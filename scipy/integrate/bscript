@@ -14,5 +14,5 @@ def pre_build(context):
                                                        use="odepack linpack_lite mach FBLAS CLIB"))
     context.register_builder("_dop",
                              lambda e: default_builder(e,
-                                                       features="c cshlib pyext bento f2py",
+                                                       features="c fc cshlib pyext bento f2py",
                                                        use="dop FBLAS CLIB"))

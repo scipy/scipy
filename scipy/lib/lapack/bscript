@@ -23,7 +23,7 @@ def pre_build(context):
 
     def builder(extension):
         return default_builder(extension,
-                               features="c pyext bento cshlib f2py f2py_fortran",
+                               features="c fc pyext bento cshlib f2py f2py_fortran",
                                use="FLAPACK CLIB")
     context.register_builder("calc_lwork", builder)
 

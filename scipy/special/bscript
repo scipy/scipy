@@ -12,7 +12,7 @@ def pre_build(context):
 
     def builder(extension):
         return default_builder(extension,
-                               features="c pyext cshlib bento f2py",
+                               features="c fc pyext cshlib bento f2py",
                                use="sc_specfunlib NPYMATH CLIB")
     context.register_builder("specfun", builder)
 

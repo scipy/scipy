@@ -8,6 +8,6 @@ def pbuild(context):
         return context.default_builder(extension,
                                        features="c cshlib bento f2py pyext",
                                        includes="src",
-                                       use="dfftpack fftpack")
+                                       use="dfftpack fftpack CLIB")
     context.register_builder("_fftpack", builder)
     context.register_builder("convolve", builder)
