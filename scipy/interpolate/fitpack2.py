@@ -704,6 +704,66 @@ class LSQBivariateSpline(BivariateSpline):
         self.degrees = kx,ky
 
 
+class RectBivariateSpline(BivariateSpline):
+    """ Bivariate spline approximation over a rectangular mesh.
+
+    Can be used for both smoothing and interpolating data.
+
+    Parameters
+    ----------
+    x,y : array_like
+        1-D arrays of coordinates in strictly ascending order.
+    z : array_like
+        2-D array of data with shape (x.size,y.size).
+    bbox : array_like, optional
+        Sequence of length 4 specifying the boundary of the rectangular
+        approximation domain.  By default,
+        ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
+    kx, ky : ints, optional
+        Degrees of the bivariate spline. Default is 3.
+    s : float, optional
+        Positive smoothing factor defined for estimation condition:
+        ``sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s``
+        Default is s=0, which is for interpolation.
+
+    See Also
+    --------
+    SmoothBivariateSpline : a smoothing bivariate spline for scattered data
+    bisplrep, bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
+
+    """
+    def __init__(self, x, y, z, bbox = [None]*4, kx=3, ky=3, s=0):
+        x,y = ravel(x), ravel(y)
+        if not all(diff(x) > 0.0):
+            raise TypeError('x must be strictly increasing')
+        if not all(diff(y) > 0.0):
+            raise TypeError('y must be strictly increasing')
+        if not ((x.min() == x[0]) and (x.max() == x[-1])):
+            raise TypeError('x must be strictly ascending')
+        if not ((y.min() == y[0]) and (y.max() == y[-1])):
+            raise TypeError('y must be strictly ascending')
+        if not x.size == z.shape[0]:
+            raise TypeError('x dimension of z must have same number of '
+                            'elements as x')
+        if not y.size == z.shape[1]:
+            raise TypeError('y dimension of z must have same number of '
+                            'elements as y')
+        z = ravel(z)
+        xb,xe,yb,ye = bbox
+        nx,tx,ny,ty,c,fp,ier = dfitpack.regrid_smth(x,y,z,
+                                                    xb,xe,yb,ye,
+                                                    kx,ky,s)
+
+        if not ier in [0,-1,-2]:
+            msg = _surfit_messages.get(ier, 'ier=%s' % (ier))
+            raise ValueError(msg)
+
+        self.fp = fp
+        self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
+        self.degrees = kx,ky
+
+
 _spherefit_messages = _surfit_messages.copy()
 _spherefit_messages[10] = """
 ERROR. On entry, the input data are controlled on validity. The following
@@ -749,9 +809,9 @@ class SphereBivariateSpline(BivariateSplineBase):
         # empty input yields empty output
         if (theta.size == 0) and (phi.size == 0):
             return array([])
-        if min(theta) < 0. or max(theta) > np.pi:
+        if theta.min() < 0. or theta.max() > np.pi:
             raise ValueError("requested theta out of bounds.")
-        if min(phi) < 0. or max(phi) > 2. * np.pi:
+        if phi.min() < 0. or phi.max() > 2. * np.pi:
             raise ValueError("requested phi out of bounds.")
         tx,ty,c = self.tck[:3]
         kx,ky = self.degrees
@@ -766,10 +826,10 @@ class SphereBivariateSpline(BivariateSplineBase):
         # empty input yields empty output
         if (thetai.size == 0) and (phii.size == 0):
             return array([])
-        if min(thetai) < 0. or max(thetai) > np.pi:
-            raise ValueError("requested theta out of bounds.")
-        if min(phii) < 0. or max(phii) > 2. * np.pi:
-            raise ValueError("requested phi out of bounds.")
+        if thetai.min() < 0. or thetai.max() > np.pi:
+            raise ValueError("requested thetai out of bounds.")
+        if phii.min() < 0. or phii.max() > 2. * np.pi:
+            raise ValueError("requested phii out of bounds.")
         tx,ty,c = self.tck[:3]
         kx,ky = self.degrees
         zi,ier = dfitpack.bispeu(tx,ty,c,kx,ky,thetai,phii)
@@ -863,7 +923,6 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         if not ier in [0, -1, -2]:
             message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(message)
-
         self.fp = fp
         self.tck = tt_[:nt_], tp_[:np_], c[:(nt_ - 4) * (np_ - 4)]
         self.degrees = (3, 3)
@@ -972,66 +1031,6 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         self.degrees = (3, 3)
 
 
-class RectBivariateSpline(BivariateSpline):
-    """ Bivariate spline approximation over a rectangular mesh.
-
-    Can be used for both smoothing and interpolating data.
-
-    Parameters
-    ----------
-    x,y : array_like
-        1-D arrays of coordinates in strictly ascending order.
-    z : array_like
-        2-D array of data with shape (x.size,y.size).
-    bbox : array_like, optional
-        Sequence of length 4 specifying the boundary of the rectangular
-        approximation domain.  By default,
-        ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
-    kx, ky : ints, optional
-        Degrees of the bivariate spline. Default is 3.
-    s : float, optional
-        Positive smoothing factor defined for estimation condition:
-        ``sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s``
-        Default is s=0, which is for interpolation.
-
-    See Also
-    --------
-    SmoothBivariateSpline : a smoothing bivariate spline for scattered data
-    bisplrep, bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
-
-    """
-    def __init__(self, x, y, z, bbox = [None]*4, kx=3, ky=3, s=0):
-        x,y = ravel(x), ravel(y)
-        if not all(diff(x) > 0.0):
-            raise TypeError('x must be strictly increasing')
-        if not all(diff(y) > 0.0):
-            raise TypeError('y must be strictly increasing')
-        if not ((x.min() == x[0]) and (x.max() == x[-1])):
-            raise TypeError('x must be strictly ascending')
-        if not ((y.min() == y[0]) and (y.max() == y[-1])):
-            raise TypeError('y must be strictly ascending')
-        if not x.size == z.shape[0]:
-            raise TypeError('x dimension of z must have same number of '
-                            'elements as x')
-        if not y.size == z.shape[1]:
-            raise TypeError('y dimension of z must have same number of '
-                            'elements as y')
-        z = ravel(z)
-        xb,xe,yb,ye = bbox
-        nx,tx,ny,ty,c,fp,ier = dfitpack.regrid_smth(x,y,z,
-                                                    xb,xe,yb,ye,
-                                                    kx,ky,s)
-
-        if not ier in [0,-1,-2]:
-            msg = _surfit_messages.get(ier, 'ier=%s' % (ier))
-            raise ValueError(msg)
-
-        self.fp = fp
-        self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
-        self.degrees = kx,ky
-
-
 _spfit_messages = _surfit_messages.copy()
 _spfit_messages[10] = """
 ERROR: on entry, the input data are controlled on validity
@@ -1061,7 +1060,7 @@ ERROR: on entry, the input data are controlled on validity
        approximation returned."""
 
 
-class RectSphereBivariateSpline(BivariateSpline):
+class RectSphereBivariateSpline(SphereBivariateSpline):
     """
     Bivariate spline approximation over a rectangular mesh on a sphere.
 
@@ -1075,8 +1074,7 @@ class RectSphereBivariateSpline(BivariateSpline):
         (0, pi).
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
-        Coordinates must be given in radians, and must lie within an interval of
-        length 2pi which in turn lies within the interval (-pi, 2pi).
+        Coordinates must be given in radians, and must lie within (0, 2pi).
     r : array_like
         2-D array of data with shape (u.size, v.size).
     s : float, optional
