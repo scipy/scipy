@@ -697,11 +697,11 @@ class LSQBivariateSpline(BivariateSpline):
                 deficiency = (nx-kx-1)*(ny-ky-1)+ier
                 message = _surfit_messages.get(-3) % (deficiency)
             else:
-                message = _surfit_messages.get(ier,'ier=%s' % (ier))
+                message = _surfit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
         self.fp = fp
-        self.tck = tx1,ty1,c
-        self.degrees = kx,ky
+        self.tck = tx1, ty1, c
+        self.degrees = kx, ky
 
 
 class RectBivariateSpline(BivariateSpline):
@@ -733,8 +733,9 @@ class RectBivariateSpline(BivariateSpline):
     UnivariateSpline : a similar class for univariate spline interpolation
 
     """
-    def __init__(self, x, y, z, bbox = [None]*4, kx=3, ky=3, s=0):
-        x,y = ravel(x), ravel(y)
+
+    def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
+        x, y = ravel(x), ravel(y)
         if not all(diff(x) > 0.0):
             raise TypeError('x must be strictly increasing')
         if not all(diff(y) > 0.0):
@@ -750,18 +751,17 @@ class RectBivariateSpline(BivariateSpline):
             raise TypeError('y dimension of z must have same number of '
                             'elements as y')
         z = ravel(z)
-        xb,xe,yb,ye = bbox
-        nx,tx,ny,ty,c,fp,ier = dfitpack.regrid_smth(x,y,z,
-                                                    xb,xe,yb,ye,
-                                                    kx,ky,s)
+        xb, xe, yb, ye = bbox
+        nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
+                                                          ye, kx, ky, s)
 
-        if not ier in [0,-1,-2]:
+        if not ier in [0, -1, -2]:
             msg = _surfit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(msg)
 
         self.fp = fp
-        self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
-        self.degrees = kx,ky
+        self.tck = tx[:nx], ty[:ny], c[:(nx - kx - 1) * (ny - ky - 1)]
+        self.degrees = kx, ky
 
 
 _spherefit_messages = _surfit_messages.copy()
@@ -813,9 +813,9 @@ class SphereBivariateSpline(BivariateSplineBase):
             raise ValueError("requested theta out of bounds.")
         if phi.min() < 0. or phi.max() > 2. * np.pi:
             raise ValueError("requested phi out of bounds.")
-        tx,ty,c = self.tck[:3]
-        kx,ky = self.degrees
-        z,ier = dfitpack.bispev(tx,ty,c,kx,ky,theta,phi)
+        tx, ty, c = self.tck[:3]
+        kx, ky = self.degrees
+        z, ier = dfitpack.bispev(tx, ty, c, kx, ky, theta, phi)
         if not ier == 0:
             raise ValueError("Error code returned by bispev: %s" % ier)
         return z
@@ -830,9 +830,9 @@ class SphereBivariateSpline(BivariateSplineBase):
             raise ValueError("requested thetai out of bounds.")
         if phii.min() < 0. or phii.max() > 2. * np.pi:
             raise ValueError("requested phii out of bounds.")
-        tx,ty,c = self.tck[:3]
-        kx,ky = self.degrees
-        zi,ier = dfitpack.bispeu(tx,ty,c,kx,ky,thetai,phii)
+        tx, ty, c = self.tck[:3]
+        kx, ky = self.degrees
+        zi, ier = dfitpack.bispeu(tx, ty, c, kx, ky, thetai, phii)
         if not ier == 0:
             raise ValueError("Error code returned by bispeu: %s" % ier)
         return zi
@@ -893,14 +893,12 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     As a first test, we'll see what the algorithm returns when run on the
     input coordinates
 
-    >>> new_lats = theta.copy()
-    >>> new_lons = phi.copy()
-    >>> data_orig = lut(new_lats, new_lons)
+    >>> data_orig = lut(theta, phi)
 
     Finally we interpolate the data to a finer grid
 
     >>> fine_lats = np.linspace(0., np.pi, 70)
-    >>> fine_lons = np.linspace(0., 2*np.pi, 90)
+    >>> fine_lons = np.linspace(0., 2 * np.pi, 90)
 
     >>> data_smth = lut(fine_lats, fine_lons)
 
@@ -914,6 +912,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     >>> plt.show()
 
     """
+
     def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
         if np.issubclass_(w, float):
             w = ones(len(theta)) * w
@@ -983,14 +982,12 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     >>> knotsp[-1] -= .0001
     >>> from scipy.interpolate import LSQSphereBivariateSpline
     >>> lut = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
-                                      data.T.ravel(),knotst,knotsp)
+                                       data.T.ravel(),knotst,knotsp)
 
     As a first test, we'll see what the algorithm returns when run on the
     input coordinates
 
-    >>> new_lats = theta.copy()
-    >>> new_lons = phi.copy()
-    >>> data_orig = lut(new_lats, new_lons)
+    >>> data_orig = lut(theta, phi)
 
     Finally we interpolate the data to a finer grid
 
@@ -1099,7 +1096,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     See Also
     --------
-    RectBivariateSpline : bivariate spline approximation over a rectangular mesh
+    RectBivariateSpline : bivariate spline approximation over a rectangular
+        mesh
 
     Notes
     -----
@@ -1187,6 +1185,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     >>> plt.show()
 
     """
+
     def __init__(self, u, v, r, s=0., pole_continuity=False, pole_values=None,
                  pole_exact=False, pole_flat=False):
         iopt = np.array([0, 0, 0], dtype=int)
@@ -1230,19 +1229,20 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
                             'elements as v')
 
         if pole_continuity[1] is False and pole_flat[1] is True:
-            raise TypeError('if pole_continuity is False, so must be pole_flat')
+            raise TypeError('if pole_continuity is False, so must be '
+                            'pole_flat')
         if pole_continuity[0] is False and pole_flat[0] is True:
-            raise TypeError('if pole_continuity is False, so must be pole_flat')
+            raise TypeError('if pole_continuity is False, so must be '
+                            'pole_flat')
 
         r = np.ravel(r)
         nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
-                                        u.copy(), v.copy(), r.copy(), r0, r1, s)
+                                       u.copy(), v.copy(), r.copy(), r0, r1, s)
 
-        if not ier in [0,-1,-2]:
+        if not ier in [0, -1, -2]:
             msg = _spfit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(msg)
 
         self.fp = fp
         self.tck = tu[:nu], tv[:nv], c[:(nu - 4) * (nv-4)]
         self.degrees = (3, 3)
-

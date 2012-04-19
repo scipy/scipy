@@ -194,21 +194,22 @@ class TestLSQSphereBivariateSpline(TestCase):
         lats, lons = linspace(0., pi, 7), linspace(0., 2*pi, 9)
         data = ones((lons.shape[0], lats.shape[0]))
         data[0,:], data[-1,:], data[:,0], data[:,-1] = 0., 0., 0., 0.
-        data[1,1:-1], data[-2,1:-1], data[1:-1,1], data[1:-1,-2] = 1., 1., 1., 1.
+        data[1,1:-1], data[-2,1:-1], data[1:-1,1], data[1:-1,-2] = 1., 1., 1., \
+                                                                   1.
         data[2,2:-3], data[-3,2:-3], data[2:-3,2], data[2:-3,-3], data[2:-2,4] = 2., 2., 2., 2., 2.
         data[3:6,3] = 3.
         data = data.T
         data = data[:,:-1]
         lons = lons[:-1]
         # define the coordinates we will test
-        new_lats = lats.copy()
-        new_lons = lons.copy()
+        new_lats = lats
+        new_lons = lons
         lats, lons = meshgrid(lats, lons)
         # calculate spline coefficients
-        lut_lsq = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(), data.T.ravel(),
-                                          knotst, knotsp)
-        assert_almost_equal(lut_lsq.get_residual(),0.0)
-        assert_array_almost_equal(lut_lsq(new_lats, new_lons),data)
+        lut_lsq = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
+                                           data.T.ravel(), knotst, knotsp)
+        assert_almost_equal(lut_lsq.get_residual(), 0.0)
+        assert_array_almost_equal(lut_lsq(new_lats, new_lons), data)
 
 
 class TestSmoothSphereBivariateSpline(TestCase):
