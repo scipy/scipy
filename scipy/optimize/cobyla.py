@@ -162,7 +162,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     return _minimize_cobyla(func, x0, args, constraints=con,
                             options=opts)[0]
 
-def _minimize_cobyla(fun, x0, args=(), constraints=(), options={}):
+def _minimize_cobyla(fun, x0, args=(), constraints=(), options=None):
     """
     Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Linear Approximation (COBYLA) algorithm.
@@ -182,6 +182,8 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(), options={}):
     This function is called by the `minimize` function with
     `method=COBYLA`. It is not supposed to be called directly.
     """
+    if options is None:
+        options = {}
     # retrieve useful options
     rhobeg = options.get('rhobeg', 1.0)
     rhoend = options.get('rhoend', 1e-4)

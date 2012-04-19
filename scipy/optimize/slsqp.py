@@ -192,7 +192,7 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         return x
 
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
-                    constraints=(), options={}):
+                    constraints=(), options=None):
     """
     Minimize a scalar function of one or more variables using Sequential
     Least SQuares Programming (SLSQP).
@@ -210,6 +210,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     `method=SLSQP`. It is not supposed to be called directly.
     """
     fprime = jac
+    if options is None:
+        options = {}
     # retrieve useful options
     iter    = options.get('maxiter', 100)
     acc     = options.get('ftol', 1.0E-6)

@@ -311,7 +311,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     else:
         return x, info['status']
 
-def _minimize_anneal(func, x0, args=(), options={}):
+def _minimize_anneal(func, x0, args=(), options=None):
     """
     Minimization of scalar function of one or more variables using the
     simulated annealing algorithm.
@@ -350,6 +350,8 @@ def _minimize_anneal(func, x0, args=(), options={}):
     This function is called by the `minimize` function with
     `method=anneal`. It is not supposed to be called directly.
     """
+    if options is None:
+        options = {}
     # retrieve useful options
     schedule   = options.get('schedule', 'fast')
     T0         = options.get('T0')

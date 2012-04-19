@@ -170,7 +170,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     return x, f, d
 
-def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options={}):
+def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options=None):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -204,6 +204,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options={}):
     This function is called by the `minimize` function with
     `method=L-BFGS-B`. It is not supposed to be called directly.
     """
+    if options is None:
+        options = {}
     # retrieve useful options
     disp    = options.get('disp', None)
     m       = options.get('maxcor', 10)
