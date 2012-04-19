@@ -44,9 +44,9 @@ class TestAnneal(TestCase):
                     'maxiter' : self.maxiter,
                     'schedule': schedule,
                     'disp'    : False}
-            x, info = minimize(self.fun[n], self.x0[n], method='anneal',
-                               options=opts, full_output=True)
-            retval = info['status']
+            res = minimize(self.fun[n], self.x0[n], method='anneal',
+                               options=opts)
+            x, retval = res['x'], res['status']
         else:
             x, retval = anneal(self.fun[n], self.x0[n], full_output=False,
                                upper=self.upper[n], lower=self.lower[n],

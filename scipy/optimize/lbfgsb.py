@@ -26,7 +26,7 @@
 
 from numpy import array, asarray, float64, int32, zeros
 import _lbfgsb
-from optimize import approx_fprime, MemoizeJac
+from optimize import approx_fprime, MemoizeJac, Result
 from numpy.compat import asbytes
 
 __all__ = ['fmin_l_bfgs_b']
@@ -160,13 +160,14 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'eps'   : epsilon,
             'maxfev': maxfun}
 
-    x, info = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
-                               options=opts)
-    d = {'grad': info['jac'],
-         'task': info['message'],
-         'funcalls': info['nfev'],
-         'warnflag': info['status']}
-    f = info['fun']
+    res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
+                           options=opts)
+    d = {'grad': res['jac'],
+         'task': res['message'],
+         'funcalls': res['nfev'],
+         'warnflag': res['status']}
+    f = res['fun']
+    x = res['x']
 
     return x, f, d
 
@@ -304,14 +305,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options=None):
          'warnflag' : warnflag
         }
 
-    info = {'fun': f,
-            'jac': g,
-            'nfev': n_function_evals,
-            'status': warnflag,
-            'message': task_str,
-            'solution': x,
-            'success': warnflag==0}
-    return x, info
+    return Result(fun=f, jac=g, nfev=n_function_evals, status=warnflag,
+                  message=task_str, x=x, success=(warnflag==0))
 
 
 if __name__ == '__main__':

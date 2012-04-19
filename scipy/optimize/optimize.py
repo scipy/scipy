@@ -60,6 +60,53 @@ class MemoizeJac(object):
             self(x, *args)
             return self.jac
 
+class Result(dict):
+    """ Represents the optimization result.
+
+    Attributes
+    ----------
+    x : ndarray
+        The solution of the optimization.
+    success : bool
+        Whether or not the optimizer exited successfully.
+    status : int
+        Termination status of the optimizer. Its value depends on the
+        underlying solver. Refer to `message` for details.
+    message : str
+        Description of the cause of the termination.
+    fun, jac, hess : ndarray
+        Values of objective function, Jacobian and Hessian (if available).
+    nfev, njev, nhev: int
+        Number of evaluations of the objective functions and of its
+        Jacobian and Hessian.
+    nit: int
+        Number of iterations performed by the optimizer.
+
+    Notes
+    -----
+    There may be additional attributes not listed above depending of the
+    specific solver. Since this class is essentially a subclass of dict
+    with attribute accessors, one can see which attributes are available
+    using the `keys()` method.
+    """
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __repr__(self):
+        if self.keys():
+            m = max(map(len, self.keys())) + 1
+            return '\n'.join([k.rjust(m) + ': ' + repr(v)
+                              for k, v in self.iteritems()])
+        else:
+            return self.__class__.__name__ + "()"
+
+
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
 def max(m, axis=0):
@@ -296,17 +343,17 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'disp': disp,
             'return_all': retall}
 
-    x, info = _minimize_neldermead(func, x0, args, opts, callback=callback)
+    res = _minimize_neldermead(func, x0, args, opts, callback=callback)
     if full_output:
-        retlist = x, info['fun'], info['nit'], info['nfev'], info['status']
+        retlist = res['x'], res['fun'], res['nit'], res['nfev'], res['status']
         if retall:
-            retlist += (info['allvecs'], )
+            retlist += (res['allvecs'], )
         return retlist
     else:
         if retall:
-            return x, info['allvecs']
+            return res['x'], res['allvecs']
         else:
-            return x
+            return res['x']
 
 def _minimize_neldermead(func, x0, args=(), options=None, callback=None):
     """
@@ -467,16 +514,12 @@ def _minimize_neldermead(func, x0, args=(), options=None, callback=None):
             print "         Function evaluations: %d" % fcalls[0]
 
 
-    info = {'fun': fval,
-            'nit': iterations,
-            'nfev': fcalls[0],
-            'status': warnflag,
-            'success': warnflag == 0,
-            'message': msg,
-            'solution': x}
+    result = Result(fun=fval, nit=iterations, nfev=fcalls[0],
+                    status=warnflag, success=(warnflag == 0), message=msg,
+                    x=x)
     if retall:
-        info['allvecs'] = allvecs
-    return x, info
+        result['allvecs'] = allvecs
+    return result
 
 
 def approx_fprime(xk, f, epsilon, *args):
@@ -663,19 +706,19 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'maxiter': maxiter,
             'return_all': retall}
 
-    x, info = _minimize_bfgs(f, x0, args, fprime, opts, callback=callback)
+    res = _minimize_bfgs(f, x0, args, fprime, opts, callback=callback)
 
     if full_output:
-        retlist = x, info['fun'], info['jac'], info['hess'], \
-                info['nfev'], info['njev'], info['status']
+        retlist = res['x'], res['fun'], res['jac'], res['hess'], \
+                res['nfev'], res['njev'], res['status']
         if retall:
-            retlist += (info['allvecs'], )
+            retlist += (res['allvecs'], )
         return retlist
     else:
         if retall:
-            return x, info['allvecs']
+            return res['x'], res['allvecs']
         else:
-            return x
+            return res['x']
 
 def _minimize_bfgs(fun, x0, args=(), jac=None, options=None, callback=None):
     """
@@ -814,18 +857,12 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options=None, callback=None):
             print "         Function evaluations: %d" % func_calls[0]
             print "         Gradient evaluations: %d" % grad_calls[0]
 
-    info = {'fun': fval,
-            'jac': gfk,
-            'hess': Hk,
-            'nfev': func_calls[0],
-            'njev': grad_calls[0],
-            'status': warnflag,
-            'success': warnflag == 0,
-            'message': msg,
-            'solution': xk}
+    result = Result(fun=fval, jac=gfk, hess=Hk, nfev=func_calls[0],
+                    njev=grad_calls[0], status=warnflag,
+                    success=(warnflag == 0), message=msg, x=xk)
     if retall:
-        info['allvecs'] = allvecs
-    return xk, info
+        result['allvecs'] = allvecs
+    return result
 
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
@@ -904,18 +941,18 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             'maxiter': maxiter,
             'return_all': retall}
 
-    x, info = _minimize_cg(f, x0, args, fprime, opts, callback=callback)
+    res = _minimize_cg(f, x0, args, fprime, opts, callback=callback)
 
     if full_output:
-        retlist = x, info['fun'], info['nfev'], info['njev'], info['status']
+        retlist = res['x'], res['fun'], res['nfev'], res['njev'], res['status']
         if retall:
-            retlist += (info['allvecs'], )
+            retlist += (res['allvecs'], )
         return retlist
     else:
         if retall:
-            return x, info['allvecs']
+            return res['x'], res['allvecs']
         else:
-            return x
+            return res['x']
 
 def _minimize_cg(fun, x0, args=(), jac=None, options=None, callback=None):
     """
@@ -1033,17 +1070,12 @@ def _minimize_cg(fun, x0, args=(), jac=None, options=None, callback=None):
             print "         Gradient evaluations: %d" % grad_calls[0]
 
 
-    info = {'fun': fval,
-            'jac': gfk,
-            'nfev': func_calls[0],
-            'njev': grad_calls[0],
-            'status': warnflag,
-            'success': warnflag == 0,
-            'message': msg,
-            'solution': xk}
+    result = Result(fun=fval, jac=gfk, nfev=func_calls[0],
+                    njev=grad_calls[0], status=warnflag,
+                    success=(warnflag == 0), message=msg, x=xk)
     if retall:
-        info['allvecs'] = allvecs
-    return xk, info
+        result['allvecs'] = allvecs
+    return result
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
@@ -1144,20 +1176,20 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             'disp': disp,
             'return_all': retall}
 
-    x, info = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
-                                 callback=callback)
+    res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
+                             callback=callback)
 
     if full_output:
-        retlist = x, info['fun'], info['nfev'], info['njev'], \
-                info['nhev'], info['status']
+        retlist = res['x'], res['fun'], res['nfev'], res['njev'], \
+                res['nhev'], res['status']
         if retall:
-            retlist += (info['allvecs'], )
+            retlist += (res['allvecs'], )
         return retlist
     else:
         if retall:
-            return x, info['allvecs']
+            return res['x'], res['allvecs']
         else:
-            return x
+            return res['x']
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                        options=None, callback=None):
@@ -1290,18 +1322,12 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print "         Gradient evaluations: %d" % gcalls[0]
             print "         Hessian evaluations: %d" % hcalls
 
-    info = {'fun': fval,
-            'jac': gfk,
-            'nfev': fcalls[0],
-            'njev': gcalls[0],
-            'nhev': hcalls,
-            'status': warnflag,
-            'success': warnflag == 0,
-            'message': msg,
-            'solution': xk}
+    result = Result(fun=fval, jac=gfk, nfev=fcalls[0], njev=gcalls[0],
+                    nhev=hcalls, status=warnflag, success=(warnflag == 0),
+                    message=msg, x=xk)
     if retall:
-        info['allvecs'] = allvecs
-    return xk, info
+        result['allvecs'] = allvecs
+    return result
 
 
 def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
@@ -1359,11 +1385,11 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
                'maxfev': maxfun,
                'disp': disp}
 
-    x, info =  _minimize_scalar_bounded(func, (x1, x2), args, options)
+    res =  _minimize_scalar_bounded(func, (x1, x2), args, options)
     if full_output:
-        return x, info['fun'], info['status'], info['nfev']
+        return res['x'], res['fun'], res['status'], res['nfev']
     else:
-        return x
+        return res['x']
 
 def _minimize_scalar_bounded(func, bounds, args=(), options=None):
     if options is None:
@@ -1483,15 +1509,13 @@ def _minimize_scalar_bounded(func, bounds, args=(), options=None):
     if disp > 0:
         _endprint(x, flag, fval, maxfun, xtol, disp)
 
-    info = {'fun': fval,
-            'status': flag,
-            'success': flag == 0,
-            'message': {0: 'Solution found.',
-                        1: 'Maximum number of function '
-                           'calls reached.'}.get(flag, ''),
-            'nfev': num}
+    result = Result(fun=fval, status=flag, success=(flag == 0),
+                    message={0: 'Solution found.',
+                             1: 'Maximum number of function calls '
+                                'reached.'}.get(flag, ''),
+                    x=xf, nfev=num)
 
-    return xf, info
+    return result
 
 class Brent:
     #need to rethink design of __init__
@@ -1680,11 +1704,11 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """
     options = {'ftol': tol,
                'maxiter': maxiter}
-    x, info = _minimize_scalar_brent(func, brack, args, options)
+    res = _minimize_scalar_brent(func, brack, args, options)
     if full_output:
-        return x, info['fun'], info['nit'], info['nfev']
+        return res['x'], res['fun'], res['nit'], res['nfev']
     else:
-        return x
+        return res['x']
 
 def _minimize_scalar_brent(func, brack=None, args=(), options=None):
     if options is None:
@@ -1699,10 +1723,7 @@ def _minimize_scalar_brent(func, brack=None, args=(), options=None):
     brent.set_bracket(brack)
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
-    info = {'fun': fval,
-            'nit': nit,
-            'nfev': nfev}
-    return x, info
+    return Result(fun=fval, x=x, nit=nit, nfev=nfev)
 
 def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     """ Given a function of one-variable and a possible bracketing interval,
@@ -1738,11 +1759,11 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
 
     """
     options = {'ftol': tol}
-    x, info = _minimize_scalar_golden(func, brack, args, options)
+    res = _minimize_scalar_golden(func, brack, args, options)
     if full_output:
-        return x, info['fun'], info['nfev']
+        return res['x'], res['fun'], res['nfev']
     else:
-        return x
+        return res['x']
 
 def _minimize_scalar_golden(func, brack=None, args=(), options=None):
     if options is None:
@@ -1795,8 +1816,7 @@ def _minimize_scalar_golden(func, brack=None, args=(), options=None):
         xmin = x2
         fval = f2
 
-    info = {'fun': fval, 'nfev': funcalls}
-    return xmin, info
+    return Result(fun=fval, nfev=funcalls, x=xmin)
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
@@ -2005,19 +2025,19 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'direc': direc,
             'return_all': retall}
 
-    x, info = _minimize_powell(func, x0, args, opts, callback=callback)
+    res = _minimize_powell(func, x0, args, opts, callback=callback)
 
     if full_output:
-        retlist = x, info['fun'], info['direc'], info['nit'], \
-                info['nfev'], info['status']
+        retlist = res['x'], res['fun'], res['direc'], res['nit'], \
+                res['nfev'], res['status']
         if retall:
-            retlist += (info['allvecs'], )
+            retlist += (res['allvecs'], )
         return retlist
     else:
         if retall:
-            return x, info['allvecs']
+            return res['x'], res['allvecs']
         else:
-            return x
+            return res['x']
 
 def _minimize_powell(func, x0, args=(), options=None, callback=None):
     """
@@ -2135,17 +2155,12 @@ def _minimize_powell(func, x0, args=(), options=None, callback=None):
 
     x = squeeze(x)
 
-    info = {'fun': fval,
-            'direc': direc,
-            'nit': iter,
-            'nfev': fcalls[0],
-            'status': warnflag,
-            'success': warnflag == 0,
-            'message': msg,
-            'solution': x}
+    result = Result(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
+                    status=warnflag, success=(warnflag == 0), message=msg,
+                    x=x)
     if retall:
-        info['allvecs'] = allvecs
-    return x, info
+        result['allvecs'] = allvecs
+    return result
 
 
 def _endprint(x, flag, fval, maxfun, xtol, disp):

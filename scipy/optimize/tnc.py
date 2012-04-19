@@ -32,7 +32,7 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 from scipy.optimize import moduleTNC, approx_fprime
-from optimize import MemoizeJac
+from optimize import MemoizeJac, Result
 from numpy import asarray, inf, array
 
 __all__ = ['fmin_tnc']
@@ -254,9 +254,9 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             'rescale': rescale,
             'disp': False}
 
-    x, info = _minimize_tnc(fun, x0, args, jac, bounds, options=opts)
+    res = _minimize_tnc(fun, x0, args, jac, bounds, options=opts)
 
-    return x, info['nfev'], info['status']
+    return res['x'], res['nfev'], res['status']
 
 def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options=None):
     """
@@ -401,14 +401,9 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options=None):
 
     xopt = array(x)
     funv, jacv = func_and_grad(xopt)
-    info = {'solution': xopt,
-            'fun': funv,
-            'jac': jacv,
-            'nfev': nf,
-            'status': rc,
-            'message': RCSTRINGS[rc],
-            'success': -1 < rc < 3}
-    return xopt, info
+
+    return Result(x=xopt, fun=funv, jac=jacv, nfev=nf, status=rc,
+                  message=RCSTRINGS[rc], success=(-1 < rc < 3))
 
 if __name__ == '__main__':
     # Examples for TNC
