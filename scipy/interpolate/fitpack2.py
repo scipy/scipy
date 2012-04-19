@@ -439,6 +439,39 @@ class LSQUnivariateSpline(UnivariateSpline):
 
 ################ Bivariate spline ####################
 
+class BivariateSplineBase(object):
+    """ Base class for Bivariate spline s(x,y) interpolation on the rectangle
+    [xb,xe] x [yb, ye] calculated from a given set of data points
+    (x,y,z).
+
+    See Also
+    --------
+    bisplrep, bisplev : an older wrapping of FITPACK
+    BivariateSpline : implementation of bivariate spline interpolation on a 
+        plane grid
+    SphereBivariateSpline : implementation of bivariate spline interpolation on
+        a spherical grid
+    """
+
+    def get_residual(self):
+        """ Return weighted sum of squared residuals of the spline
+        approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
+        """
+        return self.fp
+
+    def get_knots(self):
+        """ Return a tuple (tx,ty) where tx,ty contain knots positions
+        of the spline with respect to x-, y-variable, respectively.
+        The position of interior and additional knots are given as
+          t[k+1:-k-1] and t[:k+1]=b, t[-k-1:]=e, respectively.
+        """
+        return self.tck[:2]
+
+    def get_coeffs(self):
+        """ Return spline coefficients."""
+        return self.tck[2]
+
+
 _surfit_messages = {1:"""
 The required storage space exceeds the available storage space: nxest
 or nyest too small, or s too small.
@@ -481,7 +514,7 @@ inaccurate. Deficiency may strongly depend on the value of eps."""
                     }
 
 
-class BivariateSpline(object):
+class BivariateSpline(BivariateSplineBase):
     """ Bivariate spline s(x,y) of degrees kx and ky on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).
@@ -495,24 +528,6 @@ class BivariateSpline(object):
     LSQUnivariateSpline :
         to create a BivariateSpline using weighted least-squares fitting
     """
-
-    def get_residual(self):
-        """ Return weighted sum of squared residuals of the spline
-        approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
-        """
-        return self.fp
-
-    def get_knots(self):
-        """ Return a tuple (tx,ty) where tx,ty contain knots positions
-        of the spline with respect to x-, y-variable, respectively.
-        The position of interior and additional knots are given as
-          t[k+1:-k-1] and t[:k+1]=b, t[-k-1:]=e, respectively.
-        """
-        return self.tck[:2]
-
-    def get_coeffs(self):
-        """ Return spline coefficients."""
-        return self.tck[2]
 
     def __call__(self, x, y, mth='array'):
         """ Evaluate spline at positions x,y."""
@@ -713,7 +728,57 @@ WARNING. The coefficients of the spline returned have been computed as the
          the value of eps."""
 
 
-class SmoothSphereBivariateSpline(BivariateSpline):
+class SphereBivariateSpline(BivariateSplineBase):
+    """ Bivariate spline s(x,y) of degrees kx and ky on the rectangle
+    [xb,xe] x [yb, ye] calculated from a given set of data points
+    (x,y,z).
+
+    See Also
+    --------
+    bisplrep, bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
+    SmoothUnivariateSpline :
+        to create a BivariateSpline through the given points
+    LSQUnivariateSpline :
+        to create a BivariateSpline using weighted least-squares fitting
+    """
+
+    def __call__(self, theta, phi):
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+        # empty input yields empty output
+        if (theta.size == 0) and (phi.size == 0):
+            return array([])
+        if min(theta) < 0. or max(theta) > np.pi:
+            raise ValueError("requested theta out of bounds.")
+        if min(phi) < 0. or max(phi) > 2. * np.pi:
+            raise ValueError("requested phi out of bounds.")
+        tx,ty,c = self.tck[:3]
+        kx,ky = self.degrees
+        z,ier = dfitpack.bispev(tx,ty,c,kx,ky,theta,phi)
+        if not ier == 0:
+            raise ValueError("Error code returned by bispev: %s" % ier)
+        return z
+
+    def ev(self, thetai, phii):
+        thetai = np.asarray(thetai)
+        phii = np.asarray(phii)
+        # empty input yields empty output
+        if (thetai.size == 0) and (phii.size == 0):
+            return array([])
+        if min(thetai) < 0. or max(thetai) > np.pi:
+            raise ValueError("requested theta out of bounds.")
+        if min(phii) < 0. or max(phii) > 2. * np.pi:
+            raise ValueError("requested phi out of bounds.")
+        tx,ty,c = self.tck[:3]
+        kx,ky = self.degrees
+        zi,ier = dfitpack.bispeu(tx,ty,c,kx,ky,thetai,phii)
+        if not ier == 0:
+            raise ValueError("Error code returned by bispeu: %s" % ier)
+        return zi
+
+
+class SmoothSphereBivariateSpline(SphereBivariateSpline):
     """ Smooth bivariate spline approximation in spherical coordinates.
 
     Parameters
@@ -739,6 +804,8 @@ class SmoothSphereBivariateSpline(BivariateSpline):
     For more information, see the FITPACK_ site about this function.
 
     .. _FITPACK: http://www.netlib.org/dierckx/sphere.f
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -793,33 +860,16 @@ class SmoothSphereBivariateSpline(BivariateSpline):
         nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
                                                                 r, w=w, s=s,
                                                                 eps=eps)
-        if ier in [0, -1, -2]:  # normal return
-            pass
-        else:
+        if not ier in [0, -1, -2]:
             message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
+            raise ValueError(message)
 
         self.fp = fp
         self.tck = tt_[:nt_], tp_[:np_], c[:(nt_ - 4) * (np_ - 4)]
         self.degrees = (3, 3)
 
-    def __call__(self, theta, phi, mth='array'):
-        if min(theta) < 0. or max(theta) > np.pi:
-            raise ValueError("requested theta out of bounds.")
-        if min(phi) < 0. or max(phi) > 2. * np.pi:
-            raise ValueError("requested phi out of bounds.")
-        return super(SmoothSphereBivariateSpline, self).__call__(theta, phi,
-                                                                mth)
 
-    def ev(self, theta, phi):
-        if min(theta) < 0. or max(theta) > np.pi:
-            raise ValueError("requested theta out of bounds.")
-        if min(phi) < 0. or max(phi) > 2. * np.pi:
-            raise ValueError("requested phi out of bounds.")
-        return super(SmoothSphereBivariateSpline, self).ev(theta, phi)
-
-
-class LSQSphereBivariateSpline(BivariateSpline):
+class LSQSphereBivariateSpline(SphereBivariateSpline):
     """ Weighted least-squares bivariate spline approximation in spherical
     coordinates.
 
@@ -831,7 +881,7 @@ class LSQSphereBivariateSpline(BivariateSpline):
         and phi must lie within the interval (0, 2pi).
     tt, tp : array_like
         Strictly ordered 1-D sequences of knots coordinates.
-        Coordinates must satisfy 0<tt[i]<pi, 0<tp[i]<2*pi.
+        Coordinates must satisfy ``0<tt[i]<pi``, ``0<tp[i]<2*pi``.
     w : array_like, optional
         Positive 1-D sequence of weights.
     eps : float, optional
@@ -844,6 +894,8 @@ class LSQSphereBivariateSpline(BivariateSpline):
     For more information, see the FITPACK_ site about this function.
 
     .. _FITPACK: http://www.netlib.org/dierckx/sphere.f
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -918,20 +970,6 @@ class LSQSphereBivariateSpline(BivariateSpline):
         self.fp = fp
         self.tck = tt_, tp_, c
         self.degrees = (3, 3)
-
-    def __call__(self, theta, phi, mth='array'):
-        if min(theta) < 0. or max(theta) > np.pi:
-            raise ValueError("requested theta out of bounds.")
-        if min(phi) < 0. or max(phi) > 2. * np.pi:
-            raise ValueError("requested phi out of bounds.")
-        return super(LSQSphereBivariateSpline, self).__call__(theta, phi, mth)
-
-    def ev(self, theta, phi):
-        if min(theta) < 0. or max(theta) > np.pi:
-            raise ValueError("requested theta out of bounds.")
-        if min(phi) < 0. or max(phi) > 2. * np.pi:
-            raise ValueError("requested phi out of bounds.")
-        return super(LSQSphereBivariateSpline, self).ev(theta, phi)
 
 
 class RectBivariateSpline(BivariateSpline):
@@ -1078,6 +1116,8 @@ class RectSpherBivariateSpline(BivariateSpline):
     For more information, see the FITPACK_ site about this function.
 
     .. _FITPACK: http://www.netlib.org/dierckx/spgrid.f
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
