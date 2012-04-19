@@ -447,10 +447,10 @@ class BivariateSplineBase(object):
     See Also
     --------
     bisplrep, bisplev : an older wrapping of FITPACK
-    BivariateSpline : implementation of bivariate spline interpolation on a 
-        plane grid
-    SphereBivariateSpline : implementation of bivariate spline interpolation on
-        a spherical grid
+    BivariateSpline :
+        implementation of bivariate spline interpolation on a plane grid
+    SphereBivariateSpline :
+        implementation of bivariate spline interpolation on a spherical grid
     """
 
     def get_residual(self):
@@ -523,14 +523,17 @@ class BivariateSpline(BivariateSplineBase):
     --------
     bisplrep, bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
-    SmoothUnivariateSpline :
+    SmoothBivariateSpline :
         to create a BivariateSpline through the given points
-    LSQUnivariateSpline :
+    LSQBivariateSpline :
         to create a BivariateSpline using weighted least-squares fitting
+    SphereBivariateSpline :
+        bivariate spline interpolation in spherical cooridinates
     """
 
     def __call__(self, x, y, mth='array'):
-        """ Evaluate spline at positions x,y."""
+        """ Evaluate spline at the grid points defined by the coordinate arrays
+        x,y."""
         x = np.asarray(x)
         y = np.asarray(y)
         # empty input yields empty output
@@ -616,7 +619,7 @@ class SmoothBivariateSpline(BivariateSpline):
 
     """
 
-    def __init__(self, x, y, z, w=None, bbox = [None]*4, kx=3, ky=3, s=None,
+    def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
                  eps=None):
         xb,xe,yb,ye = bbox
         nx,tx,ny,ty,c,fp,wrk1,ier = dfitpack.surfit_smth(x,y,z,w,
@@ -789,9 +792,8 @@ WARNING. The coefficients of the spline returned have been computed as the
 
 
 class SphereBivariateSpline(BivariateSplineBase):
-    """ Bivariate spline s(x,y) of degrees kx and ky on the rectangle
-    [xb,xe] x [yb, ye] calculated from a given set of data points
-    (x,y,z).
+    """ Bivariate spline s(x,y) of degrees 3 on a sphere, calculated from a
+    given set of data points (theta,phi,r).
 
     See Also
     --------
@@ -804,6 +806,8 @@ class SphereBivariateSpline(BivariateSplineBase):
     """
 
     def __call__(self, theta, phi):
+        """ Evaluate the spline at the grid ponts defined by the coordinate
+        arrays theta, phi. """
         theta = np.asarray(theta)
         phi = np.asarray(phi)
         # empty input yields empty output
@@ -821,6 +825,9 @@ class SphereBivariateSpline(BivariateSplineBase):
         return z
 
     def ev(self, thetai, phii):
+        """ Evaluate the spline at the points (theta[i], phi[i]),
+        i=0,...,len(theta)-1
+        """
         thetai = np.asarray(thetai)
         phii = np.asarray(phii)
         # empty input yields empty output
