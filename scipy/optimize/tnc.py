@@ -258,7 +258,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
     return x, info['nfev'], info['status']
 
-def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={}):
+def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options=None):
     """
     Minimize a scalar function of one or more variables using a truncated
     Newton (TNC) algorithm.
@@ -317,6 +317,8 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={}):
     This function is called by the `minimize` function with `method=TNC`.
     It is not supposed to be called directly.
     """
+    if options is None:
+        options = {}
     # retrieve useful options
     epsilon  = options.get('eps', 1e-8)
     scale    = options.get('scale')

@@ -29,7 +29,7 @@ from slsqp import _minimize_slsqp
 
 def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
              hessp=None, bounds=None, constraints=(),
-             options=dict(), callback=None):
+             options=None, callback=None):
     """
     Minimization of scalar function of one or more variables.
 
@@ -292,6 +292,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     It should converge to the theoretical solution (1.4 ,1.7).
     """
     meth = method.lower()
+    if options is None:
+        options = {}
     # check if optional parameters are supported by the selected method
     # - jac
     if meth in ['nelder-mead', 'powell', 'anneal', 'cobyla'] and bool(jac):
@@ -358,7 +360,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
-                    method='brent', options=dict()):
+                    method='brent', options=None):
     """
     Minimization of scalar function of one variable.
 
@@ -462,6 +464,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     -2.0000002026
     """
     meth = method.lower()
+    if options is None:
+        options = {}
 
     if meth == 'brent':
         return _minimize_scalar_brent(fun, bracket, args, options)

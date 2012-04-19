@@ -331,7 +331,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         else:
             return x
 
-def _minimize_neldermead(func, x0, args=(), options={}, callback=None):
+def _minimize_neldermead(func, x0, args=(), options=None, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -351,6 +351,8 @@ def _minimize_neldermead(func, x0, args=(), options={}, callback=None):
     This function is called by the `minimize` function with
     `method=Nelder-Mead`. It is not supposed to be called directly.
     """
+    if options is None:
+        options = {}
     # retrieve useful options
     xtol    = options.get('xtol', 1e-4)
     ftol    = options.get('ftol', 1e-4)
@@ -694,7 +696,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         else:
             return x
 
-def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, callback=None):
+def _minimize_bfgs(fun, x0, args=(), jac=None, options=None, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -717,6 +719,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, callback=None):
     """
     f = fun
     fprime = jac
+    if options is None:
+        options = {}
     # retrieve useful options
     gtol    = options.get('gtol', 1e-5)
     norm    = options.get('norm', Inf)
@@ -926,7 +930,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         else:
             return x
 
-def _minimize_cg(fun, x0, args=(), jac=None, options={}, callback=None):
+def _minimize_cg(fun, x0, args=(), jac=None, options=None, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     conjugate gradient algorithm.
@@ -949,6 +953,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, callback=None):
     """
     f = fun
     fprime = jac
+    if options is None:
+        options = {}
     # retrieve useful options
     gtol    = options.get('gtol', 1e-5)
     norm    = options.get('norm', Inf)
@@ -1162,7 +1168,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             return x
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                       options={}, callback=None):
+                       options=None, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     Newton-CG algorithm.
@@ -1189,6 +1195,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     fprime = jac
     fhess_p = hessp
     fhess = hess
+    if options is None:
+        options = {}
     # retrieve useful options
     avextol = options.get('xtol', 1e-5)
     epsilon = options.get('eps', _epsilon)
@@ -1359,7 +1367,9 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     else:
         return x
 
-def _minimize_scalar_bounded(func, bounds, args=(), options={}):
+def _minimize_scalar_bounded(func, bounds, args=(), options=None):
+    if options is None:
+        options = {}
     # retrieve options
     xtol = options.get('xtol', 1e-5)
     maxfun = options.get('maxfev', 500)
@@ -1676,7 +1686,9 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     else:
         return x
 
-def _minimize_scalar_brent(func, brack=None, args=(), options={}):
+def _minimize_scalar_brent(func, brack=None, args=(), options=None):
+    if options is None:
+        options = {}
     # retrieve options
     tol = options.get('ftol', 1.48e-8)
     maxiter = options.get('maxiter', 500)
@@ -1730,7 +1742,9 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     else:
         return x
 
-def _minimize_scalar_golden(func, brack=None, args=(), options={}):
+def _minimize_scalar_golden(func, brack=None, args=(), options=None):
+    if options is None:
+        options = {}
     tol = options.get('ftol', _epsilon)
     if brack is None:
         xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
@@ -2003,7 +2017,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         else:
             return x
 
-def _minimize_powell(func, x0, args=(), options={}, callback=None):
+def _minimize_powell(func, x0, args=(), options=None, callback=None):
     """
     Minimization of scalar function of one or more variables using the
     modified Powell algorithm.
@@ -2025,6 +2039,8 @@ def _minimize_powell(func, x0, args=(), options={}, callback=None):
     This function is called by the `minimize` function with
     `method=Powell`. It is not supposed to be called directly.
     """
+    if options is None:
+        options = {}
     # retrieve useful options
     xtol    = options.get('xtol', 1e-4)
     ftol    = options.get('ftol', 1e-4)
