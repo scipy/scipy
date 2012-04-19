@@ -60,6 +60,29 @@ class MemoizeJac(object):
             self(x, *args)
             return self.jac
 
+class InfoDict(dict):
+    """ dict subclass with attribute accessors """
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __repr__(self):
+        if self.keys():
+            m = max(map(len, self.keys())) + 1
+        else:
+            m = 0
+        return '\n'.join([k.rjust(m) + ': ' + repr(v)
+                          for k, v in self.iteritems()])
+
+    def __array__(self):
+        return self.solution
+
+
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
 def max(m, axis=0):
@@ -465,13 +488,9 @@ def _minimize_neldermead(func, x0, args=(), options={}, callback=None):
             print "         Function evaluations: %d" % fcalls[0]
 
 
-    info = {'fun': fval,
-            'nit': iterations,
-            'nfev': fcalls[0],
-            'status': warnflag,
-            'success': warnflag == 0,
-            'message': msg,
-            'solution': x}
+    info = InfoDict(fun=fval, nit=iterations, nfev=fcalls[0],
+                    status=warnflag, success=(warnflag == 0), message=msg,
+                    solution=x)
     if retall:
         info['allvecs'] = allvecs
     return x, info
@@ -810,15 +829,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, callback=None):
             print "         Function evaluations: %d" % func_calls[0]
             print "         Gradient evaluations: %d" % grad_calls[0]
 
-    info = {'fun': fval,
-            'jac': gfk,
-            'hess': Hk,
-            'nfev': func_calls[0],
-            'njev': grad_calls[0],
-            'status': warnflag,
-            'success': warnflag == 0,
-            'message': msg,
-            'solution': xk}
+    info = InfoDict(fun=fval, jac=gfk, hess=Hk, nfev=func_calls[0],
+                    njev=grad_calls[0], status=warnflag,
+                    success=(warnflag == 0), message=msg, solution=xk)
     if retall:
         info['allvecs'] = allvecs
     return xk, info
@@ -1027,14 +1040,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, callback=None):
             print "         Gradient evaluations: %d" % grad_calls[0]
 
 
-    info = {'fun': fval,
-            'jac': gfk,
-            'nfev': func_calls[0],
-            'njev': grad_calls[0],
-            'status': warnflag,
-            'success': warnflag == 0,
-            'message': msg,
-            'solution': xk}
+    info = InfoDict(fun=fval, jac=gfk, nfev=func_calls[0],
+                    njev=grad_calls[0], status=warnflag,
+                    success=(warnflag == 0), message=msg, solution=xk)
     if retall:
         info['allvecs'] = allvecs
     return xk, info
@@ -1282,15 +1290,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print "         Gradient evaluations: %d" % gcalls[0]
             print "         Hessian evaluations: %d" % hcalls
 
-    info = {'fun': fval,
-            'jac': gfk,
-            'nfev': fcalls[0],
-            'njev': gcalls[0],
-            'nhev': hcalls,
-            'status': warnflag,
-            'success': warnflag == 0,
-            'message': msg,
-            'solution': xk}
+    info = InfoDict(fun=fval, jac=gfk, nfev=fcalls[0], njev=gcalls[0],
+                    nhev=hcalls, status=warnflag, success=(warnflag == 0),
+                    message=msg, solution=xk)
     if retall:
         info['allvecs'] = allvecs
     return xk, info
@@ -1473,13 +1475,11 @@ def _minimize_scalar_bounded(func, bounds, args=(), options={}):
     if disp > 0:
         _endprint(x, flag, fval, maxfun, xtol, disp)
 
-    info = {'fun': fval,
-            'status': flag,
-            'success': flag == 0,
-            'message': {0: 'Solution found.',
-                        1: 'Maximum number of function '
-                           'calls reached.'}.get(flag, ''),
-            'nfev': num}
+    info = InfoDict(fun=fval, status=flag, success=(flag == 0),
+                    message={0: 'Solution found.',
+                             1: 'Maximum number of function calls '
+                                'reached.'}.get(flag, ''),
+                    nfev=num)
 
     return xf, info
 
@@ -1687,9 +1687,7 @@ def _minimize_scalar_brent(func, brack=None, args=(), options={}):
     brent.set_bracket(brack)
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
-    info = {'fun': fval,
-            'nit': nit,
-            'nfev': nfev}
+    info = InfoDict(fun=fval, solution=x, nit=nit, nfev=nfev)
     return x, info
 
 def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
@@ -1781,7 +1779,7 @@ def _minimize_scalar_golden(func, brack=None, args=(), options={}):
         xmin = x2
         fval = f2
 
-    info = {'fun': fval, 'nfev': funcalls}
+    info = InfoDict(fun=fval, nfev=funcalls, solution=xmin)
     return xmin, info
 
 
@@ -2119,14 +2117,9 @@ def _minimize_powell(func, x0, args=(), options={}, callback=None):
 
     x = squeeze(x)
 
-    info = {'fun': fval,
-            'direc': direc,
-            'nit': iter,
-            'nfev': fcalls[0],
-            'status': warnflag,
-            'success': warnflag == 0,
-            'message': msg,
-            'solution': x}
+    info = InfoDict(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
+                    status=warnflag, success=(warnflag == 0), message=msg,
+                    solution=x)
     if retall:
         info['allvecs'] = allvecs
     return x, info

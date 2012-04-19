@@ -9,6 +9,7 @@ fmin_coblya(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 """
 
 from scipy.optimize import _cobyla
+from optimize import InfoDict
 from numpy import copy
 from warnings import warn
 
@@ -231,7 +232,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(), options={}):
     xopt = _cobyla.minimize(calcfc, m=m, x=copy(x0), rhobeg=rhobeg,
                             rhoend=rhoend, iprint=iprint, maxfun=maxfun)
 
-    return xopt, dict()
+    return xopt, InfoDict(solution=xopt)
 
 if __name__ == '__main__':
 

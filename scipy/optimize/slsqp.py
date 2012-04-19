@@ -10,7 +10,7 @@ __all__ = ['approx_jacobian','fmin_slsqp']
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isinf, atleast_1d
-from optimize import approx_fprime, wrap_function
+from optimize import approx_fprime, wrap_function, InfoDict
 
 __docformat__ = "restructuredtext en"
 
@@ -403,15 +403,9 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print "            Function evaluations:", feval[0]
         print "            Gradient evaluations:", geval[0]
 
-    info = {'solution': x,
-            'fun'     : fx,
-            'jac'     : g,
-            'nit'     : int(majiter),
-            'nfev'    : feval[0],
-            'njev'    : geval[0],
-            'status'  : int(mode),
-            'message' : exit_modes[int(mode)],
-            'success' : mode == 0}
+    info = InfoDict(solution=x, fun=fx, jac=g, nit=int(majiter),
+                    nfev=feval[0], njev=geval[0], status=int(mode),
+                    message=exit_modes[int(mode)], success=(mode == 0))
     return x, info
 
 if __name__ == '__main__':

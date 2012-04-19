@@ -32,7 +32,7 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 from scipy.optimize import moduleTNC, approx_fprime
-from optimize import MemoizeJac
+from optimize import MemoizeJac, InfoDict
 from numpy import asarray, inf, array
 
 __all__ = ['fmin_tnc']
@@ -399,13 +399,8 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={}):
 
     xopt = array(x)
     funv, jacv = func_and_grad(xopt)
-    info = {'solution': xopt,
-            'fun': funv,
-            'jac': jacv,
-            'nfev': nf,
-            'status': rc,
-            'message': RCSTRINGS[rc],
-            'success': -1 < rc < 3}
+    info = InfoDict(solution=xopt, fun=funv, jac=jacv, nfev=nf, status=rc,
+                    message=RCSTRINGS[rc], success=(-1 < rc < 3))
     return xopt, info
 
 if __name__ == '__main__':
