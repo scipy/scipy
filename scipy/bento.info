@@ -6,6 +6,7 @@ Recurse:
     io,
     lib,
     linalg,
+    ndimage,
     odr,
     optimize,
     signal,
@@ -25,6 +26,7 @@ Library:
         lib,
         linalg,
         misc,
+        ndimage,
         odr,
         optimize,
         signal,
@@ -32,4 +34,5 @@ Library:
         spatial,
         special,
         stats,
+        ndimage,
         weave

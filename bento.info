@@ -60,6 +60,7 @@ DataFiles: tests
         linalg/tests/*.py,
         misc/tests/*.py,
         misc/tests/data/*.png,
+        ndimage/tests/*.py,
         optimize/tests/*.py,
         signal/tests/*.py,
         sparse/linalg/dsolve/tests/*.py,
