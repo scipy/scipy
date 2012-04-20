@@ -6,6 +6,7 @@ Recurse:
     io,
     lib,
     linalg,
+    odr,
     optimize,
     signal,
     sparse,
@@ -24,9 +25,11 @@ Library:
         lib,
         linalg,
         misc,
+        odr,
         optimize,
         signal,
         sparse,
         spatial,
         special,
-        stats
+        stats,
+        weave
