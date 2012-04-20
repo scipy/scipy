@@ -1,4 +1,4 @@
 Recurse: matlab
 
 Library:
-    Packages: arff, matlab
+    Packages: arff, matlab, harwell_boeing
