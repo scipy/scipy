@@ -31,6 +31,10 @@ import warnings
 # Numpy etc.
 #------------------------------------------------------------------------------
 
+cdef extern from "complex.h":
+    # Need to be included so that complex types work
+    pass
+
 cdef extern from "math.h":
     double sqrt(double x) nogil
     double fabs(double a) nogil
@@ -38,6 +42,10 @@ cdef extern from "math.h":
 cdef extern from "numpy/ndarrayobject.h":
     cdef enum:
         NPY_MAXDIMS
+
+ctypedef fused double_or_complex:
+    double
+    double complex
 
 #------------------------------------------------------------------------------
 # Interpolator base class
@@ -128,7 +136,7 @@ class NDInterpolatorBase(object):
         else:
             r = self._evaluate_double(xi)
 
-        return r.reshape(shape[:-1] + self.values_shape)
+        return np.asarray(r).reshape(shape[:-1] + self.values_shape)
 
 def _ndim_coords_from_arrays(points):
     """
@@ -191,15 +199,20 @@ class LinearNDInterpolator(NDInterpolatorBase):
         NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value)
         self.tri = qhull.Delaunay(self.points)
 
-% for DTYPE, CDTYPE in zip(["double", "complex"], ["double", "double complex"]):
+    def _evaluate_double(self, xi):
+        return self._do_evaluate(xi, 1.0)
+
+    def _evaluate_complex(self, xi):
+        return self._do_evaluate(xi, 1.0j)
+
     @cython.boundscheck(False)
-    def _evaluate_${DTYPE}(self, np.ndarray[np.double_t, ndim=2] xi):
-        cdef np.ndarray[np.${DTYPE}_t, ndim=2] values = self.values
-        cdef np.ndarray[np.${DTYPE}_t, ndim=2] out
-        cdef np.ndarray[np.double_t, ndim=2] points = self.points
-        cdef np.ndarray[np.npy_int, ndim=2] simplices = self.tri.simplices
+    def _do_evaluate(self, np.ndarray[np.double_t, ndim=2] xi, double_or_complex dummy):
+        cdef double_or_complex[:,:] values = self.values
+        cdef double_or_complex[:,:] out
+        cdef double[:,:] points = self.points
+        cdef int[:,:] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
-        cdef ${CDTYPE} fill_value
+        cdef double_or_complex fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
@@ -210,7 +223,8 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
         qhull._get_delaunay_info(&info, self.tri, 1, 0)
 
-        out = np.zeros((xi.shape[0], self.values.shape[1]), dtype=np.${DTYPE})
+        out = np.zeros((xi.shape[0], self.values.shape[1]),
+                       dtype=self.values.dtype)
         nvalues = out.shape[1]
 
         eps = np.finfo(np.double).eps * 100
@@ -230,34 +244,18 @@ class LinearNDInterpolator(NDInterpolatorBase):
                 if isimplex == -1:
                     # don't extrapolate
                     for k in xrange(nvalues):
-% if DTYPE == "double":
                         out[i,k] = fill_value
-% else:
-                        out[i,k].real = fill_value.real
-                        out[i,k].imag = fill_value.imag
-% endif
                     continue
 
                 for k in xrange(nvalues):
-% if DTYPE == "double":
                     out[i,k] = 0
-% else:
-                    out[i,k].real = 0
-                    out[i,k].imag = 0
-% endif
 
                 for j in xrange(ndim+1):
                     for k in xrange(nvalues):
                         m = simplices[isimplex,j]
-% if DTYPE == "double":
                         out[i,k] += c[j] * values[m,k]
-% else:
-                        out[i,k].real += c[j] * values[m, k].real
-                        out[i,k].imag += c[j] * values[m, k].imag
-% endif
 
         return out
-% endfor
 
 
 #------------------------------------------------------------------------------
@@ -498,14 +496,12 @@ def estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
 #------------------------------------------------------------------------------
 
 
-% for DTYPE, CDTYPE in zip(["double", "complex"], ["double", "double complex"]):
-
 @cython.cdivision(True)
-cdef ${CDTYPE} _clough_tocher_2d_single_${DTYPE}(qhull.DelaunayInfo_t *d,
-                                                 int isimplex,
-                                                 double *b,
-                                                 ${CDTYPE} *f,
-                                                 ${CDTYPE} *df) nogil:
+cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
+                                                int isimplex,
+                                                double *b,
+                                                double_or_complex *f,
+                                                double_or_complex *df) nogil:
     """
     Evaluate Clough-Tocher interpolant on a 2D triangle.
 
@@ -538,19 +534,19 @@ cdef ${CDTYPE} _clough_tocher_2d_single_${DTYPE}(qhull.DelaunayInfo_t *d,
        Computer Aided Geometric Design, 3, 83 (1986).
 
     """
-    cdef ${CDTYPE} \
+    cdef double_or_complex \
          c3000, c0300, c0030, c0003, \
          c2100, c2010, c2001, c0210, c0201, c0021, \
          c1200, c1020, c1002, c0120, c0102, c0012, \
          c1101, c1011, c0111
-    cdef ${CDTYPE} \
+    cdef double_or_complex \
          f1, f2, f3, df12, df13, df21, df23, df31, df32
     cdef double \
          g1, g2, g3
     cdef double \
          e12x, e12y, e23x, e23y, e31x, e31y, \
          e14x, e14y, e24x, e24y, e34x, e34y
-    cdef ${CDTYPE} w
+    cdef double_or_complex w
     cdef double minval
     cdef double b1, b2, b3, b4
     cdef int k, itri
@@ -732,8 +728,6 @@ cdef ${CDTYPE} _clough_tocher_2d_single_${DTYPE}(qhull.DelaunayInfo_t *d,
 
     return w
 
-% endfor
-
 class CloughTocher2DInterpolator(NDInterpolatorBase):
     """
     CloughTocher2DInterpolator(points, values, tol=1e-6)
@@ -801,20 +795,24 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         self.grad = estimate_gradients_2d_global(self.tri, self.values,
                                                  tol=tol, maxiter=maxiter)
 
-% for DTYPE, CDTYPE in zip(["double", "complex"], ["double", "double complex"]):
+    def _evaluate_double(self, xi):
+        return self._do_evaluate(xi, 1.0)
+
+    def _evaluate_complex(self, xi):
+        return self._do_evaluate(xi, 1.0j)
 
     @cython.boundscheck(False)
-    def _evaluate_${DTYPE}(self, np.ndarray[np.double_t, ndim=2] xi):
-        cdef np.ndarray[np.${DTYPE}_t, ndim=2] values = self.values
-        cdef np.ndarray[np.${DTYPE}_t, ndim=3] grad = self.grad
-        cdef np.ndarray[np.${DTYPE}_t, ndim=2] out
-        cdef np.ndarray[np.double_t, ndim=2] points = self.points
-        cdef np.ndarray[np.npy_int, ndim=2] simplices = self.tri.simplices
+    def _do_evaluate(self, np.ndarray[np.double_t, ndim=2] xi, double_or_complex dummy):
+        cdef double_or_complex[:,:] values = self.values
+        cdef double_or_complex[:,:,:] grad = self.grad
+        cdef double_or_complex[:,:] out
+        cdef double[:,:] points = self.points
+        cdef int[:,:] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
-        cdef ${CDTYPE} f[NPY_MAXDIMS+1]
-        cdef ${CDTYPE} df[2*NPY_MAXDIMS+2]
-        cdef ${CDTYPE} w
-        cdef ${CDTYPE} fill_value
+        cdef double_or_complex f[NPY_MAXDIMS+1]
+        cdef double_or_complex df[2*NPY_MAXDIMS+2]
+        cdef double_or_complex w
+        cdef double_or_complex fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
@@ -825,7 +823,8 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
         qhull._get_delaunay_info(&info, self.tri, 1, 1)
 
-        out = np.zeros((xi.shape[0], self.values.shape[1]), dtype=np.${DTYPE})
+        out = np.zeros((xi.shape[0], self.values.shape[1]),
+                       dtype=self.values.dtype)
         nvalues = out.shape[1]
 
         eps = np.finfo(np.double).eps * 100
@@ -844,38 +843,16 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                 if isimplex == -1:
                     # outside triangulation
                     for k in xrange(nvalues):
-% if DTYPE == "double":
                         out[i,k] = fill_value
-% else:
-                        out[i,k].real = fill_value.real
-                        out[i,k].imag = fill_value.imag
-% endif
                     continue
 
                 for k in xrange(nvalues):
                     for j in xrange(ndim+1):
-% if DTYPE == "double":
                         f[j] = values[simplices[isimplex,j],k]
                         df[2*j] = grad[simplices[isimplex,j],k,0]
                         df[2*j+1] = grad[simplices[isimplex,j],k,1]
-% else:
-                        f[j].real = values[simplices[isimplex,j],k].real
-                        f[j].imag = values[simplices[isimplex,j],k].imag
-                        df[2*j].real = grad[simplices[isimplex,j],k,0].real
-                        df[2*j].imag = grad[simplices[isimplex,j],k,0].imag
-                        df[2*j+1].real = grad[simplices[isimplex,j],k,1].real
-                        df[2*j+1].imag = grad[simplices[isimplex,j],k,1].imag
-% endif
 
-                    w = _clough_tocher_2d_single_${DTYPE}(&info, isimplex, c,
-                                                          f, df)
-% if DTYPE == "double":
+                    w = _clough_tocher_2d_single(&info, isimplex, c, f, df)
                     out[i,k] = w
-% else:
-                    out[i,k].real = w.real
-                    out[i,k].imag = w.imag
-% endif
 
         return out
-
-% endfor
