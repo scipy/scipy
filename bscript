@@ -11,10 +11,13 @@ from numpy.distutils.from_template \
     import \
         process_str as process_f_str, resolve_includes
 
-from bento.commands import hooks
+from bento.backends.waf_backend \
+    import \
+        WAF_TOOLDIR
 from bento.installed_package_description \
     import \
         InstalledSection
+from bento.commands import hooks
 
 import waflib
 from waflib import Options
@@ -126,9 +129,8 @@ def post_configure(context):
     conf = context.waf_context
 
     opts.load("compiler_cxx")
-    opts.load("ordered_c")
     opts.load("compiler_fc")
-    opts.load("f2py")
+    opts.load("f2py", tooldir=[WAF_TOOLDIR])
     Options.options.check_fc = "gfortran"
     Options.options.check_cxx_compiler = "g++"
     if sys.platform == "win32" and conf.env.CC_NAME == "msvc":
@@ -137,7 +139,8 @@ def post_configure(context):
 
     conf.load("compiler_cxx")
     conf.load("compiler_fc")
-    conf.load("f2py")
+    conf.load("f2py", tooldir=[WAF_TOOLDIR])
+    conf.load("ordered_c", tooldir=[WAF_TOOLDIR])
 
     if conf.env.CC_NAME == 'gcc':
         conf.env.append_value('CFLAGS_PYEXT', "-Wfatal-errors")
