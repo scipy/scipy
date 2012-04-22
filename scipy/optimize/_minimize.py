@@ -46,17 +46,26 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         Extra arguments passed to the objective function and its
         derivatives (Jacobian, Hessian).
     method : str, optional
-        Type of solver.  Should be one of:
-            {'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'Anneal',
-             'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP'}.
+        Type of solver.  Should be one of
+
+            - 'Nelder-Mead'
+            - 'Powell'
+            - 'CG'
+            - 'BFGS'
+            - 'Newton-CG'
+            - 'Anneal'
+            - 'L-BFGS-B'
+            - 'TNC'
+            - 'COBYLA'
+            - 'SLSQP'
+
     jac : bool or callable, optional
         Jacobian of objective function. Only for CG, BFGS, Newton-CG.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
         value of Jacobian along with the objective function. If False, the
         Jacobian will be estimated numerically.
         `jac` can also be a callable returning the Jacobian of the
-        objective. In this case, it must accept the same arguments as
-        `fun`.
+        objective. In this case, it must accept the same arguments as `fun`.
     hess, hessp : callable, optional
         Hessian of objective function or Hessian of objective function
         times an arbitrary vector p.  Only for Newton-CG.
@@ -297,6 +306,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     ...                       constraints=cons, full_output=True)
 
     It should converge to the theoretical solution (1.4 ,1.7).
+
     """
     meth = method.lower()
     # check if optional parameters are supported by the selected method
@@ -396,8 +406,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     args : tuple, optional
         Extra arguments passed to the objective function.
     method : str, optional
-        Type of solver.  Should be one of:
-            {'Brent', 'Bounded', 'Golden'}
+        Type of solver.  Should be one of
+
+            - 'Brent'
+            - 'Bounded'
+            - 'Golden'
+
     options : dict, optional
         A dictionary of solver options.
             xtol : float
@@ -476,6 +490,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     >>> xc = minimize_scalar(f, bounds=(-3, -1), method='bounded')
     >>> xc
     -2.0000002026
+
     """
     meth = method.lower()
 

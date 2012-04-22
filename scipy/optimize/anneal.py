@@ -162,7 +162,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
     Parameters
     ----------
-    func : callable f(x, *args)
+    func : callable ``f(x, *args)``
         Function to be optimized.
     x0 : ndarray
         Initial guess.
