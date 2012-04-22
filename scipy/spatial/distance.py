@@ -59,56 +59,10 @@ functions. Use ``pdist`` for this purpose.
    sqeuclidean      -- the squared Euclidean distance.
    yule             -- the Yule dissimilarity (boolean).
 
-
-References
-----------
-
-.. [Sta07] "Statistics toolbox." API Reference Documentation. The MathWorks.
-   http://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
-   Accessed October 1, 2007.
-
-.. [Mti07] "Hierarchical clustering." API Reference Documentation.
-   The Wolfram Research, Inc.
-   http://reference.wolfram.com/mathematica/HierarchicalClustering/tutorial/HierarchicalClustering.html.
-   Accessed October 1, 2007.
-
-.. [Gow69] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
-   Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
-
-.. [War63] Ward Jr, JH. "Hierarchical grouping to optimize an objective
-   function." Journal of the American Statistical Association. 58(301):
-   pp. 236--44. 1963.
-
-.. [Joh66] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
-   32(2): pp. 241--54. 1966.
-
-.. [Sne62] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
-   855--60. 1962.
-
-.. [Bat95] Batagelj, V. "Comparing resemblance measures." Journal of
-   Classification. 12: pp. 73--90. 1995.
-
-.. [Sok58] Sokal, RR and Michener, CD. "A statistical method for evaluating
-   systematic relationships." Scientific Bulletins. 38(22):
-   pp. 1409--38. 1958.
-
-.. [Ede79] Edelbrock, C. "Mixture model tests of hierarchical clustering
-   algorithms: the problem of classifying everybody." Multivariate
-   Behavioral Research. 14: pp. 367--84. 1979.
-
-.. [Jai88] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
-   Prentice-Hall. Englewood Cliffs, NJ. 1988.
-
-.. [Fis36] Fisher, RA "The use of multiple measurements in taxonomic
-   problems." Annals of Eugenics, 7(2): 179-188. 1936
-
-
-Copyright Notice
-----------------
-
-Copyright (C) Damian Eads, 2007-2008. New BSD License.
-
 """
+
+# Copyright (C) Damian Eads, 2007-2008. New BSD License.
+
 
 import warnings
 import numpy as np

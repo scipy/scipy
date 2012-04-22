@@ -616,14 +616,14 @@ class KDTree(object):
             ``1 <= p <= infinity``.
         eps : float, optional
             Approximate search.  Branches of the tree are not explored
-            if their nearest points are further than r/(1+eps), and branches
-            are added in bulk if their furthest points are nearer than
-            ``r * (1+eps)``.  `eps` has to be non-negative.
+            if their nearest points are further than ``r/(1+eps)``, and
+            branches are added in bulk if their furthest points are nearer
+            than ``r * (1+eps)``.  `eps` has to be non-negative.
 
         Returns
         -------
         results : set
-            Set of pairs ``(i,j)``, with ``i<j`, for which the corresponding
+            Set of pairs ``(i,j)``, with ``i < j`, for which the corresponding
             positions are close.
 
         """
