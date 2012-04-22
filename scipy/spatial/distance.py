@@ -924,8 +924,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     Computes the pairwise distances between m original observations in
     n-dimensional space. Returns a condensed distance matrix Y.  For
     each :math:`i` and :math:`j` (where :math:`i<j<n`), the
-    metric ``dist(u=X[i], v=X[j])`` is computed and stored in the
-    :math:`ij`th entry.
+    metric ``dist(u=X[i], v=X[j])`` is computed and stored in entry ``ij``.
 
     See ``squareform`` for information on how to calculate the index of
     this entry or to convert the condensed distance matrix to a
@@ -977,8 +976,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
           1 - \frac{u \cdot v}
                    {{||u||}_2 {||v||}_2}
 
-       where :math:`||*||_2` is the 2-norm of its argument *, and
-       :math:`u \cdot v` is the dot product of :math:`u` and :math:`v`.
+       where :math:`||*||_2` is the 2-norm of its argument ``*``, and
+       :math:`u \cdot v` is the dot product of ``u`` and ``v``.
 
     7. ``Y = pdist(X, 'correlation')``
 
@@ -1493,29 +1492,31 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     ----------
     D : ndarray
         The candidate object to test for validity.
-    tol : double
-        The distance matrix should be symmetric. tol is the maximum
-        difference between the :math:`ij`th entry and the
-        :math:`ji`th entry for the distance metric to be
-        considered symmetric.
-    throw : bool
-        An exception is thrown if the distance matrix passed is not
-        valid.
-    name : string
-        the name of the variable to checked. This is useful if
-        throw is set to ``True`` so the offending variable can be
-        identified in the exception message when an exception is
-        thrown.
-    warning : bool
+    tol : float, optional
+        The distance matrix should be symmetric. `tol` is the maximum
+        difference between entries ``ij`` and ``ji`` for the distance
+        metric to be considered symmetric.
+    throw : bool, optional
+        An exception is thrown if the distance matrix passed is not valid.
+    name : str, optional
+        The name of the variable to checked. This is useful if
+        throw is set to True so the offending variable can be identified
+        in the exception message when an exception is thrown.
+    warning : bool, optional
         Instead of throwing an exception, a warning message is
         raised.
 
     Returns
     -------
-    Returns ``True`` if the variable ``D`` passed is a valid
-    distance matrix.  Small numerical differences in ``D`` and
-    ``D.T`` and non-zeroness of the diagonal are ignored if they are
-    within the tolerance specified by ``tol``.
+    valid : bool
+        True if the variable ``D`` passed is a valid distance matrix.
+
+    Notes
+    -----
+    Small numerical differences in ``D`` and ``D.T`` and non-zeroness of
+    the diagonal are ignored if they are within the tolerance specified
+    by ``tol``.
+
     """
     D = np.asarray(D, order='c')
     valid = True
@@ -1754,9 +1755,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
           1 - \frac{u \cdot v}
                    {{||u||}_2 {||v||}_2}
 
-       where :math:`||*||_2` is the 2-norm of its argument *, and
+       where :math:`||*||_2` is the 2-norm of its argument ``*``, and
        :math:`u \cdot v` is the dot product of :math:`u` and :math:`v`.
-
 
     7. ``Y = cdist(XA, XB, 'correlation')``
 

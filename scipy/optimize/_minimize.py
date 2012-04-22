@@ -146,8 +146,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     This section describes the available solvers that can be selected by the
     'method' parameter. The default method is *BFGS*.
 
-    Unconstrained minimization
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    **Unconstrained minimization**
+
     Method *Nelder-Mead* uses the Simplex algorithm [1]_, [2]_. This
     algorithm has been successful in many applications but other algorithms
     using the first and/or second derivatives information might be preferred
@@ -178,8 +178,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     metaheuristic algorithm for global optimization. It uses no derivative
     information from the function being optimized.
 
-    Constrained minimization
-    ~~~~~~~~~~~~~~~~~~~~~~~~
+    **Constrained minimization**
+
     Method *L-BFGS-B* uses the L-BFGS-B algorithm [6]_, [7]_ for bound
     constrained minimization.
 

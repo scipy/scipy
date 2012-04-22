@@ -1945,9 +1945,8 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     get_leaves : bool, optional
         Includes a list ``R['leaves']=H`` in the result
         dictionary. For each :math:`i`, ``H[i] == j``, cluster node
-        :math:`j` appears in the :math:`i` th position in the
-        left-to-right traversal of the leaves, where :math:`j < 2n-1`
-        and :math:`i < n`.
+        ``j`` appears in position ``i`` in the left-to-right traversal
+        of the leaves, where :math:`j < 2n-1` and :math:`i < n`.
     orientation : str, optional
         The direction to plot the dendrogram, which can be any
         of the following strings:
@@ -2050,9 +2049,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         link_color_function is called with each non-singleton id
         corresponding to each U-shaped link it will paint. The
         function is expected to return the color to paint the link,
-        encoded as a matplotlib color string code.
-
-        For example:
+        encoded as a matplotlib color string code. For example:
 
         >>> dendrogram(Z, link_color_func=lambda k: colors[k])
 
@@ -2065,25 +2062,21 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         A dictionary of data structures computed to render the
         dendrogram. Its has the following keys:
 
-           - 'icoords': a list of lists ``[I1, I2, ..., Ip]`` where
-           ``Ik`` is a list of 4 independent variable coordinates
-           corresponding to the line that represents the k'th link
-           painted.
-
-           - 'dcoords': a list of lists ``[I2, I2, ..., Ip]`` where
-           ``Ik`` is a list of 4 independent variable coordinates
-           corresponding to the line that represents the k'th link
-           painted.
-
-           - 'ivl': a list of labels corresponding to the leaf nodes.
-
-           - 'leaves': for each i, ``H[i] == j``, cluster node
-           :math:`j` appears in the :math:`i` th position in the
-           left-to-right traversal of the leaves, where :math:`j < 2n-1`
-           and :math:`i < n`. If :math:`j` is less than :math:`n`, the
-           :math:`i` th leaf node corresponds to an original
-           observation.  Otherwise, it corresponds to a non-singleton
-           cluster.
+           * 'icoords': a list of lists ``[I1, I2, ..., Ip]`` where
+             ``Ik`` is a list of 4 independent variable coordinates
+             corresponding to the line that represents the k'th link
+             painted.
+           * 'dcoords': a list of lists ``[I2, I2, ..., Ip]`` where
+             ``Ik`` is a list of 4 independent variable coordinates
+             corresponding to the line that represents the k'th link
+             painted.
+           * 'ivl': a list of labels corresponding to the leaf nodes.
+           * 'leaves': for each i, ``H[i] == j``, cluster node
+             ``j`` appears in position ``i`` in the left-to-right
+             traversal of the leaves, where :math:`j < 2n-1`
+             and :math:`i < n`. If ``j`` is less than ``n``, the
+             ``i`` th leaf node corresponds to an original observation.
+             Otherwise, it corresponds to a non-singleton cluster.
 
     """
 
