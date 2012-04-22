@@ -2705,24 +2705,33 @@ class erlang_gen(rv_continuous):
     """
     def _rvs(self, n):
         return gamma.rvs(n,size=self._size)
-    def _arg_check(self, n):
+
+    def _argcheck(self, n):
         return (n > 0) & (floor(n)==n)
+
     def _pdf(self, x, n):
         Px = (x)**(n-1.0)*exp(-x)/special.gamma(n)
         return Px
+
     def _logpdf(self, x, n):
         return (n-1.0)*log(x) - x - gamln(n)
+
     def _cdf(self, x, n):
         return special.gdtr(1.0,n,x)
+
     def _sf(self, x, n):
         return special.gdtrc(1.0,n,x)
+
     def _ppf(self, q, n):
         return special.gdtrix(1.0, n, q)
+
     def _stats(self, n):
         n = n*1.0
         return n, n, 2/sqrt(n), 6/n
+
     def _entropy(self, n):
         return special.psi(n)*(1-n) + 1 + gamln(n)
+
 erlang = erlang_gen(a=0.0, name='erlang', shapes='n')
 
 

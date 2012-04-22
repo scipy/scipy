@@ -4,7 +4,7 @@
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, assert_almost_equal, assert_array_almost_equal, \
-    assert_allclose, assert_, rand, dec
+    assert_allclose, assert_, assert_raises, rand, dec
 
 
 import numpy
@@ -874,6 +874,16 @@ def test_powerlaw_stats():
     for a, exact_mvsk in cases:
         mvsk = stats.powerlaw.stats(a, moments="mvsk")
         assert_array_almost_equal(mvsk, exact_mvsk)
+
+
+def test_erlang_noninteger_n():
+    """ erlang distribution requires an integer shape parameter.
+
+    Regression test for ticket #1647.
+    """
+    assert_array_equal(stats.erlang._argcheck([1.5, 2.0, 3.4]),
+                        [False, True, False])
+    assert_raises(ValueError, stats.erlang.rvs, 1.5)
 
 
 if __name__ == "__main__":
