@@ -40,10 +40,11 @@ def solve_sylvester(a,b,q):
     Computes a solution to the Sylvester matrix equation via the Bartels-
     Stewart algorithm.  The A and B matrices first undergo Schur
     decompositions.  The resulting matrices are used to construct an
-    alternative Sylvester equation (RY + YS^T = F) where the R and S
+    alternative Sylvester equation (``RY + YS^T = F``) where the R and S
     matrices are in quasi-triangular form (or, when R, S or F are complex,
-    triangular form).  The simplified equation is then solved using *TRSYL
+    triangular form).  The simplified equation is then solved using ``*``TRSYL
     from LAPACK directly.
+
     """
 
     # Compute the Schur decomp form of a

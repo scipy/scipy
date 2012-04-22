@@ -212,9 +212,9 @@ class UnivariateSpline(object):
 
     def __call__(self, x, nu=0):
         """ Evaluate spline (or its nu-th derivative) at positions x.
+
         Note: x can be unordered but the evaluation is more efficient
         if x is (partially) ordered.
-
         """
         x = np.asarray(x)
         # empty input yields empty output
@@ -226,8 +226,7 @@ class UnivariateSpline(object):
         return fitpack.splev(x, self._eval_args, der=nu)
 
     def get_knots(self):
-        """ Return the positions of (boundary and interior)
-        knots of the spline.
+        """ Return positions of (boundary and interior) knots of the spline.
         """
         data = self._data
         k,n = data[5],data[7]
@@ -241,14 +240,12 @@ class UnivariateSpline(object):
 
     def get_residual(self):
         """Return weighted sum of squared residuals of the spline
-        approximation: sum ((w[i]*(y[i]-s(x[i])))**2,axis=0)
-
+        approximation: ``sum((w[i] * (y[i]-s(x[i])))**2, axis=0)``.
         """
         return self._data[10]
 
     def integral(self, a, b):
-        """ Return definite integral of the spline between two
-        given points.
+        """ Return definite integral of the spline between two given points.
         """
         return dfitpack.splint(*(self._eval_args+(a,b)))
 
@@ -503,10 +500,11 @@ class BivariateSpline(object):
         return self.fp
 
     def get_knots(self):
-        """ Return a tuple (tx,ty) where tx,ty contain knots positions
+        """ Return a tuple ``(tx, ty)`` where tx,ty contain knots positions
         of the spline with respect to x-, y-variable, respectively.
+
         The position of interior and additional knots are given as
-          t[k+1:-k-1] and t[:k+1]=b, t[-k-1:]=e, respectively.
+        ``t[k+1:-k-1]``, with ``t[:k+1]=b`` and ``t[-k-1:]=e`` respectively.
         """
         return self.tck[:2]
 

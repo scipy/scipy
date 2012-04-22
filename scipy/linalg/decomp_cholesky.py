@@ -30,25 +30,27 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True):
 def cholesky(a, lower=False, overwrite_a=False):
     """Compute the Cholesky decomposition of a matrix.
 
-    Returns the Cholesky decomposition, :lm:`A = L L^*` or :lm:`A = U^* U`
-    of a Hermitian positive-definite matrix :lm:`A`.
+    Returns the Cholesky decomposition, :math:`A = L L^*` or
+    :math:`A = U^* U` of a Hermitian positive-definite matrix A.
 
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : ndarray, shape (M, M)
         Matrix to be decomposed
-    lower : boolean
-        Whether to compute the upper or lower triangular Cholesky factorization
-        (Default: upper-triangular)
-    overwrite_a : boolean
-        Whether to overwrite data in a (may improve performance)
+    lower : bool
+        Whether to compute the upper or lower triangular Cholesky
+        factorization.  Default is upper-triangular.
+    overwrite_a : bool
+        Whether to overwrite data in `a` (may improve performance).
 
     Returns
     -------
-    c : array, shape (M, M)
-        Upper- or lower-triangular Cholesky factor of A
+    c : ndarray, shape (M, M)
+        Upper- or lower-triangular Cholesky factor of `a`.
 
-    Raises LinAlgError if decomposition fails
+    Raises
+    ------
+    LinAlgError : if decomposition fails.
 
     Examples
     --------
