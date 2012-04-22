@@ -226,10 +226,13 @@ class lti(object):
     """Linear Time Invariant class which simplifies representation.
     """
     def __init__(self, *args, **kwords):
-        """Initialize the LTI system using either:
-           (numerator, denominator)
-           (zeros, poles, gain)
-           (A, B, C, D) -- state-space.
+        """
+        Initialize the LTI system using either:
+
+            - (numerator, denominator)
+            - (zeros, poles, gain)
+            - (A, B, C, D) : state-space.
+
         """
         N = len(args)
         if N == 2:  # Numerator denominator transfer function input
@@ -604,9 +607,11 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     system : an instance of the LTI class or a tuple describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
-            2 (num, den)
-            3 (zeros, poles, gain)
-            4 (A, B, C, D)
+
+            * 2 (num, den)
+            * 3 (zeros, poles, gain)
+            * 4 (A, B, C, D)
+
     T : 1-D array_like, optional
         The time steps at which the input is defined and at which the
         output is desired.  If `T` is not given, the function will
@@ -682,10 +687,12 @@ def step(system, X0=None, T=None, N=None):
     ----------
     system : an instance of the LTI class or a tuple describing the system.
         The following gives the number of elements in the tuple and
-        the interpretation.
-            2 (num, den)
-            3 (zeros, poles, gain)
-            4 (A, B, C, D)
+        the interpretation:
+
+            * 2 (num, den)
+            * 3 (zeros, poles, gain)
+            * 4 (A, B, C, D)
+
     X0 : array_like, optional
         Initial state-vector (default is zero).
     T : array_like, optional
@@ -703,6 +710,7 @@ def step(system, X0=None, T=None, N=None):
     See also
     --------
     scipy.signal.step2
+
     """
     if isinstance(system, lti):
         sys = system
@@ -728,22 +736,23 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     ----------
     system : an instance of the LTI class or a tuple describing the system.
         The following gives the number of elements in the tuple and
-        the interpretation.
-            2 (num, den)
-            3 (zeros, poles, gain)
-            4 (A, B, C, D)
+        the interpretation:
+
+            * 2 (num, den)
+            * 3 (zeros, poles, gain)
+            * 4 (A, B, C, D)
+
     X0 : array_like, optional
         Initial state-vector (default is zero).
     T : array_like, optional
         Time points (computed if not given).
     N : int
         Number of time points to compute if `T` is not given.
-    **kwargs :
+    kwargs :
         Additional keyword arguments are passed on the function
         `scipy.signal.lsim2`, which in turn passes them on to
-        :func:`scipy.integrate.odeint`.  See the documentation for
-        :func:`scipy.integrate.odeint` for information about these
-        arguments.
+        `scipy.integrate.odeint`.  See the documentation for
+        `scipy.integrate.odeint` for information about these arguments.
 
     Returns
     -------

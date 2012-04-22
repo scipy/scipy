@@ -129,10 +129,12 @@ def dimpulse(system, x0=None, t=None, n=None):
     ----------
     system : tuple
         The following gives the number of elements in the tuple and
-        the interpretation.
+        the interpretation:
+
           * 3: (num, den, dt)
           * 4: (zeros, poles, gain, dt)
           * 5: (A, B, C, D, dt)
+
     x0 : array_like, optional
         Initial state-vector.  Defaults to zero.
     t : array_like, optional
@@ -202,10 +204,12 @@ def dstep(system, x0=None, t=None, n=None):
     ----------
     system : a tuple describing the system.
         The following gives the number of elements in the tuple and
-        the interpretation.
+        the interpretation:
+
           * 3: (num, den, dt)
           * 4: (zeros, poles, gain, dt)
           * 5: (A, B, C, D, dt)
+
     x0 : array_like, optional
         Initial state-vector (default is zero).
     t : array_like, optional
