@@ -29,6 +29,7 @@ def solve_sylvester(a,b,q):
     Returns
     -------
     x : array, shape (M, N)
+        The solution to the Sylvester equation.
 
     Raises
     ------
@@ -42,8 +43,8 @@ def solve_sylvester(a,b,q):
     decompositions.  The resulting matrices are used to construct an
     alternative Sylvester equation (``RY + YS^T = F``) where the R and S
     matrices are in quasi-triangular form (or, when R, S or F are complex,
-    triangular form).  The simplified equation is then solved using ``*``TRSYL
-    from LAPACK directly.
+    triangular form).  The simplified equation is then solved using
+    ``*TRSYL`` from LAPACK directly.
 
     """
 

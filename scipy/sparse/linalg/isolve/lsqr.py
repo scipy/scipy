@@ -62,9 +62,9 @@ def _sym_ortho(a, b):
     Notes
     -----
     The routine 'SymOrtho' was added for numerical stability. This is
-    recommended by S.-C. Choi in [1]_. It removes the unpleasant potential of
+    recommended by S.-C. Choi in [1]_.  It removes the unpleasant potential of
     ``1/eps`` in some important places (see, for example text following
-    "Compute the next plane rotation Qk" in minres_py).
+    "Compute the next plane rotation Qk" in minres.py).
 
     References
     ----------
@@ -94,7 +94,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     of equations.
 
     The function solves ``Ax = b``  or  ``min ||b - Ax||^2`` or
-    ``min ||Ax - b||^2 + d^2 ||x||^2.
+    ``min ||Ax - b||^2 + d^2 ||x||^2``.
 
     The matrix A may be square or rectangular (over-determined or
     under-determined), and may have any rank.

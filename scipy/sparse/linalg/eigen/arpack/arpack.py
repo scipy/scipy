@@ -1116,36 +1116,39 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         For a real matrix A, shift-invert can either be done in imaginary
         mode or real mode, specified by the parameter OPpart ('r' or 'i').
         Note that when sigma is specified, the keyword 'which' (below)
-        refers to the shifted eigenvalues w'[i] where:
-         * If A is real and OPpart == 'r' (default),
-            w'[i] = 1/2 * [ 1/(w[i]-sigma) + 1/(w[i]-conj(sigma)) ]
-         * If A is real and OPpart == 'i',
-            w'[i] = 1/2i * [ 1/(w[i]-sigma) - 1/(w[i]-conj(sigma)) ]
-         * If A is complex,
-            w'[i] = 1/(w[i]-sigma)
-    v0 : array
+        refers to the shifted eigenvalues ``w'[i]`` where:
+
+            - If A is real and OPpart == 'r' (default),
+              ``w'[i] = 1/2 * [1/(w[i]-sigma) + 1/(w[i]-conj(sigma))]``.
+            - If A is real and OPpart == 'i',
+              ``w'[i] = 1/2i * [1/(w[i]-sigma) - 1/(w[i]-conj(sigma))]``.
+            - If A is complex, ``w'[i] = 1/(w[i]-sigma)``.
+
+    v0 : ndarray
         Starting vector for iteration.
-    ncv : integer
+    ncv : int
         The number of Lanczos vectors generated
         `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
-    which : string ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI']
+    which : str, ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI']
         Which `k` eigenvectors and eigenvalues to find:
-         - 'LM' : largest magnitude
-         - 'SM' : smallest magnitude
-         - 'LR' : largest real part
-         - 'SR' : smallest real part
-         - 'LI' : largest imaginary part
-         - 'SI' : smallest imaginary part
+
+            - 'LM' : largest magnitude
+            - 'SM' : smallest magnitude
+            - 'LR' : largest real part
+            - 'SR' : smallest real part
+            - 'LI' : largest imaginary part
+            - 'SI' : smallest imaginary part
+
         When sigma != None, 'which' refers to the shifted eigenvalues w'[i]
         (see discussion in 'sigma', above).  ARPACK is generally better
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
-    maxiter : integer
+    maxiter : int
         Maximum number of Arnoldi update iterations allowed
     tol : float
         Relative accuracy for eigenvalues (stopping criterion)
         The default value of 0 implies machine precision.
-    return_eigenvectors : boolean
+    return_eigenvectors : bool
         Return eigenvectors (True) in addition to eigenvalues
     Minv : N x N matrix, array, sparse matrix, or linear operator
         See notes in M, above.
@@ -1158,7 +1161,6 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ------
     ArpackNoConvergence
         When the requested convergence is not obtained.
-
         The currently converged eigenvalues and eigenvectors can be found
         as ``eigenvalues`` and ``eigenvectors`` attributes of the exception
         object.
@@ -1191,6 +1193,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     .. [2] R. B. Lehoucq, D. C. Sorensen, and C. Yang,  ARPACK USERS GUIDE:
        Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
        Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
+
     """
     if A.shape[0] != A.shape[1]:
         raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
@@ -1336,33 +1339,33 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         which gives x = OPinv * b = [A - sigma * M]^-1 * b.
         Note that when sigma is specified, the keyword 'which' refers to
         the shifted eigenvalues w'[i] where:
-         - if mode == 'normal',
-             w'[i] = 1 / (w[i] - sigma)
-         - if mode == 'cayley',
-             w'[i] = (w[i] + sigma) / (w[i] - sigma)
-         - if mode == 'buckling',
-             w'[i] = w[i] / (w[i] - sigma)
+
+            - if mode == 'normal', ``w'[i] = 1 / (w[i] - sigma)``.
+            - if mode == 'cayley', ``w'[i] = (w[i] + sigma) / (w[i] - sigma)``.
+            - if mode == 'buckling', ``w'[i] = w[i] / (w[i] - sigma)``.
+
         (see further discussion in 'mode' below)
-    v0 : array
+    v0 : ndarray
         Starting vector for iteration.
-    ncv : integer
-        The number of Lanczos vectors generated
-        ncv must be greater than k and smaller than n;
-        it is recommended that ncv > 2*k
-    which : string ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
+    ncv : int
+        The number of Lanczos vectors generated ncv must be greater than k and
+        smaller than n; it is recommended that ``ncv > 2*k``.
+    which : str ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
         If A is a complex hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
-         - 'LM' : Largest (in magnitude) eigenvalues
-         - 'SM' : Smallest (in magnitude) eigenvalues
-         - 'LA' : Largest (algebraic) eigenvalues
-         - 'SA' : Smallest (algebraic) eigenvalues
-         - 'BE' : Half (k/2) from each end of the spectrum
-                  When k is odd, return one more (k/2+1) from the high end
-        When sigma != None, 'which' refers to the shifted eigenvalues w'[i]
+
+            - 'LM' : Largest (in magnitude) eigenvalues
+            - 'SM' : Smallest (in magnitude) eigenvalues
+            - 'LA' : Largest (algebraic) eigenvalues
+            - 'SA' : Smallest (algebraic) eigenvalues
+            - 'BE' : Half (k/2) from each end of the spectrum
+              When k is odd, return one more (k/2+1) from the high end
+
+        When sigma != None, 'which' refers to the shifted eigenvalues ``w'[i]``
         (see discussion in 'sigma', above).  ARPACK is generally better
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
-    maxiter : integer
+    maxiter : int
         Maximum number of Arnoldi update iterations allowed
     tol : float
         Relative accuracy for eigenvalues (stopping criterion).
@@ -1371,7 +1374,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         See notes in M, above
     OPinv : N x N matrix, array, sparse matrix, or LinearOperator
         See notes in sigma, above.
-    return_eigenvectors : boolean
+    return_eigenvectors : bool
         Return eigenvectors (True) in addition to eigenvalues
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
@@ -1381,16 +1384,18 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         and transforms the resulting Ritz vectors x'[i] and Ritz values w'[i]
         into the desired eigenvectors and eigenvalues of the problem
         ``A * x[i] = w[i] * M * x[i]``.
-        The modes are as follows:
-          - 'normal'   : OP = [A - sigma * M]^-1 * M
+        The modes are as follows::
+
+            - 'normal' : OP = [A - sigma * M]^-1 * M
                          B = M
                          w'[i] = 1 / (w[i] - sigma)
-          - 'buckling' : OP = [A - sigma * M]^-1 * A
+            - 'buckling' : OP = [A - sigma * M]^-1 * A
                          B = A
                          w'[i] = w[i] / (w[i] - sigma)
-          - 'cayley'   : OP = [A - sigma * M]^-1 * [A + sigma * M]
+            - 'cayley' : OP = [A - sigma * M]^-1 * [A + sigma * M]
                          B = M
                          w'[i] = (w[i] + sigma) / (w[i] - sigma)
+
         The choice of mode will affect which eigenvalues are selected by
         the keyword 'which', and can also impact the stability of
         convergence (see [2] for a discussion)
