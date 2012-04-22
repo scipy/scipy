@@ -140,7 +140,7 @@ class gaussian_kde(object):
 
     Examples
     --------
-    Generate some random two-dimensional data::
+    Generate some random two-dimensional data:
 
     >>> from scipy import stats
     >>> def measure(n):
@@ -155,7 +155,7 @@ class gaussian_kde(object):
     >>> ymin = m2.min()
     >>> ymax = m2.max()
 
-    Perform a kernel density estimate on the data::
+    Perform a kernel density estimate on the data:
 
     >>> X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
     >>> positions = np.vstack([X.ravel(), Y.ravel()])
@@ -163,8 +163,9 @@ class gaussian_kde(object):
     >>> kernel = stats.gaussian_kde(values)
     >>> Z = np.reshape(kernel(positions).T, X.shape)
 
-    Plot the results::
+    Plot the results:
 
+    >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
     >>> ax.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
