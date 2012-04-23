@@ -2,22 +2,16 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
-    default_builder = context.default_builder
+    features="c fc pyext bento cshlib"
+    f2py_features = "c fc pyext bento cshlib f2py"
+    use = "minpack rootfind FLAPACK CLIB"
 
-    def builder(extension):
-        return default_builder(extension,
-                               features="c fc pyext bento cshlib",
-                               use="minpack rootfind FLAPACK CLIB")
-    def builder_f2py(extension):
-        return default_builder(extension,
-                               features="c fc pyext bento cshlib f2py",
-                               use="minpack rootfind FLAPACK CLIB")
-    context.register_builder("_lbfgsb", builder_f2py)
-    context.register_builder("_cobyla", builder_f2py)
-    context.register_builder("minpack2", builder_f2py)
-    context.register_builder("_nnls", builder_f2py)
-    context.register_builder("_slsqp", builder_f2py)
+    context.tweak_builder("_lbfgsb", features=f2py_features, use=use)
+    context.tweak_builder("_cobyla", features=f2py_features, use=use)
+    context.tweak_builder("minpack2", features=f2py_features, use=use)
+    context.tweak_builder("_nnls", features=f2py_features, use=use)
+    context.tweak_builder("_slsqp", features=f2py_features, use=use)
 
-    context.register_builder("_zeros", builder)
-    context.register_builder("_minpack", builder)
-    context.register_builder("moduleTNC", builder)
+    context.tweak_builder("_zeros", features=features, use=use)
+    context.tweak_builder("_minpack", features=features, use=use)
+    context.tweak_builder("moduleTNC", features=features, use=use)

@@ -8,7 +8,7 @@ def pre_build(context):
     bld = context.waf_context
     f2py = bld.tools["f2py"]
 
-    def builder(extension):
+    def fblas_builder(extension):
         source = extension.sources[:]
         if sys.platform == "darwin":
             source.pop(source.index("src/fblaswrap.f"))
@@ -17,23 +17,18 @@ def pre_build(context):
                                features="c fc pyext bento cshlib f2py",
                                source=source,
                                use="FBLAS CLIB")
-    context.register_builder("fblas", builder)
+    context.register_builder("fblas", fblas_builder)
 
-    def builder(extension):
+    def cblas_builder(extension):
         t = default_builder(extension,
                             features="c fc pyext bento cshlib f2py",
                             use="CBLAS")
         t.mappings[".pyf"] = f2py.interface_gen_callback
         return t
-    context.register_builder("cblas", builder)
+    context.register_builder("cblas", cblas_builder)
 
-    def builder(extension):
-        t = default_builder(extension,
-                            features="c fc pyext bento cshlib f2py",
-                            use="FLAPACK CLIB")
-        #t.mappings[".pyf"] = f2py.interface_gen_callback
-        return t
-    context.register_builder("flapack", builder)
+    context.tweak_builder("flapack", features="c fc pyext bento cshlib f2py",
+                          use="FLAPACK CLIB")
 
     def builder(extension):
         kw = {}
@@ -49,18 +44,14 @@ def pre_build(context):
         return t
     context.register_builder("clapack", builder)
 
-    context.register_builder("_flinalg",
-                             lambda e: default_builder(e,
-                                                       features="c fc pyext bento cshlib f2py f2py_fortran",
-                                                       use="FLAPACK CLIB"))
-    context.register_builder("calc_lwork",
-                             lambda e: default_builder(e,
-                                                       features="c fc pyext bento cshlib f2py f2py_fortran",
-                                                       use="FLAPACK CLIB"))
+    context.tweak_builder("_flinalg", features="c fc pyext bento cshlib f2py f2py_fortran",
+                          use="FLAPACK CLIB")
+    context.tweak_builder("calc_lwork", features="c fc pyext bento cshlib f2py f2py_fortran",
+                          use="FLAPACK CLIB")
 
     defines = []
     if bld.env.HAS_ATLAS:
         raise NotImplementedError("Atlas not implemented yet")
     else:
         defines.append("NO_ATLAS_INFO=1")
-    context.register_builder("atlas_version", lambda e: default_builder(e, defines=defines))
+    context.tweak_builder("atlas_version", defines=defines)

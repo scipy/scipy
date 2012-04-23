@@ -2,22 +2,13 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
-    default_builder = context.default_builder
+    context.tweak_builder("orthogonal_eval", use="NPYMATH")
+    context.tweak_builder("lambertw", use="NPYMATH")
+    context.tweak_builder("_logit", use="NPYMATH")
 
-    def builder(extension):
-        return default_builder(extension,  use="NPYMATH")
-    context.register_builder("orthogonal_eval", builder)
-    context.register_builder("lambertw", builder)
-    context.register_builder("_logit", builder)
+    context.tweak_builder("specfun", features="c fc pyext cshlib bento f2py",
+                             use="sc_specfunlib NPYMATH CLIB")
 
-    def builder(extension):
-        return default_builder(extension,
-                               features="c fc pyext cshlib bento f2py",
-                               use="sc_specfunlib NPYMATH CLIB")
-    context.register_builder("specfun", builder)
-
-    def builder(extension):
-        return default_builder(extension, 
-                               use="sc_amos sc_toms sc_c_misc sc_cephes sc_mach " \
-                                   "sc_cdf sc_specfunlib NPYMATH CLIB")
-    context.register_builder("_cephes", builder)
+    context.tweak_builder("_cephes", 
+                          use="sc_amos sc_toms sc_c_misc sc_cephes sc_mach " \
+                              "sc_cdf sc_specfunlib NPYMATH CLIB")

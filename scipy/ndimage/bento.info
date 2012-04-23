@@ -1,5 +1,3 @@
-HookFile: bscript
-
 Library:
     Extension: _nd_image
         Sources: src/*.c

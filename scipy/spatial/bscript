@@ -2,6 +2,4 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
-    default_builder = context.default_builder
-    context.register_builder("qhull", lambda e: default_builder(e, use="FLAPACK CLIB"))
-    #context.register_builder("qhull", lambda e: default_builder(e, use="FLAPACK"))
+    context.tweak_builder("qhull", use="FLAPACK CLIB")
