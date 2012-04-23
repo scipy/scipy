@@ -30,14 +30,14 @@ class coo_matrix(_data_matrix):
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
-        coo_matrix((data, ij), [shape=(M, N)])
-            The arguments 'data' and 'ij' represent three arrays:
+        coo_matrix((data, (i, j)), [shape=(M, N)])
+            to construct from three arrays:
                 1. data[:]   the entries of the matrix, in any order
-                2. ij[0][:]  the row indices of the matrix entries
-                3. ij[1][:]  the column indices of the matrix entries
+                2. i[:]      the row indices of the matrix entries
+                3. j[:]      the column indices of the matrix entries
 
-            Where ``A[ij[0][k], ij[1][k] = data[k]``.  When shape is
-            not specified, it is inferred from the index arrays
+            Where ``A[i[k], j[k]] = data[k]``.  When shape is not
+            specified, it is inferred from the index arrays
 
     Attributes
     ----------
@@ -80,38 +80,34 @@ class coo_matrix(_data_matrix):
           entries will be summed together.  This facilitates efficient
           construction of finite element matrices and the like. (see example)
 
-
     Examples
     --------
-
-    >>> from scipy.sparse import *
-    >>> from scipy import *
-    >>> coo_matrix( (3,4), dtype=int8 ).todense()
+    >>> from scipy.sparse import coo_matrix
+    >>> coo_matrix((3,4), dtype=np.int8).todense()
     matrix([[0, 0, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 0]], dtype=int8)
 
-    >>> row  = array([0,3,1,0])
-    >>> col  = array([0,3,1,2])
-    >>> data = array([4,5,7,9])
-    >>> coo_matrix( (data,(row,col)), shape=(4,4) ).todense()
+    >>> row  = np.array([0,3,1,0])
+    >>> col  = np.array([0,3,1,2])
+    >>> data = np.array([4,5,7,9])
+    >>> coo_matrix((data,(row,col)), shape=(4,4)).todense()
     matrix([[4, 0, 9, 0],
             [0, 7, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 5]])
 
     >>> # example with duplicates
-    >>> row  = array([0,0,1,3,1,0,0])
-    >>> col  = array([0,2,1,3,1,0,0])
-    >>> data = array([1,1,1,1,1,1,1])
-    >>> coo_matrix( (data,(row,col)), shape=(4,4)).todense()
+    >>> row  = np.array([0,0,1,3,1,0,0])
+    >>> col  = np.array([0,2,1,3,1,0,0])
+    >>> data = np.array([1,1,1,1,1,1,1])
+    >>> coo_matrix((data, (row,col)), shape=(4,4)).todense()
     matrix([[3, 0, 1, 0],
             [0, 2, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 1]])
 
     """
-
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 

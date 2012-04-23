@@ -31,6 +31,8 @@ __all__ = ['save_as_module']
 import dumb_shelve
 import os
 
+import numpy as np
+
 
 def _create_module(file_name):
     """ Create the module file.
@@ -60,6 +62,8 @@ def save_as_module(file_name=None,data=None):
     """
     Save the dictionary "data" into a module and shelf named save.
 
+    This function is deprecated in scipy 0.11 and will be removed for 0.12
+
     Parameters
     ----------
     file_name : str, optional
@@ -70,3 +74,21 @@ def save_as_module(file_name=None,data=None):
     """
     _create_module(file_name)
     _create_shelf(file_name,data)
+
+
+save_as_module = np.deprecate(save_as_module)
+
+
+def _load(module):
+    """ Load data into module from a shelf with
+        the same name as the module.
+    """
+    dir,filename = os.path.split(module.__file__)
+    filebase = filename.split('.')[0]
+    fn = os.path.join(dir, filebase)
+    f = dumb_shelve.open(fn, "r")
+    #exec( 'import ' + module.__name__)
+    for i in f.keys():
+        exec( 'import ' + module.__name__+ ';' +
+              module.__name__+'.'+i + '=' + 'f["' + i + '"]')
+

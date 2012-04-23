@@ -102,7 +102,7 @@ void dist_weighted(cinfo *info, int mini, int minj, int np, int n);
 
 int leaders(const double *Z, const int *T, int *L, int *M, int kk, int n);
 
-void linkage(double *dm, double *Z, double *X, int m, int n, int ml, int kc, distfunc dfunc, int method);
+int linkage(double *dm, double *Z, double *X, int m, int n, int ml, int kc, distfunc dfunc, int method);
 void linkage_alt(double *dm, double *Z, double *X, int m, int n, int ml, int kc, distfunc dfunc, int method);
 
 void cophenetic_distances(const double *Z, double *d, int n);

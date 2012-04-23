@@ -68,7 +68,7 @@ PyObject* compute_vq(PyObject* self, PyObject* args)
 
     typenum1 = PyArray_TYPE(obs);
     typenum2 = PyArray_TYPE(code);
-    if (typenum1 != typenum1) {
+    if (typenum1 != typenum2) {
 		PyErr_Format(PyExc_ValueError,
 			     "observation and code should have same type");
         return NULL;
@@ -122,7 +122,7 @@ PyObject* compute_vq(PyObject* self, PyObject* args)
             if (dist_a == NULL) {
                 goto clean_code_a;
             }
-            index_a = (PyArrayObject*)PyArray_EMPTY(1, &n, PyArray_INTP, 0);
+            index_a = (PyArrayObject*)PyArray_EMPTY(1, &n, NPY_INTP, 0);
             if (index_a == NULL) {
                 goto clean_dist_a;
             }
@@ -134,7 +134,7 @@ PyObject* compute_vq(PyObject* self, PyObject* args)
             if (dist_a == NULL) {
                 goto clean_code_a;
             }
-            index_a = (PyArrayObject*)PyArray_EMPTY(1, &n, PyArray_INTP, 0);
+            index_a = (PyArrayObject*)PyArray_EMPTY(1, &n, NPY_INTP, 0);
             if (index_a == NULL) {
                 goto clean_dist_a;
             }

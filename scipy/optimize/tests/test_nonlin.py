@@ -10,6 +10,8 @@ from numpy import matrix, diag, dot
 from numpy.linalg import inv
 import numpy as np
 
+from test_minpack import pressure_network
+
 SOLVERS = [nonlin.anderson, nonlin.diagbroyden, nonlin.linearmixing,
            nonlin.excitingmixing, nonlin.broyden1, nonlin.broyden2,
            nonlin.newton_krylov]
@@ -48,10 +50,8 @@ F4_powell.xin = [-1, -2]
 F4_powell.KNOWN_BAD = [nonlin.linearmixing, nonlin.excitingmixing,
                        nonlin.diagbroyden]
 
-from test_minpack import TestFSolve as F5_class
-F5_object = F5_class()
 def F5(x):
-    return F5_object.pressure_network(x, 4, np.array([.5, .5, .5, .5]))
+    return pressure_network(x, 4, np.array([.5, .5, .5, .5]))
 F5.xin = [2., 0, 2, 0]
 F5.KNOWN_BAD = [nonlin.excitingmixing, nonlin.linearmixing, nonlin.diagbroyden]
 

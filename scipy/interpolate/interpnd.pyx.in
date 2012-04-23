@@ -178,12 +178,12 @@ class LinearNDInterpolator(NDInterpolatorBase):
     Notes
     -----
     The interpolant is constructed by triangulating the input data
-    with Qhull [Qhull]_, and on each triangle performing linear
+    with Qhull [1]_, and on each triangle performing linear
     barycentric interpolation.
 
     References
     ----------
-    .. [Qhull] http://www.qhull.org/
+    .. [1] http://www.qhull.org/
 
     """
 
@@ -509,9 +509,9 @@ cdef ${CDTYPE} _clough_tocher_2d_single_${DTYPE}(qhull.DelaunayInfo_t *d,
 
     Parameters
     ----------
-    d
+    d :
         Delaunay info
-    isimplex
+    isimplex : int
         Triangle to evaluate on
     b : shape (3,)
         Barycentric coordinates of the point on the triangle
@@ -522,7 +522,7 @@ cdef ${CDTYPE} _clough_tocher_2d_single_${DTYPE}(qhull.DelaunayInfo_t *d,
 
     Returns
     -------
-    w
+    w :
         Value of the interpolant at the given point
 
     References
@@ -758,7 +758,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     Notes
     -----
     The interpolant is constructed by triangulating the input data
-    with Qhull [Qhull]_, and constructing a piecewise cubic
+    with Qhull [1]_, and constructing a piecewise cubic
     interpolating Bezier polynomial on each triangle, using a
     Clough-Tocher scheme [CT]_.  The interpolant is guaranteed to be
     continuously differentiable.
@@ -770,8 +770,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     References
     ----------
-
-    .. [Qhull] http://www.qhull.org/
+    .. [1] http://www.qhull.org/
 
     .. [CT] See, for example,
        P. Alfeld,

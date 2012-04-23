@@ -157,7 +157,7 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     doublecomplex   *work;
     double   *rwork;
     int      *iwork;
-    extern double dlamch_(char *);
+
     extern int zlacon_(int *, doublecomplex *, doublecomplex *, double *, int *);
 #ifdef _CRAY
     extern int CCOPY(int *, doublecomplex *, int *, doublecomplex *, int *);

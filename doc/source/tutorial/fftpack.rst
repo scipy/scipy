@@ -142,7 +142,7 @@ for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N.
 
     \[ y_k = 2\sum_{n=0}^{N-1} x_n 
     \sin\left( \pi {(n+1) (k+1)}\over{N+1} \right),
-    \qqad 0 \le k < N. \]
+    \qquad 0 \le k < N. \]
 
 Only None is supported as normalization mode for DST-I. Note also that the
 DCT-I is only supported for input size > 1.
@@ -159,8 +159,8 @@ around n=N
    :nowrap:
 
     \[ y_k = 2 \sum_{n=0}^{N-1} x_n 
-    \sin\left {\pi (n+1/2)(k+1)} \over N \right
-    \qqad 0 \le k < N. \]
+    \sin\left( {\pi (n+1/2)(k+1)} \over N \right),
+    \qquad 0 \le k < N. \]
 
 type III
 ~~~~~~~~
@@ -173,8 +173,8 @@ and even around n=N-1
    :nowrap:
 
     \[ y_k = (-1)^k x_{N-1} + 2 \sum_{n=0}^{N-2} x_n
-    \sin \left {\pi (n+1)(k+1/2)} \over N \right
-    \qqad 0 \le k < N. \]
+    \sin \left( {\pi (n+1)(k+1/2)} \over N \right),
+    \qquad 0 \le k < N. \]
 
 The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
 to a factor `2N`.

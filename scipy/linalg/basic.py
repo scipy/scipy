@@ -12,6 +12,7 @@ from flinalg import get_flinalg_funcs
 from lapack import get_lapack_funcs
 from misc import LinAlgError, _datacopied
 from scipy.linalg import calc_lwork
+from decomp_schur import schur
 import decomp_svd
 
 
@@ -546,3 +547,4 @@ def pinv2(a, cond=None, rcond=None):
             psigma[i,i] = 1.0/np.conjugate(s[i])
     #XXX: use lapack/blas routines for dot
     return np.transpose(np.conjugate(np.dot(np.dot(u,psigma),vh)))
+

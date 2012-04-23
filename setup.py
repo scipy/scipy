@@ -20,10 +20,8 @@ DOCLINES = __doc__.split("\n")
 
 import os
 import sys
-import warnings
 import subprocess
 import shutil
-import re
 
 if sys.version_info[0] < 3:
     import __builtin__ as builtins
@@ -159,6 +157,20 @@ def setup_package():
         site_cfg = os.path.join(local_path, 'site.cfg')
         if os.path.isfile(site_cfg):
             shutil.copy(site_cfg, src_path)
+
+        # Ugly hack to make pip work with Python 3
+        # Explanation: pip messes with __file__ which interacts badly with the
+        # change in directory due to the 2to3 conversion.  Therefore we restore
+        # __file__ to what it would have been otherwise.
+
+        global __file__
+        __file__ = os.path.join(os.curdir, os.path.basename(__file__))
+        if '--egg-base' in sys.argv:
+            # Change pip-egg-info entry to absolute path, so pip can find it
+            # after changing directory.
+            idx = sys.argv.index('--egg-base')
+            if sys.argv[idx + 1] == 'pip-egg-info':
+                sys.argv[idx + 1] = os.path.join(local_path, 'pip-egg-info')
 
     os.chdir(local_path)
     sys.path.insert(0, local_path)

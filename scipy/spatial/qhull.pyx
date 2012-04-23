@@ -887,9 +887,7 @@ class Delaunay(object):
     """
     Delaunay(points)
 
-    Delaunay tesselation in N dimensions
-
-    .. versionadded:: 0.9
+    Delaunay tesselation in N dimensions.
 
     Parameters
     ----------
@@ -899,19 +897,19 @@ class Delaunay(object):
     Attributes
     ----------
     points : ndarray of double, shape (npoints, ndim)
-        Points in the triangulation
+        Points in the triangulation.
     vertices : ndarray of ints, shape (nsimplex, ndim+1)
-        Indices of vertices forming simplices in the triangulation
+        Indices of vertices forming simplices in the triangulation.
     neighbors : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of neighbor simplices for each simplex.
         The kth neighbor is opposite to the kth vertex.
         For simplices at the boundary, -1 denotes no neighbor.
     equations : ndarray of double, shape (nsimplex, ndim+2)
         [normal, offset] forming the hyperplane equation of the facet
-        on the paraboloid. (See [Qhull]_ documentation for more.)
+        on the paraboloid (see [Qhull]_ documentation for more).
     paraboloid_scale, paraboloid_shift : float
-        Scale and shift for the extra paraboloid dimension.
-        (See [Qhull]_ documentation for more.)
+        Scale and shift for the extra paraboloid dimension
+        (see [Qhull]_ documentation for more).
     transform : ndarray of double, shape (nsimplex, ndim+1, ndim)
         Affine transform from ``x`` to the barycentric coordinates ``c``.
         This is defined by::
@@ -935,13 +933,13 @@ class Delaunay(object):
     -----
     The tesselation is computed using the Qhull libary [Qhull]_.
 
+    .. versionadded:: 0.9
+
     References
     ----------
-
     .. [Qhull] http://www.qhull.org/
 
     """
-
     def __init__(self, points):
         points = np.ascontiguousarray(points).astype(np.double)
         vertices, neighbors, equations, paraboloid_scale, paraboloid_shift = \
@@ -1087,7 +1085,7 @@ class Delaunay(object):
 
         Notes
         -----
-        This uses an algorithm adapted from Qhull's qh_findbestfacet,
+        This uses an algorithm adapted from Qhull's ``qh_findbestfacet``,
         which makes use of the connection between a convex hull and a
         Delaunay triangulation. After finding the simplex closest to
         the point in N+1 dimensions, the algorithm falls back to
@@ -1192,7 +1190,7 @@ def tsearch(tri, xi):
     tsearch(tri, xi)
 
     Find simplices containing the given points. This function does the
-    same thing as Delaunay.find_simplex.
+    same thing as `Delaunay.find_simplex`.
 
     .. versionadded:: 0.9
 

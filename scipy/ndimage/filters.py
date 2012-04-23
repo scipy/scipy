@@ -339,9 +339,11 @@ def generic_laplace(input, derivative2, output = None, mode = "reflect",
     %(input)s
     derivative2 : callable
         Callable with the following signature::
+
             derivative2(input, axis, output, mode, cval,
                         *extra_arguments, **extra_keywords)
-        See ``extra_arguments``, ``extra_keywords`` below
+
+        See `extra_arguments`, `extra_keywords` below.
     %(output)s
     %(mode)s
     %(cval)s
@@ -420,12 +422,13 @@ def generic_gradient_magnitude(input, derivative, output = None,
     %(input)s
     derivative : callable
         Callable with the following signature::
+
             derivative(input, axis, output, mode, cval,
                         *extra_arguments, **extra_keywords)
-        See ``extra_arguments``, ``extra_keywords`` below
-        ``derivative`` can assume that ``input`` and ``output`` are
-        ndarrays.
-        Note that the output from ``derivative`` is modified inplace;
+
+        See `extra_arguments`, `extra_keywords` below.
+        `derivative` can assume that `input` and `output` are ndarrays.
+        Note that the output from `derivative` is modified inplace;
         be careful to copy important inputs before returning them.
     %(output)s
     %(mode)s

@@ -22,7 +22,7 @@ def configuration(parent_package='',top_path=None):
                          libraries=['rootfind'])
 
     lapack = get_info('lapack_opt')
-    sources=['lbfgsb.pyf','routines.f']
+    sources=['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
     config.add_extension('_lbfgsb',
                          sources=[join('lbfgsb',x) for x in sources],
                          **lapack)

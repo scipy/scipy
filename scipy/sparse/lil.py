@@ -27,7 +27,7 @@ class lil_matrix(spmatrix):
             with a dense matrix or rank-2 ndarray D
 
         lil_matrix(S)
-            with another sparse matrix S (equivalent to S.tocsc())
+            with another sparse matrix S (equivalent to S.tolil())
 
         lil_matrix((M, N), [dtype])
             to construct an empty matrix with shape (M, N)

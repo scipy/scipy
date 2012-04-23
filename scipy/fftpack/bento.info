@@ -14,7 +14,7 @@ Library:
             src/zrfft.c,
             src/zfftnd.c,
             fftpack.pyf,
-            src/dct.c.src
+            src/dct.c.src,
             src/dst.c.src
     Extension: convolve
         Sources:

@@ -1,18 +1,55 @@
-c   Modified for SciPy by removing dependency on linpack
-c   - dnrm2, daxpy, dcopy, ddot, dscal are the same in linpack and
-c     LAPACK
-c   - wrappers that call LAPACK are used for dtrsl and dpofa
-c================    L-BFGS-B (version 2.1)   ==========================
- 
+c===========   L-BFGS-B (version 3.0.  April 25, 2011  ===================
+c
+c     This is a modified version of L-BFGS-B. Minor changes in the updated 
+c     code appear preceded by a line comment as follows 
+c  
+c     c-jlm-jn 
+c
+c     Major changes are described in the accompanying paper:
+c
+c         Jorge Nocedal and Jose Luis Morales, Remark on "Algorithm 778: 
+c         L-BFGS-B: Fortran Subroutines for Large-Scale Bound Constrained 
+c         Optimization"  (2011). To appear in  ACM Transactions on 
+c         Mathematical Software,
+c
+c     The paper describes an improvement and a correction to Algorithm 778. 
+c     It is shown that the performance of the algorithm can be improved 
+c     significantly by making a relatively simple modication to the subspace 
+c     minimization phase. The correction concerns an error caused by the use 
+c     of routine dpmeps to estimate machine precision. 
+c
+c     The total work space **wa** required by the new version is 
+c 
+c                  2*m*n + 11m*m + 5*n + 8*m 
+c
+c     the old version required 
+c
+c                  2*m*n + 12m*m + 4*n + 12*m 
+c
+c
+c            J. Nocedal  Department of Electrical Engineering and
+c                        Computer Science.
+c                        Northwestern University. Evanston, IL. USA
+c
+c
+c           J.L Morales  Departamento de Matematicas, 
+c                        Instituto Tecnologico Autonomo de Mexico
+c                        Mexico D.F. Mexico.
+c
+c                        March  2011    
+c                                                 
+c============================================================================= 
       subroutine setulb(n, m, x, l, u, nbd, f, g, factr, pgtol, wa, iwa,
-     +                 task, iprint,  csave, lsave, isave, dsave)
+     +                 task, iprint, csave, lsave, isave, dsave)
  
       character*60     task, csave
       logical          lsave(4)
       integer          n, m, iprint, 
      +                 nbd(n), iwa(3*n), isave(44)
       double precision f, factr, pgtol, x(n), l(n), u(n), g(n),
-     +                 wa(2*m*n+4*n+12*m*m+12*m), dsave(29)
+c
+c-jlm-jn
+     +                 wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
  
 c     ************
 c
@@ -83,7 +120,7 @@ c         where pg_i is the ith component of the projected gradient.
 c       On exit pgtol is unchanged.
 c
 c     wa is a double precision working array of length 
-c       (2mmax + 4)nmax + 12mmax^2 + 12mmax.
+c       (2mmax + 5)nmax + 12mmax^2 + 12mmax.
 c
 c     iwa is an integer working array of length 3nmax.
 c
@@ -193,58 +230,47 @@ c     in collaboration with R.H. Byrd, P. Lu-Chen and J. Nocedal.
 c
 c
 c     ************
- 
-      integer   l1,l2,l3,lws,lr,lz,lt,ld,lsg,lwa,lyg,
-     +          lsgo,lwy,lsy,lss,lyy,lwt,lwn,lsnd,lygo
+c-jlm-jn 
+      integer   lws,lr,lz,lt,ld,lxp,lwa,
+     +          lwy,lsy,lss,lwt,lwn,lsnd
 
       if (task .eq. 'START') then
          isave(1)  = m*n
          isave(2)  = m**2
          isave(3)  = 4*m**2
-         isave(4)  = 1
-         isave(5)  = isave(4)  + isave(1)
-         isave(6)  = isave(5)  + isave(1)
-         isave(7)  = isave(6)  + isave(2)
-         isave(8)  = isave(7)  + isave(2)
-         isave(9)  = isave(8)  + isave(2)
-         isave(10) = isave(9)  + isave(2)
-         isave(11) = isave(10) + isave(3)
-         isave(12) = isave(11) + isave(3)
-         isave(13) = isave(12) + n
-         isave(14) = isave(13) + n
-         isave(15) = isave(14) + n
-         isave(16) = isave(15) + n
-         isave(17) = isave(16) + 8*m
-         isave(18) = isave(17) + m
-         isave(19) = isave(18) + m
-         isave(20) = isave(19) + m   
+         isave(4)  = 1                      ! ws      m*n
+         isave(5)  = isave(4)  + isave(1)   ! wy      m*n
+         isave(6)  = isave(5)  + isave(1)   ! wsy     m**2
+         isave(7)  = isave(6)  + isave(2)   ! wss     m**2
+         isave(8)  = isave(7)  + isave(2)   ! wt      m**2
+         isave(9)  = isave(8)  + isave(2)   ! wn      4*m**2
+         isave(10) = isave(9)  + isave(3)   ! wsnd    4*m**2
+         isave(11) = isave(10) + isave(3)   ! wz      n
+         isave(12) = isave(11) + n          ! wr      n
+         isave(13) = isave(12) + n          ! wd      n
+         isave(14) = isave(13) + n          ! wt      n
+         isave(15) = isave(14) + n          ! wxp     n
+         isave(16) = isave(15) + n          ! wa      8*m
       endif
-      l1   = isave(1)
-      l2   = isave(2)
-      l3   = isave(3)
       lws  = isave(4)
       lwy  = isave(5)
       lsy  = isave(6)
       lss  = isave(7)
-      lyy  = isave(8)
-      lwt  = isave(9)
-      lwn  = isave(10)
-      lsnd = isave(11)
-      lz   = isave(12)
-      lr   = isave(13)
-      ld   = isave(14)
-      lt   = isave(15)
+      lwt  = isave(8)
+      lwn  = isave(9)
+      lsnd = isave(10)
+      lz   = isave(11)
+      lr   = isave(12)
+      ld   = isave(13)
+      lt   = isave(14)
+      lxp  = isave(15)
       lwa  = isave(16)
-      lsg  = isave(17)
-      lsgo = isave(18)
-      lyg  = isave(19)
-      lygo = isave(20)
 
       call mainlb(n,m,x,l,u,nbd,f,g,factr,pgtol,
-     +  wa(lws),wa(lwy),wa(lsy),wa(lss),wa(lyy),wa(lwt),
-     +  wa(lwn),wa(lsnd),wa(lz),wa(lr),wa(ld),wa(lt),
-     +  wa(lwa),wa(lsg),wa(lsgo),wa(lyg),wa(lygo),
-     +  iwa(1),iwa(n+1),iwa(2*n+1),task,iprint,
+     +  wa(lws),wa(lwy),wa(lsy),wa(lss), wa(lwt),
+     +  wa(lwn),wa(lsnd),wa(lz),wa(lr),wa(ld),wa(lt),wa(lxp),
+     +  wa(lwa),
+     +  iwa(1),iwa(n+1),iwa(2*n+1),task,iprint, 
      +  csave,lsave,isave(22),dsave)
 
       return
@@ -254,18 +280,20 @@ c     ************
 c======================= The end of setulb =============================
  
       subroutine mainlb(n, m, x, l, u, nbd, f, g, factr, pgtol, ws, wy,
-     +                  sy, ss, yy, wt, wn, snd, z, r, d, t, wa, sg,
-     +                  sgo, yg, ygo, index, iwhere, indx2, task,
+     +                  sy, ss, wt, wn, snd, z, r, d, t, xp, wa, 
+     +                  index, iwhere, indx2, task,
      +                  iprint, csave, lsave, isave, dsave)
- 
+      implicit none
       character*60     task, csave
       logical          lsave(4)
       integer          n, m, iprint, nbd(n), index(n),
      +                 iwhere(n), indx2(n), isave(23)
       double precision f, factr, pgtol,
      +                 x(n), l(n), u(n), g(n), z(n), r(n), d(n), t(n), 
-     +                 wa(8*m), sg(m), sgo(m), yg(m), ygo(m), 
-     +                 ws(n, m), wy(n, m), sy(m, m), ss(m, m), yy(m, m),
+c-jlm-jn
+     +                 xp(n), 
+     +                 wa(8*m), 
+     +                 ws(n, m), wy(n, m), sy(m, m), ss(m, m), 
      +                 wt(m, m), wn(2*m, 2*m), snd(2*m, 2*m), dsave(29)
 
 c     ************
@@ -339,7 +367,7 @@ c          ws, of dimension n x m, stores S, the matrix of s-vectors;
 c          wy, of dimension n x m, stores Y, the matrix of y-vectors;
 c          sy, of dimension m x m, stores S'Y;
 c          ss, of dimension m x m, stores S'S;
-c	   yy, of dimension m x m, stores Y'Y;
+c          yy, of dimension m x m, stores Y'Y;
 c          wt, of dimension m x m, stores the Cholesky factorization
 c                                  of (theta*S'S+LD^(-1)L'); see eq.
 c                                  (2.26) in [3].
@@ -356,10 +384,11 @@ c     snd is a double precision working array of dimension 2m x 2m
 c       used to store the lower triangular part of
 c                 N = [Y' ZZ'Y   L_a'+R_z']
 c                     [L_a +R_z  S'AA'S   ]
-c	     
-c     z(n),r(n),d(n),t(n),wa(8*m) are double precision working arrays.
-c       z is used at different times to store the Cauchy point and
-c       the Newton point.
+c            
+c     z(n),r(n),d(n),t(n), xp(n),wa(8*m) are double precision working arrays.
+c       z  is used at different times to store the Cauchy point and
+c          the Newton point.
+c       xp is used to safeguard the projected Newton direction
 c
 c     sg(m),sgo(m),yg(m),ygo(m) are double precision working arrays. 
 c
@@ -412,7 +441,7 @@ c        errclb, prn1lb, prn2lb, prn3lb, active, projgr,
 c
 c        freev, cmprlb, matupd, formt.
 c
-c       Minpack2 Library ... timer, dpmeps.
+c       Minpack2 Library ... timer
 c
 c       Linpack Library ... dcopy, ddot.
 c
@@ -451,22 +480,22 @@ c     ************
       character*3      word
       integer          i,k,nintol,itfile,iback,nskip,
      +                 head,col,iter,itail,iupdat,
-     +                 nint,nfgv,info,ifun,
+     +                 nseg,nfgv,info,ifun,
      +                 iword,nfree,nact,ileave,nenter
-      double precision theta,fold,ddot,dr,rr,tol,dpmeps,
+      double precision theta,fold,ddot,dr,rr,tol,
      +                 xstep,sbgnrm,ddum,dnorm,dtd,epsmch,
      +                 cpu1,cpu2,cachyt,sbtime,lnscht,time1,time2,
      +                 gd,gdold,stp,stpmx,time
       double precision one,zero
+      double precision dlamch
+      external         dlamch
       parameter        (one=1.0d0,zero=0.0d0)
       
       if (task .eq. 'START') then
 
+         epsmch = 2 * dlamch('e')
+
          call timer(time1)
-
-c        Generate the current machine precision.
-
-         epsmch = dpmeps()
 
 c        Initialize counters and scalars when task='START'.
 
@@ -476,15 +505,30 @@ c           for the limited memory BFGS matrices:
          theta  = one
          iupdat = 0
          updatd = .false.
- 
+         iback  = 0
+         itail  = 0
+         iword  = 0
+         nact   = 0
+         ileave = 0
+         nenter = 0
+         fold   = zero
+         dnorm  = zero
+         cpu1   = zero
+         gd     = zero
+         stpmx  = zero
+         sbgnrm = zero
+         stp    = zero
+         gdold  = zero
+         dtd    = zero
+
 c           for operation counts:
          iter   = 0
          nfgv   = 0
-         nint   = 0
+         nseg   = 0
          nintol = 0
          nskip  = 0
          nfree  = n
-
+         ifun   = 0
 c           for stopping tolerance:
          tol = factr*epsmch
 
@@ -499,19 +543,19 @@ c           'word' records the status of subspace solutions.
 c           'info' records the termination information.
          info = 0
 
+         itfile = 8
          if (iprint .ge. 1) then
 c                                open a summary file 'iterate.dat'
             open (8, file = 'iterate.dat', status = 'unknown')
-            itfile = 8
          endif            
 
 c        Check the input arguments for errors.
 
-	 call errclb(n,m,factr,l,u,nbd,task,info,k)
+         call errclb(n,m,factr,l,u,nbd,task,info,k)
          if (task(1:5) .eq. 'ERROR') then
             call prn3lb(n,x,f,task,iprint,info,itfile,
      +                  iter,nfgv,nintol,nskip,nact,sbgnrm,
-     +                  zero,nint,word,iback,stp,xstep,k,
+     +                  zero,nseg,word,iback,stp,xstep,k,
      +                  cachyt,sbtime,lnscht)
             return
          endif
@@ -541,7 +585,7 @@ c          restore local variables.
          itail  = isave(8)
          iter   = isave(9)
          iupdat = isave(10)
-         nint   = isave(12)
+         nseg   = isave(12)
          nfgv   = isave(13)
          info   = isave(14)
          ifun   = isave(15)
@@ -603,7 +647,7 @@ c     Compute the infinity norm of the (-) projected gradient.
       endif
       if (sbgnrm .le. pgtol) then
 c                                terminate the algorithm.
-         task = 'CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL'
+         task = 'CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL'
          goto 999
       endif 
  
@@ -616,8 +660,8 @@ c
       if (.not. cnstnd .and. col .gt. 0) then 
 c                                            skip the search for GCP.
          call dcopy(n,x,1,z,1)
-	 wrk = updatd
-         nint = 0
+         wrk = updatd
+         nseg = 0
          goto 333
       endif
 
@@ -630,8 +674,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       call timer(cpu1) 
       call cauchy(n,x,l,u,nbd,g,indx2,iwhere,t,d,z,
      +            m,wy,ws,sy,wt,theta,col,head,
-     + 		  wa(1),wa(2*m+1),wa(4*m+1),wa(6*m+1),nint,
-     +            sg,yg,iprint,sbgnrm,info,epsmch)
+     +            wa(1),wa(2*m+1),wa(4*m+1),wa(6*m+1),nseg,
+     +            iprint, sbgnrm, info, epsmch)
       if (info .ne. 0) then 
 c         singular triangular system detected; refresh the lbfgs memory.
          if(iprint .ge. 1) write (6, 1005)
@@ -647,16 +691,15 @@ c         singular triangular system detected; refresh the lbfgs memory.
       endif
       call timer(cpu2) 
       cachyt = cachyt + cpu2 - cpu1
-      nintol = nintol + nint
+      nintol = nintol + nseg
 
 c     Count the entering and leaving variables for iter > 0; 
 c     find the index set of free and active variables at the GCP.
 
       call freev(n,nfree,index,nenter,ileave,indx2,
      +           iwhere,wrk,updatd,cnstnd,iprint,iter)
-
       nact = n - nfree
- 
+
  333  continue
  
 c     If there are no free variables or B=theta*I, then
@@ -700,9 +743,11 @@ c                                                   from 'cauchy').
       call cmprlb(n,m,x,g,ws,wy,sy,wt,z,r,wa,index,
      +           theta,col,head,nfree,cnstnd,info)
       if (info .ne. 0) goto 444
-c       call the direct method.
-      call subsm(n,m,nfree,index,l,u,nbd,z,r,ws,wy,theta,
-     +           col,head,iword,wa,wn,iprint,info)
+
+c-jlm-jn   call the direct method. 
+
+      call subsm( n, m, nfree, index, l, u, nbd, z, r, xp, ws, wy,
+     +           theta, x, g, col, head, iword, wa, wn, iprint, info)
  444  continue
       if (info .ne. 0) then 
 c          singular triangular system detected;
@@ -732,7 +777,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     Generate the search direction d:=z-x.
 
       do 40 i = 1, n
-	 d(i) = z(i) - x(i)
+         d(i) = z(i) - x(i)
   40  continue
       call timer(cpu1) 
  666  continue
@@ -773,7 +818,7 @@ c             refresh the lbfgs memory and restart the iteration.
          endif
       else if (task(1:5) .eq. 'FG_LN') then
 c          return to the driver for calculating f and g; reenter at 666.
-	 goto 1000
+         goto 1000
       else 
 c          calculate and print out the quantities related to the new X.
          call timer(cpu2) 
@@ -787,7 +832,7 @@ c        Compute the infinity norm of the projected (-)gradient.
 c        Print iteration information.
 
          call prn2lb(n,x,f,g,iprint,itfile,iter,nfgv,nact,
-     +               sbgnrm,nint,word,iword,iback,stp,xstep)
+     +               sbgnrm,nseg,word,iword,iback,stp,xstep)
          goto 1000
       endif
  777  continue
@@ -796,14 +841,14 @@ c     Test for termination.
 
       if (sbgnrm .le. pgtol) then
 c                                terminate the algorithm.
-         task = 'CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL'
+         task = 'CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL'
          goto 999
       endif 
 
       ddum = max(abs(fold), abs(f), one)
       if ((fold - f) .le. tol*ddum) then
 c                                        terminate the algorithm.
-         task = 'CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH'
+         task = 'CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH'
          if (iback .ge. 10) info = -5
 c           i.e., to issue a warning if iback>10 in the line search.
          goto 999
@@ -820,7 +865,7 @@ c     Compute d=newx-oldx, r=newg-oldg, rr=y'y and dr=y's.
          ddum = -gdold
       else
          dr = (gd - gdold)*stp
-	 call dscal(n,stp,d,1)
+         call dscal(n,stp,d,1)
          ddum = -gdold*stp
       endif
  
@@ -881,7 +926,7 @@ c -------------------- the end of the loop -----------------------------
       time = time2 - time1
       call prn3lb(n,x,f,task,iprint,info,itfile,
      +            iter,nfgv,nintol,nskip,nact,sbgnrm,
-     +            time,nint,word,iback,stp,xstep,k,
+     +            time,nseg,word,iback,stp,xstep,k,
      +            cachyt,sbtime,lnscht)
  1000 continue
 
@@ -901,7 +946,7 @@ c     Save local variables.
       isave(8)  = itail 
       isave(9)  = iter 
       isave(10) = iupdat 
-      isave(12) = nint 
+      isave(12) = nseg
       isave(13) = nfgv 
       isave(14) = info 
       isave(15) = ifun 
@@ -1003,15 +1048,15 @@ c     Project the initial x to the easible set if necessary.
       do 10 i = 1, n
          if (nbd(i) .gt. 0) then
             if (nbd(i) .le. 2 .and. x(i) .le. l(i)) then
-	       if (x(i) .lt. l(i)) then
+               if (x(i) .lt. l(i)) then
                   prjctd = .true.
-	          x(i) = l(i)
+                  x(i) = l(i)
                endif
                nbdd = nbdd + 1
             else if (nbd(i) .ge. 2 .and. x(i) .ge. u(i)) then
-	       if (x(i) .gt. u(i)) then
+               if (x(i) .gt. u(i)) then
                   prjctd = .true.
-	          x(i) = u(i)
+                  x(i) = u(i)
                endif
                nbdd = nbdd + 1
             endif
@@ -1024,14 +1069,14 @@ c     Initialize iwhere and assign values to cnstnd and boxed.
          if (nbd(i) .ne. 2) boxed = .false.
          if (nbd(i) .eq. 0) then
 c                                this variable is always free
-	    iwhere(i) = -1
+            iwhere(i) = -1
 
 c           otherwise set x(i)=mid(x(i), u(i), l(i)).
          else
-	    cnstnd = .true.
+            cnstnd = .true.
             if (nbd(i) .eq. 2 .and. u(i) - l(i) .le. zero) then
 c                   this variable is always fixed
-	       iwhere(i) = 3
+               iwhere(i) = 3
             else 
                iwhere(i) = 0
             endif
@@ -1065,9 +1110,9 @@ c
 c     Subroutine bmv
 c
 c     This subroutine computes the product of the 2m x 2m middle matrix 
-c	in the compact L-BFGS formula of B and a 2m vector v;  
-c	it returns the product in p.
-c	
+c       in the compact L-BFGS formula of B and a 2m vector v;  
+c       it returns the product in p.
+c       
 c     m is an integer variable.
 c       On entry m is the maximum number of variable metric corrections
 c         used to define the limited memory matrix.
@@ -1126,7 +1171,7 @@ c     ************
 c     PART I: solve [  D^(1/2)      O ] [ p1 ] = [ v1 ]
 c                   [ -L*D^(-1/2)   J ] [ p2 ]   [ v2 ].
 
-c 	solve Jp2=v2+LD^(-1)v1.
+c       solve Jp2=v2+LD^(-1)v1.
       p(col + 1) = v(col + 1)
       do 20 i = 2, col
          i2 = col + i
@@ -1140,7 +1185,7 @@ c     Solve the triangular system
       call dtrsl(wt,m,col,p(col+1),11,info)
       if (info .ne. 0) return
  
-c     	solve D^(1/2)p1=v1.
+c       solve D^(1/2)p1=v1.
       do 30 i = 1, col
          p(i) = v(i)/sqrt(sy(i,i))
   30  continue 
@@ -1173,13 +1218,13 @@ c======================== The end of bmv ===============================
 
       subroutine cauchy(n, x, l, u, nbd, g, iorder, iwhere, t, d, xcp, 
      +                  m, wy, ws, sy, wt, theta, col, head, p, c, wbp, 
-     +                  v, nint, sg, yg, iprint, sbgnrm, info, epsmch)
-      
-      integer          n, m, head, col, nint, iprint, info, 
+     +                  v, nseg, iprint, sbgnrm, info, epsmch)
+      implicit none
+      integer          n, m, head, col, nseg, iprint, info, 
      +                 nbd(n), iorder(n), iwhere(n)
       double precision theta, epsmch,
      +                 x(n), l(n), u(n), g(n), t(n), d(n), xcp(n),
-     +                 sg(m), yg(m), wy(n, col), ws(n, col), sy(m, m),
+     +                 wy(n, col), ws(n, col), sy(m, m),
      +                 wt(m, m), p(2*m), c(2*m), wbp(2*m), v(2*m)
 
 c     ************
@@ -1297,8 +1342,8 @@ c         to a breakpoint.
 c
 c     v is a double precision working array of dimension 2m.
 c
-c     nint is an integer variable.
-c       On exit nint records the number of quadratic segments explored
+c     nseg is an integer variable.
+c       On exit nseg records the number of quadratic segments explored
 c         in searching for the GCP.
 c
 c     sg and yg are double precision arrays of dimension m.
@@ -1375,7 +1420,7 @@ c       the derivative f1 and the vector p = W'd (for theta = 1).
       if (sbgnrm .le. zero) then
          if (iprint .ge. 0) write (6,*) 'Subgnorm = 0.  GCP = X.'
          call dcopy(n,x,1,xcp,1)
-	 return
+         return
       endif 
       bnded = .true.
       nfree = n + 1
@@ -1437,18 +1482,18 @@ c                                 x(i) + d(i) is bounded; compute t(i).
                nbreak = nbreak + 1
                iorder(nbreak) = i
                t(nbreak) = tl/(-neggi)
-	       if (nbreak .eq. 1 .or. t(nbreak) .lt. bkmin) then
-		  bkmin = t(nbreak)
-		  ibkmin = nbreak
+               if (nbreak .eq. 1 .or. t(nbreak) .lt. bkmin) then
+                  bkmin = t(nbreak)
+                  ibkmin = nbreak
                endif
             else if (nbd(i) .ge. 2 .and. neggi .gt. zero) then
 c                                 x(i) + d(i) is bounded; compute t(i).
                nbreak = nbreak + 1
                iorder(nbreak) = i
                t(nbreak) = tu/neggi
-	       if (nbreak .eq. 1 .or. t(nbreak) .lt. bkmin) then
-		  bkmin = t(nbreak)
-		  ibkmin = nbreak
+               if (nbreak .eq. 1 .or. t(nbreak) .lt. bkmin) then
+                  bkmin = t(nbreak)
+                  ibkmin = nbreak
                endif
             else
 c                x(i) + d(i) is not bounded.
@@ -1489,13 +1534,13 @@ c     Initialize derivative f2.
       f2 =  -theta*f1 
       f2_org  =  f2
       if (col .gt. 0) then
-     	 call bmv(m,sy,wt,col,p,v,info)
-	 if (info .ne. 0) return
-     	 f2 = f2 - ddot(col2,v,1,p,1)
+         call bmv(m,sy,wt,col,p,v,info)
+         if (info .ne. 0) return
+         f2 = f2 - ddot(col2,v,1,p,1)
       endif
       dtm = -f1/f2
       tsum = zero
-      nint = 1
+      nseg = 1
       if (iprint .ge. 99) 
      +   write (6,*) 'There are ',nbreak,'  breakpoints '
  
@@ -1521,15 +1566,15 @@ c       compute dt = t(nleft) - t(nleft + 1).
 c         Since we already have the smallest breakpoint we need not do
 c         heapsort yet. Often only one breakpoint is used and the
 c         cost of heapsort is avoided.
-	 tj = bkmin
-	 ibp = iorder(ibkmin)
+         tj = bkmin
+         ibp = iorder(ibkmin)
       else
          if (iter .eq. 2) then
 c             Replace the already used smallest breakpoint with the
 c             breakpoint numbered nbreak > nlast, before heapsort call.
             if (ibkmin .ne. nbreak) then
                t(ibkmin) = t(nbreak)
-	       iorder(ibkmin) = iorder(nbreak)
+               iorder(ibkmin) = iorder(nbreak)
             endif 
 c        Update heap structure of breakpoints
 c           (if iter=2, initialize heap).
@@ -1538,14 +1583,14 @@ c           (if iter=2, initialize heap).
          tj = t(nleft)
          ibp = iorder(nleft)  
       endif 
-	 
+         
       dt = tj - tj0
  
       if (dt .ne. zero .and. iprint .ge. 100) then
-         write (6,4011) nint,f1,f2
+         write (6,4011) nseg,f1,f2
          write (6,5010) dt
          write (6,6010) dtm
-      endif	     
+      endif          
  
 c     If a minimizer is within this interval, locate the GCP and return. 
  
@@ -1560,25 +1605,25 @@ c       reset the corresponding component of d to zero.
       dibp = d(ibp)
       d(ibp) = zero
       if (dibp .gt. zero) then
-	 zibp = u(ibp) - x(ibp)
-	 xcp(ibp) = u(ibp)
+         zibp = u(ibp) - x(ibp)
+         xcp(ibp) = u(ibp)
          iwhere(ibp) = 2
       else
-	 zibp = l(ibp) - x(ibp)
-	 xcp(ibp) = l(ibp)
+         zibp = l(ibp) - x(ibp)
+         xcp(ibp) = l(ibp)
          iwhere(ibp) = 1
       endif
       if (iprint .ge. 100) write (6,*) 'Variable  ',ibp,'  is fixed.'
       if (nleft .eq. 0 .and. nbreak .eq. n) then
 c                                             all n variables are fixed,
 c                                                return with xcp as GCP.
-	 dtm = dt
-	 goto 999
+         dtm = dt
+         goto 999
       endif
  
 c     Update the derivative information.
  
-      nint = nint + 1
+      nseg = nseg + 1
       dibp2 = dibp**2
  
 c     Update f1 and f2.
@@ -1589,30 +1634,30 @@ c        temporarily set f1 and f2 for col=0.
 
       if (col .gt. 0) then
 c                          update c = c + dt*p.
-	 call daxpy(col2,dt,p,1,c,1)
+         call daxpy(col2,dt,p,1,c,1)
  
 c           choose wbp,
 c           the row of W corresponding to the breakpoint encountered.
-      	 pointr = head
+         pointr = head
          do 70 j = 1,col
-	    wbp(j) = wy(ibp,pointr)
-	    wbp(col + j) = theta*ws(ibp,pointr)
+            wbp(j) = wy(ibp,pointr)
+            wbp(col + j) = theta*ws(ibp,pointr)
             pointr = mod(pointr,m) + 1
   70     continue 
  
 c           compute (wbp)Mc, (wbp)Mp, and (wbp)M(wbp)'.
          call bmv(m,sy,wt,col,wbp,v,info)
-	 if (info .ne. 0) return
-	 wmc = ddot(col2,c,1,v,1)
-	 wmp = ddot(col2,p,1,v,1) 
-	 wmw = ddot(col2,wbp,1,v,1)
+         if (info .ne. 0) return
+         wmc = ddot(col2,c,1,v,1)
+         wmp = ddot(col2,p,1,v,1) 
+         wmw = ddot(col2,wbp,1,v,1)
  
 c           update p = p - dibp*wbp. 
-       	 call daxpy(col2,-dibp,wbp,1,p,1)
+         call daxpy(col2,-dibp,wbp,1,p,1)
  
 c           complete updating f1 and f2 while col > 0.
-      	 f1 = f1 + dibp*wmc
-      	 f2 = f2 + 2.0d0*dibp*wmp - dibp2*wmw
+         f1 = f1 + dibp*wmc
+         f2 = f2 + 2.0d0*dibp*wmp - dibp2*wmw
       endif
 
       f2 = max(epsmch*f2_org,f2)
@@ -1621,9 +1666,9 @@ c           complete updating f1 and f2 while col > 0.
          goto 777
 c                 to repeat the loop for unsearched intervals. 
       else if(bnded) then
-      	 f1 = zero
-      	 f2 = zero
-	 dtm = zero
+         f1 = zero
+         f2 = zero
+         dtm = zero
       else
          dtm = -f1/f2
       endif 
@@ -1634,7 +1679,7 @@ c------------------- the end of the loop -------------------------------
       if (iprint .ge. 99) then
          write (6,*)
          write (6,*) 'GCP found in this segment'
-         write (6,4010) nint,f1,f2
+         write (6,4010) nseg,f1,f2
          write (6,6010) dtm
       endif 
       if (dtm .le. zero) dtm = zero
@@ -1707,27 +1752,27 @@ c     ************
 
       if (.not. cnstnd .and. col .gt. 0) then 
          do 26 i = 1, n
-	    r(i) = -g(i)
+            r(i) = -g(i)
   26     continue
       else
          do 30 i = 1, nfree
             k = index(i)
-	    r(i) = -theta*(z(k) - x(k)) - g(k)
+            r(i) = -theta*(z(k) - x(k)) - g(k)
   30     continue
-     	 call bmv(m,sy,wt,col,wa(2*m+1),wa(1),info)
+         call bmv(m,sy,wt,col,wa(2*m+1),wa(1),info)
          if (info .ne. 0) then
             info = -8
-	    return
+            return
          endif
-     	 pointr = head 
-     	 do 34 j = 1, col
-       	    a1 = wa(j)
+         pointr = head 
+         do 34 j = 1, col
+            a1 = wa(j)
             a2 = theta*wa(col + j)
-	    do 32 i = 1, nfree
-	       k = index(i)
-	       r(i) = r(i) + wy(k,pointr)*a1 + ws(k,pointr)*a2
+            do 32 i = 1, nfree
+               k = index(i)
+               r(i) = r(i) + wy(k,pointr)*a1 + ws(k,pointr)*a2
   32        continue
-	    pointr = mod(pointr,m) + 1
+            pointr = mod(pointr,m) + 1
   34     continue
       endif
 
@@ -1778,15 +1823,15 @@ c     Check the validity of the arrays nbd(i), u(i), and l(i).
          if (nbd(i) .lt. 0 .or. nbd(i) .gt. 3) then
 c                                                   return
             task = 'ERROR: INVALID NBD'
-	    info = -6
-	    k = i
+            info = -6
+            k = i
          endif
-	 if (nbd(i) .eq. 2) then
-	    if (l(i) .gt. u(i)) then
+         if (nbd(i) .eq. 2) then
+            if (l(i) .gt. u(i)) then
 c                                    return
                task = 'ERROR: NO FEASIBLE SOLUTION'
-	       info = -7
-	       k = i
+               info = -7
+               k = i
             endif
          endif
   10  continue
@@ -1947,90 +1992,90 @@ c              R_z is the upper triangular part of S'ZZ'Y.
 c                                 shift old part of WN1.
             do 10 jy = 1, m - 1
                js = m + jy
-	       call dcopy(m-jy,wn1(jy+1,jy+1),1,wn1(jy,jy),1)
- 	       call dcopy(m-jy,wn1(js+1,js+1),1,wn1(js,js),1)
- 	       call dcopy(m-1,wn1(m+2,jy+1),1,wn1(m+1,jy),1)
+               call dcopy(m-jy,wn1(jy+1,jy+1),1,wn1(jy,jy),1)
+               call dcopy(m-jy,wn1(js+1,js+1),1,wn1(js,js),1)
+               call dcopy(m-1,wn1(m+2,jy+1),1,wn1(m+1,jy),1)
   10        continue
          endif
  
 c          put new rows in blocks (1,1), (2,1) and (2,2).
          pbegin = 1
-	 pend = nsub
+         pend = nsub
          dbegin = nsub + 1
-	 dend = n
+         dend = n
          iy = col
          is = m + col
          ipntr = head + col - 1
-         if (ipntr .gt. m) ipntr = ipntr - m	
+         if (ipntr .gt. m) ipntr = ipntr - m    
          jpntr = head
          do 20 jy = 1, col
             js = m + jy
             temp1 = zero
-	    temp2 = zero
-	    temp3 = zero
+            temp2 = zero
+            temp3 = zero
 c             compute element jy of row 'col' of Y'ZZ'Y
-	    do 15 k = pbegin, pend
-	       k1 = ind(k)
-	       temp1 = temp1 + wy(k1,ipntr)*wy(k1,jpntr)
+            do 15 k = pbegin, pend
+               k1 = ind(k)
+               temp1 = temp1 + wy(k1,ipntr)*wy(k1,jpntr)
   15        continue
 c             compute elements jy of row 'col' of L_a and S'AA'S
-	    do 16 k = dbegin, dend
-	       k1 = ind(k)
-	       temp2 = temp2 + ws(k1,ipntr)*ws(k1,jpntr)
-	       temp3 = temp3 + ws(k1,ipntr)*wy(k1,jpntr)
+            do 16 k = dbegin, dend
+               k1 = ind(k)
+               temp2 = temp2 + ws(k1,ipntr)*ws(k1,jpntr)
+               temp3 = temp3 + ws(k1,ipntr)*wy(k1,jpntr)
   16        continue
-	    wn1(iy,jy) = temp1
-	    wn1(is,js) = temp2
-	    wn1(is,jy) = temp3
+            wn1(iy,jy) = temp1
+            wn1(is,js) = temp2
+            wn1(is,jy) = temp3
             jpntr = mod(jpntr,m) + 1
   20     continue
  
 c          put new column in block (2,1).
-         jy = col	
+         jy = col       
          jpntr = head + col - 1
          if (jpntr .gt. m) jpntr = jpntr - m
          ipntr = head
          do 30 i = 1, col
             is = m + i
-	    temp3 = zero
+            temp3 = zero
 c             compute element i of column 'col' of R_z
-	    do 25 k = pbegin, pend
-	       k1 = ind(k)
-	       temp3 = temp3 + ws(k1,ipntr)*wy(k1,jpntr)
+            do 25 k = pbegin, pend
+               k1 = ind(k)
+               temp3 = temp3 + ws(k1,ipntr)*wy(k1,jpntr)
   25        continue 
-	    ipntr = mod(ipntr,m) + 1
+            ipntr = mod(ipntr,m) + 1
             wn1(is,jy) = temp3
   30     continue
-	 upcl = col - 1
+         upcl = col - 1
       else
          upcl = col
       endif
  
 c       modify the old parts in blocks (1,1) and (2,2) due to changes
 c       in the set of free variables.
-      ipntr = head	
+      ipntr = head      
       do 45 iy = 1, upcl
          is = m + iy
-	 jpntr = head
-      	 do 40 jy = 1, iy
-	    js = m + jy
-	    temp1 = zero
-	    temp2 = zero
-	    temp3 = zero
-	    temp4 = zero
-	    do 35 k = 1, nenter
-	       k1 = indx2(k)
-	       temp1 = temp1 + wy(k1,ipntr)*wy(k1,jpntr)
-	       temp2 = temp2 + ws(k1,ipntr)*ws(k1,jpntr)
+         jpntr = head
+         do 40 jy = 1, iy
+            js = m + jy
+            temp1 = zero
+            temp2 = zero
+            temp3 = zero
+            temp4 = zero
+            do 35 k = 1, nenter
+               k1 = indx2(k)
+               temp1 = temp1 + wy(k1,ipntr)*wy(k1,jpntr)
+               temp2 = temp2 + ws(k1,ipntr)*ws(k1,jpntr)
   35        continue
-	    do 36 k = ileave, n
-	       k1 = indx2(k)
-	       temp3 = temp3 + wy(k1,ipntr)*wy(k1,jpntr)
-	       temp4 = temp4 + ws(k1,ipntr)*ws(k1,jpntr)
+            do 36 k = ileave, n
+               k1 = indx2(k)
+               temp3 = temp3 + wy(k1,ipntr)*wy(k1,jpntr)
+               temp4 = temp4 + ws(k1,ipntr)*ws(k1,jpntr)
   36        continue
-	    wn1(iy,jy) = wn1(iy,jy) + temp1 - temp3 
-	    wn1(is,js) = wn1(is,js) - temp2 + temp4 
-	    jpntr = mod(jpntr,m) + 1
+            wn1(iy,jy) = wn1(iy,jy) + temp1 - temp3 
+            wn1(is,js) = wn1(is,js) - temp2 + temp4 
+            jpntr = mod(jpntr,m) + 1
   40     continue
          ipntr = mod(ipntr,m) + 1
   45  continue
@@ -2041,21 +2086,21 @@ c       modify the old parts in block (2,1).
          jpntr = head 
          do 55 jy = 1, upcl
             temp1 = zero
-	    temp3 = zero
-	    do 50 k = 1, nenter
-	       k1 = indx2(k)
-	       temp1 = temp1 + ws(k1,ipntr)*wy(k1,jpntr)
-  50	    continue
-	    do 51 k = ileave, n
-	       k1 = indx2(k)
-	       temp3 = temp3 + ws(k1,ipntr)*wy(k1,jpntr)
-  51	    continue
+            temp3 = zero
+            do 50 k = 1, nenter
+               k1 = indx2(k)
+               temp1 = temp1 + ws(k1,ipntr)*wy(k1,jpntr)
+  50        continue
+            do 51 k = ileave, n
+               k1 = indx2(k)
+               temp3 = temp3 + ws(k1,ipntr)*wy(k1,jpntr)
+  51        continue
          if (is .le. jy + m) then
-	       wn1(is,jy) = wn1(is,jy) + temp1 - temp3  
-	    else
-	       wn1(is,jy) = wn1(is,jy) - temp1 + temp3  
-	    endif
-	    jpntr = mod(jpntr,m) + 1
+               wn1(is,jy) = wn1(is,jy) + temp1 - temp3  
+            else
+               wn1(is,jy) = wn1(is,jy) - temp1 + temp3  
+            endif
+            jpntr = mod(jpntr,m) + 1
   55     continue
          ipntr = mod(ipntr,m) + 1
   60  continue
@@ -2065,21 +2110,21 @@ c                                     [-L_a +R_z        S'AA'S*theta]
 
       m2 = 2*m
       do 70 iy = 1, col
-	 is = col + iy
-	 is1 = m + iy
-      	 do 65 jy = 1, iy
-	    js = col + jy
+         is = col + iy
+         is1 = m + iy
+         do 65 jy = 1, iy
+            js = col + jy
             js1 = m + jy
- 	    wn(jy,iy) = wn1(iy,jy)/theta
- 	    wn(js,is) = wn1(is1,js1)*theta
+            wn(jy,iy) = wn1(iy,jy)/theta
+            wn(js,is) = wn1(is1,js1)*theta
   65     continue
-      	 do 66 jy = 1, iy - 1
- 	    wn(jy,is) = -wn1(is1,jy)
+         do 66 jy = 1, iy - 1
+            wn(jy,is) = -wn1(is1,jy)
   66     continue
-      	 do 67 jy = iy, col
- 	    wn(jy,is) = wn1(is1,jy)
+         do 67 jy = iy, col
+            wn(jy,is) = wn1(is1,jy)
   67     continue
- 	 wn(iy,iy) = wn(iy,iy) + sy(iy,iy)
+         wn(iy,iy) = wn(iy,iy) + sy(iy,iy)
   70  continue
 
 c     Form the upper triangle of WN= [  LL'            L^-1(-L_a'+R_z')] 
@@ -2089,8 +2134,8 @@ c        first Cholesky factor (1,1) block of wn to get LL'
 c                          with L' stored in the upper triangle of wn.
       call dpofa(wn,m2,col,info)
       if (info .ne. 0) then
-	 info = -1
-	 return
+         info = -1
+         return
       endif
 c        then form L^-1(-L_a'+R_z') in the (1,2) block.
       col2 = 2*col
@@ -2104,7 +2149,7 @@ c        upper triangle of (2,2) block of wn.
 
       do 72 is = col+1, col2
          do 74 js = is, col2
-	       wn(is,js) = wn(is,js) + ddot(col,wn(1,is),1,wn(1,js),1)
+               wn(is,js) = wn(is,js) + ddot(col,wn(1,is),1,wn(1,js),1)
   74        continue
   72     continue
 
@@ -2112,8 +2157,8 @@ c     Cholesky factorization of (2,2) block of wn.
 
       call dpofa(wn(col+1,col+1),m2,col,info)
       if (info .ne. 0) then
-	 info = -2
-	 return
+         info = -2
+         return
       endif
 
       return
@@ -2163,10 +2208,10 @@ c     Form the upper half of  T = theta*SS + L*D^(-1)*L',
 c        store T in the upper triangle of the array wt.
  
       do 52 j = 1, col
-      	 wt(1,j) = theta*ss(1,j)
+         wt(1,j) = theta*ss(1,j)
   52  continue
       do 55 i = 2, col
-	 do 54 j = i, col
+         do 54 j = i, col
             k1 = min(i,j) - 1
             ddum  = zero
             do 53 k = 1, k1
@@ -2241,21 +2286,25 @@ c     ************
       ileave = n + 1
       if (iter .gt. 0 .and. cnstnd) then
 c                           count the entering and leaving variables.
-	 do 20 i = 1, nfree
-	    k = index(i)
-	    if (iwhere(k) .gt. 0) then
-	       ileave = ileave - 1
-	       indx2(ileave) = k
-	       if (iprint .ge. 100) write (6,*)
+         do 20 i = 1, nfree
+            k = index(i)
+
+c            write(6,*) ' k  = index(i) ', k
+c            write(6,*) ' index = ', i
+
+            if (iwhere(k) .gt. 0) then
+               ileave = ileave - 1
+               indx2(ileave) = k
+               if (iprint .ge. 100) write (6,*)
      +             'Variable ',k,' leaves the set of free variables'
             endif
   20     continue
-	 do 22 i = 1 + nfree, n
-	    k = index(i)
-	    if (iwhere(k) .le. 0) then
-	       nenter = nenter + 1
-	       indx2(nenter) = k
-	       if (iprint .ge. 100) write (6,*)
+         do 22 i = 1 + nfree, n
+            k = index(i)
+            if (iwhere(k) .le. 0) then
+               nenter = nenter + 1
+               indx2(nenter) = k
+               if (iprint .ge. 100) write (6,*)
      +             'Variable ',k,' enters the set of free variables'
             endif
   22     continue
@@ -2269,9 +2318,9 @@ c     Find the index set of free and active variables at the GCP.
       nfree = 0 
       iact = n + 1
       do 24 i = 1, n
-	 if (iwhere(i) .le. 0) then
-	    nfree = nfree + 1
-	    index(nfree) = i
+         if (iwhere(i) .le. 0) then
+            nfree = nfree + 1
+            index(nfree) = i
          else
             iact = iact - 1
             index(iact) = i
@@ -2482,7 +2531,7 @@ c     Determine the maximum step length.
       if (iter .eq. 0 .and. .not. boxed) then
          stp = min(one/dnorm, stpmx)
       else
-	 stp = one
+         stp = one
       endif 
 
       call dcopy(n,x,1,t,1)
@@ -2494,10 +2543,11 @@ c     Determine the maximum step length.
  556  continue
       gd = ddot(n,g,1,d,1)
       if (ifun .eq. 0) then
-	 gdold=gd
+         gdold=gd
          if (gd .ge. zero) then
 c                               the directional derivative >=0.
 c                               Line search is impossible.
+            write(6,*)' ascent direction in projection gd = ', gd
             info = -4
             return
          endif
@@ -2507,15 +2557,15 @@ c                               Line search is impossible.
 
       xstep = stp*dnorm
       if (csave(1:4) .ne. 'CONV' .and. csave(1:4) .ne. 'WARN') then
-	 task = 'FG_LNSRCH'
-	 ifun = ifun + 1
+         task = 'FG_LNSRCH'
+         ifun = ifun + 1
          nfgv = nfgv + 1
          iback = ifun - 1 
          if (stp .eq. one) then
             call dcopy(n,z,1,x,1)
          else
             do 41 i = 1, n
-	       x(i) = stp*d(i) + t(i)
+               x(i) = stp*d(i) + t(i)
   41        continue
          endif
       else
@@ -2567,11 +2617,11 @@ c     ************
 c     Set pointers for matrices WS and WY.
  
       if (iupdat .le. m) then
-	 col = iupdat
-	 itail = mod(head+iupdat-2,m) + 1
+         col = iupdat
+         itail = mod(head+iupdat-2,m) + 1
       else
-	 itail = mod(itail,m) + 1
-	 head = mod(head,m) + 1
+         itail = mod(itail,m) + 1
+         head = mod(head,m) + 1
       endif
  
 c     Update matrices WS and WY.
@@ -2598,8 +2648,8 @@ c        add new information: the last row of SY
 c                                             and the last column of SS:
       pointr = head
       do 51 j = 1, col - 1
-	 sy(col,j) = ddot(n,d,1,wy(1,pointr),1)
-	 ss(j,col) = ddot(n,ws(1,pointr),1,d,1)
+         sy(col,j) = ddot(n,d,1,wy(1,pointr),1)
+         ss(j,col) = ddot(n,ws(1,pointr),1,d,1)
          pointr = mod(pointr,m) + 1
   51  continue
       if (stp .eq. one) then
@@ -2649,7 +2699,7 @@ c     ************
          if (iprint .ge. 1) then
             write (itfile,2001) epsmch
             write (itfile,*)'N = ',n,'    M = ',m
-	    write (itfile,9001)
+            write (itfile,9001)
             if (iprint .gt. 100) then
                write (6,1004) 'L =',(l(i),i = 1,n)
                write (6,1004) 'X0 =',(x(i),i = 1,n)
@@ -2662,7 +2712,7 @@ c     ************
  2001 format ('RUNNING THE L-BFGS-B CODE',/,/,
      + 'it    = iteration number',/,
      + 'nf    = number of function evaluations',/,
-     + 'nint  = number of segments explored during the Cauchy search',/,
+     + 'nseg  = number of segments explored during the Cauchy search',/,
      + 'nact  = number of active bounds at the generalized Cauchy point'
      + ,/,
      + 'sub   = manner in which the subspace minimization terminated:'
@@ -2677,7 +2727,7 @@ c     ************
  7001 format ('RUNNING THE L-BFGS-B CODE',/,/,
      + '           * * *',/,/,
      + 'Machine precision =',1p,d10.3)
- 9001 format (/,3x,'it',3x,'nf',2x,'nint',2x,'nact',2x,'sub',2x,'itls',
+ 9001 format (/,3x,'it',3x,'nf',2x,'nseg',2x,'nact',2x,'sub',2x,'itls',
      +        2x,'stepl',4x,'tstep',5x,'projg',8x,'f')
 
       return
@@ -2687,10 +2737,10 @@ c     ************
 c======================= The end of prn1lb =============================
 
       subroutine prn2lb(n, x, f, g, iprint, itfile, iter, nfgv, nact, 
-     +                  sbgnrm, nint, word, iword, iback, stp, xstep)
+     +                  sbgnrm, nseg, word, iword, iback, stp, xstep)
  
       character*3      word
-      integer          n, iprint, itfile, iter, nfgv, nact, nint,
+      integer          n, iprint, itfile, iter, nfgv, nact, nseg,
      +                 iword, iback
       double precision f, sbgnrm, stp, xstep, x(n), g(n)
 
@@ -2719,20 +2769,20 @@ c     ************
 c           'word' records the status of subspace solutions.
       if (iword .eq. 0) then
 c                            the subspace minimization converged.
-	 word = 'con'
+         word = 'con'
       else if (iword .eq. 1) then
 c                          the subspace minimization stopped at a bound.
          word = 'bnd'
       else if (iword .eq. 5) then
 c                             the truncated Newton step has been used.
-	 word = 'TNT'
+         word = 'TNT'
       else
          word = '---'
       endif
       if (iprint .ge. 99) then
          write (6,*) 'LINE SEARCH',iback,' times; norm of step = ',xstep
          write (6,2001) iter,f,sbgnrm
-         if (iprint .gt. 100) then	
+         if (iprint .gt. 100) then      
             write (6,1004) 'X =',(x(i), i = 1, n)
             write (6,1004) 'G =',(g(i), i = 1, n)
          endif
@@ -2741,7 +2791,7 @@ c                             the truncated Newton step has been used.
          if (imod .eq. 0) write (6,2001) iter,f,sbgnrm
       endif
       if (iprint .ge. 1) write (itfile,3001)
-     +          iter,nfgv,nint,nact,word,iback,stp,xstep,sbgnrm,f
+     +          iter,nfgv,nseg,nact,word,iback,stp,xstep,sbgnrm,f
 
  1004 format (/,a4, 1p, 6(1x,d11.4),/,(4x,1p,6(1x,d11.4)))
  2001 format
@@ -2756,13 +2806,13 @@ c======================= The end of prn2lb =============================
 
       subroutine prn3lb(n, x, f, task, iprint, info, itfile, 
      +                  iter, nfgv, nintol, nskip, nact, sbgnrm, 
-     +                  time, nint, word, iback, stp, xstep, k, 
+     +                  time, nseg, word, iback, stp, xstep, k, 
      +                  cachyt, sbtime, lnscht)
  
       character*60     task
       character*3      word
       integer          n, iprint, info, itfile, iter, nfgv, nintol,
-     +                 nskip, nact, nint, iback, k
+     +                 nskip, nact, nseg, iback, k
       double precision f, sbgnrm, time, stp, xstep, cachyt, sbtime,
      +                 lnscht, x(n)
 
@@ -2811,7 +2861,7 @@ c     ************
             if (info .eq. -5) write (6,9015)
             if (info .eq. -6) write (6,*)' Input nbd(',k,') is invalid.'
             if (info .eq. -7) 
-     +	       write (6,*)' l(',k,') > u(',k,').  No feasible solution.'
+     +      write (6,*)' l(',k,') > u(',k,').  No feasible solution.'
             if (info .eq. -8) write (6,9018)
             if (info .eq. -9) write (6,9019)
          endif
@@ -2820,7 +2870,7 @@ c     ************
          if (iprint .ge. 1) then
             if (info .eq. -4 .or. info .eq. -9) then
                write (itfile,3002)
-     +             iter,nfgv,nint,nact,word,iback,stp,xstep
+     +             iter,nfgv,nseg,nact,word,iback,stp,xstep
             endif
             write (itfile,3009) task
             if (info .ne. 0) then
@@ -2850,10 +2900,9 @@ c     ************
      + 'Projg = norm of the final projected gradient',/,
      + 'F     = final function value',/,/,
      + '           * * *')
- 3004 format (/,3x,'N',3x,'Tit',2x,'Tnf',2x,'Tnint',2x,
+ 3004 format (/,3x,'N',4x,'Tit',5x,'Tnf',2x,'Tnint',2x,
      +       'Skip',2x,'Nact',5x,'Projg',8x,'F')
- 3005 format (i5,2(1x,i4),(1x,i6),(2x,i4),(1x,i5),1p,2(2x,d10.3))
- 3006 format (i5,2(1x,i4),2(1x,i6),(1x,i4),(1x,i5),7x,'-',10x,'-')
+ 3005 format (i5,2(1x,i6),(1x,i6),(2x,i4),(1x,i5),1p,2(2x,d10.3))
  3007 format (/,' Cauchy                time',1p,e10.3,' seconds.',/ 
      +        ' Subspace minimization time',1p,e10.3,' seconds.',/
      +        ' Line search           time',1p,e10.3,' seconds.')
@@ -2919,15 +2968,15 @@ c     ************
 
       sbgnrm = zero
       do 15 i = 1, n
-	gi = g(i)
+        gi = g(i)
         if (nbd(i) .ne. 0) then
            if (gi .lt. zero) then
               if (nbd(i) .ge. 2) gi = max((x(i)-u(i)),gi)
-       	   else
+           else
               if (nbd(i) .le. 2) gi = min((x(i)-l(i)),gi)
            endif
         endif
-	sbgnrm = max(sbgnrm,abs(gi))
+        sbgnrm = max(sbgnrm,abs(gi))
   15  continue
 
       return
@@ -2936,39 +2985,60 @@ c     ************
 
 c======================= The end of projgr =============================
 
-      subroutine subsm(n, m, nsub, ind, l, u, nbd, x, d, ws, wy, theta, 
-     +                 col, head, iword, wv, wn, iprint, info)
- 
+      subroutine subsm ( n, m, nsub, ind, l, u, nbd, x, d, xp, ws, wy,
+     +                   theta, xx, gg,
+     +                   col, head, iword, wv, wn, iprint, info )
+      implicit none
       integer          n, m, nsub, col, head, iword, iprint, info, 
      +                 ind(nsub), nbd(n)
       double precision theta, 
-     +                 l(n), u(n), x(n), d(n), 
+     +                 l(n), u(n), x(n), d(n), xp(n), xx(n), gg(n),
      +                 ws(n, m), wy(n, m), 
      +                 wv(2*m), wn(2*m, 2*m)
 
-c     ************
+c     **********************************************************************
+c
+c     This routine contains the major changes in the updated version.
+c     The changes are described in the accompanying paper
+c
+c      Jose Luis Morales, Jorge Nocedal
+c      "Remark On Algorithm 788: L-BFGS-B: Fortran Subroutines for Large-Scale
+c       Bound Constrained Optimization". Decemmber 27, 2010.
+c
+c             J.L. Morales  Departamento de Matematicas, 
+c                           Instituto Tecnologico Autonomo de Mexico
+c                           Mexico D.F.
+c
+c             J, Nocedal    Department of Electrical Engineering and
+c                           Computer Science.
+c                           Northwestern University. Evanston, IL. USA
+c
+c                           January 17, 2011
+c
+c      **********************************************************************
+c                           
 c
 c     Subroutine subsm
 c
 c     Given xcp, l, u, r, an index set that specifies
-c	the active set at xcp, and an l-BFGS matrix B 
-c	(in terms of WY, WS, SY, WT, head, col, and theta), 
-c	this subroutine computes an approximate solution
-c	of the subspace problem
+c       the active set at xcp, and an l-BFGS matrix B 
+c       (in terms of WY, WS, SY, WT, head, col, and theta), 
+c       this subroutine computes an approximate solution
+c       of the subspace problem
 c
-c     	(P)   min Q(x) = r'(x-xcp) + 1/2 (x-xcp)' B (x-xcp)
+c       (P)   min Q(x) = r'(x-xcp) + 1/2 (x-xcp)' B (x-xcp)
 c
 c             subject to l<=x<=u
-c	  	        x_i=xcp_i for all i in A(xcp)
-c	              
-c	along the subspace unconstrained Newton direction 
-c	
-c	   d = -(Z'BZ)^(-1) r.
+c                       x_i=xcp_i for all i in A(xcp)
+c                     
+c       along the subspace unconstrained Newton direction 
+c       
+c          d = -(Z'BZ)^(-1) r.
 c
 c       The formula for the Newton direction, given the L-BFGS matrix
 c       and the Sherman-Morrison formula, is
 c
-c	   d = (1/theta)r + (1/theta*2) Z'WK^(-1)W'Z r.
+c          d = (1/theta)r + (1/theta*2) Z'WK^(-1)W'Z r.
 c 
 c       where
 c                 K = [-D -Y'ZZ'Y/theta     L_a'-R_z'  ]
@@ -3020,6 +3090,17 @@ c
 c     d is a double precision array of dimension n.
 c       On entry d is the reduced gradient of Q at xcp.
 c       On exit d is the Newton direction of Q. 
+c
+c    xp is a double precision array of dimension n.
+c       used to safeguard the projected Newton direction 
+c
+c    xx is a double precision array of dimension n
+c       On entry it holds the current iterate
+c       On output it is unchanged
+
+c    gg is a double precision array of dimension n
+c       On entry it holds the gradient at the current iterate
+c       On output it is unchanged
 c
 c     ws and wy are double precision arrays;
 c     theta is a double precision variable;
@@ -3095,9 +3176,11 @@ c
 c     ************
 
       integer          pointr,m2,col2,ibd,jy,js,i,j,k
-      double precision alpha,dk,temp1,temp2
+      double precision alpha, xk, dk, temp1, temp2 
       double precision one,zero
       parameter        (one=1.0d0,zero=0.0d0)
+c
+      double precision dd_p
 
       if (nsub .le. 0) return
       if (iprint .ge. 99) write (6,1001)
@@ -3106,16 +3189,16 @@ c     Compute wv = W'Zd.
 
       pointr = head 
       do 20 i = 1, col
-     	 temp1 = zero
-	 temp2 = zero
-	 do 10 j = 1, nsub
-	    k = ind(j)
-	    temp1 = temp1 + wy(k,pointr)*d(j)
-	    temp2 = temp2 + ws(k,pointr)*d(j)
+         temp1 = zero
+         temp2 = zero
+         do 10 j = 1, nsub
+            k = ind(j)
+            temp1 = temp1 + wy(k,pointr)*d(j)
+            temp2 = temp2 + ws(k,pointr)*d(j)
   10     continue
-	 wv(i) = temp1
-	 wv(col + i) = theta*temp2
-	 pointr = mod(pointr,m) + 1
+         wv(i) = temp1
+         wv(col + i) = theta*temp2
+         pointr = mod(pointr,m) + 1
   20  continue
  
 c     Compute wv:=K^(-1)wv.
@@ -3125,7 +3208,7 @@ c     Compute wv:=K^(-1)wv.
       call dtrsl(wn,m2,col2,wv,11,info)
       if (info .ne. 0) return
       do 25 i = 1, col
-	 wv(i) = -wv(i)
+         wv(i) = -wv(i)
   25     continue
       call dtrsl(wn,m2,col2,wv,01,info)
       if (info .ne. 0) return
@@ -3135,88 +3218,127 @@ c     Compute d = (1/theta)d + (1/theta**2)Z'W wv.
       pointr = head
       do 40 jy = 1, col
          js = col + jy
-	 do 30 i = 1, nsub
-	    k = ind(i)
-	    d(i) = d(i) + wy(k,pointr)*wv(jy)/theta     
+         do 30 i = 1, nsub
+            k = ind(i)
+            d(i) = d(i) + wy(k,pointr)*wv(jy)/theta     
      +                  + ws(k,pointr)*wv(js)
   30     continue
-	 pointr = mod(pointr,m) + 1
+         pointr = mod(pointr,m) + 1
   40  continue
-      do 50 i = 1, nsub
-	 d(i) = d(i)/theta
-  50  continue
- 
-c     Backtrack to the feasible region.
- 
-      alpha = one
-      temp1 = alpha	
-      do 60 i = 1, nsub
-	 k = ind(i)
+
+      call dscal( nsub, one/theta, d, 1 )
+c 
+c-----------------------------------------------------------------
+c     Let us try the projection, d is the Newton direction
+
+      iword = 0
+
+      call dcopy ( n, x, 1, xp, 1 )
+c
+      do 50 i=1, nsub
+         k  = ind(i)
          dk = d(i)
-	 if (nbd(k) .ne. 0) then
-   	    if (dk .lt. zero .and. nbd(k) .le. 2) then
-	       temp2 = l(k) - x(k)
-	       if (temp2 .ge. zero) then
-		  temp1 = zero
-	       else if (dk*alpha .lt. temp2) then
-		  temp1 = temp2/dk
- 	       endif
-   	    else if (dk .gt. zero .and. nbd(k) .ge. 2) then
-	       temp2 = u(k) - x(k)
-	       if (temp2 .le. zero) then
-		  temp1 = zero
-	       else if (dk*alpha .gt. temp2) then
-		  temp1 = temp2/dk
- 	       endif
+         xk = x(k)
+         if ( nbd(k) .ne. 0 ) then
+c
+            if ( nbd(k).eq.1 ) then          ! lower bounds only
+               x(k) = max( l(k), xk + dk )
+               if ( x(k).eq.l(k) ) iword = 1
+            else 
+c     
+               if ( nbd(k).eq.2 ) then       ! upper and lower bounds
+                  xk   = max( l(k), xk + dk ) 
+                  x(k) = min( u(k), xk )
+                  if ( x(k).eq.l(k) .or. x(k).eq.u(k) ) iword = 1
+               else
+c
+                  if ( nbd(k).eq.3 ) then    ! upper bounds only
+                     x(k) = min( u(k), xk + dk )
+                     if ( x(k).eq.u(k) ) iword = 1
+                  end if 
+               end if
+            end if
+c            
+         else                                ! free variables
+            x(k) = xk + dk
+         end if 
+ 50   continue
+c
+      if ( iword.eq.0 ) then
+         go to 911
+      end if
+c
+c     check sign of the directional derivative
+c
+      dd_p = zero
+      do 55 i=1, n
+         dd_p  = dd_p + (x(i) - xx(i))*gg(i)
+ 55   continue
+      if ( dd_p .gt.zero ) then
+         call dcopy( n, xp, 1, x, 1 )
+         write(6,*) ' Positive dir derivative in projection '
+         write(6,*) ' Using the backtracking step '
+      else
+         go to 911
+      endif
+c
+c-----------------------------------------------------------------
+c
+      alpha = one
+      temp1 = alpha
+      ibd   = 0 
+      do 60 i = 1, nsub
+         k = ind(i)
+         dk = d(i)
+         if (nbd(k) .ne. 0) then
+            if (dk .lt. zero .and. nbd(k) .le. 2) then
+               temp2 = l(k) - x(k)
+               if (temp2 .ge. zero) then
+                  temp1 = zero
+               else if (dk*alpha .lt. temp2) then
+                  temp1 = temp2/dk
+               endif
+            else if (dk .gt. zero .and. nbd(k) .ge. 2) then
+               temp2 = u(k) - x(k)
+               if (temp2 .le. zero) then
+                  temp1 = zero
+               else if (dk*alpha .gt. temp2) then
+                  temp1 = temp2/dk
+               endif
             endif
             if (temp1 .lt. alpha) then
-	       alpha = temp1
-	       ibd = i
+               alpha = temp1
+               ibd = i
             endif
          endif
-  60  continue
- 
+ 60   continue
+      
       if (alpha .lt. one) then
-      	 dk = d(ibd)
-      	 k = ind(ibd)
-      	 if (dk .gt. zero) then
+         dk = d(ibd)
+         k = ind(ibd)
+         if (dk .gt. zero) then
             x(k) = u(k)
             d(ibd) = zero
-     	 else if (dk .lt. zero) then
+         else if (dk .lt. zero) then
             x(k) = l(k)
-	    d(ibd) = zero
-     	 endif
+            d(ibd) = zero
+         endif
       endif
       do 70 i = 1, nsub
-	 k = ind(i)
-	 x(k) = x(k) + alpha*d(i)
-  70  continue
- 
-      if (iprint .ge. 99) then
-	 if (alpha .lt. one) then
-            write (6,1002) alpha
-         else
-            write (6,*) 'SM solution inside the box'
-	 end if	
-	 if (iprint .gt.100) write (6,1003) (x(i),i=1,n)
-      endif
- 
-      if (alpha .lt. one) then
-         iword = 1
-      else
-         iword = 0
-      endif 
+         k    = ind(i)
+         x(k) = x(k) + alpha*d(i)
+ 70   continue
+cccccc
+ 911  continue
+
       if (iprint .ge. 99) write (6,1004)
 
  1001 format (/,'----------------SUBSM entered-----------------',/)
- 1002 format ( 'ALPHA = ',f7.5,' backtrack to the BOX')	
- 1003 format ('Subspace solution X =  ',/,(4x,1p,6(1x,d11.4)))
  1004 format (/,'----------------exit SUBSM --------------------',/)
 
       return
 
       end
-      
 c====================== The end of subsm ===============================
 
       subroutine dcsrch(f,g,stp,ftol,gtol,xtol,stpmin,stpmax,
@@ -3282,13 +3404,13 @@ c            On subsequent entries f is the value of the
 c            function at stp.
 c         On exit f is the value of the function at stp.
 c
-c	g is a double precision variable.
+c       g is a double precision variable.
 c         On initial entry g is the derivative of the function at 0.
 c            On subsequent entries g is the derivative of the 
 c            function at stp.
 c         On exit g is the derivative of the function at stp.
 c
-c	stp is a double precision variable. 
+c       stp is a double precision variable. 
 c         On entry stp is the current estimate of a satisfactory 
 c            step. On initial entry, a positive initial estimate 
 c            must be provided. 
@@ -3306,18 +3428,18 @@ c         On entry gtol specifies a nonnegative tolerance for the
 c            curvature condition. 
 c         On exit gtol is unchanged.
 c
-c	xtol is a double precision variable.
+c       xtol is a double precision variable.
 c         On entry xtol specifies a nonnegative relative tolerance
 c            for an acceptable step. The subroutine exits with a
 c            warning if the relative difference between sty and stx
 c            is less than xtol.
 c         On exit xtol is unchanged.
 c
-c	stpmin is a double precision variable.
+c       stpmin is a double precision variable.
 c         On entry stpmin is a nonnegative lower bound for the step.
 c         On exit stpmin is unchanged.
 c
-c	stpmax is a double precision variable.
+c       stpmax is a double precision variable.
 c         On entry stpmax is a nonnegative upper bound for the step.
 c         On exit stpmax is unchanged.
 c
@@ -3346,7 +3468,7 @@ c       dsave is a double precision work array of dimension 13.
 c
 c     Subprograms called
 c
-c	MINPACK-2 ... dcstep
+c       MINPACK-2 ... dcstep
 c
 c     MINPACK-1 Project. June 1983.
 c     Argonne National Laboratory. 
@@ -3561,6 +3683,7 @@ c     Save local variables.
       dsave(12) = width
       dsave(13) = width1
 
+      return
       end
       
 c====================== The end of dcsrch ==============================
@@ -3818,252 +3941,6 @@ c     Compute the new step.
 
       stp = stpf
 
-      end
-      
-c====================== The end of dcstep ==============================
-
-      subroutine timer(ttime)
-      double precision ttime
-      real t1
-c     *********
-c
-c     Subroutine timer
-c
-c     This subroutine is used to determine user time. In a typical 
-c     application, the user time for a code segment requires calls 
-c     to subroutine timer to determine the initial and final time.
-c
-c     The subroutine statement is
-c
-c       subroutine timer(ttime)
-c
-c     where
-c
-c       ttime is an output variable which specifies the user time.
-c
-c     Argonne National Laboratory and University of Minnesota.
-c     MINPACK-2 Project.
-c
-c     Modified October 1990 by Brett M. Averick.
-c
-c     **********
-
-      call cpu_time(t1)
-      ttime = t1
- 
       return
-
       end
       
-c====================== The end of timer ===============================
-
-      double precision function dpmeps()
-c     **********
-c
-c     Subroutine dpeps
-c
-c     This subroutine computes the machine precision parameter
-c     dpmeps as the smallest floating point number such that
-c     1 + dpmeps differs from 1.
-c
-c     This subroutine is based on the subroutine machar described in
-c
-c     W. J. Cody,
-c     MACHAR: A subroutine to dynamically determine machine parameters,
-c     ACM Transactions on Mathematical Software, 14, 1988, pages 303-311.
-c
-c     The subroutine statement is:
-c
-c       subroutine dpeps(dpmeps)
-c
-c     where
-c
-c       dpmeps is a double precision variable.
-c         On entry dpmeps need not be specified.
-c         On exit dpmeps is the machine precision.
-c
-c     MINPACK-2 Project. February 1991.
-c     Argonne National Laboratory and University of Minnesota.
-c     Brett M. Averick.
-c
-c     *******
-      integer i,ibeta,irnd,it,itemp,negep
-      double precision a,b,beta,betain,betah,temp,tempa,temp1,
-     +       zero,one,two
-      data zero,one,two /0.0d0,1.0d0,2.0d0/
- 
-c     determine ibeta, beta ala malcolm.
-
-      a = one
-      b = one
-   10 continue
-         a = a + a
-         temp = a + one
-         temp1 = temp - a
-      if (temp1 - one .eq. zero) go to 10
-   20 continue
-         b = b + b
-         temp = a + b
-         itemp = int(temp - a)
-      if (itemp .eq. 0) go to 20
-      ibeta = itemp
-      beta = dble(ibeta)
-
-c     determine it, irnd.
-
-      it = 0
-      b = one
-   30 continue
-         it = it + 1
-         b = b * beta
-         temp = b + one
-         temp1 = temp - b
-      if (temp1 - one .eq. zero) go to 30
-      irnd = 0
-      betah = beta/two
-      temp = a + betah
-      if (temp - a .ne. zero) irnd = 1
-      tempa = a + beta
-      temp = tempa + betah
-      if ((irnd .eq. 0) .and. (temp - tempa .ne. zero)) irnd = 2
-
-c     determine dpmeps.
-
-      negep = it + 3
-      betain = one/beta
-      a = one
-      do 40 i = 1, negep
-         a = a*betain
-   40 continue
-   50 continue
-        temp = one + a
-        if (temp - one .ne. zero) go to 60
-        a = a*beta
-        go to  50
-   60 continue
-      dpmeps = a
-      if ((ibeta .eq. 2) .or. (irnd .eq. 0)) go to 70
-      a = (a*(one + a))/two
-      temp = one + a
-      if (temp - one .ne. zero) dpmeps = a
-
-   70 return
-
-      end
-
-c====================== The end of dpmeps ==============================
-
-      subroutine dpofa(a,lda,n,info)
-      integer lda,n,info
-      double precision a(lda,1)
-c
-c     dpofa factors a double precision symmetric positive definite
-c     matrix.
-c
-c     dpofa is usually called by dpoco, but it can be called
-c     directly with a saving in time if  rcond  is not needed.
-c     (time for dpoco) = (1 + 18/n)*(time for dpofa) .
-c
-c     on entry
-c
-c        a       double precision(lda, n)
-c                the symmetric matrix to be factored.  only the
-c                diagonal and upper triangle are used.
-c
-c        lda     integer
-c                the leading dimension of the array  a .
-c
-c        n       integer
-c                the order of the matrix  a .
-c
-c     on return
-c
-c        a       an upper triangular matrix  r  so that  a = trans(r)*r
-c                where  trans(r)  is the transpose.
-c                the strict lower triangle is unaltered.
-c                if  info .ne. 0 , the factorization is not complete.
-c
-c        info    integer
-c                = 0  for normal return.
-c                = k  signals an error condition.  the leading minor
-c                     of order  k  is not positive definite.
-c
-c     This is just a wrapper that calls LAPACK, but with the LINPACK
-c     calling convention.
-
-      call dpotrf('U', n, a, lda, info)
-      end
-
-c====================== The end of dpofa ===============================
-
-      subroutine dtrsl(t, ldt, n, b, job, info)
-      integer ldt, n, job, info
-      double precision t(ldt,1), b(1)
-c
-c
-c     dtrsl solves systems of the form
-c
-c                   t * x = b
-c     or
-c                   trans(t) * x = b
-c
-c     where t is a triangular matrix of order n. here trans(t)
-c     denotes the transpose of the matrix t.
-c
-c     on entry
-c
-c         t         double precision(ldt,n)
-c                   t contains the matrix of the system. the zero
-c                   elements of the matrix are not referenced, and
-c                   the corresponding elements of the array can be
-c                   used to store other information.
-c
-c         ldt       integer
-c                   ldt is the leading dimension of the array t.
-c
-c         n         integer
-c                   n is the order of the system.
-c
-c         b         double precision(n).
-c                   b contains the right hand side of the system.
-c
-c         job       integer
-c                   job specifies what kind of system is to be solved.
-c                   if job is
-c
-c                        00   solve t*x=b, t lower triangular,
-c                        01   solve t*x=b, t upper triangular,
-c                        10   solve trans(t)*x=b, t lower triangular,
-c                        11   solve trans(t)*x=b, t upper triangular.
-c
-c     on return
-c
-c         b         b contains the solution, if info .eq. 0.
-c                   otherwise b is unaltered.
-c
-c         info      integer
-c                   info contains zero if the system is nonsingular.
-c                   otherwise info contains the index of
-c                   the first zero diagonal element of t.
-c
-c     This is just a wrapper that calls LAPACK, but with the LINPACK
-c     calling convention.
-
-      character*1 uplo, trans
-
-      if (job .eq. 00) then
-          uplo = 'L'
-          trans = 'N'
-      else if (job .eq. 01) then
-          uplo = 'U'
-          trans = 'N'
-      else if (job .eq. 10) then
-          uplo = 'L'
-          trans = 'T'
-      else if (job .eq. 11) then
-          uplo = 'U'
-          trans = 'T'
-      endif
-      call dtrtrs(uplo, trans, 'N', n, 1, t, ldt, b, n, info)
-      end
-c====================== The end of dtrsl ==============================

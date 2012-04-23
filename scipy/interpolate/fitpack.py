@@ -17,12 +17,6 @@ this distribution for specifics.
 
 NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
 
-Pearu Peterson
-
-Running test programs:
-    $ python fitpack.py 1 3    # run test programs 1, and 3
-    $ python fitpack.py        # run all available test programs
-
 TODO: Make interfaces to the following fitpack functions:
     For univariate splines: cocosp, concon, fourco, insert
     For bivariate splines: profil, regrid, parsur, surev
@@ -116,12 +110,19 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     ----------
     x : array_like
         A list of sample vector arrays representing the curve.
+    w : array_like
+        Strictly positive rank-1 array of weights the same length as x[0].
+        The weights are used in computing the weighted least-squares spline
+        fit. If the errors in the x values have standard-deviation given by the
+        vector d, then w should be 1/d. Default is ones(len(x[0])).
     u : array_like, optional
         An array of parameter values. If not given, these values are
-        calculated automatically as ``M = len(x[0])``:
-           v[0] = 0
-           v[i] = v[i-1] + distance(x[i],x[i-1])
-           u[i] = v[i] / v[M-1]
+        calculated automatically as ``M = len(x[0])``::
+
+            v[0] = 0
+            v[i] = v[i-1] + distance(x[i],x[i-1])
+            u[i] = v[i] / v[M-1]
+
     ub, ue : int, optional
         The end-points of the parameters interval.  Defaults to
         u[0] and u[-1].
@@ -158,8 +159,8 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         Always large enough is nest=m+k+1.
     per : int, optional
        If non-zero, data points are considered periodic with period
-       x[m-1] - x[0] and a smooth periodic spline approximation is returned.
-       Values of y[m-1] and w[m-1] are not used.
+       ``x[m-1] - x[0]`` and a smooth periodic spline approximation is
+       returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
 
@@ -1052,177 +1053,3 @@ def insert(x,tck,m=1,per=0):
         if ier:
             raise TypeError("An error occurred")
         return (tt, cc, k)
-
-if __name__ == "__main__":
-    import sys
-    runtest=range(10)
-    if len(sys.argv[1:])>0:
-        runtest=map(int,sys.argv[1:])
-    put=sys.stdout.write
-    def norm2(x):
-        return dot(transpose(x),x)
-    def f1(x,d=0):
-        if d is None: return "sin"
-        if x is None: return "sin(x)"
-        if d%4 == 0: return sin(x)
-        if d%4 == 1: return cos(x)
-        if d%4 == 2: return -sin(x)
-        if d%4 == 3: return -cos(x)
-    def f2(x,y=0,dx=0,dy=0):
-        if x is None: return "sin(x+y)"
-        d=dx+dy
-        if d%4 == 0: return sin(x+y)
-        if d%4 == 1: return cos(x+y)
-        if d%4 == 2: return -sin(x+y)
-        if d%4 == 3: return -cos(x+y)
-    def test1(f=f1,per=0,s=0,a=0,b=2*pi,N=20,at=0,xb=None,xe=None):
-        if xb is None: xb=a
-        if xe is None: xe=b
-        x=a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
-        x1=a+(b-a)*arange(1,N,dtype=float)/float(N-1) # middle points of the nodes
-        v,v1=f(x),f(x1)
-        nk=[]
-        for k in range(1,6):
-            tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
-            if at:t=tck[0][k:-k]
-            else: t=x1
-            nd=[]
-            for d in range(k+1):
-                nd.append(norm2(f(t,d)-splev(t,tck,d)))
-            nk.append(nd)
-        print "\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]"%(f(None),
-                                                        `round(xb,3)`,`round(xe,3)`,
-                                                          `round(a,3)`,`round(b,3)`)
-        if at: str="at knots"
-        else: str="at the middle of nodes"
-        print " per=%d s=%s Evaluation %s"%(per,`s`,str)
-        print " k :  |f-s|^2  |f'-s'| |f''-.. |f'''-. |f''''- |f'''''"
-        k=1
-        for l in nk:
-            put(' %d : '%k)
-            for r in l:
-                put(' %.1e'%r)
-            put('\n')
-            k=k+1
-    def test2(f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
-              ia=0,ib=2*pi,dx=0.2*pi):
-        if xb is None: xb=a
-        if xe is None: xe=b
-        x=a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
-        v=f(x)
-        nk=[]
-        for k in range(1,6):
-            tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
-            nk.append([splint(ia,ib,tck),spalde(dx,tck)])
-        print "\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]"%(f(None),
-                                                   `round(xb,3)`,`round(xe,3)`,
-                                                    `round(a,3)`,`round(b,3)`)
-        print " per=%d s=%s N=%d [a, b] = [%s, %s]  dx=%s"%(per,`s`,N,`round(ia,3)`,`round(ib,3)`,`round(dx,3)`)
-        print " k :  int(s,[a,b]) Int.Error   Rel. error of s^(d)(dx) d = 0, .., k"
-        k=1
-        for r in nk:
-            if r[0]<0: sr='-'
-            else: sr=' '
-            put(" %d   %s%.8f   %.1e "%(k,sr,abs(r[0]),
-                                         abs(r[0]-(f(ib,-1)-f(ia,-1)))))
-            d=0
-            for dr in r[1]:
-                put(" %.1e "%(abs(1-dr/f(dx,d))))
-                d=d+1
-            put("\n")
-            k=k+1
-    def test3(f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
-              ia=0,ib=2*pi,dx=0.2*pi):
-        if xb is None: xb=a
-        if xe is None: xe=b
-        x=a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
-        v=f(x)
-        nk=[]
-        print "  k  :     Roots of s(x) approx %s  x in [%s,%s]:"%\
-              (f(None),`round(a,3)`,`round(b,3)`)
-        for k in range(1,6):
-            tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
-            print '  %d  : %s'%(k,`sproot(tck).tolist()`)
-    def test4(f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
-              ia=0,ib=2*pi,dx=0.2*pi):
-        if xb is None: xb=a
-        if xe is None: xe=b
-        x=a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
-        x1=a+(b-a)*arange(1,N,dtype=float)/float(N-1) # middle points of the nodes
-        v,v1=f(x),f(x1)
-        nk=[]
-        print " u = %s   N = %d"%(`round(dx,3)`,N)
-        print "  k  :  [x(u), %s(x(u))]  Error of splprep  Error of splrep "%(f(0,None))
-        for k in range(1,6):
-            tckp,u=splprep([x,v],s=s,per=per,k=k,nest=-1)
-            tck=splrep(x,v,s=s,per=per,k=k)
-            uv=splev(dx,tckp)
-            print "  %d  :  %s    %.1e           %.1e"%\
-                  (k,`map(lambda x:round(x,3),uv)`,
-                   abs(uv[1]-f(uv[0])),
-                   abs(splev(uv[0],tck)-f(uv[0])))
-        print "Derivatives of parametric cubic spline at u (first function):"
-        k=3
-        tckp,u=splprep([x,v],s=s,per=per,k=k,nest=-1)
-        for d in range(1,k+1):
-            uv=splev(dx,tckp,d)
-            put(" %s "%(`uv[0]`))
-        print
-    def makepairs(x,y):
-        x,y=map(myasarray,[x,y])
-        xy=array(map(lambda x,y:map(None,len(y)*[x],y),x,len(x)*[y]))
-        sh=xy.shape
-        xy.shape=sh[0]*sh[1],sh[2]
-        return transpose(xy)
-    def test5(f=f2,kx=3,ky=3,xb=0,xe=2*pi,yb=0,ye=2*pi,Nx=20,Ny=20,s=0):
-        x=xb+(xe-xb)*arange(Nx+1,dtype=float)/float(Nx)
-        y=yb+(ye-yb)*arange(Ny+1,dtype=float)/float(Ny)
-        xy=makepairs(x,y)
-        tck=bisplrep(xy[0],xy[1],f(xy[0],xy[1]),s=s,kx=kx,ky=ky)
-        tt=[tck[0][kx:-kx],tck[1][ky:-ky]]
-        t2=makepairs(tt[0],tt[1])
-        v1=bisplev(tt[0],tt[1],tck)
-        v2=f2(t2[0],t2[1])
-        v2.shape=len(tt[0]),len(tt[1])
-        print norm2(ravel(v1-v2))
-    if 1 in runtest:
-        print """\
-******************************************
-\tTests of splrep and splev
-******************************************"""
-        test1(s=1e-6)
-        test1()
-        test1(at=1)
-        test1(per=1)
-        test1(per=1,at=1)
-        test1(b=1.5*pi)
-        test1(b=1.5*pi,xe=2*pi,per=1,s=1e-1)
-    if 2 in runtest:
-        print """\
-******************************************
-\tTests of splint and spalde
-******************************************"""
-        test2()
-        test2(per=1)
-        test2(ia=0.2*pi,ib=pi)
-        test2(ia=0.2*pi,ib=pi,N=50)
-    if 3 in runtest:
-        print """\
-******************************************
-\tTests of sproot
-******************************************"""
-        test3(a=0,b=15)
-        print "Note that if k is not 3, some roots are missed or incorrect"
-    if 4 in runtest:
-        print """\
-******************************************
-\tTests of splprep, splrep, and splev
-******************************************"""
-        test4()
-        test4(N=50)
-    if 5 in runtest:
-        print """\
-******************************************
-\tTests of bisplrep, bisplev
-******************************************"""
-        test5()

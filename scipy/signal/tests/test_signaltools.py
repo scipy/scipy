@@ -593,6 +593,21 @@ class TestFiltFilt(TestCase):
         err = np.abs(y2d - xlow).max()
         assert_(err < 1e-4)
 
+        # Use the previous result to check the use of the axis keyword.
+        # (Regression test for ticket #1620)
+        y2dt = filtfilt(b, a, x2d.T, padlen=n, axis=0)
+        assert_equal(y2d, y2dt.T)
+
+    def test_axis(self):
+        """Test the 'axis' keyword on a 3D array."""
+        x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
+        b, a = butter(3, 0.125)
+        y0 = filtfilt(b, a, x, padlen=0, axis=0)
+        y1 = filtfilt(b, a, np.swapaxes(x, 0, 1), padlen=0, axis=1)
+        assert_array_equal(y0, np.swapaxes(y1, 0, 1))
+        y2 = filtfilt(b, a, np.swapaxes(x, 0, 2), padlen=0, axis=2)
+        assert_array_equal(y0, np.swapaxes(y2, 0, 2))
+
 
 class TestDecimate:
 

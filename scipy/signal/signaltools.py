@@ -65,14 +65,15 @@ def correlate(in1, in2, mode='full'):
         first input.
     in2: array
         second input. Should have the same number of dimensions as in1.
-    mode: str {'valid', 'same', 'full'}
-        a string indicating the size of the output:
+    mode: str {'valid', 'same', 'full'}, optional
+        A string indicating the size of the output:
+
             - 'valid': the output consists only of those elements that do not
-            rely on the zero-padding.
+              rely on the zero-padding.
             - 'same': the output is the same size as ``in1`` centered
               with respect to the 'full' output.
             - 'full': the output is the full discrete linear cross-correlation
-              of the inputs. (Default)
+              of the inputs (default).
 
     Returns
     -------
@@ -82,7 +83,7 @@ def correlate(in1, in2, mode='full'):
 
     Notes
     -----
-    The correlation z of two arrays x and y of rank d is defined as
+    The correlation z of two arrays x and y of rank d is defined as::
 
       z[...,k,...] = sum[..., i_l, ...]
             x[..., i_l,...] * conj(y[..., i_l + k,...])
@@ -855,22 +856,22 @@ def unique_roots(p, tol=1e-3, rtype='min'):
 def invres(r, p, k, tol=1e-3, rtype='avg'):
     """Compute b(s) and a(s) from partial fraction expansion: r,p,k
 
-    If M = len(b) and N = len(a)
+    If ``M = len(b)`` and ``N = len(a)``::
 
-            b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
-    H(s) = ------ = ----------------------------------------------
-            a(s)     a[0] x**(N-1) + a[1] x**(N-2) + ... + a[N-1]
+                b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
+        H(s) = ------ = ----------------------------------------------
+                a(s)     a[0] x**(N-1) + a[1] x**(N-2) + ... + a[N-1]
 
-             r[0]       r[1]             r[-1]
-         = -------- + -------- + ... + --------- + k(s)
-           (s-p[0])   (s-p[1])         (s-p[-1])
+                 r[0]       r[1]             r[-1]
+             = -------- + -------- + ... + --------- + k(s)
+               (s-p[0])   (s-p[1])         (s-p[-1])
 
     If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like
+    fraction expansion has terms like::
 
-            r[i]      r[i+1]              r[i+n-1]
-          -------- + ----------- + ... + -----------
-          (s-p[i])  (s-p[i])**2          (s-p[i])**n
+          r[i]      r[i+1]              r[i+n-1]
+        -------- + ----------- + ... + -----------
+        (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
     See Also
     --------
@@ -981,22 +982,22 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 def residuez(b, a, tol=1e-3, rtype='avg'):
     """Compute partial-fraction expansion of b(z) / a(z).
 
-    If M = len(b) and N = len(a)
+    If ``M = len(b)`` and ``N = len(a)``::
 
-            b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
-    H(z) = ------ = ----------------------------------------------
-            a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
+                b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
+        H(z) = ------ = ----------------------------------------------
+                a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
 
                  r[0]                   r[-1]
          = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
            (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
     If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like
+    fraction expansion has terms like::
 
-               r[i]              r[i+1]                    r[i+n-1]
-          -------------- + ------------------ + ... + ------------------
-          (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
+             r[i]              r[i+1]                    r[i+n-1]
+        -------------- + ------------------ + ... + ------------------
+        (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
     See also
     --------
@@ -1051,22 +1052,22 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """Compute b(z) and a(z) from partial fraction expansion: r,p,k
 
-    If M = len(b) and N = len(a)
+    If ``M = len(b)`` and ``N = len(a)``::
 
-            b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
-    H(z) = ------ = ----------------------------------------------
-            a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
+                b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
+        H(z) = ------ = ----------------------------------------------
+                a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
 
-                 r[0]                   r[-1]
-         = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
-           (1-p[0]z**(-1))         (1-p[-1]z**(-1))
+                     r[0]                   r[-1]
+             = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
+               (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
     If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like
+    fraction expansion has terms like::
 
-               r[i]              r[i+1]                    r[i+n-1]
-          -------------- + ------------------ + ... + ------------------
-          (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
+             r[i]              r[i+1]                    r[i+n-1]
+        -------------- + ------------------ + ... + ------------------
+        (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
     See also
     --------
@@ -1530,12 +1531,12 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     x0 = axis_slice(ext, stop=1, axis=axis)
 
     # Forward filter.
-    (y, zf) = lfilter(b, a, ext, zi=zi * x0)
+    (y, zf) = lfilter(b, a, ext, axis=axis, zi=zi * x0)
 
     # Backward filter.
     # Create y0 so zi*y0 broadcasts appropriately.
     y0 = axis_slice(y, start=-1, axis=axis)
-    (y, zf) = lfilter(b, a, axis_reverse(y, axis=axis), zi=zi * y0)
+    (y, zf) = lfilter(b, a, axis_reverse(y, axis=axis), axis=axis, zi=zi * y0)
 
     # Reverse y.
     y = axis_reverse(y, axis=axis)

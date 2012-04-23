@@ -65,6 +65,7 @@ import sys
 import subprocess
 import re
 import shutil
+import warnings
 try:
     from hash import md5
 except ImportError:
@@ -513,7 +514,8 @@ def dmg():
     idirs = options.installers.installersdir
 
     # Check if doc exists. If not, say so and quit.
-    ref = os.path.join(options.doc.destdir_pdf, "reference.pdf")
+    docpath = options.doc.destdir_pdf
+    ref = os.path.join(docpath, "reference.pdf")
     if not os.path.exists(ref):
         warnings.warn("Docs need to be built first! \n%s not found." % docpath)
 

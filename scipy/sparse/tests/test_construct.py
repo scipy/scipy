@@ -69,7 +69,7 @@ class TestConstructUtils(TestCase):
         c = array([11, 12, 13, 14, 15])
 
         cases = []
-        cases.append( ([a[:1]],  0,  (1, 1), [[1]]) )
+        cases.append( (a[:1],  0,    (1, 1), [[1]]) )
         cases.append( ([a[:1]], [0], (1, 1), [[1]]) )
         cases.append( ([a[:1]], [0], (2, 1), [[1],[0]]) )
         cases.append( ([a[:1]], [0], (1, 2), [[1,0]]) )
@@ -133,6 +133,7 @@ class TestConstructUtils(TestCase):
         cases.append( ([], [-4,2,-1], None) )
         cases.append( ([1], [-4], (4, 4)) )
         cases.append( ([a[:0]], [-1], (1, 2)) )
+        cases.append( ([a], 0, None))
 
         for d, o, shape in cases:
             try:
@@ -165,10 +166,21 @@ class TestConstructUtils(TestCase):
 
             assert_array_almost_equal_nulp(mat.todense(), dense_mat)
 
+            if len(offsets) == 1:
+                mat = construct.diags(diagonals[0], offsets[0])
+                dense_mat = np.diag(diagonals[0], offsets[0])
+                assert_array_almost_equal_nulp(mat.todense(), dense_mat)
+
     def test_diags_dtype(self):
         x = construct.diags([2.2], [0], shape=(2, 2), dtype=int)
         assert_equal(x.dtype, int)
         assert_equal(x.todense(), [[2, 0], [0, 2]])
+
+    def test_diags_one_diagonal(self):
+        d = range(5)
+        for k in range(-5, 6):
+            assert_equal(construct.diags(d, k).toarray(),
+                         construct.diags([d], [k]).toarray())
 
     def test_identity(self):
         assert_equal(construct.identity(1).toarray(), [[1]])

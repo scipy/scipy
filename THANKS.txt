@@ -79,7 +79,7 @@ Collin RM Stocks for wrapping pivoted QR decomposition.
 Martin Teichmann for improving scipy.special.ellipk & agm accuracy,
     and for linalg.qr_multiply.
 Jeff Armstrong for discrete state-space and linear time-invariant functionality
-    in scipy.signal.
+    in scipy.signal, and sylvester/riccati/lyapunov solvers in scipy.linalg.
 Mark Wiebe for fixing type casting after changes in Numpy.
 Andrey Smirnov for improvements to FIR filter design.
 Anthony Scopatz for help with code review and merging.
@@ -97,6 +97,8 @@ Chris Jordan-Squire for bug fixes, documentation improvements and
 Christoph Gohlke for many bug fixes and help with Windows specific issues.
 Jacob Silterra for cwt-based peak finding in scipy.signal.
 Denis Laxalde for the unified interface to minimizers in scipy.optimize.
+David Fong for the sparse LSMR solver.
+Andreas Hilboll for wrapping FITPACK's spgrid.f
 
 
 Institutions

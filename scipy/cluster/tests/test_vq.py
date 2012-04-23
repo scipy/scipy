@@ -8,7 +8,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal, \
-        TestCase, run_module_suite
+        TestCase, run_module_suite, assert_raises
 
 from scipy.cluster.vq import kmeans, kmeans2, py_vq, py_vq2, vq, ClusterError
 try:
@@ -82,6 +82,12 @@ class TestVq(TestCase):
             assert_array_equal(b, tb)
         else:
             print "== not testing C imp of vq (rank 1) =="
+
+    def test__vq_sametype(self):
+        if TESTC:
+            a = np.array([1, 2])
+            b = a.astype(float)
+            assert_raises(ValueError, _vq.vq, a, b)
 
 class TestKMean(TestCase):
     def test_large_features(self):

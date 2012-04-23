@@ -583,7 +583,7 @@ static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                 tmp1 = PyNumber_Multiply(*yn, *ptr_a);
                 if (tmp1 == NULL) {
                     Py_DECREF(tmp3);
-                    return NULL;
+                    return;
                 }
                 tmp2 = PyNumber_Divide(tmp1, *a0);
                 Py_DECREF(tmp1);

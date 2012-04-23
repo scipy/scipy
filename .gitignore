@@ -11,6 +11,7 @@
 .\#*
 .deps
 .libs
+cythonize.dat
 /build
 /dist
 /scipy.egg-info

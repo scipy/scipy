@@ -989,13 +989,13 @@ class TestHMean(TestCase):
         assert_array_almost_equal(actual1, desired1, decimal=14)
 
 
-class TestPercentile(TestCase):
+class TestScoreatpercentile(TestCase):
     def setUp(self):
         self.a1 = [3,4,5,10,-3,-5,6]
         self.a2 = [3,-6,-2,8,7,4,2,1]
         self.a3 = [3.,4,5,10,-3,-5,-6,7.0]
 
-    def test_percentile(self):
+    def test_basic(self):
         x = arange(8) * 0.5
         assert_equal(stats.scoreatpercentile(x, 0), 0.)
         assert_equal(stats.scoreatpercentile(x, 100), 3.5)
@@ -1007,8 +1007,58 @@ class TestPercentile(TestCase):
                    [4, 4, 3],
                    [1, 1, 1],
                    [1, 1, 1]])
-        assert_array_equal(stats.scoreatpercentile(x,50),
-                           [1,1,1])
+        assert_array_equal(stats.scoreatpercentile(x, 50), [1,1,1])
+
+    def test_fraction(self):
+        scoreatperc = stats.scoreatpercentile
+
+        # Test defaults
+        assert_equal(scoreatperc(range(10), 50), 4.5)
+        assert_equal(scoreatperc(range(10), 50, (2,7)), 4.5)
+        assert_equal(scoreatperc(range(100), 50, limit=(1, 8)), 4.5)
+        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (10,100)), 55)
+        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (1,10)), 5.5)
+
+        # explicitly specify interpolation_method 'fraction' (the default)
+        assert_equal(scoreatperc(range(10), 50, interpolation_method='fraction'),
+                     4.5)
+        assert_equal(scoreatperc(range(10), 50, limit=(2, 7),
+                                 interpolation_method='fraction'),
+                     4.5)
+        assert_equal(scoreatperc(range(100), 50, limit=(1, 8),
+                                 interpolation_method='fraction'),
+                     4.5)
+        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (10, 100),
+                                 interpolation_method='fraction'),
+                     55)
+        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (1,10),
+                                 interpolation_method='fraction'),
+                     5.5)
+
+    def test_lower_higher(self):
+        scoreatperc = stats.scoreatpercentile
+
+        # interpolation_method 'lower'/'higher'
+        assert_equal(scoreatperc(range(10), 50,
+                                 interpolation_method='lower'), 4)
+        assert_equal(scoreatperc(range(10), 50,
+                                 interpolation_method='higher'), 5)
+        assert_equal(scoreatperc(range(10), 50, (2,7),
+                                 interpolation_method='lower'), 4)
+        assert_equal(scoreatperc(range(10), 50, limit=(2,7),
+                                 interpolation_method='higher'), 5)
+        assert_equal(scoreatperc(range(100), 50, (1,8),
+                                 interpolation_method='lower'), 4)
+        assert_equal(scoreatperc(range(100), 50, (1,8),
+                                 interpolation_method='higher'), 5)
+        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (10,100),
+                                 interpolation_method='lower'), 10)
+        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, limit=(10, 100),
+                                 interpolation_method='higher'), 100)
+        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (1,10),
+                                 interpolation_method='lower'), 1)
+        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, limit=(1,10),
+                                 interpolation_method='higher'), 10)
 
 
 class TestCMedian(TestCase):
@@ -1060,7 +1110,7 @@ class TestVariability(TestCase):
         assert_array_almost_equal(desired,y,decimal=12)
 
     def test_zmap_axis(self):
-        """Test use of 'axis' keyword in zmap."""        
+        """Test use of 'axis' keyword in zmap."""
         x = np.array([[0.0, 0.0, 1.0, 1.0],
                       [1.0, 1.0, 1.0, 2.0],
                       [2.0, 0.0, 2.0, 0.0]])
@@ -1080,7 +1130,7 @@ class TestVariability(TestCase):
                        [1.0, -1.0, 1.0, -1.0]]
 
         assert_array_almost_equal(z0, z0_expected)
-        assert_array_almost_equal(z1, z1_expected)        
+        assert_array_almost_equal(z1, z1_expected)
 
     def test_zmap_ddof(self):
         """Test use of 'ddof' keyword in zmap."""
@@ -1262,17 +1312,6 @@ class TestStudentTest(TestCase):
         assert_array_almost_equal(t, self.T1_2)
         assert_array_almost_equal(p, self.P1_2)
 
-def test_scoreatpercentile():
-    assert_equal(stats.scoreatpercentile(range(10), 50), 4.5)
-    assert_equal(stats.scoreatpercentile(range(10), 50, (2,7)), 4.5)
-    assert_equal(stats.scoreatpercentile(range(100), 50, (1,8)), 4.5)
-
-    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]),
-                                         50, (10,100)),
-                 55)
-    assert_equal(stats.scoreatpercentile(np.array([1, 10 ,100]),
-                                         50, (1,10)),
-                 5.5)
 
 def test_percentileofscore():
     pcos = stats.percentileofscore

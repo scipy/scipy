@@ -92,6 +92,20 @@ Matrix Functions
    sqrtm - Matrix square root
    funm - Evaluating an arbitrary matrix function
 
+
+Matrix Equation Solvers
+=======================
+
+.. autosummary::
+   :toctree: generated/
+
+   solve_sylvester - Solve the Sylvester matrix equation
+   solve_continuous_are - Solve the continuous-time algebraic Riccati equation
+   solve_discrete_are - Solve the discrete-time algebraic Riccati equation
+   solve_discrete_lyapunov - Solve the discrete-time Lyapunov equation
+   solve_lyapunov - Solve the (continous-time) Lyapunov equation
+
+
 Special Matrices
 ================
 
@@ -125,6 +139,7 @@ from decomp_schur import *
 from matfuncs import *
 from blas import *
 from special_matrices import *
+from _solvers import *
 
 __all__ = filter(lambda s: not s.startswith('_'), dir())
 

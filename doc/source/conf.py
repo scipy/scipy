@@ -193,19 +193,31 @@ latex_documents = [
 # Additional stuff for the LaTeX preamble.
 latex_preamble = r'''
 \usepackage{amsmath}
+
 \DeclareUnicodeCharacter{00A0}{\nobreakspace}
 
-% In the parameters section, place a newline after the Parameters
-% header
+% In the parameters etc. sections, align uniformly, and adjust label emphasis
 \usepackage{expdlist}
 \let\latexdescription=\description
-\def\description{\latexdescription{}{} \breaklabel}
+\let\endlatexdescription=\enddescription
+\renewenvironment{description}%
+{\begin{latexdescription}[\setleftmargin{60pt}\breaklabel\setlabelstyle{\bfseries\itshape}]}%
+{\end{latexdescription}}
 
 % Make Examples/etc section headers smaller and more compact
 \makeatletter
 \titleformat{\paragraph}{\normalsize\py@HeaderFamily}%
             {\py@TitleColor}{0em}{\py@TitleColor}{\py@NormalColor}
 \titlespacing*{\paragraph}{0pt}{1ex}{0pt}
+\makeatother
+
+% Save vertical space in parameter lists and elsewhere
+\makeatletter
+\renewenvironment{quote}%
+               {\list{}{\topsep=0pt%
+                        \parsep \z@ \@plus\p@}%
+                \item\relax}%
+               {\endlist}
 \makeatother
 
 % Fix footer/header
@@ -298,3 +310,72 @@ plot_rcparams = {
 if not use_matplotlib_plot_directive:
     import matplotlib
     matplotlib.rcParams.update(plot_rcparams)
+
+# -----------------------------------------------------------------------------
+# Source code links
+# -----------------------------------------------------------------------------
+
+import inspect
+from os.path import relpath, dirname
+
+for name in ['sphinx.ext.linkcode', 'linkcode', 'numpydoc.linkcode']:
+    try:
+        __import__(name)
+        extensions.append(name)
+        break
+    except ImportError:
+        pass
+else:
+    print "NOTE: linkcode extension not found -- no links to source generated"
+
+def linkcode_resolve(domain, info):
+    """
+    Determine the URL corresponding to Python object
+    """
+    if domain != 'py':
+        return None
+
+    modname = info['module']
+    fullname = info['fullname']
+
+    submod = sys.modules.get(modname)
+    if submod is None:
+        return None
+
+    obj = submod
+    for part in fullname.split('.'):
+        try:
+            obj = getattr(obj, part)
+        except:
+            return None
+
+    try:
+        fn = inspect.getsourcefile(obj)
+    except:
+        fn = None
+    if not fn:
+        try:
+            fn = inspect.getsourcefile(sys.modules[obj.__module__])
+        except:
+            fn = None
+    if not fn:
+        return None
+
+    try:
+        source, lineno = inspect.findsource(obj)
+    except:
+        lineno = None
+
+    if lineno:
+        linespec = "#L%d" % (lineno + 1)
+    else:
+        linespec = ""
+
+    fn = relpath(fn, start=dirname(scipy.__file__))
+
+    if 'dev' in scipy.__version__:
+        return "http://github.com/scipy/scipy/blob/master/scipy/%s%s" % (
+           fn, linespec)
+    else:
+        return "http://github.com/scipy/scipy/blob/v%s/scipy/%s%s" % (
+           scipy.__version__, fn, linespec)

@@ -558,7 +558,6 @@ class TestPinv(TestCase):
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
-
 class TestNorm(object):
 
     def test_types(self):

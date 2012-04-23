@@ -15,7 +15,10 @@ Library:
     Extension: _zeros
         Sources: zeros.c
     Extension: _lbfgsb
-        Sources: lbfgsb/lbfgsb.pyf, lbfgsb/routines.f
+        Sources: lbfgsb/lbfgsb.pyf,
+                 lbfgsb/lbfgsb.f,
+                 lbfgsb/linpack.f,
+                 lbfgsb/timer.f
     Extension: _cobyla
         Sources:
             cobyla/cobyla2.f,

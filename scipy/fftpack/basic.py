@@ -176,12 +176,16 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     Returns
     -------
     z : complex ndarray
-        with the elements:
+        with the elements::
+
             [y(0),y(1),..,y(n/2),y(1-n/2),...,y(-1)]        if n is even
             [y(0),y(1),..,y((n-1)/2),y(-(n-1)/2),...,y(-1)]  if n is odd
-        where
+
+        where::
+
             y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n), j = 0..n-1
-        Note that y(-j) = y(n-j).conjugate().
+
+        Note that ``y(-j) = y(n-j).conjugate()``.
 
     See Also
     --------
@@ -205,7 +209,7 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     --------
     >>> from scipy.fftpack import fft, ifft
     >>> x = np.arange(5)
-    >>> np.allclose(fft(ifft(x)), x, atol=1e-15) #within numerical accuracy.
+    >>> np.allclose(fft(ifft(x)), x, atol=1e-15)  #within numerical accuracy.
     True
 
     """
@@ -343,22 +347,33 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
     """ irfft(x, n=None, axis=-1, overwrite_x=0) -> y
 
     Return inverse discrete Fourier transform of real sequence x.
-    The contents of x is interpreted as the output of rfft(..)
+    The contents of x is interpreted as the output of the ``rfft(..)``
     function.
 
-    The returned real array contains
-      [y(0),y(1),...,y(n-1)]
-    where for n is even
-      y(j) = 1/n (sum[k=1..n/2-1] (x[2*k-1]+sqrt(-1)*x[2*k])
-                                   * exp(sqrt(-1)*j*k* 2*pi/n)
-                  + c.c. + x[0] + (-1)**(j) x[n-1])
-    and for n is odd
-      y(j) = 1/n (sum[k=1..(n-1)/2] (x[2*k-1]+sqrt(-1)*x[2*k])
-                                   * exp(sqrt(-1)*j*k* 2*pi/n)
-                  + c.c. + x[0])
+    The returned real array contains::
+
+        [y(0),y(1),...,y(n-1)]
+
+    where for n is even::
+
+        y(j) = 1/n (sum[k=1..n/2-1] (x[2*k-1]+sqrt(-1)*x[2*k])
+                                     * exp(sqrt(-1)*j*k* 2*pi/n)
+                    + c.c. + x[0] + (-1)**(j) x[n-1])
+
+    and for n is odd::
+
+        y(j) = 1/n (sum[k=1..(n-1)/2] (x[2*k-1]+sqrt(-1)*x[2*k])
+                                     * exp(sqrt(-1)*j*k* 2*pi/n)
+                    + c.c. + x[0])
+
     c.c. denotes complex conjugate of preceeding expression.
 
-    Optional input: see rfft.__doc__
+    For details on input parameters, see `rfft`.
+
+    See Also
+    --------
+    rfft, ifft
+
     """
     tmp = _asfarray(x)
     if not numpy.isrealobj(tmp):

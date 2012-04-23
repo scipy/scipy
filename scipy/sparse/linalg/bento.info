@@ -1,4 +1,4 @@
-Recurse: isolve, dsolve, eigen
+Recurse: dsolve, eigen, isolve
 
 Library:
     Packages:

@@ -28,7 +28,6 @@ from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
 from linesearch import \
      line_search_BFGS, line_search_wolfe1, line_search_wolfe2, \
      line_search_wolfe2 as line_search
-import inspect
 
 
 # standard status messages of optimizers
@@ -39,6 +38,27 @@ _status_message = {'success': 'Optimization terminated successfully.',
                               'exceeded.',
                    'pr_loss': 'Desired error not necessarily achieved due '
                               'to precision loss.'}
+
+class MemoizeJac(object):
+    """ Decorator that caches the value gradient of function each time it
+    is called. """
+    def __init__(self, fun):
+        self.fun = fun
+        self.jac = None
+        self.x = None
+
+    def __call__(self, x, *args):
+        self.x = numpy.asarray(x).copy()
+        fg = self.fun(x, *args)
+        self.jac = fg[1]
+        return fg[0]
+
+    def derivative(self, x, *args):
+        if all(x == self.x) and self.jac is not None:
+            return self.jac
+        else:
+            self(x, *args)
+            return self.jac
 
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
@@ -242,9 +262,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
     See also
     --------
-    minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'Nelder-Mead' `method` in
-        particular.
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'Nelder-Mead' `method` in particular.
 
     Notes
     -----
@@ -322,7 +341,7 @@ def _minimize_neldermead(func, x0, args=(), options={}, full_output=0,
     ftol    = options.get('ftol', 1e-4)
     maxiter = options.get('maxiter')
     maxfun  = options.get('maxfev')
-    disp    = options.get('disp', True)
+    disp    = options.get('disp', False)
 
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
@@ -631,8 +650,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     See also
     --------
-    minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'BFGS' `method` in particular.
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'BFGS' `method` in particular.
 
     Notes
     -----
@@ -702,7 +721,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options={}, full_output=0,
     norm    = options.get('norm', Inf)
     epsilon = options.get('eps', _epsilon)
     maxiter = options.get('maxiter')
-    disp    = options.get('disp', True)
+    disp    = options.get('disp', False)
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
@@ -884,8 +903,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
     See also
     --------
-    minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'CG' `method` in particular.
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'CG' `method` in particular.
 
     Notes
     -----
@@ -950,7 +969,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, options={}, full_output=0,
     norm    = options.get('norm', Inf)
     epsilon = options.get('eps', _epsilon)
     maxiter = options.get('maxiter')
-    disp    = options.get('disp', True)
+    disp    = options.get('disp', False)
 
     x0 = asarray(x0).flatten()
     if maxiter is None:
@@ -1116,8 +1135,8 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     See also
     --------
-    minimize: Interface to unconstrained minimization algorithms for
-        multivariate functions. See the 'Newton-CG' `method` in particular.
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'Newton-CG' `method` in particular.
 
     Notes
     -----
@@ -1149,20 +1168,13 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             'maxiter': maxiter,
             'disp': disp}
 
-    if fhess is not None:
-        hess = fhess
-    elif fhess_p is not None:
-        hess = fhess_p
-    else:
-        hess = None
-
     # force full_output if retall=True to preserve backwards compatibility
     if retall and not full_output:
-        out = _minimize_newtoncg(f, x0, args, fprime, hess, opts,
+        out = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
                                  full_output=True, retall=retall,
                                  callback=callback)
     else:
-        out = _minimize_newtoncg(f, x0, args, fprime, hess, opts,
+        out = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
                                  full_output, retall, callback)
 
     if full_output:
@@ -1179,7 +1191,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         else:
             return out
 
-def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None,
+def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                        options={}, full_output=0, retall=0, callback=None):
     """
     Minimization of scalar function of one or more variables using the
@@ -1205,28 +1217,13 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None,
         raise ValueError('Jacobian is required for Newton-CG method')
     f = fun
     fprime = jac
-    if hess is None:
-        fhess = None
-        fhess_p = None
-    else:
-        # check hessian type based on the number of arguments
-        fun_args = inspect.getargspec(fun)[0]
-        hess_args = inspect.getargspec(hess)[0]
-        if len(hess_args) == len(fun_args):
-            fhess = hess
-            fhess_p = None
-        elif len(hess_args) == len(fun_args) + 1:
-            fhess = None
-            fhess_p = hess
-        else:
-            raise ValueError('The number of arguments of the Hessian '
-                             'function does not agree with that of the '
-                             'objective function.')
+    fhess_p = hessp
+    fhess = hess
     # retrieve useful options
     avextol = options.get('xtol', 1e-5)
     epsilon = options.get('eps', _epsilon)
     maxiter = options.get('maxiter')
-    disp    = options.get('disp', True)
+    disp    = options.get('disp', False)
 
     x0 = asarray(x0).flatten()
     fcalls, f = wrap_function(f, args)
@@ -1379,6 +1376,11 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     numfunc : int
       The number of function calls made.
 
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions. See the 'Bounded' `method` in particular.
+
     Notes
     -----
     Finds a local minimizer of the scalar function `func` in the
@@ -1386,7 +1388,28 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     for auto-bracketing).
 
     """
+    options = {'xtol': xtol,
+               'maxfev': maxfun,
+               'disp': disp}
+
+    out =  _minimize_scalar_bounded(func, (x1, x2), args, options,
+                                    full_output)
+    if full_output:
+        x, info = out
+        return x, info['fun'], info['status'], info['nfev']
+    else:
+        return out
+
+def _minimize_scalar_bounded(func, bounds, args=(), options={},
+                             full_output=False):
+    # retrieve options
+    xtol = options.get('xtol', 1e-5)
+    maxfun = options.get('maxfev', 500)
+    disp = options.get('disp', 0)
     # Test bounds are of correct form
+    if len(bounds) != 2:
+        raise ValueError('bounds must have two elements.')
+    x1, x2 = bounds
 
     if not (is_array_scalar(x1) and is_array_scalar(x2)):
         raise ValueError("Optimisation bounds must be scalars"
@@ -1488,20 +1511,22 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
         if num >= maxfun:
             flag = 1
-            fval = fx
-            if disp > 0:
-                _endprint(x, flag, fval, maxfun, xtol, disp)
-            if full_output:
-                return xf, fval, flag, num
-            else:
-                return xf
+            break
 
     fval = fx
     if disp > 0:
         _endprint(x, flag, fval, maxfun, xtol, disp)
 
     if full_output:
-        return xf, fval, flag, num
+        info = {'fun': fval,
+                'status': flag,
+                'success': flag == 0,
+                'message': {0: 'Solution found.',
+                            1: 'Maximum number of function '
+                               'calls reached.'}.get(flag, ''),
+                'nfev': num}
+
+        return xf, info
     else:
         return xf
 
@@ -1679,19 +1704,46 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     funcalls : int
         Number of objective function evaluations made.
 
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions. See the 'Brent' `method` in particular.
+
     Notes
     -----
     Uses inverse parabolic interpolation when possible to speed up
     convergence of golden section method.
 
     """
+    options = {'ftol': tol,
+               'maxiter': maxiter}
+    out = _minimize_scalar_brent(func, brack, args, options, full_output)
+    if full_output:
+        x, info = out
+        return x, info['fun'], info['nit'], info['nfev']
+    else:
+        return out
+
+def _minimize_scalar_brent(func, brack=None, args=(), options={},
+                           full_output=False):
+    # retrieve options
+    tol = options.get('ftol', 1.48e-8)
+    maxiter = options.get('maxiter', 500)
+
 
     brent = Brent(func=func, args=args, tol=tol,
                   full_output=full_output, maxiter=maxiter)
     brent.set_bracket(brack)
     brent.optimize()
-    return brent.get_result(full_output=full_output)
-
+    out = brent.get_result(full_output=full_output)
+    if full_output:
+        x, fval, nit, nfev = out
+        info = {'fun': fval,
+                'nit': nit,
+                'nfev': nfev}
+        return x, info
+    else:
+        return out
 
 def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     """ Given a function of one-variable and a possible bracketing interval,
@@ -1715,12 +1767,28 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     full_output : bool
         If True, return optional outputs.
 
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions. See the 'Golden' `method` in particular.
+
     Notes
     -----
     Uses analog of bisection method to decrease the bracketed
     interval.
 
     """
+    options = {'ftol': tol}
+    out = _minimize_scalar_golden(func, brack, args, options, full_output)
+    if full_output:
+        x, info = out
+        return x, info['fun'], info['nfev']
+    else:
+        return out
+
+def _minimize_scalar_golden(func, brack=None, args=(), options={},
+                            full_output=False):
+    tol = options.get('ftol', _epsilon)
     if brack is None:
         xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
     elif len(brack) == 2:
@@ -1768,7 +1836,8 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         xmin = x2
         fval = f2
     if full_output:
-        return xmin, fval, funcalls
+        info = {'fun': fval, 'nfev': funcalls}
+        return xmin, info
     else:
         return xmin
 
@@ -2027,7 +2096,7 @@ def _minimize_powell(func, x0, args=(), options={}, full_output=0,
     ftol    = options.get('ftol', 1e-4)
     maxiter = options.get('maxiter')
     maxfun  = options.get('maxfev')
-    disp    = options.get('disp', True)
+    disp    = options.get('disp', False)
     direc   = options.get('direc')
     # we need to use a mutable object here that we can update in the
     # wrapper function

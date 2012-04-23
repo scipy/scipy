@@ -31,7 +31,6 @@ Reference
    interpolate
    io
    linalg
-   maxentropy
    misc
    ndimage
    odr

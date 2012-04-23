@@ -307,8 +307,29 @@ rv = %(name)s(%(shapes)s, loc=0)
 """
 docdict_discrete['frozennote'] = _doc_default_frozen_note
 
-docdict_discrete['example'] = _doc_default_example.replace('[0.9,]',
-                                  'Replace with reasonable value')
+_doc_default_discrete_example = \
+"""Examples
+--------
+>>> from scipy.stats import %(name)s
+>>> [ %(shapes)s ] = [<Replace with reasonable values>]
+>>> rv = %(name)s(%(shapes)s)
+
+Display frozen pmf
+
+>>> x = np.arange(0, np.minimum(rv.dist.b, 3))
+>>> h = plt.vlines(x, 0, rv.pmf(x), lw=2)
+
+Check accuracy of cdf and ppf
+
+>>> prb = %(name)s.cdf(x, %(shapes)s)
+>>> h = plt.semilogy(np.abs(x - %(name)s.ppf(prb, %(shapes)s)) + 1e-20)
+
+Random number generation
+
+>>> R = %(name)s.rvs(%(shapes)s, size=100)
+
+"""
+docdict_discrete['example'] = _doc_default_discrete_example
 
 _doc_default_before_notes = ''.join([docdict_discrete['longsummary'],
                                      docdict_discrete['allmethods'],
@@ -1771,12 +1792,13 @@ class rv_continuous(rv_generic):
         fixedn = []
         index = range(Nargs)
         names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
-        x0 = args[:]
+        x0 = []
         for n, key in zip(index, names):
             if kwds.has_key(key):
                 fixedn.append(n)
                 args[n] = kwds[key]
-                del x0[n]
+            else:
+                x0.append(args[n])
 
         if len(fixedn) == 0:
             func = self.nnlf
@@ -5136,7 +5158,7 @@ tukeylambda = tukeylambda_gen(name='tukeylambda', shapes="lam")
 class uniform_gen(rv_continuous):
     """A uniform continuous random variable.
 
-    This distribution is constant between `loc` and ``loc = scale``.
+    This distribution is constant between `loc` and ``loc + scale``.
 
     %(before_notes)s
 
@@ -6640,10 +6662,39 @@ class hypergeom_gen(rv_discrete):
         pmf(k, M, n, N) = choose(n, k) * choose(M - n, N - k) / choose(M, N),
                                                for N - (M-n) <= k <= min(m,N)
 
-    %(example)s
+    Examples
+    --------
+    >>> from scipy.stats import hypergeom
+
+    Suppose we have a collection of 20 animals, of which 7 are dogs.  Then if
+    we want to know the probability of finding a given number of dogs if we
+    choose at random 12 of the 20 animals, we can initialize a frozen
+    distribution and plot the probability mass function:
+
+    >>> [M, n, N] = [20, 7, 12]
+    >>> rv = hypergeom(M, n, N)
+    >>> x = np.arange(0, n+1)
+    >>> pmf_dogs = rv.pmf(x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, pmf_dogs, 'bo')
+    >>> ax.vlines(x, 0, pmf_dogs, lw=2)
+    >>> ax.set_xlabel('# of dogs in our group of chosen animals')
+    >>> ax.set_ylabel('hypergeom PMF')
+    >>> plt.show()
+
+    Instead of using a frozen distribution we can also use `hypergeom`
+    methods directly.  To for example obtain the cumulative distribution
+    function, use:
+
+    >>> prb = hypergeom.cdf(x, M, n, N)
+
+    And to generate random numbers:
+
+    >>> R = hypergeom.rvs(M, n, N, size=10)
 
     """
-
     def _rvs(self, M, n, N):
         return mtrand.hypergeometric(n,M-n,N,size=self._size)
     def _argcheck(self, M, n, N):
@@ -6741,9 +6792,11 @@ for k >= 1
 class poisson_gen(rv_discrete):
     def _rvs(self, mu):
         return mtrand.poisson(mu, self._size)
-    def _pmf(self, k, mu):
+    def _logpmf(self, k, mu):
         Pk = k*log(mu)-gamln(k+1) - mu
-        return exp(Pk)
+        return Pk
+    def _pmf(self, k, mu):
+        return exp(self._logpmf(k, mu))
     def _cdf(self, x, mu):
         k = floor(x)
         return special.pdtr(k,mu)

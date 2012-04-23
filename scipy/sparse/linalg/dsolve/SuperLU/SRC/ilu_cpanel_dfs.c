@@ -108,7 +108,7 @@ ilu_cpanel_dfs(
 	/* For each nonz in A[*,jj] do dfs */
 	for (k = xa_begin[jj]; k < xa_end[jj]; k++) {
 	    krow = asub[k];
-	    tmp = slu_c_abs1(&a[k]);
+	    tmp = c_abs1(&a[k]);
 	    if (tmp > *amax_col) *amax_col = tmp;
 	    dense_col[krow] = a[k];
 	    kmark = marker[krow];

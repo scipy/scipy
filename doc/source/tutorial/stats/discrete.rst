@@ -91,6 +91,7 @@ The survival function is just
 
 the probability that the random variable is strictly larger than :math:`k` .
 
+.. _discrete-ppf:
 
 Percent Point Function (Inverse CDF)
 ------------------------------------

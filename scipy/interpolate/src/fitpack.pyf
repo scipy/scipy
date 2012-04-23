@@ -478,6 +478,42 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        integer intent(out) :: ier
      end subroutine regrid_smth
  
+     subroutine regrid_smth_spher(iopt,ider,mu,u,mv,v,r,r0,r1,s,nuest,nvest,&
+        nu,tu,nv,tv,c,fp,wrk,lwrk,iwrk,kwrk,ier)
+       !  nu,tu,nv,tv,c,fp,ier = regrid_smth_spher(u,v,r,[r0,r1,s])
+
+       fortranname spgrid
+
+       integer dimension(3) :: iopt
+       integer dimension(4) :: ider
+       integer intent(hide) :: mu=len(u)
+       real*8 dimension(mu) :: u
+       integer intent(hide) :: mv=len(v)
+       real*8 dimension(mv) :: v
+       real*8 dimension(mu*mv),depend(mu,mv),check(len(r)==mu*mv) :: r
+       real*8 optional :: r0
+       real*8 optional :: r1
+       real*8 optional,check(0.0<=s) :: s = 0.0
+       integer intent(hide),depend(mu),check(nuest>=8) &
+            :: nuest = mu+6
+       integer intent(hide),depend(mv),check(nvest>=8) &
+            :: nvest = mv+7
+       integer intent(out) :: nu
+       real*8 dimension(nuest),intent(out),depend(nuest) :: tu
+       integer intent(out) :: nv
+       real*8 dimension(nvest),intent(out),depend(nvest) :: tv
+       real*8 dimension((nuest-4)*(nvest-4)), &
+            depend(nuest,nvest),intent(out) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(lwrk),intent(cache,hide),depend(lwrk) :: wrk
+       integer intent(hide),depend(mu,mv,nuest,nvest) &
+            :: lwrk=12+nuest*(mv+nvest+3)+nvest*24+4*mu+8*mv+max(mv+nvest,nuest)
+       integer dimension(kwrk),intent(cache,hide),depend(kwrk) :: iwrk
+       integer intent(hide),depend(mu,mv,nuest,nvest) &
+            :: kwrk=5+mu+mv+nuest+nvest
+       integer intent(out) :: ier
+     end subroutine regrid_smth_spher
+
      function dblint(tx,nx,ty,ny,c,kx,ky,xb,xe,yb,ye,wrk)
        ! iy = dblint(tx,ty,c,kx,ky,xb,xe,yb,ye)
        real*8 dimension(nx),intent(in) :: tx

@@ -14,7 +14,7 @@ General-purpose
 .. autosummary::
    :toctree: generated/
 
-   minimize - Unified interface for unconstrained solvers
+   minimize - Unified interface for minimizers of multivariate functions
    show_minimize_options - Show method-specific options for `minimize`
    fmin - Nelder-Mead Simplex algorithm
    fmin_powell - Powell's (modified) level set method
@@ -50,6 +50,7 @@ Scalar function minimizers
 .. autosummary::
    :toctree: generated/
 
+   minimize_scalar - Unified interface for minimizers of univariate functions
    fminbound - Bounded minimization of a scalar function
    brent - 1-D function minimization using Brent method
    golden - 1-D function minimization using Golden Section method
@@ -139,7 +140,7 @@ Utility Functions
 """
 
 from optimize import *
-from minimize import *
+from _minimize import *
 from minpack import *
 from zeros import *
 from anneal import *

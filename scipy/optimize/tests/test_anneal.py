@@ -31,6 +31,9 @@ class TestAnneal(TestCase):
         # reasonable though.
         self.maxiter = 1000
 
+        # fix random seed
+        np.random.seed(1234)
+
     def anneal_schedule(self, schedule='fast', use_wrapper=False):
         """ Call anneal algorithm using specified schedule """
         n = 0 # index of test function

@@ -161,27 +161,35 @@ def fromimage(im, flatten=0):
         raise TypeError("Input is not a PIL image.")
     if flatten:
         im = im.convert('F')
+    elif im.mode == '1':
+        # workaround for crash in PIL, see #1613.
+        im.convert('L')
+
     return array(im)
 
 _errstr = "Mode is unknown or incompatible with input array shape."
 
 def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             mode=None, channel_axis=None):
-    """Takes a numpy array and returns a PIL image.  The mode of the
-    PIL image depends on the array shape, the pal keyword, and the mode
-    keyword.
+    """Takes a numpy array and returns a PIL image.
 
-    For 2-D arrays, if pal is a valid (N,3) byte-array giving the RGB values
-    (from 0 to 255) then mode='P', otherwise mode='L', unless mode is given
-    as 'F' or 'I' in which case a float and/or integer array is made
+    The mode of the PIL image depends on the array shape and the `pal` and
+    `mode` keywords.
 
-    For 3-D arrays, the channel_axis argument tells which dimension of the
-      array holds the channel data.
+    For 2-D arrays, if `pal` is a valid (N,3) byte-array giving the RGB values
+    (from 0 to 255) then ``mode='P'``, otherwise ``mode='L'``, unless mode
+    is given as 'F' or 'I' in which case a float and/or integer array is made.
+
+    Notes
+    -----
+    For 3-D arrays, the `channel_axis` argument tells which dimension of the
+    array holds the channel data.
+
     For 3-D arrays if one of the dimensions is 3, the mode is 'RGB'
-      by default or 'YCbCr' if selected.
-    if the
+    by default or 'YCbCr' if selected.
 
     The numpy array must be either 2 dimensional or 3 dimensional.
+
     """
     data = asarray(arr)
     if iscomplexobj(data):
@@ -431,6 +439,11 @@ def imfilter(arr,ftype):
 
 
 def radon(arr,theta=None):
+    """`radon` is deprecated in scipy 0.11, and will be removed in 0.12
+
+    For this functionality, please use the "radon" function in scikits-image.
+
+    """
     if theta is None:
         theta = mgrid[0:180]
     s = zeros((arr.shape[1],len(theta)), float)
@@ -440,3 +453,6 @@ def radon(arr,theta=None):
         s[:,k] = sum(im,axis=0)
         k += 1
     return s
+
+
+radon = numpy.deprecate(radon)

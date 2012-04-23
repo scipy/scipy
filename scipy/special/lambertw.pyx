@@ -197,23 +197,23 @@ def lambertw(z, k=0, tol=1e-8):
     Lambert W function.
 
     The Lambert W function `W(z)` is defined as the inverse function
-    of :math:`w \exp(w)`. In other words, the value of :math:`W(z)` is
-    such that :math:`z = W(z) \exp(W(z))` for any complex number
-    :math:`z`.
+    of ``w * exp(w)``. In other words, the value of ``W(z)`` is
+    such that ``z = W(z) * exp(W(z))`` for any complex number
+    ``z``.
 
     The Lambert W function is a multivalued function with infinitely
     many branches. Each branch gives a separate solution of the
-    equation :math:`w \exp(w)`. Here, the branches are indexed by the
+    equation ``w exp(w)``. Here, the branches are indexed by the
     integer `k`.
     
     Parameters
     ----------
     z : array_like
-        Input argument
-    k : integer, optional
-        Branch index
-    tol : float
-        Evaluation tolerance
+        Input argument.
+    k : int, optional
+        Branch index.
+    tol : float, optional
+        Evaluation tolerance.
 
     Notes
     -----
@@ -223,33 +223,35 @@ def lambertw(z, k=0, tol=1e-8):
     * ``lambertw(z, k)`` gives the solution on branch `k`
 
     The Lambert W function has two partially real branches: the
-    principal branch (`k = 0`) is real for real `z > -1/e`, and the
-    `k = -1` branch is real for `-1/e < z < 0`. All branches except
-    `k = 0` have a logarithmic singularity at `z = 0`.
+    principal branch (`k = 0`) is real for real ``z > -1/e``, and the
+    ``k = -1`` branch is real for ``-1/e < z < 0``. All branches except
+    ``k = 0`` have a logarithmic singularity at ``z = 0``.
 
-    .. rubric:: Possible issues
+    **Possible issues**
     
     The evaluation can become inaccurate very close to the branch point
-    at `-1/e`. In some corner cases, :func:`lambertw` might currently
+    at ``-1/e``. In some corner cases, `lambertw` might currently
     fail to converge, or can end up on the wrong branch.
 
-    .. rubric:: Algorithm
+    **Algorithm**
 
-    Halley's iteration is used to invert `w \exp(w)`, using a first-order
-    asymptotic approximation (`O(\log(w))` or `O(w)`) as the initial
-    estimate.
+    Halley's iteration is used to invert ``w * exp(w)``, using a first-order
+    asymptotic approximation (O(log(w)) or `O(w)`) as the initial estimate.
 
-    The definition, implementation and choice of branches is based
-    on Corless et al, "On the Lambert W function", Adv. Comp. Math. 5
-    (1996) 329-359, available online here:
-    http://www.apmaths.uwo.ca/~djeffrey/Offprints/W-adv-cm.pdf
+    The definition, implementation and choice of branches is based on [1]_.
     
     TODO: use a series expansion when extremely close to the branch point
-    at `-1/e` and make sure that the proper branch is chosen there
+    at ``-1/e`` and make sure that the proper branch is chosen there
+
+    References
+    ----------
+    .. [1] Corless et al, "On the Lambert W function", Adv. Comp. Math. 5
+       (1996) 329-359.
+       http://www.apmaths.uwo.ca/~djeffrey/Offprints/W-adv-cm.pdf
 
     Examples
     --------
-    The Lambert W function is the inverse of `w \exp(w)`::
+    The Lambert W function is the inverse of ``w exp(w)``:
 
     >>> from scipy.special import lambertw
     >>> w = lambertw(1)
@@ -258,7 +260,7 @@ def lambertw(z, k=0, tol=1e-8):
     >>> w*exp(w)
     1.0
 
-    Any branch gives a valid inverse::
+    Any branch gives a valid inverse:
 
     >>> w = lambertw(1, k=3)
     >>> w
@@ -267,11 +269,11 @@ def lambertw(z, k=0, tol=1e-8):
     >>> w*exp(w)
     (1.0 + 3.5075477124212226194278700785075126e-36j)
 
-    .. rubric:: Applications to equation-solving
+    **Applications to equation-solving**
 
     The Lambert W function may be used to solve various kinds of
     equations, such as finding the value of the infinite power
-    tower `z^{z^{z^{\ldots}}}`::
+    tower :math:`z^{z^{z^{\ldots}}}`:
 
     >>> def tower(z, n):
     ... if n == 0:
@@ -283,10 +285,10 @@ def lambertw(z, k=0, tol=1e-8):
     >>> -lambertw(-log(0.5))/log(0.5)
     0.6411857445049859844862004821148236665628209571911
 
-    .. rubric:: Properties
+    **Properties**
 
     The Lambert W function grows roughly like the natural logarithm
-    for large arguments::
+    for large arguments:
 
     >>> lambertw(1000)
     5.2496028524016
@@ -303,7 +305,7 @@ def lambertw(z, k=0, tol=1e-8):
     >>> nprint(taylor(lambertw, 0, 6), 10)
     [0.0, 1.0, -1.0, 1.5, -2.666666667, 5.208333333, -10.8]
     
-    Some special values and limits are::
+    Some special values and limits are:
     
     >>> lambertw(0)
     0.0
@@ -323,7 +325,7 @@ def lambertw(z, k=0, tol=1e-8):
     The `k = 0` and `k = -1` branches join at `z = -1/e` where
     `W(z) = -1` for both branches. Since `-1/e` can only be represented
     approximately with mpmath numbers, evaluating the Lambert W function
-    at this point only gives `-1` approximately::
+    at this point only gives `-1` approximately:
 
     >>> lambertw(-1/e, 0)
     -0.999999999999837133022867
@@ -331,7 +333,7 @@ def lambertw(z, k=0, tol=1e-8):
     -1.00000000000016286697718
     
     If `-1/e` happens to round in the negative direction, there might be
-    a small imaginary part::
+    a small imaginary part:
     
     >>> lambertw(-1/e)
     (-1.0 + 8.22007971511612e-9j)

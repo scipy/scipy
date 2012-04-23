@@ -44,7 +44,7 @@ def lu_factor(a, overwrite_a=False):
 
     Notes
     -----
-    This is a wrapper to the *GETRF routines from LAPACK.
+    This is a wrapper to the ``*GETRF`` routines from LAPACK.
 
     """
     a1 = asarray(a)

@@ -15,7 +15,7 @@ class Test(unittest.TestCase):
 
     def assertAllclose(self, x, y, rtol=1.0e-5):
         for i, xi in enumerate(x):
-            self.assert_(allclose(xi, y[i], rtol) or (isnan(xi) and isnan(y[i])))
+            self.assertTrue(allclose(xi, y[i], rtol) or (isnan(xi) and isnan(y[i])))
 
     def test_nearest(self):
         N = 5

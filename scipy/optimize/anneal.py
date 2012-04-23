@@ -162,7 +162,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
     Parameters
     ----------
-    func : callable f(x, *args)
+    func : callable ``f(x, *args)``
         Function to be optimized.
     x0 : ndarray
         Initial guess.
@@ -223,6 +223,11 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
                 3 : Maximum cooling iterations reached
                 4 : Maximum accepted query locations reached
                 5 : Final point not the minimum amongst encountered points
+
+    See also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'Anneal' `method` in particular.
 
     Notes
     -----
@@ -363,7 +368,7 @@ def _minimize_anneal(func, x0, args=(), options={}, full_output=0):
     lower      = options.get('lower', -100)
     upper      = options.get('upper', 100)
     dwell      = options.get('dwell', 50)
-    disp       = options.get('disp', True)
+    disp       = options.get('disp', False)
 
 
     x0 = asarray(x0)

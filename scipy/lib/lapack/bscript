@@ -1,30 +1,22 @@
-import sys
-
 from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
     default_builder = context.default_builder
 
-    def builder(extension):
-        return default_builder(extension,
-                               features="c fc pyext bento cshlib f2py",
-                               use="FLAPACK")
-    context.register_builder("flapack", builder)
+    context.tweak_builder("flapack", features="c fc pyext bento cshlib f2py",
+                          use="FLAPACK")
 
-    def builder(extension):
+    def clapack_builder(extension):
         kw = {"features": "c fc pyext bento cshlib f2py"}
         if context.waf_context.env.HAS_CLAPACK:
             kw["use"] = "CLAPACK"
         else:
             kw["source"] = ["dummy_clapack.pyf"]
         return default_builder(extension, **kw)
-    context.register_builder("clapack", builder)
+    context.register_builder("clapack", clapack_builder)
 
-    def builder(extension):
-        return default_builder(extension,
-                               features="c pyext bento cshlib f2py f2py_fortran",
-                               use="FLAPACK CLIB")
-    context.register_builder("calc_lwork", builder)
-
+    context.tweak_builder("calc_lwork", 
+                          features="c fc pyext bento cshlib f2py f2py_fortran",
+                          use="FLAPACK CLIB")
     context.disable_extension("atlas_version")

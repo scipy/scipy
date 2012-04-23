@@ -38,7 +38,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
     Parameters
     ----------
-    func : callable f(x, *args)
+    func : callable ``f(x, *args)``
         A function that takes at least one (possibly vector) argument.
     x0 : ndarray
         The starting estimate for the roots of ``func(x) = 0``.
@@ -69,7 +69,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                     matrix, stored column wise
           * 'r': upper triangular matrix produced by QR factorization of same
                  matrix
-          * 'qtf': the vector (transpose(q) * fvec)
+          * 'qtf': the vector ``(transpose(q) * fvec)``
 
     ier : int
         An integer flag.  Set to 1 if a solution was found, otherwise refer
@@ -224,7 +224,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         estimate of the jacobian around the solution.  ``None`` if a
         singular matrix encountered (indicates very flat curvature in
         some direction).  This matrix must be multiplied by the
-        residual standard deviation to get the covariance of the
+        residual variance to get the covariance of the
         parameter estimates -- see curve_fit.
     infodict : dict
         a dictionary of optional outputs with the key s::

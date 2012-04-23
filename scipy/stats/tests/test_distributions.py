@@ -488,6 +488,14 @@ class TestFitMethod(TestCase):
                 assert_(len(vals5) == 2+len(args))
                 assert_(vals5[2] == args[2])
 
+    def test_fix_fit_2args_lognorm(self):
+        """Regression test for #1551."""
+        np.random.seed(12345)
+        x = stats.lognorm.rvs(0.25, 0., 20.0, size=20)
+        assert_allclose(np.array(stats.lognorm.fit(x, floc=0, fscale=20)),
+                        [0.25888672, 0, 20], atol=1e-5)
+
+
 class TestFrozen(TestCase):
     """Test that a frozen distribution gives the same results as the original object.
 
@@ -825,11 +833,16 @@ def test_tukeylambda_stats_ticket_1545():
     assert_almost_equal(mv, expected, decimal=10)
 
 
+def test_poisson_logpmf_ticket_1436():
+    """Regression test for #1436, poisson.logpmf precision."""
+    assert_(np.isfinite(stats.poisson.logpmf(1500, 200)))
+
+
 def test_powerlaw_stats():
     """Test the powerlaw stats function.
-    
+
     This unit test is also a regression test for ticket 1548.
-    
+
     The exact values are:
     mean:
         mu = a / (a + 1)
@@ -858,7 +871,7 @@ def test_powerlaw_stats():
     """
     cases = [(1.0, (0.5, 1./12 , 0.0, -1.2)),
              (2.0, (2./3, 2./36, -0.56568542494924734, -0.6))]
-    for a, exact_mvsk in cases: 
+    for a, exact_mvsk in cases:
         mvsk = stats.powerlaw.stats(a, moments="mvsk")
         assert_array_almost_equal(mvsk, exact_mvsk)
 

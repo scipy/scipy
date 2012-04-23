@@ -296,6 +296,14 @@ class _TestCommon:
         assert_array_equal(A.todense() - self.datsp,A.todense() - self.dat)
         assert_array_equal(self.datsp - A.todense(),self.dat - A.todense())
 
+    def test_add0(self):
+        """ Adding 0 to a sparse matrix """
+        assert_array_equal((self.datsp + 0).todense(), self.dat)
+        # use sum (which takes 0 as a starting value)
+        sumS = sum([k * self.datsp for k in range(1, 3)])
+        sumD = sum([k * self.dat for k in range(1, 3)])
+        assert_almost_equal(sumS.todense(), sumD)
+
     def test_elementwise_multiply(self):
         # real/real
         A = array([[4,0,9],[2,-3,5]])
@@ -583,7 +591,6 @@ class _TestCommon:
     #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
 
 
-
 class _TestInplaceArithmetic:
     def test_imul_scalar(self):
         a = self.datsp.copy()
@@ -731,7 +738,6 @@ class _TestVertSlicing:
         assert_(caught == 2)
 
 
-
 class _TestBothSlicing:
     """Tests vertical and horizontal slicing (e.g. [:,0:2]). Tests for
     individual sparse matrix types that implement this should derive from this
@@ -749,6 +755,7 @@ class _TestBothSlicing:
         F = self.spmatrix(E)
         assert_array_equal(E[1:2, 1:2], F[1:2, 1:2].todense())
         assert_array_equal(E[:, 1:], F[:, 1:].todense())
+
 
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -975,11 +982,20 @@ class _TestArithmetic:
                 assert_equal(S1.dtype,D1.dtype)
 
 
+class _Test2DSlicingRegression:
+    def test_non_unit_stride_2d_indexing_raises_exception(self):
+        # Regression test -- used to silently ignore the stride.
+        try:
+            self.spmatrix((500, 500))[0:100:2, 0:100:2]
+        except ValueError:
+            return
+        assert_(False)  # Should not happen.
+
 
 class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         _TestInplaceArithmetic, _TestArithmetic,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
-        _TestFancyIndexing, TestCase):
+        _TestFancyIndexing, _Test2DSlicingRegression, TestCase):
     spmatrix = csr_matrix
 
     @dec.knownfailureif(True, "Fancy indexing is known to be broken for CSR" \
@@ -1087,12 +1103,10 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
 
 
-
-
 class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         _TestInplaceArithmetic, _TestArithmetic,
         _TestHorizSlicing, _TestVertSlicing, _TestBothSlicing,
-        _TestFancyIndexing, TestCase):
+        _TestFancyIndexing, _Test2DSlicingRegression, TestCase):
     spmatrix = csc_matrix
 
     @dec.knownfailureif(True, "Fancy indexing is known to be broken for CSC" \
@@ -1175,6 +1189,7 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         indptr  = array( [0, 2, 6] )
         bsp = csc_matrix( (data, indices, indptr), shape=(10,2) )
         assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
+
 
 class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
     spmatrix = dok_matrix
@@ -1327,7 +1342,6 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         b = dok_matrix((3,3))
         b[:,0] = 0
         assert_(len(b.keys())==0, "Unexpected entries in keys")
-
 
 
 class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
@@ -1566,7 +1580,6 @@ class TestDIA(_TestCommon, _TestArithmetic, TestCase):
         data    = np.array([[1,2,3,4]]).repeat(3,axis=0)
         offsets = np.array([0,-1,2])
         assert_equal(dia_matrix( (data,offsets), shape=(4,4)).todense(), D)
-
 
 
 class TestBSR(_TestCommon, _TestArithmetic, _TestInplaceArithmetic, TestCase):

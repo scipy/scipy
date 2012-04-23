@@ -37,27 +37,30 @@ DataFiles: tests
     TargetDir: $sitedir/scipy
     SourceDir: scipy
     Files:
-        constants/tests/*.py,
         cluster/tests/*.py,
         cluster/tests/*.txt,
+        constants/tests/*.py,
         fftpack/tests/*.py,
         fftpack/tests/*.npz,
         integrate/tests/*.py,
         interpolate/tests/*.py,
         io/arff/tests/*.py,
+        io/arff/tests/data/*.arff,
+        io/harwell_boeing/tests/*.py,
         io/matlab/tests/*.py,
+        io/matlab/tests/data/*.txt,
+        io/matlab/tests/data/*.mat,
         io/tests/*.py,
         io/tests/data/*.nc,
         io/tests/data/*.wav,
         io/tests/data/*.sav,
-        io/matlab/tests/data/*.txt,
-        io/matlab/tests/data/*.mat,
-        io/arff/tests/data/*.arff,
+        odr/tests/*.py,
         lib/blas/tests/*.py,
         lib/lapack/tests/*.py,
         linalg/tests/*.py,
         misc/tests/*.py,
         misc/tests/data/*.png,
+        ndimage/tests/*.py,
         optimize/tests/*.py,
         signal/tests/*.py,
         sparse/linalg/dsolve/tests/*.py,
@@ -70,13 +73,16 @@ DataFiles: tests
         spatial/tests/*.py,
         spatial/tests/*.txt,
         special/tests/*.py,
-        special/tests/*.dat,
         special/tests/data/*.npz,
-        stats/tests/*.py
+        stats/tests/*.py,
+        weave/tests/*.py,
+        weave/scxx/*.h,
+        weave/scxx/*.cpp
 
 Recurse: scipy
 
 HookFile: bscript
+UseBackends: Waf
 
 Library:
     Packages:

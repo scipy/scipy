@@ -92,7 +92,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
           simplices, and interpolate linearly on each simplex.  See
           `LinearNDInterpolator` for more details.
 
-        - ``cubic`` (1-D): return the value detemined from a cubic
+        - ``cubic`` (1-D): return the value determined from a cubic
           spline.
 
         - ``cubic`` (2-D): return the value determined from a

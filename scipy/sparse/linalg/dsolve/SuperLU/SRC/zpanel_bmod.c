@@ -115,7 +115,7 @@ zpanel_bmod (
     xlusup  = Glu->xlusup;
     
     if ( first ) {
-	maxsuper = sp_ienv(3);
+	maxsuper = SUPERLU_MAX( sp_ienv(3), sp_ienv(7) );
 	rowblk   = sp_ienv(4);
 	colblk   = sp_ienv(5);
 	first = 0;

@@ -13,7 +13,7 @@ API changes in this release, which are documented below.  All users
 are encouraged to upgrade to this release, as there are a large number
 of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 0.11.x branch, and on adding
-new features on the development trunk.
+new features on the master branch.
 
 This release requires Python 2.4-2.7 or 3.1- and NumPy 1.X.X or greater.
 
@@ -21,13 +21,36 @@ This release requires Python 2.4-2.7 or 3.1- and NumPy 1.X.X or greater.
 New features
 ============
 
-Unified interface to unconstrained solvers (``scipy.optimize``)
----------------------------------------------------------------
+``scipy.optimize`` improvements
+-------------------------------
+
+The optimize module has received a lot of attention this release.  In addition
+to added tests, documentation improvements, bug fixes and code clean-up, the
+following improvements were made:
+
+- A unified interface to minimizers of multivariate functions has been added.
+- The L-BFGS-B algorithm has been updated to version 3.0.
+
+
+Unified interface to minimizers of multivariate functions
+`````````````````````````````````````````````````````````
 
 A new function ``scipy.optimize.minimize`` was added to provide a common
-interface to the unconstrained minimizers (`fmin`, `fmin_powell`, `fmin_cg`,
-`fmin_ncg`, `fmin_bfgs` and `anneal`).  This allows for easier comparing and
-switching between solvers.
+interface to minimizers of multivariate functions (unconstrained: `fmin`,
+`fmin_powell`, `fmin_cg`, `fmin_ncg`, `fmin_bfgs` and `anneal` or
+constrained: `fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla` and `fmin_slsqp`).
+This allows for easier comparing and switching between solvers.
+
+
+New matrix equation solvers (``scipy.linalg``)
+----------------------------------------------
+
+Solvers for the Sylvester equation (``scipy.linalg.solve_sylvester``, discrete
+and continuous Lyapunov equations (``scipy.linalg.solve_lyapunov``,
+``scipy.linalg.solve_discrete_lyapunov``) and discrete and continuous algebraic
+Riccati equations (``scipy.linalg.solve_continuous_are``,
+``scipy.linalg.solve_discrete_are``) have been added to ``scipy.linalg``.
+These solvers are often used in the field of linear control theory.
 
 
 Constructing sparse matrices
@@ -36,6 +59,20 @@ Constructing sparse matrices
 Two new functions, ``scipy.sparse.diags`` and ``scipy.sparse.block_diag``, were
 added to easily construct diagonal and block-diagonal sparse matrices
 respectively.
+
+
+LSMR iterative solver
+---------------------
+
+LSMR, an iterative method for solving (sparse) linear and linear
+least-squares systems, was added as ``scipy.sparse.linalg.lsmr``.
+
+
+Discrete Sine Transform
+-----------------------
+
+Bindings for the discrete sine transform functions have been added to
+``scipy.fftpack``.
 
 
 Pascal matrix function
@@ -53,13 +90,33 @@ A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added.
 Deprecated features
 ===================
 
+``scipy.misc.radon`` has been deprecated.  A more full-featured radon transform
+can be found in scikits-image.
+
+``scipy.io.save_as_module`` has been deprecated.  A better way to save multiple
+Numpy arrays is the ``numpy.savez`` function.
+
 
 Backwards incompatible changes
 ==============================
+
+Removal of ``scipy.maxentropy``
+-------------------------------
+
+The ``scipy.maxentropy`` module, which was deprecated in the 0.10.0 release,
+has been removed.  Logistic regression in scikits.learn is a good and modern
+alternative for this functionality.  
  
 
 Other changes
 =============
+
+The SuperLU sources in ``scipy.sparse.linalg`` have been updated to version 4.3
+from upstream.
+
+The function ``scipy.linalg.qr_multiply``, which allows efficient computation
+of the matrix product of Q (from a QR decompostion) and a vector, has been
+added.
 
 
 Authors

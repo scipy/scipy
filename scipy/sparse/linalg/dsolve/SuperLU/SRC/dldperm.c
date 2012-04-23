@@ -11,8 +11,8 @@
 
 #include "slu_ddefs.h"
 
-extern void mc64id_(int_t*);
-extern void mc64ad_(int_t*, int_t*, int_t*, int_t [], int_t [], double [],
+extern int_t mc64id_(int_t*);
+extern int_t mc64ad_(int_t*, int_t*, int_t*, int_t [], int_t [], double [],
 		    int_t*, int_t [], int_t*, int_t[], int_t*, double [],
 		    int_t [], int_t []);
 
@@ -90,7 +90,7 @@ dldperm(int_t job, int_t n, int_t nnz, int_t colptr[], int_t adjncy[],
     double *dw;
 
 #if ( DEBUGlevel>=1 )
-    CHECK_MALLOC(0, "Enter dldperm()");
+    CHECK_MALLOC("Enter dldperm()");
 #endif
     liw = 5*n;
     if ( job == 3 ) liw = 10*n + nnz;
@@ -158,7 +158,7 @@ dldperm(int_t job, int_t n, int_t nnz, int_t colptr[], int_t adjncy[],
     SUPERLU_FREE(dw);
 
 #if ( DEBUGlevel>=1 )
-    CHECK_MALLOC(0, "Exit dldperm()");
+    CHECK_MALLOC("Exit dldperm()");
 #endif
 
     return info[0];

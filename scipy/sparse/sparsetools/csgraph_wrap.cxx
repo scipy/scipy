@@ -2852,37 +2852,6 @@ namespace swig {
 #define array_is_contiguous(a) (PyArray_ISCONTIGUOUS(a))
 #define array_is_native(a)     (PyArray_ISNOTSWAPPED(a))
 
-/* Support older NumPy data type names
-*/
-#if NDARRAY_VERSION < 0x01000000
-#define NPY_BOOL        PyArray_BOOL
-#define NPY_BYTE        PyArray_BYTE
-#define NPY_UBYTE       PyArray_UBYTE
-#define NPY_SHORT       PyArray_SHORT
-#define NPY_USHORT      PyArray_USHORT
-#define NPY_INT         PyArray_INT
-#define NPY_UINT        PyArray_UINT
-#define NPY_LONG        PyArray_LONG
-#define NPY_ULONG       PyArray_ULONG
-#define NPY_LONGLONG    PyArray_LONGLONG
-#define NPY_ULONGLONG   PyArray_ULONGLONG
-#define NPY_FLOAT       PyArray_FLOAT
-#define NPY_DOUBLE      PyArray_DOUBLE
-#define NPY_LONGDOUBLE  PyArray_LONGDOUBLE
-#define NPY_CFLOAT      PyArray_CFLOAT
-#define NPY_CDOUBLE     PyArray_CDOUBLE
-#define NPY_CLONGDOUBLE PyArray_CLONGDOUBLE
-#define NPY_OBJECT      PyArray_OBJECT
-#define NPY_STRING      PyArray_STRING
-#define NPY_UNICODE     PyArray_UNICODE
-#define NPY_VOID        PyArray_VOID
-#define NPY_NTYPES      PyArray_NTYPES
-#define NPY_NOTYPE      PyArray_NOTYPE
-#define NPY_CHAR        PyArray_CHAR
-#define NPY_USERDEF     PyArray_USERDEF
-#define npy_intp        intp
-#endif
-
 /* Given a PyObject, return a string describing its type.
  */
 const char* pytype_string(PyObject* py_obj) {
@@ -3366,7 +3335,7 @@ SWIGINTERN PyObject *_wrap_cs_graph_components(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array2 = obj_to_array_contiguous_allow_conversion(obj1, PyArray_INT, &is_new_object2);
+    array2 = obj_to_array_contiguous_allow_conversion(obj1, NPY_INT, &is_new_object2);
     if (!array2 || !require_dimensions(array2,1) || !require_size(array2,size,1)
       || !require_contiguous(array2)   || !require_native(array2)) SWIG_fail;
     
@@ -3376,14 +3345,14 @@ SWIGINTERN PyObject *_wrap_cs_graph_components(PyObject *SWIGUNUSEDPARM(self), P
     npy_intp size[1] = {
       -1
     };
-    array3 = obj_to_array_contiguous_allow_conversion(obj2, PyArray_INT, &is_new_object3);
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT, &is_new_object3);
     if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
       || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
     
     arg3 = (int*) array3->data;
   }
   {
-    temp4 = obj_to_array_no_conversion(obj3,PyArray_INT);
+    temp4 = obj_to_array_no_conversion(obj3,NPY_INT);
     if (!temp4  || !require_contiguous(temp4) || !require_native(temp4)) SWIG_fail;
     arg4 = (int*) array_data(temp4);
   }

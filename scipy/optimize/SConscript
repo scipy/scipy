@@ -62,7 +62,8 @@ env.NumpyPythonExtension('_minpack', '_minpackmodule.c')
 env.NumpyPythonExtension('_zeros', 'zeros.c')
 
 # _lbfgsb pyextension
-src = [pjoin('lbfgsb', i) for i in ['lbfgsb.pyf', 'routines.f']]
+src = [pjoin('lbfgsb', i) for i in ['lbfgsb.pyf', 'lbfgsb.f', 
+                                    'linpack.f', 'timer.f']]
 env.NumpyPythonExtension('_lbfgsb', source = src)
 
 # _cobyla pyextension

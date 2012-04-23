@@ -1321,7 +1321,7 @@ def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
         return totp(xn)*exp(-xn*xn/2.0)
     return thefunc
 
-def circmean(samples, high=2*pi, low=0):
+def circmean(samples, high=2*pi, low=0, axis=None):
     """
     Compute the circular mean for samples assumed to be in the range
     [low to high].
@@ -1334,6 +1334,9 @@ def circmean(samples, high=2*pi, low=0):
         Low boundary for circular mean range.  Default is 0.
     high : float or int, optional
         High boundary for circular mean range.  Default is 2*pi.
+    axis : int, optional
+        Axis along which means are computed.  The default is to compute
+        the mean of the flattened array.
 
     Returns
     -------
@@ -1342,12 +1345,15 @@ def circmean(samples, high=2*pi, low=0):
 
     """
     ang = (samples - low)*2*pi / (high-low)
-    res = angle(np.mean(exp(1j*ang), axis=0))
-    if (res < 0):
+    res = angle(np.mean(exp(1j*ang), axis=axis))
+    mask = res < 0
+    if (mask.ndim > 0):
+        res[mask] += 2*pi
+    elif mask:
         res = res + 2*pi
     return res*(high-low)/2.0/pi + low
 
-def circvar(samples, high=2*pi, low=0):
+def circvar(samples, high=2*pi, low=0, axis=None):
     """
     Compute the circular variance for samples assumed to be in the range
     [low to high].
@@ -1360,19 +1366,27 @@ def circvar(samples, high=2*pi, low=0):
         Low boundary for circular variance range.  Default is 0.
     high : float or int, optional
         High boundary for circular variance range.  Default is 2*pi.
+    axis : int, optional
+        Axis along which variances are computed.  The default is to compute
+        the variance of the flattened array.
+        
 
     Returns
     -------
     circvar : float
         Circular variance.
 
+    Notes
+    ------
+    This uses a definition of circular variance that in the limit of small angles
+    returns a number close to the 'linear' variance.
     """
     ang = (samples - low)*2*pi / (high-low)
-    res = np.mean(exp(1j*ang), axis=0)
-    V = 1-abs(res)
-    return ((high-low)/2.0/pi)**2 * V
+    res = np.mean(exp(1j*ang), axis=axis)
+    R = abs(res)
+    return ((high-low)/2.0/pi)**2 * 2 * log(1/R)
 
-def circstd(samples, high=2*pi, low=0):
+def circstd(samples, high=2*pi, low=0, axis=None):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -1385,17 +1399,24 @@ def circstd(samples, high=2*pi, low=0):
         Low boundary for circular standard deviation range.  Default is 0.
     high : float or int, optional
         High boundary for circular standard deviation range.  Default is 2*pi.
+    axis : int, optional
+        Axis along which standard deviations are computed.  The default is
+        to compute the standard deviation of the flattened array.
 
     Returns
     -------
     circstd : float
         Circular standard deviation.
 
+    Notes
+    ------
+    This uses a definition of circular standard deviation that in the limit of
+    small angles returns a number close to the 'linear' standard deviation.
     """
     ang = (samples - low)*2*pi / (high-low)
-    res = np.mean(exp(1j*ang), axis=0)
-    V = 1-abs(res)
-    return ((high-low)/2.0/pi) * sqrt(V)
+    res = np.mean(exp(1j*ang), axis=axis)
+    R = abs(res)
+    return ((high-low)/2.0/pi) * sqrt(-2*log(R))
 
 
 
