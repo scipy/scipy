@@ -1420,6 +1420,10 @@ def grey_dilation(input,  size = None, footprint = None, structure = None,
         origin[ii] = -origin[ii]
         if footprint is not None:
             sz = footprint.shape[ii]
+        elif structure is not None:
+            sz = structure.shape[ii]
+        elif numpy.isscalar(size):
+            sz = size
         else:
             sz = size[ii]
         if not sz & 1:
