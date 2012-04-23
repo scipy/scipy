@@ -14,9 +14,9 @@ def pre_build(context):
                                                        features="c fc cshlib pyext bento f2py"))
     context.register_builder("dfitpack",
                              lambda e: default_builder(e,
-                                                       use="fitpack FBLAS",
+                                                       use="fitpack FBLAS CLIB",
                                                        features="c fc cshlib pyext bento f2py"))
     context.register_builder("_interpolate",
                              lambda e: default_builder(e,
-                                                       use="FBLAS",
+                                                       use="FBLAS CLIB",
                                                        features="cxx cxxshlib fc pyext bento"))
