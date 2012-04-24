@@ -27,7 +27,7 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
 __version__ = "$Revision$"[10:-1]
 import _fitpack
 from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
-     dot, sin, cos, pi, arange, empty, int32
+     dot, sin, cos, pi, arange, empty, int32, asarray
 myasarray = atleast_1d
 
 # Try to replace _fitpack interface with
@@ -545,17 +545,19 @@ def splev(x, tck, der=0, ext=0):
         if not ext in (0,1,2):
             raise ValueError("ext not in (0, 1, 2)")
 
-        x = myasarray(x)
+        x = asarray(x)
+        shape = x.shape
+        x = atleast_1d(x)
         y, ier =_fitpack._spl_(x, der, t, c, k, ext)
+
         if ier == 10:
             raise ValueError("Invalid input data")
         if ier == 1:
             raise ValueError("Found x value not in the domain")
         if ier:
             raise TypeError("An error occurred")
-        if len(y) > 1:
-            return y
-        return y[0]
+
+        return y.reshape(shape)
 
 def splint(a,b,tck,full_output=0):
     """

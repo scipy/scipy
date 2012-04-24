@@ -218,6 +218,16 @@ class TestSmokeTests(TestCase):
         put("***************** bisplev")
         self.check_5()
 
+class TestSplev(TestCase):
+    def test_1d_shape(self):
+        x = [1,2,3,4,5]
+        y = [4,5,6,7,8]
+        tck = splrep(x, y)
+        z = splev([1], tck)
+        assert_equal(z.shape, (1,))
+        z = splev(1, tck)
+        assert_equal(z.shape, ())
+
 
 if __name__ == "__main__":
     __put_prints = True
