@@ -6,7 +6,7 @@
 
 """
 
-from numpy import array, identity, dot, sqrt, double, exp
+from numpy import array, identity, dot, sqrt, double, exp, random
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal
 
 from scipy.linalg import signm, logm, sqrtm, expm, expm2, expm3
@@ -125,9 +125,12 @@ class TestExpM(TestCase):
         assert_array_almost_equal(expm(a3),e3)
     
     def test_logm_consistency(self):
-        a = array([[1.,2],[0.5,0.1]])
-        assert_array_almost_equal(expm(logm(a)),a)
-        assert_array_almost_equal(logm(expm(a)),a)
+        random.seed(1234)
+        for n in range(1, 10):
+            for scale in [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2]:
+                # make logm(a) be of a given scale
+                a = identity(n) + random.rand(n, n) * scale
+                assert_array_almost_equal(expm(logm(a)), a)
 
 if __name__ == "__main__":
     run_module_suite()
