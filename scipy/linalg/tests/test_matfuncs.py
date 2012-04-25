@@ -117,9 +117,9 @@ class TestExpM(TestCase):
     
     def test_padecases_float(self):
         # test single-precision cases
-        a1 = eye(3, dtype=double)*1e-1; e1 = exp(1e-1)*eye(3)
-        a2 = eye(3, dtype=double);      e2 = exp(1.0)*eye(3)
-        a3 = eye(3, dtype=double)*10;   e3 = exp(10.)*eye(3)
+        a1 = eye(3, dtype=float)*1e-1; e1 = exp(1e-1)*eye(3)
+        a2 = eye(3, dtype=float);      e2 = exp(1.0)*eye(3)
+        a3 = eye(3, dtype=float)*10;   e3 = exp(10.)*eye(3)
         assert_array_almost_equal(expm(a1),e1)
         assert_array_almost_equal(expm(a2),e2)
         assert_array_almost_equal(expm(a3),e3)
