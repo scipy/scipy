@@ -117,12 +117,17 @@ class TestExpM(TestCase):
     
     def test_padecases_float(self):
         # test single-precision cases
-        a1 = eye(3, dtype=float)*1e-1; e1 = exp(1e-1)*eye(3)
-        a2 = eye(3, dtype=float);      e2 = exp(1.0)*eye(3)
-        a3 = eye(3, dtype=float)*10;   e3 = exp(10.)*eye(3)
+        a1 = identity(3, dtype=float)*1e-1; e1 = exp(1e-1)*identity(3)
+        a2 = identity(3, dtype=float);      e2 = exp(1.0)*identity(3)
+        a3 = identity(3, dtype=float)*10;   e3 = exp(10.)*identity(3)
         assert_array_almost_equal(expm(a1),e1)
         assert_array_almost_equal(expm(a2),e2)
         assert_array_almost_equal(expm(a3),e3)
+    
+    def test_logm_consistency(self):
+        a = array([[1.,2],[0.5,0.1]])
+        assert_array_almost_equal(expm(logm(a)))
+        assert_array_almost_equal(logm(expm(a)))
 
 if __name__ == "__main__":
     run_module_suite()
