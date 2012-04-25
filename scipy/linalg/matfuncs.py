@@ -19,6 +19,7 @@ from special_matrices import triu, all_mat
 from decomp import eig
 from decomp_svd import orth, svd
 from decomp_schur import schur, rsf2csf
+import warnings
 
 eps = np.finfo(float).eps
 feps = np.finfo(single).eps
@@ -40,7 +41,7 @@ def expm(A, q=False):
     Exponential Revisited", Nicholas Higham, 2005.
     
     """
-    if q: print "argument q=... in scipy.linalg.expm is deprecated."
+    if q: warnings.warn("argument q=... in scipy.linalg.expm is deprecated.")
     A = asarray(A)
     A_L1 = norm(A,1)
     n_squarings = 0
@@ -70,8 +71,7 @@ def expm(A, q=False):
             A = A / 2**n_squarings
             U,V = _pade7(A)
     else:
-        print "invalid type!",A.dtype
-        return
+        raise ValueError("invalid type: "+str(A.dtype))
     
     P = U + V  # p_m(A) : numerator
     Q = -U + V # q_m(A) : denominator
