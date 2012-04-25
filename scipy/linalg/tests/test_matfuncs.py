@@ -6,7 +6,7 @@
 
 """
 
-from numpy import array, identity, dot, sqrt
+from numpy import array, identity, dot, sqrt, eye, double, exp
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal
 
 from scipy.linalg import signm, logm, sqrtm, expm, expm2, expm3
@@ -101,6 +101,28 @@ class TestExpM(TestCase):
         a = array([[1j,1],[-1,-2j]])
         assert_array_almost_equal(expm(a), expm2(a))
         assert_array_almost_equal(expm(a), expm3(a))
+    
+    def test_padecases_double(self):
+        # test double-precision cases
+        a1 = eye(3, dtype=double)*1e-2; e1 = exp(1e-2)*eye(3)
+        a2 = eye(3, dtype=double)*1e-1; e2 = exp(1e-1)*eye(3)
+        a3 = eye(3, dtype=double)*5e-1; e3 = exp(5e-1)*eye(3)
+        a4 = eye(3, dtype=double);      e4 = exp(1.)*eye(3)
+        a5 = eye(3, dtype=double)*10;   e5 = exp(10.)*eye(3)
+        assert_array_almost_equal(expm(a1),e1)
+        assert_array_almost_equal(expm(a2),e2)
+        assert_array_almost_equal(expm(a3),e3)
+        assert_array_almost_equal(expm(a4),e4)
+        assert_array_almost_equal(expm(a5),e5)
+    
+    def test_padecases_float(self):
+        # test single-precision cases
+        a1 = eye(3, dtype=double)*1e-1; e1 = exp(1e-1)*eye(3)
+        a2 = eye(3, dtype=double);      e2 = exp(1.0)*eye(3)
+        a3 = eye(3, dtype=double)*10;   e3 = exp(10.)*eye(3)
+        assert_array_almost_equal(expm(a1),e1)
+        assert_array_almost_equal(expm(a2),e2)
+        assert_array_almost_equal(expm(a3),e3)
 
 if __name__ == "__main__":
     run_module_suite()
