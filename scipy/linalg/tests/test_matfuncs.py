@@ -126,8 +126,8 @@ class TestExpM(TestCase):
     
     def test_logm_consistency(self):
         a = array([[1.,2],[0.5,0.1]])
-        assert_array_almost_equal(expm(logm(a)))
-        assert_array_almost_equal(logm(expm(a)))
+        assert_array_almost_equal(expm(logm(a)),a)
+        assert_array_almost_equal(logm(expm(a)),a)
 
 if __name__ == "__main__":
     run_module_suite()
