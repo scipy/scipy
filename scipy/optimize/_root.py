@@ -192,6 +192,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
             info['status'] = ier
             info['success'] = ier in (1, 2, 3, 4)
             info['cov_x'] = cov_x
+            info['fun'] = info.pop('fvec')
         else:
             x = out[0]
     elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',

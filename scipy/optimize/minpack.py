@@ -121,6 +121,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                        full_output=full_output)
     if full_output:
         x, info = out
+        info['fvec'] = info.pop('fun')
         return x, info, info.pop('status'), info.pop('message')
     else:
         return out
@@ -224,6 +225,7 @@ def _root_hybr(func, x0, args=(), jac=None, options=None,
 
     if full_output:
         info = retval[1]
+        info['fun'] = info.pop('fvec')
         info['success'] = status == 1
         info['status'] = status
         try:
