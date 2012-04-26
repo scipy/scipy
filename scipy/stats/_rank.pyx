@@ -42,19 +42,20 @@ cdef _rankdata_fused(np.ndarray[array_data_type, ndim=1] b):
     n = b.size
     ivec = _np.argsort(b)
     svec = b[ivec]
-    sumranks = 0
-    dupcount = 0
     ranks = _np.zeros(n, float)
-    for i in xrange(n):
-        sumranks += i
-        dupcount += 1
-        inext = i + 1
-        if i == n-1 or svec[i] != svec[inext]:
-            averank = sumranks / float(dupcount) + 1
-            for j in xrange(inext - dupcount, inext):
-                ranks[ivec[j]] = averank
-            sumranks = 0
-            dupcount = 0
+    with nogil:
+        sumranks = 0
+        dupcount = 0
+        for i in xrange(n):
+            sumranks += i
+            dupcount += 1
+            inext = i + 1
+            if i == n-1 or svec[i] != svec[inext]:
+                averank = sumranks / float(dupcount) + 1
+                for j in xrange(inext - dupcount, inext):
+                    ranks[ivec[j]] = averank
+                sumranks = 0
+                dupcount = 0
     return ranks
 
 
@@ -163,17 +164,18 @@ def tiecorrect(np.ndarray[np.float64_t, ndim=1] rankvals):
     n = len(sorted)
     if n < 2:
         return 1.0
-    T = 0
-    i = 0
-    while i < n - 1:
-        inext = i + 1
-        if sorted[i] == sorted[inext]:
-            nties = 1
-            while i < n - 1 and sorted[i] == sorted[inext]:
-                nties += 1
-                i += 1
-                inext += 1
-            T = T + nties**3 - nties
-        i = inext
-    t = T / float(n**3 - n)
+    with nogil:
+        T = 0
+        i = 0
+        while i < n - 1:
+            inext = i + 1
+            if sorted[i] == sorted[inext]:
+                nties = 1
+                while i < n - 1 and sorted[i] == sorted[inext]:
+                    nties += 1
+                    i += 1
+                    inext += 1
+                T = T + nties**3 - nties
+            i = inext
+        t = T / float(n**3 - n)
     return 1.0 - t
