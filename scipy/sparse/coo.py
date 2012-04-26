@@ -177,13 +177,13 @@ class coo_matrix(_data_matrix):
 
                 if np.rank(M) != 2:
                     raise TypeError('expected rank <= 2 array or matrix')
+
                 self.shape = M.shape
-                self.row,self.col = (M != 0).nonzero()
-                self.data  = M[self.row,self.col]
+                self.row, self.col = M.nonzero()
+                self.data  = M[self.row, self.col]
 
         if dtype is not None:
             self.data = self.data.astype(dtype)
-
 
         self._check()
 

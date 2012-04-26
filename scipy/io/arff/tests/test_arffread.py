@@ -49,9 +49,11 @@ class DataTest(TestCase):
     def test_filelike(self):
         """Test reading from file-like object (StringIO)"""
         f1 = open(test1)
-        f2 = StringIO(open(test1).read())
         data1, meta1 = loadarff(f1)
-        data2, meta2 = loadarff(f2)
+        f1.close()
+        f2 = open(test1)
+        data2, meta2 = loadarff(StringIO(f2.read()))
+        f2.close()
         assert_(data1 == data2)
         assert_(repr(meta1) == repr(meta2))
 
@@ -67,6 +69,7 @@ class HeaderTest(TestCase):
         """Test parsing type of attribute from their value."""
         ofile = open(test2)
         rel, attrs = read_header(ofile)
+        ofile.close()
 
         expected = ['numeric', 'numeric', 'numeric', 'numeric', 'numeric',
                     'numeric', 'string', 'string', 'nominal', 'nominal']
@@ -78,6 +81,7 @@ class HeaderTest(TestCase):
         """Test parsing wrong type of attribute from their value."""
         ofile = open(test3)
         rel, attrs = read_header(ofile)
+        ofile.close()
 
         for name, value in attrs:
             assert_raises(ParseArffError, parse_type, value)
@@ -86,6 +90,7 @@ class HeaderTest(TestCase):
         """Parsing trivial header with nothing."""
         ofile = open(test1)
         rel, attrs = read_header(ofile)
+        ofile.close()
 
         # Test relation
         assert_(rel == 'test1')
