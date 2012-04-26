@@ -158,7 +158,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
              RuntimeWarning)
 
     # fun also returns the jacobian
-    if not callable(jac):
+    if not callable(jac) and meth in ('hybr', 'lm'):
         if bool(jac):
             fun = MemoizeJac(fun)
             jac = fun.derivative
@@ -222,7 +222,17 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
 
         jac_opts = options.get('jac_options', dict())
 
-        out = nonlin.nonlin_solve(fun, x0, jacobian=jacobian(**jac_opts), iter=nit,
+        if args:
+            def f(x):
+                if jac == True:
+                    r = fun(x, *args)[0]
+                else:
+                    r = fun(x, *args)
+                return r
+        else:
+            f = fun
+
+        out = nonlin.nonlin_solve(f, x0, jacobian=jacobian(**jac_opts), iter=nit,
                                   verbose=verbose, maxiter=maxiter,
                                   f_tol=f_tol, f_rtol=f_rtol, x_tol=x_tol,
                                   x_rtol=x_rtol, tol_norm=tol_norm,
