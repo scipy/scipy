@@ -535,7 +535,7 @@ class rv_frozen(object):
 
 ##  Documentation for ranlib, rv2, cdflib and
 ##
-##  Eric Wesstein's world of mathematics http://mathworld.wolfram.com/
+##  Eric Weisstein's world of mathematics http://mathworld.wolfram.com/
 ##      http://mathworld.wolfram.com/topics/StatisticalDistributions.html
 ##
 ##  Documentation to Regress+ by Michael McLaughlin
