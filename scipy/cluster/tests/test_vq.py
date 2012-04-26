@@ -116,9 +116,7 @@ class TestKMean(TestCase):
 
     def test_kmeans_lost_cluster(self):
         """This will cause kmean to have a cluster with no points."""
-        fp = open(DATAFILE1)
-        data = np.fromfile(fp, sep = ", ")
-        fp.close()
+        data = np.fromfile(DATAFILE1, sep = ", ")
         data = data.reshape((200, 2))
         initk = np.array([[-1.8127404, -0.67128041],
                          [ 2.04621601, 0.07401111],
@@ -148,9 +146,7 @@ class TestKMean(TestCase):
 
     def test_kmeans2_rank1(self):
         """Testing simple call to kmeans2 with rank 1 data."""
-        fp = open(DATAFILE1)
-        data = np.fromfile(fp, sep = ", ")
-        fp.close()
+        data = np.fromfile(DATAFILE1, sep = ", ")
         data = data.reshape((200, 2))
         data1 = data[:, 0]
         data2 = data[:, 1]
@@ -162,9 +158,7 @@ class TestKMean(TestCase):
 
     def test_kmeans2_rank1_2(self):
         """Testing simple call to kmeans2 with rank 1 data."""
-        fp = open(DATAFILE1)
-        data = np.fromfile(fp, sep = ", ")
-        fp.close()
+        data = np.fromfile(DATAFILE1, sep = ", ")
         data = data.reshape((200, 2))
         data1 = data[:, 0]
 
@@ -172,9 +166,7 @@ class TestKMean(TestCase):
 
     def test_kmeans2_init(self):
         """Testing that kmeans2 init methods work."""
-        fp = open(DATAFILE1)
-        data = np.fromfile(fp, sep = ", ")
-        fp.close()
+        data = np.fromfile(DATAFILE1, sep = ", ")
         data = data.reshape((200, 2))
 
         kmeans2(data, 3, minit = 'random')

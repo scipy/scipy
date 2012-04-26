@@ -101,9 +101,7 @@ def load_testing_files():
     for fn in _filenames:
         name = fn.replace(".txt", "").replace("-ml", "")
         fqfn = os.path.join(os.path.dirname(__file__), fn)
-        fp = open(fqfn)
-        eo[name] = np.loadtxt(fp)
-        fp.close()
+        eo[name] = np.loadtxt(fqfn)
 
 load_testing_files()
 
