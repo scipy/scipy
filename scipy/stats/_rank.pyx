@@ -62,7 +62,7 @@ cdef _rankdata_fused(np.ndarray[array_data_type, ndim=1] b):
 @cython.cdivision(True)
 def rankdata(a):
     """
-    rankata(a)
+    rankdata(a)
 
     Assign ranks to the data in `a`, dealing with ties appropriately.
 
