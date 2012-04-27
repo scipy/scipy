@@ -110,7 +110,7 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
             }
 
           PyErr_Print();
-          tmpobj = PyObject_GetAttrString(odr_global.fcn, "func_name");
+          tmpobj = PyObject_GetAttrString(odr_global.fcn, "__name__");
           if (tmpobj == NULL)
             goto fail;
 
@@ -165,7 +165,7 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
             }
 
           PyErr_Print();
-          tmpobj = PyObject_GetAttrString(odr_global.fjacb, "func_name");
+          tmpobj = PyObject_GetAttrString(odr_global.fjacb, "__name__");
           if (tmpobj == NULL)
             goto fail;
 
@@ -243,7 +243,7 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
             }
 
           PyErr_Print();
-          tmpobj = PyObject_GetAttrString(odr_global.fjacd, "func_name");
+          tmpobj = PyObject_GetAttrString(odr_global.fjacd, "__name__");
           if (tmpobj == NULL)
             goto fail;
 

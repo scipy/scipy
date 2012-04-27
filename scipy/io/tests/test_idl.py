@@ -6,12 +6,11 @@ DATA_PATH = path.join(path.dirname(__file__), 'data')
 import numpy as np
 from numpy.compat import asbytes_nested, asbytes
 from numpy.testing import assert_equal, assert_array_equal, run_module_suite
+from numpy.testing.utils import WarningManager
 from nose.tools import assert_true
 
 from scipy.io.idl import readsav
 
-warnings.filterwarnings('ignore', message="warning: multi-dimensional structures")
-warnings.filterwarnings('ignore', message="warning: empty strings")
 
 def object_array(*args):
     '''Constructs a numpy array of objects'''
@@ -118,7 +117,14 @@ class TestCompressed(TestScalars):
     '''Test that compressed .sav files can be read in'''
 
     def test_compressed(self):
-        s = readsav(path.join(DATA_PATH, 'various_compressed.sav'), verbose=False)
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            warnings.filterwarnings('ignore', message="warning: empty strings")
+            s = readsav(path.join(DATA_PATH, 'various_compressed.sav'), verbose=False)
+        finally:
+            warn_ctx.__exit__()
+
         assert_identical(s.i8u, np.uint8(234))
         assert_identical(s.f32, np.float32(-3.1234567e+37))
         assert_identical(s.c64, np.complex128(1.1987253647623157e+112-5.1987258887729157e+307j))
@@ -368,8 +374,13 @@ class TestPointerStructures:
             assert_true(np.all(vect_id(s.arrays_rep.h[i]) == id(s.arrays_rep.h[0][0])))
 
     def test_arrays_replicated_3d(self):
-
-        s = readsav(path.join(DATA_PATH, 'struct_pointer_arrays_replicated_3d.sav'), verbose=False)
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            warnings.filterwarnings('ignore', message="warning: multi-dimensional structures")
+            s = readsav(path.join(DATA_PATH, 'struct_pointer_arrays_replicated_3d.sav'), verbose=False)
+        finally:
+            warn_ctx.__exit__()
 
         # Check column types
         assert_true(s.arrays_rep.g.dtype.type is np.object_)

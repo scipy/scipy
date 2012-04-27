@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # Created by Pearu Peterson, June 2003
+import warnings
 
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
+from numpy.testing.utils import WarningManager
 from numpy import array, diff, shape, linspace, pi
 from scipy.interpolate.fitpack2 import UnivariateSpline, LSQBivariateSpline, \
     SmoothBivariateSpline, RectBivariateSpline, RectSphereBivariateSpline
@@ -91,7 +93,14 @@ class TestLSQBivariateSpline(TestCase):
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            # This seems to fail (ier=1, see ticket 1642).
+            warnings.simplefilter('ignore', UserWarning)
+            lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
+        finally:
+            warn_ctx.__exit__()
 
         tx, ty = lut.get_knots()
 
@@ -163,7 +172,15 @@ class TestSmoothBivariateSpline(TestCase):
         y = [1,2,3,1,2,3,1,2,3]
         z = array([0,7,8,3,4,7,1,3,4])
 
-        lut = SmoothBivariateSpline(x,y,z,kx=1,ky=1,s=0)
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            # This seems to fail (ier=1, see ticket 1642).
+            warnings.simplefilter('ignore', UserWarning)
+            lut = SmoothBivariateSpline(x, y, z, kx=1, ky=1, s=0)
+        finally:
+            warn_ctx.__exit__()
+
         tx = [1,2,4]
         ty = [1,2,3]
 
@@ -172,7 +189,7 @@ class TestSmoothBivariateSpline(TestCase):
                     *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
         assert_almost_equal(lut.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz)
 
-        lut2 = SmoothBivariateSpline(x,y,z,kx=2,ky=2,s=0)
+        lut2 = SmoothBivariateSpline(x, y, z, kx=2, ky=2, s=0)
         assert_almost_equal(lut2.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz,
                             decimal=0) # the quadratures give 23.75 and 23.85
 
