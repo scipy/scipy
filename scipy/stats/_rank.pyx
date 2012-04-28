@@ -32,17 +32,17 @@ ctypedef fused array_data_type:
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef _rankdata_fused(np.ndarray[array_data_type, ndim=1] b):
-    cdef unsigned int i, j, n, sumranks, dupcount, inext
-    cdef np.ndarray[np.int_t, ndim=1] ivec
-    cdef np.ndarray[array_data_type, ndim=1] svec
-    cdef np.ndarray[np.float64_t, ndim=1] ranks
+cdef np.ndarray[np.float64_t, ndim=1] _rankdata_fused(np.ndarray[array_data_type, ndim=1] b):
+    cdef unsigned int i, j, n, isize, sumranks, dupcount, inext
+    cdef int[:] order
+    cdef double[:] ranks
     cdef double averank
 
     n = b.size
-    ivec = _np.argsort(b)
-    svec = b[ivec]
-    ranks = _np.zeros(n, float)
+    ranks = cython.view.array(shape=(n,), itemsize=sizeof(double), format='d')
+
+    order = _np.argsort(b)
+
     with nogil:
         sumranks = 0
         dupcount = 0
@@ -50,13 +50,14 @@ cdef _rankdata_fused(np.ndarray[array_data_type, ndim=1] b):
             sumranks += i
             dupcount += 1
             inext = i + 1
-            if i == n-1 or svec[i] != svec[inext]:
+            if i == n - 1 or b[order[i]] != b[order[inext]]:
                 averank = sumranks / float(dupcount) + 1
                 for j in xrange(inext - dupcount, inext):
-                    ranks[ivec[j]] = averank
+                    ranks[order[j]] = averank
                 sumranks = 0
                 dupcount = 0
-    return ranks
+
+    return _np.asarray(ranks)
 
 
 @cython.boundscheck(False)
@@ -84,8 +85,8 @@ def rankdata(a):
     Notes
     -----
     All floating point types are converted to numpy.float64 before ranking.
-    This may result in spurious ties if the input array has a wider data
-    type than numpy.float64.
+    This may result in spurious ties if an input array of floats has a
+    wider data type than numpy.float64 (e.g. numpy.float128).
 
     Examples
     --------
@@ -93,21 +94,29 @@ def rankdata(a):
     array([ 1. ,  2.5,  4. ,  2.5])
 
     """
-    cdef np.ndarray[np.int64_t, ndim=1] x_int64
-    cdef np.ndarray[np.uint64_t, ndim=1] x_uint64
-    cdef np.ndarray[np.float64_t, ndim=1] x_float64
+    cdef np.ndarray[np.int64_t, ndim=1] b_int64
+    cdef np.ndarray[np.uint64_t, ndim=1] b_uint64
+    cdef np.ndarray[np.float64_t, ndim=1] b_float64
+    cdef np.ndarray[np.float64_t, ndim=1] ranks
 
+    # Convert the input to a 1-d numpy array.
     cdef np.ndarray b = _np.ravel(_np.asarray(a))
 
+    if b.size == 0:
+        return _np.array([], dtype=_np.float64)
+
     if _np.issubdtype(b.dtype, _np.unsignedinteger):
-        x_uint64 = b.astype(_np.uint64)
-        ranks = _rankdata_fused(x_uint64)
+        # Any unsigned type is converted to np.uint64.
+        b_uint64 = _np.asarray(b, dtype=_np.uint64)
+        ranks = _rankdata_fused(b_uint64)
     elif _np.issubdtype(b.dtype, _np.integer):
-        x_int64 = b.astype(_np.int64)
-        ranks = _rankdata_fused(x_int64)
+        # Any integer type is converted to np.int64.
+        b_int64 = _np.asarray(b, dtype=_np.int64)
+        ranks = _rankdata_fused(b_int64)
     else:
-        x_float64 = b.astype(_np.float64)
-        ranks = _rankdata_fused(x_float64)
+        # Anything else is converted to np.float64.
+        b_float64 = _np.asarray(b, dtype=_np.float64)
+        ranks = _rankdata_fused(b_float64)
 
     return ranks
 
@@ -131,7 +140,7 @@ def tiecorrect(np.ndarray[np.float64_t, ndim=1] rankvals):
 
     Returns
     -------
-    T : float
+    factor : float
         Correction factor for U or H.
 
     See Also
@@ -155,16 +164,21 @@ def tiecorrect(np.ndarray[np.float64_t, ndim=1] rankvals):
 
     """
     cdef unsigned int i, inext, n, nties, T
-    cdef np.ndarray[np.int_t, ndim=1] posn
-    cdef np.ndarray[np.float64_t, ndim=1] sorted
-    cdef double t
+    cdef int[:] order
+    cdef double[:] sorted
+    cdef double factor
 
-    posn = _np.argsort(rankvals)
-    sorted = rankvals[posn]
-    n = len(sorted)
+    n = rankvals.size
     if n < 2:
         return 1.0
+
+    order = _np.argsort(rankvals)
+    sorted = cython.view.array(shape=(n,), itemsize=sizeof(double), format='d')
+
     with nogil:
+        for i in xrange(n):
+            sorted[i] = rankvals[order[i]]
+
         T = 0
         i = 0
         while i < n - 1:
@@ -177,5 +191,7 @@ def tiecorrect(np.ndarray[np.float64_t, ndim=1] rankvals):
                     inext += 1
                 T = T + nties**3 - nties
             i = inext
-        t = T / float(n**3 - n)
-    return 1.0 - t
+
+        factor = 1.0 - T / float(n**3 - n)
+
+    return factor
