@@ -124,7 +124,6 @@ def rankdata(a):
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def tiecorrect(rankvals):
-##def tiecorrect(np.ndarray[np.float64_t, ndim=1] rankvals):
     """
     tiecorrect(rankvals)
 
