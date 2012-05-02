@@ -123,7 +123,8 @@ def rankdata(a):
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def tiecorrect(np.ndarray[np.float64_t, ndim=1] rankvals):
+def tiecorrect(rankvals):
+##def tiecorrect(np.ndarray[np.float64_t, ndim=1] rankvals):
     """
     tiecorrect(rankvals)
 
@@ -132,11 +133,9 @@ def tiecorrect(np.ndarray[np.float64_t, ndim=1] rankvals):
 
     Parameters
     ----------
-    rankvals : 1-d ndarray of type np.float64
-        For efficiency, this function requires a numpy array as its
-        argument.  This is not a signficant inconvenience, because its
-        primary use is in the mannwhitneyu and kruskal functions, where
-        it is called with the result of stats.rankdata.
+    rankvals : 1-d array_like
+        A 1-d sequence of ranks.  Typically this will be the array
+        returned by stats.rankdata.
 
     Returns
     -------
@@ -151,6 +150,8 @@ def tiecorrect(np.ndarray[np.float64_t, ndim=1] rankvals):
 
     Examples
     --------
+    >>> tiecorrect([1, 2.5, 2.5, 4])
+    0.9
     >>> ranks = rankdata([1, 3, 2, 4, 5, 7, 2, 8, 4])
     >>> ranks
     array([ 1. ,  4. ,  2.5,  5.5,  7. ,  8. ,  2.5,  9. ,  5.5])
@@ -163,21 +164,24 @@ def tiecorrect(np.ndarray[np.float64_t, ndim=1] rankvals):
            Sciences.  New York: McGraw-Hill.
 
     """
+    cdef np.ndarray[np.float64_t, ndim=1] ranks
     cdef unsigned int i, inext, n, nties, T
     cdef int[:] order
     cdef double[:] sorted
     cdef double factor
 
-    n = rankvals.size
+    ranks = _np.asarray(rankvals).astype(_np.float64)
+
+    n = ranks.size
     if n < 2:
         return 1.0
 
-    order = _np.argsort(rankvals)
+    order = _np.argsort(ranks)
     sorted = cython.view.array(shape=(n,), itemsize=sizeof(double), format='d')
 
     with nogil:
         for i in xrange(n):
-            sorted[i] = rankvals[order[i]]
+            sorted[i] = ranks[order[i]]
 
         T = 0
         i = 0
