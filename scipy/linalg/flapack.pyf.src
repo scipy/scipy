@@ -47,7 +47,7 @@ interface
      <ftype2> intent(out),depend(ldvsr,n),dimension(ldvsr,n) :: vsr
      integer optional,intent(in),depend(jobvsr,n) :: ldvsr=((jobvsr==1)?n:1)
      <ftype2> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
-     integer optional,intent(in),depend(n),check(lwork>=MAX(1,8*n+16)||lwork==-1):: lwork=8*n+16
+     integer optional,intent(in),depend(n),check(lwork>=MAX(1,MAX(8*n, 6*n+16))||lwork==-1):: lwork=MAX(8*n, 6*n+16)
      logical optional,intent(hide),depend(n),dimension(n) :: bwork
      integer intent(out):: info
    end subroutine <prefix2>gges
