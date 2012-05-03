@@ -306,6 +306,11 @@ class TestConstructUtils(TestCase):
 
         assert_equal(construct.block_diag((A, B, C)).todense(), expected)
 
+    def test_block_diag_1(self):
+        """ block_diag with one matrix """
+        assert_equal(construct.block_diag([[1, 0]]).todense(),
+                     matrix([[1, 0]]))
+
     def test_rand(self):
         # Simple sanity checks for sparse.rand
         for t in [np.float32, np.float64, np.longdouble]:
