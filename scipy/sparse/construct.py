@@ -563,11 +563,14 @@ def block_diag(mats, format=None, dtype=None):
 
     """
     nmat = len(mats)
-    rows = []
-    for ia, a in enumerate(mats):
-        row = [None]*nmat
-        row[ia] = a
-        rows.append(row)
+    if nmat == 1:
+        rows = mats
+    else:
+        rows = []
+        for ia, a in enumerate(mats):
+            row = [None]*nmat
+            row[ia] = a
+            rows.append(row)
     return bmat(rows, format=format, dtype=dtype)
 
 def rand(m, n, density=0.01, format="coo", dtype=None):
