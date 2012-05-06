@@ -839,13 +839,14 @@ def johnson(csgraph, directed=True, indices=None,
     # initialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
+        return_shape = indices.shape + (N,)
     else:
         indices = np.array(indices, order='C', dtype=ITYPE)
+        return_shape = indices.shape + (N,)
+        indices = np.atleast_1d(indices).reshape(-1)
         indices[indices < 0] += N
         if np.any(indices < 0) or np.any(indices >= N):
             raise ValueError("indices out of range 0...N")
-    return_shape = indices.shape + (N,)
-    indices = np.atleast_1d(indices).reshape(-1)
 
     #------------------------------
     # initialize dist_matrix for output
@@ -902,7 +903,7 @@ def johnson(csgraph, directed=True, indices=None,
     #------------------------------
     # correct the distance matrix for the bellman-ford weights
     dist_matrix += dist_array
-    dist_matrix -= dist_array[:, None]
+    dist_matrix -= dist_array[:, None][indices]
 
     if return_predecessors:
         return (dist_matrix.reshape(return_shape),

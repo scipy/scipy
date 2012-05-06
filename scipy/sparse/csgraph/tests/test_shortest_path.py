@@ -1,173 +1,121 @@
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_raises
+from numpy.testing import assert_array_almost_equal, assert_raises, TestCase
 from scipy.sparse.csgraph import \
-    shortest_path, dijkstra, floyd_warshall,\
+    shortest_path, dijkstra, floyd_warshall, johnson,\
     bellman_ford, construct_dist_matrix, NegativeCycleError
 
 
-def floyd_warshall_slow(graph, directed=False):
-    N = graph.shape[0]
+directed_G = np.array([[0, 3, 3, 0, 0],
+                       [0, 0, 0, 2, 4],
+                       [0, 0, 0, 0, 0],
+                       [1, 0, 0, 0, 0],
+                       [2, 0, 0, 2, 0]], dtype=float)
 
-    #set nonzero entries to infinity
-    graph[np.where(graph == 0)] = np.inf
+undirected_G = np.array([[0, 3, 3, 1, 2],
+                         [3, 0, 0, 2, 4],
+                         [3, 0, 0, 0, 0],
+                         [1, 2, 0, 0, 2],
+                         [2, 4, 0, 2, 0]], dtype=float)
 
-    #set diagonal to zero
-    graph.flat[::N + 1] = 0
+unweighted_G = (directed_G > 0).astype(float)
 
-    if not directed:
-        graph = np.minimum(graph, graph.T)
+directed_SP = [[0, 3, 3, 5, 7],
+               [3, 0, 6, 2, 4],
+               [np.inf, np.inf, 0, np.inf, np.inf],
+               [1, 4, 4, 0, 8],
+               [2, 5, 5, 2, 0]]
 
-    for k in range(N):
-        for i in range(N):
-            for j in range(N):
-                graph[i, j] = min(graph[i, j], graph[i, k] + graph[k, j])
+directed_pred = np.array([[-9999,     0,     0,     1,     1],
+                          [    3, -9999,     0,     1,     1],
+                          [-9999, -9999, -9999, -9999, -9999],
+                          [    3,     0,     0, -9999,     1],
+                          [    4,     0,     0,     4, -9999]], dtype=float)
 
-    return graph
+undirected_SP = np.array([[0, 3, 3, 1, 2],
+                          [3, 0, 6, 2, 4],
+                          [3, 6, 0, 4, 5],
+                          [1, 2, 4, 0, 2],
+                          [2, 4, 5, 2, 0]], dtype=float)
 
-
-def generate_graph(N=20):
-    #sparse grid of distances
-    np.random.seed(123456)
-    dist_matrix = np.random.random((N, N))
-
-    #make graph sparse
-    i = (np.random.randint(N, size=N * N / 2),
-         np.random.randint(N, size=N * N / 2))
-    dist_matrix[i] = np.inf
-
-    #set diagonal to zero
-    dist_matrix.flat[::N + 1] = 0
-
-    return dist_matrix
-
-
-def test_floyd_warshall():
-    dist_matrix = generate_graph(20)
-
-    for directed in (True, False):
-        graph_FW = shortest_path(dist_matrix, 'FW', directed)
-        graph_py = floyd_warshall_slow(dist_matrix.copy(), directed)
-
-        assert_array_almost_equal(graph_FW, graph_py)
+undirected_pred = np.array([[-9999,     0,     0,     0,     0],
+                            [    1, -9999,     0,     1,     1],
+                            [    2,     0, -9999,     0,     0],
+                            [    3,     3,     0, -9999,     3],
+                            [    4,     4,     0,     4, -9999]], dtype=float)
 
 
-def test_dijkstra():
-    dist_matrix = generate_graph(20)
+methods = ['auto', 'FW', 'D', 'BF', 'J']
 
-    for directed in (True, False):
-        graph_D = shortest_path(dist_matrix, 'D', directed)
-        graph_FW = shortest_path(dist_matrix, 'FW', directed)
+def test_directed():
+    for method in methods:
+        SP = shortest_path(directed_G, method=method, directed=True,
+                           overwrite=False)
+        yield (assert_array_almost_equal, SP, directed_SP)
 
-        assert_array_almost_equal(graph_D, graph_FW)
+def test_undirected():
+    for method in methods:
+        SP1 = shortest_path(directed_G, method=method, directed=False,
+                            overwrite=False)
+        SP2 = shortest_path(undirected_G, method=method, directed=True,
+                            overwrite=False)
 
+        yield (assert_array_almost_equal, SP1, undirected_SP)
+        yield (assert_array_almost_equal, SP2, undirected_SP)
 
-def test_dijkstra_indices():
-    dist_matrix = generate_graph(20)
-    indices = np.arange(20, dtype=int)
-    np.random.seed(0)
-    np.random.shuffle(indices)
-    indices = indices[:6]
-
-    for directed in (True, False):
-        graph_FW = shortest_path(dist_matrix, 'FW', directed)
-        for indshape in [(6,), (6, 1), (2, 3)]:
-            outshape = indshape + (20,)
-            graph_D = dijkstra(dist_matrix, directed,
-                               indices=indices.reshape(indshape))
-            assert_array_almost_equal(graph_D,
-                                      graph_FW[indices].reshape(outshape))
-
-
-def test_johnson():
-    dist_matrix = generate_graph(20)
-
-    for directed in (True, False):
-        graph_J = shortest_path(dist_matrix, 'J', directed)
-        graph_FW = shortest_path(dist_matrix, 'FW', directed)
-
-        assert_array_almost_equal(graph_J, graph_FW)
-
-
-def test_johnson_indices():
-    dist_matrix = generate_graph(20)
-    indices = np.arange(20, dtype=int)
-    np.random.seed(0)
-    np.random.shuffle(indices)
-    indices = indices[:6]
-
-    for directed in (True, False):
-        graph_FW = shortest_path(dist_matrix, 'FW', directed)
-        for indshape in [(6,), (6, 1), (2, 3)]:
-            outshape = indshape + (20,)
-            graph_J = dijkstra(dist_matrix, directed,
-                               indices=indices.reshape(indshape))
-            assert_array_almost_equal(graph_J,
-                                      graph_FW[indices].reshape(outshape))
-
-
-def test_bellman_ford():
-    dist_matrix = generate_graph(20)
-
-    for directed in (True, False):
-        graph_BF = shortest_path(dist_matrix, 'BF', directed)
-        graph_py = floyd_warshall_slow(dist_matrix.copy(), directed)
-
-        assert_array_almost_equal(graph_BF, graph_py)
-
-
-def test_bellman_ford_indices():
-    dist_matrix = generate_graph(20)
-    indices = np.arange(20, dtype=int)
-    np.random.seed(0)
-    np.random.shuffle(indices)
-    indices = indices[:6]
-
-    for directed in (True, False):
-        graph_FW = shortest_path(dist_matrix, 'FW', directed)
-        for indshape in [(6,), (6, 1), (2, 3)]:
-            outshape = indshape + (20,)
-            graph_BF = bellman_ford(dist_matrix, directed,
-                                    indices=indices.reshape(indshape))
-            assert_array_almost_equal(graph_BF,
-                                      graph_FW[indices].reshape(outshape))
-
+def test_shortest_path_indices():
+    indices = np.arange(4)
+    for indshape in [(4,), (4, 1), (2, 2)]:
+        for func in (dijkstra, johnson, bellman_ford):
+            outshape = indshape + (5,)
+            SP = func(directed_G, directed=False,
+                      indices=indices.reshape(indshape))
+            yield (assert_array_almost_equal, SP,
+                   undirected_SP[indices].reshape(outshape))
 
 def test_predecessors():
-    csgraph = generate_graph(20)
+    SP_res = {True: directed_SP,
+              False: undirected_SP}
+    pred_res = {True: directed_pred,
+                False: undirected_pred}
+    
+    for method in methods:
+        for directed in True, False:
+            SP, pred = shortest_path(directed_G, method, directed=directed,
+                                     overwrite=False,
+                                     return_predecessors=True)
 
-    for directed in (True, False):
-        dist_D, pred_D = shortest_path(csgraph, 'D', directed,
-                                       return_predecessors=True)
-        dist_FW, pred_FW = shortest_path(csgraph, 'FW', directed,
-                                         return_predecessors=True)
-
-        assert_array_almost_equal(dist_D, dist_FW)
-        assert_array_almost_equal(pred_D, pred_FW)
-
+            yield (assert_array_almost_equal,
+                   SP, SP_res[directed])
+            yield (assert_array_almost_equal,
+                   pred, pred_res[directed])
 
 def test_construct_shortest_path():
-    csgraph = generate_graph(5)
+    SP_res = {True: directed_SP,
+              False: undirected_SP}
+    for method in methods:
+        for directed in (True, False):
+            SP1, pred = shortest_path(directed_G,
+                                      directed=directed,
+                                      overwrite=False,
+                                      return_predecessors=True)
+            SP2 = construct_dist_matrix(directed_G, pred, directed=directed)
 
-    for directed in (True, False):
-        dist, pred = shortest_path(csgraph,
-                                   directed=directed,
-                                   overwrite=False,
-                                   return_predecessors=True)
-        dist2 = construct_dist_matrix(csgraph, pred, directed=directed)
-
-        assert_array_almost_equal(dist, dist2)
+            yield (assert_array_almost_equal, SP1, SP2)
 
 def test_unweighted_path():
-    csgraph = generate_graph(20)
-    csgraph_ones = np.ones(csgraph.shape)
-    csgraph_ones[np.isinf(csgraph)] = np.inf
+    for method in methods:
+        for directed in (True, False):
+            SP1 = shortest_path(directed_G,
+                                directed=directed,
+                                overwrite=False,
+                                unweighted=True)
+            SP2 = shortest_path(unweighted_G,
+                                directed=directed,
+                                overwrite=False,
+                                unweighted=False)
+    
+            yield (assert_array_almost_equal, SP1, SP2)
 
-    for directed in (True, False):
-        for method in ('D', 'J', 'BF', 'FW'):
-            D1 = shortest_path(csgraph, method=method, directed=directed,
-                               unweighted=True)
-            D2 = shortest_path(csgraph_ones, method=method, directed=directed)
-            assert_array_almost_equal(D1, D2)
 
 def test_negative_cycles():
     # create a small graph with a negative cycle
@@ -176,9 +124,8 @@ def test_negative_cycles():
     graph[1, 2] = -2
     for method in ['FW', 'J', 'BF']:
         for directed in True, False:
-            assert_raises(NegativeCycleError, shortest_path,
-                          graph, method=method, directed=directed)
-
+            yield (assert_raises, NegativeCycleError, shortest_path,
+                   graph, method, directed)
 
 if __name__ == '__main__':
     import nose
