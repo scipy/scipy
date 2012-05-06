@@ -61,31 +61,33 @@ class MemoizeJac(object):
             return self.jac
 
 class Result(dict):
-    """ Result of optimization solvers.
+    """ Represents the optimization result.
 
-    Common attributes
-    -----------------
+    Attributes
+    ----------
     x : ndarray
-        The solution.
+        The solution of the optimization.
     success : bool
         Whether or not the optimizer exited successfully.
     status : int
-        Exit status of the solver. Its value depends on the underlying
-        solver. Refer to `message` for details.
+        Termination status of the optimizer. Its value depends on the
+        underlying solver. Refer to `message` for details.
     message : str
-        Information about the cause of the termination.
+        Description of the cause of the termination.
     fun, jac, hess : ndarray
-        Values of objective function, Jacobian and Hessian (if
-        available).
+        Values of objective function, Jacobian and Hessian (if available).
     nfev, njev, nhev: int
         Number of evaluations of the objective functions and of its
-        jacobian and hessian.
+        Jacobian and Hessian.
     nit: int
-        Number of iterations.
+        Number of iterations performed by the optimizer.
 
-    Note
-    ----
-    This is essential a subclass of dict with attribute accessors.
+    Notes
+    -----
+    There may be additional attributes not listed above depending of the
+    specific solver. Since this class is essentially a subclass of dict
+    with attribute accessors, one can see which attributes are available
+    using the `keys()` method.
     """
     def __getattr__(self, name):
         try:
@@ -99,10 +101,10 @@ class Result(dict):
     def __repr__(self):
         if self.keys():
             m = max(map(len, self.keys())) + 1
+            return '\n'.join([k.rjust(m) + ': ' + repr(v)
+                              for k, v in self.iteritems()])
         else:
-            m = 0
-        return '\n'.join([k.rjust(m) + ': ' + repr(v)
-                          for k, v in self.iteritems()])
+            return self.__class__.__name__ + "()"
 
     def __array__(self):
         return self.solution
