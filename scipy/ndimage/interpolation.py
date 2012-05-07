@@ -519,9 +519,9 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     zoom_div = numpy.array(output_shape, float) - 1
     zoom = (numpy.array(input.shape) - 1) / zoom_div
 
-    # Zooming to infinity is unpredictable, so just choose
+    # Zooming to non-finite values in unpredictable, so just choose
     # zoom factor 1 instead
-    zoom[numpy.isinf(zoom)] = 1
+    zoom[~numpy.isfinite(zoom)] = 1
 
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
