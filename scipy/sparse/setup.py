@@ -11,6 +11,7 @@ def configuration(parent_package='',top_path=None):
 
     config.add_subpackage('linalg')
     config.add_subpackage('sparsetools')
+    config.add_subpackage('csgraph')
 
     return config
 

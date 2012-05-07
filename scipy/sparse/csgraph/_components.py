@@ -1,18 +1,13 @@
-"""Compressed Sparse graph algorithms"""
-
-__docformat__ = "restructuredtext en"
-
-__all__ = ['cs_graph_components']
-
 import numpy as np
 
-from sparsetools import cs_graph_components as _cs_graph_components
+from scipy.sparse.sparsetools import cs_graph_components as _cs_graph_components
 
-from csr import csr_matrix
-from base import isspmatrix
+from scipy.sparse.csr import csr_matrix
+from scipy.sparse.base import isspmatrix
 
 _msg0 = 'x must be a symmetric square matrix!'
 _msg1 = _msg0 + '(has shape %s)'
+
 
 def cs_graph_components(x):
     """
@@ -26,7 +21,7 @@ def cs_graph_components(x):
 
     Parameters
     -----------
-    x: ndarray-like, 2 dimensions, or sparse matrix
+    x: array_like or sparse matrix, 2 dimensions
         The adjacency matrix of the graph. Only the upper triangular part
         is used.
 
@@ -49,8 +44,7 @@ def cs_graph_components(x):
 
     Examples
     --------
-    >>> from scipy.sparse import cs_graph_components
-    >>> import numpy as np
+    >>> from scipy.sparse.csgraph import connected_components
     >>> D = np.eye(4)
     >>> D[0,1] = D[1,0] = 1
     >>> cs_graph_components(D)
