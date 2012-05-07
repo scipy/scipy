@@ -2987,6 +2987,11 @@ class TestNdimage:
                                                        sampling=[2, 1])
         assert_array_almost_equal(ref, out)
 
+    def test_distance_transform_edt5(self):
+        "Ticket #954"
+        out = ndimage.distance_transform_edt(False) 
+        assert_array_almost_equal(out, [0.])
+
     def test_generate_structure01(self):
         "generation of a binary structure 1"
         struct = ndimage.generate_binary_structure(0, 1)
