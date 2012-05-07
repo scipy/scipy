@@ -127,6 +127,14 @@ def test_negative_cycles():
             yield (assert_raises, NegativeCycleError, shortest_path,
                    graph, method, directed)
 
+def test_masked_input():
+    G = np.ma.masked_equal(directed_G, 0)
+    for method in methods:
+        SP = shortest_path(directed_G, method=method, directed=True,
+                           overwrite=False)
+        yield (assert_array_almost_equal, SP, directed_SP)
+    
+
 if __name__ == '__main__':
     import nose
     nose.runmodule()
