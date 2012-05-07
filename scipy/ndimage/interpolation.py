@@ -518,6 +518,8 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
 
     zoom_div = numpy.array(output_shape, float) - 1
     zoom = (numpy.array(input.shape) - 1) / zoom_div
+    zoom = numpy.where(numpy.array(input.shape) == numpy.array(output_shape),
+                       1.0, zoom)
 
     # Zooming to infinity is unpredictable, so just choose
     # zoom factor 1 instead
