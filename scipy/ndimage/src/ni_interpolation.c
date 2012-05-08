@@ -115,7 +115,7 @@ spline_coefficients(double x, int order, double *result)
 static double
 map_coordinate(double in, npy_intp len, int mode)
 {
-    if (in < 0) {
+    if (in < -0.4999) {
         switch (mode) {
         case NI_EXTEND_MIRROR:
             if (len <= 1) {
@@ -153,7 +153,7 @@ map_coordinate(double in, npy_intp len, int mode)
             in = -1;
             break;
         }
-    } else if (in > len-1) {
+    } else if (in > len-0.5001) {
         switch (mode) {
         case NI_EXTEND_MIRROR:
             if (len <= 1) {

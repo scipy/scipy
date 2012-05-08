@@ -2260,6 +2260,22 @@ class TestNdimage:
             out = ndimage.rotate(data, 90, axes=(0, 1),
                                            reshape=False)
             assert_array_almost_equal(out, expected)
+    
+    def test_rotate09(self):
+        "Ticket #1378"
+        data = numpy.array([[[-1, -1, -1],
+                             [-1, -1, -1],
+                             [-1, -1, -1]],
+                            [[ 0,  0,  0],
+                             [ 0,  1,  0],
+                             [ 0,  0,  0]],
+                            [[ 0,  0,  0],
+                            [ 0,  1,  0],
+                            [ 0,  0,  0]]])
+        out = ndimage.rotate(data, 180, axes=(0, 1))
+        expected = ndimage.rotate(ndimage.rotate(data, 90, axes=(0, 1)), 
+                                    90, axes=(0, 1))
+        assert_array_almost_equal(out, expected)
 
     def test_watershed_ift01(self):
         "watershed_ift 1"
