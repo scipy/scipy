@@ -693,7 +693,8 @@ class CXXCoder(ByteCodeMeaning):
         assert_(inspect.isfunction(function))
         assert_(not function.func_defaults,
                 msg="Function cannot have default args (yet)")
-        if name is None: name = function.func_name
+        if name is None:
+            name = function.__name__
         self.name = name
         self.function = function
         self.signature = signature

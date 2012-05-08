@@ -11,10 +11,12 @@ Run tests if scipy is installed:
 """
 
 import math
+import warnings
 
 from numpy import array
 from numpy.testing import assert_equal, assert_almost_equal, \
         assert_array_almost_equal, TestCase, run_module_suite
+from numpy.testing.utils import WarningManager
 from scipy.lib.blas import fblas
 from scipy.lib.blas import cblas
 from scipy.lib.blas import get_blas_funcs
@@ -198,11 +200,13 @@ class TestBLAS(TestCase):
         b = array([[1],[1],[1]])
 
         # get_blas_funcs is deprecated, silence the warning
-        import warnings
-        warnings.simplefilter('ignore', DeprecationWarning)
-        gemm, = get_blas_funcs(('gemm',),(a,b))
-        # remove filter again
-        warnings.filters.pop(0)
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            warnings.simplefilter('ignore', DeprecationWarning)
+            gemm, = get_blas_funcs(('gemm',),(a,b))
+        finally:
+            warn_ctx.__exit__()
 
         assert_array_almost_equal(gemm(1,a,b),[[3]],15)
 

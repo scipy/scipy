@@ -1,8 +1,10 @@
 Recurse:
     linalg,
-    sparsetools
+    sparsetools,
+    csgraph
 
 Library:
     Packages:
         linalg,
-        sparsetools
+        sparsetools,
+        csgraph

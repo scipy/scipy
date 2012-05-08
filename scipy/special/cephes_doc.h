@@ -122,6 +122,7 @@
 #define nbdtrik_doc "k=nbdtrik(y,n,p) finds the argument k such that nbdtr(k,n,p)=y."
 #define nbdtrin_doc "n=nbdtrin(k,y,p) finds the argument n such that nbdtr(k,n,p)=y."
 #define ndtr_doc "y=ndtr(x) returns the area under the standard Gaussian probability \ndensity function, integrated from minus infinity to x:\n1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)"
+#define log_ndtr_doc "y=log_ndtr(x) returns the log of the area under the standard Gaussian probability \ndensity function, integrated from minus infinity to x:\n1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)"
 #define ndtri_doc "x=ndtri(y) returns the argument x for which the area udnder the\nGaussian probability density function (integrated from minus infinity\nto x) is equal to y."
 #define obl_ang1_doc "(s,sp)=obl_ang1(m,n,c,x) computes the oblate sheroidal angular function \nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``."
 #define obl_ang1_cv_doc "(s,sp)=obl_ang1_cv(m,n,c,cv,x) computes the oblate sheroidal angular function \nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value."

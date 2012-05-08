@@ -54,7 +54,7 @@ class MemoizeJac(object):
         return fg[0]
 
     def derivative(self, x, *args):
-        if all(x == self.x) and self.jac is not None:
+        if self.jac is not None and numpy.alltrue(x == self.x):
             return self.jac
         else:
             self(x, *args)

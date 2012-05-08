@@ -61,12 +61,14 @@ Identifying sparse matrices:
    isspmatrix_coo
    isspmatrix_dia
 
-Graph algorithms:
+Submodules
+----------
 
 .. autosummary::
    :toctree: generated/
 
-   cs_graph_components -- Determine connected components of a graph
+   csgraph - Compressed sparse graph routines
+   linalg - sparse linear algebra routines
 
 Exceptions
 ----------
@@ -171,7 +173,8 @@ sorted indices are required (e.g. when passing data to other libraries).
 """
 
 # Original code by Travis Oliphant.
-# Modified and extended by Ed Schofield, Robert Cimrman, and Nathan Bell.
+# Modified and extended by Ed Schofield, Robert Cimrman,
+# Nathan Bell, and Jake Vanderplas.
 
 from base import *
 from csr import *
@@ -181,10 +184,11 @@ from dok import *
 from coo import *
 from dia import *
 from bsr import *
-from csgraph import *
-
 from construct import *
 from extract import *
+
+# for backward compatibility with v0.10.  This function is marked as deprecated
+from csgraph import cs_graph_components
 
 #from spfuncs import *
 

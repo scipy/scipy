@@ -86,9 +86,33 @@ A function for creating Pascal matrices, ``scipy.linalg.pascal``, was added.
 
 ``misc.logsumexp`` now takes an optional ``axis`` keyword argument.
 
+Sparse Graph Submodule
+----------------------
+The new submodule :mod:`scipy.sparse.csgraph` implements a number of efficient
+graph algorithms for graphs stored as sparse adjacency matrices.  Available
+routines are:
+
+   - :func:`connected_components` - determine connected components of a graph
+   - :func:`laplacian` - compute the laplacian of a graph
+   - :func:`shortest_path` - compute the shortest path between points on a
+     positive graph
+   - :func:`dijkstra` - use Dijkstra's algorithm for shortest path
+   - :func:`floyd_warshall` - use the Floyd-Warshall algorithm for
+     shortest path
+   - :func:`breadth_first_order` - compute a breadth-first order of nodes
+   - :func:`depth_first_order` - compute a depth-first order of nodes
+   - :func:`breadth_first_tree` - construct the breadth-first tree from
+     a given node
+   - :func:`depth_first_tree` - construct a depth-first tree from a given node
+   - :func:`minimum_spanning_tree` - construct the minimum spanning
+     tree of a graph
+
 
 Deprecated features
 ===================
+``scipy.sparse.cs_graph_components`` has been made a part of the sparse graph
+submodule, and renamed to ``scipy.sparse.csgraph.connected_components``.
+Calling the former routine will result in a deprecation warning.
 
 ``scipy.misc.radon`` has been deprecated.  A more full-featured radon transform
 can be found in scikits-image.
@@ -122,3 +146,4 @@ added.
 Authors
 =======
 
+Jake Vanderplas <vanderplas@hail.astro.washington.edu>, sparse graph submodule

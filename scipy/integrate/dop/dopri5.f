@@ -634,6 +634,7 @@ C ----- COMPUTE PLACE OF II-TH COMPONENT
    5  CONTINUE
       IF (I.EQ.0) THEN
          WRITE (6,*) ' NO DENSE OUTPUT AVAILABLE FOR COMP.',II 
+         CONTD5=-1
          RETURN
       END IF  
       THETA=(X-XOLD)/H
