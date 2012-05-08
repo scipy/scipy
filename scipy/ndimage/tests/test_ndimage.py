@@ -2103,6 +2103,16 @@ class TestNdimage:
                                        [0, 4, 1, 3],
                                        [0, 7, 6, 8]])
 
+    def test_shift10(self):
+        "Ticket #796"
+        data = numpy.arange(16).reshape(4, 4)
+        ref = np.array([[3, 0, 1, 2],
+                        [7, 4, 5, 6],
+                        [11, 8, 9, 10],
+                        [15, 12, 13, 14]])
+        out = ndimage.shift(data, (0, 1), mode='wrap')
+        assert_array_almost_equal(out, ref)
+
     def test_zoom1(self):
         "zoom 1"
         for order in range(0,6):
