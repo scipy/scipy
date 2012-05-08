@@ -2146,7 +2146,12 @@ class TestNdimage:
         """Ticket #1122"""
         arr = numpy.zeros((1, 5, 5))
         zoom = (1.0, 2.0, 2.0)
-        out = ndimage.zoom(arr, zoom, cval=7)
+        
+        err = numpy.seterr(divide='ignore')
+        try:
+            out = ndimage.zoom(arr, zoom, cval=7)
+        finally:
+            numpy.seterr(**err)
         ref = numpy.zeros((1, 10, 10))
         assert_array_almost_equal(out, ref)
 
