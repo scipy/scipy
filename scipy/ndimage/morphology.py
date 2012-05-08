@@ -1266,6 +1266,8 @@ def grey_erosion(input,  size = None, footprint = None, structure = None,
            [0, 0, 0, 0, 0, 0, 0]])
 
     """
+    if size is None and footprint is None and structure is None:
+        raise ValueError("size, footprint or structure must be specified")
     return filters._min_or_max_filter(input, size, footprint, structure,
                                       output, mode, cval, origin, 1)
 
@@ -1406,6 +1408,8 @@ def grey_dilation(input,  size = None, footprint = None, structure = None,
            [1, 1, 1, 1, 1, 1, 1]])
 
     """
+    if size is None and footprint is None and structure is None:
+        raise ValueError("size, footprint or structure must be specified")
     if structure is not None:
         structure = numpy.asarray(structure)
         structure = structure[tuple([slice(None, None, -1)] *
