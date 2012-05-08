@@ -1163,8 +1163,8 @@ def grey_erosion(input,  size = None, footprint = None, structure = None,
         Array over which the grayscale erosion is to be computed.
 
     size : tuple of ints
-        Shape of a flat and full structuring element used for the
-        grayscale erosion. Optional if `footprint` is provided.
+        Shape of a flat and full structuring element used for the grayscale
+        erosion. Optional if `footprint` or `structure` is provided.
 
     footprint : array of ints, optional
         Positions of non-infinite elements of a flat structuring element
@@ -1289,8 +1289,8 @@ def grey_dilation(input,  size = None, footprint = None, structure = None,
         Array over which the grayscale dilation is to be computed.
 
     size : tuple of ints
-        Shape of a flat and full structuring element used for the
-        grayscale dilation. Optional if `footprint` is provided.
+        Shape of a flat and full structuring element used for the grayscale
+        dilation. Optional if `footprint` or `structure` is provided.
 
     footprint : array of ints, optional
         Positions of non-infinite elements of a flat structuring element
@@ -1451,8 +1451,8 @@ def grey_opening(input, size = None, footprint = None, structure = None,
         Array over which the grayscale opening is to be computed.
 
     size : tuple of ints
-        Shape of a flat and full structuring element used for the
-        grayscale opening. Optional if `footprint` is provided.
+        Shape of a flat and full structuring element used for the grayscale
+        opening. Optional if `footprint` or `structure` is provided.
 
     footprint : array of ints, optional
         Positions of non-infinite elements of a flat structuring element
@@ -1546,8 +1546,8 @@ def grey_closing(input, size = None, footprint = None, structure = None,
         Array over which the grayscale closing is to be computed.
 
     size : tuple of ints
-        Shape of a flat and full structuring element used for the
-        grayscale closing. Optional if `footprint` is provided.
+        Shape of a flat and full structuring element used for the grayscale
+        closing. Optional if `footprint` or `structure` is provided.
 
     footprint : array of ints, optional
         Positions of non-infinite elements of a flat structuring element
@@ -1643,9 +1643,9 @@ def morphological_gradient(input, size = None, footprint = None,
         Array over which to compute the morphlogical gradient.
 
     size : tuple of ints
-        Shape of a flat and full structuring element used for the
-        mathematical morphology operations. Optional if `footprint`
-        is provided. A larger `size` yields a more blurred gradient.
+        Shape of a flat and full structuring element used for the mathematical
+        morphology operations. Optional if `footprint` or `structure` is
+        provided. A larger `size` yields a more blurred gradient.
 
     footprint : array of ints, optional
         Positions of non-infinite elements of a flat structuring element
