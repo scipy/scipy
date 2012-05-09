@@ -252,11 +252,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             def cjac(x, *args):
                 return approx_fprime(x, con['fun'], epsilon, *args)
         else:
-            cjac = None
+            cjac = con.get('jac')
 
         # update constraints' dictionary
         cons[ctype] += ({'fun' : con['fun'],
-                         'jac' : con.get('jac', cjac),
+                         'jac' : cjac,
                          'args': con.get('args', ())}, )
 
 
