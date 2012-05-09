@@ -247,16 +247,15 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             raise ValueError('Constraint %d has no function defined.' % ic)
 
         # check jacobian
-        if con.get('jac') is None:
+        cjac = con.get('jac')
+        if cjac is None:
             # approximate jacobian function
             def cjac(x, *args):
                 return approx_fprime(x, con['fun'], epsilon, *args)
-        else:
-            cjac = None
 
         # update constraints' dictionary
         cons[ctype] += ({'fun' : con['fun'],
-                         'jac' : con.get('jac', cjac),
+                         'jac' : cjac,
                          'args': con.get('args', ())}, )
 
 
