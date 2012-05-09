@@ -1091,6 +1091,18 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.data,[1, 2, 3])
         assert_array_equal(asp.todense(),bsp.todense())
 
+    def test_ufuncs(self):
+        X = csr_matrix(np.arange(20).reshape(4, 5) / 20.)
+        for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
+                  "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
+                  "deg2rad", "rad2deg", "floor", "ceil", "trunc"]:
+            assert_equal(hasattr(csr_matrix, f), True)
+            X2 = getattr(X, f)()
+            assert_equal(X.shape, X2.shape)
+            assert_array_equal(X.indices, X2.indices)
+            assert_array_equal(X.indptr, X2.indptr)
+            assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
+
     def test_unsorted_arithmetic(self):
         data    = arange( 5 )
         indices = array( [7, 2, 1, 5, 4] )
@@ -1178,6 +1190,18 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         asp.sort_indices()
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         assert_array_equal(asp.todense(),bsp.todense())
+
+    def test_ufuncs(self):
+        X = csc_matrix(np.arange(21).reshape(7, 3) / 21.)
+        for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
+                  "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
+                  "deg2rad", "rad2deg", "floor", "ceil", "trunc"]:
+            assert_equal(hasattr(csr_matrix, f), True)
+            X2 = getattr(X, f)()
+            assert_equal(X.shape, X2.shape)
+            assert_array_equal(X.indices, X2.indices)
+            assert_array_equal(X.indptr, X2.indptr)
+            assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
 
     def test_unsorted_arithmetic(self):
         data    = arange( 5 )
