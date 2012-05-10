@@ -77,7 +77,7 @@ for npfunc in [np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
                np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc]:
     name = npfunc.__name__
 
-    def create_method(op):
+    def _create_method(op):
         def method(self):
             result = op(self.data)
             x = self._with_data(result, copy=True)
@@ -89,4 +89,4 @@ for npfunc in [np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
 
         return method
 
-    setattr(_data_matrix, name, create_method(npfunc))
+    setattr(_data_matrix, name, _create_method(npfunc))
