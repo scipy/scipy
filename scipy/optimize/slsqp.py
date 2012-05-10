@@ -10,7 +10,7 @@ __all__ = ['approx_jacobian','fmin_slsqp']
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isinf, atleast_1d
-from optimize import approx_fprime, wrap_function
+from optimize import wrap_function
 
 __docformat__ = "restructuredtext en"
 
@@ -43,7 +43,7 @@ def approx_jacobian(x,func,epsilon,*args):
 
     """
     x0 = asfarray(x)
-    f0 = func(*((x0,)+args))
+    f0 = atleast_1d(func(*((x0,)+args)))
     jac = zeros([len(x0),len(f0)])
     dx = zeros(len(x0))
     for i in range(len(x0)):
@@ -251,7 +251,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if cjac is None:
             # approximate jacobian function
             def cjac(x, *args):
-                return approx_fprime(x, con['fun'], epsilon, *args)
+                return approx_jacobian(x, con['fun'], epsilon, *args)
 
         # update constraints' dictionary
         cons[ctype] += ({'fun' : con['fun'],
@@ -275,11 +275,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # Wrap func
     feval, func = wrap_function(func, args)
 
-    # Wrap fprime, if provided, or approx_fprime if not
+    # Wrap fprime, if provided, or approx_jacobian if not
     if fprime:
         geval, fprime = wrap_function(fprime, args)
     else:
-        geval, fprime = wrap_function(approx_fprime, (func, epsilon))
+        geval, fprime = wrap_function(approx_jacobian, (func, epsilon))
 
     # Transform x0 into an array.
     x = asfarray(x0).flatten()
