@@ -97,38 +97,13 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
 
     Returns
     -------
-    xopt : ndarray
-        The solution.
-    info : dict
-        A dictionary of extra outputs (depending on the chosen method)
-        with the keys:
-            solution : ndarray
-                The solution (same as `xopt`).
-            success : bool
-                Boolean flag indicating if a solution was found.
-            status : int
-                An integer flag indicating the type of termination.  Its
-                value depends on the underlying solver.  Refer to `message`
-                for more information.
-            message : str
-                A string message giving information about the cause of the
-                termination.
-            fun, jac, hess : ndarray
-                Values of objective function, Jacobian and Hessian (if
-                available).
-            nfev, njev, nhev: int
-                Number of evaluations of the objective functions and of its
-                jacobian and hessian.
-            nit: int
-                Number of iterations.
-            direc: ndarray
-                Current set of direction vectors for the Powell method.
-            T : float
-                Final temperature for simulated annealing.
-            accept : int
-                Number of tests accepted.
-            allvecs : list
-                Solution at each iteration (if ``options['return_all'] == True``).
+    res : Result
+        The optimization result represented as a ``Result`` object.
+        Important attributes are: ``x`` the solution array, ``success`` a
+        Boolean flag indicating if the optimizer exited successfully and
+        ``message`` which describes the cause of the termination. See
+        `Result` for a description of other attributes.
+
 
     See also
     --------
@@ -243,25 +218,25 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     A simple application of the *Nelder-Mead* method is:
 
     >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
-    >>> xopt = minimize(rosen, x0, method='Nelder-Mead')[0]
-    Optimization terminated successfully.
-         Current function value: 0.000066
-         Iterations: 141
-         Function evaluations: 243
-    >>> print xopt
+    >>> res = minimize(rosen, x0, method='Nelder-Mead')
+    >>> res.x
     [ 1.  1.  1.  1.  1.]
 
     Now using the *BFGS* algorithm, using the first derivative and a few
     options:
 
-    >>> xopt, info = minimize(rosen, x0, method='BFGS', jac=rosen_der,
-    ...                       options={'gtol': 1e-6, 'disp': False})
-
-    >>> print info['message']
+    >>> res = minimize(rosen, x0, method='BFGS', jac=rosen_der,
+    ...                options={'gtol': 1e-6, 'disp': True})
     Optimization terminated successfully.
-    >>> print info['solution']
+             Current function value: 0.000000
+             Iterations: 52
+             Function evaluations: 64
+             Gradient evaluations: 64
+    >>> res.x
     [ 1.  1.  1.  1.  1.]
-    >>> print info['hess']
+    >>> print res.message
+    Optimization terminated successfully.
+    >>> res.hess
     [[ 0.00749589  0.01255155  0.02396251  0.04750988  0.09495377]
      [ 0.01255155  0.02510441  0.04794055  0.09502834  0.18996269]
      [ 0.02396251  0.04794055  0.09631614  0.19092151  0.38165151]
@@ -286,8 +261,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
 
     The optimization problem is solved using the SLSQP method as:
 
-    >>> xopt, info = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
-    ...                       constraints=cons)
+    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
+    ...                constraints=cons)
 
     It should converge to the theoretical solution (1.4 ,1.7).
     """
@@ -400,26 +375,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     Returns
     -------
-    xopt : ndarray
-        The solution.
-    info : dict
-        A dictionary of extra outputs (depending on the chosen method)
-        with the keys:
-            success : bool
-                Boolean flag indicating if a solution was found.
-            status : int
-                An integer flag indicating the type of termination.  Its
-                value depends on the underlying solver.  Refer to `message`
-                for more information.
-            message : str
-                A string message giving information about the cause of the
-                termination.
-            fun : float
-                Values of objective function.
-            nfev: int
-                Number of evaluations of the objective function.
-            nit: int
-                Number of iterations.
+    res : Result
+        The optimization result represented as a ``Result`` object.
+        Important attributes are: ``x`` the solution array, ``success`` a
+        Boolean flag indicating if the optimizer exited successfully and
+        ``message`` which describes the cause of the termination. See
+        `Result` for a description of other attributes.
 
     See also
     --------
@@ -452,15 +413,15 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     Using the *Brent* method, we find the local minimum as:
 
     >>> from scipy.optimize import minimize_scalar
-    >>> xl = minimize_scalar(f)
-    >>> xl
+    >>> res = minimize_scalar(f)
+    >>> res.x
     1.28077640403
 
     Using the *Bounded* method, we find a local minimum with specified
     bounds as:
 
-    >>> xc = minimize_scalar(f, bounds=(-3, -1), method='bounded')
-    >>> xc
+    >>> res = minimize_scalar(f, bounds=(-3, -1), method='bounded')
+    >>> res.x
     -2.0000002026
     """
     meth = method.lower()
