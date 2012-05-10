@@ -57,6 +57,14 @@ class TestSLSQP(TestCase):
         """ Equality constraint, derivative """
         return np.array([[1, -1]])
 
+    def f_eqcon_scalar(self, x, sign=1.0):
+        """ Scalar equality constraint """
+        return self.f_eqcon(x, sign)[0]
+
+    def fprime_eqcon_scalar(self, x, sign=1.0):
+        """ Scalar equality constraint, derivative """
+        return self.fprime_eqcon(x, sign)[0].tolist()
+
     def f_ieqcon(self, x, sign=1.0):
         """ Inequality constraint """
         return np.array([x[0] - x[1] - 1.0])
@@ -137,6 +145,21 @@ class TestSLSQP(TestCase):
                                         'fun': self.f_eqcon,
                                         'args': (-1.0, ),
                                         'jac': self.fprime_eqcon},
+                           options=self.opts, full_output=True)
+        assert_(info['success'], info['message'])
+        assert_allclose(x, [1, 1])
+
+    def test_minimize_equality_given_cons_scalar(self):
+        """ \
+        Minimize with method='SLSQP': scalar equality constraint, given
+        jacobian for fun and const.
+        """
+        x, info = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
+                           jac=self.jac, args = (-1.0,),
+                           constraints={'type': 'eq',
+                                        'fun': self.f_eqcon_scalar,
+                                        'args': (-1.0, ),
+                                        'jac': self.fprime_eqcon_scalar},
                            options=self.opts, full_output=True)
         assert_(info['success'], info['message'])
         assert_allclose(x, [1, 1])
@@ -253,6 +276,18 @@ class TestSLSQP(TestCase):
         x, fx, its, imode, smode = res
         assert_(imode == 0, imode)
         assert_array_almost_equal(x, [0.8, 0.8], decimal=3)
+
+    def test_scalar_constraints(self):
+        """ Ticket #1657 """
+        x = fmin_slsqp(lambda z: z**2, [3.],
+                       ieqcons=[lambda z: z[0] - 1],
+                       iprint=0)
+        assert_array_almost_equal(x, [1.])
+
+        x = fmin_slsqp(lambda z: z**2, [3.],
+                       f_ieqcons=lambda z: [z[0] - 1],
+                       iprint=0)
+        assert_array_almost_equal(x, [1.])
 
 if __name__ == "__main__":
     run_module_suite()
