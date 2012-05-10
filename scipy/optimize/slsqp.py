@@ -287,8 +287,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
-    meq = sum(map(len, [c['fun'](x, *c['args']) for c in cons['eq']]))
-    mieq = sum(map(len, [c['fun'](x, *c['args']) for c in cons['ineq']]))
+    meq = sum(map(len, [atleast_1d(c['fun'](x, *c['args'])) for c in cons['eq']]))
+    mieq = sum(map(len, [atleast_1d(c['fun'](x, *c['args'])) for c in cons['ineq']]))
     # m = The total number of constraints
     m = meq + mieq
     # la = The number of constraints, or 1 if there are no constraints
