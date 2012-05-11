@@ -6,8 +6,10 @@
 
 """
 
+import numpy as np
 from numpy import array, identity, dot, sqrt, double, exp, random
-from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal
+from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
+     assert_array_almost_equal_nulp
 
 from scipy.linalg import signm, logm, sqrtm, expm, expm2, expm3
 
@@ -101,36 +103,25 @@ class TestExpM(TestCase):
         a = array([[1j,1],[-1,-2j]])
         assert_array_almost_equal(expm(a), expm2(a))
         assert_array_almost_equal(expm(a), expm3(a))
-    
-    def test_padecases_double(self):
-        # test double-precision cases
-        a1 = identity(3, dtype=double)*1e-2; e1 = exp(1e-2)*identity(3)
-        a2 = identity(3, dtype=double)*1e-1; e2 = exp(1e-1)*identity(3)
-        a3 = identity(3, dtype=double)*5e-1; e3 = exp(5e-1)*identity(3)
-        a4 = identity(3, dtype=double);      e4 = exp(1.)*identity(3)
-        a5 = identity(3, dtype=double)*10;   e5 = exp(10.)*identity(3)
-        assert_array_almost_equal(expm(a1),e1)
-        assert_array_almost_equal(expm(a2),e2)
-        assert_array_almost_equal(expm(a3),e3)
-        assert_array_almost_equal(expm(a4),e4)
-        assert_array_almost_equal(expm(a5),e5)
-    
-    def test_padecases_float(self):
-        # test single-precision cases
-        a1 = identity(3, dtype=float)*1e-1; e1 = exp(1e-1)*identity(3)
-        a2 = identity(3, dtype=float);      e2 = exp(1.0)*identity(3)
-        a3 = identity(3, dtype=float)*10;   e3 = exp(10.)*identity(3)
-        assert_array_almost_equal(expm(a1),e1)
-        assert_array_almost_equal(expm(a2),e2)
-        assert_array_almost_equal(expm(a3),e3)
-    
+
+    def test_padecases_dtype(self):
+        for dtype in [np.float32, np.float64, np.complex64, np.complex128]:
+            # test double-precision cases
+            for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
+                a = scale * identity(3, dtype=dtype)
+                e = exp(scale) * identity(3, dtype=dtype)
+                assert_array_almost_equal_nulp(expm(a), e, nulp=100)
+
     def test_logm_consistency(self):
         random.seed(1234)
-        for n in range(1, 10):
-            for scale in [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2]:
-                # make logm(a) be of a given scale
-                a = identity(n) + random.rand(n, n) * scale
-                assert_array_almost_equal(expm(logm(a)), a)
+        for dtype in [np.float32, np.float64, np.complex64, np.complex128]:
+            for n in range(1, 10):
+                for scale in [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2]:
+                    # make logm(a) be of a given scale
+                    a = (identity(n) + random.rand(n, n) * scale).astype(dtype)
+                    if np.iscomplexobj(a):
+                        a = a + 1j * random.rand(n, n) * scale
+                    assert_array_almost_equal(expm(logm(a)), a)
 
 if __name__ == "__main__":
     run_module_suite()
