@@ -100,6 +100,7 @@ Denis Laxalde for the unified interface to minimizers in scipy.optimize.
 David Fong for the sparse LSMR solver.
 Andreas Hilboll for wrapping FITPACK's spgrid.f
 Andrew Schein for improving the numerical precision of norm.logcdf().
+Robert Gantner for improving expm() implementation.
 
 
 Institutions
