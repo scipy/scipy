@@ -8,39 +8,97 @@ Statistics (`scipy.stats`)
 Introduction
 ------------
 
-SciPy has a tremendous number of basic statistics routines. Next to
-this, new routines and distributions can easily added by the end user
-(if you create one please contribute it).  All of the statistics
-functions are located in the sub-package :mod:`scipy.stats` and a
-fairly complete listing of these functions can be obtained using
-``info(stats)``.
-
 In this tutorial we discuss many, but certainly not all, features of
-``scipy.stats``. The intention here is to provide a user with a working
-knowledge of `scipy.stats`. We refer to the `reference
-manual <http://docs.scipy.org/doc/scipy/reference/stats.html>`_ for
-further details.
+``scipy.stats``. The intention here is to provide a user with a
+working knowledge of this package. We refer to the `reference manual
+<http://docs.scipy.org/doc/scipy/reference/stats.html>`_ for further
+details.
+
 
 Note: This documentation is work in progress.
 
 Random Variables
 ------------------
 
+
 There are two general distribution classes that have been implemented
-for encapsulating
-:ref:`continuous random variables <continuous-random-variables>`
-and
-:ref:`discrete random variables <discrete-random-variables>`
-. Over 80 continuous random variables  and 10 discrete random
-variables have been implemented using these classes. The list of the
-random variables available is in the docstring for the stats sub-
-package.
+for encapsulating :ref:`continuous random variables
+<continuous-random-variables>` and :ref:`discrete random variables
+<discrete-random-variables>` . Over 80 continuous random variables
+(RVs) and 10 discrete random variables have been implemented using
+these classes. Besides this, new routines and distributions can easily
+added by the end user. (If you create one, please contribute it).
+
+All of the statistics functions are located in the sub-package
+:mod:`scipy.stats` and a fairly complete listing of these functions
+can be obtained using ``info(stats)``.  The list of the random
+variables available can also be obtained from the docstring for the
+stats sub-package.
+
+In the discussion below we mostly focus on continuous RVs. Nearly all
+applies to discrete variables also, but we point out some differences
+here: :ref:`discrete_points_label`.
+
+Getting Help
+^^^^^^^^^^^^^^^^^^^^
+
+First of all, all distributions are accompanied with help
+functions. ``help(stats.nct)`` prints the complete docstring of the
+distribution. To obtain just some basic information we can call
+
+    >>> from scipy import stats
+    >>> from scipy.stats import norm
+    >>> print norm.extradoc 
+    Normal distribution
+
+    The location (loc) keyword specifies the mean.
+    The scale (scale) keyword specifies the standard deviation.
+    
+    normal.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
+
+We clarify the words ``loc`` and ``scale`` below. To find the support,
+i.e., upper and lower bound of the distribution, call:
+
+    >>> print 'bounds of distribution lower: %s, upper: %s' % (norm.a,norm.b)
+    bounds of distribution lower: -inf, upper: inf
+
+We can list all methods and properties of the distribution with
+``dir(norm)``. As it turns out, some of the methods are private
+methods although they are not named as such (their name does not start
+with a leading underscore), for example ``veccdf`` or ``xa`` and
+``xb`` are only available  for internal calculation.
+
+To obtain the `real` main methods, we list the methods of the frozen
+distribution. (We explain the meaning of a `frozen` distribution
+below).
+
+    >>> rv = norm()
+    >>> dir(rv) #reformatted
+        ['__class__', '__delattr__', '__dict__', '__doc__', '__getattribute__',
+        '__hash__', '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__',
+        '__repr__', '__setattr__', '__str__', '__weakref__', 'args', 'cdf', 'dist',
+        'entropy', 'isf', 'kwds', 'moment', 'pdf', 'pmf', 'ppf', 'rvs', 'sf', 'stats']
+
+Finally, we can obtain the list of available distribution through
+introspection:
+
+    >>> import warnings
+    >>> warnings.simplefilter('ignore', DeprecationWarning)
+    >>> dist_continu = [d for d in dir(stats) if
+    ...                 isinstance(getattr(stats,d), stats.rv_continuous)]
+    >>> dist_discrete = [d for d in dir(stats) if
+    ...                  isinstance(getattr(stats,d), stats.rv_discrete)]
+    >>> print 'number of continuous distributions:', len(dist_continu)
+    number of continuous distributions: 84
+    >>> print 'number of discrete distributions:  ', len(dist_discrete)
+    number of discrete distributions:   12
+
 
 
 Common Methods
 ^^^^^^^^^^^^^^^^^
 
-The main public methods for continuous  RV are:
+The main public methods for continuous  RVs are:
 
 * rvs:   Random Variates
 * pdf:   Probability Density Function
@@ -51,15 +109,15 @@ The main public methods for continuous  RV are:
 * stats: Return mean, variance, (Fisher's) skew, or (Fisher's) kurtosis
 * moment: non-central moments of the distribution
 
+
+
 Lets take a normal RV as an example.
 
 
-    >>> from scipy import stats
-    >>> from scipy.stats import norm
     >>> norm.cdf(0)
     0.5
 
-To compute the `cdf` at a number of points, we can pass a list or a numpy array.
+To compute the ``cdf`` at a number of points, we can pass a list or a numpy array.
 
     >>> norm.cdf([-1., 0, 1])
     array([ 0.15865525,  0.5       ,  0.84134475])
@@ -77,6 +135,11 @@ Other generally useful methods are supported too:
     >>> norm.stats(moments = "mv")
     (array(0.0), array(1.0))
 
+To find the median of a distribution we can use the percent point
+function ``ppf``, which is the inverse of the ``cdf``:
+
+    >>> norm..ppf(0.5)
+
 To generate a set of random variates: 
 
     >>> norm.rvs(size=5)
@@ -88,15 +151,6 @@ Don't think that ``norm.rvs(5)`` generates 5 variates:
     7.131624370075814
 
 This brings us, in fact, to topic of the next subsection.
-
-As a last example, we can get the median of the distribution by using
-the percent point function, ppf, which is the inverse of the cdf:
-
-    >>> print stats.nct.ppf(0.5, 10, 2.5)
-    2.56880722561
-    >>> my_nct = stats.nct(10, 2.5)
-    >>> print my_nct.ppf(0.5)
-    2.56880722561
 
 
 Shifting and Scaling
@@ -110,16 +164,18 @@ the scale is the standard deviation.
     >>> norm.stats(loc = 3, scale = 4, moments = "mv")
     (array(3.0), array(16.0))
 
+In general the standardized distribution for a random variable ``X``
+is obtained through the transformation ``(X - loc) / scale``.  The
+default values are ``loc = 0`` and ``scale = 1``.
 
-In general the standardized distribution for a random variable
-:math:`X` is obtained through the transformation :math:`(X - loc) /
-scale`. As a second example, the ``cdf`` of an exponentially distributed
-RV with mean :math:`1/\lambda` is given by
+Smart use of ``loc`` and ``scale`` can help modify the standard
+distributions in many ways. To illustrate the scaling further, the
+``cdf`` of an exponentially distributed RV with mean :math:`1/\lambda`
+is given by
 
 .. math::
 
     F(x) = 1 - \exp(-\lambda x)
-
 
 By applying the scaling rule above, it can be seen that by
 taking ``scale  = 1./lambda`` we get the proper scale.
@@ -128,12 +184,24 @@ taking ``scale  = 1./lambda`` we get the proper scale.
     >>> expon.mean(scale = 3.)
     3.0
 
-Now, from the previous paragraph we are left with the problem of the
-meaning of ``norm.rvs(5)``. As it turns out, calling a distribution
-like this, the first arguments gets passed to set the ``loc`` parameter. Lets see:
+The uniform distribution is also interesting:
+
+    >>> from scipy.stats import uniform
+    >>> uniform.cdf([0,1,2,3,4,5], loc = 1, scale = 4)
+    array([ 0.  ,  0.  ,  0.25,  0.5 ,  0.75,  1.  ])
+
+
+Finally, recall from the previous paragraph that we are left with the
+problem of the meaning of ``norm.rvs(5)``. As it turns out, calling a
+distribution like this, the first argument, i.e., the 5, gets passed
+to set the ``loc`` parameter. Lets see:
 
     >>> np.mean(norm.rvs(5, size=500))
     4.983550784784704
+
+Thus, to explain the output of the example of the last section:
+``norm.rvs(5)` generates a normally distributed random variate with
+mean ``loc=5``.
 
 I prefer to set the ``loc`` and ``scale`` parameter explicitly, by
 passing the values as keywords rather than as arguments. This is less
@@ -153,20 +221,25 @@ additional shape parameters. For instance, the gamma distribution, with density
     \gamma(x,n) = \frac{\lambda (\lambda x)^{n-1}}{\Gamma(n)} e^{-\lambda x},
  
 requires the shape parameter :math:`n`. Observe that setting
-:math:`\lambda` can be obtained by setting the `scale` keyword to
-:math:`1./\lambda`.
+:math:`\lambda` can be obtained by setting the ``scale`` keyword to
+:math:`1/\lambda`.
 
-Lets check the name of the shape parameter of the gamma distribution. 
+Lets check the number and name of the shape parameters of the gamma
+distribution. (We know from the above that this should be 1.)
 
     >>> from scipy.stats import gamma
+    >>> gamma.numargs
+    1
     >>> gamma.shapes
     'a'
 
-Now we set the value of the shape variable to 1, so as to obtain the
-exponential distribution, so that we compare easily whether we get the results we expect.
+Now we set the value of the shape variable to 1 to obtain the
+exponential distribution, so that we compare easily whether we get the
+results we expect.
 
     >>>  gamma(1, scale=2.).stats(moments = "mv")
     (array(2.0), array(4.0))
+
 
 Freezing a Distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -176,34 +249,25 @@ quite bothersome. The concept of `freezing` a RV is used to
 solve such problems. 
 
     >>> rv = gamma(1, scale=2.)
+
+
+By using ``rv`` we no longer have to include the scale or the shape
+parameters anymore. Thus, distributions can be used in one of two
+ways, either by passing all distribution parameters to each method
+call (such as we did earlier) or by freezing the parameters for the
+instance of the distribution. Let us check this:
+
     >>> rv.mean(), rv.std()
     (2.0, 2.0)
 
-This is indeed what we should get. Note that we no longer have to
-include the scale or the shape parameters anymore. Thus, distributions
-can be used in one of two ways, either by passing all distribution
-parameters to each method call (such as we did earlier) or by freezing
-the parameters for the instance of the distribution.
+This is indeed what we should get. 
 
 
-Fitting Distributions
-^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The main additional methods of the not frozen distribution are related to the estimation
-of distribution parameters:
+Broadcasting
+^^^^^^^^^^^^^^^^
 
-* fit:   maximum likelihood estimation of distribution parameters, including location
-         and scale
-* fit_loc_scale: estimation of location and scale when shape parameters are given
-* nnlf:  negative log likelihood function
-* expect: Calculate the expectation of a function against the pdf or pmf
-
-
-Vectorization and Broadcasting
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The basic methods, pdf, cdf, sf, ppf, and isf are vectorized with
-``np.vectorize``, and the usual numpy broadcasting is applied. For
+The basic methods ``pdf`` and so on satisfy the usual numpy broadcasting rules. For
 example, we can calculate the critical values for the upper tail of
 the t distribution for different probabilites and degrees of freedom.
 
@@ -211,90 +275,53 @@ the t distribution for different probabilites and degrees of freedom.
     array([[ 1.37218364,  1.81246112,  2.76376946],
            [ 1.36343032,  1.79588482,  2.71807918]])
 
-Here, the first row are the critical values for 10 degrees of freedom and the second row
-is for 11 d.o.f., i.e. this is the same as
+Here, the first row are the critical values for 10 degrees of freedom
+and the second row for 11 degrees of freedom (d.o.f.). Thus, the
+broadcasting rules give the same result of calling ``isf`` twice:
 
     >>> stats.t.isf([0.1, 0.05, 0.01], 10)
     array([ 1.37218364,  1.81246112,  2.76376946])
     >>> stats.t.isf([0.1, 0.05, 0.01], 11)
     array([ 1.36343032,  1.79588482,  2.71807918])
 
-If both, probabilities and degrees of freedom have the same array shape, then element
-wise matching is used. As an example, we can obtain the 10% tail for 10 d.o.f., the 5% tail
-for 11 d.o.f. and the 1% tail for 12 d.o.f. by
+If the array with probabilities, i.e, ``[0.1, 0.05, 0.01]`` and the
+array of degrees of freedom i.e., ``[10, 11, 12]``, have the same
+array shape, then element wise matching is used. As an example, we can
+obtain the 10% tail for 10 d.o.f., the 5% tail for 11 d.o.f. and the
+1% tail for 12 d.o.f. by calling
 
     >>> stats.t.isf([0.1, 0.05, 0.01], [10, 11, 12])
     array([ 1.37218364,  1.79588482,  2.68099799])
 
 
-Getting Further Help
-^^^^^^^^^^^^^^^^^^^^
-
-``help(stats.nct)`` prints the complete docstring of the distribution. Instead
-we can print just some basic information::
-
-    >>> print stats.nct.extradoc #contains the distribution specific docs
-    Non-central Student T distribution
-
-                                     df**(df/2) * gamma(df+1)
-    nct.pdf(x,df,nc) = --------------------------------------------------
-                       2**df*exp(nc**2/2)*(df+x**2)**(df/2) * gamma(df/2)
-    for df > 0, nc > 0.
 
 
-    >>> print 'number of arguments: %d, shape parameters: %s'% (stats.nct.numargs,
-    ...                                                         stats.nct.shapes)
-    number of arguments: 2, shape parameters: df,nc
-    >>> print 'bounds of distribution lower: %s, upper: %s' % (stats.nct.a,
-    ...                                                        stats.nct.b)
-    bounds of distribution lower: -1.#INF, upper: 1.#INF
-
-We can list all methods and properties of the distribution with
-``dir(stats.nct)``. Some of the methods are private methods, that are
-not named as such, i.e. no leading underscore, for example ``veccdf`` or
-``xa`` and ``xb`` are for internal calculation. The main methods we can see
-when we list the methods of the frozen distribution:
-
-    >>> print dir(my_nct) #reformatted
-        ['__class__', '__delattr__', '__dict__', '__doc__', '__getattribute__',
-        '__hash__', '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__',
-        '__repr__', '__setattr__', '__str__', '__weakref__', 'args', 'cdf', 'dist',
-        'entropy', 'isf', 'kwds', 'moment', 'pdf', 'pmf', 'ppf', 'rvs', 'sf', 'stats']
-
-We can obtain the list of available distribution through introspection:
-
-    >>> import warnings
-    >>> warnings.simplefilter('ignore', DeprecationWarning)
-    >>> dist_continu = [d for d in dir(stats) if
-    ...                 isinstance(getattr(stats,d), stats.rv_continuous)]
-    >>> dist_discrete = [d for d in dir(stats) if
-    ...                  isinstance(getattr(stats,d), stats.rv_discrete)]
-    >>> print 'number of continuous distributions:', len(dist_continu)
-    number of continuous distributions: 84
-    >>> print 'number of discrete distributions:  ', len(dist_discrete)
-    number of discrete distributions:   12
-
+.. _discrete_points_label:
 
 Specific Points for Discrete Distributions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Discrete distribution have most of the same basic methods, however
-``pdf`` is replaced the probability mass function ``pmf``, no estimation
-methods, such as fit, are available, and scale is not a valid
-keyword parameter. The location parameter, keyword `loc` can be used
-to shift the distribution.
+Discrete distribution have mostly the same basic methods as the
+continuous distributions.  However ``pdf`` is replaced the probability
+mass function ``pmf``, no estimation methods, such as fit, are
+available, and ``scale`` is not a valid keyword parameter. The
+location parameter, keyword ``loc`` can still be used to shift the
+distribution.
 
-In the case of continuous distribution the cumulative distribution function
-is in most standard cases strictly monotonic in the bounds (a,b) and has
-therefore a unique inverse. The cdf of a discrete distribution is however
-a step function and the inverse of it, the percent point function, requires
-a different definition :ref:`(ppf of discrete random variables) <discrete-ppf>`:
-
-See the docs `here <http://docs.scipy.org/doc/scipy/reference/tutorial/stats/discrete.html#percent-point-function-inverse-cdf>`__.
+The computation of the cdf requires some extra attention. In the case
+of continuous distribution the cumulative distribution function is in
+most standard cases strictly monotonic increasing in the bounds (a,b)
+and has therefore a unique inverse. The cdf of a discrete
+distribution, however, is a step function, hence the inverse cdf,
+i.e., the percent point function, requires a different definition: 
 
 ::
 
     ppf(q) = min{x : cdf(x) >= q, x integer}
+
+For further info, see the docs `here
+<http://docs.scipy.org/doc/scipy/reference/tutorial/stats/discrete.html#percent-point-function-inverse-cdf>`__.
+
 
 We can look at the hypergeometric distribution as an example
 
@@ -323,32 +350,51 @@ the next higher integer back:
     array([ 0.,  2.,  4.,  6.])
 
 
-Performance Issues
-^^^^^^^^^^^^^^^^^^
+Fitting Distributions
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The main additional methods of the not frozen distribution are related
+to the estimation of distribution parameters:
+
+* fit:   maximum likelihood estimation of distribution parameters, including location
+         and scale
+* fit_loc_scale: estimation of location and scale when shape parameters are given
+* nnlf:  negative log likelihood function
+* expect: Calculate the expectation of a function against the pdf or pmf
+
+
+.. _performance_issues_label:
+
+Performance Issues and Cautionary Remarks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The performance of the individual methods, in terms of speed, varies
 widely by distribution and method. The results of a method are
-obtained in one of two ways, either by explicit calculation or by a
+obtained in one of two ways: either by explicit calculation, or by a
 generic algorithm that is independent of the specific distribution.
-Explicit calculation, requires that the method is directly specified
-for the given distribution, either through analytic formulas or
-through special functions in scipy.special or numpy.random for
-`rvs`. These are usually relatively fast calculations. The generic
-methods are used if the distribution does not specify any explicit
-calculation. To define a distribution, only one of pdf or cdf is
-necessary, all other methods can be derived using numeric integration
-and root finding. These indirect methods can be very slow. As an
-example, ``rgh = stats.gausshyper.rvs(0.5, 2, 2, 2, size=100)`` creates
-random variables in a very indirect way and takes about 19 seconds
-for 100 random variables on my computer, while one million random
-variables from the standard normal or from the t distribution take
-just above one second.
 
+Explicit calculation, on the one hand, requires that the method is
+directly specified for the given distribution, either through analytic
+formulas or through special functions in ``scipy.special`` or
+``numpy.random`` for ``rvs``. These are usually relatively fast
+calculations.
+
+The generic methods, on the other hand, are used if the distribution
+does not specify any explicit calculation. To define a distribution,
+only one of pdf or cdf is necessary; all other methods can be derived
+using numeric integration and root finding. However, these indirect
+methods can be `very` slow. As an example, ``rgh =
+stats.gausshyper.rvs(0.5, 2, 2, 2, size=100)`` creates random
+variables in a very indirect way and takes about 19 seconds for 100
+random variables on my computer, while one million random variables
+from the standard normal or from the t distribution take just above
+one second.
 
 
 Remaining Issues
 ^^^^^^^^^^^^^^^^^^^^^
-The distributions in scipy.stats have recently been corrected and improved
+
+The distributions in ``scipy.stats`` have recently been corrected and improved
 and gained a considerable test suite, however a few issues remain:
 
 * skew and kurtosis, 3rd and 4th moments and entropy are not thoroughly
@@ -363,30 +409,93 @@ and gained a considerable test suite, however a few issues remain:
   inherently not be the best choice.
 
 
-Building a Specific Distribution
+Building  Specific Distributions
 -------------------------------------
 
+The next examples shows how to build your own distributions.  Further
+examples show the usage of the distributions and some statistical
+tests.
 
-Subclassing ``rv_continuous``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Making a Continuous Distribution, i.e., Subclassing ``rv_continuous``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-implementing ``deterministic```
+Making continuous distribution if fairly simple. 
+
+    >>> import scipy
+    >>> class deterministic_gen(scipy.stats.rv_continuous):
+    ...     def _cdf(self, x ): return np.where(x<0, 0., 1.)
+    ...     def _stats(self): return 0., 0., 0., 0.
+    ... 
+
+    >>> deterministic = deterministic_gen(name="deterministic")
+    >>> deterministic.cdf(np.arange(-3, 3, 0.5))
+    array([ 0.,  0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.,  1.,  1.])
+
+Intestingly,  the ``pdf`` is now computed automatically:
+
+    >>> deterministic.pdf(np.arange(-3, 3, 0.5))
+    array([  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
+             0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
+             5.83333333e+04,   4.16333634e-12,   4.16333634e-12,
+             4.16333634e-12,   4.16333634e-12,   4.16333634e-12])
 
 
+Be aware of the performance issues mentions in
+:ref:`performance_issues_label`. The computation of unspecified
+common methods can become very slow, since only general methods are
+called which, by their very nature, cannot use any specific
+information about the distribution. Thus, as a cautionary example:
 
-The next example shows how to build our own discrete distribution,
-and more examples for the usage of the distributions are shown below
-together with the statistical tests.
+    >>> from scipy.integrate import quad
+    >>> quad(deterministic.pdf, -1e-1, 1e-1)
+    (4.163336342344337e-13, 0.0)
+
+But this is not correct: the integral over this pdf should be 1. Lets make the integration interval smaller: 
+
+    >>> quad(deterministic.pdf, -1e-3, 1e-3) # warning removed
+    (1.000076872229173, 0.0010625571718182458)
+
+This looks better. However, the problem originated from the fact that
+the pdf is not specified in the class definition of the deterministic
+distribution.
 
 
+Subclassing ``rv_discrete``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Example: discrete distribution rv_discrete
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In the following we use ``stats.rv_discrete`` to generate a discrete
+distribution that has the probabilites of the truncated normal for the
+intervalls centered around the integers.
 
-In the following we use stats.rv_discrete to generate a discrete distribution
-that has the probabilites of the truncated normal for the intervalls
-centered around the integers.
+General Info
+_______________________
 
+From the docstring of rv_discrete, i.e., 
+
+    >>> from scipy.stats import rv_discrete
+    >>> help(rv_discrete)
+
+we learn that:
+
+ "You can construct an aribtrary discrete rv where P{X=xk} = pk by
+ passing to the rv_discrete initialization method (through the values=
+ keyword) a tuple of sequences (xk, pk) which describes only those
+ values of X (xk) that occur with nonzero probability (pk)."
+
+Next to this, there are some further requirements for this approach to
+work:
+
+* The keyword `name` is required.
+* The support points of the distribution xk have to be integers. 
+* The number of significant digits (decimals) needs to be specified. 
+
+In fact, if the last two requirements are not satisfied an exception
+may be raised or the resulting numbers may be incorrect.
+
+An Example
+________________
+
+Lets do the work. First
 
     >>> npoints = 20 # number of integer support points of the distribution minus 1
     >>> npointsh = npoints / 2
@@ -395,27 +504,18 @@ centered around the integers.
     >>> normbound = (1+1/npointsf) * nbound # actual bounds of truncated normal
     >>> grid = np.arange(-npointsh, npointsh+2, 1) # integer grid
     >>> gridlimitsnorm = (grid-0.5) / npointsh * nbound # bin limits for the truncnorm
-    >>> gridlimits = grid - 0.5
+    >>> gridlimits = grid - 0.5  # used later in the analysis
     >>> grid = grid[:-1]
     >>> probs = np.diff(stats.truncnorm.cdf(gridlimitsnorm, -normbound, normbound))
     >>> gridint = grid
+
+And finally we can subclass ``rv_discrete``:
+
     >>> normdiscrete = stats.rv_discrete(values = (gridint,
     ...              np.round(probs, decimals=7)), name='normdiscrete')
 
-From the docstring of rv_discrete:
- "You can construct an aribtrary discrete rv where P{X=xk} = pk by
- passing to the rv_discrete initialization method (through the values=
- keyword) a tuple of sequences (xk, pk) which describes only those
- values of X (xk) that occur with nonzero probability (pk)."
-
-There are some requirements for this distribution to work. The
-keyword `name` is required. The support points of the distribution
-xk have to be integers. Also, I needed  to limit the number of
-decimals. If the last two requirements are not satisfied an
-exception may be raised or the resulting numbers may be incorrect.
-
-After defining the distribution, we obtain access to all methods of
-discrete distributions.
+Now that we have defined the distribution, we have access to all
+common methods of discrete distributions.
 
     >>> print 'mean = %6.4f, variance = %6.4f, skew = %6.4f, kurtosis = %6.4f'% \
     ...       normdiscrete.stats(moments =  'mvsk')
@@ -423,7 +523,11 @@ discrete distributions.
 
     >>> nd_std = np.sqrt(normdiscrete.stats(moments =  'v'))
 
-**Generate a random sample and compare observed frequencies with probabilities**
+Testing the Implementation
+______________________________
+
+Lets generate a random sample and compare observed frequencies with
+the probabilities.
 
     >>> n_sample = 500
     >>> np.random.seed(87655678) # fix the seed for replicability
