@@ -14,7 +14,10 @@ from scipy.sparse import csr_matrix, isspmatrix,\
 include 'parameters.pxi'
 
 def csgraph_from_masked(graph):
-    """Construct a CSR-format graph from a masked array.
+    """
+    csgraph_from_masked(graph)
+
+    Construct a CSR-format graph from a masked array.
 
     Parameters
     ----------
@@ -60,7 +63,10 @@ def csgraph_masked_from_dense(graph,
                               nan_null=True,
                               infinity_null=True,
                               copy=True):
-    """Construct a masked array graph representation from a dense matrix.
+    """
+    csgraph_masked_from_dense(graph, null_value=0, nan_null=True, infinity_null=True, copy=True)
+
+    Construct a masked array graph representation from a dense matrix.
 
     Parameters
     ----------
@@ -118,7 +124,10 @@ def csgraph_from_dense(graph,
                        null_value=0,
                        nan_null=True,
                        infinity_null=True):
-    """Construct a CSR-format sparse graph from a dense matrix.
+    """
+    csgraph_from_dense(graph, null_value=0, nan_null=True, infinity_null=True)
+
+    Construct a CSR-format sparse graph from a dense matrix.
 
     Parameters
     ----------
@@ -144,7 +153,10 @@ def csgraph_from_dense(graph,
 
 
 def csgraph_to_dense(csgraph, null_value=0):
-    """Convert a sparse graph representation to a dense representation
+    """
+    csgraph_to_dense(csgraph, null_value=0)
+
+    Convert a sparse graph representation to a dense representation
 
     Parameters
     ----------
@@ -233,7 +245,10 @@ def csgraph_to_dense(csgraph, null_value=0):
 
 
 def csgraph_to_masked(csgraph):
-    """Convert a sparse graph representation to a masked array representation
+    """
+    csgraph_to_masked(csgraph)
+
+    Convert a sparse graph representation to a masked array representation
 
     Parameters
     ----------
@@ -274,7 +289,10 @@ cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
 
 
 def reconstruct_path(csgraph, predecessors, directed=True):
-    """Construct a tree from a graph and a predecessor list.
+    """
+    reconstruct_path(csgraph, predecessors, directed=True)
+
+    Construct a tree from a graph and a predecessor list.
 
     Parameters
     ----------
@@ -325,7 +343,10 @@ def construct_dist_matrix(graph,
                           predecessors,
                           directed=True,
                           null_value=np.inf):
-    """Construct distance matrix from a predecessor matrix
+    """
+    construct_dist_matrix(graph, predecessors, directed=True, null_value=np.inf)
+
+    Construct distance matrix from a predecessor matrix
 
     Parameters
     ----------

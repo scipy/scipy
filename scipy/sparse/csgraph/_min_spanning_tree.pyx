@@ -10,7 +10,10 @@ from _validation import validate_graph
 include 'parameters.pxi'
 
 def minimum_spanning_tree(csgraph, overwrite=False):
-    r"""Return a minimum spanning tree of an undirected graph
+    r"""
+    minimum_spanning_tree(csgraph, overwrite=False)
+
+    Return a minimum spanning tree of an undirected graph
 
     A minimum spanning tree is a graph consisting of the subset of edges
     which together connect all connected nodes, while minimizing the total

@@ -95,11 +95,19 @@ from scipy.special._cephes import gamma, hyp2f1, hyp1f1, gammaln
 from numpy import exp
 
 def binom(n, k):
-    """Binomial coefficient"""
+    """
+    binom(n, k)
+
+    Binomial coefficient
+    """
     return np.exp(gammaln(1+n) - gammaln(1+k) - gammaln(1+n-k))
 
 def eval_jacobi(n, alpha, beta, x, out=None):
-    """Evaluate Jacobi polynomial at a point."""
+    """
+    eval_jacobi(n, alpha, beta, x, out=None)
+
+    Evaluate Jacobi polynomial at a point.
+    """
     d = binom(n+alpha, n)
     a = -n
     b = n + alpha + beta + 1
@@ -108,12 +116,20 @@ def eval_jacobi(n, alpha, beta, x, out=None):
     return hyp2f1(a, b, c, g) * d
 
 def eval_sh_jacobi(n, p, q, x, out=None):
-    """Evaluate shifted Jacobi polynomial at a point."""
+    """
+    eval_sh_jacobi(n, p, q, x, out=None)
+
+    Evaluate shifted Jacobi polynomial at a point.
+    """
     factor = np.exp(gammaln(1+n) + gammaln(n+p) - gammaln(2*n+p))
     return factor * eval_jacobi(n, p-q, q-1, 2*x-1)
 
 def eval_gegenbauer(n, alpha, x, out=None):
-    """Evaluate Gegenbauer polynomial at a point."""
+    """
+    eval_gegenbauer(n, alpha, x, out=None)
+
+    Evaluate Gegenbauer polynomial at a point.
+    """
     d = gamma(n+2*alpha)/gamma(1+n)/gamma(2*alpha)
     a = -n
     b = n + 2*alpha
@@ -123,6 +139,8 @@ def eval_gegenbauer(n, alpha, x, out=None):
 
 def eval_chebyt(n, x, out=None):
     """
+    eval_chebyt(n, x, out=None)
+
     Evaluate Chebyshev T polynomial at a point.
 
     This routine is numerically stable for `x` in ``[-1, 1]`` at least
@@ -131,7 +149,11 @@ def eval_chebyt(n, x, out=None):
     return _eval_chebyt(n, x, out)
 
 def eval_chebyu(n, x, out=None):
-    """Evaluate Chebyshev U polynomial at a point."""
+    """
+    eval_chebyu(n, x, out=None)
+
+    Evaluate Chebyshev U polynomial at a point.
+    """
     d = n+1
     a = -n
     b = n+2
@@ -140,23 +162,43 @@ def eval_chebyu(n, x, out=None):
     return hyp2f1(a, b, c, g) * d
 
 def eval_chebys(n, x, out=None):
-    """Evaluate Chebyshev S polynomial at a point."""
+    """
+    eval_chebys(n, x, out=None)
+
+    Evaluate Chebyshev S polynomial at a point.
+    """
     return eval_chebyu(n, x/2, out=out)
 
 def eval_chebyc(n, x, out=None):
-    """Evaluate Chebyshev C polynomial at a point."""
+    """
+    eval_chebyc(n, x, out=None)
+
+    Evaluate Chebyshev C polynomial at a point.
+    """
     return 2*eval_chebyt(n, x/2.0, out)
 
 def eval_sh_chebyt(n, x, out=None):
-    """Evaluate shifted Chebyshev T polynomial at a point."""
+    """
+    eval_sh_chebyt(n, x, out=None)
+
+    Evaluate shifted Chebyshev T polynomial at a point.
+    """
     return eval_chebyt(n, 2*x-1, out=out)
 
 def eval_sh_chebyu(n, x, out=None):
-    """Evaluate shifted Chebyshev U polynomial at a point."""
+    """
+    eval_sh_chebyu(n, x, out=None)
+
+    Evaluate shifted Chebyshev U polynomial at a point.
+    """
     return eval_chebyu(n, 2*x-1, out=out)
 
 def eval_legendre(n, x, out=None):
-    """Evaluate Legendre polynomial at a point."""
+    """
+    eval_legendre(n, x, out=None)
+
+    Evaluate Legendre polynomial at a point.
+    """
     d = 1
     a = -n
     b = n+1
@@ -165,11 +207,19 @@ def eval_legendre(n, x, out=None):
     return hyp2f1(a, b, c, g) * d
 
 def eval_sh_legendre(n, x, out=None):
-    """Evaluate shifted Legendre polynomial at a point."""
+    """
+    eval_sh_legendre(n, x, out=None)
+
+    Evaluate shifted Legendre polynomial at a point.
+    """
     return eval_legendre(n, 2*x-1, out=out)
 
 def eval_genlaguerre(n, alpha, x, out=None):
-    """Evaluate generalized Laguerre polynomial at a point."""
+    """
+    eval_genlaguerre(n, alpha, x, out=None)
+
+    Evaluate generalized Laguerre polynomial at a point.
+    """
     d = binom(n+alpha, n)
     a = -n
     b = alpha + 1
@@ -177,11 +227,19 @@ def eval_genlaguerre(n, alpha, x, out=None):
     return hyp1f1(a, b, g) * d
 
 def eval_laguerre(n, x, out=None):
-    """Evaluate Laguerre polynomial at a point."""
+    """
+    eval_laguerre(n, x, out=None)
+
+    Evaluate Laguerre polynomial at a point.
+    """
     return eval_genlaguerre(n, 0., x, out=out)
 
 def eval_hermite(n, x, out=None):
-    """Evaluate Hermite polynomial at a point."""
+    """
+    eval_hermite(n, x, out=None)
+
+    Evaluate Hermite polynomial at a point.
+    """
     n, x = np.broadcast_arrays(n, x)
     n, x = np.atleast_1d(n, x)
 
@@ -203,5 +261,9 @@ def eval_hermite(n, x, out=None):
     return out
 
 def eval_hermitenorm(n, x, out=None):
-    """Evaluate normalized Hermite polynomial at a point."""
+    """
+    eval_hermitenorm(n, x, out=None)
+
+    Evaluate normalized Hermite polynomial at a point.
+    """
     return eval_hermite(n, x/sqrt(2)) * 2**(-n/2.0)

@@ -1064,7 +1064,7 @@ class Delaunay(object):
     @cython.boundscheck(False)
     def find_simplex(self, xi, bruteforce=False):
         """
-        find_simplex(xi, bruteforce=False)
+        find_simplex(self, xi, bruteforce=False)
 
         Find the simplices containing the given points.
 
@@ -1138,7 +1138,7 @@ class Delaunay(object):
     @cython.boundscheck(False)
     def plane_distance(self, xi):
         """
-        plane_distance(xi)
+        plane_distance(self, xi)
 
         Compute hyperplane distances to the point `xi` from all simplices.
 
@@ -1170,9 +1170,9 @@ class Delaunay(object):
 
         return out.reshape(xi_shape[:-1] + (self.nsimplex,))
 
-    def lift_points(tri, x):
+    def lift_points(self, x):
         """
-        lift_points(tri, x)
+        lift_points(self, x)
 
         Lift points to the Qhull paraboloid.
 
@@ -1180,8 +1180,8 @@ class Delaunay(object):
         z = np.zeros(x.shape[:-1] + (x.shape[-1]+1,), dtype=np.double)
         z[...,:-1] = x
         z[...,-1] = (x**2).sum(axis=-1)
-        z[...,-1] *= tri.paraboloid_scale
-        z[...,-1] += tri.paraboloid_shift
+        z[...,-1] *= self.paraboloid_scale
+        z[...,-1] += self.paraboloid_shift
         return z
 
 # Alias familiar from other environments

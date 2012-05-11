@@ -35,6 +35,8 @@ def shortest_path(csgraph, method='auto',
                   unweighted=False,
                   overwrite=False):
     """
+    shortest_path(csgraph, method='auto', directed=True, return_predecessors=False, unweighted=False, overwrite=False)
+
     Perform a shortest-path graph search on a positive directed or
     undirected graph.
 
@@ -159,6 +161,8 @@ def floyd_warshall(csgraph, directed=True,
                    unweighted=False,
                    overwrite=False):
     """
+    floyd_warshall(csgraph, directed=True, return_predecessors=False, unweighted=False, overwrite=False)
+
     Compute the shortest path lengths using the Floyd-Warshall algorithm
 
     Parameters
@@ -308,6 +312,8 @@ def dijkstra(csgraph, directed=True, indices=None,
              return_predecessors=False,
              unweighted=False):
     """
+    dijkstra(csgraph, directed=True, indices=None, return_predecessors=False, unweighted=False)
+
     Dijkstra algorithm using Fibonacci Heaps
 
     Parameters
@@ -563,7 +569,10 @@ cdef _dijkstra_undirected(
 def bellman_ford(csgraph, directed=True, indices=None,
                  return_predecessors=False,
                  unweighted=False):
-    """Compute the shortest path lengths using the Bellman-Ford algorithm.
+    """
+    bellman_ford(csgraph, directed=True, indices=None, return_predecessors=False, unweighted=False)
+
+    Compute the shortest path lengths using the Bellman-Ford algorithm.
     
     The Bellman-ford algorithm can robustly deal with graphs with negative
     weights.  If a negative cycle is detected, an error is raised.  For
@@ -769,7 +778,10 @@ cdef int _bellman_ford_undirected(
 def johnson(csgraph, directed=True, indices=None,
             return_predecessors=False,
             unweighted=False):
-    """Compute the shortest path lengths using Johnson's algorithm.
+    """
+    johnson(csgraph, directed=True, indices=None, return_predecessors=False, unweighted=False)
+
+    Compute the shortest path lengths using Johnson's algorithm.
 
     Johnson's algorithm combines the Bellman-Ford algorithm and Dijkstra's
     algorithm to quickly find shortest paths in a way that is robust to
