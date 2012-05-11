@@ -36,10 +36,13 @@ def expm(A, q=False):
     -------
     expA : array, shape(M,M)
         Matrix exponential of A
-    
-    See: "The Scaling and Squaring Method for the Matrix
-    Exponential Revisited", Nicholas Higham, 2005.
-    
+
+    References
+    ----------
+    N. J. Higham,
+    "The Scaling and Squaring Method for the Matrix Exponential Revisited",
+    SIAM. J. Matrix Anal. & Appl. 26, 1179 (2005).
+
     """
     if q: warnings.warn("argument q=... in scipy.linalg.expm is deprecated.")
     A = asarray(A)
