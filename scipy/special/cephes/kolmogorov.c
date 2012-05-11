@@ -35,7 +35,9 @@ smirnov (n, e)
   int v, nn;
   double evn, omevn, p, t, c, lgamnp1;
 
-  if (n <= 0 || e < 0.0 || e > 1.0)
+  /* This comparison should assure returning NaN whenever
+     e is NaN itself.  In original || form it would proceed */
+  if (!(n > 0 && e >= 0.0 && e <= 1.0))
     return (NPY_NAN);
   if (e == 0.0) return 1.0;
   nn = (int) (floor ((double) n * (1.0 - e)));
