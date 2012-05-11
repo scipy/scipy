@@ -268,6 +268,7 @@ class TestCephes(TestCase):
 
     def test_kolmogi(self):
         assert_equal(cephes.kolmogi(1),0.0)
+        assert_(np.isnan(cephes.kolmogi(np.nan)))
     def test_kolmogorov(self):
         assert_equal(cephes.kolmogorov(0),1.0)
 
@@ -428,9 +429,11 @@ class TestCephes(TestCase):
         assert_equal(cephes.sindg(90),1.0)
     def test_smirnov(self):
         assert_equal(cephes.smirnov(1,.1),0.9)
+        assert_(np.isnan(cephes.smirnov(1,np.nan)))
     def test_smirnovi(self):
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.4)),0.4)
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.6)),0.6)
+        assert_(np.isnan(cephes.smirnovi(1,np.nan)))
 
     def test_spence(self):
         assert_equal(cephes.spence(1),0.0)
