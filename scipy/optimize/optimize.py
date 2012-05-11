@@ -106,9 +106,6 @@ class Result(dict):
         else:
             return self.__class__.__name__ + "()"
 
-    def __array__(self):
-        return self.solution
-
 
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
