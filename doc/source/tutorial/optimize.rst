@@ -70,14 +70,14 @@ parameter):
     ...     return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
 
     >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
-    >>> xopt = minimize(rosen, x0, method='nelder-mead',
-    ...                 options={'xtol': 1e-8, 'disp': True})
+    >>> res = minimize(rosen, x0, method='nelder-mead',
+    ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 339
              Function evaluations: 571
 
-    >>> print xopt
+    >>> print res.x
     [ 1.  1.  1.  1.  1.]
 
 The simplex algorithm is probably the simplest way to minimize a fairly
@@ -133,14 +133,14 @@ This gradient information is specified in the :func:`minimize` function
 through the ``jac`` parameter as illustrated below.
 
 
-    >>> xopt = minimize(rosen, x0, method='BFGS', jac=rosen_der,
-    ...                 options={'disp': True})
+    >>> res = minimize(rosen, x0, method='BFGS', jac=rosen_der,
+    ...                options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 51
              Function evaluations: 63
              Gradient evaluations: 63
-    >>> print xopt
+    >>> print res.x
     [ 1.  1.  1.  1.  1.]
 
 
@@ -217,15 +217,16 @@ the function using Newton-CG method is shown in the following example:
     ...     H = H + np.diag(diagonal)
     ...     return H
 
-    >>> xopt = minimize(rosen, x0, method='Newton-CG', jac=rosen_der, hess=rosen_hess,
-    ...                 options={'avextol': 1e-8, 'disp': True})
+    >>> res = minimize(rosen, x0, method='Newton-CG',
+    ...                jac=rosen_der, hess=rosen_hess,
+    ...                options={'avextol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 19
              Function evaluations: 22
              Gradient evaluations: 19
              Hessian evaluations: 19
-    >>> print xopt
+    >>> print res.x
     [ 1.  1.  1.  1.  1.]
 
 
@@ -264,15 +265,16 @@ Rosenbrock function using :func:`minimize` follows:
     ...     Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
     ...     return Hp
 
-    >>> xopt = minimize(rosen, x0, method='Newton-CG', jac=rosen_der, hess=rosen_hess_p,
-    ...                 options={'avextol': 1e-8, 'disp': True})
+    >>> res = minimize(rosen, x0, method='Newton-CG',
+    ...                jac=rosen_der, hess=rosen_hess_p,
+    ...                options={'avextol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 20
              Function evaluations: 23
              Gradient evaluations: 20
              Hessian evaluations: 44
-    >>> print xopt
+    >>> print res.x
     [ 1.  1.  1.  1.  1.]
 
 
@@ -341,26 +343,26 @@ Then constraints are defined as a sequence of dictionaries, with keys
 
 Now an unconstrained optimization can be performed as:
 
-    >>> xopt = minimize(func, [-1.0,1.0], args=(-1.0,), jac=func_deriv,
-    ...                 method='SLSQP', options={'disp': True})
+    >>> res = minimize(func, [-1.0,1.0], args=(-1.0,), jac=func_deriv,
+    ...                method='SLSQP', options={'disp': True})
     Optimization terminated successfully.    (Exit mode 0)
                 Current function value: -2.0
                 Iterations: 4
                 Function evaluations: 5
                 Gradient evaluations: 4
-    >>> print xopt
+    >>> print res.x
     [ 2.  1.]
 
 and a constrained optimization as:
 
-    >>> xopt = minimize(func, [-1.0,1.0], args=(-1.0,), jac=func_deriv,
-                        constraints=cons, method='SLSQP', options={'disp': True})
+    >>> res = minimize(func, [-1.0,1.0], args=(-1.0,), jac=func_deriv,
+    ...                constraints=cons, method='SLSQP', options={'disp': True})
     Optimization terminated successfully.    (Exit mode 0)
                 Current function value: -1.00000018311
                 Iterations: 9
                 Function evaluations: 14
                 Gradient evaluations: 9
-    >>> print xopt
+    >>> print res.x
     [ 1.00000009  1.        ]
 
 
@@ -492,8 +494,8 @@ Here is an example:
 
     >>> from scipy.optimize import minimize_scalar
     >>> f = lambda x: (x - 2) * (x + 1)**2
-    >>> xmin = minimize_scalar(f, method='brent')
-    >>> print xmin
+    >>> res = minimize_scalar(f, method='brent')
+    >>> print res.x
     1.0
 
 
@@ -513,8 +515,8 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
 :math:`x_{\textrm{min}}=5.3314` :
 
     >>> from scipy.special import j1
-    >>> xmin = minimize_scalar(j1, bs=(4, 7), method='bounded')
-    >>> print xmin
+    >>> res = minimize_scalar(j1, bs=(4, 7), method='bounded')
+    >>> print res.x
     5.33144184241
 
 

@@ -32,7 +32,7 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 from scipy.optimize import moduleTNC, approx_fprime
-from optimize import MemoizeJac
+from optimize import MemoizeJac, Result
 from numpy import asarray, inf, array
 
 __all__ = ['fmin_tnc']
@@ -254,13 +254,11 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             'rescale': rescale,
             'disp': False}
 
-    x, info = _minimize_tnc(fun, x0, args, jac, bounds, options=opts,
-                            full_output=True)
+    res = _minimize_tnc(fun, x0, args, jac, bounds, options=opts)
 
-    return x, info['nfev'], info['status']
+    return res['x'], res['nfev'], res['status']
 
-def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={},
-                  full_output=False):
+def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options=None):
     """
     Minimize a scalar function of one or more variables using a truncated
     Newton (TNC) algorithm.
@@ -319,6 +317,8 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={},
     This function is called by the `minimize` function with `method=TNC`.
     It is not supposed to be called directly.
     """
+    if options is None:
+        options = {}
     # retrieve useful options
     epsilon  = options.get('eps', 1e-8)
     scale    = options.get('scale')
@@ -400,18 +400,10 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options={},
             fmin, ftol, xtol, pgtol, rescale)
 
     xopt = array(x)
-    if full_output:
-        funv, jacv = func_and_grad(xopt)
-        info = {'solution': xopt,
-                'fun': funv,
-                'jac': jacv,
-                'nfev': nf,
-                'status': rc,
-                'message': RCSTRINGS[rc],
-                'success': -1 < rc < 3}
-        return xopt, info
-    else:
-        return xopt
+    funv, jacv = func_and_grad(xopt)
+
+    return Result(x=xopt, fun=funv, jac=jacv, nfev=nf, status=rc,
+                  message=RCSTRINGS[rc], success=(-1 < rc < 3))
 
 if __name__ == '__main__':
     # Examples for TNC

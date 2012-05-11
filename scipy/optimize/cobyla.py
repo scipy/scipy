@@ -9,6 +9,7 @@ fmin_coblya(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
 """
 
 from scipy.optimize import _cobyla
+from optimize import Result
 from numpy import copy
 from warnings import warn
 
@@ -159,11 +160,10 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
             'disp'  : iprint != 0,
             'maxfev': maxfun}
 
-    return _minimize_cobyla(func, x0, args, constraints=con, options=opts,
-                           full_output=False)
+    return _minimize_cobyla(func, x0, args, constraints=con,
+                            options=opts)['x']
 
-def _minimize_cobyla(fun, x0, args=(), constraints=(), options={},
-                     full_output=False):
+def _minimize_cobyla(fun, x0, args=(), constraints=(), options=None):
     """
     Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Linear Approximation (COBYLA) algorithm.
@@ -183,6 +183,8 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(), options={},
     This function is called by the `minimize` function with
     `method=COBYLA`. It is not supposed to be called directly.
     """
+    if options is None:
+        options = {}
     # retrieve useful options
     rhobeg = options.get('rhobeg', 1.0)
     rhoend = options.get('rhoend', 1e-4)
@@ -232,12 +234,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(), options={},
     xopt = _cobyla.minimize(calcfc, m=m, x=copy(x0), rhobeg=rhobeg,
                             rhoend=rhoend, iprint=iprint, maxfun=maxfun)
 
-    if full_output:
-        warn('COBYLA does not handle full_output parameter.',
-             RuntimeWarning)
-        return xopt, dict()
-    else:
-        return xopt
+    return Result(x=xopt)
 
 if __name__ == '__main__':
 

@@ -29,8 +29,7 @@ from slsqp import _minimize_slsqp
 
 def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
              hessp=None, bounds=None, constraints=(),
-             options=dict(), full_output=False, callback=None,
-             retall=False):
+             options=None, callback=None):
     """
     Minimization of scalar function of one or more variables.
 
@@ -101,49 +100,19 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             disp : bool
                 Set to True to print convergence messages.
         For method-specific options, see `show_minimize_options`.
-    full_output : bool, optional
-        If True, return optional outputs.  Default is False.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
-    retall : bool, optional
-        If True, return a list of the solution at each iteration.  This is only
-        done if `full_output` is True.
 
     Returns
     -------
-    xopt : ndarray
-        The solution.
-    info : dict
-        A dictionary of optional outputs (depending on the chosen method)
-        with the keys:
-            solution : ndarray
-                The solution (same as `xopt`).
-            success : bool
-                Boolean flag indicating if a solution was found.
-            status : int
-                An integer flag indicating the type of termination.  Its
-                value depends on the underlying solver.  Refer to `message`
-                for more information.
-            message : str
-                A string message giving information about the cause of the
-                termination.
-            fun, jac, hess : ndarray
-                Values of objective function, Jacobian and Hessian (if
-                available).
-            nfev, njev, nhev: int
-                Number of evaluations of the objective functions and of its
-                jacobian and hessian.
-            nit: int
-                Number of iterations.
-            direc: ndarray
-                Current set of direction vectors for the Powell method.
-            T : float
-                Final temperature for simulated annealing.
-            accept : int
-                Number of tests accepted.
-            allvecs : list
-                Solution at each iteration (if ``retall == True``).
+    res : Result
+        The optimization result represented as a ``Result`` object.
+        Important attributes are: ``x`` the solution array, ``success`` a
+        Boolean flag indicating if the optimizer exited successfully and
+        ``message`` which describes the cause of the termination. See
+        `optimize.Result` for a description of other attributes.
+
 
     See also
     --------
@@ -258,26 +227,25 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     A simple application of the *Nelder-Mead* method is:
 
     >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
-    >>> xopt = minimize(rosen, x0, method='Nelder-Mead')
-    Optimization terminated successfully.
-         Current function value: 0.000066
-         Iterations: 141
-         Function evaluations: 243
-    >>> print xopt
+    >>> res = minimize(rosen, x0, method='Nelder-Mead')
+    >>> res.x
     [ 1.  1.  1.  1.  1.]
 
     Now using the *BFGS* algorithm, using the first derivative and a few
     options:
 
-    >>> xopt, info = minimize(rosen, x0, method='BFGS', jac=rosen_der,
-    ...                       options={'gtol': 1e-6, 'disp': False},
-    ...                       full_output=True)
-
-    >>> print info['message']
+    >>> res = minimize(rosen, x0, method='BFGS', jac=rosen_der,
+    ...                options={'gtol': 1e-6, 'disp': True})
     Optimization terminated successfully.
-    >>> print info['solution']
+             Current function value: 0.000000
+             Iterations: 52
+             Function evaluations: 64
+             Gradient evaluations: 64
+    >>> res.x
     [ 1.  1.  1.  1.  1.]
-    >>> print info['hess']
+    >>> print res.message
+    Optimization terminated successfully.
+    >>> res.hess
     [[ 0.00749589  0.01255155  0.02396251  0.04750988  0.09495377]
      [ 0.01255155  0.02510441  0.04794055  0.09502834  0.18996269]
      [ 0.02396251  0.04794055  0.09631614  0.19092151  0.38165151]
@@ -302,13 +270,15 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
 
     The optimization problem is solved using the SLSQP method as:
 
-    >>> xopt, info = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
-    ...                       constraints=cons, full_output=True)
+    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
+    ...                constraints=cons)
 
     It should converge to the theoretical solution (1.4 ,1.7).
 
     """
     meth = method.lower()
+    if options is None:
+        options = {}
     # check if optional parameters are supported by the selected method
     # - jac
     if meth in ['nelder-mead', 'powell', 'anneal', 'cobyla'] and bool(jac):
@@ -334,10 +304,10 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
        callback is not None:
         warn('Method %s does not support callback.' % method,
              RuntimeWarning)
-    # - retall
+    # - return_all
     if meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and \
-       retall:
-        warn('Method %s does not support retall.' % method,
+       options.get('return_all', False):
+        warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
 
     # fun also returns the jacobian
@@ -349,40 +319,33 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             jac = None
 
     if meth == 'nelder-mead':
-        return _minimize_neldermead(fun, x0, args, options, full_output,
-                                    retall, callback)
+        return _minimize_neldermead(fun, x0, args, options, callback)
     elif meth == 'powell':
-        return _minimize_powell(fun, x0, args, options, full_output,
-                                retall, callback)
+        return _minimize_powell(fun, x0, args, options, callback)
     elif meth == 'cg':
-        return _minimize_cg(fun, x0, args, jac, options, full_output,
-                            retall, callback)
+        return _minimize_cg(fun, x0, args, jac, options, callback)
     elif meth == 'bfgs':
-        return _minimize_bfgs(fun, x0, args, jac, options, full_output,
-                              retall, callback)
+        return _minimize_bfgs(fun, x0, args, jac, options, callback)
     elif meth == 'newton-cg':
         return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, options,
-                                  full_output, retall, callback)
+                                  callback)
     elif meth == 'anneal':
-        return _minimize_anneal(fun, x0, args, options, full_output)
+        return _minimize_anneal(fun, x0, args, options)
     elif meth == 'l-bfgs-b':
-        return _minimize_lbfgsb(fun, x0, args, jac, bounds, options,
-                                full_output)
+        return _minimize_lbfgsb(fun, x0, args, jac, bounds, options)
     elif meth == 'tnc':
-        return _minimize_tnc(fun, x0, args, jac, bounds, options,
-                             full_output)
+        return _minimize_tnc(fun, x0, args, jac, bounds, options)
     elif meth == 'cobyla':
-        return _minimize_cobyla(fun, x0, args, constraints, options,
-                                full_output)
+        return _minimize_cobyla(fun, x0, args, constraints, options)
     elif meth == 'slsqp':
         return _minimize_slsqp(fun, x0, args, jac, bounds,
-                               constraints, options, full_output)
+                               constraints, options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
-                    method='brent', options=dict(), full_output=False):
+                    method='brent', options=None):
     """
     Minimization of scalar function of one variable.
 
@@ -423,31 +386,15 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
                 Maximum number of iterations to perform.
             disp : bool
                 Set to True to print convergence messages.
-    full_output : bool, optional
-        If True, return optional outputs.  Default is False.
 
     Returns
     -------
-    xopt : ndarray
-        The solution.
-    info : dict
-        A dictionary of optional outputs (depending on the chosen method)
-        with the keys:
-            success : bool
-                Boolean flag indicating if a solution was found.
-            status : int
-                An integer flag indicating the type of termination.  Its
-                value depends on the underlying solver.  Refer to `message`
-                for more information.
-            message : str
-                A string message giving information about the cause of the
-                termination.
-            fun : float
-                Values of objective function.
-            nfev: int
-                Number of evaluations of the objective function.
-            nit: int
-                Number of iterations.
+    res : Result
+        The optimization result represented as a ``Result`` object.
+        Important attributes are: ``x`` the solution array, ``success`` a
+        Boolean flag indicating if the optimizer exited successfully and
+        ``message`` which describes the cause of the termination. See
+        `optimize.Result` for a description of other attributes.
 
     See also
     --------
@@ -480,32 +427,31 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     Using the *Brent* method, we find the local minimum as:
 
     >>> from scipy.optimize import minimize_scalar
-    >>> xl = minimize_scalar(f)
-    >>> xl
+    >>> res = minimize_scalar(f)
+    >>> res.x
     1.28077640403
 
     Using the *Bounded* method, we find a local minimum with specified
     bounds as:
 
-    >>> xc = minimize_scalar(f, bounds=(-3, -1), method='bounded')
-    >>> xc
+    >>> res = minimize_scalar(f, bounds=(-3, -1), method='bounded')
+    >>> res.x
     -2.0000002026
 
     """
     meth = method.lower()
+    if options is None:
+        options = {}
 
     if meth == 'brent':
-        return _minimize_scalar_brent(fun, bracket, args, options,
-                                      full_output)
+        return _minimize_scalar_brent(fun, bracket, args, options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
-        return _minimize_scalar_bounded(fun, bounds, args, options,
-                                        full_output)
+        return _minimize_scalar_bounded(fun, bounds, args, options)
     elif meth == 'golden':
-        return _minimize_scalar_golden(fun, bracket, args, options,
-                                       full_output)
+        return _minimize_scalar_golden(fun, bracket, args, options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
@@ -534,6 +480,9 @@ def show_minimize_options(method=None):
             Order of norm (Inf is max, -Inf is min).
         eps : float or ndarray
             If `jac` is approximated, use this value for the step size.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
 
     * Nelder-Mead options:
         xtol : float
@@ -542,6 +491,9 @@ def show_minimize_options(method=None):
             Relative error in ``fun(xopt)`` acceptable for convergence.
         maxfev : int
             Maximum number of function evaluations to make.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
 
     * Newton-CG options:
         xtol : float
@@ -549,6 +501,12 @@ def show_minimize_options(method=None):
             convergence.
         eps : float or ndarray
             If `jac` is approximated, use this value for the step size.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
 
     * CG options:
         gtol : float
@@ -558,6 +516,9 @@ def show_minimize_options(method=None):
             Order of norm (Inf is max, -Inf is min).
         eps : float or ndarray
             If `jac` is approximated, use this value for the step size.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
 
     * Powell options:
         xtol : float
@@ -568,6 +529,9 @@ def show_minimize_options(method=None):
             Maximum number of function evaluations to make.
         direc : ndarray
             Initial set of direction vectors for the Powell method.
+        return_all : bool
+            If True, return a list of the solution at each iteration.  This is only
+            done if `full_output` is True.
 
     * Anneal options:
         schedule : str

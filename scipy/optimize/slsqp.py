@@ -10,7 +10,7 @@ __all__ = ['approx_jacobian','fmin_slsqp']
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isinf, atleast_1d
-from optimize import approx_fprime, wrap_function
+from optimize import approx_fprime, wrap_function, Result
 
 __docformat__ = "restructuredtext en"
 
@@ -184,17 +184,15 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         cons += ({'type': 'ineq', 'fun': f_ieqcons, 'jac': fprime_ieqcons,
                   'args': args}, )
 
-    out = _minimize_slsqp(func, x0, args, jac=fprime, bounds=bounds,
-                          constraints=cons, options=opts,
-                          full_output=full_output)
+    res = _minimize_slsqp(func, x0, args, jac=fprime, bounds=bounds,
+                          constraints=cons, options=opts)
     if full_output:
-        x, info = out
-        return x, info['fun'], info['nit'], info['status'], info['message']
+        return res['x'], res['fun'], res['nit'], res['status'], res['message']
     else:
-        return out
+        return res['x']
 
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
-                    constraints=(), options={}, full_output=False):
+                    constraints=(), options=None):
     """
     Minimize a scalar function of one or more variables using Sequential
     Least SQuares Programming (SLSQP).
@@ -212,6 +210,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     `method=SLSQP`. It is not supposed to be called directly.
     """
     fprime = jac
+    if options is None:
+        options = {}
     # retrieve useful options
     iter    = options.get('maxiter', 100)
     acc     = options.get('ftol', 1.0E-6)
@@ -404,19 +404,9 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print "            Function evaluations:", feval[0]
         print "            Gradient evaluations:", geval[0]
 
-    if not full_output:
-        return x
-    else:
-        info = {'solution': x,
-                'fun'     : fx,
-                'jac'     : g,
-                'nit'     : int(majiter),
-                'nfev'    : feval[0],
-                'njev'    : geval[0],
-                'status'  : int(mode),
-                'message' : exit_modes[int(mode)],
-                'success' : mode == 0}
-        return x, info
+    return Result(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
+                  njev=geval[0], status=int(mode),
+                  message=exit_modes[int(mode)], success=(mode == 0))
 
 if __name__ == '__main__':
 
