@@ -353,9 +353,9 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     T = np.zeros((ndim, ndim), dtype=np.double)
     Tinvs = np.zeros((nsimplex, ndim+1, ndim), dtype=np.double)
 
-    # Maximum inverse condition number to allow: we want at least half
+    # Maximum inverse condition number to allow: we want at least three
     # of the digits be significant, to be safe
-    rcond_limit = sqrt(eps)
+    rcond_limit = 1000*eps
 
     with nogil:
         for isimplex in xrange(nsimplex):
@@ -655,28 +655,66 @@ cdef int _is_point_fully_outside(DelaunayInfo_t *d, double *x,
     return 0
 
 cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
-                                  double *x, double eps) nogil:
+                                  double *x, double eps,
+                                  double eps_broad) nogil:
     """
     Find simplex containing point `x` by going through all simplices.
 
     """
     cdef int inside, isimplex
+    cdef int k, m, ineighbor, iself
+    cdef double *transform
 
     if _is_point_fully_outside(d, x, eps):
         return -1
 
     for isimplex in xrange(d.nsimplex):
-        inside = _barycentric_inside(
-            d.ndim,
-            d.transform + isimplex*d.ndim*(d.ndim+1),
-            x, c, eps)
+        transform = d.transform + isimplex*d.ndim*(d.ndim+1)
 
-        if inside:
-            return isimplex
+        if transform[0] == transform[0]:
+            # transform is valid (non-nan)
+            inside = _barycentric_inside(d.ndim, transform, x, c, eps)
+            if inside:
+                return isimplex
+        else:
+            # transform is invalid (nan, implying degenerate simplex)
+
+            # we replace this inside-check by a check of the neighbors
+            # with a larger epsilon
+
+            for k in xrange(d.ndim+1):
+                ineighbor = d.neighbors[(d.ndim+1)*isimplex + k]
+                if ineighbor == -1:
+                    continue
+
+                transform = d.transform + ineighbor*d.ndim*(d.ndim+1)
+                if transform[0] != transform[0]:
+                    # another bad simplex
+                    continue
+
+                _barycentric_coordinates(d.ndim, transform, x, c)
+
+                # Check that the point lies (almost) inside the
+                # neigbor simplex
+                inside = 1
+                for m in xrange(d.ndim+1):
+                    if d.neighbors[(d.ndim+1)*ineighbor + m] == isimplex:
+                        # allow extra leeway towards isimplex
+                        if not (-eps_broad <= c[m] <= 1 + eps):
+                            inside = 0
+                            break
+                    else:
+                        # normal check
+                        if not (-eps <= c[m] <= 1 + eps):
+                            inside = 0
+                            break
+                if inside:
+                    return ineighbor
     return -1
 
 cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
-                                double *x, int *start, double eps) nogil:
+                                double *x, int *start, double eps,
+                                double eps_broad) nogil:
     """
     Find simplex containing point `x` via a directed walk in the tesselation.
 
@@ -767,17 +805,18 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
         else:
             # we've failed utterly (degenerate simplices in the way).
             # fall back to brute force
-            isimplex = _find_simplex_bruteforce(d, c, x, eps)
+            isimplex = _find_simplex_bruteforce(d, c, x, eps, eps_broad)
             break
     else:
         # the algorithm failed to converge -- fall back to brute force
-        isimplex = _find_simplex_bruteforce(d, c, x, eps)
+        isimplex = _find_simplex_bruteforce(d, c, x, eps, eps_broad)
 
     start[0] = isimplex
     return isimplex
 
 cdef int _find_simplex(DelaunayInfo_t *d, double *c,
-                       double *x, int *start, double eps) nogil:
+                       double *x, int *start, double eps,
+                       double eps_broad) nogil:
     """
     Find simplex containing point `x` by walking the triangulation.
 
@@ -884,7 +923,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
     # We should now be somewhere near the simplex containing the point,
     # locate it with a directed search
     start[0] = isimplex
-    return _find_simplex_directed(d, c, x, start, eps)
+    return _find_simplex_directed(d, c, x, start, eps, eps_broad)
 
 
 #------------------------------------------------------------------------------
@@ -1087,7 +1126,7 @@ class Delaunay(object):
             Whether to only perform a brute-force search
         tol : float, optional
             Tolerance allowed in the inside-triangle check.
-            Default is ``sqrt(eps)``.
+            Default is ``100*eps``.
 
         Returns
         -------
@@ -1107,7 +1146,7 @@ class Delaunay(object):
         cdef DelaunayInfo_t info
         cdef int isimplex
         cdef double c[NPY_MAXDIMS]
-        cdef double eps
+        cdef double eps, eps_broad
         cdef int start
         cdef int k
         cdef np.ndarray[np.double_t, ndim=2] x
@@ -1125,9 +1164,10 @@ class Delaunay(object):
         start = 0
 
         if tol is None:
-            eps = sqrt(np.finfo(np.double).eps)
+            eps = 100 * np.finfo(np.double).eps
         else:
             eps = tol
+        eps_broad = np.sqrt(eps)
         out = np.zeros((xi.shape[0],), dtype=np.intc)
         out_ = out
         _get_delaunay_info(&info, self, 1, 0)
@@ -1138,14 +1178,14 @@ class Delaunay(object):
                     isimplex = _find_simplex_bruteforce(
                         &info, c,
                         <double*>x.data + info.ndim*k,
-                        eps)
+                        eps, eps_broad)
                     out_[k] = isimplex
         else:
             with nogil:
                 for k in xrange(x.shape[0]):
                     isimplex = _find_simplex(&info, c,
                                              <double*>x.data + info.ndim*k,
-                                             &start, eps)
+                                             &start, eps, eps_broad)
                     out_[k] = isimplex
 
         return out.reshape(xi_shape[:-1])
