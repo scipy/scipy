@@ -43,30 +43,23 @@ Getting Help
 ^^^^^^^^^^^^^^^^^^^^
 
 First of all, all distributions are accompanied with help
-functions. ``help(stats.nct)`` prints the complete docstring of the
-distribution. To obtain just some basic information we can call
+functions. To obtain just some basic information we can call
 
     >>> from scipy import stats
     >>> from scipy.stats import norm
-    >>> print norm.extradoc 
-    Normal distribution
+    >>> print norm.__doc__
 
-    The location (loc) keyword specifies the mean.
-    The scale (scale) keyword specifies the standard deviation.
-    
-    normal.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
-
-We clarify the words ``loc`` and ``scale`` below. To find the support,
-i.e., upper and lower bound of the distribution, call:
+To find the support, i.e., upper and lower bound of the distribution,
+call:
 
     >>> print 'bounds of distribution lower: %s, upper: %s' % (norm.a,norm.b)
     bounds of distribution lower: -inf, upper: inf
 
 We can list all methods and properties of the distribution with
-``dir(norm)``. As it turns out, some of the methods are private
+``dir(norm)``.  As it turns out, some of the methods are private
 methods although they are not named as such (their name does not start
 with a leading underscore), for example ``veccdf`` or ``xa`` and
-``xb`` are only available  for internal calculation.
+``xb`` are only available for internal calculation.
 
 To obtain the `real` main methods, we list the methods of the frozen
 distribution. (We explain the meaning of a `frozen` distribution
@@ -92,7 +85,6 @@ introspection:
     number of continuous distributions: 84
     >>> print 'number of discrete distributions:  ', len(dist_discrete)
     number of discrete distributions:   12
-
 
 
 Common Methods
