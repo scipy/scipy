@@ -48,8 +48,6 @@ distribution. To obtain just some basic information we can call
 
     >>> from scipy import stats
     >>> from scipy.stats import norm
-    >>> print norm.extradoc 
-    Normal distribution
 
     The location (loc) keyword specifies the mean.
     The scale (scale) keyword specifies the standard deviation.
