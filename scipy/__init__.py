@@ -47,18 +47,6 @@ Subpackages
 
  [*] - using a package requires explicit import
 
-Global symbols from subpackages
--------------------------------
-::
-
- misc                  --> info, factorial, factorial2, factorialk,
-                           comb, who, lena, central_diff_weights,
-                           derivative, pade, source
- fftpack               --> fft, fftn, fft2, ifft, ifft2, ifftn,
-                           fftshift, ifftshift, fftfreq
- stats                 --> find_repeats
- linalg.dsolve.umfpack --> UmfpackContext
-
 Utility tools
 -------------
 ::
