@@ -293,7 +293,8 @@ class TestConstructUtils(TestCase):
 
         #TODO test failure cases
 
-    def test_block_diag(self):
+    def test_block_diag_basic(self):
+        """ basic test for block_diag """
         A = coo_matrix([[1,2],[3,4]])
         B = coo_matrix([[5],[6]])
         C = coo_matrix([[7]])
@@ -306,10 +307,24 @@ class TestConstructUtils(TestCase):
 
         assert_equal(construct.block_diag((A, B, C)).todense(), expected)
 
+    def test_block_diag_scalar_1d_args(self):
+        """ block_diag with scalar and 1d arguments """
+        # one 1d matrix and a scalar
+        assert_array_equal(construct.block_diag([[2,3], 4]).toarray(),
+                           [[2, 3, 0], [0, 0, 4]])
+
     def test_block_diag_1(self):
         """ block_diag with one matrix """
         assert_equal(construct.block_diag([[1, 0]]).todense(),
                      matrix([[1, 0]]))
+        assert_equal(construct.block_diag([[[1, 0]]]).todense(),
+                     matrix([[1, 0]]))
+        assert_equal(construct.block_diag([[[1], [0]]]).todense(),
+                     matrix([[1], [0]]))
+        # just on scalar
+        assert_equal(construct.block_diag([1]).todense(),
+                     matrix([[1]]))
+
 
     def test_rand(self):
         # Simple sanity checks for sparse.rand
