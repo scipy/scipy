@@ -343,7 +343,6 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     if full_output:
         info = {'nit': condition.iteration,
                 'fun': Fx,
-                'solution': _array_like(x, x0),
                 'status': status,
                 'success': status == 1,
                 'message': {1: 'A solution was found at the specified '

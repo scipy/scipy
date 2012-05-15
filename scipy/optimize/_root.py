@@ -10,12 +10,12 @@ __all__ = ['root']
 
 from warnings import warn
 
-from optimize import MemoizeJac
+from optimize import MemoizeJac, Result
 from minpack import _root_hybr, leastsq
 import nonlin
 
 def root(fun, x0, args=(), method='hybr', jac=None, options=None,
-         full_output=False, callback=None):
+         callback=None):
     """
     Find a root of a vector function.
 
@@ -51,8 +51,6 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
     options : dict, optional
         A dictionary of solver options. E.g. `xtol` or `maxiter`, see
         `show_options('root', method)` for details.
-    full_output : bool, optional
-        If True, return optional outputs.  Default is False.
     callback : function, optional
         Optional callback function. It is called on every iteration as
         ``callback(x, f)`` where `x` is the current solution and `f`
@@ -60,29 +58,12 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
 
     Returns
     -------
-    x : ndarray
-        The solution.
-    info : dict
-        A dictionary of optional outputs (depending on the chosen method)
-        with the keys:
-            solution : ndarray
-                The solution (same as `x`).
-            success : bool
-                Boolean flag indicating if a solution was found.
-            status : int
-                An integer flag indicating the type of termination.  Its
-                value depends on the underlying solver.  Refer to `message`
-                for more information.
-            message : str
-                A string message giving information about the cause of the
-                termination.
-            fun, jac : ndarray
-                Values of objective function and Jacobian (if available).
-            nfev, njev: int
-                Number of evaluations of the objective functions and of its
-                jacobian.
-            nit: int
-                Number of iterations.
+    sol : Result
+        The solution represented as a ``Result`` object.
+        Important attributes are: ``x`` the solution array, ``success`` a
+        Boolean flag indicating if the algorithm exited successfully and
+        ``message`` which describes the cause of the termination. See
+        `Result` for a description of other attributes.
 
     Notes
     -----
@@ -145,8 +126,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
 
     A solution can be obtained as follows.
 
-    >>> x, info = root(fun, [0, 0], jac=jac, method='hybr')
-    >>> x
+    >>> sol = root(fun, [0, 0], jac=jac, method='hybr')
+    >>> sol.x
     array([ 0.8411639,  0.1588361])
     """
     meth = method.lower()
@@ -166,12 +147,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
             jac = None
 
     if meth == 'hybr':
-        out = _root_hybr(fun, x0, args=args, jac=jac, options=options,
-                          full_output=full_output)
-        if full_output:
-            x, info = out
-        else:
-            x = out
+        sol = _root_hybr(fun, x0, args=args, jac=jac, options=options)
     elif meth == 'lm':
         col_deriv = options.get('col_deriv', 0)
         xtol      = options.get('xtol', 1.49012e-08)
@@ -181,20 +157,16 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
         epsfcn    = options.get('epsfcn', 0.0)
         factor    = options.get('factor', 100)
         diag      = options.get('diag', None)
-        out = leastsq(fun, x0, args=args, Dfun=jac,
-                      full_output=full_output, col_deriv=col_deriv,
-                      xtol=xtol, ftol=ftol, gtol=gtol, maxfev=maxfev,
-                      epsfcn=epsfcn, factor=factor, diag=diag)
-        if full_output:
-            x, cov_x, infodict, mesg, ier = out
-            info = infodict
-            info['message'] = mesg
-            info['status'] = ier
-            info['success'] = ier in (1, 2, 3, 4)
-            info['cov_x'] = cov_x
-            info['fun'] = info.pop('fvec')
-        else:
-            x = out[0]
+        x, cov_x, info, msg, ier = leastsq(fun, x0, args=args, Dfun=jac,
+                                           full_output=True,
+                                           col_deriv=col_deriv, xtol=xtol,
+                                           ftol=ftol, gtol=gtol,
+                                           maxfev=maxfev, epsfcn=epsfcn,
+                                           factor=factor, diag=diag)
+        sol = Result(x=x, message=msg, status=ier,
+                     success=ier in (1, 2, 3, 4), cov_x=cov_x,
+                     fun=info.pop('fvec'))
+        sol.update(info)
     elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',
                   'diagbroyden', 'excitingmixing', 'krylov'):
         if jac is not None:
@@ -232,23 +204,18 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
         else:
             f = fun
 
-        out = nonlin.nonlin_solve(f, x0, jacobian=jacobian(**jac_opts), iter=nit,
-                                  verbose=verbose, maxiter=maxiter,
-                                  f_tol=f_tol, f_rtol=f_rtol, x_tol=x_tol,
-                                  x_rtol=x_rtol, tol_norm=tol_norm,
-                                  line_search=line_search,
-                                  callback=callback,
-                                  full_output=full_output,
-                                  raise_exception=False)
-        if full_output:
-            x, info = out
-        else:
-            x = out
+        x, info = nonlin.nonlin_solve(f, x0, jacobian=jacobian(**jac_opts),
+                                      iter=nit, verbose=verbose,
+                                      maxiter=maxiter, f_tol=f_tol,
+                                      f_rtol=f_rtol, x_tol=x_tol,
+                                      x_rtol=x_rtol, tol_norm=tol_norm,
+                                      line_search=line_search,
+                                      callback=callback, full_output=True,
+                                      raise_exception=False)
+        sol = Result(x=x)
+        sol.update(info)
     else:
         raise ValueError('Unknown solver %s' % method)
 
-    if full_output:
-        return x, info
-    else:
-        return x
+    return sol
 

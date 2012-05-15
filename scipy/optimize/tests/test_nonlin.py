@@ -90,9 +90,9 @@ class TestNonlin(object):
         assert_(np.absolute(f(x)).max() < f_tol)
 
     def _check_root(self, f, method, f_tol=1e-2):
-        x = root(f, f.xin, method=method,
-                 options={'ftol': f_tol, 'maxiter': 200, 'verbose': 0})
-        assert_(np.absolute(f(x)).max() < f_tol)
+        res = root(f, f.xin, method=method,
+                   options={'ftol': f_tol, 'maxiter': 200, 'verbose': 0})
+        assert_(np.absolute(res.fun).max() < f_tol)
 
     @dec.knownfailureif(True)
     def _check_func_fail(self, *a, **kw):
@@ -365,45 +365,43 @@ class TestNonlinOldTests(TestCase):
         assert_(nonlin.norm(F(x)) < 1e-8)
 
     def test_root_broyden1(self):
-        x = root(F, F.xin, method='broyden1',
-                 options={'nit': 12,
-                          'jac_options': {'alpha': 1}})
-        assert_(nonlin.norm(x) < 1e-9)
-        assert_(nonlin.norm(F(x)) < 1e-9)
+        res = root(F, F.xin, method='broyden1',
+                   options={'nit': 12, 'jac_options': {'alpha': 1}})
+        assert_(nonlin.norm(res.x) < 1e-9)
+        assert_(nonlin.norm(res.fun) < 1e-9)
 
     def test_root_broyden2(self):
-        x= root(F, F.xin, method='broyden2',
-                options={'nit': 12,
-                         'jac_options': {'alpha': 1}})
-        assert_(nonlin.norm(x) < 1e-9)
-        assert_(nonlin.norm(F(x)) < 1e-9)
+        res = root(F, F.xin, method='broyden2',
+                   options={'nit': 12, 'jac_options': {'alpha': 1}})
+        assert_(nonlin.norm(res.x) < 1e-9)
+        assert_(nonlin.norm(res.fun) < 1e-9)
 
     def test_root_anderson(self):
-        x= root(F, F.xin, method='anderson',
-                options={'nit': 12,
-                         'jac_options': {'alpha': 0.03, 'M': 5}})
-        assert_(nonlin.norm(x) < 0.33)
+        res = root(F, F.xin, method='anderson',
+                   options={'nit': 12,
+                            'jac_options': {'alpha': 0.03, 'M': 5}})
+        assert_(nonlin.norm(res.x) < 0.33)
 
     def test_root_linearmixing(self):
-        x = root(F, F.xin, method='linearmixing',
-                 options={'nit': 60,
-                          'jac_options': {'alpha': 0.5}})
-        assert_(nonlin.norm(x) < 1e-7)
-        assert_(nonlin.norm(F(x)) < 1e-7)
+        res = root(F, F.xin, method='linearmixing',
+                   options={'nit': 60,
+                            'jac_options': {'alpha': 0.5}})
+        assert_(nonlin.norm(res.x) < 1e-7)
+        assert_(nonlin.norm(res.fun) < 1e-7)
 
     def test_root_excitingmixing(self):
-        x= root(F, F.xin, method='excitingmixing',
-                options={'nit': 20,
-                         'jac_options': {'alpha': 0.5}})
-        assert_(nonlin.norm(x) < 1e-5)
-        assert_(nonlin.norm(F(x)) < 1e-5)
+        res = root(F, F.xin, method='excitingmixing',
+                   options={'nit': 20,
+                            'jac_options': {'alpha': 0.5}})
+        assert_(nonlin.norm(res.x) < 1e-5)
+        assert_(nonlin.norm(res.fun) < 1e-5)
 
     def test_root_diagbroyden(self):
-        x= root(F, F.xin, method='diagbroyden',
-                options={'nit': 11,
-                         'jac_options': {'alpha': 1}})
-        assert_(nonlin.norm(x) < 1e-8)
-        assert_(nonlin.norm(F(x)) < 1e-8)
+        res = root(F, F.xin, method='diagbroyden',
+                   options={'nit': 11,
+                            'jac_options': {'alpha': 1}})
+        assert_(nonlin.norm(res.x) < 1e-8)
+        assert_(nonlin.norm(res.fun) < 1e-8)
 
 if __name__ == "__main__":
     run_module_suite()

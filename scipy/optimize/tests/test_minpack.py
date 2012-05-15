@@ -139,7 +139,7 @@ class TestRootHybr(TestCase):
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
         final_flows = optimize.root(pressure_network, initial_guess,
-                                    method='hybr', args=(Qtot, k))
+                                    method='hybr', args=(Qtot, k)).x
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_pressure_network_with_gradient(self):
@@ -149,7 +149,7 @@ class TestRootHybr(TestCase):
         initial_guess = array([2., 0., 2., 0.])
         final_flows = optimize.root(pressure_network, initial_guess,
                                     args=(Qtot, k), method='hybr',
-                                    jac=pressure_network_jacobian)
+                                    jac=pressure_network_jacobian).x
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_pressure_network_with_gradient_combined(self):
@@ -159,7 +159,7 @@ class TestRootHybr(TestCase):
         initial_guess = array([2., 0., 2., 0.])
         final_flows = optimize.root(pressure_network_fun_and_grad,
                                     initial_guess, args=(Qtot, k),
-                                    method='hybr', jac=True)
+                                    method='hybr', jac=True).x
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
@@ -170,7 +170,7 @@ class TestRootLM(TestCase):
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
         final_flows = optimize.root(pressure_network, initial_guess,
-                                    method='lm', args=(Qtot, k))
+                                    method='lm', args=(Qtot, k)).x
         assert_array_almost_equal(final_flows, np.ones(4))
 
 class TestLeastSq(TestCase):

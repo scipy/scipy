@@ -4,6 +4,7 @@ import _minpack
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
                   transpose, zeros, product, greater, array, \
                   all, where, isscalar, asarray, inf, abs
+from optimize import Result
 
 error = _minpack.error
 
@@ -104,6 +105,11 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         N positive entries that serve as a scale factors for the
         variables.
 
+    See also
+    --------
+    root: Interface to root finding algorithms for multivariate
+        functions. See the 'hybr' `method` in particular.
+
     Notes
     -----
     ``fsolve`` is a wrapper around MINPACK's hybrd and hybrj algorithms.
@@ -115,19 +121,20 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                'band': band,
                'eps': epsfcn,
                'factor': factor,
-               'diag': diag}
+               'diag': diag,
+               'full_output': full_output}
 
-    out =  _root_hybr(func, x0, args, jac=fprime, options=options,
-                       full_output=full_output)
+    res = _root_hybr(func, x0, args, jac=fprime, options=options)
     if full_output:
-        x, info = out
-        info['fvec'] = info.pop('fun')
-        return x, info, info.pop('status'), info.pop('message')
+        x = res['x']
+        info = dict((k, res.get(k))
+                    for k in ('nfev', 'njev', 'fjac', 'r', 'qtf') if k in res)
+        info['fvec'] = res['fun']
+        return x, info, res['status'], res['message']
     else:
-        return out
+        return res['x']
 
-def _root_hybr(func, x0, args=(), jac=None, options=None,
-                full_output=False):
+def _root_hybr(func, x0, args=(), jac=None, options=None):
     """
     Find the roots of a multivariate function using MINPACK's hybrd and
     hybrj routines (modified Powell method).
@@ -175,6 +182,7 @@ def _root_hybr(func, x0, args=(), jac=None, options=None,
     factor    = options.get('factor', 100)
     diag      = options.get('diag', None)
 
+    full_output = True
     x0 = array(x0, ndmin=1)
     n = len(x0)
     if type(args) != type(()): args = (args,)
@@ -213,7 +221,7 @@ def _root_hybr(func, x0, args=(), jac=None, options=None,
                  "ten iterations.", ValueError],
               'unknown': ["An error occurred.", TypeError]}
 
-    if (status != 1 and not full_output):
+    if (status != 1 and not options.get('full_output', False)):
         if status in [2,3,4,5]:
             msg = errors[status][0]
             warnings.warn(msg, RuntimeWarning)
@@ -223,19 +231,16 @@ def _root_hybr(func, x0, args=(), jac=None, options=None,
             except KeyError:
                 raise errors['unknown'][1](errors['unknown'][0])
 
-    if full_output:
-        info = retval[1]
-        info['fun'] = info.pop('fvec')
-        info['success'] = status == 1
-        info['status'] = status
-        try:
-            info['message'] = errors[status][0]
-        except KeyError:
-            info['message'] = errors['unknown'][0]
+    info = retval[1]
+    info['fun'] = info.pop('fvec')
+    sol = Result(x=x, success=(status==1), status=status)
+    sol.update(info)
+    try:
+        sol['message'] = errors[status][0]
+    except KeyError:
+        info['message'] = errors['unknown'][0]
 
-        return x, info
-    else:
-        return x
+    return sol
 
 
 def leastsq(func, x0, args=(), Dfun=None, full_output=0,
