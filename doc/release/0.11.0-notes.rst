@@ -166,6 +166,31 @@ Numpy arrays is the ``numpy.savez`` function.
 Backwards incompatible changes
 ==============================
 
+Minor change in behavior of ``splev``
+-------------------------------------
+
+The spline evaluation function now behaves similarly to ``interp1d``
+for size-1 arrays.  Previous behavior::
+
+    >>> from scipy.interpolate import splev, splrep, interp1d
+    >>> x = [1,2,3,4,5]
+    >>> y = [4,5,6,7,8]
+    >>> tck = splrep(x, y)
+    >>> splev([1], tck)
+    4.
+    >>> splev(1, tck)
+    4.
+
+Corrected behavior::
+
+    >>> splev([1], tck)
+    array([ 4.])
+    >>> splev(1, tck)
+    array(4.)
+
+This affects also the ``UnivariateSpline`` classes.
+
+
 Removal of ``scipy.maxentropy``
 -------------------------------
 
