@@ -93,9 +93,11 @@ class TestFSolve(TestCase):
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
-        final_flows = optimize.fsolve(
-            pressure_network, initial_guess, args=(Qtot, k))
+        final_flows, info, ier, mesg = optimize.fsolve(
+            pressure_network, initial_guess, args=(Qtot, k),
+            full_output=True)
         assert_array_almost_equal(final_flows, np.ones(4))
+        assert_(ier == 1, mesg)
 
     def test_pressure_network_with_gradient(self):
         """fsolve with gradient, equal pipes -> equal flows"""
