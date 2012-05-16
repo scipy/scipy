@@ -447,10 +447,9 @@ if __name__ == '__main__':
     print ' * fmin_slsqp'
     x, f = fmin_slsqp(fun, array([-1, 1]), bounds=bnds, disp=1,
                       full_output=True)[:2]
-    print ' * fmin_slsqp'
-    x, info = _minimize_slsqp(fun, array([-1, 1]), bounds=bnds,
-                              options={'disp': True},
-                              full_output=True)
+    print ' * _minimize_slsqp'
+    res = _minimize_slsqp(fun, array([-1, 1]), bounds=bnds,
+                          options={'disp': True})
 
     # Equality and inequality constraints problem
     print ' Equality and inequality constraints '.center(72, '-')
@@ -460,7 +459,5 @@ if __name__ == '__main__':
                       f_ieqcons=fieqcon, fprime_ieqcons=jieqcon,
                       disp=1, full_output=True)[:2]
     print ' * _minimize_slsqp'
-    x, info = _minimize_slsqp(fun, array([-1, 1]),
-                              constraints=cons,
-                              options={'disp': True},
-                              full_output=True)
+    res = _minimize_slsqp(fun, array([-1, 1]), constraints=cons,
+                          options={'disp': True})
