@@ -1500,7 +1500,6 @@ class rv_continuous(rv_generic):
         return output
 
     def ppf(self,q,*args,**kwds):
-        print "piet"
         """
         Percent point function (inverse of cdf) at q of the given RV.
 
