@@ -4,6 +4,13 @@ import numpy.testing as npt
 import numpy as np
 import nose
 
+import imp
+
+f, filename, description = imp.find_module('stats','/home/nicky/prog/scipy/scipy')
+print f, filename, description
+quit()
+example_package = imp.load_module('example', f, filename, description)
+
 from scipy import stats
 
 """

@@ -1500,6 +1500,7 @@ class rv_continuous(rv_generic):
         return output
 
     def ppf(self,q,*args,**kwds):
+        print "piet"
         """
         Percent point function (inverse of cdf) at q of the given RV.
 
@@ -2752,7 +2753,6 @@ class expon_gen(rv_continuous):
     %(example)s
 
     """
-
     def _rvs(self):
         return mtrand.standard_exponential(self._size)
     def _pdf(self, x):
