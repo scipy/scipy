@@ -2752,7 +2752,6 @@ class expon_gen(rv_continuous):
     %(example)s
 
     """
-    %(example)s
 
     def _rvs(self):
         return mtrand.standard_exponential(self._size)
@@ -6682,7 +6681,7 @@ class geom_gen(rv_discrete):
         g2 = numpy.polyval([1,-6,6],p)/(1.0-p)
         return mu, var, g1, g2
 geom = geom_gen(a=1,name='geom', longname="A geometric",
-                shapes="p", extradoc="""
+                shapes="p")
 
 
 ## Hypergeometric distribution
@@ -6839,7 +6838,6 @@ class logser_gen(rv_discrete):
         return mu, var, g1, g2
 logser = logser_gen(a=1,name='logser', longname='A logarithmic',
                     shapes='p')
-                    )
 
 ## Poisson distribution
 
