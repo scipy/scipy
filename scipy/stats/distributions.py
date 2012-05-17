@@ -434,11 +434,9 @@ permutation = mtrand.permutation
 ##  (needs cdf function) and uses brentq from scipy.optimize
 ##  to compute ppf from cdf.
 class general_cont_ppf(object):
-    def __init__(self, dist, xa=-10.0, xb=10.0, xtol=1e-14):
+    def __init__(self, dist, xtol=1e-14):
         self.dist = dist
         self.cdf = eval('%scdf'%dist)
-        self.xa = xa
-        self.xb = xb
         self.xtol = xtol
         self.vecfunc = sgf(self._single_call,otypes='d')
     def _tosolve(self, x, q, *args):
@@ -1077,7 +1075,7 @@ class rv_continuous(rv_generic):
 
     """
 
-    def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0,
+    def __init__(self, momtype=1, a=None, b=None,
                  xtol=1e-14, badvalue=None, name=None, longname=None,
                  shapes=None, extradoc=None):
 
@@ -1095,8 +1093,6 @@ class rv_continuous(rv_generic):
             self.a = -inf
         if b is None:
             self.b = inf
-        self.xa = xa
-        self.xb = xb
         self.xtol = xtol
         self._size = 1
         self.m = 0.0
