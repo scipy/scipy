@@ -1177,7 +1177,28 @@ class rv_continuous(rv_generic):
         return apply(self.cdf, (x, )+args)-q
 
     def _ppf_single_call(self, q, *args):
-        return optimize.brentq(self._ppf_to_solve, self.xa, self.xb, args=(q,)+args, xtol=self.xtol)
+        left = right = None
+        if self.a > -np.inf:
+            left = self.a
+        if self.b < np.inf:
+            right = self.b
+
+        factor = 10.
+        if  not left: # i.e. self.a = -inf
+            left = -1.*factor
+            while self._ppf_to_solve(left, q,*args) > 0.:
+                right = left
+                left *= factor
+            # left is now such that cdf(left) < q
+        if  not right: # i.e. self.b = inf
+            right = factor
+            while self._ppf_to_solve(right, q,*args) < 0.:
+                left = right
+                right *= factor
+            # right is now such that cdf(right) > q
+
+        return optimize.brentq(self._ppf_to_solve, \
+                               left, right, args=(q,)+args, xtol=self.xtol)
 
     # moment from definition
     def _mom_integ0(self, x,m,*args):
