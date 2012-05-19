@@ -157,7 +157,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     if disp is not None:
         iprint = disp
     opts = {'rhobeg': rhobeg,
-            'rhoend': rhoend,
+            'tol': rhoend,
             'iprint': iprint,
             'disp'  : iprint != 0,
             'maxiter': maxfun}
@@ -166,7 +166,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
                             **opts)['x']
 
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
-                     rhobeg=1.0, rhoend=1e-4, iprint=1, maxiter=1000,
+                     rhobeg=1.0, tol=1e-4, iprint=1, maxiter=1000,
                      disp=False, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
@@ -175,7 +175,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     Options for the COBYLA algorithm are:
         rhobeg : float
             Reasonable initial changes to the variables.
-        rhoend : float
+        tol : float
             Final accuracy in the optimization (not precisely guaranteed).
             This is a lower bound on the size of the trust region.
         disp : bool
@@ -189,6 +189,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     """
     _check_unknown_options(unknown_options)
     maxfun = maxiter
+    rhoend = tol
     if not disp:
         iprint = 0
 

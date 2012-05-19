@@ -2420,7 +2420,7 @@ def show_options(solver, method=None):
     * COBYLA options:
         rhobeg : float
             Reasonable initial changes to the variables.
-        rhoend : float
+        tol : float
             Final accuracy in the optimization (not precisely guaranteed).
             This is a lower bound on the size of the trust region.
         maxfev : int
