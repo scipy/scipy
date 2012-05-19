@@ -81,6 +81,8 @@ class Result(dict):
         Jacobian and Hessian.
     nit: int
         Number of iterations performed by the optimizer.
+    maxcv : float
+        The maximum constraint violation.
 
     Notes
     -----
