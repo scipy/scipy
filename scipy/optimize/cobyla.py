@@ -160,13 +160,13 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
             'rhoend': rhoend,
             'iprint': iprint,
             'disp'  : iprint != 0,
-            'maxfev': maxfun}
+            'maxiter': maxfun}
 
     return _minimize_cobyla(func, x0, args, constraints=con,
                             **opts)['x']
 
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
-                     rhobeg=1.0, rhoend=1e-4, iprint=1, maxfev=1000,
+                     rhobeg=1.0, rhoend=1e-4, iprint=1, maxiter=1000,
                      disp=False, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
@@ -181,14 +181,14 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         disp : bool
             Set to True to print convergence messages. If False,
             `verbosity` is ignored as set to 0.
-        maxfev : int
+        maxiter : int
             Maximum number of function evaluations.
 
     This function is called by the `minimize` function with
     `method=COBYLA`. It is not supposed to be called directly.
     """
     _check_unknown_options(unknown_options)
-    maxfun = maxfev
+    maxfun = maxiter
     if not disp:
         iprint = 0
 

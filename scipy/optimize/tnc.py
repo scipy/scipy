@@ -243,14 +243,14 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             'offset': offset,
             'mesg_num': mesg_num,
             'maxCGit': maxCGit,
-            'maxfev': maxfun,
+            'maxiter': maxfun,
             'eta': eta,
             'stepmx': stepmx,
             'accuracy': accuracy,
             'minfev': fmin,
             'ftol': ftol,
             'xtol': xtol,
-            'pgtol': pgtol,
+            'gtol': pgtol,
             'rescale': rescale,
             'disp': False}
 
@@ -260,8 +260,8 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
 def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   eps=1e-8, scale=None, offset=None, mesg_num=None,
-                  maxCGit=-1, maxfev=None, eta=-1, stepmx=0, accuracy=0,
-                  minfev=0, ftol=-1, xtol=-1, pgtol=-1, rescale=-1, disp=False,
+                  maxCGit=-1, maxiter=None, eta=-1, stepmx=0, accuracy=0,
+                  minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
                   **unknown_options):
     """
     Minimize a scalar function of one or more variables using a truncated
@@ -285,8 +285,8 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
             iteration.  If maxCGit == 0, the direction chosen is
             -gradient if maxCGit < 0, maxCGit is set to
             max(1,min(50,n/2)).  Defaults to -1.
-        maxfev : int
-            Maximum number of function evaluation.  if None, `maxfev` is
+        maxiter : int
+            Maximum number of function evaluation.  if None, `maxiter` is
             set to max(100, 10*len(x0)).  Defaults to None.
         eta : float
             Severity of the line search. if < 0 or > 1, set to 0.25.
@@ -308,10 +308,10 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
             criterion (after applying x scaling factors).  If xtol <
             0.0, xtol is set to sqrt(machine_precision).  Defaults to
             -1.
-        pgtol : float
+        gtol : float
             Precision goal for the value of the projected gradient in
             the stopping criterion (after applying x scaling factors).
-            If pgtol < 0.0, pgtol is set to 1e-2 * sqrt(accuracy).
+            If gtol < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
             Setting it to 0.0 is not recommended.  Defaults to -1.
         rescale : float
             Scaling factor (in log10) used to trigger f value
@@ -323,8 +323,9 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     """
     _check_unknown_options(unknown_options)
     epsilon = eps
-    maxfun = maxfev
+    maxfun = maxiter
     fmin = minfev
+    pgtol = gtol
 
     x0 = asarray(x0, dtype=float).tolist()
     n = len(x0)

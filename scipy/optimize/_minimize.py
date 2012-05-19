@@ -382,6 +382,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
                 convergence.
             ftol : float
                 Relative error in ``fun(xopt)`` acceptable for convergence.
+            gtol : float
+                Maximum gradient acceptable for convergence.
             maxiter : int
                 Maximum number of iterations to perform.
             disp : bool
@@ -454,4 +456,3 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         return _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
-
