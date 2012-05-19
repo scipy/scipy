@@ -209,6 +209,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     Least SQuares Programming (SLSQP).
 
     Options for the SLSQP algorithm are:
+        ftol : float
+            Precision goal for the value of f in the stopping criterion.
         eps : float
             Step size used for numerical approximation of the jacobian.
         disp : bool

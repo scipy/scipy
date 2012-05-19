@@ -2328,6 +2328,8 @@ def show_options(solver, method=None):
             Initial set of direction vectors for the Powell method.
 
     * Anneal options:
+        ftol : float
+            Relative error in ``fun(x)`` acceptable for convergence.
         schedule : str
             Annealing schedule to use. One of: 'fast', 'cauchy' or
             'boltzmann'.
@@ -2345,8 +2347,6 @@ def show_options(solver, method=None):
             stringent test at each temperature).
         learn_rate : float
             Scale constant for adjusting guesses.
-        ftol : float
-            Relative error in ``fun(x)`` acceptable for convergence.
         quench, m, n : float
             Parameters to alter fast_sa schedule.
         lower, upper : float or ndarray
@@ -2355,11 +2355,6 @@ def show_options(solver, method=None):
             The number of times to search the space at each temperature.
 
     * L-BFGS-B options:
-        maxcor : int
-            The maximum number of variable metric corrections used to
-            define the limited memory matrix. (The limited memory BFGS
-            method does not store the full hessian but uses this many terms
-            in an approximation to it.)
         ftol : float
             The iteration stops when ``(f^k -
             f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= ftol``.
@@ -2367,10 +2362,28 @@ def show_options(solver, method=None):
             The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
             <= gtol`` where ``pg_i`` is the i-th component of the
             projected gradient.
+        maxcor : int
+            The maximum number of variable metric corrections used to
+            define the limited memory matrix. (The limited memory BFGS
+            method does not store the full hessian but uses this many terms
+            in an approximation to it.)
         maxiter : int
             Maximum number of function evaluations.
 
     * TNC options:
+        ftol : float
+            Precision goal for the value of f in the stoping criterion.
+            If ftol < 0.0, ftol is set to 0.0 defaults to -1.
+        xtol : float
+            Precision goal for the value of x in the stopping
+            criterion (after applying x scaling factors).  If xtol <
+            0.0, xtol is set to sqrt(machine_precision).  Defaults to
+            -1.
+        gtol : float
+            Precision goal for the value of the projected gradient in
+            the stopping criterion (after applying x scaling factors).
+            If gtol < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
+            Setting it to 0.0 is not recommended.  Defaults to -1.
         scale : list of floats
             Scaling factors to apply to each variable.  If None, the
             factors are up-low for interval bounded variables and
@@ -2399,34 +2412,23 @@ def show_options(solver, method=None):
             Defaults to 0.
         minfev : float
             Minimum function value estimate.  Defaults to 0.
-        ftol : float
-            Precision goal for the value of f in the stoping criterion.
-            If ftol < 0.0, ftol is set to 0.0 defaults to -1.
-        xtol : float
-            Precision goal for the value of x in the stopping
-            criterion (after applying x scaling factors).  If xtol <
-            0.0, xtol is set to sqrt(machine_precision).  Defaults to
-            -1.
-        gtol : float
-            Precision goal for the value of the projected gradient in
-            the stopping criterion (after applying x scaling factors).
-            If gtol < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
-            Setting it to 0.0 is not recommended.  Defaults to -1.
         rescale : float
             Scaling factor (in log10) used to trigger f value
             rescaling.  If 0, rescale at each iteration.  If a large
             value, never rescale.  If < 0, rescale is set to 1.3.
 
     * COBYLA options:
-        rhobeg : float
-            Reasonable initial changes to the variables.
         tol : float
             Final accuracy in the optimization (not precisely guaranteed).
             This is a lower bound on the size of the trust region.
+        rhobeg : float
+            Reasonable initial changes to the variables.
         maxfev : int
             Maximum number of function evaluations.
 
     * SLSQP options:
+        ftol : float
+            Precision goal for the value of f in the stopping criterion.
         eps : float
             Step size used for numerical approximation of the jacobian.
         maxiter : int

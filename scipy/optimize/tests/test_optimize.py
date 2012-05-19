@@ -440,6 +440,26 @@ class TestOptimize(TestCase):
         self.setUp()
         self.test_powell(True)
 
+    def test_minimize_tol_parameter(self):
+        # Check that the minimize() tol= argument does something
+        def func(z):
+            x, y = z
+            return x**2*y**2 + x**4 + 1
+        def jac(z):
+            x, y = z
+            return np.array([2*x*y**2 + 4*x**3, 2*x**2*y])
+
+        for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
+                       'newton-cg', 'anneal', 'l-bfgs-b', 'tnc',
+                       'cobyla', 'slsqp']:
+            sol1 = optimize.minimize(func, [1,1], jac=jac, tol=1e-10,
+                                     method=method)
+            sol2 = optimize.minimize(func, [1,1], jac=jac, tol=1.0,
+                                     method=method)
+            assert_(func(sol1.x) < func(sol2.x),
+                    "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
+
+
 class TestLBFGSBBounds(TestCase):
     """ Tests for L-BFGS-B with bounds """
     def setUp(self):

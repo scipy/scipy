@@ -28,8 +28,8 @@ from cobyla import _minimize_cobyla
 from slsqp import _minimize_slsqp
 
 def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
-             hessp=None, bounds=None, constraints=(),
-             options=None, callback=None):
+             hessp=None, bounds=None, constraints=(), tol=None,
+             callback=None, options=None):
     """
     Minimization of scalar function of one or more variables.
 
@@ -92,6 +92,9 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         Equality constraint means that the constraint function result is to
         be zero whereas inequality means that it is to be non-negative.
         Note that COBYLA only supports inequality constraints.
+    tol : float, optional
+        Tolerance for termination. For detailed control, use solver-specific
+        options.
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -318,6 +321,19 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         else:
             jac = None
 
+    # set default tolerances
+    if tol is not None:
+        options = dict(options)
+        if meth in ['nelder-mead', 'newton-cg', 'powell', 'tnc']:
+            options.setdefault('xtol', tol)
+        if meth in ['nelder-mead', 'powell', 'anneal', 'l-bfgs-b', 'tnc',
+                    'slsqp']:
+            options.setdefault('ftol', tol)
+        if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc']:
+            options.setdefault('gtol', tol)
+        if meth in ['cobyla']:
+            options.setdefault('tol', tol)
+
     if meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
@@ -345,7 +361,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
-                    method='brent', options=None):
+                    method='brent', tol=None, options=None):
     """
     Minimization of scalar function of one variable.
 
@@ -374,16 +390,14 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             - 'Brent'
             - 'Bounded'
             - 'Golden'
-
+    tol : float, optional
+        Tolerance for termination. For detailed control, use solver-specific
+        options.
     options : dict, optional
         A dictionary of solver options.
             xtol : float
                 Relative error in solution `xopt` acceptable for
                 convergence.
-            ftol : float
-                Relative error in ``fun(xopt)`` acceptable for convergence.
-            gtol : float
-                Maximum gradient acceptable for convergence.
             maxiter : int
                 Maximum number of iterations to perform.
             disp : bool
@@ -444,6 +458,10 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     meth = method.lower()
     if options is None:
         options = {}
+
+    if tol is not None:
+        options = dict(options)
+        options.setdefault('xtol', tol)
 
     if meth == 'brent':
         return _minimize_scalar_brent(fun, bracket, args, **options)
