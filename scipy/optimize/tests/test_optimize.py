@@ -67,7 +67,7 @@ class TestOptimize(TestCase):
     def test_cg(self, use_wrapper=False):
         """ conjugate gradient optimization routine """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='CG', jac=self.grad,
@@ -100,7 +100,7 @@ class TestOptimize(TestCase):
     def test_bfgs(self, use_wrapper=False):
         """ Broyden-Fletcher-Goldfarb-Shanno optimization routine """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams,
                                     jac=self.grad, method='BFGS', args=(),
@@ -176,7 +176,7 @@ class TestOptimize(TestCase):
         """ Powell (direction set) optimization routine
         """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Powell', options=opts)
@@ -218,7 +218,7 @@ class TestOptimize(TestCase):
         """ Nelder-Mead simplex algorithm
         """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Nelder-mead', options=opts)
@@ -250,7 +250,7 @@ class TestOptimize(TestCase):
         """ line-search Newton conjugate gradient optimization routine
         """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
@@ -282,7 +282,7 @@ class TestOptimize(TestCase):
     def test_ncg_hess(self, use_wrapper=False):
         """ Newton conjugate gradient with Hessian """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
@@ -316,7 +316,7 @@ class TestOptimize(TestCase):
     def test_ncg_hessp(self, use_wrapper=False):
         """ Newton conjugate gradient with Hessian times a vector p """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
@@ -397,7 +397,7 @@ class TestOptimize(TestCase):
 
     def test_minimize_l_bfgs_b(self):
         """ Minimize with L-BFGS-B method """
-        opts = {'disp': False, 'maxiter': self.maxiter}
+        opts = {'disp': False, 'maxfev': self.maxiter}
         x = optimize.minimize(self.func, self.startparams,
                               method='L-BFGS-B', jac=self.grad,
                               options=opts)['x']

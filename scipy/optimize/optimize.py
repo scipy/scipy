@@ -1176,7 +1176,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     """
     opts = {'xtol': avextol,
-            'epsilon': epsilon,
+            'eps': epsilon,
             'maxiter': maxiter,
             'disp': disp,
             'return_all': retall}
