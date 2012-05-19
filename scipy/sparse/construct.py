@@ -20,6 +20,8 @@ from coo import coo_matrix
 from lil import lil_matrix
 from dia import dia_matrix
 
+from base import issparse
+
 def spdiags(data, diags, m, n, format=None):
     """
     Return a sparse matrix from diagonals.
@@ -566,7 +568,7 @@ def block_diag(mats, format=None, dtype=None):
     rows = []
     for ia, a in enumerate(mats):
         row = [None]*nmat
-        row[ia] = a
+        row[ia] = a if issparse(a) else coo_matrix(a)
         rows.append(row)
     return bmat(rows, format=format, dtype=dtype)
 
