@@ -123,41 +123,29 @@ class KroghInterpolator(object):
 
         Parameters
         ----------
-        x : scalar or array-like of length N
+        x : scalar, array-like of shape S
 
         Returns
         -------
-        y : scalar, array of length R, array of length N, or array of length N by R
+        y : array-like of shape S or S+(R,)
             If x is a scalar, returns either a vector or a scalar depending on
             whether the interpolator is vector-valued or scalar-valued.
             If x is a vector, returns a vector of values.
         """
-        if _isscalar(x):
-            scalar = True
-            m = 1
-        else:
-            scalar = False
-            m = len(x)
         x = np.asarray(x)
 
         n = self.n
         pi = 1
-        p = np.zeros((m,self.r))
-        p += self.c[0,np.newaxis,:]
-        for k in xrange(1,n):
+        p = np.zeros(x.shape+(self.r,))
+        p += self.c[(0,)+(np.newaxis,)*len(x.shape)+(slice(None,None,None),)]
+        for k in range(1,n):
             w = x - self.xi[k-1]
             pi = w*pi
-            p = p + np.multiply.outer(pi,self.c[k])
+            p += pi[...,np.newaxis]*self.c[k]
         if not self.vector_valued:
-            if scalar:
-                return p[0,0]
-            else:
-                return p[:,0]
+            return p[...,0]
         else:
-            if scalar:
-                return p[0]
-            else:
-                return p
+            return p
 
     def derivatives(self,x,der=None):
         """
@@ -167,7 +155,7 @@ class KroghInterpolator(object):
 
         Parameters
         ----------
-        x : scalar or array_like of length N
+        x : array-like of shape S
             Point or points at which to evaluate the derivatives
 
         der : None or integer
@@ -180,8 +168,7 @@ class KroghInterpolator(object):
         -------
         d : ndarray
             If the interpolator's values are R-dimensional then the
-            returned array will be der by N by R. If x is a scalar,
-            the middle dimension will be dropped; if R is 1 then the
+            returned array will be der by S by R. If R is 1 then the
             last dimension will be dropped.
 
         Examples
@@ -194,12 +181,6 @@ class KroghInterpolator(object):
                [3.0,3.0]])
 
         """
-        if _isscalar(x):
-            scalar = True
-            m = 1
-        else:
-            scalar = False
-            m = len(x)
         x = np.asarray(x)
 
         n = self.n
@@ -208,47 +189,42 @@ class KroghInterpolator(object):
         if der is None:
             der = self.n
         dern = min(self.n,der)
-        pi = np.zeros((n,m))
-        w = np.zeros((n,m))
+        pi = np.zeros((n,)+x.shape)
+        w = np.zeros((n,)+x.shape)
         pi[0] = 1
-        p = np.zeros((m,self.r))
-        p += self.c[0,np.newaxis,:]
+        p = np.zeros(x.shape+(self.r,))
+        p += self.c[(0,)+(np.newaxis,)*len(x.shape)+(slice(None,None,None),)]
 
         for k in xrange(1,n):
             w[k-1] = x - self.xi[k-1]
             pi[k] = w[k-1]*pi[k-1]
-            p += np.multiply.outer(pi[k],self.c[k])
+            p += pi[k][...,np.newaxis]*self.c[k]
 
-        cn = np.zeros((max(der,n+1),m,r))
-        cn[:n+1,...] += self.c[:n+1,np.newaxis,:]
+        cn = np.zeros((max(der,n+1),)+x.shape+(r,))
+        cn[:n+1,...] += self.c[(slice(n+1),)+(np.newaxis,)*len(x.shape)+(slice(None,None,None),)]
         cn[0] = p
         for k in xrange(1,n):
             for i in xrange(1,n-k+1):
                 pi[i] = w[k+i-1]*pi[i-1]+pi[i]
-                cn[k] = cn[k]+pi[i,:,np.newaxis]*cn[k+i]
+                cn[k] = cn[k]+pi[i,...,np.newaxis]*cn[k+i]
             cn[k]*=factorial(k)
 
         cn[n,...] = 0
         if not self.vector_valued:
-            if scalar:
-                return cn[:der,0,0]
-            else:
-                return cn[:der,:,0]
+            return cn[:der,...,0]
         else:
-            if scalar:
-                return cn[:der,0]
-            else:
-                return cn[:der]
-    def derivative(self,x,der):
+            return cn[:der]
+
+    def derivative(self, x, der=1):
         """
         Evaluate one derivative of the polynomial at the point x
 
         Parameters
         ----------
-        x : scalar or array_like of length N
+        x : array-like of shape S
             Point or points at which to evaluate the derivatives
 
-        der : None or integer
+        der : integer, optional
             Which derivative to extract. This number includes the
             function value as 0th derivative.
 
@@ -256,8 +232,7 @@ class KroghInterpolator(object):
         -------
         d : ndarray
             If the interpolator's values are R-dimensional then the
-            returned array will be N by R. If x is a scalar,
-            the middle dimension will be dropped; if R is 1 then the
+            returned array will be S by R. If R is 1 then the
             last dimension will be dropped.
 
         Notes
@@ -303,7 +278,7 @@ def krogh_interpolate(xi,yi,x,der=0):
     yi : array_like, N by R
         known y-coordinates, interpreted as vectors of length R,
         or scalars if R=1
-    x : scalar or array_like of length N
+    x : array-like of shape S
         Point or points at which to evaluate the derivatives
     der : integer or list
         How many derivatives to extract; None for all potentially
@@ -315,7 +290,7 @@ def krogh_interpolate(xi,yi,x,der=0):
     -------
     d : ndarray
         If the interpolator's values are R-dimensional then the
-        returned array will be the number of derivatives by N by R.
+        returned array will be the number of derivatives by S by R.
         If x is a scalar, the middle dimension will be dropped; if
         the yi are scalars then the last dimension will be dropped.
 
@@ -528,11 +503,11 @@ class BarycentricInterpolator(object):
 
         Parameters
         ----------
-        x : scalar or array-like of length M
+        x : array_like of shape S
 
         Returns
         -------
-        y : scalar or array-like of length R or length M or M by R
+        y : array-like of shape S or S by R
             The shape of y depends on the shape of x and whether the
             interpolator is vector-valued or scalar-valued.
 
@@ -540,27 +515,31 @@ class BarycentricInterpolator(object):
         -----
         Currently the code computes an outer product between x and the
         weights, that is, it constructs an intermediate array of size
-        N by M, where N is the degree of the polynomial.
+        N by S, where N is the degree of the polynomial.
         """
-        scalar = _isscalar(x)
-        x = np.atleast_1d(x)
-        c = np.subtract.outer(x,self.xi)
+        x = np.asarray(x)
+        if x.size == 0:
+            if self.vector_valued:
+                return np.zeros(x.shape+self.yi.shape[1:],dtype=self.yi.dtype)
+            else:
+                return np.zeros(x.shape,dtype=self.yi.dtype)
+        c = x[...,np.newaxis]-self.xi
         z = c==0
         c[z] = 1
         c = self.wi/c
-        p = np.dot(c,self.yi)/np.sum(c,axis=-1)[:,np.newaxis]
-        i, j = np.nonzero(z)
-        p[i] = self.yi[j]
-        if not self.vector_valued:
-            if scalar:
-                return p[0,0]
-            else:
-                return p[:,0]
+        p = np.dot(c,self.yi)/np.sum(c,axis=-1)[...,np.newaxis]
+        # Now fix where x==some xi
+        r = np.nonzero(z)
+        if len(r)==1: # evaluation at a scalar
+            if len(r[0])>0: # equals one of the points
+                p = self.yi[r[0][0]]
         else:
-            if scalar:
-                return p[0]
-            else:
-                return p
+            p[r[:-1]] = self.yi[r[-1]]
+        if not self.vector_valued:
+            return p[...,0]
+        else:
+            return p
+
 def barycentric_interpolate(xi, yi, x):
     """
     Convenience function for polynomial interpolation
@@ -800,7 +779,7 @@ class PiecewisePolynomial(object):
                 y[c] = self.polynomials[i](x[c])
         return y
 
-    def derivative(self, x, der):
+    def derivative(self, x, der=1):
         """
         Evaluate a derivative of the piecewise polynomial
 
@@ -808,7 +787,7 @@ class PiecewisePolynomial(object):
         ----------
         x : scalar or array_like of length N
 
-        der : integer
+        der : integer, optional
             which single derivative to extract
 
         Returns

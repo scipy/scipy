@@ -9,6 +9,24 @@ import scipy
 import numpy as np
 from scipy.interpolate import splrep, splev
 
+def check_shape(f, shape, to_shape):
+    x = np.zeros(shape)
+    assert_array_equal(to_shape,f(x).shape)
+
+def test_krogh_shapes():
+    for s in [(), (0,), (1,), (3,2,5)]:
+        yield check_shape, KroghInterpolator([1,2,3],[3,5,6]), s, s
+def test_krogh_derivs_shapes():
+    for s in [(), (0,), (1,), (3,2,5)]:
+        yield check_shape, KroghInterpolator([1,2,3],[3,5,6]).derivatives, s, (3,)+s
+def test_krogh_deriv_shapes():
+    for s in [(), (0,), (1,), (3,2,5)]:
+        yield check_shape, KroghInterpolator([1,2,3],[3,5,6]).derivative, s, s
+
+def test_barycentric_shapes():
+    for s in [(), (0,), (1,), (3,2,5)]:
+        yield check_shape, BarycentricInterpolator([1,2,3],[3,5,6]), s, s
+
 class CheckKrogh(TestCase):
     def setUp(self):
         self.true_poly = scipy.poly1d([-2,3,1,5,-4])
