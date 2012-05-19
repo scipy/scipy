@@ -1,91 +1,94 @@
-'''
-Translated from Octave code at: http://www.ecs.shimane-u.ac.jp/~kyoshida/lpeng.htm
-and placed under MIT licence by Enzo Michelangeli with permission explicitly
-granted by the original author, Prof. Kazunobu Yoshida  
+# Translated from Octave code at:
+# http://www.ecs.shimane-u.ac.jp/~kyoshida/lpeng.htm
+# and placed under MIT licence by Enzo Michelangeli with permission explicitly
+# granted by the original author, Prof. Kazunobu Yoshida
+#
+# -----------------------------------------------------------------------------
+# Copyright (c) 2010, Kazunobu Yoshida, Shimane University, and Enzo Michelangeli,
+# IT Vision Limited
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+# -----------------------------------------------------------------------------
 
------------------------------------------------------------------------------
-Copyright (c) 2010, Kazunobu Yoshida, Shimane University, and Enzo Michelangeli, 
-IT Vision Limited
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
------------------------------------------------------------------------------
-
-Usage:
- 
- optx,zmin,is_bounded,sol,basis = lp(c,A,b)
- 
-  This program finds a solution of the standard linear programming problem:
-    minimize    z = c'x
-    subject to  Ax = b, x >= 0
-  using the two phase method, where the simplex method is used at each stage.
-  Returns the tuple:
-    optx: an optimal solution.
-    zmin: the optimal value. 
-    is_bounded: True if the solution is bounded; False if unbounded.
-    sol: True if the problem is solvable; False if unsolvable.
-    basis: indices of the basis of the solution.
-    
-  All the non-scalar data types are numpy arrays.   
-'''
 from numpy import *
+from optimize import Result
 
-class NamedTuple(tuple):
-    def __new__(cls, values, names):
-        self = tuple.__new__(cls, values)
-        for value, name in zip(values, names):
-            setattr(self, name, value)
-        return self
-
-class Solution(NamedTuple):
-    _fields = []
-    def __new__(cls, *a, **kw):
-        values = list(a)
-        for name in cls._fields[len(values):]:
-            values.append(kw.pop(name))
-        if len(values) != len(cls._fields) or kw:
-            raise ValueError("Invalid arguments")
-        return NamedTuple.__new__(cls, values, cls._fields)
-
-    def __repr__(self):
-        return "%s%s" % (self.__class__.__name__, 
-                         NamedTuple.__repr__(self))
-
-class LPSolution(Solution):
+class LPResult(Result):
     """
     Solution to a linear programming problem
 
     Attributes
     ----------
-    x
-        The optimal solution
-    min
+    x : ndarray
+        The solution of the optimization.
+    success : bool
+        Whether or not the optimizer exited successfully.
+    fun : float
         The optimal value
-    is_bounded
+    is_bounded : bool
         True if the solution is bounded; False if unbounded
-    solvable
+    is_solvable : bool
         True if the problem is solvable; False if unsolvable
-    basis
+    basis : ndarray
         Indices of the basis of the solution.
     """
     _fields = ['x', 'min', 'is_bounded', 'solvable', 'basis']
 
-def lp(c, A, b, tol=1e-10):
+def lp_solve(c, A, b, tol=1e-10):
+    """
+    Solves a linear programming problem using a two-phase method.
+
+    The problem solved is::
+
+        minimize    z = c' x
+        subject to  A x = b, x >= 0
+
+    Parameters
+    ----------
+    c : array_like
+    A : array_like
+    b : array_like
+        Problem parameters
+    tol : float, optional
+        Tolerance
+
+    Returns
+    -------
+    sol : LPResult
+        A solution object, with the properties:
+            x : ndarray
+                An optimal solution.
+            fun : float
+                The optimal value.
+            is_bounded : bool
+                True if the solution is bounded; False if unbounded.
+            is_solvable : bool
+                True if the problem is solvable; False if unsolvable.
+            basis : ndarray
+                Indices of the basis of the solution.
+
+    Notes
+    -----
+    The solution is found using the two phase method, where the
+    simplex method is used at each stage.
+
+    """
     c = asarray(c)
     A = asarray(A)
     b = asarray(b)
@@ -101,12 +104,11 @@ def lp(c, A, b, tol=1e-10):
          hstack([A, array([b]).T]), # first m rows
          hstack([c, 0.]),   # last-but-one
          hstack([d, -w0])]) # last
-    indx = arange(n)
+    indx = range(n)
     basis = arange(n, n+m) # m elements from n to n+m-1
     is_bounded = _simplex(H, basis, indx, 1)
     if H[m+1,n] < -tol:   # last row, last column
         sol = False
-        #print('unsolvable')
         optx = None
         zmin = None
         is_bounded = None
@@ -117,25 +119,31 @@ def lp(c, A, b, tol=1e-10):
             j = j+1
             if H[m+1,j] > tol:
                 H = delete(H, j, 1)     # H[:,j] = [] # delete column j from H
-                indx = delete(indx, j)  # indx[j] = [] #delete element j from indx
+                del indx[j]
                 j = j-1
         H = delete(H, m+1, 0)
-        if size(indx) > 0:
-        # Phase two
-            is_bounded = _simplex(H,basis,indx,2);
+        if indx > 0:
+            # Phase two
+            is_bounded = _simplex(H,basis,indx,2)
             if is_bounded:
-                optx = zeros(n+m);
+                optx = zeros(n+m)
                 for i in xrange(m):
                     optx[basis[i]] = H[i,-1]
-                optx = optx[0:n] 
+                optx = optx[0:n]
                 zmin = -H[-1,-1]    #  last row, last column
             else:
                 optx = None
                 zmin = -Inf
         else:
             optx = zeros(n)
-            zmin = 0;
-    return LPSolution(optx, zmin, is_bounded, sol, basis)  
+            zmin = 0
+
+    return LPResult(x=optx,
+                    fun=zmin,
+                    success=(sol and is_bounded),
+                    is_bounded=is_bounded,
+                    is_solvable=sol,
+                    basis=basis)
 
 def _simplex(H,basis,indx,s):
     '''
@@ -178,7 +186,7 @@ def _simplex(H,basis,indx,s):
                 minh1 = h1[ip]
                 basis[ip] = indx[jp]
                 if not _pivot(H,ip,jp):
-                    raise ValueError("the first parameter is a Singular matrix") 
+                    raise ValueError("the first parameter is a Singular matrix")
     return is_bounded
 
 def _pivot(H,ip,jp):
@@ -194,119 +202,3 @@ def _pivot(H,ip,jp):
             if i != ip:
                 H[i,:] -= H[i,jp]*H[ip,:]
     return True
-
-
-######### Unit test section #########
-
-from numpy.testing import *
-
-def test_lp(prt=False):
-    m1 = 20
-    m2 = 50
-    probs = [
-        {
-            'A': array([
-                [2.,  5., 3., -1.,  0.,  0.],
-                [3., 2.5, 8.,  0., -1.,  0.],
-                [8.,10.,  4.,  0.,  0., -1.]]),
-            'b': array([185., 155., 600.]),
-            'c': array([4., 8., 3., 0., 0., 0.]),
-            'result': [
-                    array([ 66.25, 0., 17.5, 0., 183.75, 0.]),
-                    317.5,
-                    True,
-                    True,
-                    array([2, 0, 4])            
-                ]
-        },
-        {        
-            'A': array([
-                [-1., -1., -1.,  0.,  0.,  0.],
-                [ 0.,  0.,  0.,  1.,  1.,  1.],
-                [ 1.,  0.,  0.,  1.,  0.,  0.],
-                [ 0.,  1.,  0.,  0.,  1.,  0.],
-                [ 0.,  0.,  1.,  0.,  0.,  1.]]),
-            'b': array([-0.5, 0.4, 0.3, 0.3, 0.3]),
-            'c': array([2.8, 6.3, 10.8, -2.8, -6.3, -10.8]),
-            'result': [
-                    array([0.3, 0.2, 0.0, 0.0, 0.1, 0.3]),
-                    -1.77,
-                    True,
-                    True,
-                    array([1, 7, 0, 4, 5])            
-                ]
-        },
-        {   # with degeneracy
-            'A': array([[cos(2*pi*i/(m1+1))-1., sin(2*pi*i/(m1+1))] for i in xrange(1,m1+1)]).T,
-            'b': zeros(2).T,
-            'c': -ones(m1).T,
-            'result': [
-                    zeros(m1),
-                    0.,
-                    True,
-                    True,
-                    array([0,19])
-                ]
-            
-        },
-        {   # with unboundedness (0 is a member of the convex hull of these vectors)
-            'A': array([[cos(2*pi*i/(m2+1))-1., sin(2*pi*i/(m2+1))] for i in xrange(0,m2)]).T,
-            'b': zeros(2).T,
-            'c': -ones(m2).T,
-            'result': [
-                    None,   # unchecked when unbounded
-                    -Inf,   # unchecked when unbounded
-                    False,
-                    True,
-                    array([2, 49])
-                ]
-            
-        }, 
-        {   # Unsolvable
-            'A': array([[cos(2*pi*i/(m2+1))-1., sin(2*pi*i/(m2+1))] for i in xrange(0,m2)]).T,
-            'b': ones(2).T,
-            'c': -ones(m2).T,
-            'result': [
-                    None,   # unchecked when unsolvable
-                    None,   # unchecked when unsolvable
-                    None,   # unchecked when unsolvable
-                    False,
-                    array([50, 1])
-                ]
-            
-        }, # add other test cases here...
-    ]
-
-
-    for prob in probs:
-        #optx, zmin, bounded, solvable, basis = lp(prob['c'],prob['A'],prob['b'])
-        lpsol = lp(prob['c'],prob['A'],prob['b'])
-        optx = lpsol.x
-        zmin = lpsol.min
-        bounded = lpsol.is_bounded
-        solvable = lpsol.solvable
-        basis = lpsol.basis
-        if prt:
-            print "A:\n",prob['A']
-            print "b:",prob['b']
-            print "c:",prob['c']
-            print " ---->"
-            print "optx:",optx
-            print "zmin:",zmin
-            print "bounded:",bounded
-            print "solvable:",solvable
-            print "basis:",basis
-            print "-------------------------------------------"
-        else:
-            expected_res = prob['result']
-            assert_equal(solvable, expected_res[3])
-            assert_equal(basis, expected_res[4])
-            if solvable:
-                assert_equal(bounded, expected_res[2])
-                if bounded:
-                    assert_almost_equal(optx, expected_res[0])
-                    assert_almost_equal(zmin, expected_res[1]) # when unbounded zmin == -Inf, but -Inf != -Inf so we won't check it...
-
-if __name__ == "__main__":
-    #test_lp(True)
-    run_module_suite()

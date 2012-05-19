@@ -56,6 +56,14 @@ Scalar function minimizers
    golden - 1-D function minimization using Golden Section method
    bracket - Bracket a minimum, given two starting points
 
+Linear programming
+------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   lp_solve - Solves a linear programming problem using a two-phase method
+
 Rosenbrock function
 -------------------
 
