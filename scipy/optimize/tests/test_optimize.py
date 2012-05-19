@@ -404,6 +404,23 @@ class TestOptimize(TestCase):
         assert_allclose(self.func(x), self.func(self.solution),
                         atol=1e-6)
 
+    def test_minimize_l_bfgs_b_ftol(self):
+        # Check that the `ftol` parameter in l_bfgs_b works as expected
+        v0 = None
+        for tol in [1e-1, 1e-4, 1e-7, 1e-10]:
+            opts = {'disp': False, 'maxfev': self.maxiter, 'ftol': tol}
+            sol = optimize.minimize(self.func, self.startparams,
+                                    method='L-BFGS-B', jac=self.grad,
+                                    options=opts)
+            v = self.func(sol.x)
+
+            if v0 is None:
+                v0 = v
+            else:
+                assert_(v < v0)
+
+            assert_allclose(v, self.func(self.solution), rtol=tol)
+
     def test_minimize(self):
         """Tests for the minimize wrapper."""
         self.setUp()
