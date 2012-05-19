@@ -278,18 +278,22 @@ class ode(object):
         self.jac = jac
         self.f_params = ()
         self.jac_params = ()
-        self.y = []
+        self._y = []
+
+    @property
+    def y(self):
+        return self._y
 
     def set_initial_value(self, y, t=0.0):
         """Set initial conditions y(t) = y."""
         if isscalar(y):
             y = [y]
-        n_prev = len(self.y)
+        n_prev = len(self._y)
         if not n_prev:
             self.set_integrator('')  # find first available integrator
-        self.y = asarray(y, self._integrator.scalar)
+        self._y = asarray(y, self._integrator.scalar)
         self.t = t
-        self._integrator.reset(len(self.y), self.jac is not None)
+        self._integrator.reset(len(self._y), self.jac is not None)
         return self
 
     def set_integrator(self, name, **integrator_params):
@@ -311,10 +315,10 @@ class ode(object):
                 'available.' % name)
         else:
             self._integrator = integrator(**integrator_params)
-            if not len(self.y):
+            if not len(self._y):
                 self.t = 0.0
-                self.y = array([0.0], self._integrator.scalar)
-            self._integrator.reset(len(self.y), self.jac is not None)
+                self._y = array([0.0], self._integrator.scalar)
+            self._integrator.reset(len(self._y), self.jac is not None)
         return self
 
     def integrate(self, t, step=0, relax=0):
@@ -325,10 +329,10 @@ class ode(object):
             mth = self._integrator.run_relax
         else:
             mth = self._integrator.run
-        self.y, self.t = mth(self.f, self.jac or (lambda: None),
-                            self.y, self.t, t,
+        self._y, self.t = mth(self.f, self.jac or (lambda: None),
+                            self._y, self.t, t,
                             self.f_params, self.jac_params)
-        return self.y
+        return self._y
 
     def successful(self):
         """Check if integration was successful."""
@@ -398,6 +402,10 @@ class complex_ode(ode):
         self.jac_tmp[1::2, ::2] = imag(jac)
         self.jac_tmp[::2, 1::2] = -self.jac_tmp[1::2, ::2]
         return self.jac_tmp
+
+    @property
+    def y(self):
+        return self._y[::2] + 1j * self._y[1::2]
 
     def set_integrator(self, name, **integrator_params):
         """
