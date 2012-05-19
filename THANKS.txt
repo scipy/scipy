@@ -101,6 +101,7 @@ David Fong for the sparse LSMR solver.
 Andreas Hilboll for wrapping FITPACK's spgrid.f
 Andrew Schein for improving the numerical precision of norm.logcdf().
 Robert Gantner for improving expm() implementation.
+Sebastian Werk for Halley's method in newton().
 
 
 Institutions
