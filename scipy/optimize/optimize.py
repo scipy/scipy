@@ -1703,7 +1703,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     convergence of golden section method.
 
     """
-    options = {'ftol': tol,
+    options = {'xtol': tol,
                'maxiter': maxiter}
     res = _minimize_scalar_brent(func, brack, args, **options)
     if full_output:
@@ -1712,10 +1712,10 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         return res['x']
 
 def _minimize_scalar_brent(func, brack=None, args=(),
-                           ftol=1.48e-8, maxiter=500,
+                           xtol=1.48e-8, maxiter=500,
                            **unknown_options):
     _check_unknown_options(unknown_options)
-    tol = ftol
+    tol = xtol
 
     brent = Brent(func=func, args=args, tol=tol,
                   full_output=True, maxiter=maxiter)
@@ -1757,7 +1757,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     interval.
 
     """
-    options = {'ftol': tol}
+    options = {'xtol': tol}
     res = _minimize_scalar_golden(func, brack, args, **options)
     if full_output:
         return res['x'], res['fun'], res['nfev']
@@ -1765,9 +1765,9 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         return res['x']
 
 def _minimize_scalar_golden(func, brack=None, args=(),
-                            ftol=_epsilon, **unknown_options):
+                            xtol=_epsilon, **unknown_options):
     _check_unknown_options(unknown_options)
-    tol = ftol
+    tol = xtol
     if brack is None:
         xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
     elif len(brack) == 2:
