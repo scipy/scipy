@@ -18,10 +18,12 @@
 __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'fminbound', 'brent', 'golden', 'bracket', 'rosen', 'rosen_der',
            'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
-           'line_search', 'check_grad', 'Result', 'show_options']
+           'line_search', 'check_grad', 'Result', 'show_options',
+           'OptimizeWarning']
 
 __docformat__ = "restructuredtext en"
 
+import warnings
 import numpy
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
@@ -108,6 +110,16 @@ class Result(dict):
         else:
             return self.__class__.__name__ + "()"
 
+class OptimizeWarning(UserWarning):
+    pass
+
+def _check_unknown_options(unknown_options):
+    if unknown_options:
+        msg = ", ".join(map(str, unknown_options.keys()))
+        # Stack level 4: this is called from _minimize_*, which is
+        # called from another function in Scipy. Level 4 is the first
+        # level in user code.
+        warnings.warn("Unknown solver options: %s" % msg, OptimizeWarning, 4)
 
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
@@ -345,7 +357,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'disp': disp,
             'return_all': retall}
 
-    res = _minimize_neldermead(func, x0, args, opts, callback=callback)
+    res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
     if full_output:
         retlist = res['x'], res['fun'], res['nit'], res['nfev'], res['status']
         if retall:
@@ -357,7 +369,10 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         else:
             return res['x']
 
-def _minimize_neldermead(func, x0, args=(), options=None, callback=None):
+def _minimize_neldermead(func, x0, args=(), callback=None,
+                         xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
+                         disp=False, return_all=False,
+                         **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -377,15 +392,9 @@ def _minimize_neldermead(func, x0, args=(), options=None, callback=None):
     This function is called by the `minimize` function with
     `method=Nelder-Mead`. It is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve useful options
-    xtol    = options.get('xtol', 1e-4)
-    ftol    = options.get('ftol', 1e-4)
-    maxiter = options.get('maxiter')
-    maxfun  = options.get('maxfev')
-    disp    = options.get('disp', False)
-    retall  = options.get('return_all', False)
+    _check_unknown_options(unknown_options)
+    maxfun = maxfev
+    retall = return_all
 
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
@@ -708,7 +717,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'maxiter': maxiter,
             'return_all': retall}
 
-    res = _minimize_bfgs(f, x0, args, fprime, opts, callback=callback)
+    res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
         retlist = res['x'], res['fun'], res['jac'], res['hess'], \
@@ -722,7 +731,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         else:
             return res['x']
 
-def _minimize_bfgs(fun, x0, args=(), jac=None, options=None, callback=None):
+def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
+                   gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
+                   disp=False, return_all=False,
+                   **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -743,17 +755,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options=None, callback=None):
     This function is called by the `minimize` function with `method=BFGS`.
     It is not supposed to be called directly.
     """
+    _check_unknown_options(unknown_options)
     f = fun
     fprime = jac
-    if options is None:
-        options = {}
-    # retrieve useful options
-    gtol    = options.get('gtol', 1e-5)
-    norm    = options.get('norm', Inf)
-    epsilon = options.get('eps', _epsilon)
-    maxiter = options.get('maxiter')
-    disp    = options.get('disp', False)
-    retall  = options.get('return_all', False)
+    epsilon = eps
+    retall = return_all
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
@@ -943,7 +949,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             'maxiter': maxiter,
             'return_all': retall}
 
-    res = _minimize_cg(f, x0, args, fprime, opts, callback=callback)
+    res = _minimize_cg(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
         retlist = res['x'], res['fun'], res['nfev'], res['njev'], res['status']
@@ -956,7 +962,10 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         else:
             return res['x']
 
-def _minimize_cg(fun, x0, args=(), jac=None, options=None, callback=None):
+def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
+                 gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
+                 disp=False, return_all=False,
+                 **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     conjugate gradient algorithm.
@@ -977,17 +986,11 @@ def _minimize_cg(fun, x0, args=(), jac=None, options=None, callback=None):
     This function is called by the `minimize` function with `method=CG`. It
     is not supposed to be called directly.
     """
+    _check_unknown_options(unknown_options)
     f = fun
     fprime = jac
-    if options is None:
-        options = {}
-    # retrieve useful options
-    gtol    = options.get('gtol', 1e-5)
-    norm    = options.get('norm', Inf)
-    epsilon = options.get('eps', _epsilon)
-    maxiter = options.get('maxiter')
-    disp    = options.get('disp', False)
-    retall  = options.get('return_all', False)
+    epsilon = eps
+    retall = return_all
 
     x0 = asarray(x0).flatten()
     if maxiter is None:
@@ -1178,8 +1181,8 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             'disp': disp,
             'return_all': retall}
 
-    res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
-                             callback=callback)
+    res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p,
+                             callback=callback, **opts)
 
     if full_output:
         retlist = res['x'], res['fun'], res['nfev'], res['njev'], \
@@ -1194,7 +1197,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             return res['x']
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                       options=None, callback=None):
+                       callback=None, xtol=1e-5, eps=_epsilon, maxiter=None,
+                       disp=False, return_all=False,
+                       **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     Newton-CG algorithm.
@@ -1215,20 +1220,16 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     Also note that the `jac` parameter (Jacobian) is required.
     """
+    _check_unknown_options(unknown_options)
     if jac == None:
         raise ValueError('Jacobian is required for Newton-CG method')
     f = fun
     fprime = jac
     fhess_p = hessp
     fhess = hess
-    if options is None:
-        options = {}
-    # retrieve useful options
-    avextol = options.get('xtol', 1e-5)
-    epsilon = options.get('eps', _epsilon)
-    maxiter = options.get('maxiter')
-    disp    = options.get('disp', False)
-    retall  = options.get('return_all', False)
+    avextol = xtol
+    epsilon = eps
+    retall = return_all
 
     x0 = asarray(x0).flatten()
     fcalls, f = wrap_function(f, args)
@@ -1387,19 +1388,17 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
                'maxfev': maxfun,
                'disp': disp}
 
-    res =  _minimize_scalar_bounded(func, (x1, x2), args, options)
+    res =  _minimize_scalar_bounded(func, (x1, x2), args, **options)
     if full_output:
         return res['x'], res['fun'], res['status'], res['nfev']
     else:
         return res['x']
 
-def _minimize_scalar_bounded(func, bounds, args=(), options=None):
-    if options is None:
-        options = {}
-    # retrieve options
-    xtol = options.get('xtol', 1e-5)
-    maxfun = options.get('maxfev', 500)
-    disp = options.get('disp', 0)
+def _minimize_scalar_bounded(func, bounds, args=(),
+                             xtol=1e-5, maxfev=500, disp=0,
+                             **unknown_options):
+    _check_unknown_options(unknown_options)
+    maxfun = maxfev
     # Test bounds are of correct form
     if len(bounds) != 2:
         raise ValueError('bounds must have two elements.')
@@ -1706,19 +1705,17 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """
     options = {'ftol': tol,
                'maxiter': maxiter}
-    res = _minimize_scalar_brent(func, brack, args, options)
+    res = _minimize_scalar_brent(func, brack, args, **options)
     if full_output:
         return res['x'], res['fun'], res['nit'], res['nfev']
     else:
         return res['x']
 
-def _minimize_scalar_brent(func, brack=None, args=(), options=None):
-    if options is None:
-        options = {}
-    # retrieve options
-    tol = options.get('ftol', 1.48e-8)
-    maxiter = options.get('maxiter', 500)
-
+def _minimize_scalar_brent(func, brack=None, args=(),
+                           ftol=1.48e-8, maxiter=500,
+                           **unknown_options):
+    _check_unknown_options(unknown_options)
+    tol = ftol
 
     brent = Brent(func=func, args=args, tol=tol,
                   full_output=True, maxiter=maxiter)
@@ -1761,16 +1758,16 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
 
     """
     options = {'ftol': tol}
-    res = _minimize_scalar_golden(func, brack, args, options)
+    res = _minimize_scalar_golden(func, brack, args, **options)
     if full_output:
         return res['x'], res['fun'], res['nfev']
     else:
         return res['x']
 
-def _minimize_scalar_golden(func, brack=None, args=(), options=None):
-    if options is None:
-        options = {}
-    tol = options.get('ftol', _epsilon)
+def _minimize_scalar_golden(func, brack=None, args=(),
+                            ftol=_epsilon, **unknown_options):
+    _check_unknown_options(unknown_options)
+    tol = ftol
     if brack is None:
         xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
     elif len(brack) == 2:
@@ -2030,7 +2027,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'direc': direc,
             'return_all': retall}
 
-    res = _minimize_powell(func, x0, args, opts, callback=callback)
+    res = _minimize_powell(func, x0, args, callback=callback, **opts)
 
     if full_output:
         retlist = res['x'], res['fun'], res['direc'], res['nit'], \
@@ -2044,7 +2041,10 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         else:
             return res['x']
 
-def _minimize_powell(func, x0, args=(), options=None, callback=None):
+def _minimize_powell(func, x0, args=(), callback=None,
+                     xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
+                     disp=False, direc=None, return_all=False,
+                     **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     modified Powell algorithm.
@@ -2066,16 +2066,9 @@ def _minimize_powell(func, x0, args=(), options=None, callback=None):
     This function is called by the `minimize` function with
     `method=Powell`. It is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve useful options
-    xtol    = options.get('xtol', 1e-4)
-    ftol    = options.get('ftol', 1e-4)
-    maxiter = options.get('maxiter')
-    maxfun  = options.get('maxfev')
-    disp    = options.get('disp', False)
-    direc   = options.get('direc')
-    retall  = options.get('return_all', False)
+    _check_unknown_options(unknown_options)
+    maxfun = maxfev
+    retall = return_all
     # we need to use a mutable object here that we can update in the
     # wrapper function
     fcalls, func = wrap_function(func, args)

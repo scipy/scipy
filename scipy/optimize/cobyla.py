@@ -12,7 +12,7 @@ Functions
 
 import numpy as np
 from scipy.optimize import _cobyla
-from optimize import Result
+from optimize import Result, _check_unknown_options
 from warnings import warn
 
 __all__ = ['fmin_cobyla']
@@ -163,9 +163,11 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
             'maxfev': maxfun}
 
     return _minimize_cobyla(func, x0, args, constraints=con,
-                            options=opts)['x']
+                            **opts)['x']
 
-def _minimize_cobyla(fun, x0, args=(), constraints=(), options=None):
+def _minimize_cobyla(fun, x0, args=(), constraints=(),
+                     rhobeg=1.0, rhoend=1e-4, iprint=1, maxfev=1000,
+                     disp=False, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Linear Approximation (COBYLA) algorithm.
@@ -185,15 +187,8 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(), options=None):
     This function is called by the `minimize` function with
     `method=COBYLA`. It is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve useful options
-    rhobeg = options.get('rhobeg', 1.0)
-    rhoend = options.get('rhoend', 1e-4)
-    iprint = options.get('iprint', 1)
-    maxfun = options.get('maxfev', 1000)
-    disp   = options.get('disp', False)
-
+    _check_unknown_options(unknown_options)
+    maxfun = maxfev
     if not disp:
         iprint = 0
 

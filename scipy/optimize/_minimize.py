@@ -319,27 +319,27 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             jac = None
 
     if meth == 'nelder-mead':
-        return _minimize_neldermead(fun, x0, args, options, callback)
+        return _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
-        return _minimize_powell(fun, x0, args, options, callback)
+        return _minimize_powell(fun, x0, args, callback, **options)
     elif meth == 'cg':
-        return _minimize_cg(fun, x0, args, jac, options, callback)
+        return _minimize_cg(fun, x0, args, jac, callback, **options)
     elif meth == 'bfgs':
-        return _minimize_bfgs(fun, x0, args, jac, options, callback)
+        return _minimize_bfgs(fun, x0, args, jac, callback, **options)
     elif meth == 'newton-cg':
-        return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, options,
-                                  callback)
+        return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
+                                  **options)
     elif meth == 'anneal':
-        return _minimize_anneal(fun, x0, args, options)
+        return _minimize_anneal(fun, x0, args, **options)
     elif meth == 'l-bfgs-b':
-        return _minimize_lbfgsb(fun, x0, args, jac, bounds, options)
+        return _minimize_lbfgsb(fun, x0, args, jac, bounds, **options)
     elif meth == 'tnc':
-        return _minimize_tnc(fun, x0, args, jac, bounds, options)
+        return _minimize_tnc(fun, x0, args, jac, bounds, **options)
     elif meth == 'cobyla':
-        return _minimize_cobyla(fun, x0, args, constraints, options)
+        return _minimize_cobyla(fun, x0, args, constraints, **options)
     elif meth == 'slsqp':
         return _minimize_slsqp(fun, x0, args, jac, bounds,
-                               constraints, options)
+                               constraints, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
@@ -444,14 +444,14 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         options = {}
 
     if meth == 'brent':
-        return _minimize_scalar_brent(fun, bracket, args, options)
+        return _minimize_scalar_brent(fun, bracket, args, **options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
-        return _minimize_scalar_bounded(fun, bounds, args, options)
+        return _minimize_scalar_bounded(fun, bounds, args, **options)
     elif meth == 'golden':
-        return _minimize_scalar_golden(fun, bracket, args, options)
+        return _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 

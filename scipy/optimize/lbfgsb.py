@@ -35,7 +35,7 @@ Functions
 
 from numpy import array, asarray, float64, int32, zeros
 import _lbfgsb
-from optimize import approx_fprime, MemoizeJac, Result
+from optimize import approx_fprime, MemoizeJac, Result, _check_unknown_options
 from numpy.compat import asbytes
 
 __all__ = ['fmin_l_bfgs_b']
@@ -170,7 +170,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'maxfev': maxfun}
 
     res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
-                           options=opts)
+                           **opts)
     d = {'grad': res['jac'],
          'task': res['message'],
          'funcalls': res['nfev'],
@@ -180,7 +180,10 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     return x, f, d
 
-def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options=None):
+def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
+                     disp=None, maxcor=10, factr=1e7, pgtol=1e-5,
+                     eps=1e-8, maxfev=15000, iprint=-1,
+                     **unknown_options):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -214,16 +217,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options=None):
     This function is called by the `minimize` function with
     `method=L-BFGS-B`. It is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve useful options
-    disp    = options.get('disp', None)
-    m       = options.get('maxcor', 10)
-    factr   = options.get('factr', 1e7)
-    pgtol   = options.get('pgtol', 1e-5)
-    epsilon = options.get('eps', 1e-8)
-    maxfun  = options.get('maxfev', 15000)
-    iprint  = options.get('iprint', -1)
+    _check_unknown_options(unknown_options)
+    m = maxcor
+    epsilon = eps
+    maxfun = maxfev
 
     x0 = asarray(x0).ravel()
     n, = x0.shape
