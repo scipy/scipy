@@ -285,7 +285,7 @@ docdict_discrete['pmf'] = _doc_pmf
 docdict_discrete['logpmf'] = _doc_logpmf
 docdict_discrete['expect'] = _doc_expect_discrete
 _doc_disc_methods = ['rvs', 'pmf', 'logpmf', 'cdf', 'logcdf', 'sf', 'logsf',
-                     'ppf', 'isf', 'stats', 'entropy', 'fit', 'expect', 'median',
+                     'ppf', 'isf', 'stats', 'entropy', 'expect', 'median',
                      'mean', 'var', 'std', 'interval']
 for obj in _doc_disc_methods:
     docdict_discrete[obj] = docdict_discrete[obj].replace(', scale=1', '')
@@ -5578,9 +5578,6 @@ class rv_discrete(rv_generic):
 
     generic.entropy(<shape(s)>, loc=0)
         entropy of the RV
-
-    generic.fit(data, <shape(s)>, loc=0)
-        Parameter estimates for generic data
 
     generic.expect(func=None, args=(), loc=0, lb=None, ub=None, conditional=False)
         Expected value of a function with respect to the distribution.
