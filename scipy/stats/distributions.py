@@ -227,6 +227,8 @@ Display frozen pdf
 >>> x = np.linspace(0, np.minimum(rv.dist.b, 3))
 >>> h = plt.plot(x, rv.pdf(x))
 
+Here, ``rv.dist.b`` is the right endpoint of the support of ``rv.dist``.
+
 Check accuracy of cdf and ppf
 
 >>> prb = %(name)s.cdf(x, %(shapes)s)
@@ -318,6 +320,8 @@ Display frozen pmf
 
 >>> x = np.arange(0, np.minimum(rv.dist.b, 3))
 >>> h = plt.vlines(x, 0, rv.pmf(x), lw=2)
+
+Here, ``rv.dist.b`` is the right endpoint of the support of ``rv.dist``.
 
 Check accuracy of cdf and ppf
 
@@ -5643,6 +5647,8 @@ class rv_discrete(rv_generic):
     >>> rv = generic(<shape(s)>)
     >>> x = np.arange(0, np.min(rv.dist.b, 3)+1)
     >>> h = plt.plot(x, rv.pmf(x))
+
+    Here, ``rv.dist.b`` is the right endpoint of the support of ``rv.dist``.
 
     Check accuracy of cdf and ppf:
 
