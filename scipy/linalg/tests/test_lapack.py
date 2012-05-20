@@ -4,13 +4,16 @@
 #
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_array_almost_equal, assert_
+    assert_array_almost_equal, assert_, assert_raises
 
 import numpy as np
 
 from scipy.linalg import flapack, clapack
 from scipy.linalg.lapack import get_lapack_funcs
 
+REAL_DTYPES = [np.float32, np.float64]
+COMPLEX_DTYPES = [np.complex64, np.complex128]
+DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 class TestFlapackSimple(TestCase):
 
@@ -81,6 +84,25 @@ class TestLapack(TestCase):
             #clapack module is empty
             pass
 
+class TestRegression(TestCase):
+
+    def test_ticket_1645(self):
+        # Check that RQ routines have correct lwork
+        for dtype in DTYPES:
+            a = np.zeros((300, 2), dtype=dtype)
+
+            gerqf, = get_lapack_funcs(['gerqf'], [a])
+            assert_raises(Exception, gerqf, a, lwork=2)
+            rq, tau, work, info = gerqf(a)
+
+            if dtype in REAL_DTYPES:
+                orgrq, = get_lapack_funcs(['orgrq'], [a])
+                assert_raises(Exception, orgrq, rq[-2:], tau, lwork=1)
+                orgrq(rq[-2:], tau, lwork=2)
+            elif dtype in COMPLEX_DTYPES:
+                ungrq, = get_lapack_funcs(['ungrq'], [a])
+                assert_raises(Exception, ungrq, rq[-2:], tau, lwork=1)
+                ungrq(rq[-2:], tau, lwork=2)
 
 if __name__ == "__main__":
     run_module_suite()
