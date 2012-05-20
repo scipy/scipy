@@ -7153,11 +7153,11 @@ class skellam_gen(rv_discrete):
     uncorrelated Poisson random variables.
 
     Let k1 and k2 be two Poisson-distributed r.v. with expected values
-    lam1 and lam2. Then, k1-k2 follows a Skellam distribution with
-    parameters mu1 = lam1 - rho*sqrt(lam1*lam2) and
-    mu2 = lam2 - rho*sqrt(lam1*lam2), where rho is the correlation
+    lam1 and lam2. Then, ``k1 - k2`` follows a Skellam distribution with
+    parameters ``mu1 = lam1 - rho*sqrt(lam1*lam2)`` and
+    ``mu2 = lam2 - rho*sqrt(lam1*lam2)``, where rho is the correlation
     coefficient between k1 and k2. If the two Poisson-distributed r.v.
-    are independent then rho = 0.
+    are independent then ``rho = 0``.
 
     Parameters mu1 and mu2 must be strictly positive.
 

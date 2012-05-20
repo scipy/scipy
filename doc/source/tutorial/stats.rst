@@ -17,9 +17,9 @@ details.
 
 Note: This documentation is work in progress.
 
-Random Variables
-------------------
 
+Random Variables
+----------------
 
 There are two general distribution classes that have been implemented
 for encapsulating :ref:`continuous random variables
@@ -39,8 +39,9 @@ In the discussion below we mostly focus on continuous RVs. Nearly all
 applies to discrete variables also, but we point out some differences
 here: :ref:`discrete_points_label`.
 
+
 Getting Help
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
 First of all, all distributions are accompanied with help
 functions. To obtain just some basic information we can call
@@ -88,7 +89,7 @@ introspection:
 
 
 Common Methods
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 The main public methods for continuous  RVs are:
 
@@ -102,9 +103,7 @@ The main public methods for continuous  RVs are:
 * moment: non-central moments of the distribution
 
 
-
 Lets take a normal RV as an example.
-
 
     >>> norm.cdf(0)
     0.5
@@ -146,7 +145,7 @@ This brings us, in fact, to topic of the next subsection.
 
 
 Shifting and Scaling
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 All continuous distributions take ``loc`` and ``scale`` as keyword
 parameters to adjust the location and scale of the distribution,
@@ -202,7 +201,7 @@ topic of `freezing a RV`.
 
 
 Shape Parameters
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 While a general continuous random variable can be shifted and scaled
 with the ``loc`` and ``scale`` parameters, some distributions require 
@@ -234,14 +233,13 @@ results we expect.
 
 
 Freezing a Distribution
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Passing the ``loc`` and ``scale`` keywords time and again can become
 quite bothersome. The concept of `freezing` a RV is used to
 solve such problems. 
 
     >>> rv = gamma(1, scale=2.)
-
 
 By using ``rv`` we no longer have to include the scale or the shape
 parameters anymore. Thus, distributions can be used in one of two
@@ -255,9 +253,8 @@ instance of the distribution. Let us check this:
 This is indeed what we should get. 
 
 
-
 Broadcasting
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
 The basic methods ``pdf`` and so on satisfy the usual numpy broadcasting rules. For
 example, we can calculate the critical values for the upper tail of
@@ -286,12 +283,10 @@ obtain the 10% tail for 10 d.o.f., the 5% tail for 11 d.o.f. and the
     array([ 1.37218364,  1.79588482,  2.68099799])
 
 
-
-
 .. _discrete_points_label:
 
 Specific Points for Discrete Distributions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Discrete distribution have mostly the same basic methods as the
 continuous distributions.  However ``pdf`` is replaced the probability
@@ -343,7 +338,7 @@ the next higher integer back:
 
 
 Fitting Distributions
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 The main additional methods of the not frozen distribution are related
 to the estimation of distribution parameters:
@@ -358,7 +353,7 @@ to the estimation of distribution parameters:
 .. _performance_issues_label:
 
 Performance Issues and Cautionary Remarks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The performance of the individual methods, in terms of speed, varies
 widely by distribution and method. The results of a method are
@@ -384,7 +379,7 @@ one second.
 
 
 Remaining Issues
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 The distributions in ``scipy.stats`` have recently been corrected and improved
 and gained a considerable test suite, however a few issues remain:
@@ -402,16 +397,17 @@ and gained a considerable test suite, however a few issues remain:
 
 
 Building  Specific Distributions
--------------------------------------
+--------------------------------
 
 The next examples shows how to build your own distributions.  Further
 examples show the usage of the distributions and some statistical
 tests.
 
-Making a Continuous Distribution, i.e., Subclassing ``rv_continuous``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Making continuous distribution if fairly simple. 
+Making a Continuous Distribution, i.e., Subclassing ``rv_continuous``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Making continuous distributions is fairly simple. 
 
     >>> import scipy
     >>> class deterministic_gen(scipy.stats.rv_continuous):
@@ -423,7 +419,7 @@ Making continuous distribution if fairly simple.
     >>> deterministic.cdf(np.arange(-3, 3, 0.5))
     array([ 0.,  0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.,  1.,  1.])
 
-Intestingly,  the ``pdf`` is now computed automatically:
+Interestingly,  the ``pdf`` is now computed automatically:
 
     >>> deterministic.pdf(np.arange(-3, 3, 0.5))
     array([  0.00000000e+00,   0.00000000e+00,   0.00000000e+00,
@@ -442,7 +438,8 @@ information about the distribution. Thus, as a cautionary example:
     >>> quad(deterministic.pdf, -1e-1, 1e-1)
     (4.163336342344337e-13, 0.0)
 
-But this is not correct: the integral over this pdf should be 1. Lets make the integration interval smaller: 
+But this is not correct: the integral over this pdf should be 1. Lets make the
+integration interval smaller: 
 
     >>> quad(deterministic.pdf, -1e-3, 1e-3) # warning removed
     (1.000076872229173, 0.0010625571718182458)
@@ -453,14 +450,13 @@ distribution.
 
 
 Subclassing ``rv_discrete``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the following we use ``stats.rv_discrete`` to generate a discrete
-distribution that has the probabilites of the truncated normal for the
-intervalls centered around the integers.
+distribution that has the probabilities of the truncated normal for the
+intervals centered around the integers.
 
-General Info
-_______________________
+**General Info**
 
 From the docstring of rv_discrete, i.e., 
 
@@ -469,10 +465,10 @@ From the docstring of rv_discrete, i.e.,
 
 we learn that:
 
- "You can construct an aribtrary discrete rv where P{X=xk} = pk by
- passing to the rv_discrete initialization method (through the values=
- keyword) a tuple of sequences (xk, pk) which describes only those
- values of X (xk) that occur with nonzero probability (pk)."
+  "You can construct an aribtrary discrete rv where P{X=xk} = pk by
+  passing to the rv_discrete initialization method (through the values=
+  keyword) a tuple of sequences (xk, pk) which describes only those
+  values of X (xk) that occur with nonzero probability (pk)."
 
 Next to this, there are some further requirements for this approach to
 work:
@@ -484,26 +480,25 @@ work:
 In fact, if the last two requirements are not satisfied an exception
 may be raised or the resulting numbers may be incorrect.
 
-An Example
-________________
+**An Example**
 
 Lets do the work. First
 
-    >>> npoints = 20 # number of integer support points of the distribution minus 1
+    >>> npoints = 20   # number of integer support points of the distribution minus 1
     >>> npointsh = npoints / 2
     >>> npointsf = float(npoints)
-    >>> nbound = 4 # bounds for the truncated normal
-    >>> normbound = (1+1/npointsf) * nbound # actual bounds of truncated normal
-    >>> grid = np.arange(-npointsh, npointsh+2, 1) # integer grid
-    >>> gridlimitsnorm = (grid-0.5) / npointsh * nbound # bin limits for the truncnorm
-    >>> gridlimits = grid - 0.5  # used later in the analysis
+    >>> nbound = 4   # bounds for the truncated normal
+    >>> normbound = (1+1/npointsf) * nbound   # actual bounds of truncated normal
+    >>> grid = np.arange(-npointsh, npointsh+2, 1)   # integer grid
+    >>> gridlimitsnorm = (grid-0.5) / npointsh * nbound   # bin limits for the truncnorm
+    >>> gridlimits = grid - 0.5   # used later in the analysis
     >>> grid = grid[:-1]
     >>> probs = np.diff(stats.truncnorm.cdf(gridlimitsnorm, -normbound, normbound))
     >>> gridint = grid
 
 And finally we can subclass ``rv_discrete``:
 
-    >>> normdiscrete = stats.rv_discrete(values = (gridint,
+    >>> normdiscrete = stats.rv_discrete(values=(gridint,
     ...              np.round(probs, decimals=7)), name='normdiscrete')
 
 Now that we have defined the distribution, we have access to all
@@ -513,16 +508,15 @@ common methods of discrete distributions.
     ...       normdiscrete.stats(moments =  'mvsk')
     mean = -0.0000, variance = 6.3302, skew = 0.0000, kurtosis = -0.0076
 
-    >>> nd_std = np.sqrt(normdiscrete.stats(moments =  'v'))
+    >>> nd_std = np.sqrt(normdiscrete.stats(moments='v'))
 
-Testing the Implementation
-______________________________
+**Testing the Implementation**
 
 Lets generate a random sample and compare observed frequencies with
 the probabilities.
 
     >>> n_sample = 500
-    >>> np.random.seed(87655678) # fix the seed for replicability
+    >>> np.random.seed(87655678)   # fix the seed for replicability
     >>> rvs = normdiscrete.rvs(size=n_sample)
     >>> rvsnd = rvs
     >>> f, l = np.histogram(rvs, bins=gridlimits)
@@ -562,8 +556,8 @@ the probabilities.
 
 
 Next, we can test, whether our sample was generated by our normdiscrete
-distribution. This also verifies, whether the random numbers are generated
-correctly
+distribution. This also verifies whether the random numbers are generated
+correctly.
 
 The chisquare test requires that there are a minimum number of observations
 in each bin. We combine the tail bins into larger bins so that they contain
@@ -578,7 +572,6 @@ enough observations.
 
 The pvalue in this case is high, so we can be quite confident that
 our random sample was actually generated by the distribution.
-
 
 
 Analysing One Sample
@@ -769,7 +762,6 @@ hypothesis that our sample came from a normal distribution (at the 5% level),
 but again, with a p-value of 0.95, we cannot reject the t distribution.
 
 
-
 Special tests for normal distributions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -823,6 +815,7 @@ In the following, we are given two samples, which can come either from the
 same or from different distribution, and we want to test whether these
 samples have the same statistical properties.
 
+
 Comparing means
 ^^^^^^^^^^^^^^^
 
@@ -841,7 +834,6 @@ Test with sample with different means:
     (-4.5334142901750321, 6.507128186505895e-006)
 
 
-
 Kolmogorov-Smirnov test for two samples ks_2samp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -856,7 +848,6 @@ reject the null hypothesis since the pvalue is below 1%
 
     >>> stats.ks_2samp(rvs1, rvs3)
     (0.11399999999999999, 0.0027132103661283141)
-
 
 
 Kernel Density Estimation
