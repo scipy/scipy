@@ -254,6 +254,9 @@ class lti(object):
             self.__dict__['A'], self.__dict__['B'], \
                                 self.__dict__['C'], \
                                 self.__dict__['D'] = zpk2ss(*args)
+            # make sure we have numpy.arrays
+            self.zeros = numpy.array(self.zeros)
+            self.poles = numpy.array(self.poles)
             self.inputs = 1
             if len(self.zeros.shape) > 1:
                 self.outputs = self.zeros.shape[0]
