@@ -21,7 +21,7 @@ from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
-           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2']
+           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode']
 
 
 def tf2ss(num, den):
@@ -336,6 +336,19 @@ class lti(object):
     def output(self, U, T, X0=None):
         return lsim(self, U, T, X0=X0)
 
+    def bode(self, w=None, n=100):
+        """Calculate bode magnitude and phase data.
+
+        Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
+        [dB] and phase [deg]. See scipy.signal.bode for details.
+
+        Example:
+        >>> w, mag, phase = sys.bode()
+        >>> semilogx(w, mag)    # bode magnitude plot
+        >>> semilogx(w, phase)  # bode phase plot
+        """
+        return bode(self, w=w, n=n)
+
 
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
     """
@@ -574,6 +587,35 @@ def _default_response_times(A, n):
     return t
 
 
+def _default_response_frequencies(A, n):
+    """Compute a reasonable set of frequency points for bode plot.
+
+    This function is used by `bode` to compute the frequency points (in rad/s)
+    when the `w` argument to the function is None.
+
+    Parameters
+    ----------
+    A : ndarray
+        The system matrix, which is square.
+    n : int
+        The number of time samples to generate.
+
+    Returns
+    -------
+    w : ndarray
+        The 1-D array of length `n` of frequency samples (in rad/s) at which
+        the response is to be computed.
+    """
+    vals = linalg.eigvals(A)
+    minpole = min(abs(real(vals)))
+    maxpole = max(abs(real(vals)))
+    # A reasonable frequency range is two orders of magnitude before the
+    # minimum pole (slowest) and two orders of magnitude after the maximum pole
+    # (fastest).
+    w = numpy.logspace(numpy.log10(minpole) - 2, numpy.log10(maxpole) + 2, n)
+    return w
+
+
 def impulse(system, X0=None, T=None, N=None):
     """Impulse response of continuous-time system.
 
@@ -804,3 +846,57 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     U = ones(T.shape, sys.A.dtype)
     vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
+
+
+def bode(system, w=None, n=100):
+    """Calculate bode magnitude and phase data of a continuous-time system.
+
+    Parameters
+    ----------
+    system : an instance of the LTI class or a tuple describing the system.
+        The following gives the number of elements in the tuple and
+        the interpretation:
+
+            * 2 (num, den)
+            * 3 (zeros, poles, gain)
+            * 4 (A, B, C, D)
+
+    w : array_like, optional
+        Array of frequencies (in rad/s). Magnitude and phase data is calculated
+        for every value in this array. If not given a reasonable set will be
+        calculated.
+    n : int, optional
+        Number of frequency points to compute if `w` is not given.
+
+    Returns
+    -------
+    w : 1D ndarray
+        Frequency array [rad/s]
+    mag : 1D ndarray
+        Magnitude array [dB]
+    phase : 1D ndarray
+        Phase array [deg]
+
+    Examples
+    --------
+    >>> s1 = lti([1], [1, 1])
+    >>> w, mag, phase = s1.bode()
+    >>> semilogx(w, mag)    # bode magnitude plot
+    >>> figure()
+    >>> semilogx(w, phase)  # bode phase plot
+    """
+    if isinstance(system, lti):
+        sys = system
+    else:
+        sys = lti(*system)
+
+    if w is None:
+        w = _default_response_frequencies(sys.A, n)
+    else:
+        w = numpy.asarray(w)
+
+    jw = w * 1j
+    y = numpy.polyval(sys.num, jw) / numpy.polyval(sys.den, jw)
+    mag = 20.0 * numpy.log10(abs(y))
+    phase = numpy.arctan2(y.imag, y.real) * 180.0 / numpy.pi
+    return w, mag, phase
