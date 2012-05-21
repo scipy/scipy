@@ -102,7 +102,7 @@ C
       DELTA=1.1d0
       RHO=RHOBEG
       PARMU=0.0d0
-C     Set the SUCCESS value of DINFO to 1.0 to start.
+C     Set the STATUS value of DINFO to 1.0 to start.
 C     IF an error occurs it will get set to 0.0
       DINFO(1)=1.0d0
 
@@ -138,7 +138,7 @@ C
          IF (IPRINT .GE. 1) PRINT 50
    50      FORMAT (/3X,'Return from subroutine COBYLA because the ',
      1        'MAXFUN limit has been reached.')
-         DINFO(1)=0.0d0
+         DINFO(1)=2.0d0
          GOTO 600
       END IF
       NFVALS=NFVALS+1
@@ -252,7 +252,7 @@ C
           IF (IPRINT .GE. 1) PRINT 210
   210     FORMAT (/3X,'Return from subroutine COBYLA because ',
      1      'rounding errors are becoming damaging.')
-          DINFO(1)=0.0d0
+          DINFO(1)=3.0d0
           GOTO 600
       END IF
 C
