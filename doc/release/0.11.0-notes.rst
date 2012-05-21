@@ -61,6 +61,18 @@ added to easily construct diagonal and block-diagonal sparse matrices
 respectively.
 
 
+New operations on sparse matrices
+---------------------------------
+
+``scipy.sparse.csc_matrix`` and ``csr_matrix`` now support the operations
+``sin``, ``tan``, ``arcsin``, ``arctan``, ``sinh``, ``tanh``, ``arcsinh``,
+``arctanh``, ``rint``, ``sign``, ``expm1``, ``log1p``, ``deg2rad``, ``rad2deg``,
+``floor``, ``ceil`` and ``trunc``.
+
+Previously, these operations had to be performed by operating on the matrices'
+``data`` attribute.
+
+
 LSMR iterative solver
 ---------------------
 
