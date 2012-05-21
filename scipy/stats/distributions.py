@@ -5354,8 +5354,9 @@ def entropy(pk, qk=None, base=None):
     """
     pk = arr(pk)
     pk = 1.0* pk / sum(pk, axis=0)
+    idx = pk > 0
     if qk is None:
-        vec = where(pk == 0, 0.0, pk*log(pk))
+        vec = pk[idx]*log(pk[idx])
     else:
         qk = arr(qk)
         if len(qk) != len(pk):
@@ -5365,7 +5366,7 @@ def entropy(pk, qk=None, base=None):
         #   too, the relative entropy is infinite.
         if any(take(pk, nonzero(qk == 0.0), axis=0) != 0.0, 0):
             return inf
-        vec = where (pk == 0, 0.0, -pk*log(pk / qk))
+        vec = -pk[idx]*log(pk[idx] / qk[idx])
     S = -sum(vec, axis=0)
     if base is not None:
         S /= log(base)
