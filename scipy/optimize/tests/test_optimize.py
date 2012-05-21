@@ -397,7 +397,7 @@ class TestOptimize(TestCase):
 
     def test_minimize_l_bfgs_b(self):
         """ Minimize with L-BFGS-B method """
-        opts = {'disp': False, 'maxfev': self.maxiter}
+        opts = {'disp': False, 'maxiter': self.maxiter}
         x = optimize.minimize(self.func, self.startparams,
                               method='L-BFGS-B', jac=self.grad,
                               options=opts)['x']
@@ -408,7 +408,7 @@ class TestOptimize(TestCase):
         # Check that the `ftol` parameter in l_bfgs_b works as expected
         v0 = None
         for tol in [1e-1, 1e-4, 1e-7, 1e-10]:
-            opts = {'disp': False, 'maxfev': self.maxiter, 'ftol': tol}
+            opts = {'disp': False, 'maxiter': self.maxiter, 'ftol': tol}
             sol = optimize.minimize(self.func, self.startparams,
                                     method='L-BFGS-B', jac=self.grad,
                                     options=opts)
@@ -445,13 +445,17 @@ class TestOptimize(TestCase):
         def func(z):
             x, y = z
             return x**2*y**2 + x**4 + 1
-        def jac(z):
+        def dfunc(z):
             x, y = z
             return np.array([2*x*y**2 + 4*x**3, 2*x**2*y])
 
         for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
                        'newton-cg', 'anneal', 'l-bfgs-b', 'tnc',
                        'cobyla', 'slsqp']:
+            if method in ('nelder-mead', 'powell', 'anneal', 'cobyla'):
+                jac = None
+            else:
+                jac = dfunc
             sol1 = optimize.minimize(func, [1,1], jac=jac, tol=1e-10,
                                      method=method)
             sol2 = optimize.minimize(func, [1,1], jac=jac, tol=1.0,
@@ -618,7 +622,7 @@ class TestTnc(TestCase):
     """
     def setUp(self):
         # options for minimize
-        self.opts = {'disp': False, 'maxfev': 200}
+        self.opts = {'disp': False, 'maxiter': 200}
 
     # objective functions and jacobian for each test
     def f1(self, x, a=100.0):
