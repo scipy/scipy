@@ -305,6 +305,7 @@ class netcdf_file(object):
     sync = flush
 
     def _write(self):
+        self.fp.seek(0)
         self.fp.write(asbytes('CDF'))
         self.fp.write(array(self.version_byte, '>b').tostring())
 
