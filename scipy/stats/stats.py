@@ -85,6 +85,7 @@ CORRELATION FCNS:  paired
 
 INFERENTIAL STATS:  ttest_1samp
                     ttest_ind
+                    ttest_ind_uneq_var
                     ttest_rel
                     chisquare
                     ks_2samp
@@ -211,7 +212,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
            'threshold', 'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'pearsonr', 'fisher_exact',
            'spearmanr', 'pointbiserialr', 'kendalltau', 'linregress',
-           'ttest_1samp', 'ttest_ind', 'ttest_rel',
+           'ttest_1samp', 'ttest_ind', 'ttest_ind_uneq_var', 'ttest_rel',
            'kstest', 'chisquare', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
@@ -2913,23 +2914,115 @@ def ttest_1samp(a, popmean, axis=0):
     v = np.var(a, axis, ddof=1)
 
     t = d / np.sqrt(v/float(n))
-    t = np.where((d==0)*(v==0), 1.0, t) #define t=0/0 = 1, identical mean, var
-    prob = distributions.t.sf(np.abs(t),df)*2  #use np.abs to get upper tail
-    #distributions.t.sf currently does not propagate nans
-    #this can be dropped, if distributions.t.sf propagates nans
-    #if this is removed, then prob = prob[()] needs to be removed
-    prob = np.where(np.isnan(t), np.nan, prob)
-
-    if t.ndim == 0:
-        t = t[()]
-        prob = prob[()]
+    t = np.where((d==0), 0.0, t) # handles case where d = v = 0
+    
+    t, prob = _ttest_finish(df, t)
+        
     return t,prob
 
 
 def ttest_ind(a, b, axis=0):
-    """Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
+    """Calculates the T-test for the means of TWO INDEPENDENT samples of scores with equal variances.
 
-    This is a two-sided test for the null hypothesis that 2 independent samples
+    This is a two-sided test for the null hypothesis that 2 independent samples with equal variances
+    have identical average (expected) values.
+
+    Parameters
+    ----------
+    a, b : sequence of ndarrays
+        The arrays must have the same shape, except in the dimension
+        corresponding to `axis` (the first, by default).
+    axis : int, optional
+        Axis can equal None (ravel array first), or an integer (the axis
+        over which to operate on a and b).
+
+    Returns
+    -------
+    t : float or array
+        t-statistic
+    prob : float or array
+        two-tailed p-value
+
+
+    Notes
+    -----
+
+    We can use this test, if we observe two independent samples with equal variances from
+    the same or different population, e.g. exam scores of boys and
+    girls or of two ethnic groups. The test measures whether the
+    average (expected) value differs significantly across samples. If
+    we observe a large p-value, for example larger than 0.05 or 0.1,
+    then we cannot reject the null hypothesis of identical average scores.
+    If the p-value is smaller than the threshold, e.g. 1%, 5% or 10%,
+    then we reject the null hypothesis of equal averages.
+
+    References
+    ----------
+
+       http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+
+
+    Examples
+    --------
+
+    >>> from scipy import stats
+    >>> import numpy as np
+
+    >>> #fix seed to get the same result
+    >>> np.random.seed(12345678)
+
+    test with sample with identical means
+
+    >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
+    >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
+    >>> stats.ttest_ind(rvs1,rvs2)
+    (0.26833823296239279, 0.78849443369564765)
+
+
+    test with sample with different means
+
+    >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
+    >>> stats.ttest_ind(rvs1,rvs3)
+    (-5.0434013458585092, 5.4302979468623391e-007)
+
+    """
+    v1, n1, v2, n2, a, axis, b = _ttest_ind_setup(a, b, axis)
+    df = n1+n2-2
+
+    d = np.mean(a,axis) - np.mean(b,axis)
+    svar = ((n1-1)*v1+(n2-1)*v2) / float(df)
+
+    t = d/np.sqrt(svar*(1.0/n1 + 1.0/n2))
+    t = np.where((d==0), 0.0, t) #handles case where d = v1 = v2 = 0
+    
+    t, prob = _ttest_finish(df, t)
+
+    return t, prob
+
+def _ttest_ind_setup(a, b, axis):
+    a, b, axis = _chk2_asarray(a, b, axis)
+    v1 = np.var(a, axis, ddof=1)
+    v2 = np.var(b, axis, ddof=1)
+    n1 = a.shape[axis]
+    n2 = b.shape[axis]
+    return v1, n1, v2, n2, a, axis, b
+
+def _ttest_finish(df,t):
+    prob = distributions.t.sf(np.abs(t), df) * 2 #use np.abs to get upper tail
+    #distributions.t.sf currently does not propagate nans
+    #this can be dropped, if distributions.t.sf propagates nans
+    #if this is removed, then prob = prob[()] needs to be removed
+    prob = np.where(np.isnan(t), np.nan, prob)
+    if t.ndim == 0:
+        t = t[()]
+        prob = prob[()]
+    return t, prob
+
+def ttest_ind_uneq_var(a, b, axis=0):
+    """Calculates the T-test for the means of TWO INDEPENDENT samples of scores with 
+    unequal variances (or situations where it is unknown if the variances are equal).
+
+    This is a two-sided test for the null hypothesis that 2 independent samples with unequal variances
     have identical average (expected) values.
 
     Parameters
@@ -2982,41 +3075,62 @@ def ttest_ind(a, b, axis=0):
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> stats.ttest_ind(rvs1,rvs2)
     (0.26833823296239279, 0.78849443369564765)
+    >>> stats.ttest_ind_uneq_var(rvs1, rvs2)
+    (0.26833823296239279, 0.78849419539158605)
+    
+    ttest_ind underestimates p for unequal variances
+    
+    >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500)
+    >>> stats.ttest_ind(rvs1, rvs3)
+    (-0.46580283298287162, 0.64145827413436174)
+    >>> stats.ttest_ind_uneq_var(rvs1, rvs3)
+    (-0.46580283298287162, 0.64149552307593671)
 
+    >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100)
+    >>> stats.ttest_ind(rvs1, rvs4)
+    (-0.99882539442782481, 0.31828327091038955)
+    >>> stats.ttest_ind_uneq_var(rvs1, rvs4)
+    (-0.69712570584654099, 0.48711638692035597)
 
     test with sample with different means
 
-    >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
-    >>> stats.ttest_ind(rvs1,rvs3)
-    (-5.0434013458585092, 5.4302979468623391e-007)
+    >>> rvs5 = stats.norm.rvs(loc=8, scale=10, size=500)
+    >>> stats.ttest_ind(rvs1, rvs5)
+    (-4.130511725493573, 3.922607411074624e-05)
+    >>> stats.ttest_ind_uneq_var(rvs1, rvs5)
+    (-4.130511725493573, 3.9209626240360421e-05)
+    
+    >>> rvs6 = stats.norm.rvs(loc=8, scale=20, size=500)
+    >>> stats.ttest_ind(rvs1, rvs6)
+    (-3.8383088416156559, 0.00013167799566923922)
+    >>> stats.ttest_ind_uneq_var(rvs1, rvs6)
+    (-3.8383088416156559, 0.00013475714831652827)
+    
+    >>> rvs7 = stats.norm.rvs(loc=8, scale=20, size=100)
+    >>> stats.ttest_ind(rvs1, rvs7)
+    (-0.79821473077740479, 0.42506275883963907)
+    >>> stats.ttest_ind_uneq_var(rvs1, rvs7)
+    (-0.51902756162811092, 0.60475596772293294)
 
     """
-    a, b, axis = _chk2_asarray(a, b, axis)
+    
+    v1, n1, v2, n2, a, axis, b = _ttest_ind_setup(a, b, axis)
+    vn1 = v1 / n1
+    vn2 = v2 / n1
+    df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 + 1) + (vn2**2) / (n2 + 1)) - 2
+    
+    df = np.where(np.isnan(df), 1, df) # if df is undefined, variances are zero (assumes n1 > 0 & n2 > 0). 
+                                      # Hence doesn't matter what df is as long as it's not NaN.
 
-    v1 = np.var(a,axis,ddof = 1)
-    v2 = np.var(b,axis,ddof = 1)
-    n1 = a.shape[axis]
-    n2 = b.shape[axis]
-    df = n1+n2-2
+    d = np.mean(a, axis) - np.mean(b, axis)
 
-    d = np.mean(a,axis) - np.mean(b,axis)
-    svar = ((n1-1)*v1+(n2-1)*v2) / float(df)
+    t = d / np.sqrt(vn1 + vn2)
 
-    t = d/np.sqrt(svar*(1.0/n1 + 1.0/n2))
-    t = np.where((d==0)*(svar==0), 1.0, t) #define t=0/0 = 0, identical means
-    prob = distributions.t.sf(np.abs(t),df)*2#use np.abs to get upper tail
-
-    #distributions.t.sf currently does not propagate nans
-    #this can be dropped, if distributions.t.sf propagates nans
-    #if this is removed, then prob = prob[()] needs to be removed
-    prob = np.where(np.isnan(t), np.nan, prob)
-
-    if t.ndim == 0:
-        t = t[()]
-        prob = prob[()]
-
+    t = np.where((d==0), 0.0, t) #handles case where d = v1 = v2 = 0
+    
+    t, prob = _ttest_finish(df, t)
+    
     return t, prob
-
 
 def ttest_rel(a,b,axis=0):
     """
@@ -3084,20 +3198,9 @@ def ttest_rel(a,b,axis=0):
     dm = np.mean(d, axis)
 
     t = dm / np.sqrt(v/float(n))
-    t = np.where((dm==0)*(v==0), 1.0, t) #define t=0/0 = 1, zero mean and var
-    prob = distributions.t.sf(np.abs(t),df)*2 #use np.abs to get upper tail
-    #distributions.t.sf currently does not propagate nans
-    #this can be dropped, if distributions.t.sf propagates nans
-    #if this is removed, then prob = prob[()] needs to be removed
-    prob = np.where(np.isnan(t), np.nan, prob)
-
-##    if not np.isscalar(t):
-##        probs = np.reshape(probs, t.shape) # this should be redundant
-##    if not np.isscalar(prob) and len(prob) == 1:
-##        prob = prob[0]
-    if t.ndim == 0:
-        t = t[()]
-        prob = prob[()]
+    t = np.where((dm==0), 0.0, t) #handle case where both dm and v are 0
+    
+    t, prob = _ttest_finish(df, t)
 
     return t, prob
 
