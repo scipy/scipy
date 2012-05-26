@@ -185,8 +185,8 @@ def bartlett(M, sym=True):
     return w
 
 
-def hanning(M, sym=True):
-    """The M-point Hanning window.
+def hann(M, sym=True):
+    """The M-point Hann window.
 
     """
     if M < 1:
@@ -202,7 +202,7 @@ def hanning(M, sym=True):
         w = w[:-1]
     return w
 
-hann = hanning
+hanning = hann
 
 
 def barthann(M, sym=True):
