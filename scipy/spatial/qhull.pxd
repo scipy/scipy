@@ -60,13 +60,13 @@ cdef double _distplane(DelaunayInfo_t *d, int isimplex, double *point) nogil
 cdef int _is_point_fully_outside(DelaunayInfo_t *d, double *x, double eps) nogil
 
 cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c, double *x,
-                                  double eps) nogil
+                                  double eps, double eps_broad) nogil
 
 cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c, double *x,
-                                int *start, double eps) nogil
+                                int *start, double eps, double eps_broad) nogil
 
 cdef int _find_simplex(DelaunayInfo_t *d, double *c, double *x, int *start,
-                       double eps) nogil
+                       double eps, double eps_broad) nogil
 
 #
 # Walking ridges connected to a vertex

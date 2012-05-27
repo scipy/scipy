@@ -202,6 +202,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef ${CDTYPE} fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
         cdef qhull.DelaunayInfo_t info
+        cdef double eps, eps_broad
 
         ndim = xi.shape[1]
         start = 0
@@ -213,6 +214,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         nvalues = out.shape[1]
 
         eps = np.finfo(np.double).eps * 100
+        eps_broad = sqrt(np.finfo(np.double).eps)
 
         with nogil:
             for i in xrange(xi.shape[0]):
@@ -221,7 +223,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
                 isimplex = qhull._find_simplex(&info, c,
                                                (<double*>xi.data) + i*ndim,
-                                               &start, eps)
+                                               &start, eps, eps_broad)
 
                 # 2) Linear barycentric interpolation
 
@@ -440,7 +442,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
     # Didn't converge before maxiter
     return 0
 
-def estimate_gradients_2d_global(tri, y, maxiter=400, tol=1e-6):
+def estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
     cdef np.ndarray[np.double_t, ndim=2] data
     cdef np.ndarray[np.double_t, ndim=3] grad
     cdef qhull.DelaunayInfo_t info
@@ -815,6 +817,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef ${CDTYPE} fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
         cdef qhull.DelaunayInfo_t info
+        cdef double eps, eps_broad
 
         ndim = xi.shape[1]
         start = 0
@@ -826,6 +829,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         nvalues = out.shape[1]
 
         eps = np.finfo(np.double).eps * 100
+        eps_broad = sqrt(eps)
 
         with nogil:
             for i in xrange(xi.shape[0]):
@@ -833,7 +837,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
                 isimplex = qhull._find_simplex(&info, c,
                                                (<double*>xi.data) + i*ndim,
-                                               &start, eps)
+                                               &start, eps, eps_broad)
 
                 # 2) Clough-Tocher interpolation
 
