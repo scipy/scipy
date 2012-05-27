@@ -91,7 +91,7 @@ def load_testing_files():
     "Loading test data files for the scipy.spatial.distance tests."
     for fn in _filenames:
         name = fn.replace(".txt", "").replace("-ml", "")
-        fqfn = os.path.join(os.path.dirname(__file__), fn)
+        fqfn = os.path.join(os.path.dirname(__file__), 'data', fn)
         fp = open(fqfn)
         eo[name] = np.loadtxt(fp)
         fp.close()
