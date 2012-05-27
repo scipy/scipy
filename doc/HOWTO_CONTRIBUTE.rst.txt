@@ -68,10 +68,11 @@ At the end of this document a checklist is given that may help to check if your
 code fulfills all requirements for inclusion in SciPy. 
 
 Another question you may have is: *where exactly do I put my code*?  To answer
-this, it is useful to understand how the SciPy public API is defined.  For most
-modules the API is two levels deep, which means your new function should appear
-as ``scipy.submodule.my_new_func``.  ``my_new_func`` can be put in an existing
-or new file under ``/scipy/<submodule>/``, its name is added to the ``__all__``
+this, it is useful to understand how the SciPy public API (application
+programming interface) is defined.  For most modules the API is two levels
+deep, which means your new function should appear as
+``scipy.submodule.my_new_func``.  ``my_new_func`` can be put in an existing or
+new file under ``/scipy/<submodule>/``, its name is added to the ``__all__``
 dict in that file (which lists all public functions in the file), and those
 public functions are then imported in  ``/scipy/<submodule>/__init__.py``.  Any
 private functions/classes should have a leading underscore (``_``) in their
@@ -138,13 +139,16 @@ website is ongoing, see `scipy.github.com`_.  The redesigned website is a
 static site based on Sphinx, the sources for it are
 also on Github at `scipy.org-new`_.
 
-The SciPy documentation is constantly being improved by many developers and
-users.  You can send PRs that improve the documentation, but there's also a
-`documentation wiki`_ that is very convenient for making edits to docstrings
-(and doesn't require git knowledge).  Anyone can register a username on that
-wiki, ask on the scipy-dev mailing list for edit rights and make edits.  The
-documentation there is updated every day with the latest changes in the SciPy
-master branch, and wiki edits are regularly reviewed and merged into master.
+The SciPy *documentation* is constantly being improved by many developers and
+users.  You can contribute by sending a PR on Github that improves the
+documentation, but there's also a `documentation wiki`_ that is very convenient
+for making edits to docstrings (and doesn't require git knowledge).  Anyone can
+register a username on that wiki, ask on the scipy-dev mailing list for edit
+rights and make edits.  The documentation there is updated every day with the
+latest changes in the SciPy master branch, and wiki edits are regularly
+reviewed and merged into master.  Another advantage of the documentation wiki
+is that you can immediately see how the reStructuredText (reST) of docstrings
+and other docs is rendered as html, so you can easily catch formatting errors.
 
 Code that doesn't belong in SciPy itself or in another package but helps users
 accomplish a certain task is valuable.  `SciPy Central`_ is the place to share
@@ -198,6 +202,62 @@ requires citation or is free for academic use only can't be included in SciPy.
 Therefore if you copied existing code with such a license or made a direct
 translation to Python of it, your code can't be included.  See also `license
 compatibility`_.
+
+
+*How do I set up SciPy so I can edit files, run the tests and make commits?*
+
+The simplest method is setting up an in-place build.  To create your local git
+repo and do the in-place build::
+
+  $ git clone https://github.com/scipy/scipy.git scipy
+  $ cd scipy
+  $ python setup.py build_ext -i
+
+Then you need to either set up a symlink in your site-packages or add this
+directory to your PYTHONPATH environment variable, so Python can find it.  Some
+IDEs (Spyder for example) have utilities to manage PYTHONPATH.  On Linux and OS
+X, you can for example edit your .bash_login file to automatically add this dir
+on startup of your terminal.  Add the line::
+
+  export PYTHONPATH="$HOME/scipy:${PYTHONPATH}"
+
+Alternatively, to set up the symlink, use (prefix only necessary if you want to
+use your local instead of global site-packages dir)::
+
+  $ python setupegg.py develop --prefix=${HOME}
+ 
+To test that everything works, start the interpreter (not inside the scipy/
+source dir) and run the tests::
+
+  $ python
+  >>> import scipy as sp
+  >>> sp.test()
+
+Now editing a Python source file in SciPy allows you to immediately test and
+use your changes, by simply restarting the interpreter.
+
+Note that while the above procedure is the most straightforward way to get
+started, you may want to look into using Bento or numscons for faster and more
+flexible building, or virtualenv to maintain development environments for
+multiple Python versions.
+
+
+*How do I set up a development version of SciPy in parallel to a released
+version that I use to do my job/research?*
+
+One simple way to achieve this is to install the released version in
+site-packages, by using a binary installer or pip for example, and set up the
+development version with an in-place build in a virtualenv.  First install
+`virtualenv`_ and `virtualenvwrapper`_, then create your virtualenv (named
+scipy-dev here) with::
+
+  $ mkvirtualenv scipy-dev
+
+Now, whenever you want to switch to the virtual environment, you can use the
+command ``workon scipy-dev``, while the command ``deactivate`` exits from the
+virtual environment and brings back your previous shell.  With scipy-dev
+activated, follow the in-place build with the symlink install above to actually
+install your development version of SciPy.
 
 
 *Can I use a programming language other than Python to speed up my code?*
@@ -262,3 +322,8 @@ for bug reports, Github for patches.
 .. _license compatibility: http://www.scipy.org/License_Compatibility
 
 .. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
+
+.. _virtualenv: http://www.virtualenv.org/
+
+.. _virtualenvwrapper: http://www.doughellmann.com/projects/virtualenvwrapper/
+
