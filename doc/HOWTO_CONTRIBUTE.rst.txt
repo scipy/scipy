@@ -132,14 +132,14 @@ Other ways to contribute
 ------------------------
 
 There are many ways to contribute other than contributing code.  Participating
-in discussions on the scipy-user and scipy-dev **mailing lists** is a contribution
-in itself.  The `scipy.org`_ **website** contains a lot of information on the
+in discussions on the scipy-user and scipy-dev *mailing lists* is a contribution
+in itself.  The `scipy.org`_ *website* contains a lot of information on the
 SciPy community and can always use a new pair of hands.  A redesign of this
 website is ongoing, see `scipy.github.com`_.  The redesigned website is a
 static site based on Sphinx, the sources for it are
 also on Github at `scipy.org-new`_.
 
-The SciPy **documentation** is constantly being improved by many developers and
+The SciPy *documentation* is constantly being improved by many developers and
 users.  You can contribute by sending a PR on Github that improves the
 documentation, but there's also a `documentation wiki`_ that is very convenient
 for making edits to docstrings (and doesn't require git knowledge).  Anyone can
