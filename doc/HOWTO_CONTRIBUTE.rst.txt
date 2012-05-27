@@ -200,7 +200,7 @@ translation to Python of it, your code can't be included.  See also `license
 compatibility`_.
 
 
-*How do I set up SciPy so I can edit files, run the tests and make commits?
+*How do I set up SciPy so I can edit files, run the tests and make commits?*
 
 The simplest method is setting up an in-place build.  To create your local git
 repo and do the in-place build::
@@ -239,7 +239,7 @@ multiple Python versions.
 
 
 *How do I set up a development version of SciPy in parallel to a released
-version that I use to do my job/research?
+version that I use to do my job/research?*
 
 One simple way to achieve this is to install the released version in
 site-packages, by using a binary installer or pip for example, and set up the
