@@ -106,6 +106,21 @@ def getdtype(dtype, a=None, default=None):
 
     return newdtype
 
+def get_index_dtype(arrays=(), nnz=None):
+    """
+    Based on input (integer) arrays `a`, determine a suitable index data
+    type that can hold the data in the arrays.
+    """
+    dtype = np.intc
+    int32max = np.iinfo(np.int32).max
+    if nnz is not None:
+        if nnz > int32max:
+            dtype = np.int64
+    for arr in arrays:
+        arr = np.asarray(arr)
+        if arr.dtype > np.int32:
+            dtype = np.int64
+    return dtype
 
 def isscalarlike(x):
     """Is x either a scalar, an array scalar, or a 0-dim array?"""

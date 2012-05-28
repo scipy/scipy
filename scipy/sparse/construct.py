@@ -12,7 +12,7 @@ from warnings import warn
 
 import numpy as np
 
-from .sputils import upcast
+from .sputils import upcast, get_index_dtype
 
 from .csr import csr_matrix
 from .csc import csc_matrix
@@ -254,14 +254,16 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     if m == n and k == 0:
         # fast branch for special formats
         if format in ['csr', 'csc']:
-            indptr = np.arange(n+1, dtype=np.intc)
-            indices = np.arange(n, dtype=np.intc)
+            idx_dtype = get_index_dtype(nnz=n+1)
+            indptr = np.arange(n+1, dtype=idx_dtype)
+            indices = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
             cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
             return cls((data,indices,indptr),(n,n))
         elif format == 'coo':
-            row = np.arange(n, dtype=np.intc)
-            col = np.arange(n, dtype=np.intc)
+            idx_dtype = get_index_dtype(nnz=n)
+            row  = np.arange(n, dtype=idx_dtype)
+            col  = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
             return coo_matrix((data,(row,col)),(n,n))
 
@@ -546,9 +548,10 @@ def bmat(blocks, format=None, dtype=None):
             A = A.astype(dtype)
         return A
 
+    idx_dtype = get_index_dtype(nnz=max(M, N))
     block_mask = np.zeros(blocks.shape, dtype=np.bool)
-    brow_lengths = np.zeros(blocks.shape[0], dtype=np.intc)
-    bcol_lengths = np.zeros(blocks.shape[1], dtype=np.intc)
+    brow_lengths = np.zeros(M, dtype=idx_dtype)
+    bcol_lengths = np.zeros(N, dtype=idx_dtype)
 
     # convert everything to COO format
     for i in range(M):
@@ -584,8 +587,9 @@ def bmat(blocks, format=None, dtype=None):
     col_offsets = np.concatenate(([0], np.cumsum(bcol_lengths)))
 
     data = np.empty(nnz, dtype=dtype)
-    row = np.empty(nnz, dtype=np.intc)
-    col = np.empty(nnz, dtype=np.intc)
+    idx_dtype = get_index_dtype(nnz=nnz)
+    row  = np.empty(nnz, dtype=idx_dtype)
+    col  = np.empty(nnz, dtype=idx_dtype)
 
     nnz = 0
     for i in range(M):

@@ -10,7 +10,7 @@ import numpy as np
 
 from .base import isspmatrix, _formats
 from .data import _data_matrix
-from .sputils import isshape, upcast, upcast_char, getdtype
+from .sputils import isshape, upcast, upcast_char, getdtype, get_index_dtype
 from .sparsetools import dia_matvec
 
 
@@ -96,7 +96,8 @@ class dia_matrix(_data_matrix):
                 # create empty matrix
                 self.shape = arg1   # spmatrix checks for errors here
                 self.data = np.zeros((0,0), getdtype(dtype, default=float))
-                self.offsets = np.zeros((0), dtype=np.intc)
+                idx_dtype = get_index_dtype(nnz=max(self.shape))
+                self.offsets = np.zeros((0), dtype=idx_dtype)
             else:
                 try:
                     # Try interpreting it as (data, offsets)
@@ -107,7 +108,7 @@ class dia_matrix(_data_matrix):
                     if shape is None:
                         raise ValueError('expected a shape argument')
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
-                    self.offsets = np.atleast_1d(np.array(arg1[1], dtype=np.intc, copy=copy))
+                    self.offsets = np.atleast_1d(np.array(arg1[1], dtype=get_index_dtype(nnz=max(shape)), copy=copy))
                     self.shape = shape
         else:
             #must be dense, convert to COO first, then to DIA

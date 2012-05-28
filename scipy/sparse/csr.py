@@ -12,7 +12,7 @@ from scipy.lib.six import xrange
 
 from .sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix, csr_sample_values
-from .sputils import upcast, isintlike, IndexMixin, issequence
+from .sputils import upcast, isintlike, IndexMixin, issequence, get_index_dtype
 
 from .compressed import _cs_matrix
 
@@ -134,13 +134,18 @@ class csr_matrix(_cs_matrix, IndexMixin):
             return self
 
     def tocsc(self):
-        indptr = np.empty(self.shape[1] + 1, dtype=np.intc)
-        indices = np.empty(self.nnz, dtype=np.intc)
+        idx_dtype = get_index_dtype(nnz=max(self.nnz, self.shape[1] + 1))
+        indptr = np.empty(self.shape[1] + 1, dtype=idx_dtype)
+        indices = np.empty(self.nnz, dtype=idx_dtype)
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
         csr_tocsc(self.shape[0], self.shape[1],
-                  self.indptr, self.indices, self.data,
-                  indptr, indices, data)
+                  self.indptr.astype(idx_dtype),
+                  self.indices.astype(idx_dtype),
+                  self.data,
+                  indptr,
+                  indices,
+                  data)
 
         from .csc import csc_matrix
         A = csc_matrix((data, indices, indptr), shape=self.shape)
@@ -167,12 +172,16 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 
-            indptr = np.empty(M//R + 1, dtype=np.intc)
-            indices = np.empty(blks, dtype=np.intc)
+            idx_dtype = get_index_dtype(nnz=max(M//R + 1, blks))
+            indptr = np.empty(M//R+1, dtype=idx_dtype)
+            indices = np.empty(blks, dtype=idx_dtype)
             data = np.zeros((blks,R,C), dtype=self.dtype)
 
-            csr_tobsr(M, N, R, C, self.indptr, self.indices, self.data,
-                    indptr, indices, data.ravel())
+            csr_tobsr(M, N, R, C,
+                      self.indptr.astype(idx_dtype),
+                      self.indices.astype(idx_dtype),
+                      self.data,
+                      indptr, indices, data.ravel())
 
             return bsr_matrix((data,indices,indptr), shape=self.shape)
 
@@ -186,7 +195,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
     def __getitem__(self, key):
         def asindices(x):
             try:
-                x = np.asarray(x, dtype=np.intc)
+                x = np.asarray(x)
+                x = x.astype(get_index_dtype(x))
             except:
                 raise IndexError('invalid index')
             else:
@@ -215,7 +225,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
                 indices = indices.copy()
                 indices[indices < 0] += N
 
-            indptr = np.arange(len(indices) + 1, dtype=np.intc)
+            indptr = np.arange(len(indices)+1, dtype=indices.dtype)
             data = np.ones(len(indices), dtype=self.dtype)
             shape = (len(indices),N)
 

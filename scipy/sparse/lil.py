@@ -14,7 +14,7 @@ from scipy.lib.six import xrange
 
 from .base import spmatrix, isspmatrix
 from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
-    IndexMixin, upcast_scalar
+    IndexMixin, upcast_scalar, get_index_dtype
 
 from warnings import warn
 from .base import SparseEfficiencyWarning
@@ -387,15 +387,18 @@ class lil_matrix(spmatrix, IndexMixin):
         """ Return Compressed Sparse Row format arrays for this matrix.
         """
 
-        indptr = np.asarray([len(x) for x in self.rows], dtype=np.intc)
-        indptr = np.concatenate((np.array([0], dtype=np.intc), np.cumsum(indptr)))
+        lst = [len(x) for x in self.rows]
+        idx_dtype = get_index_dtype(nnz=sum(lst))
+        indptr = np.asarray(lst, dtype=idx_dtype)
+        indptr = np.concatenate((np.array([0], dtype=indptr.dtype), np.cumsum(indptr)))
 
         nnz = indptr[-1]
+        indptr = indptr.astype(get_index_dtype(nnz=nnz))
 
         indices = []
         for x in self.rows:
             indices.extend(x)
-        indices = np.asarray(indices, dtype=np.intc)
+        indices = np.asarray(indices, dtype=indptr.dtype)
 
         data = []
         for x in self.data:
