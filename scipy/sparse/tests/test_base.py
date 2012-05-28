@@ -220,9 +220,22 @@ class _TestCommon:
         assert_array_equal(dense_dot_dense, check2)
 
     def test_toarray(self):
+        # Check C-contiguous (default).
         dat = asarray(self.dat)
         chk = self.datsp.toarray()
         assert_array_equal(chk, dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check C-contiguous (with arg).
+        chk = self.datsp.toarray(order='C')
+        assert_array_equal(chk, dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check F-contiguous (with arg).
+        chk = self.datsp.toarray(order='F')
+        assert_array_equal(chk, dat)
+        assert_(not chk.flags.c_contiguous)
+        assert_(chk.flags.f_contiguous)
         a = array([1.,2.,3.])
         dense_dot_dense = dot(a, dat)
         check = dot(a, self.datsp.toarray())

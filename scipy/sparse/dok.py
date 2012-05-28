@@ -540,8 +540,8 @@ class dok_matrix(spmatrix, dict):
         """ Return a copy of this matrix in Compressed Sparse Column format"""
         return self.tocoo().tocsc()
 
-    def toarray(self):
-        return self.tocoo().toarray()
+    def toarray(self, order='C'):
+        return self.tocoo().toarray(order=order)
 
     def resize(self, shape):
         """ Resize the matrix in-place to dimensions given by 'shape'.

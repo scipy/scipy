@@ -431,8 +431,8 @@ class lil_matrix(spmatrix):
                 new[new_r,new_c] = self[i,j]
         return new
 
-    def toarray(self):
-        d = np.zeros(self.shape, dtype=self.dtype)
+    def toarray(self, order='C'):
+        d = np.zeros(self.shape, dtype=self.dtype, order=order)
         for i, row in enumerate(self.rows):
             for pos, j in enumerate(row):
                 d[i, j] = self.data[i][pos]

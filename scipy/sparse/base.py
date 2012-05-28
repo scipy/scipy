@@ -471,8 +471,8 @@ class spmatrix(object):
     def todense(self):
         return np.asmatrix(self.toarray())
 
-    def toarray(self):
-        return self.tocoo().toarray()
+    def toarray(self, order='C'):
+        return self.tocoo().toarray(order=order)
 
     def todok(self):
         return self.tocoo().todok()
