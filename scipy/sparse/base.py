@@ -469,9 +469,41 @@ class spmatrix(object):
     #    return self.toarray()
 
     def todense(self, order='C'):
+        """
+        Return a dense matrix representation of this matrix.
+
+        Parameters
+        ----------
+        order : {'C', 'F'}, optional
+            Whether to store multi-dimensional data in C (row-major)
+            or Fortran (column-major) order in memory. Default is 'C'.
+
+        Returns
+        -------
+        arr : numpy.matrix, 2-dimensional
+            A NumPy matrix object with the same shape and containing
+            the same data represented by the sparse matrix, with the
+            requested memory order.
+        """
         return np.asmatrix(self.toarray(order=order))
 
     def toarray(self, order='C'):
+        """
+        Return a dense ndarray representation of this matrix.
+
+        Parameters
+        ----------
+        order : {'C', 'F'}, optional
+            Whether to store multi-dimensional data in C (row-major)
+            or Fortran (column-major) order in memory. Default is 'C'.
+
+        Returns
+        -------
+        arr : ndarray, 2-dimensional
+            An array with the same shape and containing the same
+            data represented by the sparse matrix, with the requested
+            memory order.
+        """
         return self.tocoo().toarray(order=order)
 
     def todok(self):
