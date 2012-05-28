@@ -3882,7 +3882,13 @@ def ss(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    return np.sum(a*a, axis)
+    try:
+        return np.sum(a*a, axis)
+    except TypeError:
+        if hasattr(a, "next"):#handle case where a is a generator:
+            return sum(n*n for n in a)
+        else:
+            raise
 
 
 def square_of_sums(a, axis=0):
