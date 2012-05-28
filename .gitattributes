@@ -42,6 +42,22 @@ scipy/special/_ufuncs_defs.h binary
 scipy/special/_ufuncs_cxx_defs.h binary
 scipy/stats/_rank.c binary
 scipy/stats/vonmises_cython.c binary
+
+# Numerical data files
 scipy/special/tests/data/*.txt binary
 scipy/special/tests/data/*/*.txt binary
 scipy/special/tests/data/*/*/*.txt binary
+
+# SWIG-generated files
+scipy/sparse/sparsetools/bsr.py binary
+scipy/sparse/sparsetools/bsr_wrap.cxx binary
+scipy/sparse/sparsetools/coo.py binary
+scipy/sparse/sparsetools/coo_wrap.cxx binary
+scipy/sparse/sparsetools/csc.py binary
+scipy/sparse/sparsetools/csc_wrap.cxx binary
+scipy/sparse/sparsetools/csr.py binary
+scipy/sparse/sparsetools/csr_wrap.cxx binary
+scipy/sparse/sparsetools/dia.py binary
+scipy/sparse/sparsetools/dia_wrap.cxx binary
+scipy/sparse/sparsetools/csgraph.py binary
+scipy/sparse/sparsetools/csgraph_wrap.cxx binary
