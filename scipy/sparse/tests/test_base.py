@@ -208,8 +208,21 @@ class _TestCommon:
     #    assert_equal( array(self.datsp), self.dat )
 
     def test_todense(self):
+        # Check C-contiguous (default).
         chk = self.datsp.todense()
-        assert_array_equal(chk,self.dat)
+        assert_array_equal(chk, self.dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check C-contiguous (with arg).
+        chk = self.datsp.todense(order='C')
+        assert_array_equal(chk, self.dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check F-contiguous (with arg).
+        chk = self.datsp.todense(order='F')
+        assert_array_equal(chk, self.dat)
+        assert_(not chk.flags.c_contiguous)
+        assert_(chk.flags.f_contiguous)
         a = matrix([1.,2.,3.])
         dense_dot_dense = a * self.dat
         check = a * self.datsp.todense()

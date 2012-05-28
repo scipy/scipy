@@ -468,8 +468,8 @@ class spmatrix(object):
     #def __array__(self):
     #    return self.toarray()
 
-    def todense(self):
-        return np.asmatrix(self.toarray())
+    def todense(self, order='C'):
+        return np.asmatrix(self.toarray(order=order))
 
     def toarray(self, order='C'):
         return self.tocoo().toarray(order=order)
