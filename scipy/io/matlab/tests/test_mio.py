@@ -403,7 +403,7 @@ def test_warnings():
         # This neither
         mres = loadmat(fname, struct_as_record=False)
         # This should - because of deprecated system path search
-        yield assert_raises, DeprecationWarning, find_mat_file, fname
+        assert_raises(DeprecationWarning, find_mat_file, fname)
     finally:
         warn_ctx.__exit__()
 
