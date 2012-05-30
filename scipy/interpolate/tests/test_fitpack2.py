@@ -212,6 +212,34 @@ class TestLSQSphereBivariateSpline(TestCase):
         assert_array_almost_equal(lut_lsq(new_lats, new_lons), data)
 
 
+    def test_empty_input(self):
+        # define the knots
+        knotst, knotsp = linspace(0., pi, 7), linspace(0., 2.*pi, 9)
+        knotst[0] += .001
+        knotsp[0] += .001
+        knotsp[-1] -= .001
+        knotst[-1] -= .001
+        # define the input data and coordinates
+        lats, lons = linspace(0., pi, 7), linspace(0., 2*pi, 9)
+        data = ones((lons.shape[0], lats.shape[0]))
+        data[0,:], data[-1,:], data[:,0], data[:,-1] = 0., 0., 0., 0.
+        data[1,1:-1], data[-2,1:-1], data[1:-1,1], data[1:-1,-2] = 1., 1., 1., \
+                                                                   1.
+        data[2,2:-3], data[-3,2:-3], data[2:-3,2], data[2:-3,-3], data[2:-2,4] = 2., 2., 2., 2., 2.
+        data[3:6,3] = 3.
+        data = data.T
+        data = data[:,:-1]
+        lons = lons[:-1]
+        # define the coordinates we will test
+        new_lats = lats
+        new_lons = lons
+        lats, lons = meshgrid(lats, lons)
+        # calculate spline coefficients
+        lut_lsq = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
+                                           data.T.ravel(), knotst, knotsp)
+        assert_array_almost_equal(lut_lsq([], []), array([]))
+
+
 class TestSmoothSphereBivariateSpline(TestCase):
     def test_linear_constant(self):
         theta = array([.25*pi,.25*pi,.25*pi,.5*pi,.5*pi,.5*pi,.75*pi,.75*pi,.75*pi])
@@ -220,6 +248,13 @@ class TestSmoothSphereBivariateSpline(TestCase):
         lut = SmoothSphereBivariateSpline(theta,phi,r,s=1E10)
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[3,3],[3,3],[3,3]])
+
+    def test_empty_constant(self):
+        theta = array([.25*pi,.25*pi,.25*pi,.5*pi,.5*pi,.5*pi,.75*pi,.75*pi,.75*pi])
+        phi = array([.5*pi,pi,1.5*pi,.5*pi,pi,1.5*pi,.5*pi,pi,1.5*pi])
+        r = array([3,3,3,3,3,3,3,3,3])
+        lut = SmoothSphereBivariateSpline(theta,phi,r,s=1E10)
+        assert_array_almost_equal(lut([],[]), array([]))
 
 
 class TestRectBivariateSpline(TestCase):
