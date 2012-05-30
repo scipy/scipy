@@ -439,7 +439,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
 ################ Bivariate spline ####################
 
-class BivariateSplineBase(object):
+class _BivariateSplineBase(object):
     """ Base class for Bivariate spline s(x,y) interpolation on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).
@@ -514,7 +514,7 @@ inaccurate. Deficiency may strongly depend on the value of eps."""
                     }
 
 
-class BivariateSpline(BivariateSplineBase):
+class BivariateSpline(_BivariateSplineBase):
     """ Bivariate spline s(x,y) of degrees kx and ky on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).
@@ -791,7 +791,7 @@ WARNING. The coefficients of the spline returned have been computed as the
          the value of eps."""
 
 
-class SphereBivariateSpline(BivariateSplineBase):
+class SphereBivariateSpline(_BivariateSplineBase):
     """ Bivariate spline s(x,y) of degrees 3 on a sphere, calculated from a
     given set of data points (theta,phi,r).
 
