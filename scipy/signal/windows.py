@@ -626,7 +626,7 @@ def get_window(window, Nx, fftbins=True):
     -----
     Window types:
 
-        boxcar, triang, blackman, hamming, hanning, bartlett,
+        boxcar, triang, blackman, hamming, hann, bartlett, flattop, 
         parzen, bohman, blackmanharris, nuttall, barthann,
         kaiser (needs beta), gaussian (needs std),
         general_gaussian (needs power, width),
@@ -688,7 +688,7 @@ def get_window(window, Nx, fftbins=True):
         elif winstr in ['bartlett', 'bart', 'brt']:
             winfunc = bartlett
         elif winstr in ['hanning', 'hann', 'han']:
-            winfunc = hanning
+            winfunc = hann
         elif winstr in ['blackmanharris', 'blackharr', 'bkh']:
             winfunc = blackmanharris
         elif winstr in ['parzen', 'parz', 'par']:
