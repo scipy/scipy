@@ -13,12 +13,12 @@ __all__ = ['minimize', 'minimize_scalar', 'show_minimize_options']
 
 from warnings import warn
 
+from numpy import any
 # unconstrained minimization
-from optimize import _minimize_neldermead, _minimize_powell, \
-        _minimize_cg, _minimize_bfgs, _minimize_newtoncg, \
-        _minimize_scalar_brent, _minimize_scalar_bounded, \
-        _minimize_scalar_golden, \
-        MemoizeJac
+from optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
+                      _minimize_bfgs, _minimize_newtoncg,
+                      _minimize_scalar_brent, _minimize_scalar_bounded,
+                      _minimize_scalar_golden, MemoizeJac)
 from anneal import _minimize_anneal
 
 # contrained minimization
@@ -289,8 +289,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - constraints or bounds
-    if meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg'] and \
-        (bounds is not None or any(constraints)):
+    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg'] and
+        (bounds is not None or any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
     if meth in ['l-bfgs-b', 'tnc'] and any(constraints):
@@ -300,13 +300,13 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
-    if meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and \
-       callback is not None:
+    if (meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
+        callback is not None):
         warn('Method %s does not support callback.' % method,
              RuntimeWarning)
     # - return_all
-    if meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and \
-       options.get('return_all', False):
+    if (meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
+        options.get('return_all', False)):
         warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
 
