@@ -708,9 +708,9 @@ def get_window(window, Nx, fftbins=True):
         elif winstr in ['general gaussian', 'general_gaussian',
                         'general gauss', 'general_gauss', 'ggs']:
             winfunc = general_gaussian
-        elif winstr in ['boxcar', 'box', 'ones']:
+        elif winstr in ['boxcar', 'box', 'ones', 'rect', 'rectangular']:
             winfunc = boxcar
-        elif winstr in ['slepian', 'slep', 'optimal', 'dss']:
+        elif winstr in ['slepian', 'slep', 'optimal', 'dpss', 'dss']:
             winfunc = slepian
         elif winstr in ['chebwin', 'cheb']:
             winfunc = chebwin
