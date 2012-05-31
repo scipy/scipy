@@ -27,7 +27,7 @@ def pre_build(context):
         return t
     context.register_builder("cblas", cblas_builder)
 
-    context.tweak_builder("flapack", features="c fc pyext bento cshlib f2py",
+    context.tweak_extension("flapack", features="c fc pyext bento cshlib f2py",
                           use="FLAPACK CLIB")
 
     def builder(extension):
@@ -44,9 +44,9 @@ def pre_build(context):
         return t
     context.register_builder("clapack", builder)
 
-    context.tweak_builder("_flinalg", features="c fc pyext bento cshlib f2py f2py_fortran",
+    context.tweak_extension("_flinalg", features="c fc pyext bento cshlib f2py f2py_fortran",
                           use="FLAPACK CLIB")
-    context.tweak_builder("calc_lwork", features="c fc pyext bento cshlib f2py f2py_fortran",
+    context.tweak_extension("calc_lwork", features="c fc pyext bento cshlib f2py f2py_fortran",
                           use="FLAPACK CLIB")
 
     defines = []
@@ -54,4 +54,4 @@ def pre_build(context):
         raise NotImplementedError("Atlas not implemented yet")
     else:
         defines.append("NO_ATLAS_INFO=1")
-    context.tweak_builder("atlas_version", defines=defines)
+    context.tweak_extension("atlas_version", defines=defines)

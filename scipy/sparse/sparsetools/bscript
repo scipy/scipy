@@ -3,5 +3,5 @@ from bento.commands import hooks
 @hooks.pre_build
 def pre_build(context):
     for e in ["_csr", "_csc", "_coo", "_bsr", "_dia", "_csgraph"]:
-        context.tweak_builder(e, features="cxx cxxshlib pyext bento",
+        context.tweak_extension(e, features="cxx cxxshlib pyext bento",
                               defines=('__STDC_FORMAT_MACROS',))
