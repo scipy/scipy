@@ -11,15 +11,16 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
 
 
 def boxcar(M, sym=True):
-    """The M-point boxcar or rectangular window.
+    """Return a boxcar or rectangular window.
     
     Included for completeness, this is equivalent to no window at all.
 
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         Whether the window is symmetric. (Has no effect for boxcar.)
 
     Returns
@@ -32,13 +33,14 @@ def boxcar(M, sym=True):
 
 
 def triang(M, sym=True):
-    """The M-point triangular window.
+    """Return a triangular window.
 
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -70,13 +72,14 @@ def triang(M, sym=True):
 
 
 def parzen(M, sym=True):
-    """The M-point Parzen window.
+    """Return a Parzen window.
 
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -107,13 +110,14 @@ def parzen(M, sym=True):
 
 
 def bohman(M, sym=True):
-    """The M-point Bohman window.
+    """Return a Bohman window.
 
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -140,13 +144,14 @@ def bohman(M, sym=True):
 
 
 def blackman(M, sym=True):
-    """The M-point Blackman window.
+    """Return a Blackman window.
 
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -173,13 +178,14 @@ def blackman(M, sym=True):
 
 
 def nuttall(M, sym=True):
-    """A minimum 4-term Blackman-Harris window according to Nuttall.
+    """Return a minimum 4-term Blackman-Harris window according to Nuttall.
 
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -208,13 +214,14 @@ def nuttall(M, sym=True):
 
 
 def blackmanharris(M, sym=True):
-    """The M-point minimum 4-term Blackman-Harris window.
+    """Return a minimum 4-term Blackman-Harris window.
 
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -243,13 +250,14 @@ def blackmanharris(M, sym=True):
 
 
 def flattop(M, sym=True):
-    """The M-point flat top window.
+    """Return a flat top window.
 
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -278,15 +286,16 @@ def flattop(M, sym=True):
 
 
 def bartlett(M, sym=True):
-    """The M-point Bartlett window.
+    """Return a Bartlett window.
 
     Similar to the triangular window, but with zero endpoints.
     
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -313,7 +322,7 @@ def bartlett(M, sym=True):
 
 
 def hann(M, sym=True):
-    """The M-point Hann window.
+    """Return a Hann window.
 
     Raised cosine or sine squared window with ends that touch zero. (Sometimes 
     erroneously referred to as the "Hanning" window, from confusion with 
@@ -322,8 +331,9 @@ def hann(M, sym=True):
     Parameters
     ----------
     M : int
-        Window size.  If zero or less, an empty array is returned.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -385,7 +395,7 @@ def barthann(M, sym=True):
 
 
 def hamming(M, sym=True):
-    """The M-point Hamming window.
+    """Return a Hamming window.
 
     Raised cosine window with non-zero endpoints, optimized to minimize the 
     nearest side lobe.
@@ -393,8 +403,9 @@ def hamming(M, sym=True):
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -425,11 +436,12 @@ def kaiser(M, beta, sym=True):
     Parameters
     ----------
     M : int
-        Window size.
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
     beta : float
         Shape parameter, determines trade-off between main-lobe width and 
         side lobe level
-    sym : bool
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
@@ -462,17 +474,25 @@ def gaussian(M, std, sym=True):
     Parameters
     ----------
     M : int
-        Window size.
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
     std : float
         Standard deviation.
-    sym : bool
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window function
+        The window, with the maximum value normalized to 1 (though the value 1 
+        does not appear if the number of samples is even and sym is True).
+
+    Notes
+    -----
+    The Gaussian window is defined as
+
+    .. math::  w(n) = e^{ -\\frac{1}{2}\\left(\\frac{n}{\\sigma}\\right)^2 }
 
     """
     if M < 1:
@@ -515,15 +535,16 @@ def general_gaussian(M, p, sig, sym=True):
 # `chebwin` contributed by Kumar Appaiah.
 
 def chebwin(M, at, sym=True):
-    """Dolph-Chebyshev window.
+    """Return a Dolph-Chebyshev window.
 
     Parameters
     ----------
     M : int
-        Window size.
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
     at : float
         Attenuation (in dB).
-    sym : bool
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
