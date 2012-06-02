@@ -146,6 +146,11 @@ def bohman(M, sym=True):
 def blackman(M, sym=True):
     """Return a Blackman window.
 
+    The Blackman window is a taper formed by using the the first three
+    terms of a summation of cosines. It was designed to have close to the
+    minimal leakage possible.  It is close to optimal, only slightly worse
+    than a Kaiser window.
+
     Parameters
     ----------
     M : int
@@ -154,14 +159,80 @@ def blackman(M, sym=True):
     sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
-
+        
     Returns
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1 
         does not appear if the number of samples is even and sym is True).
+        
+    See Also
+    --------
+    bartlett, hamming, hann, kaiser
+
+    Notes
+    -----
+    The Blackman window is defined as
+
+    .. math::  w(n) = 0.42 - 0.5 \\cos(2\\pi n/M) + 0.08 \\cos(4\\pi n/M)
+
+    Most references to the Blackman window come from the signal processing
+    literature, where it is used as one of many windowing functions for
+    smoothing values.  It is also known as an apodization (which means
+    "removing the foot", i.e. smoothing discontinuities at the beginning
+    and end of the sampled signal) or tapering function. It is known as a
+    "near optimal" tapering function, almost as good (by some measures)
+    as the Kaiser window.
+
+    References
+    ----------
+    .. [1] Blackman, R.B. and Tukey, J.W., (1958) The measurement of power spectra,
+           Dover Publications, New York.
+    .. [2] Oppenheim, A.V., and R.W. Schafer. Discrete-Time Signal Processing.
+           Upper Saddle River, NJ: Prentice-Hall, 1999, pp. 468-471.
+
+    Examples
+    --------
+    >>> scipy.signal.blackman(12)
+    array([-0.        ,  0.03260643,  0.15990363,  0.41439798,  0.73604518,
+            0.96704677,  0.96704677,  0.73604518,  0.41439798,  0.15990363,
+            0.03260643, -0.        ])
+
+    Plot the window and the frequency response:
+
+    >>> from numpy.fft import fft, fftshift
+    >>> window = scipy.signal.blackman(51)
+    >>> plt.plot(window)
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> plt.title("Blackman window")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.ylabel("Amplitude")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.xlabel("Sample")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.show()
+
+    >>> plt.figure()
+    <matplotlib.figure.Figure object at 0x...>
+    >>> A = fft(window, 2048) / 25.5
+    >>> mag = np.abs(fftshift(A))
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(mag)
+    >>> response = np.clip(response, -100, 100)
+    >>> plt.plot(freq, response)
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> plt.title("Frequency response of Blackman window")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.ylabel("Magnitude [dB]")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.axis('tight')
+    (-0.5, 0.5, -100.0, ...)
+    >>> plt.show()
 
     """
+    # Docstring adapted from NumPy's blackman function
     if M < 1:
         return np.array([])
     if M == 1:
@@ -288,7 +359,10 @@ def flattop(M, sym=True):
 def bartlett(M, sym=True):
     """Return a Bartlett window.
 
-    Similar to the triangular window, but with zero endpoints.
+    The Bartlett window is very similar to a triangular window, except
+    that the end points are at zero.  It is often used in signal
+    processing for tapering a signal, without generating too much
+    ripple in the frequency domain.
     
     Parameters
     ----------
@@ -302,10 +376,87 @@ def bartlett(M, sym=True):
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
-        does not appear if the number of samples is even and sym is True).
+        The triangular window, with the maximum value normalized to 1 (though the value 1 
+        does not appear if the number of samples is even and sym is True), with the first
+        and last samples equal to zero.
+
+    See Also
+    --------
+    blackman, hamming, hann, kaiser
+
+    Notes
+    -----
+    The Bartlett window is defined as
+
+    .. math:: w(n) = \\frac{2}{M-1} \\left(
+              \\frac{M-1}{2} - \\left|n - \\frac{M-1}{2}\\right|
+              \\right)
+
+    Most references to the Bartlett window come from the signal
+    processing literature, where it is used as one of many windowing
+    functions for smoothing values.  Note that convolution with this
+    window produces linear interpolation.  It is also known as an
+    apodization (which means"removing the foot", i.e. smoothing
+    discontinuities at the beginning and end of the sampled signal) or
+    tapering function. The fourier transform of the Bartlett is the product
+    of two sinc functions.
+    Note the excellent discussion in Kanasewich.
+
+    References
+    ----------
+    .. [1] M.S. Bartlett, "Periodogram Analysis and Continuous Spectra",
+           Biometrika 37, 1-16, 1950.
+    .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics",
+           The University of Alberta Press, 1975, pp. 109-110.
+    .. [3] A.V. Oppenheim and R.W. Schafer, "Discrete-Time Signal
+           Processing", Prentice-Hall, 1999, pp. 468-471.
+    .. [4] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+    .. [5] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
+           "Numerical Recipes", Cambridge University Press, 1986, page 429.
+
+    Examples
+    --------
+    >>> scipy.signal.bartlett(12)
+    array([ 0.        ,  0.18181818,  0.36363636,  0.54545455,  0.72727273,
+            0.90909091,  0.90909091,  0.72727273,  0.54545455,  0.36363636,
+            0.18181818,  0.        ])
+
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> window = scipy.signal.bartlett(51)
+    >>> plt.plot(window)
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> plt.title("Bartlett window")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.ylabel("Amplitude")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.xlabel("Sample")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.show()
+
+    >>> plt.figure()
+    <matplotlib.figure.Figure object at 0x...>
+    >>> A = fft(window, 2048) / 25.5
+    >>> mag = np.abs(fftshift(A))
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(mag)
+    >>> response = np.clip(response, -100, 100)
+    >>> plt.plot(freq, response)
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> plt.title("Frequency response of Bartlett window")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.ylabel("Magnitude [dB]")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.axis('tight')
+    (-0.5, 0.5, -100.0, ...)
+    >>> plt.show()
 
     """
+    # Docstring adapted from NumPy's bartlett function
     if M < 1:
         return np.array([])
     if M == 1:
@@ -324,9 +475,8 @@ def bartlett(M, sym=True):
 def hann(M, sym=True):
     """Return a Hann window.
 
-    Raised cosine or sine squared window with ends that touch zero. (Sometimes 
-    erroneously referred to as the "Hanning" window, from confusion with 
-    Hamming.)
+    The Hann window is a taper formed by using a raised cosine or sine-squared 
+    with ends that touch zero.
 
     Parameters
     ----------
@@ -343,7 +493,81 @@ def hann(M, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1 
         does not appear if `M` is even and `sym` is True).
 
+    See Also
+    --------
+    bartlett, blackman, hamming, kaiser
+
+    Notes
+    -----
+    The Hann window is defined as
+
+    .. math::  w(n) = 0.5 - 0.5cos\\left(\\frac{2\\pi{n}}{M-1}\\right)
+               \\qquad 0 \\leq n \\leq M-1
+
+    The window was named for Julius van Hann, an Austrian meterologist. It is
+    also known as the Cosine Bell. It is sometimes erroneously referred to as the 
+    "Hanning" window, from the use of "hann" as a verb in the original paper and 
+    confusion with the very similar Hamming window.
+
+    Most references to the Hann window come from the signal processing
+    literature, where it is used as one of many windowing functions for
+    smoothing values.  It is also known as an apodization (which means
+    "removing the foot", i.e. smoothing discontinuities at the beginning
+    and end of the sampled signal) or tapering function.
+
+    References
+    ----------
+    .. [1] Blackman, R.B. and Tukey, J.W., (1958) The measurement of power
+           spectra, Dover Publications, New York.
+    .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics",
+           The University of Alberta Press, 1975, pp. 106-108.
+    .. [3] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+    .. [4] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
+           "Numerical Recipes", Cambridge University Press, 1986, page 425.
+
+    Examples
+    --------
+    >>> scipy.signal.hann(12)
+    array([ 0.        ,  0.07937323,  0.29229249,  0.57115742,  0.82743037,
+            0.97974649,  0.97974649,  0.82743037,  0.57115742,  0.29229249,
+            0.07937323,  0.        ])
+
+    Plot the window and its frequency response:
+
+    >>> from numpy.fft import fft, fftshift
+    >>> window = scipy.signal.hann(51)
+    >>> plt.plot(window)
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> plt.title("Hann window")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.ylabel("Amplitude")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.xlabel("Sample")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.show()
+
+    >>> plt.figure()
+    <matplotlib.figure.Figure object at 0x...>
+    >>> A = fft(window, 2048) / 25.5
+    >>> mag = np.abs(fftshift(A))
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(mag)
+    >>> response = np.clip(response, -100, 100)
+    >>> plt.plot(freq, response)
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> plt.title("Frequency response of the Hann window")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.ylabel("Magnitude [dB]")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.axis('tight')
+    (-0.5, 0.5, -100.0, ...)
+    >>> plt.show()
+
     """
+    # Docstring adapted from NumPy's hanning function
     if M < 1:
         return np.array([])
     if M == 1:
@@ -397,8 +621,8 @@ def barthann(M, sym=True):
 def hamming(M, sym=True):
     """Return a Hamming window.
 
-    Raised cosine window with non-zero endpoints, optimized to minimize the 
-    nearest side lobe.
+    The Hamming window is a taper formed by using a raised cosine with 
+    non-zero endpoints, optimized to minimize the nearest side lobe.
     
     Parameters
     ----------
@@ -415,7 +639,79 @@ def hamming(M, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1 
         does not appear if the number of samples is even and sym is True).
 
+    See Also
+    --------
+    bartlett, blackman, hann, kaiser
+
+    Notes
+    -----
+    The Hamming window is defined as
+
+    .. math::  w(n) = 0.54 - 0.46cos\\left(\\frac{2\\pi{n}}{M-1}\\right)
+               \\qquad 0 \\leq n \\leq M-1
+
+    The Hamming was named for R. W. Hamming, an associate of J. W. Tukey and
+    is described in Blackman and Tukey. It was recommended for smoothing the
+    truncated autocovariance function in the time domain.
+    Most references to the Hamming window come from the signal processing
+    literature, where it is used as one of many windowing functions for
+    smoothing values.  It is also known as an apodization (which means
+    "removing the foot", i.e. smoothing discontinuities at the beginning
+    and end of the sampled signal) or tapering function.
+
+    References
+    ----------
+    .. [1] Blackman, R.B. and Tukey, J.W., (1958) The measurement of power
+           spectra, Dover Publications, New York.
+    .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics", The
+           University of Alberta Press, 1975, pp. 109-110.
+    .. [3] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+    .. [4] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
+           "Numerical Recipes", Cambridge University Press, 1986, page 425.
+
+    Examples
+    --------
+    >>> scipy.signal.hamming(12)
+    array([ 0.08      ,  0.15302337,  0.34890909,  0.60546483,  0.84123594,
+            0.98136677,  0.98136677,  0.84123594,  0.60546483,  0.34890909,
+            0.15302337,  0.08      ])
+
+    Plot the window and the frequency response:
+
+    >>> from numpy.fft import fft, fftshift
+    >>> window = scipy.signal.hamming(51)
+    >>> plt.plot(window)
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> plt.title("Hamming window")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.ylabel("Amplitude")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.xlabel("Sample")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.show()
+
+    >>> plt.figure()
+    <matplotlib.figure.Figure object at 0x...>
+    >>> A = fft(window, 2048) / 25.5
+    >>> mag = np.abs(fftshift(A))
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(mag)
+    >>> response = np.clip(response, -100, 100)
+    >>> plt.plot(freq, response)
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> plt.title("Frequency response of Hamming window")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.ylabel("Magnitude [dB]")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.axis('tight')
+    (-0.5, 0.5, -100.0, ...)
+    >>> plt.show()
+
     """
+    # Docstring adapted from NumPy's hamming function
     if M < 1:
         return np.array([])
     if M == 1:
@@ -433,6 +729,8 @@ def hamming(M, sym=True):
 def kaiser(M, beta, sym=True):
     """Return a Kaiser window.
 
+    The Kaiser window is a taper formed by using a Bessel function.
+
     Parameters
     ----------
     M : int
@@ -440,18 +738,116 @@ def kaiser(M, beta, sym=True):
         array is returned.
     beta : float
         Shape parameter, determines trade-off between main-lobe width and 
-        side lobe level
+        side lobe level. As beta gets large, the window narrows.
     sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
-
+        
     Returns
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1 
         does not appear if the number of samples is even and sym is True).
+    
+    See Also
+    --------
+    bartlett, blackman, hamming, hann
+
+    Notes
+    -----
+    The Kaiser window is defined as
+
+    .. math::  w(n) = I_0\\left( \\beta \\sqrt{1-\\frac{4n^2}{(M-1)^2}}
+               \\right)/I_0(\\beta)
+
+    with
+
+    .. math:: \\quad -\\frac{M-1}{2} \\leq n \\leq \\frac{M-1}{2},
+
+    where :math:`I_0` is the modified zeroth-order Bessel function.
+
+    The Kaiser was named for Jim Kaiser, who discovered a simple approximation
+    to the DPSS window based on Bessel functions.
+    The Kaiser window is a very good approximation to the Digital Prolate
+    Spheroidal Sequence, or Slepian window, which is the transform which
+    maximizes the energy in the main lobe of the window relative to total
+    energy.
+
+    The Kaiser can approximate many other windows by varying the beta
+    parameter.
+
+    ====  =======================
+    beta  Window shape
+    ====  =======================
+    0     Rectangular
+    5     Similar to a Hamming
+    6     Similar to a Hann
+    8.6   Similar to a Blackman
+    ====  =======================
+
+    A beta value of 14 is probably a good starting point. Note that as beta
+    gets large, the window narrows, and so the number of samples needs to be
+    large enough to sample the increasingly narrow spike, otherwise nans will
+    get returned.
+
+    Most references to the Kaiser window come from the signal processing
+    literature, where it is used as one of many windowing functions for
+    smoothing values.  It is also known as an apodization (which means
+    "removing the foot", i.e. smoothing discontinuities at the beginning
+    and end of the sampled signal) or tapering function.
+
+    References
+    ----------
+    .. [1] J. F. Kaiser, "Digital Filters" - Ch 7 in "Systems analysis by
+           digital computer", Editors: F.F. Kuo and J.F. Kaiser, p 218-285.
+           John Wiley and Sons, New York, (1966).
+    .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics", The
+           University of Alberta Press, 1975, pp. 177-178.
+    .. [3] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+
+    Examples
+    --------
+    >>> scipy.signal.kaiser(12, 14)
+    array([ 0.00000773,  0.00346009,  0.04652002,  0.22973712,  0.59988532,
+            0.9456749 ,  0.9456749 ,  0.59988532,  0.22973712,  0.04652002,
+            0.00346009,  0.00000773])
+
+    Plot the window and the frequency response:
+
+    >>> from numpy.fft import fft, fftshift
+    >>> window = scipy.signal.kaiser(51, 14)
+    >>> plt.plot(window)
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> plt.title("Kaiser window")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.ylabel("Amplitude")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.xlabel("Sample")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.show()
+
+    >>> plt.figure()
+    <matplotlib.figure.Figure object at 0x...>
+    >>> A = fft(window, 2048) / 25.5
+    >>> mag = np.abs(fftshift(A))
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(mag)
+    >>> response = np.clip(response, -100, 100)
+    >>> plt.plot(freq, response)
+    [<matplotlib.lines.Line2D object at 0x...>]
+    >>> plt.title("Frequency response of Kaiser window")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.ylabel("Magnitude [dB]")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    <matplotlib.text.Text object at 0x...>
+    >>> plt.axis('tight')
+    (-0.5, 0.5, -100.0, ...)
+    >>> plt.show()
 
     """
+    # Docstring adapted from NumPy's kaiser function
     if M < 1:
         return np.array([])
     if M == 1:
