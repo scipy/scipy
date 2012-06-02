@@ -351,13 +351,14 @@ hanning = hann
 
 
 def barthann(M, sym=True):
-    """Return the M-point modified Bartlett-Hann window.
+    """Return a modified Bartlett-Hann window.
 
     Parameters
     ----------
     M : int
-        Window size.
-    sym : bool
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
 
