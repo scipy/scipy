@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
 
-from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2
+from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti
 from scipy.signal.filter_design import BadCoefficients
 
 
@@ -221,6 +221,14 @@ class Test_step2(object):
         tout, y = step2(system, atol=1e-10, rtol=1e-8)
         expected_y = 1 - (1 + tout) * np.exp(-tout)
         assert_almost_equal(y, expected_y)
+
+
+def test_lti_instantiation():
+    # Test that lti can be instantiated with sequences, scalars.  See PR-225.
+    s = lti([1], [-1])
+    s = lti(np.array([]), np.array([-1]), 1)
+    s = lti([], [-1], 1)
+    s = lti([1], [-1], 1, 3)
 
 
 if __name__ == "__main__":

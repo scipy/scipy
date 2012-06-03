@@ -224,6 +224,27 @@ def ss2zpk(A, B, C, D, input=0):
 
 class lti(object):
     """Linear Time Invariant class which simplifies representation.
+
+    Parameters
+    ----------
+    args : arguments
+        The `lti` class can be instantiated with either 2, 3 or 4 arguments.
+        The following gives the number of elements in the tuple and the
+        interpretation:
+
+            * 2: (numerator, denominator)
+            * 3: (zeros, poles, gain)
+            * 4: (A, B, C, D)
+
+        Each argument can be an array or sequence.
+
+    Notes
+    -----
+    `lti` instances have all types of representations available; for example
+    after creating an instance s with ``(zeros, poles, gain)`` the state-space
+    representation (numerator, denominator) can be accessed as ``s.num`` and
+    ``s.den``.
+
     """
     def __init__(self, *args, **kwords):
         """
