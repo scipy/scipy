@@ -917,7 +917,11 @@ def test_norm_logcdf():
                 -4613.48339520, -5005.52420869, -5413.56342187, -5837.60115548,
                 -6277.63751711, -6733.67260303]
 
-    assert_allclose(stats.norm().logcdf(x), expected, atol=1e-8)
+    olderr = np.seterr(divide='ignore')
+    try:
+        assert_allclose(stats.norm().logcdf(x), expected, atol=1e-8)
+    finally:
+        np.seterr(**olderr)
 
 
 if __name__ == "__main__":
