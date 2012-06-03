@@ -434,24 +434,6 @@ rand = mtrand.rand
 random_integers = mtrand.random_integers
 permutation = mtrand.permutation
 
-## Internal class to compute a ppf given a distribution.
-##  (needs cdf function) and uses brentq from scipy.optimize
-##  to compute ppf from cdf.
-class general_cont_ppf(object):
-    def __init__(self, dist, xa=-10.0, xb=10.0, xtol=1e-14):
-        self.dist = dist
-        self.cdf = eval('%scdf'%dist)
-        self.xa = xa
-        self.xb = xb
-        self.xtol = xtol
-        self.vecfunc = sgf(self._single_call,otypes='d')
-    def _tosolve(self, x, q, *args):
-        return apply(self.cdf, (x, )+args) - q
-    def _single_call(self, q, *args):
-        return optimize.brentq(self._tosolve, self.xa, self.xb, args=(q,)+args, xtol=self.xtol)
-    def __call__(self, q, *args):
-        return self.vecfunc(q, *args)
-
 
 # Frozen RV class
 class rv_frozen(object):
@@ -883,9 +865,9 @@ class rv_continuous(rv_generic):
         Upper bound of the support of the distribution, default is plus
         infinity.
     xa : float, optional
-        Lower bound for fixed point calculation for generic ppf.
+        DEPRECATED
     xb : float, optional
-        Upper bound for fixed point calculation for generic ppf.
+        DEPRECATED
     xtol : float, optional
         The tolerance for fixed point calculation for generic ppf.
     badvalue : object, optional
@@ -1081,7 +1063,7 @@ class rv_continuous(rv_generic):
 
     """
 
-    def __init__(self, momtype=1, a=None, b=None, xa=-10.0, xb=10.0,
+    def __init__(self, momtype=1, a=None, b=None, xa=None, xb=None,
                  xtol=1e-14, badvalue=None, name=None, longname=None,
                  shapes=None, extradoc=None):
 
@@ -1099,6 +1081,12 @@ class rv_continuous(rv_generic):
             self.a = -inf
         if b is None:
             self.b = inf
+        if xa is not None:
+            warnings.warn("The `xa` parameter is deprecated and will be "
+                          "removed in scipy 0.12", DeprecationWarning)
+        if xb is not None:
+            warnings.warn("The `xb` parameter is deprecated and will be "
+                          "removed in scipy 0.12", DeprecationWarning)
         self.xa = xa
         self.xb = xb
         self.xtol = xtol
@@ -2940,8 +2928,7 @@ class foldcauchy_gen(rv_continuous):
         return 1.0/pi*(arctan(x-c) + arctan(x+c))
     def _stats(self, c):
         return inf, inf, nan, nan
-# setting xb=1000 allows to calculate ppf for up to q=0.9993
-foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy', xb=1000, shapes='c')
+foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy', shapes='c')
 
 
 ## F
@@ -4978,9 +4965,8 @@ class recipinvgauss_gen(rv_continuous):
         trm2 = 1.0/mu + x
         isqx = 1.0/sqrt(x)
         return 1.0-_norm_cdf(isqx*trm1)-exp(2.0/mu)*_norm_cdf(-isqx*trm2)
-    # xb=50 or something large is necessary for stats to converge without exception
-recipinvgauss = recipinvgauss_gen(a=0.0, xb=50, name='recipinvgauss',
-                                  shapes="mu")
+recipinvgauss = recipinvgauss_gen(a=0.0, name='recipinvgauss', shapes="mu")
+
 
 # Semicircular
 
