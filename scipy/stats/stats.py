@@ -2876,7 +2876,6 @@ def ttest_1samp(a, popmean, axis=0):
     --------
 
     >>> from scipy import stats
-    >>> import numpy as np
 
     >>> #fix seed to get the same result
     >>> np.random.seed(7654567)
@@ -2907,39 +2906,43 @@ def ttest_1samp(a, popmean, axis=0):
 
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    df=n-1
+    df= n - 1
 
-    d = np.mean(a,axis) - popmean
+    d = np.mean(a, axis) - popmean
     v = np.var(a, axis, ddof=1)
+    denom = np.sqrt(v / float(n))
 
-    t = d / np.sqrt(v/float(n))
-    t = np.where((d==0)*(v==0), 1.0, t) #define t=0/0 = 1, identical mean, var
-    prob = distributions.t.sf(np.abs(t),df)*2  #use np.abs to get upper tail
-    #distributions.t.sf currently does not propagate nans
-    #this can be dropped, if distributions.t.sf propagates nans
-    #if this is removed, then prob = prob[()] needs to be removed
-    prob = np.where(np.isnan(t), np.nan, prob)
-
-    if t.ndim == 0:
-        t = t[()]
-        prob = prob[()]
+    t = d / denom
+    t = np.where((d == 0) * (denom == 0), np.nan, t) # handles case where d = v = 0
+    
+    t, prob = _ttest_finish(df, t)
+        
     return t,prob
 
+def _ttest_finish(df,t):
+    prob = distributions.t.sf(np.abs(t), df) * 2 #use np.abs to get upper tail
+    if t.ndim == 0:
+        t = t[()]
+    return t, prob
 
-def ttest_ind(a, b, axis=0):
-    """Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
+def ttest_ind(a, b, axis=0, equal_var = True):
+    """Calculates the T-test for the means of TWO INDEPENDENT samples of scores
 
     This is a two-sided test for the null hypothesis that 2 independent samples
     have identical average (expected) values.
 
     Parameters
     ----------
-    a, b : sequence of ndarrays
+    a, b : array_like
         The arrays must have the same shape, except in the dimension
         corresponding to `axis` (the first, by default).
     axis : int, optional
         Axis can equal None (ravel array first), or an integer (the axis
         over which to operate on a and b).
+    equal_var : bool, optional
+        The default is True, which performs a standard independent 2 sample test
+        that assumes equal population variances. If False, Welch's t-test, which
+        does not assume equal population variance, is performed.
 
     Returns
     -------
@@ -2971,7 +2974,6 @@ def ttest_ind(a, b, axis=0):
     --------
 
     >>> from scipy import stats
-    >>> import numpy as np
 
     >>> #fix seed to get the same result
     >>> np.random.seed(12345678)
@@ -2981,42 +2983,63 @@ def ttest_ind(a, b, axis=0):
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> stats.ttest_ind(rvs1,rvs2)
-    (0.26833823296239279, 0.78849443369564765)
+    (0.26833823296239279, 0.78849443369564776)
+    >>> stats.ttest_ind(rvs1,rvs2, equal_var = False)
+    (0.26833823296239279, 0.78849452749500748)
+    
+    ttest_ind underestimates p for unequal variances
+    
+    >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500)
+    >>> stats.ttest_ind(rvs1, rvs3)
+    (-0.46580283298287162, 0.64145827413436174)
+    >>> stats.ttest_ind(rvs1, rvs3, equal_var = False)
+    (-0.46580283298287162, 0.64149646246569292)
 
+    When n1 != n2, the equal means t-statistic is no longer equal to the
+    unequal means t-statistic
 
-    test with sample with different means
+    >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100)
+    >>> stats.ttest_ind(rvs1, rvs4)
+    (-0.99882539442782481, 0.3182832709103896)
+    >>> stats.ttest_ind(rvs1, rvs4, equal_var = False)
+    (-0.69712570584654099, 0.48716927725402048)
 
-    >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
-    >>> stats.ttest_ind(rvs1,rvs3)
-    (-5.0434013458585092, 5.4302979468623391e-007)
+    T-test with different means, variance, and n
+
+    >>> rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
+    >>> stats.ttest_ind(rvs1, rvs5)
+    (-1.4679669854490653, 0.14263895620529152)
+    >>> stats.ttest_ind(rvs1, rvs5, equal_var = False)
+    (-0.94365973617132992, 0.34744170334794122)
 
     """
+    
     a, b, axis = _chk2_asarray(a, b, axis)
-
-    v1 = np.var(a,axis,ddof = 1)
-    v2 = np.var(b,axis,ddof = 1)
+    v1 = np.var(a, axis, ddof=1)
+    v2 = np.var(b, axis, ddof=1)
     n1 = a.shape[axis]
     n2 = b.shape[axis]
-    df = n1+n2-2
-
-    d = np.mean(a,axis) - np.mean(b,axis)
-    svar = ((n1-1)*v1+(n2-1)*v2) / float(df)
-
-    t = d/np.sqrt(svar*(1.0/n1 + 1.0/n2))
-    t = np.where((d==0)*(svar==0), 1.0, t) #define t=0/0 = 0, identical means
-    prob = distributions.t.sf(np.abs(t),df)*2#use np.abs to get upper tail
-
-    #distributions.t.sf currently does not propagate nans
-    #this can be dropped, if distributions.t.sf propagates nans
-    #if this is removed, then prob = prob[()] needs to be removed
-    prob = np.where(np.isnan(t), np.nan, prob)
-
-    if t.ndim == 0:
-        t = t[()]
-        prob = prob[()]
-
+    
+    if (equal_var):
+        df = n1 + n2 - 2
+        svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / float(df)
+        denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
+    else:
+        vn1 = v1 / n1
+        vn2 = v2 / n2
+        df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
+    
+        df = np.where(np.isnan(df), 1, df) # if df is undefined, variances are 
+            #zero (assumes n1 > 0 & n2 > 0). Hence doesn't matter what df is as 
+            #long as it's not NaN.
+        denom = np.sqrt(vn1 + vn2) 
+    
+    d = np.mean(a, axis) - np.mean(b, axis)
+    t = d / denom
+    t = np.where((d == 0) * (denom == 0), np.nan, t) #handles case where d = v1 = v2 = 0
+    t, prob = _ttest_finish(df, t)
+    
     return t, prob
-
 
 def ttest_rel(a,b,axis=0):
     """
@@ -3027,7 +3050,7 @@ def ttest_rel(a,b,axis=0):
 
     Parameters
     ----------
-    a, b : sequence of ndarrays
+    a, b : array_like
         The arrays must have the same shape.
     axis : int, optional, (default axis=0)
         Axis can equal None (ravel array first), or an integer (the axis
@@ -3077,27 +3100,17 @@ def ttest_rel(a,b,axis=0):
     if a.shape[axis] != b.shape[axis]:
         raise ValueError('unequal length arrays')
     n = a.shape[axis]
-    df = float(n-1)
+    df = float(n - 1)
 
-    d = (a-b).astype('d')
-    v = np.var(d,axis,ddof=1)
+    d = (a - b).astype(np.float64)
+    v = np.var(d, axis, ddof=1)
     dm = np.mean(d, axis)
+    denom = np.sqrt(v / float(n))
 
-    t = dm / np.sqrt(v/float(n))
-    t = np.where((dm==0)*(v==0), 1.0, t) #define t=0/0 = 1, zero mean and var
-    prob = distributions.t.sf(np.abs(t),df)*2 #use np.abs to get upper tail
-    #distributions.t.sf currently does not propagate nans
-    #this can be dropped, if distributions.t.sf propagates nans
-    #if this is removed, then prob = prob[()] needs to be removed
-    prob = np.where(np.isnan(t), np.nan, prob)
-
-##    if not np.isscalar(t):
-##        probs = np.reshape(probs, t.shape) # this should be redundant
-##    if not np.isscalar(prob) and len(prob) == 1:
-##        prob = prob[0]
-    if t.ndim == 0:
-        t = t[()]
-        prob = prob[()]
+    t = dm / denom
+    t = np.where((dm == 0) * (denom == 0), np.nan, t) #handle case where both dm and v are 0
+    
+    t, prob = _ttest_finish(df, t)
 
     return t, prob
 
