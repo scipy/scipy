@@ -470,7 +470,7 @@ def mahalanobis(u, v, VI):
 
     .. math::
 
-       (u-v)V^{-1}(u-v)^T
+       \sqrt{ (u-v) V^{-1} (u-v)^T }
 
     where ``V`` is the covariance matrix.  Note that the argument ``VI``
     is the inverse of ``V``.
