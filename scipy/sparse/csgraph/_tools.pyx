@@ -240,7 +240,7 @@ def csgraph_to_dense(csgraph, null_value=0):
     # create the output array
     graph = np.empty(csgraph.shape, dtype=DTYPE)
     graph.fill(np.inf)
-    _populate_graph(graph, data, indices, indptr, null_value)
+    _populate_graph(data, indices, indptr, graph, null_value)
     return graph
 
 
