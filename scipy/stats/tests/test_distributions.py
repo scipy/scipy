@@ -877,6 +877,7 @@ def test_powerlaw_stats():
         mvsk = stats.powerlaw.stats(a, moments="mvsk")
         assert_array_almost_equal(mvsk, exact_mvsk)
 
+
 def test_ksone_fit_freeze():
     """Regression test for ticket #1638.
 
@@ -893,6 +894,7 @@ def test_ksone_fit_freeze():
          -0.10943985, -0.35243174,  0.06897665, -0.03553363, -0.0701746 ,
          -0.06037974,  0.37670779, -0.21684405])
 
+    olderr = np.seterr(invalid='ignore')
     warn_ctx = WarningManager()
     warn_ctx.__enter__()
     try:
@@ -900,6 +902,8 @@ def test_ksone_fit_freeze():
         stats.ksone.fit(d)
     finally:
         warn_ctx.__exit__()
+        np.seterr(**olderr)
+
 
 def test_norm_logcdf():
     """Test precision of the logcdf of the normal distribution.
