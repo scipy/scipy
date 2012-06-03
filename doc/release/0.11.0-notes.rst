@@ -161,6 +161,9 @@ The function ``scipy.linalg.qr_multiply``, which allows efficient computation
 of the matrix product of Q (from a QR decompostion) and a vector, has been
 added.
 
+The function ``scipy.signal.bode``, which calculates magnitude and phase data
+for a continuous-time system, has been added.
+
 
 Authors
 =======
