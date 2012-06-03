@@ -342,10 +342,19 @@ class lti(object):
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
         [dB] and phase [deg]. See scipy.signal.bode for details.
 
-        Example:
-        >>> w, mag, phase = sys.bode()
-        >>> semilogx(w, mag)    # bode magnitude plot
-        >>> semilogx(w, phase)  # bode phase plot
+        Example
+        -------
+        >>> from scipy import signal
+        >>> import matplotlib.pyplot as plt
+
+        >>> s1 = signal.lti([1], [1, 1])
+        >>> w, mag, phase = s1.bode()
+
+        >>> plt.figure()
+        >>> plt.semilogx(w, mag)    # bode magnitude plot
+        >>> plt.figure()
+        >>> plt.semilogx(w, phase)  # bode phase plot
+        >>> plt.show()
         """
         return bode(self, w=w, n=n)
 
@@ -866,7 +875,10 @@ def bode(system, w=None, n=100):
         for every value in this array. If not given a reasonable set will be
         calculated.
     n : int, optional
-        Number of frequency points to compute if `w` is not given.
+        Number of frequency points to compute if `w` is not given. The `n`
+        frequencies are logarithmically spaced in the range from two orders of
+        magnitude before the minimum (slowest) pole to two orders of magnitude
+        after the maximum (fastest) pole.
 
     Returns
     -------
@@ -877,13 +889,19 @@ def bode(system, w=None, n=100):
     phase : 1D ndarray
         Phase array [deg]
 
-    Examples
-    --------
-    >>> s1 = lti([1], [1, 1])
-    >>> w, mag, phase = s1.bode()
-    >>> semilogx(w, mag)    # bode magnitude plot
-    >>> figure()
-    >>> semilogx(w, phase)  # bode phase plot
+    Example
+    -------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> s1 = signal.lti([1], [1, 1])
+    >>> w, mag, phase = bode(s1)
+
+    >>> plt.figure()
+    >>> plt.semilogx(w, mag)    # bode magnitude plot
+    >>> plt.figure()
+    >>> plt.semilogx(w, phase)  # bode phase plot
+    >>> plt.show()
     """
     if isinstance(system, lti):
         sys = system
