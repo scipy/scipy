@@ -6,6 +6,7 @@ from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
 
 from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti, bode
 from scipy.signal.filter_design import BadCoefficients
+import scipy.linalg as linalg
 
 
 class TestSS2TF:
@@ -280,6 +281,23 @@ class Test_bode(object):
         y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
         expected_phase = np.arctan2(y.imag, y.real) * 180.0 / np.pi
         assert_almost_equal(phase, expected_phase)
+
+    def test_05(self):
+        """Test that bode() finds a reasonable frequency range.
+
+        A reasonable frequency range is two orders of magnitude before the
+        minimum (slowest) pole and two orders of magnitude after the maximum
+        (fastest) pole.
+        """
+        # 1st order low-pass filter: H(s) = 1 / (s + 1)
+        system = lti([1], [1, 1])
+        vals = linalg.eigvals(system.A)
+        minpole = min(abs(np.real(vals)))
+        maxpole = max(abs(np.real(vals)))
+        n = 10;
+        expected_w = np.logspace(np.log10(minpole) - 2, np.log10(maxpole) + 2, n)
+        w, mag, phase = bode(system, n=n)
+        assert_almost_equal(w, expected_w)
 
 
 if __name__ == "__main__":
