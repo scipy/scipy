@@ -284,7 +284,7 @@ def gaussian(M, std, sym=True):
 def general_gaussian(M, p, sig, sym=True):
     """Return a window with a generalized Gaussian shape.
 
-    The Gaussian shape is defined as ``exp(-0.5*(x/sig)**(2*p))``, the
+    The Gaussian shape is defined as ``exp(-0.5*abs(x/sig)**(2*p))``, the
     half-power point is at ``(2*log(2)))**(1/(2*p)) * sig``.
 
     """
@@ -296,7 +296,7 @@ def general_gaussian(M, p, sig, sym=True):
     if not sym and not odd:
         M = M + 1
     n = np.arange(0, M) - (M - 1.0) / 2.0
-    w = np.exp(-0.5 * (n / sig) ** (2 * p))
+    w = np.exp(-0.5 * np.abs(n / sig) ** (2 * p))
     if not sym and not odd:
         w = w[:-1]
     return w
