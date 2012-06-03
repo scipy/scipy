@@ -141,6 +141,15 @@ routines are:
      tree of a graph
 
 
+``scipy.interpolate`` improvements
+----------------------------------
+
+For interpolation in spherical coordinates, the three classes
+``scipy.interpolate.SmoothSphereBivariateSpline``,
+``scipy.interpolate.LSQSphereBivariateSpline``, and
+``scipy.interpolate.RectSphereBivariateSpline`` have been added.
+
+
 Deprecated features
 ===================
 ``scipy.sparse.cs_graph_components`` has been made a part of the sparse graph
@@ -163,7 +172,7 @@ Removal of ``scipy.maxentropy``
 The ``scipy.maxentropy`` module, which was deprecated in the 0.10.0 release,
 has been removed.  Logistic regression in scikits.learn is a good and modern
 alternative for this functionality.
- 
+
 
 Other changes
 =============
