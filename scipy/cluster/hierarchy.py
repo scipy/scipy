@@ -280,9 +280,7 @@ def complete(y):
 
 def average(y):
     """
-    Performs average/UPGMA linkage on the condensed distance matrix
-    ``y``. See ``linkage`` for more information on the return
-    structure and algorithm.
+    Performs average/UPGMA linkage on a condensed distance matrix
 
     Parameters
     ----------
@@ -1244,12 +1242,14 @@ def is_valid_im(R, warning=False, throw=False, name=None):
 
 def is_valid_linkage(Z, warning=False, throw=False, name=None):
     """
-    Checks the validity of a linkage matrix. A linkage matrix is valid
-    if it is a two dimensional nd-array (type double) with :math:`n`
+    Checks the validity of a linkage matrix.
+
+    A linkage matrix is valid if it is a two dimensional
+    ndarray (type double) with :math:`n`
     rows and 4 columns.  The first two columns must contain indices
     between 0 and :math:`2n-1`. For a given row ``i``,
-    :math:`0 \leq \mathtt{Z[i,0]} \leq i+n-1`
-    and :math:`0 \leq Z[i,1] \leq i+n-1`
+    :math:`0 \\leq \\mathtt{Z[i,0]} \\leq i+n-1`
+    and :math:`0 \\leq Z[i,1] \\leq i+n-1`
     (i.e. a cluster cannot join another cluster unless the cluster
     being joined has been generated.)
 
@@ -1406,8 +1406,7 @@ def num_obs_linkage(Z):
 
 def correspond(Z, Y):
     """
-    Checks if a linkage matrix ``Z`` and condensed distance matrix
-    ``Y`` could possibly correspond to one another.
+    Checks for correspondence between linkage and condensed distance matrices
 
     They must have the same number of original observations for
     the check to succeed.
@@ -1418,10 +1417,10 @@ def correspond(Z, Y):
 
     Parameters
     ----------
-    Z : ndarray
-        The linkage matrix to check for correspondance.
-    Y : ndarray
-        The condensed distance matrix to check for correspondance.
+    Z : array_like
+        The linkage matrix to check for correspondence.
+    Y : array_like
+        The condensed distance matrix to check for correspondence.
 
     Returns
     -------
@@ -2466,21 +2465,19 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
 
 def is_isomorphic(T1, T2):
     """
-
-      Determines if two different cluster assignments ``T1`` and
-      ``T2`` are equivalent.
+    Determines if two different cluster assignments are equivalent.
 
     Parameters
     ----------
-    T1 : ndarray
+    T1 : array_like
         An assignment of singleton cluster ids to flat cluster ids.
-    T2 : ndarray
+    T2 : array_like
         An assignment of singleton cluster ids to flat cluster ids.
 
     Returns
     -------
     b : bool
-        Whether the flat cluster assignments ``T1`` and ``T2`` are
+        Whether the flat cluster assignments `T1` and `T2` are
         equivalent.
 
     """
@@ -2514,10 +2511,7 @@ def is_isomorphic(T1, T2):
 
 def maxdists(Z):
     """
-    MD = maxdists(Z)
-
-    Returns the maximum distance between any cluster for each
-    non-singleton cluster.
+    Returns the maximum distance between any non-singleton cluster.
 
     Parameters
     ----------
@@ -2527,7 +2521,7 @@ def maxdists(Z):
 
     Returns
     -------
-    MD : ndarray
+    maxdists : ndarray
         A ``(n-1)`` sized numpy array of doubles; ``MD[i]`` represents
         the maximum distance between any cluster (including
         singletons) below and including the node with index i. More
@@ -2586,19 +2580,19 @@ def maxRstat(Z, R, i):
 
     Parameters
     ----------
-    Z : ndarray
+    Z : array_like
         The hierarchical clustering encoded as a matrix. See
         ``linkage`` for more information.
-    R : ndarray
+    R : array_like
         The inconsistency matrix.
     i : int
-        The column of ``R`` to use as the statistic.
+        The column of `R` to use as the statistic.
 
     Returns
     -------
     MR : ndarray
         Calculates the maximum statistic for the i'th column of the
-        inconsistency matrix ``R`` for each non-singleton cluster
+        inconsistency matrix `R` for each non-singleton cluster
         node. ``MR[j]`` is the maximum over ``R[Q(j)-n, i]`` where
         ``Q(j)`` the set of all node ids corresponding to nodes below
         and including ``j``.
