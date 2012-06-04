@@ -223,6 +223,18 @@ class _TestCommon:
         assert_array_equal(chk, self.dat)
         assert_(not chk.flags.c_contiguous)
         assert_(chk.flags.f_contiguous)
+        # Check with out argument (array).
+        out = np.zeros(self.datsp.shape, dtype=self.datsp.dtype)
+        chk = self.datsp.todense(out=out)
+        assert_array_equal(self.dat, out)
+        assert_array_equal(self.dat, chk)
+        assert_(chk.base is out)
+        # Check with out array (matrix).
+        out = np.asmatrix(np.zeros(self.datsp.shape, dtype=self.datsp.dtype))
+        chk = self.datsp.todense(out=out)
+        assert_array_equal(self.dat, out)
+        assert_array_equal(self.dat, chk)
+        assert_(chk is out)
         a = matrix([1.,2.,3.])
         dense_dot_dense = a * self.dat
         check = a * self.datsp.todense()
