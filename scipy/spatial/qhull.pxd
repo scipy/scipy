@@ -28,9 +28,9 @@ ctypedef struct DelaunayInfo_t:
     double *max_bound
     double *min_bound
 
-cdef void _get_delaunay_info(DelaunayInfo_t *, obj,
-                             int compute_transform,
-                             int compute_vertex_to_simplex)
+cdef int _get_delaunay_info(DelaunayInfo_t *, obj,
+                            int compute_transform,
+                            int compute_vertex_to_simplex) except -1
 
 #
 # N-D geometry
