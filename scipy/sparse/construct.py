@@ -426,7 +426,7 @@ def bmat(blocks, format=None, dtype=None):
 
     Parameters
     ----------
-    blocks
+    blocks : array_like
         grid of sparse matrices with compatible shapes
         an entry of None implies an all-zero matrix
     format : str, optional
@@ -438,7 +438,8 @@ def bmat(blocks, format=None, dtype=None):
 
     Returns
     -------
-    res : sparse matrix
+    bmat : sparse matrix
+        A "coo" sparse matrix or type of sparse matrix identified by `format`.
 
     See Also
     --------

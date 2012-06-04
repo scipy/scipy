@@ -38,7 +38,30 @@
 #define ellipj_doc "(sn,cn,dn,ph)=ellipj(u,m) calculates the Jacobian elliptic functions of\nparameter m between 0 and 1, and real u.  The returned functions are\noften written sn(u|m), cn(u|m), and dn(u|m).  The value of ph is such\nthat if u = ellik(ph,m), then sn(u|m) = sin(ph) and cn(u|m) = cos(ph)."
 #define ellipkm1_doc "y=ellipkm1(1 - m) returns the complete integral of the first kind:\nintegral(1/sqrt(1-m*sin(t)**2),t=0..pi/2)"
 #define ellipkinc_doc "y=ellipkinc(phi,m) returns the incomplete elliptic integral of the first\nkind: integral(1/sqrt(1-m*sin(t)**2),t=0..phi)"
-#define erf_doc "y=erf(z) returns the error function of complex argument defined as\nas 2/sqrt(pi)*integral(exp(-t**2),t=0..z)"
+#define erf_doc "Returns the error function of complex argument.\n\n" \
+"It is defined as ``2/sqrt(pi)*integral(exp(-t**2), t=0..z)``.\n\n" \
+"Parameters\n" \
+"----------\n" \
+"x : ndarray\n" \
+"    Input array.\n\n" \
+"Returns\n" \
+"-------\n" \
+"res : ndarray\n" \
+"    The values of the error function at the given points x.\n\n" \
+"See Also\n" \
+"--------\n" \
+"erfc, erfinv, erfcinv\n\n" \
+"Notes\n" \
+"-----\n" \
+"The cumulative of the unit normal distribution is given by\n" \
+"``Phi(z) = 1/2[1 + erf(z/sqrt(2))]``.\n\n" \
+"References\n" \
+"----------\n" \
+".. [1] http://en.wikipedia.org/wiki/Error_function\n" \
+".. [2] Milton Abramowitz and Irene A. Stegun, eds.\n" \
+"    Handbook of Mathematical Functions with Formulas,\n" \
+"    Graphs, and Mathematical Tables. New York: Dover,\n" \
+"    1972. http://www.math.sfu.ca/~cbm/aands/page_297.htm"
 #define erfc_doc "y=erfc(x) returns 1 - erf(x)."
 #define exp1_doc "y=exp1(z) returns the exponential integral (n=1) of complex argument\nz: integral(exp(-z*t)/t,t=1..inf)."
 #define exp10_doc "y=exp10(x) returns 10 raised to the x power."

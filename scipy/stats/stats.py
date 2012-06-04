@@ -2927,10 +2927,12 @@ def ttest_1samp(a, popmean, axis=0):
 
 
 def ttest_ind(a, b, axis=0):
-    """Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
+    """
+    Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
-    have identical average (expected) values.
+    have identical average (expected) values. This test assumes that the
+    populations have identical variances.
 
     Parameters
     ----------
@@ -2964,7 +2966,7 @@ def ttest_ind(a, b, axis=0):
     References
     ----------
 
-       http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+     http://en.wikipedia.org/wiki/T_test#Unequal_sample_sizes.2C_equal_variance
 
 
     Examples

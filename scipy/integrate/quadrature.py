@@ -174,7 +174,8 @@ def tupleset(t, i, value):
     return tuple(l)
 
 def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
-    """Cumulatively integrate y(x) using the composite trapezoidal rule.
+    """
+    Cumulatively integrate y(x) using the composite trapezoidal rule.
 
     Parameters
     ----------
@@ -211,7 +212,6 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     dblquad: double integrals
     tplquad: triple integrals
     romb: integrators for sampled data
-    trapz: integrators for sampled data
     ode: ODE integrators
     odeint: ODE integrators
 

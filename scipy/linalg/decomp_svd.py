@@ -138,10 +138,12 @@ def diagsvd(s, M, N):
 
     Parameters
     ----------
-    s : array, shape (M,) or (N,)
+    s : array_like, shape (M,) or (N,)
         Singular values
-    M, N : int
-        Number of rows and columns in the matrix whose singular values are s
+    M : int
+        Size of the matrix whose singular values are `s`.
+    N : int
+        Size of the matrix whose singular values are `s`.
 
     Returns
     -------

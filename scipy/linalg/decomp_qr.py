@@ -25,7 +25,8 @@ def safecall(f, name, *args, **kwargs):
     return ret[:-2]
 
 def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
-    """Compute QR decomposition of a matrix.
+    """
+    Compute QR decomposition of a matrix.
 
     Calculate the decomposition ``A = Q R`` where Q is unitary/orthogonal
     and R upper triangular.
@@ -54,12 +55,13 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     Returns
     -------
     Q : float or complex ndarray
-        Of shape (M, M), or (M, K) for ``mode='economic'``.  Not returned if
-        ``mode='r'``.
+        Of shape (M, M), or (M, K) for ``mode='economic'``.  Not returned
+        if ``mode='r'``.
     R : float or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
     P : integer ndarray
-        Of shape (N,) for ``pivoting=True``. Not returned if ``pivoting=False``.
+        Of shape (N,) for ``pivoting=True``. Not returned if
+        ``pivoting=False``.
 
     Raises
     ------
@@ -80,7 +82,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     >>> a = random.randn(9, 6)
 
     >>> q, r = linalg.qr(a)
-    >>> allclose(a, dot(q, r))
+    >>> allclose(a, np.dot(q, r))
     True
     >>> q.shape, r.shape
     ((9, 9), (9, 6))

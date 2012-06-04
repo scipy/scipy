@@ -91,12 +91,12 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False, overwrite_b=False)
 
     Parameters
     ----------
-    a : ndarray
+    a : array_like, shape (M, M)
         A complex or real matrix whose eigenvalues and eigenvectors
-        will be computed.  Of shape ``(M, M)``.
-    b : ndarray, optional
+        will be computed.
+    b : array_like, shape (M, M), optional
         Right-hand side matrix in a generalized eigenvalue problem.
-        Default is None, identity matrix is assumed.  Of shape ``(M, M)``.
+        Default is None, identity matrix is assumed.
     left : bool, optional
         Whether to calculate and return left eigenvectors.  Default is False.
     right : bool, optional
@@ -545,19 +545,18 @@ def eigvals(a, b=None, overwrite_a=False):
 
     Parameters
     ----------
-    a : ndarray
+    a : array_like, shape (M, M)
         A complex or real matrix whose eigenvalues and eigenvectors
-        will be computed.  Of shape ``(M, M)``.
-    b : ndarray, optional
+        will be computed.
+    b : array_like, shape (M, M), optional
         Right-hand side matrix in a generalized eigenvalue problem.
-        Default is None, which means that the identity matrix is assumed.
-        Of shape ``(M, M)``.
-    overwrite_a : bool, optional
-        Whether to overwrite `a`; may improve performance.  Default is False.
+        If omitted, identity matrix is assumed.
+    overwrite_a : boolean, optional
+        Whether to overwrite data in a (may improve performance)
 
     Returns
     -------
-    w : double or complex ndarray
+    w : double or complex ndarray, shape (M,)
         The eigenvalues, each repeated according to its multiplicity,
         but not in any specific order.  Of shape (M,).
 
