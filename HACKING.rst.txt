@@ -303,7 +303,7 @@ for bug reports, Github for patches.
 
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
-.. _maintainers: https://github.com/scipy/scipy/blob/maintainers/doc/MAINTAINERS.rst.txt
+.. _maintainers: https://github.com/scipy/scipy/blob/master/doc/MAINTAINERS.rst.txt
 
 .. _Trac: http://projects.scipy.org/scipy/timeline
 
