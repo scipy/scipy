@@ -45,6 +45,8 @@ class MemoizeFun(object):
     it is called or only the first time if `first_only==True`."""
     def __init__(self, fun, first_only=False):
         self.fun = fun
+        if hasattr(fun, '__name__'):
+            self.__name__ = fun.__name__
         self.calls = 0
         self.first_only = first_only
 
@@ -70,6 +72,8 @@ class MemoizeJac(object):
     is called. """
     def __init__(self, fun):
         self.fun = fun
+        if hasattr(fun, '__name__'):
+            self.__name__ = fun.__name__
         self.jac = None
         self.x = None
 
