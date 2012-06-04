@@ -1261,10 +1261,10 @@ def tsearch(tri, xi):
 # Delaunay triangulation interface, for low-level C
 #------------------------------------------------------------------------------
 
-cdef void _get_delaunay_info(DelaunayInfo_t *info,
-                             obj,
-                             int compute_transform,
-                             int compute_vertex_to_simplex):
+cdef int _get_delaunay_info(DelaunayInfo_t *info,
+                            obj,
+                            int compute_transform,
+                            int compute_vertex_to_simplex) except -1:
     cdef np.ndarray[np.double_t, ndim=3] transform
     cdef np.ndarray[np.npy_int, ndim=1] vertex_to_simplex
     cdef np.ndarray[np.double_t, ndim=2] points = obj.points
@@ -1295,3 +1295,5 @@ cdef void _get_delaunay_info(DelaunayInfo_t *info,
         info.vertex_to_simplex = NULL
     info.min_bound = <double*>min_bound.data
     info.max_bound = <double*>max_bound.data
+
+    return 0
