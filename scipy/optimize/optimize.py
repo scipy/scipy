@@ -1820,7 +1820,10 @@ def _minimize_scalar_golden(func, brack=None, args=(), options=None):
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
-    """Given a function and distinct initial points, search in the
+    """
+    Bracket the minimum of the function.
+
+    Given a function and distinct initial points, search in the
     downhill direction (as defined by the initital points) and return
     new points xa, xb, xc that bracket the minimum of the function
     f(xa) > f(xb) < f(xc). It doesn't always mean that obtained
@@ -1830,14 +1833,14 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     ----------
     func : callable f(x,*args)
         Objective function to minimize.
-    xa, xb : float
-        Bracketing interval.
-    args : tuple
+    xa, xb : float, optional
+        Bracketing interval. Defaults `xa` to 0.0, and `xb` to 1.0.
+    args : tuple, optional
         Additional arguments (if present), passed to `func`.
-    grow_limit : float
-        Maximum grow limit.
-    maxiter : int
-        Maximum number of iterations to perform.
+    grow_limit : float, optional
+        Maximum grow limit.  Defaults to 110.0
+    maxiter : int, optional
+        Maximum number of iterations to perform. Defaults to 1000.
 
     Returns
     -------

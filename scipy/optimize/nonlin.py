@@ -162,7 +162,7 @@ _doc_parts = dict(
     F : function(x) -> f
         Function whose root to find; should take and return an array-like
         object.
-    x0 : array-like
+    x0 : array_like
         Initial guess for the solution
     """.strip(),
     params_extra="""
@@ -197,7 +197,7 @@ _doc_parts = dict(
 
     Returns
     -------
-    sol : array-like
+    sol : ndarray
         An array (of similar array type as `x0`) containing the final solution.
 
     Raises

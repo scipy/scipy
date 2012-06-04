@@ -1,3 +1,12 @@
+"""
+Functions
+---------
+.. autosummary::
+   :toctree: generated/
+
+    fmin_l_bfgs_b
+
+"""
 
 ## License for the Python wrapper
 ## ==============================

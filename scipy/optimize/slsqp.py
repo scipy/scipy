@@ -1,7 +1,15 @@
-"""This module implements the Sequential Least SQuares Programming optimization
+"""
+This module implements the Sequential Least SQuares Programming optimization
 algorithm (SLSQP), orginally developed by Dieter Kraft.
-
 See http://www.netlib.org/toms/733
+
+Functions
+---------
+.. autosummary::
+   :toctree: generated/
+
+    approx_jacobian
+    fmin_slsqp
 
 """
 

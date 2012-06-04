@@ -1,10 +1,12 @@
-"""Interface to Constrained Optimization By Linear Approximation
+"""
+Interface to Constrained Optimization By Linear Approximation
 
-Functions:
-fmin_coblya(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
-            iprint=1, maxfun=1000)
-    Minimize a function using the Constrained Optimization BY Linear
-    Approximation (COBYLA) method
+Functions
+---------
+.. autosummary::
+   :toctree: generated/
+
+    fmin_cobyla
 
 """
 
