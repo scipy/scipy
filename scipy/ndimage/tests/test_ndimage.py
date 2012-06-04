@@ -2147,7 +2147,7 @@ class TestNdimage:
         arr = numpy.zeros((1, 5, 5))
         zoom = (1.0, 2.0, 2.0)
         
-        err = numpy.seterr(divide='ignore')
+        err = numpy.seterr(invalid='ignore')
         try:
             out = ndimage.zoom(arr, zoom, cval=7)
         finally:
