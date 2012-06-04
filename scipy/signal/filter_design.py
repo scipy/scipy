@@ -659,14 +659,16 @@ def cheby1(N, rp, Wn, btype='low', analog=0, output='ba'):
 
 
 def cheby2(N, rs, Wn, btype='low', analog=0, output='ba'):
-    """Chebyshev type I digital and analog filter design.
+    """
+    Chebyshev type II digital and analog filter design.
 
-    Design an Nth order lowpass digital or analog Chebyshev type I filter and
+    Design an Nth order lowpass digital or analog Chebyshev type II filter and
     return the filter coefficients in (B,A) or (Z,P,K) form.
 
     See also
     --------
     cheb2ord.
+
     """
     return iirfilter(N, Wn, rs=rs, btype=btype, analog=analog,
                      output=output, ftype='cheby2')

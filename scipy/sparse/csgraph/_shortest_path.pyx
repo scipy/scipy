@@ -326,7 +326,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
-    indices : array-like or integer, optional
+    indices : array_like or int, optional
         if specified, only compute the paths for the points at the given
         indices.
     return_predecessors : bool, optional
@@ -570,7 +570,8 @@ def bellman_ford(csgraph, directed=True, indices=None,
                  return_predecessors=False,
                  unweighted=False):
     """
-    bellman_ford(csgraph, directed=True, indices=None, return_predecessors=False, unweighted=False)
+    bellman_ford(csgraph, directed=True, indices=None, return_predecessors=False,
+                 unweighted=False)
 
     Compute the shortest path lengths using the Bellman-Ford algorithm.
     
@@ -588,7 +589,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
-    indices : array-like or integer, optional
+    indices : array_like or int, optional
         if specified, only compute the paths for the points at the given
         indices.
     return_predecessors : bool, optional
@@ -779,7 +780,8 @@ def johnson(csgraph, directed=True, indices=None,
             return_predecessors=False,
             unweighted=False):
     """
-    johnson(csgraph, directed=True, indices=None, return_predecessors=False, unweighted=False)
+    johnson(csgraph, directed=True, indices=None, return_predecessors=False,
+            unweighted=False)
 
     Compute the shortest path lengths using Johnson's algorithm.
 
@@ -799,7 +801,7 @@ def johnson(csgraph, directed=True, indices=None,
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
-    indices : array-like or integer, optional
+    indices : array_like or int, optional
         if specified, only compute the paths for the points at the given
         indices.
     return_predecessors : bool, optional
