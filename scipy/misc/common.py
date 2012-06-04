@@ -34,21 +34,20 @@ def logsumexp(a, axis=None):
     --------
     numpy.logaddexp, numpy.logaddexp2
 
+    Notes
+    -----
+    Numpy has a logaddexp function which is very similar to `logsumexp`, but
+    only handles two arguments. `logaddexp.reduce` is similar to this
+    function, but may be less stable.
+
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.misc import logsumexp
     >>> a = np.arange(10)
     >>> np.log(np.sum(np.exp(a)))
     9.4586297444267107
     >>> logsumexp(a)
     9.4586297444267107
-
-    Notes
-    -----
-    Numpy has a logaddexp function which is very similar to `logsumexp`, but
-    only handles two arguments. `logaddexp.reduce` is similar to this
-    function, but may be less stable.
 
     """
     a = asarray(a)

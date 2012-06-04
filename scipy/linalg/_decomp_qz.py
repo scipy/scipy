@@ -73,9 +73,9 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     Parameters
     ----------
-    A : array-like, shape (N,N)
+    A : array_like, shape (N,N)
         2d array to decompose
-    B : array-like, shape (N,N)
+    B : array_like, shape (N,N)
         2d array to decompose
     output : str {'real','complex'}
         Construct the real or complex QZ decomposition for real matrices.
@@ -99,13 +99,13 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     Returns
     -------
-    AA : array, shape (N,N)
+    AA : ndarray, shape (N,N)
         Generalized Schur form of A.
-    BB : array, shape (N,N)
+    BB : ndarray, shape (N,N)
         Generalized Schur form of B.
-    Q : array, shape (N,N)
+    Q : ndarray, shape (N,N)
         The left Schur vectors.
-    Z : array, shape (N,N)
+    Z : ndarray, shape (N,N)
         The right Schur vectors.
     sdim : int
         If sorting was requested, a fifth return value will contain the
@@ -116,6 +116,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     Q is transposed versus the equivalent function in Matlab.
 
     .. versionadded:: 0.11.0
+
     """
     if not output in ['real','complex','r','c']:
         raise ValueError("argument must be 'real', or 'complex'")
