@@ -39,6 +39,32 @@ _status_message = {'success': 'Optimization terminated successfully.',
                    'pr_loss': 'Desired error not necessarily achieved due '
                               'to precision loss.'}
 
+
+class MemoizeFun(object):
+    """ Decorator that caches the value of the objective function each time
+    it is called or only the first time if `first_only==True`."""
+    def __init__(self, fun, first_only=False):
+        self.fun = fun
+        self.calls = 0
+        self.first_only = first_only
+
+    def __call__(self, x, *args):
+        if self.calls == 0:
+            self.x = numpy.asarray(x).copy()
+            self.f = self.fun(x, *args)
+            self.calls += 1
+            return self.f
+        elif self.first_only and self.calls > 1:
+            self.calls += 1
+            return self.fun(x, *args)
+        elif numpy.any(x != self.x):
+            self.x = numpy.asarray(x).copy()
+            self.f = self.fun(x, *args)
+            self.calls += 1
+            return self.f
+        else:
+            return self.f
+
 class MemoizeJac(object):
     """ Decorator that caches the value gradient of function each time it
     is called. """
