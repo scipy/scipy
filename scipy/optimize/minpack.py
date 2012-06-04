@@ -185,7 +185,8 @@ def _root_hybr(func, x0, args=(), jac=None, options=None):
     full_output = True
     x0 = array(x0, ndmin=1)
     n = len(x0)
-    if type(args) != type(()): args = (args,)
+    if type(args) != type(()):
+        args = (args,)
     _check_func('fsolve', 'func', func, x0, args, n, (n,))
     Dfun = jac
     if Dfun is None:

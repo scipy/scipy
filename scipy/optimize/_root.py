@@ -50,7 +50,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
         this case, it must accept the same arguments as `fun`.
     options : dict, optional
         A dictionary of solver options. E.g. `xtol` or `maxiter`, see
-        `show_options('root', method)` for details.
+        ``show_options('root', method)`` for details.
     callback : function, optional
         Optional callback function. It is called on every iteration as
         ``callback(x, f)`` where `x` is the current solution and `f`
@@ -126,7 +126,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
 
     A solution can be obtained as follows.
 
-    >>> sol = root(fun, [0, 0], jac=jac, method='hybr')
+    >>> from scipy import optimize
+    >>> sol = optimize.root(fun, [0, 0], jac=jac, method='hybr')
     >>> sol.x
     array([ 0.8411639,  0.1588361])
     """
