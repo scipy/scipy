@@ -328,8 +328,8 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     These are stacked into the `Tinvs` returned.
 
     """
-    cdef double[:,::1] T
-    cdef double[:,:,::1] Tinvs
+    cdef np.ndarray[np.double_t, ndim=2] T
+    cdef np.ndarray[np.double_t, ndim=3] Tinvs
     cdef int isimplex
     cdef int i, j, n, nrhs, lda, ldb, info
     cdef int ipiv[NPY_MAXDIMS+1]
@@ -367,18 +367,18 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
                 Tinvs[isimplex,i,i] = 1
 
             # compute 1-norm for estimating condition number
-            anorm = _matrix_norm1(T)
+            anorm = _matrix_norm1(ndim, <double*>T.data)
 
             # LU decomposition
             n = ndim
             nrhs = ndim
             lda = ndim
             ldb = ndim
-            qh_dgetrf(&n, &n, <double*>T._data, &lda, ipiv, &info)
+            qh_dgetrf(&n, &n, <double*>T.data, &lda, ipiv, &info)
 
             # Check condition number
             if info == 0:
-                qh_dgecon("1", &n, <double*>T._data, &lda, &anorm, &rcond,
+                qh_dgecon("1", &n, <double*>T.data, &lda, &anorm, &rcond,
                           work, iwork, &info)
 
                 if rcond < rcond_limit:
@@ -387,26 +387,29 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
 
             # Compute transform
             if info == 0:
-                qh_dgetrs("N", &n, &nrhs, <double*>T._data, &lda, ipiv,
-                          (<double*>Tinvs._data) + ndim*(ndim+1)*isimplex,
+                qh_dgetrs("N", &n, &nrhs, <double*>T.data, &lda, ipiv,
+                          (<double*>Tinvs.data) + ndim*(ndim+1)*isimplex,
                           &ldb, &info)
 
             # Deal with degenerate simplices
             if info != 0:
-                Tinvs[isimplex,:,:] = nan
+                for i in range(ndim+1):
+                    for j in range(ndim):
+                        Tinvs[isimplex,i,j] = nan
 
-    return np.asarray(Tinvs)
+    return Tinvs
 
 @cython.boundscheck(False)
-cdef double _matrix_norm1(double[:,::1] a) nogil:
-    """Compute the 1-norm of a square matrix"""
+cdef double _matrix_norm1(int n, double *a) nogil:
+    """Compute the 1-norm of a square matrix given in in Fortran order"""
     cdef double maxsum = 0, colsum
     cdef int i, j
 
-    for j in range(a.shape[1]):
+    for j in range(n):
         colsum = 0
-        for i in range(a.shape[0]):
-            colsum += fabs(a[i,j])
+        for i in range(n):
+            colsum += fabs(a[0])
+            a += 1
         if maxsum < colsum:
             maxsum = colsum
     return maxsum
@@ -1075,6 +1078,7 @@ class Delaunay(object):
 
         """
         cdef int isimplex, k, j, ndim, nsimplex, m, msize
+        cdef object out
         cdef np.ndarray[np.npy_int, ndim=2] arr
         cdef np.ndarray[np.npy_int, ndim=2] neighbors
         cdef np.ndarray[np.npy_int, ndim=2] vertices
@@ -1106,7 +1110,12 @@ class Delaunay(object):
                         arr = out
 
         arr = None
-        out.resize(m, ndim)
+        try:
+            out.resize(m, ndim)
+        except ValueError:
+            # XXX: work around a Cython bug on Python 2.4
+            #      still leaks memory, though
+            return np.resize(out, (m, ndim))
         return out
 
     @cython.boundscheck(False)
@@ -1261,10 +1270,10 @@ def tsearch(tri, xi):
 # Delaunay triangulation interface, for low-level C
 #------------------------------------------------------------------------------
 
-cdef void _get_delaunay_info(DelaunayInfo_t *info,
-                             obj,
-                             int compute_transform,
-                             int compute_vertex_to_simplex):
+cdef int _get_delaunay_info(DelaunayInfo_t *info,
+                            obj,
+                            int compute_transform,
+                            int compute_vertex_to_simplex) except -1:
     cdef np.ndarray[np.double_t, ndim=3] transform
     cdef np.ndarray[np.npy_int, ndim=1] vertex_to_simplex
     cdef np.ndarray[np.double_t, ndim=2] points = obj.points
@@ -1295,3 +1304,5 @@ cdef void _get_delaunay_info(DelaunayInfo_t *info,
         info.vertex_to_simplex = NULL
     info.min_bound = <double*>min_bound.data
     info.max_bound = <double*>max_bound.data
+
+    return 0
