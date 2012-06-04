@@ -562,7 +562,8 @@ class BivariateSpline(object):
 
 
 class SmoothBivariateSpline(BivariateSpline):
-    """ Smooth bivariate spline approximation.
+    """
+    Smooth bivariate spline approximation.
 
     Parameters
     ----------
@@ -586,15 +587,16 @@ class SmoothBivariateSpline(BivariateSpline):
         linear system of equations. `eps` should have a value between 0 and 1,
         the default is 1e-16.
 
+    See Also
+    --------
+    bisplrep : an older wrapping of FITPACK
+    bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
+    LSQUnivariateSpline : to create a BivariateSpline using weighted
+
     Notes
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
-
-    See Also
-    --------
-    bisplrep, bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
-    LSQUnivariateSpline : to create a BivariateSpline using weighted
 
     """
 
@@ -617,7 +619,8 @@ class SmoothBivariateSpline(BivariateSpline):
 
 
 class LSQBivariateSpline(BivariateSpline):
-    """ Weighted least-squares bivariate spline approximation.
+    """
+    Weighted least-squares bivariate spline approximation.
 
     Parameters
     ----------
@@ -625,7 +628,7 @@ class LSQBivariateSpline(BivariateSpline):
         1-D sequences of data points (order is not important).
     tx, ty : array_like
         Strictly ordered 1-D sequences of knots coordinates.
-    w : array_lie, optional
+    w : array_like, optional
         Positive 1-D sequence of weights.
     bbox : array_like, optional
         Sequence of length 4 specifying the boundary of the rectangular
@@ -643,15 +646,16 @@ class LSQBivariateSpline(BivariateSpline):
         linear system of equations. `eps` should have a value between 0 and 1,
         the default is 1e-16.
 
+    See Also
+    --------
+    bisplrep : an older wrapping of FITPACK
+    bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
+    SmoothBivariateSpline : create a smoothing BivariateSpline
+
     Notes
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
-
-    See Also
-    --------
-    bisplrep, bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
-    SmoothUnivariateSpline : To create a BivariateSpline through the given points
 
     """
 
