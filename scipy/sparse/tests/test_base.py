@@ -249,6 +249,14 @@ class _TestCommon:
         assert_array_equal(chk, dat)
         assert_(not chk.flags.c_contiguous)
         assert_(chk.flags.f_contiguous)
+        # Check with output arg.
+        out = np.zeros(self.datsp.shape, dtype=self.datsp.dtype)
+        self.datsp.toarray(out=out)
+        assert_array_equal(chk, dat)
+        # Check that things are fine when we don't initialize with zeros.
+        out[...] = 1.
+        self.datsp.toarray(out=out)
+        assert_array_equal(chk, dat)
         a = array([1.,2.,3.])
         dense_dot_dense = dot(a, dat)
         check = dot(a, self.datsp.toarray())

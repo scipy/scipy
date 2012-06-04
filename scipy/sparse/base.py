@@ -487,7 +487,7 @@ class spmatrix(object):
         """
         return np.asmatrix(self.toarray(order=order))
 
-    def toarray(self, order='C'):
+    def toarray(self, order=None, out=None):
         """
         Return a dense ndarray representation of this matrix.
 
@@ -495,16 +495,27 @@ class spmatrix(object):
         ----------
         order : {'C', 'F'}, optional
             Whether to store multi-dimensional data in C (row-major)
-            or Fortran (column-major) order in memory. Default is 'C'.
+            or Fortran (column-major) order in memory. The default
+            is 'None', indicating the NumPy default of C-ordered.
+            Cannot be specified in conjunction with the `out`
+            argument.
+
+        out : ndarray, 2-dimensional, optional
+            If specified, uses this array as the output buffer
+            instead of allocating a new array to return. The provided
+            array must have the same shape and dtype as the sparse
+            matrix on which you are calling the method.
 
         Returns
         -------
         arr : ndarray, 2-dimensional
             An array with the same shape and containing the same
             data represented by the sparse matrix, with the requested
-            memory order.
+            memory order. If `out` was passed, the same object is
+            returned after being modified in-place to contain the
+            appropriate values.
         """
-        return self.tocoo().toarray(order=order)
+        return self.tocoo().toarray(order=order, out=out)
 
     def todok(self):
         return self.tocoo().todok()
@@ -587,6 +598,19 @@ class spmatrix(object):
             max_index = min(M, N-k, len(values))
             for i,v in enumerate(values[:max_index]):
                 self[i, i + k] = v
+
+    def _process_toarray_args(self, order, out):
+        if out is not None:
+            if order is not None:
+                raise ValueError('order cannot be specified if out '
+                                 'is not None')
+            if out.shape != self.shape or out.dtype != self.dtype:
+                raise ValueError('out array must be same dtype and shape as '
+                                 'sparse matrix')
+            out[...] = 0.
+            return out
+        else:
+            return np.zeros(self.shape, dtype=self.dtype, order=order)
 
 
 def isspmatrix(x):

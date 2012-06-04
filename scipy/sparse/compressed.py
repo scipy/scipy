@@ -554,8 +554,8 @@ class _cs_matrix(_data_matrix):
         from coo import coo_matrix
         return coo_matrix((data,(row,col)), self.shape)
 
-    def toarray(self, order='C'):
-        return self.tocoo(copy=False).toarray(order=order)
+    def toarray(self, order=None, out=None):
+        return self.tocoo(copy=False).toarray(order=order, out=out)
 
     ##############################################################
     # methods that examine or modify the internal data structure #

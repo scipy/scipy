@@ -230,8 +230,8 @@ class coo_matrix(_data_matrix):
         M,N = self.shape
         return coo_matrix((self.data, (self.col, self.row)), shape=(N,M), copy=copy)
 
-    def toarray(self, order='C'):
-        B = np.zeros(self.shape, dtype=self.dtype, order=order)
+    def toarray(self, order=None, out=None):
+        B = self._process_toarray_args(order, out)
         fortran = int(B.flags.f_contiguous)
         M,N = self.shape
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
