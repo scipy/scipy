@@ -1651,10 +1651,10 @@ def num_obs_y(Y):
 
 
 def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
-    r"""
-    Computes distance between each pair of observation vectors in the
-    Cartesian product of two collections of vectors. ``XA`` is a
-    :math:`m_A` by :math:`n` array while ``XB`` is a :math:`m_B` by
+    """
+    Computes distance between each pair of the two collections of inputs.
+
+    ``XA`` is a :math:`m_A` by :math:`n` array while ``XB`` is a :math:`m_B` by
     :math:`n` array. A :math:`m_A` by :math:`m_B` array is
     returned. An exception is thrown if ``XA`` and ``XB`` do not have
     the same number of columns.
@@ -1675,7 +1675,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     2. ``Y = cdist(XA, XB, 'minkowski', p)``
 
        Computes the distances using the Minkowski distance
-       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p \geq 1`.
+       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p \\geq 1`.
 
     3. ``Y = cdist(XA, XB, 'cityblock')``
 
@@ -1689,7 +1689,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          \sqrt{\sum {(u_i-v_i)^2 / V[x_i]}}.
+          \\sqrt{\\sum {(u_i-v_i)^2 / V[x_i]}}.
 
        V is the variance vector; V[i] is the variance computed over all
           the i'th components of the points. If not passed, it is
@@ -1706,11 +1706,11 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          1 - \frac{u \cdot v}
+          1 - \\frac{u \\cdot v}
                    {{||u||}_2 {||v||}_2}
 
        where :math:`||*||_2` is the 2-norm of its argument ``*``, and
-       :math:`u \cdot v` is the dot product of :math:`u` and :math:`v`.
+       :math:`u \\cdot v` is the dot product of :math:`u` and :math:`v`.
 
     7. ``Y = cdist(XA, XB, 'correlation')``
 
@@ -1718,11 +1718,11 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          1 - \frac{(u - \bar{u}) \cdot (v - \bar{v})}
-                   {{||(u - \bar{u})||}_2 {||(v - \bar{v})||}_2}
+          1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
+                   {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
 
-       where :math:`\bar{v}` is the mean of the elements of vector v,
-       and :math:`x \cdot y` is the dot product of :math:`x` and :math:`y`.
+       where :math:`\\bar{v}` is the mean of the elements of vector v,
+       and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
 
 
     8. ``Y = cdist(XA, XB, 'hamming')``
@@ -1748,7 +1748,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          d(u,v) = \max_i {|u_i-v_i|}.
+          d(u,v) = \\max_i {|u_i-v_i|}.
 
     11. ``Y = cdist(XA, XB, 'canberra')``
 
@@ -1757,7 +1757,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-         d(u,v) = \sum_i \frac{|u_i-v_i|}
+         d(u,v) = \\sum_i \\frac{|u_i-v_i|}
                               {|u_i|+|v_i|}.
 
     12. ``Y = cdist(XA, XB, 'braycurtis')``
@@ -1768,8 +1768,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-            d(u,v) = \frac{\sum_i (u_i-v_i)}
-                          {\sum_i (u_i+v_i)}
+            d(u,v) = \\frac{\\sum_i (u_i-v_i)}
+                          {\\sum_i (u_i+v_i)}
 
     13. ``Y = cdist(XA, XB, 'mahalanobis', VI=None)``
 
@@ -1841,7 +1841,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        would calculate the pair-wise distances between the vectors in
        X using the Python function sokalsneath. This would result in
-       sokalsneath being called :math:`{n \choose 2}` times, which
+       sokalsneath being called :math:`{n \\choose 2}` times, which
        is inefficient. Instead, the optimized C version is more
        efficient, and we call it using the following syntax.::
 
@@ -1877,6 +1877,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     -------
     Y : ndarray
         A :math:`m_A` by :math:`m_B` distance matrix.
+
     """
 
 #         21. Y = cdist(XA, XB, 'test_Y')

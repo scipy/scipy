@@ -232,9 +232,7 @@ def _randdm(pnts):
 
 def single(y):
     """
-    Performs single/min/nearest linkage on the condensed distance
-    matrix ``y``. See ``linkage`` for more information on the return
-    structure and algorithm.
+    Performs single/min/nearest linkage on the condensed distance matrix ``y``
 
     Parameters
     ----------
@@ -257,9 +255,7 @@ def single(y):
 
 def complete(y):
     """
-    Performs complete complete/max/farthest point linkage on the
-    condensed distance matrix ``y``. See ``linkage`` for more
-    information on the return structure and algorithm.
+    Performs complete/max/farthest point linkage on a condensed distance matrix
 
     Parameters
     ----------
@@ -273,6 +269,10 @@ def complete(y):
         A linkage matrix containing the hierarchical clustering. See
         the ``linkage`` function documentation for more information
         on its structure.
+
+    See Also
+    --------
+    linkage
 
     """
     return linkage(y, method='complete', metric='euclidean')
@@ -1978,7 +1978,6 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
         Note ``distance_sort`` and ``count_sort`` cannot both be
         ``True``.
-
     distance_sort : str or bool, optional
         For each node n, the order (visually, from left-to-right) n's
         two descendent links are plotted is determined by this
@@ -1992,7 +1991,6 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
         Note ``distance_sort`` and ``count_sort`` cannot both be
         ``True``.
-
     show_leaf_counts : bool, optional
          When ``True``, leaf nodes representing :math:`k>1` original
          observation are labeled with the number of observations they
@@ -2036,7 +2034,6 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
           # The text for the leaf nodes is going to be big so force
           # a rotation of 90 degrees.
           dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
-
     show_contracted : bool
         When ``True`` the heights of non-singleton nodes contracted
         into a leaf node are plotted as crosses along the link
