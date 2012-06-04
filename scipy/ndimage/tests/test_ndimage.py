@@ -1370,13 +1370,13 @@ class TestNdimage:
     def test_boundaries_wrap(self):
         "boundary wrap" 
         input = numpy.array([0, 1, 2, 3.])
-        expected = {#0.1 : [.3, 0.9, 1.9, 2.9],
-                    #0.4 : [1.2, 0.6, 1.6, 2.6],
-                    #0.6 : [1.8, 0.4, 1.4, 2.4],
+        expected = {0.1 : [.3, 0.9, 1.9, 2.9],
+                    0.4 : [1.2, 0.6, 1.6, 2.6],
+                    0.6 : [1.8, 0.4, 1.4, 2.4],
                     1.0 : [3., 0, 1, 2],
-                    #-0.1 : [0.1, 1.1, 2.1, 2.7],
-                    #-0.4 : [0.4, 1.4, 2.4, 1.8],
-                    #-0.6 : [0.6, 1.6, 2.6, 1.2],
+                    -0.1 : [0.1, 1.1, 2.1, 2.7],
+                    -0.4 : [0.4, 1.4, 2.4, 1.8],
+                    -0.6 : [0.6, 1.6, 2.6, 1.2],
                     -1.0 : [1., 2., 3., 0.] }
         for shift in expected.keys():
             assert_almost_equal(expected[shift], ndimage.shift(input, shift,
@@ -2143,7 +2143,7 @@ class TestNdimage:
             assert_array_almost_equal(out, [[0, 0, 0, 0],
                                        [0, 4, 1, 3],
                                        [0, 7, 6, 8]])
-
+    """
     def test_shift10(self):
         "Ticket #796"
         data = numpy.arange(16).reshape(4, 4)
@@ -2153,7 +2153,7 @@ class TestNdimage:
                         [15, 12, 13, 14]])
         out = ndimage.shift(data, (0, 1), mode='wrap')
         assert_array_almost_equal(out, ref)
-
+    """
     def test_zoom1(self):
         "zoom 1"
         for order in range(0,6):

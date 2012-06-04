@@ -38,6 +38,9 @@
 static void
 spline_coefficients(double x, int order, double *result)
 {
+    printf("IN spline coeff\n");
+    printf("x : %f, order : order %i\n", x, order);
+    
     int hh;
     double y, start;
 
@@ -116,6 +119,8 @@ spline_coefficients(double x, int order, double *result)
 static double
 map_coordinate(double in, npy_intp len, int mode)
 {
+    printf("in before fix %f", in);
+    
     switch (mode) {
     case NI_EXTEND_CONSTANT:        // constant mode
         if (in < 0 - EPSILON) {         
@@ -191,7 +196,7 @@ map_coordinate(double in, npy_intp len, int mode)
             }
             break;
         }
-        if (in > len -1 + EPSILON) {
+        if (in > len - 1 + EPSILON) {
             if (len <= 1) {
                 in = 0;
             } else {
@@ -202,6 +207,7 @@ map_coordinate(double in, npy_intp len, int mode)
         } 
 
     }
+    printf("in after fix %f\n", in);
 /*  
     // OLD CODE
     if (in < -0.4999) {
@@ -841,6 +847,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                 }
                 offsets[jj][kk] = istrides[jj] * start;
                 if (start < 0 || start + order >= idimensions[jj]) {
+                    printf("in here: cc: %f, start %f, kk %i, jj %i\n",
+                            cc, start, kk, jj);
                     edge_offsets[jj][kk] = (npy_intp*)malloc((order + 1) * sizeof(npy_intp));
                     if (!edge_offsets[jj][kk]) {
                         PyErr_NoMemory();
@@ -848,21 +856,27 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                     }
                     for(hh = 0; hh <= order; hh++) {
                         int idx = start + hh;
-                         int len = idimensions[jj];
-                        if (len <= 1) {
-                            idx = 0;
+                        if (mode == NI_EXTEND_REFLECT || mode == NI_EXTEND_WRAP){
+                            idx = (int) map_coordinate((double) idx, 
+                                                    idimensions[jj], mode);
                         } else {
-                            int s2 = 2 * len - 2;
-                            if (idx < 0) {
-                                idx = s2 * (int)(-idx / s2) + idx;
-                                idx = idx <= 1 - len ? idx + s2 : -idx;
-                            } else if (idx >= len) {
-                                idx -= s2 * (int)(idx / s2);
-                                if (idx >= len)
-                                    idx = s2 - idx;
+                            int len = idimensions[jj];
+                            if (len <= 1) {
+                                idx = 0;
+                            } else {
+                                int s2 = 2 * len - 2;
+                                if (idx < 0) {
+                                    idx = s2 * (int)(-idx / s2) + idx;
+                                    idx = idx <= 1 - len ? idx + s2 : -idx;
+                                } else if (idx >= len) {
+                                    idx -= s2 * (int)(idx / s2);
+                                    if (idx >= len)
+                                        idx = s2 - idx;
+                                }
                             }
                         }
                         edge_offsets[jj][kk][hh] = istrides[jj] * (idx - start);
+                        printf("hh: %i edge_offset set to %i\n", hh, edge_offsets[jj][kk][hh] );
                     }
                 }
                 if (order > 0) {
@@ -955,14 +969,18 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                     /* use normal offsets: */
                     idx += oo + foffsets[hh];
                 }
+                printf("idx: %i\n", idx);
                 idxs[hh] = idx;
                 ff += rank;
             }
         }
         if (!zero) {
+            printf("kk %i\n", kk);
+
             npy_intp *ff = fcoordinates;
             t = 0.0;
             for(hh = 0; hh < filter_size; hh++) {
+                printf("pi %f, idxs[hh] %f\n", pi, idxs[hh]);
                 double coeff = 0.0;
                 switch (NI_NormalizeType(input->descr->type_num)) {
                     CASE_INTERP_COEFF(coeff, pi, idxs[hh], Bool);
@@ -983,11 +1001,20 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                                                     "data type not supported");
                     goto exit;
                 }
-                /* calculate interpolated value: */
+                /* calculate interpolated value: */ 
+                if (kk == 0) {printf("coeff prefore splvals%f\n", coeff);}
                 for(jj = 0; jj < rank; jj++)
-                    if (order > 0)
-                        coeff *= splvals[jj][io.coordinates[jj]][ff[jj]];
+                    if (order > 0) {
+                        coeff *= splvals[jj][io.coordinates[jj]][ff[jj]];   
+                        if (kk == 0) {
+                            printf("io.coordinates[jj]:%i\n", 
+                                    io.coordinates[jj]);
+                            printf("ff[jj]: %i\n", ff[jj]);
+
+                            printf("coeff %f\n", coeff);}
+                    }
                 t += coeff;
+                if (kk == 0) {printf("t %f\n", t);}
                 ff += rank;
             }
         } else {
