@@ -555,6 +555,7 @@ class _cs_matrix(_data_matrix):
         return coo_matrix((data,(row,col)), self.shape)
 
     def toarray(self, order=None, out=None):
+        """See the docstring for `spmatrix.toarray`."""
         return self.tocoo(copy=False).toarray(order=order, out=out)
 
     ##############################################################

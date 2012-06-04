@@ -231,6 +231,7 @@ class coo_matrix(_data_matrix):
         return coo_matrix((self.data, (self.col, self.row)), shape=(N,M), copy=copy)
 
     def toarray(self, order=None, out=None):
+        """See the docstring for `spmatrix.toarray`."""
         B = self._process_toarray_args(order, out)
         fortran = int(B.flags.f_contiguous)
         M,N = self.shape

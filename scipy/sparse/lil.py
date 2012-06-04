@@ -432,6 +432,7 @@ class lil_matrix(spmatrix):
         return new
 
     def toarray(self, order=None, out=None):
+        """See the docstring for `spmatrix.toarray`."""
         d = self._process_toarray_args(order, out)
         for i, row in enumerate(self.rows):
             for pos, j in enumerate(row):
