@@ -468,11 +468,69 @@ class spmatrix(object):
     #def __array__(self):
     #    return self.toarray()
 
-    def todense(self):
-        return np.asmatrix(self.toarray())
+    def todense(self, order=None, out=None):
+        """
+        Return a dense matrix representation of this matrix.
 
-    def toarray(self):
-        return self.tocoo().toarray()
+        Parameters
+        ----------
+        order : {'C', 'F'}, optional
+            Whether to store multi-dimensional data in C (row-major)
+            or Fortran (column-major) order in memory. The default
+            is 'None', indicating the NumPy default of C-ordered.
+            Cannot be specified in conjunction with the `out`
+            argument.
+
+        out : ndarray, 2-dimensional, optional
+            If specified, uses this array (or `numpy.matrix`) as the
+            output buffer instead of allocating a new array to
+            return. The provided array must have the same shape and
+            dtype as the sparse matrix on which you are calling the
+            method.
+
+        Returns
+        -------
+        arr : numpy.matrix, 2-dimensional
+            A NumPy matrix object with the same shape and containing
+            the same data represented by the sparse matrix, with the
+            requested memory order. If `out` was passed and was an
+            array (rather than a `numpy.matrix`), it will be filled
+            with the appropriate values and returned wrapped in a
+            `numpy.matrix` object that shares the same memory.
+        """
+        return np.asmatrix(self.toarray(order=order, out=out))
+
+    def toarray(self, order=None, out=None):
+        """
+        Return a dense ndarray representation of this matrix.
+
+        Parameters
+        ----------
+        order : {'C', 'F'}, optional
+            Whether to store multi-dimensional data in C (row-major)
+            or Fortran (column-major) order in memory. The default
+            is 'None', indicating the NumPy default of C-ordered.
+            Cannot be specified in conjunction with the `out`
+            argument.
+
+        out : ndarray, 2-dimensional, optional
+            If specified, uses this array as the output buffer
+            instead of allocating a new array to return. The provided
+            array must have the same shape and dtype as the sparse
+            matrix on which you are calling the method. For most
+            sparse types, `out` is required to be memory contiguous
+            (either C or Fortran ordered).
+
+        Returns
+        -------
+        arr : ndarray, 2-dimensional
+            An array with the same shape and containing the same
+            data represented by the sparse matrix, with the requested
+            memory order. If `out` was passed, the same object is
+            returned after being modified in-place to contain the
+            appropriate values.
+        """
+        return self.tocoo().toarray(order=order, out=out)
 
     def todok(self):
         return self.tocoo().todok()
@@ -555,6 +613,19 @@ class spmatrix(object):
             max_index = min(M, N-k, len(values))
             for i,v in enumerate(values[:max_index]):
                 self[i, i + k] = v
+
+    def _process_toarray_args(self, order, out):
+        if out is not None:
+            if order is not None:
+                raise ValueError('order cannot be specified if out '
+                                 'is not None')
+            if out.shape != self.shape or out.dtype != self.dtype:
+                raise ValueError('out array must be same dtype and shape as '
+                                 'sparse matrix')
+            out[...] = 0.
+            return out
+        else:
+            return np.zeros(self.shape, dtype=self.dtype, order=order)
 
 
 def isspmatrix(x):
