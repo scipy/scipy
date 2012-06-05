@@ -391,7 +391,7 @@ def laplace(input, output = None, mode = "reflect", cval = 0.0):
 
 @docfiller
 def gaussian_laplace(input, sigma, output = None, mode = "reflect",
-                     cval = 0.0):
+                     cval = 0.0, **kwargs):
     """Calculate a multidimensional laplace filter using gaussian
     second derivatives.
 
@@ -405,14 +405,17 @@ def gaussian_laplace(input, sigma, output = None, mode = "reflect",
     %(output)s
     %(mode)s
     %(cval)s
+    Extra keyword arguments will be passed to gaussian_filter().
     """
     input = numpy.asarray(input)
-    def derivative2(input, axis, output, mode, cval, sigma):
+    def derivative2(input, axis, output, mode, cval, sigma, **kwargs):
         order = [0] * input.ndim
         order[axis] = 2
-        return gaussian_filter(input, sigma, order, output, mode, cval)
+        return gaussian_filter(input, sigma, order, output, mode, cval,
+                               **kwargs)
     return generic_laplace(input, derivative2, output, mode, cval,
-                           extra_arguments = (sigma,))
+                           extra_arguments = (sigma,),
+                           extra_keywords = kwargs)
 
 
 @docfiller
@@ -467,7 +470,7 @@ def generic_gradient_magnitude(input, derivative, output = None,
 
 @docfiller
 def gaussian_gradient_magnitude(input, sigma, output = None,
-                mode = "reflect", cval = 0.0):
+                mode = "reflect", cval = 0.0, **kwargs):
     """Calculate a multidimensional gradient magnitude using gaussian
     derivatives.
 
@@ -481,14 +484,17 @@ def gaussian_gradient_magnitude(input, sigma, output = None,
     %(output)s
     %(mode)s
     %(cval)s
+    Extra keyword arguments will be passed to gaussian_filter().
     """
     input = numpy.asarray(input)
-    def derivative(input, axis, output, mode, cval, sigma):
+    def derivative(input, axis, output, mode, cval, sigma, **kwargs):
         order = [0] * input.ndim
         order[axis] = 1
-        return gaussian_filter(input, sigma, order, output, mode, cval)
+        return gaussian_filter(input, sigma, order, output, mode,
+                               cval, **kwargs)
     return generic_gradient_magnitude(input, derivative, output, mode,
-                            cval, extra_arguments = (sigma,))
+                                      cval, extra_arguments = (sigma,),
+                                      extra_keywords = kwargs)
 
 
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
