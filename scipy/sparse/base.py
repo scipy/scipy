@@ -517,7 +517,9 @@ class spmatrix(object):
             If specified, uses this array as the output buffer
             instead of allocating a new array to return. The provided
             array must have the same shape and dtype as the sparse
-            matrix on which you are calling the method.
+            matrix on which you are calling the method. For most
+            sparse types, `out` is required to be memory contiguous
+            (either C or Fortran ordered).
 
         Returns
         -------

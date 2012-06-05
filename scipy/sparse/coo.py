@@ -234,6 +234,8 @@ class coo_matrix(_data_matrix):
         """See the docstring for `spmatrix.toarray`."""
         B = self._process_toarray_args(order, out)
         fortran = int(B.flags.f_contiguous)
+        if not fortran and not B.flags.c_contiguous:
+            raise ValueError("Output array must be C or F contiguous")
         M,N = self.shape
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     B.ravel(order='A'), fortran)
