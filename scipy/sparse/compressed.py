@@ -554,8 +554,9 @@ class _cs_matrix(_data_matrix):
         from coo import coo_matrix
         return coo_matrix((data,(row,col)), self.shape)
 
-    def toarray(self):
-        return self.tocoo(copy=False).toarray()
+    def toarray(self, order=None, out=None):
+        """See the docstring for `spmatrix.toarray`."""
+        return self.tocoo(copy=False).toarray(order=order, out=out)
 
     ##############################################################
     # methods that examine or modify the internal data structure #

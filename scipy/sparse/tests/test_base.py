@@ -208,8 +208,33 @@ class _TestCommon:
     #    assert_equal( array(self.datsp), self.dat )
 
     def test_todense(self):
+        # Check C-contiguous (default).
         chk = self.datsp.todense()
-        assert_array_equal(chk,self.dat)
+        assert_array_equal(chk, self.dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check C-contiguous (with arg).
+        chk = self.datsp.todense(order='C')
+        assert_array_equal(chk, self.dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check F-contiguous (with arg).
+        chk = self.datsp.todense(order='F')
+        assert_array_equal(chk, self.dat)
+        assert_(not chk.flags.c_contiguous)
+        assert_(chk.flags.f_contiguous)
+        # Check with out argument (array).
+        out = np.zeros(self.datsp.shape, dtype=self.datsp.dtype)
+        chk = self.datsp.todense(out=out)
+        assert_array_equal(self.dat, out)
+        assert_array_equal(self.dat, chk)
+        assert_(chk.base is out)
+        # Check with out array (matrix).
+        out = np.asmatrix(np.zeros(self.datsp.shape, dtype=self.datsp.dtype))
+        chk = self.datsp.todense(out=out)
+        assert_array_equal(self.dat, out)
+        assert_array_equal(self.dat, chk)
+        assert_(chk is out)
         a = matrix([1.,2.,3.])
         dense_dot_dense = a * self.dat
         check = a * self.datsp.todense()
@@ -220,8 +245,29 @@ class _TestCommon:
         assert_array_equal(dense_dot_dense, check2)
 
     def test_toarray(self):
+        # Check C-contiguous (default).
         dat = asarray(self.dat)
         chk = self.datsp.toarray()
+        assert_array_equal(chk, dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check C-contiguous (with arg).
+        chk = self.datsp.toarray(order='C')
+        assert_array_equal(chk, dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check F-contiguous (with arg).
+        chk = self.datsp.toarray(order='F')
+        assert_array_equal(chk, dat)
+        assert_(not chk.flags.c_contiguous)
+        assert_(chk.flags.f_contiguous)
+        # Check with output arg.
+        out = np.zeros(self.datsp.shape, dtype=self.datsp.dtype)
+        self.datsp.toarray(out=out)
+        assert_array_equal(chk, dat)
+        # Check that things are fine when we don't initialize with zeros.
+        out[...] = 1.
+        self.datsp.toarray(out=out)
         assert_array_equal(chk, dat)
         a = array([1.,2.,3.])
         dense_dot_dense = dot(a, dat)
