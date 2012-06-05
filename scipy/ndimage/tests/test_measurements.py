@@ -1,6 +1,6 @@
 from numpy.testing import assert_, assert_array_almost_equal, assert_equal, \
                           assert_almost_equal, assert_array_equal, \
-                          run_module_suite, TestCase
+                          assert_raises, run_module_suite, TestCase
 import numpy as np
 
 import scipy.ndimage as ndimage
@@ -260,6 +260,30 @@ def test_label13():
                     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
         assert_array_almost_equal(out, expected)
         assert_equal(n, 1)
+
+def test_label_output_typed():
+    "test label with specified output with type"
+    data = np.ones([5])
+    for t in types:
+        output = np.zeros([5], dtype=t)
+        n = ndimage.label(data, output=output)
+        assert_array_almost_equal(output, 1)
+        assert_equal(n, 1)
+
+def test_label_output_dtype():
+    "test label with specified output dtype"
+    data = np.ones([5])
+    for t in types:
+        output, n = ndimage.label(data, output=t)
+        assert_array_almost_equal(output, 1)
+        assert output.dtype == t
+
+def test_label_output_wrong_size():
+    "test label with output of wrong size"
+    data = np.ones([5])
+    for t in types:
+        output = np.zeros([10], t)
+        assert_raises(RuntimeError, ndimage.label, data, output=output)
 
 def test_find_objects01():
     "find_objects 1"
