@@ -178,7 +178,7 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
 
 @docfiller
 def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
-                      mode="reflect", cval=0.0):
+                      mode="reflect", cval=0.0, truncate=4.0):
     """One-dimensional Gaussian filter.
 
     Parameters
@@ -195,6 +195,9 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     %(output)s
     %(mode)s
     %(cval)s
+    truncate : float
+        Truncate the filter at this many standard deviations.
+        Default is 4.0.
 
     Returns
     -------
@@ -204,9 +207,8 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     if order not in range(4):
         raise ValueError('Order outside 0..3 not implemented')
     sd = float(sigma)
-    # make the length of the filter equal to 4 times the standard
-    # deviations:
-    lw = int(4.0 * sd + 0.5)
+    # make the radius of the filter equal to truncate standard deviations
+    lw = int(truncate * sd + 0.5)
     weights = [0.0] * (2 * lw + 1)
     weights[lw] = 1.0
     sum = 1.0
@@ -247,7 +249,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
 @docfiller
 def gaussian_filter(input, sigma, order=0, output=None,
-                  mode="reflect", cval=0.0):
+                  mode="reflect", cval=0.0, truncate=4.0):
     """Multidimensional Gaussian filter.
 
     Parameters
@@ -268,6 +270,9 @@ def gaussian_filter(input, sigma, order=0, output=None,
     %(output)s
     %(mode)s
     %(cval)s
+    truncate : float
+        Truncate the filter at this many standard deviations.
+        Default is 4.0.
 
     Returns
     -------
@@ -296,7 +301,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
     if len(axes) > 0:
         for axis, sigma, order in axes:
             gaussian_filter1d(input, sigma, axis, order, output,
-                              mode, cval)
+                              mode, cval, truncate)
             input = output
     else:
         output[...] = input[...]
