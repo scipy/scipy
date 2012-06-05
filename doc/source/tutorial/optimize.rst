@@ -523,22 +523,37 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
 Root finding
 ------------
 
-
 Sets of equations
 ^^^^^^^^^^^^^^^^^
 
 To find the roots of a polynomial, the command :obj:`roots
 <scipy.roots>` is useful. To find a root of a set of non-linear
-equations, the command :obj:`fsolve` is needed. For example, the
-following example finds the roots of the single-variable
-transcendental equation
+equations, the function :func:`root` is needed.
+
+The following example finds a root of the single-variable transcendental
+equation
 
 .. math::
    :nowrap:
 
     \[ x+2\cos\left(x\right)=0,\]
 
-and the set of non-linear equations
+::
+
+    >>> def func(x):
+    ...     return x + 2 * np.cos(x)
+
+    >>> from scipy.optimize import root
+    >>> sol = root(func, 0.3)
+    >>> sol.x
+    array([-1.02986653])
+    >>> sol.fun
+    array([ -6.66133815e-16])
+
+Several methods are available through the :func:`root` interface, the
+default is `hybr` and uses the hybrid method of Powell from MINPACK.
+
+Consider now a set of non-linear equations
 
 .. math::
    :nowrap:
@@ -548,24 +563,21 @@ and the set of non-linear equations
     x_{0}x_{1}-x_{1} & = & 5.
     \end{eqnarray*}
 
-The results are :math:`x=-1.0299` and :math:`x_{0}=6.5041,\, x_{1}=0.9084` .
+We define the objective function so that it also returns the Jacobian and
+indicate this by setting the `jac` parameter to `True`. Also, the
+Levenberg-Marquardt solver is used here.
 
-    >>> def func(x):
-    ...     return x + 2*cos(x)
+::
 
     >>> def func2(x):
-    ...     out = [x[0]*cos(x[1]) - 4]
-    ...     out.append(x[1]*x[0] - x[1] - 5)
-    ...     return out
-
-    >>> from scipy.optimize import fsolve
-    >>> x0 = fsolve(func, 0.3)
-    >>> print x0
-    -1.02986652932
-
-    >>> x02 = fsolve(func2, [1, 1])
-    >>> print x02
-    [ 6.50409711  0.90841421]
+    ...     f = [x[0] * np.cos(x[1]) - 4,
+    ...          x[1]*x[0] - x[1] - 5]
+    ...     df = np.array([[np.cos(x[1]), -x[0] * np.sin(x[1])],
+    ...                    [x[1], x[0] - 1]])
+    ...     return f, df
+    >>> sol = root(func2, [1, 1] jac=True, method='lm')
+    >>> sol.x
+    array([ 6.50409711,  0.90841421])
 
 
 Scalar function root finding
