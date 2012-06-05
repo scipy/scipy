@@ -5,7 +5,7 @@ import warnings
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
 from numpy.testing.utils import WarningManager
-from numpy import array, diff, linspace, meshgrid, ones, pi, shape
+from numpy import array, diff, linspace, meshgrid, ones, pi, roll, shape
 from scipy.interpolate.fitpack2 import UnivariateSpline, \
     LSQBivariateSpline, SmoothBivariateSpline, RectBivariateSpline, \
     LSQSphereBivariateSpline, SmoothSphereBivariateSpline, \
@@ -77,6 +77,7 @@ class TestUnivariateSpline(TestCase):
 
 
 class TestLSQBivariateSpline(TestCase):
+    # NOTE: The systems in this test class are rank-deficient
     def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
@@ -201,78 +202,49 @@ class TestSmoothBivariateSpline(TestCase):
         assert_almost_equal(lut.integral(tx[0], tx[-2], ty[0], ty[-2]), trpz)
 
 class TestLSQSphereBivariateSpline(TestCase):
-    def test_linear_constant(self):
-        # define the knots
-        knotst, knotsp = linspace(0., pi, 7), linspace(0., 2.*pi, 9)
-        knotst[0] += .001
-        knotsp[0] += .001
-        knotsp[-1] -= .001
-        knotst[-1] -= .001
+    def setUp(self):
         # define the input data and coordinates
-        lats, lons = linspace(0., pi, 7), linspace(0., 2*pi, 9)
-        data = ones((lons.shape[0], lats.shape[0]))
-        data[0,:], data[-1,:], data[:,0], data[:,-1] = 0., 0., 0., 0.
-        data[1,1:-1], data[-2,1:-1], data[1:-1,1], data[1:-1,-2] = 1., 1., 1., \
-                                                                   1.
-        data[2,2:-3], data[-3,2:-3], data[2:-3,2], data[2:-3,-3], data[2:-2,4] = 2., 2., 2., 2., 2.
-        data[3:6,3] = 3.
-        data = data.T
-        data = data[:,:-1]
-        lons = lons[:-1]
-        # define the coordinates we will test
-        new_lats = lats
-        new_lons = lons
-        lats, lons = meshgrid(lats, lons)
+        ntheta, nphi = 70, 90
+        theta = linspace(0.5/(ntheta - 1), 1 - 0.5/(ntheta - 1), ntheta) * pi
+        phi = linspace(0.5/(nphi - 1), 1 - 0.5/(nphi - 1), nphi) * 2. * pi
+        data = ones((theta.shape[0], phi.shape[0]))
+        # define knots and extract data values at the knots
+        knotst = theta[::5]
+        knotsp = phi[::5]
+        knotdata = data[::5, ::5]
         # calculate spline coefficients
+        lats, lons = meshgrid(theta, phi)
         lut_lsq = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
                                            data.T.ravel(), knotst, knotsp)
-        assert_almost_equal(lut_lsq.get_residual(), 0.0)
-        assert_array_almost_equal(lut_lsq(new_lats, new_lons), data)
+        self.lut_lsq = lut_lsq
+        self.data = knotdata
+        self.new_lons, self.new_lats = knotsp, knotst
 
+    def test_linear_constant(self):
+        assert_almost_equal(self.lut_lsq.get_residual(), 0.0)
+        assert_array_almost_equal(self.lut_lsq(self.new_lats, self.new_lons),
+                                  self.data)
 
     def test_empty_input(self):
-        # define the knots
-        knotst, knotsp = linspace(0., pi, 7), linspace(0., 2.*pi, 9)
-        knotst[0] += .001
-        knotsp[0] += .001
-        knotsp[-1] -= .001
-        knotst[-1] -= .001
-        # define the input data and coordinates
-        lats, lons = linspace(0., pi, 7), linspace(0., 2*pi, 9)
-        data = ones((lons.shape[0], lats.shape[0]))
-        data[0,:], data[-1,:], data[:,0], data[:,-1] = 0., 0., 0., 0.
-        data[1,1:-1], data[-2,1:-1], data[1:-1,1], data[1:-1,-2] = 1., 1., 1., \
-                                                                   1.
-        data[2,2:-3], data[-3,2:-3], data[2:-3,2], data[2:-3,-3], data[2:-2,4] = 2., 2., 2., 2., 2.
-        data[3:6,3] = 3.
-        data = data.T
-        data = data[:,:-1]
-        lons = lons[:-1]
-        # define the coordinates we will test
-        new_lats = lats
-        new_lons = lons
-        lats, lons = meshgrid(lats, lons)
-        # calculate spline coefficients
-        lut_lsq = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
-                                           data.T.ravel(), knotst, knotsp)
-        assert_array_almost_equal(lut_lsq([], []), array([]))
+        assert_array_almost_equal(self.lut_lsq([], []), array([]))
 
 
 class TestSmoothSphereBivariateSpline(TestCase):
-    def test_linear_constant(self):
-        theta = array([.25*pi,.25*pi,.25*pi,.5*pi,.5*pi,.5*pi,.75*pi,.75*pi,.75*pi])
-        phi = array([.5*pi,pi,1.5*pi,.5*pi,pi,1.5*pi,.5*pi,pi,1.5*pi])
-        r = array([3,3,3,3,3,3,3,3,3])
-        lut = SmoothSphereBivariateSpline(theta,phi,r,s=1E10)
-        assert_almost_equal(lut.get_residual(),0.0)
-        assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[3,3],[3,3],[3,3]])
+    def setUp(self):
+        theta = array([.25*pi, .25*pi, .25*pi, .5*pi, .5*pi, .5*pi, .75*pi,
+                       .75*pi, .75*pi])
+        phi = array([.5 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi, .5 * pi, pi,
+                     1.5 * pi])
+        r = array([3, 3, 3, 3, 3, 3, 3, 3, 3])
+        self.lut = SmoothSphereBivariateSpline(theta, phi, r, s=1E10)
 
-    def test_empty_constant(self):
-        theta = array([.25*pi,.25*pi,.25*pi,.5*pi,.5*pi,.5*pi,.75*pi,.75*pi,.75*pi])
-        phi = array([.5*pi,pi,1.5*pi,.5*pi,pi,1.5*pi,.5*pi,pi,1.5*pi])
-        r = array([3,3,3,3,3,3,3,3,3])
-        lut = SmoothSphereBivariateSpline(theta,phi,r,s=1E10)
-        assert_array_almost_equal(lut([],[]), array([]))
+    def test_linear_constant(self):
+        assert_almost_equal(self.lut.get_residual(), 0.)
+        assert_array_almost_equal(self.lut([1, 1.5, 2],[1, 1.5]),
+                                  [[3, 3], [3, 3], [3, 3]])
+
+    def test_empty_input(self):
+        assert_array_almost_equal(self.lut([], []), array([]))
 
 
 class TestRectBivariateSpline(TestCase):
