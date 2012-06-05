@@ -27,9 +27,9 @@ The module contains:
 4. Scalar univariate functions minimizers (:func:`minimize_scalar`) and
    root finders (:func:`newton`)
 
-5. Multivariate equation system solvers (:func:`fsolve`)
-
-6. Large-scale multivariate equation system solvers (e.g. :func:`newton_krylov`)
+5. Multivariate equation system solvers (:func:`root`) using a variety of
+   algorithms (e.g. hybrid Powell, Levenberg-Marquardt or large-scale
+   methods such as Newton-Krylov).
 
 Below, several examples demonstrate their basic usage.
 
@@ -609,10 +609,10 @@ starting point.
 Root finding: Large problems
 ----------------------------
 
-The :obj:`fsolve` function cannot deal with a very large number of
-variables (*N*), as it needs to calculate and invert a dense *N x N*
-Jacobian matrix on every Newton step. This becomes rather inefficent
-when *N* grows.
+Methods `hybr` and `lm` in :func:`root` function cannot deal with a very
+large number of variables (*N*), as they need to calculate and invert a
+dense *N x N* Jacobian matrix on every Newton step. This becomes rather
+inefficent when *N* grows.
 
 Consider for instance the following problem: we need to solve the
 following integrodifferential equation on the square
@@ -632,30 +632,29 @@ P(x-h,y))/h^2`. The problem is then equivalent to finding the root of
 some function *residual(P)*, where *P* is a vector of length
 :math:`N_x N_y`.
 
-Now, because :math:`N_x N_y` can be large, :obj:`fsolve` will take a
-long time to solve this problem.  The solution can however be found
-using one of the large-scale solvers in :mod:`scipy.optimize`, for
-example :obj:`newton_krylov`, :obj:`broyden2`, or
-:obj:`anderson`. These use what is known as the inexact Newton method,
-which instead of computing the Jacobian matrix exactly, forms an
-approximation for it.
+Now, because :math:`N_x N_y` can be large, methods `hybr` or `lm` in
+:func:`root` will take a long time to solve this problem. The solution
+can however be found using one of the large-scale solvers, for example
+`krylov`, `broyden2`, or `anderson`. These use what is known as the inexact
+Newton method, which instead of computing the Jacobian matrix exactly,
+forms an approximation for it.
 
 The problem we have can now be solved as follows:
 
 .. plot::
 
-   import numpy as np
-   from scipy.optimize import newton_krylov
-   from numpy import cosh, zeros_like, mgrid, zeros
+    import numpy as np
+    from scipy.optimize import root
+    from numpy import cosh, zeros_like, mgrid, zeros
 
-   # parameters
-   nx, ny = 75, 75
-   hx, hy = 1./(nx-1), 1./(ny-1)
+    # parameters
+    nx, ny = 75, 75
+    hx, hy = 1./(nx-1), 1./(ny-1)
 
-   P_left, P_right = 0, 0
-   P_top, P_bottom = 1, 0
+    P_left, P_right = 0, 0
+    P_top, P_bottom = 1, 0
 
-   def residual(P):
+    def residual(P):
        d2x = zeros_like(P)
        d2y = zeros_like(P)
 
@@ -669,26 +668,26 @@ The problem we have can now be solved as follows:
 
        return d2x + d2y + 5*cosh(P).mean()**2
 
-   # solve
-   guess = zeros((nx, ny), float)
-   sol = newton_krylov(residual, guess, verbose=1)
-   #sol = broyden2(residual, guess, max_rank=50, verbose=1)
-   #sol = anderson(residual, guess, M=10, verbose=1)
-   print 'Residual', abs(residual(sol)).max()
+    # solve
+    guess = zeros((nx, ny), float)
+    sol = root(residual, guess, method='krylov', options={'disp': True})
+    #sol = root(residual, guess, method='broyden2', options={'disp': True, 'max_rank': 50})
+    #sol = root(residual, guess, method='anderson', options={'disp': True, 'M': 10})
+    print 'Residual', abs(residual(sol.x)).max()
 
-   # visualize
-   import matplotlib.pyplot as plt
-   x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
-   plt.pcolor(x, y, sol)
-   plt.colorbar()
-   plt.show()
+    # visualize
+    import matplotlib.pyplot as plt
+    x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
+    plt.pcolor(x, y, sol.x)
+    plt.colorbar()
+    plt.show()
 
 
 Still too slow? Preconditioning.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When looking for the zero of the functions :math:`f_i({\bf x}) = 0`,
-*i = 1, 2, ..., N*, the :obj:`newton_krylov` solver spends most of its
+*i = 1, 2, ..., N*, the `krylov` solver spends most of its
 time inverting the Jacobian matrix,
 
 .. math:: J_{ij} = \frac{\partial f_i}{\partial x_j} .
@@ -700,9 +699,9 @@ linear inversion problem. The idea is that instead of solving
 matrix :math:`MJ` is "closer" to the identity matrix than :math:`J`
 is, the equation should be easier for the Krylov method to deal with.
 
-The matrix *M* can be passed to :obj:`newton_krylov` as the *inner_M*
-parameter. It can be a (sparse) matrix or a
-:obj:`scipy.sparse.linalg.LinearOperator` instance.
+The matrix *M* can be passed to :func:`root` with method `krylov` as an
+option *inner_M* in the `jac_options` field. It can be a (sparse) matrix
+or a :obj:`scipy.sparse.linalg.LinearOperator` instance.
 
 For the problem in the previous section, we note that the function to
 solve consists of two parts: the first one is application of the
