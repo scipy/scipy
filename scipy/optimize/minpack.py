@@ -222,7 +222,7 @@ def _root_hybr(func, x0, args=(), jac=None, options=None):
                  "ten iterations.", ValueError],
               'unknown': ["An error occurred.", TypeError]}
 
-    if (status != 1 and not options.get('full_output', False)):
+    if (status != 1 and not options.get('full_output', full_output)):
         if status in [2,3,4,5]:
             msg = errors[status][0]
             warnings.warn(msg, RuntimeWarning)
