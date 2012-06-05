@@ -148,16 +148,33 @@ def label(input, structure=None, output=None):
             raise  RuntimeError('structure dimensions must be equal to 3')
     if not structure.flags.contiguous:
         structure = structure.copy()
+    requested_output = None
+    requested_dtype = None
     if isinstance(output, numpy.ndarray):
         if output.dtype.type != numpy.int32:
-            raise RuntimeError('output type must be int32')
+            if output.shape != input.shape:
+                raise RuntimeError("output shape not correct")
+            # _ndimage.label() needs np.int32
+            requested_output = output
+            output = numpy.int32
+        else:
+            # output will be written directly
+            pass
     else:
+        requested_dtype = output
         output = numpy.int32
     output, return_value = _ni_support._get_output(output, input)
     max_label = _nd_image.label(input, structure, output)
     if return_value is None:
+        # result was written in-place
+        return max_label
+    elif requested_output is not None:
+        # original output was not int32
+        requested_output[...] = output[...]
         return max_label
     else:
+        if requested_dtype is not None:
+            return_value = return_value.astype(requested_dtype)
         return return_value, max_label
 
 def find_objects(input, max_label=0):
