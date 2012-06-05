@@ -10,9 +10,9 @@ Functions
 
 """
 
+import numpy as np
 from scipy.optimize import _cobyla
 from optimize import Result
-from numpy import copy
 from warnings import warn
 
 __all__ = ['fmin_cobyla']
@@ -233,10 +233,23 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(), options=None):
             con[k] = c['fun'](x, *c['args'])
         return f
 
-    xopt = _cobyla.minimize(calcfc, m=m, x=copy(x0), rhobeg=rhobeg,
-                            rhoend=rhoend, iprint=iprint, maxfun=maxfun)
+    info = np.zeros(4, np.float64)
+    xopt, info = _cobyla.minimize(calcfc, m=m, x=np.copy(x0), rhobeg=rhobeg,
+                                  rhoend=rhoend, iprint=iprint, maxfun=maxfun,
+                                  dinfo=info)
 
-    return Result(x=xopt)
+    return Result(x=xopt,
+                  status=info[0],
+                  success=info[0]==1,
+                  message={1: 'Optimization terminated successfully.',
+                           2: 'Maximum number of function evaluations has '
+                              'been exceeded.',
+                           3: 'Rounding errors are becoming damaging in '
+                              'COBYLA subroutine.'
+                          }.get(info[0], 'Unknown exit status.'),
+                  nfev=int(info[1]),
+                  fun=info[2],
+                  maxcv=info[3])
 
 if __name__ == '__main__':
 
