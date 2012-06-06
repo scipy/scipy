@@ -550,10 +550,12 @@ starting point.
 Sets of equations
 ^^^^^^^^^^^^^^^^^
 
-Find a root of a set of non-linear equations can be achieve using the
-function :func:`root`.
+Finding a root of a set of non-linear equations can be achieve using the
+:func:`root` function. Several methods are available, amongst which ``hybr``
+(the default) and ``lm`` which respectively use the hybrid method of Powell
+and the Levenberg-Marquardt method from MINPACK.
 
-The following example finds a root of the single-variable transcendental
+The following example considers the single-variable transcendental
 equation
 
 .. math::
@@ -561,21 +563,17 @@ equation
 
     \[ x+2\cos\left(x\right)=0,\]
 
-::
+a root of which can be found as follows::
 
     >>> import numpy as np
     >>> from scipy.optimize import root
     >>> def func(x):
     ...     return x + 2 * np.cos(x)
-
     >>> sol = root(func, 0.3)
     >>> sol.x
     array([-1.02986653])
     >>> sol.fun
     array([ -6.66133815e-16])
-
-Several methods are available through the :func:`root` interface, the
-default is `hybr` and uses the hybrid method of Powell from MINPACK.
 
 Consider now a set of non-linear equations
 
@@ -588,7 +586,7 @@ Consider now a set of non-linear equations
     \end{eqnarray*}
 
 We define the objective function so that it also returns the Jacobian and
-indicate this by setting the `jac` parameter to `True`. Also, the
+indicate this by setting the ``jac`` parameter to ``True``. Also, the
 Levenberg-Marquardt solver is used here.
 
 ::
@@ -599,7 +597,7 @@ Levenberg-Marquardt solver is used here.
     ...     df = np.array([[np.cos(x[1]), -x[0] * np.sin(x[1])],
     ...                    [x[1], x[0] - 1]])
     ...     return f, df
-    >>> sol = root(func2, [1, 1] jac=True, method='lm')
+    >>> sol = root(func2, [1, 1], jac=True, method='lm')
     >>> sol.x
     array([ 6.50409711,  0.90841421])
 
@@ -607,10 +605,10 @@ Levenberg-Marquardt solver is used here.
 Root finding for large problems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Methods `hybr` and `lm` in :func:`root` function cannot deal with a very
-large number of variables (*N*), as they need to calculate and invert a
-dense *N x N* Jacobian matrix on every Newton step. This becomes rather
-inefficent when *N* grows.
+Methods ``hybr`` and ``lm`` in :func:`root` cannot deal with a very large
+number of variables (*N*), as they need to calculate and invert a dense *N
+x N* Jacobian matrix on every Newton step. This becomes rather inefficient
+when *N* grows.
 
 Consider for instance the following problem: we need to solve the
 following integrodifferential equation on the square
@@ -627,15 +625,15 @@ by approximating the continuous function *P* by its values on a grid,
 *h*. The derivatives and integrals can then be approximated; for
 instance :math:`\partial_x^2 P(x,y)\approx{}(P(x+h,y) - 2 P(x,y) +
 P(x-h,y))/h^2`. The problem is then equivalent to finding the root of
-some function *residual(P)*, where *P* is a vector of length
+some function ``residual(P)``, where ``P`` is a vector of length
 :math:`N_x N_y`.
 
-Now, because :math:`N_x N_y` can be large, methods `hybr` or `lm` in
-:func:`root` will take a long time to solve this problem. The solution
-can however be found using one of the large-scale solvers, for example
-`krylov`, `broyden2`, or `anderson`. These use what is known as the inexact
-Newton method, which instead of computing the Jacobian matrix exactly,
-forms an approximation for it.
+Now, because :math:`N_x N_y` can be large, methods ``hybr`` or ``lm`` in
+:func:`root` will take a long time to solve this problem. The solution can
+however be found using one of the large-scale solvers, for example
+``krylov``, ``broyden2``, or ``anderson``. These use what is known as the
+inexact Newton method, which instead of computing the Jacobian matrix
+exactly, forms an approximation for it.
 
 The problem we have can now be solved as follows:
 
@@ -685,7 +683,7 @@ Still too slow? Preconditioning.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When looking for the zero of the functions :math:`f_i({\bf x}) = 0`,
-*i = 1, 2, ..., N*, the `krylov` solver spends most of its
+*i = 1, 2, ..., N*, the ``krylov`` solver spends most of its
 time inverting the Jacobian matrix,
 
 .. math:: J_{ij} = \frac{\partial f_i}{\partial x_j} .
@@ -697,8 +695,8 @@ linear inversion problem. The idea is that instead of solving
 matrix :math:`MJ` is "closer" to the identity matrix than :math:`J`
 is, the equation should be easier for the Krylov method to deal with.
 
-The matrix *M* can be passed to :func:`root` with method `krylov` as an
-option *inner_M* in the `jac_options` field. It can be a (sparse) matrix
+The matrix *M* can be passed to :func:`root` with method ``krylov`` as an
+option ``options['jac_options']['inner_M']``. It can be a (sparse) matrix
 or a :obj:`scipy.sparse.linalg.LinearOperator` instance.
 
 For the problem in the previous section, we note that the function to
@@ -762,7 +760,7 @@ and then with preconditioning::
   Evaluations 77
 
 Using a preconditioner reduced the number of evaluations of the
-*residual* function by a factor of *4*. For problems where the
+``residual`` function by a factor of *4*. For problems where the
 residual is expensive to compute, good preconditioning can be crucial
 --- it can even decide whether the problem is solvable in practice or
 not.
