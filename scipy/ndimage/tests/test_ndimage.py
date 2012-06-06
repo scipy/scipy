@@ -2122,6 +2122,19 @@ class TestNdimage:
         out = ndimage.zoom(ndimage.zoom(arr,2),0.5)
         assert_array_equal(out,arr)
 
+    def test_zoom3(self):
+        "zoom 3"
+        err = numpy.seterr(invalid='ignore')    
+        arr = numpy.array([[1, 2]])
+        try:
+            out1 = ndimage.zoom(arr, (2, 1))
+            out2 = ndimage.zoom(arr, (1,2))
+        finally:
+            numpy.seterr(**err)
+
+        assert_array_almost_equal(out1, numpy.array([[1, 2], [1, 2]])) 
+        assert_array_almost_equal(out2, numpy.array([[1, 1, 2, 2]]))
+
     def test_zoom_affine01(self):
         "zoom by affine transformation 1"
         data = [[1, 2, 3, 4],
