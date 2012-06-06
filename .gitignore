@@ -22,3 +22,4 @@ cythonize.dat
 /doc/frontpage/build
 /doc/source/generated
 
+.tox
