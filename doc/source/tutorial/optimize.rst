@@ -523,12 +523,35 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
 Root finding
 ------------
 
+Scalar functions
+^^^^^^^^^^^^^^^^
+
+If one has a single-variable equation, there are four different root
+finding algorithms that can be tried. Each of these algorithms requires the
+endpoints of an interval in which a root is expected (because the function
+changes signs). In general :obj:`brentq` is the best choice, but the other
+methods may be useful in certain circumstances or for academic purposes.
+
+
+Fixed-point solving
+^^^^^^^^^^^^^^^^^^^
+
+A problem closely related to finding the zeros of a function is the
+problem of finding a fixed-point of a function. A fixed point of a
+function is the point at which evaluation of the function returns the
+point: :math:`g\left(x\right)=x.` Clearly the fixed point of :math:`g`
+is the root of :math:`f\left(x\right)=g\left(x\right)-x.`
+Equivalently, the root of :math:`f` is the fixed_point of
+:math:`g\left(x\right)=f\left(x\right)+x.` The routine
+:obj:`fixed_point` provides a simple iterative method using Aitkens
+sequence acceleration to estimate the fixed point of :math:`g` given a
+starting point.
+
 Sets of equations
 ^^^^^^^^^^^^^^^^^
 
-To find the roots of a polynomial, the command :obj:`roots
-<scipy.roots>` is useful. To find a root of a set of non-linear
-equations, the function :func:`root` is needed.
+Find a root of a set of non-linear equations can be achieve using the
+function :func:`root`.
 
 The following example finds a root of the single-variable transcendental
 equation
@@ -540,10 +563,11 @@ equation
 
 ::
 
+    >>> import numpy as np
+    >>> from scipy.optimize import root
     >>> def func(x):
     ...     return x + 2 * np.cos(x)
 
-    >>> from scipy.optimize import root
     >>> sol = root(func, 0.3)
     >>> sol.x
     array([-1.02986653])
@@ -580,34 +604,8 @@ Levenberg-Marquardt solver is used here.
     array([ 6.50409711,  0.90841421])
 
 
-Scalar function root finding
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If one has a single-variable equation, there are four different root
-finder algorithms that can be tried. Each of these root finding
-algorithms requires the endpoints of an interval where a root is
-suspected (because the function changes signs). In general
-:obj:`brentq` is the best choice, but the other methods may be useful
-in certain circumstances or for academic purposes.
-
-
-Fixed-point solving
-^^^^^^^^^^^^^^^^^^^
-
-A problem closely related to finding the zeros of a function is the
-problem of finding a fixed-point of a function. A fixed point of a
-function is the point at which evaluation of the function returns the
-point: :math:`g\left(x\right)=x.` Clearly the fixed point of :math:`g`
-is the root of :math:`f\left(x\right)=g\left(x\right)-x.`
-Equivalently, the root of :math:`f` is the fixed_point of
-:math:`g\left(x\right)=f\left(x\right)+x.` The routine
-:obj:`fixed_point` provides a simple iterative method using Aitkens
-sequence acceleration to estimate the fixed point of :math:`g` given a
-starting point.
-
-
-Root finding: Large problems
-----------------------------
+Root finding for large problems
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Methods `hybr` and `lm` in :func:`root` function cannot deal with a very
 large number of variables (*N*), as they need to calculate and invert a
