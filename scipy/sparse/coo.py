@@ -238,7 +238,7 @@ class coo_matrix(_data_matrix):
             raise ValueError("Output array must be C or F contiguous")
         M,N = self.shape
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
-                    B.ravel(order='A'), fortran)
+                    B.ravel('A'), fortran)
         return B
 
     def tocsc(self):

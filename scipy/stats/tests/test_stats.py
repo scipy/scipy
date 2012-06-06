@@ -606,6 +606,7 @@ class TestCorrSpearmanrTies(TestCase):
 ### I need to figure out how to do this one.
 
 
+@dec.knownfailureif(sys.version[:3] < '2.5', "Can't index array with np.int64")
 def test_kendalltau():
     """Some tests for kendalltau."""
 
