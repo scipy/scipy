@@ -1,31 +1,60 @@
 
 from numpy.testing import assert_almost_equal, assert_array_equal, \
-        TestCase, run_module_suite
+        TestCase, run_module_suite, assert_allclose, assert_equal
 from scipy.interpolate import KroghInterpolator, krogh_interpolate, \
         BarycentricInterpolator, barycentric_interpolate, \
         PiecewisePolynomial, piecewise_polynomial_interpolate, \
-        approximate_taylor_polynomial
+        approximate_taylor_polynomial, pchip
 import scipy
 import numpy as np
 from scipy.interpolate import splrep, splev
 
-def check_shape(f, shape, to_shape):
-    x = np.zeros(shape)
-    assert_array_equal(to_shape,f(x).shape)
+def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None):
+    np.random.seed(1234)
 
-def test_krogh_shapes():
-    for s in [(), (0,), (1,), (3,2,5)]:
-        yield check_shape, KroghInterpolator([1,2,3],[3,5,6]), s, s
-def test_krogh_derivs_shapes():
-    for s in [(), (0,), (1,), (3,2,5)]:
-        yield check_shape, KroghInterpolator([1,2,3],[3,5,6]).derivatives, s, (3,)+s
-def test_krogh_deriv_shapes():
-    for s in [(), (0,), (1,), (3,2,5)]:
-        yield check_shape, KroghInterpolator([1,2,3],[3,5,6]).derivative, s, s
+    x = [-1, 0, 1]
+    y = np.random.rand(*((3,) + y_shape))
 
-def test_barycentric_shapes():
-    for s in [(), (0,), (1,), (3,2,5)]:
-        yield check_shape, BarycentricInterpolator([1,2,3],[3,5,6]), s, s
+    xi = np.zeros(x_shape)
+    yi = interpolator_cls(x, y)(xi)
+    assert_equal(yi.shape, (deriv_shape or ()) + x_shape + y_shape)
+
+    # check it works also with lists
+    if x_shape:
+        interpolator_cls(list(x), list(y))(list(xi))
+
+    # check also values
+    if xi.size > 0 and deriv_shape is None:
+        yi, y = np.broadcast_arrays(yi, y[1])
+        assert_allclose(yi, y)
+
+SHAPES = [(), (0,), (1,), (3,2,5)]
+
+def test_shapes():
+    for ip in [KroghInterpolator, BarycentricInterpolator, pchip]:
+        for s1 in SHAPES:
+            for s2 in SHAPES:
+                yield check_shape, ip, s1, s2
+
+def test_derivs_shapes():
+    def krogh_derivs(x, y):
+        return KroghInterpolator(x, y).derivatives
+    def pchip_derivs(x, y):
+        return pchip(x, y).derivatives
+    for s1 in SHAPES:
+        for s2 in SHAPES:
+            yield check_shape, krogh_derivs, s1, s2, (3,)
+            yield check_shape, pchip_derivs, s1, s2, (4,)
+
+def test_deriv_shapes():
+    def krogh_deriv(x, y):
+        return KroghInterpolator(x, y).derivative
+    def pchip_deriv(x, y):
+        return pchip(x, y).derivative
+    for ip in [krogh_deriv, pchip_deriv]:
+        for s1 in SHAPES:
+            for s2 in SHAPES:
+                yield check_shape, ip, s1, s2, ()
 
 class CheckKrogh(TestCase):
     def setUp(self):
