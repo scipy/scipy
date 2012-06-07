@@ -84,13 +84,9 @@ class KroghInterpolator(object):
         """
         self.xi = np.asarray(xi)
         self.yi = np.asarray(yi)
-        if len(self.yi.shape)==1:
-            self.vector_valued = False
-            self.yi = self.yi[:,np.newaxis]
-        elif len(self.yi.shape)>2:
-            raise ValueError("y coordinates must be either scalars or vectors")
-        else:
-            self.vector_valued = True
+
+        self.y_shape = self.yi.shape[1:]
+        self.yi = self.yi.reshape(self.yi.shape[0], -1)
 
         n = len(xi)
         self.n = n
@@ -100,14 +96,14 @@ class KroghInterpolator(object):
         self.r = r
 
         c = np.zeros((n+1,r))
-        c[0] = yi[0]
+        c[0] = self.yi[0]
         Vk = np.zeros((n,r))
         for k in xrange(1,n):
             s = 0
             while s<=k and xi[k-s]==xi[k]:
                 s += 1
             s -= 1
-            Vk[0] = yi[k]/float(factorial(s))
+            Vk[0] = self.yi[k]/float(factorial(s))
             for i in xrange(k-s):
                 if xi[i] == xi[k]:
                     raise ValueError("Elements if `xi` can't be equal.")
@@ -142,10 +138,8 @@ class KroghInterpolator(object):
             w = x - self.xi[k-1]
             pi = w*pi
             p += pi[...,np.newaxis]*self.c[k]
-        if not self.vector_valued:
-            return p[...,0]
-        else:
-            return p
+
+        return p.reshape(x.shape + self.y_shape)
 
     def derivatives(self,x,der=None):
         """
@@ -210,10 +204,8 @@ class KroghInterpolator(object):
             cn[k]*=factorial(k)
 
         cn[n,...] = 0
-        if not self.vector_valued:
-            return cn[:der,...,0]
-        else:
-            return cn[:der]
+
+        return cn[:der].reshape((-1,) + x.shape + self.y_shape)
 
     def derivative(self, x, der=1):
         """
@@ -434,13 +426,9 @@ class BarycentricInterpolator(object):
             self.yi = None
             return
         yi = np.asarray(yi)
-        if len(yi.shape)==1:
-            self.vector_valued = False
-            yi = yi[:,np.newaxis]
-        elif len(yi.shape)>2:
-            raise ValueError("y coordinates must be either scalars or vectors")
-        else:
-            self.vector_valued = True
+
+        self.y_shape = yi.shape[1:]
+        yi = yi.reshape(yi.shape[0], -1)
 
         n, r = yi.shape
         if n!=len(self.xi):
@@ -471,17 +459,11 @@ class BarycentricInterpolator(object):
             if self.yi is None:
                 raise ValueError("No previous yi value to update!")
             yi = np.asarray(yi)
-            if len(yi.shape)==1:
-                if self.vector_valued:
-                    raise ValueError("Cannot extend dimension %d y vectors with scalars" % self.r)
-                yi = yi[:,np.newaxis]
-            elif len(yi.shape)>2:
-                raise ValueError("y coordinates must be either scalars or vectors")
+            if yi.shape[1:] != self.y_shape:
+                raise ValueError("Added data must be of shape (N,) + %r" % (self.y_shape,))
             else:
+                yi = yi.reshape(yi.shape[0], -1)
                 n, r = yi.shape
-                if r!=self.r:
-                    raise ValueError("Cannot extend dimension %d y vectors with dimension %d y vectors" % (self.r, r))
-
             self.yi = np.vstack((self.yi,yi))
         else:
             if self.yi is not None:
@@ -519,10 +501,7 @@ class BarycentricInterpolator(object):
         """
         x = np.asarray(x)
         if x.size == 0:
-            if self.vector_valued:
-                return np.zeros(x.shape+self.yi.shape[1:],dtype=self.yi.dtype)
-            else:
-                return np.zeros(x.shape,dtype=self.yi.dtype)
+            return np.zeros(x.shape + self.y_shape, dtype=self.yi.dtype)
         c = x[...,np.newaxis]-self.xi
         z = c==0
         c[z] = 1
@@ -535,10 +514,8 @@ class BarycentricInterpolator(object):
                 p = self.yi[r[0][0]]
         else:
             p[r[:-1]] = self.yi[r[-1]]
-        if not self.vector_valued:
-            return p[...,0]
-        else:
-            return p
+
+        return p.reshape(x.shape + self.y_shape)
 
 def barycentric_interpolate(xi, yi, x):
     """
@@ -607,7 +584,7 @@ class PiecewisePolynomial(object):
         xi : array-like of length N
             a sorted list of x-coordinates
         yi : list of lists of length N
-            yi[i] is the list of derivatives known at xi[i]
+            yi[i][j] is the j-th derivative known at xi[i]
         orders : list of integers, or integer
             a list of polynomial orders, or a single universal order
         direction : {None, 1, -1}
@@ -627,14 +604,10 @@ class PiecewisePolynomial(object):
         not enough derivatives are available, an exception is raised.
         """
         yi0 = np.asarray(yi[0])
-        if len(yi0.shape)==2:
-            self.vector_valued = True
-            self.r = yi0.shape[1]
-        elif len(yi0.shape)==1:
-            self.vector_valued = False
-            self.r = 1
-        else:
-            raise ValueError("Each derivative must be a vector, not a higher-rank array")
+
+        self.y_shape = yi0.shape[1:]
+        self.dtype = yi0.dtype
+        yi0 = yi0.reshape(yi0.shape[0], -1)
 
         self.xi = [xi[0]]
         self.yi = [yi0]
@@ -666,15 +639,12 @@ class PiecewisePolynomial(object):
             raise ValueError("`order` input incompatible with length y1 or y2.")
 
         xi = np.zeros(n)
-        if self.vector_valued:
-            yi = np.zeros((n,self.r))
-        else:
-            yi = np.zeros((n,))
+        yi = np.zeros((n,) + self.y_shape)
 
         xi[:n1] = x1
-        yi[:n1] = y1[:n1]
+        yi[:n1] = y1[:n1].reshape((n1,) + self.y_shape)
         xi[n1:] = x2
-        yi[n1:] = y2[:n2]
+        yi[n1:] = y2[:n2].reshape((n2,) + self.y_shape)
 
         return KroghInterpolator(xi,yi)
 
@@ -696,12 +666,10 @@ class PiecewisePolynomial(object):
         """
 
         yi = np.asarray(yi)
-        if self.vector_valued:
-            if (len(yi.shape)!=2 or yi.shape[1]!=self.r):
-                raise ValueError("Each derivative must be a vector of length %d" % self.r)
-        else:
-            if len(yi.shape)!=1:
-                raise ValueError("Each derivative must be a scalar")
+
+        if yi.shape[1:] != self.y_shape:
+            raise ValueError("Each derivative must be of shape %r" % self.y_shape)
+        yi = yi.reshape(yi.shape[0], -1)
 
         if self.direction is None:
             self.direction = np.sign(xi-self.xi[-1])
@@ -768,15 +736,16 @@ class PiecewisePolynomial(object):
             y = self.polynomials[pos](x)
         else:
             x = np.asarray(x)
+            x_shape = x.shape
+            x = x.ravel()
             m = len(x)
             pos = np.clip(np.searchsorted(self.xi, x) - 1, 0, self.n-2)
-            if self.vector_valued:
-                y = np.zeros((m,self.r))
-            else:
-                y = np.zeros(m)
-            for i in xrange(self.n-1):
-                c = pos==i
-                y[c] = self.polynomials[i](x[c])
+            y = np.zeros((m,) + self.y_shape, dtype=self.dtype)
+            if y.size > 0:
+                for i in xrange(self.n-1):
+                    c = pos==i
+                    y[c] = self.polynomials[i](x[c])
+            y = y.reshape(x_shape + self.y_shape)
         return y
 
     def derivative(self, x, der=1):
@@ -802,7 +771,7 @@ class PiecewisePolynomial(object):
         """
         return self.derivatives(x,der=der+1)[der]
 
-    def derivatives(self, x, der):
+    def derivatives(self, x, der=None):
         """
         Evaluate a derivative of the piecewise polynomial
 
@@ -819,20 +788,23 @@ class PiecewisePolynomial(object):
         y : array_like of shape der by R or der by N or der by N by R
 
         """
+        if der is None and self.polynomials:
+            der = self.polynomials[0].n
         if _isscalar(x):
             pos = np.clip(np.searchsorted(self.xi, x) - 1, 0, self.n-2)
             y = self.polynomials[pos].derivatives(x,der=der)
         else:
             x = np.asarray(x)
+            x_shape = x.shape
+            x = x.ravel()
             m = len(x)
             pos = np.clip(np.searchsorted(self.xi, x) - 1, 0, self.n-2)
-            if self.vector_valued:
-                y = np.zeros((der,m,self.r))
-            else:
-                y = np.zeros((der,m))
-            for i in xrange(self.n-1):
-                c = pos==i
-                y[:,c] = self.polynomials[i].derivatives(x[c],der=der)
+            y = np.zeros((der,m)+self.y_shape, dtype=self.dtype)
+            if y.size > 0:
+                for i in xrange(self.n-1):
+                    c = pos==i
+                    y[:,c] = self.polynomials[i].derivatives(x[c],der=der)
+            y = y.reshape((der,) + x_shape + self.y_shape)
         return y
 
 
@@ -946,5 +918,8 @@ def pchip(x, y):
         The result of the interpolation.
 
     """
-    derivs = _find_derivatives(x,y)
+    x = np.asarray(x)
+    y = np.asarray(y)
+    xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
+    derivs = _find_derivatives(xp, y)
     return PiecewisePolynomial(x, zip(y, derivs), orders=3, direction=None)
