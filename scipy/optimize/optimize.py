@@ -41,28 +41,33 @@ _status_message = {'success': 'Optimization terminated successfully.',
 
 
 class MemoizeFun(object):
-    """ Decorator that caches the value of the objective function each time
-    it is called or only the first time if `first_only==True`."""
-    def __init__(self, fun, first_only=False):
+    """ Decorator that caches the value of the objective function.
+    If `first_only==True`, only the first point is memoized.
+    If `nskip > 0`, it is assumed that the function is evaluated `nskip`
+    times at the first point, so that the memoized values is used. """
+    def __init__(self, fun, first_only=False, nskip=0):
         self.fun = fun
         if hasattr(fun, '__name__'):
             self.__name__ = fun.__name__
-        self.calls = 0
         self.first_only = first_only
+        self.nskip = nskip
 
     def __call__(self, x, *args):
+        if hasattr(self, 'calls'):
+            self.calls += 1
+        else:
+            self.calls = 0
         if self.calls == 0:
             self.x = numpy.asarray(x).copy()
             self.f = self.fun(x, *args)
-            self.calls += 1
+            return self.f
+        elif self.calls <= self.nskip:
             return self.f
         elif self.first_only and self.calls > 1:
-            self.calls += 1
             return self.fun(x, *args)
         elif numpy.any(x != self.x):
             self.x = numpy.asarray(x).copy()
             self.f = self.fun(x, *args)
-            self.calls += 1
             return self.f
         else:
             return self.f

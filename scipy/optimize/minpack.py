@@ -183,7 +183,7 @@ def _root_hybr(func, x0, args=(), jac=None, options=None):
     diag      = options.get('diag', None)
 
     full_output = True
-    func = MemoizeFun(func, first_only=True)
+    func = MemoizeFun(func, first_only=True, nskip=1)
     x0 = array(x0, ndmin=1)
     n = len(x0)
     if type(args) != type(()):
@@ -200,7 +200,7 @@ def _root_hybr(func, x0, args=(), jac=None, options=None):
         retval = _minpack._hybrd(func, x0, args, full_output, xtol, maxfev,
                                  ml, mu, epsfcn, factor, diag)
     else:
-        Dfun = MemoizeFun(Dfun, first_only=True)
+        Dfun = MemoizeFun(Dfun, first_only=True, nskip=1)
         _check_func('fsolve', 'fprime', Dfun, x0, args, n, (n,n))
         if (maxfev == 0):
             maxfev = 100*(n + 1)
@@ -350,7 +350,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
          params
 
     """
-    func = MemoizeFun(func, first_only=True)
+    func = MemoizeFun(func, first_only=True, nskip=1)
     x0 = array(x0, ndmin=1)
     n = len(x0)
     if type(args) != type(()):
@@ -364,7 +364,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         retval = _minpack._lmdif(func, x0, args, full_output, ftol, xtol,
                 gtol, maxfev, epsfcn, factor, diag)
     else:
-        Dfun = MemoizeFun(Dfun, first_only=True)
+        Dfun = MemoizeFun(Dfun, first_only=True, nskip=1)
         if col_deriv:
             _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (n,m))
         else:
