@@ -56,6 +56,16 @@ def test_deriv_shapes():
             for s2 in SHAPES:
                 yield check_shape, ip, s1, s2, ()
 
+def _check_complex(ip):
+    x = [1, 2, 3, 4]
+    y = [1, 2, 1j, 3]
+    p = ip(x, y)
+    assert_allclose(y, p(x))
+
+def test_complex():
+    for ip in [KroghInterpolator, BarycentricInterpolator, pchip]:
+        yield _check_complex, ip
+
 class CheckKrogh(TestCase):
     def setUp(self):
         self.true_poly = scipy.poly1d([-2,3,1,5,-4])

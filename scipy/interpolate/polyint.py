@@ -95,9 +95,9 @@ class KroghInterpolator(object):
             raise ValueError("%d x values provided and %d y values; must be equal" % (n, nn))
         self.r = r
 
-        c = np.zeros((n+1,r))
+        c = np.zeros((n+1,r), dtype=self.yi.dtype)
         c[0] = self.yi[0]
-        Vk = np.zeros((n,r))
+        Vk = np.zeros((n,r), dtype=self.yi.dtype)
         for k in xrange(1,n):
             s = 0
             while s<=k and xi[k-s]==xi[k]:
@@ -132,7 +132,7 @@ class KroghInterpolator(object):
 
         n = self.n
         pi = 1
-        p = np.zeros(x.shape+(self.r,))
+        p = np.zeros(x.shape+(self.r,), dtype=self.yi.dtype)
         p += self.c[(0,)+(np.newaxis,)*len(x.shape)+(slice(None,None,None),)]
         for k in range(1,n):
             w = x - self.xi[k-1]
@@ -194,7 +194,7 @@ class KroghInterpolator(object):
             pi[k] = w[k-1]*pi[k-1]
             p += pi[k][...,np.newaxis]*self.c[k]
 
-        cn = np.zeros((max(der,n+1),)+x.shape+(r,))
+        cn = np.zeros((max(der,n+1),)+x.shape+(r,), dtype=self.yi.dtype)
         cn[:n+1,...] += self.c[(slice(n+1),)+(np.newaxis,)*len(x.shape)+(slice(None,None,None),)]
         cn[0] = p
         for k in xrange(1,n):
@@ -205,7 +205,7 @@ class KroghInterpolator(object):
 
         cn[n,...] = 0
 
-        return cn[:der].reshape((-1,) + x.shape + self.y_shape)
+        return cn[:der].reshape((der,) + x.shape + self.y_shape)
 
     def derivative(self, x, der=1):
         """
@@ -606,7 +606,8 @@ class PiecewisePolynomial(object):
         yi0 = np.asarray(yi[0])
 
         self.y_shape = yi0.shape[1:]
-        self.dtype = yi0.dtype
+        self.is_complex = np.issubdtype(yi0.dtype, np.complexfloating)
+
         yi0 = yi0.reshape(yi0.shape[0], -1)
 
         self.xi = [xi[0]]
@@ -617,6 +618,13 @@ class PiecewisePolynomial(object):
         self.orders = []
         self.polynomials = []
         self.extend(xi[1:],yi[1:],orders)
+
+    @property
+    def dtype(self):
+        if self.is_complex:
+            return np.complex_
+        else:
+            return np.float_
 
     def _make_polynomial(self,x1,y1,x2,y2,order,direction):
         """Construct the interpolating polynomial object
@@ -639,7 +647,7 @@ class PiecewisePolynomial(object):
             raise ValueError("`order` input incompatible with length y1 or y2.")
 
         xi = np.zeros(n)
-        yi = np.zeros((n,) + self.y_shape)
+        yi = np.zeros((n,) + self.y_shape, dtype=self.dtype)
 
         xi[:n1] = x1
         yi[:n1] = y1[:n1].reshape((n1,) + self.y_shape)
@@ -670,6 +678,9 @@ class PiecewisePolynomial(object):
         if yi.shape[1:] != self.y_shape:
             raise ValueError("Each derivative must be of shape %r" % self.y_shape)
         yi = yi.reshape(yi.shape[0], -1)
+
+        self.is_complex = (self.is_complex
+                           or np.issubdtype(yi.dtype, np.complexfloating))
 
         if self.direction is None:
             self.direction = np.sign(xi-self.xi[-1])
