@@ -1,0 +1,16 @@
+language: python
+
+python:
+  - 2.5
+  - 2.6
+  - 2.7
+  - 3.2
+  - pypy
+
+install:
+  - pip install numpy nose
+
+script:
+  - python setup.py clean
+  - CFLAGS=-O0 python setup.py build_ext --inplace
+  - CFLAGS=-O0 nosetests -q
