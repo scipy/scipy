@@ -27,9 +27,9 @@ The module contains:
 4. Scalar univariate functions minimizers (:func:`minimize_scalar`) and
    root finders (:func:`newton`)
 
-5. Multivariate equation system solvers (:func:`fsolve`)
-
-6. Large-scale multivariate equation system solvers (e.g. :func:`newton_krylov`)
+5. Multivariate equation system solvers (:func:`root`) using a variety of
+   algorithms (e.g. hybrid Powell, Levenberg-Marquardt or large-scale
+   methods such as Newton-Krylov).
 
 Below, several examples demonstrate their basic usage.
 
@@ -523,60 +523,14 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
 Root finding
 ------------
 
-
-Sets of equations
-^^^^^^^^^^^^^^^^^
-
-To find the roots of a polynomial, the command :obj:`roots
-<scipy.roots>` is useful. To find a root of a set of non-linear
-equations, the command :obj:`fsolve` is needed. For example, the
-following example finds the roots of the single-variable
-transcendental equation
-
-.. math::
-   :nowrap:
-
-    \[ x+2\cos\left(x\right)=0,\]
-
-and the set of non-linear equations
-
-.. math::
-   :nowrap:
-
-    \begin{eqnarray*}
-    x_{0}\cos\left(x_{1}\right) & = & 4,\\
-    x_{0}x_{1}-x_{1} & = & 5.
-    \end{eqnarray*}
-
-The results are :math:`x=-1.0299` and :math:`x_{0}=6.5041,\, x_{1}=0.9084` .
-
-    >>> def func(x):
-    ...     return x + 2*cos(x)
-
-    >>> def func2(x):
-    ...     out = [x[0]*cos(x[1]) - 4]
-    ...     out.append(x[1]*x[0] - x[1] - 5)
-    ...     return out
-
-    >>> from scipy.optimize import fsolve
-    >>> x0 = fsolve(func, 0.3)
-    >>> print x0
-    -1.02986652932
-
-    >>> x02 = fsolve(func2, [1, 1])
-    >>> print x02
-    [ 6.50409711  0.90841421]
-
-
-Scalar function root finding
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Scalar functions
+^^^^^^^^^^^^^^^^
 
 If one has a single-variable equation, there are four different root
-finder algorithms that can be tried. Each of these root finding
-algorithms requires the endpoints of an interval where a root is
-suspected (because the function changes signs). In general
-:obj:`brentq` is the best choice, but the other methods may be useful
-in certain circumstances or for academic purposes.
+finding algorithms that can be tried. Each of these algorithms requires the
+endpoints of an interval in which a root is expected (because the function
+changes signs). In general :obj:`brentq` is the best choice, but the other
+methods may be useful in certain circumstances or for academic purposes.
 
 
 Fixed-point solving
@@ -593,13 +547,67 @@ Equivalently, the root of :math:`f` is the fixed_point of
 sequence acceleration to estimate the fixed point of :math:`g` given a
 starting point.
 
+Sets of equations
+^^^^^^^^^^^^^^^^^
 
-Root finding: Large problems
-----------------------------
+Finding a root of a set of non-linear equations can be achieve using the
+:func:`root` function. Several methods are available, amongst which ``hybr``
+(the default) and ``lm`` which respectively use the hybrid method of Powell
+and the Levenberg-Marquardt method from MINPACK.
 
-The :obj:`fsolve` function cannot deal with a very large number of
-variables (*N*), as it needs to calculate and invert a dense *N x N*
-Jacobian matrix on every Newton step. This becomes rather inefficent
+The following example considers the single-variable transcendental
+equation
+
+.. math::
+   :nowrap:
+
+    \[ x+2\cos\left(x\right)=0,\]
+
+a root of which can be found as follows::
+
+    >>> import numpy as np
+    >>> from scipy.optimize import root
+    >>> def func(x):
+    ...     return x + 2 * np.cos(x)
+    >>> sol = root(func, 0.3)
+    >>> sol.x
+    array([-1.02986653])
+    >>> sol.fun
+    array([ -6.66133815e-16])
+
+Consider now a set of non-linear equations
+
+.. math::
+   :nowrap:
+
+    \begin{eqnarray*}
+    x_{0}\cos\left(x_{1}\right) & = & 4,\\
+    x_{0}x_{1}-x_{1} & = & 5.
+    \end{eqnarray*}
+
+We define the objective function so that it also returns the Jacobian and
+indicate this by setting the ``jac`` parameter to ``True``. Also, the
+Levenberg-Marquardt solver is used here.
+
+::
+
+    >>> def func2(x):
+    ...     f = [x[0] * np.cos(x[1]) - 4,
+    ...          x[1]*x[0] - x[1] - 5]
+    ...     df = np.array([[np.cos(x[1]), -x[0] * np.sin(x[1])],
+    ...                    [x[1], x[0] - 1]])
+    ...     return f, df
+    >>> sol = root(func2, [1, 1], jac=True, method='lm')
+    >>> sol.x
+    array([ 6.50409711,  0.90841421])
+
+
+Root finding for large problems
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Methods ``hybr`` and ``lm`` in :func:`root` cannot deal with a very large
+number of variables (*N*), as they need to calculate and invert a dense *N
+x N* Jacobian matrix on every Newton step. This becomes rather inefficient
 when *N* grows.
 
 Consider for instance the following problem: we need to solve the
@@ -617,33 +625,32 @@ by approximating the continuous function *P* by its values on a grid,
 *h*. The derivatives and integrals can then be approximated; for
 instance :math:`\partial_x^2 P(x,y)\approx{}(P(x+h,y) - 2 P(x,y) +
 P(x-h,y))/h^2`. The problem is then equivalent to finding the root of
-some function *residual(P)*, where *P* is a vector of length
+some function ``residual(P)``, where ``P`` is a vector of length
 :math:`N_x N_y`.
 
-Now, because :math:`N_x N_y` can be large, :obj:`fsolve` will take a
-long time to solve this problem.  The solution can however be found
-using one of the large-scale solvers in :mod:`scipy.optimize`, for
-example :obj:`newton_krylov`, :obj:`broyden2`, or
-:obj:`anderson`. These use what is known as the inexact Newton method,
-which instead of computing the Jacobian matrix exactly, forms an
-approximation for it.
+Now, because :math:`N_x N_y` can be large, methods ``hybr`` or ``lm`` in
+:func:`root` will take a long time to solve this problem. The solution can
+however be found using one of the large-scale solvers, for example
+``krylov``, ``broyden2``, or ``anderson``. These use what is known as the
+inexact Newton method, which instead of computing the Jacobian matrix
+exactly, forms an approximation for it.
 
 The problem we have can now be solved as follows:
 
 .. plot::
 
-   import numpy as np
-   from scipy.optimize import newton_krylov
-   from numpy import cosh, zeros_like, mgrid, zeros
+    import numpy as np
+    from scipy.optimize import root
+    from numpy import cosh, zeros_like, mgrid, zeros
 
-   # parameters
-   nx, ny = 75, 75
-   hx, hy = 1./(nx-1), 1./(ny-1)
+    # parameters
+    nx, ny = 75, 75
+    hx, hy = 1./(nx-1), 1./(ny-1)
 
-   P_left, P_right = 0, 0
-   P_top, P_bottom = 1, 0
+    P_left, P_right = 0, 0
+    P_top, P_bottom = 1, 0
 
-   def residual(P):
+    def residual(P):
        d2x = zeros_like(P)
        d2y = zeros_like(P)
 
@@ -657,26 +664,26 @@ The problem we have can now be solved as follows:
 
        return d2x + d2y + 5*cosh(P).mean()**2
 
-   # solve
-   guess = zeros((nx, ny), float)
-   sol = newton_krylov(residual, guess, verbose=1)
-   #sol = broyden2(residual, guess, max_rank=50, verbose=1)
-   #sol = anderson(residual, guess, M=10, verbose=1)
-   print 'Residual', abs(residual(sol)).max()
+    # solve
+    guess = zeros((nx, ny), float)
+    sol = root(residual, guess, method='krylov', options={'disp': True})
+    #sol = root(residual, guess, method='broyden2', options={'disp': True, 'max_rank': 50})
+    #sol = root(residual, guess, method='anderson', options={'disp': True, 'M': 10})
+    print 'Residual', abs(residual(sol.x)).max()
 
-   # visualize
-   import matplotlib.pyplot as plt
-   x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
-   plt.pcolor(x, y, sol)
-   plt.colorbar()
-   plt.show()
+    # visualize
+    import matplotlib.pyplot as plt
+    x, y = mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
+    plt.pcolor(x, y, sol.x)
+    plt.colorbar()
+    plt.show()
 
 
 Still too slow? Preconditioning.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When looking for the zero of the functions :math:`f_i({\bf x}) = 0`,
-*i = 1, 2, ..., N*, the :obj:`newton_krylov` solver spends most of its
+*i = 1, 2, ..., N*, the ``krylov`` solver spends most of its
 time inverting the Jacobian matrix,
 
 .. math:: J_{ij} = \frac{\partial f_i}{\partial x_j} .
@@ -688,9 +695,9 @@ linear inversion problem. The idea is that instead of solving
 matrix :math:`MJ` is "closer" to the identity matrix than :math:`J`
 is, the equation should be easier for the Krylov method to deal with.
 
-The matrix *M* can be passed to :obj:`newton_krylov` as the *inner_M*
-parameter. It can be a (sparse) matrix or a
-:obj:`scipy.sparse.linalg.LinearOperator` instance.
+The matrix *M* can be passed to :func:`root` with method ``krylov`` as an
+option ``options['jac_options']['inner_M']``. It can be a (sparse) matrix
+or a :obj:`scipy.sparse.linalg.LinearOperator` instance.
 
 For the problem in the previous section, we note that the function to
 solve consists of two parts: the first one is application of the
@@ -753,7 +760,7 @@ and then with preconditioning::
   Evaluations 77
 
 Using a preconditioner reduced the number of evaluations of the
-*residual* function by a factor of *4*. For problems where the
+``residual`` function by a factor of *4*. For problems where the
 residual is expensive to compute, good preconditioning can be crucial
 --- it can even decide whether the problem is solvable in practice or
 not.
