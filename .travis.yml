@@ -12,5 +12,5 @@ install:
 
 script:
   - python setup.py clean
-  - CFLAGS=-O0 python setup.py build_ext --inplace
-  - CFLAGS=-O0 nosetests -q
+  - CFLAGS=-O0 python setup.py install
+  - cd /tmp && python -c "import sys, scipy; sys.exit(0 if scipy.test('full', verbose=2).wasSuccessful() else 1)"
