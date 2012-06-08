@@ -12,7 +12,7 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
 
 def boxcar(M, sym=True):
     """Return a boxcar or rectangular window.
-    
+
     Included for completeness, this is equivalent to no window at all.
 
     Parameters
@@ -41,13 +41,13 @@ def triang(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
     """
@@ -80,13 +80,13 @@ def parzen(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
     """
@@ -118,13 +118,13 @@ def bohman(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
     """
@@ -157,15 +157,15 @@ def blackman(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
-        
+
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
-        
+
     See Also
     --------
     bartlett, hamming, hann, kaiser
@@ -257,13 +257,13 @@ def nuttall(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
     """
@@ -293,13 +293,13 @@ def blackmanharris(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
     """
@@ -329,13 +329,14 @@ def flattop(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window function
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
 
     """
     if M < 1:
@@ -363,20 +364,20 @@ def bartlett(M, sym=True):
     that the end points are at zero.  It is often used in signal
     processing for tapering a signal, without generating too much
     ripple in the frequency domain.
-    
+
     Parameters
     ----------
     M : int
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The triangular window, with the maximum value normalized to 1 (though the value 1 
+        The triangular window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True), with the first
         and last samples equal to zero.
 
@@ -475,7 +476,7 @@ def bartlett(M, sym=True):
 def hann(M, sym=True):
     """Return a Hann window.
 
-    The Hann window is a taper formed by using a raised cosine or sine-squared 
+    The Hann window is a taper formed by using a raised cosine or sine-squared
     with ends that touch zero.
 
     Parameters
@@ -484,13 +485,13 @@ def hann(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
 
     See Also
@@ -505,8 +506,8 @@ def hann(M, sym=True):
                \\qquad 0 \\leq n \\leq M-1
 
     The window was named for Julius van Hann, an Austrian meterologist. It is
-    also known as the Cosine Bell. It is sometimes erroneously referred to as the 
-    "Hanning" window, from the use of "hann" as a verb in the original paper and 
+    also known as the Cosine Bell. It is sometimes erroneously referred to as the
+    "Hanning" window, from the use of "hann" as a verb in the original paper and
     confusion with the very similar Hamming window.
 
     Most references to the Hann window come from the signal processing
@@ -593,13 +594,13 @@ def barthann(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
     """
@@ -621,22 +622,22 @@ def barthann(M, sym=True):
 def hamming(M, sym=True):
     """Return a Hamming window.
 
-    The Hamming window is a taper formed by using a raised cosine with 
+    The Hamming window is a taper formed by using a raised cosine with
     non-zero endpoints, optimized to minimize the nearest side lobe.
-    
+
     Parameters
     ----------
     M : int
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
     See Also
@@ -737,18 +738,18 @@ def kaiser(M, beta, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     beta : float
-        Shape parameter, determines trade-off between main-lobe width and 
+        Shape parameter, determines trade-off between main-lobe width and
         side lobe level. As beta gets large, the window narrows.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
-        
+
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
-    
+
     See Also
     --------
     bartlett, blackman, hamming, hann
@@ -873,15 +874,15 @@ def gaussian(M, std, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     std : float
-        Standard deviation.
+        The standard deviation, sigma.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1 (though the value 1 
+        The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
     Notes
@@ -907,13 +908,39 @@ def gaussian(M, std, sym=True):
 
 
 def general_gaussian(M, p, sig, sym=True):
-    """Return a window with a generalized Gaussian shape.
+    r"""Return a window with a generalized Gaussian shape.
 
-    The Gaussian shape is defined as ``exp(-0.5*abs(x/sig)**(2*p))``, the
-    half-power point is at ``(2*log(2)))**(1/(2*p)) * sig``.
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    p : float
+        Shape parameter.  p = 1 is identical to :func:`~gaussian`, p = 0.5 is
+        the same shape as the Laplace distribution.
+    sig : float
+        The standard deviation, sigma.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
+
+    Notes
+    -----
+    The generalized Gaussian window is defined as
+
+    .. math::  w(n) = e^{ -\frac{1}{2}\left|\frac{n}{\sigma}\right|^{2p} }
+
+    the half-power point is at
+
+    .. math::  (2 \log(2))^{1/(2 p)} \sigma
 
     """
-    # FIXME: What are p and sig called in English?  Improve docstring
     if M < 1:
         return np.array([])
     if M == 1:
@@ -941,14 +968,14 @@ def chebwin(M, at, sym=True):
     at : float
         Attenuation (in dB).
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design. 
+        When True, generates a symmetric window, for use in filter design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window function
-    
+        The window, with the maximum value always normalized to 1
+
     """
     if M < 1:
         return np.array([])
@@ -991,14 +1018,28 @@ def chebwin(M, at, sym=True):
 
 
 def slepian(M, width, sym=True):
-    """Return the M-point Slepian window.
-    
-    Used to maximize the energy concentration in the main lobe.  Also called 
+    """Return a digital Slepian window.
+
+    Used to maximize the energy concentration in the main lobe.  Also called
     the digital prolate spheroidal sequence (DPSS).
 
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    width : float
+        Bandwidth
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value always normalized to 1
+
     """
-    # FIXME: Improve docstring, explain what "width" does
-    
     if (M * width > 27.38):
         raise ValueError("Cannot reliably obtain slepian sequences for"
               " M*width > 27.38.")
@@ -1044,7 +1085,7 @@ def get_window(window, Nx, fftbins=True):
     -----
     Window types:
 
-        boxcar, triang, blackman, hamming, hann, bartlett, flattop, 
+        boxcar, triang, blackman, hamming, hann, bartlett, flattop,
         parzen, bohman, blackmanharris, nuttall, barthann,
         kaiser (needs beta), gaussian (needs std),
         general_gaussian (needs power, width),
