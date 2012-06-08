@@ -335,7 +335,8 @@ def flattop(M, sym=True):
     Returns
     -------
     w : ndarray
-        The window function
+        The window, with the maximum value normalized to 1 (though the value 1 
+        does not appear if the number of samples is even and sym is True).
 
     """
     if M < 1:
@@ -873,7 +874,7 @@ def gaussian(M, std, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     std : float
-        Standard deviation.
+        The standard deviation, sigma.
     sym : bool, optional
         When True, generates a symmetric window, for use in filter design. 
         When False, generates a periodic window, for use in spectral analysis.
@@ -907,13 +908,39 @@ def gaussian(M, std, sym=True):
 
 
 def general_gaussian(M, p, sig, sym=True):
-    """Return a window with a generalized Gaussian shape.
+    r"""Return a window with a generalized Gaussian shape.
 
-    The Gaussian shape is defined as ``exp(-0.5*(x/sig)**(2*p))``, the
-    half-power point is at ``(2*log(2)))**(1/(2*p)) * sig``.
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    p : float
+        Shape parameter.  p = 1 is identical to :func:`~gaussian`, p = 0.5 is
+        the same shape as the Laplace distribution.
+    sig : float
+        The standard deviation, sigma.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design. 
+        When False, generates a periodic window, for use in spectral analysis.
 
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1 
+        does not appear if the number of samples is even and sym is True).
+
+    Notes
+    -----
+    The generalized Gaussian window is defined as
+
+    .. math::  w(n) = e^{ -\frac{1}{2}\left|\frac{n}{\sigma}\right|^{2p} }
+    
+    the half-power point is at
+    
+    .. math::  (2 \log(2))^{1/(2 p)} \sigma
+        
     """
-    # FIXME: What are p and sig called in English?  Improve docstring
     if M < 1:
         return np.array([])
     if M == 1:
@@ -922,7 +949,7 @@ def general_gaussian(M, p, sig, sym=True):
     if not sym and not odd:
         M = M + 1
     n = np.arange(0, M) - (M - 1.0) / 2.0
-    w = np.exp(-0.5 * (n / sig) ** (2 * p))
+    w = np.exp(-0.5 * np.abs(n / sig) ** (2 * p))
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -947,7 +974,7 @@ def chebwin(M, at, sym=True):
     Returns
     -------
     w : ndarray
-        The window function
+        The window, with the maximum value always normalized to 1
     
     """
     if M < 1:
@@ -991,14 +1018,28 @@ def chebwin(M, at, sym=True):
 
 
 def slepian(M, width, sym=True):
-    """Return the M-point Slepian window.
+    """Return a digital Slepian window.
     
     Used to maximize the energy concentration in the main lobe.  Also called 
     the digital prolate spheroidal sequence (DPSS).
 
-    """
-    # FIXME: Improve docstring, explain what "width" does
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    width : float
+        Bandwidth
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design. 
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value always normalized to 1
     
+    """
     if (M * width > 27.38):
         raise ValueError("Cannot reliably obtain slepian sequences for"
               " M*width > 27.38.")
