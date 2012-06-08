@@ -22,7 +22,8 @@ __all__ = [ 'use_solver', 'spsolve', 'splu', 'spilu', 'factorized' ]
 
 def use_solver( **kwargs ):
     """
-    Valid keyword arguments with defaults (other ignored):
+    Valid keyword arguments with defaults (other ignored)::
+
       useUmfpack = True
       assumeSortedIndices = False
 
@@ -31,8 +32,9 @@ def use_solver( **kwargs ):
     based solver to be used.
 
     Umfpack requires a CSR/CSC matrix to have sorted column/row indices. If
-    sure that the matrix fulfills this, pass assumeSortedIndices=True
+    sure that the matrix fulfills this, pass ``assumeSortedIndices=True``
     to gain some speed.
+
     """
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
@@ -42,8 +44,7 @@ def use_solver( **kwargs ):
 
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
-    """Solve the sparse linear system Ax=b
-    """
+    """Solve the sparse linear system Ax=b """
     if isspmatrix( b ):
         b = b.toarray()
 
@@ -105,9 +106,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Parameters
     ----------
-    A
+    A : sparse matrix
         Sparse matrix to factorize. Should be in CSR or CSC format.
-
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -218,12 +218,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     This function uses the SuperLU library.
 
-    References
-    ----------
-    .. [SLU] SuperLU http://crd.lbl.gov/~xiaoye/SuperLU/
-
     """
-
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
         warn('splu requires CSC matrix format', SparseEfficiencyWarning)

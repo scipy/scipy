@@ -86,7 +86,7 @@ def wavedec(amn, hk):
 
 def cascade(hk, J=7):
     """
-    Return (x, phi, psi) at dyadic points K/2**J from filter coefficients.
+    Return (x, phi, psi) at dyadic points ``K/2**J`` from filter coefficients.
 
     Parameters
     ----------
@@ -97,18 +97,18 @@ def cascade(hk, J=7):
 
     Returns
     -------
-    x :
-        The dyadic points K/2**J for ``K=0...N * (2**J)-1`` where
-        ``len(hk) = len(gk) = N+1``
-    phi :
-        The scaling function ``phi(x)`` at `x`:
+    x : ndarray
+        The dyadic points ``K/2**J`` for ``K=0...N * (2**J)-1`` where
+        ``len(hk) = len(gk) = N+1``.
+    phi : ndarray
+        The scaling function ``phi(x)`` at `x`::
 
                      N
           phi(x) = sum   hk * phi(2x-k)
                      k=0
 
-    psi :
-        The wavelet function ``psi(x)`` at `x`:
+    psi : ndarray, optional
+        The wavelet function ``psi(x)`` at `x`::
 
                      N
           phi(x) = sum   gk * phi(2x-k)
@@ -304,8 +304,8 @@ def cwt(data, wavelet, widths):
         Wavelet function, which should take 2 arguments.
         The first argument is a width parameter, defining
         the size of the wavelet (e.g. standard deviation of a gaussian).
-        The second is the number of points that the returned vector will have 
-        (len(wavelet(width,length)) == length). See `ricker`, which 
+        The second is the number of points that the returned vector will have
+        (len(wavelet(width,length)) == length). See `ricker`, which
         satisfies these requirements.
     widths : sequence
         Widths to use for transform.
@@ -318,7 +318,7 @@ def cwt(data, wavelet, widths):
     Notes
     ------
     cwt[ii,:] = scipy.signal.convolve(data,wavelet(width[ii], length), mode='same')
-    where length = min(10 * width[ii], len(data)). 
+    where length = min(10 * width[ii], len(data)).
 
     Examples
     --------

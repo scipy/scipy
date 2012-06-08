@@ -47,7 +47,7 @@ its use, for linear and cubic spline interpolation:
    >>> from scipy.interpolate import interp1d
 
    >>> x = np.linspace(0, 10, 10)
-   >>> y = np.exp(-x/3.0)
+   >>> y = np.cos(-x**2/8.0)
    >>> f = interp1d(x, y)
    >>> f2 = interp1d(x, y, kind='cubic')
 

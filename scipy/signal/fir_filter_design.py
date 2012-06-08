@@ -178,11 +178,12 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         Set to True to scale the coefficients so that the frequency
         response is exactly unity at a certain frequency.
         That frequency is either:
-            0 (DC) if the first passband starts at 0 (i.e. pass_zero
-                is True);
-            `nyq` (the Nyquist rate) if the first passband ends at
-                `nyq` (i.e the filter is a single band highpass filter);
-            center of first passband otherwise.
+
+            - 0 (DC) if the first passband starts at 0 (i.e. pass_zero
+              is True);
+            - `nyq` (the Nyquist rate) if the first passband ends at
+              `nyq` (i.e the filter is a single band highpass filter);
+              center of first passband otherwise.
 
     nyq : float
         Nyquist frequency.  Each frequency in `cutoff` must be between 0
@@ -190,7 +191,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 
     Returns
     -------
-    h : 1D ndarray
+    h : 1-D ndarray
         Coefficients of length `numtaps` FIR filter.
 
     Raises
@@ -322,45 +323,39 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
     numtaps : int
         The number of taps in the FIR filter.  `numtaps` must be less than
         `nfreqs`.
-
     freq : array-like, 1D
         The frequency sampling points. Typically 0.0 to 1.0 with 1.0 being
         Nyquist.  The Nyquist frequency can be redefined with the argument
         `nyq`.
-
         The values in `freq` must be nondecreasing.  A value can be repeated
         once to implement a discontinuity.  The first value in `freq` must
         be 0, and the last value must be `nyq`.
-
     gain : array-like
         The filter gains at the frequency sampling points. Certain
         constraints to gain values, depending on the filter type, are applied,
         see Notes for details.
-
     nfreqs : int, optional
         The size of the interpolation mesh used to construct the filter.
         For most efficient behavior, this should be a power of 2 plus 1
         (e.g, 129, 257, etc).  The default is one more than the smallest
         power of 2 that is not less than `numtaps`.  `nfreqs` must be greater
         than `numtaps`.
-
     window : string or (string, float) or float, or None, optional
         Window function to use. Default is "hamming".  See
         `scipy.signal.get_window` for the complete list of possible values.
         If None, no window function is applied.
-
     nyq : float
         Nyquist frequency.  Each frequency in `freq` must be between 0 and
         `nyq` (inclusive).
-
     antisymmetric : bool
         Flag setting wither resulting impulse responce is symmetric/antisymmetric.
         See Notes for more details.
 
     Returns
     -------
-    taps : numpy 1D array of length `numtaps`
-        The filter coefficients of the FIR filter.
+    taps : ndarray
+        The filter coefficients of the FIR filter, as a 1-D array of length
+        `numtaps`.
 
     Examples
     --------
@@ -387,6 +382,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
     The FIR filter will have linear phase. The type of filter is determined by
     the value of 'numtaps` and `antisymmetric` flag.
     There are four possible combinations:
+
        - odd  `numtaps`, `antisymmetric` is False, type I filter is produced
        - even `numtaps`, `antisymmetric` is False, type II filter is produced
        - odd  `numtaps`, `antisymmetric` is True, type III filter is produced
@@ -394,6 +390,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
 
     Magnitude response of all but type I filters are subjects to following
     constraints:
+
        - type II  -- zero at the Nyquist frequency
        - type III -- zero at zero and Nyquist frequencies
        - type IV  -- zero at zero frequency

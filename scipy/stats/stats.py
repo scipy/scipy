@@ -224,7 +224,30 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
 
 
 def find_repeats(arr):
-    """Find repeats in arr and return (repeats, repeat_count)
+    """
+    Find repeats and repeat counts.
+
+    Parameters
+    ----------
+    arr : array_like
+        Input array
+
+    Returns
+    -------
+    find_repeats : tuple
+        Returns a tuple of two 1-D ndarrays.  The first ndarray are the repeats
+        as sorted, unique values that are repeated in `arr`.  The second
+        ndarray are the counts mapped one-to-one of the repeated values
+        in the first ndarray.
+
+    Examples
+    --------
+        >>> sp.stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
+        (array([ 2. ]), array([ 4 ], dtype=int32)
+
+        >>> sp.stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
+        (array([ 4., 5.]), array([2, 2], dtype=int32))
+
     """
     v1,v2, n = futil.dfreps(arr)
     return v1[:n],v2[:n]
@@ -1695,13 +1718,19 @@ def obrientransform(*args):
     Computes a transform on input data (any number of columns).
 
     Used to test for homogeneity of variance prior to running one-way stats.
-    Each array in *args is one level of a factor.  If an F_oneway() run on the
-    transformed data and found significant, variances are unequal.   From
-    Maxwell and Delaney, p.112.
+    Each array in ``*args`` is one level of a factor.
+    If an `F_oneway` run on the transformed data and found significant,
+    variances are unequal.  From Maxwell and Delaney, p.112.
+
+    Parameters
+    ----------
+    args : ndarray
+        Any number of arrays.
 
     Returns
     -------
-    Transformed data for use in an ANOVA
+    obrientransform : ndarray
+        Transformed data for use in an ANOVA.
 
     """
     TINY = 1e-10
@@ -2927,10 +2956,12 @@ def ttest_1samp(a, popmean, axis=0):
 
 
 def ttest_ind(a, b, axis=0):
-    """Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
+    """
+    Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
-    have identical average (expected) values.
+    have identical average (expected) values. This test assumes that the
+    populations have identical variances.
 
     Parameters
     ----------
@@ -2964,7 +2995,7 @@ def ttest_ind(a, b, axis=0):
     References
     ----------
 
-       http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+     http://en.wikipedia.org/wiki/T_test#Unequal_sample_sizes.2C_equal_variance
 
 
     Examples
@@ -3464,14 +3495,26 @@ def mannwhitneyu(x, y, use_continuity=True):
 
 
 def tiecorrect(rankvals):
-    """Tie-corrector for ties in Mann Whitney U and Kruskal Wallis H tests.
-    See Siegel, S. (1956) Nonparametric Statistics for the Behavioral
-    Sciences.  New York: McGraw-Hill.  Code adapted from |Stat rankind.c
-    code.
+    """
+    Tie-corrector for ties in Mann Whitney U and Kruskal Wallis H tests.
+
+    Parameters
+    ----------
+    rankvals : array_like
+        Input values
 
     Returns
     -------
     T correction factor for U or H
+
+    Notes
+    -----
+    Code adapted from \\|STAT rankind.c code.
+
+    References
+    ----------
+    Siegel, S. (1956) Nonparametric Statistics for the Behavioral
+    Sciences.  New York: McGraw-Hill.
 
     """
     sorted,posn = fastsort(asarray(rankvals))

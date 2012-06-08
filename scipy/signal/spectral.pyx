@@ -19,7 +19,10 @@ cdef extern from "math.h":
 def lombscargle(np.ndarray[np.float64_t, ndim=1] x,
                 np.ndarray[np.float64_t, ndim=1] y,
                 np.ndarray[np.float64_t, ndim=1] freqs):
-    """Computes the Lomb-Scargle periodogram.
+    """
+    lombscargle(x, y, freqs)
+
+    Computes the Lomb-Scargle periodogram.
     
     The Lomb-Scargle periodogram was developed by Lomb [1]_ and further
     extended by Scargle [2]_ to find, and test the significance of weak

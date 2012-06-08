@@ -1,3 +1,12 @@
+"""
+Functions
+---------
+.. autosummary::
+   :toctree: generated/
+
+    fmin_l_bfgs_b
+
+"""
 
 ## License for the Python wrapper
 ## ==============================
@@ -26,7 +35,7 @@
 
 from numpy import array, asarray, float64, int32, zeros
 import _lbfgsb
-from optimize import approx_fprime, MemoizeJac
+from optimize import approx_fprime, MemoizeJac, Result
 from numpy.compat import asbytes
 
 __all__ = ['fmin_l_bfgs_b']
@@ -160,18 +169,18 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'eps'   : epsilon,
             'maxfev': maxfun}
 
-    x, info = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
-                               options=opts, full_output=True)
-    d = {'grad': info['jac'],
-         'task': info['message'],
-         'funcalls': info['nfev'],
-         'warnflag': info['status']}
-    f = info['fun']
+    res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
+                           options=opts)
+    d = {'grad': res['jac'],
+         'task': res['message'],
+         'funcalls': res['nfev'],
+         'warnflag': res['status']}
+    f = res['fun']
+    x = res['x']
 
     return x, f, d
 
-def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options={},
-                     full_output=False):
+def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options=None):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -205,6 +214,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options={},
     This function is called by the `minimize` function with
     `method=L-BFGS-B`. It is not supposed to be called directly.
     """
+    if options is None:
+        options = {}
     # retrieve useful options
     disp    = options.get('disp', None)
     m       = options.get('maxcor', 10)
@@ -303,17 +314,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options={},
          'warnflag' : warnflag
         }
 
-    if full_output:
-        info = {'fun': f,
-                'jac': g,
-                'nfev': n_function_evals,
-                'status': warnflag,
-                'message': task_str,
-                'solution': x,
-                'success': warnflag==0}
-        return x, info
-    else:
-        return x
+    return Result(fun=f, jac=g, nfev=n_function_evals, status=warnflag,
+                  message=task_str, x=x, success=(warnflag==0))
 
 
 if __name__ == '__main__':

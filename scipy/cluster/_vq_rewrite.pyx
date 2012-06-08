@@ -76,6 +76,8 @@ cdef void float_tvq(float32_t *obs, float32_t *code_book,
 
 def vq(np.ndarray obs, np.ndarray codes):
     """
+    vq(obs, codes)
+
     Vector quantization ndarray wrapper.
     """
     cdef np.npy_intp nobs, ncodes, nfeat, nfeat_codes

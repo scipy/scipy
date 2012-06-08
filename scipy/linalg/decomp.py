@@ -79,53 +79,55 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
     return w, vr
 
 def eig(a, b=None, left=False, right=True, overwrite_a=False, overwrite_b=False):
-    """Solve an ordinary or generalized eigenvalue problem of a square matrix.
+    """
+    Solve an ordinary or generalized eigenvalue problem of a square matrix.
 
     Find eigenvalues w and right or left eigenvectors of a general matrix::
 
         a   vr[:,i] = w[i]        b   vr[:,i]
         a.H vl[:,i] = w[i].conj() b.H vl[:,i]
 
-    where .H is the Hermitean conjugation.
+    where ``.H`` is the Hermitian conjugation.
 
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : array_like, shape (M, M)
         A complex or real matrix whose eigenvalues and eigenvectors
         will be computed.
-    b : array, shape (M, M)
+    b : array_like, shape (M, M), optional
         Right-hand side matrix in a generalized eigenvalue problem.
-        If omitted, identity matrix is assumed.
-    left : boolean
-        Whether to calculate and return left eigenvectors
-    right : boolean
-        Whether to calculate and return right eigenvectors
-
-    overwrite_a : boolean
-        Whether to overwrite data in a (may improve performance)
-    overwrite_b : boolean
-        Whether to overwrite data in b (may improve performance)
+        Default is None, identity matrix is assumed.
+    left : bool, optional
+        Whether to calculate and return left eigenvectors.  Default is False.
+    right : bool, optional
+        Whether to calculate and return right eigenvectors.  Default is True.
+    overwrite_a : bool, optional
+        Whether to overwrite `a`; may improve performance.  Default is False.
+    overwrite_b : bool, optional
+        Whether to overwrite `b`; may improve performance.  Default is False.
 
     Returns
     -------
-    w : double or complex array, shape (M,)
+    w : double or complex ndarray
         The eigenvalues, each repeated according to its multiplicity.
+        Of shape (M,).
+    vl : double or complex ndarray
+        The normalized left eigenvector corresponding to the eigenvalue
+        ``w[i]`` is the column v[:,i]. Only returned if ``left=True``.
+        Of shape ``(M, M)``.
+    vr : double or complex array
+        The normalized right eigenvector corresponding to the eigenvalue
+        ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
+        Of shape ``(M, M)``.
 
-    (if left == True)
-    vl : double or complex array, shape (M, M)
-        The normalized left eigenvector corresponding to the eigenvalue w[i]
-        is the column v[:,i].
-
-    (if right == True)
-    vr : double or complex array, shape (M, M)
-        The normalized right eigenvector corresponding to the eigenvalue w[i]
-        is the column vr[:,i].
-
-    Raises LinAlgError if eigenvalue computation does not converge
+    Raises
+    ------
+    LinAlgError
+        If eigenvalue computation does not converge.
 
     See Also
     --------
-    eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
+    eigh : Eigenvalues and right eigenvectors for symmetric/Hermitian arrays.
 
     """
     a1 = asarray_chkfinite(a)
@@ -534,7 +536,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 def eigvals(a, b=None, overwrite_a=False):
-    """Compute eigenvalues from an ordinary or generalized eigenvalue problem.
+    """
+    Compute eigenvalues from an ordinary or generalized eigenvalue problem.
 
     Find eigenvalues of a general matrix::
 
@@ -542,28 +545,31 @@ def eigvals(a, b=None, overwrite_a=False):
 
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : array_like, shape (M, M)
         A complex or real matrix whose eigenvalues and eigenvectors
         will be computed.
-    b : array, shape (M, M)
+    b : array_like, shape (M, M), optional
         Right-hand side matrix in a generalized eigenvalue problem.
         If omitted, identity matrix is assumed.
-    overwrite_a : boolean
+    overwrite_a : boolean, optional
         Whether to overwrite data in a (may improve performance)
 
     Returns
     -------
-    w : double or complex array, shape (M,)
+    w : double or complex ndarray, shape (M,)
         The eigenvalues, each repeated according to its multiplicity,
-        but not in any specific order.
+        but not in any specific order.  Of shape (M,).
 
-    Raises LinAlgError if eigenvalue computation does not converge
+    Raises
+    ------
+    LinAlgError
+        If eigenvalue computation does not converge
 
     See Also
     --------
-    eigvalsh : eigenvalues of symmetric or Hemitiean arrays
-    eig : eigenvalues and right eigenvectors of general arrays
-    eigh : eigenvalues and eigenvectors of symmetric/Hermitean arrays.
+    eigvalsh : eigenvalues of symmetric or Hermitian arrays,
+    eig : eigenvalues and right eigenvectors of general arrays.
+    eigh : eigenvalues and eigenvectors of symmetric/Hermitian arrays.
 
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a)
@@ -706,32 +712,33 @@ _double_precision = ['i','l','d']
 
 
 def hessenberg(a, calc_q=False, overwrite_a=False):
-    """Compute Hessenberg form of a matrix.
+    """
+    Compute Hessenberg form of a matrix.
 
-    The Hessenberg decomposition is
+    The Hessenberg decomposition is::
 
         A = Q H Q^H
 
-    where Q is unitary/orthogonal and H has only zero elements below the first
-    subdiagonal.
+    where `Q` is unitary/orthogonal and `H` has only zero elements below
+    the first sub-diagonal.
 
     Parameters
     ----------
-    a : array, shape (M,M)
-        Matrix to bring into Hessenberg form
-    calc_q : boolean
-        Whether to compute the transformation matrix
-    overwrite_a : boolean
-        Whether to ovewrite data in a (may improve performance)
+    a : ndarray
+        Matrix to bring into Hessenberg form, of shape ``(M,M)``.
+    calc_q : bool, optional
+        Whether to compute the transformation matrix.  Default is False.
+    overwrite_a : bool, optional
+        Whether to overwrite `a`; may improve performance.
+        Default is False.
 
     Returns
     -------
-    H : array, shape (M,M)
-        Hessenberg form of A
-
-    (If calc_q == True)
-    Q : array, shape (M,M)
-        Unitary/orthogonal similarity transformation matrix s.t. A = Q H Q^H
+    H : ndarray
+        Hessenberg form of `a`, of shape (M,M).
+    Q : ndarray
+        Unitary/orthogonal similarity transformation matrix ``A = Q H Q^H``.
+        Only returned if ``calc_q=True``.  Of shape (M,M).
 
     """
     a1 = asarray(a)

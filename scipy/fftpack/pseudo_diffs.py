@@ -19,30 +19,34 @@ del atexit
 
 
 _cache = {}
-def diff(x,order=1,period=None,
-            _cache = _cache):
-    """ diff(x, order=1, period=2*pi) -> y
-
+def diff(x,order=1,period=None, _cache=_cache):
+    """
     Return k-th derivative (or integral) of a periodic sequence x.
 
     If x_j and y_j are Fourier coefficients of periodic functions x
-    and y, respectively, then
+    and y, respectively, then::
 
       y_j = pow(sqrt(-1)*j*2*pi/period, order) * x_j
       y_0 = 0 if order is not 0.
 
-    Optional input:
-      order
+    Parameters
+    ----------
+    x : array_like
+
+    order : int, optional
         The order of differentiation. Default order is 1. If order is
         negative, then integration is carried out under the assumption
-        that x_0==0.
-      period
-        The assumed period of the sequence. Default is 2*pi.
+        that ``x_0 == 0``.
+    period : float, optional
+        The assumed period of the sequence. Default is ``2*pi``.
 
-    Notes:
-      If sum(x,axis=0)=0 then
-          diff(diff(x,k),-k)==x (within numerical accuracy)
-      For odd order and even len(x), the Nyquist mode is taken zero.
+    Notes
+    -----
+    If ``sum(x, axis=0) = 0`` then ``diff(diff(x, k), -k) == x`` (within
+    numerical accuracy).
+
+    For odd order and even ``len(x)``, the Nyquist mode is taken zero.
+
     """
     tmp = asarray(x)
     if order==0:
@@ -72,67 +76,84 @@ del _cache
 
 
 _cache = {}
-def tilbert(x,h,period=None,
-            _cache = _cache):
-    """ tilbert(x, h, period=2*pi) -> y
-
+def tilbert(x, h, period=None, _cache=_cache):
+    """
     Return h-Tilbert transform of a periodic sequence x.
 
     If x_j and y_j are Fourier coefficients of periodic functions x
-    and y, respectively, then
+    and y, respectively, then::
 
-      y_j = sqrt(-1)*coth(j*h*2*pi/period) * x_j
-      y_0 = 0
+        y_j = sqrt(-1)*coth(j*h*2*pi/period) * x_j
+        y_0 = 0
 
-    Input:
-      h
+    Parameters
+    ----------
+    x : array_like
+        The input array to transform.
+    h : float
         Defines the parameter of the Tilbert transform.
-      period
-        The assumed period of the sequence. Default period is 2*pi.
+    period : float, optional
+        The assumed period of the sequence.  Default period is ``2*pi``.
 
-    Notes:
-      If sum(x,axis=0)==0 and n=len(x) is odd then
-        tilbert(itilbert(x)) == x
-      If 2*pi*h/period is approximately 10 or larger then numerically
-        tilbert == hilbert
-      (theoretically oo-Tilbert == Hilbert).
-      For even len(x), the Nyquist mode of x is taken zero.
+    Returns
+    -------
+    tilbert : ndarray
+        The result of the transform.
+
+    Notes
+    -----
+    If ``sum(x, axis=0) == 0`` and ``n = len(x)`` is odd then
+    ``tilbert(itilbert(x)) == x``.
+
+    If ``2 * pi * h / period`` is approximately 10 or larger, then
+    numerically ``tilbert == hilbert``
+    (theoretically oo-Tilbert == Hilbert).
+
+    For even ``len(x)``, the Nyquist mode of ``x`` is taken zero.
+
     """
     tmp = asarray(x)
     if iscomplexobj(tmp):
-        return tilbert(tmp.real,h,period)+\
-               1j*tilbert(tmp.imag,h,period)
+        return tilbert(tmp.real, h, period) + \
+               1j * tilbert(tmp.imag, h, period)
+
     if period is not None:
-        h = h*2*pi/period
+        h = h * 2 * pi / period
+
     n = len(x)
-    omega = _cache.get((n,h))
+    omega = _cache.get((n, h))
     if omega is None:
-        if len(_cache)>20:
-            while _cache: _cache.popitem()
-        def kernel(k,h=h):
-            if k: return 1.0/tanh(h*k)
+        if len(_cache) > 20:
+            while _cache:
+                _cache.popitem()
+
+        def kernel(k, h=h):
+            if k:
+                return 1.0/tanh(h*k)
+
             return 0
-        omega = convolve.init_convolution_kernel(n,kernel,d=1)
+
+        omega = convolve.init_convolution_kernel(n, kernel, d=1)
         _cache[(n,h)] = omega
+
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 del _cache
 
 
 _cache = {}
-def itilbert(x,h,period=None,
-            _cache = _cache):
-    """ itilbert(x, h, period=2*pi) -> y
-
+def itilbert(x,h,period=None, _cache=_cache):
+    """
     Return inverse h-Tilbert transform of a periodic sequence x.
 
-    If x_j and y_j are Fourier coefficients of periodic functions x
-    and y, respectively, then
+    If ``x_j`` and ``y_j`` are Fourier coefficients of periodic functions x
+    and y, respectively, then::
 
       y_j = -sqrt(-1)*tanh(j*h*2*pi/period) * x_j
       y_0 = 0
 
-    Optional input: see tilbert.__doc__
+    For more details, see `tilbert`.
+
     """
     tmp = asarray(x)
     if iscomplexobj(tmp):
@@ -156,14 +177,12 @@ del _cache
 
 
 _cache = {}
-def hilbert(x,
-            _cache=_cache):
-    """ hilbert(x) -> y
-
+def hilbert(x, _cache=_cache):
+    """
     Return Hilbert transform of a periodic sequence x.
 
     If x_j and y_j are Fourier coefficients of periodic functions x
-    and y, respectively, then
+    and y, respectively, then::
 
       y_j = sqrt(-1)*sign(j) * x_j
       y_0 = 0
@@ -212,38 +231,39 @@ del _cache
 
 
 def ihilbert(x):
-    """ ihilbert(x) -> y
-
+    """
     Return inverse Hilbert transform of a periodic sequence x.
 
-    If x_j and y_j are Fourier coefficients of periodic functions x
-    and y, respectively, then
+    If ``x_j`` and ``y_j`` are Fourier coefficients of periodic functions x
+    and y, respectively, then::
 
       y_j = -sqrt(-1)*sign(j) * x_j
       y_0 = 0
+
     """
     return -hilbert(x)
 
 
 _cache = {}
-def cs_diff(x, a, b, period=None,
-            _cache = _cache):
-    """ cs_diff(x, a, b, period=2*pi) -> y
-
+def cs_diff(x, a, b, period=None, _cache=_cache):
+    """
     Return (a,b)-cosh/sinh pseudo-derivative of a periodic sequence x.
 
-    If x_j and y_j are Fourier coefficients of periodic functions x
-    and y, respectively, then
+    If ``x_j`` and ``y_j`` are Fourier coefficients of periodic functions x
+    and y, respectively, then::
 
       y_j = -sqrt(-1)*cosh(j*a*2*pi/period)/sinh(j*b*2*pi/period) * x_j
       y_0 = 0
 
-    Input:
-      a,b
+    Parameters
+    ----------
+    x : array_like
+        The array to take the pseudo-derivative from.
+    a, b : float
         Defines the parameters of the cosh/sinh pseudo-differential
         operator.
-      period
-        The period of the sequence. Default period is 2*pi.
+    period : float, optional
+        The period of the sequence. Default period is ``2*pi``.
 
     Notes:
       For even len(x), the Nyquist mode of x is taken zero.
@@ -271,8 +291,7 @@ del _cache
 
 
 _cache = {}
-def sc_diff(x, a, b, period=None,
-            _cache = _cache):
+def sc_diff(x, a, b, period=None, _cache=_cache):
     """
     Return (a,b)-sinh/cosh pseudo-derivative of a periodic sequence x.
 
@@ -321,27 +340,30 @@ del _cache
 
 
 _cache = {}
-def ss_diff(x, a, b, period=None,
-            _cache = _cache):
-    """ ss_diff(x, a, b, period=2*pi) -> y
-
+def ss_diff(x, a, b, period=None, _cache=_cache):
+    """
     Return (a,b)-sinh/sinh pseudo-derivative of a periodic sequence x.
 
     If x_j and y_j are Fourier coefficients of periodic functions x
-    and y, respectively, then
+    and y, respectively, then::
 
       y_j = sinh(j*a*2*pi/period)/sinh(j*b*2*pi/period) * x_j
       y_0 = a/b * x_0
 
-    Input:
-      a,b
+    Parameters
+    ----------
+    x : array_like
+        The array to take the pseudo-derivative from.
+    a,b
         Defines the parameters of the sinh/sinh pseudo-differential
         operator.
-      period
-        The period of the sequence x. Default is 2*pi.
+    period : float, optional
+        The period of the sequence x. Default is ``2*pi``.
 
-    Notes:
-      ss_diff(ss_diff(x,a,b),b,a) == x
+    Notes
+    -----
+    ``ss_diff(ss_diff(x,a,b),b,a) == x``
+
     """
     tmp = asarray(x)
     if iscomplexobj(tmp):
@@ -366,28 +388,29 @@ del _cache
 
 
 _cache = {}
-def cc_diff(x, a, b, period=None,
-            _cache = _cache):
-    """ cc_diff(x, a, b, period=2*pi) -> y
-
+def cc_diff(x, a, b, period=None, _cache=_cache):
+    """
     Return (a,b)-cosh/cosh pseudo-derivative of a periodic sequence x.
 
     If x_j and y_j are Fourier coefficients of periodic functions x
-    and y, respectively, then
+    and y, respectively, then::
 
       y_j = cosh(j*a*2*pi/period)/cosh(j*b*2*pi/period) * x_j
 
-    Input:
-      a,b
+    Parameters
+    ----------
+    x : array_like
+        The array to take the pseudo-derivative from.
+    a,b
         Defines the parameters of the sinh/sinh pseudo-differential
         operator.
+    period : float, optional
+        The period of the sequence x. Default is ``2*pi``.
 
-    Optional input:
-      period
-        The period of the sequence x. Default is 2*pi.
+    Notes
+    -----
+    ``cc_diff(cc_diff(x,a,b),b,a) == x``
 
-    Notes:
-      cc_diff(cc_diff(x,a,b),b,a) == x
     """
     tmp = asarray(x)
     if iscomplexobj(tmp):
@@ -409,21 +432,25 @@ def cc_diff(x, a, b, period=None,
     return convolve.convolve(tmp,omega,overwrite_x=overwrite_x)
 del _cache
 
-_cache = {}
-def shift(x, a, period=None,
-          _cache = _cache):
-    """ shift(x, a, period=2*pi) -> y
 
+_cache = {}
+def shift(x, a, period=None, _cache=_cache):
+    """
     Shift periodic sequence x by a: y(u) = x(u+a).
 
     If x_j and y_j are Fourier coefficients of periodic functions x
-    and y, respectively, then
+    and y, respectively, then::
 
           y_j = exp(j*a*2*pi/period*sqrt(-1)) * x_f
 
-    Optional input:
-      period
-        The period of the sequences x and y. Default period is 2*pi.
+    Parameters
+    ----------
+    x : array_like
+        The array to take the pseudo-derivative from.
+    a : float
+        Defines the parameters of the sinh/sinh pseudo-differential
+    period : float, optional
+        The period of the sequences x and y. Default period is ``2*pi``.
     """
     tmp = asarray(x)
     if iscomplexobj(tmp):

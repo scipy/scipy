@@ -122,7 +122,9 @@ def test_read_example_data():
     # read any example data files
     for fname in glob(pjoin(TEST_DATA_PATH, '*.nc')):
         f = netcdf_file(fname, 'r')
+        f.close()
         f = netcdf_file(fname, 'r', mmap=False)
+        f.close()
 
 def test_itemset_no_segfault_on_readonly():
     # Regression test for ticket #1202.
@@ -130,6 +132,7 @@ def test_itemset_no_segfault_on_readonly():
     filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
     f = netcdf_file(filename, 'r')
     time_var = f.variables['time']
+    f.close()
     # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
     assert_raises(RuntimeError, time_var.assignValue, 42)
 

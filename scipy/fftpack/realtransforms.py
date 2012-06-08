@@ -56,8 +56,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
     Inverse DCT generally refers to DCT type 3.
 
-    type I
-    ~~~~~~
+    **type I**
+
     There are several definitions of the DCT-I; we use the following
     (for ``norm=None``)::
 
@@ -68,8 +68,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     Only None is supported as normalization mode for DCT-I. Note also that the
     DCT-I is only supported for input size > 1
 
-    type II
-    ~~~~~~~
+    **type II**
+
     There are several definitions of the DCT-II; we use the following
     (for ``norm=None``)::
 
@@ -86,8 +86,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     Which makes the corresponding matrix of coefficients orthonormal
     (``OO' = Id``).
 
-    type III
-    ~~~~~~~~
+    **type III**
 
     There are several definitions, we use the following
     (for ``norm=None``)::
@@ -108,7 +107,6 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 
     References
     ----------
-
     http://en.wikipedia.org/wiki/Discrete_cosine_transform
 
     'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, `IEEE
@@ -279,8 +277,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     even/odd boundary conditions and boundary off sets [WPS]_, only the first
     3 types are implemented in scipy.
 
-    type I
-    ~~~~~~
+    **type I**
+
     There are several definitions of the DST-I; we use the following
     for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N.
 
@@ -292,8 +290,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     DCT-I is only supported for input size > 1
     The (unnormalized) DCT-I is its own inverse, up to a factor `2(N+1)`.
 
-    type II
-    ~~~~~~~
+    **type II**
+
     There are several definitions of the DST-I; we use the following
     for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N.
 
@@ -306,8 +304,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
         f = sqrt(1/(4*N)) if k == 0
         f = sqrt(1/(2*N)) otherwise.
 
-    type III
-    ~~~~~~~~
+    **type III**
 
     There are several definitions of the DST-III, we use the following
     (for ``norm=None``).  DST-III assumes the input is odd around n=-1
@@ -323,8 +320,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 
     References
     ----------
-
     http://en.wikipedia.org/wiki/Discrete_sine_transform
+
     """
     if type == 1 and norm is not None:
         raise NotImplementedError(

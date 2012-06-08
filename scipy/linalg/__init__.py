@@ -68,6 +68,7 @@ Decompositions
    cho_solve_banded - Solve previously factored banded linear system
    qr - QR decomposition of a matrix
    qr_multiply - QR decomposition and multiplication by Q
+   qz - QZ decomposition of a pair of matrices
    schur - Schur decomposition of a matrix
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix
@@ -134,6 +135,7 @@ from decomp import *
 from decomp_lu import *
 from decomp_cholesky import *
 from decomp_qr import *
+from _decomp_qz import *
 from decomp_svd import *
 from decomp_schur import *
 from matfuncs import *

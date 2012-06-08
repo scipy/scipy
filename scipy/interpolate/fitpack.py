@@ -117,10 +117,12 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         vector d, then w should be 1/d. Default is ones(len(x[0])).
     u : array_like, optional
         An array of parameter values. If not given, these values are
-        calculated automatically as ``M = len(x[0])``:
-           v[0] = 0
-           v[i] = v[i-1] + distance(x[i],x[i-1])
-           u[i] = v[i] / v[M-1]
+        calculated automatically as ``M = len(x[0])``::
+
+            v[0] = 0
+            v[i] = v[i-1] + distance(x[i],x[i-1])
+            u[i] = v[i] / v[M-1]
+
     ub, ue : int, optional
         The end-points of the parameters interval.  Defaults to
         u[0] and u[-1].
@@ -157,8 +159,8 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         Always large enough is nest=m+k+1.
     per : int, optional
        If non-zero, data points are considered periodic with period
-       x[m-1] - x[0] and a smooth periodic spline approximation is returned.
-       Values of y[m-1] and w[m-1] are not used.
+       ``x[m-1] - x[0]`` and a smooth periodic spline approximation is
+       returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
 

@@ -146,7 +146,7 @@ html_additional_pages = {}
 html_use_modindex = True
 
 # If true, the reST sources are included in the HTML build as _sources/<name>.
-#html_copy_source = True
+html_copy_source = False
 
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the
@@ -206,8 +206,8 @@ latex_preamble = r'''
 
 % Make Examples/etc section headers smaller and more compact
 \makeatletter
-\titleformat{\paragraph}{\normalsize\py@HeaderFamily}%
-            {\py@TitleColor}{0em}{\py@TitleColor}{\py@NormalColor}
+\titleformat{\paragraph}{\normalsize\normalfont\bfseries\itshape}%
+            {\py@NormalColor}{0em}{\py@NormalColor}{\py@NormalColor}
 \titlespacing*{\paragraph}{0pt}{1ex}{0pt}
 \makeatother
 

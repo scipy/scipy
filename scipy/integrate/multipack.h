@@ -175,7 +175,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
    */
   if ((result = PyEval_CallObject(func, arglist))==NULL) {
     PyErr_Print();
-    tmpobj = PyObject_GetAttrString(func, "func_name");
+    tmpobj = PyObject_GetAttrString(func, "__name__");
     if (tmpobj == NULL) goto fail;
     str1 = PyString_FromString("Error occurred while calling the Python function named ");
     if (str1 == NULL) { Py_DECREF(tmpobj); goto fail;}

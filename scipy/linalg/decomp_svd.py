@@ -12,40 +12,57 @@ __all__ = ['svd', 'svdvals', 'diagsvd', 'orth']
 
 
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
-    """Singular Value Decomposition.
+    """
+    Singular Value Decomposition.
 
-    Factorizes the matrix a into two unitary matrices U and Vh and
-    an 1d-array s of singular values (real, non-negative) such that
-    a == U S Vh  if S is an suitably shaped matrix of zeros whose
-    main diagonal is s.
+    Factorizes the matrix a into two unitary matrices U and Vh, and
+    a 1-D array s of singular values (real, non-negative) such that
+    ``a == U*S*Vh``, where S is a suitably shaped matrix of zeros with
+    main diagonal s.
 
     Parameters
     ----------
-    a : array, shape (M, N)
-        Matrix to decompose
-    full_matrices : boolean
-        If true,  U, Vh are shaped  (M,M), (N,N)
-        If false, the shapes are    (M,K), (K,N) where K = min(M,N)
-    compute_uv : boolean
-        Whether to compute also U, Vh in addition to s (Default: true)
-    overwrite_a : boolean
-        Whether data in a is overwritten (may improve performance)
+    a : ndarray
+        Matrix to decompose, of shape ``(M,N)``.
+    full_matrices : bool, optional
+        If True, `U` and `Vh` are of shape ``(M,M)``, ``(N,N)``.
+        If False, the shapes are ``(M,K)`` and ``(K,N)``, where
+        ``K = min(M,N)``.
+    compute_uv : bool, optional
+        Whether to compute also `U` and `Vh` in addition to `s`.
+        Default is True.
+    overwrite_a : bool, optional
+        Whether to overwrite `a`; may improve performance.
+        Default is False.
 
     Returns
     -------
-    U:  array, shape (M,M) or (M,K) depending on full_matrices
-    s:  array, shape (K,)
-        The singular values, sorted so that s[i] >= s[i+1]. K = min(M, N)
-    Vh: array, shape (N,N) or (K,N) depending on full_matrices
+    U : ndarray
+        Unitary matrix having left singular vectors as columns.
+        Of shape ``(M,M)`` or ``(M,K)``, depending on `full_matrices`.
+    s : ndarray
+        The singular values, sorted in non-increasing order.
+        Of shape (K,), with ``K = min(M, N)``.
+    Vh : ndarray
+        Unitary matrix having right singular vectors as rows.
+        Of shape ``(N,N)`` or ``(K,N)`` depending on `full_matrices`.
 
-    For compute_uv = False, only s is returned.
+    For ``compute_uv = False``, only `s` is returned.
 
-    Raises LinAlgError if SVD computation does not converge
+    Raises
+    ------
+    LinAlgError
+        If SVD computation does not converge.
+
+    See also
+    --------
+    svdvals : Compute singular values of a matrix.
+    diagsvd : Construct the Sigma matrix, given the vector s.
 
     Examples
     --------
-    >>> from scipy import random, linalg, allclose, dot
-    >>> a = random.randn(9, 6) + 1j*random.randn(9, 6)
+    >>> from scipy import linalg
+    >>> a = np.random.randn(9, 6) + 1.j*np.random.randn(9, 6)
     >>> U, s, Vh = linalg.svd(a)
     >>> U.shape, Vh.shape, s.shape
     ((9, 9), (6, 6), (6,))
@@ -54,17 +71,12 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     >>> U.shape, Vh.shape, s.shape
     ((9, 6), (6, 6), (6,))
     >>> S = linalg.diagsvd(s, 6, 6)
-    >>> allclose(a, dot(U, dot(S, Vh)))
+    >>> np.allclose(a, np.dot(U, np.dot(S, Vh)))
     True
 
     >>> s2 = linalg.svd(a, compute_uv=False)
-    >>> allclose(s, s2)
+    >>> np.allclose(s, s2)
     True
-
-    See also
-    --------
-    svdvals : return singular values of a matrix
-    diagsvd : return the Sigma matrix, given the vector s
 
     """
     a1 = asarray_chkfinite(a)
@@ -90,40 +102,48 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
         return s
 
 def svdvals(a, overwrite_a=False):
-    """Compute singular values of a matrix.
+    """
+    Compute singular values of a matrix.
 
     Parameters
     ----------
-    a : array, shape (M, N)
-        Matrix to decompose
-    overwrite_a : boolean
-        Whether data in a is overwritten (may improve performance)
+    a : ndarray
+        Matrix to decompose, of shape ``(M, N)``.
+    overwrite_a : bool, optional
+        Whether to overwrite `a`; may improve performance.
+        Default is False.
 
     Returns
     -------
-    s:  array, shape (K,)
-        The singular values, sorted so that s[i] >= s[i+1]. K = min(M, N)
+    s : ndarray
+        The singular values, sorted in decreasing order.
+        Of shape ``(K,)``, with``K = min(M, N)``.
 
-    Raises LinAlgError if SVD computation does not converge
+    Raises
+    ------
+    LinAlgError
+        If SVD computation does not converge.
 
     See also
     --------
-    svd : return the full singular value decomposition of a matrix
-    diagsvd : return the Sigma matrix, given the vector s
+    svd : Compute the full singular value decomposition of a matrix.
+    diagsvd : Construct the Sigma matrix, given the vector s.
 
     """
     return svd(a, compute_uv=0, overwrite_a=overwrite_a)
 
 def diagsvd(s, M, N):
-    """Construct the sigma matrix in SVD from singular values and size M,N.
+    """
+    Construct the sigma matrix in SVD from singular values and size M, N.
 
     Parameters
     ----------
-    s : array, shape (M,) or (N,)
+    s : array_like, shape (M,) or (N,)
         Singular values
-    M : integer
-    N : integer
-        Size of the matrix whose singular values are s
+    M : int
+        Size of the matrix whose singular values are `s`.
+    N : int
+        Size of the matrix whose singular values are `s`.
 
     Returns
     -------

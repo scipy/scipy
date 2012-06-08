@@ -127,6 +127,7 @@ extern double nbdtr ( int k, int n, double p );
 extern double nbdtri ( int k, int n, double p ); 
 
 extern double ndtr ( double a );
+extern double log_ndtr ( double a );
 extern double erfc ( double a );
 extern double erf ( double x );
 extern double ndtri ( double y0 );

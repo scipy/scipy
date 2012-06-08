@@ -9,6 +9,7 @@ import warnings
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal, \
         TestCase, run_module_suite, assert_raises
+from numpy.testing.utils import WarningManager
 
 from scipy.cluster.vq import kmeans, kmeans2, py_vq, py_vq2, vq, ClusterError
 try:
@@ -115,24 +116,23 @@ class TestKMean(TestCase):
 
     def test_kmeans_lost_cluster(self):
         """This will cause kmean to have a cluster with no points."""
-        data = np.fromfile(open(DATAFILE1), sep = ", ")
+        data = np.fromfile(DATAFILE1, sep = ", ")
         data = data.reshape((200, 2))
         initk = np.array([[-1.8127404, -0.67128041],
                          [ 2.04621601, 0.07401111],
                          [-2.31149087,-0.05160469]])
 
         res = kmeans(data, initk)
-        warnings.simplefilter('ignore', UserWarning)
-        try:
-            res = kmeans2(data, initk, missing = 'warn')
-        finally:
-            warnings.simplefilter('default', UserWarning)
 
-        try :
-            res = kmeans2(data, initk, missing = 'raise')
-            raise AssertionError("Exception not raised ! Should not happen")
-        except ClusterError, e:
-            pass
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            warnings.simplefilter('ignore', UserWarning)
+            res = kmeans2(data, initk, missing='warn')
+        finally:
+            warn_ctx.__exit__()
+
+        assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
 
     def test_kmeans2_simple(self):
         """Testing simple call to kmeans2 and its results."""
@@ -146,7 +146,7 @@ class TestKMean(TestCase):
 
     def test_kmeans2_rank1(self):
         """Testing simple call to kmeans2 with rank 1 data."""
-        data = np.fromfile(open(DATAFILE1), sep = ", ")
+        data = np.fromfile(DATAFILE1, sep = ", ")
         data = data.reshape((200, 2))
         data1 = data[:, 0]
         data2 = data[:, 1]
@@ -158,7 +158,7 @@ class TestKMean(TestCase):
 
     def test_kmeans2_rank1_2(self):
         """Testing simple call to kmeans2 with rank 1 data."""
-        data = np.fromfile(open(DATAFILE1), sep = ", ")
+        data = np.fromfile(DATAFILE1, sep = ", ")
         data = data.reshape((200, 2))
         data1 = data[:, 0]
 
@@ -166,7 +166,7 @@ class TestKMean(TestCase):
 
     def test_kmeans2_init(self):
         """Testing that kmeans2 init methods work."""
-        data = np.fromfile(open(DATAFILE1), sep = ", ")
+        data = np.fromfile(DATAFILE1, sep = ", ")
         data = data.reshape((200, 2))
 
         kmeans2(data, 3, minit = 'random')
@@ -179,32 +179,14 @@ class TestKMean(TestCase):
 
     def test_kmeans2_empty(self):
         """Ticket #505."""
-        try:
-            kmeans2([], 2)
-            raise AssertionError("This should not succeed.")
-        except ValueError, e:
-            # OK, that's what we expect
-            pass
+        assert_raises(ValueError, kmeans2, [], 2)
 
     def test_kmeans_0k(self):
         """Regression test for #546: fail when k arg is 0."""
-        try:
-            kmeans(X, 0)
-            raise AssertionError("kmeans with 0 clusters should fail.")
-        except ValueError:
-            pass
+        assert_raises(ValueError, kmeans, X, 0)
+        assert_raises(ValueError, kmeans2, X, 0)
+        assert_raises(ValueError, kmeans2, X, np.array([]))
 
-        try:
-            kmeans2(X, 0)
-            raise AssertionError("kmeans2 with 0 clusters should fail.")
-        except ValueError:
-            pass
-
-        try:
-            kmeans2(X, np.array([]))
-            raise AssertionError("kmeans2 with 0 clusters should fail.")
-        except ValueError:
-            pass
 
 if __name__ == "__main__":
     run_module_suite()

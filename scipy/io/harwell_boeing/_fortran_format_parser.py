@@ -50,14 +50,15 @@ class IntFormat(object):
         Returns
         -------
         res: IntFormat
-            IntFormat instance with reasonable (see Note) computed width
+            IntFormat instance with reasonable (see Notes) computed width
 
-        Note
-        ----
+        Notes
+        -----
         Reasonable should be understood as the minimal string length necessary
         without losing precision. For example, IntFormat.from_number(1) will
         return an IntFormat instance of width 2, so that any 0 and 1 may be
-        represented as 1-character strings without loss of information."""
+        represented as 1-character strings without loss of information.
+        """
         width = number_digits(n) + 1
         if n < 0:
             width += 1
@@ -109,12 +110,13 @@ class ExpFormat(object):
         Returns
         -------
         res: ExpFormat
-            ExpFormat instance with reasonable (see Note) computed width
+            ExpFormat instance with reasonable (see Notes) computed width
 
-        Note
-        ----
+        Notes
+        -----
         Reasonable should be understood as the minimal string length necessary
-        to avoid losing precision."""
+        to avoid losing precision.
+        """
         # len of one number in exp format: sign + 1|0 + "." +
         # number of digit for fractional part + 'E' + sign of exponent +
         # len of exponent
@@ -224,8 +226,8 @@ class FortranFormatParser(object):
     """Parser for fortran format strings. The parse method returns a *Format
     instance.
 
-    Note
-    ----
+    Notes
+    -----
     Only ExpFormat (exponential format for floating values) and IntFormat
     (integer format) for now.
     """

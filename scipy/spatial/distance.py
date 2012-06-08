@@ -59,56 +59,10 @@ functions. Use ``pdist`` for this purpose.
    sqeuclidean      -- the squared Euclidean distance.
    yule             -- the Yule dissimilarity (boolean).
 
-
-References
-----------
-
-.. [Sta07] "Statistics toolbox." API Reference Documentation. The MathWorks.
-   http://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
-   Accessed October 1, 2007.
-
-.. [Mti07] "Hierarchical clustering." API Reference Documentation.
-   The Wolfram Research, Inc.
-   http://reference.wolfram.com/mathematica/HierarchicalClustering/tutorial/HierarchicalClustering.html.
-   Accessed October 1, 2007.
-
-.. [Gow69] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
-   Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
-
-.. [War63] Ward Jr, JH. "Hierarchical grouping to optimize an objective
-   function." Journal of the American Statistical Association. 58(301):
-   pp. 236--44. 1963.
-
-.. [Joh66] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
-   32(2): pp. 241--54. 1966.
-
-.. [Sne62] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
-   855--60. 1962.
-
-.. [Bat95] Batagelj, V. "Comparing resemblance measures." Journal of
-   Classification. 12: pp. 73--90. 1995.
-
-.. [Sok58] Sokal, RR and Michener, CD. "A statistical method for evaluating
-   systematic relationships." Scientific Bulletins. 38(22):
-   pp. 1409--38. 1958.
-
-.. [Ede79] Edelbrock, C. "Mixture model tests of hierarchical clustering
-   algorithms: the problem of classifying everybody." Multivariate
-   Behavioral Research. 14: pp. 367--84. 1979.
-
-.. [Jai88] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
-   Prentice-Hall. Englewood Cliffs, NJ. 1988.
-
-.. [Fis36] Fisher, RA "The use of multiple measurements in taxonomic
-   problems." Annals of Eugenics, 7(2): 179-188. 1936
-
-
-Copyright Notice
-----------------
-
-Copyright (C) Damian Eads, 2007-2008. New BSD License.
-
 """
+
+# Copyright (C) Damian Eads, 2007-2008. New BSD License.
+
 
 import warnings
 import numpy as np
@@ -516,7 +470,7 @@ def mahalanobis(u, v, VI):
 
     .. math::
 
-       (u-v)V^{-1}(u-v)^T
+       \sqrt{ (u-v) V^{-1} (u-v)^T }
 
     where ``V`` is the covariance matrix.  Note that the argument ``VI``
     is the inverse of ``V``.
@@ -924,8 +878,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     Computes the pairwise distances between m original observations in
     n-dimensional space. Returns a condensed distance matrix Y.  For
     each :math:`i` and :math:`j` (where :math:`i<j<n`), the
-    metric ``dist(u=X[i], v=X[j])`` is computed and stored in the
-    :math:`ij`th entry.
+    metric ``dist(u=X[i], v=X[j])`` is computed and stored in entry ``ij``.
 
     See ``squareform`` for information on how to calculate the index of
     this entry or to convert the condensed distance matrix to a
@@ -977,8 +930,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
           1 - \frac{u \cdot v}
                    {{||u||}_2 {||v||}_2}
 
-       where :math:`||*||_2` is the 2-norm of its argument *, and
-       :math:`u \cdot v` is the dot product of :math:`u` and :math:`v`.
+       where :math:`||*||_2` is the 2-norm of its argument ``*``, and
+       :math:`u \cdot v` is the dot product of ``u`` and ``v``.
 
     7. ``Y = pdist(X, 'correlation')``
 
@@ -1362,42 +1315,39 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
 
 def squareform(X, force="no", checks=True):
-    r"""
+    """
     Converts a vector-form distance vector to a square-form distance
     matrix, and vice-versa.
 
     Parameters
     ----------
-       X : ndarray
-           Either a condensed or redundant distance matrix.
+    X : ndarray
+        Either a condensed or redundant distance matrix.
 
     Returns
     -------
-       Y : ndarray
-           If a condensed distance matrix is passed, a redundant
-           one is returned, or if a redundant one is passed, a
-           condensed distance matrix is returned.
+    Y : ndarray
+        If a condensed distance matrix is passed, a redundant one is
+        returned, or if a redundant one is passed, a condensed distance
+        matrix is returned.
+    force : str, optional
+        As with MATLAB(TM), if force is equal to 'tovector' or 'tomatrix',
+        the input will be treated as a distance matrix or distance vector
+        respectively.
+    checks : bool, optional
+        If `checks` is set to False, no checks will be made for matrix
+        symmetry nor zero diagonals. This is useful if it is known that
+        ``X - X.T1`` is small and ``diag(X)`` is close to zero.
+        These values are ignored any way so they do not disrupt the
+        squareform transformation.
 
-       force : string
-           As with MATLAB(TM), if force is equal to 'tovector' or
-           'tomatrix', the input will be treated as a distance matrix
-           or distance vector respectively.
-
-       checks : bool
-           If ``checks`` is set to ``False``, no checks will be made
-           for matrix symmetry nor zero diagonals. This is useful if
-           it is known that ``X - X.T1`` is small and ``diag(X)`` is
-           close to zero. These values are ignored any way so they do
-           not disrupt the squareform transformation.
-
-
-    Calling Conventions
-    -------------------
+    Notes
+    -----
 
     1. v = squareform(X)
 
-       Given a square d by d symmetric distance matrix ``X``,
-       ``v=squareform(X)`` returns a :math:`d*(d-1)/2` (or
+       Given a square d-by-d symmetric distance matrix X,
+       ``v=squareform(X)`` returns a ``d * (d-1) / 2`` (or
        `${n \choose 2}$`) sized vector v.
 
       v[{n \choose 2}-{n-i \choose 2} + (j-i-1)] is the distance
@@ -1496,29 +1446,31 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     ----------
     D : ndarray
         The candidate object to test for validity.
-    tol : double
-        The distance matrix should be symmetric. tol is the maximum
-        difference between the :math:`ij`th entry and the
-        :math:`ji`th entry for the distance metric to be
-        considered symmetric.
-    throw : bool
-        An exception is thrown if the distance matrix passed is not
-        valid.
-    name : string
-        the name of the variable to checked. This is useful if
-        throw is set to ``True`` so the offending variable can be
-        identified in the exception message when an exception is
-        thrown.
-    warning : bool
+    tol : float, optional
+        The distance matrix should be symmetric. `tol` is the maximum
+        difference between entries ``ij`` and ``ji`` for the distance
+        metric to be considered symmetric.
+    throw : bool, optional
+        An exception is thrown if the distance matrix passed is not valid.
+    name : str, optional
+        The name of the variable to checked. This is useful if
+        throw is set to True so the offending variable can be identified
+        in the exception message when an exception is thrown.
+    warning : bool, optional
         Instead of throwing an exception, a warning message is
         raised.
 
     Returns
     -------
-    Returns ``True`` if the variable ``D`` passed is a valid
-    distance matrix.  Small numerical differences in ``D`` and
-    ``D.T`` and non-zeroness of the diagonal are ignored if they are
-    within the tolerance specified by ``tol``.
+    valid : bool
+        True if the variable ``D`` passed is a valid distance matrix.
+
+    Notes
+    -----
+    Small numerical differences in ``D`` and ``D.T`` and non-zeroness of
+    the diagonal are ignored if they are within the tolerance specified
+    by ``tol``.
+
     """
     D = np.asarray(D, order='c')
     valid = True
@@ -1699,10 +1651,10 @@ def num_obs_y(Y):
 
 
 def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
-    r"""
-    Computes distance between each pair of observation vectors in the
-    Cartesian product of two collections of vectors. ``XA`` is a
-    :math:`m_A` by :math:`n` array while ``XB`` is a :math:`m_B` by
+    """
+    Computes distance between each pair of the two collections of inputs.
+
+    ``XA`` is a :math:`m_A` by :math:`n` array while ``XB`` is a :math:`m_B` by
     :math:`n` array. A :math:`m_A` by :math:`m_B` array is
     returned. An exception is thrown if ``XA`` and ``XB`` do not have
     the same number of columns.
@@ -1723,7 +1675,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     2. ``Y = cdist(XA, XB, 'minkowski', p)``
 
        Computes the distances using the Minkowski distance
-       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p \geq 1`.
+       :math:`||u-v||_p` (:math:`p`-norm) where :math:`p \\geq 1`.
 
     3. ``Y = cdist(XA, XB, 'cityblock')``
 
@@ -1737,7 +1689,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          \sqrt{\sum {(u_i-v_i)^2 / V[x_i]}}.
+          \\sqrt{\\sum {(u_i-v_i)^2 / V[x_i]}}.
 
        V is the variance vector; V[i] is the variance computed over all
           the i'th components of the points. If not passed, it is
@@ -1754,12 +1706,11 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          1 - \frac{u \cdot v}
+          1 - \\frac{u \\cdot v}
                    {{||u||}_2 {||v||}_2}
 
-       where :math:`||*||_2` is the 2-norm of its argument *, and
-       :math:`u \cdot v` is the dot product of :math:`u` and :math:`v`.
-
+       where :math:`||*||_2` is the 2-norm of its argument ``*``, and
+       :math:`u \\cdot v` is the dot product of :math:`u` and :math:`v`.
 
     7. ``Y = cdist(XA, XB, 'correlation')``
 
@@ -1767,11 +1718,11 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          1 - \frac{(u - \bar{u}) \cdot (v - \bar{v})}
-                   {{||(u - \bar{u})||}_2 {||(v - \bar{v})||}_2}
+          1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
+                   {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
 
-       where :math:`\bar{v}` is the mean of the elements of vector v,
-       and :math:`x \cdot y` is the dot product of :math:`x` and :math:`y`.
+       where :math:`\\bar{v}` is the mean of the elements of vector v,
+       and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
 
 
     8. ``Y = cdist(XA, XB, 'hamming')``
@@ -1797,7 +1748,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-          d(u,v) = \max_i {|u_i-v_i|}.
+          d(u,v) = \\max_i {|u_i-v_i|}.
 
     11. ``Y = cdist(XA, XB, 'canberra')``
 
@@ -1806,7 +1757,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-         d(u,v) = \sum_i \frac{|u_i-v_i|}
+         d(u,v) = \\sum_i \\frac{|u_i-v_i|}
                               {|u_i|+|v_i|}.
 
     12. ``Y = cdist(XA, XB, 'braycurtis')``
@@ -1817,8 +1768,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-            d(u,v) = \frac{\sum_i (u_i-v_i)}
-                          {\sum_i (u_i+v_i)}
+            d(u,v) = \\frac{\\sum_i (u_i-v_i)}
+                          {\\sum_i (u_i+v_i)}
 
     13. ``Y = cdist(XA, XB, 'mahalanobis', VI=None)``
 
@@ -1890,7 +1841,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        would calculate the pair-wise distances between the vectors in
        X using the Python function sokalsneath. This would result in
-       sokalsneath being called :math:`{n \choose 2}` times, which
+       sokalsneath being called :math:`{n \\choose 2}` times, which
        is inefficient. Instead, the optimized C version is more
        efficient, and we call it using the following syntax.::
 
@@ -1926,6 +1877,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     -------
     Y : ndarray
         A :math:`m_A` by :math:`m_B` distance matrix.
+
     """
 
 #         21. Y = cdist(XA, XB, 'test_Y')

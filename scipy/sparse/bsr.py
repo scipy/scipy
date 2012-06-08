@@ -63,51 +63,47 @@ class bsr_matrix(_cs_matrix):
 
     Notes
     -----
-
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
 
-    Summary of BSR format:
+    **Summary of BSR format**
 
-        - The Block Compressed Row (BSR) format is very similar to the
-          Compressed Sparse Row (CSR) format.  BSR is appropriate for
-          sparse matrices with dense sub matrices like the last example
-          below.  Block matrices often arise in vector-valued finite
-          element discretizations.  In such cases, BSR is considerably
-          more efficient than CSR and CSC for many sparse arithmetic
-          operations.
+    The Block Compressed Row (BSR) format is very similar to the Compressed
+    Sparse Row (CSR) format.  BSR is appropriate for sparse matrices with dense
+    sub matrices like the last example below.  Block matrices often arise in
+    vector-valued finite element discretizations.  In such cases, BSR is
+    considerably more efficient than CSR and CSC for many sparse arithmetic
+    operations.
 
-    Blocksize
-        - The blocksize (R,C) must evenly divide the shape of
-          the matrix (M,N).  That is, R and C must satisfy the
-          relationship M % R = 0 and N % C = 0.
-        - If no blocksize is specified, a simple heuristic is applied
-          to determine an appropriate blocksize.
+    **Blocksize**
 
+    The blocksize (R,C) must evenly divide the shape of the matrix (M,N).
+    That is, R and C must satisfy the relationship ``M % R = 0`` and
+    ``N % C = 0``.
 
+    If no blocksize is specified, a simple heuristic is applied to determine
+    an appropriate blocksize.
 
     Examples
     --------
-
-    >>> from scipy.sparse import *
-    >>> from scipy import *
-    >>> bsr_matrix( (3,4), dtype=int8 ).todense()
+    >>> from scipy.sparse import bsr_matrix
+    >>> bsr_matrix((3,4), dtype=np.int8).todense()
     matrix([[0, 0, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 0]], dtype=int8)
 
-    >>> row  = array([0,0,1,2,2,2])
-    >>> col  = array([0,2,2,0,1,2])
-    >>> data = array([1,2,3,4,5,6])
-    >>> bsr_matrix( (data,(row,col)), shape=(3,3) ).todense()
+    >>> row = np.array([0,0,1,2,2,2])
+    >>> col = np.array([0,2,2,0,1,2])
+    >>> data = np.array([1,2,3,4,5,6])
+    >>> bsr_matrix((data, (row,col)), shape=(3,3)).todense()
     matrix([[1, 0, 2],
             [0, 0, 3],
             [4, 5, 6]])
 
-    >>> indptr  = array([0,2,3,6])
-    >>> indices = array([0,2,2,0,1,2])
-    >>> data    = array([1,2,3,4,5,6]).repeat(4).reshape(6,2,2)
-    >>> bsr_matrix( (data,indices,indptr), shape=(6,6) ).todense()
+    >>> indptr = np.array([0,2,3,6])
+    >>> indices = np.array([0,2,2,0,1,2])
+    >>> data = np.array([1,2,3,4,5,6]).repeat(4).reshape(6,2,2)
+    >>> bsr_matrix((data,indices,indptr), shape=(6,6)).todense()
     matrix([[1, 1, 0, 0, 2, 2],
             [1, 1, 0, 0, 2, 2],
             [0, 0, 0, 0, 3, 3],

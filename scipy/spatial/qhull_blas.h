@@ -16,4 +16,6 @@
 #endif
 #endif
 
-#define qh_dgesv F_FUNC(dgesv,DGESV)
+#define qh_dgetrf F_FUNC(dgetrf,DGETRF)
+#define qh_dgecon F_FUNC(dgecon,DGECON)
+#define qh_dgetrs F_FUNC(dgetrs,DGETRS)

@@ -17,7 +17,7 @@ _double_precision = ['i','l','d']
 def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
     """Compute Schur decomposition of a matrix.
 
-    The Schur decomposition is
+    The Schur decomposition is::
 
         A = Z T Z^H
 
@@ -28,33 +28,35 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
 
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : ndarray, shape (M, M)
         Matrix to decompose
-    output : {'real', 'complex'}
+    output : {'real', 'complex'}, optional
         Construct the real or complex Schur decomposition (for real matrices).
-    lwork : integer
+    lwork : int, optional
         Work array size. If None or -1, it is automatically computed.
-    overwrite_a : boolean
-        Whether to overwrite data in a (may improve performance)
-    sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}
+    overwrite_a : bool, optional
+        Whether to overwrite data in a (may improve performance).
+    sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
         Specifies whether the upper eigenvalues should be sorted.  A callable
         may be passed that, given a eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True).
-        Alternatively, string parameters may be used:
+        Alternatively, string parameters may be used::
+
             'lhp'   Left-hand plane (x.real < 0.0)
             'rhp'   Right-hand plane (x.real > 0.0)
             'iuc'   Inside the unit circle (x*x.conjugate() <= 1.0)
             'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+
         Defaults to None (no sorting).
 
     Returns
     -------
-    T : array, shape (M, M)
+    T : ndarray, shape (M, M)
         Schur form of A. It is real-valued for the real Schur decomposition.
-    Z : array, shape (M, M)
+    Z : ndarray, shape (M, M)
         An unitary Schur transformation matrix for A.
         It is real-valued for the real Schur decomposition.
-    sdim : integer
+    sdim : int
         If and only if sorting was requested, a third return value will
         contain the number of eigenvalues satisfying the sort condition.
 
@@ -62,6 +64,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
     ------
     LinAlgError
         Error raised under three conditions:
+
         1. The algorithm failed due to a failure of the QR algorithm to
            compute all eigenvalues
         2. If eigenvalue sorting was requested, the eigenvalues could not be

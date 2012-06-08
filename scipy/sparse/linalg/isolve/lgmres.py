@@ -7,10 +7,12 @@ from utils import make_system
 
 __all__ = ['lgmres']
 
+
 def norm2(q):
     q = np.asarray(q)
     nrm2 = get_blas_funcs('nrm2', dtype=q.dtype)
     return nrm2(q)
+
 
 def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
            inner_m=30, outer_k=3, outer_v=None, store_outer_Av=True):
@@ -32,7 +34,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     tol : float
         Tolerance to achieve. The algorithm terminates when either the relative
         or the absolute residual is below `tol`.
-    maxiter : integer
+    maxiter : int
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, dense matrix, LinearOperator}
@@ -43,9 +45,6 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
-
-    Other Parameters
-    ----------------
     inner_m : int, optional
         Number of inner GMRES iterations per each outer iteration.
     outer_k : int, optional
@@ -70,11 +69,12 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     -------
     x : array or matrix
         The converged solution.
-    info : integer
+    info : int
         Provides convergence information:
-            0  : successful exit
-            >0 : convergence to tolerance not achieved, number of iterations
-            <0 : illegal input or breakdown
+
+            - 0  : successful exit
+            - >0 : convergence to tolerance not achieved, number of iterations
+            - <0 : illegal input or breakdown
 
     Notes
     -----

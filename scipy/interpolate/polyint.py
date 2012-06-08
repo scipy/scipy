@@ -27,9 +27,9 @@ class KroghInterpolator(object):
 
     Parameters
     ----------
-    xi : array-like, length N
+    xi : array_like, length N
         Known x-coordinates
-    yi : array-like, N by R
+    yi : array_like, N by R
         Known y-coordinates, interpreted as vectors of length R,
         or scalars if R=1. When an xi occurs two or more times in
         a row, the corresponding yi's represent derivative values.

@@ -6,7 +6,7 @@ from bento.commands import hooks
 def pre_build(context):
     default_builder = context.default_builder
 
-    def builder(extension):
+    def fblas_builder(extension):
         source = extension.sources[:]
         if sys.platform == "darwin":
             source.pop(source.index("fblaswrap.f.src"))
@@ -15,13 +15,13 @@ def pre_build(context):
                                features="c fc pyext bento cshlib f2py",
                                source=source,
                                use="FBLAS CLIB")
-    context.register_builder("fblas", builder)
+    context.register_builder("fblas", fblas_builder)
 
-    def builder(extension):
+    def cblas_builder(extension):
         kw = {}
         if context.waf_context.env.HAS_CBLAS:
             kw["use"] = "CBLAS"
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                **kw)
-    context.register_builder("cblas", builder)
+    context.register_builder("cblas", cblas_builder)

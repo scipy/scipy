@@ -65,14 +65,15 @@ def correlate(in1, in2, mode='full'):
         first input.
     in2: array
         second input. Should have the same number of dimensions as in1.
-    mode: str {'valid', 'same', 'full'}
-        a string indicating the size of the output:
+    mode: str {'valid', 'same', 'full'}, optional
+        A string indicating the size of the output:
+
             - 'valid': the output consists only of those elements that do not
-            rely on the zero-padding.
+              rely on the zero-padding.
             - 'same': the output is the same size as ``in1`` centered
               with respect to the 'full' output.
             - 'full': the output is the full discrete linear cross-correlation
-              of the inputs. (Default)
+              of the inputs (default).
 
     Returns
     -------
@@ -82,7 +83,7 @@ def correlate(in1, in2, mode='full'):
 
     Notes
     -----
-    The correlation z of two arrays x and y of rank d is defined as
+    The correlation z of two arrays x and y of rank d is defined as::
 
       z[...,k,...] = sum[..., i_l, ...]
             x[..., i_l,...] * conj(y[..., i_l + k,...])
@@ -510,7 +511,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     """
     Filter data along one-dimension with an IIR or FIR filter.
 
-    Filter a data sequence, x, using a digital filter.  This works for many
+    Filter a data sequence, `x`, using a digital filter.  This works for many
     fundamental data types (including Object type).  The filter is a direct
     form II transposed implementation of the standard difference equation
     (see Notes).
@@ -520,34 +521,32 @@ def lfilter(b, a, x, axis=-1, zi=None):
     b : array_like
         The numerator coefficient vector in a 1-D sequence.
     a : array_like
-        The denominator coefficient vector in a 1-D sequence.  If a[0]
-        is not 1, then both a and b are normalized by a[0].
+        The denominator coefficient vector in a 1-D sequence.  If ``a[0]``
+        is not 1, then both `a` and `b` are normalized by ``a[0]``.
     x : array_like
         An N-dimensional input array.
     axis : int
         The axis of the input data array along which to apply the
         linear filter. The filter is applied to each subarray along
-        this axis (*Default* = -1)
-    zi : array_like (optional)
+        this axis.  Default is -1.
+    zi : array_like, optional
         Initial conditions for the filter delays.  It is a vector
         (or array of vectors for an N-dimensional input) of length
-        max(len(a),len(b))-1.  If zi=None or is not given then initial
-        rest is assumed.  SEE signal.lfiltic for more information.
+        ``max(len(a),len(b))-1``.  If `zi` is None or is not given then
+        initial rest is assumed.  See `lfiltic` for more information.
 
     Returns
     -------
     y : array
         The output of the digital filter.
-    zf : array (optional)
-        If zi is None, this is not returned, otherwise, zf holds the
+    zf : array, optional
+        If `zi` is None, this is not returned, otherwise, `zf` holds the
         final filter delay values.
 
     Notes
     -----
     The filter function is implemented as a direct II transposed structure.
-    This means that the filter implements
-
-    ::
+    This means that the filter implements::
 
        a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[nb]*x[n-nb]
                                - a[1]*y[n-1] - ... - a[na]*y[n-na]
@@ -583,25 +582,42 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
 def lfiltic(b, a, y, x=None):
     """
-    Construct initial conditions for lfilter
+    Construct initial conditions for lfilter.
 
-    Given a linear filter (b,a) and initial conditions on the output y
-    and the input x, return the inital conditions on the state vector zi
-    which is used by lfilter to generate the output given the input.
+    Given a linear filter (b, a) and initial conditions on the output `y`
+    and the input `x`, return the inital conditions on the state vector zi
+    which is used by `lfilter` to generate the output given the input.
 
-    If M=len(b)-1 and N=len(a)-1.  Then, the initial conditions are given
-    in the vectors x and y as::
+    Parameters
+    ----------
+    b : array_like
+        Linear filter term.
+    a : array_like
+        Linear filter term.
+    y : array_like
+        Initial conditions.
 
-      x = {x[-1],x[-2],...,x[-M]}
-      y = {y[-1],y[-2],...,y[-N]}
+        If ``N=len(a) - 1``, then ``y = {y[-1], y[-2], ..., y[-N]}``.
 
-    If x is not given, its inital conditions are assumed zero.
-    If either vector is too short, then zeros are added
-    to achieve the proper length.
+        If `y` is too short, it is padded with zeros.
+    x : array_like, optional
+        Initial conditions.
 
-    The output vector zi contains::
+        If ``M=len(b) - 1``, then ``x = {x[-1], x[-2], ..., x[-M]}``.
 
-      zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}  where K=max(M,N).
+        If `x` is not given, its initial conditions are assumed zero.
+
+        If `x` is too short, it is padded with zeros.
+
+    Returns
+    -------
+    zi : ndarray
+        The state vector ``zi``.
+        ``zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}``, where ``K = max(M,N)``.
+
+    See Also
+    --------
+    lfilter
 
     """
     N = np.size(a) - 1
@@ -855,22 +871,22 @@ def unique_roots(p, tol=1e-3, rtype='min'):
 def invres(r, p, k, tol=1e-3, rtype='avg'):
     """Compute b(s) and a(s) from partial fraction expansion: r,p,k
 
-    If M = len(b) and N = len(a)
+    If ``M = len(b)`` and ``N = len(a)``::
 
-            b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
-    H(s) = ------ = ----------------------------------------------
-            a(s)     a[0] x**(N-1) + a[1] x**(N-2) + ... + a[N-1]
+                b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
+        H(s) = ------ = ----------------------------------------------
+                a(s)     a[0] x**(N-1) + a[1] x**(N-2) + ... + a[N-1]
 
-             r[0]       r[1]             r[-1]
-         = -------- + -------- + ... + --------- + k(s)
-           (s-p[0])   (s-p[1])         (s-p[-1])
+                 r[0]       r[1]             r[-1]
+             = -------- + -------- + ... + --------- + k(s)
+               (s-p[0])   (s-p[1])         (s-p[-1])
 
     If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like
+    fraction expansion has terms like::
 
-            r[i]      r[i+1]              r[i+n-1]
-          -------- + ----------- + ... + -----------
-          (s-p[i])  (s-p[i])**2          (s-p[i])**n
+          r[i]      r[i+1]              r[i+n-1]
+        -------- + ----------- + ... + -----------
+        (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
     See Also
     --------
@@ -981,22 +997,22 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 def residuez(b, a, tol=1e-3, rtype='avg'):
     """Compute partial-fraction expansion of b(z) / a(z).
 
-    If M = len(b) and N = len(a)
+    If ``M = len(b)`` and ``N = len(a)``::
 
-            b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
-    H(z) = ------ = ----------------------------------------------
-            a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
+                b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
+        H(z) = ------ = ----------------------------------------------
+                a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
 
                  r[0]                   r[-1]
          = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
            (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
     If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like
+    fraction expansion has terms like::
 
-               r[i]              r[i+1]                    r[i+n-1]
-          -------------- + ------------------ + ... + ------------------
-          (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
+             r[i]              r[i+1]                    r[i+n-1]
+        -------------- + ------------------ + ... + ------------------
+        (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
     See also
     --------
@@ -1051,22 +1067,22 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """Compute b(z) and a(z) from partial fraction expansion: r,p,k
 
-    If M = len(b) and N = len(a)
+    If ``M = len(b)`` and ``N = len(a)``::
 
-            b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
-    H(z) = ------ = ----------------------------------------------
-            a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
+                b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
+        H(z) = ------ = ----------------------------------------------
+                a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
 
-                 r[0]                   r[-1]
-         = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
-           (1-p[0]z**(-1))         (1-p[-1]z**(-1))
+                     r[0]                   r[-1]
+             = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
+               (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
     If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like
+    fraction expansion has terms like::
 
-               r[i]              r[i+1]                    r[i+n-1]
-          -------------- + ------------------ + ... + ------------------
-          (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
+             r[i]              r[i+1]                    r[i+n-1]
+        -------------- + ------------------ + ... + ------------------
+        (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
     See also
     --------
@@ -1530,12 +1546,12 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     x0 = axis_slice(ext, stop=1, axis=axis)
 
     # Forward filter.
-    (y, zf) = lfilter(b, a, ext, zi=zi * x0)
+    (y, zf) = lfilter(b, a, ext, axis=axis, zi=zi * x0)
 
     # Backward filter.
     # Create y0 so zi*y0 broadcasts appropriately.
     y0 = axis_slice(y, start=-1, axis=axis)
-    (y, zf) = lfilter(b, a, axis_reverse(y, axis=axis), zi=zi * y0)
+    (y, zf) = lfilter(b, a, axis_reverse(y, axis=axis), axis=axis, zi=zi * y0)
 
     # Reverse y.
     y = axis_reverse(y, axis=axis)

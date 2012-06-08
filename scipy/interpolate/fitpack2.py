@@ -18,9 +18,8 @@ __all__ = [
     'RectBivariateSpline',
     'RectSphereBivariateSpline']
 
-from types import NoneType
-
 import warnings
+
 from numpy import zeros, concatenate, alltrue, ravel, all, diff, array
 import numpy as np
 
@@ -212,9 +211,9 @@ class UnivariateSpline(object):
 
     def __call__(self, x, nu=0):
         """ Evaluate spline (or its nu-th derivative) at positions x.
+
         Note: x can be unordered but the evaluation is more efficient
         if x is (partially) ordered.
-
         """
         x = np.asarray(x)
         # empty input yields empty output
@@ -226,8 +225,7 @@ class UnivariateSpline(object):
         return fitpack.splev(x, self._eval_args, der=nu)
 
     def get_knots(self):
-        """ Return the positions of (boundary and interior)
-        knots of the spline.
+        """ Return positions of (boundary and interior) knots of the spline.
         """
         data = self._data
         k,n = data[5],data[7]
@@ -241,14 +239,12 @@ class UnivariateSpline(object):
 
     def get_residual(self):
         """Return weighted sum of squared residuals of the spline
-        approximation: sum ((w[i]*(y[i]-s(x[i])))**2,axis=0)
-
+        approximation: ``sum((w[i] * (y[i]-s(x[i])))**2, axis=0)``.
         """
         return self._data[10]
 
     def integral(self, a, b):
-        """ Return definite integral of the spline between two
-        given points.
+        """ Return definite integral of the spline between two given points.
         """
         return dfitpack.splint(*(self._eval_args+(a,b)))
 
@@ -480,7 +476,8 @@ inaccurate. Deficiency may strongly depend on the value of eps."""
 
 
 class BivariateSpline(object):
-    """ Bivariate spline s(x,y) of degrees kx and ky on the rectangle
+    """
+    Bivariate spline s(x,y) of degrees kx and ky on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
     (x,y,z).
 
@@ -488,10 +485,11 @@ class BivariateSpline(object):
     --------
     bisplrep, bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
-    SmoothUnivariateSpline :
+    SmoothBivariateSpline :
         to create a BivariateSpline through the given points
     LSQUnivariateSpline :
         to create a BivariateSpline using weighted least-squares fitting
+
     """
 
     def get_residual(self):
@@ -501,10 +499,11 @@ class BivariateSpline(object):
         return self.fp
 
     def get_knots(self):
-        """ Return a tuple (tx,ty) where tx,ty contain knots positions
+        """ Return a tuple ``(tx, ty)`` where tx,ty contain knots positions
         of the spline with respect to x-, y-variable, respectively.
+
         The position of interior and additional knots are given as
-          t[k+1:-k-1] and t[:k+1]=b, t[-k-1:]=e, respectively.
+        ``t[k+1:-k-1]``, with ``t[:k+1]=b`` and ``t[-k-1:]=e`` respectively.
         """
         return self.tck[:2]
 
@@ -563,7 +562,8 @@ class BivariateSpline(object):
 
 
 class SmoothBivariateSpline(BivariateSpline):
-    """ Smooth bivariate spline approximation.
+    """
+    Smooth bivariate spline approximation.
 
     Parameters
     ----------
@@ -587,15 +587,16 @@ class SmoothBivariateSpline(BivariateSpline):
         linear system of equations. `eps` should have a value between 0 and 1,
         the default is 1e-16.
 
+    See Also
+    --------
+    bisplrep : an older wrapping of FITPACK
+    bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
+    LSQUnivariateSpline : to create a BivariateSpline using weighted
+
     Notes
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
-
-    See Also
-    --------
-    bisplrep, bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
-    LSQUnivariateSpline : to create a BivariateSpline using weighted
 
     """
 
@@ -618,7 +619,8 @@ class SmoothBivariateSpline(BivariateSpline):
 
 
 class LSQBivariateSpline(BivariateSpline):
-    """ Weighted least-squares bivariate spline approximation.
+    """
+    Weighted least-squares bivariate spline approximation.
 
     Parameters
     ----------
@@ -626,7 +628,7 @@ class LSQBivariateSpline(BivariateSpline):
         1-D sequences of data points (order is not important).
     tx, ty : array_like
         Strictly ordered 1-D sequences of knots coordinates.
-    w : array_lie, optional
+    w : array_like, optional
         Positive 1-D sequence of weights.
     bbox : array_like, optional
         Sequence of length 4 specifying the boundary of the rectangular
@@ -644,15 +646,16 @@ class LSQBivariateSpline(BivariateSpline):
         linear system of equations. `eps` should have a value between 0 and 1,
         the default is 1e-16.
 
+    See Also
+    --------
+    bisplrep : an older wrapping of FITPACK
+    bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
+    SmoothBivariateSpline : create a smoothing BivariateSpline
+
     Notes
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
-
-    See Also
-    --------
-    bisplrep, bisplev : an older wrapping of FITPACK
-    UnivariateSpline : a similar class for univariate spline interpolation
-    SmoothUnivariateSpline : To create a BivariateSpline through the given points
 
     """
 
@@ -906,7 +909,7 @@ class RectSphereBivariateSpline(BivariateSpline):
                  pole_exact=False, pole_flat=False):
         iopt = np.array([0, 0, 0], dtype=int)
         ider = np.array([-1, 0, -1, 0], dtype=int)
-        if isinstance(pole_values, NoneType):
+        if pole_values is None:
             pole_values = (None, None)
         elif isinstance(pole_values, (float, np.float32, np.float64)):
             pole_values = (pole_values, pole_values)

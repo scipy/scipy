@@ -1,7 +1,15 @@
-"""This module implements the Sequential Least SQuares Programming optimization
+"""
+This module implements the Sequential Least SQuares Programming optimization
 algorithm (SLSQP), orginally developed by Dieter Kraft.
-
 See http://www.netlib.org/toms/733
+
+Functions
+---------
+.. autosummary::
+   :toctree: generated/
+
+    approx_jacobian
+    fmin_slsqp
 
 """
 
@@ -10,7 +18,7 @@ __all__ = ['approx_jacobian','fmin_slsqp']
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isinf, atleast_1d
-from optimize import approx_fprime, wrap_function
+from optimize import wrap_function, Result
 
 __docformat__ = "restructuredtext en"
 
@@ -43,7 +51,7 @@ def approx_jacobian(x,func,epsilon,*args):
 
     """
     x0 = asfarray(x)
-    f0 = func(*((x0,)+args))
+    f0 = atleast_1d(func(*((x0,)+args)))
     jac = zeros([len(x0),len(f0)])
     dx = zeros(len(x0))
     for i in range(len(x0)):
@@ -184,17 +192,15 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         cons += ({'type': 'ineq', 'fun': f_ieqcons, 'jac': fprime_ieqcons,
                   'args': args}, )
 
-    out = _minimize_slsqp(func, x0, args, jac=fprime, bounds=bounds,
-                          constraints=cons, options=opts,
-                          full_output=full_output)
+    res = _minimize_slsqp(func, x0, args, jac=fprime, bounds=bounds,
+                          constraints=cons, options=opts)
     if full_output:
-        x, info = out
-        return x, info['fun'], info['nit'], info['status'], info['message']
+        return res['x'], res['fun'], res['nit'], res['status'], res['message']
     else:
-        return out
+        return res['x']
 
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
-                    constraints=(), options={}, full_output=False):
+                    constraints=(), options=None):
     """
     Minimize a scalar function of one or more variables using Sequential
     Least SQuares Programming (SLSQP).
@@ -212,6 +218,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     `method=SLSQP`. It is not supposed to be called directly.
     """
     fprime = jac
+    if options is None:
+        options = {}
     # retrieve useful options
     iter    = options.get('maxiter', 100)
     acc     = options.get('ftol', 1.0E-6)
@@ -247,16 +255,15 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             raise ValueError('Constraint %d has no function defined.' % ic)
 
         # check jacobian
-        if con.get('jac') is None:
+        cjac = con.get('jac')
+        if cjac is None:
             # approximate jacobian function
             def cjac(x, *args):
-                return approx_fprime(x, con['fun'], epsilon, *args)
-        else:
-            cjac = None
+                return approx_jacobian(x, con['fun'], epsilon, *args)
 
         # update constraints' dictionary
         cons[ctype] += ({'fun' : con['fun'],
-                         'jac' : con.get('jac', cjac),
+                         'jac' : cjac,
                          'args': con.get('args', ())}, )
 
 
@@ -276,11 +283,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # Wrap func
     feval, func = wrap_function(func, args)
 
-    # Wrap fprime, if provided, or approx_fprime if not
+    # Wrap fprime, if provided, or approx_jacobian if not
     if fprime:
         geval, fprime = wrap_function(fprime, args)
     else:
-        geval, fprime = wrap_function(approx_fprime, (func, epsilon))
+        geval, fprime = wrap_function(approx_jacobian, (func, epsilon))
 
     # Transform x0 into an array.
     x = asfarray(x0).flatten()
@@ -288,8 +295,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
-    meq = sum(map(len, [c['fun'](x, *c['args']) for c in cons['eq']]))
-    mieq = sum(map(len, [c['fun'](x, *c['args']) for c in cons['ineq']]))
+    meq = sum(map(len, [atleast_1d(c['fun'](x, *c['args'])) for c in cons['eq']]))
+    mieq = sum(map(len, [atleast_1d(c['fun'](x, *c['args'])) for c in cons['ineq']]))
     # m = The total number of constraints
     m = meq + mieq
     # la = The number of constraints, or 1 if there are no constraints
@@ -405,19 +412,9 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print "            Function evaluations:", feval[0]
         print "            Gradient evaluations:", geval[0]
 
-    if not full_output:
-        return x
-    else:
-        info = {'solution': x,
-                'fun'     : fx,
-                'jac'     : g,
-                'nit'     : int(majiter),
-                'nfev'    : feval[0],
-                'njev'    : geval[0],
-                'status'  : int(mode),
-                'message' : exit_modes[int(mode)],
-                'success' : mode == 0}
-        return x, info
+    return Result(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
+                  njev=geval[0], status=int(mode),
+                  message=exit_modes[int(mode)], success=(mode == 0))
 
 if __name__ == '__main__':
 
@@ -458,10 +455,9 @@ if __name__ == '__main__':
     print ' * fmin_slsqp'
     x, f = fmin_slsqp(fun, array([-1, 1]), bounds=bnds, disp=1,
                       full_output=True)[:2]
-    print ' * fmin_slsqp'
-    x, info = _minimize_slsqp(fun, array([-1, 1]), bounds=bnds,
-                              options={'disp': True},
-                              full_output=True)
+    print ' * _minimize_slsqp'
+    res = _minimize_slsqp(fun, array([-1, 1]), bounds=bnds,
+                          options={'disp': True})
 
     # Equality and inequality constraints problem
     print ' Equality and inequality constraints '.center(72, '-')
@@ -471,7 +467,5 @@ if __name__ == '__main__':
                       f_ieqcons=fieqcon, fprime_ieqcons=jieqcon,
                       disp=1, full_output=True)[:2]
     print ' * _minimize_slsqp'
-    x, info = _minimize_slsqp(fun, array([-1, 1]),
-                              constraints=cons,
-                              options={'disp': True},
-                              full_output=True)
+    res = _minimize_slsqp(fun, array([-1, 1]), constraints=cons,
+                          options={'disp': True})

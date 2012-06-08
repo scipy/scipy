@@ -208,8 +208,33 @@ class _TestCommon:
     #    assert_equal( array(self.datsp), self.dat )
 
     def test_todense(self):
+        # Check C-contiguous (default).
         chk = self.datsp.todense()
-        assert_array_equal(chk,self.dat)
+        assert_array_equal(chk, self.dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check C-contiguous (with arg).
+        chk = self.datsp.todense(order='C')
+        assert_array_equal(chk, self.dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check F-contiguous (with arg).
+        chk = self.datsp.todense(order='F')
+        assert_array_equal(chk, self.dat)
+        assert_(not chk.flags.c_contiguous)
+        assert_(chk.flags.f_contiguous)
+        # Check with out argument (array).
+        out = np.zeros(self.datsp.shape, dtype=self.datsp.dtype)
+        chk = self.datsp.todense(out=out)
+        assert_array_equal(self.dat, out)
+        assert_array_equal(self.dat, chk)
+        assert_(chk.base is out)
+        # Check with out array (matrix).
+        out = np.asmatrix(np.zeros(self.datsp.shape, dtype=self.datsp.dtype))
+        chk = self.datsp.todense(out=out)
+        assert_array_equal(self.dat, out)
+        assert_array_equal(self.dat, chk)
+        assert_(chk is out)
         a = matrix([1.,2.,3.])
         dense_dot_dense = a * self.dat
         check = a * self.datsp.todense()
@@ -220,8 +245,29 @@ class _TestCommon:
         assert_array_equal(dense_dot_dense, check2)
 
     def test_toarray(self):
+        # Check C-contiguous (default).
         dat = asarray(self.dat)
         chk = self.datsp.toarray()
+        assert_array_equal(chk, dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check C-contiguous (with arg).
+        chk = self.datsp.toarray(order='C')
+        assert_array_equal(chk, dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check F-contiguous (with arg).
+        chk = self.datsp.toarray(order='F')
+        assert_array_equal(chk, dat)
+        assert_(not chk.flags.c_contiguous)
+        assert_(chk.flags.f_contiguous)
+        # Check with output arg.
+        out = np.zeros(self.datsp.shape, dtype=self.datsp.dtype)
+        self.datsp.toarray(out=out)
+        assert_array_equal(chk, dat)
+        # Check that things are fine when we don't initialize with zeros.
+        out[...] = 1.
+        self.datsp.toarray(out=out)
         assert_array_equal(chk, dat)
         a = array([1.,2.,3.])
         dense_dot_dense = dot(a, dat)
@@ -1091,6 +1137,18 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.data,[1, 2, 3])
         assert_array_equal(asp.todense(),bsp.todense())
 
+    def test_ufuncs(self):
+        X = csr_matrix(np.arange(20).reshape(4, 5) / 20.)
+        for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
+                  "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
+                  "deg2rad", "rad2deg", "floor", "ceil", "trunc"]:
+            assert_equal(hasattr(csr_matrix, f), True)
+            X2 = getattr(X, f)()
+            assert_equal(X.shape, X2.shape)
+            assert_array_equal(X.indices, X2.indices)
+            assert_array_equal(X.indptr, X2.indptr)
+            assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
+
     def test_unsorted_arithmetic(self):
         data    = arange( 5 )
         indices = array( [7, 2, 1, 5, 4] )
@@ -1178,6 +1236,18 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         asp.sort_indices()
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         assert_array_equal(asp.todense(),bsp.todense())
+
+    def test_ufuncs(self):
+        X = csc_matrix(np.arange(21).reshape(7, 3) / 21.)
+        for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
+                  "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
+                  "deg2rad", "rad2deg", "floor", "ceil", "trunc"]:
+            assert_equal(hasattr(csr_matrix, f), True)
+            X2 = getattr(X, f)()
+            assert_equal(X.shape, X2.shape)
+            assert_array_equal(X.indices, X2.indices)
+            assert_array_equal(X.indptr, X2.indptr)
+            assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
 
     def test_unsorted_arithmetic(self):
         data    = arange( 5 )

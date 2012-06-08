@@ -4,8 +4,9 @@ import warnings
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
 
-from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2
+from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti, bode
 from scipy.signal.filter_design import BadCoefficients
+import scipy.linalg as linalg
 
 
 class TestSS2TF:
@@ -221,6 +222,82 @@ class Test_step2(object):
         tout, y = step2(system, atol=1e-10, rtol=1e-8)
         expected_y = 1 - (1 + tout) * np.exp(-tout)
         assert_almost_equal(y, expected_y)
+
+
+def test_lti_instantiation():
+    # Test that lti can be instantiated with sequences, scalars.  See PR-225.
+    s = lti([1], [-1])
+    s = lti(np.array([]), np.array([-1]), 1)
+    s = lti([], [-1], 1)
+    s = lti([1], [-1], 1, 3)
+
+
+class Test_bode(object):
+
+    def test_01(self):
+        """Test bode() magnitude calculation (manual sanity check)."""
+        # 1st order low-pass filter: H(s) = 1 / (s + 1),
+        # cutoff: 1 rad/s, slope: -20 dB/decade
+        #   H(s=0.1) ~= 0 dB
+        #   H(s=1) ~= -3 dB
+        #   H(s=10) ~= -20 dB
+        #   H(s=100) ~= -40 dB
+        system = lti([1], [1, 1])
+        w = [0.1, 1, 10, 100]
+        w, mag, phase = bode(system, w=w)
+        expected_mag = [0, -3, -20, -40]
+        assert_almost_equal(mag, expected_mag, decimal=1)
+
+    def test_02(self):
+        """Test bode() phase calculation (manual sanity check)."""
+        # 1st order low-pass filter: H(s) = 1 / (s + 1),
+        #   angle(H(s=0.1)) ~= -5.7 deg
+        #   angle(H(s=1)) ~= -45 deg
+        #   angle(H(s=10)) ~= -84.3 deg
+        system = lti([1], [1, 1])
+        w = [0.1, 1, 10]
+        w, mag, phase = bode(system, w=w)
+        expected_phase = [-5.7, -45, -84.3]
+        assert_almost_equal(phase, expected_phase, decimal=1)
+
+    def test_03(self):
+        """Test bode() magnitude calculation."""
+        # 1st order low-pass filter: H(s) = 1 / (s + 1)
+        system = lti([1], [1, 1])
+        w = [0.1, 1, 10, 100]
+        w, mag, phase = bode(system, w=w)
+        jw = w * 1j
+        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
+        expected_mag = 20.0 * np.log10(abs(y))
+        assert_almost_equal(mag, expected_mag)
+
+    def test_04(self):
+        """Test bode() phase calculation."""
+        # 1st order low-pass filter: H(s) = 1 / (s + 1)
+        system = lti([1], [1, 1])
+        w = [0.1, 1, 10, 100]
+        w, mag, phase = bode(system, w=w)
+        jw = w * 1j
+        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
+        expected_phase = np.arctan2(y.imag, y.real) * 180.0 / np.pi
+        assert_almost_equal(phase, expected_phase)
+
+    def test_05(self):
+        """Test that bode() finds a reasonable frequency range.
+
+        A reasonable frequency range is two orders of magnitude before the
+        minimum (slowest) pole and two orders of magnitude after the maximum
+        (fastest) pole.
+        """
+        # 1st order low-pass filter: H(s) = 1 / (s + 1)
+        system = lti([1], [1, 1])
+        vals = linalg.eigvals(system.A)
+        minpole = min(abs(np.real(vals)))
+        maxpole = max(abs(np.real(vals)))
+        n = 10;
+        expected_w = np.logspace(np.log10(minpole) - 2, np.log10(maxpole) + 2, n)
+        w, mag, phase = bode(system, n=n)
+        assert_almost_equal(w, expected_w)
 
 
 if __name__ == "__main__":

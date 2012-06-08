@@ -40,7 +40,7 @@ __all__ = ['multigammln']
 
 
 def multigammaln(a, d):
-    """returns the log of multivariate gamma, also sometimes called the
+    """Returns the log of multivariate gamma, also sometimes called the
     generalized gamma.
 
     Parameters
@@ -55,28 +55,28 @@ def multigammaln(a, d):
     res : ndarray
         the values of the log multivariate gamma at the given points a.
 
-    Note
-    ----
+    Notes
+    -----
     The formal definition of the multivariate gamma of dimension d for a real a
-    is :
+    is::
 
-    \Gamma_d(a) = \int_{A>0}{e^{-tr(A)\cdot{|A|}^{a - (m+1)/2}dA}}
+        \Gamma_d(a) = \int_{A>0}{e^{-tr(A)\cdot{|A|}^{a - (m+1)/2}dA}}
 
     with the condition a > (d-1)/2, and A>0 being the set of all the positive
     definite matrices of dimension s. Note that a is a scalar: the integrand
     only is multivariate, the argument is not (the function is defined over a
     subset of the real set).
 
-    This can be proven to be equal to the much friendler equation:
+    This can be proven to be equal to the much friendlier equation::
 
-    \Gamma_d(a) = \pi^{d(d-1)/4}\prod_{i=1}^{d}{\Gamma(a - (i-1)/2)}.
+        \Gamma_d(a) = \pi^{d(d-1)/4}\prod_{i=1}^{d}{\Gamma(a - (i-1)/2)}.
 
-    Notes
-    -----
-    Reference:
-
+    References
+    ----------
     R. J. Muirhead, Aspects of multivariate statistical theory (Wiley Series in
-    probability and mathematical statistics). """
+    probability and mathematical statistics).
+
+    """
     a = np.asarray(a)
     if not np.isscalar(d) or (np.floor(d) != d):
         raise ValueError("d should be a positive integer (dimension)")

@@ -155,7 +155,10 @@ cdef struct nodeinfo:
     double side_distances[0]
 
 cdef class cKDTree:
-    """kd-tree for quick nearest-neighbor lookup
+    """
+    cKDTree(data, int leafsize=10)
+
+    kd-tree for quick nearest-neighbor lookup
 
     This class provides an index into a set of k-dimensional points
     which can be used to rapidly look up the nearest neighbors of any

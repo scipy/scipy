@@ -25,9 +25,10 @@ def safecall(f, name, *args, **kwargs):
     return ret[:-2]
 
 def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
-    """Compute QR decomposition of a matrix.
+    """
+    Compute QR decomposition of a matrix.
 
-    Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
+    Calculate the decomposition ``A = Q R`` where Q is unitary/orthogonal
     and R upper triangular.
 
     Parameters
@@ -48,18 +49,19 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
-        :lm:`A P = Q R` as above, but where P is chosen such that the diagonal
+        ``A P = Q R`` as above, but where P is chosen such that the diagonal
         of R is non-increasing.
 
     Returns
     -------
     Q : float or complex ndarray
-        Of shape (M, M), or (M, K) for ``mode='economic'``.  Not returned if
-        ``mode='r'``.
+        Of shape (M, M), or (M, K) for ``mode='economic'``.  Not returned
+        if ``mode='r'``.
     R : float or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
     P : integer ndarray
-        Of shape (N,) for ``pivoting=True``. Not returned if ``pivoting=False``.
+        Of shape (N,) for ``pivoting=True``. Not returned if
+        ``pivoting=False``.
 
     Raises
     ------
@@ -80,7 +82,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False):
     >>> a = random.randn(9, 6)
 
     >>> q, r = linalg.qr(a)
-    >>> allclose(a, dot(q, r))
+    >>> allclose(a, np.dot(q, r))
     True
     >>> q.shape, r.shape
     ((9, 9), (9, 6))
@@ -168,23 +170,23 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     overwrite_a=False, overwrite_c=False):
     """Calculate the QR decomposition and multiply Q with a matrix.
 
-    Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
+    Calculate the decomposition ``A = Q R`` where Q is unitary/orthogonal
     and R upper triangular. Multiply Q with a vector or a matrix c.
 
     .. versionadded:: 0.11
 
     Parameters
     ----------
-    a : array, shape (M, N)
+    a : ndarray, shape (M, N)
         Matrix to be decomposed
-    c : array, one- or two-dimensional
+    c : ndarray, one- or two-dimensional
         calculate the product of c and q, depending on the mode:
     mode : {'left', 'right'}
-        dot(Q, c) is returned if mode is 'left',
-        dot(c, Q) is returned if mode is 'right'.
-        the shape of c must be appropriate for the matrix multiplications,
-        if mode is 'left', min(a.shape) == c.shape[0],
-        if mode is 'right', a.shape[0] == c.shape[1].
+        ``dot(Q, c)`` is returned if mode is 'left',
+        ``dot(c, Q)`` is returned if mode is 'right'.
+        The shape of c must be appropriate for the matrix multiplications,
+        if mode is 'left', ``min(a.shape) == c.shape[0]``,
+        if mode is 'right', ``a.shape[0] == c.shape[1]``.
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition, see the documentation of qr.
@@ -205,7 +207,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         the product of Q and c, as defined in mode
     R : float or complex ndarray
         Of shape (K, N), ``K = min(M, N)``.
-    P : integer ndarray
+    P : ndarray of ints
         Of shape (N,) for ``pivoting=True``. Not returned if ``pivoting=False``.
 
     Raises
@@ -217,6 +219,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     -----
     This is an interface to the LAPACK routines dgeqrf, zgeqrf,
     dormqr, zunmqr, dgeqp3, and zgeqp3.
+
     """
     if not mode in ['left', 'right']:
         raise ValueError("Mode argument should be one of ['left', 'right']")

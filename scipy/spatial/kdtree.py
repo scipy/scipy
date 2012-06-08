@@ -361,9 +361,9 @@ class KDTree(object):
 
         Examples
         --------
-        >>> from scipy.spatial import KDTree
+        >>> from scipy import spatial
         >>> x, y = np.mgrid[0:5, 2:8]
-        >>> tree = KDTree(zip(x.ravel(), y.ravel()))
+        >>> tree = spatial.KDTree(zip(x.ravel(), y.ravel()))
         >>> tree.data
         array([[0, 2],
                [0, 3],
@@ -540,25 +540,26 @@ class KDTree(object):
         """Find all pairs of points whose distance is at most r
 
         Parameters
-        ==========
-
-        other : KDTree
-            The tree containing points to search against
-        r : positive float
-            The maximum distance
-        p : float 1<=p<=infinity
-            Which Minkowski norm to use
-        eps : nonnegative float
-            Approximate search. Branches of the tree are not explored
-            if their nearest points are further than r/(1+eps), and branches
-            are added in bulk if their furthest points are nearer than r*(1+eps).
+        ----------
+        other : KDTree instance
+            The tree containing points to search against.
+        r : float
+            The maximum distance, has to be positive.
+        p : float, optional
+            Which Minkowski norm to use.  `p` has to meet the condition
+            ``1 <= p <= infinity``.
+        eps : float, optional
+            Approximate search.  Branches of the tree are not explored
+            if their nearest points are further than ``r/(1+eps)``, and
+            branches are added in bulk if their furthest points are nearer
+            than ``r * (1+eps)``.  `eps` has to be non-negative.
 
         Returns
-        =======
-
+        -------
         results : list of lists
-            For each element self.data[i] of this tree, results[i] is a list of the
-            indices of its neighbors in other.data.
+            For each element ``self.data[i]`` of this tree, ``results[i]`` is a
+            list of the indices of its neighbors in ``other.data``.
+
         """
         results = [[] for i in range(self.n)]
         def traverse_checking(node1, rect1, node2, rect2):
@@ -604,26 +605,26 @@ class KDTree(object):
         return results
 
     def query_pairs(self, r, p=2., eps=0):
-        """Find all pairs of points whose distance is at most r
+        """Find all pairs of points whose distance is at most r.
 
         Parameters
-        ==========
-
+        ----------
         r : positive float
-            The maximum distance
-        p : float 1<=p<=infinity
-            Which Minkowski norm to use
-        eps : nonnegative float
-            Approximate search. Branches of the tree are not explored
-            if their nearest points are further than r/(1+eps), and branches
-            are added in bulk if their furthest points are nearer than r*(1+eps).
+            The maximum distance.
+        p : float, optional
+            Which Minkowski norm to use.  `p` has to meet the condition
+            ``1 <= p <= infinity``.
+        eps : float, optional
+            Approximate search.  Branches of the tree are not explored
+            if their nearest points are further than ``r/(1+eps)``, and
+            branches are added in bulk if their furthest points are nearer
+            than ``r * (1+eps)``.  `eps` has to be non-negative.
 
         Returns
-        =======
-
+        -------
         results : set
-            set of pairs (i,j), i<j, for which the corresponing positions are
-            close.
+            Set of pairs ``(i,j)``, with ``i < j`, for which the corresponding
+            positions are close.
 
         """
         results = set()
@@ -706,30 +707,29 @@ class KDTree(object):
         """Count how many nearby pairs can be formed.
 
         Count the number of pairs (x1,x2) can be formed, with x1 drawn
-        from self and x2 drawn from other, and where distance(x1,x2,p)<=r.
+        from self and x2 drawn from `other`, and where
+        ``distance(x1, x2, p) <= r``.
         This is the "two-point correlation" described in Gray and Moore 2000,
         "N-body problems in statistical learning", and the code here is based
         on their algorithm.
 
         Parameters
-        ==========
-
-        other : KDTree
-
+        ----------
+        other : KDTree instance
+            The other tree to draw points from.
         r : float or one-dimensional array of floats
-            The radius to produce a count for. Multiple radii are searched with a single
-            tree traversal.
+            The radius to produce a count for. Multiple radii are searched with
+            a single tree traversal.
         p : float, 1<=p<=infinity
             Which Minkowski p-norm to use
 
         Returns
-        =======
-
-        result : integer or one-dimensional array of integers
+        -------
+        result : int or 1-D array of ints
             The number of pairs. Note that this is internally stored in a numpy int,
-            and so may overflow if very large (two billion).
-        """
+            and so may overflow if very large (2e9).
 
+        """
         def traverse(node1, rect1, node2, rect2, idx):
             min_r = rect1.min_distance_rectangle(rect2,p)
             max_r = rect1.max_distance_rectangle(rect2,p)
@@ -762,6 +762,7 @@ class KDTree(object):
                     traverse(node1.less,less1,node2.greater,greater2,idx)
                     traverse(node1.greater,greater1,node2.less,less2,idx)
                     traverse(node1.greater,greater1,node2.greater,greater2,idx)
+
         R1 = Rectangle(self.maxes, self.mins)
         R2 = Rectangle(other.maxes, other.mins)
         if np.shape(r) == ():
@@ -785,17 +786,16 @@ class KDTree(object):
         any distance greater than max_distance.
 
         Parameters
-        ==========
-
+        ----------
         other : KDTree
 
         max_distance : positive float
 
         Returns
-        =======
-
+        -------
         result : dok_matrix
             Sparse matrix representing the results in "dictionary of keys" format.
+
         """
         result = scipy.sparse.dok_matrix((self.n,other.n))
 

@@ -117,7 +117,7 @@ smirnovi (n, p)
   double e, t, dpde;
   int iterations;
 
-  if (p <= 0.0 || p > 1.0)
+  if (!(p > 0.0 && p <= 1.0))
     {
       mtherr ("smirnovi", DOMAIN);
       return (NPY_NAN);
@@ -165,7 +165,7 @@ kolmogi (p)
   double y, t, dpdy;
   int iterations;
 
-  if (p <= 0.0 || p > 1.0)
+  if (!(p > 0.0 && p <= 1.0))
     {
       mtherr ("kolmogi", DOMAIN);
       return (NPY_NAN);

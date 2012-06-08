@@ -5,6 +5,7 @@
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, assert_almost_equal, assert_array_almost_equal, \
     assert_allclose, assert_, rand, dec
+from numpy.testing.utils import WarningManager
 
 
 import numpy
@@ -12,6 +13,7 @@ import numpy as np
 from numpy import typecodes, array
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
+import warnings
 
 def kolmogorov_check(diststr, args=(), N=20, significance=0.01):
     qtest = stats.ksoneisf(significance, N)
@@ -488,6 +490,14 @@ class TestFitMethod(TestCase):
                 assert_(len(vals5) == 2+len(args))
                 assert_(vals5[2] == args[2])
 
+    def test_fix_fit_2args_lognorm(self):
+        """Regression test for #1551."""
+        np.random.seed(12345)
+        x = stats.lognorm.rvs(0.25, 0., 20.0, size=20)
+        assert_allclose(np.array(stats.lognorm.fit(x, floc=0, fscale=20)),
+                        [0.25888672, 0, 20], atol=1e-5)
+
+
 class TestFrozen(TestCase):
     """Test that a frozen distribution gives the same results as the original object.
 
@@ -825,11 +835,16 @@ def test_tukeylambda_stats_ticket_1545():
     assert_almost_equal(mv, expected, decimal=10)
 
 
+def test_poisson_logpmf_ticket_1436():
+    """Regression test for #1436, poisson.logpmf precision."""
+    assert_(np.isfinite(stats.poisson.logpmf(1500, 200)))
+
+
 def test_powerlaw_stats():
     """Test the powerlaw stats function.
-    
+
     This unit test is also a regression test for ticket 1548.
-    
+
     The exact values are:
     mean:
         mu = a / (a + 1)
@@ -858,9 +873,59 @@ def test_powerlaw_stats():
     """
     cases = [(1.0, (0.5, 1./12 , 0.0, -1.2)),
              (2.0, (2./3, 2./36, -0.56568542494924734, -0.6))]
-    for a, exact_mvsk in cases: 
+    for a, exact_mvsk in cases:
         mvsk = stats.powerlaw.stats(a, moments="mvsk")
         assert_array_almost_equal(mvsk, exact_mvsk)
+
+
+def test_ksone_fit_freeze():
+    """Regression test for ticket #1638.
+
+    """
+    d = np.array(
+        [-0.18879233,  0.15734249,  0.18695107,  0.27908787, -0.248649,
+         -0.2171497 ,  0.12233512,  0.15126419,  0.03119282,  0.4365294 ,
+          0.08930393, -0.23509903,  0.28231224, -0.09974875, -0.25196048,
+          0.11102028,  0.1427649 ,  0.10176452,  0.18754054,  0.25826724,
+          0.05988819,  0.0531668 ,  0.21906056,  0.32106729,  0.2117662 ,
+          0.10886442,  0.09375789,  0.24583286, -0.22968366, -0.07842391,
+         -0.31195432, -0.21271196,  0.1114243 , -0.13293002,  0.01331725,
+         -0.04330977, -0.09485776, -0.28434547,  0.22245721, -0.18518199,
+         -0.10943985, -0.35243174,  0.06897665, -0.03553363, -0.0701746 ,
+         -0.06037974,  0.37670779, -0.21684405])
+
+    olderr = np.seterr(invalid='ignore')
+    warn_ctx = WarningManager()
+    warn_ctx.__enter__()
+    try:
+        warnings.simplefilter('ignore', UserWarning)
+        stats.ksone.fit(d)
+    finally:
+        warn_ctx.__exit__()
+        np.seterr(**olderr)
+
+
+def test_norm_logcdf():
+    """Test precision of the logcdf of the normal distribution.
+
+    This precision was enhanced in ticket 1614.
+    """
+    x = -np.asarray(range(0, 120, 4))
+    # Values from R
+    expected = [-0.69314718, -10.36010149, -35.01343716, -75.41067300,
+                -131.69539607, -203.91715537, -292.09872100, -396.25241451,
+                -516.38564863, -652.50322759, -804.60844201, -972.70364403,
+                -1156.79057310, -1356.87055173, -1572.94460885, -1805.01356068,
+                -2053.07806561, -2317.13866238, -2597.19579746, -2893.24984493,
+                -3205.30112136, -3533.34989701, -3877.39640444, -4237.44084522,
+                -4613.48339520, -5005.52420869, -5413.56342187, -5837.60115548,
+                -6277.63751711, -6733.67260303]
+
+    olderr = np.seterr(divide='ignore')
+    try:
+        assert_allclose(stats.norm().logcdf(x), expected, atol=1e-8)
+    finally:
+        np.seterr(**olderr)
 
 
 if __name__ == "__main__":

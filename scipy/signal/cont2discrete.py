@@ -21,20 +21,23 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
     sys : a tuple describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
-        * 2: (num, den)
-        * 3: (zeros, poles, gain)
-        * 4: (A, B, C, D)
+
+            * 2: (num, den)
+            * 3: (zeros, poles, gain)
+            * 4: (A, B, C, D)
 
     dt : float
         The discretization time step.
     method : {"gbt", "bilinear", "euler", "backward_diff", "zoh"}
         Which method to use:
+
             * gbt: generalized bilinear transformation
             * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
             * euler: Euler (or forward differencing) method ("gbt" with
                      alpha=0)
             * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
             * zoh: zero-order hold (default).
+
     alpha : float within [0, 1]
         The generalized bilinear transformation weighting parameter, which
         should only be specified with method="gbt", and is ignored otherwise
@@ -55,15 +58,18 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
     may be used, which includes the common Tustin's bilinear approximation,
     an Euler's method technique, or a backwards differencing technique.
 
-    The Zero-Order Hold (zoh) method is based on:
-    http://en.wikipedia.org/wiki/Discretization#Discretization_of_linear_state_space_models
+    The Zero-Order Hold (zoh) method is based on [1]_, the generalized bilinear
+    approximation is based on [2]_ and [3].
 
-    Generalize bilinear approximation is based on:
-    http://techteach.no/publications/discretetime_signals_systems/discrete.pdf
-     and
-    G. Zhang, X. Chen, and T. Chen, Digital redesign via the generalized bilinear
-    transformation, Int. J. Control, vol. 82, no. 4, pp. 741-754, 2009.
-    (http://www.ece.ualberta.ca/~gfzhang/research/ZCC07_preprint.pdf)
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/wiki/Discretization#Discretization_of_linear_state_space_models
+
+    .. [2] http://techteach.no/publications/discretetime_signals_systems/discrete.pdf
+
+    .. [3] G. Zhang, X. Chen, and T. Chen, Digital redesign via the generalized
+        bilinear transformation, Int. J. Control, vol. 82, no. 4, pp. 741-754,
+        2009.  (http://www.ece.ualberta.ca/~gfzhang/research/ZCC07_preprint.pdf)
 
     """
     if len(sys) == 2:

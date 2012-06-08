@@ -15,6 +15,7 @@ science, and engineering.
 .. toctree::
    :maxdepth: 1
 
+   hacking
    api
    release
 
@@ -38,6 +39,7 @@ Reference
    signal
    sparse
    sparse.linalg
+   sparse.csgraph
    spatial
    special
    stats

@@ -99,6 +99,12 @@ Jacob Silterra for cwt-based peak finding in scipy.signal.
 Denis Laxalde for the unified interface to minimizers in scipy.optimize.
 David Fong for the sparse LSMR solver.
 Andreas Hilboll for wrapping FITPACK's spgrid.f
+Andrew Schein for improving the numerical precision of norm.logcdf().
+Robert Gantner for improving expm() implementation.
+Sebastian Werk for Halley's method in newton().
+Bjorn Forsman for contributing signal.bode().
+Tony S. Yu for ndimage improvements.
+Jonathan J. Helmus for work on ndimage.
 
 
 Institutions

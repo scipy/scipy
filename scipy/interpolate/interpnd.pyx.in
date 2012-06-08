@@ -178,12 +178,12 @@ class LinearNDInterpolator(NDInterpolatorBase):
     Notes
     -----
     The interpolant is constructed by triangulating the input data
-    with Qhull [Qhull]_, and on each triangle performing linear
+    with Qhull [1]_, and on each triangle performing linear
     barycentric interpolation.
 
     References
     ----------
-    .. [Qhull] http://www.qhull.org/
+    .. [1] http://www.qhull.org/
 
     """
 
@@ -202,6 +202,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef ${CDTYPE} fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
         cdef qhull.DelaunayInfo_t info
+        cdef double eps, eps_broad
 
         ndim = xi.shape[1]
         start = 0
@@ -213,6 +214,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         nvalues = out.shape[1]
 
         eps = np.finfo(np.double).eps * 100
+        eps_broad = sqrt(np.finfo(np.double).eps)
 
         with nogil:
             for i in xrange(xi.shape[0]):
@@ -221,7 +223,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
                 isimplex = qhull._find_simplex(&info, c,
                                                (<double*>xi.data) + i*ndim,
-                                               &start, eps)
+                                               &start, eps, eps_broad)
 
                 # 2) Linear barycentric interpolation
 
@@ -440,7 +442,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
     # Didn't converge before maxiter
     return 0
 
-def estimate_gradients_2d_global(tri, y, maxiter=400, tol=1e-6):
+def estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
     cdef np.ndarray[np.double_t, ndim=2] data
     cdef np.ndarray[np.double_t, ndim=3] grad
     cdef qhull.DelaunayInfo_t info
@@ -509,9 +511,9 @@ cdef ${CDTYPE} _clough_tocher_2d_single_${DTYPE}(qhull.DelaunayInfo_t *d,
 
     Parameters
     ----------
-    d
+    d :
         Delaunay info
-    isimplex
+    isimplex : int
         Triangle to evaluate on
     b : shape (3,)
         Barycentric coordinates of the point on the triangle
@@ -522,7 +524,7 @@ cdef ${CDTYPE} _clough_tocher_2d_single_${DTYPE}(qhull.DelaunayInfo_t *d,
 
     Returns
     -------
-    w
+    w :
         Value of the interpolant at the given point
 
     References
@@ -758,7 +760,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     Notes
     -----
     The interpolant is constructed by triangulating the input data
-    with Qhull [Qhull]_, and constructing a piecewise cubic
+    with Qhull [1]_, and constructing a piecewise cubic
     interpolating Bezier polynomial on each triangle, using a
     Clough-Tocher scheme [CT]_.  The interpolant is guaranteed to be
     continuously differentiable.
@@ -770,8 +772,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     References
     ----------
-
-    .. [Qhull] http://www.qhull.org/
+    .. [1] http://www.qhull.org/
 
     .. [CT] See, for example,
        P. Alfeld,
@@ -816,6 +817,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef ${CDTYPE} fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
         cdef qhull.DelaunayInfo_t info
+        cdef double eps, eps_broad
 
         ndim = xi.shape[1]
         start = 0
@@ -827,6 +829,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         nvalues = out.shape[1]
 
         eps = np.finfo(np.double).eps * 100
+        eps_broad = sqrt(eps)
 
         with nogil:
             for i in xrange(xi.shape[0]):
@@ -834,7 +837,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
                 isimplex = qhull._find_simplex(&info, c,
                                                (<double*>xi.data) + i*ndim,
-                                               &start, eps)
+                                               &start, eps, eps_broad)
 
                 # 2) Clough-Tocher interpolation
 

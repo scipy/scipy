@@ -6,3 +6,16 @@ python module gees__user__routines
         end function <prefix>select
     end interface
 end python module gees__user__routines
+
+python module gges__user__routines 
+    interface
+        function <prefix2c>select(alpha, beta)
+            <ftype2c> :: alpha, beta
+            logical :: <prefix2c>select
+        end function <prefix2c>select
+        function <prefix2>select(alphar, alphai, beta)
+            <ftype2> :: alphar, alphai, beta
+            logical :: <prefix2>select
+        end function <prefix2>select
+    end interface
+end python module gges__user__routines

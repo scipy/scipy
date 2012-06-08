@@ -4,8 +4,8 @@
 
 import numpy
 from numpy import asarray, tan, exp, ones, squeeze, sign, \
-     all, log, sqrt, pi, shape, array, minimum, where
-from numpy import random
+     all, log, sqrt, pi, shape, array, minimum, where, random
+from optimize import Result
 
 __all__ = ['anneal']
 
@@ -162,7 +162,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
     Parameters
     ----------
-    func : callable f(x, *args)
+    func : callable ``f(x, *args)``
         Function to be optimized.
     x0 : ndarray
         Initial guess.
@@ -303,17 +303,15 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             'dwell'     : dwell,
             'disp'      : disp}
 
-    # call _minimize_anneal full_output=True in order to always retrieve
-    # retval (aka info['status'])
-    x, info = _minimize_anneal(func, x0, args, opts, full_output=True)
+    res = _minimize_anneal(func, x0, args, opts)
 
     if full_output:
-        return x, info['fun'], info['T'], info['nfev'], info['nit'], \
-            info['accept'], info['status']
+        return res['x'], res['fun'], res['T'], res['nfev'], res['nit'], \
+            res['accept'], res['status']
     else:
-        return x, info['status']
+        return res['x'], res['status']
 
-def _minimize_anneal(func, x0, args=(), options={}, full_output=0):
+def _minimize_anneal(func, x0, args=(), options=None):
     """
     Minimization of scalar function of one or more variables using the
     simulated annealing algorithm.
@@ -352,6 +350,8 @@ def _minimize_anneal(func, x0, args=(), options={}, full_output=0):
     This function is called by the `minimize` function with
     `method=anneal`. It is not supposed to be called directly.
     """
+    if options is None:
+        options = {}
     # retrieve useful options
     schedule   = options.get('schedule', 'fast')
     T0         = options.get('T0')
@@ -449,25 +449,18 @@ def _minimize_anneal(func, x0, args=(), options={}, full_output=0):
             retval = 4
             break
 
-    if full_output:
-        info = {'solution': best_state.x,
-                'fun'     : best_state.cost,
-                'T'       : schedule.T,
-                'nfev'    : schedule.feval,
-                'nit'     : iters,
-                'accept'  : schedule.accepted,
-                'status'  : retval,
-                'success' : retval <= 1}
-        info['message'] = {0: 'Points no longer changing',
-                           1: 'Cooled to final temperature',
-                           2: 'Maximum function evaluations',
-                           3: 'Maximum cooling iterations reached',
-                           4: 'Maximum accepted query locations reached',
-                           5: 'Final point not the minimum amongst '
-                              'encountered points'}[retval]
-        return best_state.x, info
-    else:
-        return best_state.x
+    result = Result(x=best_state.x, fun=best_state.cost,
+                    T=schedule.T, nfev=schedule.feval, nit=iters,
+                    accept=schedule.accepted, status=retval,
+                    success=(retval <= 1),
+                    message={0: 'Points no longer changing',
+                             1: 'Cooled to final temperature',
+                             2: 'Maximum function evaluations',
+                             3: 'Maximum cooling iterations reached',
+                             4: 'Maximum accepted query locations reached',
+                             5: 'Final point not the minimum amongst '
+                                'encountered points'}[retval])
+    return result
 
 
 

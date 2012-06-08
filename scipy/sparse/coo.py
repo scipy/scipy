@@ -80,38 +80,34 @@ class coo_matrix(_data_matrix):
           entries will be summed together.  This facilitates efficient
           construction of finite element matrices and the like. (see example)
 
-
     Examples
     --------
-
-    >>> from scipy.sparse import *
-    >>> from scipy import *
-    >>> coo_matrix( (3,4), dtype=int8 ).todense()
+    >>> from scipy.sparse import coo_matrix
+    >>> coo_matrix((3,4), dtype=np.int8).todense()
     matrix([[0, 0, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 0]], dtype=int8)
 
-    >>> row  = array([0,3,1,0])
-    >>> col  = array([0,3,1,2])
-    >>> data = array([4,5,7,9])
-    >>> coo_matrix( (data,(row,col)), shape=(4,4) ).todense()
+    >>> row  = np.array([0,3,1,0])
+    >>> col  = np.array([0,3,1,2])
+    >>> data = np.array([4,5,7,9])
+    >>> coo_matrix((data,(row,col)), shape=(4,4)).todense()
     matrix([[4, 0, 9, 0],
             [0, 7, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 5]])
 
     >>> # example with duplicates
-    >>> row  = array([0,0,1,3,1,0,0])
-    >>> col  = array([0,2,1,3,1,0,0])
-    >>> data = array([1,1,1,1,1,1,1])
-    >>> coo_matrix( (data,(row,col)), shape=(4,4)).todense()
+    >>> row  = np.array([0,0,1,3,1,0,0])
+    >>> col  = np.array([0,2,1,3,1,0,0])
+    >>> data = np.array([1,1,1,1,1,1,1])
+    >>> coo_matrix((data, (row,col)), shape=(4,4)).todense()
     matrix([[3, 0, 1, 0],
             [0, 2, 0, 0],
             [0, 0, 0, 0],
             [0, 0, 0, 1]])
 
     """
-
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 
@@ -181,13 +177,13 @@ class coo_matrix(_data_matrix):
 
                 if np.rank(M) != 2:
                     raise TypeError('expected rank <= 2 array or matrix')
+
                 self.shape = M.shape
-                self.row,self.col = (M != 0).nonzero()
-                self.data  = M[self.row,self.col]
+                self.row, self.col = M.nonzero()
+                self.data  = M[self.row, self.col]
 
         if dtype is not None:
             self.data = self.data.astype(dtype)
-
 
         self._check()
 
@@ -234,10 +230,15 @@ class coo_matrix(_data_matrix):
         M,N = self.shape
         return coo_matrix((self.data, (self.col, self.row)), shape=(N,M), copy=copy)
 
-    def toarray(self):
-        B = np.zeros(self.shape, dtype=self.dtype)
+    def toarray(self, order=None, out=None):
+        """See the docstring for `spmatrix.toarray`."""
+        B = self._process_toarray_args(order, out)
+        fortran = int(B.flags.f_contiguous)
+        if not fortran and not B.flags.c_contiguous:
+            raise ValueError("Output array must be C or F contiguous")
         M,N = self.shape
-        coo_todense(M, N, self.nnz, self.row, self.col, self.data, B.ravel())
+        coo_todense(M, N, self.nnz, self.row, self.col, self.data,
+                    B.ravel(order='A'), fortran)
         return B
 
     def tocsc(self):

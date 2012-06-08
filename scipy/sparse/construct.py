@@ -20,6 +20,8 @@ from coo import coo_matrix
 from lil import lil_matrix
 from dia import dia_matrix
 
+from base import issparse
+
 def spdiags(data, diags, m, n, format=None):
     """
     Return a sparse matrix from diagonals.
@@ -424,7 +426,7 @@ def bmat(blocks, format=None, dtype=None):
 
     Parameters
     ----------
-    blocks
+    blocks : array_like
         grid of sparse matrices with compatible shapes
         an entry of None implies an all-zero matrix
     format : str, optional
@@ -436,7 +438,8 @@ def bmat(blocks, format=None, dtype=None):
 
     Returns
     -------
-    res : sparse matrix
+    bmat : sparse matrix
+        A "coo" sparse matrix or type of sparse matrix identified by `format`.
 
     See Also
     --------
@@ -566,7 +569,10 @@ def block_diag(mats, format=None, dtype=None):
     rows = []
     for ia, a in enumerate(mats):
         row = [None]*nmat
-        row[ia] = a
+        if issparse(a):
+            row[ia] = a
+        else:
+            row[ia] = coo_matrix(a)
         rows.append(row)
     return bmat(rows, format=format, dtype=dtype)
 

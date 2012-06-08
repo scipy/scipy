@@ -2,12 +2,7 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pbuild(context):
-    bld = context.waf_context
-
-    def builder(extension):
-        return context.default_builder(extension,
-                                       features="c cshlib bento f2py pyext",
-                                       includes="src",
-                                       use="dfftpack fftpack")
-    context.register_builder("_fftpack", builder)
-    context.register_builder("convolve", builder)
+    context.tweak_builder("_fftpack", features="c cshlib bento f2py pyext",
+                          includes="src", use="dfftpack fftpack CLIB")
+    context.tweak_builder("convolve", features="c cshlib bento f2py pyext",
+                          includes="src", use="dfftpack fftpack CLIB")

@@ -4,6 +4,7 @@ import _minpack
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
                   transpose, zeros, product, greater, array, \
                   all, where, isscalar, asarray, inf, abs
+from optimize import Result
 
 error = _minpack.error
 
@@ -18,7 +19,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs, output_shape=Non
                     return shape(res)
             msg = "%s: there is a mismatch between the input and output " \
                   "shape of the '%s' argument" % (checker, argname)
-            func_name = getattr(thefunc, 'func_name', None)
+            func_name = getattr(thefunc, '__name__', None)
             if func_name:
                 msg += " '%s'." % func_name
             else:
@@ -38,7 +39,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
     Parameters
     ----------
-    func : callable f(x, *args)
+    func : callable ``f(x, *args)``
         A function that takes at least one (possibly vector) argument.
     x0 : ndarray
         The starting estimate for the roots of ``func(x) = 0``.
@@ -69,7 +70,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                     matrix, stored column wise
           * 'r': upper triangular matrix produced by QR factorization of same
                  matrix
-          * 'qtf': the vector (transpose(q) * fvec)
+          * 'qtf': the vector ``(transpose(q) * fvec)``
 
     ier : int
         An integer flag.  Set to 1 if a solution was found, otherwise refer
@@ -104,16 +105,90 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         N positive entries that serve as a scale factors for the
         variables.
 
+    See also
+    --------
+    root: Interface to root finding algorithms for multivariate
+        functions. See the 'hybr' `method` in particular.
+
     Notes
     -----
     ``fsolve`` is a wrapper around MINPACK's hybrd and hybrj algorithms.
 
     """
+    options = {'col_deriv': col_deriv,
+               'xtol': xtol,
+               'maxfev': maxfev,
+               'band': band,
+               'eps': epsfcn,
+               'factor': factor,
+               'diag': diag,
+               'full_output': full_output}
+
+    res = _root_hybr(func, x0, args, jac=fprime, options=options)
+    if full_output:
+        x = res['x']
+        info = dict((k, res.get(k))
+                    for k in ('nfev', 'njev', 'fjac', 'r', 'qtf') if k in res)
+        info['fvec'] = res['fun']
+        return x, info, res['status'], res['message']
+    else:
+        return res['x']
+
+def _root_hybr(func, x0, args=(), jac=None, options=None):
+    """
+    Find the roots of a multivariate function using MINPACK's hybrd and
+    hybrj routines (modified Powell method).
+
+    Options for the hybrd algorithm are:
+        col_deriv : bool
+            Specify whether the Jacobian function computes derivatives down
+            the columns (faster, because there is no transpose operation).
+        xtol : float
+            The calculation will terminate if the relative error between two
+            consecutive iterates is at most `xtol`.
+        maxfev : int
+            The maximum number of calls to the function. If zero, then
+            ``100*(N+1)`` is the maximum where N is the number of elements
+            in `x0`.
+        band : tuple
+            If set to a two-sequence containing the number of sub- and
+            super-diagonals within the band of the Jacobi matrix, the
+            Jacobi matrix is considered banded (only for ``fprime=None``).
+        eps : float
+            A suitable step length for the forward-difference
+            approximation of the Jacobian (for ``fprime=None``). If
+            `eps` is less than the machine precision, it is assumed
+            that the relative errors in the functions are of the order of
+            the machine precision.
+        factor : float
+            A parameter determining the initial step bound
+            (``factor * || diag * x||``).  Should be in the interval
+            ``(0.1, 100)``.
+        diag : sequence
+            N positive entries that serve as a scale factors for the
+            variables.
+
+    This function is called by the `root` function with `method=hybr`. It
+    is not supposed to be called directly.
+    """
+    if options is None:
+        options = {}
+    # retrieve options
+    col_deriv = options.get('col_deriv', 0)
+    xtol      = options.get('xtol', 1.49012e-08)
+    maxfev    = options.get('maxfev', 0)
+    band      = options.get('band', None)
+    epsfcn    = options.get('eps', 0.0)
+    factor    = options.get('factor', 100)
+    diag      = options.get('diag', None)
+
+    full_output = True
     x0 = array(x0, ndmin=1)
     n = len(x0)
-    if type(args) != type(()): args = (args,)
+    if type(args) != type(()):
+        args = (args,)
     _check_func('fsolve', 'func', func, x0, args, n, (n,))
-    Dfun = fprime
+    Dfun = jac
     if Dfun is None:
         if band is None:
             ml, mu = -10,-10
@@ -121,14 +196,16 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
             ml, mu = band[:2]
         if (maxfev == 0):
             maxfev = 200*(n + 1)
-        retval = _minpack._hybrd(func, x0, args, full_output, xtol,
-                maxfev, ml, mu, epsfcn, factor, diag)
+        retval = _minpack._hybrd(func, x0, args, full_output, xtol, maxfev,
+                                 ml, mu, epsfcn, factor, diag)
     else:
         _check_func('fsolve', 'fprime', Dfun, x0, args, n, (n,n))
         if (maxfev == 0):
             maxfev = 100*(n + 1)
         retval = _minpack._hybrj(func, Dfun, x0, args, full_output,
-                col_deriv, xtol, maxfev, factor,diag)
+                                 col_deriv, xtol, maxfev, factor,diag)
+
+    x, status = retval[0], retval[-1]
 
     errors = {0:["Improper input parameters were entered.",TypeError],
               1:["The solution converged.", None],
@@ -145,24 +222,26 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                  "ten iterations.", ValueError],
               'unknown': ["An error occurred.", TypeError]}
 
-    info = retval[-1]    # The FORTRAN return value
-    if (info != 1 and not full_output):
-        if info in [2,3,4,5]:
-            msg = errors[info][0]
+    if (status != 1 and not options.get('full_output', full_output)):
+        if status in [2,3,4,5]:
+            msg = errors[status][0]
             warnings.warn(msg, RuntimeWarning)
         else:
             try:
-                raise errors[info][1](errors[info][0])
+                raise errors[status][1](errors[status][0])
             except KeyError:
                 raise errors['unknown'][1](errors['unknown'][0])
 
-    if full_output:
-        try:
-            return retval + (errors[info][0],)  # Return all + the message
-        except KeyError:
-            return retval + (errors['unknown'][0],)
-    else:
-        return retval[0]
+    info = retval[1]
+    info['fun'] = info.pop('fvec')
+    sol = Result(x=x, success=(status==1), status=status)
+    sol.update(info)
+    try:
+        sol['message'] = errors[status][0]
+    except KeyError:
+        info['message'] = errors['unknown'][0]
+
+    return sol
 
 
 def leastsq(func, x0, args=(), Dfun=None, full_output=0,
@@ -224,7 +303,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         estimate of the jacobian around the solution.  ``None`` if a
         singular matrix encountered (indicates very flat curvature in
         some direction).  This matrix must be multiplied by the
-        residual standard deviation to get the covariance of the
+        residual variance to get the covariance of the
         parameter estimates -- see curve_fit.
     infodict : dict
         a dictionary of optional outputs with the key s::

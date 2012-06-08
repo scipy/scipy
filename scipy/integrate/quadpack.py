@@ -382,7 +382,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     y=gfun(x)..hfun(x).
 
     Parameters
-    -----------
+    ----------
     func : callable
         A Python function or method of at least two variables: y must be the
         first argument and x the second argument.
@@ -415,8 +415,10 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     tplquad : triple integral
     fixed_quad : fixed-order Gaussian quadrature
     quadrature : adaptive Gaussian quadrature
-    odeint, ode : ODE integrators
-    simps, trapz, romb : integrators for sampled data
+    odeint : ODE integrator
+    ode : ODE integrator
+    simps : integrator for sampled data
+    romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
 
     """
@@ -476,7 +478,6 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     fixed_quad: Fixed-order Gaussian quadrature
     dblquad: Double integrals
     romb: Integrators for sampled data
-    trapz: Integrators for sampled data
     simps: Integrators for sampled data
     ode: ODE integrators
     odeint: ODE integrators

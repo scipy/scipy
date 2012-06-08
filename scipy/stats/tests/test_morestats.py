@@ -8,6 +8,7 @@ import warnings
 from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
     assert_almost_equal, assert_array_less, assert_array_almost_equal, \
     assert_raises, assert_, assert_allclose
+from numpy.testing.utils import WarningManager
 
 import scipy.stats as stats
 
@@ -89,7 +90,16 @@ class TestAnsari(TestCase):
                            101, 96, 97, 102, 107, 113, 116, 113, 110, 98))
         parekh = np.array((107, 108, 106, 98, 105, 103, 110, 105, 104,
                            100, 96, 108, 103, 104, 114, 114, 113, 108, 106, 99))
-        W, pval = stats.ansari(ramsay, parekh)
+
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            warnings.filterwarnings('ignore',
+                        message="Ties preclude use of exact statistic.")
+            W, pval = stats.ansari(ramsay, parekh)
+        finally:
+            warn_ctx.__exit__()
+
         assert_almost_equal(W,185.5,11)
         assert_almost_equal(pval,0.18145819972867083,11)
 
@@ -101,9 +111,6 @@ class TestAnsari(TestCase):
     def test_bad_arg(self):
         assert_raises(ValueError, stats.ansari, [], [1])
         assert_raises(ValueError, stats.ansari, [1], [])
-
-warnings.filterwarnings('ignore',
-                        message="Ties preclude use of exact statistic.")
 
 
 class TestBartlett(TestCase):
@@ -306,11 +313,11 @@ def test_circstats():
     M = stats.circmean(x, high=360)
     Mval = 0.167690146
     assert_allclose(M, Mval, rtol=1e-7)
-    
+
     V = stats.circvar(x, high=360)
     Vval = 42.51955609
     assert_allclose(V, Vval, rtol=1e-7)
-    
+
     S = stats.circstd(x, high=360)
     Sval = 6.520702116
     assert_allclose(S, Sval, rtol=1e-7)
@@ -335,7 +342,7 @@ def test_circvar_axis():
     x = np.array([[355,5,2,359,10,350],
                   [351,7,4,352,9,349],
                   [357,9,8,358,4,356]])
-    
+
     V1 = stats.circvar(x, high=360)
     V2 = stats.circvar(x.ravel(), high=360)
     assert_allclose(V1, V2, rtol=1e-11)
@@ -352,7 +359,7 @@ def test_circstd_axis():
     x = np.array([[355,5,2,359,10,350],
                   [351,7,4,352,9,349],
                   [357,9,8,358,4,356]])
-    
+
     S1 = stats.circstd(x, high=360)
     S2 = stats.circstd(x.ravel(), high=360)
     assert_allclose(S1, S2, rtol=1e-11)
@@ -364,7 +371,7 @@ def test_circstd_axis():
     S1 = stats.circstd(x, high=360, axis=0)
     S2 = [stats.circstd(x[:,i], high=360) for i in range(x.shape[1])]
     assert_allclose(S1, S2, rtol=1e-11)
-    
+
 
 def test_circstats_small():
     x = np.array([20,21,22,18,19,20.5,19.2])

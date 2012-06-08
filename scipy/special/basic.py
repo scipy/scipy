@@ -520,24 +520,23 @@ def mathieu_odd_coef(m,q):
     fc = specfun.fcoef(kd,m,q,b)
     return fc[:km]
 
+
 def lpmn(m,n,z):
     """Associated Legendre functions of the first kind, Pmn(z) and its
-    derivative, Pmn'(z) of order m and degree n.  Returns two
-    arrays of size (m+1,n+1) containing Pmn(z) and Pmn'(z) for
-    all orders from 0..m and degrees from 0..n.
-
-    z can be complex.
+    derivative, ``Pmn'(z)`` of order m and degree n.  Returns two
+    arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for
+    all orders from ``0..m`` and degrees from ``0..n``.
 
     Parameters
     ----------
     m : int
-       |m| <= n; the order of the Legendre function
+       ``|m| <= n``; the order of the Legendre function.
     n : int
-       where `n` >= 0; the degree of the Legendre function.  Often
+       where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
     z : float or complex
-       input value
+        Input value.
 
     Returns
     -------
@@ -570,12 +569,11 @@ def lpmn(m,n,z):
     return p,pd
 
 
-
 def lqmn(m,n,z):
     """Associated Legendre functions of the second kind, Qmn(z) and its
-    derivative, Qmn'(z) of order m and degree n.  Returns two
-    arrays of size (m+1,n+1) containing Qmn(z) and Qmn'(z) for
-    all orders from 0..m and degrees from 0..n.
+    derivative, ``Qmn'(z)`` of order m and degree n.  Returns two
+    arrays of size ``(m+1, n+1)`` containing ``Qmn(z)`` and ``Qmn'(z)`` for
+    all orders from ``0..m`` and degrees from ``0..n``.
 
     z can be complex.
     """

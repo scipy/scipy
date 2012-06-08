@@ -614,7 +614,7 @@ void qh_initflags(char *command) {
   if (command <= &qh qhull_command[0] || command > &qh qhull_command[0] + sizeof(qh qhull_command)) {
     if (command != &qh qhull_command[0]) {
       *qh qhull_command= '\0';
-      strncat( qh qhull_command, command, sizeof( qh qhull_command));
+      strncat( qh qhull_command, command, sizeof( qh qhull_command)-strlen( qh qhull_command)-1);
     }
     while (*s && !isspace(*s))  /* skip program name */
       s++;
