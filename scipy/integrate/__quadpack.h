@@ -90,6 +90,7 @@ get_func_type(PyObject *func) {
 
   ctypes_module = PyImport_ImportModule("ctypes");
   if (ctypes_module == NULL) { /* We don't have ctypes... just return Callable */
+      PyErr_Clear();
       return Callable;
   }
   CFuncPtr = PyObject_GetAttrString(ctypes_module, "_CFuncPtr");
