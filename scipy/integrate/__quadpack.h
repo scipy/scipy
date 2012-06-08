@@ -87,8 +87,11 @@ get_func_type(PyObject *func) {
     PyErr_SetString(quadpack_error, "quad: first argument is not callable");
     return Not_Callable;
   }
+
   ctypes_module = PyImport_ImportModule("ctypes");
-  if (ctypes_module == NULL) return Error;
+  if (ctypes_module == NULL) { /* We don't have ctypes... just return Callable */
+      return Callable;
+  }
   CFuncPtr = PyObject_GetAttrString(ctypes_module, "_CFuncPtr");
   if (CFuncPtr == NULL) {
     Py_DECREF(ctypes_module);
