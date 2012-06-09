@@ -15,12 +15,15 @@ __all__ = [
     'BivariateSpline',
     'LSQBivariateSpline',
     'SmoothBivariateSpline',
+    'LSQSphereBivariateSpline',
+    'SmoothSphereBivariateSpline',
     'RectBivariateSpline',
     'RectSphereBivariateSpline']
 
+
 import warnings
 
-from numpy import zeros, concatenate, alltrue, ravel, all, diff, array
+from numpy import zeros, concatenate, alltrue, ravel, all, diff, array, ones
 import numpy as np
 
 import fitpack
@@ -433,6 +436,39 @@ class LSQUnivariateSpline(UnivariateSpline):
 
 ################ Bivariate spline ####################
 
+class _BivariateSplineBase(object):
+    """ Base class for Bivariate spline s(x,y) interpolation on the rectangle
+    [xb,xe] x [yb, ye] calculated from a given set of data points
+    (x,y,z).
+
+    See Also
+    --------
+    bisplrep, bisplev : an older wrapping of FITPACK
+    BivariateSpline :
+        implementation of bivariate spline interpolation on a plane grid
+    SphereBivariateSpline :
+        implementation of bivariate spline interpolation on a spherical grid
+    """
+
+    def get_residual(self):
+        """ Return weighted sum of squared residuals of the spline
+        approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
+        """
+        return self.fp
+
+    def get_knots(self):
+        """ Return a tuple (tx,ty) where tx,ty contain knots positions
+        of the spline with respect to x-, y-variable, respectively.
+        The position of interior and additional knots are given as
+          t[k+1:-k-1] and t[:k+1]=b, t[-k-1:]=e, respectively.
+        """
+        return self.tck[:2]
+
+    def get_coeffs(self):
+        """ Return spline coefficients."""
+        return self.tck[2]
+
+
 _surfit_messages = {1:"""
 The required storage space exceeds the available storage space: nxest
 or nyest too small, or s too small.
@@ -474,8 +510,7 @@ system (deficiency=%i). If deficiency is large, the results may be
 inaccurate. Deficiency may strongly depend on the value of eps."""
                     }
 
-
-class BivariateSpline(object):
+class BivariateSpline(_BivariateSplineBase):
     """
     Bivariate spline s(x,y) of degrees kx and ky on the rectangle
     [xb,xe] x [yb, ye] calculated from a given set of data points
@@ -487,32 +522,15 @@ class BivariateSpline(object):
     UnivariateSpline : a similar class for univariate spline interpolation
     SmoothBivariateSpline :
         to create a BivariateSpline through the given points
-    LSQUnivariateSpline :
+    LSQBivariateSpline :
         to create a BivariateSpline using weighted least-squares fitting
+    SphereBivariateSpline :
+        bivariate spline interpolation in spherical cooridinates
 
     """
-
-    def get_residual(self):
-        """ Return weighted sum of squared residuals of the spline
-        approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
-        """
-        return self.fp
-
-    def get_knots(self):
-        """ Return a tuple ``(tx, ty)`` where tx,ty contain knots positions
-        of the spline with respect to x-, y-variable, respectively.
-
-        The position of interior and additional knots are given as
-        ``t[k+1:-k-1]``, with ``t[:k+1]=b`` and ``t[-k-1:]=e`` respectively.
-        """
-        return self.tck[:2]
-
-    def get_coeffs(self):
-        """ Return spline coefficients."""
-        return self.tck[2]
-
     def __call__(self, x, y, mth='array'):
-        """ Evaluate spline at positions x,y."""
+        """ Evaluate spline at the grid points defined by the coordinate arrays
+        x,y."""
         x = np.asarray(x)
         y = np.asarray(y)
         # empty input yields empty output
@@ -600,7 +618,7 @@ class SmoothBivariateSpline(BivariateSpline):
 
     """
 
-    def __init__(self, x, y, z, w=None, bbox = [None]*4, kx=3, ky=3, s=None,
+    def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
                  eps=None):
         xb,xe,yb,ye = bbox
         nx,tx,ny,ty,c,fp,wrk1,ier = dfitpack.surfit_smth(x,y,z,w,
@@ -683,11 +701,11 @@ class LSQBivariateSpline(BivariateSpline):
                 deficiency = (nx-kx-1)*(ny-ky-1)+ier
                 message = _surfit_messages.get(-3) % (deficiency)
             else:
-                message = _surfit_messages.get(ier,'ier=%s' % (ier))
+                message = _surfit_messages.get(ier, 'ier=%s' % (ier))
             warnings.warn(message)
         self.fp = fp
-        self.tck = tx1,ty1,c
-        self.degrees = kx,ky
+        self.tck = tx1, ty1, c
+        self.degrees = kx, ky
 
 
 class RectBivariateSpline(BivariateSpline):
@@ -719,8 +737,9 @@ class RectBivariateSpline(BivariateSpline):
     UnivariateSpline : a similar class for univariate spline interpolation
 
     """
-    def __init__(self, x, y, z, bbox = [None]*4, kx=3, ky=3, s=0):
-        x,y = ravel(x), ravel(y)
+
+    def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
+        x, y = ravel(x), ravel(y)
         if not all(diff(x) > 0.0):
             raise TypeError('x must be strictly increasing')
         if not all(diff(y) > 0.0):
@@ -736,18 +755,284 @@ class RectBivariateSpline(BivariateSpline):
             raise TypeError('y dimension of z must have same number of '
                             'elements as y')
         z = ravel(z)
-        xb,xe,yb,ye = bbox
-        nx,tx,ny,ty,c,fp,ier = dfitpack.regrid_smth(x,y,z,
-                                                    xb,xe,yb,ye,
-                                                    kx,ky,s)
+        xb, xe, yb, ye = bbox
+        nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
+                                                          ye, kx, ky, s)
 
-        if not ier in [0,-1,-2]:
+        if not ier in [0, -1, -2]:
             msg = _surfit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(msg)
 
         self.fp = fp
-        self.tck = tx[:nx],ty[:ny],c[:(nx-kx-1)*(ny-ky-1)]
-        self.degrees = kx,ky
+        self.tck = tx[:nx], ty[:ny], c[:(nx - kx - 1) * (ny - ky - 1)]
+        self.degrees = kx, ky
+
+
+_spherefit_messages = _surfit_messages.copy()
+_spherefit_messages[10] = """
+ERROR. On entry, the input data are controlled on validity. The following
+       restrictions must be satisfied:
+            -1<=iopt<=1,  m>=2, ntest>=8 ,npest >=8, 0<eps<1,
+            0<=teta(i)<=pi, 0<=phi(i)<=2*pi, w(i)>0, i=1,...,m
+            lwrk1 >= 185+52*v+10*u+14*u*v+8*(u-1)*v**2+8*m
+            kwrk >= m+(ntest-7)*(npest-7)
+            if iopt=-1: 8<=nt<=ntest , 9<=np<=npest
+                        0<tt(5)<tt(6)<...<tt(nt-4)<pi
+                        0<tp(5)<tp(6)<...<tp(np-4)<2*pi
+            if iopt>=0: s>=0
+            if one of these conditions is found to be violated,control
+            is immediately repassed to the calling program. in that
+            case there is no approximation returned."""
+_spherefit_messages[-3] = """
+WARNING. The coefficients of the spline returned have been computed as the
+         minimal norm least-squares solution of a (numerically) rank
+         deficient system (deficiency=%i, rank=%i). Especially if the rank
+         deficiency, which is computed by 6+(nt-8)*(np-7)+ier, is large,
+         the results may be inaccurate. They could also seriously depend on
+         the value of eps."""
+
+
+class SphereBivariateSpline(_BivariateSplineBase):
+    """ Bivariate spline s(x,y) of degrees 3 on a sphere, calculated from a
+    given set of data points (theta,phi,r).
+
+    See Also
+    --------
+    bisplrep, bisplev : an older wrapping of FITPACK
+    UnivariateSpline : a similar class for univariate spline interpolation
+    SmoothUnivariateSpline :
+        to create a BivariateSpline through the given points
+    LSQUnivariateSpline :
+        to create a BivariateSpline using weighted least-squares fitting
+    """
+
+    def __call__(self, theta, phi):
+        """ Evaluate the spline at the grid ponts defined by the coordinate
+        arrays theta, phi. """
+        theta = np.asarray(theta)
+        phi = np.asarray(phi)
+        # empty input yields empty output
+        if (theta.size == 0) and (phi.size == 0):
+            return array([])
+        if theta.min() < 0. or theta.max() > np.pi:
+            raise ValueError("requested theta out of bounds.")
+        if phi.min() < 0. or phi.max() > 2. * np.pi:
+            raise ValueError("requested phi out of bounds.")
+        tx, ty, c = self.tck[:3]
+        kx, ky = self.degrees
+        z, ier = dfitpack.bispev(tx, ty, c, kx, ky, theta, phi)
+        if not ier == 0:
+            raise ValueError("Error code returned by bispev: %s" % ier)
+        return z
+
+    def ev(self, thetai, phii):
+        """ Evaluate the spline at the points (theta[i], phi[i]),
+        i=0,...,len(theta)-1
+        """
+        thetai = np.asarray(thetai)
+        phii = np.asarray(phii)
+        # empty input yields empty output
+        if (thetai.size == 0) and (phii.size == 0):
+            return array([])
+        if thetai.min() < 0. or thetai.max() > np.pi:
+            raise ValueError("requested thetai out of bounds.")
+        if phii.min() < 0. or phii.max() > 2. * np.pi:
+            raise ValueError("requested phii out of bounds.")
+        tx, ty, c = self.tck[:3]
+        kx, ky = self.degrees
+        zi, ier = dfitpack.bispeu(tx, ty, c, kx, ky, thetai, phii)
+        if not ier == 0:
+            raise ValueError("Error code returned by bispeu: %s" % ier)
+        return zi
+
+
+class SmoothSphereBivariateSpline(SphereBivariateSpline):
+    """ Smooth bivariate spline approximation in spherical coordinates.
+
+    Parameters
+    ----------
+    theta, phi, r : array_like
+        1-D sequences of data points (order is not important). Coordinates
+        must be given in radians. Theta must lie within the interval (0, pi),
+        and phi must lie within the interval (0, 2pi).
+    w : array_like, optional
+        Positive 1-D sequence of weights.
+    s : float, optional
+        Positive smoothing factor defined for estimation condition:
+        ``sum((w(i)*(r(i)-s(theta(i),phi(i))))**2,axis=0) <= s``
+        Default ``s=len(w)`` which should be a good value if 1/w[i] is an
+        estimate of the standard deviation of r[i].
+    eps : float, optional
+        A threshold for determining the effective rank of an over-determined
+        linear system of equations. `eps` should have a value between 0 and 1,
+        the default is 1e-16.
+
+    Notes
+    -----
+    For more information, see the FITPACK_ site about this function.
+
+    .. _FITPACK: http://www.netlib.org/dierckx/sphere.f
+
+    .. versionadded:: 0.11.0
+
+    Examples
+    --------
+    Suppose we have global data on a coarse grid (the input data does not
+    have to be on a grid):
+
+    >>> theta = np.linspace(0., np.pi, 7)
+    >>> phi = np.linspace(0., 2*np.pi, 9)
+    >>> data = np.empty((theta.shape[0], phi.shape[0]))
+    >>> data[:,0], data[0,:], data[-1,:] = 0., 0., 0.
+    >>> data[1:-1,1], data[1:-1,-1] = 1., 1.
+    >>> data[1,1:-1], data[-2,1:-1] = 1., 1.
+    >>> data[2:-2,2], data[2:-2,-2] = 2., 2.
+    >>> data[2,2:-2], data[-3,2:-2] = 2., 2.
+    >>> data[3,3:-2] = 3.
+    >>> data = np.roll(data, 4, 1)
+
+    We need to set up the interpolator object
+
+    >>> lats, lons = np.meshgrid(theta, phi)
+    >>> from scipy.interpolate import SmoothSphereBivariateSpline
+    >>> lut = SmoothSphereBivariateSpline(lats.ravel(), lons.ravel(),
+                                         data.T.ravel(),s=3.5)
+
+    As a first test, we'll see what the algorithm returns when run on the
+    input coordinates
+
+    >>> data_orig = lut(theta, phi)
+
+    Finally we interpolate the data to a finer grid
+
+    >>> fine_lats = np.linspace(0., np.pi, 70)
+    >>> fine_lons = np.linspace(0., 2 * np.pi, 90)
+
+    >>> data_smth = lut(fine_lats, fine_lons)
+
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(131)
+    >>> ax1.imshow(data, interpolation='nearest')
+    >>> ax2 = fig.add_subplot(132)
+    >>> ax2.imshow(data_orig, interpolation='nearest')
+    >>> ax3 = fig.add_subplot(133)
+    >>> ax3.imshow(data_smth, interpolation='nearest')
+    >>> plt.show()
+
+    """
+
+    def __init__(self, theta, phi, r, w=None, s=0., eps=1E-16):
+        if np.issubclass_(w, float):
+            w = ones(len(theta)) * w
+        nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
+                                                                r, w=w, s=s,
+                                                                eps=eps)
+        if not ier in [0, -1, -2]:
+            message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
+            raise ValueError(message)
+        self.fp = fp
+        self.tck = tt_[:nt_], tp_[:np_], c[:(nt_ - 4) * (np_ - 4)]
+        self.degrees = (3, 3)
+
+
+class LSQSphereBivariateSpline(SphereBivariateSpline):
+    """ Weighted least-squares bivariate spline approximation in spherical
+    coordinates.
+
+    Parameters
+    ----------
+    theta, phi, r : array_like
+        1-D sequences of data points (order is not important). Coordinates
+        must be given in radians. Theta must lie within the interval (0, pi),
+        and phi must lie within the interval (0, 2pi).
+    tt, tp : array_like
+        Strictly ordered 1-D sequences of knots coordinates.
+        Coordinates must satisfy ``0<tt[i]<pi``, ``0<tp[i]<2*pi``.
+    w : array_like, optional
+        Positive 1-D sequence of weights.
+    eps : float, optional
+        A threshold for determining the effective rank of an over-determined
+        linear system of equations. `eps` should have a value between 0 and 1,
+        the default is 1e-16.
+
+    Notes
+    -----
+    For more information, see the FITPACK_ site about this function.
+
+    .. _FITPACK: http://www.netlib.org/dierckx/sphere.f
+
+    .. versionadded:: 0.11.0
+
+    Examples
+    --------
+    Suppose we have global data on a coarse grid (the input data does not
+    have to be on a grid):
+
+    >>> theta = np.linspace(0., np.pi, 7)
+    >>> phi = np.linspace(0., 2*np.pi, 9)
+    >>> data = np.empty((theta.shape[0], phi.shape[0]))
+    >>> data[:,0], data[0,:], data[-1,:] = 0., 0., 0.
+    >>> data[1:-1,1], data[1:-1,-1] = 1., 1.
+    >>> data[1,1:-1], data[-2,1:-1] = 1., 1.
+    >>> data[2:-2,2], data[2:-2,-2] = 2., 2.
+    >>> data[2,2:-2], data[-3,2:-2] = 2., 2.
+    >>> data[3,3:-2] = 3.
+    >>> data = np.roll(data, 4, 1)
+
+    We need to set up the interpolator object. Here, we must also specify the
+    coordinates of the knots to use.
+
+    >>> lats, lons = np.meshgrid(theta, phi)
+    >>> knotst, knotsp = theta.copy(), phi.copy()
+    >>> knotst[0] += .0001
+    >>> knotst[-1] -= .0001
+    >>> knotsp[0] += .0001
+    >>> knotsp[-1] -= .0001
+    >>> from scipy.interpolate import LSQSphereBivariateSpline
+    >>> lut = LSQSphereBivariateSpline(lats.ravel(), lons.ravel(),
+                                       data.T.ravel(),knotst,knotsp)
+
+    As a first test, we'll see what the algorithm returns when run on the
+    input coordinates
+
+    >>> data_orig = lut(theta, phi)
+
+    Finally we interpolate the data to a finer grid
+
+    >>> fine_lats = np.linspace(0., np.pi, 70)
+    >>> fine_lons = np.linspace(0., 2*np.pi, 90)
+
+    >>> data_lsq = lut(fine_lats, fine_lons)
+
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(131)
+    >>> ax1.imshow(data, interpolation='nearest')
+    >>> ax2 = fig.add_subplot(132)
+    >>> ax2.imshow(data_orig, interpolation='nearest')
+    >>> ax3 = fig.add_subplot(133)
+    >>> ax3.imshow(data_lsq, interpolation='nearest')
+    >>> plt.show()
+    """
+
+    def __init__(self, theta, phi, r, tt, tp, w=None, eps=1E-16):
+        if np.issubclass_(w, float):
+            w = ones(len(theta)) * w
+        nt_, np_ = 8 + len(tt), 8 + len(tp)
+        tt_, tp_ = zeros((nt_,), float), zeros((np_,), float)
+        tt_[4:-4], tp_[4:-4] = tt, tp
+        tt_[-4:], tp_[-4:] = np.pi, 2. * np.pi
+        tt_, tp_, c, fp, ier = dfitpack.spherfit_lsq(theta, phi, r, tt_, tp_,
+                                                     w=w, eps=eps)
+        if ier < -2:
+            deficiency = 6 + (nt_ - 8) * (np_ - 7) + ier
+            message = _spherefit_messages.get(-3) % (deficiency, -ier)
+            warnings.warn(message)
+        elif not ier in [0, -1, -2]:
+            message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
+            raise ValueError(message)
+        self.fp = fp
+        self.tck = tt_, tp_, c
+        self.degrees = (3, 3)
 
 
 _spfit_messages = _surfit_messages.copy()
@@ -779,7 +1064,7 @@ ERROR: on entry, the input data are controlled on validity
        approximation returned."""
 
 
-class RectSphereBivariateSpline(BivariateSpline):
+class RectSphereBivariateSpline(SphereBivariateSpline):
     """
     Bivariate spline approximation over a rectangular mesh on a sphere.
 
@@ -793,8 +1078,7 @@ class RectSphereBivariateSpline(BivariateSpline):
         (0, pi).
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
-        Coordinates must be given in radians, and must lie within an interval of
-        length 2pi which in turn lies within the interval (-pi, 2pi).
+        Coordinates must be given in radians, and must lie within (0, 2pi).
     r : array_like
         2-D array of data with shape (u.size, v.size).
     s : float, optional
@@ -819,7 +1103,8 @@ class RectSphereBivariateSpline(BivariateSpline):
 
     See Also
     --------
-    RectBivariateSpline : bivariate spline approximation over a rectangular mesh
+    RectBivariateSpline : bivariate spline approximation over a rectangular
+        mesh
 
     Notes
     -----
@@ -834,6 +1119,8 @@ class RectSphereBivariateSpline(BivariateSpline):
     For more information, see the FITPACK_ site about this function.
 
     .. _FITPACK: http://www.netlib.org/dierckx/spgrid.f
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -905,6 +1192,7 @@ class RectSphereBivariateSpline(BivariateSpline):
     >>> plt.show()
 
     """
+
     def __init__(self, u, v, r, s=0., pole_continuity=False, pole_values=None,
                  pole_exact=False, pole_flat=False):
         iopt = np.array([0, 0, 0], dtype=int)
@@ -948,19 +1236,20 @@ class RectSphereBivariateSpline(BivariateSpline):
                             'elements as v')
 
         if pole_continuity[1] is False and pole_flat[1] is True:
-            raise TypeError('if pole_continuity is False, so must be pole_flat')
+            raise TypeError('if pole_continuity is False, so must be '
+                            'pole_flat')
         if pole_continuity[0] is False and pole_flat[0] is True:
-            raise TypeError('if pole_continuity is False, so must be pole_flat')
+            raise TypeError('if pole_continuity is False, so must be '
+                            'pole_flat')
 
         r = np.ravel(r)
         nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
-                                        u.copy(), v.copy(), r.copy(), r0, r1, s)
+                                       u.copy(), v.copy(), r.copy(), r0, r1, s)
 
-        if not ier in [0,-1,-2]:
+        if not ier in [0, -1, -2]:
             msg = _spfit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(msg)
 
         self.fp = fp
         self.tck = tu[:nu], tv[:nv], c[:(nu - 4) * (nv-4)]
         self.degrees = (3, 3)
-
