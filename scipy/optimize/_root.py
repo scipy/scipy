@@ -184,15 +184,15 @@ def _root_leastsq(func, x0, args=(), jac=None,
 def _root_nonlin_solve(func, x0, args=(), jac=None,
                        _callback=None, _method=None,
                        nit=None, disp=False, maxiter=None,
-                       ftol=None, frtol=None, xtol=None, xrtol=None,
+                       ftol=None, fatol=None, xtol=None, xatol=None,
                        tol_norm=None, line_search='armijo', jac_options=None,
                        **unknown_options):
     _check_unknown_options(unknown_options)
 
-    f_tol = ftol
-    f_rtol = frtol
-    x_tol = xtol
-    x_rtol = xrtol
+    f_tol = fatol
+    f_rtol = ftol
+    x_tol = xatol
+    x_rtol = xtol
     verbose = disp
     if jac_options is None:
         jac_options = dict()

@@ -2498,16 +2498,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2548,16 +2548,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2598,16 +2598,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2633,16 +2633,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2663,16 +2663,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2693,16 +2693,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2726,16 +2726,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
