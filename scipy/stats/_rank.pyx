@@ -34,12 +34,12 @@ ctypedef fused array_data_type:
 @cython.cdivision(True)
 cdef np.ndarray[np.float64_t, ndim=1] _rankdata_fused(np.ndarray[array_data_type, ndim=1] b):
     cdef unsigned int i, j, n, isize, sumranks, dupcount, inext
-    cdef int[:] order
-    cdef double[:] ranks
+    cdef np.ndarray[np.int32_t, ndim=1] order
+    cdef np.ndarray[np.float64_t, ndim=1] ranks
     cdef double averank
 
     n = b.size
-    ranks = cython.view.array(shape=(n,), itemsize=sizeof(double), format='d')
+    ranks = _np.empty((n,))
 
     order = _np.argsort(b)
 
@@ -57,7 +57,7 @@ cdef np.ndarray[np.float64_t, ndim=1] _rankdata_fused(np.ndarray[array_data_type
                 sumranks = 0
                 dupcount = 0
 
-    return _np.asarray(ranks)
+    return ranks
 
 
 @cython.boundscheck(False)
@@ -165,8 +165,8 @@ def tiecorrect(rankvals):
     """
     cdef np.ndarray[np.float64_t, ndim=1] ranks
     cdef unsigned int i, inext, n, nties, T
-    cdef int[:] order
-    cdef double[:] sorted
+    cdef np.ndarray[np.int32_t, ndim=1] order
+    cdef np.ndarray[np.float64_t, ndim=1] sorted_
     cdef double factor
 
     ranks = _np.asarray(rankvals).astype(_np.float64)
@@ -176,19 +176,19 @@ def tiecorrect(rankvals):
         return 1.0
 
     order = _np.argsort(ranks)
-    sorted = cython.view.array(shape=(n,), itemsize=sizeof(double), format='d')
+    sorted_ = _np.empty((n,))
 
     with nogil:
         for i in xrange(n):
-            sorted[i] = ranks[order[i]]
+            sorted_[i] = ranks[order[i]]
 
         T = 0
         i = 0
         while i < n - 1:
             inext = i + 1
-            if sorted[i] == sorted[inext]:
+            if sorted_[i] == sorted_[inext]:
                 nties = 1
-                while i < n - 1 and sorted[i] == sorted[inext]:
+                while i < n - 1 and sorted_[i] == sorted_[inext]:
                     nties += 1
                     i += 1
                     inext += 1
