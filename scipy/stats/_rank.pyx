@@ -34,14 +34,14 @@ ctypedef fused array_data_type:
 @cython.cdivision(True)
 cdef np.ndarray[np.float64_t, ndim=1] _rankdata_fused(np.ndarray[array_data_type, ndim=1] b):
     cdef unsigned int i, j, n, isize, sumranks, dupcount, inext
-    cdef np.ndarray[np.int32_t, ndim=1] order
+    cdef np.ndarray[np.intp_t, ndim=1] order
     cdef np.ndarray[np.float64_t, ndim=1] ranks
     cdef double averank
 
     n = b.size
     ranks = _np.empty((n,))
 
-    order = _np.argsort(b)
+    order = _np.argsort(b).astype(_np.intp)
 
     with nogil:
         sumranks = 0
@@ -165,7 +165,7 @@ def tiecorrect(rankvals):
     """
     cdef np.ndarray[np.float64_t, ndim=1] ranks
     cdef unsigned int i, inext, n, nties, T
-    cdef np.ndarray[np.int32_t, ndim=1] order
+    cdef np.ndarray[np.intp_t, ndim=1] order
     cdef np.ndarray[np.float64_t, ndim=1] sorted_
     cdef double factor
 
@@ -175,7 +175,7 @@ def tiecorrect(rankvals):
     if n < 2:
         return 1.0
 
-    order = _np.argsort(ranks)
+    order = _np.argsort(ranks).astype(_np.intp)
     sorted_ = _np.empty((n,))
 
     with nogil:
