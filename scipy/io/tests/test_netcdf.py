@@ -14,6 +14,7 @@ from glob import glob
 
 import numpy as np
 from numpy.compat import asbytes
+from numpy.testing import dec
 
 from scipy.io.netcdf import netcdf_file
 
@@ -87,6 +88,7 @@ def test_read_write_files():
     shutil.rmtree(tmpdir)
 
 
+@dec.skipif(sys.version[:3] < '2.5', "Random StringIO issue on 2.4")
 def test_read_write_sio():
     eg_sio1 = BytesIO()
     f1 = make_simple(eg_sio1, 'w')
