@@ -4,7 +4,7 @@ import _minpack
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
                   transpose, zeros, product, greater, array, \
                   all, where, isscalar, asarray, inf, abs
-from optimize import Result
+from optimize import Result, _check_unknown_options
 
 error = _minpack.error
 
@@ -124,7 +124,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                'diag': diag,
                'full_output': full_output}
 
-    res = _root_hybr(func, x0, args, jac=fprime, options=options)
+    res = _root_hybr(func, x0, args, jac=fprime, **options)
     if full_output:
         x = res['x']
         info = dict((k, res.get(k))
@@ -134,7 +134,9 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     else:
         return res['x']
 
-def _root_hybr(func, x0, args=(), jac=None, options=None):
+def _root_hybr(func, x0, args=(), jac=None,
+               col_deriv=0, xtol=1.49012e-08, maxfev=0, band=None, eps=0.0,
+               factor=100, diag=None, full_output=0, **unknown_options):
     """
     Find the roots of a multivariate function using MINPACK's hybrd and
     hybrj routines (modified Powell method).
@@ -171,18 +173,9 @@ def _root_hybr(func, x0, args=(), jac=None, options=None):
     This function is called by the `root` function with `method=hybr`. It
     is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve options
-    col_deriv = options.get('col_deriv', 0)
-    xtol      = options.get('xtol', 1.49012e-08)
-    maxfev    = options.get('maxfev', 0)
-    band      = options.get('band', None)
-    epsfcn    = options.get('eps', 0.0)
-    factor    = options.get('factor', 100)
-    diag      = options.get('diag', None)
+    _check_unknown_options(unknown_options)
+    epsfcn = eps
 
-    full_output = True
     x0 = array(x0, ndmin=1)
     n = len(x0)
     if type(args) != type(()):
@@ -196,13 +189,13 @@ def _root_hybr(func, x0, args=(), jac=None, options=None):
             ml, mu = band[:2]
         if (maxfev == 0):
             maxfev = 200*(n + 1)
-        retval = _minpack._hybrd(func, x0, args, full_output, xtol, maxfev,
+        retval = _minpack._hybrd(func, x0, args, 1, xtol, maxfev,
                                  ml, mu, epsfcn, factor, diag)
     else:
         _check_func('fsolve', 'fprime', Dfun, x0, args, n, (n,n))
         if (maxfev == 0):
             maxfev = 100*(n + 1)
-        retval = _minpack._hybrj(func, Dfun, x0, args, full_output,
+        retval = _minpack._hybrj(func, Dfun, x0, args, 1,
                                  col_deriv, xtol, maxfev, factor,diag)
 
     x, status = retval[0], retval[-1]
@@ -222,7 +215,7 @@ def _root_hybr(func, x0, args=(), jac=None, options=None):
                  "ten iterations.", ValueError],
               'unknown': ["An error occurred.", TypeError]}
 
-    if (status != 1 and not options.get('full_output', full_output)):
+    if status != 1 and not full_output:
         if status in [2,3,4,5]:
             msg = errors[status][0]
             warnings.warn(msg, RuntimeWarning)

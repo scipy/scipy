@@ -67,7 +67,7 @@ class TestOptimize(TestCase):
     def test_cg(self, use_wrapper=False):
         """ conjugate gradient optimization routine """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='CG', jac=self.grad,
@@ -100,7 +100,7 @@ class TestOptimize(TestCase):
     def test_bfgs(self, use_wrapper=False):
         """ Broyden-Fletcher-Goldfarb-Shanno optimization routine """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams,
                                     jac=self.grad, method='BFGS', args=(),
@@ -176,7 +176,7 @@ class TestOptimize(TestCase):
         """ Powell (direction set) optimization routine
         """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Powell', options=opts)
@@ -218,7 +218,7 @@ class TestOptimize(TestCase):
         """ Nelder-Mead simplex algorithm
         """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Nelder-mead', options=opts)
@@ -250,7 +250,7 @@ class TestOptimize(TestCase):
         """ line-search Newton conjugate gradient optimization routine
         """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
@@ -282,7 +282,7 @@ class TestOptimize(TestCase):
     def test_ncg_hess(self, use_wrapper=False):
         """ Newton conjugate gradient with Hessian """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
@@ -316,7 +316,7 @@ class TestOptimize(TestCase):
     def test_ncg_hessp(self, use_wrapper=False):
         """ Newton conjugate gradient with Hessian times a vector p """
         if use_wrapper:
-            opts = {'maxit': self.maxiter, 'disp': False,
+            opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
@@ -404,6 +404,23 @@ class TestOptimize(TestCase):
         assert_allclose(self.func(x), self.func(self.solution),
                         atol=1e-6)
 
+    def test_minimize_l_bfgs_b_ftol(self):
+        # Check that the `ftol` parameter in l_bfgs_b works as expected
+        v0 = None
+        for tol in [1e-1, 1e-4, 1e-7, 1e-10]:
+            opts = {'disp': False, 'maxiter': self.maxiter, 'ftol': tol}
+            sol = optimize.minimize(self.func, self.startparams,
+                                    method='L-BFGS-B', jac=self.grad,
+                                    options=opts)
+            v = self.func(sol.x)
+
+            if v0 is None:
+                v0 = v
+            else:
+                assert_(v < v0)
+
+            assert_allclose(v, self.func(self.solution), rtol=tol)
+
     def test_minimize(self):
         """Tests for the minimize wrapper."""
         self.setUp()
@@ -422,6 +439,30 @@ class TestOptimize(TestCase):
         self.test_neldermead(True)
         self.setUp()
         self.test_powell(True)
+
+    def test_minimize_tol_parameter(self):
+        # Check that the minimize() tol= argument does something
+        def func(z):
+            x, y = z
+            return x**2*y**2 + x**4 + 1
+        def dfunc(z):
+            x, y = z
+            return np.array([2*x*y**2 + 4*x**3, 2*x**2*y])
+
+        for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
+                       'newton-cg', 'anneal', 'l-bfgs-b', 'tnc',
+                       'cobyla', 'slsqp']:
+            if method in ('nelder-mead', 'powell', 'anneal', 'cobyla'):
+                jac = None
+            else:
+                jac = dfunc
+            sol1 = optimize.minimize(func, [1,1], jac=jac, tol=1e-10,
+                                     method=method)
+            sol2 = optimize.minimize(func, [1,1], jac=jac, tol=1.0,
+                                     method=method)
+            assert_(func(sol1.x) < func(sol2.x),
+                    "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
+
 
 class TestLBFGSBBounds(TestCase):
     """ Tests for L-BFGS-B with bounds """
@@ -581,7 +622,7 @@ class TestTnc(TestCase):
     """
     def setUp(self):
         # options for minimize
-        self.opts = {'disp': False, 'maxfev': 200}
+        self.opts = {'disp': False, 'maxiter': 200}
 
     # objective functions and jacobian for each test
     def f1(self, x, a=100.0):

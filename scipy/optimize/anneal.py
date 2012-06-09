@@ -5,7 +5,7 @@
 import numpy
 from numpy import asarray, tan, exp, ones, squeeze, sign, \
      all, log, sqrt, pi, shape, array, minimum, where, random
-from optimize import Result
+from optimize import Result, _check_unknown_options
 
 __all__ = ['anneal']
 
@@ -303,7 +303,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             'dwell'     : dwell,
             'disp'      : disp}
 
-    res = _minimize_anneal(func, x0, args, opts)
+    res = _minimize_anneal(func, x0, args, **opts)
 
     if full_output:
         return res['x'], res['fun'], res['T'], res['nfev'], res['nit'], \
@@ -311,7 +311,12 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     else:
         return res['x'], res['status']
 
-def _minimize_anneal(func, x0, args=(), options=None):
+def _minimize_anneal(func, x0, args=(),
+                     schedule='fast', T0=None, Tf=1e-12, maxfev=None,
+                     maxaccept=None, maxiter=400, boltzmann=1.0, learn_rate=0.5,
+                     ftol=1e-6, quench=1.0, m=1.0, n=1.0, lower=-100,
+                     upper=100, dwell=50, disp=False,
+                     **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     simulated annealing algorithm.
@@ -350,26 +355,9 @@ def _minimize_anneal(func, x0, args=(), options=None):
     This function is called by the `minimize` function with
     `method=anneal`. It is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve useful options
-    schedule   = options.get('schedule', 'fast')
-    T0         = options.get('T0')
-    Tf         = options.get('Tf', 1e-12)
-    maxeval    = options.get('maxfev')
-    maxaccept  = options.get('maxaccept')
-    maxiter    = options.get('maxiter', 400)
-    boltzmann  = options.get('boltzmann', 1.0)
-    learn_rate = options.get('learn_rate', 0.5)
-    feps       = options.get('ftol', 1e-6)
-    quench     = options.get('quench', 1.0)
-    m          = options.get('m', 1.0)
-    n          = options.get('n', 1.0)
-    lower      = options.get('lower', -100)
-    upper      = options.get('upper', 100)
-    dwell      = options.get('dwell', 50)
-    disp       = options.get('disp', False)
-
+    _check_unknown_options(unknown_options)
+    maxeval = maxfev
+    feps = ftol
 
     x0 = asarray(x0)
     lower = asarray(lower)

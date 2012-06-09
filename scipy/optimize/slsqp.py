@@ -18,7 +18,7 @@ __all__ = ['approx_jacobian','fmin_slsqp']
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isinf, atleast_1d
-from optimize import wrap_function, Result
+from optimize import wrap_function, Result, _check_unknown_options
 
 __docformat__ = "restructuredtext en"
 
@@ -193,19 +193,24 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
                   'args': args}, )
 
     res = _minimize_slsqp(func, x0, args, jac=fprime, bounds=bounds,
-                          constraints=cons, options=opts)
+                          constraints=cons, **opts)
     if full_output:
         return res['x'], res['fun'], res['nit'], res['status'], res['message']
     else:
         return res['x']
 
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
-                    constraints=(), options=None):
+                    constraints=(),
+                    maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
+                    eps=_epsilon,
+                    **unknown_options):
     """
     Minimize a scalar function of one or more variables using Sequential
     Least SQuares Programming (SLSQP).
 
     Options for the SLSQP algorithm are:
+        ftol : float
+            Precision goal for the value of f in the stopping criterion.
         eps : float
             Step size used for numerical approximation of the jacobian.
         disp : bool
@@ -217,15 +222,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     This function is called by the `minimize` function with
     `method=SLSQP`. It is not supposed to be called directly.
     """
+    _check_unknown_options(unknown_options)
     fprime = jac
-    if options is None:
-        options = {}
-    # retrieve useful options
-    iter    = options.get('maxiter', 100)
-    acc     = options.get('ftol', 1.0E-6)
-    iprint  = options.get('iprint', 1)
-    disp    = options.get('disp', False)
-    epsilon = options.get('eps', _epsilon)
+    iter = maxiter
+    acc = ftol
+    epsilon = eps
 
     if not disp:
         iprint = 0
@@ -457,7 +458,7 @@ if __name__ == '__main__':
                       full_output=True)[:2]
     print ' * _minimize_slsqp'
     res = _minimize_slsqp(fun, array([-1, 1]), bounds=bnds,
-                          options={'disp': True})
+                          **{'disp': True})
 
     # Equality and inequality constraints problem
     print ' Equality and inequality constraints '.center(72, '-')
@@ -468,4 +469,4 @@ if __name__ == '__main__':
                       disp=1, full_output=True)[:2]
     print ' * _minimize_slsqp'
     res = _minimize_slsqp(fun, array([-1, 1]), constraints=cons,
-                          options={'disp': True})
+                          **{'disp': True})

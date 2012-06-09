@@ -8,14 +8,16 @@ Functions
 
 __all__ = ['root']
 
+import numpy as np
+
 from warnings import warn
 
-from optimize import MemoizeJac, Result
+from optimize import MemoizeJac, Result, _check_unknown_options
 from minpack import _root_hybr, leastsq
 import nonlin
 
-def root(fun, x0, args=(), method='hybr', jac=None, options=None,
-         callback=None):
+def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
+         options=None):
     """
     Find a root of a vector function.
 
@@ -48,13 +50,16 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
         Jacobian will be estimated numerically.
         `jac` can also be a callable returning the Jacobian of `fun`. In
         this case, it must accept the same arguments as `fun`.
-    options : dict, optional
-        A dictionary of solver options. E.g. `xtol` or `maxiter`, see
-        ``show_options('root', method)`` for details.
+    tol : float, optional
+        Tolerance for termination. For detailed control, use solver-specific
+        options.
     callback : function, optional
         Optional callback function. It is called on every iteration as
         ``callback(x, f)`` where `x` is the current solution and `f`
         the corresponding residual. For all methods but 'hybr' and 'lm'.
+    options : dict, optional
+        A dictionary of solver options. E.g. `xtol` or `maxiter`, see
+        ``show_options('root', method)`` for details.
 
     Returns
     -------
@@ -147,76 +152,95 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
         else:
             jac = None
 
+    # set default tolerances
+    if tol is not None:
+        options = dict(options)
+        if meth in ('hybr', 'lm'):
+            options.setdefault('xtol', tol)
+        elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',
+                      'diagbroyden', 'excitingmixing', 'krylov'):
+            options.setdefault('xtol', tol)
+            options.setdefault('xatol', np.inf)
+            options.setdefault('ftol', np.inf)
+            options.setdefault('fatol', np.inf)
+
     if meth == 'hybr':
-        sol = _root_hybr(fun, x0, args=args, jac=jac, options=options)
+        sol = _root_hybr(fun, x0, args=args, jac=jac, **options)
     elif meth == 'lm':
-        col_deriv = options.get('col_deriv', 0)
-        xtol      = options.get('xtol', 1.49012e-08)
-        ftol      = options.get('ftol', 1.49012e-08)
-        gtol      = options.get('gtol', 0.0)
-        maxfev    = options.get('maxfev', 0)
-        epsfcn    = options.get('epsfcn', 0.0)
-        factor    = options.get('factor', 100)
-        diag      = options.get('diag', None)
-        x, cov_x, info, msg, ier = leastsq(fun, x0, args=args, Dfun=jac,
-                                           full_output=True,
-                                           col_deriv=col_deriv, xtol=xtol,
-                                           ftol=ftol, gtol=gtol,
-                                           maxfev=maxfev, epsfcn=epsfcn,
-                                           factor=factor, diag=diag)
-        sol = Result(x=x, message=msg, status=ier,
-                     success=ier in (1, 2, 3, 4), cov_x=cov_x,
-                     fun=info.pop('fvec'))
-        sol.update(info)
+        sol = _root_leastsq(fun, x0, args=args, jac=jac, **options)
     elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',
                   'diagbroyden', 'excitingmixing', 'krylov'):
         if jac is not None:
             warn('Method %s does not use the jacobian (jac).' % method,
                  RuntimeWarning)
-
-        jacobian = {'broyden1': nonlin.BroydenFirst,
-                    'broyden2': nonlin.BroydenSecond,
-                    'anderson': nonlin.Anderson,
-                    'linearmixing': nonlin.LinearMixing,
-                    'diagbroyden': nonlin.DiagBroyden,
-                    'excitingmixing': nonlin.ExcitingMixing,
-                    'krylov': nonlin.KrylovJacobian
-                   }[meth]
-
-        nit         = options.get('nit')
-        verbose     = options.get('disp', False)
-        maxiter     = options.get('maxiter')
-        f_tol       = options.get('ftol')
-        f_rtol      = options.get('frtol')
-        x_tol       = options.get('xtol')
-        x_rtol      = options.get('xrtol')
-        tol_norm    = options.get('tol_norm')
-        line_search = options.get('line_search', 'armijo')
-
-        jac_opts = options.get('jac_options', dict())
-
-        if args:
-            def f(x):
-                if jac == True:
-                    r = fun(x, *args)[0]
-                else:
-                    r = fun(x, *args)
-                return r
-        else:
-            f = fun
-
-        x, info = nonlin.nonlin_solve(f, x0, jacobian=jacobian(**jac_opts),
-                                      iter=nit, verbose=verbose,
-                                      maxiter=maxiter, f_tol=f_tol,
-                                      f_rtol=f_rtol, x_tol=x_tol,
-                                      x_rtol=x_rtol, tol_norm=tol_norm,
-                                      line_search=line_search,
-                                      callback=callback, full_output=True,
-                                      raise_exception=False)
-        sol = Result(x=x)
-        sol.update(info)
+        sol = _root_nonlin_solve(fun, x0, args=args, jac=jac,
+                                 _method=meth, _callback=callback,
+                                 **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
     return sol
 
+def _root_leastsq(func, x0, args=(), jac=None,
+                  col_deriv=0, xtol=1.49012e-08, ftol=1.49012e-08,
+                  gtol=0.0, maxiter=0, eps=0.0, factor=100, diag=None,
+                  **unknown_options):
+    _check_unknown_options(unknown_options)
+    x, cov_x, info, msg, ier = leastsq(func, x0, args=args, Dfun=jac,
+                                       full_output=True,
+                                       col_deriv=col_deriv, xtol=xtol,
+                                       ftol=ftol, gtol=gtol,
+                                       maxfev=maxiter, epsfcn=eps,
+                                       factor=factor, diag=diag)
+    sol = Result(x=x, message=msg, status=ier,
+                 success=ier in (1, 2, 3, 4), cov_x=cov_x,
+                 fun=info.pop('fvec'))
+    sol.update(info)
+    return sol
+
+def _root_nonlin_solve(func, x0, args=(), jac=None,
+                       _callback=None, _method=None,
+                       nit=None, disp=False, maxiter=None,
+                       ftol=None, fatol=None, xtol=None, xatol=None,
+                       tol_norm=None, line_search='armijo', jac_options=None,
+                       **unknown_options):
+    _check_unknown_options(unknown_options)
+
+    f_tol = fatol
+    f_rtol = ftol
+    x_tol = xatol
+    x_rtol = xtol
+    verbose = disp
+    if jac_options is None:
+        jac_options = dict()
+
+    jacobian = {'broyden1': nonlin.BroydenFirst,
+                'broyden2': nonlin.BroydenSecond,
+                'anderson': nonlin.Anderson,
+                'linearmixing': nonlin.LinearMixing,
+                'diagbroyden': nonlin.DiagBroyden,
+                'excitingmixing': nonlin.ExcitingMixing,
+                'krylov': nonlin.KrylovJacobian
+               }[_method]
+
+    if args:
+        if jac == True:
+            def f(x):
+                return func(x, *args)[0]
+        else:
+            def f(x):
+                return func(x, *args)
+    else:
+        f = func
+
+    x, info = nonlin.nonlin_solve(f, x0, jacobian=jacobian(**jac_options),
+                                  iter=nit, verbose=verbose,
+                                  maxiter=maxiter, f_tol=f_tol,
+                                  f_rtol=f_rtol, x_tol=x_tol,
+                                  x_rtol=x_rtol, tol_norm=tol_norm,
+                                  line_search=line_search,
+                                  callback=_callback, full_output=True,
+                                  raise_exception=False)
+    sol = Result(x=x)
+    sol.update(info)
+    return sol
