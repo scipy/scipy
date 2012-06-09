@@ -5,7 +5,7 @@ import numpy as np
 cimport numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix_csc, isspmatrix
-from _validation import validate_graph
+from scipy.sparse.csgraph._validation import validate_graph
 
 include 'parameters.pxi'
 
