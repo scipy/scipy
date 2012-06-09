@@ -12,7 +12,7 @@ Functions
 
 import numpy as np
 from scipy.optimize import _cobyla
-from optimize import Result
+from optimize import Result, _check_unknown_options
 from warnings import warn
 
 __all__ = ['fmin_cobyla']
@@ -157,15 +157,17 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     if disp is not None:
         iprint = disp
     opts = {'rhobeg': rhobeg,
-            'rhoend': rhoend,
+            'tol': rhoend,
             'iprint': iprint,
             'disp'  : iprint != 0,
-            'maxfev': maxfun}
+            'maxiter': maxfun}
 
     return _minimize_cobyla(func, x0, args, constraints=con,
-                            options=opts)['x']
+                            **opts)['x']
 
-def _minimize_cobyla(fun, x0, args=(), constraints=(), options=None):
+def _minimize_cobyla(fun, x0, args=(), constraints=(),
+                     rhobeg=1.0, tol=1e-4, iprint=1, maxiter=1000,
+                     disp=False, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Linear Approximation (COBYLA) algorithm.
@@ -173,27 +175,21 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(), options=None):
     Options for the COBYLA algorithm are:
         rhobeg : float
             Reasonable initial changes to the variables.
-        rhoend : float
+        tol : float
             Final accuracy in the optimization (not precisely guaranteed).
             This is a lower bound on the size of the trust region.
         disp : bool
             Set to True to print convergence messages. If False,
             `verbosity` is ignored as set to 0.
-        maxfev : int
+        maxiter : int
             Maximum number of function evaluations.
 
     This function is called by the `minimize` function with
     `method=COBYLA`. It is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve useful options
-    rhobeg = options.get('rhobeg', 1.0)
-    rhoend = options.get('rhoend', 1e-4)
-    iprint = options.get('iprint', 1)
-    maxfun = options.get('maxfev', 1000)
-    disp   = options.get('disp', False)
-
+    _check_unknown_options(unknown_options)
+    maxfun = maxiter
+    rhoend = tol
     if not disp:
         iprint = 0
 

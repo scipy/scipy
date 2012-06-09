@@ -32,7 +32,7 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 from scipy.optimize import moduleTNC, approx_fprime
-from optimize import MemoizeJac, Result
+from optimize import MemoizeJac, Result, _check_unknown_options
 from numpy import asarray, inf, array
 
 __all__ = ['fmin_tnc']
@@ -243,22 +243,26 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             'offset': offset,
             'mesg_num': mesg_num,
             'maxCGit': maxCGit,
-            'maxfev': maxfun,
+            'maxiter': maxfun,
             'eta': eta,
             'stepmx': stepmx,
             'accuracy': accuracy,
             'minfev': fmin,
             'ftol': ftol,
             'xtol': xtol,
-            'pgtol': pgtol,
+            'gtol': pgtol,
             'rescale': rescale,
             'disp': False}
 
-    res = _minimize_tnc(fun, x0, args, jac, bounds, options=opts)
+    res = _minimize_tnc(fun, x0, args, jac, bounds, **opts)
 
     return res['x'], res['nfev'], res['status']
 
-def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options=None):
+def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
+                  eps=1e-8, scale=None, offset=None, mesg_num=None,
+                  maxCGit=-1, maxiter=None, eta=-1, stepmx=0, accuracy=0,
+                  minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
+                  **unknown_options):
     """
     Minimize a scalar function of one or more variables using a truncated
     Newton (TNC) algorithm.
@@ -281,8 +285,8 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options=None):
             iteration.  If maxCGit == 0, the direction chosen is
             -gradient if maxCGit < 0, maxCGit is set to
             max(1,min(50,n/2)).  Defaults to -1.
-        maxfev : int
-            Maximum number of function evaluation.  if None, `maxfev` is
+        maxiter : int
+            Maximum number of function evaluation.  if None, `maxiter` is
             set to max(100, 10*len(x0)).  Defaults to None.
         eta : float
             Severity of the line search. if < 0 or > 1, set to 0.25.
@@ -304,10 +308,10 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options=None):
             criterion (after applying x scaling factors).  If xtol <
             0.0, xtol is set to sqrt(machine_precision).  Defaults to
             -1.
-        pgtol : float
+        gtol : float
             Precision goal for the value of the projected gradient in
             the stopping criterion (after applying x scaling factors).
-            If pgtol < 0.0, pgtol is set to 1e-2 * sqrt(accuracy).
+            If gtol < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
             Setting it to 0.0 is not recommended.  Defaults to -1.
         rescale : float
             Scaling factor (in log10) used to trigger f value
@@ -317,24 +321,11 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None, options=None):
     This function is called by the `minimize` function with `method=TNC`.
     It is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve useful options
-    epsilon  = options.get('eps', 1e-8)
-    scale    = options.get('scale')
-    offset   = options.get('offset')
-    mesg_num = options.get('mesg_num')
-    maxCGit  = options.get('maxCGit', -1)
-    maxfun   = options.get('maxfev')
-    eta      = options.get('eta', -1)
-    stepmx   = options.get('stepmx', 0)
-    accuracy = options.get('accuracy', 0)
-    fmin     = options.get('minfev', 0)
-    ftol     = options.get('ftol', -1)
-    xtol     = options.get('xtol', -1)
-    pgtol    = options.get('pgtol', -1)
-    rescale  = options.get('rescale', -1)
-    disp     = options.get('disp', False)
+    _check_unknown_options(unknown_options)
+    epsilon = eps
+    maxfun = maxiter
+    fmin = minfev
+    pgtol = gtol
 
     x0 = asarray(x0, dtype=float).tolist()
     n = len(x0)

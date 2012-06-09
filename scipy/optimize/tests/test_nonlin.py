@@ -91,7 +91,7 @@ class TestNonlin(object):
 
     def _check_root(self, f, method, f_tol=1e-2):
         res = root(f, f.xin, method=method,
-                   options={'ftol': f_tol, 'maxiter': 200, 'verbose': 0})
+                   options={'ftol': f_tol, 'maxiter': 200, 'disp': 0})
         assert_(np.absolute(res.fun).max() < f_tol)
 
     @dec.knownfailureif(True)

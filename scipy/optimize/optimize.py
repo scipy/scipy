@@ -18,10 +18,12 @@
 __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'fminbound', 'brent', 'golden', 'bracket', 'rosen', 'rosen_der',
            'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
-           'line_search', 'check_grad', 'Result', 'show_options']
+           'line_search', 'check_grad', 'Result', 'show_options',
+           'OptimizeWarning']
 
 __docformat__ = "restructuredtext en"
 
+import warnings
 import numpy
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
@@ -108,6 +110,16 @@ class Result(dict):
         else:
             return self.__class__.__name__ + "()"
 
+class OptimizeWarning(UserWarning):
+    pass
+
+def _check_unknown_options(unknown_options):
+    if unknown_options:
+        msg = ", ".join(map(str, unknown_options.keys()))
+        # Stack level 4: this is called from _minimize_*, which is
+        # called from another function in Scipy. Level 4 is the first
+        # level in user code.
+        warnings.warn("Unknown solver options: %s" % msg, OptimizeWarning, 4)
 
 # These have been copied from Numeric's MLab.py
 # I don't think they made the transition to scipy_core
@@ -345,7 +357,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'disp': disp,
             'return_all': retall}
 
-    res = _minimize_neldermead(func, x0, args, opts, callback=callback)
+    res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
     if full_output:
         retlist = res['x'], res['fun'], res['nit'], res['nfev'], res['status']
         if retall:
@@ -357,7 +369,10 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         else:
             return res['x']
 
-def _minimize_neldermead(func, x0, args=(), options=None, callback=None):
+def _minimize_neldermead(func, x0, args=(), callback=None,
+                         xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
+                         disp=False, return_all=False,
+                         **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -377,15 +392,9 @@ def _minimize_neldermead(func, x0, args=(), options=None, callback=None):
     This function is called by the `minimize` function with
     `method=Nelder-Mead`. It is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve useful options
-    xtol    = options.get('xtol', 1e-4)
-    ftol    = options.get('ftol', 1e-4)
-    maxiter = options.get('maxiter')
-    maxfun  = options.get('maxfev')
-    disp    = options.get('disp', False)
-    retall  = options.get('return_all', False)
+    _check_unknown_options(unknown_options)
+    maxfun = maxfev
+    retall = return_all
 
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
@@ -708,7 +717,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'maxiter': maxiter,
             'return_all': retall}
 
-    res = _minimize_bfgs(f, x0, args, fprime, opts, callback=callback)
+    res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
         retlist = res['x'], res['fun'], res['jac'], res['hess'], \
@@ -722,7 +731,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         else:
             return res['x']
 
-def _minimize_bfgs(fun, x0, args=(), jac=None, options=None, callback=None):
+def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
+                   gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
+                   disp=False, return_all=False,
+                   **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -743,17 +755,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, options=None, callback=None):
     This function is called by the `minimize` function with `method=BFGS`.
     It is not supposed to be called directly.
     """
+    _check_unknown_options(unknown_options)
     f = fun
     fprime = jac
-    if options is None:
-        options = {}
-    # retrieve useful options
-    gtol    = options.get('gtol', 1e-5)
-    norm    = options.get('norm', Inf)
-    epsilon = options.get('eps', _epsilon)
-    maxiter = options.get('maxiter')
-    disp    = options.get('disp', False)
-    retall  = options.get('return_all', False)
+    epsilon = eps
+    retall = return_all
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
@@ -943,7 +949,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             'maxiter': maxiter,
             'return_all': retall}
 
-    res = _minimize_cg(f, x0, args, fprime, opts, callback=callback)
+    res = _minimize_cg(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
         retlist = res['x'], res['fun'], res['nfev'], res['njev'], res['status']
@@ -956,7 +962,10 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         else:
             return res['x']
 
-def _minimize_cg(fun, x0, args=(), jac=None, options=None, callback=None):
+def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
+                 gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
+                 disp=False, return_all=False,
+                 **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     conjugate gradient algorithm.
@@ -977,17 +986,11 @@ def _minimize_cg(fun, x0, args=(), jac=None, options=None, callback=None):
     This function is called by the `minimize` function with `method=CG`. It
     is not supposed to be called directly.
     """
+    _check_unknown_options(unknown_options)
     f = fun
     fprime = jac
-    if options is None:
-        options = {}
-    # retrieve useful options
-    gtol    = options.get('gtol', 1e-5)
-    norm    = options.get('norm', Inf)
-    epsilon = options.get('eps', _epsilon)
-    maxiter = options.get('maxiter')
-    disp    = options.get('disp', False)
-    retall  = options.get('return_all', False)
+    epsilon = eps
+    retall = return_all
 
     x0 = asarray(x0).flatten()
     if maxiter is None:
@@ -1173,13 +1176,13 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     """
     opts = {'xtol': avextol,
-            'epsilon': epsilon,
+            'eps': epsilon,
             'maxiter': maxiter,
             'disp': disp,
             'return_all': retall}
 
-    res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p, opts,
-                             callback=callback)
+    res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p,
+                             callback=callback, **opts)
 
     if full_output:
         retlist = res['x'], res['fun'], res['nfev'], res['njev'], \
@@ -1194,7 +1197,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             return res['x']
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                       options=None, callback=None):
+                       callback=None, xtol=1e-5, eps=_epsilon, maxiter=None,
+                       disp=False, return_all=False,
+                       **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     Newton-CG algorithm.
@@ -1215,20 +1220,16 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     Also note that the `jac` parameter (Jacobian) is required.
     """
+    _check_unknown_options(unknown_options)
     if jac == None:
         raise ValueError('Jacobian is required for Newton-CG method')
     f = fun
     fprime = jac
     fhess_p = hessp
     fhess = hess
-    if options is None:
-        options = {}
-    # retrieve useful options
-    avextol = options.get('xtol', 1e-5)
-    epsilon = options.get('eps', _epsilon)
-    maxiter = options.get('maxiter')
-    disp    = options.get('disp', False)
-    retall  = options.get('return_all', False)
+    avextol = xtol
+    epsilon = eps
+    retall = return_all
 
     x0 = asarray(x0).flatten()
     fcalls, f = wrap_function(f, args)
@@ -1384,22 +1385,20 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
     """
     options = {'xtol': xtol,
-               'maxfev': maxfun,
+               'maxiter': maxfun,
                'disp': disp}
 
-    res =  _minimize_scalar_bounded(func, (x1, x2), args, options)
+    res =  _minimize_scalar_bounded(func, (x1, x2), args, **options)
     if full_output:
         return res['x'], res['fun'], res['status'], res['nfev']
     else:
         return res['x']
 
-def _minimize_scalar_bounded(func, bounds, args=(), options=None):
-    if options is None:
-        options = {}
-    # retrieve options
-    xtol = options.get('xtol', 1e-5)
-    maxfun = options.get('maxfev', 500)
-    disp = options.get('disp', 0)
+def _minimize_scalar_bounded(func, bounds, args=(),
+                             xtol=1e-5, maxiter=500, disp=0,
+                             **unknown_options):
+    _check_unknown_options(unknown_options)
+    maxfun = maxiter
     # Test bounds are of correct form
     if len(bounds) != 2:
         raise ValueError('bounds must have two elements.')
@@ -1704,21 +1703,19 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     convergence of golden section method.
 
     """
-    options = {'ftol': tol,
+    options = {'xtol': tol,
                'maxiter': maxiter}
-    res = _minimize_scalar_brent(func, brack, args, options)
+    res = _minimize_scalar_brent(func, brack, args, **options)
     if full_output:
         return res['x'], res['fun'], res['nit'], res['nfev']
     else:
         return res['x']
 
-def _minimize_scalar_brent(func, brack=None, args=(), options=None):
-    if options is None:
-        options = {}
-    # retrieve options
-    tol = options.get('ftol', 1.48e-8)
-    maxiter = options.get('maxiter', 500)
-
+def _minimize_scalar_brent(func, brack=None, args=(),
+                           xtol=1.48e-8, maxiter=500,
+                           **unknown_options):
+    _check_unknown_options(unknown_options)
+    tol = xtol
 
     brent = Brent(func=func, args=args, tol=tol,
                   full_output=True, maxiter=maxiter)
@@ -1760,17 +1757,17 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     interval.
 
     """
-    options = {'ftol': tol}
-    res = _minimize_scalar_golden(func, brack, args, options)
+    options = {'xtol': tol}
+    res = _minimize_scalar_golden(func, brack, args, **options)
     if full_output:
         return res['x'], res['fun'], res['nfev']
     else:
         return res['x']
 
-def _minimize_scalar_golden(func, brack=None, args=(), options=None):
-    if options is None:
-        options = {}
-    tol = options.get('ftol', _epsilon)
+def _minimize_scalar_golden(func, brack=None, args=(),
+                            xtol=_epsilon, **unknown_options):
+    _check_unknown_options(unknown_options)
+    tol = xtol
     if brack is None:
         xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
     elif len(brack) == 2:
@@ -2030,7 +2027,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'direc': direc,
             'return_all': retall}
 
-    res = _minimize_powell(func, x0, args, opts, callback=callback)
+    res = _minimize_powell(func, x0, args, callback=callback, **opts)
 
     if full_output:
         retlist = res['x'], res['fun'], res['direc'], res['nit'], \
@@ -2044,7 +2041,10 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         else:
             return res['x']
 
-def _minimize_powell(func, x0, args=(), options=None, callback=None):
+def _minimize_powell(func, x0, args=(), callback=None,
+                     xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
+                     disp=False, direc=None, return_all=False,
+                     **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     modified Powell algorithm.
@@ -2066,16 +2066,9 @@ def _minimize_powell(func, x0, args=(), options=None, callback=None):
     This function is called by the `minimize` function with
     `method=Powell`. It is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve useful options
-    xtol    = options.get('xtol', 1e-4)
-    ftol    = options.get('ftol', 1e-4)
-    maxiter = options.get('maxiter')
-    maxfun  = options.get('maxfev')
-    disp    = options.get('disp', False)
-    direc   = options.get('direc')
-    retall  = options.get('return_all', False)
+    _check_unknown_options(unknown_options)
+    maxfun = maxfev
+    retall = return_all
     # we need to use a mutable object here that we can update in the
     # wrapper function
     fcalls, func = wrap_function(func, args)
@@ -2335,6 +2328,8 @@ def show_options(solver, method=None):
             Initial set of direction vectors for the Powell method.
 
     * Anneal options:
+        ftol : float
+            Relative error in ``fun(x)`` acceptable for convergence.
         schedule : str
             Annealing schedule to use. One of: 'fast', 'cauchy' or
             'boltzmann'.
@@ -2352,8 +2347,6 @@ def show_options(solver, method=None):
             stringent test at each temperature).
         learn_rate : float
             Scale constant for adjusting guesses.
-        ftol : float
-            Relative error in ``fun(x)`` acceptable for convergence.
         quench, m, n : float
             Parameters to alter fast_sa schedule.
         lower, upper : float or ndarray
@@ -2362,26 +2355,35 @@ def show_options(solver, method=None):
             The number of times to search the space at each temperature.
 
     * L-BFGS-B options:
+        ftol : float
+            The iteration stops when ``(f^k -
+            f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= ftol``.
+        gtol : float
+            The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
+            <= gtol`` where ``pg_i`` is the i-th component of the
+            projected gradient.
         maxcor : int
             The maximum number of variable metric corrections used to
             define the limited memory matrix. (The limited memory BFGS
             method does not store the full hessian but uses this many terms
             in an approximation to it.)
-        factr : float
-            The iteration stops when ``(f^k -
-            f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr * eps``, where ``eps``
-            is the machine precision, which is automatically generated by
-            the code. Typical values for `factr` are: 1e12 for low
-            accuracy; 1e7 for moderate accuracy; 10.0 for extremely high
-            accuracy.
-        pgtol : float
-            The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
-            <= pgtol`` where ``pg_i`` is the i-th component of the
-            projected gradient.
-        maxfev : int
+        maxiter : int
             Maximum number of function evaluations.
 
     * TNC options:
+        ftol : float
+            Precision goal for the value of f in the stoping criterion.
+            If ftol < 0.0, ftol is set to 0.0 defaults to -1.
+        xtol : float
+            Precision goal for the value of x in the stopping
+            criterion (after applying x scaling factors).  If xtol <
+            0.0, xtol is set to sqrt(machine_precision).  Defaults to
+            -1.
+        gtol : float
+            Precision goal for the value of the projected gradient in
+            the stopping criterion (after applying x scaling factors).
+            If gtol < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
+            Setting it to 0.0 is not recommended.  Defaults to -1.
         scale : list of floats
             Scaling factors to apply to each variable.  If None, the
             factors are up-low for interval bounded variables and
@@ -2395,8 +2397,8 @@ def show_options(solver, method=None):
             iteration.  If maxCGit == 0, the direction chosen is
             -gradient if maxCGit < 0, maxCGit is set to
             max(1,min(50,n/2)).  Defaults to -1.
-        maxfev : int
-            Maximum number of function evaluation.  if None, `maxfev` is
+        maxiter : int
+            Maximum number of function evaluation.  if None, `maxiter` is
             set to max(100, 10*len(x0)).  Defaults to None.
         eta : float
             Severity of the line search. if < 0 or > 1, set to 0.25.
@@ -2410,34 +2412,23 @@ def show_options(solver, method=None):
             Defaults to 0.
         minfev : float
             Minimum function value estimate.  Defaults to 0.
-        ftol : float
-            Precision goal for the value of f in the stoping criterion.
-            If ftol < 0.0, ftol is set to 0.0 defaults to -1.
-        xtol : float
-            Precision goal for the value of x in the stopping
-            criterion (after applying x scaling factors).  If xtol <
-            0.0, xtol is set to sqrt(machine_precision).  Defaults to
-            -1.
-        pgtol : float
-            Precision goal for the value of the projected gradient in
-            the stopping criterion (after applying x scaling factors).
-            If pgtol < 0.0, pgtol is set to 1e-2 * sqrt(accuracy).
-            Setting it to 0.0 is not recommended.  Defaults to -1.
         rescale : float
             Scaling factor (in log10) used to trigger f value
             rescaling.  If 0, rescale at each iteration.  If a large
             value, never rescale.  If < 0, rescale is set to 1.3.
 
     * COBYLA options:
-        rhobeg : float
-            Reasonable initial changes to the variables.
-        rhoend : float
+        tol : float
             Final accuracy in the optimization (not precisely guaranteed).
             This is a lower bound on the size of the trust region.
+        rhobeg : float
+            Reasonable initial changes to the variables.
         maxfev : int
             Maximum number of function evaluations.
 
     * SLSQP options:
+        ftol : float
+            Precision goal for the value of f in the stopping criterion.
         eps : float
             Step size used for numerical approximation of the jacobian.
         maxiter : int
@@ -2507,16 +2498,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2557,16 +2548,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2607,16 +2598,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2642,16 +2633,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2672,16 +2663,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2702,16 +2693,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
@@ -2735,16 +2726,16 @@ def show_options(solver, method=None):
             Maximum number of iterations to make. If more are needed to
             meet convergence, `NoConvergence` is raised.
         ftol : float, optional
+            Relative tolerance for the residual. If omitted, not used.
+        fatol : float, optional
             Absolute tolerance (in max-norm) for the residual.
             If omitted, default is 6e-6.
-        frtol : float, optional
-            Relative tolerance for the residual. If omitted, not used.
         xtol : float, optional
+            Relative minimum step size. If omitted, not used.
+        xatol : float, optional
             Absolute minimum step size, as determined from the Jacobian
             approximation. If the step size is smaller than this, optimization
             is terminated as successful. If omitted, not used.
-        xrtol : float, optional
-            Relative minimum step size. If omitted, not used.
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional

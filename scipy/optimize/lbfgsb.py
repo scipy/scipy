@@ -33,9 +33,10 @@ Functions
 
 ## Modifications by Travis Oliphant and Enthought, Inc.  for inclusion in SciPy
 
+import numpy as np
 from numpy import array, asarray, float64, int32, zeros
 import _lbfgsb
-from optimize import approx_fprime, MemoizeJac, Result
+from optimize import approx_fprime, MemoizeJac, Result, _check_unknown_options
 from numpy.compat import asbytes
 
 __all__ = ['fmin_l_bfgs_b']
@@ -164,13 +165,13 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     opts = {'disp'  : disp,
             'iprint': iprint,
             'maxcor': m,
-            'factr' : factr,
-            'pgtol' : pgtol,
+            'ftol'  : factr * np.finfo(float).eps,
+            'gtol'  : pgtol,
             'eps'   : epsilon,
-            'maxfev': maxfun}
+            'maxiter': maxfun}
 
     res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
-                           options=opts)
+                           **opts)
     d = {'grad': res['jac'],
          'task': res['message'],
          'funcalls': res['nfev'],
@@ -180,7 +181,10 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     return x, f, d
 
-def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options=None):
+def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
+                     disp=None, maxcor=10, ftol=2.2204460492503131e-09,
+                     gtol=1e-5, eps=1e-8, maxiter=15000, iprint=-1,
+                     **unknown_options):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -200,30 +204,26 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, options=None):
             the code. Typical values for `factr` are: 1e12 for low
             accuracy; 1e7 for moderate accuracy; 10.0 for extremely high
             accuracy.
-        pgtol : float
+        gtol : float
             The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
-            <= pgtol`` where ``pg_i`` is the i-th component of the
+            <= gtol`` where ``pg_i`` is the i-th component of the
             projected gradient.
         eps : float
             Step size used for numerical approximation of the jacobian.
         disp : int
             Set to True to print convergence messages.
-        maxfev : int
+        maxiter : int
             Maximum number of function evaluations.
 
     This function is called by the `minimize` function with
     `method=L-BFGS-B`. It is not supposed to be called directly.
     """
-    if options is None:
-        options = {}
-    # retrieve useful options
-    disp    = options.get('disp', None)
-    m       = options.get('maxcor', 10)
-    factr   = options.get('factr', 1e7)
-    pgtol   = options.get('pgtol', 1e-5)
-    epsilon = options.get('eps', 1e-8)
-    maxfun  = options.get('maxfev', 15000)
-    iprint  = options.get('iprint', -1)
+    _check_unknown_options(unknown_options)
+    m = maxcor
+    epsilon = eps
+    maxfun = maxiter
+    pgtol = gtol
+    factr = ftol / np.finfo(float).eps
 
     x0 = asarray(x0).ravel()
     n, = x0.shape
