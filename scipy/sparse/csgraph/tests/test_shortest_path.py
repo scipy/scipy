@@ -1,5 +1,6 @@
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_raises, TestCase
+from numpy.testing import \
+    assert_array_almost_equal, assert_raises, TestCase, dec
 from scipy.sparse.csgraph import \
     shortest_path, dijkstra, floyd_warshall, johnson,\
     bellman_ford, construct_dist_matrix, NegativeCycleError
@@ -46,6 +47,7 @@ undirected_pred = np.array([[-9999,     0,     0,     0,     0],
 
 methods = ['auto', 'FW', 'D', 'BF', 'J']
 
+@dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_directed():
     for method in methods:
         SP = shortest_path(directed_G, method=method, directed=True,
@@ -72,12 +74,13 @@ def test_shortest_path_indices():
             yield (assert_array_almost_equal, SP,
                    undirected_SP[indices].reshape(outshape))
 
+@dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_predecessors():
     SP_res = {True: directed_SP,
               False: undirected_SP}
     pred_res = {True: directed_pred,
                 False: undirected_pred}
-    
+
     for method in methods:
         for directed in True, False:
             SP, pred = shortest_path(directed_G, method, directed=directed,
@@ -89,6 +92,7 @@ def test_predecessors():
             yield (assert_array_almost_equal,
                    pred, pred_res[directed])
 
+@dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_construct_shortest_path():
     SP_res = {True: directed_SP,
               False: undirected_SP}
@@ -102,6 +106,7 @@ def test_construct_shortest_path():
 
             yield (assert_array_almost_equal, SP1, SP2)
 
+@dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_unweighted_path():
     for method in methods:
         for directed in (True, False):
@@ -113,7 +118,7 @@ def test_unweighted_path():
                                 directed=directed,
                                 overwrite=False,
                                 unweighted=False)
-    
+
             yield (assert_array_almost_equal, SP1, SP2)
 
 
@@ -127,13 +132,14 @@ def test_negative_cycles():
             yield (assert_raises, NegativeCycleError, shortest_path,
                    graph, method, directed)
 
+@dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_masked_input():
     G = np.ma.masked_equal(directed_G, 0)
     for method in methods:
         SP = shortest_path(directed_G, method=method, directed=True,
                            overwrite=False)
         yield (assert_array_almost_equal, SP, directed_SP)
-    
+
 
 if __name__ == '__main__':
     import nose
