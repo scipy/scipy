@@ -200,6 +200,7 @@ import distributions
 # Local imports.
 import _support
 from _support import _chk_asarray, _chk2_asarray
+from _rank import rankdata, tiecorrect
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
            'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
@@ -3494,45 +3495,6 @@ def mannwhitneyu(x, y, use_continuity=True):
     return smallu, distributions.norm.sf(z)  #(1.0 - zprob(z))
 
 
-def tiecorrect(rankvals):
-    """
-    Tie-corrector for ties in Mann Whitney U and Kruskal Wallis H tests.
-
-    Parameters
-    ----------
-    rankvals : array_like
-        Input values
-
-    Returns
-    -------
-    T correction factor for U or H
-
-    Notes
-    -----
-    Code adapted from \\|STAT rankind.c code.
-
-    References
-    ----------
-    Siegel, S. (1956) Nonparametric Statistics for the Behavioral
-    Sciences.  New York: McGraw-Hill.
-
-    """
-    sorted,posn = fastsort(asarray(rankvals))
-    n = len(sorted)
-    T = 0.0
-    i = 0
-    while (i<n-1):
-        if sorted[i] == sorted[i+1]:
-            nties = 1
-            while (i<n-1) and (sorted[i] == sorted[i+1]):
-                nties = nties +1
-                i = i +1
-            T = T + nties**3 - nties
-        i = i+1
-    T = T / float(n**3-n)
-    return 1.0 - T
-
-
 def ranksums(x, y):
     """
     Compute the Wilcoxon rank-sum statistic for two samples.
@@ -3986,44 +3948,3 @@ def fastsort(a):
     it = np.argsort(a)
     as_ = a[it]
     return as_, it
-
-def rankdata(a):
-    """
-    Ranks the data, dealing with ties appropriately.
-
-    Equal values are assigned a rank that is the average of the ranks that
-    would have been otherwise assigned to all of the values within that set.
-    Ranks begin at 1, not 0.
-
-    Parameters
-    ----------
-    a : array_like
-        This array is first flattened.
-
-    Returns
-    -------
-    rankdata : ndarray
-         An array of length equal to the size of `a`, containing rank scores.
-
-    Examples
-    --------
-    >>> stats.rankdata([0, 2, 2, 3])
-    array([ 1. ,  2.5,  2.5,  4. ])
-
-    """
-    a = np.ravel(a)
-    n = len(a)
-    svec, ivec = fastsort(a)
-    sumranks = 0
-    dupcount = 0
-    newarray = np.zeros(n, float)
-    for i in xrange(n):
-        sumranks += i
-        dupcount += 1
-        if i==n-1 or svec[i] != svec[i+1]:
-            averank = sumranks / float(dupcount) + 1
-            for j in xrange(i-dupcount+1,i+1):
-                newarray[ivec[j]] = averank
-            sumranks = 0
-            dupcount = 0
-    return newarray
