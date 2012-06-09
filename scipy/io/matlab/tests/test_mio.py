@@ -516,11 +516,23 @@ def test_use_small_element():
 
 def test_save_dict():
     # Test that dict can be saved (as recarray), loaded as matstruct
-    d = {'a':1, 'b':2}
-    stream = BytesIO()
-    savemat_future(stream, {'dict':d})
-    stream.seek(0)
-    vals = loadmat(stream)
+    dict_types = (dict,)
+    try:
+        from collections import OrderedDict
+    except ImportError:
+        pass
+    else:
+        dict_types += (OrderedDict,)
+    exp_arr = np.zeros((1, 1), dtype = [('a', object), ('b', object)])
+    exp_arr['a'] = 1
+    exp_arr['b'] = 2
+    for dict_type in dict_types:
+        d = dict_type(a=1, b=2)
+        stream = BytesIO()
+        savemat_future(stream, {'dict': d})
+        stream.seek(0)
+        vals = loadmat(stream)
+        assert_array_equal(vals['dict'], exp_arr)
 
 
 def test_1d_shape():

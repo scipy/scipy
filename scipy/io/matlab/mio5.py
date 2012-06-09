@@ -438,12 +438,15 @@ def to_writeable(source):
         return source
     if source is None:
         return None
-    # Objects that have dicts
-    if hasattr(source, '__dict__'):
+    # Objects that implement mappings
+    is_mapping = (hasattr(source, 'keys') and hasattr(source, 'values') and
+                  hasattr(source, 'items'))
+    # Objects that don't implement mappings, but do have dicts
+    if not is_mapping and hasattr(source, '__dict__'):
         source = dict((key, value) for key, value in source.__dict__.items()
                       if not key.startswith('_'))
-    # Mappings or object dicts
-    if hasattr(source, 'keys'):
+        is_mapping = True
+    if is_mapping:
         dtype = []
         values = []
         for field, value in source.items():
@@ -452,7 +455,7 @@ def to_writeable(source):
                 dtype.append((field,object))
                 values.append(value)
         if dtype:
-            return np.array( [tuple(values)] ,dtype)
+            return np.array([tuple(values)] ,dtype)
         else:
             return None
     # Next try and convert to an array
