@@ -8,14 +8,16 @@ Functions
 
 __all__ = ['root']
 
+import numpy as np
+
 from warnings import warn
 
 from optimize import MemoizeJac, Result, _check_unknown_options
 from minpack import _root_hybr, leastsq
 import nonlin
 
-def root(fun, x0, args=(), method='hybr', jac=None, options=None,
-         callback=None):
+def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
+         options=None):
     """
     Find a root of a vector function.
 
@@ -48,13 +50,16 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
         Jacobian will be estimated numerically.
         `jac` can also be a callable returning the Jacobian of `fun`. In
         this case, it must accept the same arguments as `fun`.
-    options : dict, optional
-        A dictionary of solver options. E.g. `xtol` or `maxiter`, see
-        ``show_options('root', method)`` for details.
+    tol : float, optional
+        Tolerance for termination. For detailed control, use solver-specific
+        options.
     callback : function, optional
         Optional callback function. It is called on every iteration as
         ``callback(x, f)`` where `x` is the current solution and `f`
         the corresponding residual. For all methods but 'hybr' and 'lm'.
+    options : dict, optional
+        A dictionary of solver options. E.g. `xtol` or `maxiter`, see
+        ``show_options('root', method)`` for details.
 
     Returns
     -------
@@ -146,6 +151,18 @@ def root(fun, x0, args=(), method='hybr', jac=None, options=None,
             jac = fun.derivative
         else:
             jac = None
+
+    # set default tolerances
+    if tol is not None:
+        options = dict(options)
+        if meth in ('hybr', 'lm'):
+            options.setdefault('xtol', tol)
+        elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',
+                      'diagbroyden', 'excitingmixing', 'krylov'):
+            options.setdefault('xtol', tol)
+            options.setdefault('xatol', np.inf)
+            options.setdefault('ftol', np.inf)
+            options.setdefault('fatol', np.inf)
 
     if meth == 'hybr':
         sol = _root_hybr(fun, x0, args=args, jac=jac, **options)
