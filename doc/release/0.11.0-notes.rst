@@ -197,6 +197,19 @@ Removal of ``scipy.maxentropy``
 The ``scipy.maxentropy`` module, which was deprecated in the 0.10.0 release,
 has been removed.  Logistic regression in scikits.learn is a good and modern
 alternative for this functionality.
+alternative for this functionality.  
+
+Behavior of ``scipy.integrate.complex_ode``
+-------------------------------------------
+
+The behavior of the ``y`` attribute of ``complex_ode`` is changed.
+Previously, it expressed the complex-valued solution in the form::
+
+    z = ode.y[::2] + 1j * ode.y[1::2]
+
+Now, it is directly the complex-valued solution::
+
+    z = ode.y
 
 
 Other changes
