@@ -46,6 +46,17 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(edges1, edges2)
 
 
+    def test_1d_std(self):
+        x = self.x
+        v = self.v
+
+        stat1, edges1 = binned_statistic(x, v, 'std', bins=10)
+        stat2, edges2 = binned_statistic(x, v, np.std, bins=10)
+
+        assert_array_almost_equal(stat1, stat2)
+        assert_array_almost_equal(edges1, edges2)
+
+
     def test_1d_median(self):
         x = self.x
         v = self.v
@@ -96,6 +107,19 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(biny1, biny2)
 
 
+    def test_2d_std(self):
+        x = self.x
+        y = self.y
+        v = self.v
+
+        stat1, binx1, biny1 = binned_statistic_2d(x, y, v, 'std', bins=5)
+        stat2, binx2, biny2 = binned_statistic_2d(x, y, v, np.std, bins=5)
+
+        assert_array_almost_equal(stat1, stat2)
+        assert_array_almost_equal(binx1, binx2)
+        assert_array_almost_equal(biny1, biny2)
+
+
     def test_2d_median(self):
         x = self.x
         y = self.y
@@ -138,6 +162,17 @@ class TestBinnedStatistic(object):
 
         stat1, edges1 = binned_statistic_dd(X, v, 'mean', bins=3)
         stat2, edges2 = binned_statistic_dd(X, v, np.mean, bins=3)
+
+        assert_array_almost_equal(stat1, stat2)
+        assert_array_almost_equal(edges1, edges2)
+
+
+    def test_dd_std(self):
+        X = self.X
+        v = self.v
+
+        stat1, edges1 = binned_statistic_dd(X, v, 'std', bins=3)
+        stat2, edges2 = binned_statistic_dd(X, v, np.std, bins=3)
 
         assert_array_almost_equal(stat1, stat2)
         assert_array_almost_equal(edges1, edges2)
