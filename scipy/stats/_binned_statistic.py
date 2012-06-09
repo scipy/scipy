@@ -229,7 +229,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     np.histogramdd, binned_statistic, binned_statistic_2d
     """
     if type(statistic) == str:
-        if statistic not in ['mean', 'median', 'count', 'sum']:
+        if statistic not in ['mean', 'median', 'count', 'sum', 'std']:
             raise ValueError('unrecognized statistic "%s"' % statistic)
     elif callable(statistic):
         pass
@@ -318,9 +318,16 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result.fill(np.nan)
         flatcount = np.bincount(xy, None)
         flatsum = np.bincount(xy, values)
-        a = np.arange(len(flatcount))
-        result[a] = flatsum
-        result[a] /= flatcount
+        a = (flatcount > 0)
+        result[a] = flatsum[a] / flatcount[a]
+    elif statistic == 'std':
+        result.fill(0)
+        flatcount = np.bincount(xy, None)
+        flatsum = np.bincount(xy, values)
+        flatsum2 = np.bincount(xy, values ** 2)
+        a = (flatcount > 0)
+        result[a] = np.sqrt(flatsum2[a] / flatcount[a]
+                            - (flatsum[a] / flatcount[a]) ** 2)
     elif statistic == 'count':
         result.fill(0)
         flatcount = np.bincount(xy, None)
