@@ -2929,7 +2929,7 @@ def ttest_ind(a, b, axis=0, equal_var = True):
     """Calculates the T-test for the means of TWO INDEPENDENT samples of scores
 
     This is a two-sided test for the null hypothesis that 2 independent samples
-    with have identical average (expected) values.
+    have identical average (expected) values.
 
     Parameters
     ----------
@@ -2939,8 +2939,8 @@ def ttest_ind(a, b, axis=0, equal_var = True):
     axis : int, optional
         Axis can equal None (ravel array first), or an integer (the axis
         over which to operate on a and b).
-    equal_var : boolean, optional
-        The default is True, which performs a standard indepentent 2 sample test
+    equal_var : bool, optional
+        The default is True, which performs a standard independent 2 sample test
         that assumes equal population variances. If False, Welch's t-test, which
         does not assume equal population variance, is performed.
 
@@ -3102,7 +3102,7 @@ def ttest_rel(a,b,axis=0):
     n = a.shape[axis]
     df = float(n - 1)
 
-    d = (a - b).astype('d')
+    d = (a - b).astype(np.float64)
     v = np.var(d, axis, ddof=1)
     dm = np.mean(d, axis)
     denom = np.sqrt(v / float(n))
