@@ -35,25 +35,31 @@ def _read_fmt_chunk(fid):
 
 # assumes file pointer is immediately
 #   after the 'data' id
-def _read_data_chunk(fid, noc, bits):
+def _read_data_chunk(fid, noc, bits, mmap=False):
     if _big_endian:
         fmt = '>i'
     else:
         fmt = '<i'
     size = struct.unpack(fmt,fid.read(4))[0]
+
+    bytes = bits//8
     if bits == 8:
-        data = numpy.fromfile(fid, dtype=numpy.ubyte, count=size)
-        if noc > 1:
-            data = data.reshape(-1,noc)
+        dtype = 'u1'
+    elif _big_endian:
+        dtype = '>i%d' % bytes
     else:
-        bytes = bits//8
-        if _big_endian:
-            dtype = '>i%d' % bytes
-        else:
-            dtype = '<i%d' % bytes
+        dtype = '<i%d' % bytes
+
+    if not mmap:
         data = numpy.fromfile(fid, dtype=dtype, count=size//bytes)
-        if noc > 1:
-            data = data.reshape(-1,noc)
+    else:
+        start = fid.tell()
+        data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
+                            shape=(size//bytes,))
+        fid.seek(start + size)
+
+    if noc > 1:
+        data = data.reshape(-1,noc)
     return data
 
 def _read_riff_chunk(fid):
@@ -76,7 +82,7 @@ def _read_riff_chunk(fid):
     return fsize
 
 # open a wave-file
-def read(file):
+def read(file, mmap=False):
     """
     Return the sample rate (in samples/sec) and data from a WAV file
 
@@ -84,6 +90,10 @@ def read(file):
     ----------
     file : file
         Input wav file.
+    mmap : bool, optional
+        Whether to read data as memory mapped. (Default: False)
+
+        .. versionadded:: 0.11.0
 
     Returns
     -------
@@ -116,7 +126,7 @@ def read(file):
         if chunk_id == asbytes('fmt '):
             size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid)
         elif chunk_id == asbytes('data'):
-            data = _read_data_chunk(fid, noc, bits)
+            data = _read_data_chunk(fid, noc, bits, mmap=mmap)
         else:
             warnings.warn("chunk not understood", WavFileWarning)
             data = fid.read(4)

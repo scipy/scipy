@@ -12,28 +12,33 @@ def datafile(fn):
     return os.path.join(os.path.dirname(__file__), 'data', fn)
 
 def test_read_1():
-    warn_ctx = WarningManager()
-    warn_ctx.__enter__()
-    try:
-        warnings.simplefilter('ignore', wavfile.WavFileWarning)
-        rate, data = wavfile.read(datafile('test-44100-le-1ch-4bytes.wav'))
-    finally:
-        warn_ctx.__exit__()
+    for mmap in [False, True]:
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            warnings.simplefilter('ignore', wavfile.WavFileWarning)
+            rate, data = wavfile.read(datafile('test-44100-le-1ch-4bytes.wav'),
+                                      mmap=mmap)
+        finally:
+            warn_ctx.__exit__()
 
-    assert_equal(rate, 44100)
-    assert_(np.issubdtype(data.dtype, np.int32))
-    assert_equal(data.shape, (4410,))
+        assert_equal(rate, 44100)
+        assert_(np.issubdtype(data.dtype, np.int32))
+        assert_equal(data.shape, (4410,))
 
 def test_read_2():
-    rate, data = wavfile.read(datafile('test-8000-le-2ch-1byteu.wav'))
-    assert_equal(rate, 8000)
-    assert_(np.issubdtype(data.dtype, np.uint8))
-    assert_equal(data.shape, (800, 2))
+    for mmap in [False, True]:
+        rate, data = wavfile.read(datafile('test-8000-le-2ch-1byteu.wav'),
+                                  mmap=mmap)
+        assert_equal(rate, 8000)
+        assert_(np.issubdtype(data.dtype, np.uint8))
+        assert_equal(data.shape, (800, 2))
 
 def test_read_fail():
-    fp = open(datafile('example_1.nc'))
-    assert_raises(ValueError, wavfile.read, fp)
-    fp.close()
+    for mmap in [False, True]:
+        fp = open(datafile('example_1.nc'))
+        assert_raises(ValueError, wavfile.read, fp, mmap=mmap)
+        fp.close()
 
 def _check_roundtrip(rate, dtype, channels):
     fd, tmpfile = tempfile.mkstemp(suffix='.wav')
@@ -46,11 +51,13 @@ def _check_roundtrip(rate, dtype, channels):
         data = (data*128).astype(dtype)
 
         wavfile.write(tmpfile, rate, data)
-        rate2, data2 = wavfile.read(tmpfile)
 
-        assert_equal(rate, rate2)
-        assert_(data2.dtype.byteorder in ('<', '=', '|'), msg=data2.dtype)
-        assert_array_equal(data, data2)
+        for mmap in [False, True]:
+            rate2, data2 = wavfile.read(tmpfile, mmap=mmap)
+
+            assert_equal(rate, rate2)
+            assert_(data2.dtype.byteorder in ('<', '=', '|'), msg=data2.dtype)
+            assert_array_equal(data, data2)
     finally:
         os.unlink(tmpfile)
 
