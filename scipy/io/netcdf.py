@@ -280,14 +280,12 @@ class netcdf_file(object):
         shape = tuple([self.dimensions[dim] for dim in dimensions])
         shape_ = tuple([dim or 0 for dim in shape])  # replace None with 0 for numpy
 
-        if isinstance(type, basestring): type = dtype(type)
+        type = dtype(type)
         typecode, size = type.char, type.itemsize
         if (typecode, size) not in REVERSE:
             raise ValueError("NetCDF 3 does not support type %s" % type)
-        dtype_ = '>%s' % typecode
-        if size > 1: dtype_ += str(size)
 
-        data = empty(shape_, dtype=dtype_)
+        data = empty(shape_, dtype=type)
         self.variables[name] = netcdf_variable(data, typecode, size, shape, dimensions)
         return self.variables[name]
 
@@ -305,6 +303,7 @@ class netcdf_file(object):
     sync = flush
 
     def _write(self):
+        self.fp.seek(0)
         self.fp.write(asbytes('CDF'))
         self.fp.write(array(self.version_byte, '>b').tostring())
 
