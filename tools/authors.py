@@ -44,6 +44,8 @@ NAME_MAP = {
     u'Travis E. Oliphant': u'Travis Oliphant',
     u'warren.weckesser': u'Warren Weckesser',
     u'weathergod': u'Benjamin Root',
+    u'Andreas H': u'Andreas Hilboll',
+    u'honnorat': u'Marc Honnorat',
 }
 
 def main():

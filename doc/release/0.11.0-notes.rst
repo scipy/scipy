@@ -216,4 +216,60 @@ for a continuous-time system, has been added.
 Authors
 =======
 
-Jake Vanderplas <vanderplas@hail.astro.washington.edu>, sparse graph submodule
+This release contains work by the following people (contributed at least
+one patch to this release, names in alphabetical order):
+
+* Jeff Armstrong
+* Chad Baker
+* Brandon Beacher +
+* behrisch +
+* Matthew Brett
+* Lars Buitinck
+* Luis Pedro Coelho +
+* Johann Cohen-Tanugi
+* David Cournapeau
+* dougal +
+* endolith +
+* Bjørn Forsman +
+* Robert Gantner +
+* Sebastian Gassner +
+* Christoph Gohlke
+* Ralf Gommers
+* Yaroslav Halchenko
+* Charles Harris
+* Jonathan Helmus +
+* Andreas Hilboll +
+* Marc Honnorat +
+* Jonathan Hunt +
+* Maxim Ivanov +
+* Christopher Kuster +
+* Denis Laxalde +
+* lmwang +
+* Travis Oliphant
+* Joonas Paalasmaa +
+* Fabian Pedregosa
+* Josef Perktold
+* Jim Radford +
+* Andrew Schein +
+* Skipper Seabold
+* Jacob Silterra +
+* Scott Sinclair
+* Alexis Tabary +
+* Martin Teichmann
+* Matt Terry +
+* Nicky van Foreest +
+* Jacob Vanderplas
+* Patrick Varilly +
+* Pauli Virtanen
+* Nils Wagner +
+* Darryl Wally +
+* Stefan van der Walt
+* David Warde-Farley +
+* Warren Weckesser
+* Sebastian Werk +
+* Mike Wimmer +
+* Tony S Yu +
+
+A total of 50 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+
