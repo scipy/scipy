@@ -2122,6 +2122,19 @@ class TestNdimage:
         out = ndimage.zoom(ndimage.zoom(arr,2),0.5)
         assert_array_equal(out,arr)
 
+    def test_zoom3(self):
+        "zoom 3"
+        err = numpy.seterr(invalid='ignore')    
+        arr = numpy.array([[1, 2]])
+        try:
+            out1 = ndimage.zoom(arr, (2, 1))
+            out2 = ndimage.zoom(arr, (1,2))
+        finally:
+            numpy.seterr(**err)
+
+        assert_array_almost_equal(out1, numpy.array([[1, 2], [1, 2]])) 
+        assert_array_almost_equal(out2, numpy.array([[1, 1, 2, 2]]))
+
     def test_zoom_affine01(self):
         "zoom by affine transformation 1"
         data = [[1, 2, 3, 4],
@@ -2141,6 +2154,19 @@ class TestNdimage:
             ndimage.zoom(numpy.zeros((dim, dim)), 1./dim, mode='nearest')
         finally:
             numpy.seterr(**err)
+    
+    def test_zoom_zoomfactor_one(self):
+        """Ticket #1122"""
+        arr = numpy.zeros((1, 5, 5))
+        zoom = (1.0, 2.0, 2.0)
+        
+        err = numpy.seterr(invalid='ignore')
+        try:
+            out = ndimage.zoom(arr, zoom, cval=7)
+        finally:
+            numpy.seterr(**err)
+        ref = numpy.zeros((1, 10, 10))
+        assert_array_almost_equal(out, ref)
 
     def test_rotate01(self):
         "rotate 1"
