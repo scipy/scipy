@@ -343,10 +343,12 @@ def binned_statistic_dd(sample, values, statistic='mean',
         for i in np.unique(xy):
             result[i] = np.median(values[xy == i])
     elif callable(statistic):
+        old = np.seterr(invalid='ignore')
         try:
             null = statistic([])
         except:
             null = np.nan
+        np.seterr(**old)
         result.fill(null)
         for i in np.unique(xy):
             result[i] = statistic(values[xy == i])
