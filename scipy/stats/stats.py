@@ -2878,7 +2878,8 @@ def linregress(x, y=None):
 #####################################
 
 def ttest_1samp(a, popmean, axis=0):
-    """Calculates the T-test for the mean of ONE group of scores `a`.
+    """
+    Calculates the T-test for the mean of ONE group of scores `a`.
 
     This is a two-sided test for the null hypothesis that the expected value
     (mean) of a sample of independent observations is equal to the given
@@ -2904,23 +2905,21 @@ def ttest_1samp(a, popmean, axis=0):
 
     Examples
     --------
-
     >>> from scipy import stats
 
-    >>> #fix seed to get the same result
-    >>> np.random.seed(7654567)
-    >>> rvs = stats.norm.rvs(loc=5,scale=10,size=(50,2))
+    >>> np.random.seed(7654567)  # fix seed to get the same result
+    >>> rvs = stats.norm.rvs(loc=5, scale=10, size=(50,2))
 
-    test if mean of random sample is equal to true mean, and different mean.
+    Test if mean of random sample is equal to true mean, and different mean.
     We reject the null hypothesis in the second case and don't reject it in
-    the first case
+    the first case.
 
     >>> stats.ttest_1samp(rvs,5.0)
     (array([-0.68014479, -0.04323899]), array([ 0.49961383,  0.96568674]))
     >>> stats.ttest_1samp(rvs,0.0)
     (array([ 2.77025808,  4.11038784]), array([ 0.00789095,  0.00014999]))
 
-    examples using axis and non-scalar dimension for population mean
+    Examples using axis and non-scalar dimension for population mean.
 
     >>> stats.ttest_1samp(rvs,[5.0,0.0])
     (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,   1.49986458e-04]))
@@ -2931,9 +2930,7 @@ def ttest_1samp(a, popmean, axis=0):
            [ 2.77025808,  4.11038784]]), array([[  4.99613833e-01,   9.65686743e-01],
            [  7.89094663e-03,   1.49986458e-04]]))
 
-"""
-
-
+    """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
     df= n - 1
@@ -2947,13 +2944,17 @@ def ttest_1samp(a, popmean, axis=0):
 
     return t,prob
 
+
 def _ttest_finish(df,t):
+    """Common code between all 3 t-test functions."""
     prob = distributions.t.sf(np.abs(t), df) * 2 #use np.abs to get upper tail
     if t.ndim == 0:
         t = t[()]
+
     return t, prob
 
-def ttest_ind(a, b, axis=0, equal_var = True):
+
+def ttest_ind(a, b, axis=0, equal_var=True):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -2970,21 +2971,20 @@ def ttest_ind(a, b, axis=0, equal_var = True):
         Axis can equal None (ravel array first), or an integer (the axis
         over which to operate on a and b).
     equal_var : bool, optional
-        The default is True, which performs a standard independent 2 sample test
-        that assumes equal population variances. If False, Welch's t-test, which
-        does not assume equal population variance, is performed.
+        If True (default), perform a standard independent 2 sample test
+        that assumes equal population variances [1]_.
+        If False, perform Welch's t-test, which does not assume equal
+        population variance [2]_.
 
     Returns
     -------
     t : float or array
-        t-statistic
+        The calculated t-statistic.
     prob : float or array
-        two-tailed p-value
-
+        The two-tailed p-value.
 
     Notes
     -----
-
     We can use this test, if we observe two independent samples from
     the same or different population, e.g. exam scores of boys and
     girls or of two ethnic groups. The test measures whether the
@@ -2996,19 +2996,16 @@ def ttest_ind(a, b, axis=0, equal_var = True):
 
     References
     ----------
-       http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
-       http://en.wikipedia.org/wiki/Welch%27s_t_test
+    .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
+    .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
 
     Examples
     --------
-
     >>> from scipy import stats
-
-    >>> #fix seed to get the same result
     >>> np.random.seed(12345678)
 
-    test with sample with identical means
+    Test with sample with identical means:
 
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
@@ -3017,7 +3014,7 @@ def ttest_ind(a, b, axis=0, equal_var = True):
     >>> stats.ttest_ind(rvs1,rvs2, equal_var = False)
     (0.26833823296239279, 0.78849452749500748)
 
-    ttest_ind underestimates p for unequal variances
+    `ttest_ind` underestimates p for unequal variances:
 
     >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500)
     >>> stats.ttest_ind(rvs1, rvs3)
@@ -3026,7 +3023,7 @@ def ttest_ind(a, b, axis=0, equal_var = True):
     (-0.46580283298287162, 0.64149646246569292)
 
     When n1 != n2, the equal variance t-statistic is no longer equal to the
-    unequal variance t-statistic
+    unequal variance t-statistic:
 
     >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100)
     >>> stats.ttest_ind(rvs1, rvs4)
@@ -3034,7 +3031,7 @@ def ttest_ind(a, b, axis=0, equal_var = True):
     >>> stats.ttest_ind(rvs1, rvs4, equal_var = False)
     (-0.69712570584654099, 0.48716927725402048)
 
-    T-test with different means, variance, and n
+    T-test with different means, variance, and n:
 
     >>> rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
     >>> stats.ttest_ind(rvs1, rvs5)
@@ -3043,7 +3040,6 @@ def ttest_ind(a, b, axis=0, equal_var = True):
     (-0.94365973617132992, 0.34744170334794122)
 
     """
-
     a, b, axis = _chk2_asarray(a, b, axis)
     v1 = np.var(a, axis, ddof=1)
     v2 = np.var(b, axis, ddof=1)
@@ -3059,9 +3055,9 @@ def ttest_ind(a, b, axis=0, equal_var = True):
         vn2 = v2 / n2
         df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
 
-        df = np.where(np.isnan(df), 1, df) # if df is undefined, variances are
-            #zero (assumes n1 > 0 & n2 > 0). Hence doesn't matter what df is as
-            #long as it's not NaN.
+        # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
+        # Hence it doesn't matter what df is as long as it's not NaN.
+        df = np.where(np.isnan(df), 1, df)
         denom = np.sqrt(vn1 + vn2)
 
     d = np.mean(a, axis) - np.mean(b, axis)
@@ -3070,7 +3066,8 @@ def ttest_ind(a, b, axis=0, equal_var = True):
 
     return t, prob
 
-def ttest_rel(a,b,axis=0):
+
+def ttest_rel(a, b, axis=0):
     """
     Calculates the T-test on TWO RELATED samples of scores, a and b.
 
@@ -3106,14 +3103,13 @@ def ttest_rel(a,b,axis=0):
 
     References
     ----------
-
-        http://en.wikipedia.org/wiki/T-test#Dependent_t-test
+    http://en.wikipedia.org/wiki/T-test#Dependent_t-test
 
     Examples
     --------
-
     >>> from scipy import stats
     >>> np.random.seed(12345678) # fix random seed to get same numbers
+
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = (stats.norm.rvs(loc=5,scale=10,size=500) +
     ...         stats.norm.rvs(scale=0.2,size=500))
@@ -3128,6 +3124,7 @@ def ttest_rel(a,b,axis=0):
     a, b, axis = _chk2_asarray(a, b, axis)
     if a.shape[axis] != b.shape[axis]:
         raise ValueError('unequal length arrays')
+
     n = a.shape[axis]
     df = float(n - 1)
 
