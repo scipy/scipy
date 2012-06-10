@@ -2912,9 +2912,7 @@ def ttest_1samp(a, popmean, axis=0):
     v = np.var(a, axis, ddof=1)
     denom = np.sqrt(v / float(n))
 
-    t = d / denom
-    t = np.where((d == 0) * (denom == 0), np.nan, t) # handles case where d = v = 0
-    
+    t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
         
     return t,prob
@@ -2968,6 +2966,7 @@ def ttest_ind(a, b, axis=0, equal_var = True):
     ----------
 
        http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+       http://en.wikipedia.org/wiki/Welch%27s_t_test
 
 
     Examples
@@ -2995,8 +2994,8 @@ def ttest_ind(a, b, axis=0, equal_var = True):
     >>> stats.ttest_ind(rvs1, rvs3, equal_var = False)
     (-0.46580283298287162, 0.64149646246569292)
 
-    When n1 != n2, the equal means t-statistic is no longer equal to the
-    unequal means t-statistic
+    When n1 != n2, the equal variance t-statistic is no longer equal to the
+    unequal variance t-statistic
 
     >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100)
     >>> stats.ttest_ind(rvs1, rvs4)
@@ -3035,8 +3034,7 @@ def ttest_ind(a, b, axis=0, equal_var = True):
         denom = np.sqrt(vn1 + vn2) 
     
     d = np.mean(a, axis) - np.mean(b, axis)
-    t = d / denom
-    t = np.where((d == 0) * (denom == 0), np.nan, t) #handles case where d = v1 = v2 = 0
+    t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
     
     return t, prob
@@ -3107,9 +3105,7 @@ def ttest_rel(a,b,axis=0):
     dm = np.mean(d, axis)
     denom = np.sqrt(v / float(n))
 
-    t = dm / denom
-    t = np.where((dm == 0) * (denom == 0), np.nan, t) #handle case where both dm and v are 0
-    
+    t = np.divide(dm, denom)
     t, prob = _ttest_finish(df, t)
 
     return t, prob
