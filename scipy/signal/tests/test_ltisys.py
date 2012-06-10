@@ -299,6 +299,12 @@ class Test_bode(object):
         w, mag, phase = bode(system, n=n)
         assert_almost_equal(w, expected_w)
 
+    def test_06(self):
+        """Test that bode() doesn't fail on a system with a pole at 0."""
+        # integrator, pole at zero: H(s) = 1 / s
+        system = lti([1], [1, 0])
+        w, mag, phase = bode(system, n=2)
+        assert_equal(w[0], 0.01)  # a fail would give not-a-number
 
 if __name__ == "__main__":
     run_module_suite()
