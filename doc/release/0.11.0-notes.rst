@@ -199,6 +199,7 @@ has been removed.  Logistic regression in scikits.learn is a good and modern
 alternative for this functionality.
 alternative for this functionality.  
 
+
 Behavior of ``scipy.integrate.complex_ode``
 -------------------------------------------
 
@@ -210,6 +211,14 @@ Previously, it expressed the complex-valued solution in the form::
 Now, it is directly the complex-valued solution::
 
     z = ode.y
+
+
+Minor change in behavior of T-tests
+-----------------------------------
+
+The T-tests ``scipy.stats.ttest_ind``, ``scipy.stats.ttest_rel`` and
+``scipy.stats.ttest_1samp`` have been changed so that 0 / 0 now returns NaN
+instead of 1.
 
 
 Other changes
@@ -225,6 +234,9 @@ added.
 The function ``scipy.signal.bode``, which calculates magnitude and phase data
 for a continuous-time system, has been added.
 
+The two-sample T-test ``scipy.stats.ttest_ind`` gained an option to compare
+samples with unequal variances, i.e. Welch's T-test.
+
 
 Authors
 =======
@@ -236,12 +248,14 @@ one patch to this release, names in alphabetical order):
 * Chad Baker
 * Brandon Beacher +
 * behrisch +
+* borishim +
 * Matthew Brett
 * Lars Buitinck
 * Luis Pedro Coelho +
 * Johann Cohen-Tanugi
 * David Cournapeau
 * dougal +
+* Ali Ebrahim +
 * endolith +
 * Bjørn Forsman +
 * Robert Gantner +
@@ -255,13 +269,14 @@ one patch to this release, names in alphabetical order):
 * Marc Honnorat +
 * Jonathan Hunt +
 * Maxim Ivanov +
+* Thouis (Ray) Jones
 * Christopher Kuster +
 * Denis Laxalde +
-* lmwang +
 * Travis Oliphant
 * Joonas Paalasmaa +
 * Fabian Pedregosa
 * Josef Perktold
+* Gavin Price +
 * Jim Radford +
 * Andrew Schein +
 * Skipper Seabold
@@ -277,12 +292,13 @@ one patch to this release, names in alphabetical order):
 * Nils Wagner +
 * Darryl Wally +
 * Stefan van der Walt
+* Liming Wang +
 * David Warde-Farley +
 * Warren Weckesser
 * Sebastian Werk +
 * Mike Wimmer +
 * Tony S Yu +
 
-A total of 50 people contributed to this release.
+A total of 54 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 
