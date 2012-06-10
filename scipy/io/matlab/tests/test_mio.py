@@ -829,6 +829,16 @@ def test_mat_struct_squeeze():
                     )
 
 
+def test_scalar_squeeze():
+    stream = BytesIO()
+    in_d = {'scalar': [[0.1]], 'string': 'my name', 'st':{'one':1, 'two':2}}
+    savemat_future(stream, in_d)
+    out_d = loadmat(stream, squeeze_me=True)
+    assert_true(isinstance(out_d['scalar'], float))
+    assert_true(isinstance(out_d['string'], basestring))
+    assert_true(isinstance(out_d['st'], np.ndarray))
+
+
 def test_str_round():
     # from report by Angus McMorland on mailing list 3 May 2010
     stream = BytesIO()
