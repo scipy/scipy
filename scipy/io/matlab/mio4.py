@@ -225,8 +225,12 @@ class MatFile4Reader(MatFileReader):
         self.mat_stream.seek(0)
         mopt = read_dtype(self.mat_stream, np.dtype('i4'))
         self.mat_stream.seek(0)
+        if mopt == 0:
+            return '<'
         if mopt < 0 or mopt > 5000:
+            # Number must have been byteswapped
             return SYS_LITTLE_ENDIAN and '>' or '<'
+        # Not byteswapped
         return SYS_LITTLE_ENDIAN and '<' or '>'
 
     def initialize_read(self):
