@@ -5,6 +5,7 @@ from scipy.sparse.csgraph import csgraph_from_dense, csgraph_to_dense
 
 
 def test_csgraph_from_dense():
+    np.random.seed(1234)
     G = np.random.random((10, 10))
     some_nulls = (G < 0.4)
     all_nulls = (G < 0.8)
@@ -35,6 +36,7 @@ def test_csgraph_from_dense():
 
 @dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_csgraph_to_dense():
+    np.random.seed(1234)
     G = np.random.random((10, 10))
     nulls = (G < 0.8)
     G[nulls] = np.inf
@@ -48,6 +50,7 @@ def test_csgraph_to_dense():
 
 def test_multiple_edges():
     # create a random sqare matrix with an even number of elements
+    np.random.seed(1234)
     X = np.random.random((10, 10))
     Xcsr = csr_matrix(X)
 
