@@ -164,7 +164,7 @@ def test_zero_byte_string():
     # Tests hack to allow chars of non-zero length, but 0 bytes
     # make reader-like thing
     str_io = cStringIO()
-    r = _make_readerlike(str_io, '<')
+    r = _make_readerlike(str_io, boc.native_code)
     c_reader = m5u.VarReader5(r)
     tag_dt = np.dtype([('mdtype', 'u4'), ('byte_count', 'u4')])
     tag = np.zeros((1,), dtype=tag_dt)
