@@ -321,9 +321,9 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     nnull = (predecessors < 0).sum()
 
-    indices = np.argsort(predecessors)[nnull:]
+    indices = np.argsort(predecessors)[nnull:].astype(ITYPE)
     pind = predecessors[indices]
-    indptr = pind.searchsorted(np.arange(N + 1))
+    indptr = pind.searchsorted(np.arange(N + 1)).astype(ITYPE)
 
     if directed == True:
         data = csgraph[pind, indices]

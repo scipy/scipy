@@ -442,6 +442,7 @@ cdef _dijkstra_directed(
     cdef unsigned int Nind = dist_matrix.shape[0]
     cdef unsigned int N = dist_matrix.shape[1]
     cdef unsigned int i, k, j_source, j_current
+    cdef ITYPE_t j
 
     cdef DTYPE_t weight
 
@@ -502,6 +503,7 @@ cdef _dijkstra_undirected(
     cdef unsigned int Nind = dist_matrix.shape[0]
     cdef unsigned int N = dist_matrix.shape[1]
     cdef unsigned int i, k, j_source, j_current
+    cdef ITYPE_t j
 
     cdef DTYPE_t weight
 

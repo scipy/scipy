@@ -89,7 +89,7 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     predecessors = np.empty(N, dtype=ITYPE)
     predecessors.fill(NULL_IDX)
 
-    i_sort = np.argsort(data)
+    i_sort = np.argsort(data).astype(ITYPE)
     row_indices = np.zeros(len(data), dtype=ITYPE)
 
     _min_spanning_tree(data, indices, indptr, i_sort,
