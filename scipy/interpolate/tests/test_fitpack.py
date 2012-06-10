@@ -1,7 +1,7 @@
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, assert_, TestCase
 from numpy import array, diff, shape, asarray, pi, sin, cos, arange, dot, \
-     ravel, sqrt, inf
+     ravel, sqrt, inf, round
 from scipy.interpolate.fitpack import splrep, splev, bisplrep, bisplev, \
      sproot, splprep, splint, spalde
 

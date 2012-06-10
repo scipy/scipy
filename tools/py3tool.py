@@ -215,7 +215,7 @@ def custom_mangling(filename):
                     'sigtools', 'spline', 'spectral',
                     '_fitpack', 'dfitpack', '_interpolate',
                     '_odepack', '_quadpack', 'vode', '_dop',
-                    'vonmises_cython',
+                    'vonmises_cython', '_rank',
                     'futil', 'mvn',
                     '_nd_image',
                     'numpyio',
