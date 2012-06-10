@@ -616,8 +616,16 @@ def _default_response_frequencies(A, n):
         the response is to be computed.
     """
     vals = linalg.eigvals(A)
-    minpole = min(abs(real(vals)))
-    maxpole = max(abs(real(vals)))
+    # Remove poles at 0 because they don't help us determine an interesting
+    # frequency range. (And if we pass a 0 to log10() below we will crash.)
+    poles = [pole for pole in vals if pole != 0]
+    # If there are no non-zero poles, just hardcode something.
+    if len(poles) == 0:
+        minpole = 1
+        maxpole = 1
+    else:
+        minpole = min(abs(real(poles)))
+        maxpole = max(abs(real(poles)))
     # A reasonable frequency range is two orders of magnitude before the
     # minimum pole (slowest) and two orders of magnitude after the maximum pole
     # (fastest).
