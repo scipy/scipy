@@ -318,14 +318,14 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result.fill(np.nan)
         flatcount = np.bincount(xy, None)
         flatsum = np.bincount(xy, values)
-        a = (flatcount > 0)
+        a = flatcount.nonzero()
         result[a] = flatsum[a] / flatcount[a]
     elif statistic == 'std':
         result.fill(0)
         flatcount = np.bincount(xy, None)
         flatsum = np.bincount(xy, values)
         flatsum2 = np.bincount(xy, values ** 2)
-        a = (flatcount > 0)
+        a = flatcount.nonzero()
         result[a] = np.sqrt(flatsum2[a] / flatcount[a]
                             - (flatsum[a] / flatcount[a]) ** 2)
     elif statistic == 'count':

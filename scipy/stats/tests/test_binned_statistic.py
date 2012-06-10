@@ -145,7 +145,6 @@ class TestBinnedStatistic(object):
 
 
     def test_dd_sum(self):
-        print "dd_sum"
         X = self.X
         v = self.v
 
