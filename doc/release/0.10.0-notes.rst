@@ -2,18 +2,22 @@
 SciPy 0.10.0 Release Notes
 ==========================
 
-.. note:: Scipy 0.10.0 is not released yet!
-
 .. contents::
 
-SciPy 0.10.0 is the culmination of XXX months of hard work. It contains
+SciPy 0.10.0 is the culmination of 8 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
-better documentation.  There have been a number of deprecations and
-API changes in this release, which are documented below.  All users
-are encouraged to upgrade to this release, as there are a large number
-of bug-fixes and optimizations.  Moreover, our development attention
-will now shift to bug-fix releases on the 0.10.x branch, and on adding
-new features on the development trunk.
+better documentation.  There have been a limited number of deprecations
+and backwards-incompatible changes in this release, which are documented
+below.  All users are encouraged to upgrade to this release, as there
+are a large number of bug-fixes and optimizations.  Moreover, our 
+development attention will now shift to bug-fix releases on the 0.10.x 
+branch, and on adding new features on the development master branch.
+
+Release highlights:
+
+  - Support for Bento as optional build system.
+  - Support for generalized eigenvalue problems, and all shift-invert modes
+    available in ARPACK.
 
 This release requires Python 2.4-2.7 or 3.1- and NumPy 1.5 or greater.
 
@@ -133,8 +137,8 @@ The numscons build system is being replaced by Bento, and will be removed in
 one of the next scipy releases.
 
 
-Removed features
-================
+Backwards-incompatible changes
+==============================
 
 The deprecated name `invnorm` was removed from ``scipy.stats.distributions``,
 this distribution is available as `invgauss`.
@@ -160,4 +164,50 @@ namespaces (particularly useful for interactive work).
 
 An API section has been added to the documentation, giving recommended import
 guidelines and specifying which submodules are public and which aren't.
+
+
+Authors
+=======
+
+This release contains work by the following people (contributed at least
+one patch to this release, names in alphabetical order):
+
+* Jeff Armstrong +
+* Matthew Brett
+* Lars Buitinck +
+* David Cournapeau
+* FI$H 2000 +
+* Michael McNeil Forbes +
+* Matty G +
+* Christoph Gohlke
+* Ralf Gommers
+* Yaroslav Halchenko
+* Charles Harris
+* Thouis (Ray) Jones +
+* Chris Jordan-Squire +
+* Robert Kern
+* Chris Lasher +
+* Wes McKinney +
+* Travis Oliphant
+* Fabian Pedregosa
+* Josef Perktold
+* Thomas Robitaille +
+* Pim Schellart +
+* Anthony Scopatz +
+* Skipper Seabold +
+* Fazlul Shahriar +
+* David Simcha +
+* Scott Sinclair +
+* Andrey Smirnov +
+* Collin RM Stocks +
+* Martin Teichmann +
+* Jake Vanderplas +
+* Gaël Varoquaux +
+* Pauli Virtanen
+* Stefan van der Walt
+* Warren Weckesser
+* Mark Wiebe +
+
+A total of 35 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
 
