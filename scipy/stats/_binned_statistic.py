@@ -45,7 +45,7 @@ def binned_statistic(x, values, statistic='mean',
         The lower and upper range of the bins.  If not provided, range
         is simply ``(x.min(), x.max())``.  Values outside the range are
         ignored.
-    bincode : ndarray, 1d, int
+    binnumber : ndarray, 1d, int
         This assigns to each observation an integer that represents the bin
         in which this observation falls. Array has the same length as values.
 
@@ -89,7 +89,7 @@ def binned_statistic(x, values, statistic='mean',
         bins = [np.asarray(bins, float)]
 
     medians, edges, xy = binned_statistic_dd([x], values, statistic,
-                                         bins, range)
+                                             bins, range)
 
     return medians, edges[0], xy
 
@@ -153,7 +153,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         The bin edges along the first dimension.
     yedges : ndarray, shape(ny + 1,)
         The bin edges along the second dimension.
-    bincode : ndarray, 1d, int
+    binnumber : ndarray, 1d, int
         This assigns to each observation an integer that represents the bin
         in which this observation falls. Array has the same length as values.
 
@@ -173,7 +173,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         bins = [xedges, yedges]
 
     medians, edges, xy = binned_statistic_dd([x, y], values, statistic,
-                                         bins, range)
+                                             bins, range)
 
     return medians, edges[0], edges[1], xy
 
@@ -233,13 +233,14 @@ def binned_statistic_dd(sample, values, statistic='mean',
     edges : list of ndarrays
         A list of D arrays describing the (nxi + 1) bin edges for each
         dimension
-    bincode : ndarray, 1d, int
+    binnumber : ndarray, 1d, int
         This assigns to each observation an integer that represents the bin
         in which this observation falls. Array has the same length as values.
 
     See Also
     --------
     np.histogramdd, binned_statistic, binned_statistic_2d
+
     """
     if type(statistic) == str:
         if statistic not in ['mean', 'median', 'count', 'sum', 'std']:
@@ -307,7 +308,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
     # Using digitize, values that fall on an edge are put in the right bin.
     # For the rightmost bin, we want values equal to the right
     # edge to be counted in the last bin, and not as an outlier.
-    outliers = np.zeros(N, int)
     for i in np.arange(D):
         # Rounding precision
         decimal = int(-np.log10(dedges[i].min())) + 6
@@ -319,7 +319,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     # Compute the sample indices in the flattened statistic matrix.
     ni = nbin.argsort()
-    shape = []
     xy = np.zeros(N, int)
     for i in np.arange(0, D - 1):
         xy += Ncount[ni[i]] * nbin[ni[i + 1:]].prod()
@@ -379,4 +378,5 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     if (result.shape != nbin - 2).any():
         raise RuntimeError('Internal Shape Error')
+
     return result, edges, xy
