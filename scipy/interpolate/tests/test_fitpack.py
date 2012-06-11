@@ -207,7 +207,7 @@ class TestSmokeTests(TestCase):
 
     def test_smoke_sproot(self):
         put("***************** sproot")
-        self.check_3(a=0,b=15)
+        self.check_3(a=0.1,b=15)
 
     def test_smoke_splprep_splrep_splev(self):
         put("***************** splprep/splrep/splev")

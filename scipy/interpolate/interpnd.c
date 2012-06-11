@@ -10558,6 +10558,10 @@ __Pyx_CyFunction_repr(__pyx_CyFunctionObject *op)
                                PyString_AsString(func_name), (void *)op);
 #endif
 }
+static PyObject *__Pyx_PyCFunction_Call_wrap(PyObject *a, PyObject *b, PyObject *c)
+{
+    return __Pyx_PyCFunction_Call(a, b, c);
+}
 static PyTypeObject __pyx_CyFunctionType_type = {
     PyVarObject_HEAD_INIT(0, 0)
     __Pyx_NAMESTR("cython_function_or_method"), 
@@ -10577,7 +10581,7 @@ static PyTypeObject __pyx_CyFunctionType_type = {
     0,                                  
     0,                                  
     0,                                  
-    __Pyx_PyCFunction_Call,             
+    __Pyx_PyCFunction_Call_wrap,             
     0,                                  
     0,                                  
     0,                                  

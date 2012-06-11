@@ -83,11 +83,11 @@ class TestGriddata(object):
 
         for method in ('nearest', 'linear', 'cubic'):
             assert_allclose(griddata(x, y, x, method=method), y,
-                            err_msg=method, atol=1e-14)
+                            err_msg=method, atol=1e-10)
             assert_allclose(griddata(x.reshape(6, 1), y, x, method=method), y,
-                            err_msg=method, atol=1e-14)
+                            err_msg=method, atol=1e-10)
             assert_allclose(griddata((x,), y, (x,), method=method), y,
-                            err_msg=method, atol=1e-14)
+                            err_msg=method, atol=1e-10)
 
 
 if __name__ == "__main__":
