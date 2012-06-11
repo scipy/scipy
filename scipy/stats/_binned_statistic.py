@@ -45,6 +45,9 @@ def binned_statistic(x, values, statistic='mean',
         The lower and upper range of the bins.  If not provided, range
         is simply ``(x.min(), x.max())``.  Values outside the range are
         ignored.
+    bincode : ndarray, 1d, int
+        This assigns to each observation an integer that represents the bin
+        in which this observation falls. Array has the same length as values.
 
     Returns
     -------
@@ -66,8 +69,12 @@ def binned_statistic(x, values, statistic='mean',
 
     Examples
     --------
-    >>> binned_statistic([1,2,1], bins=[0,1,2,3], 'count')
-    (array([0, 2, 1]), array([0, 1, 2, 3]))\
+    >>> stats.binned_statistic([1, 2, 1, 2, 4], np.arange(5), statistic='mean',
+    ... bins=3)
+    (array([ 1.,  2.,  4.]), array([ 1.,  2.,  3.,  4.]), array([1, 2, 1, 2, 3]))
+
+    >>> stats.binned_statistic([1, 2, 1, 2, 4], np.arange(5), statistic='mean', bins=3)
+    (array([ 1.,  2.,  4.]), array([ 1.,  2.,  3.,  4.]), array([1, 2, 1, 2, 3]))
 
     See Also
     --------
@@ -81,10 +88,10 @@ def binned_statistic(x, values, statistic='mean',
     if N != 1:
         bins = [np.asarray(bins, float)]
 
-    medians, edges = binned_statistic_dd([x], values, statistic,
+    medians, edges, xy = binned_statistic_dd([x], values, statistic,
                                          bins, range)
 
-    return medians, edges[0]
+    return medians, edges[0], xy
 
 
 def binned_statistic_2d(x, y, values, statistic='mean',
@@ -143,9 +150,12 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     statistic : ndarray, shape(nx, ny)
         The values of the selected statistic in each two-dimensional bin
     xedges : ndarray, shape(nx + 1,)
-      The bin edges along the first dimension.
+        The bin edges along the first dimension.
     yedges : ndarray, shape(ny + 1,)
-      The bin edges along the second dimension.
+        The bin edges along the second dimension.
+    bincode : ndarray, 1d, int
+        This assigns to each observation an integer that represents the bin
+        in which this observation falls. Array has the same length as values.
 
     See Also
     --------
@@ -162,10 +172,10 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         xedges = yedges = np.asarray(bins, float)
         bins = [xedges, yedges]
 
-    medians, edges = binned_statistic_dd([x, y], values, statistic,
+    medians, edges, xy = binned_statistic_dd([x, y], values, statistic,
                                          bins, range)
 
-    return medians, edges[0], edges[1]
+    return medians, edges[0], edges[1], xy
 
 
 def binned_statistic_dd(sample, values, statistic='mean',
@@ -223,6 +233,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
     edges : list of ndarrays
         A list of D arrays describing the (nxi + 1) bin edges for each
         dimension
+    bincode : ndarray, 1d, int
+        This assigns to each observation an integer that represents the bin
+        in which this observation falls. Array has the same length as values.
 
     See Also
     --------
@@ -366,4 +379,4 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     if (result.shape != nbin - 2).any():
         raise RuntimeError('Internal Shape Error')
-    return result, edges
+    return result, edges, xy
