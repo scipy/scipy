@@ -50,7 +50,7 @@
 #if CYTHON_COMPILING_IN_PYPY
   #define __Pyx_PyCFunction_Call PyObject_Call
 #else
-  #define __Pyx_PyCFunction_Call PyCFunction_Call
+  static PyObject* __Pyx_PyCFunction_Call(PyObject *a, PyObject *b, PyObject *c) { return PyCFunction_Call(a, b, c); }
 #endif
 
 #if PY_VERSION_HEX < 0x02050000
