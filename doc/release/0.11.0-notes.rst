@@ -150,6 +150,15 @@ For interpolation in spherical coordinates, the three classes
 ``scipy.interpolate.RectSphereBivariateSpline`` have been added.
 
 
+Binned statistics
+-----------------
+
+The stats module has gained functions to do binned statistics, which are a
+generalization of histograms, in 1-D, 2-D and multiple dimensions:
+``scipy.stats.binned_statistic``, ``scipy.stats.binned_statistic_2d`` and 
+``scipy.stats.binned_statistic_dd``.
+
+
 Deprecated features
 ===================
 ``scipy.sparse.cs_graph_components`` has been made a part of the sparse graph
