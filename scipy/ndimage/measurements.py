@@ -33,6 +33,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import numpy as np
 from . import _ni_support
+from . import _ni_label
 from . import _nd_image
 from . import morphology
 
@@ -66,7 +67,10 @@ def label(input, structure=None, output=None):
         If `output` is a data type, it specifies the type of the resulting
         labeled feature array
         If `output` is an array-like object, then `output` will be updated
-        with the labeled features from this function
+        with the labeled features from this function.  This function can
+        operate in-place, by passing output=input.
+        Note that the output must be able to store the largest label, or this
+        function will raise an Exception.
 
     Returns
     -------
@@ -147,37 +151,50 @@ def label(input, structure=None, output=None):
         raise RuntimeError('structure and input must have equal rank')
     for ii in structure.shape:
         if ii != 3:
-            raise  RuntimeError('structure dimensions must be equal to 3')
-    if not structure.flags.contiguous:
-        structure = structure.copy()
-    requested_output = None
-    requested_dtype = None
+            raise ValueError('structure dimensions must be equal to 3')
+
     if isinstance(output, numpy.ndarray):
-        if output.dtype.type != numpy.int32:
-            if output.shape != input.shape:
-                raise RuntimeError("output shape not correct")
-            # _ndimage.label() needs np.int32
-            requested_output = output
-            output = numpy.int32
-        else:
-            # output will be written directly
-            pass
+        if output.shape != input.shape:
+            raise ValueError("output shape not correct")
+        caller_provided_output = True
     else:
-        requested_dtype = output
-        output = numpy.int32
-    output, return_value = _ni_support._get_output(output, input)
-    max_label = _nd_image.label(input, structure, output)
-    if return_value is None:
+        caller_provided_output = False
+        if output is None:
+            output = np.zeros(input.shape, np.intp)
+        else:
+            output = np.zeros(input.shape, output)
+
+    # handle scalars, 0-dim arrays
+    if input.ndim == 0 or input.size == 0:
+        if input.ndim == 0:
+            # scalar
+            maxlabel = 1 if (input != 0) else 0
+            output[...] = maxlabel
+        else:
+            # 0-dim
+            maxlabel = 0
+        if caller_provided_output:
+            return maxlabel
+        else:
+            return output, maxlabel
+
+    try:
+        max_label = _ni_label._label(input, structure, output)
+    except _ni_label.NeedMoreBits, e:
+            # Make another attempt with enough bits, then try to cast to the
+            # new type.
+            tmp_output = np.zeros(input.shape, np.intp)
+            max_label = _ni_label._label(input, structure, tmp_output)
+            output[...] = tmp_output[...]
+            if not np.all(output == tmp_output):
+                # refuse to return bad results
+                raise RuntimeError("insufficient bit-depth in requested output type")
+
+    if caller_provided_output:
         # result was written in-place
         return max_label
-    elif requested_output is not None:
-        # original output was not int32
-        requested_output[...] = output[...]
-        return max_label
     else:
-        if requested_dtype is not None:
-            return_value = return_value.astype(requested_dtype)
-        return return_value, max_label
+        return output, max_label
 
 def find_objects(input, max_label=0):
     """
