@@ -18,6 +18,10 @@ def sawtooth(t, width=1):
     The sawtooth waveform has a period 2*pi, rises from -1 to 1 on the
     interval 0 to width*2*pi and drops from 1 to -1 on the interval
     width*2*pi to 2*pi. `width` must be in the interval [0,1].
+    
+    Note that this is not band-limited.  It produces an infinite number 
+    of harmonics, which are aliased back and forth across the frequency 
+    spectrum.
 
     Parameters
     ----------
@@ -78,6 +82,10 @@ def square(t, duty=0.5):
     The square wave has a period 2*pi, has value +1 from 0 to 2*pi*duty
     and -1 from 2*pi*duty to 2*pi. `duty` must be in the interval [0,1].
 
+    Note that this is not band-limited.  It produces an infinite number 
+    of harmonics, which are aliased back and forth across the frequency 
+    spectrum.
+    
     Parameters
     ----------
     t : array_like
