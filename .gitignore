@@ -11,6 +11,7 @@
 .\#*
 .deps
 .libs
+.tox
 cythonize.dat
 /build
 /dist
