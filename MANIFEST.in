@@ -15,8 +15,10 @@ include f2py.py
 include interface_gen.py
 include bscript bento.info
 recursive-include scipy bscript bento.info
-# Add py3tool
+# Add build and testing tools
 include tools/py3tool.py
+include tox.ini
+include tools/test-installed-scipy.py
 # Add documentation: we don't use add_data_dir since we do not want to include
 # this at installation, only for sdist-generated tarballs
 include doc/Makefile doc/postprocess.py
