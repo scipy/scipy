@@ -727,6 +727,21 @@ class _TestGetSet:
         for v in [3j]:
             assert_raises(TypeError, A.__setitem__, (0,0), v)
 
+
+    def test_scalar_assign_2(self):
+        n, m = (5, 10)
+        def _test_set(i, j, nitems):
+            msg = "%r ; %r ; %r" % (i, j, nitems)
+            A = self.spmatrix((n, m))
+            A[i, j] = 1
+            assert_almost_equal(A.sum(), nitems, err_msg=msg)
+            assert_almost_equal(A[i, j], 1, err_msg=msg)
+
+        # [i,j]
+        for i, j in [(2, 3), (-1, 8), (-1, -2), (array(-1), -2), (-1, array(-2)),
+                     (array(-1), array(-2))]:
+            _test_set(i, j, 1)
+
 class _TestSolve:
     def test_solve(self):
         # Test whether the lu_solve command segfaults, as reported by Nils
@@ -830,6 +845,51 @@ class _TestSlicing:
         assert_array_equal(v.todense(),
                            v0[0:25:2, 2:30:3])
 
+    def test_slicing_2(self):
+        B = asmatrix(arange(50).reshape(5,10))
+        A = self.spmatrix( B )
+
+        # [i,j]
+        assert_equal(A[2,3],  B[2,3])
+        assert_equal(A[-1,8], B[-1,8])
+        assert_equal(A[-1,-2],B[-1,-2])
+        assert_equal(A[array(-1),-2],B[-1,-2])
+        assert_equal(A[-1,array(-2)],B[-1,-2])
+        assert_equal(A[array(-1),array(-2)],B[-1,-2])
+
+        # [i,1:2]
+        assert_equal(A[2,:].todense(),   B[2,:])
+        assert_equal(A[2,5:-2].todense(),B[2,5:-2])
+        assert_equal(A[array(2),5:-2].todense(),B[2,5:-2])
+
+        # [1:2,j]
+        assert_equal(A[:,2].todense(),   B[:,2])
+        assert_equal(A[3:4,9].todense(), B[3:4,9])
+        assert_equal(A[1:4,-5].todense(),B[1:4,-5])
+        assert_equal(A[2:-1,3].todense(),B[2:-1,3])
+        assert_equal(A[2:-1,array(3)].todense(),B[2:-1,3])
+
+        # [1:2,1:2]
+        assert_equal(A[1:2,1:2].todense(),B[1:2,1:2])
+        assert_equal(A[4:,3:].todense(),  B[4:,3:])
+        assert_equal(A[:4,:5].todense(),  B[:4,:5])
+        assert_equal(A[2:-1,:5].todense(),B[2:-1,:5])
+
+        # [i]
+        assert_equal(A[1,:].todense(), B[1,:])
+        assert_equal(A[-2,:].todense(),B[-2,:])
+        assert_equal(A[array(-2),:].todense(),B[-2,:])
+
+        # [1:2]
+        assert_equal(A[1:4].todense(), B[1:4])
+        assert_equal(A[1:-2].todense(),B[1:-2])
+
+        # Check bug reported by Robert Cimrman:
+        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986
+        s = slice(int8(2),int8(4),None)
+        assert_equal(A[s,:].todense(), B[2:4,:])
+        assert_equal(A[:,s].todense(), B[:,2:4])
+
 
 class _TestSlicingAssign:
     def test_index_scalar_assign(self):
@@ -852,6 +912,50 @@ class _TestSlicingAssign:
             C[3::-1,4:] = 9
         assert_array_equal(A.A, B)
 
+    def test_slice_assign_2(self):
+        n, m = (5, 10)
+        def _test_set(i, j, nitems):
+            msg = "%r ; %r ; %r" % (i, j, nitems)
+            A = self.spmatrix((n, m))
+            A[i, j] = 1
+            assert_almost_equal(A.sum(), nitems, err_msg=msg)
+            assert_almost_equal(A[i, j], 1, err_msg=msg)
+
+        # [i,1:2]
+        for i, j in [(2, slice(m)), (2, slice(5, -2)), (array(2), slice(5, -2))]:
+            _test_set(i, j, 3)
+
+    def test_self_self_assignment(self):
+        # Tests whether a row of one lil_matrix can be assigned to
+        # another.
+        B = self.spmatrix((4,3))
+        B[0,0] = 2
+        B[1,2] = 7
+        B[2,1] = 3
+        B[3,0] = 10
+
+        A = B / 10
+        B[0,:] = A[0,:]
+        assert_array_equal(A[0,:].A, B[0,:].A)
+
+    def test_slice_assignment(self):
+        B = self.spmatrix((4,3))
+        B[0,0] = 5
+        B[1,2] = 3
+        B[2,1] = 7
+
+        expected = array([[10,0,0],
+                          [0,0,6],
+                          [0,14,0],
+                          [0,0,0]])
+
+        B[:,:] = B+B
+        assert_array_equal(B.todense(),expected)
+
+        block = [[1,0],[0,4]]
+        B[:2,:2] = csc_matrix(array(block))
+        assert_array_equal(B.todense()[:2,:2],block)
+
 
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -862,38 +966,12 @@ class _TestFancyIndexing:
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix( B )
 
-        # [i,j]
-        assert_equal(A[2,3],  B[2,3])
-        assert_equal(A[-1,8], B[-1,8])
-        assert_equal(A[-1,-2],B[-1,-2])
-        assert_equal(A[array(-1),-2],B[-1,-2])
-        assert_equal(A[-1,array(-2)],B[-1,-2])
-        assert_equal(A[array(-1),array(-2)],B[-1,-2])
-
-        # [i,1:2]
-        assert_equal(A[2,:].todense(),   B[2,:])
-        assert_equal(A[2,5:-2].todense(),B[2,5:-2])
-        assert_equal(A[array(2),5:-2].todense(),B[2,5:-2])
-
         # [i,[1,2]]
         assert_equal(A[3,[1,3]].todense(),  B[3,[1,3]])
         assert_equal(A[-1,[2,-5]].todense(),B[-1,[2,-5]])
         assert_equal(A[array(-1),[2,-5]].todense(),B[-1,[2,-5]])
         assert_equal(A[-1,array([2,-5])].todense(),B[-1,[2,-5]])
         assert_equal(A[array(-1),array([2,-5])].todense(),B[-1,[2,-5]])
-
-        # [1:2,j]
-        assert_equal(A[:,2].todense(),   B[:,2])
-        assert_equal(A[3:4,9].todense(), B[3:4,9])
-        assert_equal(A[1:4,-5].todense(),B[1:4,-5])
-        assert_equal(A[2:-1,3].todense(),B[2:-1,3])
-        assert_equal(A[2:-1,array(3)].todense(),B[2:-1,3])
-
-        # [1:2,1:2]
-        assert_equal(A[1:2,1:2].todense(),B[1:2,1:2])
-        assert_equal(A[4:,3:].todense(),  B[4:,3:])
-        assert_equal(A[:4,:5].todense(),  B[:4,:5])
-        assert_equal(A[2:-1,:5].todense(),B[2:-1,:5])
 
         # [1:2,[1,2]]
         assert_equal(A[:,[2,8,3,-1]].todense(),B[:,[2,8,3,-1]])
@@ -927,15 +1005,6 @@ class _TestFancyIndexing:
         assert_equal(A[[[-1],[-3],[-2]],array([2,-4])].todense(),B[[[-1],[-3],[-2]],[2,-4]])
         assert_equal(A[array([[-1],[-3],[-2]]),array([2,-4])].todense(),B[[[-1],[-3],[-2]],[2,-4]])
 
-        # [i]
-        assert_equal(A[1,:].todense(), B[1,:])
-        assert_equal(A[-2,:].todense(),B[-2,:])
-        assert_equal(A[array(-2),:].todense(),B[-2,:])
-
-        # [1:2]
-        assert_equal(A[1:4].todense(), B[1:4])
-        assert_equal(A[1:-2].todense(),B[1:-2])
-
         # [[1,2]]
         assert_equal(A[[1,3]].todense(),  B[[1,3]])
         assert_equal(A[[-1,-3]].todense(),B[[-1,-3]])
@@ -951,7 +1020,6 @@ class _TestFancyIndexing:
         assert_equal(A[:,[-1,-3]][[2,-4],:].todense(), B[:,[-1,-3]][[2,-4],:] )
         assert_equal(A[:,array([-1,-3])][array([2,-4]),:].todense(), B[:,[-1,-3]][[2,-4],:] )
 
-
         # Check bug reported by Robert Cimrman:
         # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986
         s = slice(int8(2),int8(4),None)
@@ -959,7 +1027,7 @@ class _TestFancyIndexing:
         assert_equal(A[:,s].todense(), B[:,2:4])
 
     def test_fancy_indexing_randomized(self):
-        random.seed(0) # make runs repeatable
+        random.seed(1234) # make runs repeatable
 
         NUM_SAMPLES = 50
         M = 6
@@ -982,58 +1050,6 @@ class _TestFancyIndexing:
         assert_raises(IndexError, S.__getitem__, (I,J_bad))
 
 class _TestFancyIndexingAssign:
-    @property
-    def __B(self):
-        B = lil_matrix((4,3))
-        B[0,0] = 2
-        B[1,2] = 7
-        B[2,1] = 3
-        B[3,0] = 10
-        return self.spmatrix(B)
-
-    def test_fancy_indexing_set(self):
-        n, m = (5, 10)
-        def _test_set(i, j, nitems):
-            A = self.spmatrix((n, m))
-            A[i, j] = 1
-            assert_almost_equal(A.sum(), nitems)
-            assert_almost_equal(A[i, j], 1)
-
-        # [i,j]
-        for i, j in [(2, 3), (-1, 8), (-1, -2), (array(-1), -2), (-1, array(-2)),
-                     (array(-1), array(-2))]:
-            _test_set(i, j, 1)
-
-        # [i,1:2]
-        for i, j in [(2, slice(m)), (2, slice(5, -2)), (array(2), slice(5, -2))]:
-            _test_set(i, j, 3)
-
-    def test_self_self_assignment(self):
-        # Tests whether a row of one lil_matrix can be assigned to
-        # another.
-        B = self.__B.copy()
-        A = B / 10
-        B[0,:] = A[0,:]
-        assert_array_equal(A[0,:].A, B[0,:].A)
-
-    def test_slice_assignment(self):
-        B = self.spmatrix((4,3))
-        B[0,0] = 5
-        B[1,2] = 3
-        B[2,1] = 7
-
-        expected = array([[10,0,0],
-                          [0,0,6],
-                          [0,14,0],
-                          [0,0,0]])
-
-        B[:,:] = B+B
-        assert_array_equal(B.todense(),expected)
-
-        block = [[1,0],[0,4]]
-        B[:2,:2] = csc_matrix(array(block))
-        assert_array_equal(B.todense()[:2,:2],block)
-
     def test_sequence_assignment(self):
         A = self.spmatrix((4,3))
         B = self.spmatrix(eye(3,4))
