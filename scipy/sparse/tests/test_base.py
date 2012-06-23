@@ -919,10 +919,10 @@ class _TestSlicingAssign:
             A = self.spmatrix((n, m))
             A[i, j] = 1
             assert_almost_equal(A.sum(), nitems, err_msg=msg)
-            assert_almost_equal(A[i, j], 1, err_msg=msg)
+            assert_almost_equal(A[i, j].todense(), 1, err_msg=msg)
 
         # [i,1:2]
-        for i, j in [(2, slice(m)), (2, slice(5, -2)), (array(2), slice(5, -2))]:
+        for i, j in [(2, slice(3)), (2, slice(5, -2)), (array(2), slice(5, -2))]:
             _test_set(i, j, 3)
 
     def test_self_self_assignment(self):
@@ -1041,7 +1041,10 @@ class _TestFancyIndexing:
 
         S = self.spmatrix(D)
 
-        assert_equal(S[I,J], D[I,J])
+        SIJ = S[I,J]
+        if isspmatrix(SIJ):
+            SIJ = SIJ.todense()
+        assert_equal(SIJ, D[I,J])
 
         I_bad = I + M
         J_bad = J - N
