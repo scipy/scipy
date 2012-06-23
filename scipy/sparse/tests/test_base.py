@@ -1071,19 +1071,65 @@ class _TestFancyIndexingAssign:
         A[1,1:3] = [10,20]
         assert_array_equal(A.todense(), [[0,0,0],[0,10,20]])
 
-        # column slice
+        # row slice
         A = self.spmatrix((3,2))
         A[1:3,1] = [[10],[20]]
         assert_array_equal(A.todense(), [[0,0],[0,10],[0,20]])
 
-
-    def test_diag_sequence_assignment(self):
+        # both slices
         A = self.spmatrix((3,3))
         B = np.zeros((3,3))
         for C in [A, B]:
-            # assign to diagonal via sequence slicing
             C[[0,1,2], [0,1,2]] = [4,5,6]
         assert_array_equal(A.A, B)
+
+class _TestFancyMultidim:
+    def test_fancy_indexing_ndarray(self):
+        sets = [
+            (np.array([[1], [2], [3]]), np.array([3, 4, 2])),
+            (np.array([[1], [2], [3]]), np.array([[3, 4, 2]])),
+            (np.array([[1, 2, 3]]), np.array([[3], [4], [2]])),
+            (np.array([1, 2, 3]), np.array([[3], [4], [2]])),
+            (np.array([[1, 2, 3], [3, 4, 2]]),
+             np.array([[5, 6, 3], [2, 3, 1]])),
+        ]
+
+        for I, J in sets:
+            np.random.seed(1234)
+            D = np.asmatrix(np.random.rand(5, 7))
+            S = self.spmatrix(D)
+
+            SIJ = S[I,J]
+            if isspmatrix(SIJ):
+                SIJ = SIJ.todense()
+            assert_equal(SIJ, D[I,J])
+
+            I_bad = I + 5
+            J_bad = J + 7
+
+            assert_raises(IndexError, S.__getitem__, (I_bad,J))
+            assert_raises(IndexError, S.__getitem__, (I,J_bad))
+
+class _TestFancyMultidimAssign:
+    def test_fancy_assign_ndarray(self):
+        np.random.seed(1234)
+
+        D = np.asmatrix(np.random.rand(5, 7))
+        S = self.spmatrix(D)
+        X = np.random.rand(2, 2)
+
+        I = np.array([[1, 2, 3], [3, 4, 2]])
+        J = np.array([[5, 6, 3], [2, 3, 1]])
+
+        S[I,J] = X
+        D[I,J] = X
+
+        assert_equal(S.todense(), D)
+
+        I_bad = I + 5
+        J_bad = J + 7
+        assert_raises(IndexError, S.__setitem__, (I_bad,J), C)
+        assert_raises(IndexError, S.__setitem__, (I,J_bad), C)
 
 
 class _TestArithmetic:
@@ -1179,8 +1225,7 @@ class _TestArithmetic:
 def _possibly_unimplemented(cls, require=True):
     """
     Construct a class that either runs tests as usual (require=True),
-    or each method raises SkipTest if it encounters a NotImplementedError
-    or a TypeError.
+    or each method raises SkipTest if it encounters a common error.
     """
     if require:
         return cls
@@ -1189,7 +1234,8 @@ def _possibly_unimplemented(cls, require=True):
             def wrapper(*a, **kw):
                 try:
                     return fc(*a, **kw)
-                except (NotImplementedError, TypeError):
+                except (NotImplementedError, TypeError, ValueError,
+                        IndexError):
                     raise nose.SkipTest("feature not implemented")
 
             wrapper.__name__ = fc.__name__
@@ -1204,7 +1250,9 @@ def _possibly_unimplemented(cls, require=True):
                     new_dict)
 
 def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
-                      fancy_indexing=True, fancy_assign=True):
+                      fancy_indexing=True, fancy_assign=True,
+                      fancy_multidim_indexing=True,
+                      fancy_multidim_assign=True):
     """
     Construct a base class, optionally converting some of the tests in
     the suite to check that the feature is not implemented.
@@ -1219,6 +1267,10 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
              _possibly_unimplemented(_TestFancyIndexing, fancy_indexing),
              _possibly_unimplemented(_TestFancyIndexingAssign,
                                      fancy_assign),
+             _possibly_unimplemented(_TestFancyMultidim,
+                                     fancy_indexing and fancy_multidim_indexing),
+             _possibly_unimplemented(_TestFancyMultidimAssign,
+                                     fancy_multidim_assign and fancy_assign),
              TestCase)
     return type("TestBase", bases, {})
 
@@ -1227,7 +1279,8 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 # Matrix class based tests
 #------------------------------------------------------------------------------
 
-class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False)):
+class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
+                                fancy_multidim_indexing=False)):
     spmatrix = csr_matrix
 
     def test_constructor1(self):
@@ -1341,8 +1394,22 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False)):
         bsp = csr_matrix( (data, indices, indptr), shape=(2,10) )
         assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
 
+    def test_fancy_indexing_broadcast(self):
+        # broadcasting indexing mode is supported
+        I = np.array([[1], [2], [3]])
+        J = np.array([3, 4, 2])
 
-class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False)):
+        np.random.seed(1234)
+        D = np.asmatrix(np.random.rand(5, 7))
+        S = self.spmatrix(D)
+
+        SIJ = S[I,J]
+        if isspmatrix(SIJ):
+            SIJ = SIJ.todense()
+        assert_equal(SIJ, D[I,J])
+
+class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
+                                fancy_multidim_indexing=False)):
     spmatrix = csc_matrix
 
     def test_constructor1(self):
@@ -1432,6 +1499,20 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False)):
         indptr  = array( [0, 2, 6] )
         bsp = csc_matrix( (data, indices, indptr), shape=(10,2) )
         assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
+
+    def test_fancy_indexing_broadcast(self):
+        # broadcasting indexing mode is supported
+        I = np.array([[1], [2], [3]])
+        J = np.array([3, 4, 2])
+
+        np.random.seed(1234)
+        D = np.asmatrix(np.random.rand(5, 7))
+        S = self.spmatrix(D)
+
+        SIJ = S[I,J]
+        if isspmatrix(SIJ):
+            SIJ = SIJ.todense()
+        assert_equal(SIJ, D[I,J])
 
 
 class TestDOK(sparse_test_class()):
@@ -1678,7 +1759,8 @@ class TestDOK(sparse_test_class()):
         sum2 = 3*self.datsp - self.dat
         assert_array_equal(sum2, 2*self.dat)
 
-class TestLIL(sparse_test_class()):
+class TestLIL(sparse_test_class(fancy_multidim_assign=False,
+                                fancy_multidim_indexing=False)):
     spmatrix = lil_matrix
 
     def test_dot(self):
