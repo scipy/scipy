@@ -841,7 +841,7 @@ class LowRankMatrix(object):
         C = np.array(self.cs).T
         D = np.array(self.ds).T
 
-        D, R = qr(D, mode='qr', econ=True)
+        D, R = qr(D, mode='economic')
         C = dot(C, R.T.conj())
 
         U, S, WH = svd(C, full_matrices=False, compute_uv=True)
