@@ -8,7 +8,7 @@ try:
     import ctypes
     _ctypes_missing = False
 except ImportError:
-    _ctypes_missing = True    
+    _ctypes_missing = True
 
 def assert_quad((value, err), tabledValue, errTol=1.5e-8):
     assert_(abs(value-tabledValue) < err, (value, tabledValue, err))
@@ -39,13 +39,16 @@ class TestCtypesQuad(TestCase):
         assert_quad(quad(self.lib.cos,0,5),quad(math.cos,0,5)[0])
         assert_quad(quad(self.lib.tan,0,1),quad(math.tan,0,1)[0])
 
-    @dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
+    #@dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
+    # This doesn't seem to always work.  Need a better way to figure out
+    # whether the fast path is called.
+    @dec.knownfailureif(True, msg="Unreliable test, see ticket 1684.")
     def test_improvement(self):
         import time
         start = time.time()
         for i in xrange(100):
             quad(self.lib.sin, 0, 100)
-        fast = time.time() - start    
+        fast = time.time() - start
         start = time.time()
         for i in xrange(100):
             quad(math.sin, 0, 100)
