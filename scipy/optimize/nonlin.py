@@ -311,7 +311,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                                                         line_search)
         else:
             s = 1.0
-            x += dx
+            x = x + dx
             Fx = func(x)
             Fx_norm_new = norm(Fx)
 

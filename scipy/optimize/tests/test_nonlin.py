@@ -211,7 +211,7 @@ class TestLinear(TestCase):
         def func(x):
             return dot(A, x) - b
 
-        sol = nonlin.nonlin_solve(func, b*0, jac, maxiter=maxiter,
+        sol = nonlin.nonlin_solve(func, np.zeros(N), jac, maxiter=maxiter,
                                   f_tol=1e-6, line_search=None, verbose=0)
         assert_(np.allclose(dot(A, sol), b, atol=1e-6))
 
