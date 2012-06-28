@@ -25,11 +25,10 @@ def f2(x,y=0,dx=0,dy=0):
     if d%4 == 2: return -sin(x+y)
     if d%4 == 3: return -cos(x+y)
 
-def makepairs(x,y):
-    x,y=map(asarray,[x,y])
-    xy=array(map(lambda x,y:map(None,len(y)*[x],y),x,len(x)*[y]))
-    sh=xy.shape
-    xy.shape=sh[0]*sh[1],sh[2]
+def makepairs(x, y):
+    """Helper function to create an array of pairs of x and y."""
+    # Or itertools.product (>= python 2.6)
+    xy = array([[a, b] for a in asarray(x) for b in asarray(y)])
     return xy.T
 
 def put(*a):
