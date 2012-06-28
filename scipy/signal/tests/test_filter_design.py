@@ -126,6 +126,7 @@ class TestNormalize(TestCase):
         
         b_output, a_output = normalize(b_norm_in, a_norm_in)
         assert_array_almost_equal(b_matlab, b_output, decimal=14)
+        print(a_matlab - a_output)
         assert_array_almost_equal(a_matlab, a_output, decimal=14)
 
 if __name__ == "__main__":
