@@ -283,10 +283,10 @@ def normalize(b, a):
         a = a[1:]
     outb = b * (1.0) / a[0]
     outa = a * (1.0) / a[0]
-    if allclose(outb[:, 0], 0, rtol=1e-14):
+    if allclose(0, outb[:, 0], atol=1e-14):
         warnings.warn("Badly conditioned filter coefficients (numerator): the "
                       "results may be meaningless", BadCoefficients)
-        while allclose(outb[:, 0], 0, rtol=1e-14) and (outb.shape[-1] > 1):
+        while allclose(0, outb[:, 0], atol=1e-14) and (outb.shape[-1] > 1):
             outb = outb[:, 1:]
     if outb.shape[0] == 1:
         outb = outb[0]
