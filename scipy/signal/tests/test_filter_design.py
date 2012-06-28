@@ -89,7 +89,8 @@ class TestFreqz(TestCase):
 class TestNormalize(TestCase):
 
     def test_allclose(self):
-        """Test that for false positive on allclose"""
+        """Test for false positive on allclose in normalize() in
+        filter_design.py"""
         # Test to make sure the allclose call within signal.normalize does not
         # choose false positives. Then check against a known output from MATLAB
         # to make sure the fix doesn't break anything.
@@ -125,8 +126,11 @@ class TestNormalize(TestCase):
                               6.0799461347219651e+04])
         
         b_output, a_output = normalize(b_norm_in, a_norm_in)
+        
+        # The test on b works for decimal=14 but the one for a does not. For
+        # the sake of consistency, both of these are decimal=13. If something
+        # breaks on another platform, it is probably fine to relax this lower.
         assert_array_almost_equal(b_matlab, b_output, decimal=13)
-        print(a_matlab - a_output)
         assert_array_almost_equal(a_matlab, a_output, decimal=13)
 
 if __name__ == "__main__":
