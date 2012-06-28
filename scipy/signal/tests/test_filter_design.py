@@ -98,7 +98,7 @@ class TestNormalize(TestCase):
         #   `[b,a] = cheby1(8, 0.5, 0.048)'
         # in MATLAB. There are at least 15 significant figures in each
         # coefficient, so it makes sense to test for errors on the order of
-        # 1e-14 (this can always be relaxed if different platforms have
+        # 1e-13 (this can always be relaxed if different platforms have
         # different rounding errors)
         b_matlab = np.array([2.150733144728282e-11, 1.720586515782626e-10,
                              6.022052805239190e-10, 1.204410561047838e-09,
@@ -125,9 +125,9 @@ class TestNormalize(TestCase):
                               6.0799461347219651e+04])
         
         b_output, a_output = normalize(b_norm_in, a_norm_in)
-        assert_array_almost_equal(b_matlab, b_output, decimal=14)
+        assert_array_almost_equal(b_matlab, b_output, decimal=13)
         print(a_matlab - a_output)
-        assert_array_almost_equal(a_matlab, a_output, decimal=14)
+        assert_array_almost_equal(a_matlab, a_output, decimal=13)
 
 if __name__ == "__main__":
     run_module_suite()
