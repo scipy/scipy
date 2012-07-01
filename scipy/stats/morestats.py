@@ -737,6 +737,8 @@ def ansari(x,y):
 
     Returns
     -------
+    AB : float
+        The Ansari-Bradley test statistic
     p-value : float
         The p-value of the hypothesis test
 
@@ -1140,6 +1142,8 @@ def mood(x,y):
 
     Returns
     -------
+    z : float
+        The z-score for the hypothesis test.
     p-value : float
         The p-value for the hypothesis test.
 
