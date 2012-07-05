@@ -263,10 +263,28 @@ class test_random_ball(ball_consistency):
         self.eps = 0
         self.d = 0.2
 
+class test_random_ball_compiled(ball_consistency):
+
+    def setUp(self):
+        n = 100
+        m = 4
+        self.data = np.random.randn(n,m)
+        self.T = cKDTree(self.data,leafsize=2)
+        self.x = np.random.randn(m)
+        self.p = 2.
+        self.eps = 0
+        self.d = 0.2
+
 class test_random_ball_approx(test_random_ball):
 
     def setUp(self):
         test_random_ball.setUp(self)
+        self.eps = 0.1
+
+class test_random_ball_approx_compiled(test_random_ball_compiled):
+
+    def setUp(self):
+        test_random_ball_compiled.setUp(self)
         self.eps = 0.1
 
 class test_random_ball_far(test_random_ball):
@@ -275,10 +293,22 @@ class test_random_ball_far(test_random_ball):
         test_random_ball.setUp(self)
         self.d = 2.
 
+class test_random_ball_far_compiled(test_random_ball_compiled):
+
+    def setUp(self):
+        test_random_ball_compiled.setUp(self)
+        self.d = 2.
+
 class test_random_ball_l1(test_random_ball):
 
     def setUp(self):
         test_random_ball.setUp(self)
+        self.p = 1
+
+class test_random_ball_l1_compiled(test_random_ball_compiled):
+
+    def setUp(self):
+        test_random_ball_compiled.setUp(self)
         self.p = 1
 
 class test_random_ball_linf(test_random_ball):
@@ -287,11 +317,27 @@ class test_random_ball_linf(test_random_ball):
         test_random_ball.setUp(self)
         self.p = np.inf
 
+class test_random_ball_linf_compiled(test_random_ball_compiled):
+
+    def setUp(self):
+        test_random_ball_compiled.setUp(self)
+        self.p = np.inf
+
 def test_random_ball_vectorized():
 
     n = 20
     m = 5
     T = KDTree(np.random.randn(n,m))
+
+    r = T.query_ball_point(np.random.randn(2,3,m),1)
+    assert_equal(r.shape,(2,3))
+    assert_(isinstance(r[0,0],list))
+
+def test_random_ball_vectorized_compiled():
+
+    n = 20
+    m = 5
+    T = cKDTree(np.random.randn(n,m))
 
     r = T.query_ball_point(np.random.randn(2,3,m),1)
     assert_equal(r.shape,(2,3))
@@ -484,6 +530,8 @@ def test_ball_point_ints():
     assert_equal(sorted([4, 8, 9, 12]),
                  sorted(tree.query_ball_point((2, 0), 1)))
 
+# cKDTree is specialized to type double points, so no need to make
+# a unit test corresponding to test_ball_point_ints()
 
 if __name__=="__main__":
     run_module_suite()

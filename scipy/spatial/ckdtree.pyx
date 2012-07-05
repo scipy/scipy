@@ -518,24 +518,24 @@ cdef class cKDTree:
             double distance_upper_bound=infinity):
         """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf)
         
-        Query the kd-tree for nearest neighbors.
+        Query the kd-tree for nearest neighbors
 
         Parameters
         ----------
         x : array_like, last dimension self.m
             An array of points to query.
-        k : int
+        k : integer
             The number of nearest neighbors to return.
         eps : non-negative float
-            Return approximate nearest neighbors; the k-th returned value 
-            is guaranteed to be no further than (1 + `eps`) times the 
+            Return approximate nearest neighbors; the kth returned value 
+            is guaranteed to be no further than (1+eps) times the 
             distance to the real k-th nearest neighbor.
-        p : float, 1 <= p <= infinity
+        p : float, 1<=p<=infinity
             Which Minkowski p-norm to use. 
-            1 is the sum-of-absolute-values "Manhattan" distance.
-            2 is the usual Euclidean distance.
-            infinity is the maximum-coordinate-difference distance.
-        distance_upper_bound : non-negative float
+            1 is the sum-of-absolute-values "Manhattan" distance
+            2 is the usual Euclidean distance
+            infinity is the maximum-coordinate-difference distance
+        distance_upper_bound : nonnegative float
             Return only neighbors within this distance.  This is used to prune
             tree searches, so if you are doing a series of nearest-neighbor
             queries, it may help to supply the distance to the nearest neighbor
@@ -543,9 +543,9 @@ cdef class cKDTree:
 
         Returns
         -------
-        d : ndarray of floats
+        d : array of floats
             The distances to the nearest neighbors. 
-            If `x` has shape tuple+(self.m,), then `d` has shape tuple+(k,).
+            If x has shape tuple+(self.m,), then d has shape tuple+(k,).
             Missing neighbors are indicated with infinite distances.
         i : ndarray of ints
             The locations of the neighbors in self.data.
@@ -594,4 +594,235 @@ cdef class cKDTree:
                 return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
             else:
                 return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
+            
+    cdef void __ball_point_traverse_no_checking(cKDTree self,
+                                                list results,
+                                                innernode* node):
+        cdef leafnode* lnode
+        cdef innernode* inode
+        if node.split_dim == -1:  # leaf node
+            lnode = <leafnode*>node
+            for i in range(lnode.start_idx, lnode.end_idx):
+                results.append(self.raw_indices[i])
+        else:
+            inode = <innernode*>node
+            self.__ball_point_traverse_no_checking(results, inode.less)
+            self.__ball_point_traverse_no_checking(results, inode.greater)
 
+    cdef void __ball_point_traverse_checking(cKDTree self,
+                                             list results,
+                                             innernode* node,
+                                             double* x,
+                                             double r,
+                                             double p,
+                                             double epsfac, double invepsfac,
+                                             double* mins, double* maxes,
+                                             double min_distance,
+                                             double max_distance):
+        cdef leafnode* lnode
+        cdef innernode* inode
+        cdef int k
+        cdef double save_min, save_max
+        cdef double part_min_distance = 0., part_max_distance = 0.
+        
+        if min_distance > r*epsfac:
+            return
+        elif max_distance < r*invepsfac:
+            self.__ball_point_traverse_no_checking(results, node)
+        elif node.split_dim == -1:  # leaf node
+            lnode = <leafnode*>node
+            # brute-force
+            for i in range(lnode.start_idx, lnode.end_idx):
+                d = _distance_p(
+                    self.raw_data + self.raw_indices[i] * self.m,
+                    x, p, self.m, r)
+                if d <= r:
+                    results.append(self.raw_indices[i])
+        else:
+            inode = <innernode*>node
+                
+            k = inode.split_dim
+            if p != infinity:
+                part_min_distance = (
+                    min_distance -
+                    dmax(0, dmax(mins[k]-x[k], x[k]-maxes[k]))**p)
+                part_max_distance = (
+                    max_distance -
+                    dmax(maxes[k]-x[k], x[k]-mins[k])**p)
+            
+            # Go to box with lesser component along k
+            # less.maxes[k] goes from maxes[k] to inode.split
+            save_max = maxes[k]
+            maxes[k] = inode.split
+            if p != infinity:
+                min_distance = (
+                    part_min_distance +
+                    dmax(0, dmax(mins[k]-x[k], x[k]-maxes[k]))**p)
+                max_distance = (
+                    part_max_distance +
+                    dmax(maxes[k]-x[k], x[k]-mins[k])**p)
+            else:
+                # This could be a bit more optimized
+                min_distance = 0.
+                max_distance = 0.
+                for i in range(self.m):
+                    min_distance = dmax(
+                        min_distance,
+                        dmax(0, dmax(mins[k]-x[k], x[k]-maxes[k])))
+                    max_distance = dmax(
+                        max_distance,
+                        dmax(maxes[k]-x[k], x[k]-mins[k]))
+                    
+            self.__ball_point_traverse_checking(results, inode.less,
+                                                x, r, p, epsfac, invepsfac,
+                                                mins, maxes,
+                                                min_distance, max_distance)
+            maxes[k] = save_max
+             # Go to box with greater component along k
+            # greater.mins[k] goes from mins[k] to inode.split
+            save_min = mins[k]
+            mins[k] = inode.split
+            if p != infinity:
+                min_distance = (
+                    part_min_distance +
+                    dmax(0, dmax(mins[k]-x[k], x[k]-maxes[k]))**p)
+                max_distance = (
+                    part_max_distance +
+                    dmax(maxes[k]-x[k], x[k]-mins[k])**p)
+            else:
+                # This could be a bit more optimized
+                min_distance = 0.
+                max_distance = 0.
+                for i in range(self.m):
+                    min_distance = dmax(
+                        min_distance,
+                        dmax(0, dmax(mins[k]-x[k], x[k]-maxes[k])))
+                    max_distance = dmax(
+                        max_distance,
+                        dmax(maxes[k]-x[k], x[k]-mins[k]))
+                    
+            self.__ball_point_traverse_checking(results, inode.greater,
+                                                x, r, p, epsfac, invepsfac,
+                                                mins, maxes,
+                                                min_distance, max_distance)
+            mins[k] = save_min
+
+    cdef list __query_ball_point(cKDTree self,
+                                 double* x,
+                                 double r,
+                                 double p,
+                                 double eps):
+
+        cdef list results
+        cdef double* mins
+        cdef double* maxes
+        cdef double epsfac, invepsfac
+        cdef double min_distance, max_distance
+
+        # internally we represent all distances as distance**p
+        if p != infinity and r != infinity:
+            r = r ** p
+
+        # fiddle approximation factor
+        if eps == 0:
+            epsfac = 1
+        elif p == infinity:
+            epsfac = 1/(1+eps)
+        else:
+            epsfac = 1/(1+eps)**p
+        invepsfac = 1/epsfac
+
+        # Calculate mins and maxes to outer box
+        mins = <double*>stdlib.malloc(self.m * sizeof(double))
+        maxes = <double*>stdlib.malloc(self.m * sizeof(double))
+        for i in range(self.m):
+            mins[i] = self.raw_mins[i]
+            maxes[i] = self.raw_maxes[i]
+
+        # Computer first min and max distances
+        min_distance = 0.
+        max_distance = 0.
+        if p == infinity:
+            for i in range(self.m):
+                min_distance = dmax(min_distance,
+                                    dmax(mins[i]-x[i], x[i]-maxes[i]))
+                max_distance = dmax(max_distance,
+                                    dmax(maxes[i]-x[i], x[i]-mins[i]))
+        else:
+            for i in range(self.m):
+                min_distance += (
+                    dmax(0.0, dmax(mins[i]-x[i], x[i]-maxes[i]))**p)
+                max_distance += (
+                    dmax(maxes[i]-x[i], x[i]-mins[i])**p)
+                
+        results = []
+        self.__ball_point_traverse_checking(results, self.tree,
+                                            x, r, p, epsfac, invepsfac,
+                                            mins, maxes,
+                                            min_distance, max_distance)
+
+        stdlib.free(mins)
+        stdlib.free(maxes)
+
+        return results
+
+    def query_ball_point(cKDTree self, object x, double r,
+                         double p=2., double eps=0):
+        """query_ball_point(self, x, r, p, eps)
+        
+        Find all points within distance r of point(s) x.
+
+        Parameters
+        ----------
+        x : array_like, shape tuple + (self.m,)
+            The point or points to search for neighbors of.
+        r : positive float
+            The radius of points to return.
+        p : float, optional
+            Which Minkowski p-norm to use.  Should be in the range [1, inf].
+        eps : nonnegative float, optional
+            Approximate search. Branches of the tree are not explored if their
+            nearest points are further than ``r / (1 + eps)``, and branches are
+            added in bulk if their furthest points are nearer than
+            ``r * (1 + eps)``.
+
+        Returns
+        -------
+        results : list or array of lists
+            If `x` is a single point, returns a list of the indices of the
+            neighbors of `x`. If `x` is an array of points, returns an object
+            array of shape tuple containing lists of neighbors.
+
+        Notes
+        -----
+        If you have many points whose neighbors you want to find, you may save
+        substantial amounts of time by putting them in a cKDTree and using
+        query_ball_tree.
+
+        Examples
+        --------
+        >>> from scipy import spatial
+        >>> x, y = np.mgrid[0:4, 0:4]
+        >>> points = zip(x.ravel(), y.ravel())
+        >>> tree = spatial.cKDTree(points)
+        >>> tree.query_ball_point([2, 0], 1)
+        [4, 8, 9, 12]
+
+        """
+        cdef np.ndarray[double, ndim=1] xx
+        
+        x = np.asarray(x).astype(np.float)
+        if x.shape[-1] != self.m:
+            raise ValueError("Searching for a %d-dimensional point in a " \
+                             "%d-dimensional KDTree" % (x.shape[-1], self.m))
+        if len(x.shape) == 1:
+            xx = np.ascontiguousarray(x)
+            return self.__query_ball_point(<double*>xx.data, r, p, eps)
+        else:
+            retshape = x.shape[:-1]
+            result = np.empty(retshape, dtype=np.object)
+            for c in np.ndindex(retshape):
+                xx = np.ascontiguousarray(x[c])
+                result[c] = self.__query_ball_point(
+                    <double*>xx.data, r, p, eps)
+            return result
