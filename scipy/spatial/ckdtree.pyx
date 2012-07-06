@@ -668,10 +668,10 @@ cdef class cKDTree:
                 for i in range(self.m):
                     min_distance = dmax(
                         min_distance,
-                        dmax(0, dmax(mins[k]-x[k], x[k]-maxes[k])))
+                        dmax(mins[i]-x[i], x[i]-maxes[i]))
                     max_distance = dmax(
                         max_distance,
-                        dmax(maxes[k]-x[k], x[k]-mins[k]))
+                        dmax(maxes[i]-x[i], x[i]-mins[i]))
                     
             self.__ball_point_traverse_checking(results, inode.less,
                                                 x, r, p, epsfac, invepsfac,
@@ -696,10 +696,10 @@ cdef class cKDTree:
                 for i in range(self.m):
                     min_distance = dmax(
                         min_distance,
-                        dmax(0, dmax(mins[k]-x[k], x[k]-maxes[k])))
+                        dmax(mins[i]-x[i], x[i]-maxes[i]))
                     max_distance = dmax(
                         max_distance,
-                        dmax(maxes[k]-x[k], x[k]-mins[k]))
+                        dmax(maxes[i]-x[i], x[i]-mins[i]))
                     
             self.__ball_point_traverse_checking(results, inode.greater,
                                                 x, r, p, epsfac, invepsfac,
