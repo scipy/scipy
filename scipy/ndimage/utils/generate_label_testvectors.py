@@ -24,6 +24,7 @@ def generate_test_vecs(infile, strelfile, resultfile):
               np.zeros((3, 3)),
               bitimage(["010", "111", "010"]),
               bitimage(["101", "010", "101"]),
+              bitimage(["100", "010", "001"]),
               bitimage(["000", "111", "000"]),
               bitimage(["110", "010", "011"]),
               bitimage(["110", "111", "011"])]
