@@ -79,17 +79,13 @@ cdef void fused_read_line(data_t *p, np.intp_t stride,
 cdef bint fused_write_line(data_t *p, np.intp_t stride,
                            np.uintp_t *line, np.intp_t L) nogil:
     cdef np.uintp_t i
-    cdef data_t val, tmp
     for i in range(L):
-        val = line[i]
-        tmp = <data_t> val
         # Check before overwrite, as this prevents us accidentally writing a 0
         # in the foreground, which allows us to retry even when operating
         # in-place.
-        if val != <np.uintp_t> tmp:
+        if line[i] != <np.uintp_t> <data_t> line[i]:
             return True
-        (<data_t *> ((<void *> p) + i * stride))[0] = tmp
-
+        (<data_t *> ((<void *> p) + i * stride))[0] = <data_t> line[i]
     return False
 
 

@@ -153,6 +153,11 @@ def label(input, structure=None, output=None):
         if ii != 3:
             raise ValueError('structure dimensions must be equal to 3')
 
+    # Use 32 bits if it's large enough for this image.
+    # _ni_label.label()  needs two entries for background and
+    # foreground tracking
+    need_64bits = input.size < (2**32 - 2)
+
     if isinstance(output, numpy.ndarray):
         if output.shape != input.shape:
             raise ValueError("output shape not correct")
@@ -160,9 +165,9 @@ def label(input, structure=None, output=None):
     else:
         caller_provided_output = False
         if output is None:
-            output = np.zeros(input.shape, np.intp)
+            output = np.empty(input.shape, np.uintp if need_64bits else np.uint32)
         else:
-            output = np.zeros(input.shape, output)
+            output = np.empty(input.shape, output)
 
     # handle scalars, 0-dim arrays
     if input.ndim == 0 or input.size == 0:
@@ -180,15 +185,15 @@ def label(input, structure=None, output=None):
 
     try:
         max_label = _ni_label._label(input, structure, output)
-    except _ni_label.NeedMoreBits, e:
-            # Make another attempt with enough bits, then try to cast to the
-            # new type.
-            tmp_output = np.zeros(input.shape, np.intp)
-            max_label = _ni_label._label(input, structure, tmp_output)
-            output[...] = tmp_output[...]
-            if not np.all(output == tmp_output):
-                # refuse to return bad results
-                raise RuntimeError("insufficient bit-depth in requested output type")
+    except _ni_label.NeedMoreBits:
+        # Make another attempt with enough bits, then try to cast to the
+        # new type.
+        tmp_output = np.empty(input.shape, np.uintp if need_64bits else np.uint32)
+        max_label = _ni_label._label(input, structure, tmp_output)
+        output[...] = tmp_output[...]
+        if not np.all(output == tmp_output):
+            # refuse to return bad results
+            raise RuntimeError("insufficient bit-depth in requested output type")
 
     if caller_provided_output:
         # result was written in-place
