@@ -8,7 +8,8 @@ from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   r_, rollaxis, sum
 
 __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
-           'central_diff_weights', 'derivative', 'pade', 'lena']
+           'central_diff_weights', 'derivative', 'pade', 'lena',
+           'logsumexp_b']
 
 # XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
@@ -57,6 +58,51 @@ def logsumexp(a, axis=None):
         a = rollaxis(a, axis)
     a_max = a.max(axis=0)
     out = log(sum(exp(a - a_max), axis=0))
+    out += a_max
+    return out
+
+def logsumexp_b(a, b, axis=None):
+    """
+    Compute the log of the sum of scaled exponentials of inputs.
+
+    Parameters
+    ----------
+    a : array-like
+        Input array
+    b : array-like
+        Scaling factor for exp(`a`) must be of the same shape as `a` or
+        broadcastable to `a`.
+    axis : int, optional
+        Axis over which the sum is taken. By default `axis` is None, and
+        all elements are summed.
+
+    Returns
+    -------
+    res : ndarray
+        The result, ``np.log(np.sum(b*np.exp(a)))`` calculated in a numerically
+        more stable way.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.misc import logsumexp_b
+    >>> a = np.arange(10)
+    >>> b = np.arange(10, 0, -1)
+    >>> logsumexp_b(a, b)
+    9.9170178533034665
+    >>> np.log(np.sum(b*np.exp(a)))
+    9.9170178533034647
+    """
+    a = asarray(a)
+    b = asarray(b)
+    if axis is None:
+        a = a.ravel()
+        b = b.ravel()
+    else:
+        a = rollaxis(a, axis)
+        b = rollaxis(b, axis)
+    a_max = a.max(axis=0)
+    out = log(sum(b * exp(a - a_max), axis=0))
     out += a_max
     return out
 
