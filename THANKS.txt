@@ -105,6 +105,7 @@ Sebastian Werk for Halley's method in newton().
 Bjorn Forsman for contributing signal.bode().
 Tony S. Yu for ndimage improvements.
 Jonathan J. Helmus for work on ndimage.
+Alex Reinhart for documentation improvements.
 
 
 Institutions

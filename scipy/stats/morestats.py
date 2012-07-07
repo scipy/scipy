@@ -737,6 +737,8 @@ def ansari(x,y):
 
     Returns
     -------
+    AB : float
+        The Ansari-Bradley test statistic
     p-value : float
         The p-value of the hypothesis test
 
@@ -1140,6 +1142,8 @@ def mood(x,y):
 
     Returns
     -------
+    z : float
+        The z-score for the hypothesis test.
     p-value : float
         The p-value for the hypothesis test.
 
@@ -1226,8 +1230,9 @@ def wilcoxon(x,y=None):
     Calculate the Wilcoxon signed-rank test.
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
-    related samples come from the same distribution. It is a a
-    non-parametric version of the paired T-test.
+    related paired samples come from the same distribution. In particular,
+    it tests whether the distribution of the differences x - y is symmetric
+    about zero. It is a non-parametric version of the paired T-test.
 
     Parameters
     ----------
@@ -1240,9 +1245,9 @@ def wilcoxon(x,y=None):
 
     Returns
     -------
-    z-statistic : float
-        The test statistic under the large-sample approximation that the
-        signed-rank statistic is normally distributed.
+    T : float
+        The sum of the ranks of the differences above or below zero, whichever
+        is smaller.
     p-value : float
         The two-sided p-value for the test.
 
