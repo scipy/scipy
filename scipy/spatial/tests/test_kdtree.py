@@ -519,12 +519,11 @@ def check_onetree_query(T,d):
             if i<j:
                 s.add((i,j))
 
-    # FIXME: uncomment assert once I implement cKDTree query_pairs
-    #assert_(s == T.query_pairs(d))
+    assert_(s == T.query_pairs(d))
 
 def test_onetree_query():
     np.random.seed(0)
-    n = 100
+    n = 50
     k = 4
     points = np.random.randn(n,k)
     T = KDTree(points)
@@ -558,6 +557,10 @@ def test_onetree_query_compiled():
 
 def test_query_pairs_single_node():
     tree = KDTree([[0, 1]])
+    assert_equal(tree.query_pairs(0.5), set())
+
+def test_query_pairs_single_node_compiled():
+    tree = cKDTree([[0, 1]])
     assert_equal(tree.query_pairs(0.5), set())
 
 
