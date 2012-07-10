@@ -8,7 +8,8 @@ Laplacian of a compressed-sparse graph
 # License: BSD
 
 import numpy as np
-from scipy.sparse import isspmatrix
+from scipy.sparse import isspmatrix, coo_matrix
+
 
 ###############################################################################
 # Graph laplacian
@@ -31,7 +32,7 @@ def laplacian(csgraph, normed=False, return_diag=False):
     -------
     lap: ndarray
         The N x N laplacian matrix of graph.
-    
+
     diag: ndarray
         The length-N diagonal of the laplacian matrix.
         diag is returned only if return_diag is True.
@@ -70,7 +71,7 @@ def laplacian(csgraph, normed=False, return_diag=False):
                    or np.issubdtype(csgraph.dtype, np.uint)):
         csgraph = csgraph.astype(np.float)
 
-    if isspmatrix(csgraph):            
+    if isspmatrix(csgraph):
         return _laplacian_sparse(csgraph, normed=normed,
                                  return_diag=return_diag)
     else:
@@ -89,14 +90,14 @@ def _laplacian_sparse(graph, normed=False, return_diag=False):
         # The sparsity pattern of the matrix has holes on the diagonal,
         # we need to fix that
         diag_idx = lap.row[diag_mask]
-
-        lap = lap.tolil()
-
         diagonal_holes = list(set(range(n_nodes)).difference(
                                 diag_idx))
-        lap[diagonal_holes, diagonal_holes] = 1
-        lap = lap.tocoo()
+        new_data = np.concatenate([lap.data, np.ones(len(diagonal_holes))])
+        new_row = np.concatenate([lap.row, diagonal_holes])
+        new_col = np.concatenate([lap.col, diagonal_holes])
+        lap = coo_matrix((new_data, (new_row, new_col)), shape=lap.shape)
         diag_mask = (lap.row == lap.col)
+
     lap.data[diag_mask] = 0
     w = -np.asarray(lap.sum(axis=1)).squeeze()
     if normed:
@@ -115,7 +116,7 @@ def _laplacian_sparse(graph, normed=False, return_diag=False):
 
 def _laplacian_dense(graph, normed=False, return_diag=False):
     n_nodes = graph.shape[0]
-    lap = -graph.copy()
+    lap = -np.asarray(graph)  # minus sign leads to a copy
 
     # set diagonal to zero
     lap.flat[::n_nodes + 1] = 0
@@ -132,4 +133,3 @@ def _laplacian_dense(graph, normed=False, return_diag=False):
     if return_diag:
         return lap, w
     return lap
-
