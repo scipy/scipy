@@ -24,13 +24,17 @@ B-splines
 .. autosummary::
    :toctree: generated/
 
-   bspline       -- B-spline basis function of order n.
-   gauss_spline  -- Gaussian approximation to the B-spline basis function.
-   cspline1d     -- Coefficients for 1-D cubic (3rd order) B-spline.
-   qspline1d     -- Coefficients for 1-D quadratic (2nd order) B-spline.
-   cspline2d     -- Coefficients for 2-D cubic (3rd order) B-spline.
-   qspline2d     -- Coefficients for 2-D quadratic (2nd order) B-spline.
-   spline_filter -- Smoothing spline (cubic) filtering of a rank-2 array.
+   bspline        -- B-spline basis function of order n.
+   cubic          -- B-spline basis function of order 3.
+   quadratic      -- B-spline basis function of order 2.
+   gauss_spline   -- Gaussian approximation to the B-spline basis function.
+   cspline1d      -- Coefficients for 1-D cubic (3rd order) B-spline.
+   qspline1d      -- Coefficients for 1-D quadratic (2nd order) B-spline.
+   cspline2d      -- Coefficients for 2-D cubic (3rd order) B-spline.
+   qspline2d      -- Coefficients for 2-D quadratic (2nd order) B-spline.
+   cspline1d_eval -- Evaluate a cubic spline at the given points.
+   cspline1d_eval -- Evaluate a quadratic spline at the given points.
+   spline_filter  -- Smoothing spline (cubic) filtering of a rank-2 array.
 
 Filtering
 =========
