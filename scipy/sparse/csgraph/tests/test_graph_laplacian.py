@@ -1,4 +1,5 @@
 # Author: Gael Varoquaux <gael.varoquaux@normalesup.org>
+#         Jake Vanderplas <vanderplas@astro.washington.edu>
 # License: BSD
 
 import numpy as np
@@ -12,6 +13,7 @@ def test_graph_laplacian():
                 np.ones((7, 7)),
                 np.eye(19),
                 np.vander(np.arange(4)) + np.vander(np.arange(4)).T,
+                sparse.diags([1, 1], [-1, 1], shape=(4, 4)).toarray(),
                ):
         sp_mat = sparse.csr_matrix(mat)
         for normed in (True, False):
