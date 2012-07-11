@@ -490,6 +490,27 @@ class test_sparse_distance_matrix:
     def test_zero_distance(self):
         M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870
 
+class test_sparse_distance_matrix_compiled:
+    def setUp(self):
+        n = 50
+        m = 4
+        np.random.seed(0)
+        self.T1 = cKDTree(np.random.randn(n,m),leafsize=2)
+        self.T2 = cKDTree(np.random.randn(n,m),leafsize=2)
+        self.r = 0.3
+
+    def test_consistency_with_neighbors(self):
+        M = self.T1.sparse_distance_matrix(self.T2, self.r)
+        r = self.T1.query_ball_tree(self.T2, self.r)
+        for i,l in enumerate(r):
+            for j in l:
+                assert_equal(M[i,j],distance(self.T1.data[i],self.T2.data[j]))
+        for ((i,j),d) in M.items():
+            assert_(j in r[i])
+
+    def test_zero_distance(self):
+        M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870
+
 def test_distance_matrix():
     m = 10
     n = 11
