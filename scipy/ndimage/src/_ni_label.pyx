@@ -349,7 +349,6 @@ cpdef _label(np.ndarray input,
                                                               mergetable)
                         if ni == (num_neighbors - 1):
                             needs_self_labeling = False
-                        needs_self_labeling
                     PyArray_ITER_NEXT(itstruct)
 
                 if needs_self_labeling:
