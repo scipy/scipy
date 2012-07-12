@@ -1519,6 +1519,275 @@ cdef class cKDTree:
 
         return results
 
+    # ---------------
+    # count_neighbors
+    # ---------------
+    cdef void __count_neighbors_traverse(cKDTree self, cKDTree other,
+                                         int n_queries, double* r, np.int_t* results, np.int_t* idx,
+                                         innernode* node1, innernode* node2,
+                                         double p,
+                                         Rectangle rect1, Rectangle rect2,
+                                         double min_distance,
+                                         double max_distance):
+        cdef leafnode *lnode1, *lnode2
+        cdef innernode *inode1, *inode2
+        cdef int k1, k2
+        cdef double save_min1, save_max1
+        cdef double save_min2, save_max2
+        cdef double part_min_distance1 = 0., part_max_distance1 = 0.
+        cdef double part_min_distance2 = 0., part_max_distance2 = 0.
+        cdef np.int_t *old_idx
+
+        # Speed through pairs of nodes all of whose children are close
+        # and see if any work remains to be done
+        old_idx = idx
+        idx = <np.int_t*>stdlib.malloc(n_queries * sizeof(np.int_t))
+        old_n_queries = n_queries
+        n_queries = 0
+        
+        for i in xrange(old_n_queries):
+            if max_distance < r[old_idx[i]]:
+                results[old_idx[i]] += node1.children * node2.children
+            elif min_distance <= r[old_idx[i]]:
+                idx[n_queries] = old_idx[i]
+                n_queries += 1
+
+        if n_queries >= 0:
+            # OK, need to probe a bit deeper
+            if node1.split_dim == -1:  # 1 is leaf node
+                lnode1 = <leafnode*>node1
+                
+                if node2.split_dim == -1:  # 1 & 2 are leaves
+                    lnode2 = <leafnode*>node2
+                    
+                    # brute-force
+                    for i in range(lnode1.start_idx, lnode1.end_idx):
+                        for j in range(lnode2.start_idx, lnode2.end_idx):
+                            d = _distance_p(
+                                self.raw_data + self.raw_indices[i] * self.m,
+                                other.raw_data + other.raw_indices[j] * other.m,
+                                p, self.m, max_distance)
+
+                            # I think it's usually cheaper to test d against all r's
+                            # than to generate a distance array, sort it, then
+                            # search for all r's via binary search
+                            for l in range(n_queries):
+                                if d <= r[idx[l]]:
+                                    results[idx[l]] += 1
+                                
+                else:  # 1 is a leaf node, 2 is inner node
+                    k2 = node2.split_dim
+                    __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                        
+                    # node2 goes to box with lesser component along k2
+                    # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
+                    save_max2 = rect2.maxes[k2]
+                    rect2.maxes[k2] = node2.split
+                    __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1, node2.less,
+                                                    p, rect1, rect2,
+                                                    min_distance, max_distance)
+                    rect2.maxes[k2] = save_max2
+                        
+                    # node2 goes to box with greater component along k2
+                    # node2.greater.mins[k2] changes from mins2[k2] to node2.split
+                    save_min2 = rect2.mins[k2]
+                    rect2.mins[k2] = node2.split
+                    __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1, node2.greater,
+                                                    p, rect1, rect2,
+                                                    min_distance, max_distance)
+                    rect2.mins[k2] = save_min2
+                
+                    
+            else:  # 1 is an inner node
+                k1 = node1.split_dim
+                __rect_preupdate(rect1, rect2, k1, p, min_distance, max_distance, &part_min_distance1, &part_max_distance1)
+                    
+                # node1 goes to box with lesser component along k1
+                # node1.less.maxes[k1] changes from rect1.maxes[k1] to node1.split
+                save_max1 = rect1.maxes[k1]
+                rect1.maxes[k1] = node1.split
+                __rect_postupdate(rect1, rect2, k1, p, &min_distance, &max_distance, part_min_distance1, part_max_distance1)
+    
+                if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.less, node2,
+                                                    p, rect1, rect2,
+                                                    min_distance, max_distance)
+                else: # 1 and 2 are inner nodes
+                    k2 = node2.split_dim
+                    __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                        
+                    # node2 goes to box with lesser component along k2
+                    # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
+                    save_max2 = rect2.maxes[k2]
+                    rect2.maxes[k2] = node2.split
+                    __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.less, node2.less,
+                                                    p, rect1, rect2,
+                                                    min_distance, max_distance)
+                    rect2.maxes[k2] = save_max2
+                        
+                    # node2 goes to box with greater component along k2
+                    # node2.greater.mins[k2] changes from mins2[k2] to node2.split
+                    save_min2 = rect2.mins[k2]
+                    rect2.mins[k2] = node2.split
+                    __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.less, node2.greater,
+                                                    p, rect1, rect2,
+                                                    min_distance, max_distance)
+                    rect2.mins[k2] = save_min2
+                    
+                rect1.maxes[k1] = save_max1
+                        
+                # node1 goes to box with greater component along k1
+                # node1.greater.mins[k1] changes from rect1.mins[k1] to node1.split
+                save_min1 = rect1.mins[k1]
+                rect1.mins[k1] = node1.split
+                __rect_postupdate(rect1, rect2, k1, p, &min_distance, &max_distance, part_min_distance1, part_max_distance1)
+                    
+                if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.greater, node2,
+                                                    p, rect1, rect2,
+                                                    min_distance, max_distance)
+                else: # 1 and 2 are inner nodes
+                    k2 = node2.split_dim
+                    __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                        
+                    # node2 goes to box with lesser component along k2
+                    # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
+                    save_max2 = rect2.maxes[k2]
+                    rect2.maxes[k2] = node2.split
+                    __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.greater, node2.less,
+                                                    p, rect1, rect2,
+                                                    min_distance, max_distance)
+                    rect2.maxes[k2] = save_max2
+                        
+                    # node2 goes to box with greater component along k2
+                    # node2.greater.mins[k2] changes from rect2.mins[k2] to node2.split
+                    save_min2 = rect2.mins[k2]
+                    rect2.mins[k2] = node2.split
+                    __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.greater, node2.greater,
+                                                    p, rect1, rect2,
+                                                    min_distance, max_distance)
+                    rect2.mins[k2] = save_min2
+                    
+                rect1.mins[k1] = save_min1
+
+        # Free memory
+        stdlib.free(idx)
+            
+
+    def count_neighbors(cKDTree self, cKDTree other, object r, double p=2.):
+        """count_neighbors(self, other, r, p)
+
+        Count how many nearby pairs can be formed.
+
+        Count the number of pairs (x1,x2) can be formed, with x1 drawn
+        from self and x2 drawn from `other`, and where
+        ``distance(x1, x2, p) <= r``.
+        This is the "two-point correlation" described in Gray and Moore 2000,
+        "N-body problems in statistical learning", and the code here is based
+        on their algorithm.
+
+        Parameters
+        ----------
+        other : KDTree instance
+            The other tree to draw points from.
+        r : float or one-dimensional array of floats
+            The radius to produce a count for. Multiple radii are searched with
+            a single tree traversal.
+        p : float, 1<=p<=infinity
+            Which Minkowski p-norm to use
+
+        Returns
+        -------
+        result : int or 1-D array of ints
+            The number of pairs. Note that this is internally stored in a numpy int,
+            and so may overflow if very large (2e9).
+
+        """
+
+        cdef int i, n_queries
+        cdef Rectangle rect1, rect2
+        cdef double epsfac, invepsfac
+        cdef double min_distance, max_distance
+        cdef np.ndarray[dtype=np.double_t, ndim=1] real_r
+        cdef np.ndarray[dtype=np.int_t, ndim=1] results, idx
+
+        # Make sure trees are compatible
+        if self.m != other.m:
+            raise ValueError("Trees passed to query_ball_trees have different dimensionality")
+
+        # Make a copy of r array to ensure it's contiguous and to modify it
+        # below
+        if np.shape(r) == ():
+            real_r = np.array([r], dtype=np.double)
+            n_queries = 1
+        elif len(np.shape(r))==1:
+            real_r = np.array(r, dtype=np.double)
+            n_queries = r.shape[0]
+        else:
+            raise ValueError("r must be either a single value or a one-dimensional array of values")
+        
+        # internally we represent all distances as distance**p
+        if p != infinity:
+            for i in xrange(n_queries):
+                if real_r[i] != infinity:
+                    real_r[i] = real_r[i] ** p
+
+        # Calculate mins and maxes to outer box
+        rect1.m = rect2.m = self.m
+        rect1.mins = <double*>stdlib.malloc(self.m * sizeof(double))
+        rect1.maxes = <double*>stdlib.malloc(self.m * sizeof(double))
+        rect2.mins = <double*>stdlib.malloc(self.m * sizeof(double))
+        rect2.maxes = <double*>stdlib.malloc(self.m * sizeof(double))
+        for i in range(self.m):
+            rect1.mins[i] = self.raw_mins[i]
+            rect1.maxes[i] = self.raw_maxes[i]
+            rect2.mins[i] = other.raw_mins[i]
+            rect2.maxes[i] = other.raw_maxes[i]
+
+        # Compute first min and max distances
+        if p == infinity:
+            min_distance = min_dist_rect_rect_p_inf(rect1, rect2)
+            max_distance = max_dist_rect_rect_p_inf(rect1, rect2)
+        else:
+            min_distance = 0.
+            max_distance = 0.
+            for i in range(self.m):
+                min_distance += min_dist_interval_interval_p(rect1, rect2, i, p)
+                max_distance += max_dist_interval_interval_p(rect1, rect2, i, p)
+                
+        # Go!
+        results = np.zeros((n_queries,), dtype=np.int)
+        idx = np.arange(n_queries, dtype=np.int)
+        self.__count_neighbors_traverse(other,
+                                        n_queries, <double*>real_r.data, <np.int_t*>results.data, <np.int_t*>idx.data,
+                                        self.tree, other.tree,
+                                        p, rect1, rect2,
+                                        min_distance, max_distance)
+
+        stdlib.free(rect1.mins)
+        stdlib.free(rect1.maxes)
+        stdlib.free(rect2.mins)
+        stdlib.free(rect2.maxes)
+
+        if np.shape(r) == ():
+            return results[0]
+        elif len(np.shape(r))==1:
+            return results
+
     # ----------------------
     # sparse_distance_matrix
     # ----------------------

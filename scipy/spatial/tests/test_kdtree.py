@@ -470,6 +470,31 @@ class test_count_neighbors:
         for r,result in zip(rs, results):
             assert_equal(self.T1.count_neighbors(self.T2, r), result)
 
+class test_count_neighbors_compiled:
+
+    def setUp(self):
+        n = 50
+        m = 2
+        self.T1 = cKDTree(np.random.randn(n,m),leafsize=2)
+        self.T2 = cKDTree(np.random.randn(n,m),leafsize=2)
+
+    def test_one_radius(self):
+        r = 0.2
+        assert_equal(self.T1.count_neighbors(self.T2, r),
+                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
+
+    def test_large_radius(self):
+        r = 1000
+        assert_equal(self.T1.count_neighbors(self.T2, r),
+                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
+
+    def test_multiple_radius(self):
+        rs = np.exp(np.linspace(np.log(0.01),np.log(10),3))
+        results = self.T1.count_neighbors(self.T2, rs)
+        assert_(np.all(np.diff(results)>=0))
+        for r,result in zip(rs, results):
+            assert_equal(self.T1.count_neighbors(self.T2, r), result)
+
 class test_sparse_distance_matrix:
     def setUp(self):
         n = 50
@@ -509,7 +534,7 @@ class test_sparse_distance_matrix_compiled:
             assert_(j in r[i])
 
     def test_zero_distance(self):
-        M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870
+        M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870 (FIXME: Does it?)
 
 def test_distance_matrix():
     m = 10
