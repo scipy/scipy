@@ -143,7 +143,9 @@ cdef inline np.float64_t dabs(np.float64_t x):
     else:
         return -x
         
-cdef inline np.float64_t _distance_p(np.float64_t *x, np.float64_t *y, np.float64_t p, np.npy_intp k, np.float64_t upperbound):
+cdef inline np.float64_t _distance_p(np.float64_t *x, np.float64_t *y,
+                                     np.float64_t p, np.npy_intp k,
+                                     np.float64_t upperbound):
     """Compute the distance between x and y
 
     Computes the Minkowski p-distance to the power p between two points.
@@ -185,27 +187,48 @@ cdef struct Rectangle:
 
 # 1-d pieces
 # These should only be used if p != infinity
-
-cdef inline np.float64_t min_dist_point_interval_p(np.float64_t* x, Rectangle rect, np.npy_intp k, np.float64_t p):    
-    """Compute the minimum distance along dimension k between x and a point in the hyperrectangle."""
+cdef inline np.float64_t min_dist_point_interval_p(np.float64_t* x,
+                                                   Rectangle rect,
+                                                   np.npy_intp k,
+                                                   np.float64_t p):    
+    """Compute the minimum distance along dimension k between x and
+    a point in the hyperrectangle.
+    """
     return dmax(0, dmax(rect.mins[k] - x[k], x[k] - rect.maxes[k])) ** p
 
-cdef inline np.float64_t max_dist_point_interval_p(np.float64_t* x, Rectangle rect, np.npy_intp k, np.float64_t p):
-    """Compute the maximum distance along dimension k between x and a point in the hyperrectangle."""
+cdef inline np.float64_t max_dist_point_interval_p(np.float64_t* x,
+                                                   Rectangle rect,
+                                                   np.npy_intp k,
+                                                   np.float64_t p):
+    """Compute the maximum distance along dimension k between x and
+    a point in the hyperrectangle.
+    """
     return dmax(rect.maxes[k] - x[k], x[k] - rect.mins[k]) ** p
 
-cdef inline np.float64_t min_dist_interval_interval_p(Rectangle rect1, Rectangle rect2, np.npy_intp k, np.float64_t p):
-    """Compute the minimum distance along dimension k between points in two hyperrectangles."""
-    return dmax(0, dmax(rect1.mins[k] - rect2.maxes[k], rect2.mins[k] - rect1.maxes[k])) ** p
+cdef inline np.float64_t min_dist_interval_interval_p(Rectangle rect1,
+                                                      Rectangle rect2,
+                                                      np.npy_intp k,
+                                                      np.float64_t p):
+    """Compute the minimum distance along dimension k between points in
+    two hyperrectangles.
+    """
+    return dmax(0, dmax(rect1.mins[k] - rect2.maxes[k],
+                        rect2.mins[k] - rect1.maxes[k])) ** p
 
-cdef inline np.float64_t max_dist_interval_interval_p(Rectangle rect1, Rectangle rect2, np.npy_intp k, np.float64_t p):
-    """Compute the maximum distance along dimension k between points in two hyperrectangles."""
+cdef inline np.float64_t max_dist_interval_interval_p(Rectangle rect1,
+                                                      Rectangle rect2,
+                                                      np.npy_intp k,
+                                                      np.float64_t p):
+    """Compute the maximum distance along dimension k between points in
+    two hyperrectangles.
+    """
     return dmax(rect1.maxes[k] - rect2.mins[k], rect2.maxes[k] - rect1.mins[k]) ** p
 
 # Interval arithmetic in m-D
 
 # These should be used only for p == infinity
-cdef inline np.float64_t min_dist_point_rect_p_inf(np.float64_t* x, Rectangle rect):
+cdef inline np.float64_t min_dist_point_rect_p_inf(np.float64_t* x,
+                                                   Rectangle rect):
     """Compute the minimum distance between x and the given hyperrectangle."""
     cdef np.npy_intp i
     cdef np.float64_t min_dist = 0.
@@ -213,7 +236,8 @@ cdef inline np.float64_t min_dist_point_rect_p_inf(np.float64_t* x, Rectangle re
         min_dist = dmax(min_dist, dmax(rect.mins[i]-x[i], x[i]-rect.maxes[i]))
     return min_dist
 
-cdef inline np.float64_t max_dist_point_rect_p_inf(np.float64_t* x, Rectangle rect):
+cdef inline np.float64_t max_dist_point_rect_p_inf(np.float64_t* x,
+                                                   Rectangle rect):
     """Compute the maximum distance between x and the given hyperrectangle."""
     cdef np.npy_intp i
     cdef np.float64_t max_dist = 0.
@@ -221,34 +245,44 @@ cdef inline np.float64_t max_dist_point_rect_p_inf(np.float64_t* x, Rectangle re
         max_dist = dmax(max_dist, dmax(rect.maxes[i]-x[i], x[i]-rect.mins[i]))
     return max_dist
 
-cdef inline np.float64_t min_dist_rect_rect_p_inf(Rectangle rect1, Rectangle rect2):
+cdef inline np.float64_t min_dist_rect_rect_p_inf(Rectangle rect1,
+                                                  Rectangle rect2):
     """Compute the minimum distance between points in two hyperrectangles."""
     cdef np.npy_intp i
     cdef np.float64_t min_dist = 0.
     for i in range(rect1.m):
-        min_dist = dmax(min_dist, dmax(rect1.mins[i] - rect2.maxes[i], rect2.mins[i] - rect1.maxes[i]))
+        min_dist = dmax(min_dist, dmax(rect1.mins[i] - rect2.maxes[i],
+                                       rect2.mins[i] - rect1.maxes[i]))
     return min_dist
 
-cdef inline np.float64_t max_dist_rect_rect_p_inf(Rectangle rect1, Rectangle rect2):
+cdef inline np.float64_t max_dist_rect_rect_p_inf(Rectangle rect1,
+                                                  Rectangle rect2):
     """Compute the maximum distance between points in two hyperrectangles."""
     cdef np.npy_intp i
     cdef np.float64_t max_dist = 0.
     for i in range(rect1.m):
-        max_dist = dmax(max_dist, dmax(rect1.maxes[i] - rect2.mins[i], rect2.maxes[i] - rect1.mins[i]))
+        max_dist = dmax(max_dist, dmax(rect1.maxes[i] - rect2.mins[i],
+                                       rect2.maxes[i] - rect1.mins[i]))
     return max_dist
 
 # A pair of functions to do incremental updates of min and max distances
 # between two hyperrectangles
-cdef inline void __rect_preupdate(Rectangle rect1, Rectangle rect2, np.npy_intp k, np.float64_t p,
-                                  np.float64_t min_distance, np.float64_t max_distance,
-                                  np.float64_t *part_min, np.float64_t *part_max):
+cdef inline void __rect_preupdate(Rectangle rect1, Rectangle rect2,
+                                  np.npy_intp k, np.float64_t p,
+                                  np.float64_t min_distance,
+                                  np.float64_t max_distance,
+                                  np.float64_t *part_min,
+                                  np.float64_t *part_max):
     if p != infinity:
         part_min[0] = min_distance - min_dist_interval_interval_p(rect1, rect2, k, p)
         part_max[0] = max_distance - max_dist_interval_interval_p(rect1, rect2, k, p)
 
-cdef inline void __rect_postupdate(Rectangle rect1, Rectangle rect2, np.npy_intp k, np.float64_t p,
-                                   np.float64_t *min_distance, np.float64_t *max_distance,
-                                   np.float64_t part_min, np.float64_t part_max):
+cdef inline void __rect_postupdate(Rectangle rect1, Rectangle rect2,
+                                   np.npy_intp k, np.float64_t p,
+                                   np.float64_t *min_distance,
+                                   np.float64_t *max_distance,
+                                   np.float64_t part_min,
+                                   np.float64_t part_max):
     if p != infinity:
         min_distance[0] = part_min + min_dist_interval_interval_p(rect1, rect2, k, p)
         max_distance[0] = part_max + max_dist_interval_interval_p(rect1, rect2, k, p)
@@ -406,7 +440,8 @@ cdef class cKDTree:
 
         self.tree = self.__build(0, self.n, self.raw_maxes, self.raw_mins)
 
-    cdef innernode* __build(cKDTree self, np.npy_intp start_idx, np.npy_intp end_idx, np.float64_t* maxes, np.float64_t* mins) except? <innernode*> NULL:
+    cdef innernode* __build(cKDTree self, np.npy_intp start_idx, np.npy_intp end_idx,
+                            np.float64_t* maxes, np.float64_t* mins) except? <innernode*> NULL:
         cdef leafnode* n
         cdef innernode* ni
         cdef np.npy_intp i, j, t, p, q, d
@@ -700,10 +735,15 @@ cdef class cKDTree:
                         far_min_distance = dmax(min_distance, dabs(inode.split-x[inode.split_dim]))
                     elif p == 1:
                         inf2.side_distances[inode.split_dim] = dabs(inode.split-x[inode.split_dim])
-                        far_min_distance = min_distance - inf.side_distances[inode.split_dim] + inf2.side_distances[inode.split_dim]
+                        far_min_distance = min_distance - \
+                                           inf.side_distances[inode.split_dim] + \
+                                           inf2.side_distances[inode.split_dim]
                     else:
-                        inf2.side_distances[inode.split_dim] = dabs(inode.split-x[inode.split_dim])**p
-                        far_min_distance = min_distance - inf.side_distances[inode.split_dim] + inf2.side_distances[inode.split_dim]
+                        inf2.side_distances[inode.split_dim] = dabs(inode.split - 
+                                                                    x[inode.split_dim])**p
+                        far_min_distance = min_distance - \
+                                           inf.side_distances[inode.split_dim] + \
+                                           inf2.side_distances[inode.split_dim]
 
                     it2.priority = far_min_distance
 
@@ -744,8 +784,8 @@ cdef class cKDTree:
         return 0
 
 
-    def query(cKDTree self, object x, np.npy_intp k=1, np.float64_t eps=0, np.float64_t p=2, 
-            np.float64_t distance_upper_bound=infinity):
+    def query(cKDTree self, object x, np.npy_intp k=1, np.float64_t eps=0,
+              np.float64_t p=2, np.float64_t distance_upper_bound=infinity):
         """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf)
         
         Query the kd-tree for nearest neighbors
@@ -789,8 +829,9 @@ cdef class cKDTree:
         cdef np.npy_intp c
         x = np.asarray(x).astype(np.float64)
         if np.shape(x)[-1] != self.m:
-            raise ValueError("x must consist of vectors of length %d but has shape %s" % (self.m, np.shape(x)))
-        if p<1:
+            raise ValueError("x must consist of vectors of length %d but has"
+                             "shape %s" % (self.m, np.shape(x)))
+        if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
         if len(x.shape)==1:
             single = True
@@ -854,7 +895,8 @@ cdef class cKDTree:
                                                    np.float64_t* x,
                                                    np.float64_t r,
                                                    np.float64_t p,
-                                                   np.float64_t epsfac, np.float64_t invepsfac,
+                                                   np.float64_t epsfac,
+                                                   np.float64_t invepsfac,
                                                    Rectangle rect,
                                                    np.float64_t min_distance,
                                                    np.float64_t max_distance) except -1:
@@ -1092,16 +1134,19 @@ cdef class cKDTree:
 
 
 
-    cdef int __query_ball_tree_traverse_checking(cKDTree self, cKDTree other,
-                                                  list results,
-                                                  innernode* node1, innernode* node2,
-                                                  np.float64_t r,
-                                                  np.float64_t p,
-                                                  np.float64_t epsfac, np.float64_t invepsfac,
-                                                  Rectangle rect1,
-                                                  Rectangle rect2,
-                                                  np.float64_t min_distance,
-                                                  np.float64_t max_distance) except -1:
+    cdef int __query_ball_tree_traverse_checking(cKDTree self,
+                                                 cKDTree other,
+                                                 list results,
+                                                 innernode* node1,
+                                                 innernode* node2,
+                                                 np.float64_t r,
+                                                 np.float64_t p,
+                                                 np.float64_t epsfac,
+                                                 np.float64_t invepsfac,
+                                                 Rectangle rect1,
+                                                 Rectangle rect2,
+                                                 np.float64_t min_distance,
+                                                 np.float64_t max_distance) except -1:
         cdef leafnode *lnode1, *lnode2
         cdef innernode *inode1, *inode2        
         cdef list results_i
@@ -1136,13 +1181,17 @@ cdef class cKDTree:
                             
             else:  # 1 is a leaf node, 2 is inner node
                 k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                 max_distance, &part_min_distance2,
+                                 &part_max_distance2)
                     
                 # node2 goes to box with lesser component along k2
                 # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                 save_max2 = rect2.maxes[k2]
                 rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_ball_tree_traverse_checking(other, results,
                                                          node1, node2.less,
                                                          r, p, epsfac, invepsfac,
@@ -1154,7 +1203,9 @@ cdef class cKDTree:
                 # node2.greater.mins[k2] changes from mins2[k2] to node2.split
                 save_min2 = rect2.mins[k2]
                 rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_ball_tree_traverse_checking(other, results,
                                                          node1, node2.greater,
                                                          r, p, epsfac, invepsfac,
@@ -1165,13 +1216,17 @@ cdef class cKDTree:
                 
         else:  # 1 is an inner node
             k1 = node1.split_dim
-            __rect_preupdate(rect1, rect2, k1, p, min_distance, max_distance, &part_min_distance1, &part_max_distance1)
+            __rect_preupdate(rect1, rect2, k1, p, min_distance,
+                             max_distance, &part_min_distance1,
+                             &part_max_distance1)
                 
             # node1 goes to box with lesser component along k1
             # node1.less.maxes[k1] changes from rect1.maxes[k1] to node1.split
             save_max1 = rect1.maxes[k1]
             rect1.maxes[k1] = node1.split
-            __rect_postupdate(rect1, rect2, k1, p, &min_distance, &max_distance, part_min_distance1, part_max_distance1)
+            __rect_postupdate(rect1, rect2, k1, p, &min_distance,
+                              &max_distance, part_min_distance1,
+                              part_max_distance1)
 
             if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
                 self.__query_ball_tree_traverse_checking(other, results,
@@ -1181,13 +1236,17 @@ cdef class cKDTree:
                                                          min_distance, max_distance)
             else: # 1 and 2 are inner nodes
                 k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                 max_distance, &part_min_distance2,
+                                 &part_max_distance2)
                     
                 # node2 goes to box with lesser component along k2
                 # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                 save_max2 = rect2.maxes[k2]
                 rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_ball_tree_traverse_checking(other, results,
                                                          node1.less, node2.less,
                                                          r, p, epsfac, invepsfac,
@@ -1199,7 +1258,9 @@ cdef class cKDTree:
                 # node2.greater.mins[k2] changes from mins2[k2] to node2.split
                 save_min2 = rect2.mins[k2]
                 rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_ball_tree_traverse_checking(other, results,
                                                          node1.less, node2.greater,
                                                          r, p, epsfac, invepsfac,
@@ -1213,7 +1274,9 @@ cdef class cKDTree:
             # node1.greater.mins[k1] changes from rect1.mins[k1] to node1.split
             save_min1 = rect1.mins[k1]
             rect1.mins[k1] = node1.split
-            __rect_postupdate(rect1, rect2, k1, p, &min_distance, &max_distance, part_min_distance1, part_max_distance1)
+            __rect_postupdate(rect1, rect2, k1, p, &min_distance,
+                              &max_distance, part_min_distance1,
+                              part_max_distance1)
                 
             if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
                 self.__query_ball_tree_traverse_checking(other, results,
@@ -1223,13 +1286,17 @@ cdef class cKDTree:
                                                          min_distance, max_distance)
             else: # 1 and 2 are inner nodes
                 k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                 max_distance, &part_min_distance2,
+                                 &part_max_distance2)
                     
                 # node2 goes to box with lesser component along k2
                 # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                 save_max2 = rect2.maxes[k2]
                 rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_ball_tree_traverse_checking(other, results,
                                                          node1.greater, node2.less,
                                                          r, p, epsfac, invepsfac,
@@ -1241,7 +1308,9 @@ cdef class cKDTree:
                 # node2.greater.mins[k2] changes from rect2.mins[k2] to node2.split
                 save_min2 = rect2.mins[k2]
                 rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_ball_tree_traverse_checking(other, results,
                                                          node1.greater, node2.greater,
                                                          r, p, epsfac, invepsfac,
@@ -1423,10 +1492,12 @@ cdef class cKDTree:
 
     cdef int __query_pairs_traverse_checking(cKDTree self,
                                               set results,
-                                              innernode* node1, innernode* node2,
+                                              innernode* node1,
+                                              innernode* node2,
                                               np.float64_t r,
                                               np.float64_t p,
-                                              np.float64_t epsfac, np.float64_t invepsfac,
+                                              np.float64_t epsfac,
+                                              np.float64_t invepsfac,
                                               Rectangle rect1,
                                               Rectangle rect2,
                                               np.float64_t min_distance,
@@ -1480,13 +1551,17 @@ cdef class cKDTree:
                             
             else:  # 1 is a leaf node, 2 is inner node
                 k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                 max_distance, &part_min_distance2,
+                                 &part_max_distance2)
                     
                 # node2 goes to box with lesser component along k2
                 # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                 save_max2 = rect2.maxes[k2]
                 rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_pairs_traverse_checking(results,
                                                      node1, node2.less,
                                                      r, p, epsfac, invepsfac,
@@ -1498,7 +1573,9 @@ cdef class cKDTree:
                 # node2.greater.mins[k2] changes from mins2[k2] to node2.split
                 save_min2 = rect2.mins[k2]
                 rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_pairs_traverse_checking(results,
                                                      node1, node2.greater,
                                                      r, p, epsfac, invepsfac,
@@ -1509,13 +1586,17 @@ cdef class cKDTree:
                 
         else:  # 1 is an inner node
             k1 = node1.split_dim
-            __rect_preupdate(rect1, rect2, k1, p, min_distance, max_distance, &part_min_distance1, &part_max_distance1)
+            __rect_preupdate(rect1, rect2, k1, p, min_distance,
+                             max_distance, &part_min_distance1,
+                             &part_max_distance1)
                 
             # node1 goes to box with lesser component along k1
             # node1.less.maxes[k1] changes from rect1.maxes[k1] to node1.split
             save_max1 = rect1.maxes[k1]
             rect1.maxes[k1] = node1.split
-            __rect_postupdate(rect1, rect2, k1, p, &min_distance, &max_distance, part_min_distance1, part_max_distance1)
+            __rect_postupdate(rect1, rect2, k1, p, &min_distance,
+                              &max_distance, part_min_distance1,
+                              part_max_distance1)
 
             if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
                 self.__query_pairs_traverse_checking(results,
@@ -1525,13 +1606,17 @@ cdef class cKDTree:
                                                      min_distance, max_distance)
             else: # 1 and 2 are inner nodes
                 k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                 max_distance, &part_min_distance2,
+                                 &part_max_distance2)
                     
                 # node2 goes to box with lesser component along k2
                 # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                 save_max2 = rect2.maxes[k2]
                 rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_pairs_traverse_checking(results,
                                                      node1.less, node2.less,
                                                      r, p, epsfac, invepsfac,
@@ -1543,7 +1628,9 @@ cdef class cKDTree:
                 # node2.greater.mins[k2] changes from mins2[k2] to node2.split
                 save_min2 = rect2.mins[k2]
                 rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_pairs_traverse_checking(results,
                                                      node1.less, node2.greater,
                                                      r, p, epsfac, invepsfac,
@@ -1557,7 +1644,9 @@ cdef class cKDTree:
             # node1.greater.mins[k1] changes from rect1.mins[k1] to node1.split
             save_min1 = rect1.mins[k1]
             rect1.mins[k1] = node1.split
-            __rect_postupdate(rect1, rect2, k1, p, &min_distance, &max_distance, part_min_distance1, part_max_distance1)
+            __rect_postupdate(rect1, rect2, k1, p, &min_distance,
+                              &max_distance, part_min_distance1,
+                              part_max_distance1)
                 
             if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
                 self.__query_pairs_traverse_checking(results,
@@ -1567,7 +1656,9 @@ cdef class cKDTree:
                                                      min_distance, max_distance)
             else: # 1 and 2 are inner nodes
                 k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                 max_distance, &part_min_distance2,
+                                 &part_max_distance2)
 
                 if node1 != node2:
                     # Avoid traversing (node1.less, node2.greater) and
@@ -1579,7 +1670,9 @@ cdef class cKDTree:
                     # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                     save_max2 = rect2.maxes[k2]
                     rect2.maxes[k2] = node2.split
-                    __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                    __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                      &max_distance, part_min_distance2,
+                                      part_max_distance2)
                     self.__query_pairs_traverse_checking(results,
                                                          node1.greater, node2.less,
                                                          r, p, epsfac, invepsfac,
@@ -1591,7 +1684,9 @@ cdef class cKDTree:
                 # node2.greater.mins[k2] changes from rect2.mins[k2] to node2.split
                 save_min2 = rect2.mins[k2]
                 rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__query_pairs_traverse_checking(results,
                                                      node1.greater, node2.greater,
                                                      r, p, epsfac, invepsfac,
@@ -1600,11 +1695,11 @@ cdef class cKDTree:
                 rect2.mins[k2] = save_min2
                 
             rect1.mins[k1] = save_min1
-
             return 0
             
 
-    def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2., np.float64_t eps=0):
+    def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
+                    np.float64_t eps=0):
         """query_pairs(self, r, p, eps)
 
         Find all pairs of points whose distance is at most r.
@@ -1712,13 +1807,19 @@ cdef class cKDTree:
     # ---------------
     # count_neighbors
     # ---------------
-    cdef int __count_neighbors_traverse(cKDTree self, cKDTree other,
-                                         np.npy_intp n_queries, np.float64_t* r, np.npy_intp * results, np.npy_intp * idx,
-                                         innernode* node1, innernode* node2,
-                                         np.float64_t p,
-                                         Rectangle rect1, Rectangle rect2,
-                                         np.float64_t min_distance,
-                                         np.float64_t max_distance) except -1:
+    cdef int __count_neighbors_traverse(cKDTree self,
+                                        cKDTree other,
+                                        np.npy_intp n_queries,
+                                        np.float64_t* r,
+                                        np.npy_intp * results,
+                                        np.npy_intp * idx,
+                                        innernode* node1,
+                                        innernode* node2,
+                                        np.float64_t p,
+                                        Rectangle rect1,
+                                        Rectangle rect2,
+                                        np.float64_t min_distance,
+                                        np.float64_t max_distance) except -1:
         cdef leafnode *lnode1, *lnode2
         cdef innernode *inode1, *inode2
         
@@ -1776,13 +1877,17 @@ cdef class cKDTree:
                                     
                     else:  # 1 is a leaf node, 2 is inner node
                         k2 = node2.split_dim
-                        __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                        __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                         max_distance, &part_min_distance2,
+                                         &part_max_distance2)
                             
                         # node2 goes to box with lesser component along k2
                         # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                         save_max2 = rect2.maxes[k2]
                         rect2.maxes[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                          &max_distance, part_min_distance2,
+                                          part_max_distance2)
                         self.__count_neighbors_traverse(other, n_queries, r, results, idx,
                                                         node1, node2.less,
                                                         p, rect1, rect2,
@@ -1793,7 +1898,9 @@ cdef class cKDTree:
                         # node2.greater.mins[k2] changes from mins2[k2] to node2.split
                         save_min2 = rect2.mins[k2]
                         rect2.mins[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                          &max_distance, part_min_distance2,
+                                          part_max_distance2)
                         self.__count_neighbors_traverse(other, n_queries, r, results, idx,
                                                         node1, node2.greater,
                                                         p, rect1, rect2,
@@ -1803,13 +1910,17 @@ cdef class cKDTree:
                         
                 else:  # 1 is an inner node
                     k1 = node1.split_dim
-                    __rect_preupdate(rect1, rect2, k1, p, min_distance, max_distance, &part_min_distance1, &part_max_distance1)
+                    __rect_preupdate(rect1, rect2, k1, p, min_distance,
+                                     max_distance, &part_min_distance1,
+                                     &part_max_distance1)
                         
                     # node1 goes to box with lesser component along k1
                     # node1.less.maxes[k1] changes from rect1.maxes[k1] to node1.split
                     save_max1 = rect1.maxes[k1]
                     rect1.maxes[k1] = node1.split
-                    __rect_postupdate(rect1, rect2, k1, p, &min_distance, &max_distance, part_min_distance1, part_max_distance1)
+                    __rect_postupdate(rect1, rect2, k1, p, &min_distance,
+                                      &max_distance, part_min_distance1,
+                                      part_max_distance1)
         
                     if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
                         self.__count_neighbors_traverse(other, n_queries, r, results, idx,
@@ -1818,13 +1929,17 @@ cdef class cKDTree:
                                                         min_distance, max_distance)
                     else: # 1 and 2 are inner nodes
                         k2 = node2.split_dim
-                        __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                        __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                         max_distance, &part_min_distance2,
+                                         &part_max_distance2)
                             
                         # node2 goes to box with lesser component along k2
                         # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                         save_max2 = rect2.maxes[k2]
                         rect2.maxes[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                          &max_distance, part_min_distance2,
+                                          part_max_distance2)
                         self.__count_neighbors_traverse(other, n_queries, r, results, idx,
                                                         node1.less, node2.less,
                                                         p, rect1, rect2,
@@ -1835,7 +1950,9 @@ cdef class cKDTree:
                         # node2.greater.mins[k2] changes from mins2[k2] to node2.split
                         save_min2 = rect2.mins[k2]
                         rect2.mins[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                          &max_distance, part_min_distance2,
+                                          part_max_distance2)
                         self.__count_neighbors_traverse(other, n_queries, r, results, idx,
                                                         node1.less, node2.greater,
                                                         p, rect1, rect2,
@@ -1848,7 +1965,9 @@ cdef class cKDTree:
                     # node1.greater.mins[k1] changes from rect1.mins[k1] to node1.split
                     save_min1 = rect1.mins[k1]
                     rect1.mins[k1] = node1.split
-                    __rect_postupdate(rect1, rect2, k1, p, &min_distance, &max_distance, part_min_distance1, part_max_distance1)
+                    __rect_postupdate(rect1, rect2, k1, p, &min_distance,
+                                      &max_distance, part_min_distance1,
+                                      part_max_distance1)
                         
                     if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
                         self.__count_neighbors_traverse(other, n_queries, r, results, idx,
@@ -1857,13 +1976,17 @@ cdef class cKDTree:
                                                         min_distance, max_distance)
                     else: # 1 and 2 are inner nodes
                         k2 = node2.split_dim
-                        __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                        __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                         max_distance, &part_min_distance2,
+                                         &part_max_distance2)
                             
                         # node2 goes to box with lesser component along k2
                         # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                         save_max2 = rect2.maxes[k2]
                         rect2.maxes[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                          &max_distance, part_min_distance2,
+                                          part_max_distance2)
                         self.__count_neighbors_traverse(other, n_queries, r, results, idx,
                                                         node1.greater, node2.less,
                                                         p, rect1, rect2,
@@ -1874,7 +1997,9 @@ cdef class cKDTree:
                         # node2.greater.mins[k2] changes from rect2.mins[k2] to node2.split
                         save_min2 = rect2.mins[k2]
                         rect2.mins[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                          &max_distance, part_min_distance2,
+                                          part_max_distance2)
                         self.__count_neighbors_traverse(other, n_queries, r, results, idx,
                                                         node1.greater, node2.greater,
                                                         p, rect1, rect2,
@@ -1882,13 +2007,11 @@ cdef class cKDTree:
                         rect2.mins[k2] = save_min2
                         
                     rect1.mins[k1] = save_min1
-
         finally:
             # Free memory
             if idx != <np.npy_intp *> NULL:
                 stdlib.free(idx)
         return 0
-            
 
 
     @cython.boundscheck(False)
@@ -1992,8 +2115,10 @@ cdef class cKDTree:
             # Go!
             results = np.zeros((n_queries,), dtype=npy_intp_dtype)
             idx = np.arange(n_queries, dtype=npy_intp_dtype)
-            self.__count_neighbors_traverse(other,
-                                            n_queries, <np.float64_t*>np.PyArray_DATA(real_r), <np.npy_intp *>np.PyArray_DATA(results), <np.npy_intp *>np.PyArray_DATA(idx),
+            self.__count_neighbors_traverse(other, n_queries,
+                                            <np.float64_t*>np.PyArray_DATA(real_r),
+                                            <np.npy_intp *>np.PyArray_DATA(results),
+                                            <np.npy_intp *>np.PyArray_DATA(idx),
                                             self.tree, other.tree,
                                             p, rect1, rect2,
                                             min_distance, max_distance)
@@ -2076,13 +2201,17 @@ cdef class cKDTree:
                             
             else:  # 1 is a leaf node, 2 is inner node
                 k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                 max_distance, &part_min_distance2,
+                                 &part_max_distance2)
                     
                 # node2 goes to box with lesser component along k2
                 # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                 save_max2 = rect2.maxes[k2]
                 rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__sparse_distance_matrix_traverse(other, results,
                                                        node1, node2.less,
                                                        r, p,
@@ -2094,7 +2223,9 @@ cdef class cKDTree:
                 # node2.greater.mins[k2] changes from mins2[k2] to node2.split
                 save_min2 = rect2.mins[k2]
                 rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                  &max_distance, part_min_distance2,
+                                  part_max_distance2)
                 self.__sparse_distance_matrix_traverse(other, results,
                                                        node1, node2.greater,
                                                        r, p,
@@ -2105,13 +2236,17 @@ cdef class cKDTree:
                 
         else:  # 1 is an inner node
             k1 = node1.split_dim
-            __rect_preupdate(rect1, rect2, k1, p, min_distance, max_distance, &part_min_distance1, &part_max_distance1)
+            __rect_preupdate(rect1, rect2, k1, p, min_distance,
+                             max_distance, &part_min_distance1,
+                             &part_max_distance1)
                 
             # node1 goes to box with lesser component along k1
             # node1.less.maxes[k1] changes from rect1.maxes[k1] to node1.split
             save_max1 = rect1.maxes[k1]
             rect1.maxes[k1] = node1.split
-            __rect_postupdate(rect1, rect2, k1, p, &min_distance, &max_distance, part_min_distance1, part_max_distance1)
+            __rect_postupdate(rect1, rect2, k1, p, &min_distance,
+                             &max_distance, part_min_distance1,
+                             part_max_distance1)
 
             if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
                 self.__sparse_distance_matrix_traverse(other, results,
@@ -2121,13 +2256,17 @@ cdef class cKDTree:
                                                        min_distance, max_distance)
             else: # 1 and 2 are inner nodes
                 k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                 max_distance, &part_min_distance2,
+                                 &part_max_distance2)
                     
                 # node2 goes to box with lesser component along k2
                 # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                 save_max2 = rect2.maxes[k2]
                 rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                 &max_distance, part_min_distance2,
+                                 part_max_distance2)
                 self.__sparse_distance_matrix_traverse(other, results,
                                                        node1.less, node2.less,
                                                        r, p,
@@ -2139,7 +2278,9 @@ cdef class cKDTree:
                 # node2.greater.mins[k2] changes from mins2[k2] to node2.split
                 save_min2 = rect2.mins[k2]
                 rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                 &max_distance, part_min_distance2,
+                                 part_max_distance2)
                 self.__sparse_distance_matrix_traverse(other, results,
                                                        node1.less, node2.greater,
                                                        r, p,
@@ -2153,7 +2294,9 @@ cdef class cKDTree:
             # node1.greater.mins[k1] changes from rect1.mins[k1] to node1.split
             save_min1 = rect1.mins[k1]
             rect1.mins[k1] = node1.split
-            __rect_postupdate(rect1, rect2, k1, p, &min_distance, &max_distance, part_min_distance1, part_max_distance1)
+            __rect_postupdate(rect1, rect2, k1, p, &min_distance,
+                             &max_distance, part_min_distance1,
+                             part_max_distance1)
                 
             if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
                 self.__sparse_distance_matrix_traverse(other, results,
@@ -2163,7 +2306,9 @@ cdef class cKDTree:
                                                        min_distance, max_distance)
             else: # 1 and 2 are inner nodes
                 k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance, max_distance, &part_min_distance2, &part_max_distance2)
+                __rect_preupdate(rect1, rect2, k2, p, min_distance,
+                                 max_distance, &part_min_distance2,
+                                 &part_max_distance2)
 
                 if node1 != node2:
                     # Avoid traversing (node1.less, node2.greater) and
@@ -2175,7 +2320,9 @@ cdef class cKDTree:
                     # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
                     save_max2 = rect2.maxes[k2]
                     rect2.maxes[k2] = node2.split
-                    __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                    __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                     &max_distance, part_min_distance2,
+                                     part_max_distance2)
                     self.__sparse_distance_matrix_traverse(other, results,
                                                            node1.greater, node2.less,
                                                            r, p,
@@ -2187,7 +2334,9 @@ cdef class cKDTree:
                 # node2.greater.mins[k2] changes from rect2.mins[k2] to node2.split
                 save_min2 = rect2.mins[k2]
                 rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance, &max_distance, part_min_distance2, part_max_distance2)
+                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
+                                 &max_distance, part_min_distance2,
+                                 part_max_distance2)
                 self.__sparse_distance_matrix_traverse(other, results,
                                                        node1.greater, node2.greater,
                                                        r, p,
@@ -2196,11 +2345,11 @@ cdef class cKDTree:
                 rect2.mins[k2] = save_min2
                 
             rect1.mins[k1] = save_min1
-
             return 0
             
 
-    def sparse_distance_matrix(cKDTree self, cKDTree other, np.float64_t r, np.float64_t p=2.):
+    def sparse_distance_matrix(cKDTree self, cKDTree other, np.float64_t r,
+                               np.float64_t p=2.):
         """sparse_distance_matrix(self, r, p)
 
         Compute a sparse distance matrix
@@ -2294,14 +2443,4 @@ cdef class cKDTree:
                 stdlib.free(rect2.maxes)
 
         return results.to_matrix(shape=(self.n, other.n)).todok()
-
-
-
-
-
-
-
-
-
-
 
