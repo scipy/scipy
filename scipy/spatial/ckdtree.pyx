@@ -5,11 +5,15 @@ cimport numpy as np
 cimport libc.stdlib as stdlib
 cimport cython
 
+cdef extern from "limits.h":
+    long LONG_MAX
+
 import scipy.sparse
 
 import kdtree
 
 cdef np.float64_t infinity = np.inf
+
 
 __all__ = ['cKDTree']
 
@@ -25,7 +29,6 @@ elif sizeof(np.npy_intp) == sizeof(np.int64_t):
     npy_intp_dtype = np.int64
 else:
     raise ImportError, 'Unexpected length of npy_intp'    
-
 
 
 # priority queue
@@ -62,7 +65,7 @@ cdef inline int heapdestroy(heap* self) except -1:
 cdef inline int heapresize(heap* self, np.npy_intp new_space) except -1:
     cdef void *tmp
     if new_space<self.n:
-        raise ValueError("Heap containing %d items cannot be resized to %d" % (self.n, new_space))
+        raise ValueError("Heap containing %d items cannot be resized to %d" % (int(self.n), int(new_space)))
     self.space = new_space
     self.heap = <heapitem*> NULL
     tmp = stdlib.realloc(<void*>self.heap, new_space*sizeof(heapitem))
@@ -70,6 +73,7 @@ cdef inline int heapresize(heap* self, np.npy_intp new_space) except -1:
         raise MemoryError
     self.heap = <heapitem*> tmp
     return 0
+
 
 @cython.cdivision(True)
 cdef inline int heappush(heap* self, heapitem item) except -1:
@@ -90,6 +94,7 @@ cdef inline int heappush(heap* self, heapitem item) except -1:
 
 cdef heapitem heappeek(heap* self):
     return self.heap[0]
+
 
 @cython.cdivision(True)
 cdef int heapremove(heap* self) except -1:
@@ -121,13 +126,9 @@ cdef int heapremove(heap* self) except -1:
 
 
 cdef int heappop(heap* self, heapitem *it) except -1:
-    # cdef heapitem it
     it[0] = heappeek(self)
     heapremove(self)
-    # return it
     return 0
-
-
 
 
 # utility functions
@@ -361,6 +362,7 @@ cdef class coo_entries:
         return scipy.sparse.coo_matrix((self.v, (self.i, self.j)),
                                        shape=shape)
 
+
 cdef class cKDTree:
     """
     cKDTree(data, int leafsize=10)
@@ -555,7 +557,6 @@ cdef class cKDTree:
 
             ni.split_dim = d
             ni.split = split
-
             return ni
                     
     cdef __free_tree(cKDTree self, innernode* node):
@@ -766,11 +767,9 @@ cdef class cKDTree:
                 else:
                     result_distances[i] = (-neighbor.priority)**(1./p)
 
-            
             inf = inf2 = <nodeinfo*> NULL
 
         finally:
-
             if inf2 != <nodeinfo*> NULL:
                 stdlib.free(inf2)
 
@@ -830,7 +829,7 @@ cdef class cKDTree:
         x = np.asarray(x).astype(np.float64)
         if np.shape(x)[-1] != self.m:
             raise ValueError("x must consist of vectors of length %d but has"
-                             "shape %s" % (self.m, np.shape(x)))
+                             "shape %s" % (int(self.m), np.shape(x)))
         if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
         if len(x.shape)==1:
@@ -844,7 +843,7 @@ cdef class cKDTree:
         xx = np.ascontiguousarray(xx,dtype=np.float64)
         dd = np.empty((n,k),dtype=np.float64)
         dd.fill(infinity)
-        ii = np.empty((n,k),dtype='i')
+        ii = np.empty((n,k),dtype=npy_intp_dtype)
         ii.fill(self.n)
         for c in range(n):
             self.__query(
@@ -857,7 +856,15 @@ cdef class cKDTree:
                     distance_upper_bound)
         if single:
             if k==1:
-                return dd[0,0], ii[0,0]
+                if sizeof(long) < sizeof(np.npy_intp):
+                    # ... e.g. Windows 64
+                    if ii[0,0] <= <np.npy_intp>LONG_MAX:
+                        return dd[0,0], int(ii[0,0])
+                    else:
+                        return dd[0,0], ii[0,0]
+                else:
+                    # ... most other platforms
+                    return dd[0,0], ii[0,0]
             else:
                 return dd[0], ii[0]
         else:
@@ -886,7 +893,6 @@ cdef class cKDTree:
             self.__query_ball_point_traverse_no_checking(results, inode.greater)
 
         return 0
-
 
 
     cdef int __query_ball_point_traverse_checking(cKDTree self,
@@ -962,7 +968,6 @@ cdef class cKDTree:
                                                       rect,
                                                       min_distance, max_distance)
             rect.mins[k] = save_min
-
             return 0
 
 
@@ -1027,7 +1032,6 @@ cdef class cKDTree:
                                                     min_distance, max_distance)
 
         finally:
-
             if rect.mins != <np.float64_t*> NULL:
                 stdlib.free(rect.mins)
 
@@ -1035,7 +1039,6 @@ cdef class cKDTree:
                 stdlib.free(rect.maxes)
 
         return results
-
 
 
     def query_ball_point(cKDTree self, object x, np.float64_t r,
@@ -1086,7 +1089,7 @@ cdef class cKDTree:
         x = np.asarray(x).astype(np.float64)
         if x.shape[-1] != self.m:
             raise ValueError("Searching for a %d-dimensional point in a " \
-                             "%d-dimensional KDTree" % (x.shape[-1], self.m))
+                             "%d-dimensional KDTree" % (int(x.shape[-1]), int(self.m)))
         if len(x.shape) == 1:
             xx = np.ascontiguousarray(x, dtype=np.float64)
             return self.__query_ball_point(<np.float64_t*>np.PyArray_DATA(xx), r, p, eps)
@@ -1131,7 +1134,6 @@ cdef class cKDTree:
             self.__query_ball_tree_traverse_no_checking(other, results, node1.greater, node2)
 
         return 0
-
 
 
     cdef int __query_ball_tree_traverse_checking(cKDTree self,
@@ -1319,7 +1321,6 @@ cdef class cKDTree:
                 rect2.mins[k2] = save_min2
                 
             rect1.mins[k1] = save_min1
-
             return 0
             
 
@@ -1351,7 +1352,6 @@ cdef class cKDTree:
             list of the indices of its neighbors in ``other.data``.
 
         """
-        
         cdef list results
         cdef Rectangle rect1, rect2
         cdef np.float64_t epsfac, invepsfac
@@ -1379,7 +1379,6 @@ cdef class cKDTree:
         rect1.m = rect2.m = self.m
         rect1.mins = rect1.maxes = rect2.mins = rect2.maxes = <np.float64_t*> NULL
         try:
-            
             rect1.mins = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
             if rect1.mins == <np.float64_t*> NULL: 
                 raise MemoryError
@@ -1421,7 +1420,6 @@ cdef class cKDTree:
                                                     min_distance, max_distance)
 
         finally:
-
             if rect1.mins  != <np.float64_t*> NULL: 
                 stdlib.free(rect1.mins)
 
@@ -1435,6 +1433,7 @@ cdef class cKDTree:
                 stdlib.free(rect2.maxes)
 
         return results
+
 
     # -----------
     # query_pairs
@@ -1470,7 +1469,6 @@ cdef class cKDTree:
                                 results.add((self.raw_indices[j], self.raw_indices[i]))
                             
             else:
-                
                 self.__query_pairs_traverse_no_checking(results, node1, node2.less)
                 self.__query_pairs_traverse_no_checking(results, node1, node2.greater)
         else:
@@ -1487,7 +1485,6 @@ cdef class cKDTree:
                 self.__query_pairs_traverse_no_checking(results, node1.greater, node2)
 
         return 0
-
 
 
     cdef int __query_pairs_traverse_checking(cKDTree self,
@@ -1582,7 +1579,6 @@ cdef class cKDTree:
                                                      rect1, rect2,
                                                      min_distance, max_distance)
                 rect2.mins[k2] = save_min2
-            
                 
         else:  # 1 is an inner node
             k1 = node1.split_dim
@@ -1724,11 +1720,12 @@ cdef class cKDTree:
             positions are close.
 
         """
-        cdef np.npy_intp i
-        cdef set results
+        
+        cdef set results, _results
         cdef Rectangle rect1, rect2
         cdef np.float64_t epsfac, invepsfac
         cdef np.float64_t min_distance, max_distance
+        cdef np.npy_intp i,j
 
         # internally we represent all distances as distance**p
         if p != infinity and r != infinity:
@@ -1781,15 +1778,14 @@ cdef class cKDTree:
                     min_distance += min_dist_interval_interval_p(rect1, rect2, i, p)
                     max_distance += max_dist_interval_interval_p(rect1, rect2, i, p)
                     
-            results = set()
-            self.__query_pairs_traverse_checking(results,
+            _results = set()
+            self.__query_pairs_traverse_checking(_results,
                                                 self.tree, self.tree,
                                                 r, p, epsfac, invepsfac,
                                                 rect1, rect2,
                                                 min_distance, max_distance)
 
         finally:
-
             if rect1.mins  != <np.float64_t*> NULL: 
                 stdlib.free(rect1.mins)
 
@@ -1802,7 +1798,24 @@ cdef class cKDTree:
             if rect2.maxes != <np.float64_t*> NULL: 
                 stdlib.free(rect2.maxes)
 
+        ## On platforms where a C long is shorter than npy_intp,
+        ## e.g. Windows 64, we convert to Python int if they don't
+        ## overflow.    
+        
+        if sizeof(long) < sizeof(np.npy_intp):
+            results = set()
+            for i,j in _results:    
+                if (i <= <np.npy_intp> LONG_MAX) and (j <= <np.npy_intp> LONG_MAX):
+                    results.add((int(i),int(j)))
+                else:
+                    results.add((i,j))
+                
+        ## other platforms 
+        else:
+            results = _results
+
         return results
+
 
     # ---------------
     # count_neighbors
@@ -1835,16 +1848,13 @@ cdef class cKDTree:
         # and see if any work remains to be done
         old_idx = idx
 
-       
         try:
-
             idx = <np.npy_intp *> stdlib.malloc(n_queries * sizeof(np.npy_intp ))
             if idx == <np.npy_intp *> NULL:
                 raise MemoryError
 
             old_n_queries = n_queries
             n_queries = 0
-            
             for i in range(old_n_queries):
                 if max_distance < r[old_idx[i]]:
                     results[old_idx[i]] += node1.children * node2.children
@@ -1856,7 +1866,6 @@ cdef class cKDTree:
                 # OK, need to probe a bit deeper
                 if node1.split_dim == -1:  # 1 is leaf node
                     lnode1 = <leafnode*>node1
-                    
                     if node2.split_dim == -1:  # 1 & 2 are leaves
                         lnode2 = <leafnode*>node2
                         
@@ -1907,7 +1916,6 @@ cdef class cKDTree:
                                                         min_distance, max_distance)
                         rect2.mins[k2] = save_min2
                     
-                        
                 else:  # 1 is an inner node
                     k1 = node1.split_dim
                     __rect_preupdate(rect1, rect2, k1, p, min_distance,
@@ -2013,7 +2021,6 @@ cdef class cKDTree:
                 stdlib.free(idx)
         return 0
 
-
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2.):
@@ -2045,7 +2052,6 @@ cdef class cKDTree:
             and so may overflow if very large (2e9).
 
         """
-
         cdef np.npy_intp i, n_queries
         cdef Rectangle rect1, rect2
         cdef np.float64_t epsfac, invepsfac
@@ -2060,14 +2066,15 @@ cdef class cKDTree:
         # Make a copy of r array to ensure it's contiguous and to modify it
         # below
         if np.shape(r) == ():
-            real_r = np.ascontiguousarray([r], dtype=np.float64)
+            real_r = np.array([r], dtype=np.float64)
             n_queries = 1
         elif len(np.shape(r))==1:
-            real_r = np.ascontiguousarray(r, dtype=np.float64)
+            real_r = np.array(r, dtype=np.float64)
             n_queries = r.shape[0]
         else:
             raise ValueError("r must be either a single value or a one-dimensional array of values")
-        
+
+                
         # internally we represent all distances as distance**p
         if p != infinity:
             for i in range(n_queries):
@@ -2124,7 +2131,6 @@ cdef class cKDTree:
                                             min_distance, max_distance)
 
         finally:
-
             if rect1.mins  != <np.float64_t*> NULL: 
                 stdlib.free(rect1.mins)
 
@@ -2138,7 +2144,10 @@ cdef class cKDTree:
                 stdlib.free(rect2.maxes)
 
         if np.shape(r) == ():
-            return results[0]
+            if results[0] <= <np.npy_intp> LONG_MAX:
+                return int(results[0])
+            else:
+                return results[0]
         elif len(np.shape(r))==1:
             return results
 
@@ -2232,7 +2241,6 @@ cdef class cKDTree:
                                                        rect1, rect2,
                                                        min_distance, max_distance)
                 rect2.mins[k2] = save_min2
-            
                 
         else:  # 1 is an inner node
             k1 = node1.split_dim
@@ -2347,7 +2355,6 @@ cdef class cKDTree:
             rect1.mins[k1] = save_min1
             return 0
             
-
     def sparse_distance_matrix(cKDTree self, cKDTree other, np.float64_t r,
                                np.float64_t p=2.):
         """sparse_distance_matrix(self, r, p)
@@ -2429,7 +2436,6 @@ cdef class cKDTree:
                                                 r, p, rect1, rect2,
                                                 min_distance, max_distance)
         finally:
-
             if rect1.mins  != <np.float64_t*> NULL: 
                 stdlib.free(rect1.mins)
 
