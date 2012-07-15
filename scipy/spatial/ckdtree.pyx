@@ -67,7 +67,6 @@ cdef inline int heapresize(heap* self, np.npy_intp new_space) except -1:
     if new_space<self.n:
         raise ValueError("Heap containing %d items cannot be resized to %d" % (int(self.n), int(new_space)))
     self.space = new_space
-    self.heap = <heapitem*> NULL
     tmp = stdlib.realloc(<void*>self.heap, new_space*sizeof(heapitem))
     if tmp == NULL:
         raise MemoryError
@@ -291,6 +290,179 @@ cdef inline void __rect_postupdate(Rectangle rect1, Rectangle rect2,
         min_distance[0] = min_dist_rect_rect_p_inf(rect1, rect2)
         max_distance[0] = max_dist_rect_rect_p_inf(rect1, rect2)
 
+
+# The logical unit that repeats over and over is to keep track of the
+# maximum and minimum distances between points in two hyperrectangles
+# as these rectangles are successively split.
+#
+# Example
+# -------
+# # node1 encloses points in rect1, node2 encloses those in rect2
+#
+# cdef RectRectDistanceTracker dist_tracker
+# dist_tracker = RectRectDistanceTracker(rect1, rect2, p)
+#
+# ...
+#
+# if dist_tracker.min_distance < ...:
+#     ...
+#
+# dist_tracker.push(1, LESS, node1.split_dim, node1.split)
+# do_something(node1.less, dist_tracker)
+# dist_tracker.pop()
+#
+# dist_tracker.push(1, GREATER, node1.split_dim, node1.split_val)
+# do_something(node1.greater, dist_tracker)
+# dist_tracker.pop()
+
+cdef struct RR_stack_item:
+    np.npy_intp which
+    np.npy_intp split_dim
+    double min_along_dim, max_along_dim
+    np.float64_t min_distance, max_distance
+
+cdef np.npy_intp LESS = 1
+cdef np.npy_intp GREATER = 2
+
+cdef class RectRectDistanceTracker(object):
+    cdef Rectangle rect1, rect2
+    cdef np.float64_t p
+    cdef np.float64_t min_distance, max_distance
+
+    cdef np.npy_intp stack_size, stack_max_size
+    cdef RR_stack_item *stack
+
+    # Stack handling
+    cdef int _init_stack(self) except -1:
+        cdef void *tmp
+        self.stack_max_size = 10
+        tmp = stdlib.malloc(sizeof(RR_stack_item) *
+                            self.stack_max_size)
+        if tmp == NULL:
+            raise MemoryError
+        self.stack = <RR_stack_item*> tmp
+        self.stack_size = 0
+        return 0
+
+    cdef int _resize_stack(self, np.npy_intp new_max_size) except -1:
+        cdef void *tmp
+        self.stack_max_size = new_max_size
+        tmp = stdlib.realloc(<RR_stack_item*> self.stack,
+                              new_max_size *
+                              sizeof(RR_stack_item))
+        if tmp == NULL:
+            raise MemoryError
+        self.stack = <RR_stack_item*> tmp
+        return 0
+    
+    cdef int _free_stack(self) except -1:
+        if self.stack != <RR_stack_item*> NULL:
+            stdlib.free(self.stack)
+        return 0
+
+    cdef inline int _push(self,
+                          np.npy_intp which,
+                          np.npy_intp split_dim) except -1:
+    
+        if self.stack_size == self.stack_max_size:
+            self._resize_stack(self.stack_max_size * 2)
+            
+        cdef RR_stack_item *item = &self.stack[self.stack_size]
+        self.stack_size += 1
+        item.which = which
+        item.split_dim = split_dim
+        item.min_distance = self.min_distance
+        item.max_distance = self.max_distance
+        if which == 1:
+            item.min_along_dim = self.rect1.mins[split_dim]
+            item.max_along_dim = self.rect1.maxes[split_dim]
+        else:
+            item.min_along_dim = self.rect2.mins[split_dim]
+            item.max_along_dim = self.rect2.maxes[split_dim]
+            
+        return 0
+
+    cdef inline int _pop(self) except -1:
+        
+        self.stack_size -= 1
+        assert self.stack_size >= 0
+        
+        cdef RR_stack_item* item = &self.stack[self.stack_size]
+        
+        self.min_distance = item.min_distance
+        self.max_distance = item.max_distance
+
+        if item.which == 1:
+            self.rect1.mins[item.split_dim] = item.min_along_dim
+            self.rect1.maxes[item.split_dim] = item.max_along_dim
+        else:
+            self.rect2.mins[item.split_dim] = item.min_along_dim
+            self.rect2.maxes[item.split_dim] = item.max_along_dim
+        
+        return 0
+
+    # Distance tracker
+    def __init__(self):
+        self.stack = <RR_stack_item*> NULL
+
+    cdef init(self, Rectangle rect1, Rectangle rect2, double p):
+        if rect1.m != rect2.m:
+            raise ValueError("rect1 and rect2 have different dimensions")
+
+        self.rect1 = rect1
+        self.rect2 = rect2
+        self.p = p
+
+        self._init_stack()
+
+        # Compute initial min and max distances
+        if self.p == infinity:
+            self.min_distance = min_dist_rect_rect_p_inf(rect1, rect2)
+            self.max_distance = max_dist_rect_rect_p_inf(rect1, rect2)
+        else:
+            self.min_distance = 0.
+            self.max_distance = 0.
+            for i in range(rect1.m):
+                self.min_distance += min_dist_interval_interval_p(rect1, rect2, i, p)
+                self.max_distance += max_dist_interval_interval_p(rect1, rect2, i, p)
+
+    def __dealloc__(self):
+        self._free_stack()
+
+    cdef int push(self, np.npy_intp which, np.npy_intp direction,
+                  np.npy_intp split_dim,
+                  np.float64_t split_val) except -1:
+
+        cdef Rectangle *rect
+
+        self._push(which, split_dim)
+        
+        if self.p != infinity:
+            self.min_distance -= min_dist_interval_interval_p(self.rect1, self.rect2, split_dim, self.p)
+            self.max_distance -= max_dist_interval_interval_p(self.rect1, self.rect2, split_dim, self.p)
+
+        if which == 1:
+            rect = &self.rect1
+        else:
+            rect = &self.rect2
+
+        if direction == LESS:
+            rect.maxes[split_dim] = split_val
+        else:
+            rect.mins[split_dim] = split_val
+
+        if self.p != infinity:
+            self.min_distance += min_dist_interval_interval_p(self.rect1, self.rect2, split_dim, self.p)
+            self.max_distance += max_dist_interval_interval_p(self.rect1, self.rect2, split_dim, self.p)
+        else:
+            self.min_distance = min_dist_rect_rect_p_inf(self.rect1, self.rect2)
+            self.max_distance = max_dist_rect_rect_p_inf(self.rect1, self.rect2)
+            
+        return 0
+
+    cdef inline int pop(self) except -1:
+        self._pop()
+        return 0
 
 # Tree structure
 
@@ -1106,10 +1278,10 @@ cdef class cKDTree:
     # query_ball_tree
     # ---------------
     cdef int __query_ball_tree_traverse_no_checking(cKDTree self,
-                                                     cKDTree other,
-                                                     list results,
-                                                     innernode* node1,
-                                                     innernode* node2) except -1:
+                                                    cKDTree other,
+                                                    list results,
+                                                    innernode* node1,
+                                                    innernode* node2) except -1:
         cdef leafnode *lnode1, *lnode2
         cdef list results_i
         cdef np.npy_intp i, j
@@ -1136,6 +1308,7 @@ cdef class cKDTree:
         return 0
 
 
+    @cython.cdivision(True)
     cdef int __query_ball_tree_traverse_checking(cKDTree self,
                                                  cKDTree other,
                                                  list results,
@@ -1144,25 +1317,16 @@ cdef class cKDTree:
                                                  np.float64_t r,
                                                  np.float64_t p,
                                                  np.float64_t epsfac,
-                                                 np.float64_t invepsfac,
-                                                 Rectangle rect1,
-                                                 Rectangle rect2,
-                                                 np.float64_t min_distance,
-                                                 np.float64_t max_distance) except -1:
+                                                 RectRectDistanceTracker tracker) except -1:
         cdef leafnode *lnode1, *lnode2
-        cdef innernode *inode1, *inode2        
         cdef list results_i
-        cdef np.float64_t save_min1, save_max1
-        cdef np.float64_t save_min2, save_max2
-        cdef np.float64_t part_min_distance1 = 0., part_max_distance1 = 0.
-        cdef np.float64_t part_min_distance2 = 0., part_max_distance2 = 0.
         cdef np.float64_t d
-        cdef np.npy_intp k1, k2, i, j
+        cdef np.npy_intp i, j
 
         
-        if min_distance > r*epsfac:
+        if tracker.min_distance > r*epsfac:
             return 0
-        elif max_distance < r*invepsfac:
+        elif tracker.max_distance < r/epsfac:
             self.__query_ball_tree_traverse_no_checking(other, results, node1, node2)
         elif node1.split_dim == -1:  # 1 is leaf node
             lnode1 = <leafnode*>node1
@@ -1182,146 +1346,58 @@ cdef class cKDTree:
                             results_i.append(other.raw_indices[j])
                             
             else:  # 1 is a leaf node, 2 is inner node
-                k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance,
-                                 max_distance, &part_min_distance2,
-                                 &part_max_distance2)
+
+                tracker.push(2, LESS, node2.split_dim, node2.split)
+                self.__query_ball_tree_traverse_checking(
+                    other, results, node1, node2.less, r, p, epsfac, tracker)
+                tracker.pop()
                     
-                # node2 goes to box with lesser component along k2
-                # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
-                save_max2 = rect2.maxes[k2]
-                rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                  &max_distance, part_min_distance2,
-                                  part_max_distance2)
-                self.__query_ball_tree_traverse_checking(other, results,
-                                                         node1, node2.less,
-                                                         r, p, epsfac, invepsfac,
-                                                         rect1, rect2,
-                                                         min_distance, max_distance)
-                rect2.maxes[k2] = save_max2
-                    
-                # node2 goes to box with greater component along k2
-                # node2.greater.mins[k2] changes from mins2[k2] to node2.split
-                save_min2 = rect2.mins[k2]
-                rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                  &max_distance, part_min_distance2,
-                                  part_max_distance2)
-                self.__query_ball_tree_traverse_checking(other, results,
-                                                         node1, node2.greater,
-                                                         r, p, epsfac, invepsfac,
-                                                         rect1, rect2,
-                                                         min_distance, max_distance)
-                rect2.mins[k2] = save_min2
+                tracker.push(2, GREATER, node2.split_dim, node2.split)
+                self.__query_ball_tree_traverse_checking(
+                    other, results, node1, node2.greater, r, p, epsfac, tracker)
+                tracker.pop()
             
                 
         else:  # 1 is an inner node
-            k1 = node1.split_dim
-            __rect_preupdate(rect1, rect2, k1, p, min_distance,
-                             max_distance, &part_min_distance1,
-                             &part_max_distance1)
+            if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
+                tracker.push(1, LESS, node1.split_dim, node1.split)
+                self.__query_ball_tree_traverse_checking(
+                    other, results, node1.less, node2, r, p, epsfac, tracker)
+                tracker.pop()
+                    
+                tracker.push(1, GREATER, node1.split_dim, node1.split)
+                self.__query_ball_tree_traverse_checking(
+                    other, results, node1.greater, node2, r, p, epsfac, tracker)
+                tracker.pop()
                 
-            # node1 goes to box with lesser component along k1
-            # node1.less.maxes[k1] changes from rect1.maxes[k1] to node1.split
-            save_max1 = rect1.maxes[k1]
-            rect1.maxes[k1] = node1.split
-            __rect_postupdate(rect1, rect2, k1, p, &min_distance,
-                              &max_distance, part_min_distance1,
-                              part_max_distance1)
+            else: # 1 & 2 are inner nodes
+                
+                tracker.push(1, LESS, node1.split_dim, node1.split)
+                tracker.push(2, LESS, node2.split_dim, node2.split)
+                self.__query_ball_tree_traverse_checking(
+                    other, results, node1.less, node2.less, r, p, epsfac, tracker)
+                tracker.pop()
+                    
+                tracker.push(2, GREATER, node2.split_dim, node2.split)
+                self.__query_ball_tree_traverse_checking(
+                    other, results, node1.less, node2.greater, r, p, epsfac, tracker)
+                tracker.pop()
+                tracker.pop()
 
-            if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
-                self.__query_ball_tree_traverse_checking(other, results,
-                                                         node1.less, node2,
-                                                         r, p, epsfac, invepsfac,
-                                                         rect1, rect2,
-                                                         min_distance, max_distance)
-            else: # 1 and 2 are inner nodes
-                k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance,
-                                 max_distance, &part_min_distance2,
-                                 &part_max_distance2)
-                    
-                # node2 goes to box with lesser component along k2
-                # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
-                save_max2 = rect2.maxes[k2]
-                rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                  &max_distance, part_min_distance2,
-                                  part_max_distance2)
-                self.__query_ball_tree_traverse_checking(other, results,
-                                                         node1.less, node2.less,
-                                                         r, p, epsfac, invepsfac,
-                                                         rect1, rect2,
-                                                         min_distance, max_distance)
-                rect2.maxes[k2] = save_max2
-                    
-                # node2 goes to box with greater component along k2
-                # node2.greater.mins[k2] changes from mins2[k2] to node2.split
-                save_min2 = rect2.mins[k2]
-                rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                  &max_distance, part_min_distance2,
-                                  part_max_distance2)
-                self.__query_ball_tree_traverse_checking(other, results,
-                                                         node1.less, node2.greater,
-                                                         r, p, epsfac, invepsfac,
-                                                         rect1, rect2,
-                                                         min_distance, max_distance)
-                rect2.mins[k2] = save_min2
                 
-            rect1.maxes[k1] = save_max1
+                tracker.push(1, GREATER, node1.split_dim, node1.split)
+                tracker.push(2, LESS, node2.split_dim, node2.split)
+                self.__query_ball_tree_traverse_checking(
+                    other, results, node1.greater, node2.less, r, p, epsfac, tracker)
+                tracker.pop()
                     
-            # node1 goes to box with greater component along k1
-            # node1.greater.mins[k1] changes from rect1.mins[k1] to node1.split
-            save_min1 = rect1.mins[k1]
-            rect1.mins[k1] = node1.split
-            __rect_postupdate(rect1, rect2, k1, p, &min_distance,
-                              &max_distance, part_min_distance1,
-                              part_max_distance1)
-                
-            if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
-                self.__query_ball_tree_traverse_checking(other, results,
-                                                         node1.greater, node2,
-                                                         r, p, epsfac, invepsfac,
-                                                         rect1, rect2,
-                                                         min_distance, max_distance)
-            else: # 1 and 2 are inner nodes
-                k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance,
-                                 max_distance, &part_min_distance2,
-                                 &part_max_distance2)
-                    
-                # node2 goes to box with lesser component along k2
-                # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
-                save_max2 = rect2.maxes[k2]
-                rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                  &max_distance, part_min_distance2,
-                                  part_max_distance2)
-                self.__query_ball_tree_traverse_checking(other, results,
-                                                         node1.greater, node2.less,
-                                                         r, p, epsfac, invepsfac,
-                                                         rect1, rect2,
-                                                         min_distance, max_distance)
-                rect2.maxes[k2] = save_max2
-                    
-                # node2 goes to box with greater component along k2
-                # node2.greater.mins[k2] changes from rect2.mins[k2] to node2.split
-                save_min2 = rect2.mins[k2]
-                rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                  &max_distance, part_min_distance2,
-                                  part_max_distance2)
-                self.__query_ball_tree_traverse_checking(other, results,
-                                                         node1.greater, node2.greater,
-                                                         r, p, epsfac, invepsfac,
-                                                         rect1, rect2,
-                                                         min_distance, max_distance)
-                rect2.mins[k2] = save_min2
-                
-            rect1.mins[k1] = save_min1
-            return 0
+                tracker.push(2, GREATER, node2.split_dim, node2.split)
+                self.__query_ball_tree_traverse_checking(
+                    other, results, node1.greater, node2.greater, r, p, epsfac, tracker)
+                tracker.pop()
+                tracker.pop()
+            
+        return 0
             
 
     def query_ball_tree(cKDTree self, cKDTree other,
@@ -1354,7 +1430,7 @@ cdef class cKDTree:
         """
         cdef list results
         cdef Rectangle rect1, rect2
-        cdef np.float64_t epsfac, invepsfac
+        cdef np.float64_t epsfac
         cdef np.float64_t min_distance, max_distance
         cdef np.npy_intp i
 
@@ -1373,64 +1449,25 @@ cdef class cKDTree:
             epsfac = 1/(1+eps)
         else:
             epsfac = 1/(1+eps)**p
-        invepsfac = 1/epsfac
 
-        # Calculate mins and maxes to outer box
+        cdef np.ndarray[np.float64_t, ndim=1] inner_self_maxes, inner_other_maxes
+        cdef np.ndarray[np.float64_t, ndim=1] inner_self_mins, inner_other_mins
+        inner_self_maxes = np.array(self.maxes)
+        inner_self_mins = np.array(self.mins)
+        inner_other_maxes = np.array(other.maxes)
+        inner_other_mins = np.array(other.mins)
         rect1.m = rect2.m = self.m
-        rect1.mins = rect1.maxes = rect2.mins = rect2.maxes = <np.float64_t*> NULL
-        try:
-            rect1.mins = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect1.mins == <np.float64_t*> NULL: 
-                raise MemoryError
+        rect1.mins = &inner_self_mins[0]
+        rect1.maxes = &inner_self_maxes[0]
+        rect2.mins = &inner_other_mins[0]
+        rect2.maxes = &inner_other_maxes[0]
 
-            rect1.maxes = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect1.maxes == <np.float64_t*> NULL: 
-                raise MemoryError    
-
-            rect2.mins = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect2.mins == <np.float64_t*> NULL: 
-                raise MemoryError
-
-            rect2.maxes = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect2.maxes == <np.float64_t*> NULL: 
-                raise MemoryError
-
-            for i in range(self.m):
-                rect1.mins[i] = self.raw_mins[i]
-                rect1.maxes[i] = self.raw_maxes[i]
-                rect2.mins[i] = other.raw_mins[i]
-                rect2.maxes[i] = other.raw_maxes[i]
-
-            # Compute first min and max distances
-            if p == infinity:
-                min_distance = min_dist_rect_rect_p_inf(rect1, rect2)
-                max_distance = max_dist_rect_rect_p_inf(rect1, rect2)
-            else:
-                min_distance = 0.
-                max_distance = 0.
-                for i in range(self.m):
-                    min_distance += min_dist_interval_interval_p(rect1, rect2, i, p)
-                    max_distance += max_dist_interval_interval_p(rect1, rect2, i, p)
-                    
-            results = [[] for i in range(self.n)]
-            self.__query_ball_tree_traverse_checking(other, results,
-                                                    self.tree, other.tree,
-                                                    r, p, epsfac, invepsfac,
-                                                    rect1, rect2,
-                                                    min_distance, max_distance)
-
-        finally:
-            if rect1.mins  != <np.float64_t*> NULL: 
-                stdlib.free(rect1.mins)
-
-            if rect1.maxes != <np.float64_t*> NULL: 
-                stdlib.free(rect1.maxes)
-
-            if rect2.mins  != <np.float64_t*> NULL: 
-                stdlib.free(rect2.mins)
-
-            if rect2.maxes != <np.float64_t*> NULL: 
-                stdlib.free(rect2.maxes)
+        cdef RectRectDistanceTracker tracker = RectRectDistanceTracker()
+        tracker.init(rect1, rect2, p)
+        
+        results = [[] for i in range(self.n)]
+        self.__query_ball_tree_traverse_checking(
+            other, results, self.tree, other.tree, r, p, epsfac, tracker)
 
         return results
 
