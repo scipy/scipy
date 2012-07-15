@@ -16,6 +16,12 @@ C/C++ integration
 
 """
 
+import sys
+
+if sys.version_info[0] >= 3:
+    raise ImportError("scipy.weave only supports Python 2.x")
+
+
 from weave_version import weave_version as __version__
 
 try:
