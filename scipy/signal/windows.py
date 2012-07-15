@@ -165,10 +165,6 @@ def blackman(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1 
         does not appear if the number of samples is even and sym is True).
-        
-    See Also
-    --------
-    bartlett, hamming, hann, kaiser
 
     Notes
     -----
@@ -381,10 +377,6 @@ def bartlett(M, sym=True):
         does not appear if the number of samples is even and sym is True), with the first
         and last samples equal to zero.
 
-    See Also
-    --------
-    blackman, hamming, hann, kaiser
-
     Notes
     -----
     The Bartlett window is defined as
@@ -493,10 +485,6 @@ def hann(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1 
         does not appear if `M` is even and `sym` is True).
-
-    See Also
-    --------
-    bartlett, blackman, hamming, kaiser
 
     Notes
     -----
@@ -640,10 +628,6 @@ def hamming(M, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1 
         does not appear if the number of samples is even and sym is True).
 
-    See Also
-    --------
-    bartlett, blackman, hann, kaiser
-
     Notes
     -----
     The Hamming window is defined as
@@ -749,10 +733,6 @@ def kaiser(M, beta, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1 
         does not appear if the number of samples is even and sym is True).
-    
-    See Also
-    --------
-    bartlett, blackman, hamming, hann
 
     Notes
     -----
