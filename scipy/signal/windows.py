@@ -144,7 +144,7 @@ def bohman(M, sym=True):
 
 
 def blackman(M, sym=True):
-    """Return a Blackman window.
+    r"""Return a Blackman window.
 
     The Blackman window is a taper formed by using the the first three
     terms of a summation of cosines. It was designed to have close to the
@@ -170,7 +170,7 @@ def blackman(M, sym=True):
     -----
     The Blackman window is defined as
 
-    .. math::  w(n) = 0.42 - 0.5 \\cos(2\\pi n/M) + 0.08 \\cos(4\\pi n/M)
+    .. math::  w(n) = 0.42 - 0.5 \cos(2\pi n/M) + 0.08 \cos(4\pi n/M)
 
     Most references to the Blackman window come from the signal processing
     literature, where it is used as one of many windowing functions for
@@ -354,7 +354,7 @@ def flattop(M, sym=True):
 
 
 def bartlett(M, sym=True):
-    """Return a Bartlett window.
+    r"""Return a Bartlett window.
 
     The Bartlett window is very similar to a triangular window, except
     that the end points are at zero.  It is often used in signal
@@ -381,9 +381,9 @@ def bartlett(M, sym=True):
     -----
     The Bartlett window is defined as
 
-    .. math:: w(n) = \\frac{2}{M-1} \\left(
-              \\frac{M-1}{2} - \\left|n - \\frac{M-1}{2}\\right|
-              \\right)
+    .. math:: w(n) = \frac{2}{M-1} \left(
+              \frac{M-1}{2} - \left|n - \frac{M-1}{2}\right|
+              \right)
 
     Most references to the Bartlett window come from the signal
     processing literature, where it is used as one of many windowing
@@ -466,7 +466,7 @@ def bartlett(M, sym=True):
 
 
 def hann(M, sym=True):
-    """Return a Hann window.
+    r"""Return a Hann window.
 
     The Hann window is a taper formed by using a raised cosine or sine-squared
     with ends that touch zero.
@@ -490,8 +490,8 @@ def hann(M, sym=True):
     -----
     The Hann window is defined as
 
-    .. math::  w(n) = 0.5 - 0.5cos\\left(\\frac{2\\pi{n}}{M-1}\\right)
-               \\qquad 0 \\leq n \\leq M-1
+    .. math::  w(n) = 0.5 - 0.5cos\left(\frac{2\pi{n}}{M-1}\right)
+               \qquad 0 \leq n \leq M-1
 
     The window was named for Julius van Hann, an Austrian meterologist. It is
     also known as the Cosine Bell. It is sometimes erroneously referred to as the
@@ -608,7 +608,7 @@ def barthann(M, sym=True):
 
 
 def hamming(M, sym=True):
-    """Return a Hamming window.
+    r"""Return a Hamming window.
 
     The Hamming window is a taper formed by using a raised cosine with
     non-zero endpoints, optimized to minimize the nearest side lobe.
@@ -632,8 +632,8 @@ def hamming(M, sym=True):
     -----
     The Hamming window is defined as
 
-    .. math::  w(n) = 0.54 - 0.46cos\\left(\\frac{2\\pi{n}}{M-1}\\right)
-               \\qquad 0 \\leq n \\leq M-1
+    .. math::  w(n) = 0.54 - 0.46cos\left(\frac{2\pi{n}}{M-1}\right)
+               \qquad 0 \leq n \leq M-1
 
     The Hamming was named for R. W. Hamming, an associate of J. W. Tukey and
     is described in Blackman and Tukey. It was recommended for smoothing the
@@ -712,7 +712,7 @@ def hamming(M, sym=True):
 
 
 def kaiser(M, beta, sym=True):
-    """Return a Kaiser window.
+    r"""Return a Kaiser window.
 
     The Kaiser window is a taper formed by using a Bessel function.
 
@@ -738,12 +738,12 @@ def kaiser(M, beta, sym=True):
     -----
     The Kaiser window is defined as
 
-    .. math::  w(n) = I_0\\left( \\beta \\sqrt{1-\\frac{4n^2}{(M-1)^2}}
-               \\right)/I_0(\\beta)
+    .. math::  w(n) = I_0\left( \beta \sqrt{1-\frac{4n^2}{(M-1)^2}}
+               \right)/I_0(\beta)
 
     with
 
-    .. math:: \\quad -\\frac{M-1}{2} \\leq n \\leq \\frac{M-1}{2},
+    .. math:: \quad -\frac{M-1}{2} \leq n \leq \frac{M-1}{2},
 
     where :math:`I_0` is the modified zeroth-order Bessel function.
 
@@ -846,7 +846,7 @@ def kaiser(M, beta, sym=True):
 
 
 def gaussian(M, std, sym=True):
-    """Return a Gaussian window.
+    r"""Return a Gaussian window.
 
     Parameters
     ----------
@@ -869,7 +869,7 @@ def gaussian(M, std, sym=True):
     -----
     The Gaussian window is defined as
 
-    .. math::  w(n) = e^{ -\\frac{1}{2}\\left(\\frac{n}{\\sigma}\\right)^2 }
+    .. math::  w(n) = e^{ -\frac{1}{2}\left(\frac{n}{\sigma}\right)^2 }
 
     """
     if M < 1:
