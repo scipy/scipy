@@ -880,7 +880,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     #------------------------------
     # initialize distance array
-    dist_array = np.empty(N, dtype=DTYPE)
+    dist_array = np.zeros(N, dtype=DTYPE)
 
     csr_data = csgraph.data.copy()
 
