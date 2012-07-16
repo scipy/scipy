@@ -1568,7 +1568,6 @@ cdef class cKDTree:
                                              np.float64_t epsfac,
                                              RectRectDistanceTracker tracker) except -1:
         cdef leafnode *lnode1, *lnode2
-        cdef innernode *inode1, *inode2
         cdef list results_i
         cdef np.float64_t d
         cdef np.intp_t i, j, min_j
@@ -1738,196 +1737,105 @@ cdef class cKDTree:
                                         innernode* node1,
                                         innernode* node2,
                                         np.float64_t p,
-                                        Rectangle rect1,
-                                        Rectangle rect2,
-                                        np.float64_t min_distance,
-                                        np.float64_t max_distance) except -1:
+                                        RectRectDistanceTracker tracker) except -1:
         cdef leafnode *lnode1, *lnode2
-        cdef innernode *inode1, *inode2
-        
-        cdef np.float64_t save_min1, save_max1
-        cdef np.float64_t save_min2, save_max2
-        cdef np.float64_t part_min_distance1 = 0., part_max_distance1 = 0.
-        cdef np.float64_t part_min_distance2 = 0., part_max_distance2 = 0.
         cdef np.float64_t d
         cdef np.intp_t  *old_idx
-        cdef np.intp_t old_n_queries, k1, k2, l, i, j
+        cdef np.intp_t old_n_queries, l, i, j
 
         # Speed through pairs of nodes all of whose children are close
         # and see if any work remains to be done
         old_idx = idx
+        cdef np.ndarray[np.intp_t, ndim=1] inner_idx
+        inner_idx = np.empty((n_queries,), dtype=np.int)
+        idx = &inner_idx[0]
 
-        try:
-            idx = <np.intp_t *> stdlib.malloc(n_queries * sizeof(np.intp_t ))
-            if idx == <np.intp_t *> NULL:
-                raise MemoryError
+        old_n_queries = n_queries
+        n_queries = 0
+        for i in range(old_n_queries):
+            if tracker.max_distance < r[old_idx[i]]:
+                results[old_idx[i]] += node1.children * node2.children
+            elif tracker.min_distance <= r[old_idx[i]]:
+                idx[n_queries] = old_idx[i]
+                n_queries += 1
 
-            old_n_queries = n_queries
-            n_queries = 0
-            for i in range(old_n_queries):
-                if max_distance < r[old_idx[i]]:
-                    results[old_idx[i]] += node1.children * node2.children
-                elif min_distance <= r[old_idx[i]]:
-                    idx[n_queries] = old_idx[i]
-                    n_queries += 1
-
-            if n_queries >= 0:
-                # OK, need to probe a bit deeper
-                if node1.split_dim == -1:  # 1 is leaf node
-                    lnode1 = <leafnode*>node1
-                    if node2.split_dim == -1:  # 1 & 2 are leaves
-                        lnode2 = <leafnode*>node2
-                        
-                        # brute-force
-                        for i in range(lnode1.start_idx, lnode1.end_idx):
-                            for j in range(lnode2.start_idx, lnode2.end_idx):
-                                d = _distance_p(
-                                    self.raw_data + self.raw_indices[i] * self.m,
-                                    other.raw_data + other.raw_indices[j] * other.m,
-                                    p, self.m, max_distance)
-
-                                # I think it's usually cheaper to test d against all r's
-                                # than to generate a distance array, sort it, then
-                                # search for all r's via binary search
-                                for l in range(n_queries):
-                                    if d <= r[idx[l]]:
-                                        results[idx[l]] += 1
-                                    
-                    else:  # 1 is a leaf node, 2 is inner node
-                        k2 = node2.split_dim
-                        __rect_preupdate(rect1, rect2, k2, p, min_distance,
-                                         max_distance, &part_min_distance2,
-                                         &part_max_distance2)
-                            
-                        # node2 goes to box with lesser component along k2
-                        # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
-                        save_max2 = rect2.maxes[k2]
-                        rect2.maxes[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                          &max_distance, part_min_distance2,
-                                          part_max_distance2)
-                        self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                        node1, node2.less,
-                                                        p, rect1, rect2,
-                                                        min_distance, max_distance)
-                        rect2.maxes[k2] = save_max2
-                            
-                        # node2 goes to box with greater component along k2
-                        # node2.greater.mins[k2] changes from mins2[k2] to node2.split
-                        save_min2 = rect2.mins[k2]
-                        rect2.mins[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                          &max_distance, part_min_distance2,
-                                          part_max_distance2)
-                        self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                        node1, node2.greater,
-                                                        p, rect1, rect2,
-                                                        min_distance, max_distance)
-                        rect2.mins[k2] = save_min2
+        if n_queries > 0:
+            # OK, need to probe a bit deeper
+            if node1.split_dim == -1:  # 1 is leaf node
+                lnode1 = <leafnode*>node1
+                if node2.split_dim == -1:  # 1 & 2 are leaves
+                    lnode2 = <leafnode*>node2
                     
-                else:  # 1 is an inner node
-                    k1 = node1.split_dim
-                    __rect_preupdate(rect1, rect2, k1, p, min_distance,
-                                     max_distance, &part_min_distance1,
-                                     &part_max_distance1)
+                    # brute-force
+                    for i in range(lnode1.start_idx, lnode1.end_idx):
+                        for j in range(lnode2.start_idx, lnode2.end_idx):
+                            d = _distance_p(
+                                self.raw_data + self.raw_indices[i] * self.m,
+                                other.raw_data + other.raw_indices[j] * other.m,
+                                p, self.m, tracker.max_distance)
+                            # I think it's usually cheaper to test d against all r's
+                            # than to generate a distance array, sort it, then
+                            # search for all r's via binary search
+                            for l in range(n_queries):
+                                if d <= r[idx[l]]:
+                                    results[idx[l]] += 1
+                                
+                else:  # 1 is a leaf node, 2 is inner node
+                    tracker.push(2, LESS, node2.split_dim, node2.split)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1, node2.less,
+                                                    p, tracker)
+                    tracker.pop()
+
+                    tracker.push(2, GREATER, node2.split_dim, node2.split)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1, node2.greater,
+                                                    p, tracker)
+                    tracker.pop()
+                
+            else:  # 1 is an inner node
+                if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
+                    tracker.push(1, LESS, node1.split_dim, node1.split)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.less, node2,
+                                                    p, tracker)
+                    tracker.pop()
+                    
+                    tracker.push(1, GREATER, node1.split_dim, node1.split)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.greater, node2,
+                                                    p, tracker)
+                    tracker.pop()
+                    
+                else: # 1 and 2 are inner nodes
+                    tracker.push(1, LESS, node1.split_dim, node1.split)
+                    tracker.push(2, LESS, node2.split_dim, node2.split)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.less, node2.less,
+                                                    p, tracker)
+                    tracker.pop()
                         
-                    # node1 goes to box with lesser component along k1
-                    # node1.less.maxes[k1] changes from rect1.maxes[k1] to node1.split
-                    save_max1 = rect1.maxes[k1]
-                    rect1.maxes[k1] = node1.split
-                    __rect_postupdate(rect1, rect2, k1, p, &min_distance,
-                                      &max_distance, part_min_distance1,
-                                      part_max_distance1)
-        
-                    if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
-                        self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                        node1.less, node2,
-                                                        p, rect1, rect2,
-                                                        min_distance, max_distance)
-                    else: # 1 and 2 are inner nodes
-                        k2 = node2.split_dim
-                        __rect_preupdate(rect1, rect2, k2, p, min_distance,
-                                         max_distance, &part_min_distance2,
-                                         &part_max_distance2)
-                            
-                        # node2 goes to box with lesser component along k2
-                        # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
-                        save_max2 = rect2.maxes[k2]
-                        rect2.maxes[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                          &max_distance, part_min_distance2,
-                                          part_max_distance2)
-                        self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                        node1.less, node2.less,
-                                                        p, rect1, rect2,
-                                                        min_distance, max_distance)
-                        rect2.maxes[k2] = save_max2
-                            
-                        # node2 goes to box with greater component along k2
-                        # node2.greater.mins[k2] changes from mins2[k2] to node2.split
-                        save_min2 = rect2.mins[k2]
-                        rect2.mins[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                          &max_distance, part_min_distance2,
-                                          part_max_distance2)
-                        self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                        node1.less, node2.greater,
-                                                        p, rect1, rect2,
-                                                        min_distance, max_distance)
-                        rect2.mins[k2] = save_min2
+                    tracker.push(2, GREATER, node2.split_dim, node2.split)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.less, node2.greater,
+                                                    p, tracker)
+                    tracker.pop()
+                    tracker.pop()
                         
-                    rect1.maxes[k1] = save_max1
-                            
-                    # node1 goes to box with greater component along k1
-                    # node1.greater.mins[k1] changes from rect1.mins[k1] to node1.split
-                    save_min1 = rect1.mins[k1]
-                    rect1.mins[k1] = node1.split
-                    __rect_postupdate(rect1, rect2, k1, p, &min_distance,
-                                      &max_distance, part_min_distance1,
-                                      part_max_distance1)
+                    tracker.push(1, GREATER, node1.split_dim, node1.split)
+                    tracker.push(2, LESS, node2.split_dim, node2.split)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.greater, node2.less,
+                                                    p, tracker)
+                    tracker.pop()
                         
-                    if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
-                        self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                        node1.greater, node2,
-                                                        p, rect1, rect2,
-                                                        min_distance, max_distance)
-                    else: # 1 and 2 are inner nodes
-                        k2 = node2.split_dim
-                        __rect_preupdate(rect1, rect2, k2, p, min_distance,
-                                         max_distance, &part_min_distance2,
-                                         &part_max_distance2)
-                            
-                        # node2 goes to box with lesser component along k2
-                        # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
-                        save_max2 = rect2.maxes[k2]
-                        rect2.maxes[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                          &max_distance, part_min_distance2,
-                                          part_max_distance2)
-                        self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                        node1.greater, node2.less,
-                                                        p, rect1, rect2,
-                                                        min_distance, max_distance)
-                        rect2.maxes[k2] = save_max2
-                            
-                        # node2 goes to box with greater component along k2
-                        # node2.greater.mins[k2] changes from rect2.mins[k2] to node2.split
-                        save_min2 = rect2.mins[k2]
-                        rect2.mins[k2] = node2.split
-                        __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                          &max_distance, part_min_distance2,
-                                          part_max_distance2)
-                        self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                        node1.greater, node2.greater,
-                                                        p, rect1, rect2,
-                                                        min_distance, max_distance)
-                        rect2.mins[k2] = save_min2
-                        
-                    rect1.mins[k1] = save_min1
-        finally:
-            # Free memory
-            if idx != <np.intp_t *> NULL:
-                stdlib.free(idx)
+                    tracker.push(2, GREATER, node2.split_dim, node2.split)
+                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
+                                                    node1.greater, node2.greater,
+                                                    p, tracker)
+                    tracker.pop()
+                    tracker.pop()
+                    
         return 0
 
     @cython.boundscheck(False)
@@ -1963,8 +1871,6 @@ cdef class cKDTree:
         """
         cdef np.intp_t i, n_queries
         cdef Rectangle rect1, rect2
-        cdef np.float64_t epsfac, invepsfac
-        cdef np.float64_t min_distance, max_distance
         cdef np.ndarray[np.float64_t, ndim=1, mode="c"] real_r
         cdef np.ndarray[np.intp_t, ndim=1, mode="c"] results, idx
 
@@ -1991,65 +1897,30 @@ cdef class cKDTree:
                     real_r[i] = real_r[i] ** p
 
         # Calculate mins and maxes to outer box
+        cdef np.ndarray[np.float64_t, ndim=1] inner_maxes_1, inner_maxes_2
+        cdef np.ndarray[np.float64_t, ndim=1] inner_mins_1, inner_mins_2
+        inner_mins_1 = np.array(self.mins)
+        inner_maxes_1 = np.array(self.maxes)
+        inner_mins_2 = np.array(other.mins)
+        inner_maxes_2 = np.array(other.maxes)
+        
         rect1.m = rect2.m = self.m
-        rect1.mins = rect1.maxes = rect2.mins = rect2.maxes = <np.float64_t*> NULL
-        try:
-            
-            rect1.mins = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect1.mins == <np.float64_t*> NULL: 
-                raise MemoryError
+        rect1.mins = &inner_mins_1[0]
+        rect1.maxes = &inner_maxes_1[0]
+        rect2.mins = &inner_mins_2[0]
+        rect2.maxes = &inner_maxes_2[0]
 
-            rect1.maxes = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect1.maxes == <np.float64_t*> NULL: 
-                raise MemoryError    
-
-            rect2.mins = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect2.mins == <np.float64_t*> NULL: 
-                raise MemoryError
-
-            rect2.maxes = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect2.maxes == <np.float64_t*> NULL: 
-                raise MemoryError
-
-            for i in range(self.m):
-                rect1.mins[i] = self.raw_mins[i]
-                rect1.maxes[i] = self.raw_maxes[i]
-                rect2.mins[i] = other.raw_mins[i]
-                rect2.maxes[i] = other.raw_maxes[i]
-
-            # Compute first min and max distances
-            if p == infinity:
-                min_distance = min_dist_rect_rect_p_inf(rect1, rect2)
-                max_distance = max_dist_rect_rect_p_inf(rect1, rect2)
-            else:
-                min_distance = 0.
-                max_distance = 0.
-                for i in range(self.m):
-                    min_distance += min_dist_interval_interval_p(rect1, rect2, i, p)
-                    max_distance += max_dist_interval_interval_p(rect1, rect2, i, p)
-                    
-            # Go!
-            results = np.zeros((n_queries,), dtype=np.intp)
-            idx = np.arange(n_queries, dtype=np.intp)
-            self.__count_neighbors_traverse(other, n_queries,
-                                            &real_r[0], &results[0], &idx[0],
-                                            self.tree, other.tree,
-                                            p, rect1, rect2,
-                                            min_distance, max_distance)
-
-        finally:
-            if rect1.mins  != <np.float64_t*> NULL: 
-                stdlib.free(rect1.mins)
-
-            if rect1.maxes != <np.float64_t*> NULL: 
-                stdlib.free(rect1.maxes)
-
-            if rect2.mins  != <np.float64_t*> NULL: 
-                stdlib.free(rect2.mins)
-
-            if rect2.maxes != <np.float64_t*> NULL: 
-                stdlib.free(rect2.maxes)
-
+        cdef RectRectDistanceTracker tracker = RectRectDistanceTracker()
+        tracker.init(rect1, rect2, p)
+        
+        # Go!
+        results = np.zeros((n_queries,), dtype=np.intp)
+        idx = np.arange(n_queries, dtype=np.intp)
+        self.__count_neighbors_traverse(other, n_queries,
+                                        &real_r[0], &results[0], &idx[0],
+                                        self.tree, other.tree,
+                                        p, tracker)
+        
         if np.shape(r) == ():
             if results[0] <= <np.intp_t> LONG_MAX:
                 return int(results[0])
@@ -2071,7 +1942,6 @@ cdef class cKDTree:
                                                 np.float64_t min_distance,
                                                 np.float64_t max_distance) except -1:
         cdef leafnode *lnode1, *lnode2
-        cdef innernode *inode1, *inode2
         cdef list results_i
 
         cdef np.float64_t save_min1, save_max1
