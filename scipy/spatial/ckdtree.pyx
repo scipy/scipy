@@ -1782,57 +1782,57 @@ cdef class cKDTree:
                                 
                 else:  # 1 is a leaf node, 2 is inner node
                     tracker.push(2, LESS, node2.split_dim, node2.split)
-                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                    node1, node2.less,
-                                                    p, tracker)
+                    self.__count_neighbors_traverse(
+                        other, n_queries, r, results, idx,
+                        node1, node2.less, p, tracker)
                     tracker.pop()
 
                     tracker.push(2, GREATER, node2.split_dim, node2.split)
-                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                    node1, node2.greater,
-                                                    p, tracker)
+                    self.__count_neighbors_traverse(
+                        other, n_queries, r, results, idx,
+                        node1, node2.greater, p, tracker)
                     tracker.pop()
                 
             else:  # 1 is an inner node
                 if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
                     tracker.push(1, LESS, node1.split_dim, node1.split)
-                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                    node1.less, node2,
-                                                    p, tracker)
+                    self.__count_neighbors_traverse(
+                        other, n_queries, r, results, idx,
+                        node1.less, node2, p, tracker)
                     tracker.pop()
                     
                     tracker.push(1, GREATER, node1.split_dim, node1.split)
-                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                    node1.greater, node2,
-                                                    p, tracker)
+                    self.__count_neighbors_traverse(
+                        other, n_queries, r, results, idx,
+                        node1.greater, node2, p, tracker)
                     tracker.pop()
                     
                 else: # 1 and 2 are inner nodes
                     tracker.push(1, LESS, node1.split_dim, node1.split)
                     tracker.push(2, LESS, node2.split_dim, node2.split)
-                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                    node1.less, node2.less,
-                                                    p, tracker)
+                    self.__count_neighbors_traverse(
+                        other, n_queries, r, results, idx,
+                        node1.less, node2.less, p, tracker)
                     tracker.pop()
                         
                     tracker.push(2, GREATER, node2.split_dim, node2.split)
-                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                    node1.less, node2.greater,
-                                                    p, tracker)
+                    self.__count_neighbors_traverse(
+                        other, n_queries, r, results, idx,
+                        node1.less, node2.greater, p, tracker)
                     tracker.pop()
                     tracker.pop()
                         
                     tracker.push(1, GREATER, node1.split_dim, node1.split)
                     tracker.push(2, LESS, node2.split_dim, node2.split)
-                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                    node1.greater, node2.less,
-                                                    p, tracker)
+                    self.__count_neighbors_traverse(
+                        other, n_queries, r, results, idx,
+                        node1.greater, node2.less, p, tracker)
                     tracker.pop()
                         
                     tracker.push(2, GREATER, node2.split_dim, node2.split)
-                    self.__count_neighbors_traverse(other, n_queries, r, results, idx,
-                                                    node1.greater, node2.greater,
-                                                    p, tracker)
+                    self.__count_neighbors_traverse(
+                        other, n_queries, r, results, idx,
+                        node1.greater, node2.greater, p, tracker)
                     tracker.pop()
                     tracker.pop()
                     
@@ -1933,25 +1933,18 @@ cdef class cKDTree:
     # sparse_distance_matrix
     # ----------------------
     cdef int __sparse_distance_matrix_traverse(cKDTree self, cKDTree other,
-                                                coo_entries results,
-                                                innernode* node1, innernode* node2,
-                                                np.float64_t r,
-                                                np.float64_t p,
-                                                Rectangle rect1,
-                                                Rectangle rect2,
-                                                np.float64_t min_distance,
-                                                np.float64_t max_distance) except -1:
+                                               coo_entries results,
+                                               innernode* node1, innernode* node2,
+                                               np.float64_t r,
+                                               np.float64_t p,
+                                               RectRectDistanceTracker tracker) except -1:
         cdef leafnode *lnode1, *lnode2
         cdef list results_i
 
-        cdef np.float64_t save_min1, save_max1
-        cdef np.float64_t save_min2, save_max2
-        cdef np.float64_t part_min_distance1 = 0., part_max_distance1 = 0.
-        cdef np.float64_t part_min_distance2 = 0., part_max_distance2 = 0.
         cdef np.float64_t d
-        cdef np.intp_t k1, k2, i, j
+        cdef np.intp_t i, j, min_j
                 
-        if min_distance > r:
+        if tracker.min_distance > r:
             return 0
         elif node1.split_dim == -1:  # 1 is leaf node
             lnode1 = <leafnode*>node1
@@ -1960,177 +1953,79 @@ cdef class cKDTree:
                 lnode2 = <leafnode*>node2
                 
                 # brute-force
-                # Special care here to avoid duplicate pairs
-                if node1 == node2:
-                    # self == other if we get here
-                    for i in range(lnode1.start_idx, lnode1.end_idx):
-                        for j in range(i+1, lnode2.end_idx):
-                            d = _distance_p(
-                                self.raw_data + self.raw_indices[i] * self.m,
-                                self.raw_data + self.raw_indices[j] * self.m,
-                                p, self.m, r)
-                            if d <= r:
-                                results.add(self.raw_indices[i],
-                                            self.raw_indices[j], d)
+                for i in range(lnode1.start_idx, lnode1.end_idx):
+                    # Special care here to avoid duplicate pairs
+                    if node1 == node2:
+                        min_j = i+1
+                    else:
+                        min_j = lnode2.end_idx
+                        
+                    for j in range(min_j, lnode2.end_idx):
+                        d = _distance_p(
+                            self.raw_data + self.raw_indices[i] * self.m,
+                            other.raw_data + other.raw_indices[j] * self.m,
+                            p, self.m, r)
+                        if d <= r:
+                            results.add(self.raw_indices[i],
+                                        self.raw_indices[j], d)
+                            if node1 == node2:
                                 results.add(self.raw_indices[j],
                                             self.raw_indices[i], d)
-                else:
-                    for i in range(lnode1.start_idx, lnode1.end_idx):
-                        for j in range(lnode2.start_idx, lnode2.end_idx):
-                            d = _distance_p(
-                                self.raw_data + self.raw_indices[i] * self.m,
-                                other.raw_data + other.raw_indices[j] * self.m,
-                                p, self.m, r)
-                            if d <= r:
-                                results.add(self.raw_indices[i],
-                                            other.raw_indices[j], d)
-                            
+
             else:  # 1 is a leaf node, 2 is inner node
-                k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance,
-                                 max_distance, &part_min_distance2,
-                                 &part_max_distance2)
+                tracker.push(2, LESS, node2.split_dim, node2.split)
+                self.__sparse_distance_matrix_traverse(
+                    other, results, node1, node2.less, r, p, tracker)
+                tracker.pop()
                     
-                # node2 goes to box with lesser component along k2
-                # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
-                save_max2 = rect2.maxes[k2]
-                rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                  &max_distance, part_min_distance2,
-                                  part_max_distance2)
-                self.__sparse_distance_matrix_traverse(other, results,
-                                                       node1, node2.less,
-                                                       r, p,
-                                                       rect1, rect2,
-                                                       min_distance, max_distance)
-                rect2.maxes[k2] = save_max2
-                    
-                # node2 goes to box with greater component along k2
-                # node2.greater.mins[k2] changes from mins2[k2] to node2.split
-                save_min2 = rect2.mins[k2]
-                rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                  &max_distance, part_min_distance2,
-                                  part_max_distance2)
-                self.__sparse_distance_matrix_traverse(other, results,
-                                                       node1, node2.greater,
-                                                       r, p,
-                                                       rect1, rect2,
-                                                       min_distance, max_distance)
-                rect2.mins[k2] = save_min2
+                tracker.push(2, GREATER, node2.split_dim, node2.split)
+                self.__sparse_distance_matrix_traverse(
+                    other, results, node1, node2.greater, r, p, tracker)
+                tracker.pop()
                 
         else:  # 1 is an inner node
-            k1 = node1.split_dim
-            __rect_preupdate(rect1, rect2, k1, p, min_distance,
-                             max_distance, &part_min_distance1,
-                             &part_max_distance1)
-                
-            # node1 goes to box with lesser component along k1
-            # node1.less.maxes[k1] changes from rect1.maxes[k1] to node1.split
-            save_max1 = rect1.maxes[k1]
-            rect1.maxes[k1] = node1.split
-            __rect_postupdate(rect1, rect2, k1, p, &min_distance,
-                             &max_distance, part_min_distance1,
-                             part_max_distance1)
-
             if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
-                self.__sparse_distance_matrix_traverse(other, results,
-                                                       node1.less, node2,
-                                                       r, p,
-                                                       rect1, rect2,
-                                                       min_distance, max_distance)
-            else: # 1 and 2 are inner nodes
-                k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance,
-                                 max_distance, &part_min_distance2,
-                                 &part_max_distance2)
-                    
-                # node2 goes to box with lesser component along k2
-                # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
-                save_max2 = rect2.maxes[k2]
-                rect2.maxes[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                 &max_distance, part_min_distance2,
-                                 part_max_distance2)
-                self.__sparse_distance_matrix_traverse(other, results,
-                                                       node1.less, node2.less,
-                                                       r, p,
-                                                       rect1, rect2,
-                                                       min_distance, max_distance)
-                rect2.maxes[k2] = save_max2
-                    
-                # node2 goes to box with greater component along k2
-                # node2.greater.mins[k2] changes from mins2[k2] to node2.split
-                save_min2 = rect2.mins[k2]
-                rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                 &max_distance, part_min_distance2,
-                                 part_max_distance2)
-                self.__sparse_distance_matrix_traverse(other, results,
-                                                       node1.less, node2.greater,
-                                                       r, p,
-                                                       rect1, rect2,
-                                                       min_distance, max_distance)
-                rect2.mins[k2] = save_min2
+                tracker.push(1, LESS, node1.split_dim, node1.split)
+                self.__sparse_distance_matrix_traverse(
+                    other, results, node1.less, node2, r, p, tracker)
+                tracker.pop()
                 
-            rect1.maxes[k1] = save_max1
-                    
-            # node1 goes to box with greater component along k1
-            # node1.greater.mins[k1] changes from rect1.mins[k1] to node1.split
-            save_min1 = rect1.mins[k1]
-            rect1.mins[k1] = node1.split
-            __rect_postupdate(rect1, rect2, k1, p, &min_distance,
-                             &max_distance, part_min_distance1,
-                             part_max_distance1)
+                tracker.push(1, GREATER, node1.split_dim, node1.split)
+                self.__sparse_distance_matrix_traverse(
+                    other, results, node1.greater, node2, r, p, tracker)
+                tracker.pop()
                 
-            if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
-                self.__sparse_distance_matrix_traverse(other, results,
-                                                       node1.greater, node2,
-                                                       r, p,
-                                                       rect1, rect2,
-                                                       min_distance, max_distance)
             else: # 1 and 2 are inner nodes
-                k2 = node2.split_dim
-                __rect_preupdate(rect1, rect2, k2, p, min_distance,
-                                 max_distance, &part_min_distance2,
-                                 &part_max_distance2)
-
+                tracker.push(1, LESS, node1.split_dim, node1.split)
+                tracker.push(2, LESS, node2.split_dim, node2.split)
+                self.__sparse_distance_matrix_traverse(
+                    other, results, node1.less, node2.less, r, p, tracker)
+                tracker.pop()
+                    
+                tracker.push(2, GREATER, node2.split_dim, node2.split)
+                self.__sparse_distance_matrix_traverse(
+                    other, results, node1.less, node2.greater, r, p, tracker)
+                tracker.pop()
+                tracker.pop()
+                    
+                tracker.push(1, GREATER, node1.split_dim, node1.split)
                 if node1 != node2:
                     # Avoid traversing (node1.less, node2.greater) and
-                    # (node1.greater, node2.less) (it's the same node pair twice
-                    # over, which is the source of the complication in the
-                    # original KDTree.sparse_distance_matrix)
+                    # (node1.greater, node2.less) (it's the same node pair
+                    # twice over, which is the source of the complication in
+                    # the original KDTree.sparse_distance_matrix)
+                    tracker.push(2, LESS, node2.split_dim, node2.split)
+                    self.__sparse_distance_matrix_traverse(
+                        other, results, node1.greater, node2.less, r, p, tracker)
+                    tracker.pop()
                     
-                    # node2 goes to box with lesser component along k2
-                    # node2.less.maxes[k2] changes from rect2.maxes[k2] to node2.split
-                    save_max2 = rect2.maxes[k2]
-                    rect2.maxes[k2] = node2.split
-                    __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                     &max_distance, part_min_distance2,
-                                     part_max_distance2)
-                    self.__sparse_distance_matrix_traverse(other, results,
-                                                           node1.greater, node2.less,
-                                                           r, p,
-                                                           rect1, rect2,
-                                                           min_distance, max_distance)
-                    rect2.maxes[k2] = save_max2
-                    
-                # node2 goes to box with greater component along k2
-                # node2.greater.mins[k2] changes from rect2.mins[k2] to node2.split
-                save_min2 = rect2.mins[k2]
-                rect2.mins[k2] = node2.split
-                __rect_postupdate(rect1, rect2, k2, p, &min_distance,
-                                 &max_distance, part_min_distance2,
-                                 part_max_distance2)
-                self.__sparse_distance_matrix_traverse(other, results,
-                                                       node1.greater, node2.greater,
-                                                       r, p,
-                                                       rect1, rect2,
-                                                       min_distance, max_distance)
-                rect2.mins[k2] = save_min2
+                tracker.push(2, GREATER, node2.split_dim, node2.split)
+                self.__sparse_distance_matrix_traverse(
+                    other, results, node1.greater, node2.greater, r, p, tracker)
+                tracker.pop()
+                tracker.pop()
                 
-            rect1.mins[k1] = save_min1
-            return 0
+        return 0
             
     def sparse_distance_matrix(cKDTree self, cKDTree other, np.float64_t r,
                                np.float64_t p=2.):
@@ -2159,7 +2054,6 @@ cdef class cKDTree:
         cdef np.intp_t i
         cdef coo_entries results
         cdef Rectangle rect1, rect2
-        cdef np.float64_t min_distance, max_distance
 
         # Make sure trees are compatible
         if self.m != other.m:
@@ -2170,60 +2064,25 @@ cdef class cKDTree:
             r = r ** p
 
         # Calculate mins and maxes to outer box
+        cdef np.ndarray[np.float64_t, ndim=1] inner_maxes_1, inner_maxes_2
+        cdef np.ndarray[np.float64_t, ndim=1] inner_mins_1, inner_mins_2
+        inner_mins_1 = np.array(self.mins)
+        inner_maxes_1 = np.array(self.maxes)
+        inner_mins_2 = np.array(other.mins)
+        inner_maxes_2 = np.array(other.maxes)
+        
         rect1.m = rect2.m = self.m
+        rect1.mins = &inner_mins_1[0]
+        rect1.maxes = &inner_maxes_1[0]
+        rect2.mins = &inner_mins_2[0]
+        rect2.maxes = &inner_maxes_2[0]
 
-        rect1.mins = rect1.maxes = rect2.mins = rect2.maxes = <np.float64_t*> NULL
-        try:
-            rect1.mins = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect1.mins == <np.float64_t*> NULL: 
-                raise MemoryError
-
-            rect1.maxes = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect1.maxes == <np.float64_t*> NULL: 
-                raise MemoryError    
-
-            rect2.mins = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect2.mins == <np.float64_t*> NULL: 
-                raise MemoryError
-
-            rect2.maxes = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect2.maxes == <np.float64_t*> NULL: 
-                raise MemoryError
-
-            for i in range(self.m):
-                rect1.mins[i] = self.raw_mins[i]
-                rect1.maxes[i] = self.raw_maxes[i]
-                rect2.mins[i] = other.raw_mins[i]
-                rect2.maxes[i] = other.raw_maxes[i]
-
-            # Compute first min and max distances
-            if p == infinity:
-                min_distance = min_dist_rect_rect_p_inf(rect1, rect2)
-                max_distance = max_dist_rect_rect_p_inf(rect1, rect2)
-            else:
-                min_distance = 0.
-                max_distance = 0.
-                for i in range(self.m):
-                    min_distance += min_dist_interval_interval_p(rect1, rect2, i, p)
-                    max_distance += max_dist_interval_interval_p(rect1, rect2, i, p)
-                    
-            results = coo_entries()
-            self.__sparse_distance_matrix_traverse(other, results,
-                                                self.tree, other.tree,
-                                                r, p, rect1, rect2,
-                                                min_distance, max_distance)
-        finally:
-            if rect1.mins  != <np.float64_t*> NULL: 
-                stdlib.free(rect1.mins)
-
-            if rect1.maxes != <np.float64_t*> NULL: 
-                stdlib.free(rect1.maxes)
-
-            if rect2.mins  != <np.float64_t*> NULL: 
-                stdlib.free(rect2.mins)
-
-            if rect2.maxes != <np.float64_t*> NULL: 
-                stdlib.free(rect2.maxes)
-
+        cdef RectRectDistanceTracker tracker = RectRectDistanceTracker()
+        tracker.init(rect1, rect2, p)
+        
+        results = coo_entries()
+        self.__sparse_distance_matrix_traverse(other, results,
+                                               self.tree, other.tree,
+                                               r, p, tracker)
+        
         return results.to_matrix(shape=(self.n, other.n)).todok()
-
