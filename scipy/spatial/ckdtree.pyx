@@ -633,22 +633,18 @@ cdef class cKDTree:
     """
 
     cdef innernode* tree 
-    cdef readonly object data
+    cdef readonly np.ndarray data
     cdef np.float64_t* raw_data
     cdef readonly np.intp_t n, m
     cdef readonly np.intp_t leafsize
-    cdef readonly object maxes
+    cdef readonly np.ndarray maxes
     cdef np.float64_t* raw_maxes
-    cdef readonly object mins
+    cdef readonly np.ndarray mins
     cdef np.float64_t* raw_mins
-    cdef object indices
+    cdef np.ndarray indices
     cdef np.intp_t* raw_indices
 
     def __init__(cKDTree self, data, np.intp_t leafsize=10):
-        cdef np.ndarray[np.float64_t, ndim=2] inner_data
-        cdef np.ndarray[np.float64_t, ndim=1] inner_maxes
-        cdef np.ndarray[np.float64_t, ndim=1] inner_mins
-        cdef np.ndarray[np.intp_t, ndim=1] inner_indices
         self.data = np.ascontiguousarray(data,dtype=np.float64)
         self.n, self.m = np.shape(self.data)
         self.leafsize = leafsize
@@ -658,14 +654,10 @@ cdef class cKDTree:
         self.mins = np.ascontiguousarray(np.amin(self.data,axis=0), dtype=np.float64)
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
 
-        inner_data = self.data
-        self.raw_data = <np.float64_t*>np.PyArray_DATA(inner_data)
-        inner_maxes = self.maxes
-        self.raw_maxes = <np.float64_t*>np.PyArray_DATA(inner_maxes)
-        inner_mins = self.mins
-        self.raw_mins = <np.float64_t*>np.PyArray_DATA(inner_mins)
-        inner_indices = self.indices
-        self.raw_indices = <np.intp_t*>np.PyArray_DATA(inner_indices)
+        self.raw_data = <np.float64_t*>np.PyArray_DATA(self.data)
+        self.raw_maxes = <np.float64_t*>np.PyArray_DATA(self.maxes)
+        self.raw_mins = <np.float64_t*>np.PyArray_DATA(self.mins)
+        self.raw_indices = <np.intp_t*>np.PyArray_DATA(self.indices)
 
         self.tree = self.__build(0, self.n, self.raw_maxes, self.raw_mins)
 
@@ -1073,14 +1065,8 @@ cdef class cKDTree:
         ii = np.empty((n,k),dtype=np.intp)
         ii.fill(self.n)
         for c in range(n):
-            self.__query(
-                    (<np.float64_t*>np.PyArray_DATA(dd))+c*k,
-                    (<np.intp_t*>np.PyArray_DATA(ii))+c*k,
-                    (<np.float64_t*>np.PyArray_DATA(xx))+c*self.m, 
-                    k, 
-                    eps,
-                    p, 
-                    distance_upper_bound)
+            self.__query(&dd[c, 0], &ii[c, 0], &xx[c, 0],
+                          k, eps, p, distance_upper_bound)
         if single:
             if k==1:
                 if sizeof(long) < sizeof(np.intp_t):
@@ -1319,14 +1305,13 @@ cdef class cKDTree:
                              "%d-dimensional KDTree" % (int(x.shape[-1]), int(self.m)))
         if len(x.shape) == 1:
             xx = np.ascontiguousarray(x, dtype=np.float64)
-            return self.__query_ball_point(<np.float64_t*>np.PyArray_DATA(xx), r, p, eps)
+            return self.__query_ball_point(&xx[0], r, p, eps)
         else:
             retshape = x.shape[:-1]
             result = np.empty(retshape, dtype=np.object)
             for c in np.ndindex(retshape):
                 xx = np.ascontiguousarray(x[c], dtype=np.float64)
-                result[c] = self.__query_ball_point(
-                    <np.float64_t*>np.PyArray_DATA(xx), r, p, eps)
+                result[c] = self.__query_ball_point(&xx[0], r, p, eps)
             return result
 
     # ---------------
@@ -2195,9 +2180,7 @@ cdef class cKDTree:
             results = np.zeros((n_queries,), dtype=np.intp)
             idx = np.arange(n_queries, dtype=np.intp)
             self.__count_neighbors_traverse(other, n_queries,
-                                            <np.float64_t*>np.PyArray_DATA(real_r),
-                                            <np.intp_t *>np.PyArray_DATA(results),
-                                            <np.intp_t *>np.PyArray_DATA(idx),
+                                            &real_r[0], &results[0], &idx[0],
                                             self.tree, other.tree,
                                             p, rect1, rect2,
                                             min_distance, max_distance)
