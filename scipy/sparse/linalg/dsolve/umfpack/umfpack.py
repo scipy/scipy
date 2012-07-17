@@ -345,10 +345,10 @@ class UmfpackContext( Struct ):
                 raise ValueError('matrix must have long indices')
 
         if self.isReal:
-            if mtx.data.dtype != np.dtype('<f8'):
+            if mtx.data.dtype != np.dtype('f8'):
                 raise ValueError('matrix must have float64 values')
         else:
-            if mtx.data.dtype != np.dtype('<c16'):
+            if mtx.data.dtype != np.dtype('c16'):
                 raise ValueError('matrix must have complex128 values')
 
         return indx
