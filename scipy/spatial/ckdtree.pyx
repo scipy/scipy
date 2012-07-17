@@ -1747,7 +1747,7 @@ cdef class cKDTree:
         # and see if any work remains to be done
         old_idx = idx
         cdef np.ndarray[np.intp_t, ndim=1] inner_idx
-        inner_idx = np.empty((n_queries,), dtype=np.int)
+        inner_idx = np.empty((n_queries,), dtype=np.intp)
         idx = &inner_idx[0]
 
         old_n_queries = n_queries
