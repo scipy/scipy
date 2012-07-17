@@ -284,6 +284,7 @@ one patch to this release, names in alphabetical order):
 * Maxim Ivanov +
 * Thouis (Ray) Jones
 * Christopher Kuster +
+* Josh Lawrence +
 * Denis Laxalde +
 * Travis Oliphant
 * Joonas Paalasmaa +
@@ -312,6 +313,6 @@ one patch to this release, names in alphabetical order):
 * Mike Wimmer +
 * Tony S Yu +
 
-A total of 54 people contributed to this release.
+A total of 55 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 
