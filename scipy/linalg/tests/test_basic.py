@@ -484,8 +484,7 @@ class TestLstsq(TestCase):
         b = [1,2]
         x,res,r,s = lstsq(a,b)
         #XXX: need independent check
-        assert_array_almost_equal(x,[[-0.05555556],
-                                     [0.11111111],[0.27777778]])
+        assert_array_almost_equal(x,[-0.05555556, 0.11111111, 0.27777778])
 
     def test_random_exact(self):
 
