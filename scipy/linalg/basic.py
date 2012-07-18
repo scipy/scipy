@@ -468,11 +468,15 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     if n > m:
         # need to extend b matrix as it will be filled with
         # a larger solution matrix
-        b2 = np.zeros((n, nrhs), dtype=gelss.dtype)
+        if len(b1.shape) == 2:
+            b2 = np.zeros((n, nrhs), dtype=gelss.dtype)
+        else:
+            b2 = np.zeros(n, dtype=gelss.dtype)
+
         if len(b1.shape) == 2:
             b2[:m,:] = b1
         else:
-            b2[:m,0] = b1
+            b2[:m] = b1
         b1 = b2
     overwrite_a = overwrite_a or _datacopied(a1, a)
     overwrite_b = overwrite_b or _datacopied(b1, b)
