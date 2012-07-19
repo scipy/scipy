@@ -519,6 +519,158 @@ cdef class RectRectDistanceTracker(object):
         self._pop()
         return 0
 
+# The other logical unit that is used in query_ball_point is to keep track
+# of the maximum and minimum distances between points in a hyperrectangle
+# and another fixed point as the rectangle is successively split.
+#
+# Example
+# -------
+# # node encloses points in rect
+#
+# cdef PointRectDistanceTracker dist_tracker
+# dist_tracker = PointRectDistanceTracker(pt, rect, p)
+#
+# ...
+#
+# if dist_tracker.min_distance < ...:
+#     ...
+#
+# dist_tracker.push(LESS, node.split_dim, node.split)
+# do_something(node.less, dist_tracker)
+# dist_tracker.pop()
+#
+# dist_tracker.push(GREATER, node.split_dim, node.split_val)
+# do_something(node.greater, dist_tracker)
+# dist_tracker.pop()
+
+cdef struct RP_stack_item:
+    np.intp_t split_dim
+    double min_along_dim, max_along_dim
+    np.float64_t min_distance, max_distance
+
+cdef class PointRectDistanceTracker(object):
+    cdef Rectangle rect
+    cdef np.float64_t *pt
+    cdef np.float64_t p
+    cdef np.float64_t min_distance, max_distance
+
+    cdef np.intp_t stack_size, stack_max_size
+    cdef RP_stack_item *stack
+
+    # Stack handling
+    cdef int _init_stack(self) except -1:
+        cdef void *tmp
+        self.stack_max_size = 10
+        tmp = stdlib.malloc(sizeof(RP_stack_item) *
+                            self.stack_max_size)
+        if tmp == NULL:
+            raise MemoryError
+        self.stack = <RP_stack_item*> tmp
+        self.stack_size = 0
+        return 0
+
+    cdef int _resize_stack(self, np.intp_t new_max_size) except -1:
+        cdef void *tmp
+        self.stack_max_size = new_max_size
+        tmp = stdlib.realloc(<RP_stack_item*> self.stack,
+                              new_max_size *
+                              sizeof(RP_stack_item))
+        if tmp == NULL:
+            raise MemoryError
+        self.stack = <RP_stack_item*> tmp
+        return 0
+    
+    cdef int _free_stack(self) except -1:
+        if self.stack != <RP_stack_item*> NULL:
+            stdlib.free(self.stack)
+        return 0
+
+    cdef inline int _push(self,
+                          np.intp_t split_dim) except -1:
+    
+        if self.stack_size == self.stack_max_size:
+            self._resize_stack(self.stack_max_size * 2)
+            
+        cdef RP_stack_item *item = &self.stack[self.stack_size]
+        self.stack_size += 1
+        
+        item.split_dim = split_dim
+        item.min_distance = self.min_distance
+        item.max_distance = self.max_distance
+        item.min_along_dim = self.rect.mins[split_dim]
+        item.max_along_dim = self.rect.maxes[split_dim]
+            
+        return 0
+
+    cdef inline int _pop(self) except -1:
+        
+        self.stack_size -= 1
+        assert self.stack_size >= 0
+        
+        cdef RP_stack_item* item = &self.stack[self.stack_size]
+        
+        self.min_distance = item.min_distance
+        self.max_distance = item.max_distance
+
+        self.rect.mins[item.split_dim] = item.min_along_dim
+        self.rect.maxes[item.split_dim] = item.max_along_dim
+        
+        return 0
+
+    # Distance tracker
+    def __init__(self):
+        self.stack = <RP_stack_item*> NULL
+
+    cdef init(self, np.float64_t *pt, Rectangle rect, double p):
+
+        self.pt = pt
+        self.rect = rect
+        self.p = p
+
+        self._init_stack()
+
+        # Compute initial min and max distances
+        if self.p == infinity:
+            self.min_distance = min_dist_point_rect_p_inf(pt, rect)
+            self.max_distance = max_dist_point_rect_p_inf(pt, rect)
+        else:
+            self.min_distance = 0.
+            self.max_distance = 0.
+            for i in range(rect.m):
+                self.min_distance += min_dist_point_interval_p(pt, rect, i, p)
+                self.max_distance += max_dist_point_interval_p(pt, rect, i, p)
+
+    def __dealloc__(self):
+        self._free_stack()
+
+    cdef int push(self, np.intp_t direction,
+                  np.intp_t split_dim,
+                  np.float64_t split_val) except -1:
+
+        self._push(split_dim)
+        
+        if self.p != infinity:
+            self.min_distance -= min_dist_point_interval_p(self.pt, self.rect, split_dim, self.p)
+            self.max_distance -= max_dist_point_interval_p(self.pt, self.rect, split_dim, self.p)
+
+        if direction == LESS:
+            self.rect.maxes[split_dim] = split_val
+        else:
+            self.rect.mins[split_dim] = split_val
+
+        if self.p != infinity:
+            self.min_distance += min_dist_point_interval_p(self.pt, self.rect, split_dim, self.p)
+            self.max_distance += max_dist_point_interval_p(self.pt, self.rect, split_dim, self.p)
+        else:
+            self.min_distance = min_dist_point_rect_p_inf(self.pt, self.rect)
+            self.max_distance = max_dist_point_rect_p_inf(self.pt, self.rect)
+            
+        return 0
+
+    cdef inline int pop(self) except -1:
+        self._pop()
+        return 0
+
 # Tree structure
 
 cdef struct innernode:
@@ -1108,28 +1260,22 @@ cdef class cKDTree:
         return 0
 
 
+    @cython.cdivision(True)
     cdef int __query_ball_point_traverse_checking(cKDTree self,
                                                    list results,
                                                    innernode* node,
-                                                   np.float64_t* x,
                                                    np.float64_t r,
                                                    np.float64_t p,
                                                    np.float64_t epsfac,
-                                                   np.float64_t invepsfac,
-                                                   Rectangle rect,
-                                                   np.float64_t min_distance,
-                                                   np.float64_t max_distance) except -1:
+                                                   PointRectDistanceTracker tracker) except -1:
         cdef leafnode* lnode
-        cdef innernode* inode
         
-        cdef np.float64_t save_min, save_max
-        cdef np.float64_t part_min_distance = 0., part_max_distance = 0.
         cdef np.float64_t d
-        cdef np.intp_t k, i, j
+        cdef np.intp_t i, j
 
-        if min_distance > r*epsfac:
+        if tracker.min_distance > r*epsfac:
             return 0
-        elif max_distance < r*invepsfac:
+        elif tracker.max_distance < r/epsfac:
             self.__query_ball_point_traverse_no_checking(results, node)
         elif node.split_dim == -1:  # leaf node
             lnode = <leafnode*>node
@@ -1137,51 +1283,21 @@ cdef class cKDTree:
             for i in range(lnode.start_idx, lnode.end_idx):
                 d = _distance_p(
                     self.raw_data + self.raw_indices[i] * self.m,
-                    x, p, self.m, r)
+                    tracker.pt, p, self.m, r)
                 if d <= r:
                     list_append(results, self.raw_indices[i])
         else:
-            inode = <innernode*>node
-                
-            k = inode.split_dim
-            if p != infinity:
-                part_min_distance = min_distance - min_dist_point_interval_p(x, rect, k, p)
-                part_max_distance = max_distance - max_dist_point_interval_p(x, rect, k, p)
+            tracker.push(LESS, node.split_dim, node.split)
+            self.__query_ball_point_traverse_checking(results, node.less,
+                                                      r, p, epsfac, tracker)
+            tracker.pop()
             
-            # Go to box with lesser component along k
-            # less.maxes[k] goes from rect.maxes[k] to inode.split
-            save_max = rect.maxes[k]
-            rect.maxes[k] = inode.split
-            if p != infinity:
-                min_distance = part_min_distance + min_dist_point_interval_p(x, rect, k, p)
-                max_distance = part_max_distance + max_dist_point_interval_p(x, rect, k, p)
-            else:
-                min_distance = min_dist_point_rect_p_inf(x, rect)
-                max_distance = max_dist_point_rect_p_inf(x, rect)
-                    
-            self.__query_ball_point_traverse_checking(results, inode.less,
-                                                      x, r, p, epsfac, invepsfac,
-                                                      rect,
-                                                      min_distance, max_distance)
-            rect.maxes[k] = save_max
+            tracker.push(GREATER, node.split_dim, node.split)
+            self.__query_ball_point_traverse_checking(results, node.greater,
+                                                      r, p, epsfac, tracker)
+            tracker.pop()
             
-            # Go to box with greater component along k
-            # greater.mins[k] goes from rect.mins[k] to inode.split
-            save_min = rect.mins[k]
-            rect.mins[k] = inode.split
-            if p != infinity:
-                min_distance = part_min_distance + min_dist_point_interval_p(x, rect, k, p)
-                max_distance = part_max_distance + max_dist_point_interval_p(x, rect, k, p)
-            else:
-                min_distance = min_dist_point_rect_p_inf(x, rect)
-                max_distance = max_dist_point_rect_p_inf(x, rect)
-                    
-            self.__query_ball_point_traverse_checking(results, inode.greater,
-                                                      x, r, p, epsfac, invepsfac,
-                                                      rect,
-                                                      min_distance, max_distance)
-            rect.mins[k] = save_min
-            return 0
+        return 0
 
 
     cdef list __query_ball_point(cKDTree self,
@@ -1192,7 +1308,7 @@ cdef class cKDTree:
 
         cdef list results
         cdef Rectangle rect
-        cdef np.float64_t epsfac, invepsfac
+        cdef np.float64_t epsfac
         cdef np.float64_t min_distance, max_distance
         cdef np.intp_t i
 
@@ -1208,48 +1324,22 @@ cdef class cKDTree:
             epsfac = 1/(1+eps)
         else:
             epsfac = 1/(1+eps)**p
-        invepsfac = 1/epsfac
 
         # Calculate mins and maxes to outer box
+        cdef np.ndarray[np.float64_t, ndim=1] inner_maxes
+        cdef np.ndarray[np.float64_t, ndim=1] inner_mins
+        inner_maxes = np.array(self.maxes)
+        inner_mins = np.array(self.mins)
         rect.m = self.m
-        rect.mins = rect.maxes = <np.float64_t*> NULL
-        try:
-            
-            rect.mins = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect.mins == <np.float64_t*> NULL:
-                raise MemoryError
-
-            rect.maxes = <np.float64_t*>stdlib.malloc(self.m * sizeof(np.float64_t))
-            if rect.maxes == <np.float64_t*> NULL:
-                raise MemoryError
-
-            for i in range(self.m):
-                rect.mins[i] = self.raw_mins[i]
-                rect.maxes[i] = self.raw_maxes[i]
-
-            # Computer first min and max distances
-            if p == infinity:
-                min_distance = min_dist_point_rect_p_inf(x, rect)
-                max_distance = max_dist_point_rect_p_inf(x, rect)
-            else:
-                min_distance = 0.
-                max_distance = 0.
-                for i in range(self.m):
-                    min_distance += min_dist_point_interval_p(x, rect, i, p)
-                    max_distance += max_dist_point_interval_p(x, rect, i, p)
-                    
-            results = []
-            self.__query_ball_point_traverse_checking(results, self.tree,
-                                                    x, r, p, epsfac, invepsfac,
-                                                    rect,
-                                                    min_distance, max_distance)
-
-        finally:
-            if rect.mins != <np.float64_t*> NULL:
-                stdlib.free(rect.mins)
-
-            if rect.maxes != <np.float64_t*> NULL:
-                stdlib.free(rect.maxes)
+        rect.mins = &inner_mins[0]
+        rect.maxes = &inner_maxes[0]
+        
+        cdef PointRectDistanceTracker tracker = PointRectDistanceTracker()
+        tracker.init(x, rect, p)
+        
+        results = []
+        self.__query_ball_point_traverse_checking(results, self.tree,
+                                                  r, p, epsfac, tracker)
 
         return results
 
