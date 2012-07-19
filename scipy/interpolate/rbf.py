@@ -186,7 +186,9 @@ class Rbf(object):
 
         self.norm = kwargs.pop('norm', self._euclidean_norm)
         r = self._call_norm(self.xi, self.xi)
-        self.epsilon = kwargs.pop('epsilon', r.mean())
+        self.epsilon = kwargs.pop('epsilon', None)
+        if self.epsilon is None:
+            self.epsilon = r.mean()
         self.smooth = kwargs.pop('smooth', 0.0)
 
         self.function = kwargs.pop('function', 'multiquadric')

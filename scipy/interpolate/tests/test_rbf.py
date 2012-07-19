@@ -3,7 +3,8 @@
 """ Test functions for rbf module """
 
 import numpy as np
-from numpy.testing import assert_, assert_array_almost_equal, assert_almost_equal
+from numpy.testing import (assert_, assert_array_almost_equal,
+                           assert_almost_equal, run_module_suite)
 from numpy import linspace, sin, random, exp, allclose
 from scipy.interpolate.rbf import Rbf
 
@@ -120,3 +121,12 @@ def test_two_arg_function_is_callable():
     rbf = Rbf(x, y, function=_func)
     yi = rbf(x)
     assert_array_almost_equal(y, yi)
+
+def test_rbf_epsilon_none():
+    x = linspace(0, 10, 9)
+    y = sin(x)
+    rbf = Rbf(x, y, epsilon=None)
+
+
+if __name__ == "__main__":
+    run_module_suite()
