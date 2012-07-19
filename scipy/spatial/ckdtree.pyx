@@ -946,137 +946,7 @@ cdef class cKDTree:
     # query
     # -----
 
-    cdef np.float64_t __new_query_traverse(cKDTree self,
-                                           heap* neighbors,
-                                           innernode* node,
-                                           np.intp_t k, 
-                                           np.float64_t epsfac,
-                                           np.float64_t p, 
-                                           np.float64_t distance_upper_bound,
-                                           PointRectDistanceTracker tracker) except -1.0:
-    
-        # Returns updated distance_upper_bound
-    
-        cdef leafnode* lnode
-        
-        cdef np.float64_t d
-        cdef np.intp_t i, j
-        cdef heapitem neighbor
-        cdef np.intp_t near_which, far_which
-        cdef innernode *near, *far
-
-        if tracker.min_distance > distance_upper_bound*epsfac:
-            return distance_upper_bound
-        elif node.split_dim == -1:  # leaf node
-            lnode = <leafnode*>node
-            # brute-force
-            for i in range(lnode.start_idx, lnode.end_idx):
-                d = _distance_p(
-                    self.raw_data + self.raw_indices[i] * self.m,
-                    tracker.pt, p, self.m, distance_upper_bound)
-                
-                if d < distance_upper_bound:
-                    # replace furthest neighbor
-                    if neighbors.n == k:
-                        heapremove(neighbors)
-                    neighbor.priority = -d
-                    neighbor.contents.intdata = self.raw_indices[i]
-                    heappush(neighbors, neighbor)
-
-                    # adjust upper bound for efficiency
-                    if neighbors.n == k:
-                        distance_upper_bound = -heappeek(neighbors).priority
-        else:
-            # set up children for searching
-            if tracker.pt[node.split_dim] < node.split:
-                which_near = LESS
-                near = node.less
-                which_far = GREATER
-                far = node.greater
-            else:
-                which_near = GREATER
-                near = node.greater
-                which_far = LESS
-                far = node.less
-                
-            tracker.push(which_near, node.split_dim, node.split)
-            distance_upper_bound = self.__new_query_traverse(
-                neighbors, near, k, epsfac, p,
-                distance_upper_bound, tracker)
-            tracker.pop()
-            
-            tracker.push(which_far, node.split_dim, node.split)
-            distance_upper_bound = self.__new_query_traverse(
-                neighbors, far, k, epsfac, p,
-                distance_upper_bound, tracker)
-            tracker.pop()
-            
-        return distance_upper_bound
-        
-
-    cdef int __new_query(cKDTree self, 
-                         np.float64_t*result_distances, 
-                         np.intp_t*result_indices, 
-                         np.float64_t*x, 
-                         np.intp_t k, 
-                         np.float64_t eps, 
-                         np.float64_t p, 
-                         np.float64_t distance_upper_bound) except -1:
-
-        cdef heap neighbors
-        cdef Rectangle rect
-        cdef np.float64_t epsfac
-        cdef np.intp_t i
-        cdef heapitem neighbor
-
-        # internally we represent all distances as distance**p
-        if p != infinity and distance_upper_bound != infinity:
-            distance_upper_bound = distance_upper_bound ** p
-
-        # fiddle approximation factor
-        if eps == 0:
-            epsfac = 1
-        elif p == infinity:
-            epsfac = 1/(1+eps)
-        else:
-            epsfac = 1/(1+eps)**p
-
-        # Calculate mins and maxes to outer box
-        cdef np.ndarray[np.float64_t, ndim=1] inner_maxes
-        cdef np.ndarray[np.float64_t, ndim=1] inner_mins
-        inner_maxes = np.array(self.maxes)
-        inner_mins = np.array(self.mins)
-        rect.m = self.m
-        rect.mins = &inner_mins[0]
-        rect.maxes = &inner_maxes[0]
-        
-        cdef PointRectDistanceTracker tracker = PointRectDistanceTracker()
-        tracker.init(x, rect, p)
-        
-        try:
-            # priority queue for the nearest neighbors
-            # furthest known neighbor first
-            # entries are (-distance ** p, i)
-            heapcreate(&neighbors, k)
-
-            self.__new_query_traverse(&neighbors, self.tree, k, epsfac,
-                                      p, distance_upper_bound, tracker)
-
-            # fill output arrays with sorted neighbors 
-            for i in range(neighbors.n - 1, -1, -1):
-                heappop(&neighbors, &neighbor) # FIXME: neighbors may be realloced
-                result_indices[i] = neighbor.contents.intdata
-                if p == 1 or p == infinity:
-                    result_distances[i] = -neighbor.priority
-                else:
-                    result_distances[i] = (-neighbor.priority)**(1./p)
-
-        finally:
-            heapdestroy(&neighbors)
-
-        return 0
-
-    cdef int __old_query(cKDTree self, 
+    cdef int __query(cKDTree self, 
             np.float64_t*result_distances, 
             np.intp_t*result_indices, 
             np.float64_t*x, 
@@ -1288,100 +1158,6 @@ cdef class cKDTree:
         return 0
 
 
-    def old_query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
-                  np.float64_t p=2, np.float64_t distance_upper_bound=infinity):
-        cdef np.ndarray[np.intp_t, ndim=2] ii
-        cdef np.ndarray[np.float64_t, ndim=2] dd
-        cdef np.ndarray[np.float64_t, ndim=2] xx
-        cdef np.intp_t c
-        x = np.asarray(x).astype(np.float64)
-        if np.shape(x)[-1] != self.m:
-            raise ValueError("x must consist of vectors of length %d but has"
-                             "shape %s" % (int(self.m), np.shape(x)))
-        if p < 1:
-            raise ValueError("Only p-norms with 1<=p<=infinity permitted")
-        if len(x.shape)==1:
-            single = True
-            x = x[np.newaxis,:]
-        else:
-            single = False
-        retshape = np.shape(x)[:-1]
-        n = np.prod(retshape)
-        xx = np.reshape(x,(n,self.m))
-        xx = np.ascontiguousarray(xx,dtype=np.float64)
-        dd = np.empty((n,k),dtype=np.float64)
-        dd.fill(infinity)
-        ii = np.empty((n,k),dtype=np.intp)
-        ii.fill(self.n)
-        for c in range(n):
-            self.__old_query(&dd[c, 0], &ii[c, 0], &xx[c, 0],
-                          k, eps, p, distance_upper_bound)
-        if single:
-            if k==1:
-                if sizeof(long) < sizeof(np.intp_t):
-                    # ... e.g. Windows 64
-                    if ii[0,0] <= <np.intp_t>LONG_MAX:
-                        return dd[0,0], int(ii[0,0])
-                    else:
-                        return dd[0,0], ii[0,0]
-                else:
-                    # ... most other platforms
-                    return dd[0,0], ii[0,0]
-            else:
-                return dd[0], ii[0]
-        else:
-            if k==1:
-                return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
-            else:
-                return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
-            
-    def new_query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
-                  np.float64_t p=2, np.float64_t distance_upper_bound=infinity):
-        cdef np.ndarray[np.intp_t, ndim=2] ii
-        cdef np.ndarray[np.float64_t, ndim=2] dd
-        cdef np.ndarray[np.float64_t, ndim=2] xx
-        cdef np.intp_t c
-        x = np.asarray(x).astype(np.float64)
-        if np.shape(x)[-1] != self.m:
-            raise ValueError("x must consist of vectors of length %d but has"
-                             "shape %s" % (int(self.m), np.shape(x)))
-        if p < 1:
-            raise ValueError("Only p-norms with 1<=p<=infinity permitted")
-        if len(x.shape)==1:
-            single = True
-            x = x[np.newaxis,:]
-        else:
-            single = False
-        retshape = np.shape(x)[:-1]
-        n = np.prod(retshape)
-        xx = np.reshape(x,(n,self.m))
-        xx = np.ascontiguousarray(xx,dtype=np.float64)
-        dd = np.empty((n,k),dtype=np.float64)
-        dd.fill(infinity)
-        ii = np.empty((n,k),dtype=np.intp)
-        ii.fill(self.n)
-        for c in range(n):
-            self.__new_query(&dd[c, 0], &ii[c, 0], &xx[c, 0],
-                          k, eps, p, distance_upper_bound)
-        if single:
-            if k==1:
-                if sizeof(long) < sizeof(np.intp_t):
-                    # ... e.g. Windows 64
-                    if ii[0,0] <= <np.intp_t>LONG_MAX:
-                        return dd[0,0], int(ii[0,0])
-                    else:
-                        return dd[0,0], ii[0,0]
-                else:
-                    # ... most other platforms
-                    return dd[0,0], ii[0,0]
-            else:
-                return dd[0], ii[0]
-        else:
-            if k==1:
-                return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
-            else:
-                return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
-            
     def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
               np.float64_t p=2, np.float64_t distance_upper_bound=infinity):
         """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf)
@@ -1421,7 +1197,50 @@ cdef class cKDTree:
             Missing neighbors are indicated with self.n.
 
         """
-        return self.old_query(x, k, eps, p, distance_upper_bound)
+        cdef np.ndarray[np.intp_t, ndim=2] ii
+        cdef np.ndarray[np.float64_t, ndim=2] dd
+        cdef np.ndarray[np.float64_t, ndim=2] xx
+        cdef np.intp_t c
+        x = np.asarray(x).astype(np.float64)
+        if np.shape(x)[-1] != self.m:
+            raise ValueError("x must consist of vectors of length %d but has"
+                             "shape %s" % (int(self.m), np.shape(x)))
+        if p < 1:
+            raise ValueError("Only p-norms with 1<=p<=infinity permitted")
+        if len(x.shape)==1:
+            single = True
+            x = x[np.newaxis,:]
+        else:
+            single = False
+        retshape = np.shape(x)[:-1]
+        n = np.prod(retshape)
+        xx = np.reshape(x,(n,self.m))
+        xx = np.ascontiguousarray(xx,dtype=np.float64)
+        dd = np.empty((n,k),dtype=np.float64)
+        dd.fill(infinity)
+        ii = np.empty((n,k),dtype=np.intp)
+        ii.fill(self.n)
+        for c in range(n):
+            self.__query(&dd[c, 0], &ii[c, 0], &xx[c, 0],
+                          k, eps, p, distance_upper_bound)
+        if single:
+            if k==1:
+                if sizeof(long) < sizeof(np.intp_t):
+                    # ... e.g. Windows 64
+                    if ii[0,0] <= <np.intp_t>LONG_MAX:
+                        return dd[0,0], int(ii[0,0])
+                    else:
+                        return dd[0,0], ii[0,0]
+                else:
+                    # ... most other platforms
+                    return dd[0,0], ii[0,0]
+            else:
+                return dd[0], ii[0]
+        else:
+            if k==1:
+                return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
+            else:
+                return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
 
     # ----------------
     # query_ball_point
