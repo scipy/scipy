@@ -3858,7 +3858,7 @@ def f_value_multivariate(ER, EF, dfnum, dfden):
 
 def ss(a, axis=0):
     """
-    Squares each element of the input array, and returns the square(s) of that.
+    Squares each element of the input array, and returns the sum(s) of that.
 
     Parameters
     ----------
