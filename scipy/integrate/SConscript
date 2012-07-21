@@ -73,6 +73,9 @@ odenv.NumpyPythonExtension('_odepack', source = '_odepackmodule.c')
 # Build vode
 odenv.NumpyPythonExtension('vode', source = 'vode.pyf')
 
+# Build lsoda
+odenv.NumpyPythonExtension('lsoda', source = 'lsoda.pyf')
+
 # Dop extension
 dopenv = env.Clone()
 dopenv.Prepend(LIBS=['dop'])

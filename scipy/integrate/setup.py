@@ -57,6 +57,12 @@ def configuration(parent_package='',top_path=None):
                          libraries=libs,
                          **newblas)
 
+    # lsoda
+    config.add_extension('lsoda',
+                         sources=['lsoda.pyf'],
+                         libraries=libs,
+                         **newblas)
+
     # dop
     config.add_extension('_dop',
                          sources=['dop.pyf'],

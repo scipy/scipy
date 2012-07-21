@@ -71,6 +71,13 @@ class TestOde(TestCase):
                 self._do_problem(problem, 'zvode', 'adams')
             self._do_problem(problem, 'zvode', 'bdf')
 
+    def test_lsoda(self):
+        """Check the lsoda solver"""
+        for problem_cls in PROBLEMS:
+            problem = problem_cls()
+            if problem.cmplx: continue
+            self._do_problem(problem, 'lsoda')
+
     def test_dopri5(self):
         """Check the dopri5 solver"""
         for problem_cls in PROBLEMS:
@@ -90,7 +97,7 @@ class TestOde(TestCase):
             self._do_problem(problem, 'dop853')
 
     def test_concurrent_fail(self):
-        for sol in ('vode', 'zvode'):
+        for sol in ('vode', 'zvode', 'lsoda'):
             f = lambda t, y: 1.0
 
             r = ode(f).set_integrator(sol)
@@ -108,7 +115,7 @@ class TestOde(TestCase):
         f = lambda t, y: 1.0
 
         for k in xrange(3):
-            for sol in ('vode', 'zvode', 'dopri5', 'dop853'):
+            for sol in ('vode', 'zvode', 'lsoda', 'dopri5', 'dop853'):
                 r = ode(f).set_integrator(sol)
                 r.set_initial_value(0, 0)
 
@@ -170,6 +177,12 @@ class TestComplexOde(TestCase):
                 self._do_problem(problem, 'vode', 'adams')
             else:
                 self._do_problem(problem, 'vode', 'bdf')
+
+    def test_lsoda(self):
+        """Check the lsoda solver"""
+        for problem_cls in PROBLEMS:
+            problem = problem_cls()
+            self._do_problem(problem, 'lsoda')
 
     def test_dopri5(self):
         """Check the dopri5 solver"""
@@ -371,6 +384,11 @@ class VODECheckParameterUse(ODECheckParameterUse, TestCase):
 
 class ZVODECheckParameterUse(ODECheckParameterUse, TestCase):
     solver_name = 'zvode'
+    solver_uses_jac = True
+
+
+class LSODACheckParameterUse(ODECheckParameterUse, TestCase):
+    solver_name = 'lsoda'
     solver_uses_jac = True
 
 
