@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_almost_equal, \
                           assert_array_almost_equal
 
-from scipy.misc import pade, logsumexp, logsumexp_b
+from scipy.misc import pade, logsumexp
 
 
 def test_pade_trivial():
@@ -60,12 +60,12 @@ def test_logsumexp_b():
     a = np.arange(200)
     b = np.arange(200, 0, -1)
     desired = np.log(np.sum(b*np.exp(a)))
-    assert_almost_equal(logsumexp_b(a, b), desired)
+    assert_almost_equal(logsumexp(a, b=b), desired)
 
     a = [1000, 1000]
     b = [1.2, 1.2]
     desired = 1000 + np.log(2 * 1.2)
-    assert_almost_equal(logsumexp_b(a, b), desired)
+    assert_almost_equal(logsumexp(a, b=b), desired)
 
     x = np.array([1e-40] * 100000)
     b = np.linspace(1, 1000, 1e5)
@@ -74,9 +74,9 @@ def test_logsumexp_b():
     X = np.vstack((x, x))
     logX = np.vstack((logx, logx))
     B = np.vstack((b, b))
-    assert_array_almost_equal(np.exp(logsumexp_b(logX, B)), (B * X).sum())
-    assert_array_almost_equal(np.exp(logsumexp_b(logX, B, axis=0)),
+    assert_array_almost_equal(np.exp(logsumexp(logX, b=B)), (B * X).sum())
+    assert_array_almost_equal(np.exp(logsumexp(logX, b=B, axis=0)),
                                 (B * X).sum(axis=0))
-    assert_array_almost_equal(np.exp(logsumexp_b(logX, B, axis=1)),
+    assert_array_almost_equal(np.exp(logsumexp(logX, b=B, axis=1)),
                                 (B * X).sum(axis=1))
 

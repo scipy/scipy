@@ -31,7 +31,6 @@ systems that don't have PIL installed.
    info - Get help information for a function, class, or module
    lena - Get classic image processing example image Lena
    logsumexp - Compute the log of the sum of exponentials of input elements
-   logsumexp_b - Compute the log of the sum of scaled exponentials of inputs
    pade - Pade approximation to function as the ratio of two polynomials
    radon -
    toimage - Takes a numpy array and returns a PIL image
