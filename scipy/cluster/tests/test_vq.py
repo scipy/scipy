@@ -166,16 +166,22 @@ class TestKMean(TestCase):
 
     def test_kmeans2_init(self):
         """Testing that kmeans2 init methods work."""
-        data = np.fromfile(DATAFILE1, sep = ", ")
+        data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
 
-        kmeans2(data, 3, minit = 'random')
-        kmeans2(data, 3, minit = 'points')
+        kmeans2(data, 3, minit='points')
+        kmeans2(data[:, :1], 3, minit='points')  # special case (1-D)
 
-        # Check special case 1d
-        data = data[:, :1]
-        kmeans2(data, 3, minit = 'random')
-        kmeans2(data, 3, minit = 'points')
+        # minit='random' can give warnings, filter those
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            warnings.filterwarnings('ignore',
+                        message="One of the clusters is empty. Re-run")
+            kmeans2(data, 3, minit='random')
+            kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
+        finally:
+            warn_ctx.__exit__()
 
     def test_kmeans2_empty(self):
         """Ticket #505."""
