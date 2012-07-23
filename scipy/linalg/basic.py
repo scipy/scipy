@@ -470,14 +470,12 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
         # a larger solution matrix
         if len(b1.shape) == 2:
             b2 = np.zeros((n, nrhs), dtype=gelss.dtype)
-        else:
-            b2 = np.zeros(n, dtype=gelss.dtype)
-
-        if len(b1.shape) == 2:
             b2[:m,:] = b1
         else:
+            b2 = np.zeros(n, dtype=gelss.dtype)
             b2[:m] = b1
         b1 = b2
+
     overwrite_a = overwrite_a or _datacopied(a1, a)
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if gelss.module_name[:7] == 'flapack':
