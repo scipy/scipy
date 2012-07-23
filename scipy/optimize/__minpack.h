@@ -231,6 +231,7 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   double   xtol = 1.49012e-8, epsfcn = 0.0, factor = 1.0e2;
   int      mode = 2, nprint = 0, info, nfev, ldfjac;
   npy_intp n,lr;
+  int      n_int, lr_int;  /* for casted storage to pass int into HYBRD */
   double   *x, *fvec, *diag, *fjac, *r, *qtf;
 
   PyArrayObject *ap_x = NULL, *ap_fvec = NULL;
@@ -288,7 +289,8 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   allocated = 1;
 
   /* Call the underlying FORTRAN routines. */
-  HYBRD(raw_multipack_calling_function, &n, x, fvec, &xtol, &maxfev, &ml, &mu, &epsfcn, diag, &mode, &factor, &nprint, &info, &nfev, fjac, &ldfjac, r, &lr, qtf, wa, wa+n, wa+2*n, wa+3*n);
+  n_int = n; lr_int = lr; /* cast/store/pass into HYBRD */
+  HYBRD(raw_multipack_calling_function, &n_int, x, fvec, &xtol, &maxfev, &ml, &mu, &epsfcn, diag, &mode, &factor, &nprint, &info, &nfev, fjac, &ldfjac, r, &lr_int, qtf, wa, wa+n, wa+2*n, wa+3*n);
 
   RESTORE_FUNC();
 
@@ -332,6 +334,7 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   double   xtol = 1.49012e-8, factor = 1.0e2;
   int      mode = 2, nprint = 0, info, nfev, njev, ldfjac;
   npy_intp n, lr;
+  int n_int, lr_int;
   double   *x, *fvec, *diag, *fjac, *r, *qtf;
 
   PyArrayObject *ap_x = NULL, *ap_fvec = NULL;
@@ -388,7 +391,8 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   allocated = 1;
 
   /* Call the underlying FORTRAN routines. */
-  HYBRJ(jac_multipack_calling_function, &n, x, fvec, fjac, &ldfjac, &xtol, &maxfev, diag, &mode, &factor, &nprint, &info, &nfev, &njev, r, &lr, qtf, wa, wa+n, wa+2*n, wa+3*n);
+  n_int = n; lr_int = lr; /* cast/store/pass into HYBRJ */
+  HYBRJ(jac_multipack_calling_function, &n_int, x, fvec, fjac, &ldfjac, &xtol, &maxfev, diag, &mode, &factor, &nprint, &info, &nfev, &njev, r, &lr_int, qtf, wa, wa+n, wa+2*n, wa+3*n);
 
   RESTORE_JAC_FUNC();
 
@@ -434,6 +438,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   double   gtol = 0.0, epsfcn = 0.0, factor = 1.0e2;
   int      m, mode = 2, nprint = 0, info, nfev, ldfjac, *ipvt;
   npy_intp n;
+  int      n_int;  /* for casted storage to pass int into LMDIF */
   double   *x, *fvec, *diag, *fjac, *qtf;
 
   PyArrayObject *ap_x = NULL, *ap_fvec = NULL;
@@ -486,7 +491,8 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   allocated = 1;
 
   /* Call the underlying FORTRAN routines. */
-  LMDIF(raw_multipack_lm_function, &m, &n, x, fvec, &ftol, &xtol, &gtol, &maxfev, &epsfcn, diag, &mode, &factor, &nprint, &info, &nfev, fjac, &ldfjac, ipvt, qtf, wa, wa+n, wa+2*n, wa+3*n);
+  n_int = n; /* to provide int*-pointed storage for int argument of LMDIF */
+  LMDIF(raw_multipack_lm_function, &m, &n_int, x, fvec, &ftol, &xtol, &gtol, &maxfev, &epsfcn, diag, &mode, &factor, &nprint, &info, &nfev, fjac, &ldfjac, ipvt, qtf, wa, wa+n, wa+2*n, wa+3*n);
     
   RESTORE_FUNC();
 
@@ -530,6 +536,7 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   double   gtol = 0.0, factor = 1.0e2;
   int      m, mode = 2, nprint = 0, info, nfev, njev, ldfjac, *ipvt;
   npy_intp n;
+  int n_int;
   double   *x, *fvec, *diag, *fjac, *qtf;
 
   PyArrayObject *ap_x = NULL, *ap_fvec = NULL;
@@ -582,7 +589,8 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   allocated = 1;
 
   /* Call the underlying FORTRAN routines. */
-  LMDER(jac_multipack_lm_function, &m, &n, x, fvec, fjac, &ldfjac, &ftol, &xtol, &gtol, &maxfev, diag, &mode, &factor, &nprint, &info, &nfev, &njev, ipvt, qtf, wa, wa+n, wa+2*n, wa+3*n);
+  n_int = n;
+  LMDER(jac_multipack_lm_function, &m, &n_int, x, fvec, fjac, &ldfjac, &ftol, &xtol, &gtol, &maxfev, diag, &mode, &factor, &nprint, &info, &nfev, &njev, ipvt, qtf, wa, wa+n, wa+2*n, wa+3*n);
 
   RESTORE_JAC_FUNC();
 
