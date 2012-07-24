@@ -1054,8 +1054,8 @@ static void __Pyx_ReleaseBuffer(Py_buffer *view);
 #define __Pyx_ReleaseBuffer PyBuffer_Release
 #endif
 
-Py_ssize_t __Pyx_zeros[] = {0};
-Py_ssize_t __Pyx_minusones[] = {-1};
+static Py_ssize_t __Pyx_zeros[] = {0};
+static Py_ssize_t __Pyx_minusones[] = {-1};
 
 static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, long level); /*proto*/
 
