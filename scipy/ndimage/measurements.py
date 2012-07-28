@@ -191,11 +191,13 @@ def find_objects(input, max_label=0):
 
     Returns
     -------
-    object_slices : list of slices
-        A list of slices, one for the extent of each labeled object.
-        Slices correspond to the minimal parallelepiped that contains
-        the object. If a number is missing, None is returned instead
-        of a slice.
+    object_slices : generate a list of one or more tuples each 
+        contain a number of slices corresponding to the dimensionality 
+        of the 'labeled_array'.  The n'th tuple in the list corresponds 
+        to label n+1. Each tuple can be used to slice the array to retrive
+        the minimum parallelepiped which contains all instances of
+        the label.  If a number is missing, None is returned instead
+        of a tuple of slices.
 
     See Also
     --------
@@ -216,7 +218,7 @@ def find_objects(input, max_label=0):
     >>> a
     array([[2, 2, 2, 0, 0, 3],
            [2, 2, 2, 0, 0, 0],
-           [0, 0, 1, 1, 0, 0],
+           [0, 0, 0, 1, 0, 0],
            [0, 0, 1, 1, 0, 0],
            [0, 0, 0, 0, 1, 0],
            [0, 0, 0, 0, 0, 0]])
@@ -227,6 +229,11 @@ def find_objects(input, max_label=0):
     >>> ndimage.find_objects(a == 1, max_label=2)
     [(slice(2, 5, None), slice(2, 5, None)), None]
 
+    >>> loc = ndimage.find_objects(a)[0]
+    >>> a[*loc]
+    array([[0, 1, 0]
+           [1, 1, 0]
+           [0, 0, 1]])
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
