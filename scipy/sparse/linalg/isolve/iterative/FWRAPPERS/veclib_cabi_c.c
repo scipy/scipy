@@ -1,5 +1,5 @@
 #include <complex.h>
-#include <vecLib/vecLib.h>
+#include <Accelerate/Accelerate.h>
 
 #define WRAP_F77(a) a##_
 void WRAP_F77(veclib_cdotc)(const int *N, const complex float *X, const int *incX,
