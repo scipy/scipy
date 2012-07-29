@@ -258,14 +258,15 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__superlu(void)
+PyMODINIT_FUNC
+PyInit__superlu(void)
 {
     PyObject *m, *d;
 
     import_array();
 
     if (PyType_Ready(&SciPySuperLUType) < 0) {
-        return;
+        return NULL;
     }
 
     m = PyModule_Create(&moduledef);
