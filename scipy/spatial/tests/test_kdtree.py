@@ -263,10 +263,28 @@ class test_random_ball(ball_consistency):
         self.eps = 0
         self.d = 0.2
 
+class test_random_ball_compiled(ball_consistency):
+
+    def setUp(self):
+        n = 100
+        m = 4
+        self.data = np.random.randn(n,m)
+        self.T = cKDTree(self.data,leafsize=2)
+        self.x = np.random.randn(m)
+        self.p = 2.
+        self.eps = 0
+        self.d = 0.2
+
 class test_random_ball_approx(test_random_ball):
 
     def setUp(self):
         test_random_ball.setUp(self)
+        self.eps = 0.1
+
+class test_random_ball_approx_compiled(test_random_ball_compiled):
+
+    def setUp(self):
+        test_random_ball_compiled.setUp(self)
         self.eps = 0.1
 
 class test_random_ball_far(test_random_ball):
@@ -275,10 +293,22 @@ class test_random_ball_far(test_random_ball):
         test_random_ball.setUp(self)
         self.d = 2.
 
+class test_random_ball_far_compiled(test_random_ball_compiled):
+
+    def setUp(self):
+        test_random_ball_compiled.setUp(self)
+        self.d = 2.
+
 class test_random_ball_l1(test_random_ball):
 
     def setUp(self):
         test_random_ball.setUp(self)
+        self.p = 1
+
+class test_random_ball_l1_compiled(test_random_ball_compiled):
+
+    def setUp(self):
+        test_random_ball_compiled.setUp(self)
         self.p = 1
 
 class test_random_ball_linf(test_random_ball):
@@ -287,11 +317,27 @@ class test_random_ball_linf(test_random_ball):
         test_random_ball.setUp(self)
         self.p = np.inf
 
+class test_random_ball_linf_compiled(test_random_ball_compiled):
+
+    def setUp(self):
+        test_random_ball_compiled.setUp(self)
+        self.p = np.inf
+
 def test_random_ball_vectorized():
 
     n = 20
     m = 5
     T = KDTree(np.random.randn(n,m))
+
+    r = T.query_ball_point(np.random.randn(2,3,m),1)
+    assert_equal(r.shape,(2,3))
+    assert_(isinstance(r[0,0],list))
+
+def test_random_ball_vectorized_compiled():
+
+    n = 20
+    m = 5
+    T = cKDTree(np.random.randn(n,m))
 
     r = T.query_ball_point(np.random.randn(2,3,m),1)
     assert_equal(r.shape,(2,3))
@@ -324,16 +370,41 @@ class test_two_random_trees(two_trees_consistency):
         self.eps = 0
         self.d = 0.2
 
+class test_two_random_trees_compiled(two_trees_consistency):
+
+    def setUp(self):
+        n = 50
+        m = 4
+        self.data1 = np.random.randn(n,m)
+        self.T1 = cKDTree(self.data1,leafsize=2)
+        self.data2 = np.random.randn(n,m)
+        self.T2 = cKDTree(self.data2,leafsize=2)
+        self.p = 2.
+        self.eps = 0
+        self.d = 0.2
+
 class test_two_random_trees_far(test_two_random_trees):
 
     def setUp(self):
         test_two_random_trees.setUp(self)
         self.d = 2
 
+class test_two_random_trees_far_compiled(test_two_random_trees_compiled):
+
+    def setUp(self):
+        test_two_random_trees_compiled.setUp(self)
+        self.d = 2
+
 class test_two_random_trees_linf(test_two_random_trees):
 
     def setUp(self):
         test_two_random_trees.setUp(self)
+        self.p = np.inf
+
+class test_two_random_trees_linf_compiled(test_two_random_trees_compiled):
+
+    def setUp(self):
+        test_two_random_trees_compiled.setUp(self)
         self.p = np.inf
 
 
@@ -399,6 +470,31 @@ class test_count_neighbors:
         for r,result in zip(rs, results):
             assert_equal(self.T1.count_neighbors(self.T2, r), result)
 
+class test_count_neighbors_compiled:
+
+    def setUp(self):
+        n = 50
+        m = 2
+        self.T1 = cKDTree(np.random.randn(n,m),leafsize=2)
+        self.T2 = cKDTree(np.random.randn(n,m),leafsize=2)
+
+    def test_one_radius(self):
+        r = 0.2
+        assert_equal(self.T1.count_neighbors(self.T2, r),
+                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
+
+    def test_large_radius(self):
+        r = 1000
+        assert_equal(self.T1.count_neighbors(self.T2, r),
+                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
+
+    def test_multiple_radius(self):
+        rs = np.exp(np.linspace(np.log(0.01),np.log(10),3))
+        results = self.T1.count_neighbors(self.T2, rs)
+        assert_(np.all(np.diff(results)>=0))
+        for r,result in zip(rs, results):
+            assert_equal(self.T1.count_neighbors(self.T2, r), result)
+
 class test_sparse_distance_matrix:
     def setUp(self):
         n = 50
@@ -418,6 +514,27 @@ class test_sparse_distance_matrix:
 
     def test_zero_distance(self):
         M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870
+
+class test_sparse_distance_matrix_compiled:
+    def setUp(self):
+        n = 50
+        m = 4
+        np.random.seed(0)
+        self.T1 = cKDTree(np.random.randn(n,m),leafsize=2)
+        self.T2 = cKDTree(np.random.randn(n,m),leafsize=2)
+        self.r = 0.3
+
+    def test_consistency_with_neighbors(self):
+        M = self.T1.sparse_distance_matrix(self.T2, self.r)
+        r = self.T1.query_ball_tree(self.T2, self.r)
+        for i,l in enumerate(r):
+            for j in l:
+                assert_equal(M[i,j],distance(self.T1.data[i],self.T2.data[j]))
+        for ((i,j),d) in M.items():
+            assert_(j in r[i])
+
+    def test_zero_distance(self):
+        M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870 (FIXME: Does it?)
 
 def test_distance_matrix():
     m = 10
@@ -452,7 +569,7 @@ def check_onetree_query(T,d):
 
 def test_onetree_query():
     np.random.seed(0)
-    n = 100
+    n = 50
     k = 4
     points = np.random.randn(n,k)
     T = KDTree(points)
@@ -467,8 +584,29 @@ def test_onetree_query():
     yield check_onetree_query, T, 0.00001
     yield check_onetree_query, T, 1e-6
 
+def test_onetree_query_compiled():
+    np.random.seed(0)
+    n = 100
+    k = 4
+    points = np.random.randn(n,k)
+    T = cKDTree(points)
+    yield check_onetree_query, T, 0.1
+
+    points = np.random.randn(3*n,k)
+    points[:n] *= 0.001
+    points[n:2*n] += 2
+    T = cKDTree(points)
+    yield check_onetree_query, T, 0.1
+    yield check_onetree_query, T, 0.001
+    yield check_onetree_query, T, 0.00001
+    yield check_onetree_query, T, 1e-6
+
 def test_query_pairs_single_node():
     tree = KDTree([[0, 1]])
+    assert_equal(tree.query_pairs(0.5), set())
+
+def test_query_pairs_single_node_compiled():
+    tree = cKDTree([[0, 1]])
     assert_equal(tree.query_pairs(0.5), set())
 
 
@@ -484,6 +622,8 @@ def test_ball_point_ints():
     assert_equal(sorted([4, 8, 9, 12]),
                  sorted(tree.query_ball_point((2, 0), 1)))
 
+# cKDTree is specialized to type double points, so no need to make
+# a unit test corresponding to test_ball_point_ints()
 
 if __name__=="__main__":
     run_module_suite()
