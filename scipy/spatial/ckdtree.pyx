@@ -454,7 +454,6 @@ cdef class RectRectDistanceTracker(object):
         return 0
     
 
-    @cython.cdivision(True)
     def __init__(self, Rectangle rect1, Rectangle rect2,
                 np.float64_t p, np.float64_t eps, np.float64_t upper_bound):
         
@@ -635,7 +634,6 @@ cdef class PointRectDistanceTracker(object):
             stdlib.free(self.stack)
         return 0
 
-    @cython.cdivision(True)
     cdef init(self, np.float64_t *pt, Rectangle rect,
             np.float64_t p, np.float64_t eps, np.float64_t upper_bound):
 
@@ -1167,6 +1165,8 @@ cdef class cKDTree:
         return 0
 
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
             np.float64_t p=2, np.float64_t distance_upper_bound=infinity):
         """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf)
@@ -1232,6 +1232,7 @@ cdef class cKDTree:
         for c in range(n):
             self.__query(&dd[c, 0], &ii[c, 0], &xx[c, 0],
                         k, eps, p, distance_upper_bound)
+
         if single:
             if k==1:
                 if sizeof(long) < sizeof(np.intp_t):
