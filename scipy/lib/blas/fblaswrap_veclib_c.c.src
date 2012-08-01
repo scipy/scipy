@@ -1,5 +1,5 @@
 #include <complex.h>
-#include <vecLib/vecLib.h>
+#include <Accelerate/Accelerate.h>
 
 //#define WRAP_F77(a) wcblas_##a##_
 #define WRAP_F77(a) w##a##_
