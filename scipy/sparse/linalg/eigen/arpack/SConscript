@@ -47,6 +47,7 @@ arpack_src += [pjoin('ARPACK', 'UTIL', s) for s in [ "cmout.f", "cvout.f",
 if use_c_calling:
     arpack_src += [pjoin('ARPACK', 'FWRAPPERS', 'veclib_cabi_f.f'),
                    pjoin('ARPACK', 'FWRAPPERS', 'veclib_cabi_c.c')]
+    env.Append(F77FLAGS='-ff2c')
 else:
     arpack_src += [pjoin('ARPACK', 'FWRAPPERS', 'dummy.f')]
 arpack_src += [pjoin('ARPACK', 'LAPACK', s) for s in [ "clahqr.f", "dlahqr.f",

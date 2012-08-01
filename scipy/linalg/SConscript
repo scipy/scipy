@@ -101,6 +101,7 @@ fenv.FromFTemplate('fblas.pyf', 'fblas.pyf.src')
 source = ['fblas.pyf']
 if IsVeclib(fenv, 'blas') or IsAccelerate(fenv, 'blas'):
     source.append(pjoin('src', 'fblaswrap_veclib_c.c'))
+    fenv.Append(F77FLAGS='-ff2c')
 else:
     source.append(pjoin('src', 'fblaswrap.f'))
 fenv.NumpyPythonExtension('fblas', source)

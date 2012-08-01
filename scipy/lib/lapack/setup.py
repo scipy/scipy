@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import re
 from glob import glob
 
 #-------------------
@@ -10,6 +11,23 @@ from glob import glob
 skip_single_routines = 0
 
 #--------------------
+
+
+def needs_cblas_wrapper(info):
+    """Returns true if needs c wrapper around cblas for calling from
+    fortran."""
+    r_accel = re.compile("Accelerate")
+    r_vec = re.compile("vecLib")
+    res = False
+    try:
+        tmpstr = info['extra_link_args']
+        for i in tmpstr:
+            if r_accel.search(i) or r_vec.search(i):
+                res = True
+    except KeyError:
+        pass
+
+    return res
 
 tmpl_empty_clapack_pyf = '''
 python module clapack
@@ -57,6 +75,12 @@ def configuration(parent_package='',top_path=None):
             ' slauum dlauum clauum zlauum strtri dtrtri ctrtri ztrtri'.split())
     elif atlas_version and atlas_version>'3.4.0' and atlas_version<='3.5.12':
         skip_names['clapack'].extend('cpotrf zpotrf'.split())
+
+    if needs_cblas_wrapper(lapack_opt):
+        # Veclib/Accelerate ABI is g77
+        lapack_opt = dict(lapack_opt)
+        lapack_opt.setdefault('extra_compile_f77_args', []).append('-ff2c')
+        lapack_opt.setdefault('extra_compile_f90_args', []).append('-ff2c')
 
     # flapack:
     config.add_extension('flapack',
