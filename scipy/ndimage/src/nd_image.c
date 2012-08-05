@@ -1039,7 +1039,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__nd_image(void)
+PyMODINIT_FUNC PyInit__nd_image(void)
 {
     PyObject *m, *s, *d;
 
