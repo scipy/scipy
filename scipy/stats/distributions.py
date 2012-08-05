@@ -3354,7 +3354,7 @@ class gamma_gen(rv_continuous):
 
     The probability density function for `gamma` is::
 
-        gamma.pdf(x, a) = (lambda*x)**(a-1) * exp(-lambda*x) / gamma(a)
+        gamma.pdf(x, a) = lambda**a * x**(a-1) * exp(-lambda*x) / gamma(a)
 
     for ``x >= 0``, ``a > 0``. Here ``gamma(a)`` refers to the gamma function.
 
