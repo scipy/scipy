@@ -234,7 +234,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__interpolate(void)
+PyMODINIT_FUNC PyInit__interpolate(void)
 {
     PyObject *m, *d, *s;
 
