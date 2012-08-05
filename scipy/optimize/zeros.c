@@ -1,4 +1,3 @@
-
 /* Written by Charles Harris charles.harris@sdl.usu.edu */
 
 /* Modifications by Travis Oliphant to separate Python code from C
@@ -200,7 +199,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__zeros(void)
+PyMODINIT_FUNC PyInit__zeros(void)
 {
     PyObject *m, *d, *s;
 
