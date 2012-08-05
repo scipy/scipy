@@ -122,10 +122,30 @@ class KDTree(object):
     """
     kd-tree for quick nearest-neighbor lookup
 
-    This class provides an index into a set of k-dimensional points
-    which can be used to rapidly look up the nearest neighbors of any
-    point.
+    This class provides an index into a set of k-dimensional points which
+    can be used to rapidly look up the nearest neighbors of any point.
 
+    Parameters
+    ----------
+    data : array_like, shape (n,k)
+        The data points to be indexed. This array is not copied, and
+        so modifying this data will result in bogus results.
+    leafsize : int, optional
+        The number of points at which the algorithm switches over to
+        brute-force.  Has to be positive.
+
+    Raises
+    ------
+    RuntimeError
+        If the maximum recursion limit is exceeded, can happen for large data
+        sets.  If this happens, either increase the value for the `leafsize`
+        parameter or increase the recursion limit by::
+
+            import sys
+            sys.setrecursionlimit(10000)
+
+    Notes
+    -----
     The algorithm used is described in Maneewongvatana and Mount 1999.
     The general idea is that the kd-tree is a binary tree, each of whose
     nodes represents an axis-aligned hyperrectangle. Each node specifies
@@ -152,17 +172,6 @@ class KDTree(object):
 
     """
     def __init__(self, data, leafsize=10):
-        """Construct a kd-tree.
-
-        Parameters
-        ----------
-        data : array_like, shape (n,k)
-            The data points to be indexed. This array is not copied, and
-            so modifying this data will result in bogus results.
-        leafsize : positive int
-            The number of points at which the algorithm switches over to
-            brute-force.
-        """
         self.data = np.asarray(data)
         self.n, self.m = np.shape(self.data)
         self.leafsize = int(leafsize)
