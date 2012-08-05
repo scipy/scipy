@@ -395,7 +395,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__hierarchy_wrap(void)
+PyMODINIT_FUNC PyInit__hierarchy_wrap(void)
 {
     PyObject *m;
 
