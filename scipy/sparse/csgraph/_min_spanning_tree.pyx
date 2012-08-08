@@ -145,7 +145,6 @@ cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
         # edge.  Otherwise, we remove the edge: it duplicates one already
         # in the spanning tree.
         if R1 != R2:
-            
             # Use approximate (because of path-compression) rank to try
             # to keep balanced trees.
             if rank[R1] < rank[R2]:
@@ -153,8 +152,8 @@ cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
             elif rank[R1] > rank[R2]:
                 predecessors[R1] = R2
             else:
-                predecessors[R1] = R2
-                rank[R1] = rank[R2] + 1
+                predecessors[R2] = R1
+                rank[R1] += 1
             
         else:
             data[j] = 0
