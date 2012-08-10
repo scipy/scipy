@@ -582,7 +582,14 @@ class TestNorm(object):
     def test_stable(self):
         # more stable than numpy's norm
         a = array([1e4] + [1]*10000, dtype=float32)
-        assert_almost_equal(norm(a) - 1e4, 0.5)
+        try:
+            # snrm in double precision; we obtain the same as for float64
+            assert_almost_equal(norm(a) - 1e4, 0.5)
+        except AssertionError:
+            # snrm implemented in single precision, == np.linalg.norm result
+            msg = ": Result should equal either 0.0 or 0.5 (depending on " \
+                  "implementation of snrm2)."
+            assert_almost_equal(norm(a) - 1e4, 0.0, err_msg=msg)
 
     def test_zero_norm(self):
         assert_equal(norm([1,0,3], 0), 2)
