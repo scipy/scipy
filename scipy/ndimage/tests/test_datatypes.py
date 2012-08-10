@@ -1,14 +1,14 @@
 """ Testing data types for ndimage calls
 """
 
+import sys
+
 import numpy as np
+from numpy.testing import (assert_array_almost_equal, dec,
+                           assert_array_equal)
+from nose.tools import assert_true, assert_equal, assert_raises
 
 from scipy import ndimage
-
-from numpy.testing import (assert_array_almost_equal,
-                           assert_array_equal)
-
-from nose.tools import assert_true, assert_equal, assert_raises
 
 
 def test_map_coordinates_dts():
@@ -47,8 +47,11 @@ def test_map_coordinates_dts():
             assert_array_almost_equal(these_data, out)
 
 
+@dec.knownfailureif(not sys.platform == 'darwin')
 def test_uint64_max():
-    # Test interpolation respects uint64 max
+    # Test interpolation respects uint64 max.  Reported to fail at least on
+    # win32 (due to the 32 bit visual C compiler using signed int64 when
+    # converting between uint64 to double) and Debian on s390x.
     big = 2**64-1
     arr = np.array([big, big, big], dtype=np.uint64)
     # Tests geometric transform (map_coordinates, affine_transform)
