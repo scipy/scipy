@@ -1656,7 +1656,7 @@ class TestBessel(TestCase):
 
         # Most error apparently comes from AMOS and not our implementation;
         # there are some problems near integer orders there
-        assert_(dc[k] < 1e-9, (v[k], x[k], special.iv(v[k], x[k]), special.iv(v[k], x[k]+0j)))
+        assert_(dc[k] < 2e-7, (v[k], x[k], special.iv(v[k], x[k]), special.iv(v[k], x[k]+0j)))
 
     def test_kv_cephes_vs_amos(self):
         #self.check_cephes_vs_amos(kv, kn, rtol=1e-9, atol=1e-305)
