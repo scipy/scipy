@@ -148,9 +148,9 @@ cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
             
             # Use approximate (because of path-compression) rank to try
             # to keep balanced trees.
-            if rank[R1] < rank[R2]:
+            if rank[R1] > rank[R2]:
                 predecessors[R2] = R1
-            elif rank[R1] > rank[R2]:
+            elif rank[R1] < rank[R2]:
                 predecessors[R1] = R2
             else:
                 predecessors[R2] = R1
