@@ -110,18 +110,21 @@ cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
     # Work-horse routine for computing minimum spanning tree using
     #  Kruskal's algorithm.  By separating this code here, we get more
     #  efficient indexing.
-    cdef unsigned int i, j, V1, V2, R1, R2
+    cdef unsigned int i, j, V1, V2, R1, R2, n_edges_in_mst, n_verts
     cdef DTYPE_t E
+    n_verts = predecessors.shape[0]
     
     # Arrange `row_indices` to contain the row index of each value in `data`.
     # Note that the array `col_indices` already contains the column index.
-    for i from 0 <= i < predecessors.shape[0]:
+    for i from 0 <= i < n_verts:
         for j from indptr[i] <= j < indptr[i + 1]:
             row_indices[j] = i
     
     # step through the edges from smallest to largest.
     #  V1 and V2 are the vertices, and E is the edge weight connecting them.
-    for i from 0 <= i < i_sort.shape[0]:
+    n_edges_in_mst = 0
+    i = 0
+    while i < i_sort.shape[0] and n_edges_in_mst < n_verts-1:
         j = i_sort[i]
         V1 = row_indices[j]
         V2 = col_indices[j]
@@ -155,6 +158,17 @@ cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
             else:
                 predecessors[R2] = R1
                 rank[R1] += 1
+                
+            n_edges_in_mst += 1
+            
         else:
             data[j] = 0
+        
+        i += 1
+        
+    # We may have stopped early if we found a full-sized MST so zero out the rest
+    while i < i_sort.shape[0]:
+        j = i_sort[i]
+        data[j] = 0
+        i += 1
     
