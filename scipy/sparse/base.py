@@ -669,14 +669,22 @@ class spmatrix(object):
         else:
             raise ValueError("invalid type: "+str(self.dtype))
 
-        from linalg import splu, factorized
+        from linalg import spsolve
+        from construct import eye
 
         P = U + V  # p_m(A) : numerator
         Q = -U + V # q_m(A) : denominator
-        #R = spsolve(Q,P)
-        #R = factorized(Q,P)
-        R = factorized(Q)(np.array([0, 0, 1]))
-        print R
+
+        shape0 = self.shape[0]
+        tempj = np.empty(shape0, dtype=int)
+        R = self.__class__(self.shape)
+        for j in range(shape0):
+            Rj = spsolve(Q, P[:,j])
+            w = np.where(Rj != 0.0)[0]
+            tempj.fill(j)
+            R = R + self.__class__((Rj[w],(w,tempj[:len(w)])), 
+                                    shape=self.shape, dtype=self.dtype)
+
         # squaring step to undo scaling
         for i in range(n_squarings):
             R = R.dot(R)

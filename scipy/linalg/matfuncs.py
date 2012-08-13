@@ -78,6 +78,7 @@ def expm(A, q=False):
 
     P = U + V  # p_m(A) : numerator
     Q = -U + V # q_m(A) : denominator
+
     R = solve(Q,P)
     # squaring step to undo scaling
     for i in range(n_squarings):
