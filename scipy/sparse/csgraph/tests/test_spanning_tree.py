@@ -31,7 +31,10 @@ def test_minimum_spanning_tree():
     # Ensure that the original graph was not modified.
     npt.assert_array_equal(csgraph.todense(), graph, 'Original graph was modified.')
     
-    
+    # Now let the algorithm modify the csgraph in place.
+    mintree = minimum_spanning_tree(csgraph, overwrite=True)
+    npt.assert_array_equal(mintree.todense(), expected, 'Graph was not properly modified to contain MST.')
+    #npt.assert_array_equal(csgraph.todense(), expected, 'Graph was not properly modified to contain MST.')
     
     np.random.seed(1234)
     for N in (5, 10, 15, 20):
