@@ -104,6 +104,14 @@ def solve(A, B, permc_spec=None, use_umfpack=True):
     if not isspmatrix(B) or A.shape != B.shape:
         return spsolve(A, B, permc_spec=permc_spec, use_umfpack=use_umfpack)
 
+    if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
+        A = csc_matrix(A)
+        warn('solve requires CSC or CSR matrix format', SparseEfficiencyWarning)
+
+    if not (isspmatrix_csc(B) or isspmatrix_csr(B)):
+        B = csc_matrix(B)
+        warn('solve requires CSC or CSR matrix format', SparseEfficiencyWarning)
+
     shape0 = A.shape[0]
     tempj = empty(shape0, dtype=int)
     X = A.__class__(A.shape)
