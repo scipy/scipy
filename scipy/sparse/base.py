@@ -669,27 +669,27 @@ class spmatrix(object):
         else:
             raise ValueError("invalid type: "+str(self.dtype))
 
-        from linalg import spsolve
-        from construct import eye
+        from linalg import solve
 
         P = U + V  # p_m(A) : numerator
         Q = -U + V # q_m(A) : denominator
-
-        shape0 = self.shape[0]
-        tempj = np.empty(shape0, dtype=int)
-        R = self.__class__(self.shape)
-        for j in range(shape0):
-            Rj = spsolve(Q, P[:,j])
-            w = np.where(Rj != 0.0)[0]
-            tempj.fill(j)
-            R = R + self.__class__((Rj[w],(w,tempj[:len(w)])), 
-                                    shape=self.shape, dtype=self.dtype)
+        R = solve(Q, P)
 
         # squaring step to undo scaling
         for i in range(n_squarings):
             R = R.dot(R)
 
         return R
+
+    def inv(self):
+        """Computes the inverse of the sparse matrix.
+        """
+        from construct import eye
+        from linalg import solve
+        I = eye(self.shape[0], self.shape[1], dtype=self.dtype, format=self.format)
+        selfinv = solve(self, I)
+        return selfinv
+        
 
 
 def _pade3(A):

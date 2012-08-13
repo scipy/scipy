@@ -1,6 +1,6 @@
 from warnings import warn
 
-from numpy import asarray
+from numpy import asarray, empty, where
 from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
         SparseEfficiencyWarning, csc_matrix
 
@@ -18,7 +18,7 @@ isUmfpack = hasattr( umfpack, 'UMFPACK_OK' )
 useUmfpack = True
 
 
-__all__ = [ 'use_solver', 'spsolve', 'splu', 'spilu', 'factorized' ]
+__all__ = [ 'use_solver', 'spsolve', 'solve', 'splu', 'spilu', 'factorized' ]
 
 def use_solver( **kwargs ):
     """
@@ -98,6 +98,23 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         options = dict(ColPerm=permc_spec)
         return _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag,
                              options=options)[0]
+
+def solve(A, B, permc_spec=None, use_umfpack=True):
+    """Solve the sparse linear system Ax=B, where B may be a vector or a matrix."""
+    if not isspmatrix(B) or A.shape != B.shape:
+        return spsolve(A, B, permc_spec=permc_spec, use_umfpack=use_umfpack)
+
+    shape0 = A.shape[0]
+    tempj = empty(shape0, dtype=int)
+    X = A.__class__(A.shape)
+    for j in range(shape0):
+        Xj = spsolve(A, B[:,j])
+        w = where(Xj != 0.0)[0]
+        tempj.fill(j)
+        X = X + A.__class__((Xj[w],(w,tempj[:len(w)])),
+                            shape=A.shape, dtype=A.dtype)
+    return X
+
 
 def splu(A, permc_spec=None, diag_pivot_thresh=None,
          drop_tol=None, relax=None, panel_size=None, options=dict()):
