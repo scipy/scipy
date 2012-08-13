@@ -124,7 +124,7 @@ cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
     #  V1 and V2 are the vertices, and E is the edge weight connecting them.
     n_edges_in_mst = 0
     i = 0
-    while i < i_sort.shape[0] and n_edges_in_mst < n_verts-1:
+    while i < i_sort.shape[0] and n_edges_in_mst < n_verts - 1:
         j = i_sort[i]
         V1 = row_indices[j]
         V2 = col_indices[j]
@@ -148,6 +148,7 @@ cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
         # edge.  Otherwise, we remove the edge: it duplicates one already
         # in the spanning tree.
         if R1 != R2:
+            n_edges_in_mst += 1
             
             # Use approximate (because of path-compression) rank to try
             # to keep balanced trees.
@@ -158,9 +159,6 @@ cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
             else:
                 predecessors[R2] = R1
                 rank[R1] += 1
-                
-            n_edges_in_mst += 1
-            
         else:
             data[j] = 0
         
