@@ -669,11 +669,11 @@ class spmatrix(object):
         else:
             raise ValueError("invalid type: "+str(self.dtype))
 
-        from linalg import solve
+        from linalg import spsolve
 
         P = U + V  # p_m(A) : numerator
         Q = -U + V # q_m(A) : denominator
-        R = solve(Q, P)
+        R = spsolve(Q, P)
 
         # squaring step to undo scaling
         for i in range(n_squarings):
@@ -685,9 +685,9 @@ class spmatrix(object):
         """Computes the inverse of the sparse matrix.
         """
         from construct import eye
-        from linalg import solve
+        from linalg import spsolve
         I = eye(self.shape[0], self.shape[1], dtype=self.dtype, format=self.format)
-        selfinv = solve(self, I)
+        selfinv = spsolve(self, I)
         return selfinv
         
 

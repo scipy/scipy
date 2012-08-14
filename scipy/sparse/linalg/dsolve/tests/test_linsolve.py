@@ -8,7 +8,7 @@ from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal,
 import scipy.linalg 
 from scipy.linalg import norm, inv
 from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix, csr_matrix
-from scipy.sparse.linalg.dsolve import spsolve, solve, use_solver, splu, spilu
+from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
@@ -40,7 +40,7 @@ class TestLinsolve(TestCase):
 
                 assert_( norm(b - Asp*x) < 10 * cond_A * eps )
 
-    def test_smoketest(self):
+    def test_bvector_smoketest(self):
         Adense = matrix([[ 0.,  1.,  1.],
                          [ 1.,  0.,  1.],
                          [ 0.,  0.,  1.]])
@@ -52,6 +52,18 @@ class TestLinsolve(TestCase):
 
         assert_array_almost_equal(x, x2)
 
+    def test_bmatrix_smoketest(self):
+        Adense = matrix([[ 0.,  1.,  1.],
+                         [ 1.,  0.,  1.],
+                         [ 0.,  0.,  1.]])
+        As =  csc_matrix(Adense)
+        random.seed(1234)
+        x = random.randn(3, 3)
+        Bdense = As.dot(x)
+        Bs = csc_matrix(Bdense)
+        x2 = spsolve(As, Bs)
+        assert_array_almost_equal(x, x2.todense())
+
     def test_non_square(self):
         # A is not square.
         A = ones((3, 4))
@@ -61,20 +73,6 @@ class TestLinsolve(TestCase):
         A2 = csc_matrix(eye(3))
         b2 = array([1.0, 2.0])
         assert_raises(ValueError, spsolve, A2, b2)
-
-
-class TestSolve(TestCase):
-    def test_solve_smoketest(self):
-        Adense = matrix([[ 0.,  1.,  1.],
-                         [ 1.,  0.,  1.],
-                         [ 0.,  0.,  1.]])
-        As =  csc_matrix(Adense)
-        random.seed(1234)
-        x = random.randn(3, 3)
-        Bdense = As.dot(x)
-        Bs = csc_matrix(Bdense)
-        x2 = solve(As, Bs)
-        assert_array_almost_equal(x, x2.todense())
 
     def test_example_comparison(self):
         row = array([0,0,1,2,2,2])
@@ -89,7 +87,7 @@ class TestSolve(TestCase):
         sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
         N = sN.todense()
 
-        sX = solve(sM, sN)
+        sX = spsolve(sM, sN)
         X = scipy.linalg.solve(M, N)
 
         assert_array_almost_equal(X, sX.todense())
