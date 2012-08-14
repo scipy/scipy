@@ -639,6 +639,8 @@ class spmatrix(object):
         --------
         scipy.linalg.expm
         """
+        from scipy.linalg.matfuncs import _pade3, _pade5, _pade7, _pade9, _pade13
+
         A_L1 = max(abs(self).sum(axis=0).flat)
         n_squarings = 0
 
@@ -690,67 +692,6 @@ class spmatrix(object):
         selfinv = spsolve(self, I)
         return selfinv
         
-
-
-def _pade3(A):
-    from construct import eye
-    b = (120., 60., 12., 1.)
-    ident = eye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
-    A2 = A.dot(A)
-    U = A.dot(b[3]*A2 + b[1]*ident)
-    V = b[2]*A2 + b[0]*ident
-    return U,V
-
-def _pade5(A):
-    from construct import eye
-    b = (30240., 15120., 3360., 420., 30., 1.)
-    ident = eye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
-    A2 = A.dot(A)
-    A4 = A2.dot(A2)
-    U = A.dot(b[5]*A4 + b[3]*A2 + b[1]*ident)
-    V = b[4]*A4 + b[2]*A2 + b[0]*ident
-    return U,V
-
-def _pade7(A):
-    from construct import eye
-    b = (17297280., 8648640., 1995840., 277200., 25200., 1512., 56., 1.)
-    ident = eye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
-    A2 = A.dot(A)
-    A4 = A2.dot(A2)
-    A6 = A4.dot(A2)
-    U = A.dot(b[7]*A6 + b[5]*A4 + b[3]*A2 + b[1]*ident)
-    V = b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*ident
-    return U,V
-
-def _pade9(A):
-    from construct import eye
-    b = (17643225600., 8821612800., 2075673600., 302702400., 30270240.,
-                2162160., 110880., 3960., 90., 1.)
-    ident = eye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
-    A2 = A.dot(A)
-    A4 = A2.dot(A2)
-    A6 = A4.dot(A2)
-    A8 = A6.dot(A2)
-    U = A.dot(b[9]*A8 + b[7]*A6 + b[5]*A4 + b[3]*A2 + b[1]*ident)
-    V = b[8]*A8 + b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*ident
-    return U,V
-
-def _pade13(A):
-    from construct import eye
-    b = (64764752532480000., 32382376266240000., 7771770303897600.,
-    1187353796428800., 129060195264000., 10559470521600., 670442572800.,
-    33522128640., 1323241920., 40840800., 960960., 16380., 182., 1.)
-    ident = eye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
-    A2 = A.dot(A)
-    A4 = A2.dot(A2)
-    A6 = A4.dot(A2)
-    U = A.dot(A6.dot(b[13]*A6 + b[11]*A4 + b[9]*A2) + b[7]*A6 + b[5]*A4 + b[3]*A2 + b[1]*ident)
-    V = A6.dot(b[12]*A6 + b[10]*A4 + b[8]*A2) + b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*ident
-    return U,V
-
-
-
-
 
 def isspmatrix(x):
     return isinstance(x, spmatrix)

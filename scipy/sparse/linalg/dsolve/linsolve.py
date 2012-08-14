@@ -62,7 +62,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 msg += "or matrix whose shape matches lhs (%s)" % (A.shape,)
                 raise ValueError(msg)
     elif isspmatrix(b) and not (isspmatrix_csc(b) or isspmatrix_csr(b)):
-        B = csc_matrix(b)
+        b = csc_matrix(b)
         warn('solve requires b be CSC or CSR matrix format', SparseEfficiencyWarning)
 
     A.sort_indices()
