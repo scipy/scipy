@@ -114,18 +114,6 @@ def _pade5(A):
     V = b[4]*A4 + b[2]*A2 + b[0]*ident
     return U,V
 
-def _pade5(A):
-    b = (30240., 15120., 3360., 420., 30., 1.)
-    if isspmatrix(A):
-        ident = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
-    else:
-        ident = eye(A.shape[0], A.shape[1], dtype=A.dtype)
-    A2 = A.dot(A)
-    A4 = A2.dot(A2)
-    U = A.dot(b[5]*A4 + b[3]*A2 + b[1]*ident)
-    V = b[4]*A4 + b[2]*A2 + b[0]*ident
-    return U,V
-
 def _pade7(A):
     b = (17297280., 8648640., 1995840., 277200., 25200., 1512., 56., 1.)
     if isspmatrix(A):
