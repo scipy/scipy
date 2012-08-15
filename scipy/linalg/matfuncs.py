@@ -32,8 +32,8 @@ def expm(A, q=False):
 
     Parameters
     ----------
-    A : array, shape(M,M)
-        Matrix to be exponentiated
+    A : array or sparse matrix, shape(M,M)
+        2D Array or Matrix (sparse or dense) to be exponentiated
 
     Returns
     -------
@@ -48,8 +48,14 @@ def expm(A, q=False):
 
     """
     if q: warnings.warn("argument q=... in scipy.linalg.expm is deprecated.")
-    A = asarray(A)
-    A_L1 = norm(A,1)
+    Aissparse = isspmatrix(A)
+
+    if Aissparse:
+        A_L1 = max(abs(A).sum(axis=0).flat)
+    else:
+        A = asarray(A)
+        A_L1 = norm(A,1)
+
     n_squarings = 0
 
     if A.dtype == 'float64' or A.dtype == 'complex128':
@@ -82,10 +88,15 @@ def expm(A, q=False):
     P = U + V  # p_m(A) : numerator
     Q = -U + V # q_m(A) : denominator
 
-    R = solve(Q,P)
+    if Aissparse:
+        from scipy.sparse.linalg import spsolve
+        R = spsolve(Q, P)
+    else:
+        R = solve(Q,P)
+
     # squaring step to undo scaling
     for i in range(n_squarings):
-        R = dot(R,R)
+        R = R.dot(R)
 
     return R
 

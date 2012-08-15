@@ -639,49 +639,8 @@ class spmatrix(object):
         --------
         scipy.linalg.expm
         """
-        from scipy.linalg.matfuncs import _pade3, _pade5, _pade7, _pade9, _pade13
-
-        A_L1 = max(abs(self).sum(axis=0).flat)
-        n_squarings = 0
-
-        if self.dtype == 'float64' or self.dtype == 'complex128':
-            if A_L1 < 1.495585217958292e-002:
-                U,V = _pade3(self)
-            elif A_L1 < 2.539398330063230e-001:
-                U,V = _pade5(self)
-            elif A_L1 < 9.504178996162932e-001:
-                U,V = _pade7(self)
-            elif A_L1 < 2.097847961257068e+000:
-                U,V = _pade9(self)
-            else:
-                maxnorm = 5.371920351148152
-                n_squarings = max(0, int(np.ceil(np.log2(A_L1 / maxnorm))))
-                A = self / 2**n_squarings
-                U,V = _pade13(A)
-        elif self.dtype == 'float32' or self.dtype == 'complex64':
-            if A_L1 < 4.258730016922831e-001:
-                U,V = _pade3(self)
-            elif A_L1 < 1.880152677804762e+000:
-                U,V = _pade5(self)
-            else:
-                maxnorm = 3.925724783138660
-                n_squarings = max(0, int(np.ceil(np.log2(A_L1 / maxnorm))))
-                A = self / 2**n_squarings
-                U,V = _pade7(A)
-        else:
-            raise ValueError("invalid type: "+str(self.dtype))
-
-        from linalg import spsolve
-
-        P = U + V  # p_m(A) : numerator
-        Q = -U + V # q_m(A) : denominator
-        R = spsolve(Q, P)
-
-        # squaring step to undo scaling
-        for i in range(n_squarings):
-            R = R.dot(R)
-
-        return R
+        from scipy.linalg.matfuncs import expm as mfexpm
+        return mfexpm(self)
 
     def inv(self):
         """Computes the inverse of the sparse matrix.
