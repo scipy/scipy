@@ -600,7 +600,7 @@ def pinv2(a, cond=None, rcond=None):
     return np.transpose(np.conjugate(np.dot(u * psigma_diag, vh)))
 
 
-def pinvh(a, cond=None, rcond=None):
+def pinvh(a, cond=None, rcond=None, lower=True):
     """Compute the (Moore-Penrose) pseudo-inverse of a hermetian matrix.
 
     Calculate a generalized inverse of a symmetric matrix using its
@@ -616,6 +616,9 @@ def pinvh(a, cond=None, rcond=None):
         zero.
 
         If None or -1, suitable machine precision is used.
+    lower : boolean
+        Whether the pertinent array data is taken from the lower or upper
+        triangle of a. (Default: lower)
 
     Returns
     -------
@@ -639,7 +642,7 @@ def pinvh(a, cond=None, rcond=None):
 
     """
     a = np.asarray_chkfinite(a)
-    s, u = decomp.eigh(a)
+    s, u = decomp.eigh(a, lower=lower)
     
     if rcond is not None:
         cond = rcond
