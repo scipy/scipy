@@ -646,7 +646,8 @@ def pinvh(a, cond=None, rcond=None):
         factor = {'f': 1E3, 'd': 1E6}
         cond = factor[t] * np.finfo(t).eps
     
-    above_cutoff = (s > cond * np.max(s))
+    # unlike svd case, eigh can lead to negative eigenvalues
+    above_cutoff = (abs(s) > cond * np.max(abs(s)))
     psigma_diag = np.zeros_like(s)
     psigma_diag[above_cutoff] = 1.0 / s[above_cutoff]
 
