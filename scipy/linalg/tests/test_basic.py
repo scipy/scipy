@@ -549,7 +549,7 @@ class TestPinv(TestCase):
         a_pinv = pinv2(a)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
 
-    def test_simple_det(self):
+    def test_simple_singular(self):
         a = array([[1,2,3],[4,5,6.],[7,8,9]])
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
