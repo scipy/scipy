@@ -582,21 +582,17 @@ def pinv2(a, cond=None, rcond=None):
 
     """
     a = np.asarray_chkfinite(a)
-    u, s, vh = decomp_svd.svd(a)
-    t = u.dtype.char
+    u, s, vh = decomp_svd.svd(a, full_matrices=False)
+    
     if rcond is not None:
         cond = rcond
     if cond in [None,-1]:
-        eps = np.finfo(np.float).eps
-        feps = np.finfo(np.single).eps
-        _array_precision = {'f': 0, 'd': 1, 'F': 0, 'D': 1}
-        cond = {0: feps*1e3, 1: eps*1e6}[_array_precision[t]]
-    m, n = a.shape
-    cutoff = cond*np.maximum.reduce(s)
-    psigma = np.zeros((m, n), t)
-    for i in range(len(s)):
-        if s[i] > cutoff:
-            psigma[i,i] = 1.0/np.conjugate(s[i])
-    #XXX: use lapack/blas routines for dot
-    return np.transpose(np.conjugate(np.dot(np.dot(u,psigma),vh)))
-
+        t = u.dtype.char.lower()
+        factor = {'f': 1E3, 'd': 1E6}
+        cond = factor[t] * np.finfo(t).eps
+    
+    above_cutoff = (s > cond * np.max(s))
+    psigma_diag = np.zeros_like(s)
+    psigma_diag[above_cutoff] = 1.0 / s[above_cutoff]
+ 
+    return np.transpose(np.conjugate(np.dot(u * psigma_diag, vh)))
