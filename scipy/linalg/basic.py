@@ -4,7 +4,7 @@
 # w/ additions by Travis Oliphant, March 2002
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
-            'inv', 'det', 'lstsq', 'pinv', 'pinv2']
+            'inv', 'det', 'lstsq', 'pinv', 'pinv2', 'pinvh']
 
 import numpy as np
 
@@ -13,7 +13,7 @@ from lapack import get_lapack_funcs
 from misc import LinAlgError, _datacopied
 from scipy.linalg import calc_lwork
 from decomp_schur import schur
-import decomp_svd
+import decomp, decomp_svd
 
 
 # Linear equations
@@ -596,3 +596,58 @@ def pinv2(a, cond=None, rcond=None):
     psigma_diag[above_cutoff] = 1.0 / s[above_cutoff]
  
     return np.transpose(np.conjugate(np.dot(u * psigma_diag, vh)))
+
+
+def pinvh(a, cond=None, rcond=None):
+    """Compute the (Moore-Penrose) pseudo-inverse of a hermetian matrix.
+
+    Calculate a generalized inverse of a symmetric matrix using its
+    eigenvalue decomposition and including all 'large' eigenvalues.
+
+    Parameters
+    ----------
+    a : array, shape (N, N)
+        Real symmetric or complex hermetian matrix to be pseudo-inverted
+    cond, rcond : float or None
+        Cutoff for 'small' eigenvalues.
+        Singular values smaller than rcond * largest_eigenvalue are considered
+        zero.
+
+        If None or -1, suitable machine precision is used.
+
+    Returns
+    -------
+    B : array, shape (N, N)
+
+    Raises
+    ------
+    LinAlgError
+        If eigenvalue does not converge
+
+    Examples
+    --------
+    >>> from numpy import *
+    >>> a = random.randn(9, 6)
+    >>> a = np.dot(a, a.T)
+    >>> B = pinv_symmetric(a)
+    >>> allclose(a, dot(a, dot(B, a)))
+    True
+    >>> allclose(B, dot(B, dot(a, B)))
+    True
+
+    """
+    a = np.asarray_chkfinite(a)
+    s, u = decomp.eigh(a)
+    
+    if rcond is not None:
+        cond = rcond
+    if cond in [None, -1]:
+        t = u.dtype.char.lower()
+        factor = {'f': 1E3, 'd': 1E6}
+        cond = factor[t] * np.finfo(t).eps
+    
+    above_cutoff = (s > cond * np.max(s))
+    psigma_diag = np.zeros_like(s)
+    psigma_diag[above_cutoff] = 1.0 / s[above_cutoff]
+
+    return np.dot(u * psigma_diag, np.conjugate(u).T)

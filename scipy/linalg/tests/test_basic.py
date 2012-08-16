@@ -28,7 +28,7 @@ from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
     assert_equal, assert_almost_equal, assert_array_almost_equal, assert_, \
     assert_allclose
 
-from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, norm,\
+from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,\
         solve_banded, solveh_banded, solve_triangular
 
 from scipy.linalg._testutils import assert_no_overwrite
@@ -534,29 +534,55 @@ class TestLstsq(TestCase):
 
 class TestPinv(TestCase):
 
-    def test_simple(self):
-        a=array([[1,2,3],[4,5,6.],[7,8,10]])
+    def test_simple_real(self):
+        a = array([[1,2,3], [4,5,6.], [7,8,10]])
         a_pinv = pinv(a)
-        assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
+        assert_array_almost_equal(dot(a,a_pinv), np.eye(3))
         a_pinv = pinv2(a)
-        assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
-    def test_simple_0det(self):
-        a=array([[1,2,3],[4,5,6.],[7,8,9]])
+        assert_array_almost_equal(dot(a,a_pinv), np.eye(3))
+
+    def test_simple_complex(self):
+        a = (array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+             + 1j * array([[9, 8, 7], [6, 5, 4], [3, 2, 1]]))
+        a_pinv = pinv(a)
+        assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
+        a_pinv = pinv2(a)
+        assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
+
+    def test_simple_det(self):
+        a = array([[1,2,3],[4,5,6.],[7,8,9]])
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
     def test_simple_cols(self):
-        a=array([[1,2,3],[4,5,6.]])
+        a = array([[1,2,3],[4,5,6.]])
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
     def test_simple_rows(self):
-        a=array([[1,2],[3,4],[5,6]])
+        a = array([[1,2],[3,4],[5,6]])
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
+
+
+class TestPinv(TestCase):
+
+    def test_simple_real(self):
+        a = array([[1,2,3], [4,5,6.], [7,8,10]])
+        a = np.dot(a, a.T)
+        a_pinv = pinvh(a)
+        assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
+
+    def test_simple_complex(self):
+        a = (array([[1, 2, 3], [4, 5, 6], [7, 8, 10]])
+             + 1j * array([[10, 8, 7], [6, 5, 4], [3, 2, 1]]))
+        a = np.dot(a, a.conj().T)
+        a_pinv = pinvh(a)
+        assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
+
 
 class TestNorm(object):
 
@@ -608,6 +634,8 @@ class TestOverwrite(object):
         assert_no_overwrite(pinv, [(3,3)])
     def test_pinv2(self):
         assert_no_overwrite(pinv2, [(3,3)])
+    def test_pinvh(self):
+        assert_no_overwrite(pinvh, [(3,3)])
 
 if __name__ == "__main__":
     run_module_suite()
