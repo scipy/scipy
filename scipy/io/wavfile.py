@@ -56,6 +56,17 @@ def _read_data_chunk(fid, noc, bits):
             data = data.reshape(-1,noc)
     return data
 
+def _skip_unknown_chunk(fid):
+    if _big_endian:
+        fmt = '>i'
+    else:
+        fmt = '<i'
+
+    data = fid.read(4)
+    size = struct.unpack(fmt, data)[0]
+    fid.seek(size, 1)
+
+
 def _read_riff_chunk(fid):
     global _big_endian
     str1 = fid.read(4)
@@ -117,15 +128,13 @@ def read(file):
             size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid)
         elif chunk_id == asbytes('data'):
             data = _read_data_chunk(fid, noc, bits)
+        elif chunk_id == asbytes('LIST'):
+            # Someday this could be handled properly but for now skip it
+            _skip_unknown_chunk(fid)
         else:
-            warnings.warn("chunk not understood", WavFileWarning)
-            data = fid.read(4)
-            if _big_endian:
-                fmt = '>i'
-            else:
-                fmt = '<i'
-            size = struct.unpack(fmt, data)[0]
-            fid.seek(size, 1)
+            warnings.warn("Chunk (non-data) not understood, skipping it.",
+                          WavFileWarning)
+            _skip_unknown_chunk(fid)
     fid.close()
     return rate, data
 
