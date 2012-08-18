@@ -634,7 +634,7 @@ def pinvh(a, cond=None, rcond=None, lower=True):
     >>> from numpy import *
     >>> a = random.randn(9, 6)
     >>> a = np.dot(a, a.T)
-    >>> B = pinv_symmetric(a)
+    >>> B = pinvh(a)
     >>> allclose(a, dot(a, dot(B, a)))
     True
     >>> allclose(B, dot(B, dot(a, B)))

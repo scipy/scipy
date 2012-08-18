@@ -534,34 +534,34 @@ class TestLstsq(TestCase):
 class TestPinv(TestCase):
 
     def test_simple_real(self):
-        a = array([[1,2,3], [4,5,6.], [7,8,10]])
+        a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a_pinv = pinv(a)
         assert_array_almost_equal(dot(a,a_pinv), np.eye(3))
         a_pinv = pinv2(a)
         assert_array_almost_equal(dot(a,a_pinv), np.eye(3))
 
     def test_simple_complex(self):
-        a = (array([[1, 2, 3], [4, 5, 6], [7, 8, 10]])
-             + 1j * array([[10, 8, 7], [6, 5, 4], [3, 2, 1]]))
+        a = (array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
+             + 1j * array([[10, 8, 7], [6, 5, 4], [3, 2, 1]], dtype=float))
         a_pinv = pinv(a)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
         a_pinv = pinv2(a)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
 
     def test_simple_singular(self):
-        a = array([[1,2,3],[4,5,6.],[7,8,9]])
+        a = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=float)
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
     def test_simple_cols(self):
-        a = array([[1,2,3],[4,5,6.]])
+        a = array([[1, 2, 3], [4, 5, 6]], dtype=float)
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
 
     def test_simple_rows(self):
-        a = array([[1,2],[3,4],[5,6]])
+        a = array([[1, 2], [3, 4], [5, 6]], dtype=float)
         a_pinv = pinv(a)
         a_pinv2 = pinv2(a)
         assert_array_almost_equal(a_pinv,a_pinv2)
@@ -570,13 +570,13 @@ class TestPinv(TestCase):
 class TestPinvSymmetric(TestCase):
 
     def test_simple_real(self):
-        a = array([[1,2,3], [4,5,6.], [7,8,10]])
+        a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a = np.dot(a, a.T)
         a_pinv = pinvh(a)
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
 
     def test_nonpositive(self):
-        a = array([[1,2,3], [4,5,6.], [7,8,9]])
+        a = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=float)
         a = np.dot(a, a.T)
         u, s, vt = np.linalg.svd(a)
         s[0] *= -1
@@ -586,8 +586,8 @@ class TestPinvSymmetric(TestCase):
         assert_array_almost_equal(a_pinv, a_pinvh)
 
     def test_simple_complex(self):
-        a = (array([[1, 2, 3], [4, 5, 6], [7, 8, 10]])
-             + 1j * array([[10, 8, 7], [6, 5, 4], [3, 2, 1]]))
+        a = (array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
+             + 1j * array([[10, 8, 7], [6, 5, 4], [3, 2, 1]], dtype=float))
         a = np.dot(a, a.conj().T)
         a_pinv = pinvh(a)
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
