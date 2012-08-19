@@ -874,6 +874,7 @@ is called a rug plot):
 .. plot::
 
     >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
 
     >>> x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
     >>> kde1 = stats.gaussian_kde(x1)

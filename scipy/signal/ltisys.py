@@ -342,8 +342,8 @@ class lti(object):
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
         [dB] and phase [deg]. See scipy.signal.bode for details.
 
-        Example
-        -------
+        Examples
+        --------
         >>> from scipy import signal
         >>> import matplotlib.pyplot as plt
 
@@ -728,10 +728,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     .. versionadded:: 0.8.0
 
-
     Examples
     --------
-
     Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
 
     >>> import scipy.signal
@@ -897,8 +895,8 @@ def bode(system, w=None, n=100):
     phase : 1D ndarray
         Phase array [deg]
 
-    Example
-    -------
+    Examples
+    --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
