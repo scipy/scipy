@@ -16,7 +16,7 @@ from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
 
 
-def expm(A, q=False):
+def expm(A):
     """Compute the matrix exponential using Pade approximation.
 
     Parameters
