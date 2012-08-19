@@ -637,9 +637,9 @@ class spmatrix(object):
 
         See Also 
         --------
-        scipy.linalg.expm
+        scipy.sparse.linalg.expm
         """
-        from scipy.linalg.matfuncs import expm as mfexpm
+        from scipy.sparse.linalg import expm as mfexpm
         return mfexpm(self)
 
     def inv(self):

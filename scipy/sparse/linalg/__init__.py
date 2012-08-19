@@ -92,7 +92,7 @@ from isolve import *
 from dsolve import *
 from interface import *
 from eigen import *
-
+from matfuncs import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import Tester
