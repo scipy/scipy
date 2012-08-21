@@ -21,6 +21,14 @@ This release requires Python 2.4-2.7 or 3.1- and NumPy 1.X.X or greater.
 New features
 ============
 
+``scipy.sparse.linalg`` features
+--------------------------------
+- In ``scipy.sparse.linalg.spsolve``, the ``b`` argument can now be either
+  a vector or a matrix.
+- ``scipy.sparse.linalg.expm`` was added.  This computes the exponential of
+  a sparse matrix using a similar algorithm to the existing dense array
+  implementation in ``scipy.linalg.expm``.
+
 
 Deprecated features
 ===================
