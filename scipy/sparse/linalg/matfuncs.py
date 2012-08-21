@@ -40,7 +40,6 @@ def expm(A):
     Aissparse = isspmatrix(A)
 
     if Aissparse:
-
         A_L1 = max(abs(A).sum(axis=0).flat)
         ident = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
     else:

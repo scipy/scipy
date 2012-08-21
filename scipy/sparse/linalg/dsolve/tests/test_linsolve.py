@@ -58,7 +58,7 @@ class TestLinsolve(TestCase):
                          [ 0.,  0.,  1.]])
         As =  csc_matrix(Adense)
         random.seed(1234)
-        x = random.randn(3, 3)
+        x = random.randn(3, 4)
         Bdense = As.dot(x)
         Bs = csc_matrix(Bdense)
         x2 = spsolve(As, Bs)
