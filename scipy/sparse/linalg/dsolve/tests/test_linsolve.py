@@ -5,8 +5,9 @@ import numpy.random as random
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
     assert_raises, assert_almost_equal, assert_equal, assert_array_equal, assert_
 
+import scipy.linalg 
 from scipy.linalg import norm, inv
-from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix
+from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix, csr_matrix
 from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
@@ -39,7 +40,7 @@ class TestLinsolve(TestCase):
 
                 assert_( norm(b - Asp*x) < 10 * cond_A * eps )
 
-    def test_smoketest(self):
+    def test_bvector_smoketest(self):
         Adense = matrix([[ 0.,  1.,  1.],
                          [ 1.,  0.,  1.],
                          [ 0.,  0.,  1.]])
@@ -51,6 +52,18 @@ class TestLinsolve(TestCase):
 
         assert_array_almost_equal(x, x2)
 
+    def test_bmatrix_smoketest(self):
+        Adense = matrix([[ 0.,  1.,  1.],
+                         [ 1.,  0.,  1.],
+                         [ 0.,  0.,  1.]])
+        As =  csc_matrix(Adense)
+        random.seed(1234)
+        x = random.randn(3, 3)
+        Bdense = As.dot(x)
+        Bs = csc_matrix(Bdense)
+        x2 = spsolve(As, Bs)
+        assert_array_almost_equal(x, x2.todense())
+
     def test_non_square(self):
         # A is not square.
         A = ones((3, 4))
@@ -60,6 +73,24 @@ class TestLinsolve(TestCase):
         A2 = csc_matrix(eye(3))
         b2 = array([1.0, 2.0])
         assert_raises(ValueError, spsolve, A2, b2)
+
+    def test_example_comparison(self):
+        row = array([0,0,1,2,2,2])
+        col = array([0,2,2,0,1,2])
+        data = array([1,2,3,-4,5,6])
+        sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
+        M = sM.todense()
+
+        row  = array([0,0,1,1,0,0])
+        col  = array([0,2,1,1,0,0])
+        data = array([1,1,1,1,1,1])
+        sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
+        N = sN.todense()
+
+        sX = spsolve(sM, sN)
+        X = scipy.linalg.solve(M, N)
+
+        assert_array_almost_equal(X, sX.todense())
 
 class TestSplu(object):
     def setUp(self):

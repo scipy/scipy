@@ -26,6 +26,8 @@ from numpy.testing import assert_raises, assert_equal, assert_array_equal, \
         assert_array_almost_equal, assert_almost_equal, assert_, \
         dec, TestCase, run_module_suite
 
+import scipy.linalg
+
 import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
@@ -155,6 +157,25 @@ class _TestCommon:
         assert_array_equal(self.dat.mean(axis=None), self.datsp.mean(axis=None))
         assert_array_equal(self.dat.mean(axis=0), self.datsp.mean(axis=0))
         assert_array_equal(self.dat.mean(axis=1), self.datsp.mean(axis=1))
+
+    def test_expm(self):
+        M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
+        sM = self.spmatrix(M, shape=(3,3), dtype=float)
+        Mexp = scipy.linalg.expm(M)
+        sMexp = sM.expm().todense()
+        assert_array_almost_equal((sMexp - Mexp), zeros((3, 3)))
+
+        N = array([[ 3.,  0., 1.], [ 0.,  2., 0.],  [ 0.,  0., 0.]])
+        sN = self.spmatrix(N, shape=(3,3), dtype=float)
+        Nexp = scipy.linalg.expm(N)
+        sNexp = sN.expm().todense()
+        assert_array_almost_equal((sNexp - Nexp), zeros((3, 3)))
+
+    def test_inv(self):
+        M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
+        sM = self.spmatrix(M, shape=(3,3), dtype=float)
+        sMinv = sM.inv()
+        assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
 
     def test_from_array(self):
         A = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])

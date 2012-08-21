@@ -24,6 +24,7 @@ Direct methods for linear equation systems:
 
    spsolve -- Solve the sparse linear system Ax=b
    factorized -- Pre-factorize matrix to a function solving a linear system
+   solve -- Solve the sparse linear system Ax=B, where B may be a sparse matrix
 
 Iterative methods for linear equation systems:
 
@@ -91,7 +92,7 @@ from isolve import *
 from dsolve import *
 from interface import *
 from eigen import *
-
+from matfuncs import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import Tester
