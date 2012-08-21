@@ -489,7 +489,7 @@ def gaussian_gradient_magnitude(input, sigma, output = None,
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
                            convolution):
     input = numpy.asarray(input)
-    if numpy.iscomplexobj(int):
+    if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     weights = numpy.asarray(weights, dtype=numpy.float64)
