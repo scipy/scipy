@@ -3,7 +3,7 @@
 # Author: Anthony Scopatz, August 2012 (Sparse Updates)
 #
 
-__all__ = ['expm', ]
+__all__ = ['expm', 'inv']
 
 from numpy import asarray, dot, eye, ceil, log2
 from numpy import matrix as mat
@@ -14,7 +14,30 @@ from scipy.linalg.basic import solve, inv
 
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
+from scipy.sparse.linalg import spsolve
 
+
+def inv(A):
+    """Compute the inverse of a sparse matrix
+
+    Parameters
+    ----------
+    A : ndarray or sparse matrix
+        square matrix to be inverted
+    
+    Returns
+    -------
+    Ainv : inverse of A
+
+    Notes
+    -----
+    This computes the sparse inverse of A.  If the inverse of A is expected
+    to be non-sparse, it will likely be faster to convert A to dense and use
+    scipy.linalg.inv.
+    """
+    I = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
+    Ainv = spsolve(A, I)
+    return Ainv
 
 def expm(A):
     """Compute the matrix exponential using Pade approximation.

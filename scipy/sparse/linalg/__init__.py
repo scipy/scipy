@@ -14,6 +14,15 @@ Abstract linear operators
    LinearOperator -- abstract representation of a linear operator
    aslinearoperator -- convert an object to an abstract linear operator
 
+Matrix Operations
+-----------------
+
+.. autosummary::
+   :toctree: generated/
+
+   inv -- compute the sparse matrix inverse
+   expm -- compute the sparse matrix exponential
+
 Solving linear problems
 -----------------------
 

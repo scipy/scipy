@@ -33,7 +33,7 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
         eye, isspmatrix, SparseEfficiencyWarning
 from scipy.sparse.sputils import supported_dtypes
-from scipy.sparse.linalg import splu
+from scipy.sparse.linalg import splu, expm, inv
 
 
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
@@ -162,19 +162,19 @@ class _TestCommon:
         M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
         sM = self.spmatrix(M, shape=(3,3), dtype=float)
         Mexp = scipy.linalg.expm(M)
-        sMexp = sM.expm().todense()
+        sMexp = expm(sM).todense()
         assert_array_almost_equal((sMexp - Mexp), zeros((3, 3)))
 
         N = array([[ 3.,  0., 1.], [ 0.,  2., 0.],  [ 0.,  0., 0.]])
         sN = self.spmatrix(N, shape=(3,3), dtype=float)
         Nexp = scipy.linalg.expm(N)
-        sNexp = sN.expm().todense()
+        sNexp = expm(sN).todense()
         assert_array_almost_equal((sNexp - Nexp), zeros((3, 3)))
 
     def test_inv(self):
         M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
         sM = self.spmatrix(M, shape=(3,3), dtype=float)
-        sMinv = sM.inv()
+        sMinv = inv(sM)
         assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
 
     def test_from_array(self):

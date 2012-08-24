@@ -626,30 +626,6 @@ class spmatrix(object):
             return out
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
-
-    def expm(self):
-        """Compute the matrix exponential using Pade approximation.
-
-        Returns
-        -------
-        expA : array, shape(M,M)
-            Matrix exponential of A
-
-        See Also 
-        --------
-        scipy.sparse.linalg.expm
-        """
-        from scipy.sparse.linalg import expm as mfexpm
-        return mfexpm(self)
-
-    def inv(self):
-        """Computes the inverse of the sparse matrix.
-        """
-        from construct import eye
-        from linalg import spsolve
-        I = eye(self.shape[0], self.shape[1], dtype=self.dtype, format=self.format)
-        selfinv = spsolve(self, I)
-        return selfinv
         
 
 def isspmatrix(x):
