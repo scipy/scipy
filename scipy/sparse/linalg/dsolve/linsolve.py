@@ -44,7 +44,37 @@ def use_solver( **kwargs ):
 
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
-    """Solve the sparse linear system Ax=b, where b may be a vector or a matrix."""
+    """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
+
+    Parameters
+    ----------
+    A : ndarray or sparse matrix
+        The square matrix A will be converted into CSC or CSR form
+    b : ndarray or sparse matrix
+        The matrix or vector representing the right hand side of the equation.
+        If a vector, b.size must
+    permc_spec : (optional)
+        argument passed to ColPerm option in the superLU solver.  This is
+        only referenced if b is a vector and use_umfpack == False
+    use_umfpack : bool (optional)
+        if True (default) then use umfpack for the solution.  This is
+        only referenced if b is a vector.
+
+    Returns
+    -------
+    x : ndarray or sparse matrix
+        the solution of the sparse linear equation.
+        If b is a vector, then x is a vector of size A.shape[1]
+        If b is a matrix, then x is a matrix of size (A.shape[1], b.shape[1])
+
+    Notes
+    -----
+    For solving the matrix expression AX = B, this solver assumes the resulting
+    matrix X is sparse, as is often the case for very sparse inputs.  If the
+    resulting X is dense, the construction of this sparse result will be
+    relatively expensive.  In that case, consider converting A to a dense
+    matrix and using scipy.linalg.solve or its variants.
+    """
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
         warn('spsolve requires A be CSC or CSR matrix format', SparseEfficiencyWarning)
