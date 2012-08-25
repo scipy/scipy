@@ -1,6 +1,6 @@
 from warnings import warn
 
-from numpy import asarray
+from numpy import asarray, empty, where, squeeze, prod
 from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
         SparseEfficiencyWarning, csc_matrix
 
@@ -44,33 +44,78 @@ def use_solver( **kwargs ):
 
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
-    """Solve the sparse linear system Ax=b """
-    if isspmatrix( b ):
-        b = b.toarray()
+    """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
-    if b.ndim > 1:
-        if max( b.shape ) == b.size:
-            b = b.squeeze()
-        else:
-            raise ValueError("rhs must be a vector (has shape %s)" % (b.shape,))
+    Parameters
+    ----------
+    A : ndarray or sparse matrix
+        The square matrix A will be converted into CSC or CSR form
+    b : ndarray or sparse matrix
+        The matrix or vector representing the right hand side of the equation.
+        If a vector, b.size must
+    permc_spec : str, optional
+        How to permute the columns of the matrix for sparsity preservation.
+        (default: 'COLAMD')
 
+        - ``NATURAL``: natural ordering.
+        - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
+        - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
+        - ``COLAMD``: approximate minimum degree column ordering
+    use_umfpack : bool (optional)
+        if True (default) then use umfpack for the solution.  This is
+        only referenced if b is a vector.
+
+    Returns
+    -------
+    x : ndarray or sparse matrix
+        the solution of the sparse linear equation.
+        If b is a vector, then x is a vector of size A.shape[1]
+        If b is a matrix, then x is a matrix of size (A.shape[1], b.shape[1])
+
+    Notes
+    -----
+    For solving the matrix expression AX = B, this solver assumes the resulting
+    matrix X is sparse, as is often the case for very sparse inputs.  If the
+    resulting X is dense, the construction of this sparse result will be
+    relatively expensive.  In that case, consider converting A to a dense
+    matrix and using scipy.linalg.solve or its variants.
+    """
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
-        warn('spsolve requires CSC or CSR matrix format', SparseEfficiencyWarning)
+        warn('spsolve requires A be CSC or CSR matrix format', SparseEfficiencyWarning)
+
+    # b.size gives a different answer for dense vs sparse:
+    # use prod(b.shape)
+    b_is_vector = (max(b.shape) == prod(b.shape))
+
+    if b_is_vector:
+        if isspmatrix(b):
+            b = b.toarray()
+        b = b.squeeze()
+
+    else:
+        if isspmatrix(b) and not (isspmatrix_csc(b) or isspmatrix_csr(b)):
+            b = csc_matrix(b)
+            warn('solve requires b be CSC or CSR matrix format',
+                 SparseEfficiencyWarning)
+        if b.ndim != 2:
+            raise ValueError("b must be either a vector or a matrix")
 
     A.sort_indices()
-    A = A.asfptype()  #upcast to a floating point format
+    A = A.asfptype()  # upcast to a floating point format
 
+    # validate input shapes
     M, N = A.shape
     if (M != N):
         raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
-    if M != b.size:
-        raise ValueError("matrix - rhs size mismatch (%s - %s)"
-              % (A.shape, b.size))
+
+    if M != b.shape[0]:
+        raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
+                         % (A.shape, b.shape[0]))
 
     use_umfpack = use_umfpack and useUmfpack
 
-    if isUmfpack and use_umfpack:
+    if b_is_vector and isUmfpack and use_umfpack:
         if noScikit:
             warn( 'scipy.sparse.linalg.dsolve.umfpack will be removed,'
                     ' install scikits.umfpack instead', DeprecationWarning )
@@ -81,11 +126,11 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         b = asarray(b, dtype=A.dtype).reshape(-1)
 
         family = {'d' : 'di', 'D' : 'zi'}
-        umf = umfpack.UmfpackContext( family[A.dtype.char] )
-        return umf.linsolve( umfpack.UMFPACK_A, A, b,
-                             autoTranspose = True )
+        umf = umfpack.UmfpackContext(family[A.dtype.char])
+        x = umf.linsolve(umfpack.UMFPACK_A, A, b,
+                         autoTranspose = True )
 
-    else:
+    elif b_is_vector:
         if isspmatrix_csc(A):
             flag = 1 # CSC format
         elif isspmatrix_csr(A):
@@ -96,8 +141,21 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
         b = asarray(b, dtype=A.dtype)
         options = dict(ColPerm=permc_spec)
-        return _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag,
-                             options=options)[0]
+        x = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag,
+                          options=options)[0]
+    else:
+        # Cover the case where b is also a matrix
+        Afactsolve = factorized(A)
+        tempj = empty(M, dtype=int)
+        x = A.__class__(b.shape)
+        for j in range(b.shape[1]):
+            xj = Afactsolve(squeeze(b[:, j].toarray()))
+            w = where(xj != 0.0)[0]
+            tempj.fill(j)
+            x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
+                                shape=b.shape, dtype=A.dtype)
+    return x
+
 
 def splu(A, permc_spec=None, diag_pivot_thresh=None,
          drop_tol=None, relax=None, panel_size=None, options=dict()):
@@ -243,10 +301,11 @@ def factorized( A ):
     """
     Return a fuction for solving a sparse linear system, with A pre-factorized.
 
-    Example:
-      solve = factorized( A ) # Makes LU decomposition.
-      x1 = solve( rhs1 ) # Uses the LU factors.
-      x2 = solve( rhs2 ) # Uses again the LU factors.
+    Examples
+    --------
+    solve = factorized( A ) # Makes LU decomposition.
+    x1 = solve( rhs1 ) # Uses the LU factors.
+    x2 = solve( rhs2 ) # Uses again the LU factors.
     """
     if isUmfpack and useUmfpack:
         if noScikit:
