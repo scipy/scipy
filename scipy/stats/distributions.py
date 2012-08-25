@@ -1608,7 +1608,6 @@ class rv_continuous(rv_generic):
             location parameter (default=0)
         scale : array_like, optional
             scale parameter (default=1)
-
         moments : string, optional
             composed of letters ['mvsk'] defining which moments to compute:
             'm' = mean,
@@ -1724,7 +1723,7 @@ class rv_continuous(rv_generic):
 
     def moment(self, n, *args, **kwds):
         """
-        n'th order non-central moment of distribution
+        n'th order non-central moment of distribution.
 
         Parameters
         ----------
@@ -1854,7 +1853,7 @@ class rv_continuous(rv_generic):
         Parameters
         ----------
         data : array_like
-            Data to use in calculating the MLEs
+            Data to use in calculating the MLEs.
         args : floats, optional
             Starting value(s) for any shape-characterizing arguments (those not
             provided will be determined by a call to ``_fitstart(data)``).
@@ -1915,7 +1914,23 @@ class rv_continuous(rv_generic):
 
     def fit_loc_scale(self, data, *args):
         """
-        Estimate loc and scale parameters from data using 1st and 2nd moments
+        Estimate loc and scale parameters from data using 1st and 2nd moments.
+
+        Parameters
+        ----------
+        data : array_like
+            Data to fit.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+
+        Returns
+        -------
+        Lhat : float
+            Estimated location parameter for the data.
+        Shat : float
+            Estimated scale parameter for the data.
+
         """
         mu, mu2 = self.stats(*args,**{'moments':'mv'})
         muhat = arr(data).mean()
@@ -1926,10 +1941,24 @@ class rv_continuous(rv_generic):
 
     @np.deprecate
     def est_loc_scale(self, data, *args):
-        """This function is deprecated, use self.fit_loc_scale(data) instead. """
+        """This function is deprecated, use self.fit_loc_scale(data) instead."""
         return self.fit_loc_scale(data, *args)
 
     def freeze(self,*args,**kwds):
+        """Freeze the distribution for the given arguments.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution.  Should include all
+            the non-optional arguments, may include ``loc`` and ``scale``.
+
+        Returns
+        -------
+        rv_frozen : rv_frozen instance
+            The frozen distribution.
+
+        """
         return rv_frozen(self,*args,**kwds)
 
     def __call__(self, *args, **kwds):
@@ -1960,16 +1989,15 @@ class rv_continuous(rv_generic):
         """
         Differential entropy of the RV.
 
-
         Parameters
         ----------
         arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
+            instance object for more information).
         loc : array_like, optional
-            location parameter (default=0)
+            Location parameter (default=0).
         scale : array_like, optional
-            scale parameter (default=1)
+            Scale parameter (default=1).
 
         """
         loc,scale=map(kwds.get,['loc','scale'])
