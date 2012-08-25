@@ -626,7 +626,7 @@ class spmatrix(object):
             return out
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
-
+        
 
 def isspmatrix(x):
     return isinstance(x, spmatrix)
