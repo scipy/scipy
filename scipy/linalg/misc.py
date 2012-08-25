@@ -1,11 +1,6 @@
 import numpy as np
-from numpy import eye
 from numpy.linalg import LinAlgError
 import fblas
-
-from scipy.sparse.base import isspmatrix
-from scipy.sparse.construct import eye as speye
-
 
 __all__ = ['LinAlgError', 'norm']
 
