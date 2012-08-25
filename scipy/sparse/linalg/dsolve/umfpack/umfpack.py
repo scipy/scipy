@@ -5,17 +5,22 @@ Interface to the UMFPACK library.
 Author: Robert Cimrman
 """
 
+import re
+import warnings
 
-#from base import Struct, pause
 import numpy as np
 import scipy.sparse as sp
-import re
 try: # Silence import error.
     import _umfpack as _um
 except:
     _um = None
 
 assumeSortedIndices = False
+
+
+class UmfpackWarning(UserWarning):
+    pass
+
 
 ##
 # 10.01.2006, c
@@ -267,7 +272,7 @@ class UmfpackContext( Struct ):
         Keyword arguments:
 
         maxCond .. if extimated condition number is greater than maxCond,
-                   a warning is printed (default: 1e12)"""
+                   a warning is issued (default: 1e12)"""
         if _um is None:
             raise ImportError('Scipy was built without UMFPACK support. '
                               'You need to install the UMFPACK library and '
@@ -379,7 +384,6 @@ class UmfpackContext( Struct ):
                                           mtx.indptr, indx,
                                           real, imag,
                                           self.control, self.info )
-##         print status, self._symbolic
 
         if status != UMFPACK_OK:
             raise RuntimeError('%s failed with %s' % (self.funs.symbolic,
@@ -418,16 +422,15 @@ class UmfpackContext( Struct ):
                                              real, imag,
                                              self._symbolic,
                                              self.control, self.info )
-##             print status, self._numeric
 
             if status != UMFPACK_OK:
                 if status == UMFPACK_WARNING_singular_matrix:
-                    print 'warning: singular matrix'
+                    warnings.warn('Singular matrix', UmfpackWarning)
                     break
                 elif status in (UMFPACK_ERROR_different_pattern,
                                 UMFPACK_ERROR_invalid_Symbolic_object):
                     # Try again.
-                    print 'warning: recomputing symbolic'
+                    warnings.warn('Recomputing symbolic', UmfpackWarning)
                     self.symbolic( mtx )
                     failCount += 1
                 else:
@@ -551,15 +554,16 @@ class UmfpackContext( Struct ):
         if status != UMFPACK_OK:
             if status == UMFPACK_WARNING_singular_matrix:
                 ## Change inf, nan to zeros.
-                print 'zeroing nan and inf entries...'
+                warnings.warn('Zeroing nan and inf entries...', UmfpackWarning)
                 sol[~np.isfinite( sol )] = 0.0
             else:
                 raise RuntimeError('%s failed with %s' % (self.funs.solve,
                                                            umfStatus[status]))
         econd = 1.0 / self.info[UMFPACK_RCOND]
         if econd > self.maxCond:
-            print 'warning: (almost) singular matrix! '\
+            msg = '(almost) singular matrix! '\
                   + '(estimated cond. number: %.2e)' % econd
+            warnings.warn(msg, UmfpackWarning)
 
         return sol
 
@@ -582,7 +586,6 @@ class UmfpackContext( Struct ):
                       assumes CSC internally
         """
 
-#        print self.family
         if sys not in umfSys:
             raise ValueError('sys must be in' % umfSys)
 
