@@ -13,7 +13,7 @@ __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
 # XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
 
-def logsumexp(a, axis=None):
+def logsumexp(a, axis=None, b=None):
     """Compute the log of the sum of exponentials of input elements.
 
     Parameters
@@ -23,12 +23,17 @@ def logsumexp(a, axis=None):
     axis : int, optional
         Axis over which the sum is taken. By default `axis` is None,
         and all elements are summed.
+    b : array-like, optional
+        Scaling factor for exp(`a`) must be of the same shape as `a` or
+        broadcastable to `a`.
+
 
     Returns
     -------
     res : ndarray
         The result, ``np.log(np.sum(np.exp(a)))`` calculated in a numerically
-        more stable way.
+        more stable way. If `b` is given then ``np.log(np.sum(b*np.exp(a)))``
+        is returned.
 
     See Also
     --------
@@ -49,6 +54,14 @@ def logsumexp(a, axis=None):
     >>> logsumexp(a)
     9.4586297444267107
 
+    With weights
+
+    >>> a = np.arange(10)
+    >>> b = np.arange(10, 0, -1)
+    >>> logsumexp(a, b=b)
+    9.9170178533034665
+    >>> np.log(np.sum(b*np.exp(a)))
+    9.9170178533034647
     """
     a = asarray(a)
     if axis is None:
@@ -56,7 +69,15 @@ def logsumexp(a, axis=None):
     else:
         a = rollaxis(a, axis)
     a_max = a.max(axis=0)
-    out = log(sum(exp(a - a_max), axis=0))
+    if b is not None:
+        b = asarray(b)
+        if axis is None:
+            b = b.ravel()
+        else:
+            b = rollaxis(b, axis)
+        out = log(sum(b * exp(a - a_max), axis=0))
+    else:
+        out = log(sum(exp(a - a_max), axis=0))
     out += a_max
     return out
 
