@@ -1,6 +1,11 @@
+"""
+Sparse matrix functions
+"""
+
 #
-# Author: Travis Oliphant, March 2002
-# Author: Anthony Scopatz, August 2012 (Sparse Updates)
+# Authors: Travis Oliphant, March 2002
+#          Anthony Scopatz, August 2012 (Sparse Updates)
+#          Jake Vanderplas, August 2012 (Sparse Updates)
 #
 
 __all__ = ['expm', 'inv']

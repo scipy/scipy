@@ -53,9 +53,14 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     b : ndarray or sparse matrix
         The matrix or vector representing the right hand side of the equation.
         If a vector, b.size must
-    permc_spec : (optional)
-        argument passed to ColPerm option in the superLU solver.  This is
-        only referenced if b is a vector and use_umfpack == False
+    permc_spec : str, optional
+        How to permute the columns of the matrix for sparsity preservation.
+        (default: 'COLAMD')
+
+        - ``NATURAL``: natural ordering.
+        - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
+        - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
+        - ``COLAMD``: approximate minimum degree column ordering
     use_umfpack : bool (optional)
         if True (default) then use umfpack for the solution.  This is
         only referenced if b is a vector.

@@ -25,6 +25,8 @@ New features
 --------------------------------
 - In ``scipy.sparse.linalg.spsolve``, the ``b`` argument can now be either
   a vector or a matrix.
+- ``scipy.sparse.linalg.inv`` was added.  This uses ``spsolve`` to compute
+  a sparse matrix inverse.
 - ``scipy.sparse.linalg.expm`` was added.  This computes the exponential of
   a sparse matrix using a similar algorithm to the existing dense array
   implementation in ``scipy.linalg.expm``.
@@ -47,4 +49,5 @@ Other changes
 
 Authors
 =======
-
+- Anthony Scopatz (sparse linear algebra)
+- Jake Vanderplas (sparse linear algebra)

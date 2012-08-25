@@ -33,7 +33,6 @@ Direct methods for linear equation systems:
 
    spsolve -- Solve the sparse linear system Ax=b
    factorized -- Pre-factorize matrix to a function solving a linear system
-   solve -- Solve the sparse linear system Ax=B, where B may be a sparse matrix
 
 Iterative methods for linear equation systems:
 
