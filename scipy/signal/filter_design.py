@@ -479,17 +479,18 @@ def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
             - Chebyshev II: 'cheby2',
             - Bessel :      'bessel'
 
-    output : ['ba', 'zpk'], optional
+    output : {'ba', 'zpk'}, optional
         Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
         Default is 'ba'.
 
     Returns
     -------
-    b, a :
-        Numerator and denominator of the IIR filter. Only returned if
-        ``output='ba'``.
-    z, p, k : Zeros, poles, and gain of the IIR filter. Only returned if
-    ``output='zpk'``.
+    b, a : ndarray, ndarray
+        Numerator (b) and denominator (a) polynomials of the IIR filter. 
+        Only returned if ``output='ba'``.
+    z, p, k : ndarray, ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer 
+        function.  Only returned if ``output='zpk'``.
 
     """
 
