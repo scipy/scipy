@@ -445,7 +445,7 @@ def bilinear(b, a, fs=1.0):
     return normalize(bprime, aprime)
 
 
-def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
+def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
     """Complete IIR digital and analog filter design.
 
     Given passband and stopband frequencies and gains construct an analog or
@@ -467,8 +467,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
         The maximum loss in the passband (dB).
     gstop : float
         The minimum attenuation in the stopband (dB).
-    analog : int, optional
-        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+    analog : bool, optional
+        True to design an analog filter (in this case `wp` and `ws` are in
         radians / second).
     ftype : str, optional
         The type of IIR filter to design:
