@@ -3141,14 +3141,14 @@ def ttest_rel(a, b, axis=0):
 
 #import scipy.stats
 #import distributions
-def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**kwds):
+def kstest(rvs, cdf, args=(), N=20, alternative = 'two-sided', mode='approx',**kwds):
     """
     Perform the Kolmogorov-Smirnov test for goodness of fit
 
     This performs a test of the distribution G(x) of an observed
     random variable against a given distribution F(x). Under the null
     hypothesis the two distributions are identical, G(x)=F(x). The
-    alternative hypothesis can be either 'two_sided' (default), 'less'
+    alternative hypothesis can be either 'two-sided' (default), 'less'
     or 'greater'. The KS test is only valid for continuous distributions.
 
     Parameters
@@ -3170,7 +3170,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
         distribution parameters, used if rvs or cdf are strings
     N : int
         sample size if rvs is string or callable
-    alternative : 'two_sided' (default), 'less' or 'greater'
+    alternative : 'two-sided' (default), 'less' or 'greater'
         defines the alternative hypothesis (see explanation)
 
     mode : 'approx' (default) or 'asymp'
@@ -3276,17 +3276,21 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
         N = len(vals)
     cdfvals = cdf(vals, *args)
 
-    if alternative in ['two_sided', 'greater']:
+    # to not break compatibility with existing code
+    if alternative == 'two_sided':
+        alternative = 'two-sided'
+
+    if alternative in ['two-sided', 'greater']:
         Dplus = (np.arange(1.0, N+1)/N - cdfvals).max()
         if alternative == 'greater':
             return Dplus, distributions.ksone.sf(Dplus,N)
 
-    if alternative in ['two_sided', 'less']:
+    if alternative in ['two-sided', 'less']:
         Dmin = (cdfvals - np.arange(0.0, N)/N).max()
         if alternative == 'less':
             return Dmin, distributions.ksone.sf(Dmin,N)
 
-    if alternative == 'two_sided':
+    if alternative == 'two-sided':
         D = np.max([Dplus,Dmin])
         if mode == 'asymp':
             return D, distributions.kstwobign.sf(D*np.sqrt(N))
