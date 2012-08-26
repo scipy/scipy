@@ -648,7 +648,7 @@ def butter(N, Wn, btype='low', analog=0, output='ba'):
     analog : int, optional
         Non-zero to return an analog filter, otherwise a digital filter is
         returned.
-    output : ['ba', 'zpk'], optional
+    output : {'ba', 'zpk'}, optional
         Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
         Default is 'ba'.
        
