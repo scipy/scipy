@@ -3139,11 +3139,10 @@ def ttest_rel(a, b, axis=0):
     return t, prob
 
 
-#import scipy.stats
-#import distributions
-def kstest(rvs, cdf, args=(), N=20, alternative = 'two-sided', mode='approx',**kwds):
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
+           **kwds):
     """
-    Perform the Kolmogorov-Smirnov test for goodness of fit
+    Perform the Kolmogorov-Smirnov test for goodness of fit.
 
     This performs a test of the distribution G(x) of an observed
     random variable against a given distribution F(x). Under the null
@@ -3153,96 +3152,85 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two-sided', mode='approx',**k
 
     Parameters
     ----------
-    rvs : string or array or callable
-        string: name of a distribution in scipy.stats
+    rvs : str, array or callable
+        If a string, it should be the name of a distribution in `scipy.stats`.
+        If an array, it should be a 1-D array of observations of random
+        variables.
+        If a callable, it should be a function to generate random variables;
+        it is required to have a keyword argument `size`.
+    cdf : str or callable
+        If a string, it should be the name of a distribution in `scipy.stats`.
+        If `rvs` is a string then `cdf` can be False or the same as `rvs`.
+        If a callable, that callable is used to calculate the cdf.
+    args : tuple, sequence, optional
+        Distribution parameters, used if `rvs` or `cdf` are strings.
+    N : int, optional
+        Sample size if `rvs` is string or callable.  Default is 20.
+    alternative : {'two-sided', 'less','greater'}, optional
+        Defines the alternative hypothesis (see explanation above).
+        Default is 'two-sided'.
+    mode : 'approx' (default) or 'asymp', optional
+        Defines the distribution used for calculating the p-value.
 
-        array: 1-D observations of random variables
-
-        callable: function to generate random variables, requires keyword
-        argument `size`
-
-    cdf : string or callable
-        string: name of a distribution in scipy.stats, if rvs is a string then
-        cdf can evaluate to `False` or be the same as rvs
-        callable: function to evaluate cdf
-
-    args : tuple, sequence
-        distribution parameters, used if rvs or cdf are strings
-    N : int
-        sample size if rvs is string or callable
-    alternative : 'two-sided' (default), 'less' or 'greater'
-        defines the alternative hypothesis (see explanation)
-
-    mode : 'approx' (default) or 'asymp'
-        defines the distribution used for calculating p-value
-
-        'approx' : use approximation to exact distribution of test statistic
-
-        'asymp' : use asymptotic distribution of test statistic
-
+          - 'approx' : use approximation to exact distribution of test statistic
+          - 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
     D : float
-        KS test statistic, either D, D+ or D-
+        KS test statistic, either D, D+ or D-.
     p-value :  float
-        one-tailed or two-tailed p-value
+        One-tailed or two-tailed p-value.
 
     Notes
     -----
-
     In the one-sided test, the alternative is that the empirical
     cumulative distribution function of the random variable is "less"
     or "greater" than the cumulative distribution function F(x) of the
-    hypothesis, G(x)<=F(x), resp. G(x)>=F(x).
+    hypothesis, ``G(x)<=F(x)``, resp. ``G(x)>=F(x)``.
 
     Examples
     --------
-
     >>> from scipy import stats
-    >>> import numpy as np
-    >>> from scipy.stats import kstest
 
-    >>> x = np.linspace(-15,15,9)
-    >>> kstest(x,'norm')
+    >>> x = np.linspace(-15, 15, 9)
+    >>> stats.kstest(x, 'norm')
     (0.44435602715924361, 0.038850142705171065)
 
     >>> np.random.seed(987654321) # set random seed to get the same result
-    >>> kstest('norm','',N=100)
+    >>> stats.kstest('norm', False, N=100)
     (0.058352892479417884, 0.88531190944151261)
 
-    is equivalent to this
+    The above lines are equivalent to:
 
     >>> np.random.seed(987654321)
-    >>> kstest(stats.norm.rvs(size=100),'norm')
+    >>> stats.kstest(stats.norm.rvs(size=100), 'norm')
     (0.058352892479417884, 0.88531190944151261)
 
-    Test against one-sided alternative hypothesis:
+    *Test against one-sided alternative hypothesis*
+
+    Shift distribution to larger values, so that ``cdf_dgp(x) < norm.cdf(x)``:
 
     >>> np.random.seed(987654321)
-
-    Shift distribution to larger values, so that cdf_dgp(x)< norm.cdf(x):
-
     >>> x = stats.norm.rvs(loc=0.2, size=100)
-    >>> kstest(x,'norm', alternative = 'less')
+    >>> stats.kstest(x,'norm', alternative = 'less')
     (0.12464329735846891, 0.040989164077641749)
 
     Reject equal distribution against alternative hypothesis: less
 
-    >>> kstest(x,'norm', alternative = 'greater')
+    >>> stats.kstest(x,'norm', alternative = 'greater')
     (0.0072115233216311081, 0.98531158590396395)
 
     Don't reject equal distribution against alternative hypothesis: greater
 
-    >>> kstest(x,'norm', mode='asymp')
+    >>> stats.kstest(x,'norm', mode='asymp')
     (0.12464329735846891, 0.08944488871182088)
 
-
-    Testing t distributed random variables against normal distribution:
+    *Testing t distributed random variables against normal distribution*
 
     With 100 degrees of freedom the t distribution looks close to the normal
-    distribution, and the kstest does not reject the hypothesis that the sample
-    came from the normal distribution
+    distribution, and the K-S test does not reject the hypothesis that the
+    sample came from the normal distribution:
 
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
@@ -3250,7 +3238,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two-sided', mode='approx',**k
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
-    sample came from the normal distribution at a alpha=10% level
+    sample came from the normal distribution at the 10% level:
 
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.t.rvs(3,size=100),'norm')
@@ -3264,7 +3252,6 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two-sided', mode='approx',**k
             rvs = getattr(distributions, rvs).rvs
         else:
             raise AttributeError('if rvs is string, cdf has to be the same distribution')
-
 
     if isinstance(cdf, basestring):
         cdf = getattr(distributions, cdf).cdf
@@ -3340,16 +3327,15 @@ def chisquare(f_obs, f_exp=None, ddof=0):
 
     References
     ----------
-
     .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
            Statistics". Chapter 8. http://faculty.vassar.edu/lowry/ch8pt1.html
 
     """
-
     f_obs = asarray(f_obs)
     k = len(f_obs)
     if f_exp is None:
         f_exp = array([np.sum(f_obs,axis=0)/float(k)] * len(f_obs),float)
+
     f_exp = f_exp.astype(float)
     chisq = np.add.reduce((f_obs-f_exp)**2 / f_exp)
     return chisq, chisqprob(chisq, k-1-ddof)
@@ -3368,7 +3354,6 @@ def ks_2samp(data1, data2):
         two arrays of sample observations assumed to be drawn from a continuous
         distribution, sample sizes can be different
 
-
     Returns
     -------
     D : float
@@ -3376,10 +3361,8 @@ def ks_2samp(data1, data2):
     p-value : float
         two-tailed p-value
 
-
     Notes
     -----
-
     This tests whether 2 samples are drawn from the same distribution. Note
     that, like in the case of the one-sample K-S test, the distribution is
     assumed to be continuous.
@@ -3393,38 +3376,31 @@ def ks_2samp(data1, data2):
 
     Examples
     --------
-
     >>> from scipy import stats
-    >>> import numpy as np
-    >>> from scipy.stats import ks_2samp
-
-    >>> #fix random seed to get the same result
-    >>> np.random.seed(12345678);
-
+    >>> np.random.seed(12345678)  #fix random seed to get the same result
     >>> n1 = 200  # size of first sample
     >>> n2 = 300  # size of second sample
 
-    different distribution
-    we can reject the null hypothesis since the pvalue is below 1%
+    For a different distribution, we can reject the null hypothesis since the
+    pvalue is below 1%:
 
-    >>> rvs1 = stats.norm.rvs(size=n1,loc=0.,scale=1);
-    >>> rvs2 = stats.norm.rvs(size=n2,loc=0.5,scale=1.5)
-    >>> ks_2samp(rvs1,rvs2)
+    >>> rvs1 = stats.norm.rvs(size=n1, loc=0., scale=1)
+    >>> rvs2 = stats.norm.rvs(size=n2, loc=0.5, scale=1.5)
+    >>> stats.ks_2samp(rvs1, rvs2)
     (0.20833333333333337, 4.6674975515806989e-005)
 
-    slightly different distribution
-    we cannot reject the null hypothesis at a 10% or lower alpha since
-    the pvalue at 0.144 is higher than 10%
+    For a slightly different distribution, we cannot reject the null hypothesis
+    at a 10% or lower alpha since the p-value at 0.144 is higher than 10%
 
-    >>> rvs3 = stats.norm.rvs(size=n2,loc=0.01,scale=1.0)
-    >>> ks_2samp(rvs1,rvs3)
+    >>> rvs3 = stats.norm.rvs(size=n2, loc=0.01, scale=1.0)
+    >>> stats.ks_2samp(rvs1, rvs3)
     (0.10333333333333333, 0.14498781825751686)
 
-    identical distribution
-    we cannot reject the null hypothesis since the pvalue is high, 41%
+    For an identical distribution, we cannot reject the null hypothesis since
+    the p-value is high, 41%:
 
-    >>> rvs4 = stats.norm.rvs(size=n2,loc=0.0,scale=1.0)
-    >>> ks_2samp(rvs1,rvs4)
+    >>> rvs4 = stats.norm.rvs(size=n2, loc=0.0, scale=1.0)
+    >>> stats.ks_2samp(rvs1, rvs4)
     (0.07999999999999996, 0.41126949729859719)
 
     """
@@ -3550,7 +3526,6 @@ def ranksums(x, y):
     return z, prob
 
 
-
 def kruskal(*args):
     """
     Compute the Kruskal-Wallis H-test for independent samples
@@ -3611,7 +3586,6 @@ def kruskal(*args):
     df = na - 1
     h = h / float(T)
     return h, chisqprob(h, df)
-
 
 
 def friedmanchisquare(*args):
