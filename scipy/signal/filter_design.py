@@ -637,6 +637,31 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     Design an Nth order lowpass digital or analog Butterworth filter and return
     the filter coefficients in (B,A) or (Z,P,K) form.
 
+    Parameters
+    ----------
+    N : int
+        The order of the filter.
+    Wn : array_like
+        A scalar or length-2 sequence giving the critical frequencies.
+    btype : str, optional
+        The type of filter (lowpass, highpass, bandpass, bandstop).
+        Default is bandpass.
+    analog : int, optional
+        Non-zero to return an analog filter, otherwise a digital filter is
+        returned.
+    output : {'ba', 'zpk'}, optional
+        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
+        Default is 'ba'.
+       
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (b) and denominator (a) polynomials of the IIR filter. 
+        Only returned if ``output='ba'``.
+    z, p, k : ndarray, ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer 
+        function.  Only returned if ``output='zpk'``.
+    
     See also
     --------
     buttord.
