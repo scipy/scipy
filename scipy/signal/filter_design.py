@@ -445,7 +445,7 @@ def bilinear(b, a, fs=1.0):
     return normalize(bprime, aprime)
 
 
-def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
+def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
     """Complete IIR digital and analog filter design.
 
     Given passband and stopband frequencies and gains construct an analog or
@@ -467,8 +467,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
         The maximum loss in the passband (dB).
     gstop : float
         The minimum attenuation in the stopband (dB).
-    analog : int, optional
-        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+    analog : bool, optional
+        True to design an analog filter (in this case `wp` and `ws` are in
         radians / second).
     ftype : str, optional
         The type of IIR filter to design:
@@ -516,7 +516,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=0, ftype='ellip', output='ba'):
                      ftype=ftype, output=output)
 
 
-def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0,
+def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
               ftype='butter', output='ba'):
     """IIR digital and analog filter design given order and critical points.
 
@@ -538,8 +538,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0,
     btype : str, optional
         The type of filter (lowpass, highpass, bandpass, bandstop).
         Default is bandpass.
-    analog : int, optional
-        Non-zero to return an analog filter, otherwise a digital filter is
+    analog : bool, optional
+        True to return an analog filter, otherwise a digital filter is
         returned.
     ftype : str, optional
         The type of IIR filter to design:
@@ -630,7 +630,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=0,
         return b, a
 
 
-def butter(N, Wn, btype='low', analog=0, output='ba'):
+def butter(N, Wn, btype='low', analog=False, output='ba'):
     """Butterworth digital and analog filter design.
 
     Design an Nth order lowpass digital or analog Butterworth filter and return
@@ -644,7 +644,7 @@ def butter(N, Wn, btype='low', analog=0, output='ba'):
                      output=output, ftype='butter')
 
 
-def cheby1(N, rp, Wn, btype='low', analog=0, output='ba'):
+def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     """Chebyshev type I digital and analog filter design.
 
     Design an Nth order lowpass digital or analog Chebyshev type I filter and
@@ -658,7 +658,7 @@ def cheby1(N, rp, Wn, btype='low', analog=0, output='ba'):
                      output=output, ftype='cheby1')
 
 
-def cheby2(N, rs, Wn, btype='low', analog=0, output='ba'):
+def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     """
     Chebyshev type II digital and analog filter design.
 
@@ -688,7 +688,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=0, output='ba'):
                      output=output, ftype='elliptic')
 
 
-def bessel(N, Wn, btype='low', analog=0, output='ba'):
+def bessel(N, Wn, btype='low', analog=False, output='ba'):
     """Bessel digital and analog filter design.
 
     Design an Nth order lowpass digital or analog Bessel filter and return the
@@ -762,7 +762,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     return n
 
 
-def buttord(wp, ws, gpass, gstop, analog=0):
+def buttord(wp, ws, gpass, gstop, analog=False):
     """Butterworth filter order selection.
 
     Return the order of the lowest order digital Butterworth filter that loses
@@ -784,8 +784,8 @@ def buttord(wp, ws, gpass, gstop, analog=0):
         The maximum loss in the passband (dB).
     gstop : float
         The minimum attenuation in the stopband (dB).
-    analog : int, optional
-        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+    analog : bool, optional
+        True to design an analog filter (in this case `wp` and `ws` are in
         radians / second).
 
     Returns
@@ -881,7 +881,7 @@ def buttord(wp, ws, gpass, gstop, analog=0):
     return ord, wn
 
 
-def cheb1ord(wp, ws, gpass, gstop, analog=0):
+def cheb1ord(wp, ws, gpass, gstop, analog=False):
     """Chebyshev type I filter order selection.
 
     Return the order of the lowest order digital Chebyshev Type I filter that
@@ -903,8 +903,8 @@ def cheb1ord(wp, ws, gpass, gstop, analog=0):
         The maximum loss in the passband (dB).
     gstop : float
         The minimum attenuation in the stopband (dB).
-    analog : int, optional
-        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+    analog : bool, optional
+        True to design an analog filter (in this case `wp` and `ws` are in
         radians / second).
 
     Returns
@@ -969,7 +969,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=0):
     return ord, wn
 
 
-def cheb2ord(wp, ws, gpass, gstop, analog=0):
+def cheb2ord(wp, ws, gpass, gstop, analog=False):
     """Chebyshev type II filter order selection.
 
     Description:
@@ -993,8 +993,8 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
         The maximum loss in the passband (dB).
     gstop : float
         The minimum attenuation in the stopband (dB).
-    analog : int, optional
-        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+    analog : bool, optional
+        True to design an analog filter (in this case `wp` and `ws` are in
         radians / second).
 
     Returns
@@ -1081,7 +1081,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=0):
     return ord, wn
 
 
-def ellipord(wp, ws, gpass, gstop, analog=0):
+def ellipord(wp, ws, gpass, gstop, analog=False):
     """Elliptic (Cauer) filter order selection.
 
     Return the order of the lowest order digital elliptic filter that loses no
@@ -1103,8 +1103,8 @@ def ellipord(wp, ws, gpass, gstop, analog=0):
         The maximum loss in the passband (dB).
     gstop : float
         The minimum attenuation in the stopband (dB).
-    analog : int, optional
-        Non-zero to design an analog filter (in this case `wp` and `ws` are in
+    analog : bool, optional
+        True to design an analog filter (in this case `wp` and `ws` are in
         radians / second).
 
     Returns
