@@ -544,7 +544,7 @@ def approx_fprime(xk, f, epsilon, *args):
         The function of which to determine the gradient (partial derivatives).
         Should take `xk` as first argument, other arguments to `f` can be
         supplied in ``*args``.  Should return a scalar, the value of the
-        gradient at `xk`.
+        function at `xk`.
     epsilon : array_like
         Increment to `xk` to use for determining the function gradient.
         If a scalar, uses the same finite difference delta for all partial
