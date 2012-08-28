@@ -411,7 +411,7 @@ def lp2bs(b, a, wo=1, bw=1):
 def bilinear(b, a, fs=1.0):
     """Return a digital filter from an analog one using a bilinear transform.
 
-    The bilinear transform substitutes ``(z-1) / (z+1``) for ``s``.
+    The bilinear transform substitutes ``(z-1) / (z+1)`` for ``s``.
     """
     fs = float(fs)
     a, b = map(atleast_1d, (a, b))
@@ -521,7 +521,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
               ftype='butter', output='ba'):
     """IIR digital and analog filter design given order and critical points.
 
-    Design an Nth order lowpass digital or analog filter and return the filter
+    Design an Nth order digital or analog filter and return the filter
     coefficients in (B,A) (numerator, denominator) or (Z,P,K) form.
 
     Parameters
@@ -532,15 +532,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         A scalar or length-2 sequence giving the critical frequencies.
     rp : float, optional
         For Chebyshev and elliptic filters provides the maximum ripple
-        in the passband.
+        in the passband. (dB)
     rs : float, optional
         For chebyshev and elliptic filters provides the minimum attenuation in
-        the stop band.
+        the stop band. (dB)
     btype : str, optional
         The type of filter (lowpass, highpass, bandpass, bandstop).
         Default is bandpass.
     analog : bool, optional
-        True to return an analog filter, otherwise a digital filter is
+        When True, return an analog filter, otherwise a digital filter is
         returned.
     ftype : str, optional
         The type of IIR filter to design:
@@ -634,7 +634,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 def butter(N, Wn, btype='low', analog=False, output='ba'):
     """Butterworth digital and analog filter design.
 
-    Design an Nth order lowpass digital or analog Butterworth filter and return
+    Design an Nth order digital or analog Butterworth filter and return
     the filter coefficients in (B,A) or (Z,P,K) form.
 
     Parameters
@@ -642,17 +642,18 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     N : int
         The order of the filter.
     Wn : array_like
-        A scalar or length-2 sequence giving the critical frequencies.
+        A scalar or length-2 sequence giving the critical frequencies, 
+        normalized from 0 to 1, where 1 is the Nyquist frequency.
     btype : str, optional
         The type of filter (lowpass, highpass, bandpass, bandstop).
         Default is lowpass.
-    analog : int, optional
-        True to return an analog filter, otherwise a digital filter is
-        returned.
+    analog : bool, optional
+        When True, return an analog filter (Wn in radians / second).
+        By default, a digital filter is returned (Wn in radians / sample).
     output : {'ba', 'zpk'}, optional
         Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
         Default is 'ba'.
-       
+    
     Returns
     -------
     b, a : ndarray, ndarray
@@ -673,9 +674,37 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
 def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     """Chebyshev type I digital and analog filter design.
 
-    Design an Nth order lowpass digital or analog Chebyshev type I filter and
+    Design an Nth order digital or analog Chebyshev type I filter and
     return the filter coefficients in (B,A) or (Z,P,K) form.
-
+    
+    Parameters
+    ----------
+    N : int
+        The order of the filter.
+    rp : float
+        Provides the maximum ripple in the passband. (dB)
+    Wn : array_like
+        A scalar or length-2 sequence giving the critical frequencies, 
+        normalized from 0 to 1, where 1 is the Nyquist frequency.
+    btype : str, optional
+        The type of filter (lowpass, highpass, bandpass, bandstop).
+        Default is lowpass.
+    analog : bool, optional
+        When True, return an analog filter (Wn in radians / second).
+        By default, a digital filter is returned (Wn in radians / sample).
+    output : {'ba', 'zpk'}, optional
+        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
+        Default is 'ba'.
+    
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (b) and denominator (a) polynomials of the IIR filter. 
+        Only returned if ``output='ba'``.
+    z, p, k : ndarray, ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer 
+        function.  Only returned if ``output='zpk'``.
+    
     See also
     --------
     cheb1ord.
@@ -688,9 +717,37 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     """
     Chebyshev type II digital and analog filter design.
 
-    Design an Nth order lowpass digital or analog Chebyshev type II filter and
+    Design an Nth order digital or analog Chebyshev type II filter and
     return the filter coefficients in (B,A) or (Z,P,K) form.
-
+    
+    Parameters
+    ----------
+    N : int
+        The order of the filter.
+    rs : float
+        Provides the minimum attenuation in the stop band. (dB)
+    Wn : array_like
+        A scalar or length-2 sequence giving the critical frequencies, 
+        normalized from 0 to 1, where 1 is the Nyquist frequency.
+    btype : str, optional
+        The type of filter (lowpass, highpass, bandpass, bandstop).
+        Default is lowpass.
+    analog : bool, optional
+        When True, return an analog filter (Wn in radians / second).
+        By default, a digital filter is returned (Wn in radians / sample).
+    output : {'ba', 'zpk'}, optional
+        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
+        Default is 'ba'.
+    
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (b) and denominator (a) polynomials of the IIR filter. 
+        Only returned if ``output='ba'``.
+    z, p, k : ndarray, ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer 
+        function.  Only returned if ``output='zpk'``.
+    
     See also
     --------
     cheb2ord.
@@ -700,12 +757,42 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
                      output=output, ftype='cheby2')
 
 
-def ellip(N, rp, rs, Wn, btype='low', analog=0, output='ba'):
+def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     """Elliptic (Cauer) digital and analog filter design.
 
-    Design an Nth order lowpass digital or analog elliptic filter and return
+    Design an Nth order digital or analog elliptic filter and return
     the filter coefficients in (B,A) or (Z,P,K) form.
-
+    
+    Parameters
+    ----------
+    N : int
+        The order of the filter.
+    rp : float
+        Provides the maximum ripple in the passband. (dB)
+    rs : float
+        Provides the minimum attenuation in the stop band. (dB)
+    Wn : array_like
+        A scalar or length-2 sequence giving the critical frequencies, 
+        normalized from 0 to 1, where 1 is the Nyquist frequency.
+    btype : str, optional
+        The type of filter (lowpass, highpass, bandpass, bandstop).
+        Default is lowpass.
+    analog : bool, optional
+        When True, return an analog filter (Wn in radians / second).
+        By default, a digital filter is returned (Wn in radians / sample).
+    output : {'ba', 'zpk'}, optional
+        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
+        Default is 'ba'.
+    
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (b) and denominator (a) polynomials of the IIR filter. 
+        Only returned if ``output='ba'``.
+    z, p, k : ndarray, ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer 
+        function.  Only returned if ``output='zpk'``.
+    
     See also
     --------
     ellipord.
@@ -717,9 +804,35 @@ def ellip(N, rp, rs, Wn, btype='low', analog=0, output='ba'):
 def bessel(N, Wn, btype='low', analog=False, output='ba'):
     """Bessel digital and analog filter design.
 
-    Design an Nth order lowpass digital or analog Bessel filter and return the
+    Design an Nth order digital or analog Bessel filter and return the
     filter coefficients in (B,A) or (Z,P,K) form.
-
+    
+    Parameters
+    ----------
+    N : int
+        The order of the filter.
+    Wn : array_like
+        A scalar or length-2 sequence giving the critical frequencies, 
+        normalized from 0 to 1, where 1 is the Nyquist frequency.
+    btype : str, optional
+        The type of filter (lowpass, highpass, bandpass, bandstop).
+        Default is lowpass.
+    analog : bool, optional
+        When True, return an analog filter (Wn in radians / second).
+        By default, a digital filter is returned (Wn in radians / sample).
+    output : {'ba', 'zpk'}, optional
+        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
+        Default is 'ba'.
+    
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (b) and denominator (a) polynomials of the IIR filter. 
+        Only returned if ``output='ba'``.
+    z, p, k : ndarray, ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer 
+        function.  Only returned if ``output='zpk'``.
+    
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
                      output=output, ftype='bessel')
