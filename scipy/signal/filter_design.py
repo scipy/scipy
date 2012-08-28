@@ -645,9 +645,9 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
         A scalar or length-2 sequence giving the critical frequencies.
     btype : str, optional
         The type of filter (lowpass, highpass, bandpass, bandstop).
-        Default is bandpass.
+        Default is lowpass.
     analog : int, optional
-        Non-zero to return an analog filter, otherwise a digital filter is
+        True to return an analog filter, otherwise a digital filter is
         returned.
     output : {'ba', 'zpk'}, optional
         Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
