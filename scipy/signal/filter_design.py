@@ -67,7 +67,7 @@ def freqs(b, a, worN=None, plot=None):
     worN : {None, int}, optional
         If None, then compute at 200 frequencies around the interesting parts
         of the response curve (determined by pole-zero locations).  If a single
-        integer, the compute at that many frequencies.  Otherwise, compute the
+        integer, then compute at that many frequencies.  Otherwise, compute the
         response at frequencies given in worN.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
@@ -128,7 +128,7 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
         denominator of a linear filter
     worN : {None, int}, optional
         If None, then compute at 512 frequencies around the unit circle.
-        If a single integer, the compute at that many frequencies.
+        If a single integer, then compute at that many frequencies.
         Otherwise, compute the response at frequencies given in worN
     whole : bool, optional
         Normally, frequencies are computed from 0 to pi (upper-half of
@@ -1111,11 +1111,9 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
 def cheb2ord(wp, ws, gpass, gstop, analog=False):
     """Chebyshev type II filter order selection.
 
-    Description:
-
-      Return the order of the lowest order digital Chebyshev Type II filter
-      that loses no more than gpass dB in the passband and has at least
-      gstop dB attenuation in the stopband.
+    Return the order of the lowest order digital Chebyshev Type II filter
+    that loses no more than gpass dB in the passband and has at least
+    gstop dB attenuation in the stopband.
 
     Parameters
     ----------
@@ -1249,10 +1247,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
     Returns
     ------
     ord : int
-        The lowest order for  an Elliptic (Cauer) filter that meets specs.
+        The lowest order for an Elliptic (Cauer) filter that meets specs.
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
-        `ellip` to give filter results.-
+        `ellip` to give filter results.
 
     """
     wp = atleast_1d(wp)
