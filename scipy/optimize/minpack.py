@@ -462,7 +462,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
 
     Notes
     -----
-    The algorithm uses the Levenburg-Marquardt algorithm through `leastsq`.
+    The algorithm uses the Levenberg-Marquardt algorithm through `leastsq`.
     Additional keyword arguments are passed directly to that algorithm.
 
     Examples
