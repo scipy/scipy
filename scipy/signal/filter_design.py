@@ -91,6 +91,21 @@ def freqs(b, a, worN=None, plot=None):
     unexpected results,  this plots the real part of the complex transfer
     function, not the magnitude.
 
+    Examples
+    --------
+    >>> from scipy.signal import freqs, iirfilter
+
+    >>> b, a = iirfilter(4, [1, 10], 1, 60, analog=True, ftype='cheby1')
+
+    >>> w, h = freqs(b, a, worN=np.logspace(-1, 2, 1000))
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.semilogx(w, abs(h))
+    >>> plt.xlabel('Frequency')
+    >>> plt.ylabel('Amplitude response')
+    >>> plt.grid()
+    >>> plt.show()
+
     """
     if worN is None:
         w = findfreqs(b, a, 200)
