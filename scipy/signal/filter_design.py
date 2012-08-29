@@ -166,7 +166,6 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     >>> plt.ylabel('Amplitude (dB)', color='b')
     >>> plt.xlabel('Frequency (rad/sample)')
     >>> plt.grid()
-    >>> plt.legend()
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
