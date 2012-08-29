@@ -91,6 +91,21 @@ def freqs(b, a, worN=None, plot=None):
     unexpected results,  this plots the real part of the complex transfer
     function, not the magnitude.
 
+    Examples
+    --------
+    >>> from scipy.signal import freqs, iirfilter
+
+    >>> b, a = iirfilter(4, [1, 10], 1, 60, analog=True, ftype='cheby1')
+
+    >>> w, h = freqs(b, a, worN=np.logspace(-1, 2, 1000))
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.semilogx(w, abs(h))
+    >>> plt.xlabel('Frequency')
+    >>> plt.ylabel('Amplitude response')
+    >>> plt.grid()
+    >>> plt.show()
+
     """
     if worN is None:
         w = findfreqs(b, a, 200)
@@ -155,7 +170,7 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     --------
     >>> from scipy import signal
     >>> b = signal.firwin(80, 0.5, window=('kaiser', 8))
-    >>> h, w = signal.freqz(b)
+    >>> w, h = signal.freqz(b)
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
@@ -165,13 +180,13 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     >>> plt.semilogy(w, np.abs(h), 'b')
     >>> plt.ylabel('Amplitude (dB)', color='b')
     >>> plt.xlabel('Frequency (rad/sample)')
-    >>> plt.grid()
-    >>> plt.legend()
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
     >>> plt.plot(w, angles, 'g')
     >>> plt.ylabel('Angle (radians)', color='g')
+    >>> plt.grid()
+    >>> plt.axis('tight')
     >>> plt.show()
 
     """
