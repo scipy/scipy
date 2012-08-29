@@ -76,7 +76,7 @@ def minimum_spanning_tree(csgraph, overwrite=False):
            [0, 0, 0, 0]])
     """
     global NULL_IDX
-
+    
     csgraph = validate_graph(csgraph, True, DTYPE, dense_output=False,
                              copy_if_sparse=not overwrite)
     cdef int N = csgraph.shape[0]
@@ -85,15 +85,14 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     indices = csgraph.indices
     indptr = csgraph.indptr
 
-    components = np.arange(N, dtype=ITYPE)
-    predecessors = np.empty(N, dtype=ITYPE)
-    predecessors.fill(NULL_IDX)
+    rank = np.zeros(N, dtype=ITYPE)
+    predecessors = np.arange(N, dtype=ITYPE)
 
     i_sort = np.argsort(data).astype(ITYPE)
     row_indices = np.zeros(len(data), dtype=ITYPE)
 
     _min_spanning_tree(data, indices, indptr, i_sort,
-                       row_indices, predecessors, components)
+                       row_indices, predecessors, rank)
 
     sp_tree = csr_matrix((data, indices, indptr), (N, N))
     sp_tree.eliminate_zeros()
@@ -107,39 +106,67 @@ cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
                         np.ndarray[ITYPE_t, ndim=1, mode='c'] i_sort,
                         np.ndarray[ITYPE_t, ndim=1, mode='c'] row_indices,
                         np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
-                        np.ndarray[ITYPE_t, ndim=1, mode='c'] components):
+                        np.ndarray[ITYPE_t, ndim=1, mode='c'] rank):
     # Work-horse routine for computing minimum spanning tree using
     #  Kruskal's algorithm.  By separating this code here, we get more
     #  efficient indexing.
-    global NULL_IDX
-    cdef unsigned int i, j, V1, V2
+    cdef unsigned int i, j, V1, V2, R1, R2, n_edges_in_mst, n_verts
     cdef DTYPE_t E
+    n_verts = predecessors.shape[0]
     
     # Arrange `row_indices` to contain the row index of each value in `data`.
     # Note that the array `col_indices` already contains the column index.
-    for i from 0 <= i < predecessors.shape[0]:
+    for i from 0 <= i < n_verts:
         for j from indptr[i] <= j < indptr[i + 1]:
             row_indices[j] = i
     
     # step through the edges from smallest to largest.
     #  V1 and V2 are the vertices, and E is the edge weight connecting them.
-    for i from 0 <= i < i_sort.shape[0]:
+    n_edges_in_mst = 0
+    i = 0
+    while i < i_sort.shape[0] and n_edges_in_mst < n_verts - 1:
         j = i_sort[i]
         V1 = row_indices[j]
         V2 = col_indices[j]
         E = data[j]
 
         # progress upward to the head node of each subtree
-        while predecessors[V1] != NULL_IDX:
-            V1 = predecessors[V1]
-        while predecessors[V2] != NULL_IDX:
-            V2 = predecessors[V2]
+        R1 = V1
+        while predecessors[R1] != R1:
+            R1 = predecessors[R1]
+        R2 = V2
+        while predecessors[R2] != R2:
+            R2 = predecessors[R2]
 
+        # Compress both paths.
+        while predecessors[V1] != R1:
+            predecessors[V1] = R1
+        while predecessors[V2] != R2:
+            predecessors[V2] = R2
+            
         # if the subtrees are different, then we connect them and keep the
         # edge.  Otherwise, we remove the edge: it duplicates one already
         # in the spanning tree.
-        if components[V1] != components[V2]:
-            predecessors[V2] = V1
+        if R1 != R2:
+            n_edges_in_mst += 1
+            
+            # Use approximate (because of path-compression) rank to try
+            # to keep balanced trees.
+            if rank[R1] > rank[R2]:
+                predecessors[R2] = R1
+            elif rank[R1] < rank[R2]:
+                predecessors[R1] = R2
+            else:
+                predecessors[R2] = R1
+                rank[R1] += 1
         else:
             data[j] = 0
+        
+        i += 1
+        
+    # We may have stopped early if we found a full-sized MST so zero out the rest
+    while i < i_sort.shape[0]:
+        j = i_sort[i]
+        data[j] = 0
+        i += 1
     
