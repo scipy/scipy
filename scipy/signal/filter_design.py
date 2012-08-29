@@ -155,7 +155,7 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     --------
     >>> from scipy import signal
     >>> b = signal.firwin(80, 0.5, window=('kaiser', 8))
-    >>> h, w = signal.freqz(b)
+    >>> w, h = signal.freqz(b)
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
