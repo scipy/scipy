@@ -180,12 +180,13 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     >>> plt.semilogy(w, np.abs(h), 'b')
     >>> plt.ylabel('Amplitude (dB)', color='b')
     >>> plt.xlabel('Frequency (rad/sample)')
-    >>> plt.grid()
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
     >>> plt.plot(w, angles, 'g')
     >>> plt.ylabel('Angle (radians)', color='g')
+    >>> plt.grid()
+    >>> plt.axis('tight')
     >>> plt.show()
 
     """
