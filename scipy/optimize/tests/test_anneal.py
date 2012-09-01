@@ -78,7 +78,7 @@ class TestAnneal(TestCase):
     def test_minimize(self):
         """ minimize with 'anneal' method """
         self.test_fast(True)
-        self.test_cauchy(True)
+        self.test_boltzmann(True)
         self.test_cauchy(True)
 
 if __name__ == "__main__":
