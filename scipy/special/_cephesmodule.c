@@ -1111,7 +1111,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__cephes(void)
+PyMODINIT_FUNC PyInit__cephes(void)
 {
     PyObject *m, *s, *d;
 

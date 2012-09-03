@@ -35,7 +35,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit_atlas_version(void)
+PyMODINIT_FUNC PyInit_atlas_version(void)
 {
 #define RETVAL m
     PyObject *m;

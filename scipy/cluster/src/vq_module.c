@@ -28,7 +28,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__vq(void)
+PyMODINIT_FUNC PyInit__vq(void)
 {
     PyObject *m;
 

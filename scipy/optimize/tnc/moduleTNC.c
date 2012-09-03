@@ -317,7 +317,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit_moduleTNC(void)
+PyMODINIT_FUNC PyInit_moduleTNC(void)
 {
     return PyModule_Create(&moduledef);
 }

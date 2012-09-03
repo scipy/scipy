@@ -1324,7 +1324,7 @@ static struct PyModuleDef moduledef = {
     NULL,
     NULL
 };
-PyObject *PyInit_sigtools(void)
+PyMODINIT_FUNC PyInit_sigtools(void)
 {
     PyObject *m, *d, *s;
 

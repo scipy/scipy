@@ -1145,7 +1145,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__distance_wrap(void)
+PyMODINIT_FUNC PyInit__distance_wrap(void)
 {
     PyObject *m;
 

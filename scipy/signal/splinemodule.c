@@ -488,7 +488,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit_spline(void)
+PyMODINIT_FUNC PyInit_spline(void)
 {
     PyObject *m, *d, *s;
 
