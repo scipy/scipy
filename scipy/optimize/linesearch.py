@@ -189,7 +189,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     f : callable f(x,*args)
         Objective function.
     myfprime : callable f'(x,*args)
-        Objective function gradient (can be None).
+        Objective function gradient.
     xk : ndarray
         Starting point.
     pk : ndarray
