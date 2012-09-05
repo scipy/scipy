@@ -249,6 +249,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
             gval[0] = fprime(xk+alpha*pk, *args)  # store for later use
             return np.dot(gval[0], pk)
 
+    if gfk is None:
+        gfk = fprime(xk)
     derphi0 = np.dot(gfk, pk)
 
     alpha_star, phi_star, old_fval, derphi_star = \
