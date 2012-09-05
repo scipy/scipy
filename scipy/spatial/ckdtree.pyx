@@ -39,8 +39,8 @@ __all__ = ['cKDTree']
 # test is optimized away.
 
 cdef inline int set_add_pair(set results,
-                             np.intp_t i,
-                             np.intp_t j) except -1:
+                            np.intp_t i,
+                            np.intp_t j) except -1:
 
     if sizeof(long) < sizeof(np.intp_t):
         # Win 64
@@ -52,8 +52,8 @@ cdef inline int set_add_pair(set results,
 
 
 cdef inline int set_add_ordered_pair(set results,
-                                     np.intp_t i,
-                                     np.intp_t j) except -1:
+                                    np.intp_t i,
+                                    np.intp_t j) except -1:
 
     if sizeof(long) < sizeof(np.intp_t):
         # Win 64
@@ -242,14 +242,14 @@ cdef class coo_entries:
         self.v_data = <np.float64_t*>np.PyArray_DATA(self.v)
         self.n_max = self.n
         return scipy.sparse.coo_matrix((self.v, (self.i, self.j)),
-                                       shape=shape)
+                                    shape=shape)
 
 
 # Measuring distances
 # ===================
 cdef inline np.float64_t _distance_p(np.float64_t *x, np.float64_t *y,
-                                     np.float64_t p, np.intp_t k,
-                                     np.float64_t upperbound):
+                                    np.float64_t p, np.intp_t k,
+                                    np.float64_t upperbound):
     """Compute the distance between x and y
 
     Computes the Minkowski p-distance to the power p between two points.
@@ -303,27 +303,27 @@ cdef class Rectangle:
 # 1-d pieces
 # These should only be used if p != infinity
 cdef inline np.float64_t min_dist_point_interval_p(np.float64_t* x,
-                                                   Rectangle rect,
-                                                   np.intp_t k,
-                                                   np.float64_t p):    
+                                                Rectangle rect,
+                                                np.intp_t k,
+                                                np.float64_t p):    
     """Compute the minimum distance along dimension k between x and
     a point in the hyperrectangle.
     """
     return dmax(0, dmax(rect.mins[k] - x[k], x[k] - rect.maxes[k])) ** p
 
 cdef inline np.float64_t max_dist_point_interval_p(np.float64_t* x,
-                                                   Rectangle rect,
-                                                   np.intp_t k,
-                                                   np.float64_t p):
+                                                Rectangle rect,
+                                                np.intp_t k,
+                                                np.float64_t p):
     """Compute the maximum distance along dimension k between x and
     a point in the hyperrectangle.
     """
     return dmax(rect.maxes[k] - x[k], x[k] - rect.mins[k]) ** p
 
 cdef inline np.float64_t min_dist_interval_interval_p(Rectangle rect1,
-                                                      Rectangle rect2,
-                                                      np.intp_t k,
-                                                      np.float64_t p):
+                                                    Rectangle rect2,
+                                                    np.intp_t k,
+                                                    np.float64_t p):
     """Compute the minimum distance along dimension k between points in
     two hyperrectangles.
     """
@@ -331,9 +331,9 @@ cdef inline np.float64_t min_dist_interval_interval_p(Rectangle rect1,
                         rect2.mins[k] - rect1.maxes[k])) ** p
 
 cdef inline np.float64_t max_dist_interval_interval_p(Rectangle rect1,
-                                                      Rectangle rect2,
-                                                      np.intp_t k,
-                                                      np.float64_t p):
+                                                    Rectangle rect2,
+                                                    np.intp_t k,
+                                                    np.float64_t p):
     """Compute the maximum distance along dimension k between points in
     two hyperrectangles.
     """
@@ -344,7 +344,7 @@ cdef inline np.float64_t max_dist_interval_interval_p(Rectangle rect1,
 
 # These should be used only for p == infinity
 cdef inline np.float64_t min_dist_point_rect_p_inf(np.float64_t* x,
-                                                   Rectangle rect):
+                                                Rectangle rect):
     """Compute the minimum distance between x and the given hyperrectangle."""
     cdef np.intp_t i
     cdef np.float64_t min_dist = 0.
@@ -353,7 +353,7 @@ cdef inline np.float64_t min_dist_point_rect_p_inf(np.float64_t* x,
     return min_dist
 
 cdef inline np.float64_t max_dist_point_rect_p_inf(np.float64_t* x,
-                                                   Rectangle rect):
+                                                Rectangle rect):
     """Compute the maximum distance between x and the given hyperrectangle."""
     cdef np.intp_t i
     cdef np.float64_t max_dist = 0.
@@ -362,23 +362,23 @@ cdef inline np.float64_t max_dist_point_rect_p_inf(np.float64_t* x,
     return max_dist
 
 cdef inline np.float64_t min_dist_rect_rect_p_inf(Rectangle rect1,
-                                                  Rectangle rect2):
+                                                Rectangle rect2):
     """Compute the minimum distance between points in two hyperrectangles."""
     cdef np.intp_t i
     cdef np.float64_t min_dist = 0.
     for i in range(rect1.m):
         min_dist = dmax(min_dist, dmax(rect1.mins[i] - rect2.maxes[i],
-                                       rect2.mins[i] - rect1.maxes[i]))
+                                    rect2.mins[i] - rect1.maxes[i]))
     return min_dist
 
 cdef inline np.float64_t max_dist_rect_rect_p_inf(Rectangle rect1,
-                                                  Rectangle rect2):
+                                                Rectangle rect2):
     """Compute the maximum distance between points in two hyperrectangles."""
     cdef np.intp_t i
     cdef np.float64_t max_dist = 0.
     for i in range(rect1.m):
         max_dist = dmax(max_dist, dmax(rect1.maxes[i] - rect2.mins[i],
-                                       rect2.maxes[i] - rect1.mins[i]))
+                                    rect2.maxes[i] - rect1.mins[i]))
     return max_dist
 
 # Rectangle-to-rectangle distance tracker
@@ -441,8 +441,8 @@ cdef class RectRectDistanceTracker(object):
         cdef void *tmp
         self.stack_max_size = new_max_size
         tmp = stdlib.realloc(<RR_stack_item*> self.stack,
-                              new_max_size *
-                              sizeof(RR_stack_item))
+                            new_max_size *
+                            sizeof(RR_stack_item))
         if tmp == NULL:
             raise MemoryError
         self.stack = <RR_stack_item*> tmp
@@ -454,9 +454,8 @@ cdef class RectRectDistanceTracker(object):
         return 0
     
 
-    @cython.cdivision(True)
     def __init__(self, Rectangle rect1, Rectangle rect2,
-                 np.float64_t p, np.float64_t eps, np.float64_t upper_bound):
+                np.float64_t p, np.float64_t eps, np.float64_t upper_bound):
         
         if rect1.m != rect2.m:
             raise ValueError("rect1 and rect2 have different dimensions")
@@ -496,8 +495,8 @@ cdef class RectRectDistanceTracker(object):
         self._free_stack()
 
     cdef int push(self, np.intp_t which, np.intp_t direction,
-                  np.intp_t split_dim,
-                  np.float64_t split_val) except -1:
+                np.intp_t split_dim,
+                np.float64_t split_val) except -1:
 
         cdef Rectangle rect
         if which == 1:
@@ -539,7 +538,7 @@ cdef class RectRectDistanceTracker(object):
 
     
     cdef inline int push_less_of(self, np.intp_t which,
-                                 innernode *node) except -1:
+                                innernode *node) except -1:
         return self.push(which, LESS, node.split_dim, node.split)
 
     
@@ -623,8 +622,8 @@ cdef class PointRectDistanceTracker(object):
         cdef void *tmp
         self.stack_max_size = new_max_size
         tmp = stdlib.realloc(<RP_stack_item*> self.stack,
-                              new_max_size *
-                              sizeof(RP_stack_item))
+                            new_max_size *
+                            sizeof(RP_stack_item))
         if tmp == NULL:
             raise MemoryError
         self.stack = <RP_stack_item*> tmp
@@ -635,9 +634,8 @@ cdef class PointRectDistanceTracker(object):
             stdlib.free(self.stack)
         return 0
 
-    @cython.cdivision(True)
     cdef init(self, np.float64_t *pt, Rectangle rect,
-              np.float64_t p, np.float64_t eps, np.float64_t upper_bound):
+            np.float64_t p, np.float64_t eps, np.float64_t upper_bound):
 
         self.pt = pt
         self.rect = rect
@@ -674,8 +672,8 @@ cdef class PointRectDistanceTracker(object):
         self._free_stack()
 
     cdef int push(self, np.intp_t direction,
-                  np.intp_t split_dim,
-                  np.float64_t split_val) except -1:
+                np.intp_t split_dim,
+                np.float64_t split_val) except -1:
 
         # Push onto stack
         if self.stack_size == self.stack_max_size:
@@ -1125,14 +1123,14 @@ cdef class cKDTree:
                     elif p == 1:
                         inf2.side_distances[inode.split_dim] = dabs(inode.split-x[inode.split_dim])
                         far_min_distance = min_distance - \
-                                           inf.side_distances[inode.split_dim] + \
-                                           inf2.side_distances[inode.split_dim]
+                                        inf.side_distances[inode.split_dim] + \
+                                        inf2.side_distances[inode.split_dim]
                     else:
                         inf2.side_distances[inode.split_dim] = dabs(inode.split - 
                                                                     x[inode.split_dim])**p
                         far_min_distance = min_distance - \
-                                           inf.side_distances[inode.split_dim] + \
-                                           inf2.side_distances[inode.split_dim]
+                                        inf.side_distances[inode.split_dim] + \
+                                        inf2.side_distances[inode.split_dim]
 
                     it2.priority = far_min_distance
 
@@ -1167,8 +1165,10 @@ cdef class cKDTree:
         return 0
 
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
-              np.float64_t p=2, np.float64_t distance_upper_bound=infinity):
+            np.float64_t p=2, np.float64_t distance_upper_bound=infinity):
         """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf)
         
         Query the kd-tree for nearest neighbors
@@ -1209,11 +1209,11 @@ cdef class cKDTree:
         cdef np.ndarray[np.intp_t, ndim=2] ii
         cdef np.ndarray[np.float64_t, ndim=2] dd
         cdef np.ndarray[np.float64_t, ndim=2] xx
-        cdef np.intp_t c
+        cdef np.intp_t c, n, i, j
         x = np.asarray(x).astype(np.float64)
         if np.shape(x)[-1] != self.m:
             raise ValueError("x must consist of vectors of length %d but has"
-                             "shape %s" % (int(self.m), np.shape(x)))
+                            "shape %s" % (int(self.m), np.shape(x)))
         if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
         if len(x.shape)==1:
@@ -1222,7 +1222,7 @@ cdef class cKDTree:
         else:
             single = False
         retshape = np.shape(x)[:-1]
-        n = np.prod(retshape)
+        n = <np.intp_t> np.prod(retshape)
         xx = np.reshape(x,(n,self.m))
         xx = np.ascontiguousarray(xx,dtype=np.float64)
         dd = np.empty((n,k),dtype=np.float64)
@@ -1231,7 +1231,8 @@ cdef class cKDTree:
         ii.fill(self.n)
         for c in range(n):
             self.__query(&dd[c, 0], &ii[c, 0], &xx[c, 0],
-                          k, eps, p, distance_upper_bound)
+                        k, eps, p, distance_upper_bound)
+
         if single:
             if k==1:
                 if sizeof(long) < sizeof(np.intp_t):
@@ -1246,17 +1247,36 @@ cdef class cKDTree:
             else:
                 return dd[0], ii[0]
         else:
-            if k==1:
-                return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
+            if sizeof(long) < sizeof(np.intp_t):
+                # ... e.g. Windows 64
+                for i in range(n):
+                    for j in range(k):
+                        if ii[i,j] > <np.intp_t>LONG_MAX:
+                            # C long overlow, return array of dtype=np.int_p
+                            if k==1:
+                                return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
+                            else:
+                                return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
+
+                # no C long overlow, return array of dtype=int
+                if k==1:
+                        return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape).astype(int)
+                else:
+                        return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,)).astype(int)     
+
             else:
-                return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
+                # ... most other platforms
+                if k==1:
+                    return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
+                else:
+                    return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
 
     # ----------------
     # query_ball_point
     # ----------------
     cdef int __query_ball_point_traverse_no_checking(cKDTree self,
-                                                      list results,
-                                                      innernode* node) except -1:
+                                                    list results,
+                                                    innernode* node) except -1:
         cdef leafnode* lnode
         cdef np.intp_t i
 
@@ -1273,9 +1293,9 @@ cdef class cKDTree:
 
     @cython.cdivision(True)
     cdef int __query_ball_point_traverse_checking(cKDTree self,
-                                                   list results,
-                                                   innernode* node,
-                                                   PointRectDistanceTracker tracker) except -1:
+                                                list results,
+                                                innernode* node,
+                                                PointRectDistanceTracker tracker) except -1:
         cdef leafnode* lnode
         cdef np.float64_t d
         cdef np.intp_t i
@@ -1308,14 +1328,14 @@ cdef class cKDTree:
 
 
     cdef list __query_ball_point(cKDTree self,
-                                 np.float64_t* x,
-                                 np.float64_t r,
-                                 np.float64_t p,
-                                 np.float64_t eps):
+                                np.float64_t* x,
+                                np.float64_t r,
+                                np.float64_t p,
+                                np.float64_t eps):
 
         tracker = PointRectDistanceTracker()
         tracker.init(x, Rectangle(self.mins, self.maxes),
-                     p, eps, r)
+                    p, eps, r)
         
         results = []
         self.__query_ball_point_traverse_checking(
@@ -1324,7 +1344,7 @@ cdef class cKDTree:
 
 
     def query_ball_point(cKDTree self, object x, np.float64_t r,
-                         np.float64_t p=2., np.float64_t eps=0):
+                        np.float64_t p=2., np.float64_t eps=0):
         """query_ball_point(self, x, r, p, eps)
         
         Find all points within distance r of point(s) x.
@@ -1371,7 +1391,7 @@ cdef class cKDTree:
         x = np.asarray(x).astype(np.float64)
         if x.shape[-1] != self.m:
             raise ValueError("Searching for a %d-dimensional point in a " \
-                             "%d-dimensional KDTree" % (int(x.shape[-1]), int(self.m)))
+                            "%d-dimensional KDTree" % (int(x.shape[-1]), int(self.m)))
         if len(x.shape) == 1:
             xx = np.ascontiguousarray(x, dtype=np.float64)
             return self.__query_ball_point(&xx[0], r, p, eps)
@@ -1419,11 +1439,11 @@ cdef class cKDTree:
 
     @cython.cdivision(True)
     cdef int __query_ball_tree_traverse_checking(cKDTree self,
-                                                 cKDTree other,
-                                                 list results,
-                                                 innernode* node1,
-                                                 innernode* node2,
-                                                 RectRectDistanceTracker tracker) except -1:
+                                                cKDTree other,
+                                                list results,
+                                                innernode* node1,
+                                                innernode* node2,
+                                                RectRectDistanceTracker tracker) except -1:
         cdef leafnode *lnode1, *lnode2
         cdef list results_i
         cdef np.float64_t d
@@ -1577,8 +1597,8 @@ cdef class cKDTree:
                         
                     for j in range(min_j, lnode2.end_idx):
                         set_add_ordered_pair(results,
-                                             self.raw_indices[i],
-                                             self.raw_indices[j])
+                                            self.raw_indices[i],
+                                            self.raw_indices[j])
                             
             else:
                 self.__query_pairs_traverse_no_checking(results, node1, node2.less)
@@ -1600,10 +1620,10 @@ cdef class cKDTree:
 
     @cython.cdivision(True)
     cdef int __query_pairs_traverse_checking(cKDTree self,
-                                             set results,
-                                             innernode* node1,
-                                             innernode* node2,
-                                             RectRectDistanceTracker tracker) except -1:
+                                            set results,
+                                            innernode* node1,
+                                            innernode* node2,
+                                            RectRectDistanceTracker tracker) except -1:
         cdef leafnode *lnode1, *lnode2
         cdef list results_i
         cdef np.float64_t d
@@ -1635,8 +1655,8 @@ cdef class cKDTree:
                             tracker.p, self.m, tracker.upper_bound)
                         if d <= tracker.upper_bound:
                             set_add_ordered_pair(results,
-                                                 self.raw_indices[i],
-                                                 self.raw_indices[j])
+                                                self.raw_indices[i],
+                                                self.raw_indices[j])
                             
             else:  # 1 is a leaf node, 2 is inner node
                 tracker.push_less_of(2, node2)
@@ -1927,9 +1947,9 @@ cdef class cKDTree:
     # sparse_distance_matrix
     # ----------------------
     cdef int __sparse_distance_matrix_traverse(cKDTree self, cKDTree other,
-                                               coo_entries results,
-                                               innernode* node1, innernode* node2,
-                                               RectRectDistanceTracker tracker) except -1:
+                                            coo_entries results,
+                                            innernode* node1, innernode* node2,
+                                            RectRectDistanceTracker tracker) except -1:
         cdef leafnode *lnode1, *lnode2
         cdef list results_i
         cdef np.float64_t d
@@ -2019,8 +2039,8 @@ cdef class cKDTree:
         return 0
             
     def sparse_distance_matrix(cKDTree self, cKDTree other,
-                               np.float64_t max_distance,
-                               np.float64_t p=2.):
+                            np.float64_t max_distance,
+                            np.float64_t p=2.):
         """sparse_distance_matrix(self, max_distance, p)
 
         Compute a sparse distance matrix
@@ -2055,7 +2075,11 @@ cdef class cKDTree:
         
         results = coo_entries()
         self.__sparse_distance_matrix_traverse(other, results,
-                                               self.tree, other.tree,
-                                               tracker)
+                                            self.tree, other.tree,
+                                            tracker)
         
         return results.to_matrix(shape=(self.n, other.n)).todok()
+
+
+
+

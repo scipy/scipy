@@ -44,35 +44,49 @@ undirected_pred = np.array([[-9999,     0,     0,     0,     0],
                             [    3,     3,     0, -9999,     3],
                             [    4,     4,     0,     4, -9999]], dtype=float)
 
-
 methods = ['auto', 'FW', 'D', 'BF', 'J']
+
 
 @dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_directed():
-    for method in methods:
+    def check(method):
         SP = shortest_path(directed_G, method=method, directed=True,
                            overwrite=False)
-        yield (assert_array_almost_equal, SP, directed_SP)
+        assert_array_almost_equal(SP, directed_SP)
+
+    for method in methods:
+        yield check, method
+
 
 def test_undirected():
-    for method in methods:
-        SP1 = shortest_path(directed_G, method=method, directed=False,
-                            overwrite=False)
-        SP2 = shortest_path(undirected_G, method=method, directed=True,
-                            overwrite=False)
+    def check(method, directed_in):
+        if directed_in:
+            SP1 = shortest_path(directed_G, method=method, directed=False,
+                                overwrite=False)
+            assert_array_almost_equal(SP1, undirected_SP)
+        else:
+            SP2 = shortest_path(undirected_G, method=method, directed=True,
+                                overwrite=False)
+            assert_array_almost_equal(SP2, undirected_SP)
 
-        yield (assert_array_almost_equal, SP1, undirected_SP)
-        yield (assert_array_almost_equal, SP2, undirected_SP)
+    for method in methods:
+        for directed_in in (True, False):
+            yield check, method, directed_in
+
 
 def test_shortest_path_indices():
     indices = np.arange(4)
+
+    def check(func, indshape):
+        outshape = indshape + (5,)
+        SP = func(directed_G, directed=False,
+                  indices=indices.reshape(indshape))
+        assert_array_almost_equal(SP, undirected_SP[indices].reshape(outshape))
+
     for indshape in [(4,), (4, 1), (2, 2)]:
-        for func in (dijkstra, johnson, bellman_ford):
-            outshape = indshape + (5,)
-            SP = func(directed_G, directed=False,
-                      indices=indices.reshape(indshape))
-            yield (assert_array_almost_equal, SP,
-                   undirected_SP[indices].reshape(outshape))
+        for func in (dijkstra, bellman_ford, johnson):
+            yield check, func, indshape
+
 
 @dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_predecessors():
@@ -81,45 +95,49 @@ def test_predecessors():
     pred_res = {True: directed_pred,
                 False: undirected_pred}
 
-    for method in methods:
-        for directed in True, False:
-            SP, pred = shortest_path(directed_G, method, directed=directed,
-                                     overwrite=False,
-                                     return_predecessors=True)
+    def check(method, directed):
+        SP, pred = shortest_path(directed_G, method, directed=directed,
+                                 overwrite=False,
+                                 return_predecessors=True)
+        assert_array_almost_equal(SP, SP_res[directed])
+        assert_array_almost_equal(pred, pred_res[directed])
 
-            yield (assert_array_almost_equal,
-                   SP, SP_res[directed])
-            yield (assert_array_almost_equal,
-                   pred, pred_res[directed])
+    for method in methods:
+        for directed in (True, False):
+            yield check, method, directed
+
 
 @dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_construct_shortest_path():
-    SP_res = {True: directed_SP,
-              False: undirected_SP}
+    def check(method, directed):
+        SP1, pred = shortest_path(directed_G,
+                                  directed=directed,
+                                  overwrite=False,
+                                  return_predecessors=True)
+        SP2 = construct_dist_matrix(directed_G, pred, directed=directed)
+        assert_array_almost_equal(SP1, SP2)
+
     for method in methods:
         for directed in (True, False):
-            SP1, pred = shortest_path(directed_G,
-                                      directed=directed,
-                                      overwrite=False,
-                                      return_predecessors=True)
-            SP2 = construct_dist_matrix(directed_G, pred, directed=directed)
+            yield check, method, directed
 
-            yield (assert_array_almost_equal, SP1, SP2)
 
 @dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_unweighted_path():
+    def check(method, directed):
+        SP1 = shortest_path(directed_G,
+                            directed=directed,
+                            overwrite=False,
+                            unweighted=True)
+        SP2 = shortest_path(unweighted_G,
+                            directed=directed,
+                            overwrite=False,
+                            unweighted=False)
+        assert_array_almost_equal(SP1, SP2)
+
     for method in methods:
         for directed in (True, False):
-            SP1 = shortest_path(directed_G,
-                                directed=directed,
-                                overwrite=False,
-                                unweighted=True)
-            SP2 = shortest_path(unweighted_G,
-                                directed=directed,
-                                overwrite=False,
-                                unweighted=False)
-
-            yield (assert_array_almost_equal, SP1, SP2)
+            yield check, method, directed
 
 
 def test_negative_cycles():
@@ -127,18 +145,27 @@ def test_negative_cycles():
     graph = np.ones([5, 5])
     graph.flat[::6] = 0
     graph[1, 2] = -2
+
+    def check(method, directed):
+        assert_raises(NegativeCycleError, shortest_path, graph, method,
+                      directed)
+
     for method in ['FW', 'J', 'BF']:
-        for directed in True, False:
-            yield (assert_raises, NegativeCycleError, shortest_path,
-                   graph, method, directed)
+        for directed in (True, False):
+            yield check, method, directed
+
 
 @dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_masked_input():
     G = np.ma.masked_equal(directed_G, 0)
-    for method in methods:
+
+    def check(method):
         SP = shortest_path(directed_G, method=method, directed=True,
                            overwrite=False)
-        yield (assert_array_almost_equal, SP, directed_SP)
+        assert_array_almost_equal(SP, directed_SP)
+
+    for method in methods:
+        yield check, method
 
 
 if __name__ == '__main__':
