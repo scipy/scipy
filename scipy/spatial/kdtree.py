@@ -637,32 +637,28 @@ class KDTree(object):
 
         """
         results = set()
-        visited = set()
-        def test_set_visited(node1, node2):
-            i, j = sorted((id(node1),id(node2)))
-            if (i,j) in visited:
-                return True
-            else:
-                visited.add((i,j))
-                return False
         def traverse_checking(node1, rect1, node2, rect2):
-            if test_set_visited(node1, node2):
+            if rect1.min_distance_rectangle(rect2, p)>r/(1.+eps):
                 return
-
-            if id(node2)<id(node1):
-                # This node pair will be visited in the other order
-                #return
-                pass
-
-            if isinstance(node1, KDTree.leafnode):
+            elif rect1.max_distance_rectangle(rect2, p)<r*(1.+eps):
+                traverse_no_checking(node1, node2)
+            elif isinstance(node1, KDTree.leafnode):
                 if isinstance(node2, KDTree.leafnode):
-                    d = self.data[node2.idx]
-                    for i in node1.idx:
-                        for j in node2.idx[minkowski_distance(d,self.data[i],p)<=r]:
-                            if i<j:
-                                results.add((i,j))
-                            elif j<i:
-                                results.add((j,i))
+                    # Special care to avoid duplicate pairs
+                    if id(node1) == id(node2):
+                        d = self.data[node2.idx]
+                        for i in node1.idx:
+                            for j in node2.idx[minkowski_distance(d,self.data[i],p)<=r]:
+                                if i<j:
+                                    results.add((i,j))
+                    else:
+                        d = self.data[node2.idx]
+                        for i in node1.idx:
+                            for j in node2.idx[minkowski_distance(d,self.data[i],p)<=r]:
+                                if i<j:
+                                    results.add((i,j))
+                                elif j<i:
+                                    results.add((j,i))
                 else:
                     less, greater = rect2.split(node2.split_dim, node2.split)
                     traverse_checking(node1,rect1,node2.less,less)
@@ -671,41 +667,52 @@ class KDTree(object):
                 less, greater = rect1.split(node1.split_dim, node1.split)
                 traverse_checking(node1.less,less,node2,rect2)
                 traverse_checking(node1.greater,greater,node2,rect2)
-            elif rect1.min_distance_rectangle(rect2, p)>r/(1.+eps):
-                return
-            elif rect1.max_distance_rectangle(rect2, p)<r*(1.+eps):
-                traverse_no_checking(node1.less, node2)
-                traverse_no_checking(node1.greater, node2)
             else:
                 less1, greater1 = rect1.split(node1.split_dim, node1.split)
                 less2, greater2 = rect2.split(node2.split_dim, node2.split)
                 traverse_checking(node1.less,less1,node2.less,less2)
                 traverse_checking(node1.less,less1,node2.greater,greater2)
-                traverse_checking(node1.greater,greater1,node2.less,less2)
+
+                # Avoid traversing (node1.less, node2.greater) and
+                # (node1.greater, node2.less) (it's the same node pair twice
+                # over, which is the source of the complication in the
+                # original KDTree.query_pairs)
+                if id(node1) != id(node2):
+                    traverse_checking(node1.greater,greater1,node2.less,less2)
+                    
                 traverse_checking(node1.greater,greater1,node2.greater,greater2)
 
         def traverse_no_checking(node1, node2):
-            if test_set_visited(node1, node2):
-                return
-
-            if id(node2)<id(node1):
-                # This node pair will be visited in the other order
-                #return
-                pass
             if isinstance(node1, KDTree.leafnode):
                 if isinstance(node2, KDTree.leafnode):
-                    for i in node1.idx:
-                        for j in node2.idx:
-                            if i<j:
-                                results.add((i,j))
-                            elif j<i:
-                                results.add((j,i))
+                    # Special care to avoid duplicate pairs
+                    if id(node1) == id(node2):
+                        for i in node1.idx:
+                            for j in node2.idx:
+                                if i<j:
+                                    results.add((i,j))
+                    else:
+                        for i in node1.idx:
+                            for j in node2.idx:
+                                if i<j:
+                                    results.add((i,j))
+                                elif j<i:
+                                    results.add((j,i))
                 else:
                     traverse_no_checking(node1, node2.less)
                     traverse_no_checking(node1, node2.greater)
             else:
-                traverse_no_checking(node1.less, node2)
-                traverse_no_checking(node1.greater, node2)
+                # Avoid traversing (node1.less, node2.greater) and
+                # (node1.greater, node2.less) (it's the same node pair twice
+                # over, which is the source of the complication in the
+                # original KDTree.query_pairs)
+                if id(node1) == id(node2):
+                    traverse_no_checking(node1.less, node2.less)
+                    traverse_no_checking(node1.less, node2.greater)
+                    traverse_no_checking(node1.greater, node2.greater)
+                else:
+                    traverse_no_checking(node1.less, node2)
+                    traverse_no_checking(node1.greater, node2)
 
         traverse_checking(self.tree, Rectangle(self.maxes, self.mins),
                           self.tree, Rectangle(self.maxes, self.mins))
