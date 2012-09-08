@@ -83,6 +83,8 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     lwork : int, optional
         Work array size.  If None or -1, it is automatically computed.
     sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
+        NOTE: THIS INPUT IS DISABLED FOR NOW, IT DOESN'T WORK WELL ON WINDOWS.
+
         Specifies whether the upper eigenvalues should be sorted.  A callable
         may be passed that, given a eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True). For
@@ -146,6 +148,11 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
            [-0.54861681, -0.6210585 , -0.55973739]])
 
     """
+    if sort is not None:
+        # Disabled due to segfaults on win32, see ticket 1717.
+        raise ValueError("The 'sort' input of qz() has to be None (will "
+                 " change when this functionality is made more robust).")
+
     if not output in ['real','complex','r','c']:
         raise ValueError("argument must be 'real', or 'complex'")
 
@@ -201,14 +208,14 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise ValueError("Illegal value in argument %d of gges" % -info)
     elif info > 0 and info <= a_n:
         warnings.warn("The QZ iteration failed. (a,b) are not in Schur "
-                "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be correct"
+                "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be correct "
                 "for J=%d,...,N" % info-1, UserWarning)
     elif info == a_n+1:
         raise LinAlgError("Something other than QZ iteration failed")
     elif info == a_n+2:
-        raise LinAlgError("After reordering, roundoff changed values of some"
-                "complex eigenvalues so that leading eigenvalues in the"
-                "Generalized Schur form no longer satisfy sort=True."
+        raise LinAlgError("After reordering, roundoff changed values of some "
+                "complex eigenvalues so that leading eigenvalues in the "
+                "Generalized Schur form no longer satisfy sort=True. "
                 "This could also be caused due to scaling.")
     elif info == a_n+3:
         raise LinAlgError("Reordering failed in <s,d,c,z>tgsen")
