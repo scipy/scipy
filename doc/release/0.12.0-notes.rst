@@ -21,6 +21,13 @@ This release requires Python 2.4-2.7 or 3.1- and NumPy 1.X.X or greater.
 New features
 ============
 
+* scipy.spatial: Cython version of KDTree, cKDTree, is now feature-complete.
+  Most operations (construction, query, query_ball_point, query_pairs,
+  count_neighbors and sparse_distance_matrix) are between 200 and 1000 times
+  faster in cKDTree than in KDTree.  With very minor caveats, cKDTree has
+  exactly the same interface as KDTree, and can be used as a drop-in
+  replacement.
+
 
 Deprecated features
 ===================
