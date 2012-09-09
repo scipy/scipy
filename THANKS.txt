@@ -106,6 +106,8 @@ Bjorn Forsman for contributing signal.bode().
 Tony S. Yu for ndimage improvements.
 Jonathan J. Helmus for work on ndimage.
 Alex Reinhart for documentation improvements.
+Patrick Varilly for cKDTree improvements.
+Sturla Molden for cKDTree improvements.
 
 
 Institutions
