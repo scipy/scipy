@@ -236,8 +236,10 @@ Minimum IFC flags for building LAPACK and ATLAS are
 Also consult 'ifc -help' for additional optimization flags suitable
 for your computers CPU.
 
-To have the LAPACK tests pass the 'ieee' compliancy test, one should use the -mp (='more precise') 
-compiler option. (Tip from Jerome Kieffer, scipy mailing list).
+If you want to have the LAPACK tests pass the 'ieee' compliancy test, you have to
+use the -mp (='more precise') compiler option. Note that there's a signifant hit
+on the resulting performance though, reducing it to almost GNU level, but not quite.
+(Tip from Jerome Kieffer, scipy mailing list).
 
 When finishing LAPACK build, you must recompile ?lamch.f, xerbla.f
 with optimization disabled (otherwise infinite loops occur when using
