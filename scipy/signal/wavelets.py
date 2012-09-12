@@ -19,6 +19,10 @@ def daub(p):
     p : int
         Order of the zero at f=1/2, can have values from 1 to 34.
 
+    Returns
+    -------
+    q : ndarray
+
     """
     sqrt = np.sqrt
     if p < 1:
@@ -73,6 +77,7 @@ def daub(p):
 
 def qmf(hk):
     """Return high-pass qmf filter from low-pass
+
     """
     N = len(hk) - 1
     asgn = [{0: 1, 1:-1}[k % 2] for k in range(N + 1)]
@@ -90,10 +95,10 @@ def cascade(hk, J=7):
 
     Parameters
     ----------
-    hk :
+    hk : array_like
         Coefficients of low-pass filter.
-    J : int. optional
-        Values will be computed at grid points ``K/2**J``.
+    J : int, optional
+        Values will be computed at grid points ``K/2**J``. Default is 7.
 
     Returns
     -------
@@ -124,7 +129,6 @@ def cascade(hk, J=7):
     end.
 
     """
-
     N = len(hk) - 1
 
     if (J > 30 - np.log2(N + 1)):
@@ -209,11 +213,15 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     M : int
         Length of the wavelet.
     w : float
-        Omega0
+        Omega0. Default is 5
     s : float
-        Scaling factor, windowed from -s*2*pi to +s*2*pi.
+        Scaling factor, windowed from ``-s*2*pi`` to ``+s*2*pi``. Default is 1.
     complete : bool
         Whether to use the complete or the standard version.
+
+    Returns
+    -------
+    out : 1-D ndarray
 
     Notes
     -----
@@ -222,10 +230,10 @@ def morlet(M, w=5.0, s=1.0, complete=True):
         pi**-0.25 * exp(1j*w*x) * exp(-0.5*(x**2))
 
     This commonly used wavelet is often referred to simply as the
-    Morlet wavelet.  Note that, this simplified version can cause
+    Morlet wavelet.  Note that this simplified version can cause
     admissibility problems at low values of w.
 
-    The complete version:
+    The complete version::
 
         pi**-0.25 * (exp(1j*w*x) - exp(-0.5*(w**2))) * exp(-0.5*(x**2))
 
@@ -238,6 +246,10 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     The fundamental frequency of this wavelet in Hz is given
     by ``f = 2*s*w*r / M`` where r is the sampling rate.
+
+    See Also
+    --------
+    scipy.signal.gausspulse
 
     """
     x = linspace(-s * 2 * pi, s * 2 * pi, M)
@@ -253,24 +265,26 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
 def ricker(points, a):
     """
-    Also known as the "mexican hat wavelet", models the function::
+    Return a Ricker wavelet, also known as the "Mexican hat wavelet".
 
-        A ( 1 - x^2/a^2) exp(-t^2/a^2),
+    It models the function:
 
-    where ``A = 2/sqrt(3a)pi^1/3``
+        ``A (1 - x^2/a^2) exp(-t^2/a^2)``,
+
+    where ``A = 2/sqrt(3a)pi^1/3``.
 
     Parameters
     ----------
-    points: int, optional
-        Number of points in `vector`. Default is ``10*a``
+    points: int
+        Number of points in `vector`. Default is ``10 * a``.
         Will be centered around 0.
-    a: scalar
+    a : scalar
         Width parameter of the wavelet.
 
     Returns
     -------
-    vector: 1-D ndarray
-        Array of length `points` in shape of ricker curve.
+    vector : 1-D ndarray
+        Array of length `points` in shape of Ricker curve.
 
     Examples
     --------
@@ -284,8 +298,8 @@ def ricker(points, a):
     100
     >>> plt.plot(vec2)
     >>> plt.show()
-    """
 
+    """
     A = 2 / (np.sqrt(3 * a) * (np.pi**0.25))
     wsq = a**2
     vec = np.arange(0, points) - (points - 1.0) / 2
@@ -299,7 +313,7 @@ def ricker(points, a):
 def cwt(data, wavelet, widths):
     """
     Performs a continuous wavelet transform on `data`,
-    using the wavelet function. A CWT performs a convolution
+    using the `wavelet` function. A CWT performs a convolution
     with `data` using the `wavelet` function, which is characterized
     by a width parameter and length parameter.
 
@@ -309,11 +323,11 @@ def cwt(data, wavelet, widths):
         data on which to perform the transform.
     wavelet : function
         Wavelet function, which should take 2 arguments.
-        The first argument is a width parameter, defining
-        the size of the wavelet (e.g. standard deviation of a gaussian).
-        The second is the number of points that the returned vector will have
-        (len(wavelet(width,length)) == length). See `ricker`, which
-        satisfies these requirements.
+        The first argument is the number of points that the returned vector
+        will have (len(wavelet(width,length)) == length).
+        The second is a width parameter, defining the size of the wavelet
+        (e.g. standard deviation of a gaussian). See
+        :func:`scipy.signal.ricker`, which satisfies these requirements.
     widths : sequence
         Widths to use for transform.
 
@@ -334,8 +348,8 @@ def cwt(data, wavelet, widths):
     >>> wavelet = signal.ricker
     >>> widths = np.arange(1, 11)
     >>> cwtmatr = signal.cwt(sig, wavelet, widths)
-    """
 
+    """
     output = np.zeros([len(widths), len(data)])
     for ind, width in enumerate(widths):
         wavelet_data = wavelet(min(10 * width, len(data)), width)
