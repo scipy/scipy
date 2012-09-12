@@ -87,7 +87,7 @@ def square(t, duty=0.5):
 
     Returns
     -------
-    y : array_like
+    y : ndarray
         The output square wave.
 
     """
