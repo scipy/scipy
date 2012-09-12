@@ -411,24 +411,6 @@ def _kurtosis(data):
     return m4 / m2**2 - 3
 
 
-
-def _build_random_array(fun, args, size=None):
-# Build an array by applying function fun to
-# the arguments in args, creating an array with
-# the specified shape.
-# Allows an integer shape n as a shorthand for (n,).
-    if isinstance(size, types.IntType):
-        size = [size]
-    if size is not None and len(size) != 0:
-        n = numpy.multiply.reduce(size)
-        s = apply(fun, args + (n,))
-        s.shape = size
-        return s
-    else:
-        n = 1
-        s = apply(fun, args + (n,))
-        return s[0]
-
 random = mtrand.random_sample
 rand = mtrand.rand
 random_integers = mtrand.random_integers
