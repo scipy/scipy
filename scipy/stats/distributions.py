@@ -397,6 +397,9 @@ def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
 
 
 def _skew(data):
+    """
+    skew is third central moment / variance**(1.5)
+    """
     data = np.ravel(data)
     mu = data.mean()
     m2 = ((data - mu)**2).mean()
@@ -404,6 +407,9 @@ def _skew(data):
     return m3 / m2**1.5
 
 def _kurtosis(data):
+    """
+    kurtosis is fourth central moment / variance**2 - 3
+    """
     data = np.ravel(data)
     mu = data.mean()
     m2 = ((data - mu)**2).mean()
@@ -487,97 +493,6 @@ class rv_frozen(object):
         return self.dist.interval(alpha, *self.args, **self.kwds)
 
 
-
-##  NANs are returned for unsupported parameters.
-##    location and scale parameters are optional for each distribution.
-##    The shape parameters are generally required
-##
-##    The loc and scale parameters must be given as keyword parameters.
-##    These are related to the common symbols in the .lyx file
-
-##  skew is third central moment / variance**(1.5)
-##  kurtosis is fourth central moment / variance**2 - 3
-
-
-## References::
-
-##  Documentation for ranlib, rv2, cdflib and
-##
-##  Eric Weisstein's world of mathematics http://mathworld.wolfram.com/
-##      http://mathworld.wolfram.com/topics/StatisticalDistributions.html
-##
-##  Documentation to Regress+ by Michael McLaughlin
-##
-##  Engineering and Statistics Handbook (NIST)
-##      http://www.itl.nist.gov/div898/handbook/index.htm
-##
-##  Documentation for DATAPLOT from NIST
-##      http://www.itl.nist.gov/div898/software/dataplot/distribu.htm
-##
-##  Norman Johnson, Samuel Kotz, and N. Balakrishnan "Continuous
-##      Univariate Distributions", second edition,
-##      Volumes I and II, Wiley & Sons, 1994.
-
-
-## Each continuous random variable as the following methods
-##
-## rvs -- Random Variates (alternatively calling the class could produce these)
-## pdf -- PDF
-## logpdf -- log PDF (more  numerically accurate if possible)
-## cdf -- CDF
-## logcdf -- log of CDF
-## sf  -- Survival Function (1-CDF)
-## logsf --- log of SF
-## ppf -- Percent Point Function (Inverse of CDF)
-## isf -- Inverse Survival Function (Inverse of SF)
-## stats -- Return mean, variance, (Fisher's) skew, or (Fisher's) kurtosis
-## nnlf  -- negative log likelihood function (to minimize)
-## fit   -- Model-fitting
-##
-##  Maybe Later
-##
-##  hf  --- Hazard Function (PDF / SF)
-##  chf  --- Cumulative hazard function (-log(SF))
-##  psf --- Probability sparsity function (reciprocal of the pdf) in
-##                units of percent-point-function (as a function of q).
-##                Also, the derivative of the percent-point function.
-
-## To define a new random variable you subclass the rv_continuous class
-##   and re-define the
-##
-##   _pdf method which will be given clean arguments (in between a and b)
-##        and passing the argument check method
-##
-##      If postive argument checking is not correct for your RV
-##      then you will also need to re-define
-##   _argcheck
-
-##   Correct, but potentially slow defaults exist for the remaining
-##       methods but for speed and/or accuracy you can over-ride
-##
-##     _cdf, _ppf, _rvs, _isf, _sf
-##
-##   Rarely would you override _isf  and _sf but you could for numerical precision.
-##
-##   Statistics are computed using numerical integration by default.
-##     For speed you can redefine this using
-##
-##    _stats  --- take shape parameters and return mu, mu2, g1, g2
-##            --- If you can't compute one of these return it as None
-##
-##            --- Can also be defined with a keyword argument moments=<str>
-##                  where <str> is a string composed of 'm', 'v', 's',
-##                  and/or 'k'.  Only the components appearing in string
-##                 should be computed and returned in the order 'm', 'v',
-##                  's', or 'k'  with missing values returned as None
-##
-##    OR
-##
-##  You can override
-##
-##    _munp    -- takes n and shape parameters and returns
-##             --  then nth non-central moment of the distribution.
-##
 
 def valarray(shape,value=nan,typecode=None):
     """Return an array of all value.
@@ -827,6 +742,14 @@ class rv_generic(object):
         b = self.ppf(q2, *args, **kwds)
         return a, b
 
+
+##  continuous random variables: implement maybe later
+##
+##  hf  --- Hazard Function (PDF / SF)
+##  chf  --- Cumulative hazard function (-log(SF))
+##  psf --- Probability sparsity function (reciprocal of the pdf) in
+##                units of percent-point-function (as a function of q).
+##                Also, the derivative of the percent-point function.
 
 class rv_continuous(rv_generic):
     """
