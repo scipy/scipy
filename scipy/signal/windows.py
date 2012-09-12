@@ -189,11 +189,6 @@ def blackman(M, sym=True):
 
     Examples
     --------
-    >>> scipy.signal.blackman(12)
-    array([-0.        ,  0.03260643,  0.15990363,  0.41439798,  0.73604518,
-            0.96704677,  0.96704677,  0.73604518,  0.41439798,  0.15990363,
-            0.03260643, -0.        ])
-
     Plot the window and the frequency response:
 
     >>> from numpy.fft import fft, fftshift
@@ -410,11 +405,6 @@ def bartlett(M, sym=True):
 
     Examples
     --------
-    >>> scipy.signal.bartlett(12)
-    array([ 0.        ,  0.18181818,  0.36363636,  0.54545455,  0.72727273,
-            0.90909091,  0.90909091,  0.72727273,  0.54545455,  0.36363636,
-            0.18181818,  0.        ])
-
     Plot the window and its frequency response (requires matplotlib):
 
     >>> from numpy.fft import fft, fftshift
@@ -517,11 +507,6 @@ def hann(M, sym=True):
 
     Examples
     --------
-    >>> scipy.signal.hann(12)
-    array([ 0.        ,  0.07937323,  0.29229249,  0.57115742,  0.82743037,
-            0.97974649,  0.97974649,  0.82743037,  0.57115742,  0.29229249,
-            0.07937323,  0.        ])
-
     Plot the window and its frequency response:
 
     >>> from numpy.fft import fft, fftshift
@@ -657,11 +642,6 @@ def hamming(M, sym=True):
 
     Examples
     --------
-    >>> scipy.signal.hamming(12)
-    array([ 0.08      ,  0.15302337,  0.34890909,  0.60546483,  0.84123594,
-            0.98136677,  0.98136677,  0.84123594,  0.60546483,  0.34890909,
-            0.15302337,  0.08      ])
-
     Plot the window and the frequency response:
 
     >>> from numpy.fft import fft, fftshift
@@ -789,11 +769,6 @@ def kaiser(M, beta, sym=True):
 
     Examples
     --------
-    >>> scipy.signal.kaiser(12, 14)
-    array([ 0.00000773,  0.00346009,  0.04652002,  0.22973712,  0.59988532,
-            0.9456749 ,  0.9456749 ,  0.59988532,  0.22973712,  0.04652002,
-            0.00346009,  0.00000773])
-
     Plot the window and the frequency response:
 
     >>> from numpy.fft import fft, fftshift
