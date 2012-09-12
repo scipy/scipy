@@ -13,7 +13,7 @@ __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly']
 
 def sawtooth(t, width=1):
     """
-    Return a periodic sawtooth waveform.
+    Return a periodic sawtooth or triangle waveform.
 
     The sawtooth waveform has a period 2*pi, rises from -1 to 1 on the
     interval 0 to width*2*pi and drops from 1 to -1 on the interval
@@ -24,7 +24,9 @@ def sawtooth(t, width=1):
     t : array_like
         Time.
     width : float, optional
-        Width of the waveform. Default is 1.
+        Width of the rising ramp as a proportion of the total cycle. 
+        Default is 1, producing a rising ramp, 0 produces a falling ramp.  
+        `t` = 0.5 produces a triangle wave.
 
     Returns
     -------
@@ -35,7 +37,7 @@ def sawtooth(t, width=1):
     --------
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 20*np.pi, 500)
-    >>> plt.plot(x, sp.signal.sawtooth(x))
+    >>> plt.plot(x, scipy.signal.sawtooth(x))
 
     """
     t, w = asarray(t), asarray(width)
@@ -88,7 +90,7 @@ def square(t, duty=0.5):
     Returns
     -------
     y : ndarray
-        The output square wave.
+        Output array containing the square waveform.
 
     """
     t, w = asarray(t), asarray(duty)
@@ -224,13 +226,15 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
     Returns
     -------
-    A numpy array containing the signal evaluated at 't' with the requested
-    time-varying frequency.  More precisely, the function returns:
-
-        ``cos(phase + (pi/180)*phi)``
-
-    where `phase` is the integral (from 0 to t) of ``2*pi*f(t)``.
-    ``f(t)`` is defined below.
+    y : ndarray
+        A numpy array containing the signal evaluated at `t` with the 
+        requested time-varying frequency.  More precisely, the function 
+        returns:
+        
+            ``cos(phase + (pi/180)*phi)``
+        
+        where `phase` is the integral (from 0 to `t`) of ``2*pi*f(t)``.
+        ``f(t)`` is defined below.
 
     See Also
     --------
@@ -363,13 +367,15 @@ def sweep_poly(t, poly, phi=0):
 
     Returns
     -------
-    A numpy array containing the signal evaluated at 't' with the requested
-    time-varying frequency.  More precisely, the function returns
-
-        ``cos(phase + (pi/180)*phi)``
-
-    where `phase` is the integral (from 0 to t) of ``2 * pi * f(t)``;
-    ``f(t)`` is defined above.
+    y : ndarray
+        A numpy array containing the signal evaluated at `t` with the 
+        requested time-varying frequency.  More precisely, the function 
+        returns:
+        
+            ``cos(phase + (pi/180)*phi)``
+        
+        where `phase` is the integral (from 0 to t) of ``2 * pi * f(t)``;
+        ``f(t)`` is defined above.
 
     See Also
     --------
