@@ -217,25 +217,27 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     Notes
     -----
-    The standard version:
+    The standard version::
+
         pi**-0.25 * exp(1j*w*x) * exp(-0.5*(x**2))
 
-        This commonly used wavelet is often referred to simply as the
-        Morlet wavelet.  Note that, this simplified version can cause
-        admissibility problems at low values of w.
+    This commonly used wavelet is often referred to simply as the
+    Morlet wavelet.  Note that, this simplified version can cause
+    admissibility problems at low values of w.
 
     The complete version:
+
         pi**-0.25 * (exp(1j*w*x) - exp(-0.5*(w**2))) * exp(-0.5*(x**2))
 
-        The complete version of the Morlet wavelet, with a correction
-        term to improve admissibility. For w greater than 5, the
-        correction term is negligible.
+    The complete version of the Morlet wavelet, with a correction
+    term to improve admissibility. For w greater than 5, the
+    correction term is negligible.
 
     Note that the energy of the return wavelet is not normalised
     according to s.
 
     The fundamental frequency of this wavelet in Hz is given
-    by f = 2*s*w*r / M where r is the sampling rate.
+    by ``f = 2*s*w*r / M`` where r is the sampling rate.
 
     """
     x = linspace(-s * 2 * pi, s * 2 * pi, M)
@@ -251,28 +253,33 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
 def ricker(points, a):
     """
-    Also known as the "mexican hat wavelet",
-    models the function:
-    A ( 1 - x^2/a^2) exp(-t^2/a^2),
+    Also known as the "mexican hat wavelet", models the function::
+
+        A ( 1 - x^2/a^2) exp(-t^2/a^2),
+
     where ``A = 2/sqrt(3a)pi^1/3``
 
     Parameters
     ----------
-    a: scalar
-        Width parameter of the wavelet.
     points: int, optional
         Number of points in `vector`. Default is ``10*a``
         Will be centered around 0.
+    a: scalar
+        Width parameter of the wavelet.
+
     Returns
-    -----------
+    -------
     vector: 1-D ndarray
-        array of length `points` in shape of ricker curve.
+        Array of length `points` in shape of ricker curve.
+
     Examples
     --------
+    >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+
     >>> points = 100
     >>> a = 4.0
-    >>> vec2 = ricker(a,points)
+    >>> vec2 = signal.ricker(points, a)
     >>> print len(vec2)
     100
     >>> plt.plot(vec2)
@@ -313,19 +320,20 @@ def cwt(data, wavelet, widths):
     Returns
     -------
     cwt: 2-D ndarray
-        Will be len(widths) x len(data).
+        Will be ``len(widths) * len(data)``.
 
     Notes
     ------
-    cwt[ii,:] = scipy.signal.convolve(data,wavelet(width[ii], length), mode='same')
-    where length = min(10 * width[ii], len(data)).
+    ``cwt[ii,:] = scipy.signal.convolve(data,wavelet(width[ii], length), mode='same')``,
+    where length = ``min(10 * width[ii], len(data))``.
 
     Examples
     --------
-    >>> signal = np.random.rand(20) - 0.5
-    >>> wavelet = ricker
+    >>> from scipy import signal
+    >>> sig = np.random.rand(20) - 0.5
+    >>> wavelet = signal.ricker
     >>> widths = np.arange(1, 11)
-    >>> cwtmatr = cwt(signal, wavelet, widths)
+    >>> cwtmatr = signal.cwt(sig, wavelet, widths)
     """
 
     output = np.zeros([len(widths), len(data)])

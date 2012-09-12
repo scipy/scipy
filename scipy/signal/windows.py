@@ -192,6 +192,8 @@ def blackman(M, sym=True):
     Plot the window and the frequency response:
 
     >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
     >>> window = scipy.signal.blackman(51)
     >>> plt.plot(window)
     [<matplotlib.lines.Line2D object at 0x...>]
@@ -408,6 +410,8 @@ def bartlett(M, sym=True):
     Plot the window and its frequency response (requires matplotlib):
 
     >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
     >>> window = scipy.signal.bartlett(51)
     >>> plt.plot(window)
     [<matplotlib.lines.Line2D object at 0x...>]
@@ -510,6 +514,8 @@ def hann(M, sym=True):
     Plot the window and its frequency response:
 
     >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
     >>> window = scipy.signal.hann(51)
     >>> plt.plot(window)
     [<matplotlib.lines.Line2D object at 0x...>]
@@ -645,6 +651,8 @@ def hamming(M, sym=True):
     Plot the window and the frequency response:
 
     >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
     >>> window = scipy.signal.hamming(51)
     >>> plt.plot(window)
     [<matplotlib.lines.Line2D object at 0x...>]
@@ -772,6 +780,8 @@ def kaiser(M, beta, sym=True):
     Plot the window and the frequency response:
 
     >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
     >>> window = scipy.signal.kaiser(51, 14)
     >>> plt.plot(window)
     [<matplotlib.lines.Line2D object at 0x...>]
@@ -1062,17 +1072,17 @@ def get_window(window, Nx, fftbins=True):
 
     Examples
     --------
-    >>> get_window('triang', 7)
+    >>> from scipy import signal
+    >>> signal.get_window('triang', 7)
     array([ 0.25,  0.5 ,  0.75,  1.  ,  0.75,  0.5 ,  0.25])
-    >>> get_window(('kaiser', 4.0), 9)
+    >>> signal.get_window(('kaiser', 4.0), 9)
     array([ 0.08848053,  0.32578323,  0.63343178,  0.89640418,  1.        ,
             0.89640418,  0.63343178,  0.32578323,  0.08848053])
-    >>> get_window(4.0, 9)
+    >>> signal.get_window(4.0, 9)
     array([ 0.08848053,  0.32578323,  0.63343178,  0.89640418,  1.        ,
             0.89640418,  0.63343178,  0.32578323,  0.08848053])
 
     """
-
     sym = not fftbins
     try:
         beta = float(window)

@@ -152,28 +152,23 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         Length of the filter (number of coefficients, i.e. the filter
         order + 1).  `numtaps` must be even if a passband includes the
         Nyquist frequency.
-
     cutoff : float or 1D array_like
         Cutoff frequency of filter (expressed in the same units as `nyq`)
         OR an array of cutoff frequencies (that is, band edges). In the
         latter case, the frequencies in `cutoff` should be positive and
         monotonically increasing between 0 and `nyq`.  The values 0 and
         `nyq` must not be included in `cutoff`.
-
     width : float or None
         If `width` is not None, then assume it is the approximate width
         of the transition region (expressed in the same units as `nyq`)
         for use in Kaiser FIR filter design.  In this case, the `window`
         argument is ignored.
-
     window : string or tuple of string and parameter values
         Desired window to use. See `scipy.signal.get_window` for a list
         of windows and required parameters.
-
     pass_zero : bool
         If True, the gain at the frequency 0 (i.e. the "DC gain") is 1.
         Otherwise the DC gain is 0.
-
     scale : bool
         Set to True to scale the coefficients so that the frequency
         response is exactly unity at a certain frequency.
@@ -204,34 +199,34 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 
     Examples
     --------
-
     Low-pass from 0 to f::
 
-    >>> firwin(numtaps, f)
+    >>> from scipy import signal
+    >>> signal.firwin(numtaps, f)
 
     Use a specific window function::
 
-    >>> firwin(numtaps, f, window='nuttall')
+    >>> signal.firwin(numtaps, f, window='nuttall')
 
     High-pass ('stop' from 0 to f)::
 
-    >>> firwin(numtaps, f, pass_zero=False)
+    >>> signal.firwin(numtaps, f, pass_zero=False)
 
     Band-pass::
 
-    >>> firwin(numtaps, [f1, f2], pass_zero=False)
+    >>> signal.firwin(numtaps, [f1, f2], pass_zero=False)
 
     Band-stop::
 
-    >>> firwin(numtaps, [f1, f2])
+    >>> signal.firwin(numtaps, [f1, f2])
 
     Multi-band (passbands are [0, f1], [f2, f3] and [f4, 1])::
 
-    >>>firwin(numtaps, [f1, f2, f3, f4])
+    >>> signal.firwin(numtaps, [f1, f2, f3, f4])
 
     Multi-band (passbands are [f1, f2] and [f3,f4])::
 
-    >>> firwin(numtaps, [f1, f2, f3, f4], pass_zero=False)
+    >>> signal.firwin(numtaps, [f1, f2, f3, f4], pass_zero=False)
 
     See also
     --------
@@ -362,7 +357,8 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
     A lowpass FIR filter with a response that is 1 on [0.0, 0.5], and
     that decreases linearly on [0.5, 1.0] from 1 to 0:
 
-    >>> taps = firwin2(150, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0])
+    >>> from scipy import signal
+    >>> taps = signal.firwin2(150, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0])
     >>> print(taps[72:78])
     [-0.02286961 -0.06362756  0.57310236  0.57310236 -0.06362756 -0.02286961]
 
@@ -372,7 +368,6 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
 
     Notes
     -----
-
     From the given set of frequencies and gains, the desired response is
     constructed in the frequency domain.  The inverse FFT is applied to the
     desired response to create the associated convolution kernel, and the
@@ -557,15 +552,15 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
     behavior in the frequency ranges between those bands is unspecified and
     may overshoot.
 
-    >>> bpass = sp.signal.remez(72, [0, 0.1, 0.2, 0.4, 0.45, 0.5], [0, 1, 0])
-    >>> freq, response = sp.signal.freqz(bpass)
+    >>> from scipy import signal
+    >>> bpass = signal.remez(72, [0, 0.1, 0.2, 0.4, 0.45, 0.5], [0, 1, 0])
+    >>> freq, response = signal.freqz(bpass)
     >>> ampl = np.abs(response)
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax1 = fig.add_subplot(111)
-    >>> ax1.semilogy(freq/(2*np.pi), ampl, 'b-') # freq in Hz
-    [<matplotlib.lines.Line2D object at 0xf486790>]
+    >>> ax1.semilogy(freq/(2*np.pi), ampl, 'b-')  # freq in Hz
     >>> plt.show()
 
     """

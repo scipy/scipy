@@ -246,7 +246,7 @@ def order_filter(a, domain, rank):
 
     Examples
     --------
-    >>> import scipy.signal
+    >>> from scipy import signal
     >>> x = np.arange(25).reshape(5, 5)
     >>> domain = np.identity(3)
     >>> x
@@ -255,13 +255,13 @@ def order_filter(a, domain, rank):
            [10, 11, 12, 13, 14],
            [15, 16, 17, 18, 19],
            [20, 21, 22, 23, 24]])
-    >>> sp.signal.order_filter(x, domain, 0)
+    >>> signal.order_filter(x, domain, 0)
     array([[  0.,   0.,   0.,   0.,   0.],
            [  0.,   0.,   1.,   2.,   0.],
            [  0.,   5.,   6.,   7.,   0.],
            [  0.,  10.,  11.,  12.,   0.],
            [  0.,   0.,   0.,   0.,   0.]])
-    >>> sp.signal.order_filter(x, domain, 2)
+    >>> signal.order_filter(x, domain, 2)
     array([[  6.,   7.,   8.,   9.,   4.],
            [ 11.,  12.,  13.,  14.,   9.],
            [ 16.,  17.,  18.,  19.,  14.],
@@ -829,8 +829,9 @@ def unique_roots(p, tol=1e-3, rtype='min'):
 
     Examples
     --------
+    >>> from scipy import signal
     >>> vals = [0, 1.3, 1.31, 2.8, 1.25, 2.2, 10.3]
-    >>> uniq, mult = sp.signal.unique_roots(vals, tol=2e-2, rtype='avg')
+    >>> uniq, mult = signal.unique_roots(vals, tol=2e-2, rtype='avg')
 
     Check which roots have multiplicity larger than 1:
 
@@ -1239,11 +1240,12 @@ def detrend(data, axis=-1, type='linear', bp=0):
 
     Examples
     --------
+    >>> from scipy import signal
     >>> randgen = np.random.RandomState(9)
     >>> npoints = 1e3
     >>> noise = randgen.randn(npoints)
     >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
-    >>> (sp.signal.detrend(x) - noise).max() < 0.01
+    >>> (signal.detrend(x) - noise).max() < 0.01
     True
 
     """
@@ -1467,8 +1469,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
 
     See Also
     --------
-    lfilter_zi
-    lfilter
+    lfilter_zi, lfilter
 
     Examples
     --------
@@ -1484,9 +1485,9 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     the Nyquist rate, or 125 Hz, and apply it to x with filtfilt.  The
     result should be approximately xlow, with no phase shift.
 
-    >>> from scipy.signal import butter
-    >>> b, a = butter(8, 0.125)
-    >>> y = filtfilt(b, a, x, padlen=150)
+    >>> from scipy import signal
+    >>> b, a = signal.butter(8, 0.125)
+    >>> y = signal.filtfilt(b, a, x, padlen=150)
     >>> np.abs(y - xlow).max()
     9.1086182074789912e-06
 

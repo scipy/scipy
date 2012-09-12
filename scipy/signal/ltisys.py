@@ -732,9 +732,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     --------
     Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = u(t)
 
-    >>> import scipy.signal
+    >>> from scipy import signal
     >>> system = ([1.0], [1.0, 2.0, 1.0])
-    >>> t, y = sp.signal.impulse2(system)
+    >>> t, y = signal.impulse2(system)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(t, y)
 
@@ -901,7 +901,7 @@ def bode(system, w=None, n=100):
     >>> import matplotlib.pyplot as plt
 
     >>> s1 = signal.lti([1], [1, 1])
-    >>> w, mag, phase = bode(s1)
+    >>> w, mag, phase = signal.bode(s1)
 
     >>> plt.figure()
     >>> plt.semilogx(w, mag)    # bode magnitude plot
