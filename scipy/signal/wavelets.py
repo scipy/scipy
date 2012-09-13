@@ -265,11 +265,11 @@ def ricker(points, a):
 
     Parameters
     ----------
-    a : scalar
-        Width parameter of the wavelet.
     points : int, optional
         Number of points in `vector`. Default is ``10*a``
         Will be centered around 0.
+    a : scalar
+        Width parameter of the wavelet.
 
     Returns
     -------
@@ -281,7 +281,7 @@ def ricker(points, a):
     >>> import matplotlib.pyplot as plt
     >>> points = 100
     >>> a = 4.0
-    >>> vec2 = ricker(a,points)
+    >>> vec2 = ricker(points, a)
     >>> print len(vec2)
     100
     >>> plt.plot(vec2)
