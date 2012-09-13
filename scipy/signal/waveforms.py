@@ -266,12 +266,8 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
     y : ndarray
         A numpy array containing the signal evaluated at `t` with the 
         requested time-varying frequency.  More precisely, the function 
-        returns:
-        
-            ``cos(phase + (pi/180)*phi)``
-        
-        where `phase` is the integral (from 0 to `t`) of ``2*pi*f(t)``.
-        ``f(t)`` is defined below.
+        returns ``cos(phase + (pi/180)*phi)`` where `phase` is the integral 
+        (from 0 to `t`) of ``2*pi*f(t)``. ``f(t)`` is defined below.
 
     See Also
     --------
