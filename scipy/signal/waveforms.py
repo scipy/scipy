@@ -140,7 +140,7 @@ def square(t, duty=0.5):
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                retenv=False):
     """
-    Return a gaussian modulated sinusoid: exp(-a t^2) exp(1j*2*pi*fc*t).
+    Return a Gaussian modulated sinusoid: exp(-a t^2) exp(1j*2*pi*fc*t).
 
     If `retquad` is True, then return the real and imaginary parts
     (in-phase and quadrature).
@@ -156,7 +156,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     bw : float, optional
         Fractional bandwidth in frequency domain of pulse (Hz).
         Default is 0.5.
-    bwr: float, optional
+    bwr : float, optional
         Reference level at which fractional bandwidth is calculated (dB).
         Default is -6.
     tpr : float, optional
@@ -168,6 +168,29 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
         of the signal.  Default is False.
     retenv : bool, optional
         If True, return the envelope of the signal.  Default is False.
+
+    Returns
+    -------
+    yI : ndarray
+        Real part of signal.  Always returned.
+    yQ : ndarray
+        Imaginary part of signal.  Only returned if `retquad` is True.
+    yenv : ndarray
+        Envelope of signal.  Only returned if `retenv` is True.
+        
+    See Also
+    --------
+    scipy.signal.morlet
+
+    Examples
+    --------
+    Plot real, imaginary, and envelope for a 5 Hz pulse, sampled at 100 Hz 
+    for 2 seconds:
+    
+    >>> import matplotlib.pyplot as plt
+    >>> t = linspace(-1, 1, 2 * 100, endpoint=False)
+    >>> i, q, e = scipy.signal.gausspulse(t, fc=5, retquad=True, retenv=True)
+    >>> plot(t, i, t, q, t, e, '--')
 
     """
     if fc < 0:
@@ -295,7 +318,6 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
         f1 must be positive, and f0 must be greater than f1.
 
     """
-
     # 'phase' is computed in _chirp_phase, to make testing easier.
     phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero)
     # Convert  phi to radians.
@@ -395,6 +417,7 @@ def sweep_poly(t, poly, phi=0):
     Notes
     -----
     .. versionadded:: 0.8.0
+    
     """
     # 'phase' is computed in _sweep_poly_phase, to make testing easier.
     phase = _sweep_poly_phase(t, poly)
