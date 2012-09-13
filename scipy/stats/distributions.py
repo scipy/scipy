@@ -416,12 +416,6 @@ def _kurtosis(data):
     return m4 / m2**2 - 3
 
 
-random = mtrand.random_sample
-rand = mtrand.rand
-random_integers = mtrand.random_integers
-permutation = mtrand.permutation
-
-
 # Frozen RV class
 class rv_frozen(object):
 
