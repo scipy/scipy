@@ -281,7 +281,7 @@ def ricker(points, a):
     Returns
     -------
     vector : 1-D ndarray
-        Array of length `points` in shape of ricker curve.
+        Array of length `points` in shape of Ricker curve.
 
     Examples
     --------
