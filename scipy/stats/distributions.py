@@ -56,8 +56,6 @@ __all__ = [
 
 floatinfo = numpy.finfo(float)
 
-#errp = special.errprint
-#arr = asarray
 gam = special.gamma
 
 import types
