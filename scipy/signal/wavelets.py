@@ -215,7 +215,7 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     w : float
         Omega0. Default is 5
     s : float
-        Scaling factor, windowed from -s*2*pi to +s*2*pi.  Default is 1.
+        Scaling factor, windowed from ``-s*2*pi`` to ``+s*2*pi``. Default is 1.
     complete : bool
         Whether to use the complete or the standard version.
 
@@ -245,7 +245,7 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     according to s.
 
     The fundamental frequency of this wavelet in Hz is given
-    by f = 2*s*w*r / M where r is the sampling rate.
+    by ``f = 2*s*w*r / M`` where r is the sampling rate.
 
     See Also
     --------
@@ -265,9 +265,11 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
 def ricker(points, a):
     """
-    Also known as the "Mexican hat wavelet",
+    Return a Ricker wavelet, also known as the "Mexican hat wavelet", which 
     models the function:
-    A (1 - x^2/a^2) exp(-t^2/a^2),
+    
+        ``A (1 - x^2/a^2) exp(-t^2/a^2)``,
+        
     where ``A = 2/sqrt(3a)pi^1/3``
 
     Parameters
@@ -288,7 +290,7 @@ def ricker(points, a):
     >>> import matplotlib.pyplot as plt
     >>> points = 100
     >>> a = 4.0
-    >>> vec2 = ricker(points, a)
+    >>> vec2 = signal.ricker(points, a)
     >>> print len(vec2)
     100
     >>> plt.plot(vec2)
@@ -342,9 +344,9 @@ def cwt(data, wavelet, widths):
     Examples
     --------
     >>> signal = np.random.rand(20) - 0.5
-    >>> wavelet = ricker
+    >>> wavelet = signal.ricker
     >>> widths = np.arange(1, 11)
-    >>> cwtmatr = cwt(signal, wavelet, widths)
+    >>> cwtmatr = signal.cwt(signal, wavelet, widths)
     """
 
     output = np.zeros([len(widths), len(data)])

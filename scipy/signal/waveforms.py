@@ -15,9 +15,9 @@ def sawtooth(t, width=1):
     """
     Return a periodic sawtooth or triangle waveform.
 
-    The sawtooth waveform has a period 2*pi, rises from -1 to 1 on the
-    interval 0 to width*2*pi, then drops from 1 to -1 on the interval
-    width*2*pi to 2*pi. `width` must be in the interval [0, 1].
+    The sawtooth waveform has a period ``2*pi``, rises from -1 to 1 on the
+    interval 0 to ``width*2*pi``, then drops from 1 to -1 on the interval
+    ``width*2*pi`` to ``2*pi``. `width` must be in the interval [0, 1].
 
     Parameters
     ----------
@@ -79,8 +79,9 @@ def square(t, duty=0.5):
     """
     Return a periodic square-wave waveform.
 
-    The square wave has a period 2*pi, has value +1 from 0 to 2*pi*duty
-    and -1 from 2*pi*duty to 2*pi. `duty` must be in the interval [0,1].
+    The square wave has a period ``2*pi``, has value +1 from 0 to 
+    ``2*pi*duty`` and -1 from ``2*pi*duty`` to ``2*pi``. `duty` must be in 
+    the interval [0,1].
 
     Parameters
     ----------
@@ -101,7 +102,7 @@ def square(t, duty=0.5):
     >>> import matplotlib.pyplot as plt
     >>> t = np.linspace(0, 1, 500, endpoint=False)
     >>> plt.plot(t, scipy.signal.square(2 * np.pi * 5 * t))
-    >>> ylim(-2, 2)
+    >>> plt.ylim(-2, 2)
 
     """
     t, w = asarray(t), asarray(duty)
@@ -140,7 +141,9 @@ def square(t, duty=0.5):
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                retenv=False):
     """
-    Return a Gaussian modulated sinusoid: exp(-a t^2) exp(1j*2*pi*fc*t).
+    Return a Gaussian modulated sinusoid:
+        
+        ``exp(-a t^2) exp(1j*2*pi*fc*t).``
 
     If `retquad` is True, then return the real and imaginary parts
     (in-phase and quadrature).
@@ -184,13 +187,13 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
 
     Examples
     --------
-    Plot real, imaginary, and envelope for a 5 Hz pulse, sampled at 100 Hz 
-    for 2 seconds:
+    Plot real component, imaginary component, and envelope for a 5 Hz pulse, 
+    sampled at 100 Hz for 2 seconds:
     
     >>> import matplotlib.pyplot as plt
-    >>> t = linspace(-1, 1, 2 * 100, endpoint=False)
+    >>> t = np.linspace(-1, 1, 2 * 100, endpoint=False)
     >>> i, q, e = scipy.signal.gausspulse(t, fc=5, retquad=True, retenv=True)
-    >>> plot(t, i, t, q, t, e, '--')
+    >>> plt.plot(t, i, t, q, t, e, '--')
 
     """
     if fc < 0:
@@ -403,12 +406,8 @@ def sweep_poly(t, poly, phi=0):
     y : ndarray
         A numpy array containing the signal evaluated at `t` with the 
         requested time-varying frequency.  More precisely, the function 
-        returns:
-        
-            ``cos(phase + (pi/180)*phi)``
-        
-        where `phase` is the integral (from 0 to t) of ``2 * pi * f(t)``;
-        ``f(t)`` is defined above.
+        returns ``cos(phase + (pi/180)*phi)``, where `phase` is the integral 
+        (from 0 to t) of ``2 * pi * f(t)``; ``f(t)`` is defined above.
 
     See Also
     --------
