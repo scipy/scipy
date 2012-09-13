@@ -1721,26 +1721,28 @@ class TestQZ(TestCase):
         assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
         assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
 
-        assert_array_almost_equal(AA, np.array(
+        # test absolute values bc the sign is ambiguous and might be platform
+        # dependent
+        assert_array_almost_equal(np.abs(AA), np.abs(np.array(
                         [[ 35.7864, -80.9061, -12.0629,  -9.498 ],
                          [  0.    ,   2.7638,  -2.3505,   7.3256],
                          [  0.    ,   0.    ,   0.6258,  -0.0398],
-                         [  0.    ,   0.    ,   0.    , -12.8217]]), 4)
-        assert_array_almost_equal(BB, np.array(
+                         [  0.    ,   0.    ,   0.    , -12.8217]])), 4)
+        assert_array_almost_equal(np.abs(BB), np.abs(np.array(
                         [[ 4.5324, -8.7878,  3.2357, -3.5526],
                          [ 0.    ,  1.4314, -2.1894,  0.9709],
                          [ 0.    ,  0.    ,  1.3126, -0.3468],
-                         [ 0.    ,  0.    ,  0.    ,  0.559 ]]), 4)
-        assert_array_almost_equal(Q, np.array(
+                         [ 0.    ,  0.    ,  0.    ,  0.559 ]])), 4)
+        assert_array_almost_equal(np.abs(Q), np.abs(np.array(
                         [[-0.4193, -0.605 , -0.1894, -0.6498],
                          [-0.5495,  0.6987,  0.2654, -0.3734],
                          [-0.4973, -0.3682,  0.6194,  0.4832],
-                         [-0.5243,  0.1008, -0.7142,  0.4526]]), 4)
-        assert_array_almost_equal(Z, np.array(
+                         [-0.5243,  0.1008, -0.7142,  0.4526]])), 4)
+        assert_array_almost_equal(np.abs(Z), np.abs(np.array(
                         [[-0.9471, -0.2971, -0.1217,  0.0055],
                          [-0.0367,  0.1209,  0.0358,  0.9913],
                          [ 0.3171, -0.9041, -0.2547,  0.1312],
-                         [ 0.0346,  0.2824, -0.9587,  0.0014]]), 4)
+                         [ 0.0346,  0.2824, -0.9587,  0.0014]])), 4)
 
         # test absolute values bc the sign is ambiguous and might be platform
         # dependent
