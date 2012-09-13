@@ -1715,34 +1715,36 @@ class TestQZ(TestCase):
 
         sort = lambda ar,ai,beta : ai == 0
 
-        AA,BB,Q,Z,sdim = qz(A,B,sort=sort)
-        #assert_(sdim == 2)
-        assert_(sdim == 4)
-        assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
-        assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
+        assert_raises(ValueError, qz, A, B, sort=sort)
+        if False:
+            AA,BB,Q,Z,sdim = qz(A,B,sort=sort)
+            #assert_(sdim == 2)
+            assert_(sdim == 4)
+            assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
+            assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
 
-        # test absolute values bc the sign is ambiguous and might be platform
-        # dependent
-        assert_array_almost_equal(np.abs(AA), np.abs(np.array(
-                        [[ 35.7864, -80.9061, -12.0629,  -9.498 ],
-                         [  0.    ,   2.7638,  -2.3505,   7.3256],
-                         [  0.    ,   0.    ,   0.6258,  -0.0398],
-                         [  0.    ,   0.    ,   0.    , -12.8217]])), 4)
-        assert_array_almost_equal(np.abs(BB), np.abs(np.array(
-                        [[ 4.5324, -8.7878,  3.2357, -3.5526],
-                         [ 0.    ,  1.4314, -2.1894,  0.9709],
-                         [ 0.    ,  0.    ,  1.3126, -0.3468],
-                         [ 0.    ,  0.    ,  0.    ,  0.559 ]])), 4)
-        assert_array_almost_equal(np.abs(Q), np.abs(np.array(
-                        [[-0.4193, -0.605 , -0.1894, -0.6498],
-                         [-0.5495,  0.6987,  0.2654, -0.3734],
-                         [-0.4973, -0.3682,  0.6194,  0.4832],
-                         [-0.5243,  0.1008, -0.7142,  0.4526]])), 4)
-        assert_array_almost_equal(np.abs(Z), np.abs(np.array(
-                        [[-0.9471, -0.2971, -0.1217,  0.0055],
-                         [-0.0367,  0.1209,  0.0358,  0.9913],
-                         [ 0.3171, -0.9041, -0.2547,  0.1312],
-                         [ 0.0346,  0.2824, -0.9587,  0.0014]])), 4)
+            # test absolute values bc the sign is ambiguous and might be platform
+            # dependent
+            assert_array_almost_equal(np.abs(AA), np.abs(np.array(
+                            [[ 35.7864, -80.9061, -12.0629,  -9.498 ],
+                             [  0.    ,   2.7638,  -2.3505,   7.3256],
+                             [  0.    ,   0.    ,   0.6258,  -0.0398],
+                             [  0.    ,   0.    ,   0.    , -12.8217]])), 4)
+            assert_array_almost_equal(np.abs(BB), np.abs(np.array(
+                            [[ 4.5324, -8.7878,  3.2357, -3.5526],
+                             [ 0.    ,  1.4314, -2.1894,  0.9709],
+                             [ 0.    ,  0.    ,  1.3126, -0.3468],
+                             [ 0.    ,  0.    ,  0.    ,  0.559 ]])), 4)
+            assert_array_almost_equal(np.abs(Q), np.abs(np.array(
+                            [[-0.4193, -0.605 , -0.1894, -0.6498],
+                             [-0.5495,  0.6987,  0.2654, -0.3734],
+                             [-0.4973, -0.3682,  0.6194,  0.4832],
+                             [-0.5243,  0.1008, -0.7142,  0.4526]])), 4)
+            assert_array_almost_equal(np.abs(Z), np.abs(np.array(
+                            [[-0.9471, -0.2971, -0.1217,  0.0055],
+                             [-0.0367,  0.1209,  0.0358,  0.9913],
+                             [ 0.3171, -0.9041, -0.2547,  0.1312],
+                             [ 0.0346,  0.2824, -0.9587,  0.0014]])), 4)
 
         # test absolute values bc the sign is ambiguous and might be platform
         # dependent
@@ -1769,24 +1771,25 @@ class TestQZ(TestCase):
         #                [0.0626, -0.6934, -0.7114,  0.0956]])), 4)
         #assert_array_almost_equal(dot(Z,Z.T), eye(4))
 
-    def test_qz_complex_sort(self):
-        cA = np.array([
-       [-21.10+22.50*1j, 53.50+-50.50*1j, -34.50+127.50*1j, 7.50+  0.50*1j],
-       [-0.46+ -7.78*1j, -3.50+-37.50*1j, -15.50+ 58.50*1j,-10.50+ -1.50*1j],
-       [ 4.30+ -5.50*1j, 39.70+-17.10*1j, -68.50+ 12.50*1j, -7.50+ -3.50*1j],
-       [ 5.50+  4.40*1j, 14.40+ 43.30*1j, -32.50+-46.00*1j,-19.00+-32.50*1j]])
+    #def test_qz_complex_sort(self):
+    #    cA = np.array([
+    #   [-21.10+22.50*1j, 53.50+-50.50*1j, -34.50+127.50*1j, 7.50+  0.50*1j],
+    #   [-0.46+ -7.78*1j, -3.50+-37.50*1j, -15.50+ 58.50*1j,-10.50+ -1.50*1j],
+    #   [ 4.30+ -5.50*1j, 39.70+-17.10*1j, -68.50+ 12.50*1j, -7.50+ -3.50*1j],
+    #   [ 5.50+  4.40*1j, 14.40+ 43.30*1j, -32.50+-46.00*1j,-19.00+-32.50*1j]])
 
-        cB =  np.array([
-       [1.00+ -5.00*1j, 1.60+  1.20*1j,-3.00+  0.00*1j, 0.00+ -1.00*1j],
-       [0.80+ -0.60*1j, 3.00+ -5.00*1j,-4.00+  3.00*1j,-2.40+ -3.20*1j],
-       [1.00+  0.00*1j, 2.40+  1.80*1j,-4.00+ -5.00*1j, 0.00+ -3.00*1j],
-       [0.00+  1.00*1j,-1.80+  2.40*1j, 0.00+ -4.00*1j, 4.00+ -5.00*1j]])
+    #    cB =  np.array([
+    #   [1.00+ -5.00*1j, 1.60+  1.20*1j,-3.00+  0.00*1j, 0.00+ -1.00*1j],
+    #   [0.80+ -0.60*1j, 3.00+ -5.00*1j,-4.00+  3.00*1j,-2.40+ -3.20*1j],
+    #   [1.00+  0.00*1j, 2.40+  1.80*1j,-4.00+ -5.00*1j, 0.00+ -3.00*1j],
+    #   [0.00+  1.00*1j,-1.80+  2.40*1j, 0.00+ -4.00*1j, 4.00+ -5.00*1j]])
 
-        AAS,BBS,QS,ZS,sdim = qz(cA,cB,sort='lhp')
+    #    AAS,BBS,QS,ZS,sdim = qz(cA,cB,sort='lhp')
 
-        eigenvalues = diag(AAS)/diag(BBS)
-        assert_(all(np.real(eigenvalues[:sdim] < 0)))
-        assert_(all(np.real(eigenvalues[sdim:] > 0)))
+    #    eigenvalues = diag(AAS)/diag(BBS)
+    #    assert_(all(np.real(eigenvalues[:sdim] < 0)))
+    #    assert_(all(np.real(eigenvalues[sdim:] > 0)))
+
 
 class TestDatacopied(TestCase):
 
