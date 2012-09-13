@@ -18,6 +18,10 @@ def daub(p):
     ----------
     p : int
         Order of the zero at f=1/2, can have values from 1 to 34.
+        
+    Returns
+    -------
+    q : ndarray
 
     """
     sqrt = np.sqrt
@@ -91,10 +95,10 @@ def cascade(hk, J=7):
 
     Parameters
     ----------
-    hk :
+    hk : array_like
         Coefficients of low-pass filter.
-    J : int. optional
-        Values will be computed at grid points ``K/2**J``.
+    J : int, optional
+        Values will be computed at grid points ``K/2**J``. Default is 7.
 
     Returns
     -------
@@ -125,7 +129,6 @@ def cascade(hk, J=7):
     end.
 
     """
-
     N = len(hk) - 1
 
     if (J > 30 - np.log2(N + 1)):
@@ -210,11 +213,15 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     M : int
         Length of the wavelet.
     w : float
-        Omega0
+        Omega0. Default is 5
     s : float
-        Scaling factor, windowed from -s*2*pi to +s*2*pi.
+        Scaling factor, windowed from -s*2*pi to +s*2*pi.  Default is 1.
     complete : bool
         Whether to use the complete or the standard version.
+
+    Returns
+    -------
+    out : 1-D ndarray
 
     Notes
     -----
@@ -260,7 +267,7 @@ def ricker(points, a):
     """
     Also known as the "Mexican hat wavelet",
     models the function:
-    A ( 1 - x^2/a^2) exp(-t^2/a^2),
+    A (1 - x^2/a^2) exp(-t^2/a^2),
     where ``A = 2/sqrt(3a)pi^1/3``
 
     Parameters
@@ -274,7 +281,7 @@ def ricker(points, a):
     Returns
     -------
     vector : 1-D ndarray
-        array of length `points` in shape of ricker curve.
+        Array of length `points` in shape of ricker curve.
 
     Examples
     --------
@@ -326,8 +333,11 @@ def cwt(data, wavelet, widths):
 
     Notes
     ------
-    cwt[ii,:] = scipy.signal.convolve(data,wavelet(width[ii], length), mode='same')
-    where length = min(10 * width[ii], len(data)).
+    ``cwt[ii,:] = scipy.signal.convolve(data, wavelet(width[ii], length), mode='same')``
+    
+    where
+    
+    ``length = min(10 * width[ii], len(data))``.
 
     Examples
     --------
