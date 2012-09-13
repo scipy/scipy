@@ -11,14 +11,44 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
 
 
 def boxcar(M, sym=True):
-    """The M-point boxcar window.
+    """Return a boxcar or rectangular window.
+
+    Included for completeness, this is equivalent to no window at all.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        Whether the window is symmetric. (Has no effect for boxcar.)
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1
 
     """
     return np.ones(M, float)
 
 
 def triang(M, sym=True):
-    """The M-point triangular window.
+    """Return a triangular window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
 
     """
     if M < 1:
@@ -42,7 +72,22 @@ def triang(M, sym=True):
 
 
 def parzen(M, sym=True):
-    """The M-point Parzen window.
+    """Return a Parzen window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
 
     """
     if M < 1:
@@ -65,7 +110,22 @@ def parzen(M, sym=True):
 
 
 def bohman(M, sym=True):
-    """The M-point Bohman window.
+    """Return a Bohman window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
 
     """
     if M < 1:
@@ -84,9 +144,75 @@ def bohman(M, sym=True):
 
 
 def blackman(M, sym=True):
-    """The M-point Blackman window.
+    r"""Return a Blackman window.
+
+    The Blackman window is a taper formed by using the the first three
+    terms of a summation of cosines. It was designed to have close to the
+    minimal leakage possible.  It is close to optimal, only slightly worse
+    than a Kaiser window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
+
+    Notes
+    -----
+    The Blackman window is defined as
+
+    .. math::  w(n) = 0.42 - 0.5 \cos(2\pi n/M) + 0.08 \cos(4\pi n/M)
+
+    Most references to the Blackman window come from the signal processing
+    literature, where it is used as one of many windowing functions for
+    smoothing values.  It is also known as an apodization (which means
+    "removing the foot", i.e. smoothing discontinuities at the beginning
+    and end of the sampled signal) or tapering function. It is known as a
+    "near optimal" tapering function, almost as good (by some measures)
+    as the Kaiser window.
+
+    References
+    ----------
+    .. [1] Blackman, R.B. and Tukey, J.W., (1958) The measurement of power spectra,
+           Dover Publications, New York.
+    .. [2] Oppenheim, A.V., and R.W. Schafer. Discrete-Time Signal Processing.
+           Upper Saddle River, NJ: Prentice-Hall, 1999, pp. 468-471.
+
+    Examples
+    --------
+    Plot the window and the frequency response:
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.blackman(51)
+    >>> plt.plot(window)
+    >>> plt.title("Blackman window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / 25.5
+    >>> mag = np.abs(fftshift(A))
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(mag)
+    >>> response = np.clip(response, -100, 100)
+    >>> plt.plot(freq, response)
+    >>> plt.title("Frequency response of Blackman window")
+    >>> plt.ylabel("Magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    # Docstring adapted from NumPy's blackman function
     if M < 1:
         return np.array([])
     if M == 1:
@@ -103,7 +229,22 @@ def blackman(M, sym=True):
 
 
 def nuttall(M, sym=True):
-    """A minimum 4-term Blackman-Harris window according to Nuttall.
+    """Return a minimum 4-term Blackman-Harris window according to Nuttall.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
 
     """
     if M < 1:
@@ -124,7 +265,22 @@ def nuttall(M, sym=True):
 
 
 def blackmanharris(M, sym=True):
-    """The M-point minimum 4-term Blackman-Harris window.
+    """Return a minimum 4-term Blackman-Harris window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
 
     """
     if M < 1:
@@ -145,7 +301,22 @@ def blackmanharris(M, sym=True):
 
 
 def flattop(M, sym=True):
-    """The M-point Flat top window.
+    """Return a flat top window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
 
     """
     if M < 1:
@@ -167,9 +338,86 @@ def flattop(M, sym=True):
 
 
 def bartlett(M, sym=True):
-    """The M-point Bartlett window.
+    r"""Return a Bartlett window.
+
+    The Bartlett window is very similar to a triangular window, except
+    that the end points are at zero.  It is often used in signal
+    processing for tapering a signal, without generating too much
+    ripple in the frequency domain.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The triangular window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True), with the first
+        and last samples equal to zero.
+
+    Notes
+    -----
+    The Bartlett window is defined as
+
+    .. math:: w(n) = \frac{2}{M-1} \left(
+              \frac{M-1}{2} - \left|n - \frac{M-1}{2}\right|
+              \right)
+
+    Most references to the Bartlett window come from the signal
+    processing literature, where it is used as one of many windowing
+    functions for smoothing values.  Note that convolution with this
+    window produces linear interpolation.  It is also known as an
+    apodization (which means"removing the foot", i.e. smoothing
+    discontinuities at the beginning and end of the sampled signal) or
+    tapering function. The fourier transform of the Bartlett is the product
+    of two sinc functions.
+    Note the excellent discussion in Kanasewich.
+
+    References
+    ----------
+    .. [1] M.S. Bartlett, "Periodogram Analysis and Continuous Spectra",
+           Biometrika 37, 1-16, 1950.
+    .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics",
+           The University of Alberta Press, 1975, pp. 109-110.
+    .. [3] A.V. Oppenheim and R.W. Schafer, "Discrete-Time Signal
+           Processing", Prentice-Hall, 1999, pp. 468-471.
+    .. [4] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+    .. [5] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
+           "Numerical Recipes", Cambridge University Press, 1986, page 429.
+
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.bartlett(51)
+    >>> plt.plot(window)
+    >>> plt.title("Bartlett window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / 25.5
+    >>> mag = np.abs(fftshift(A))
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(mag)
+    >>> response = np.clip(response, -100, 100)
+    >>> plt.plot(freq, response)
+    >>> plt.title("Frequency response of Bartlett window")
+    >>> plt.ylabel("Magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    # Docstring adapted from NumPy's bartlett function
     if M < 1:
         return np.array([])
     if M == 1:
@@ -186,9 +434,81 @@ def bartlett(M, sym=True):
 
 
 def hann(M, sym=True):
-    """The M-point Hann window.
+    r"""Return a Hann window.
+
+    The Hann window is a taper formed by using a raised cosine or sine-squared
+    with ends that touch zero.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+    The Hann window is defined as
+
+    .. math::  w(n) = 0.5 - 0.5cos\left(\frac{2\pi{n}}{M-1}\right)
+               \qquad 0 \leq n \leq M-1
+
+    The window was named for Julius van Hann, an Austrian meterologist. It is
+    also known as the Cosine Bell. It is sometimes erroneously referred to as the
+    "Hanning" window, from the use of "hann" as a verb in the original paper and
+    confusion with the very similar Hamming window.
+
+    Most references to the Hann window come from the signal processing
+    literature, where it is used as one of many windowing functions for
+    smoothing values.  It is also known as an apodization (which means
+    "removing the foot", i.e. smoothing discontinuities at the beginning
+    and end of the sampled signal) or tapering function.
+
+    References
+    ----------
+    .. [1] Blackman, R.B. and Tukey, J.W., (1958) The measurement of power
+           spectra, Dover Publications, New York.
+    .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics",
+           The University of Alberta Press, 1975, pp. 106-108.
+    .. [3] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+    .. [4] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
+           "Numerical Recipes", Cambridge University Press, 1986, page 425.
+
+    Examples
+    --------
+    Plot the window and its frequency response:
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.hann(51)
+    >>> plt.plot(window)
+    >>> plt.title("Hann window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / 25.5
+    >>> mag = np.abs(fftshift(A))
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(mag)
+    >>> response = np.clip(response, -100, 100)
+    >>> plt.plot(freq, response)
+    >>> plt.title("Frequency response of the Hann window")
+    >>> plt.ylabel("Magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    # Docstring adapted from NumPy's hanning function
     if M < 1:
         return np.array([])
     if M == 1:
@@ -206,7 +526,22 @@ hanning = hann
 
 
 def barthann(M, sym=True):
-    """Return the M-point modified Bartlett-Hann window.
+    """Return a modified Bartlett-Hann window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
 
     """
     if M < 1:
@@ -225,9 +560,79 @@ def barthann(M, sym=True):
 
 
 def hamming(M, sym=True):
-    """The M-point Hamming window.
+    r"""Return a Hamming window.
+
+    The Hamming window is a taper formed by using a raised cosine with
+    non-zero endpoints, optimized to minimize the nearest side lobe.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
+
+    Notes
+    -----
+    The Hamming window is defined as
+
+    .. math::  w(n) = 0.54 - 0.46cos\left(\frac{2\pi{n}}{M-1}\right)
+               \qquad 0 \leq n \leq M-1
+
+    The Hamming was named for R. W. Hamming, an associate of J. W. Tukey and
+    is described in Blackman and Tukey. It was recommended for smoothing the
+    truncated autocovariance function in the time domain.
+    Most references to the Hamming window come from the signal processing
+    literature, where it is used as one of many windowing functions for
+    smoothing values.  It is also known as an apodization (which means
+    "removing the foot", i.e. smoothing discontinuities at the beginning
+    and end of the sampled signal) or tapering function.
+
+    References
+    ----------
+    .. [1] Blackman, R.B. and Tukey, J.W., (1958) The measurement of power
+           spectra, Dover Publications, New York.
+    .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics", The
+           University of Alberta Press, 1975, pp. 109-110.
+    .. [3] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+    .. [4] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
+           "Numerical Recipes", Cambridge University Press, 1986, page 425.
+
+    Examples
+    --------
+    Plot the window and the frequency response:
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.hamming(51)
+    >>> plt.plot(window)
+    >>> plt.title("Hamming window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / 25.5
+    >>> mag = np.abs(fftshift(A))
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(mag)
+    >>> response = np.clip(response, -100, 100)
+    >>> plt.plot(freq, response)
+    >>> plt.title("Frequency response of Hamming window")
+    >>> plt.ylabel("Magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    # Docstring adapted from NumPy's hamming function
     if M < 1:
         return np.array([])
     if M == 1:
@@ -243,9 +648,107 @@ def hamming(M, sym=True):
 
 
 def kaiser(M, beta, sym=True):
-    """Return a Kaiser window of length M with shape parameter beta.
+    r"""Return a Kaiser window.
+
+    The Kaiser window is a taper formed by using a Bessel function.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    beta : float
+        Shape parameter, determines trade-off between main-lobe width and
+        side lobe level. As beta gets large, the window narrows.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
+
+    Notes
+    -----
+    The Kaiser window is defined as
+
+    .. math::  w(n) = I_0\left( \beta \sqrt{1-\frac{4n^2}{(M-1)^2}}
+               \right)/I_0(\beta)
+
+    with
+
+    .. math:: \quad -\frac{M-1}{2} \leq n \leq \frac{M-1}{2},
+
+    where :math:`I_0` is the modified zeroth-order Bessel function.
+
+    The Kaiser was named for Jim Kaiser, who discovered a simple approximation
+    to the DPSS window based on Bessel functions.
+    The Kaiser window is a very good approximation to the Digital Prolate
+    Spheroidal Sequence, or Slepian window, which is the transform which
+    maximizes the energy in the main lobe of the window relative to total
+    energy.
+
+    The Kaiser can approximate many other windows by varying the beta
+    parameter.
+
+    ====  =======================
+    beta  Window shape
+    ====  =======================
+    0     Rectangular
+    5     Similar to a Hamming
+    6     Similar to a Hann
+    8.6   Similar to a Blackman
+    ====  =======================
+
+    A beta value of 14 is probably a good starting point. Note that as beta
+    gets large, the window narrows, and so the number of samples needs to be
+    large enough to sample the increasingly narrow spike, otherwise nans will
+    get returned.
+
+    Most references to the Kaiser window come from the signal processing
+    literature, where it is used as one of many windowing functions for
+    smoothing values.  It is also known as an apodization (which means
+    "removing the foot", i.e. smoothing discontinuities at the beginning
+    and end of the sampled signal) or tapering function.
+
+    References
+    ----------
+    .. [1] J. F. Kaiser, "Digital Filters" - Ch 7 in "Systems analysis by
+           digital computer", Editors: F.F. Kuo and J.F. Kaiser, p 218-285.
+           John Wiley and Sons, New York, (1966).
+    .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics", The
+           University of Alberta Press, 1975, pp. 177-178.
+    .. [3] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+
+    Examples
+    --------
+    Plot the window and the frequency response:
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.kaiser(51, 14)
+    >>> plt.plot(window)
+    >>> plt.title("Kaiser window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / 25.5
+    >>> mag = np.abs(fftshift(A))
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(mag)
+    >>> response = np.clip(response, -100, 100)
+    >>> plt.plot(freq, response)
+    >>> plt.title("Frequency response of Kaiser window")
+    >>> plt.ylabel("Magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    # Docstring adapted from NumPy's kaiser function
     if M < 1:
         return np.array([])
     if M == 1:
@@ -263,7 +766,30 @@ def kaiser(M, beta, sym=True):
 
 
 def gaussian(M, std, sym=True):
-    """Return a Gaussian window of length M with standard-deviation std.
+    r"""Return a Gaussian window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    std : float
+        The standard deviation, sigma.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
+
+    Notes
+    -----
+    The Gaussian window is defined as
+
+    .. math::  w(n) = e^{ -\frac{1}{2}\left(\frac{n}{\sigma}\right)^2 }
 
     """
     if M < 1:
@@ -282,10 +808,37 @@ def gaussian(M, std, sym=True):
 
 
 def general_gaussian(M, p, sig, sym=True):
-    """Return a window with a generalized Gaussian shape.
+    r"""Return a window with a generalized Gaussian shape.
 
-    The Gaussian shape is defined as ``exp(-0.5*abs(x/sig)**(2*p))``, the
-    half-power point is at ``(2*log(2)))**(1/(2*p)) * sig``.
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    p : float
+        Shape parameter.  p = 1 is identical to :func:`~gaussian`, p = 0.5 is
+        the same shape as the Laplace distribution.
+    sig : float
+        The standard deviation, sigma.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if the number of samples is even and sym is True).
+
+    Notes
+    -----
+    The generalized Gaussian window is defined as
+
+    .. math::  w(n) = e^{ -\frac{1}{2}\left|\frac{n}{\sigma}\right|^{2p} }
+
+    the half-power point is at
+
+    .. math::  (2 \log(2))^{1/(2 p)} \sigma
 
     """
     if M < 1:
@@ -305,16 +858,23 @@ def general_gaussian(M, p, sig, sym=True):
 # `chebwin` contributed by Kumar Appaiah.
 
 def chebwin(M, at, sym=True):
-    """Dolph-Chebyshev window.
+    """Return a Dolph-Chebyshev window.
 
     Parameters
     ----------
     M : int
-        Window size.
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
     at : float
         Attenuation (in dB).
-    sym : bool
-        Generates symmetric window if True.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value always normalized to 1
 
     """
     if M < 1:
@@ -358,7 +918,26 @@ def chebwin(M, at, sym=True):
 
 
 def slepian(M, width, sym=True):
-    """Return the M-point slepian window.
+    """Return a digital Slepian window.
+
+    Used to maximize the energy concentration in the main lobe.  Also called
+    the digital prolate spheroidal sequence (DPSS).
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    width : float
+        Bandwidth
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value always normalized to 1
 
     """
     if (M * width > 27.38):
@@ -406,7 +985,7 @@ def get_window(window, Nx, fftbins=True):
     -----
     Window types:
 
-        boxcar, triang, blackman, hamming, hanning, bartlett,
+        boxcar, triang, blackman, hamming, hann, bartlett, flattop,
         parzen, bohman, blackmanharris, nuttall, barthann,
         kaiser (needs beta), gaussian (needs std),
         general_gaussian (needs power, width),
@@ -428,17 +1007,17 @@ def get_window(window, Nx, fftbins=True):
 
     Examples
     --------
-    >>> get_window('triang', 7)
+    >>> from scipy import signal
+    >>> signal.get_window('triang', 7)
     array([ 0.25,  0.5 ,  0.75,  1.  ,  0.75,  0.5 ,  0.25])
-    >>> get_window(('kaiser', 4.0), 9)
+    >>> signal.get_window(('kaiser', 4.0), 9)
     array([ 0.08848053,  0.32578323,  0.63343178,  0.89640418,  1.        ,
             0.89640418,  0.63343178,  0.32578323,  0.08848053])
-    >>> get_window(4.0, 9)
+    >>> signal.get_window(4.0, 9)
     array([ 0.08848053,  0.32578323,  0.63343178,  0.89640418,  1.        ,
             0.89640418,  0.63343178,  0.32578323,  0.08848053])
 
     """
-
     sym = not fftbins
     try:
         beta = float(window)
@@ -468,7 +1047,7 @@ def get_window(window, Nx, fftbins=True):
         elif winstr in ['bartlett', 'bart', 'brt']:
             winfunc = bartlett
         elif winstr in ['hanning', 'hann', 'han']:
-            winfunc = hanning
+            winfunc = hann
         elif winstr in ['blackmanharris', 'blackharr', 'bkh']:
             winfunc = blackmanharris
         elif winstr in ['parzen', 'parz', 'par']:
@@ -488,9 +1067,9 @@ def get_window(window, Nx, fftbins=True):
         elif winstr in ['general gaussian', 'general_gaussian',
                         'general gauss', 'general_gauss', 'ggs']:
             winfunc = general_gaussian
-        elif winstr in ['boxcar', 'box', 'ones']:
+        elif winstr in ['boxcar', 'box', 'ones', 'rect', 'rectangular']:
             winfunc = boxcar
-        elif winstr in ['slepian', 'slep', 'optimal', 'dss']:
+        elif winstr in ['slepian', 'slep', 'optimal', 'dpss', 'dss']:
             winfunc = slepian
         elif winstr in ['chebwin', 'cheb']:
             winfunc = chebwin
