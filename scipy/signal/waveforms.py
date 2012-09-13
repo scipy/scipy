@@ -13,18 +13,20 @@ __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly']
 
 def sawtooth(t, width=1):
     """
-    Return a periodic sawtooth waveform.
+    Return a periodic sawtooth or triangle waveform.
 
     The sawtooth waveform has a period 2*pi, rises from -1 to 1 on the
-    interval 0 to width*2*pi and drops from 1 to -1 on the interval
-    width*2*pi to 2*pi. `width` must be in the interval [0,1].
+    interval 0 to width*2*pi, then drops from 1 to -1 on the interval
+    width*2*pi to 2*pi. `width` must be in the interval [0, 1].
 
     Parameters
     ----------
     t : array_like
         Time.
     width : float, optional
-        Width of the waveform. Default is 1.
+        Width of the rising ramp as a proportion of the total cycle. 
+        Default is 1, producing a rising ramp, while 0 produces a falling 
+        ramp.  `t` = 0.5 produces a triangle wave.
 
     Returns
     -------
@@ -33,9 +35,11 @@ def sawtooth(t, width=1):
 
     Examples
     --------
+    A 5 Hz waveform sampled at 500 Hz for 1 second:
+    
     >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(0, 20*np.pi, 500)
-    >>> plt.plot(x, sp.signal.sawtooth(x))
+    >>> t = np.linspace(0, 1, 500, endpoint=False)
+    >>> plt.plot(t, scipy.signal.sawtooth(2 * np.pi * 5 * t))
 
     """
     t, w = asarray(t), asarray(width)
@@ -83,12 +87,21 @@ def square(t, duty=0.5):
     t : array_like
         The input time array.
     duty : float, optional
-        Duty cycle.
+        Duty cycle.  Default is 0.5 (50% duty cycle)
 
     Returns
     -------
-    y : array_like
-        The output square wave.
+    y : ndarray
+        Output array containing the square waveform.
+
+    Examples
+    --------
+    A 5 Hz waveform sampled at 500 Hz for 1 second:
+    
+    >>> import matplotlib.pyplot as plt
+    >>> t = np.linspace(0, 1, 500, endpoint=False)
+    >>> plt.plot(t, scipy.signal.square(2 * np.pi * 5 * t))
+    >>> ylim(-2, 2)
 
     """
     t, w = asarray(t), asarray(duty)
@@ -127,7 +140,7 @@ def square(t, duty=0.5):
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                retenv=False):
     """
-    Return a gaussian modulated sinusoid: exp(-a t^2) exp(1j*2*pi*fc*t).
+    Return a Gaussian modulated sinusoid: exp(-a t^2) exp(1j*2*pi*fc*t).
 
     If `retquad` is True, then return the real and imaginary parts
     (in-phase and quadrature).
@@ -143,7 +156,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     bw : float, optional
         Fractional bandwidth in frequency domain of pulse (Hz).
         Default is 0.5.
-    bwr: float, optional
+    bwr : float, optional
         Reference level at which fractional bandwidth is calculated (dB).
         Default is -6.
     tpr : float, optional
@@ -155,6 +168,29 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
         of the signal.  Default is False.
     retenv : bool, optional
         If True, return the envelope of the signal.  Default is False.
+
+    Returns
+    -------
+    yI : ndarray
+        Real part of signal.  Always returned.
+    yQ : ndarray
+        Imaginary part of signal.  Only returned if `retquad` is True.
+    yenv : ndarray
+        Envelope of signal.  Only returned if `retenv` is True.
+        
+    See Also
+    --------
+    scipy.signal.morlet
+
+    Examples
+    --------
+    Plot real, imaginary, and envelope for a 5 Hz pulse, sampled at 100 Hz 
+    for 2 seconds:
+    
+    >>> import matplotlib.pyplot as plt
+    >>> t = linspace(-1, 1, 2 * 100, endpoint=False)
+    >>> i, q, e = scipy.signal.gausspulse(t, fc=5, retquad=True, retenv=True)
+    >>> plot(t, i, t, q, t, e, '--')
 
     """
     if fc < 0:
@@ -224,13 +260,15 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
     Returns
     -------
-    A numpy array containing the signal evaluated at 't' with the requested
-    time-varying frequency.  More precisely, the function returns:
-
-        ``cos(phase + (pi/180)*phi)``
-
-    where `phase` is the integral (from 0 to t) of ``2*pi*f(t)``.
-    ``f(t)`` is defined below.
+    y : ndarray
+        A numpy array containing the signal evaluated at `t` with the 
+        requested time-varying frequency.  More precisely, the function 
+        returns:
+        
+            ``cos(phase + (pi/180)*phi)``
+        
+        where `phase` is the integral (from 0 to `t`) of ``2*pi*f(t)``.
+        ``f(t)`` is defined below.
 
     See Also
     --------
@@ -280,7 +318,6 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
         f1 must be positive, and f0 must be greater than f1.
 
     """
-
     # 'phase' is computed in _chirp_phase, to make testing easier.
     phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero)
     # Convert  phi to radians.
@@ -363,13 +400,15 @@ def sweep_poly(t, poly, phi=0):
 
     Returns
     -------
-    A numpy array containing the signal evaluated at 't' with the requested
-    time-varying frequency.  More precisely, the function returns
-
-        ``cos(phase + (pi/180)*phi)``
-
-    where `phase` is the integral (from 0 to t) of ``2 * pi * f(t)``;
-    ``f(t)`` is defined above.
+    y : ndarray
+        A numpy array containing the signal evaluated at `t` with the 
+        requested time-varying frequency.  More precisely, the function 
+        returns:
+        
+            ``cos(phase + (pi/180)*phi)``
+        
+        where `phase` is the integral (from 0 to t) of ``2 * pi * f(t)``;
+        ``f(t)`` is defined above.
 
     See Also
     --------
@@ -378,6 +417,7 @@ def sweep_poly(t, poly, phi=0):
     Notes
     -----
     .. versionadded:: 0.8.0
+    
     """
     # 'phase' is computed in _sweep_poly_phase, to make testing easier.
     phase = _sweep_poly_phase(t, poly)
