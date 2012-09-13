@@ -73,6 +73,7 @@ def daub(p):
 
 def qmf(hk):
     """Return high-pass qmf filter from low-pass
+
     """
     N = len(hk) - 1
     asgn = [{0: 1, 1:-1}[k % 2] for k in range(N + 1)]
@@ -217,25 +218,31 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     Notes
     -----
-    The standard version:
+    The standard version::
+
         pi**-0.25 * exp(1j*w*x) * exp(-0.5*(x**2))
 
-        This commonly used wavelet is often referred to simply as the
-        Morlet wavelet.  Note that, this simplified version can cause
-        admissibility problems at low values of w.
+    This commonly used wavelet is often referred to simply as the
+    Morlet wavelet.  Note that this simplified version can cause
+    admissibility problems at low values of w.
 
-    The complete version:
+    The complete version::
+
         pi**-0.25 * (exp(1j*w*x) - exp(-0.5*(w**2))) * exp(-0.5*(x**2))
 
-        The complete version of the Morlet wavelet, with a correction
-        term to improve admissibility. For w greater than 5, the
-        correction term is negligible.
+    The complete version of the Morlet wavelet, with a correction
+    term to improve admissibility. For w greater than 5, the
+    correction term is negligible.
 
     Note that the energy of the return wavelet is not normalised
     according to s.
 
     The fundamental frequency of this wavelet in Hz is given
     by f = 2*s*w*r / M where r is the sampling rate.
+
+    See Also
+    --------
+    scipy.signal.gausspulse
 
     """
     x = linspace(-s * 2 * pi, s * 2 * pi, M)
@@ -258,15 +265,15 @@ def ricker(points, a):
 
     Parameters
     ----------
-    a: scalar
+    a : scalar
         Width parameter of the wavelet.
-    points: int, optional
+    points : int, optional
         Number of points in `vector`. Default is ``10*a``
         Will be centered around 0.
 
     Returns
     -------
-    vector: 1-D ndarray
+    vector : 1-D ndarray
         array of length `points` in shape of ricker curve.
 
     Examples
@@ -294,7 +301,7 @@ def ricker(points, a):
 def cwt(data, wavelet, widths):
     """
     Performs a continuous wavelet transform on `data`,
-    using the wavelet function. A CWT performs a convolution
+    using the `wavelet` function. A CWT performs a convolution
     with `data` using the `wavelet` function, which is characterized
     by a width parameter and length parameter.
 
@@ -314,7 +321,7 @@ def cwt(data, wavelet, widths):
 
     Returns
     -------
-    cwt: 2-D ndarray
+    cwt : 2-D ndarray
         Will be len(widths) x len(data).
 
     Notes
