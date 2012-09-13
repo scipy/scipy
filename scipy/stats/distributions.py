@@ -16,7 +16,7 @@ from scipy import integrate
 from scipy.special import gammaln as gamln
 
 import inspect
-from numpy import alltrue, where, arange, putmask, \
+from numpy import all, where, arange, putmask, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
      arctan, tanh, ndarray, cos, cosh, sinh, newaxis, array, log1p, expm1
@@ -56,13 +56,12 @@ __all__ = [
 
 floatinfo = numpy.finfo(float)
 
-errp = special.errprint
-arr = asarray
+#errp = special.errprint
+#arr = asarray
 gam = special.gamma
 
 import types
 from scipy.misc import doccer
-all = alltrue
 sgf = vectorize
 
 try:
@@ -501,7 +500,7 @@ def valarray(shape,value=nan,typecode=None):
     if typecode is not None:
         out = out.astype(typecode)
     if not isinstance(out, ndarray):
-        out = arr(out)
+        out = asarray(out)
     return out
 
 # This should be rewritten
@@ -733,7 +732,7 @@ class rv_generic(object):
         a, b: array_like (float)
             end-points of range that contain alpha % of the rvs
         """
-        alpha = arr(alpha)
+        alpha = asarray(alpha)
         if any((alpha > 1) | (alpha < 0)):
             raise ValueError("alpha must be between 0 and 1 inclusive")
         q1 = (1.0-alpha)/2
@@ -1116,7 +1115,7 @@ class rv_continuous(rv_generic):
         #  0's where they are not.
         cond = 1
         for arg in args:
-            cond = logical_and(cond,(arr(arg) > 0))
+            cond = logical_and(cond,(asarray(arg) > 0))
         return cond
 
     def _pdf(self,x,*args):
@@ -1188,9 +1187,9 @@ class rv_continuous(rv_generic):
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = map(arr,(x,loc,scale))
-        args = tuple(map(arr,args))
-        x = arr((x-loc)*1.0/scale)
+        x,loc,scale = map(asarray,(x,loc,scale))
+        args = tuple(map(asarray,args))
+        x = asarray((x-loc)*1.0/scale)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
         cond = cond0 & cond1
@@ -1230,9 +1229,9 @@ class rv_continuous(rv_generic):
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = map(arr,(x,loc,scale))
-        args = tuple(map(arr,args))
-        x = arr((x-loc)*1.0/scale)
+        x,loc,scale = map(asarray,(x,loc,scale))
+        args = tuple(map(asarray,args))
+        x = asarray((x-loc)*1.0/scale)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
         cond = cond0 & cond1
@@ -1272,8 +1271,8 @@ class rv_continuous(rv_generic):
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = map(arr,(x,loc,scale))
-        args = tuple(map(arr,args))
+        x,loc,scale = map(asarray,(x,loc,scale))
+        args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x > self.a) & (x < self.b)
@@ -1313,8 +1312,8 @@ class rv_continuous(rv_generic):
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = map(arr,(x,loc,scale))
-        args = tuple(map(arr,args))
+        x,loc,scale = map(asarray,(x,loc,scale))
+        args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x > self.a) & (x < self.b)
@@ -1355,8 +1354,8 @@ class rv_continuous(rv_generic):
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = map(arr,(x,loc,scale))
-        args = tuple(map(arr,args))
+        x,loc,scale = map(asarray,(x,loc,scale))
+        args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x > self.a) & (x < self.b)
@@ -1399,8 +1398,8 @@ class rv_continuous(rv_generic):
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = map(arr,(x,loc,scale))
-        args = tuple(map(arr,args))
+        x,loc,scale = map(asarray,(x,loc,scale))
+        args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x > self.a) & (x < self.b)
@@ -1441,8 +1440,8 @@ class rv_continuous(rv_generic):
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        q,loc,scale = map(arr,(q,loc,scale))
-        args = tuple(map(arr,args))
+        q,loc,scale = map(asarray,(q,loc,scale))
+        args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
         cond1 = (q > 0) & (q < 1)
         cond2 = (q==1) & cond0
@@ -1482,8 +1481,8 @@ class rv_continuous(rv_generic):
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        q,loc,scale = map(arr,(q,loc,scale))
-        args = tuple(map(arr,args))
+        q,loc,scale = map(asarray,(q,loc,scale))
+        args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
         cond1 = (q > 0) & (q < 1)
         cond2 = (q==1) & cond0
@@ -1545,8 +1544,8 @@ class rv_continuous(rv_generic):
         if loc is None: loc = 0.0
         if moments is None: moments = 'mv'
 
-        loc,scale = map(arr,(loc,scale))
-        args = tuple(map(arr,args))
+        loc,scale = map(asarray,(loc,scale))
+        args = tuple(map(asarray,args))
         cond = self._argcheck(*args) & (scale > 0) & (loc==loc)
 
         signature = inspect.getargspec(self._stats.im_func)
@@ -1687,7 +1686,7 @@ class rv_continuous(rv_generic):
             raise ValueError("Not enough input arguments.")
         if not self._argcheck(*args) or scale <= 0:
             return inf
-        x = arr((x-loc) / scale)
+        x = asarray((x-loc) / scale)
         cond0 = (x <= self.a) | (x >= self.b)
         if (any(cond0)):
             return inf
@@ -1838,8 +1837,8 @@ class rv_continuous(rv_generic):
 
         """
         mu, mu2 = self.stats(*args,**{'moments':'mv'})
-        muhat = arr(data).mean()
-        mu2hat = arr(data).var()
+        muhat = asarray(data).mean()
+        mu2hat = asarray(data).var()
         Shat = sqrt(mu2hat / mu2)
         Lhat = muhat - Shat*mu
         return Lhat, Shat
@@ -1907,7 +1906,7 @@ class rv_continuous(rv_generic):
         """
         loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        args = tuple(map(arr,args))
+        args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
         output = zeros(shape(cond0),'d')
         place(output,(1-cond0),self.badvalue)
@@ -2089,7 +2088,7 @@ class alpha_gen(rv_continuous):
     def _cdf(self, x, a):
         return special.ndtr(a-1.0/x) / special.ndtr(a)
     def _ppf(self, q, a):
-        return 1.0/arr(a-special.ndtri(q*special.ndtr(a)))
+        return 1.0/asarray(a-special.ndtri(q*special.ndtr(a)))
     def _stats(self, a):
         return [inf]*2 + [nan]*2
 alpha = alpha_gen(a=0.0, name='alpha', shapes='a')
@@ -2471,9 +2470,9 @@ class chi_gen(rv_continuous):
     def _stats(self, df):
         mu = sqrt(2)*special.gamma(df/2.0+0.5)/special.gamma(df/2.0)
         mu2 = df - mu*mu
-        g1 = (2*mu**3.0 + mu*(1-2*df))/arr(mu2**1.5)
+        g1 = (2*mu**3.0 + mu*(1-2*df))/asarray(mu2**1.5)
         g2 = 2*df*(1.0-df)-6*mu**4 + 4*mu**2 * (2*df-1)
-        g2 /= arr(mu2**2.0)
+        g2 /= asarray(mu2**2.0)
         return mu, mu2, g1, g2
 chi = chi_gen(a=0.0, name='chi', shapes='df')
 
@@ -2624,7 +2623,7 @@ class dweibull_gen(rv_continuous):
         return where(x > 0, 1-Cx1, Cx1)
     def _ppf_skip(self, q, c):
         fac = where(q<=0.5,2*q,2*q-1)
-        fac = pow(arr(log(1.0/fac)),1.0/c)
+        fac = pow(asarray(log(1.0/fac)),1.0/c)
         return where(q>0.5,fac,-fac)
     def _stats(self, c):
         var = gam(1+2.0/c)
@@ -2741,15 +2740,15 @@ class exponweib_gen(rv_continuous):
     """
     def _pdf(self, x, a, c):
         exc = exp(-x**c)
-        return a*c*(1-exc)**arr(a-1) * exc * x**(c-1)
+        return a*c*(1-exc)**asarray(a-1) * exc * x**(c-1)
     def _logpdf(self, x, a, c):
         exc = exp(-x**c)
         return log(a) + log(c) + (a-1.)*log(1-exc) - x**c + (c-1.0)*log(x)
     def _cdf(self, x, a, c):
         exm1c = -expm1(-x**c)
-        return arr((exm1c)**a)
+        return asarray((exm1c)**a)
     def _ppf(self, q, a, c):
-        return (-log1p(-q**(1.0/a)))**arr(1.0/c)
+        return (-log1p(-q**(1.0/a)))**asarray(1.0/c)
 exponweib = exponweib_gen(a=0.0, name='exponweib', shapes="a, c")
 
 
@@ -2772,17 +2771,17 @@ class exponpow_gen(rv_continuous):
 
     """
     def _pdf(self, x, b):
-        xbm1 = arr(x**(b-1.0))
+        xbm1 = asarray(x**(b-1.0))
         xb = xbm1 * x
         return exp(1)*b*xbm1 * exp(xb - exp(xb))
     def _logpdf(self, x, b):
         xb = x**(b-1.0)*x
         return 1 + log(b) + (b-1.0)*log(x) + xb - exp(xb)
     def _cdf(self, x, b):
-        xb = arr(x**b)
+        xb = asarray(x**b)
         return -expm1(-expm1(xb))
     def _sf(self, x, b):
-        xb = arr(x**b)
+        xb = asarray(x**b)
         return exp(-expm1(xb))
     def _isf(self, x, b):
         return (log1p(-log(x)))**(1./b)
@@ -2816,11 +2815,11 @@ class fatiguelife_gen(rv_continuous):
         t = 1.0 + 2*x2 + 2*x*sqrt(1 + x2)
         return t
     def _pdf(self, x, c):
-        return (x+1)/arr(2*c*sqrt(2*pi*x**3))*exp(-(x-1)**2/arr((2.0*x*c**2)))
+        return (x+1)/asarray(2*c*sqrt(2*pi*x**3))*exp(-(x-1)**2/asarray((2.0*x*c**2)))
     def _logpdf(self, x, c):
         return log(x+1) - (x-1)**2 / (2.0*x*c**2) - log(2*c) - 0.5*(log(2*pi) + 3*log(x))
     def _cdf(self, x, c):
-        return special.ndtr(1.0/c*(sqrt(x)-1.0/arr(sqrt(x))))
+        return special.ndtr(1.0/c*(sqrt(x)-1.0/asarray(sqrt(x))))
     def _ppf(self, q, c):
         tmp = c*special.ndtri(q)
         return 0.25*(tmp + sqrt(tmp**2 + 4))**2
@@ -2887,8 +2886,8 @@ class f_gen(rv_continuous):
     def _rvs(self, dfn, dfd):
         return mtrand.f(dfn, dfd, self._size)
     def _pdf(self, x, dfn, dfd):
-#        n = arr(1.0*dfn)
-#        m = arr(1.0*dfd)
+#        n = asarray(1.0*dfn)
+#        m = asarray(1.0*dfd)
 #        Px = m**(m/2) * n**(n/2) * x**(n/2-1)
 #        Px /= (m+n*x)**((n+m)/2)*special.beta(n/2,m/2)
         return exp(self._logpdf(x, dfn, dfd))
@@ -2905,9 +2904,9 @@ class f_gen(rv_continuous):
     def _ppf(self, q, dfn, dfd):
         return special.fdtri(dfn, dfd, q)
     def _stats(self, dfn, dfd):
-        v2 = arr(dfd*1.0)
-        v1 = arr(dfn*1.0)
-        mu = where (v2 > 2, v2 / arr(v2 - 2), inf)
+        v2 = asarray(dfd*1.0)
+        v1 = asarray(dfn*1.0)
+        mu = where (v2 > 2, v2 / asarray(v2 - 2), inf)
         mu2 = 2*v2*v2*(v2+v1-2)/(v1*(v2-2)**2 * (v2-4))
         mu2 = where(v2 > 4, mu2, inf)
         g1 = 2*(v2+2*v1-2)/(v2-6)*sqrt((2*v2-4)/(v1*(v2+v1-2)))
@@ -3107,16 +3106,16 @@ class genpareto_gen(rv_continuous):
 
     """
     def _argcheck(self, c):
-        c = arr(c)
+        c = asarray(c)
         self.b = where(c < 0, 1.0/abs(c), inf)
         return where(c==0, 0, 1)
     def _pdf(self, x, c):
-        Px = pow(1+c*x,arr(-1.0-1.0/c))
+        Px = pow(1+c*x,asarray(-1.0-1.0/c))
         return Px
     def _logpdf(self, x, c):
         return (-1.0-1.0/c) * np.log1p(c*x)
     def _cdf(self, x, c):
-        return 1.0 - pow(1+c*x,arr(-1.0/c))
+        return 1.0 - pow(1+c*x,asarray(-1.0/c))
     def _ppf(self, q, c):
         vals = 1.0/c * (pow(1-q, -c)-1)
         return vals
@@ -3406,13 +3405,13 @@ class genhalflogistic_gen(rv_continuous):
         return (c > 0)
     def _pdf(self, x, c):
         limit = 1.0/c
-        tmp = arr(1-c*x)
+        tmp = asarray(1-c*x)
         tmp0 = tmp**(limit-1)
         tmp2 = tmp0*tmp
         return 2*tmp0 / (1+tmp2)**2
     def _cdf(self, x, c):
         limit = 1.0/c
-        tmp = arr(1-c*x)
+        tmp = asarray(1-c*x)
         tmp2 = tmp**(limit)
         return (1.0-tmp2) / (1+tmp2)
     def _ppf(self, q, c):
@@ -3809,7 +3808,7 @@ class invweibull_gen(rv_continuous):
         xc1 = x**(-c)
         return exp(-xc1)
     def _ppf(self, q, c):
-        return pow(-log(q),arr(-1.0/c))
+        return pow(-log(q),asarray(-1.0/c))
     def _entropy(self, c):
         return 1+_EULER + _EULER / c - log(c)
 invweibull = invweibull_gen(a=0, name='invweibull', shapes='c')
@@ -4341,7 +4340,7 @@ class ncx2_gen(rv_continuous):
     def _rvs(self, df, nc):
         return mtrand.noncentral_chisquare(df,nc,self._size)
     def _logpdf(self, x, df, nc):
-        a = arr(df/2.0)
+        a = asarray(df/2.0)
         fac = -nc/2.0 - x/2.0 + (a-1)*np.log(x) - a*np.log(2) - special.gammaln(a)
         return fac + np.nan_to_num(np.log(special.hyp0f1(a, nc * x/4.0)))
     def _pdf(self, x, df, nc):
@@ -4438,7 +4437,7 @@ class t_gen(rv_continuous):
         #sY = sqrt(Y)
         #return 0.5*sqrt(df)*(sY-1.0/sY)
     def _pdf(self, x, df):
-        r = arr(df*1.0)
+        r = asarray(df*1.0)
         Px = exp(gamln((r+1)/2)-gamln(r/2))
         Px /= sqrt(r*pi)*(1+(x**2)/r)**((r+1)/2)
         return Px
@@ -4496,9 +4495,9 @@ class nct_gen(rv_continuous):
         Px = exp(trm1)
         valF = ncx2 / (2*fac1)
         trm1 = sqrt(2)*nc*x*special.hyp1f1(n/2+1,1.5,valF)
-        trm1 /= arr(fac1*special.gamma((n+1)/2))
+        trm1 /= asarray(fac1*special.gamma((n+1)/2))
         trm2 = special.hyp1f1((n+1)/2,0.5,valF)
-        trm2 /= arr(sqrt(fac1)*special.gamma(n/2+1))
+        trm2 /= asarray(sqrt(fac1)*special.gamma(n/2+1))
         Px *= trm1+trm2
         return Px
     def _cdf(self, x, df, nc):
@@ -5088,10 +5087,10 @@ class tukeylambda_gen(rv_continuous):
         return np.ones(np.shape(lam), dtype=bool)
 
     def _pdf(self, x, lam):
-        Fx = arr(special.tklmbda(x,lam))
-        Px = Fx**(lam-1.0) + (arr(1-Fx))**(lam-1.0)
-        Px = 1.0/arr(Px)
-        return where((lam <= 0) | (abs(x) < 1.0/arr(lam)), Px, 0.0)
+        Fx = asarray(special.tklmbda(x,lam))
+        Px = Fx**(lam-1.0) + (asarray(1-Fx))**(lam-1.0)
+        Px = 1.0/asarray(Px)
+        return where((lam <= 0) | (abs(x) < 1.0/asarray(lam)), Px, 0.0)
 
     def _cdf(self, x, lam):
         return special.tklmbda(x, lam)
@@ -5292,12 +5291,12 @@ def entropy(pk, qk=None, base=None):
         The calculated entropy.
 
     """
-    pk = arr(pk)
+    pk = asarray(pk)
     pk = 1.0* pk / sum(pk, axis=0)
     if qk is None:
         vec = where(pk == 0, 0.0, pk*log(pk))
     else:
-        qk = arr(qk)
+        qk = asarray(qk)
         if len(qk) != len(pk):
             raise ValueError("qk and pk must have same length.")
         qk = 1.0*qk / sum(qk, axis=0)
@@ -5333,11 +5332,11 @@ def _drv_nonzero(self, k, *args):
     return 1
 
 def _drv_moment(self, n, *args):
-    n = arr(n)
+    n = asarray(n)
     return sum(self.xk**n[newaxis,...] * self.pk, axis=0)
 
 def _drv_moment_gen(self, t, *args):
-    t = arr(t)
+    t = asarray(t)
     return sum(exp(self.xk * t[newaxis,...]) * self.pk, axis=0)
 
 def _drv2_moment(self, n, *args):
@@ -5807,9 +5806,9 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = map(arr,(k,loc))
-        args = tuple(map(arr,args))
-        k = arr((k-loc))
+        k,loc = map(asarray,(k,loc))
+        args = tuple(map(asarray,args))
+        k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= self.a) & (k <= self.b) & self._nonzero(k,*args)
         cond = cond0 & cond1
@@ -5844,9 +5843,9 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = map(arr,(k,loc))
-        args = tuple(map(arr,args))
-        k = arr((k-loc))
+        k,loc = map(asarray,(k,loc))
+        args = tuple(map(asarray,args))
+        k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= self.a) & (k <= self.b) & self._nonzero(k,*args)
         cond = cond0 & cond1
@@ -5882,9 +5881,9 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = map(arr,(k,loc))
-        args = tuple(map(arr,args))
-        k = arr((k-loc))
+        k,loc = map(asarray,(k,loc))
+        args = tuple(map(asarray,args))
+        k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= self.a) & (k < self.b)
         cond2 = (k >= self.b)
@@ -5922,9 +5921,9 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = map(arr,(k,loc))
-        args = tuple(map(arr,args))
-        k = arr((k-loc))
+        k,loc = map(asarray,(k,loc))
+        args = tuple(map(asarray,args))
+        k = asarray((k-loc))
         cond0 = self._argcheck(*args)
         cond1 = (k >= self.a) & (k < self.b)
         cond2 = (k >= self.b)
@@ -5963,9 +5962,9 @@ class rv_discrete(rv_generic):
         """
         loc= kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = map(arr,(k,loc))
-        args = tuple(map(arr,args))
-        k = arr(k-loc)
+        k,loc = map(asarray,(k,loc))
+        args = tuple(map(asarray,args))
+        k = asarray(k-loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= self.a) & (k <= self.b)
         cond2 = (k < self.a) & cond0
@@ -6002,9 +6001,9 @@ class rv_discrete(rv_generic):
         """
         loc= kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = map(arr,(k,loc))
-        args = tuple(map(arr,args))
-        k = arr(k-loc)
+        k,loc = map(asarray,(k,loc))
+        args = tuple(map(asarray,args))
+        k = asarray(k-loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= self.a) & (k <= self.b)
         cond2 = (k < self.a) & cond0
@@ -6044,8 +6043,8 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        q,loc  = map(arr,(q,loc))
-        args = tuple(map(arr,args))
+        q,loc  = map(asarray,(q,loc))
+        args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
         cond2 = (q==1) & cond0
@@ -6086,8 +6085,8 @@ class rv_discrete(rv_generic):
 
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        q,loc  = map(arr,(q,loc))
-        args = tuple(map(arr,args))
+        q,loc  = map(asarray,(q,loc))
+        args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
         cond2 = (q==1) & cond0
@@ -6153,8 +6152,8 @@ class rv_discrete(rv_generic):
         if loc is None: loc = 0.0
         if moments is None: moments = 'mv'
 
-        loc = arr(loc)
-        args = tuple(map(arr,args))
+        loc = asarray(loc)
+        args = tuple(map(asarray,args))
         cond = self._argcheck(*args) & (loc==loc)
 
         signature = inspect.getargspec(self._stats.im_func)
@@ -6300,8 +6299,8 @@ class rv_discrete(rv_generic):
     def entropy(self, *args, **kwds):
         loc= kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        loc = arr(loc)
-        args = map(arr,args)
+        loc = asarray(loc)
+        args = map(asarray,args)
         cond0 = self._argcheck(*args) & (loc==loc)
         output = zeros(shape(cond0),'d')
         place(output,(1-cond0),self.badvalue)
@@ -6817,8 +6816,8 @@ class poisson_gen(rv_discrete):
         return where((temp >= q), vals1, vals)
     def _stats(self, mu):
         var = mu
-        g1 = 1.0/arr(sqrt(mu))
-        g2 = 1.0 / arr(mu)
+        g1 = 1.0/asarray(sqrt(mu))
+        g2 = 1.0 / asarray(mu)
         return mu, var, g1, g2
 poisson = poisson_gen(name="poisson", longname='A Poisson', shapes="mu")
 
@@ -6958,7 +6957,7 @@ class randint_gen(rv_discrete):
         temp = self._cdf(vals1, min, max)
         return where(temp >= q, vals1, vals)
     def _stats(self, min, max):
-        m2, m1 = arr(max), arr(min)
+        m2, m1 = asarray(max), asarray(min)
         mu = (m2 + m1 - 1.0) / 2
         d = m2 - m1
         var = (d-1)*(d+1.0)/12.0
@@ -7004,24 +7003,24 @@ class zipf_gen(rv_discrete):
     def _argcheck(self, a):
         return a > 1
     def _pmf(self, k, a):
-        Pk = 1.0 / arr(special.zeta(a,1) * k**a)
+        Pk = 1.0 / asarray(special.zeta(a,1) * k**a)
         return Pk
     def _munp(self, n, a):
         return special.zeta(a-n,1) / special.zeta(a,1)
     def _stats(self, a):
-        sv = errp(0)
-        fac = arr(special.zeta(a,1))
+        sv = special.errprint(0)
+        fac = asarray(special.zeta(a,1))
         mu = special.zeta(a-1.0,1)/fac
         mu2p = special.zeta(a-2.0,1)/fac
         var = mu2p - mu*mu
         mu3p = special.zeta(a-3.0,1)/fac
         mu3 = mu3p - 3*mu*mu2p + 2*mu**3
-        g1 = mu3 / arr(var**1.5)
+        g1 = mu3 / asarray(var**1.5)
 
         mu4p = special.zeta(a-4.0,1)/fac
-        sv = errp(sv)
+        sv = special.errprint(sv)
         mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
-        g2 = mu4 / arr(var**2) - 3.0
+        g2 = mu4 / asarray(var**2) - 3.0
         return mu, var, g1, g2
 zipf = zipf_gen(a=1,name='zipf', longname='A Zipf',
                 shapes="a")
