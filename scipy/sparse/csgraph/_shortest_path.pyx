@@ -15,7 +15,7 @@ import numpy as np
 cimport numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
-from _validation import validate_graph
+from scipy.sparse.csgraph._validation import validate_graph
 
 cimport cython
 
@@ -326,7 +326,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
-    indices : array-like or integer, optional
+    indices : array_like or int, optional
         if specified, only compute the paths for the points at the given
         indices.
     return_predecessors : bool, optional
@@ -442,6 +442,7 @@ cdef _dijkstra_directed(
     cdef unsigned int Nind = dist_matrix.shape[0]
     cdef unsigned int N = dist_matrix.shape[1]
     cdef unsigned int i, k, j_source, j_current
+    cdef ITYPE_t j
 
     cdef DTYPE_t weight
 
@@ -502,6 +503,7 @@ cdef _dijkstra_undirected(
     cdef unsigned int Nind = dist_matrix.shape[0]
     cdef unsigned int N = dist_matrix.shape[1]
     cdef unsigned int i, k, j_source, j_current
+    cdef ITYPE_t j
 
     cdef DTYPE_t weight
 
@@ -570,7 +572,8 @@ def bellman_ford(csgraph, directed=True, indices=None,
                  return_predecessors=False,
                  unweighted=False):
     """
-    bellman_ford(csgraph, directed=True, indices=None, return_predecessors=False, unweighted=False)
+    bellman_ford(csgraph, directed=True, indices=None, return_predecessors=False,
+                 unweighted=False)
 
     Compute the shortest path lengths using the Bellman-Ford algorithm.
     
@@ -588,7 +591,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
-    indices : array-like or integer, optional
+    indices : array_like or int, optional
         if specified, only compute the paths for the points at the given
         indices.
     return_predecessors : bool, optional
@@ -779,7 +782,8 @@ def johnson(csgraph, directed=True, indices=None,
             return_predecessors=False,
             unweighted=False):
     """
-    johnson(csgraph, directed=True, indices=None, return_predecessors=False, unweighted=False)
+    johnson(csgraph, directed=True, indices=None, return_predecessors=False,
+            unweighted=False)
 
     Compute the shortest path lengths using Johnson's algorithm.
 
@@ -799,7 +803,7 @@ def johnson(csgraph, directed=True, indices=None,
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
-    indices : array-like or integer, optional
+    indices : array_like or int, optional
         if specified, only compute the paths for the points at the given
         indices.
     return_predecessors : bool, optional
@@ -876,7 +880,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     #------------------------------
     # initialize distance array
-    dist_array = np.empty(N, dtype=DTYPE)
+    dist_array = np.zeros(N, dtype=DTYPE)
 
     csr_data = csgraph.data.copy()
 

@@ -2,4 +2,4 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
-    context.tweak_builder("qhull", use="FLAPACK CLIB")
+    context.tweak_extension("qhull", use="FLAPACK CLIB")

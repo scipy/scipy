@@ -112,20 +112,19 @@ def whiten(obs):
     Returns
     -------
     result : ndarray
-        Contains the values in `obs` scaled by the standard devation
+        Contains the values in `obs` scaled by the standard deviation
         of each column.
 
     Examples
     --------
-    >>> from numpy import array
     >>> from scipy.cluster.vq import whiten
-    >>> features  = array([[  1.9,2.3,1.7],
-    ...                    [  1.5,2.5,2.2],
-    ...                    [  0.8,0.6,1.7,]])
+    >>> features  = np.array([[1.9, 2.3, 1.7],
+    ...                       [1.5, 2.5, 2.2],
+    ...                       [0.8, 0.6, 1.7,]])
     >>> whiten(features)
-    array([[ 3.41250074,  2.20300046,  5.88897275],
-           [ 2.69407953,  2.39456571,  7.62102355],
-           [ 1.43684242,  0.57469577,  5.88897275]])
+    array([[ 4.17944278,  2.69811351,  7.21248917],
+           [ 3.29956009,  2.93273208,  9.33380951],
+           [ 1.75976538,  0.7038557 ,  7.21248917]])
 
     """
     std_dev = std(obs, axis=0)

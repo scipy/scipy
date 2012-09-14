@@ -112,10 +112,10 @@ finally:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/0.11.0-notes.rst'
+RELEASE = 'doc/release/0.12.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v0.10.0'
+LOG_START = 'v0.11.0'
 LOG_END = 'master'
 
 
@@ -128,7 +128,7 @@ PYVER="2.6"
 
 # Paver options object, holds all default dirs
 options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
-        virtualenv=Bunch(packages_to_install=["sphinx==1.0.4", "numpydoc"],
+        virtualenv=Bunch(packages_to_install=["sphinx==1.1.3", "numpydoc"],
                          no_site_packages=False),
         sphinx=Bunch(builddir="build", sourcedir="source", docroot='doc'),
         superpack=Bunch(builddir="build-superpack",

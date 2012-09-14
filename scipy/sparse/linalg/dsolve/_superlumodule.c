@@ -265,7 +265,7 @@ PyObject *PyInit__superlu(void)
     import_array();
 
     if (PyType_Ready(&SciPySuperLUType) < 0) {
-        return;
+        return NULL;
     }
 
     m = PyModule_Create(&moduledef);

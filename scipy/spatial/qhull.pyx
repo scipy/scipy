@@ -29,6 +29,7 @@ cdef extern from "stdio.h":
 
 cdef extern from "math.h":
     double fabs(double x) nogil
+    double sqrt(double x) nogil
 
 cdef extern from "qhull/src/qset.h":
     ctypedef union setelemT:
@@ -123,8 +124,12 @@ _qhull_lock = threading.Lock()
 #------------------------------------------------------------------------------
 
 cdef extern from "qhull_blas.h":
-    void qh_dgesv(int *n, int *nrhs, double *a, int *lda, int *ipiv,
-                  double *b, int *ldb, int *info) nogil
+    void qh_dgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
+                   int *info) nogil
+    void qh_dgetrs(char *trans, int *n, int *nrhs, double *a, int *lda,
+                   int *ipiv, double *b, int *ldb, int *info) nogil
+    void qh_dgecon(char *norm, int *n, double *a, int *lda, double *anorm,
+                   double *rcond, double *work, int *iwork, int *info) nogil
 
 
 #------------------------------------------------------------------------------
@@ -290,7 +295,8 @@ def _qhull_get_facet_array(int ndim, int numpoints):
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
-                                np.ndarray[np.npy_int, ndim=2] vertices):
+                                np.ndarray[np.npy_int, ndim=2] vertices,
+                                double eps):
     """
     Compute barycentric affine coordinate transformations for given
     simplices.
@@ -322,14 +328,19 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     These are stacked into the `Tinvs` returned.
 
     """
-
     cdef np.ndarray[np.double_t, ndim=2] T
     cdef np.ndarray[np.double_t, ndim=3] Tinvs
-    cdef int ivertex
+    cdef int isimplex
     cdef int i, j, n, nrhs, lda, ldb, info
     cdef int ipiv[NPY_MAXDIMS+1]
-    cdef int ndim, nvertex
-    cdef double nan
+    cdef int ndim, nsimplex
+    cdef double centroid[NPY_MAXDIMS], c[NPY_MAXDIMS+1]
+    cdef double *transform
+    cdef double anorm, rcond
+    cdef double nan, rcond_limit
+
+    cdef double work[4*NPY_MAXDIMS]
+    cdef int iwork[NPY_MAXDIMS]
 
     cdef double x1, x2, x3
     cdef double y1, y2, y3
@@ -337,71 +348,71 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
 
     nan = np.nan
     ndim = points.shape[1]
-    nvertex = vertices.shape[0]
+    nsimplex = vertices.shape[0]
 
     T = np.zeros((ndim, ndim), dtype=np.double)
-    Tinvs = np.zeros((nvertex, ndim+1, ndim), dtype=np.double)
+    Tinvs = np.zeros((nsimplex, ndim+1, ndim), dtype=np.double)
+
+    # Maximum inverse condition number to allow: we want at least three
+    # of the digits be significant, to be safe
+    rcond_limit = 1000*eps
 
     with nogil:
-        for ivertex in xrange(nvertex):
-            if ndim == 2:
-                # Manual unrolling of the generic barycentric transform
-                # code below. This is roughly 3.5x faster than the generic
-                # implementation; however, the time taken here is in any
-                # case a small fraction of `qh_new_qhull`, so optimization
-                # here is probably not very important.
+        for isimplex in xrange(nsimplex):
+            for i in xrange(ndim):
+                Tinvs[isimplex,ndim,i] = points[vertices[isimplex,ndim],i]
+                for j in xrange(ndim):
+                    T[i,j] = (points[vertices[isimplex,j],i]
+                              - Tinvs[isimplex,ndim,i])
+                Tinvs[isimplex,i,i] = 1
 
-                x1 = points[vertices[ivertex,0],0]
-                x2 = points[vertices[ivertex,1],0]
-                x3 = points[vertices[ivertex,2],0]
+            # compute 1-norm for estimating condition number
+            anorm = _matrix_norm1(ndim, <double*>T.data)
 
-                y1 = points[vertices[ivertex,0],1]
-                y2 = points[vertices[ivertex,1],1]
-                y3 = points[vertices[ivertex,2],1]
+            # LU decomposition
+            n = ndim
+            nrhs = ndim
+            lda = ndim
+            ldb = ndim
+            qh_dgetrf(&n, &n, <double*>T.data, &lda, ipiv, &info)
 
-                x1 -= x3
-                x2 -= x3
+            # Check condition number
+            if info == 0:
+                qh_dgecon("1", &n, <double*>T.data, &lda, &anorm, &rcond,
+                          work, iwork, &info)
 
-                y1 -= y3
-                y2 -= y3
-
-                det = x1*y2 - x2*y1
-
-                if det == 0:
+                if rcond < rcond_limit:
+                    # The transform seems singular
                     info = 1
-                else:
-                    info = 0
-                    Tinvs[ivertex,0,0] = y2/det
-                    Tinvs[ivertex,0,1] = -x2/det
-                    Tinvs[ivertex,1,0] = -y1/det
-                    Tinvs[ivertex,1,1] = x1/det
-                    Tinvs[ivertex,2,0] = x3
-                    Tinvs[ivertex,2,1] = y3
-            else:
-                # General dimensions
 
-                for i in xrange(ndim):
-                    Tinvs[ivertex,ndim,i] = points[vertices[ivertex,ndim],i]
-                    for j in xrange(ndim):
-                        T[i,j] = (points[vertices[ivertex,j],i]
-                                  - Tinvs[ivertex,ndim,i])
-                    Tinvs[ivertex,i,i] = 1
+            # Compute transform
+            if info == 0:
+                qh_dgetrs("N", &n, &nrhs, <double*>T.data, &lda, ipiv,
+                          (<double*>Tinvs.data) + ndim*(ndim+1)*isimplex,
+                          &ldb, &info)
 
-                n = ndim
-                nrhs = ndim
-                lda = ndim
-                ldb = ndim
-                qh_dgesv(&n, &nrhs, <double*>T.data, &lda, ipiv,
-                         (<double*>Tinvs.data) + ndim*(ndim+1)*ivertex,
-                         &ldb, &info)
-
+            # Deal with degenerate simplices
             if info != 0:
-                # degenerate simplex
-                for i in xrange(ndim+1):
-                    for j in xrange(ndim):
-                        Tinvs[ivertex,i,j] = nan
+                for i in range(ndim+1):
+                    for j in range(ndim):
+                        Tinvs[isimplex,i,j] = nan
 
     return Tinvs
+
+@cython.boundscheck(False)
+cdef double _matrix_norm1(int n, double *a) nogil:
+    """Compute the 1-norm of a square matrix given in in Fortran order"""
+    cdef double maxsum = 0, colsum
+    cdef int i, j
+
+    for j in range(n):
+        colsum = 0
+        for i in range(n):
+            colsum += fabs(a[0])
+            a += 1
+        if maxsum < colsum:
+            maxsum = colsum
+    return maxsum
 
 cdef int _barycentric_inside(int ndim, double *transform,
                              double *x, double *c, double eps) nogil:
@@ -647,28 +658,66 @@ cdef int _is_point_fully_outside(DelaunayInfo_t *d, double *x,
     return 0
 
 cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
-                                  double *x, double eps) nogil:
+                                  double *x, double eps,
+                                  double eps_broad) nogil:
     """
     Find simplex containing point `x` by going through all simplices.
 
     """
     cdef int inside, isimplex
+    cdef int k, m, ineighbor, iself
+    cdef double *transform
 
     if _is_point_fully_outside(d, x, eps):
         return -1
 
     for isimplex in xrange(d.nsimplex):
-        inside = _barycentric_inside(
-            d.ndim,
-            d.transform + isimplex*d.ndim*(d.ndim+1),
-            x, c, eps)
+        transform = d.transform + isimplex*d.ndim*(d.ndim+1)
 
-        if inside:
-            return isimplex
+        if transform[0] == transform[0]:
+            # transform is valid (non-nan)
+            inside = _barycentric_inside(d.ndim, transform, x, c, eps)
+            if inside:
+                return isimplex
+        else:
+            # transform is invalid (nan, implying degenerate simplex)
+
+            # we replace this inside-check by a check of the neighbors
+            # with a larger epsilon
+
+            for k in xrange(d.ndim+1):
+                ineighbor = d.neighbors[(d.ndim+1)*isimplex + k]
+                if ineighbor == -1:
+                    continue
+
+                transform = d.transform + ineighbor*d.ndim*(d.ndim+1)
+                if transform[0] != transform[0]:
+                    # another bad simplex
+                    continue
+
+                _barycentric_coordinates(d.ndim, transform, x, c)
+
+                # Check that the point lies (almost) inside the
+                # neigbor simplex
+                inside = 1
+                for m in xrange(d.ndim+1):
+                    if d.neighbors[(d.ndim+1)*ineighbor + m] == isimplex:
+                        # allow extra leeway towards isimplex
+                        if not (-eps_broad <= c[m] <= 1 + eps):
+                            inside = 0
+                            break
+                    else:
+                        # normal check
+                        if not (-eps <= c[m] <= 1 + eps):
+                            inside = 0
+                            break
+                if inside:
+                    return ineighbor
     return -1
 
 cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
-                                double *x, int *start, double eps) nogil:
+                                double *x, int *start, double eps,
+                                double eps_broad) nogil:
     """
     Find simplex containing point `x` via a directed walk in the tesselation.
 
@@ -759,17 +808,18 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
         else:
             # we've failed utterly (degenerate simplices in the way).
             # fall back to brute force
-            isimplex = _find_simplex_bruteforce(d, c, x, eps)
+            isimplex = _find_simplex_bruteforce(d, c, x, eps, eps_broad)
             break
     else:
         # the algorithm failed to converge -- fall back to brute force
-        isimplex = _find_simplex_bruteforce(d, c, x, eps)
+        isimplex = _find_simplex_bruteforce(d, c, x, eps, eps_broad)
 
     start[0] = isimplex
     return isimplex
 
 cdef int _find_simplex(DelaunayInfo_t *d, double *c,
-                       double *x, int *start, double eps) nogil:
+                       double *x, int *start, double eps,
+                       double eps_broad) nogil:
     """
     Find simplex containing point `x` by walking the triangulation.
 
@@ -876,7 +926,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
     # We should now be somewhere near the simplex containing the point,
     # locate it with a directed search
     start[0] = isimplex
-    return _find_simplex_directed(d, c, x, start, eps)
+    return _find_simplex_directed(d, c, x, start, eps, eps_broad)
 
 
 #------------------------------------------------------------------------------
@@ -979,7 +1029,8 @@ class Delaunay(object):
         """
         if self._transform is None:
             self._transform = _get_barycentric_transforms(self.points,
-                                                          self.vertices)
+                                                          self.vertices,
+                                                          np.finfo(float).eps)
         return self._transform
 
     @property
@@ -1027,6 +1078,7 @@ class Delaunay(object):
 
         """
         cdef int isimplex, k, j, ndim, nsimplex, m, msize
+        cdef object out
         cdef np.ndarray[np.npy_int, ndim=2] arr
         cdef np.ndarray[np.npy_int, ndim=2] neighbors
         cdef np.ndarray[np.npy_int, ndim=2] vertices
@@ -1058,13 +1110,18 @@ class Delaunay(object):
                         arr = out
 
         arr = None
-        out.resize(m, ndim)
+        try:
+            out.resize(m, ndim)
+        except ValueError:
+            # XXX: work around a Cython bug on Python 2.4
+            #      still leaks memory, though
+            return np.resize(out, (m, ndim))
         return out
 
     @cython.boundscheck(False)
-    def find_simplex(self, xi, bruteforce=False):
+    def find_simplex(self, xi, bruteforce=False, tol=None):
         """
-        find_simplex(self, xi, bruteforce=False)
+        find_simplex(self, xi, bruteforce=False, tol=None)
 
         Find the simplices containing the given points.
 
@@ -1076,6 +1133,9 @@ class Delaunay(object):
             Points to locate
         bruteforce : bool, optional
             Whether to only perform a brute-force search
+        tol : float, optional
+            Tolerance allowed in the inside-triangle check.
+            Default is ``100*eps``.
 
         Returns
         -------
@@ -1095,7 +1155,7 @@ class Delaunay(object):
         cdef DelaunayInfo_t info
         cdef int isimplex
         cdef double c[NPY_MAXDIMS]
-        cdef double eps
+        cdef double eps, eps_broad
         cdef int start
         cdef int k
         cdef np.ndarray[np.double_t, ndim=2] x
@@ -1112,7 +1172,11 @@ class Delaunay(object):
 
         start = 0
 
-        eps = np.finfo(np.double).eps * 10
+        if tol is None:
+            eps = 100 * np.finfo(np.double).eps
+        else:
+            eps = tol
+        eps_broad = np.sqrt(eps)
         out = np.zeros((xi.shape[0],), dtype=np.intc)
         out_ = out
         _get_delaunay_info(&info, self, 1, 0)
@@ -1123,14 +1187,14 @@ class Delaunay(object):
                     isimplex = _find_simplex_bruteforce(
                         &info, c,
                         <double*>x.data + info.ndim*k,
-                        eps)
+                        eps, eps_broad)
                     out_[k] = isimplex
         else:
             with nogil:
                 for k in xrange(x.shape[0]):
                     isimplex = _find_simplex(&info, c,
                                              <double*>x.data + info.ndim*k,
-                                             &start, eps)
+                                             &start, eps, eps_broad)
                     out_[k] = isimplex
 
         return out.reshape(xi_shape[:-1])
@@ -1206,10 +1270,10 @@ def tsearch(tri, xi):
 # Delaunay triangulation interface, for low-level C
 #------------------------------------------------------------------------------
 
-cdef void _get_delaunay_info(DelaunayInfo_t *info,
-                             obj,
-                             int compute_transform,
-                             int compute_vertex_to_simplex):
+cdef int _get_delaunay_info(DelaunayInfo_t *info,
+                            obj,
+                            int compute_transform,
+                            int compute_vertex_to_simplex) except -1:
     cdef np.ndarray[np.double_t, ndim=3] transform
     cdef np.ndarray[np.npy_int, ndim=1] vertex_to_simplex
     cdef np.ndarray[np.double_t, ndim=2] points = obj.points
@@ -1240,3 +1304,5 @@ cdef void _get_delaunay_info(DelaunayInfo_t *info,
         info.vertex_to_simplex = NULL
     info.min_bound = <double*>min_bound.data
     info.max_bound = <double*>max_bound.data
+
+    return 0

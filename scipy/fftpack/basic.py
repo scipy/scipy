@@ -344,12 +344,38 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
 
 
 def irfft(x, n=None, axis=-1, overwrite_x=0):
-    """ irfft(x, n=None, axis=-1, overwrite_x=0) -> y
-
+    """
     Return inverse discrete Fourier transform of real sequence x.
+
     The contents of x is interpreted as the output of the ``rfft(..)``
     function.
 
+    Parameters
+    ----------
+    x : array_like
+        Transformed data to invert.
+    n : int, optional
+        Length of the inverse Fourier transform.
+        If n < x.shape[axis], x is truncated.
+        If n > x.shape[axis], x is zero-padded.
+        The default results in n = x.shape[axis].
+    axis : int, optional
+        Axis along which the ifft's are computed; the default is over
+        the last axis (i.e., axis=-1).
+    overwrite_x : bool, optional
+        If True the contents of `x` can be destroyed; the default is False.
+
+    Returns
+    -------
+    irfft : ndarray of floats
+        The inverse discrete Fourier transform.
+
+    See Also
+    --------
+    rfft, ifft
+
+    Notes
+    -----
     The returned real array contains::
 
         [y(0),y(1),...,y(n-1)]
@@ -369,10 +395,6 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
     c.c. denotes complex conjugate of preceeding expression.
 
     For details on input parameters, see `rfft`.
-
-    See Also
-    --------
-    rfft, ifft
 
     """
     tmp = _asfarray(x)

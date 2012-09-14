@@ -8,17 +8,17 @@ Functions
 """
 
 
-__all__ = ['minimize', 'minimize_scalar', 'show_minimize_options']
+__all__ = ['minimize', 'minimize_scalar']
 
 
 from warnings import warn
 
+from numpy import any
 # unconstrained minimization
-from optimize import _minimize_neldermead, _minimize_powell, \
-        _minimize_cg, _minimize_bfgs, _minimize_newtoncg, \
-        _minimize_scalar_brent, _minimize_scalar_bounded, \
-        _minimize_scalar_golden, \
-        MemoizeJac
+from optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
+                      _minimize_bfgs, _minimize_newtoncg,
+                      _minimize_scalar_brent, _minimize_scalar_bounded,
+                      _minimize_scalar_golden, MemoizeJac)
 from anneal import _minimize_anneal
 
 # contrained minimization
@@ -28,8 +28,8 @@ from cobyla import _minimize_cobyla
 from slsqp import _minimize_slsqp
 
 def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
-             hessp=None, bounds=None, constraints=(),
-             options=None, callback=None):
+             hessp=None, bounds=None, constraints=(), tol=None,
+             callback=None, options=None):
     """
     Minimization of scalar function of one or more variables.
 
@@ -92,6 +92,9 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         Equality constraint means that the constraint function result is to
         be zero whereas inequality means that it is to be non-negative.
         Note that COBYLA only supports inequality constraints.
+    tol : float, optional
+        Tolerance for termination. For detailed control, use solver-specific
+        options.
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -99,7 +102,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
                 Maximum number of iterations to perform.
             disp : bool
                 Set to True to print convergence messages.
-        For method-specific options, see `show_minimize_options`.
+        For method-specific options, see `show_options('minimize', method)`.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
@@ -289,8 +292,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - constraints or bounds
-    if meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg'] and \
-        (bounds is not None or any(constraints)):
+    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg'] and
+        (bounds is not None or any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
     if meth in ['l-bfgs-b', 'tnc'] and any(constraints):
@@ -300,13 +303,13 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
-    if meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and \
-       callback is not None:
+    if (meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
+        callback is not None):
         warn('Method %s does not support callback.' % method,
              RuntimeWarning)
     # - return_all
-    if meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and \
-       options.get('return_all', False):
+    if (meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
+        options.get('return_all', False)):
         warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
 
@@ -318,34 +321,47 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         else:
             jac = None
 
+    # set default tolerances
+    if tol is not None:
+        options = dict(options)
+        if meth in ['nelder-mead', 'newton-cg', 'powell', 'tnc']:
+            options.setdefault('xtol', tol)
+        if meth in ['nelder-mead', 'powell', 'anneal', 'l-bfgs-b', 'tnc',
+                    'slsqp']:
+            options.setdefault('ftol', tol)
+        if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc']:
+            options.setdefault('gtol', tol)
+        if meth in ['cobyla']:
+            options.setdefault('tol', tol)
+
     if meth == 'nelder-mead':
-        return _minimize_neldermead(fun, x0, args, options, callback)
+        return _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
-        return _minimize_powell(fun, x0, args, options, callback)
+        return _minimize_powell(fun, x0, args, callback, **options)
     elif meth == 'cg':
-        return _minimize_cg(fun, x0, args, jac, options, callback)
+        return _minimize_cg(fun, x0, args, jac, callback, **options)
     elif meth == 'bfgs':
-        return _minimize_bfgs(fun, x0, args, jac, options, callback)
+        return _minimize_bfgs(fun, x0, args, jac, callback, **options)
     elif meth == 'newton-cg':
-        return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, options,
-                                  callback)
+        return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
+                                  **options)
     elif meth == 'anneal':
-        return _minimize_anneal(fun, x0, args, options)
+        return _minimize_anneal(fun, x0, args, **options)
     elif meth == 'l-bfgs-b':
-        return _minimize_lbfgsb(fun, x0, args, jac, bounds, options)
+        return _minimize_lbfgsb(fun, x0, args, jac, bounds, **options)
     elif meth == 'tnc':
-        return _minimize_tnc(fun, x0, args, jac, bounds, options)
+        return _minimize_tnc(fun, x0, args, jac, bounds, **options)
     elif meth == 'cobyla':
-        return _minimize_cobyla(fun, x0, args, constraints, options)
+        return _minimize_cobyla(fun, x0, args, constraints, **options)
     elif meth == 'slsqp':
         return _minimize_slsqp(fun, x0, args, jac, bounds,
-                               constraints, options)
+                               constraints, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
-                    method='brent', options=None):
+                    method='brent', tol=None, options=None):
     """
     Minimization of scalar function of one variable.
 
@@ -374,14 +390,14 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             - 'Brent'
             - 'Bounded'
             - 'Golden'
-
+    tol : float, optional
+        Tolerance for termination. For detailed control, use solver-specific
+        options.
     options : dict, optional
         A dictionary of solver options.
             xtol : float
                 Relative error in solution `xopt` acceptable for
                 convergence.
-            ftol : float
-                Relative error in ``fun(xopt)`` acceptable for convergence.
             maxiter : int
                 Maximum number of iterations to perform.
             disp : bool
@@ -443,213 +459,18 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     if options is None:
         options = {}
 
+    if tol is not None:
+        options = dict(options)
+        options.setdefault('xtol', tol)
+
     if meth == 'brent':
-        return _minimize_scalar_brent(fun, bracket, args, options)
+        return _minimize_scalar_brent(fun, bracket, args, **options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
-        return _minimize_scalar_bounded(fun, bounds, args, options)
+        return _minimize_scalar_bounded(fun, bounds, args, **options)
     elif meth == 'golden':
-        return _minimize_scalar_golden(fun, bracket, args, options)
+        return _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
-
-
-def show_minimize_options(method=None):
-    """Show documentation for additional options of minimize's methods.
-
-    These are method-specific options that can be supplied to `minimize` in the
-    ``options`` dict.
-
-    Parameters
-    ----------
-    method : str, optional
-        If not given, shows all methods.  Otherwise, show only the options for
-        the specified method.  Valid values are: 'BFGS', 'Newton-CG',
-        'Nelder-Mead', 'Powell', 'CG', 'Anneal', 'L-BFGS-B', 'TNC',
-        'COBYLA', 'SLSQP'.
-
-    Notes
-    -----
-    * BFGS options:
-        gtol : float
-            Gradient norm must be less than `gtol` before successful
-            termination.
-        norm : float
-            Order of norm (Inf is max, -Inf is min).
-        eps : float or ndarray
-            If `jac` is approximated, use this value for the step size.
-        return_all : bool
-            If True, return a list of the solution at each iteration.  This is only
-            done if `full_output` is True.
-
-    * Nelder-Mead options:
-        xtol : float
-            Relative error in solution `xopt` acceptable for convergence.
-        ftol : float
-            Relative error in ``fun(xopt)`` acceptable for convergence.
-        maxfev : int
-            Maximum number of function evaluations to make.
-        return_all : bool
-            If True, return a list of the solution at each iteration.  This is only
-            done if `full_output` is True.
-
-    * Newton-CG options:
-        xtol : float
-            Average relative error in solution `xopt` acceptable for
-            convergence.
-        eps : float or ndarray
-            If `jac` is approximated, use this value for the step size.
-        return_all : bool
-            If True, return a list of the solution at each iteration.  This is only
-            done if `full_output` is True.
-        return_all : bool
-            If True, return a list of the solution at each iteration.  This is only
-            done if `full_output` is True.
-
-    * CG options:
-        gtol : float
-            Gradient norm must be less than `gtol` before successful
-            termination.
-        norm : float
-            Order of norm (Inf is max, -Inf is min).
-        eps : float or ndarray
-            If `jac` is approximated, use this value for the step size.
-        return_all : bool
-            If True, return a list of the solution at each iteration.  This is only
-            done if `full_output` is True.
-
-    * Powell options:
-        xtol : float
-            Relative error in solution `xopt` acceptable for convergence.
-        ftol : float
-            Relative error in ``fun(xopt)`` acceptable for convergence.
-        maxfev : int
-            Maximum number of function evaluations to make.
-        direc : ndarray
-            Initial set of direction vectors for the Powell method.
-        return_all : bool
-            If True, return a list of the solution at each iteration.  This is only
-            done if `full_output` is True.
-
-    * Anneal options:
-        schedule : str
-            Annealing schedule to use. One of: 'fast', 'cauchy' or
-            'boltzmann'.
-        T0 : float
-            Initial Temperature (estimated as 1.2 times the largest
-            cost-function deviation over random points in the range).
-        Tf : float
-            Final goal temperature.
-        maxfev : int
-            Maximum number of function evaluations to make.
-        maxaccept : int
-            Maximum changes to accept.
-        boltzmann : float
-            Boltzmann constant in acceptance test (increase for less
-            stringent test at each temperature).
-        learn_rate : float
-            Scale constant for adjusting guesses.
-        ftol : float
-            Relative error in ``fun(x)`` acceptable for convergence.
-        quench, m, n : float
-            Parameters to alter fast_sa schedule.
-        lower, upper : float or ndarray
-            Lower and upper bounds on `x`.
-        dwell : int
-            The number of times to search the space at each temperature.
-
-    * L-BFGS-B options:
-        maxcor : int
-            The maximum number of variable metric corrections used to
-            define the limited memory matrix. (The limited memory BFGS
-            method does not store the full hessian but uses this many terms
-            in an approximation to it.)
-        factr : float
-            The iteration stops when ``(f^k -
-            f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr * eps``, where ``eps``
-            is the machine precision, which is automatically generated by
-            the code. Typical values for `factr` are: 1e12 for low
-            accuracy; 1e7 for moderate accuracy; 10.0 for extremely high
-            accuracy.
-        pgtol : float
-            The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
-            <= pgtol`` where ``pg_i`` is the i-th component of the
-            projected gradient.
-        maxfev : int
-            Maximum number of function evaluations.
-
-    * TNC options:
-        scale : list of floats
-            Scaling factors to apply to each variable.  If None, the
-            factors are up-low for interval bounded variables and
-            1+|x] fo the others.  Defaults to None
-        offset : float
-            Value to substract from each variable.  If None, the
-            offsets are (up+low)/2 for interval bounded variables
-            and x for the others.
-        maxCGit : int
-            Maximum number of hessian*vector evaluations per main
-            iteration.  If maxCGit == 0, the direction chosen is
-            -gradient if maxCGit < 0, maxCGit is set to
-            max(1,min(50,n/2)).  Defaults to -1.
-        maxfev : int
-            Maximum number of function evaluation.  if None, `maxfev` is
-            set to max(100, 10*len(x0)).  Defaults to None.
-        eta : float
-            Severity of the line search. if < 0 or > 1, set to 0.25.
-            Defaults to -1.
-        stepmx : float
-            Maximum step for the line search.  May be increased during
-            call.  If too small, it will be set to 10.0.  Defaults to 0.
-        accuracy : float
-            Relative precision for finite difference calculations.  If
-            <= machine_precision, set to sqrt(machine_precision).
-            Defaults to 0.
-        minfev : float
-            Minimum function value estimate.  Defaults to 0.
-        ftol : float
-            Precision goal for the value of f in the stoping criterion.
-            If ftol < 0.0, ftol is set to 0.0 defaults to -1.
-        xtol : float
-            Precision goal for the value of x in the stopping
-            criterion (after applying x scaling factors).  If xtol <
-            0.0, xtol is set to sqrt(machine_precision).  Defaults to
-            -1.
-        pgtol : float
-            Precision goal for the value of the projected gradient in
-            the stopping criterion (after applying x scaling factors).
-            If pgtol < 0.0, pgtol is set to 1e-2 * sqrt(accuracy).
-            Setting it to 0.0 is not recommended.  Defaults to -1.
-        rescale : float
-            Scaling factor (in log10) used to trigger f value
-            rescaling.  If 0, rescale at each iteration.  If a large
-            value, never rescale.  If < 0, rescale is set to 1.3.
-
-    * COBYLA options:
-        rhobeg : float
-            Reasonable initial changes to the variables.
-        rhoend : float
-            Final accuracy in the optimization (not precisely guaranteed).
-            This is a lower bound on the size of the trust region.
-        maxfev : int
-            Maximum number of function evaluations.
-
-    * SLSQP options:
-        eps : float
-            Step size used for numerical approximation of the jacobian.
-        maxiter : int
-            Maximum number of iterations.
-    """
-    if method is None:
-        notes_header = "Notes\n    -----"
-        sections = show_minimize_options.__doc__.split(notes_header)[1:]
-    else:
-        sections = show_minimize_options.__doc__.split('*')[1:]
-        sections = [s.strip() for s in sections]
-        sections = [s for s in sections if s.lower().startswith(method.lower())]
-
-    print '\n'.join(sections)
-
-    return

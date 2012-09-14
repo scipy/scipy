@@ -403,7 +403,7 @@ def test_warnings():
         # This neither
         mres = loadmat(fname, struct_as_record=False)
         # This should - because of deprecated system path search
-        yield assert_raises, DeprecationWarning, find_mat_file, fname
+        assert_raises(DeprecationWarning, find_mat_file, fname)
     finally:
         warn_ctx.__exit__()
 
@@ -516,11 +516,23 @@ def test_use_small_element():
 
 def test_save_dict():
     # Test that dict can be saved (as recarray), loaded as matstruct
-    d = {'a':1, 'b':2}
-    stream = BytesIO()
-    savemat_future(stream, {'dict':d})
-    stream.seek(0)
-    vals = loadmat(stream)
+    dict_types = (dict,)
+    try:
+        from collections import OrderedDict
+    except ImportError:
+        pass
+    else:
+        dict_types += (OrderedDict,)
+    exp_arr = np.zeros((1, 1), dtype = [('a', object), ('b', object)])
+    exp_arr['a'] = 1
+    exp_arr['b'] = 2
+    for dict_type in dict_types:
+        d = dict_type(a=1, b=2)
+        stream = BytesIO()
+        savemat_future(stream, {'dict': d})
+        stream.seek(0)
+        vals = loadmat(stream)
+        assert_array_equal(vals['dict'], exp_arr)
 
 
 def test_1d_shape():
@@ -817,6 +829,16 @@ def test_mat_struct_squeeze():
                     )
 
 
+def test_scalar_squeeze():
+    stream = BytesIO()
+    in_d = {'scalar': [[0.1]], 'string': 'my name', 'st':{'one':1, 'two':2}}
+    savemat_future(stream, in_d)
+    out_d = loadmat(stream, squeeze_me=True)
+    assert_true(isinstance(out_d['scalar'], float))
+    assert_true(isinstance(out_d['string'], basestring))
+    assert_true(isinstance(out_d['st'], np.ndarray))
+
+
 def test_str_round():
     # from report by Angus McMorland on mailing list 3 May 2010
     stream = BytesIO()
@@ -910,6 +932,14 @@ def test_one_by_zero():
     d = rdr.get_variables()
     fp.close()
     assert_equal(d['var'].shape, (0,))
+
+
+def test_load_mat4_le():
+    # We were getting byte order wrong when reading little-endian floa64 dense
+    # matrices on big-endian platforms
+    mat4_fname = pjoin(test_data_path, 'test_mat4_le_floats.mat')
+    vars = loadmat(mat4_fname)
+    assert_array_equal(vars['a'], [[0.1, 1.2]])
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, assert_, TestCase
 from numpy import array, diff, shape, asarray, pi, sin, cos, arange, dot, \
-     ravel, sqrt, inf
+     ravel, sqrt, inf, round
 from scipy.interpolate.fitpack import splrep, splev, bisplrep, bisplev, \
      sproot, splprep, splint, spalde
 
@@ -25,11 +25,10 @@ def f2(x,y=0,dx=0,dy=0):
     if d%4 == 2: return -sin(x+y)
     if d%4 == 3: return -cos(x+y)
 
-def makepairs(x,y):
-    x,y=map(asarray,[x,y])
-    xy=array(map(lambda x,y:map(None,len(y)*[x],y),x,len(x)*[y]))
-    sh=xy.shape
-    xy.shape=sh[0]*sh[1],sh[2]
+def makepairs(x, y):
+    """Helper function to create an array of pairs of x and y."""
+    # Or itertools.product (>= python 2.6)
+    xy = array([[a, b] for a in asarray(x) for b in asarray(y)])
     return xy.T
 
 def put(*a):
@@ -207,7 +206,7 @@ class TestSmokeTests(TestCase):
 
     def test_smoke_sproot(self):
         put("***************** sproot")
-        self.check_3(a=0,b=15)
+        self.check_3(a=0.1,b=15)
 
     def test_smoke_splprep_splrep_splev(self):
         put("***************** splprep/splrep/splev")
@@ -217,6 +216,16 @@ class TestSmokeTests(TestCase):
     def test_smoke_bisplrep_bisplev(self):
         put("***************** bisplev")
         self.check_5()
+
+class TestSplev(TestCase):
+    def test_1d_shape(self):
+        x = [1,2,3,4,5]
+        y = [4,5,6,7,8]
+        tck = splrep(x, y)
+        z = splev([1], tck)
+        assert_equal(z.shape, (1,))
+        z = splev(1, tck)
+        assert_equal(z.shape, ())
 
 
 if __name__ == "__main__":

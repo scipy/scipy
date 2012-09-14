@@ -9,8 +9,8 @@ import numpy as np
 cimport numpy as np
 
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
-from _validation import validate_graph
-from _tools import reconstruct_path
+from scipy.sparse.csgraph._validation import validate_graph
+from scipy.sparse.csgraph._tools import reconstruct_path
 
 cimport cython
 from libc cimport stdlib
@@ -429,10 +429,10 @@ def depth_first_order(csgraph, i_start,
     csgraph = validate_graph(csgraph, directed, dense_output=False)
     cdef int N = csgraph.shape[0]
 
-    cdef np.ndarray node_list = np.empty(N, dtype=ITYPE)
-    cdef np.ndarray predecessors = np.empty(N, dtype=ITYPE)
-    cdef np.ndarray root_list = np.empty(N, dtype=ITYPE)
-    cdef np.ndarray flag = np.zeros(N, dtype=int)
+    node_list = np.empty(N, dtype=ITYPE)
+    predecessors = np.empty(N, dtype=ITYPE)
+    root_list = np.empty(N, dtype=ITYPE)
+    flag = np.zeros(N, dtype=ITYPE)
     node_list.fill(NULL_IDX)
     predecessors.fill(NULL_IDX)
     root_list.fill(NULL_IDX)
@@ -463,7 +463,7 @@ cdef unsigned int _depth_first_directed(
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] node_list,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
-                           np.ndarray[int, ndim=1, mode='c'] flag):
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] flag):
     cdef unsigned int i, j, i_nl_end, cnode, pnode
     cdef unsigned int N = node_list.shape[0]
     cdef int no_children, i_root
@@ -509,7 +509,7 @@ cdef unsigned int _depth_first_undirected(
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] node_list,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
-                           np.ndarray[int, ndim=1, mode='c'] flag):
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] flag):
     cdef unsigned int i, j, i_nl_end, cnode, pnode
     cdef unsigned int N = node_list.shape[0]
     cdef int no_children, i_root
@@ -574,7 +574,7 @@ cdef int _connected_components_undirected(
     cdef np.ndarray node_list = np.empty(N, dtype=ITYPE)
     cdef np.ndarray predecessors = np.empty(N, dtype=ITYPE)
     cdef np.ndarray root_list = np.empty(N, dtype=ITYPE)
-    cdef np.ndarray flag = np.zeros(N, dtype=int)
+    cdef np.ndarray flag = np.zeros(N, dtype=ITYPE)
 
     root_list.fill(NULL_IDX)
     predecessors.fill(NULL_IDX)

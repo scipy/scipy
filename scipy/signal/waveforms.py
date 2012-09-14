@@ -37,9 +37,10 @@ def sawtooth(t, width=1):
 
     Examples
     --------
+    >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 20*np.pi, 500)
-    >>> plt.plot(x, sp.signal.sawtooth(x))
+    >>> plt.plot(x, signal.sawtooth(x))
 
     """
     t, w = asarray(t), asarray(width)

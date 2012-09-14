@@ -17,16 +17,15 @@ ODR -- collects all data and runs the fitting routine
 
 Exceptions
 ==========
-
-odr_error -- error sometimes raised inside odr() and can be raised in the
+`odr_error` :
+    error sometimes raised inside odr() and can be raised in the
     fitting functions to tell ODRPACK to halt the procedure
-
-odr_stop -- error to raise in fitting functions to tell ODRPACK that the data or
+`odr_stop` :
+    error to raise in fitting functions to tell ODRPACK that the data or
     parameters given are invalid
 
 Use
 ===
-
 Basic use:
 
 1) Define the function you want to fit against.
@@ -328,36 +327,63 @@ class Data(object):
 
 
 class RealData(Data):
-    """ The RealData class stores the weightings as actual standard deviations
+    """
+    The RealData class stores the weightings as actual standard deviations
     and/or covariances.
 
-    The weights needed for ODRPACK are generated on-the-fly with __getattr__
-    trickery.
+    Parameters
+    ----------
+    x : array_like
+        x
+    y : array_like, optional
+        y
+    sx, sy : array_like, optional
+        Standard deviations of `x`.
+        `sx` are standard deviations of `x` and are converted to weights by
+         dividing 1.0 by their squares.
+    sy : array_like, optional
+        Standard deviations of `y`.
+        `sy` are standard deviations of `y` and are converted to weights by
+        dividing 1.0 by their squares.
+    covx : array_like, optional
+        Covariance of `x`
+        `covx` is an array of covariance matrices of `x` and are converted to
+        weights by performing a matrix inversion on each observation's
+        covariance matrix.
+    covy : array_like, optional
+        Covariance of `y`
+        `covy` is an array of covariance matrices and are converted to
+        weights by performing a matrix inversion on each observation's
+        covariance matrix.
+    fix : array_like
+        The argument and member fix is the same as Data.fix and ODR.ifixx:
+        It is an array of integers with the same shape as `x` that
+        determines which input observations are treated as fixed. One can
+        use a sequence of length m (the dimensionality of the input
+        observations) to fix some dimensions for all observations. A value
+        of 0 fixes the observation, a value > 0 makes it free.
+    meta : dict
+        Meta
 
-    sx and sy are standard deviations of x and y and are converted to weights by
-    dividing 1.0 by their squares.
+    Notes
+    -----
+    The weights needed for ODRPACK are generated on-the-fly with
+    ``__getattr__`` trickery.
 
-      E.g.  wd = 1./numpy.power(sx, 2)
+    `sx` and `sy` are converted to weights by dividing 1.0 by their squares.
+    For example, ``wd = 1./numpy.power(`sx`, 2)``.
 
-    covx and covy are arrays of covariance matrices and are converted to weights
-    by performing a matrix inversion on each observation's covariance matrix.
+    `covx` and `covy` are arrays of covariance matrices and are converted to
+    weights by performing a matrix inversion on each observation's covariance
+    matrix.  For example, ``we[i] = numpy.linalg.inv(covy[i])``.
 
-      E.g.  we[i] = numpy.linalg.inv(covy[i])  # i in range(len(covy))
-                                               #   if covy.shape == (n,q,q)
+    These arguments follow the same structured argument conventions as wd and
+    we only restricted by their natures: `sx` and `sy` can't be rank-3, but
+    `covx` and `covy` can be.
 
-    These arguments follow the same structured argument conventions as wd and we
-    only restricted by their natures: sx and sy can't be rank-3, but covx and
-    covy can be.
+    Only set *either* `sx` or `covx` (not both). Setting both will raise an
+    exception.  Same with `sy` and `covy`.
 
-    Only set *either* sx or covx (not both). Setting both will raise an
-    exception.  Same with sy and covy.
-
-    The argument and member fix is the same as Data.fix and ODR.ifixx:
-      It is an array of integers with the same shape as data.x that determines
-      which input observations are treated as fixed. One can use a sequence of
-      length m (the dimensionality of the input observations) to fix some
-      dimensions for all observations. A value of 0 fixes the observation,
-      a value > 0 makes it free.
     """
 
     def __init__(self, x, y=None, sx=None, sy=None, covx=None, covy=None,

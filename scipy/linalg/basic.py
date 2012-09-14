@@ -19,28 +19,48 @@ import decomp_svd
 # Linear equations
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False,
           debug=False):
-    """Solve the equation a x = b for x
+    """
+    Solve the equation ``a x = b`` for ``x``.
 
     Parameters
     ----------
-    a : array, shape (M, M)
-    b : array, shape (M,) or (M, N)
-    sym_pos : boolean
-        Assume a is symmetric and positive definite
+    a : array_like, shape (M, M)
+        A square matrix.
+    b : array_like, shape (M,) or (M, N)
+        Right-hand side matrix in ``a x = b``.
+    sym_pos : bool
+        Assume `a` is symmetric and positive definite.
     lower : boolean
-        Use only data contained in the lower triangle of a, if sym_pos is true.
-        Default is to use upper triangle.
-    overwrite_a : boolean
-        Allow overwriting data in a (may enhance performance)
-    overwrite_b : boolean
-        Allow overwriting data in b (may enhance performance)
+        Use only data contained in the lower triangle of `a`, if `sym_pos` is
+        true.  Default is to use upper triangle.
+    overwrite_a : bool
+        Allow overwriting data in `a` (may enhance performance).
+        Default is False.
+    overwrite_b : bool
+        Allow overwriting data in `b` (may enhance performance).
+        Default is False.
 
     Returns
     -------
-    x : array, shape (M,) or (M, N) depending on b
-        Solution to the system a x = b
+    x : array, shape (M,) or (M, N) depending on `b`
+        Solution to the system ``a x = b``.
 
-    Raises LinAlgError if a is singular
+    Raises
+    ------
+    LinAlgError
+        If `a` is singular.
+
+    Examples
+    --------
+    Given `a` and `b`, solve for `x`:
+
+    >>> a = np.array([[3,2,0],[1,-1,0],[0,5,1]])
+    >>> b = np.array([2,4,-1])
+    >>> x = linalg.solve(a,b)
+    >>> x
+    array([ 2., -2.,  9.])
+    >>> np.dot(a, x) == b
+    array([ True,  True,  True], dtype=bool)
 
     """
     a1, b1 = map(np.asarray_chkfinite,(a,b))
@@ -335,20 +355,45 @@ def inv(a, overwrite_a=False):
 ### Determinant
 
 def det(a, overwrite_a=False):
-    """Compute the determinant of a matrix
+    """
+    Compute the determinant of a matrix
+
+    The determinant of a square matrix is a value derived arithmetically
+    from the coefficients of the matrix.
+
+    The determinant for a 3x3 matrix, for example, is computed as follows::
+
+        a    b    c
+        d    e    f = A
+        g    h    i
+
+        det(A) = a*e*i +b*f*g + c*d*h - c*e*g - b*d*i - a*f*h
 
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : array_like, shape (M, M)
+        A square matrix.
+    overwrite_a : bool
+        Allow overwriting data in a (may enhance performance).
 
     Returns
     -------
     det : float or complex
-        Determinant of a
+        Determinant of `a`.
 
     Notes
     -----
     The determinant is computed via LU factorization, LAPACK routine z/dgetrf.
+
+    Examples
+    --------
+    >>> a = np.array([[1,2,3],[4,5,6],[7,8,9]])
+    >>> linalg.det(a)
+    0.0
+    >>> a = np.array([[0,2,3],[4,5,6],[7,8,9]])
+    >>> linalg.det(a)
+    3.0
+
     """
     a1 = np.asarray_chkfinite(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -423,12 +468,14 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     if n > m:
         # need to extend b matrix as it will be filled with
         # a larger solution matrix
-        b2 = np.zeros((n, nrhs), dtype=gelss.dtype)
         if len(b1.shape) == 2:
+            b2 = np.zeros((n, nrhs), dtype=gelss.dtype)
             b2[:m,:] = b1
         else:
-            b2[:m,0] = b1
+            b2 = np.zeros(n, dtype=gelss.dtype)
+            b2[:m] = b1
         b1 = b2
+
     overwrite_a = overwrite_a or _datacopied(a1, a)
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if gelss.module_name[:7] == 'flapack':
@@ -456,7 +503,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
 
 
 def pinv(a, cond=None, rcond=None):
-    """Compute the (Moore-Penrose) pseudo-inverse of a matrix.
+    """
+    Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
     Calculate a generalized inverse of a matrix using a least-squares
     solver.
@@ -464,26 +512,29 @@ def pinv(a, cond=None, rcond=None):
     Parameters
     ----------
     a : array, shape (M, N)
-        Matrix to be pseudo-inverted
-    cond, rcond : float
+        Matrix to be pseudo-inverted.
+    cond, rcond : float, optional
         Cutoff for 'small' singular values in the least-squares solver.
-        Singular values smaller than rcond*largest_singular_value are
-        considered zero.
+        Singular values smaller than ``rcond * largest_singular_value``
+        are considered zero.
 
     Returns
     -------
     B : array, shape (N, M)
+        The pseudo-inverse of matrix `a`.
 
-    Raises LinAlgError if computation does not converge
+    Raises
+    ------
+    LinAlgError
+        If computation does not converge.
 
     Examples
     --------
-    >>> from numpy import *
-    >>> a = random.randn(9, 6)
+    >>> a = np.random.randn(9, 6)
     >>> B = linalg.pinv(a)
-    >>> allclose(a, dot(a, dot(B, a)))
+    >>> np.allclose(a, dot(a, dot(B, a)))
     True
-    >>> allclose(B, dot(B, dot(a, B)))
+    >>> np.allclose(B, dot(B, dot(a, B)))
     True
 
     """
@@ -495,7 +546,8 @@ def pinv(a, cond=None, rcond=None):
 
 
 def pinv2(a, cond=None, rcond=None):
-    """Compute the (Moore-Penrose) pseudo-inverse of a matrix.
+    """
+    Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
     Calculate a generalized inverse of a matrix using its
     singular-value decomposition and including all 'large' singular
@@ -504,28 +556,30 @@ def pinv2(a, cond=None, rcond=None):
     Parameters
     ----------
     a : array, shape (M, N)
-        Matrix to be pseudo-inverted
+        Matrix to be pseudo-inverted.
     cond, rcond : float or None
         Cutoff for 'small' singular values.
-        Singular values smaller than rcond*largest_singular_value are
-        considered zero.
-
+        Singular values smaller than ``rcond*largest_singular_value``
+        are considered zero.
         If None or -1, suitable machine precision is used.
 
     Returns
     -------
     B : array, shape (N, M)
+        The pseudo-inverse of matrix `a`.
 
-    Raises LinAlgError if SVD computation does not converge
+    Raises
+    ------
+    LinAlgError
+        If SVD computation does not converge.
 
     Examples
     --------
-    >>> from numpy import *
-    >>> a = random.randn(9, 6)
+    >>> a = np.random.randn(9, 6)
     >>> B = linalg.pinv2(a)
-    >>> allclose(a, dot(a, dot(B, a)))
+    >>> np.allclose(a, dot(a, dot(B, a)))
     True
-    >>> allclose(B, dot(B, dot(a, B)))
+    >>> np.allclose(B, dot(B, dot(a, B)))
     True
 
     """

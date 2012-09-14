@@ -84,7 +84,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     See Also
     --------
-    brentq, brenth, ridder, bisect : find zeroes in one dimension.
+    brentq, brenth, ridder, bisect
     fsolve : find zeroes in n dimensions.
 
     Notes
@@ -162,7 +162,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 def bisect(f, a, b, args=(),
            xtol=_xtol, rtol=_rtol, maxiter=_iter,
            full_output=False, disp=True):
-    """Find root of f in [a,b].
+    """
+    Find root of f in [a,b].
 
     Basic bisection routine to find a zero of the function f between the
     arguments a and b. f(a) and f(b) can not have the same signs. Slow but
@@ -204,7 +205,7 @@ def bisect(f, a, b, args=(),
 
     See Also
     --------
-    brentq, brenth, bisect, newton : one-dimensional root-finding
+    brentq, brenth, bisect, newton
     fixed_point : scalar fixed-point finder
     fsolve : n-dimensional root-finding
 

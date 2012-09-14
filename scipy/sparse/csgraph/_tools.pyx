@@ -240,7 +240,7 @@ def csgraph_to_dense(csgraph, null_value=0):
     # create the output array
     graph = np.empty(csgraph.shape, dtype=DTYPE)
     graph.fill(np.inf)
-    _populate_graph(graph, data, indices, indptr, null_value)
+    _populate_graph(data, indices, indptr, graph, null_value)
     return graph
 
 
@@ -321,9 +321,9 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     nnull = (predecessors < 0).sum()
 
-    indices = np.argsort(predecessors)[nnull:]
+    indices = np.argsort(predecessors)[nnull:].astype(ITYPE)
     pind = predecessors[indices]
-    indptr = pind.searchsorted(np.arange(N + 1))
+    indptr = pind.searchsorted(np.arange(N + 1)).astype(ITYPE)
 
     if directed == True:
         data = csgraph[pind, indices]

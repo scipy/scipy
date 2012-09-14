@@ -216,7 +216,7 @@ class _TestDSTBase(TestCase):
 class TestDSTIDouble(_TestDSTBase):
     def setUp(self):
         self.rdt = np.double
-        self.dec = 15
+        self.dec = 14
         self.type = 1
 
 class TestDSTIFloat(_TestDSTBase):
@@ -228,7 +228,7 @@ class TestDSTIFloat(_TestDSTBase):
 class TestDSTIIDouble(_TestDSTBase):
     def setUp(self):
         self.rdt = np.double
-        self.dec = 15
+        self.dec = 14
         self.type = 2
 
 class TestDSTIIFloat(_TestDSTBase):
@@ -240,7 +240,7 @@ class TestDSTIIFloat(_TestDSTBase):
 class TestDSTIIIDouble(_TestDSTBase):
     def setUp(self):
         self.rdt = np.double
-        self.dec = 16
+        self.dec = 14
         self.type = 3
 
 class TestDSTIIIFloat(_TestDSTBase):
@@ -288,7 +288,7 @@ class TestIDSTIFloat(_TestIDSTBase):
 class TestIDSTIIDouble(_TestIDSTBase):
     def setUp(self):
         self.rdt = np.double
-        self.dec = 15
+        self.dec = 14
         self.type = 2
 
 class TestIDSTIIFloat(_TestIDSTBase):
@@ -300,7 +300,7 @@ class TestIDSTIIFloat(_TestIDSTBase):
 class TestIDSTIIIDouble(_TestIDSTBase):
     def setUp(self):
         self.rdt = np.double
-        self.dec = 15
+        self.dec = 14
         self.type = 3
 
 class TestIDSTIIIFloat(_TestIDSTBase):

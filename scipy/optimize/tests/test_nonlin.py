@@ -5,18 +5,19 @@ May 2007
 
 from numpy.testing import assert_, dec, TestCase, run_module_suite
 
-from scipy.optimize import nonlin
+from scipy.optimize import nonlin, root
 from numpy import matrix, diag, dot
 from numpy.linalg import inv
 import numpy as np
 
 from test_minpack import pressure_network
 
-SOLVERS = [nonlin.anderson, nonlin.diagbroyden, nonlin.linearmixing,
-           nonlin.excitingmixing, nonlin.broyden1, nonlin.broyden2,
-           nonlin.newton_krylov]
-MUST_WORK = [nonlin.anderson, nonlin.broyden1, nonlin.broyden2,
-             nonlin.newton_krylov]
+SOLVERS = {'anderson': nonlin.anderson, 'diagbroyden': nonlin.diagbroyden,
+           'linearmixing': nonlin.linearmixing, 'excitingmixing': nonlin.excitingmixing,
+           'broyden1': nonlin.broyden1, 'broyden2': nonlin.broyden2,
+           'krylov': nonlin.newton_krylov}
+MUST_WORK = {'anderson': nonlin.anderson, 'broyden1': nonlin.broyden1,
+             'broyden2': nonlin.broyden2, 'krylov': nonlin.newton_krylov}
 
 #-------------------------------------------------------------------------------
 # Test problems
@@ -29,31 +30,35 @@ def F(x):
     f = -d*x - c*float(x.T*x)*x
     return f
 F.xin = [1,1,1,1,1]
-F.KNOWN_BAD = []
+F.KNOWN_BAD = {}
 
 def F2(x):
     return x
 F2.xin = [1,2,3,4,5,6]
-F2.KNOWN_BAD = [nonlin.linearmixing, nonlin.excitingmixing]
+F2.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
+                'excitingmixing': nonlin.excitingmixing}
 
 def F3(x):
     A = np.mat('-2 1 0; 1 -2 1; 0 1 -2')
     b = np.mat('1 2 3')
     return np.dot(A, x) - b
 F3.xin = [1,2,3]
-F3.KNOWN_BAD = []
+F3.KNOWN_BAD = {}
 
 def F4_powell(x):
     A = 1e4
     return [A*x[0]*x[1] - 1, np.exp(-x[0]) + np.exp(-x[1]) - (1 + 1/A)]
 F4_powell.xin = [-1, -2]
-F4_powell.KNOWN_BAD = [nonlin.linearmixing, nonlin.excitingmixing,
-                       nonlin.diagbroyden]
+F4_powell.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
+                       'excitingmixing': nonlin.excitingmixing,
+                       'diagbroyden': nonlin.diagbroyden}
 
 def F5(x):
     return pressure_network(x, 4, np.array([.5, .5, .5, .5]))
 F5.xin = [2., 0, 2, 0]
-F5.KNOWN_BAD = [nonlin.excitingmixing, nonlin.linearmixing, nonlin.diagbroyden]
+F5.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
+                'linearmixing': nonlin.linearmixing,
+                'diagbroyden': nonlin.diagbroyden}
 
 def F6(x):
     x1, x2 = x
@@ -63,7 +68,9 @@ def F6(x):
                   np.sin(x2 * np.exp(x1) - 1)])
     return -np.linalg.solve(J0, v)
 F6.xin = [-0.5, 1.4]
-F6.KNOWN_BAD = [nonlin.excitingmixing, nonlin.linearmixing, nonlin.diagbroyden]
+F6.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
+                'linearmixing': nonlin.linearmixing,
+                'diagbroyden': nonlin.diagbroyden}
 
 #-------------------------------------------------------------------------------
 # Tests
@@ -78,22 +85,38 @@ class TestNonlin(object):
 
     """
 
-    def _check_func(self, f, func, f_tol=1e-2):
+    def _check_nonlin_func(self, f, func, f_tol=1e-2):
         x = func(f, f.xin, f_tol=f_tol, maxiter=200, verbose=0)
         assert_(np.absolute(f(x)).max() < f_tol)
+
+    def _check_root(self, f, method, f_tol=1e-2):
+        res = root(f, f.xin, method=method,
+                   options={'ftol': f_tol, 'maxiter': 200, 'disp': 0})
+        assert_(np.absolute(res.fun).max() < f_tol)
 
     @dec.knownfailureif(True)
     def _check_func_fail(self, *a, **kw):
         pass
 
-    def test_problem(self):
+    def test_problem_nonlin(self):
+        """ Tests for nonlin functions """
         for f in [F, F2, F3, F4_powell, F5, F6]:
-            for func in SOLVERS:
-                if func in f.KNOWN_BAD:
-                    if func in MUST_WORK:
+            for func in SOLVERS.itervalues():
+                if func in f.KNOWN_BAD.values():
+                    if func in MUST_WORK.values():
                         yield self._check_func_fail, f, func
                     continue
-                yield self._check_func, f, func
+                yield self._check_nonlin_func, f, func
+
+    def test_problem_root(self):
+        """ Tests for root """
+        for f in [F, F2, F3, F4_powell, F5, F6]:
+            for meth in SOLVERS.iterkeys():
+                if meth in f.KNOWN_BAD.keys():
+                    if meth in MUST_WORK.keys():
+                        yield self._check_func_fail, f, meth
+                    continue
+                yield self._check_root, f, meth
 
 
 class TestSecant(TestCase):
@@ -188,7 +211,7 @@ class TestLinear(TestCase):
         def func(x):
             return dot(A, x) - b
 
-        sol = nonlin.nonlin_solve(func, b*0, jac, maxiter=maxiter,
+        sol = nonlin.nonlin_solve(func, np.zeros(N), jac, maxiter=maxiter,
                                   f_tol=1e-6, line_search=None, verbose=0)
         assert_(np.allclose(dot(A, sol), b, atol=1e-6))
 
@@ -340,6 +363,45 @@ class TestNonlinOldTests(TestCase):
         x= nonlin.diagbroyden(F,F.xin,iter=11,alpha=1)
         assert_(nonlin.norm(x) < 1e-8)
         assert_(nonlin.norm(F(x)) < 1e-8)
+
+    def test_root_broyden1(self):
+        res = root(F, F.xin, method='broyden1',
+                   options={'nit': 12, 'jac_options': {'alpha': 1}})
+        assert_(nonlin.norm(res.x) < 1e-9)
+        assert_(nonlin.norm(res.fun) < 1e-9)
+
+    def test_root_broyden2(self):
+        res = root(F, F.xin, method='broyden2',
+                   options={'nit': 12, 'jac_options': {'alpha': 1}})
+        assert_(nonlin.norm(res.x) < 1e-9)
+        assert_(nonlin.norm(res.fun) < 1e-9)
+
+    def test_root_anderson(self):
+        res = root(F, F.xin, method='anderson',
+                   options={'nit': 12,
+                            'jac_options': {'alpha': 0.03, 'M': 5}})
+        assert_(nonlin.norm(res.x) < 0.33)
+
+    def test_root_linearmixing(self):
+        res = root(F, F.xin, method='linearmixing',
+                   options={'nit': 60,
+                            'jac_options': {'alpha': 0.5}})
+        assert_(nonlin.norm(res.x) < 1e-7)
+        assert_(nonlin.norm(res.fun) < 1e-7)
+
+    def test_root_excitingmixing(self):
+        res = root(F, F.xin, method='excitingmixing',
+                   options={'nit': 20,
+                            'jac_options': {'alpha': 0.5}})
+        assert_(nonlin.norm(res.x) < 1e-5)
+        assert_(nonlin.norm(res.fun) < 1e-5)
+
+    def test_root_diagbroyden(self):
+        res = root(F, F.xin, method='diagbroyden',
+                   options={'nit': 11,
+                            'jac_options': {'alpha': 1}})
+        assert_(nonlin.norm(res.x) < 1e-8)
+        assert_(nonlin.norm(res.fun) < 1e-8)
 
 if __name__ == "__main__":
     run_module_suite()

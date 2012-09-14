@@ -13,6 +13,7 @@ Run tests if sparse is not installed:
   python tests/test_sparse.py
 """
 
+import sys
 import warnings
 
 import numpy as np
@@ -25,12 +26,14 @@ from numpy.testing import assert_raises, assert_equal, assert_array_equal, \
         assert_array_almost_equal, assert_almost_equal, assert_, \
         dec, TestCase, run_module_suite
 
+import scipy.linalg
+
 import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
         eye, isspmatrix, SparseEfficiencyWarning
 from scipy.sparse.sputils import supported_dtypes
-from scipy.sparse.linalg import splu
+from scipy.sparse.linalg import splu, expm, inv
 
 
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
@@ -155,6 +158,25 @@ class _TestCommon:
         assert_array_equal(self.dat.mean(axis=0), self.datsp.mean(axis=0))
         assert_array_equal(self.dat.mean(axis=1), self.datsp.mean(axis=1))
 
+    def test_expm(self):
+        M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
+        sM = self.spmatrix(M, shape=(3,3), dtype=float)
+        Mexp = scipy.linalg.expm(M)
+        sMexp = expm(sM).todense()
+        assert_array_almost_equal((sMexp - Mexp), zeros((3, 3)))
+
+        N = array([[ 3.,  0., 1.], [ 0.,  2., 0.],  [ 0.,  0., 0.]])
+        sN = self.spmatrix(N, shape=(3,3), dtype=float)
+        Nexp = scipy.linalg.expm(N)
+        sNexp = expm(sN).todense()
+        assert_array_almost_equal((sNexp - Nexp), zeros((3, 3)))
+
+    def test_inv(self):
+        M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
+        sM = self.spmatrix(M, shape=(3,3), dtype=float)
+        sMinv = inv(sM)
+        assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
+
     def test_from_array(self):
         A = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
         assert_array_equal(self.spmatrix(A).toarray(), A)
@@ -208,8 +230,33 @@ class _TestCommon:
     #    assert_equal( array(self.datsp), self.dat )
 
     def test_todense(self):
+        # Check C-contiguous (default).
         chk = self.datsp.todense()
-        assert_array_equal(chk,self.dat)
+        assert_array_equal(chk, self.dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check C-contiguous (with arg).
+        chk = self.datsp.todense(order='C')
+        assert_array_equal(chk, self.dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check F-contiguous (with arg).
+        chk = self.datsp.todense(order='F')
+        assert_array_equal(chk, self.dat)
+        assert_(not chk.flags.c_contiguous)
+        assert_(chk.flags.f_contiguous)
+        # Check with out argument (array).
+        out = np.zeros(self.datsp.shape, dtype=self.datsp.dtype)
+        chk = self.datsp.todense(out=out)
+        assert_array_equal(self.dat, out)
+        assert_array_equal(self.dat, chk)
+        assert_(chk.base is out)
+        # Check with out array (matrix).
+        out = np.asmatrix(np.zeros(self.datsp.shape, dtype=self.datsp.dtype))
+        chk = self.datsp.todense(out=out)
+        assert_array_equal(self.dat, out)
+        assert_array_equal(self.dat, chk)
+        assert_(chk is out)
         a = matrix([1.,2.,3.])
         dense_dot_dense = a * self.dat
         check = a * self.datsp.todense()
@@ -220,8 +267,29 @@ class _TestCommon:
         assert_array_equal(dense_dot_dense, check2)
 
     def test_toarray(self):
+        # Check C-contiguous (default).
         dat = asarray(self.dat)
         chk = self.datsp.toarray()
+        assert_array_equal(chk, dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check C-contiguous (with arg).
+        chk = self.datsp.toarray(order='C')
+        assert_array_equal(chk, dat)
+        assert_(chk.flags.c_contiguous)
+        assert_(not chk.flags.f_contiguous)
+        # Check F-contiguous (with arg).
+        chk = self.datsp.toarray(order='F')
+        assert_array_equal(chk, dat)
+        assert_(not chk.flags.c_contiguous)
+        assert_(chk.flags.f_contiguous)
+        # Check with output arg.
+        out = np.zeros(self.datsp.shape, dtype=self.datsp.dtype)
+        self.datsp.toarray(out=out)
+        assert_array_equal(chk, dat)
+        # Check that things are fine when we don't initialize with zeros.
+        out[...] = 1.
+        self.datsp.toarray(out=out)
         assert_array_equal(chk, dat)
         a = array([1.,2.,3.])
         dense_dot_dense = dot(a, dat)
@@ -1091,6 +1159,18 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         assert_array_equal(asp.data,[1, 2, 3])
         assert_array_equal(asp.todense(),bsp.todense())
 
+    def test_ufuncs(self):
+        X = csr_matrix(np.arange(20).reshape(4, 5) / 20.)
+        for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
+                  "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
+                  "deg2rad", "rad2deg", "floor", "ceil", "trunc"]:
+            assert_equal(hasattr(csr_matrix, f), True)
+            X2 = getattr(X, f)()
+            assert_equal(X.shape, X2.shape)
+            assert_array_equal(X.indices, X2.indices)
+            assert_array_equal(X.indptr, X2.indptr)
+            assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
+
     def test_unsorted_arithmetic(self):
         data    = arange( 5 )
         indices = array( [7, 2, 1, 5, 4] )
@@ -1178,6 +1258,18 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         asp.sort_indices()
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         assert_array_equal(asp.todense(),bsp.todense())
+
+    def test_ufuncs(self):
+        X = csc_matrix(np.arange(21).reshape(7, 3) / 21.)
+        for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
+                  "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
+                  "deg2rad", "rad2deg", "floor", "ceil", "trunc"]:
+            assert_equal(hasattr(csr_matrix, f), True)
+            X2 = getattr(X, f)()
+            assert_equal(X.shape, X2.shape)
+            assert_array_equal(X.indices, X2.indices)
+            assert_array_equal(X.indptr, X2.indptr)
+            assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
 
     def test_unsorted_arithmetic(self):
         data    = arange( 5 )
@@ -1343,6 +1435,100 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         b[:,0] = 0
         assert_(len(b.keys())==0, "Unexpected entries in keys")
 
+    # The following five tests are duplicates from _TestCommon, so they can be
+    # marked as knownfail for Python 2.4.  Once 2.4 is no longer supported,
+    # these duplicates can be removed again.
+
+    @dec.knownfailureif(sys.version[:3] == '2.4', "See ticket 1559")
+    def test_add_dense(self):
+        """ adding a dense matrix to a sparse matrix
+        """
+        sum1 = self.dat + self.datsp
+        assert_array_equal(sum1, 2*self.dat)
+        sum2 = self.datsp + self.dat
+        assert_array_equal(sum2, 2*self.dat)
+
+    @dec.knownfailureif(sys.version[:3] == '2.4', "See ticket 1559")
+    def test_radd(self):
+        a = self.dat.copy()
+        a[0,2] = 2.0
+        b = self.datsp
+        c = a + b
+        assert_array_equal(c,[[2,0,2,4],[6,0,2,0],[0,4,0,0]])
+
+    @dec.knownfailureif(sys.version[:3] == '2.4', "See ticket 1559")
+    def test_rsub(self):
+        assert_array_equal((self.dat - self.datsp),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
+        assert_array_equal((self.datsp - self.dat),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
+
+        A = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
+        assert_array_equal((self.dat - A),self.dat - A.todense())
+        assert_array_equal((A - self.dat),A.todense() - self.dat)
+        assert_array_equal(A.todense() - self.datsp,A.todense() - self.dat)
+        assert_array_equal(self.datsp - A.todense(),self.dat - A.todense())
+
+    @dec.knownfailureif(sys.version[:3] == '2.4', "See ticket 1559")
+    def test_matmat_sparse(self):
+        a = matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]])
+        a2 = array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]])
+        b = matrix([[0,1],[1,0],[0,2]],'d')
+        asp = self.spmatrix(a)
+        bsp = self.spmatrix(b)
+        assert_array_almost_equal((asp*bsp).todense(), a*b)
+        assert_array_almost_equal( asp*b, a*b)
+        assert_array_almost_equal( a*bsp, a*b)
+        assert_array_almost_equal( a2*bsp, a*b)
+
+        # Now try performing cross-type multplication:
+        csp = bsp.tocsc()
+        c = b
+        assert_array_almost_equal((asp*csp).todense(), a*c)
+        assert_array_almost_equal( asp*c, a*c)
+
+        assert_array_almost_equal( a*csp, a*c)
+        assert_array_almost_equal( a2*csp, a*c)
+        csp = bsp.tocsr()
+        assert_array_almost_equal((asp*csp).todense(), a*c)
+        assert_array_almost_equal( asp*c, a*c)
+
+        assert_array_almost_equal( a*csp, a*c)
+        assert_array_almost_equal( a2*csp, a*c)
+        csp = bsp.tocoo()
+        assert_array_almost_equal((asp*csp).todense(), a*c)
+        assert_array_almost_equal( asp*c, a*c)
+
+        assert_array_almost_equal( a*csp, a*c)
+        assert_array_almost_equal( a2*csp, a*c)
+
+        # Test provided by Andy Fraser, 2006-03-26
+        L = 30
+        frac = .3
+        random.seed(0) # make runs repeatable
+        A = zeros((L,2))
+        for i in xrange(L):
+            for j in xrange(2):
+                r = random.random()
+                if r < frac:
+                    A[i,j] = r/frac
+
+        A = self.spmatrix(A)
+        B = A*A.T
+        assert_array_almost_equal(B.todense(), A.todense() * A.T.todense())
+        assert_array_almost_equal(B.todense(), A.todense() * A.todense().T)
+
+        # check dimension mismatch  2x2 times 3x2
+        A = self.spmatrix( [[1,2],[3,4]] )
+        B = self.spmatrix( [[1,2],[3,4],[5,6]] )
+        assert_raises(ValueError, A.__mul__, B)
+
+    @dec.knownfailureif(sys.version[:3] == '2.4', "See ticket 1559")
+    def test_sub_dense(self):
+        """ subtracting a dense matrix to/from a sparse matrix
+        """
+        sum1 = 3*self.dat - self.datsp
+        assert_array_equal(sum1, 2*self.dat)
+        sum2 = 3*self.datsp - self.dat
+        assert_array_equal(sum2, 2*self.dat)
 
 class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         _TestBothSlicing, _TestGetSet, _TestSolve,

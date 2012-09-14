@@ -141,6 +141,7 @@ def post_configure(context):
     conf.load("compiler_fc")
     conf.load("f2py", tooldir=[WAF_TOOLDIR])
     conf.load("ordered_c", tooldir=[WAF_TOOLDIR])
+    conf.load("arch", tooldir=[WAF_TOOLDIR])
 
     if conf.env.CC_NAME == 'gcc':
         conf.env.append_value('CFLAGS_PYEXT', "-Wfatal-errors")
@@ -148,6 +149,10 @@ def post_configure(context):
 
     if sys.platform == "darwin":
         conf.env["MACOSX_DEPLOYMENT_TARGET"] = "10.4"
+
+        conf.check_cc_default_arch()
+        archs = [conf.env.DEFAULT_CC_ARCH]
+        conf.env.ARCH = archs
 
     conf.check_fortran_verbose_flag()
     conf.check_fortran_clib()
@@ -238,12 +243,7 @@ def post_configure(context):
 def pre_build(context):
     bld = context.waf_context
 
-    def iregistrer(category, name, nodes, from_node, target_dir):
-        source_dir = op.join("$_srcrootdir", from_node.bldpath())
-        files = [n.path_from(from_node) for n in nodes]
-        return InstalledSection.from_source_target_directories(category, name, source_dir, target_dir, files)
-    context.isection_registry.register_category("gen_pymodule", iregistrer)
-    context.outputs_registry.register_category("gen_pymodule", "pythonfiles")
+    context.register_category("gen_pymodule")
     bld(features="gen_pymodule",
         target="scipy/__config__.py",
         content="""\

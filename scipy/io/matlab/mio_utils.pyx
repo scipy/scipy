@@ -22,7 +22,8 @@ cpdef object squeeze_element(cnp.ndarray arr):
     if not arr.size:
         return np.array([])
     arr2 = np.squeeze(arr)
-    if (not arr2.shape) and arr2.dtype.isbuiltin: # 0d coverted to scalar
+    # We want to squeeze 0d arrays, unless they are record arrays
+    if (not arr2.shape) and arr2.dtype.kind != 'V':
         return arr2.item()
     return arr2
 

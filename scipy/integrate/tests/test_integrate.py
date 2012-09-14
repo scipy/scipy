@@ -8,7 +8,8 @@ from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, \
                   allclose
 
 from numpy.testing import assert_, TestCase, run_module_suite, \
-        assert_array_almost_equal, assert_raises, assert_allclose
+        assert_array_almost_equal, assert_raises, assert_allclose, \
+        assert_array_equal
 from scipy.integrate import odeint, ode, complex_ode
 
 #------------------------------------------------------------------------------
@@ -155,7 +156,9 @@ class TestComplexOde(TestCase):
                           method=method)
         ig.set_initial_value(problem.z0, t=0.0)
         z = ig.integrate(problem.stop_t)
+        z2 = ig.y
 
+        assert_array_equal(z, z2)
         assert_(ig.successful(), (problem, method))
         assert_(problem.verify(array([z]), problem.stop_t), (problem, method))
 

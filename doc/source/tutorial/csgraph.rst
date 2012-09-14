@@ -12,7 +12,7 @@ Example: Word Ladders
 A `Word Ladder <http://en.wikipedia.org/wiki/Word_ladder>`_ is a word game
 invented by Lewis Carroll in which players find paths between words by
 switching one letter at a time.  For example, one can link "ape" and "man"
-in the following way::
+in the following way:
 
 .. math::
    {\rm ape \to apt \to ait \to bit \to big \to bag \to mag \to man}

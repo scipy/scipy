@@ -27,9 +27,9 @@ class KroghInterpolator(object):
 
     Parameters
     ----------
-    xi : array-like, length N
+    xi : array_like, length N
         Known x-coordinates
-    yi : array-like, N by R
+    yi : array_like, N by R
         Known y-coordinates, interpreted as vectors of length R,
         or scalars if R=1. When an xi occurs two or more times in
         a row, the corresponding yi's represent derivative values.
@@ -945,12 +945,10 @@ def _find_derivatives(x, y):
 def pchip(x, y):
     """PCHIP 1-d monotonic cubic interpolation
 
-    Description
-    -----------
-    x and y are arrays of values used to approximate some function f:
-       y = f(x)
-    This class factory function returns a callable class whose __call__ method
-    uses monotonic cubic, interpolation to find the value of new points.
+    x and y are arrays of values used to approximate some function f, with
+    ``y = f(x)``.  This class factory function returns a callable class whose
+    ``__call__`` method uses monotonic cubic, interpolation to find the value
+    of new points.
 
     Parameters
     ----------
@@ -961,7 +959,13 @@ def pchip(x, y):
         A 1-D array of real values.  y's length along the interpolation
         axis must be equal to the length of x.
 
-    Assumes x is sorted in monotonic order (e.g. x[1] > x[0])
+    Assumes x is sorted in monotonic order (e.g. ``x[1] > x[0]``).
+
+    Returns
+    -------
+    pchip : PiecewisePolynomial instance
+        The result of the interpolation.
+
     """
     derivs = _find_derivatives(x,y)
     return PiecewisePolynomial(x, zip(y, derivs), orders=3, direction=None)

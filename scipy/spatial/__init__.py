@@ -32,3 +32,4 @@ __all__ += ['distance']
 import distance
 from numpy.testing import Tester
 test = Tester().test
+bench = Tester().bench

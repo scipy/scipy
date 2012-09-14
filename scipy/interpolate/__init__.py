@@ -23,6 +23,7 @@ Univariate interpolation
    BarycentricInterpolator
    KroghInterpolator
    PiecewisePolynomial
+   pchip
    barycentric_interpolate
    krogh_interpolate
    piecewise_polynomial_interpolate

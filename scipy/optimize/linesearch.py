@@ -1,3 +1,16 @@
+"""
+Functions
+---------
+.. autosummary::
+   :toctree: generated/
+
+    line_search_armijo
+    line_search_wolfe1
+    line_search_wolfe2
+    scalar_search_wolfe1
+    scalar_search_wolfe2
+
+"""
 from scipy.optimize import minpack2
 import numpy as np
 from numpy.compat import asbytes

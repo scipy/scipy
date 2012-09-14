@@ -71,7 +71,7 @@ DataFiles: tests
         sparse/linalg/tests/*.py,
         sparse/tests/*.py,
         spatial/tests/*.py,
-        spatial/tests/*.txt,
+        spatial/tests/data/*.txt,
         special/tests/*.py,
         special/tests/data/*.npz,
         stats/tests/*.py,

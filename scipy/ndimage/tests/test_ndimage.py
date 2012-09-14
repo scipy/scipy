@@ -2122,6 +2122,19 @@ class TestNdimage:
         out = ndimage.zoom(ndimage.zoom(arr,2),0.5)
         assert_array_equal(out,arr)
 
+    def test_zoom3(self):
+        "zoom 3"
+        err = numpy.seterr(invalid='ignore')
+        arr = numpy.array([[1, 2]])
+        try:
+            out1 = ndimage.zoom(arr, (2, 1))
+            out2 = ndimage.zoom(arr, (1,2))
+        finally:
+            numpy.seterr(**err)
+
+        assert_array_almost_equal(out1, numpy.array([[1, 2], [1, 2]]))
+        assert_array_almost_equal(out2, numpy.array([[1, 1, 2, 2]]))
+
     def test_zoom_affine01(self):
         "zoom by affine transformation 1"
         data = [[1, 2, 3, 4],
@@ -2141,6 +2154,19 @@ class TestNdimage:
             ndimage.zoom(numpy.zeros((dim, dim)), 1./dim, mode='nearest')
         finally:
             numpy.seterr(**err)
+
+    def test_zoom_zoomfactor_one(self):
+        """Ticket #1122"""
+        arr = numpy.zeros((1, 5, 5))
+        zoom = (1.0, 2.0, 2.0)
+
+        err = numpy.seterr(invalid='ignore')
+        try:
+            out = ndimage.zoom(arr, zoom, cval=7)
+        finally:
+            numpy.seterr(**err)
+        ref = numpy.zeros((1, 10, 10))
+        assert_array_almost_equal(out, ref)
 
     def test_rotate01(self):
         "rotate 1"
@@ -4665,6 +4691,30 @@ class TestNdimage:
             out = ndimage.binary_hit_or_miss(data, struct1,
                                               struct2)
             assert_array_almost_equal(expected, out)
+
+
+class TestDilateFix:
+
+    def setUp(self):
+        # dilation related setup
+        self.array = numpy.array([[0, 0, 0, 0, 0,],
+                                  [0, 0, 0, 0, 0,],
+                                  [0, 0, 0, 1, 0,],
+                                  [0, 0, 1, 1, 0,],
+                                  [0, 0, 0, 0, 0,]], dtype=numpy.uint8)
+
+        self.sq3x3 = numpy.ones((3, 3))
+        dilated3x3 = ndimage.binary_dilation(self.array, structure=self.sq3x3)
+        self.dilated3x3 = dilated3x3.view(numpy.uint8)
+
+    def test_dilation_square_structure(self):
+        result = ndimage.grey_dilation(self.array, structure=self.sq3x3)
+        # +1 accounts for difference between grey and binary dilation
+        assert_array_almost_equal(result, self.dilated3x3 + 1)
+
+    def test_dilation_scalar_size(self):
+        result = ndimage.grey_dilation(self.array, size=3)
+        assert_array_almost_equal(result, self.dilated3x3)
 
 
 #class NDImageTestResult(unittest.TestResult):

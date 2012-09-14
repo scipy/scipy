@@ -14,6 +14,7 @@ from glob import glob
 
 import numpy as np
 from numpy.compat import asbytes
+from numpy.testing import dec, assert_
 
 from scipy.io.netcdf import netcdf_file
 
@@ -87,6 +88,7 @@ def test_read_write_files():
     shutil.rmtree(tmpdir)
 
 
+@dec.skipif(sys.version[:3] < '2.5', "Random StringIO issue on 2.4")
 def test_read_write_sio():
     eg_sio1 = BytesIO()
     f1 = make_simple(eg_sio1, 'w')
@@ -148,5 +150,31 @@ def test_write_invalid_dtype():
     for dt in dtypes:
         yield assert_raises, ValueError, \
             f.createVariable, 'time', dt, ('time',)
+    f.close()
+
+
+def test_flush_rewind():
+    stream = BytesIO()
+    f = make_simple(stream, mode='w')
+    x = f.createDimension('x',4)
+    v = f.createVariable('v', 'i2', ['x'])
+    v[:] = 1
+    f.flush()
+    len_single = len(stream.getvalue())
+    f.flush()
+    len_double = len(stream.getvalue())
+    f.close()
+    assert_(len_single == len_double)
+
+
+def test_dtype_specifiers():
+    # Numpy 1.7.0-dev had a bug where 'i2' wouldn't work.
+    # Specifying np.int16 or similar only works from the same commit as this
+    # comment was made.
+    f = make_simple(BytesIO(), mode='w')
+    x = f.createDimension('x',4)
+    v1 = f.createVariable('v1', 'i2', ['x'])
+    v2 = f.createVariable('v2', np.int16, ['x'])
+    v3 = f.createVariable('v3', np.dtype(np.int16), ['x'])
     f.close()
 

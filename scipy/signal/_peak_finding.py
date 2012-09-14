@@ -255,7 +255,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
         Minimum length a ridge line needs to be acceptable.
         Default is `cwt`.shape[0]/4, ie 1/4th the number of widths.
     min_snr: float, optional
-        Minimum SNR ratio. Default 0. The signal is the value of
+        Minimum SNR ratio. Default 1. The signal is the value of
         the cwt matrix at the shortest length scale (`cwt`[0,loc]), the noise is
         the `noise_perc`th percentile of datapoints contained within
         a window of `window_size` around `cwt`[0,loc]

@@ -4,7 +4,7 @@ from bento.commands import hooks
 def pre_build(context):
     default_builder = context.default_builder
 
-    context.tweak_builder("flapack", features="c fc pyext bento cshlib f2py",
+    context.tweak_extension("flapack", features="c fc pyext bento cshlib f2py",
                           use="FLAPACK")
 
     def clapack_builder(extension):
@@ -16,7 +16,7 @@ def pre_build(context):
         return default_builder(extension, **kw)
     context.register_builder("clapack", clapack_builder)
 
-    context.tweak_builder("calc_lwork", 
+    context.tweak_extension("calc_lwork",
                           features="c fc pyext bento cshlib f2py f2py_fortran",
                           use="FLAPACK CLIB")
     context.disable_extension("atlas_version")

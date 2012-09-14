@@ -15,7 +15,6 @@ General-purpose
    :toctree: generated/
 
    minimize - Unified interface for minimizers of multivariate functions
-   show_minimize_options - Show method-specific options for `minimize`
    fmin - Nelder-Mead Simplex algorithm
    fmin_powell - Powell's (modified) level set method
    fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm
@@ -105,6 +104,7 @@ General nonlinear solvers:
 .. autosummary::
    :toctree: generated/
 
+   root - Unified interface for nonlinear solvers of multivariate functions
    fsolve - Non-linear multi-variable equation solver
    broyden1 - Broyden's first method
    broyden2 - Broyden's second method
@@ -137,10 +137,13 @@ Utility Functions
    line_search - Return a step that satisfies the strong Wolfe conditions
    check_grad - Check the supplied derivative using finite differences
 
+   show_options - Show specific options optimization solvers
+
 """
 
 from optimize import *
 from _minimize import *
+from _root import *
 from minpack import *
 from zeros import *
 from anneal import *

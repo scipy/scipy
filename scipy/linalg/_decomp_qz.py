@@ -52,36 +52,39 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     QZ decompostion for generalized eigenvalues of a pair of matrices.
 
     The QZ, or generalized Schur, decomposition for a pair of N x N
-    nonsymmetric matrices (A,B) is
+    nonsymmetric matrices (A,B) is::
 
         (A,B) = (Q*AA*Z', Q*BB*Z')
 
     where AA, BB is in generalized Schur form if BB is upper-triangular
     with non-negative diagonal and AA is upper-triangular, or for real QZ
-    decomposition (output='real') block upper triangular with 1x1
-    and 2x2 blocks. In this case, the 1x1 blocks correpsond to real
+    decomposition (``output='real'``) block upper triangular with 1x1
+    and 2x2 blocks.  In this case, the 1x1 blocks correspond to real
     generalized eigenvalues and 2x2 blocks are 'standardized' by making
-    the correpsonding elements of BB have the form::
+    the corresponding elements of BB have the form::
 
         [ a 0 ]
         [ 0 b ]
 
-    and the pair of correpsonding 2x2 blocks in AA and BB will have a complex
-    conjugate pair of generalized eigenvalues. If (output='complex') or A
-    and B are complex matrices, Z' denotes the conjugate-transpose of Z.
+    and the pair of corresponding 2x2 blocks in AA and BB will have a complex
+    conjugate pair of generalized eigenvalues.  If (``output='complex'``) or
+    A and B are complex matrices, Z' denotes the conjugate-transpose of Z.
     Q and Z are unitary matrices.
 
     Parameters
     ----------
-    A : array-like, shape (N,N)
-        2d array to decompose
-    B : array-like, shape (N,N)
-        2d array to decompose
-    output : str {'real','complex'}
+    A : array_like, shape (N,N)
+        2-D array to decompose.
+    B : array_like, shape (N,N)
+        2-D array to decompose.
+    output : {'real','complex'}, optional
         Construct the real or complex QZ decomposition for real matrices.
-    lwork : integer, optional
-        Work array size. If None or -1, it is automatically computed.
-    sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}
+        Default is 'real'.
+    lwork : int, optional
+        Work array size.  If None or -1, it is automatically computed.
+    sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
+        NOTE: THIS INPUT IS DISABLED FOR NOW, IT DOESN'T WORK WELL ON WINDOWS.
+
         Specifies whether the upper eigenvalues should be sorted.  A callable
         may be passed that, given a eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True). For
@@ -91,23 +94,25 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         takes two complex arguments (alpha, beta). The eigenvalue
         x = (alpha/beta).
         Alternatively, string parameters may be used:
-            'lhp'   Left-hand plane (x.real < 0.0)
-            'rhp'   Right-hand plane (x.real > 0.0)
-            'iuc'   Inside the unit circle (x*x.conjugate() <= 1.0)
-            'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+
+            - 'lhp'   Left-hand plane (x.real < 0.0)
+            - 'rhp'   Right-hand plane (x.real > 0.0)
+            - 'iuc'   Inside the unit circle (x*x.conjugate() <= 1.0)
+            - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+
         Defaults to None (no sorting).
 
     Returns
     -------
-    AA : array, shape (N,N)
+    AA : ndarray, shape (N,N)
         Generalized Schur form of A.
-    BB : array, shape (N,N)
+    BB : ndarray, shape (N,N)
         Generalized Schur form of B.
-    Q : array, shape (N,N)
+    Q : ndarray, shape (N,N)
         The left Schur vectors.
-    Z : array, shape (N,N)
+    Z : ndarray, shape (N,N)
         The right Schur vectors.
-    sdim : int
+    sdim : int, optional
         If sorting was requested, a fifth return value will contain the
         number of eigenvalues for which the sort condition was True.
 
@@ -116,7 +121,38 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     Q is transposed versus the equivalent function in Matlab.
 
     .. versionadded:: 0.11.0
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> np.random.seed(1234)
+    >>> A = np.arange(9).reshape((3, 3))
+    >>> B = np.random.randn(3, 3)
+
+    >>> AA, BB, Q, Z = linalg.qz(A, B)
+    >>> AA
+    array([[-13.40928183,  -4.62471562,   1.09215523],
+           [  0.        ,   0.        ,   1.22805978],
+           [  0.        ,   0.        ,   0.31973817]])
+    >>> BB
+    array([[ 0.33362547, -1.37393632,  0.02179805],
+           [ 0.        ,  1.68144922,  0.74683866],
+           [ 0.        ,  0.        ,  0.9258294 ]])
+    >>> Q
+    array([[ 0.14134727, -0.97562773,  0.16784365],
+           [ 0.49835904, -0.07636948, -0.86360059],
+           [ 0.85537081,  0.20571399,  0.47541828]])
+    >>> Z
+    array([[-0.24900855, -0.51772687,  0.81850696],
+           [-0.79813178,  0.58842606,  0.12938478],
+           [-0.54861681, -0.6210585 , -0.55973739]])
+
     """
+    if sort is not None:
+        # Disabled due to segfaults on win32, see ticket 1717.
+        raise ValueError("The 'sort' input of qz() has to be None (will "
+                 " change when this functionality is made more robust).")
+
     if not output in ['real','complex','r','c']:
         raise ValueError("argument must be 'real', or 'complex'")
 
@@ -172,14 +208,14 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise ValueError("Illegal value in argument %d of gges" % -info)
     elif info > 0 and info <= a_n:
         warnings.warn("The QZ iteration failed. (a,b) are not in Schur "
-                "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be correct"
+                "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be correct "
                 "for J=%d,...,N" % info-1, UserWarning)
     elif info == a_n+1:
         raise LinAlgError("Something other than QZ iteration failed")
     elif info == a_n+2:
-        raise LinAlgError("After reordering, roundoff changed values of some"
-                "complex eigenvalues so that leading eigenvalues in the"
-                "Generalized Schur form no longer satisfy sort=True."
+        raise LinAlgError("After reordering, roundoff changed values of some "
+                "complex eigenvalues so that leading eigenvalues in the "
+                "Generalized Schur form no longer satisfy sort=True. "
                 "This could also be caused due to scaling.")
     elif info == a_n+3:
         raise LinAlgError("Reordering failed in <s,d,c,z>tgsen")

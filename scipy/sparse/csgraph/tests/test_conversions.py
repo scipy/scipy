@@ -1,33 +1,46 @@
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, dec
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import csgraph_from_dense, csgraph_to_dense
 
 
 def test_csgraph_from_dense():
+    np.random.seed(1234)
     G = np.random.random((10, 10))
     some_nulls = (G < 0.4)
     all_nulls = (G < 0.8)
 
     for null_value in [0, np.nan, np.inf]:
         G[all_nulls] = null_value
-        G_csr = csgraph_from_dense(G, null_value=0)
+        olderr = np.seterr(invalid="ignore")
+        try:
+            G_csr = csgraph_from_dense(G, null_value=0)
+        finally:
+            np.seterr(**olderr)
+
         G[all_nulls] = 0
         assert_array_almost_equal(G, G_csr.toarray())
 
     for null_value in [np.nan, np.inf]:
         G[all_nulls] = 0
         G[some_nulls] = null_value
-        G_csr = csgraph_from_dense(G, null_value=0)
+        olderr = np.seterr(invalid="ignore")
+        try:
+            G_csr = csgraph_from_dense(G, null_value=0)
+        finally:
+            np.seterr(**olderr)
+
         G[all_nulls] = 0
         assert_array_almost_equal(G, G_csr.toarray())
 
 
+@dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_csgraph_to_dense():
+    np.random.seed(1234)
     G = np.random.random((10, 10))
     nulls = (G < 0.8)
     G[nulls] = np.inf
-    
+
     G_csr = csgraph_from_dense(G)
 
     for null_value in [0, 10, -np.inf, np.inf]:
@@ -37,6 +50,7 @@ def test_csgraph_to_dense():
 
 def test_multiple_edges():
     # create a random sqare matrix with an even number of elements
+    np.random.seed(1234)
     X = np.random.random((10, 10))
     Xcsr = csr_matrix(X)
 

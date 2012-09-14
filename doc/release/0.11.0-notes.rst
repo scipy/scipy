@@ -28,19 +28,33 @@ The optimize module has received a lot of attention this release.  In addition
 to added tests, documentation improvements, bug fixes and code clean-up, the
 following improvements were made:
 
-- A unified interface to minimizers of multivariate functions has been added.
+- A unified interface to minimizers of univariate and multivariate
+  functions has been added.
+- A unified interface to root finding algorithms for multivariate functions
+  has been added.
 - The L-BFGS-B algorithm has been updated to version 3.0.
 
 
-Unified interface to minimizers of multivariate functions
-`````````````````````````````````````````````````````````
+Unified interfaces to minimizers
+````````````````````````````````
 
-A new function ``scipy.optimize.minimize`` was added to provide a common
-interface to minimizers of multivariate functions (unconstrained: `fmin`,
-`fmin_powell`, `fmin_cg`, `fmin_ncg`, `fmin_bfgs` and `anneal` or
-constrained: `fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla` and `fmin_slsqp`).
+Two new functions ``scipy.optimize.minimize`` and
+``scipy.optimize.minimize_scalar`` were added to provide a common interface
+to minimizers of multivariate and univariate functions respectively.
+For multivariate functions, ``scipy.optimize.minimize`` provides an
+interface to methods for unconstrained optimization (`fmin`, `fmin_powell`,
+`fmin_cg`, `fmin_ncg`, `fmin_bfgs` and `anneal`) or constrained
+optimization (`fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla` and `fmin_slsqp`).
+For univariate functions, ``scipy.optimize.minimize_scalar`` provides an
+interface to methods for unconstrained and bounded optimization (`brent`,
+`golden`, `fminbound`).
 This allows for easier comparing and switching between solvers.
 
+Unified interface to root finding algorithms
+````````````````````````````````````````````
+The new function ``scipy.optimize.root`` provides a common interface to
+root finding algorithms for multivariate functions, embeding `fsolve`,
+`leastsq` and `nonlin` solvers.
 
 New matrix equation solvers (``scipy.linalg``)
 ----------------------------------------------
@@ -59,6 +73,18 @@ Constructing sparse matrices
 Two new functions, ``scipy.sparse.diags`` and ``scipy.sparse.block_diag``, were
 added to easily construct diagonal and block-diagonal sparse matrices
 respectively.
+
+
+New operations on sparse matrices
+---------------------------------
+
+``scipy.sparse.csc_matrix`` and ``csr_matrix`` now support the operations
+``sin``, ``tan``, ``arcsin``, ``arctan``, ``sinh``, ``tanh``, ``arcsinh``,
+``arctanh``, ``rint``, ``sign``, ``expm1``, ``log1p``, ``deg2rad``, ``rad2deg``,
+``floor``, ``ceil`` and ``trunc``.
+
+Previously, these operations had to be performed by operating on the matrices'
+``data`` attribute.
 
 
 LSMR iterative solver
@@ -115,6 +141,24 @@ routines are:
      tree of a graph
 
 
+``scipy.interpolate`` improvements
+----------------------------------
+
+For interpolation in spherical coordinates, the three classes
+``scipy.interpolate.SmoothSphereBivariateSpline``,
+``scipy.interpolate.LSQSphereBivariateSpline``, and
+``scipy.interpolate.RectSphereBivariateSpline`` have been added.
+
+
+Binned statistics
+-----------------
+
+The stats module has gained functions to do binned statistics, which are a
+generalization of histograms, in 1-D, 2-D and multiple dimensions:
+``scipy.stats.binned_statistic``, ``scipy.stats.binned_statistic_2d`` and 
+``scipy.stats.binned_statistic_dd``.
+
+
 Deprecated features
 ===================
 ``scipy.sparse.cs_graph_components`` has been made a part of the sparse graph
@@ -131,13 +175,60 @@ Numpy arrays is the ``numpy.savez`` function.
 Backwards incompatible changes
 ==============================
 
+Minor change in behavior of ``splev``
+-------------------------------------
+
+The spline evaluation function now behaves similarly to ``interp1d``
+for size-1 arrays.  Previous behavior::
+
+    >>> from scipy.interpolate import splev, splrep, interp1d
+    >>> x = [1,2,3,4,5]
+    >>> y = [4,5,6,7,8]
+    >>> tck = splrep(x, y)
+    >>> splev([1], tck)
+    4.
+    >>> splev(1, tck)
+    4.
+
+Corrected behavior::
+
+    >>> splev([1], tck)
+    array([ 4.])
+    >>> splev(1, tck)
+    array(4.)
+
+This affects also the ``UnivariateSpline`` classes.
+
+
 Removal of ``scipy.maxentropy``
 -------------------------------
 
 The ``scipy.maxentropy`` module, which was deprecated in the 0.10.0 release,
 has been removed.  Logistic regression in scikits.learn is a good and modern
+alternative for this functionality.
 alternative for this functionality.  
- 
+
+
+Behavior of ``scipy.integrate.complex_ode``
+-------------------------------------------
+
+The behavior of the ``y`` attribute of ``complex_ode`` is changed.
+Previously, it expressed the complex-valued solution in the form::
+
+    z = ode.y[::2] + 1j * ode.y[1::2]
+
+Now, it is directly the complex-valued solution::
+
+    z = ode.y
+
+
+Minor change in behavior of T-tests
+-----------------------------------
+
+The T-tests ``scipy.stats.ttest_ind``, ``scipy.stats.ttest_rel`` and
+``scipy.stats.ttest_1samp`` have been changed so that 0 / 0 now returns NaN
+instead of 1.
+
 
 Other changes
 =============
@@ -149,8 +240,74 @@ The function ``scipy.linalg.qr_multiply``, which allows efficient computation
 of the matrix product of Q (from a QR decompostion) and a vector, has been
 added.
 
+The function ``scipy.signal.bode``, which calculates magnitude and phase data
+for a continuous-time system, has been added.
+
+The two-sample T-test ``scipy.stats.ttest_ind`` gained an option to compare
+samples with unequal variances, i.e. Welch's T-test.
+
 
 Authors
 =======
 
-Jake Vanderplas <vanderplas@hail.astro.washington.edu>, sparse graph submodule
+This release contains work by the following people (contributed at least
+one patch to this release, names in alphabetical order):
+
+* Jeff Armstrong
+* Chad Baker
+* Brandon Beacher +
+* behrisch +
+* borishim +
+* Matthew Brett
+* Lars Buitinck
+* Luis Pedro Coelho +
+* Johann Cohen-Tanugi
+* David Cournapeau
+* dougal +
+* Ali Ebrahim +
+* endolith +
+* Bjørn Forsman +
+* Robert Gantner +
+* Sebastian Gassner +
+* Christoph Gohlke
+* Ralf Gommers
+* Yaroslav Halchenko
+* Charles Harris
+* Jonathan Helmus +
+* Andreas Hilboll +
+* Marc Honnorat +
+* Jonathan Hunt +
+* Maxim Ivanov +
+* Thouis (Ray) Jones
+* Christopher Kuster +
+* Denis Laxalde +
+* Travis Oliphant
+* Joonas Paalasmaa +
+* Fabian Pedregosa
+* Josef Perktold
+* Gavin Price +
+* Jim Radford +
+* Andrew Schein +
+* Skipper Seabold
+* Jacob Silterra +
+* Scott Sinclair
+* Alexis Tabary +
+* Martin Teichmann
+* Matt Terry +
+* Nicky van Foreest +
+* Jacob Vanderplas
+* Patrick Varilly +
+* Pauli Virtanen
+* Nils Wagner +
+* Darryl Wally +
+* Stefan van der Walt
+* Liming Wang +
+* David Warde-Farley +
+* Warren Weckesser
+* Sebastian Werk +
+* Mike Wimmer +
+* Tony S Yu +
+
+A total of 54 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+

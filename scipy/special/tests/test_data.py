@@ -96,7 +96,7 @@ def test_boost():
         data(gamma, 'test_gamma_data_ipp-near_1', 0, 1),
         data(gamma, 'test_gamma_data_ipp-near_2', 0, 1),
         data(gamma, 'test_gamma_data_ipp-near_m10', 0, 1),
-        data(gamma, 'test_gamma_data_ipp-near_m55', 0, 1),
+        data(gamma, 'test_gamma_data_ipp-near_m55', 0, 1, rtol=7e-12),
         data(gamma, 'test_gamma_data_ipp-near_0', 0j, 1, rtol=2e-9),
         data(gamma, 'test_gamma_data_ipp-near_1', 0j, 1, rtol=2e-9),
         data(gamma, 'test_gamma_data_ipp-near_2', 0j, 1, rtol=2e-9),

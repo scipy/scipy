@@ -192,6 +192,8 @@ def custom_mangling(filename):
         os.path.join('sparse', 'linalg', 'eigen', 'arpack', 'arpack.py'),
         os.path.join('sparse', 'linalg', 'eigen', 'arpack', 'speigs.py'),
         os.path.join('sparse', 'linalg', 'iterative', 'isolve', 'iterative.py'),
+        os.path.join('sparse', 'csgraph', '__init__.py'),
+        os.path.join('sparse', 'csgraph', '_validation.py'),
         os.path.join('stats', 'stats.py'),
         os.path.join('stats', 'distributions.py'),
         os.path.join('stats', 'morestats.py'),
@@ -213,13 +215,14 @@ def custom_mangling(filename):
                     'sigtools', 'spline', 'spectral',
                     '_fitpack', 'dfitpack', '_interpolate',
                     '_odepack', '_quadpack', 'vode', '_dop',
-                    'vonmises_cython',
+                    'vonmises_cython', '_rank',
                     'futil', 'mvn',
                     '_nd_image',
                     'numpyio',
                     '_superlu', '_arpack', '_iterative', '_umfpack',
                     'interpnd',
-                    'mio_utils', 'mio5_utils', 'streams'
+                    'mio_utils', 'mio5_utils', 'streams',
+                    '_min_spanning_tree', '_shortest_path', '_tools', '_traversal'
                     ]:
             text = re.sub(r'^(\s*)import %s' % mod,
                           r'\1from . import %s' % mod,

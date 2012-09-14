@@ -8,9 +8,9 @@ def pre_build(context):
         return default_builder(extension, features="c cstlib pyext bento")
     context.register_compiled_library_builder("statlibimp", builder)
 
-    context.tweak_builder("statlib", features="c fc cshlib pyext bento f2py",
+    context.tweak_extension("statlib", features="c fc cshlib pyext bento f2py",
                              use="statlibimp CLIB")
-    context.tweak_builder("mvn", features="c fc cshlib pyext bento f2py",
+    context.tweak_extension("mvn", features="c fc cshlib pyext bento f2py",
                           use="CLIB")
-    context.tweak_builder("futil", features="c fc cshlib pyext bento f2py f2py_fortran",
+    context.tweak_extension("futil", features="c fc cshlib pyext bento f2py f2py_fortran",
                           use="CLIB")

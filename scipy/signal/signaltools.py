@@ -246,7 +246,7 @@ def order_filter(a, domain, rank):
 
     Examples
     --------
-    >>> import scipy.signal
+    >>> from scipy import signal
     >>> x = np.arange(25).reshape(5, 5)
     >>> domain = np.identity(3)
     >>> x
@@ -255,13 +255,13 @@ def order_filter(a, domain, rank):
            [10, 11, 12, 13, 14],
            [15, 16, 17, 18, 19],
            [20, 21, 22, 23, 24]])
-    >>> sp.signal.order_filter(x, domain, 0)
+    >>> signal.order_filter(x, domain, 0)
     array([[  0.,   0.,   0.,   0.,   0.],
            [  0.,   0.,   1.,   2.,   0.],
            [  0.,   5.,   6.,   7.,   0.],
            [  0.,  10.,  11.,  12.,   0.],
            [  0.,   0.,   0.,   0.,   0.]])
-    >>> sp.signal.order_filter(x, domain, 2)
+    >>> signal.order_filter(x, domain, 2)
     array([[  6.,   7.,   8.,   9.,   4.],
            [ 11.,  12.,  13.,  14.,   9.],
            [ 16.,  17.,  18.,  19.,  14.],
@@ -511,7 +511,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     """
     Filter data along one-dimension with an IIR or FIR filter.
 
-    Filter a data sequence, x, using a digital filter.  This works for many
+    Filter a data sequence, `x`, using a digital filter.  This works for many
     fundamental data types (including Object type).  The filter is a direct
     form II transposed implementation of the standard difference equation
     (see Notes).
@@ -521,34 +521,32 @@ def lfilter(b, a, x, axis=-1, zi=None):
     b : array_like
         The numerator coefficient vector in a 1-D sequence.
     a : array_like
-        The denominator coefficient vector in a 1-D sequence.  If a[0]
-        is not 1, then both a and b are normalized by a[0].
+        The denominator coefficient vector in a 1-D sequence.  If ``a[0]``
+        is not 1, then both `a` and `b` are normalized by ``a[0]``.
     x : array_like
         An N-dimensional input array.
     axis : int
         The axis of the input data array along which to apply the
         linear filter. The filter is applied to each subarray along
-        this axis (*Default* = -1)
-    zi : array_like (optional)
+        this axis.  Default is -1.
+    zi : array_like, optional
         Initial conditions for the filter delays.  It is a vector
         (or array of vectors for an N-dimensional input) of length
-        max(len(a),len(b))-1.  If zi=None or is not given then initial
-        rest is assumed.  SEE signal.lfiltic for more information.
+        ``max(len(a),len(b))-1``.  If `zi` is None or is not given then
+        initial rest is assumed.  See `lfiltic` for more information.
 
     Returns
     -------
     y : array
         The output of the digital filter.
-    zf : array (optional)
-        If zi is None, this is not returned, otherwise, zf holds the
+    zf : array, optional
+        If `zi` is None, this is not returned, otherwise, `zf` holds the
         final filter delay values.
 
     Notes
     -----
     The filter function is implemented as a direct II transposed structure.
-    This means that the filter implements
-
-    ::
+    This means that the filter implements::
 
        a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[nb]*x[n-nb]
                                - a[1]*y[n-1] - ... - a[na]*y[n-na]
@@ -584,25 +582,42 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
 def lfiltic(b, a, y, x=None):
     """
-    Construct initial conditions for lfilter
+    Construct initial conditions for lfilter.
 
-    Given a linear filter (b,a) and initial conditions on the output y
-    and the input x, return the inital conditions on the state vector zi
-    which is used by lfilter to generate the output given the input.
+    Given a linear filter (b, a) and initial conditions on the output `y`
+    and the input `x`, return the inital conditions on the state vector zi
+    which is used by `lfilter` to generate the output given the input.
 
-    If M=len(b)-1 and N=len(a)-1.  Then, the initial conditions are given
-    in the vectors x and y as::
+    Parameters
+    ----------
+    b : array_like
+        Linear filter term.
+    a : array_like
+        Linear filter term.
+    y : array_like
+        Initial conditions.
 
-      x = {x[-1],x[-2],...,x[-M]}
-      y = {y[-1],y[-2],...,y[-N]}
+        If ``N=len(a) - 1``, then ``y = {y[-1], y[-2], ..., y[-N]}``.
 
-    If x is not given, its inital conditions are assumed zero.
-    If either vector is too short, then zeros are added
-    to achieve the proper length.
+        If `y` is too short, it is padded with zeros.
+    x : array_like, optional
+        Initial conditions.
 
-    The output vector zi contains::
+        If ``M=len(b) - 1``, then ``x = {x[-1], x[-2], ..., x[-M]}``.
 
-      zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}  where K=max(M,N).
+        If `x` is not given, its initial conditions are assumed zero.
+
+        If `x` is too short, it is padded with zeros.
+
+    Returns
+    -------
+    zi : ndarray
+        The state vector ``zi``.
+        ``zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}``, where ``K = max(M,N)``.
+
+    See Also
+    --------
+    lfilter
 
     """
     N = np.size(a) - 1
@@ -814,8 +829,9 @@ def unique_roots(p, tol=1e-3, rtype='min'):
 
     Examples
     --------
+    >>> from scipy import signal
     >>> vals = [0, 1.3, 1.31, 2.8, 1.25, 2.2, 10.3]
-    >>> uniq, mult = sp.signal.unique_roots(vals, tol=2e-2, rtype='avg')
+    >>> uniq, mult = signal.unique_roots(vals, tol=2e-2, rtype='avg')
 
     Check which roots have multiplicity larger than 1:
 
@@ -1224,11 +1240,12 @@ def detrend(data, axis=-1, type='linear', bp=0):
 
     Examples
     --------
+    >>> from scipy import signal
     >>> randgen = np.random.RandomState(9)
     >>> npoints = 1e3
     >>> noise = randgen.randn(npoints)
     >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
-    >>> (sp.signal.detrend(x) - noise).max() < 0.01
+    >>> (signal.detrend(x) - noise).max() < 0.01
     True
 
     """
@@ -1452,8 +1469,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
 
     See Also
     --------
-    lfilter_zi
-    lfilter
+    lfilter_zi, lfilter
 
     Examples
     --------
@@ -1469,9 +1485,9 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     the Nyquist rate, or 125 Hz, and apply it to x with filtfilt.  The
     result should be approximately xlow, with no phase shift.
 
-    >>> from scipy.signal import butter
-    >>> b, a = butter(8, 0.125)
-    >>> y = filtfilt(b, a, x, padlen=150)
+    >>> from scipy import signal
+    >>> b, a = signal.butter(8, 0.125)
+    >>> y = signal.filtfilt(b, a, x, padlen=150)
     >>> np.abs(y - xlow).max()
     9.1086182074789912e-06
 

@@ -64,6 +64,17 @@ static int calc_surfit_lwrk2(int m, int kx, int ky, int nxest, int nyest) {
  return u*v*(b2+1)+b2;
 }
 
+static int calc_spherfit_lwrk1(int m, int ntest, int npest) {
+ int u = ntest-7;
+ int v = npest-7;
+ return 185+52*v+10*u+14*u*v+8*(u-1)*v*v+8*m;
+}
+static int calc_spherfit_lwrk2(int ntest, int npest) {
+ int u = ntest-7;
+ int v = npest-7;
+ return 48+21*v+7*u*v+4*(u-1)*v*v;
+}
+
 static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
                             int nxest, int nyest) {
  int u = MAX(my, nxest);
@@ -438,6 +449,75 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
             :: kwrk=m+(nx-2*kx-1)*(ny-2*ky-1)
        integer intent(out) :: ier
      end subroutine surfit_lsq
+
+     subroutine spherfit_smth(iopt,m,teta,phi,r,w,s,ntest,npest,eps,nt,tt,np,&
+          tp,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
+       !  tt,tp,c,fp,ier = spherfit_smth(teta,phi,r,[w,s,eps])
+
+       fortranname sphere
+
+       integer intent(hide) :: iopt=0
+       integer intent(hide),depend(teta),check(m>=2) :: m=len(teta)
+       real*8 dimension(m) :: teta
+       real*8 dimension(m),depend(m),check(len(phi)==m) :: phi
+       real*8 dimension(m),depend(m),check(len(r)==m) :: r
+       real*8 optional,dimension(m),depend(m),check(len(w)==m) :: w = 1.0
+       real*8 optional,check(0.0<=s) :: s = m
+       integer intent(hide),depend(m),check(ntest>=8) :: ntest = 8+sqrt(m/2)
+       integer intent(hide),depend(m),check(npest>=8) :: npest = 8+sqrt(m/2)
+       real*8 optional,check(0.0<eps && eps<1.0) :: eps = 1e-16
+       integer intent(out) :: nt
+       real*8 dimension(ntest),intent(out),depend(ntest) :: tt
+       integer intent(out) :: np
+       real*8 dimension(npest),intent(out),depend(npest) :: tp
+       real*8 dimension((ntest-4)*(npest-4)), &
+            depend(ntest,npest),intent(out) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(lwrk1),intent(cache,hide),depend(lwrk1) :: wrk1
+       integer intent(hide),depend(m,ntest,npest) &
+            :: lwrk1=calc_spherfit_lwrk1(m,ntest,npest)
+       real*8 dimension(lwrk2),intent(cache,hide),depend(lwrk2) :: wrk2
+       integer intent(hide),depend(ntest,npest) &
+            :: lwrk2=calc_spherfit_lwrk2(ntest,npest)
+       integer dimension(kwrk),depend(kwrk),intent(cache,hide) :: iwrk
+       integer intent(hide),depend(m,ntest,npest) &
+            :: kwrk=m+(ntest-7)*(npest-7)
+       integer intent(out) :: ier
+     end subroutine spherfit_smth
+
+     subroutine spherfit_lsq(iopt,m,teta,phi,r,w,s,ntest,npest,eps,nt,tt,np,&
+          tp,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
+       !  tt,tp,c,fp,ier = spherfit_lsq(teta,phi,r,tt,tp,[w,eps])
+
+       fortranname sphere
+
+       integer intent(hide) :: iopt=-1
+       integer intent(hide),depend(teta),check(m>=2) :: m=len(teta)
+       real*8 dimension(m) :: teta
+       real*8 dimension(m),depend(m),check(len(phi)==m) :: phi
+       real*8 dimension(m),depend(m),check(len(r)==m) :: r
+       real*8 optional,dimension(m),depend(m),check(len(w)==m) :: w = 1.0
+       real*8 intent(hide) :: s = 0.0
+       integer intent(hide),depend(tt) :: ntest = len(tt)
+       integer intent(hide),depend(tp),check(npest>=9) :: npest = len(tp)
+       real*8 optional,check(0.0<eps && eps<1.0) :: eps = 1e-16
+       integer intent(hide),depend(ntest) :: nt = ntest
+       real*8 dimension(ntest),intent(in,out,overwrite) :: tt
+       integer intent(hide),depend(npest) :: np = npest
+       real*8 dimension(npest),intent(in,out,overwrite) :: tp
+       real*8 dimension((nt-4)*(np-4)),intent(out),depend(nt,np) :: c
+       real*8 intent(out) :: fp
+       real*8 dimension(lwrk1),intent(cache,hide),depend(lwrk1) :: wrk1
+       integer intent(hide),depend(m,ntest,npest) &
+            :: lwrk1=calc_spherfit_lwrk1(m,ntest,npest)
+       real*8 dimension(lwrk2),intent(cache,hide),depend(lwrk2) :: wrk2
+       integer intent(hide),depend(ntest,npest) &
+            :: lwrk2=calc_spherfit_lwrk2(ntest,npest)
+       integer dimension(kwrk),depend(kwrk),intent(cache,hide) :: iwrk
+       integer intent(hide),depend(m,ntest,npest) &
+            :: kwrk=m+(ntest-7)*(npest-7)
+       integer intent(out) :: ier
+     end subroutine spherfit_lsq
 
      subroutine regrid_smth(iopt,mx,x,my,y,z,xb,xe,yb,ye,kx,ky,s,&
         nxest,nyest,nx,tx,ny,ty,c,fp,wrk,lwrk,iwrk,kwrk,ier)

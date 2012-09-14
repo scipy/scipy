@@ -1,0 +1,329 @@
+Contributing to SciPy
+=====================
+
+This document aims to give an overview of how to contribute to SciPy.  It
+tries to answer commonly asked questions, and provide some insight into how the
+community process works in practice.  Readers who are familiar with the SciPy
+community and are experienced Python coders may want to jump straight to the
+`git workflow`_ documentation.
+
+
+Contributing new code
+---------------------
+
+If you have been working with the scientific Python toolstack for a while, you
+probably have some code lying around of which you think "this could be useful
+for others too".  Perhaps it's a good idea then to contribute it to SciPy or
+another open source project.  The first question to ask is then, where does
+this code belong?  That question is hard to answer here, so we start with a
+more specific one: *what code is suitable for putting into SciPy?*
+Almost all of the new code added to scipy has in common that it's potentially
+useful in multiple scientific domains and it fits in the scope of existing
+scipy submodules.  In principle new submodules can be added too, but this is
+far less common.  For code that is specific to a single application, there may
+be an existing project that can use the code.  Some scikits (`scikit-learn`_,
+`scikits-image`_, `statsmodels`_, etc.) are good examples here; they have a
+narrower focus and because of that more domain-specific code than SciPy.
+
+Now if you have code that you would like to see included in SciPy, how do you
+go about it?  After checking that your code can be distributed in SciPy under a
+compatible license (see FAQ for details), the first step is to discuss on the
+scipy-dev mailing list.  All new features, as well as changes to existing code,
+are discussed and decided on there.  You can, and probably should, already
+start this discussion before your code is finished.
+
+Assuming the outcome of the discussion on the mailing list is positive and you
+have a function or piece of code that does what you need it to do, what next?
+Before code is added to SciPy, it at least has to have good documentation, unit
+tests and correct code style.  
+
+1. Unit tests
+    In principle you should aim to create unit tests that exercise all the code
+    that you are adding.  This gives some degree of confidence that your code
+    runs correctly, also on Python versions and hardware or OSes that you don't
+    have available yourself.  An extensive description of how to write unit
+    tests is given in the NumPy `testing guidelines`_.
+
+2. Documentation
+    Clear and complete documentation is essential in order for users to be able
+    to find and understand the code.  Documentation for individual functions
+    and classes -- which includes at least a basic description, type and
+    meaning of all parameters and returns values, and usage examples in
+    `doctest`_ format -- is put in docstrings.  Those docstrings can be read
+    within the interpreter, and are compiled into a reference guide in html and
+    pdf format.  Higher-level documentation for key (areas of) functionality is
+    provided in tutorial format and/or in module docstrings.  A guide on how to
+    write documentation is given in `how to document`_.
+
+3. Code style
+    Uniformity of style in which code is written is important to others trying
+    to understand the code.  SciPy follows the standard Python guidelines for
+    code style, `PEP8`_.  In order to check that your code conforms to PEP8,
+    you can use the `pep8 package`_ style checker.  Most IDEs and text editors
+    have settings that can help you follow PEP8, for example by translating
+    tabs by four spaces.  Using `pyflakes`_ to check your code is also a good
+    idea.
+
+At the end of this document a checklist is given that may help to check if your
+code fulfills all requirements for inclusion in SciPy. 
+
+Another question you may have is: *where exactly do I put my code*?  To answer
+this, it is useful to understand how the SciPy public API (application
+programming interface) is defined.  For most modules the API is two levels
+deep, which means your new function should appear as
+``scipy.submodule.my_new_func``.  ``my_new_func`` can be put in an existing or
+new file under ``/scipy/<submodule>/``, its name is added to the ``__all__``
+dict in that file (which lists all public functions in the file), and those
+public functions are then imported in  ``/scipy/<submodule>/__init__.py``.  Any
+private functions/classes should have a leading underscore (``_``) in their
+name.  A more detailed description of what the public API of SciPy is, is given
+in `SciPy API`_.
+
+Once you think your code is ready for inclusion in SciPy, you can send a pull
+request (PR) on Github.  We won't go into the details of how to work with git
+here, this is described well in the `git workflow`_ section of the NumPy
+documentation and in the Github help pages.  When you send the PR for a new
+feature, be sure to also mention this on the scipy-dev mailing list.  This can
+prompt interested people to help review your PR.  Assuming that you already got
+positive feedback before on the general idea of your code/feature, the purpose
+of the code review is to ensure that the code is correct, efficient and meets
+the requirements outlined above.  In many cases the code review happens
+relatively quickly, but it's possible that it stalls.  If you have addressed
+all feedback already given, it's perfectly fine to ask on the mailing list
+again for review (after a reasonable amount of time, say a couple of weeks, has
+passed).  Once the review is completed, the PR is merged into the "master"
+branch of SciPy.
+
+The above describes the requirements and process for adding code to SciPy.  It
+doesn't yet answer the question though how decisions are made exactly.  The
+basic answer is: decisions are made by consensus, by everyone who chooses to
+participate in the discussion on the mailing list.  This includes developers,
+other users and yourself.  Aiming for consensus in the discussion is important
+-- SciPy is a project by and for the scientific Python community.  In those
+rare cases that agreement cannot be reached, the `maintainers`_ of the module
+in question can decide the issue.
+
+
+Contributing by helping maintain existing code
+----------------------------------------------
+
+The previous section talked specifically about adding new functionality to
+SciPy.  A large part of that discussion also applies to maintenance of existing
+code.  Maintenance means fixing bugs, improving code quality or style,
+documenting existing functionality better, adding missing unit tests, keeping
+build scripts up-to-date, etc.  The SciPy `Trac`_ bug tracker contains all
+reported bugs, build/documentation issues, etc.  Fixing issues described in
+Trac tickets helps improve the overall quality of SciPy, and is also a good way
+of getting familiar with the project.  You may also want to fix a bug because
+you ran into it and need the function in question to work correctly.
+
+The discussion on code style and unit testing above applies equally to bug
+fixes.  It is usually best to start by writing a unit test that shows the
+problem, i.e. it should pass but doesn't.  Once you have that, you can fix the
+code so that the test does pass.  That should be enough to send a PR for this
+issue.  Unlike when adding new code, discussing this on the mailing list may
+not be necessary - if the old behavior of the code is clearly incorrect, no one
+will object to having it fixed.  It may be necessary to add some warning or
+deprecation message for the changed behavior.  This should be part of the
+review process.
+
+
+Other ways to contribute
+------------------------
+
+There are many ways to contribute other than contributing code.  Participating
+in discussions on the scipy-user and scipy-dev *mailing lists* is a contribution
+in itself.  The `scipy.org`_ *website* contains a lot of information on the
+SciPy community and can always use a new pair of hands.  A redesign of this
+website is ongoing, see `scipy.github.com`_.  The redesigned website is a
+static site based on Sphinx, the sources for it are
+also on Github at `scipy.org-new`_.
+
+The SciPy *documentation* is constantly being improved by many developers and
+users.  You can contribute by sending a PR on Github that improves the
+documentation, but there's also a `documentation wiki`_ that is very convenient
+for making edits to docstrings (and doesn't require git knowledge).  Anyone can
+register a username on that wiki, ask on the scipy-dev mailing list for edit
+rights and make edits.  The documentation there is updated every day with the
+latest changes in the SciPy master branch, and wiki edits are regularly
+reviewed and merged into master.  Another advantage of the documentation wiki
+is that you can immediately see how the reStructuredText (reST) of docstrings
+and other docs is rendered as html, so you can easily catch formatting errors.
+
+Code that doesn't belong in SciPy itself or in another package but helps users
+accomplish a certain task is valuable.  `SciPy Central`_ is the place to share
+this type of code (snippets, examples, plotting code, etc.).
+
+
+Useful links, FAQ, checklist
+----------------------------
+
+Checklist before submitting a PR
+````````````````````````````````
+
+  - Are there unit tests with good code coverage?
+  - Do all public function have docstrings including examples?
+  - Is the code style correct (PEP8, pyflakes)
+  - Is the new functionality tagged with ``.. versionadded:: X.Y.Z`` (with
+    X.Y.Z the version number of the next release - can be found in setup.py)?
+  - Is the new functionality mentioned in the release notes of the next
+    release?
+  - Is the new functionality added to the reference guide?
+  - In case of larger additions, is there a tutorial or more extensive
+    module-level description?
+  - In case compiled code is added, is it integrated correctly via setup.py
+    (and preferably also Bento/Numscons configuration files)?
+  - If you are a first-time contributor, did you add yourself to THANKS.txt?
+    Please note that this is perfectly normal and desirable - the aim is to
+    give every single contributor credit, and if you don't add yourself it's
+    simply extra work for the reviewer (or worse, the reviewer may forget).
+  - Did you check that the code can be distributed under a BSD license?
+
+
+Useful SciPy documents
+``````````````````````
+
+  - The `how to document`_ guidelines
+  - NumPy/SciPy `testing guidelines`_
+  - `SciPy API`_
+  - SciPy `maintainers`_
+  - NumPy/SciPy `git workflow`_
+
+
+FAQ
+```
+
+*I based my code on existing Matlab/R/... code I found online, is this OK?*
+
+It depends.  SciPy is distributed under a BSD license, so if the code that you
+based your code on is also BSD licensed or has a BSD-compatible license (MIT,
+Apache, ...) then it's OK.  Code which is GPL-licensed, has no clear license,
+requires citation or is free for academic use only can't be included in SciPy.
+Therefore if you copied existing code with such a license or made a direct
+translation to Python of it, your code can't be included.  See also `license
+compatibility`_.
+
+
+*How do I set up SciPy so I can edit files, run the tests and make commits?*
+
+The simplest method is setting up an in-place build.  To create your local git
+repo and do the in-place build::
+
+  $ git clone https://github.com/scipy/scipy.git scipy
+  $ cd scipy
+  $ python setup.py build_ext -i
+
+Then you need to either set up a symlink in your site-packages or add this
+directory to your PYTHONPATH environment variable, so Python can find it.  Some
+IDEs (Spyder for example) have utilities to manage PYTHONPATH.  On Linux and OS
+X, you can for example edit your .bash_login file to automatically add this dir
+on startup of your terminal.  Add the line::
+
+  export PYTHONPATH="$HOME/scipy:${PYTHONPATH}"
+
+Alternatively, to set up the symlink, use (prefix only necessary if you want to
+use your local instead of global site-packages dir)::
+
+  $ python setupegg.py develop --prefix=${HOME}
+ 
+To test that everything works, start the interpreter (not inside the scipy/
+source dir) and run the tests::
+
+  $ python
+  >>> import scipy as sp
+  >>> sp.test()
+
+Now editing a Python source file in SciPy allows you to immediately test and
+use your changes, by simply restarting the interpreter.
+
+Note that while the above procedure is the most straightforward way to get
+started, you may want to look into using Bento or numscons for faster and more
+flexible building, or virtualenv to maintain development environments for
+multiple Python versions.
+
+
+*How do I set up a development version of SciPy in parallel to a released
+version that I use to do my job/research?*
+
+One simple way to achieve this is to install the released version in
+site-packages, by using a binary installer or pip for example, and set up the
+development version with an in-place build in a virtualenv.  First install
+`virtualenv`_ and `virtualenvwrapper`_, then create your virtualenv (named
+scipy-dev here) with::
+
+  $ mkvirtualenv scipy-dev
+
+Now, whenever you want to switch to the virtual environment, you can use the
+command ``workon scipy-dev``, while the command ``deactivate`` exits from the
+virtual environment and brings back your previous shell.  With scipy-dev
+activated, follow the in-place build with the symlink install above to actually
+install your development version of SciPy.
+
+
+*Can I use a programming language other than Python to speed up my code?*
+
+Yes.  The languages used in SciPy are Python, Cython, C, C++ and Fortran.  All
+of these have their pros and cons.  If Python really doesn't offer enough
+performance, one of those languages can be used.  Important concerns when
+using compiled languages are maintainability and portability.  For
+maintainability, Cython is clearly preferred over C/C++/Fortran.  Cython and C
+are more portable than C++/Fortran.  A lot of the existing C and Fortran code
+in SciPy is older, battle-tested code that was only wrapped in (but not
+specifically written for) Python/SciPy.  Therefore the basic advice is: use
+Cython.  If there's specific reasons why C/C++/Fortran should be preferred,
+please discuss those reasons first.
+
+
+*There's overlap between Trac and Github, which do I use for what?*
+
+Trac_ is the bug tracker, Github_ the code repository.  Before the SciPy code
+repository moved to Github, the preferred way to contribute code was to create
+a patch and attach it to a Trac ticket.  The overhead of this approach is much
+larger than sending a PR on Github, so please don't do this anymore.  Use Trac
+for bug reports, Github for patches.
+
+
+.. _scikit-learn: http://scikit-learn.org
+
+.. _scikits-image: http://scikits-image.org/
+
+.. _statsmodels: http://statsmodels.sourceforge.net/
+
+.. _testing guidelines: https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt
+
+.. _how to document: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
+
+.. _PEP8: http://www.python.org/dev/peps/pep-0008/
+
+.. _pep8 package: http://pypi.python.org/pypi/pep8
+
+.. _pyflakes: http://pypi.python.org/pypi/pyflakes
+
+.. _SciPy API: http://docs.scipy.org/doc/scipy/reference/api.html
+
+.. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
+
+.. _maintainers: https://github.com/scipy/scipy/blob/master/doc/MAINTAINERS.rst.txt
+
+.. _Trac: http://projects.scipy.org/scipy/timeline
+
+.. _Github: https://github.com/scipy/scipy
+
+.. _scipy.org: http://scipy.org/
+
+.. _scipy.github.com: http://scipy.github.com/
+
+.. _scipy.org-new: https://github.com/scipy/scipy.org-new
+
+.. _documentation wiki: http://docs.scipy.org/scipy/Front%20Page/
+
+.. _SciPy Central: http://scipy-central.org/
+
+.. _license compatibility: http://www.scipy.org/License_Compatibility
+
+.. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
+
+.. _virtualenv: http://www.virtualenv.org/
+
+.. _virtualenvwrapper: http://www.doughellmann.com/projects/virtualenvwrapper/
+

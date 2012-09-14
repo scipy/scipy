@@ -857,7 +857,7 @@ def _kolmog1(x,n):
                                        + (j-1) * np.log(x+j/float(n))))
 
 
-def ks_twosamp(data1, data2, alternative="two_sided"):
+def ks_twosamp(data1, data2, alternative="two-sided"):
     """Computes the Kolmogorov-Smirnov test on two samples.
     Missing values are discarded.
 
@@ -867,7 +867,7 @@ def ks_twosamp(data1, data2, alternative="two_sided"):
             First data set
         data2 : sequence
             Second data set
-        alternative : {'two_sided', 'less', 'greater'} optional
+        alternative : {'two-sided', 'less', 'greater'} optional
             Indicates the alternative hypothesis.
 
     Returns
@@ -900,7 +900,7 @@ def ks_twosamp(data1, data2, alternative="two_sided"):
         prob = np.exp(-2*n*d**2)
     else:
         raise ValueError("Invalid value for the alternative hypothesis: "\
-                         "should be in 'two_sided', 'less' or 'greater'")
+                         "should be in 'two-sided', 'less' or 'greater'")
     return (d, prob)
 ks_2samp = ks_twosamp
 

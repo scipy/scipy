@@ -200,6 +200,7 @@ import distributions
 # Local imports.
 import _support
 from _support import _chk_asarray, _chk2_asarray
+from _rank import rankdata, tiecorrect
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
            'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
@@ -224,7 +225,30 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
 
 
 def find_repeats(arr):
-    """Find repeats in arr and return (repeats, repeat_count)
+    """
+    Find repeats and repeat counts.
+
+    Parameters
+    ----------
+    arr : array_like
+        Input array
+
+    Returns
+    -------
+    find_repeats : tuple
+        Returns a tuple of two 1-D ndarrays.  The first ndarray are the repeats
+        as sorted, unique values that are repeated in `arr`.  The second
+        ndarray are the counts mapped one-to-one of the repeated values
+        in the first ndarray.
+
+    Examples
+    --------
+        >>> sp.stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
+        (array([ 2. ]), array([ 4 ], dtype=int32)
+
+        >>> sp.stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
+        (array([ 4., 5.]), array([2, 2], dtype=int32))
+
     """
     v1,v2, n = futil.dfreps(arr)
     return v1[:n],v2[:n]
@@ -1695,13 +1719,19 @@ def obrientransform(*args):
     Computes a transform on input data (any number of columns).
 
     Used to test for homogeneity of variance prior to running one-way stats.
-    Each array in *args is one level of a factor.  If an F_oneway() run on the
-    transformed data and found significant, variances are unequal.   From
-    Maxwell and Delaney, p.112.
+    Each array in ``*args`` is one level of a factor.
+    If an `F_oneway` run on the transformed data and found significant,
+    variances are unequal.  From Maxwell and Delaney, p.112.
+
+    Parameters
+    ----------
+    args : ndarray
+        Any number of arrays.
 
     Returns
     -------
-    Transformed data for use in an ANOVA
+    obrientransform : ndarray
+        Transformed data for use in an ANOVA.
 
     """
     TINY = 1e-10
@@ -2848,7 +2878,8 @@ def linregress(x, y=None):
 #####################################
 
 def ttest_1samp(a, popmean, axis=0):
-    """Calculates the T-test for the mean of ONE group of scores `a`.
+    """
+    Calculates the T-test for the mean of ONE group of scores `a`.
 
     This is a two-sided test for the null hypothesis that the expected value
     (mean) of a sample of independent observations is equal to the given
@@ -2874,24 +2905,21 @@ def ttest_1samp(a, popmean, axis=0):
 
     Examples
     --------
-
     >>> from scipy import stats
-    >>> import numpy as np
 
-    >>> #fix seed to get the same result
-    >>> np.random.seed(7654567)
-    >>> rvs = stats.norm.rvs(loc=5,scale=10,size=(50,2))
+    >>> np.random.seed(7654567)  # fix seed to get the same result
+    >>> rvs = stats.norm.rvs(loc=5, scale=10, size=(50,2))
 
-    test if mean of random sample is equal to true mean, and different mean.
+    Test if mean of random sample is equal to true mean, and different mean.
     We reject the null hypothesis in the second case and don't reject it in
-    the first case
+    the first case.
 
     >>> stats.ttest_1samp(rvs,5.0)
     (array([-0.68014479, -0.04323899]), array([ 0.49961383,  0.96568674]))
     >>> stats.ttest_1samp(rvs,0.0)
     (array([ 2.77025808,  4.11038784]), array([ 0.00789095,  0.00014999]))
 
-    examples using axis and non-scalar dimension for population mean
+    Examples using axis and non-scalar dimension for population mean.
 
     >>> stats.ttest_1samp(rvs,[5.0,0.0])
     (array([-0.68014479,  4.11038784]), array([  4.99613833e-01,   1.49986458e-04]))
@@ -2902,56 +2930,61 @@ def ttest_1samp(a, popmean, axis=0):
            [ 2.77025808,  4.11038784]]), array([[  4.99613833e-01,   9.65686743e-01],
            [  7.89094663e-03,   1.49986458e-04]]))
 
-"""
-
-
+    """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    df=n-1
+    df= n - 1
 
-    d = np.mean(a,axis) - popmean
+    d = np.mean(a, axis) - popmean
     v = np.var(a, axis, ddof=1)
+    denom = np.sqrt(v / float(n))
 
-    t = d / np.sqrt(v/float(n))
-    t = np.where((d==0)*(v==0), 1.0, t) #define t=0/0 = 1, identical mean, var
-    prob = distributions.t.sf(np.abs(t),df)*2  #use np.abs to get upper tail
-    #distributions.t.sf currently does not propagate nans
-    #this can be dropped, if distributions.t.sf propagates nans
-    #if this is removed, then prob = prob[()] needs to be removed
-    prob = np.where(np.isnan(t), np.nan, prob)
+    t = np.divide(d, denom)
+    t, prob = _ttest_finish(df, t)
 
-    if t.ndim == 0:
-        t = t[()]
-        prob = prob[()]
     return t,prob
 
 
-def ttest_ind(a, b, axis=0):
-    """Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
+def _ttest_finish(df,t):
+    """Common code between all 3 t-test functions."""
+    prob = distributions.t.sf(np.abs(t), df) * 2 #use np.abs to get upper tail
+    if t.ndim == 0:
+        t = t[()]
+
+    return t, prob
+
+
+def ttest_ind(a, b, axis=0, equal_var=True):
+    """
+    Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
-    have identical average (expected) values.
+    have identical average (expected) values. This test assumes that the
+    populations have identical variances.
 
     Parameters
     ----------
-    a, b : sequence of ndarrays
+    a, b : array_like
         The arrays must have the same shape, except in the dimension
         corresponding to `axis` (the first, by default).
     axis : int, optional
         Axis can equal None (ravel array first), or an integer (the axis
         over which to operate on a and b).
+    equal_var : bool, optional
+        If True (default), perform a standard independent 2 sample test
+        that assumes equal population variances [1]_.
+        If False, perform Welch's t-test, which does not assume equal
+        population variance [2]_.
 
     Returns
     -------
     t : float or array
-        t-statistic
+        The calculated t-statistic.
     prob : float or array
-        two-tailed p-value
-
+        The two-tailed p-value.
 
     Notes
     -----
-
     We can use this test, if we observe two independent samples from
     the same or different population, e.g. exam scores of boys and
     girls or of two ethnic groups. The test measures whether the
@@ -2963,62 +2996,78 @@ def ttest_ind(a, b, axis=0):
 
     References
     ----------
+    .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
-       http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
-
+    .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
 
     Examples
     --------
-
     >>> from scipy import stats
-    >>> import numpy as np
-
-    >>> #fix seed to get the same result
     >>> np.random.seed(12345678)
 
-    test with sample with identical means
+    Test with sample with identical means:
 
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> stats.ttest_ind(rvs1,rvs2)
-    (0.26833823296239279, 0.78849443369564765)
+    (0.26833823296239279, 0.78849443369564776)
+    >>> stats.ttest_ind(rvs1,rvs2, equal_var = False)
+    (0.26833823296239279, 0.78849452749500748)
 
+    `ttest_ind` underestimates p for unequal variances:
 
-    test with sample with different means
+    >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500)
+    >>> stats.ttest_ind(rvs1, rvs3)
+    (-0.46580283298287162, 0.64145827413436174)
+    >>> stats.ttest_ind(rvs1, rvs3, equal_var = False)
+    (-0.46580283298287162, 0.64149646246569292)
 
-    >>> rvs3 = stats.norm.rvs(loc=8,scale=10,size=500)
-    >>> stats.ttest_ind(rvs1,rvs3)
-    (-5.0434013458585092, 5.4302979468623391e-007)
+    When n1 != n2, the equal variance t-statistic is no longer equal to the
+    unequal variance t-statistic:
+
+    >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100)
+    >>> stats.ttest_ind(rvs1, rvs4)
+    (-0.99882539442782481, 0.3182832709103896)
+    >>> stats.ttest_ind(rvs1, rvs4, equal_var = False)
+    (-0.69712570584654099, 0.48716927725402048)
+
+    T-test with different means, variance, and n:
+
+    >>> rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
+    >>> stats.ttest_ind(rvs1, rvs5)
+    (-1.4679669854490653, 0.14263895620529152)
+    >>> stats.ttest_ind(rvs1, rvs5, equal_var = False)
+    (-0.94365973617132992, 0.34744170334794122)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
-
-    v1 = np.var(a,axis,ddof = 1)
-    v2 = np.var(b,axis,ddof = 1)
+    v1 = np.var(a, axis, ddof=1)
+    v2 = np.var(b, axis, ddof=1)
     n1 = a.shape[axis]
     n2 = b.shape[axis]
-    df = n1+n2-2
 
-    d = np.mean(a,axis) - np.mean(b,axis)
-    svar = ((n1-1)*v1+(n2-1)*v2) / float(df)
+    if (equal_var):
+        df = n1 + n2 - 2
+        svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / float(df)
+        denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
+    else:
+        vn1 = v1 / n1
+        vn2 = v2 / n2
+        df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
 
-    t = d/np.sqrt(svar*(1.0/n1 + 1.0/n2))
-    t = np.where((d==0)*(svar==0), 1.0, t) #define t=0/0 = 0, identical means
-    prob = distributions.t.sf(np.abs(t),df)*2#use np.abs to get upper tail
+        # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
+        # Hence it doesn't matter what df is as long as it's not NaN.
+        df = np.where(np.isnan(df), 1, df)
+        denom = np.sqrt(vn1 + vn2)
 
-    #distributions.t.sf currently does not propagate nans
-    #this can be dropped, if distributions.t.sf propagates nans
-    #if this is removed, then prob = prob[()] needs to be removed
-    prob = np.where(np.isnan(t), np.nan, prob)
-
-    if t.ndim == 0:
-        t = t[()]
-        prob = prob[()]
+    d = np.mean(a, axis) - np.mean(b, axis)
+    t = np.divide(d, denom)
+    t, prob = _ttest_finish(df, t)
 
     return t, prob
 
 
-def ttest_rel(a,b,axis=0):
+def ttest_rel(a, b, axis=0):
     """
     Calculates the T-test on TWO RELATED samples of scores, a and b.
 
@@ -3027,7 +3076,7 @@ def ttest_rel(a,b,axis=0):
 
     Parameters
     ----------
-    a, b : sequence of ndarrays
+    a, b : array_like
         The arrays must have the same shape.
     axis : int, optional, (default axis=0)
         Axis can equal None (ravel array first), or an integer (the axis
@@ -3054,14 +3103,13 @@ def ttest_rel(a,b,axis=0):
 
     References
     ----------
-
-        http://en.wikipedia.org/wiki/T-test#Dependent_t-test
+    http://en.wikipedia.org/wiki/T-test#Dependent_t-test
 
     Examples
     --------
-
     >>> from scipy import stats
     >>> np.random.seed(12345678) # fix random seed to get same numbers
+
     >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
     >>> rvs2 = (stats.norm.rvs(loc=5,scale=10,size=500) +
     ...         stats.norm.rvs(scale=0.2,size=500))
@@ -3076,136 +3124,113 @@ def ttest_rel(a,b,axis=0):
     a, b, axis = _chk2_asarray(a, b, axis)
     if a.shape[axis] != b.shape[axis]:
         raise ValueError('unequal length arrays')
+
     n = a.shape[axis]
-    df = float(n-1)
+    df = float(n - 1)
 
-    d = (a-b).astype('d')
-    v = np.var(d,axis,ddof=1)
+    d = (a - b).astype(np.float64)
+    v = np.var(d, axis, ddof=1)
     dm = np.mean(d, axis)
+    denom = np.sqrt(v / float(n))
 
-    t = dm / np.sqrt(v/float(n))
-    t = np.where((dm==0)*(v==0), 1.0, t) #define t=0/0 = 1, zero mean and var
-    prob = distributions.t.sf(np.abs(t),df)*2 #use np.abs to get upper tail
-    #distributions.t.sf currently does not propagate nans
-    #this can be dropped, if distributions.t.sf propagates nans
-    #if this is removed, then prob = prob[()] needs to be removed
-    prob = np.where(np.isnan(t), np.nan, prob)
-
-##    if not np.isscalar(t):
-##        probs = np.reshape(probs, t.shape) # this should be redundant
-##    if not np.isscalar(prob) and len(prob) == 1:
-##        prob = prob[0]
-    if t.ndim == 0:
-        t = t[()]
-        prob = prob[()]
+    t = np.divide(dm, denom)
+    t, prob = _ttest_finish(df, t)
 
     return t, prob
 
 
-#import scipy.stats
-#import distributions
-def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**kwds):
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
+           **kwds):
     """
-    Perform the Kolmogorov-Smirnov test for goodness of fit
+    Perform the Kolmogorov-Smirnov test for goodness of fit.
 
     This performs a test of the distribution G(x) of an observed
     random variable against a given distribution F(x). Under the null
     hypothesis the two distributions are identical, G(x)=F(x). The
-    alternative hypothesis can be either 'two_sided' (default), 'less'
+    alternative hypothesis can be either 'two-sided' (default), 'less'
     or 'greater'. The KS test is only valid for continuous distributions.
 
     Parameters
     ----------
-    rvs : string or array or callable
-        string: name of a distribution in scipy.stats
+    rvs : str, array or callable
+        If a string, it should be the name of a distribution in `scipy.stats`.
+        If an array, it should be a 1-D array of observations of random
+        variables.
+        If a callable, it should be a function to generate random variables;
+        it is required to have a keyword argument `size`.
+    cdf : str or callable
+        If a string, it should be the name of a distribution in `scipy.stats`.
+        If `rvs` is a string then `cdf` can be False or the same as `rvs`.
+        If a callable, that callable is used to calculate the cdf.
+    args : tuple, sequence, optional
+        Distribution parameters, used if `rvs` or `cdf` are strings.
+    N : int, optional
+        Sample size if `rvs` is string or callable.  Default is 20.
+    alternative : {'two-sided', 'less','greater'}, optional
+        Defines the alternative hypothesis (see explanation above).
+        Default is 'two-sided'.
+    mode : 'approx' (default) or 'asymp', optional
+        Defines the distribution used for calculating the p-value.
 
-        array: 1-D observations of random variables
-
-        callable: function to generate random variables, requires keyword
-        argument `size`
-
-    cdf : string or callable
-        string: name of a distribution in scipy.stats, if rvs is a string then
-        cdf can evaluate to `False` or be the same as rvs
-        callable: function to evaluate cdf
-
-    args : tuple, sequence
-        distribution parameters, used if rvs or cdf are strings
-    N : int
-        sample size if rvs is string or callable
-    alternative : 'two_sided' (default), 'less' or 'greater'
-        defines the alternative hypothesis (see explanation)
-
-    mode : 'approx' (default) or 'asymp'
-        defines the distribution used for calculating p-value
-
-        'approx' : use approximation to exact distribution of test statistic
-
-        'asymp' : use asymptotic distribution of test statistic
-
+          - 'approx' : use approximation to exact distribution of test statistic
+          - 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
     D : float
-        KS test statistic, either D, D+ or D-
+        KS test statistic, either D, D+ or D-.
     p-value :  float
-        one-tailed or two-tailed p-value
+        One-tailed or two-tailed p-value.
 
     Notes
     -----
-
     In the one-sided test, the alternative is that the empirical
     cumulative distribution function of the random variable is "less"
     or "greater" than the cumulative distribution function F(x) of the
-    hypothesis, G(x)<=F(x), resp. G(x)>=F(x).
+    hypothesis, ``G(x)<=F(x)``, resp. ``G(x)>=F(x)``.
 
     Examples
     --------
-
     >>> from scipy import stats
-    >>> import numpy as np
-    >>> from scipy.stats import kstest
 
-    >>> x = np.linspace(-15,15,9)
-    >>> kstest(x,'norm')
+    >>> x = np.linspace(-15, 15, 9)
+    >>> stats.kstest(x, 'norm')
     (0.44435602715924361, 0.038850142705171065)
 
     >>> np.random.seed(987654321) # set random seed to get the same result
-    >>> kstest('norm','',N=100)
+    >>> stats.kstest('norm', False, N=100)
     (0.058352892479417884, 0.88531190944151261)
 
-    is equivalent to this
+    The above lines are equivalent to:
 
     >>> np.random.seed(987654321)
-    >>> kstest(stats.norm.rvs(size=100),'norm')
+    >>> stats.kstest(stats.norm.rvs(size=100), 'norm')
     (0.058352892479417884, 0.88531190944151261)
 
-    Test against one-sided alternative hypothesis:
+    *Test against one-sided alternative hypothesis*
+
+    Shift distribution to larger values, so that ``cdf_dgp(x) < norm.cdf(x)``:
 
     >>> np.random.seed(987654321)
-
-    Shift distribution to larger values, so that cdf_dgp(x)< norm.cdf(x):
-
     >>> x = stats.norm.rvs(loc=0.2, size=100)
-    >>> kstest(x,'norm', alternative = 'less')
+    >>> stats.kstest(x,'norm', alternative = 'less')
     (0.12464329735846891, 0.040989164077641749)
 
     Reject equal distribution against alternative hypothesis: less
 
-    >>> kstest(x,'norm', alternative = 'greater')
+    >>> stats.kstest(x,'norm', alternative = 'greater')
     (0.0072115233216311081, 0.98531158590396395)
 
     Don't reject equal distribution against alternative hypothesis: greater
 
-    >>> kstest(x,'norm', mode='asymp')
+    >>> stats.kstest(x,'norm', mode='asymp')
     (0.12464329735846891, 0.08944488871182088)
 
-
-    Testing t distributed random variables against normal distribution:
+    *Testing t distributed random variables against normal distribution*
 
     With 100 degrees of freedom the t distribution looks close to the normal
-    distribution, and the kstest does not reject the hypothesis that the sample
-    came from the normal distribution
+    distribution, and the K-S test does not reject the hypothesis that the
+    sample came from the normal distribution:
 
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
@@ -3213,7 +3238,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
 
     With 3 degrees of freedom the t distribution looks sufficiently different
     from the normal distribution, that we can reject the hypothesis that the
-    sample came from the normal distribution at a alpha=10% level
+    sample came from the normal distribution at the 10% level:
 
     >>> np.random.seed(987654321)
     >>> stats.kstest(stats.t.rvs(3,size=100),'norm')
@@ -3228,7 +3253,6 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
         else:
             raise AttributeError('if rvs is string, cdf has to be the same distribution')
 
-
     if isinstance(cdf, basestring):
         cdf = getattr(distributions, cdf).cdf
     if callable(rvs):
@@ -3239,17 +3263,21 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
         N = len(vals)
     cdfvals = cdf(vals, *args)
 
-    if alternative in ['two_sided', 'greater']:
+    # to not break compatibility with existing code
+    if alternative == 'two_sided':
+        alternative = 'two-sided'
+
+    if alternative in ['two-sided', 'greater']:
         Dplus = (np.arange(1.0, N+1)/N - cdfvals).max()
         if alternative == 'greater':
             return Dplus, distributions.ksone.sf(Dplus,N)
 
-    if alternative in ['two_sided', 'less']:
+    if alternative in ['two-sided', 'less']:
         Dmin = (cdfvals - np.arange(0.0, N)/N).max()
         if alternative == 'less':
             return Dmin, distributions.ksone.sf(Dmin,N)
 
-    if alternative == 'two_sided':
+    if alternative == 'two-sided':
         D = np.max([Dplus,Dmin])
         if mode == 'asymp':
             return D, distributions.kstwobign.sf(D*np.sqrt(N))
@@ -3299,16 +3327,15 @@ def chisquare(f_obs, f_exp=None, ddof=0):
 
     References
     ----------
-
     .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
            Statistics". Chapter 8. http://faculty.vassar.edu/lowry/ch8pt1.html
 
     """
-
     f_obs = asarray(f_obs)
     k = len(f_obs)
     if f_exp is None:
         f_exp = array([np.sum(f_obs,axis=0)/float(k)] * len(f_obs),float)
+
     f_exp = f_exp.astype(float)
     chisq = np.add.reduce((f_obs-f_exp)**2 / f_exp)
     return chisq, chisqprob(chisq, k-1-ddof)
@@ -3327,7 +3354,6 @@ def ks_2samp(data1, data2):
         two arrays of sample observations assumed to be drawn from a continuous
         distribution, sample sizes can be different
 
-
     Returns
     -------
     D : float
@@ -3335,10 +3361,8 @@ def ks_2samp(data1, data2):
     p-value : float
         two-tailed p-value
 
-
     Notes
     -----
-
     This tests whether 2 samples are drawn from the same distribution. Note
     that, like in the case of the one-sample K-S test, the distribution is
     assumed to be continuous.
@@ -3352,38 +3376,31 @@ def ks_2samp(data1, data2):
 
     Examples
     --------
-
     >>> from scipy import stats
-    >>> import numpy as np
-    >>> from scipy.stats import ks_2samp
-
-    >>> #fix random seed to get the same result
-    >>> np.random.seed(12345678);
-
+    >>> np.random.seed(12345678)  #fix random seed to get the same result
     >>> n1 = 200  # size of first sample
     >>> n2 = 300  # size of second sample
 
-    different distribution
-    we can reject the null hypothesis since the pvalue is below 1%
+    For a different distribution, we can reject the null hypothesis since the
+    pvalue is below 1%:
 
-    >>> rvs1 = stats.norm.rvs(size=n1,loc=0.,scale=1);
-    >>> rvs2 = stats.norm.rvs(size=n2,loc=0.5,scale=1.5)
-    >>> ks_2samp(rvs1,rvs2)
+    >>> rvs1 = stats.norm.rvs(size=n1, loc=0., scale=1)
+    >>> rvs2 = stats.norm.rvs(size=n2, loc=0.5, scale=1.5)
+    >>> stats.ks_2samp(rvs1, rvs2)
     (0.20833333333333337, 4.6674975515806989e-005)
 
-    slightly different distribution
-    we cannot reject the null hypothesis at a 10% or lower alpha since
-    the pvalue at 0.144 is higher than 10%
+    For a slightly different distribution, we cannot reject the null hypothesis
+    at a 10% or lower alpha since the p-value at 0.144 is higher than 10%
 
-    >>> rvs3 = stats.norm.rvs(size=n2,loc=0.01,scale=1.0)
-    >>> ks_2samp(rvs1,rvs3)
+    >>> rvs3 = stats.norm.rvs(size=n2, loc=0.01, scale=1.0)
+    >>> stats.ks_2samp(rvs1, rvs3)
     (0.10333333333333333, 0.14498781825751686)
 
-    identical distribution
-    we cannot reject the null hypothesis since the pvalue is high, 41%
+    For an identical distribution, we cannot reject the null hypothesis since
+    the p-value is high, 41%:
 
-    >>> rvs4 = stats.norm.rvs(size=n2,loc=0.0,scale=1.0)
-    >>> ks_2samp(rvs1,rvs4)
+    >>> rvs4 = stats.norm.rvs(size=n2, loc=0.0, scale=1.0)
+    >>> stats.ks_2samp(rvs1, rvs4)
     (0.07999999999999996, 0.41126949729859719)
 
     """
@@ -3463,33 +3480,6 @@ def mannwhitneyu(x, y, use_continuity=True):
     return smallu, distributions.norm.sf(z)  #(1.0 - zprob(z))
 
 
-def tiecorrect(rankvals):
-    """Tie-corrector for ties in Mann Whitney U and Kruskal Wallis H tests.
-    See Siegel, S. (1956) Nonparametric Statistics for the Behavioral
-    Sciences.  New York: McGraw-Hill.  Code adapted from |Stat rankind.c
-    code.
-
-    Returns
-    -------
-    T correction factor for U or H
-
-    """
-    sorted,posn = fastsort(asarray(rankvals))
-    n = len(sorted)
-    T = 0.0
-    i = 0
-    while (i<n-1):
-        if sorted[i] == sorted[i+1]:
-            nties = 1
-            while (i<n-1) and (sorted[i] == sorted[i+1]):
-                nties = nties +1
-                i = i +1
-            T = T + nties**3 - nties
-        i = i+1
-    T = T / float(n**3-n)
-    return 1.0 - T
-
-
 def ranksums(x, y):
     """
     Compute the Wilcoxon rank-sum statistic for two samples.
@@ -3534,7 +3524,6 @@ def ranksums(x, y):
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
     prob = 2 * distributions.norm.sf(abs(z))
     return z, prob
-
 
 
 def kruskal(*args):
@@ -3597,7 +3586,6 @@ def kruskal(*args):
     df = na - 1
     h = h / float(T)
     return h, chisqprob(h, df)
-
 
 
 def friedmanchisquare(*args):
@@ -3848,7 +3836,7 @@ def f_value_multivariate(ER, EF, dfnum, dfden):
 
 def ss(a, axis=0):
     """
-    Squares each element of the input array, and returns the square(s) of that.
+    Squares each element of the input array, and returns the sum(s) of that.
 
     Parameters
     ----------
@@ -3943,44 +3931,3 @@ def fastsort(a):
     it = np.argsort(a)
     as_ = a[it]
     return as_, it
-
-def rankdata(a):
-    """
-    Ranks the data, dealing with ties appropriately.
-
-    Equal values are assigned a rank that is the average of the ranks that
-    would have been otherwise assigned to all of the values within that set.
-    Ranks begin at 1, not 0.
-
-    Parameters
-    ----------
-    a : array_like
-        This array is first flattened.
-
-    Returns
-    -------
-    rankdata : ndarray
-         An array of length equal to the size of `a`, containing rank scores.
-
-    Examples
-    --------
-    >>> stats.rankdata([0, 2, 2, 3])
-    array([ 1. ,  2.5,  2.5,  4. ])
-
-    """
-    a = np.ravel(a)
-    n = len(a)
-    svec, ivec = fastsort(a)
-    sumranks = 0
-    dupcount = 0
-    newarray = np.zeros(n, float)
-    for i in xrange(n):
-        sumranks += i
-        dupcount += 1
-        if i==n-1 or svec[i] != svec[i+1]:
-            averank = sumranks / float(dupcount) + 1
-            for j in xrange(i-dupcount+1,i+1):
-                newarray[ivec[j]] = averank
-            sumranks = 0
-            dupcount = 0
-    return newarray

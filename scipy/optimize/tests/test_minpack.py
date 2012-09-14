@@ -83,6 +83,9 @@ def pressure_network_jacobian(flow_rates, Qtot, k):
 
     return jac
 
+def pressure_network_fun_and_grad(flow_rates, Qtot, k):
+    return pressure_network(flow_rates, Qtot, k), \
+        pressure_network_jacobian(flow_rates, Qtot, k)
 
 class TestFSolve(TestCase):
     def test_pressure_network_no_gradient(self):
@@ -90,9 +93,11 @@ class TestFSolve(TestCase):
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
-        final_flows = optimize.fsolve(
-            pressure_network, initial_guess, args=(Qtot, k))
+        final_flows, info, ier, mesg = optimize.fsolve(
+            pressure_network, initial_guess, args=(Qtot, k),
+            full_output=True)
         assert_array_almost_equal(final_flows, np.ones(4))
+        assert_(ier == 1, mesg)
 
     def test_pressure_network_with_gradient(self):
         """fsolve with gradient, equal pipes -> equal flows"""
@@ -129,6 +134,46 @@ class TestFSolve(TestCase):
         deriv_func = lambda x: dummy_func(x, (3,3))
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
 
+class TestRootHybr(TestCase):
+    def test_pressure_network_no_gradient(self):
+        """root/hybr without gradient, equal pipes -> equal flows"""
+        k = np.ones(4) * 0.5
+        Qtot = 4
+        initial_guess = array([2., 0., 2., 0.])
+        final_flows = optimize.root(pressure_network, initial_guess,
+                                    method='hybr', args=(Qtot, k)).x
+        assert_array_almost_equal(final_flows, np.ones(4))
+
+    def test_pressure_network_with_gradient(self):
+        """root/hybr with gradient, equal pipes -> equal flows"""
+        k = np.ones(4) * 0.5
+        Qtot = 4
+        initial_guess = array([2., 0., 2., 0.])
+        final_flows = optimize.root(pressure_network, initial_guess,
+                                    args=(Qtot, k), method='hybr',
+                                    jac=pressure_network_jacobian).x
+        assert_array_almost_equal(final_flows, np.ones(4))
+
+    def test_pressure_network_with_gradient_combined(self):
+        """root/hybr with gradient and function combined, equal pipes -> equal flows"""
+        k = np.ones(4) * 0.5
+        Qtot = 4
+        initial_guess = array([2., 0., 2., 0.])
+        final_flows = optimize.root(pressure_network_fun_and_grad,
+                                    initial_guess, args=(Qtot, k),
+                                    method='hybr', jac=True).x
+        assert_array_almost_equal(final_flows, np.ones(4))
+
+
+class TestRootLM(TestCase):
+    def test_pressure_network_no_gradient(self):
+        """root/lm without gradient, equal pipes -> equal flows"""
+        k = np.ones(4) * 0.5
+        Qtot = 4
+        initial_guess = array([2., 0., 2., 0.])
+        final_flows = optimize.root(pressure_network, initial_guess,
+                                    method='lm', args=(Qtot, k)).x
+        assert_array_almost_equal(final_flows, np.ones(4))
 
 class TestLeastSq(TestCase):
     def setUp(self):

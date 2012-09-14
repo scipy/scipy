@@ -87,24 +87,25 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     Other Parameters
     ----------------
-    ml, mu : integer
-        If either of these are not-None or non-negative, then the
+
+    ml, mu : int
+        If either of these are not None or non-negative, then the
         Jacobian is assumed to be banded.  These give the number of
         lower and upper non-zero diagonals in this banded matrix.
         For the banded case, Dfun should return a matrix whose
         columns contain the non-zero bands (starting with the
         lowest diagonal).  Thus, the return matrix from Dfun should
-        have shape ``len(y0) * (ml + mu + 1) when ml >=0 or mu >=0``
+        have shape ``len(y0) * (ml + mu + 1)`` when ``ml >=0`` or ``mu >=0``.
     rtol, atol : float
-        The input parameters rtol and atol determine the error
+        The input parameters `rtol` and `atol` determine the error
         control performed by the solver.  The solver will control the
         vector, e, of estimated local errors in y, according to an
         inequality of the form ``max-norm of (e / ewt) <= 1``,
-        where ewt is a vector of positive error weights computed as:
-        ``ewt = rtol * abs(y) + atol``
+        where ewt is a vector of positive error weights computed as
+        ``ewt = rtol * abs(y) + atol``.
         rtol and atol can be either vectors the same length as y or scalars.
         Defaults to 1.49012e-8.
-    tcrit : array
+    tcrit : ndarray
         Vector of critical points (e.g. singularities) where integration
         care should be taken.
     h0 : float, (0: solver-determined)
@@ -113,22 +114,22 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         The maximum absolute step size allowed.
     hmin : float, (0: solver-determined)
         The minimum absolute step size allowed.
-    ixpr : boolean
+    ixpr : bool
         Whether to generate extra printing at method switches.
-    mxstep : integer, (0: solver-determined)
+    mxstep : int, (0: solver-determined)
         Maximum number of (internally defined) steps allowed for each
         integration point in t.
-    mxhnil : integer, (0: solver-determined)
+    mxhnil : int, (0: solver-determined)
         Maximum number of messages printed.
-    mxordn : integer, (0: solver-determined)
-        Maximum order to be allowed for the nonstiff (Adams) method.
-    mxords : integer, (0: solver-determined)
+    mxordn : int, (0: solver-determined)
+        Maximum order to be allowed for the non-stiff (Adams) method.
+    mxords : int, (0: solver-determined)
         Maximum order to be allowed for the stiff (BDF) method.
 
     See Also
     --------
-    ode : a more object-oriented integrator based on VODE
-    quad : for finding the area under a curve
+    ode : a more object-oriented integrator based on VODE.
+    quad : for finding the area under a curve.
 
     """
 
