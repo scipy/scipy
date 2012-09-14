@@ -57,6 +57,7 @@ __all__ = [
 floatinfo = numpy.finfo(float)
 
 gam = special.gamma
+random = mtrand.random_sample
 
 import types
 from scipy.misc import doccer
@@ -412,6 +413,7 @@ def _kurtosis(data):
     m2 = ((data - mu)**2).mean()
     m4 = ((data - mu)**4).mean()
     return m4 / m2**2 - 3
+
 
 
 # Frozen RV class
@@ -6807,7 +6809,7 @@ class poisson_gen(rv_discrete):
         return where((temp >= q), vals1, vals)
     def _stats(self, mu):
         var = mu
-        tmp = asarray(my)
+        tmp = asarray(mu)
         g1 = 1.0/asarray(tmp)
         g2 = 1.0 / asarray(tmp)
         return mu, var, g1, g2
