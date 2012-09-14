@@ -321,28 +321,37 @@ class csr_matrix(_cs_matrix):
 
         start, stop, stride = cslice.indices(self.shape[1])
 
-        row_indices = self.indices[self.indptr[i]:self.indptr[i + 1]]
-        row_data = self.data[self.indptr[i]:self.indptr[i + 1]]
+        if stride == 1:
+            # for stride == 1, _get_submatrix is ~30% faster than below
+            row_slice = self._get_submatrix(i, cslice)
 
-        if stride > 0:
-            ind = (row_indices >= start) & (row_indices < stop)
-        elif stride < 0:
-            ind = (row_indices <= start) & (row_indices > stop)
+        else:
+            # other strides need new code
+            row_indices = self.indices[self.indptr[i]:self.indptr[i + 1]]
+            row_data = self.data[self.indptr[i]:self.indptr[i + 1]]
 
-        if abs(stride) > 1:
-            ind = ind & ((row_indices - start) % stride == 0)
+            if stride > 0:
+                ind = (row_indices >= start) & (row_indices < stop)
+            elif stride < 0:
+                ind = (row_indices <= start) & (row_indices > stop)
 
-        row_indices = (row_indices[ind] - start) / stride
-        row_data = row_data[ind]
-        row_indptr = np.array([0, len(row_indices)])
+            if abs(stride) > 1:
+                ind = ind & ((row_indices - start) % stride == 0)
 
-        if stride < 0:
-            row_data = row_data[::-1]
-            row_indices = abs(row_indices[::-1])
+            row_indices = (row_indices[ind] - start) / stride
+            row_data = row_data[ind]
+            row_indptr = np.array([0, len(row_indices)])
 
-        shape = (1, np.ceil(float(stop - start) / stride))
+            if stride < 0:
+                row_data = row_data[::-1]
+                row_indices = abs(row_indices[::-1])
 
-        return csr_matrix((row_data, row_indices, row_indptr), shape=shape)
+            shape = (1, np.ceil(float(stop - start) / stride))
+
+            row_slice = csr_matrix((row_data, row_indices, row_indptr),
+                                   shape=shape)
+
+        return row_slice
 
     def _get_submatrix( self, row_slice, col_slice ):
         """Return a submatrix of this matrix (new matrix is created)."""
