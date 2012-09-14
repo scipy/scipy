@@ -16,6 +16,8 @@ from sputils import upcast, isintlike
 
 from compressed import _cs_matrix
 
+_slice_all = slice(None, None, None)
+
 class csr_matrix(_cs_matrix):
     """
     Compressed Sparse Row matrix
@@ -230,6 +232,8 @@ class csr_matrix(_cs_matrix):
                 if isintlike(col):
                     return self._get_single_element(row, col) #[i,j]
                 elif isinstance(col, slice):
+                    if col == _slice_all:                     #[i,:]
+                        return self.getrow(row)
                     return self._get_row_slice(row, col)      #[i,1:2]
                 else:
                     P = extractor(col,self.shape[1]).T        #[i,[1,2]]
