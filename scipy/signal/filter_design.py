@@ -216,6 +216,8 @@ def tf2zpk(b, a):
     k : float
         System gain.
 
+    Notes
+    -----
     If some values of `b` are too close to 0, they are removed. In that case, 
     a BadCoefficients warning is emitted.
     """
