@@ -1278,7 +1278,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
         returned.
 
     Returns
-    ------
+    -------
     ord : int
         The lowest order for an Elliptic (Cauer) filter that meets specs.
     wn : ndarray or float
