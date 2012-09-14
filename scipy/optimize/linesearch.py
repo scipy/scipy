@@ -527,7 +527,7 @@ def line_search_armijo(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
         Current point.
     pk : array_like
         Search direction.
-    gfk : array_like, optional
+    gfk : array_like
         Gradient of `f` at point `xk`.
     old_fval : float
         Value of `f` at point `xk`.
