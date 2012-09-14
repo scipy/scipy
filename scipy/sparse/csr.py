@@ -321,24 +321,28 @@ class csr_matrix(_cs_matrix):
 
         start, stop, stride = cslice.indices(self.shape[1])
 
-        if stride != 1:
-            raise ValueError("slicing with step != 1 not supported")
-        if stop <= start:
-            raise ValueError("slice width must be >= 1")
+        row_indices = self.indices[self.indptr[i]:self.indptr[i + 1]]
+        row_data = self.data[self.indptr[i]:self.indptr[i + 1]]
 
-        #TODO make [i,:] faster
-        #TODO implement [i,x:y:z]
+        if stride > 0:
+            ind = (row_indices >= start) & (row_indices < stop)
+        elif stride < 0:
+            ind = (row_indices <= start) & (row_indices > stop)
 
-        indices = []
+        if abs(stride) > 1:
+            ind = ind & ((row_indices - start) % stride == 0)
 
-        for ind in xrange(self.indptr[i], self.indptr[i+1]):
-            if self.indices[ind] >= start and self.indices[ind] < stop:
-                indices.append(ind)
+        row_indices = (row_indices[ind] - start) / stride
+        row_data = row_data[ind]
+        row_indptr = np.array([0, len(row_indices)])
 
-        index  = self.indices[indices] - start
-        data   = self.data[indices]
-        indptr = np.array([0, len(indices)])
-        return csr_matrix( (data, index, indptr), shape=(1, stop-start) )
+        if stride < 0:
+            row_data = row_data[::-1]
+            row_indices = abs(row_indices[::-1])
+
+        shape = (1, np.ceil(float(stop - start) / stride))
+
+        return csr_matrix((row_data, row_indices, row_indptr), shape=shape)
 
     def _get_submatrix( self, row_slice, col_slice ):
         """Return a submatrix of this matrix (new matrix is created)."""
