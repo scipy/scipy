@@ -1829,8 +1829,9 @@ class rv_continuous(rv_generic):
 
         """
         mu, mu2 = self.stats(*args,**{'moments':'mv'})
-        muhat = asarray(data).mean()
-        mu2hat = asarray(data).var()
+        tmp = asarray(data)
+        muhat = tmp.mean()
+        mu2hat = tmp.var()
         Shat = sqrt(mu2hat / mu2)
         Lhat = muhat - Shat*mu
         return Lhat, Shat
@@ -2738,7 +2739,7 @@ class exponweib_gen(rv_continuous):
         return log(a) + log(c) + (a-1.)*log(1-exc) - x**c + (c-1.0)*log(x)
     def _cdf(self, x, a, c):
         exm1c = -expm1(-x**c)
-        return asarray((exm1c)**a)
+        return (exm1c)**a
     def _ppf(self, q, a, c):
         return (-log1p(-q**(1.0/a)))**asarray(1.0/c)
 exponweib = exponweib_gen(a=0.0, name='exponweib', shapes="a, c")
@@ -2763,18 +2764,16 @@ class exponpow_gen(rv_continuous):
 
     """
     def _pdf(self, x, b):
-        xbm1 = asarray(x**(b-1.0))
+        xbm1 = x**(b-1.0)
         xb = xbm1 * x
         return exp(1)*b*xbm1 * exp(xb - exp(xb))
     def _logpdf(self, x, b):
         xb = x**(b-1.0)*x
         return 1 + log(b) + (b-1.0)*log(x) + xb - exp(xb)
     def _cdf(self, x, b):
-        xb = asarray(x**b)
-        return -expm1(-expm1(xb))
+        return -expm1(-expm1(x**b))
     def _sf(self, x, b):
-        xb = asarray(x**b)
-        return exp(-expm1(xb))
+        return exp(-expm1(x**b))
     def _isf(self, x, b):
         return (log1p(-log(x)))**(1./b)
     def _ppf(self, q, b):
@@ -6808,8 +6807,9 @@ class poisson_gen(rv_discrete):
         return where((temp >= q), vals1, vals)
     def _stats(self, mu):
         var = mu
-        g1 = 1.0/asarray(sqrt(mu))
-        g2 = 1.0 / asarray(mu)
+        tmp = asarray(my)
+        g1 = 1.0/asarray(tmp)
+        g2 = 1.0 / asarray(tmp)
         return mu, var, g1, g2
 poisson = poisson_gen(name="poisson", longname='A Poisson', shapes="mu")
 
