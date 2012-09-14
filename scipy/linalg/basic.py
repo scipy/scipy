@@ -2,6 +2,7 @@
 # Author: Pearu Peterson, March 2002
 #
 # w/ additions by Travis Oliphant, March 2002
+#              and Jake Vanderplas, August 2012
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
             'inv', 'det', 'lstsq', 'pinv', 'pinv2', 'pinvh']
@@ -500,7 +501,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     return x, resids, rank, s
 
 
-def pinv(a, cond=None, rcond=None):
+def pinv(a, cond=None, rcond=None, return_rank=False):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
@@ -515,11 +516,15 @@ def pinv(a, cond=None, rcond=None):
         Cutoff for 'small' singular values in the least-squares solver.
         Singular values smaller than ``rcond * largest_singular_value``
         are considered zero.
+    return_rank : bool, optional
+        if True, return the effective rank of the matrix
 
     Returns
     -------
     B : array, shape (N, M)
         The pseudo-inverse of matrix `a`.
+    rank : int
+        The effective rank of the matrix.  Returned if return_rank == True
 
     Raises
     ------
@@ -540,10 +545,16 @@ def pinv(a, cond=None, rcond=None):
     b = np.identity(a.shape[0], dtype=a.dtype)
     if rcond is not None:
         cond = rcond
-    return lstsq(a, b, cond=cond)[0]
+
+    x, resids, rank, s = lstsq(a, b, cond=cond)
+
+    if return_rank:
+        return x, rank
+    else:
+        return x
 
 
-def pinv2(a, cond=None, rcond=None):
+def pinv2(a, cond=None, rcond=None, return_rank=False):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
@@ -560,11 +571,15 @@ def pinv2(a, cond=None, rcond=None):
         Singular values smaller than ``rcond*largest_singular_value``
         are considered zero.
         If None or -1, suitable machine precision is used.
+    return_rank : bool, optional
+        if True, return the effective rank of the matrix
 
     Returns
     -------
     B : array, shape (N, M)
         The pseudo-inverse of matrix `a`.
+    rank : int
+        The effective rank of the matrix.  Returned if return_rank == True
 
     Raises
     ------
@@ -595,10 +610,15 @@ def pinv2(a, cond=None, rcond=None):
     psigma_diag = np.zeros_like(s)
     psigma_diag[above_cutoff] = 1.0 / s[above_cutoff]
  
-    return np.transpose(np.conjugate(np.dot(u * psigma_diag, vh)))
+    B = np.transpose(np.conjugate(np.dot(u * psigma_diag, vh)))
+
+    if return_rank:
+        return B, np.sum(above_cutoff)
+    else:
+        return B
 
 
-def pinvh(a, cond=None, rcond=None, lower=True):
+def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False):
     """Compute the (Moore-Penrose) pseudo-inverse of a hermetian matrix.
 
     Calculate a generalized inverse of a symmetric matrix using its
@@ -617,10 +637,15 @@ def pinvh(a, cond=None, rcond=None, lower=True):
     lower : boolean
         Whether the pertinent array data is taken from the lower or upper
         triangle of a. (Default: lower)
+    return_rank : bool, optional
+        if True, return the effective rank of the matrix
 
     Returns
     -------
     B : array, shape (N, N)
+        The pseudo-inverse of matrix `a`.
+    rank : int
+        The effective rank of the matrix.  Returned if return_rank == True
 
     Raises
     ------
@@ -649,9 +674,14 @@ def pinvh(a, cond=None, rcond=None, lower=True):
         factor = {'f': 1E3, 'd': 1E6}
         cond = factor[t] * np.finfo(t).eps
     
-    # unlike svd case, eigh can lead to negative eigenvalues
+    # For hermitian matrices, singular values equal abs(eigenvalues)
     above_cutoff = (abs(s) > cond * np.max(abs(s)))
     psigma_diag = np.zeros_like(s)
     psigma_diag[above_cutoff] = 1.0 / s[above_cutoff]
 
-    return np.dot(u * psigma_diag, np.conjugate(u).T)
+    B = np.dot(u * psigma_diag, np.conjugate(u).T)
+
+    if return_rank:
+        return B, np.sum(above_cutoff)
+    else:
+        return B
