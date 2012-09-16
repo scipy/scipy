@@ -189,7 +189,7 @@ def blackman(M, sym=True):
 
     Examples
     --------
-    Plot the window and the frequency response:
+    Plot the window and its frequency response (requires matplotlib):
 
     >>> from numpy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -201,14 +201,13 @@ def blackman(M, sym=True):
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / 25.5
-    >>> mag = np.abs(fftshift(A))
+    >>> A = fft(window, 2048) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(mag)
-    >>> response = np.clip(response, -100, 100)
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
-    >>> plt.title("Frequency response of Blackman window")
-    >>> plt.ylabel("Magnitude [dB]")
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Blackman window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
@@ -406,14 +405,13 @@ def bartlett(M, sym=True):
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / 25.5
-    >>> mag = np.abs(fftshift(A))
+    >>> A = fft(window, 2048) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(mag)
-    >>> response = np.clip(response, -100, 100)
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
-    >>> plt.title("Frequency response of Bartlett window")
-    >>> plt.ylabel("Magnitude [dB]")
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Bartlett window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
@@ -485,7 +483,7 @@ def hann(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response:
+    Plot the window and its frequency response (requires matplotlib):
 
     >>> from numpy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -497,14 +495,13 @@ def hann(M, sym=True):
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / 25.5
-    >>> mag = np.abs(fftshift(A))
+    >>> A = fft(window, 2048) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(mag)
-    >>> response = np.clip(response, -100, 100)
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
     >>> plt.title("Frequency response of the Hann window")
-    >>> plt.ylabel("Magnitude [dB]")
+    >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
@@ -609,7 +606,7 @@ def hamming(M, sym=True):
 
     Examples
     --------
-    Plot the window and the frequency response:
+    Plot the window and its frequency response (requires matplotlib):
 
     >>> from numpy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -621,14 +618,13 @@ def hamming(M, sym=True):
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / 25.5
-    >>> mag = np.abs(fftshift(A))
+    >>> A = fft(window, 2048) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(mag)
-    >>> response = np.clip(response, -100, 100)
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
-    >>> plt.title("Frequency response of Hamming window")
-    >>> plt.ylabel("Magnitude [dB]")
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Hamming window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
@@ -725,26 +721,25 @@ def kaiser(M, beta, sym=True):
 
     Examples
     --------
-    Plot the window and the frequency response:
+    Plot the window and its frequency response (requires matplotlib):
 
     >>> from numpy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = scipy.signal.kaiser(51, 14)
+    >>> window = scipy.signal.kaiser(51, beta=14)
     >>> plt.plot(window)
-    >>> plt.title("Kaiser window")
+    >>> plt.title(r"Kaiser window ($\beta$=14)")
     >>> plt.ylabel("Amplitude")
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / 25.5
-    >>> mag = np.abs(fftshift(A))
+    >>> A = fft(window, 2048) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> response = 20 * np.log10(mag)
-    >>> response = np.clip(response, -100, 100)
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
-    >>> plt.title("Frequency response of Kaiser window")
-    >>> plt.ylabel("Magnitude [dB]")
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title(r"Frequency response of the Kaiser window ($\beta$=14)")
+    >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
