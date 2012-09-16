@@ -275,7 +275,7 @@ def ricker(points, a):
 
     Parameters
     ----------
-    points: int
+    points : int
         Number of points in `vector`. Default is ``10 * a``.
         Will be centered around 0.
     a : scalar
@@ -333,7 +333,7 @@ def cwt(data, wavelet, widths):
 
     Returns
     -------
-    cwt: 2-D ndarray
+    cwt : 2-D ndarray
         Will be ``len(widths) * len(data)``.
 
     Notes
