@@ -544,7 +544,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         For Chebyshev and elliptic filters, provides the maximum ripple
         in the passband. (dB)
     rs : float, optional
-        For chebyshev and elliptic filters, provides the minimum attenuation 
+        For Chebyshev and elliptic filters, provides the minimum attenuation 
         in the stop band. (dB)
     btype : {'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         The type of filter.  Default is bandpass.
@@ -1002,7 +1002,7 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     GPASS = 10 ** (0.1 * abs(gpass))
     ord = int(ceil(log10((GSTOP - 1.0) / (GPASS - 1.0)) / (2 * log10(nat))))
 
-    # Find the butterworth natural frequency W0 (or the "3dB" frequency")
+    # Find the Butterworth natural frequency W0 (or the "3dB" frequency")
     # to give exactly gstop at nat. W0 will be between 1 and nat
     try:
         W0 = nat / ((10 ** (0.1 * abs(gstop)) - 1) ** (1.0 / (2.0 * ord)))
