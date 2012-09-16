@@ -5521,12 +5521,6 @@ class rv_discrete(rv_generic):
 
     Notes
     -----
-    Alternatively, the object may be called (as a function) to fix the shape
-    and location parameters returning a "frozen" discrete RV object::
-
-        myrv = generic(<shape(s)>, loc=0)
-            - frozen RV object with the same methods but holding the given
-              shape and location fixed.
 
     You can construct an arbitrary discrete rv where ``P{X=xk} = pk``
     by passing to the rv_discrete initialization method (through the
@@ -5547,14 +5541,32 @@ class rv_discrete(rv_generic):
 
     The docstring can be created from a template.
 
+    Alternatively, the object may be called (as a function) to fix the shape
+    and location parameters returning a "frozen" discrete RV object::
+
+        myrv = generic(<shape(s)>, loc=0)
+            - frozen RV object with the same methods but holding the given
+              shape and location fixed.
+
     Examples
     --------
+
+    Custom made discrete distribution:
+
     >>> import matplotlib.pyplot as plt
-    >>> numargs = generic.numargs
-    >>> [ <shape(s)> ] = ['Replace with resonable value', ]*numargs
+    >>> xk = arange(7)
+    >>> pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.1, 0.1)
+    >>> custm = rv_discrete(name='custm', values=(xk, pk))
+    >>> h = plt.plot(xk, custm.pmf(xk))
+
+    Random number generation:
+
+    >>> R = custm.rvs(size=100)
 
     Display frozen pmf:
 
+    >>> numargs = generic.numargs
+    >>> [ <shape(s)> ] = ['Replace with resonable value', ]*numargs
     >>> rv = generic(<shape(s)>)
     >>> x = np.arange(0, np.min(rv.dist.b, 3)+1)
     >>> h = plt.plot(x, rv.pmf(x))
@@ -5565,17 +5577,6 @@ class rv_discrete(rv_generic):
 
     >>> prb = generic.cdf(x, <shape(s)>)
     >>> h = plt.semilogy(np.abs(x-generic.ppf(prb, <shape(s)>))+1e-20)
-
-    Random number generation:
-
-    >>> R = generic.rvs(<shape(s)>, size=100)
-
-    Custom made discrete distribution:
-
-    >>> xk = arange(7)
-    >>> pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.1, 0.1)
-    >>> custm = rv_discrete(name='custm', values=(xk, pk))
-    >>> h = plt.plot(xk, custm.pmf(xk))
 
     """
 
