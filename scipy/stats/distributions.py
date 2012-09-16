@@ -5572,9 +5572,10 @@ class rv_discrete(rv_generic):
 
     Custom made discrete distribution:
 
-    >>> vals = [arange(7), (0.1, 0.2, 0.3, 0.1, 0.1, 0.1, 0.1)]
-    >>> custm = rv_discrete(name='custm', values=vals)
-    >>> h = plt.plot(vals[0], custm.pmf(vals[0]))
+    >>> xk = arange(7)
+    >>> pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.1, 0.1)
+    >>> custm = rv_discrete(name='custm', values=(xk, pk))
+    >>> h = plt.plot(xk, custm.pmf(xk))
 
     """
 
