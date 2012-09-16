@@ -547,7 +547,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         For Chebyshev and elliptic filters, provides the minimum attenuation 
         in the stop band. (dB)
     btype : {'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
-        The type of filter.  Default is bandpass.
+        The type of filter.  Default is 'bandpass'.
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -657,7 +657,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
         half-cycles / sample.)
         For analog filters, `Wn` is in radians / second.
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
-        The type of filter.  Default is lowpass.
+        The type of filter.  Default is 'lowpass'.
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -701,7 +701,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
         half-cycles / sample.)
         For analog filters, `Wn` is in radians / second.
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
-        The type of filter.  Default is lowpass.
+        The type of filter.  Default is 'lowpass'.
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -746,7 +746,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
         half-cycles / sample.)
         For analog filters, `Wn` is in radians / second.
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
-        The type of filter.  Default is lowpass.
+        The type of filter.  Default is 'lowpass'.
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -793,7 +793,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
         half-cycles / sample.)
         For analog filters, `Wn` is in radians / second.
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
-        The type of filter.  Default is lowpass.
+        The type of filter.  Default is 'lowpass'.
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
@@ -835,7 +835,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
         half-cycles / sample.)
         For analog filters, `Wn` is in radians / second.
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
-        The type of filter.  Default is lowpass.
+        The type of filter.  Default is 'lowpass'.
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
