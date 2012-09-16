@@ -28,6 +28,29 @@ def boxcar(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1
 
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.boxcar(51)
+    >>> plt.plot(window)
+    >>> plt.title("Boxcar window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the boxcar window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
     """
     return np.ones(M, float)
 
@@ -49,6 +72,29 @@ def triang(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
+
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.triang(51)
+    >>> plt.plot(window)
+    >>> plt.title("Triangular window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the triangular window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
     if M < 1:
@@ -89,6 +135,29 @@ def parzen(M, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.parzen(51)
+    >>> plt.plot(window)
+    >>> plt.title("Parzen window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Parzen window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
     """
     if M < 1:
         return np.array([])
@@ -126,6 +195,29 @@ def bohman(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
+
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.bohman(51)
+    >>> plt.plot(window)
+    >>> plt.title("Bohman window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Bohman window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
     if M < 1:
@@ -245,6 +337,29 @@ def nuttall(M, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.nuttall(51)
+    >>> plt.plot(window)
+    >>> plt.title("Nuttall window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Nuttall window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
     """
     if M < 1:
         return np.array([])
@@ -280,6 +395,29 @@ def blackmanharris(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
+
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.blackmanharris(51)
+    >>> plt.plot(window)
+    >>> plt.title("Blackman-Harris window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Blackman-Harris window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
     if M < 1:
@@ -317,6 +455,29 @@ def flattop(M, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
 
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.flattop(51)
+    >>> plt.plot(window)
+    >>> plt.title("Flat top window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the flat top window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    
     """
     if M < 1:
         return np.array([])
@@ -539,6 +700,29 @@ def barthann(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if the number of samples is even and sym is True).
+
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.barthann(51)
+    >>> plt.plot(window)
+    >>> plt.title("Bartlett-Hann window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Bartlett-Hann window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
     if M < 1:
@@ -786,6 +970,29 @@ def gaussian(M, std, sym=True):
 
     .. math::  w(n) = e^{ -\frac{1}{2}\left(\frac{n}{\sigma}\right)^2 }
 
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.gaussian(51, std=7)
+    >>> plt.plot(window)
+    >>> plt.title(r"Gaussian window ($\sigma$=7)")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title(r"Frequency response of the Gaussian window ($\sigma$=7)")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
     """
     if M < 1:
         return np.array([])
@@ -835,6 +1042,29 @@ def general_gaussian(M, p, sig, sym=True):
 
     .. math::  (2 \log(2))^{1/(2 p)} \sigma
 
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.general_gaussian(51, p=1.5, sig=7)
+    >>> plt.plot(window)
+    >>> plt.title(r"Generalized Gaussian window (p=1.5, $\sigma$=7)")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title(r"Freq. resp. of the gen. Gaussian window (p=1.5, $\sigma$=7)")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
     """
     if M < 1:
         return np.array([])
@@ -870,6 +1100,29 @@ def chebwin(M, at, sym=True):
     -------
     w : ndarray
         The window, with the maximum value always normalized to 1
+
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.chebwin(51, at=100)
+    >>> plt.plot(window)
+    >>> plt.title("Dolph-Chebyshev window (100 dB)")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Dolph-Chebyshev window (100 dB)")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
     if M < 1:
@@ -933,6 +1186,29 @@ def slepian(M, width, sym=True):
     -------
     w : ndarray
         The window, with the maximum value always normalized to 1
+
+    Examples
+    --------
+    Plot the window and its frequency response (requires matplotlib):
+
+    >>> from numpy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = scipy.signal.slepian(51, width=0.3)
+    >>> plt.plot(window)
+    >>> plt.title("Slepian (DPSS) window (BW=0.3)")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Slepian window (BW=0.3)")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
     if (M * width > 27.38):
