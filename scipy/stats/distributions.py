@@ -875,6 +875,8 @@ class rv_continuous(rv_generic):
     n : int
         order of moment to calculate in method moments
 
+    Notes
+    -----
 
     **Methods that can be overwritten by subclasses**
     ::
@@ -894,10 +896,6 @@ class rv_continuous(rv_generic):
     be useful for cross-checking and for debugging, but might work in all
     cases when directly called.
 
-
-    Notes
-    -----
-
     **Frozen Distribution**
 
     Alternatively, the object may be called (as a function) to fix the shape,
@@ -910,44 +908,33 @@ class rv_continuous(rv_generic):
     **Subclassing**
 
     New random variables can be defined by subclassing rv_continuous class
-    and re-defining at least the
+    and re-defining at least the ``_pdf`` or the ``_cdf`` method (normalized
+    to location 0 and scale 1) which will be given clean arguments (in between
+    a and b) and passing the argument check method.
 
-    _pdf or the _cdf method (normalized to location 0 and scale 1)
-    which will be given clean arguments (in between a and b) and
-    passing the argument check method
-
-    If postive argument checking is not correct for your RV
-    then you will also need to re-define ::
-
-      _argcheck
+    If positive argument checking is not correct for your RV
+    then you will also need to re-define the ``_argcheck`` method.
 
     Correct, but potentially slow defaults exist for the remaining
-    methods but for speed and/or accuracy you can over-ride ::
+    methods but for speed and/or accuracy you can over-ride::
 
       _logpdf, _cdf, _logcdf, _ppf, _rvs, _isf, _sf, _logsf
 
-    Rarely would you override _isf, _sf, and _logsf but you could.
+    Rarely would you override ``_isf``, ``_sf`` or ``_logsf``, but you could.
 
     Statistics are computed using numerical integration by default.
-    For speed you can redefine this using
+    For speed you can redefine this using ``_stats``:
 
-    _stats
      - take shape parameters and return mu, mu2, g1, g2
      - If you can't compute one of these, return it as None
-     - Can also be defined with a keyword argument moments=<str>
+     - Can also be defined with a keyword argument ``moments=<str>``,
        where <str> is a string composed of 'm', 'v', 's',
        and/or 'k'.  Only the components appearing in string
        should be computed and returned in the order 'm', 'v',
-       's', or 'k'  with missing values returned as None
+       's', or 'k'  with missing values returned as None.
 
-    OR
-
-    You can override
-
-    _munp
-      takes n and shape parameters and returns
-      the nth non-central moment of the distribution.
-
+    Alternatively, you can override ``_munp``, which takes n and shape
+    parameters and returns the nth non-central moment of the distribution.
 
     Examples
     --------
