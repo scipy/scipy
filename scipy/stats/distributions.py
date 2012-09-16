@@ -5528,7 +5528,7 @@ class rv_discrete(rv_generic):
             - frozen RV object with the same methods but holding the given
               shape and location fixed.
 
-    You can construct an aribtrary discrete rv where ``P{X=xk} = pk``
+    You can construct an arbitrary discrete rv where ``P{X=xk} = pk``
     by passing to the rv_discrete initialization method (through the
     values=keyword) a tuple of sequences (xk, pk) which describes only those
     values of X (xk) that occur with nonzero probability (pk).
