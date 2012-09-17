@@ -46,7 +46,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
                   approx_grad=0,
                   bounds=None, m=10, factr=1e7, pgtol=1e-5,
                   epsilon=1e-8,
-                  iprint=-1, maxfun=15000, disp=None):
+                  iprint=-1, maxfun=15000, maxiter=15000, disp=None):
     """
     Minimize a function func using the L-BFGS-B algorithm.
 
@@ -98,6 +98,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         `iprint` (i.e., `iprint` gets the value of `disp`).
     maxfun : int
         Maximum number of function evaluations.
+    maxiter : int
+        Maximum number of iterations.
 
     Returns
     -------
@@ -111,7 +113,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         * d['warnflag'] is
 
           - 0 if converged,
-          - 1 if too many function evaluations,
+          - 1 if too many function evaluations or too many iterations,
           - 2 if stopped for another reason, given in d['task']
 
         * d['grad'] is the gradient at the minimum (should be 0 ish)
@@ -168,13 +170,15 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'ftol'  : factr * np.finfo(float).eps,
             'gtol'  : pgtol,
             'eps'   : epsilon,
-            'maxiter': maxfun}
+            'maxfun': maxfun,
+            'maxiter': maxiter}
 
     res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
                            **opts)
     d = {'grad': res['jac'],
          'task': res['message'],
          'funcalls': res['nfev'],
+         'iter' : res['nit'],
          'warnflag': res['status']}
     f = res['fun']
     x = res['x']
@@ -183,8 +187,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
 def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                      disp=None, maxcor=10, ftol=2.2204460492503131e-09,
-                     gtol=1e-5, eps=1e-8, maxiter=15000, iprint=-1,
-                     **unknown_options):
+                     gtol=1e-5, eps=1e-8, maxfun=15000, maxiter=15000,
+                     iprint=-1, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -212,8 +216,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             Step size used for numerical approximation of the jacobian.
         disp : int
             Set to True to print convergence messages.
-        maxiter : int
+        maxfun : int
             Maximum number of function evaluations.
+        maxiter : int
+            Maximum number of iterations.
 
     This function is called by the `minimize` function with
     `method=L-BFGS-B`. It is not supposed to be called directly.
@@ -221,7 +227,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     _check_unknown_options(unknown_options)
     m = maxcor
     epsilon = eps
-    maxfun = maxiter
     pgtol = gtol
     factr = ftol / np.finfo(float).eps
 
@@ -281,6 +286,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     task[:] = 'START'
 
     n_function_evals = 0
+    n_iterations = 0
+
     while 1:
 #        x, f, g, wa, iwa, task, csave, lsave, isave, dsave = \
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
@@ -288,14 +295,19 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                        isave, dsave)
         task_str = task.tostring()
         if task_str.startswith(asbytes('FG')):
-            # minimization routine wants f and g at the current x
-            n_function_evals += 1
-            # Overwrite f and g:
-            f, g = func_and_grad(x)
-        elif task_str.startswith(asbytes('NEW_X')):
-            # new iteration
             if n_function_evals > maxfun:
                 task[:] = 'STOP: TOTAL NO. of f AND g EVALUATIONS EXCEEDS LIMIT'
+            else:
+                # minimization routine wants f and g at the current x
+                n_function_evals += 1
+                # Overwrite f and g:
+                f, g = func_and_grad(x)
+        elif task_str.startswith(asbytes('NEW_X')):
+            # new iteration
+            if n_iterations > maxiter:
+                task[:] = 'STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT'
+            else:
+                n_iterations += 1
         else:
             break
 
@@ -304,19 +316,21 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         warnflag = 0
     elif n_function_evals > maxfun:
         warnflag = 1
+    elif n_iterations > maxiter:
+        warnflag = 1
     else:
         warnflag = 2
-
 
     d = {'grad' : g,
          'task' : task_str,
          'funcalls' : n_function_evals,
+         'iter' : n_iterations,
          'warnflag' : warnflag
         }
 
-    return Result(fun=f, jac=g, nfev=n_function_evals, status=warnflag,
-                  message=task_str, x=x, success=(warnflag==0))
-
+    return Result(fun=f, jac=g, nfev=n_function_evals, nit=n_iterations,
+                  status=warnflag, message=task_str, x=x,
+                  success=(warnflag==0))
 
 if __name__ == '__main__':
     def func(x):
