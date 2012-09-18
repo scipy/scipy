@@ -27,10 +27,12 @@ def sawtooth(t, width=1):
     ----------
     t : array_like
         Time.
-    width : float, optional
+    width : float or array_like, optional
         Width of the rising ramp as a proportion of the total cycle.
         Default is 1, producing a rising ramp, while 0 produces a falling
         ramp.  `t` = 0.5 produces a triangle wave.
+        If an array, must be the same length as t, causes wave shape to change 
+        over time.
 
     Returns
     -------
@@ -96,8 +98,10 @@ def square(t, duty=0.5):
     ----------
     t : array_like
         The input time array.
-    duty : float, optional
+    duty : float or array_like, optional
         Duty cycle.  Default is 0.5 (50% duty cycle)
+        If an array, must be the same length as t, causes wave shape to change 
+        over time.
 
     Returns
     -------
