@@ -329,13 +329,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     else:
         warnflag = 2
 
-    d = {'grad' : g,
-         'task' : task_str,
-         'funcalls' : n_function_evals,
-         'nit' : n_iterations,
-         'warnflag' : warnflag
-        }
-
     return Result(fun=f, jac=g, nfev=n_function_evals, nit=n_iterations,
                   status=warnflag, message=task_str, x=x,
                   success=(warnflag==0))
