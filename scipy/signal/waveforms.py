@@ -117,6 +117,16 @@ def square(t, duty=0.5):
     >>> plt.plot(t, scipy.signal.square(2 * np.pi * 5 * t))
     >>> plt.ylim(-2, 2)
 
+    A pulse-width modulated sine wave:
+
+    >>> sig = np.sin(2 * np.pi * t)
+    >>> pwm = scipy.signal.square(2 * np.pi * 30 * t, duty=(sig + 1)/2)
+    >>> plt.subplot(2, 1, 1)
+    >>> plt.plot(t, sig)
+    >>> plt.subplot(2, 1, 2)
+    >>> plt.plot(t, pwm)
+    >>> plt.ylim(-1.5, 1.5)
+
     """
     t, w = asarray(t), asarray(duty)
     w = asarray(w + (t - t))
