@@ -303,7 +303,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
-    if (meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
+    if (meth in ['anneal', 'tnc', 'cobyla', 'slsqp'] and
         callback is not None):
         warn('Method %s does not support callback.' % method,
              RuntimeWarning)
