@@ -46,7 +46,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
                   approx_grad=0,
                   bounds=None, m=10, factr=1e7, pgtol=1e-5,
                   epsilon=1e-8,
-                  iprint=-1, maxfun=15000, disp=None):
+                  iprint=-1, maxfun=15000, disp=None, callback=None):
     """
     Minimize a function func using the L-BFGS-B algorithm.
 
@@ -98,6 +98,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         `iprint` (i.e., `iprint` gets the value of `disp`).
     maxfun : int
         Maximum number of function evaluations.
+    callback : callable, optional
+        Called after each iteration, as ``callback(xk)``, where ``xk`` is the
+        current parameter vector.
 
     Returns
     -------
@@ -162,16 +165,11 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     # build options
     if disp is None:
         disp = iprint
-    opts = {'disp'  : disp,
-            'iprint': iprint,
-            'maxcor': m,
-            'ftol'  : factr * np.finfo(float).eps,
-            'gtol'  : pgtol,
-            'eps'   : epsilon,
-            'maxiter': maxfun}
 
     res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
-                           **opts)
+                           disp=disp, maxcor=m, ftol=factr*np.finfo(float).eps,
+                           gtol=pgtol, eps=epsilon, maxiter=maxfun,
+                           iprint=iprint, callback=callback)
     d = {'grad': res['jac'],
          'task': res['message'],
          'funcalls': res['nfev'],
@@ -184,7 +182,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                      disp=None, maxcor=10, ftol=2.2204460492503131e-09,
                      gtol=1e-5, eps=1e-8, maxiter=15000, iprint=-1,
-                     **unknown_options):
+                     callback=None, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -286,6 +284,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
                        pgtol, wa, iwa, task, iprint, csave, lsave,
                        isave, dsave)
+
+        if callback is not None:
+            callback(x)
+
         task_str = task.tostring()
         if task_str.startswith(asbytes('FG')):
             # minimization routine wants f and g at the current x
