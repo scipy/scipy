@@ -104,9 +104,9 @@ def kaiserord(ripple, width):
     -----
     There are several ways to obtain the Kaiser window:
 
-      signal.kaiser(numtaps, beta, sym=0)
-      signal.get_window(beta, numtaps)
-      signal.get_window(('kaiser', beta), numtaps)
+    - ``signal.kaiser(numtaps, beta, sym=0)``
+    - ``signal.get_window(beta, numtaps)``
+    - ``signal.get_window(('kaiser', beta), numtaps)``
 
     The empirical equations discovered by Kaiser are used.
 
