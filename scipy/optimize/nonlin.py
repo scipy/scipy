@@ -1418,6 +1418,7 @@ class KrylovJacobian(Jacobian):
         return r
 
     def solve(self, rhs, tol=0):
+        tol = self.method_kw.pop('tol', tol)
         sol, info = self.method(self.op, rhs, tol=tol, **self.method_kw)
         return sol
 
