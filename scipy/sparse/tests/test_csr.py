@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, run_module_suite
 from scipy.sparse import csr_matrix
 
 
@@ -24,3 +24,6 @@ def test_csr_rowslice():
     for i in range(N):
         for sl in slices:
             yield (check_csr_rowslice, X, Xcsr, i, sl)
+
+if __name__ == "__main__":
+    run_module_suite()
