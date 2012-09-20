@@ -6,6 +6,10 @@ accessed through the `netcdf_file` object. Data written to and from NetCDF
 files are contained in `netcdf_variable` objects. Attributes are given
 as member variables of the `netcdf_file` and `netcdf_variable` objects.
 
+This module implements the Scientific.IO.NetCDF API to read and create
+NetCDF files. The same API is also used in the PyNIO and pynetcdf
+modules, allowing these modules to be used interchangeably when working
+with NetCDF files. 
 """
 
 #TODO:
@@ -101,6 +105,10 @@ class netcdf_file(object):
 
     Notes
     -----
+    The major advantage of this module over other modules is that it doesn't 
+    require the code to be linked to the NetCDF libraries. This module is
+    derived from `pupynere <https://bitbucket.org/robertodealmeida/pupynere/>`_.
+
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
     details about NetCDF files can be found `here
@@ -127,13 +135,6 @@ class netcdf_file(object):
     the NetCDF file as time progresses, then the temperature variable should
     have the time dimension flagged as the record dimension.
     
-    This module implements the Scientific.IO.NetCDF API to read and create
-    NetCDF files. The same API is also used in the PyNIO and pynetcdf
-    modules, allowing these modules to be used interchangeably when working
-    with NetCDF files. The major advantage of this module over other
-    modules is that it doesn't require the code to be linked to the NetCDF
-    libraries.
-    
     In addition, the NetCDF file header contains the position of the data in
     the file, so access can be done in an efficient manner without loading
     unnecessary data into memory. It uses the ``mmap`` module to create
@@ -148,7 +149,7 @@ class netcdf_file(object):
         >>> f.history = 'Created for a test'
         >>> f.createDimension('time', 10)
         >>> time = f.createVariable('time', 'i', ('time',))
-        >>> time[:] = range(10)
+        >>> time[:] = np.arange(10)
         >>> time.units = 'days since 2008-01-01'
         >>> f.close()
     
