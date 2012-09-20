@@ -3,7 +3,7 @@ from numpy.testing import assert_array_almost_equal, run_module_suite
 from scipy.sparse import csr_matrix
 
 
-def check_csr_rowslice(X, Xcsr, i, sl):
+def check_csr_rowslice(i, sl, X, Xcsr):
     np_slice = X[i, sl]
     csr_slice = Xcsr[i, sl]
     assert_array_almost_equal(np_slice, csr_slice.toarray()[0])
@@ -23,7 +23,7 @@ def test_csr_rowslice():
 
     for i in range(N):
         for sl in slices:
-            yield (check_csr_rowslice, X, Xcsr, i, sl)
+            yield (check_csr_rowslice, i, sl, X, Xcsr)
 
 
 def test_csr_getrow_getcol():
