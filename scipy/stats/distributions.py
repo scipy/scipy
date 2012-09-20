@@ -5554,9 +5554,10 @@ class rv_discrete(rv_generic):
     Custom made discrete distribution:
 
     >>> import matplotlib.pyplot as plt
-    >>> xk = arange(7)
+    >>> from scipy import stats
+    >>> xk = np.arange(7)
     >>> pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.1, 0.1)
-    >>> custm = rv_discrete(name='custm', values=(xk, pk))
+    >>> custm = stats.rv_discrete(name='custm', values=(xk, pk))
     >>> h = plt.plot(xk, custm.pmf(xk))
 
     Random number generation:
