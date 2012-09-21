@@ -90,6 +90,7 @@ from numpy import asarray, array, zeros, int32, isscalar, real, imag
 
 import vode as _vode
 import _dop
+import lsoda as _lsoda
 
 
 #------------------------------------------------------------------------------
@@ -198,6 +199,52 @@ class ode(object):
             in which f is not analytic, ZVODE is likely to have convergence
             failures, and for this problem one should instead use DVODE on the
             equivalent real system (in the real and imaginary parts of y).
+
+    "lsoda"
+
+        Real-valued Variable-coefficient Ordinary Differential Equation
+        solver, with fixed-leading-coefficient implementation. It provides
+        automatic method switching between implicit Adams method (for non-stiff
+        problems) and a method based on backward differentiation formulas (BDF)
+        (for stiff problems).
+
+        Source: http://www.netlib.org/odepack
+
+        .. warning::
+
+           This integrator is not re-entrant. You cannot have two `ode`
+           instances using the "lsoda" integrator at the same time.
+
+        This integrator accepts the following parameters in `set_integrator`
+        method of the `ode` class:
+
+        - atol : float or sequence
+          absolute tolerance for solution
+        - rtol : float or sequence
+          relative tolerance for solution
+        - lband : None or int
+        - rband : None or int
+          Jacobian band width, jac[i,j] != 0 for i-lband <= j <= i+rband.
+          Setting these requires your jac routine to return the jacobian
+          in packed format, jac_packed[i-j+lband, j] = jac[i,j].
+        - with_jacobian : bool
+          Whether to use the jacobian
+        - nsteps : int
+          Maximum number of (internally defined) steps allowed during one
+          call to the solver.
+        - first_step : float
+        - min_step : float
+        - max_step : float
+          Limits for the step sizes used by the integrator.
+        - max_order_ns : int
+          Maximum order used in the nonstiff case (default 12).
+        - max_order_s : int
+          Maximum order used in the stiff case (default 5).
+        - max_hnil : int
+          Maximum number of messages reporting too small step size (t + h = t)
+          (default 0)
+        - ixpr : int
+          Whether to generate extra printing at method switches (default False).
 
     "dopri5"
 
@@ -891,3 +938,137 @@ class dop853(dopri5):
 
 if dop853.runner is not None:
     IntegratorBase.integrator_classes.append(dop853)
+
+class lsoda(IntegratorBase):
+
+    runner = getattr(_lsoda, 'lsoda', None)
+    active_global_handle = 0
+
+    messages = {
+        2: "Integration successful.",
+        -1: "Excess work done on this call (perhaps wrong Dfun type).",
+        -2: "Excess accuracy requested (tolerances too small).",
+        -3: "Illegal input detected (internal error).",
+        -4: "Repeated error test failures (internal error).",
+        -5: "Repeated convergence failures (perhaps bad Jacobian or tolerances).",
+        -6: "Error weight became zero during problem.",
+        -7: "Internal workspace insufficient to finish (internal error)."
+    }
+
+    def __init__(self,
+                 with_jacobian=0,
+                 rtol=1e-6, atol=1e-12,
+                 lband=None, uband=None,
+                 nsteps=500,
+                 max_step=0.0,  # corresponds to infinite
+                 min_step=0.0,
+                 first_step=0.0,  # determined by solver
+                 ixpr=0,
+                 max_hnil=0,
+                 max_order_ns=12,
+                 max_order_s=5,
+                 method=None
+                 ):
+
+        self.with_jacobian = with_jacobian
+        self.rtol = rtol
+        self.atol = atol
+        self.mu = uband
+        self.ml = lband
+
+        self.max_order_ns = max_order_ns
+        self.max_order_s = max_order_s
+        self.nsteps = nsteps
+        self.max_step = max_step
+        self.min_step = min_step
+        self.first_step = first_step
+        self.ixpr = ixpr
+        self.max_hnil = max_hnil
+        self.success = 1
+
+        self.initialized = False
+
+    def reset(self, n, has_jac):
+        # Calculate parameters for Fortran subroutine dvode.
+        if has_jac:
+            if self.mu is None and self.ml is None:
+                jt = 1
+            else:
+                if self.mu is None:
+                    self.mu = 0
+                if self.ml is None:
+                    self.ml = 0
+                jt = 4
+        else:
+            if self.mu is None and self.ml is None:
+                jt = 2
+            else:
+                if self.mu is None:
+                    self.mu = 0
+                if self.ml is None:
+                    self.ml = 0
+                jt = 5
+        lrn = 20 + (self.max_order_ns + 4) * n
+        if jt in [1, 2]:
+            lrs = 22 + (self.max_order_s + 4) * n + n * n
+        elif jt in [4, 5]:
+            lrs = 22 + (self.max_order_s + 5 + 2 * self.ml + self.mu) * n
+        else:
+            raise ValueError('Unexpected jt=%s' % jt)
+        lrw = max(lrn, lrs)
+        liw = 20 + n
+        rwork = zeros((lrw,), float)
+        rwork[4] = self.first_step
+        rwork[5] = self.max_step
+        rwork[6] = self.min_step
+        self.rwork = rwork
+        iwork = zeros((liw,), int32)
+        if self.ml is not None:
+            iwork[0] = self.ml
+        if self.mu is not None:
+            iwork[1] = self.mu
+        iwork[4] = self.ixpr
+        iwork[5] = self.nsteps
+        iwork[6] = self.max_hnil
+        iwork[7] = self.max_order_ns
+        iwork[8] = self.max_order_s
+        self.iwork = iwork
+        self.call_args = [self.rtol, self.atol, 1, 1,
+                          self.rwork, self.iwork, jt]
+        self.success = 1
+        self.initialized = False
+
+    def run(self, f,jac,y0,t0,t1,f_params,jac_params):
+        if self.initialized:
+            self.check_handle()
+        else:
+            self.initialized = True
+            self.acquire_new_handle()
+        args = [f, y0, t0, t1] + self.call_args[:-1] + \
+               [jac, self.call_args[-1], f_params, 0, jac_params]
+        y1, t, istate = self.runner(*args)
+        if istate < 0:
+            warnings.warn('lsoda: ' +
+                          self.messages.get(istate,
+                                            'Unexpected istate=%s' % istate))
+            self.success = 0
+        else:
+            self.call_args[3] = 2  # upgrade istate from 1 to 2
+        return y1, t
+
+    def step(self, *args):
+        itask = self.call_args[2]
+        self.call_args[2] = 2
+        r = self.run(*args)
+        self.call_args[2] = itask
+        return r
+
+    def run_relax(self, *args):
+        itask = self.call_args[2]
+        self.call_args[2] = 3
+        r = self.run(*args)
+        self.call_args[2] = itask
+        return r
+
+if lsoda.runner:
+    IntegratorBase.integrator_classes.append(lsoda)
