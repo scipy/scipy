@@ -7,12 +7,35 @@ def rfftfreq(n, d=1.0):
     """DFT sample frequencies (for usage with rfft, irfft).
 
     The returned float array contains the frequency bins in
-    cycles/unit (with zero at the start) given a window length n and a
-    sample spacing d::
+    cycles/unit (with zero at the start) given a window length `n` and a
+    sample spacing `d`::
 
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2]/(d*n)   if n is even
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2,n/2]/(d*n)   if n is odd
+    
+    Parameters
+    ----------
+    n : int
+        Window length.
+    d : scalar
+        Sample spacing.
+
+    Returns
+    -------
+    out : ndarray
+        The array of length `n`, containing the sample frequencies.
+
+    Examples
+    --------
+    >>> sig = np.array([-2, 8, 6, 4, 1, 0, 3, 5], dtype=float)
+    >>> fourier = scipy.fftpack.rfft(sig)
+    >>> n = fourier.size
+    >>> timestep = 0.1
+    >>> freq = scipy.fftpack.rfftfreq(n, d=timestep)
+    >>> freq
+    array([ 0.  ,  1.25,  1.25,  2.5 ,  2.5 ,  3.75,  3.75,  5.  ])
+
     """
     if not isinstance(n, int) or n < 0:
         raise ValueError("n = %s is not valid.  n must be a nonnegative integer." % n)
-    return (array(range(1,n+1),dtype=int)//2)/float(n*d)
+    return (array(range(1, n + 1), dtype=int) // 2) / float(n * d)
