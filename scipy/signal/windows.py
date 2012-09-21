@@ -30,9 +30,9 @@ def boxcar(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.boxcar(51)
@@ -75,9 +75,9 @@ def triang(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.triang(51)
@@ -137,9 +137,9 @@ def parzen(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.parzen(51)
@@ -198,9 +198,9 @@ def bohman(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.bohman(51)
@@ -281,9 +281,9 @@ def blackman(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.blackman(51)
@@ -339,9 +339,9 @@ def nuttall(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.nuttall(51)
@@ -398,9 +398,9 @@ def blackmanharris(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.blackmanharris(51)
@@ -457,9 +457,9 @@ def flattop(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.flattop(51)
@@ -554,9 +554,9 @@ def bartlett(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.bartlett(51)
@@ -644,9 +644,9 @@ def hann(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.hann(51)
@@ -703,9 +703,9 @@ def barthann(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.barthann(51)
@@ -790,9 +790,9 @@ def hamming(M, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.hamming(51)
@@ -905,9 +905,9 @@ def kaiser(M, beta, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.kaiser(51, beta=14)
@@ -972,9 +972,9 @@ def gaussian(M, std, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.gaussian(51, std=7)
@@ -1044,9 +1044,9 @@ def general_gaussian(M, p, sig, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.general_gaussian(51, p=1.5, sig=7)
@@ -1103,9 +1103,9 @@ def chebwin(M, at, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.chebwin(51, at=100)
@@ -1189,9 +1189,9 @@ def slepian(M, width, sym=True):
 
     Examples
     --------
-    Plot the window and its frequency response (requires matplotlib):
+    Plot the window and its frequency response:
 
-    >>> from numpy.fft import fft, fftshift
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
     >>> window = scipy.signal.slepian(51, width=0.3)
