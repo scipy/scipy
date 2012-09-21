@@ -8,7 +8,7 @@ def rfftfreq(n, d=1.0):
 
     The returned float array contains the frequency bins in
     cycles/unit (with zero at the start) given a window length n and a
-    sample spacing d:
+    sample spacing d::
 
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2]/(d*n)   if n is even
       f = [0,1,1,2,2,...,n/2-1,n/2-1,n/2,n/2]/(d*n)   if n is odd
