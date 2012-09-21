@@ -114,7 +114,8 @@ static tnc_rc tnc_minimize(int n, double x[], double *f, double g[],
   double low[], double up[], tnc_message messages,
   int maxCGit, int maxnfeval, int *nfeval,
   double eta, double stepmx, double accuracy,
-  double fmin, double ftol, double xtol, double pgtol, double rescale);
+  double fmin, double ftol, double xtol, double pgtol, double rescale,
+  tnc_callback *callback);
 
 static getptc_rc getptcInit(double *reltol, double *abstol, double tnytol,
   double eta, double rmu, double xbnd,
@@ -235,7 +236,7 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
   void *state, double low[], double up[], double scale[], double offset[],
   int messages, int maxCGit, int maxnfeval, double eta, double stepmx,
   double accuracy, double fmin, double ftol, double xtol, double pgtol,
-  double rescale, int *nfeval)
+  double rescale, int *nfeval, tnc_callback *callback)
 {
   int rc, frc, i, nc, nfeval_local,
     free_low = TNC_FALSE, free_up = TNC_FALSE,
@@ -404,7 +405,7 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
   rc = tnc_minimize(n, x, f, g, function, state,
     xscale, xoffset, &fscale, low, up, messages,
     maxCGit, maxnfeval, nfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
-    rescale);
+    rescale, callback);
 
 cleanup:
   if (messages & TNC_MSG_EXIT)
@@ -502,7 +503,7 @@ static tnc_rc tnc_minimize(int n, double x[],
   double low[], double up[], tnc_message messages,
   int maxCGit, int maxnfeval, int *nfeval, double eta, double stepmx,
   double accuracy, double fmin, double ftol, double xtol, double pgtol,
-  double rescale)
+  double rescale, tnc_callback *callback)
 {
   double fLastReset, difnew, epsmch, epsred, oldgtp,
     difold, oldf, xnorm, newscale,
@@ -838,6 +839,14 @@ static tnc_rc tnc_minimize(int n, double x[],
         else lreset = TNC_FALSE;
       }
       upd1 = TNC_FALSE;
+    }
+
+    /* Invoke the callback function */
+    if (callback)
+    {
+      unscalex(n, x, xscale, xoffset);
+      callback(x, state);
+      scalex(n, x, xscale, xoffset);
     }
   }
 
