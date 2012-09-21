@@ -168,15 +168,17 @@ class csc_matrix(_cs_matrix):
             return self.T[:,key].T                              #[[1,2]]
 
     def getrow(self, i):
-        """Returns a copy of row i of the matrix, as a (1 x n) sparse
-        matrix (row vector).
+        """Returns a copy of row i of the matrix, as a (1 x n)
+        CSR matrix (row vector).
         """
         # transpose to use CSR code
-        return self.T.getcol(i).T
+        # we convert to CSR to maintain compatibility with old impl.
+        # in spmatrix.getrow()
+        return self.T.getcol(i).T.tocsr()
 
     def getcol(self, i):
-        """Returns a copy of column i of the matrix, as a (1 x n) sparse
-        matrix (row vector).
+        """Returns a copy of column i of the matrix, as a (m x 1)
+        CSC matrix (column vector).
         """
         # transpose to use CSR code
         return self.T.getrow(i).T

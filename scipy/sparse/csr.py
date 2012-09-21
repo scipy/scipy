@@ -311,14 +311,14 @@ class csr_matrix(_cs_matrix):
             raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col) )
 
     def getrow(self, i):
-        """Returns a copy of row i of the matrix, as a (1 x n) sparse
-        matrix (row vector).
+        """Returns a copy of row i of the matrix, as a (1 x n)
+        CSR matrix (row vector).
         """
         return self._get_submatrix(i, slice(None))
 
     def getcol(self, i):
-        """Returns a copy of column i of the matrix, as a (1 x n) sparse
-        matrix (row vector).
+        """Returns a copy of column i of the matrix, as a (m x 1)
+        CSR matrix (column vector).
         """
         return self._get_submatrix(slice(None), i)
 
