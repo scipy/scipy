@@ -1703,7 +1703,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
         If None (default), the input array is first flattened.
     limit : tuple
         Tuple of (lower, upper) values.
-        Values of `a` outside this closed interval are ignored.
+        Values of `a` outside this open interval are ignored.
 
     Returns
     -------
