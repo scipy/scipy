@@ -439,6 +439,8 @@ class TestCephes(TestCase):
         assert_equal(cephes.spence(1),0.0)
     def test_stdtr(self):
         assert_equal(cephes.stdtr(1,0),0.5)
+        assert_almost_equal(cephes.stdtr(1,1), 0.75)
+        assert_almost_equal(cephes.stdtr(1,2), 0.852416382349)
     def test_stdtridf(self):
         cephes.stdtridf(0.7,1)
     def test_stdtrit(self):
