@@ -17,8 +17,8 @@ def rfftfreq(n, d=1.0):
     ----------
     n : int
         Window length.
-    d : scalar
-        Sample spacing.
+    d : scalar, optional
+        Sample spacing. Default is 1.
 
     Returns
     -------
@@ -27,11 +27,12 @@ def rfftfreq(n, d=1.0):
 
     Examples
     --------
+    >>> from scipy import fftpack
     >>> sig = np.array([-2, 8, 6, 4, 1, 0, 3, 5], dtype=float)
-    >>> fourier = scipy.fftpack.rfft(sig)
-    >>> n = fourier.size
+    >>> sig_fft = fftpack.rfft(sig)
+    >>> n = sig_fft.size
     >>> timestep = 0.1
-    >>> freq = scipy.fftpack.rfftfreq(n, d=timestep)
+    >>> freq = fftpack.rfftfreq(n, d=timestep)
     >>> freq
     array([ 0.  ,  1.25,  1.25,  2.5 ,  2.5 ,  3.75,  3.75,  5.  ])
 
