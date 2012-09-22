@@ -574,7 +574,7 @@ def convolve(input, weights, output = None, mode = 'reflect', cval = 0.0,
     cval : scalar, optional
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
-    origin : scalar, optional
+    origin : array_like, optional
         The `origin` parameter controls the placement of the filter.
         Default is 0.
 
