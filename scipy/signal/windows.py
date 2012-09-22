@@ -611,10 +611,11 @@ def hamming(M, sym=True):
     --------
     Plot the window and the frequency response:
 
+    >>> from scipy import signal
     >>> from numpy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = scipy.signal.hamming(51)
+    >>> window = signal.hamming(51)
     >>> plt.plot(window)
     >>> plt.title("Hamming window")
     >>> plt.ylabel("Amplitude")
