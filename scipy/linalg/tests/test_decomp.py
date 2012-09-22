@@ -10,6 +10,8 @@ Run tests if linalg is not installed:
   python tests/test_decomp.py
 """
 
+import sys
+
 import numpy as np
 from numpy.testing import TestCase, assert_equal, assert_array_almost_equal, \
         assert_array_equal, assert_raises, assert_, run_module_suite, dec
@@ -187,6 +189,7 @@ class TestEig(object):
         assert_array_almost_equal(sort(w[isfinite(w)]), sort(wt[isfinite(wt)]),
                                   err_msg=msg)
 
+    @dec.knownfailureif(sys.platform == "win32", "See ticket #1735")
     def test_singular(self):
         """Test singular pair"""
         # Example taken from
