@@ -348,7 +348,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     elif meth == 'anneal':
         return _minimize_anneal(fun, x0, args, **options)
     elif meth == 'l-bfgs-b':
-        return _minimize_lbfgsb(fun, x0, args, jac, bounds, **options)
+        return _minimize_lbfgsb(fun, x0, args, jac, bounds,
+                                callback=callback, **options)
     elif meth == 'tnc':
         return _minimize_tnc(fun, x0, args, jac, bounds, **options)
     elif meth == 'cobyla':
