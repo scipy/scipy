@@ -1,6 +1,6 @@
 __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq']
 
-from numpy import array
+from numpy import arange
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
 
 def rfftfreq(n, d=1.0):
@@ -39,4 +39,4 @@ def rfftfreq(n, d=1.0):
     """
     if not isinstance(n, int) or n < 0:
         raise ValueError("n = %s is not valid.  n must be a nonnegative integer." % n)
-    return (array(range(1, n + 1), dtype=int) // 2) / float(n * d)
+    return (arange(1, n + 1, dtype=int) // 2) / float(n * d)
