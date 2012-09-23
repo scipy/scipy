@@ -14,15 +14,14 @@ from scipy.sparse import isspmatrix, coo_matrix
 ###############################################################################
 # Graph laplacian
 def laplacian(csgraph, normed=False, return_diag=False):
-    """ Return the Laplacian matrix of a directed graph.  For non-symmetric
-    graphs the out-degree is used in the computation.
+    """ Return the Laplacian matrix of a directed graph.
+
+    For non-symmetric graphs the out-degree is used in the computation.
 
     Parameters
     ----------
     csgraph: array_like or sparse matrix, 2 dimensions
         compressed-sparse graph, with shape (N, N).
-    directed: bool, optional
-        If True (default), then csgraph represents a directed graph.
     normed: bool, optional
         If True, then compute normalized Laplacian.
     return_diag: bool, optional
@@ -32,7 +31,6 @@ def laplacian(csgraph, normed=False, return_diag=False):
     -------
     lap: ndarray
         The N x N laplacian matrix of graph.
-
     diag: ndarray
         The length-N diagonal of the laplacian matrix.
         diag is returned only if return_diag is True.
