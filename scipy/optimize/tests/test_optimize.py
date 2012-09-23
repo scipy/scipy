@@ -353,7 +353,7 @@ class TestOptimize(TestCase):
         """
         retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
                                         self.grad, args=(),
-                                        maxfun=self.maxiter)
+                                        maxiter=self.maxiter)
 
         (params, fopt, d) = retval
 
@@ -375,7 +375,7 @@ class TestOptimize(TestCase):
         """ L-BFGS-B with numerical jacobian """
         retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
                                         approx_grad=True,
-                                        maxfun=self.maxiter)
+                                        maxiter=self.maxiter)
 
         (params, fopt, d) = retval
 
@@ -388,7 +388,7 @@ class TestOptimize(TestCase):
             return self.func(x), self.grad(x)
 
         retval = optimize.fmin_l_bfgs_b(fun, self.startparams,
-                                        maxfun=self.maxiter)
+                                        maxiter=self.maxiter)
 
         (params, fopt, d) = retval
 
