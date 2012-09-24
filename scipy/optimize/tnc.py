@@ -83,7 +83,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
              bounds=None, epsilon=1e-8, scale=None, offset=None,
              messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
              stepmx=0, accuracy=0, fmin=0, ftol=-1, xtol=-1, pgtol=-1,
-             rescale=-1, disp=None):
+             rescale=-1, disp=None, callback=None):
     """
     Minimize a function with variables subject to bounds, using
     gradient information in a truncated Newton algorithm. This
@@ -169,6 +169,9 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         Scaling factor (in log10) used to trigger f value
         rescaling.  If 0, rescale at each iteration.  If a large
         value, never rescale.  If < 0, rescale is set to 1.3.
+    callback : callable, optional
+        Called after each iteration, as callback(xk), where xk is the
+        current parameter vector.
 
     Returns
     -------
@@ -254,7 +257,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             'rescale': rescale,
             'disp': False}
 
-    res = _minimize_tnc(fun, x0, args, jac, bounds, **opts)
+    res = _minimize_tnc(fun, x0, args, jac, bounds, callback=callback, **opts)
 
     return res['x'], res['nfev'], res['status']
 
@@ -262,7 +265,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   eps=1e-8, scale=None, offset=None, mesg_num=None,
                   maxCGit=-1, maxiter=None, eta=-1, stepmx=0, accuracy=0,
                   minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
-                  **unknown_options):
+                  callback=None, **unknown_options):
     """
     Minimize a scalar function of one or more variables using a truncated
     Newton (TNC) algorithm.
@@ -388,7 +391,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     rc, nf, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale, offset,
             messages, maxCGit, maxfun, eta, stepmx, accuracy,
-            fmin, ftol, xtol, pgtol, rescale)
+            fmin, ftol, xtol, pgtol, rescale, callback)
 
     xopt = array(x)
     funv, jacv = func_and_grad(xopt)
