@@ -720,10 +720,11 @@ class TestTnc(TestCase):
         """Minimize, method=TNC, 1"""
         x0, bnds = [-2, 1], ([-np.inf, None],[-1.5, None])
         xopt = [1, 1]
+        iterx = [] # to test callback
 
         x = optimize.minimize(self.f1, x0, method='TNC',
                               jac=self.g1, bounds=bnds,
-                              options=self.opts).x
+                              options=self.opts, callback=iterx.append).x
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8)
 
     def test_minimize_tnc1b(self):
