@@ -414,21 +414,21 @@ def _stats(input, labels=None, index=None, centered=False):
         compatible with `input`; typically it is the same shape as `input`.
         If `labels` is None, all nonzero values in `input` are treated as
         the single labeled group.
-    index: label or sequence of labels, optional
+    index : label or sequence of labels, optional
         These are the labels of the groups for which the stats are computed.
         If `index` is None, the stats are computed for the single group where
         `labels` is greater than 0.
-    centered: bool, optional
+    centered : bool, optional
         If True, the centered sum of squares for each labeled group is
         also returned.  Default is False.
 
     Returns
     -------
-    counts: int or ndarray of ints
+    counts : int or ndarray of ints
         The number of elements in each labeled group.
-    sums: scalar or ndarray of scalars
+    sums : scalar or ndarray of scalars
         The sums of the values in each labeled group.
-    sums_c: scalar or ndarray of scalars, optional
+    sums_c : scalar or ndarray of scalars, optional
         The sums of mean-centered squares of the values in each labeled group.
         This is only returned if `centered` is True.
 
@@ -818,15 +818,15 @@ def minimum(input, labels=None, index=None):
 
     Parameters
     ----------
-    input: array_like
+    input : array_like
         Array_like of values. For each region specified by `labels`, the
         minimal values of `input` over the region is computed.
-    labels: array_like, optional
+    labels : array_like, optional
         An array_like of integers marking different regions over which the
         minimum value of `input` is to be computed. `labels` must have the
         same shape as `input`. If `labels` is not specified, the minimum
         over the whole array is returned.
-    index: array_like, optional
+    index : array_like, optional
         A list of region labels that are taken into account for computing the
         minima. If index is None, the minimum over all elements where `labels`
         is non-zero is returned.
@@ -956,15 +956,15 @@ def median(input, labels=None, index=None):
 
     Parameters
     ----------
-    input: array_like
+    input : array_like
         Array_like of values. For each region specified by `labels`, the
         median value of `input` over the region is computed.
-    labels: array_like, optional
+    labels : array_like, optional
         An array_like of integers marking different regions over which the
         median value of `input` is to be computed. `labels` must have the
         same shape as `input`. If `labels` is not specified, the median
         over the whole array is returned.
-    index: array_like, optional
+    index : array_like, optional
         A list of region labels that are taken into account for computing the
         medians. If index is None, the minimum over all elements where `labels`
         is non-zero is returned.

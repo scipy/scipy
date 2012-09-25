@@ -732,7 +732,7 @@ def newton_cotes(rn, equal=0):
         The integer order for equally-spaced data or the relative positions of
         the samples with the first sample at 0 and the last at N, where N+1 is
         the length of `rn`.  N is the order of the Newton-Cotes integration.
-    equal: int, optional
+    equal : int, optional
         Set to 1 to enforce equally spaced data.
 
     Returns

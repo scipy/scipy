@@ -51,20 +51,20 @@ class HBInfo(object):
 
         Parameters
         ----------
-        m: sparse matrix
+        m : sparse matrix
             the HBInfo instance will derive its parameters from m
-        title: str
+        title : str
             Title to put in the HB header
-        key: str
+        key : str
             Key
-        mxtype: HBMatrixType
+        mxtype : HBMatrixType
             type of the input matrix
-        fmt: dict
+        fmt : dict
             not implemented
 
         Returns
         -------
-        hb_info: HBInfo instance
+        hb_info : HBInfo instance
         """
         pointer = m.indptr
         indices = m.indices
@@ -127,12 +127,12 @@ class HBInfo(object):
 
         Parameters
         ----------
-        fid: file-like matrix
+        fid : file-like matrix
             File or file-like object containing a matrix in the HB format.
 
         Returns
         -------
-        hb_info: HBInfo instance
+        hb_info : HBInfo instance
         """
         # First line
         line = fid.readline().strip("\n")
@@ -424,9 +424,9 @@ class HBFile(object):
 
         Parameters
         ----------
-        file: file-object
+        file : file-object
             StringIO work as well
-        hb_info: HBInfo
+        hb_info : HBInfo
             Should be given as an argument for writing, in which case the file
             should be writable.
         """
@@ -470,7 +470,7 @@ def hb_read(file):
 
     Parameters
     ----------
-    file: str-like or file-like
+    file : str-like or file-like
         If a string-like object, file is the name of the file to read. If a
         file-like object, the data are read from it.
 
@@ -508,12 +508,12 @@ def hb_write(file, m, hb_info=None):
 
     Parameters
     ----------
-    file: str-like or file-like
+    file : str-like or file-like
         if a string-like object, file is the name of the file to read. If a
         file-like object, the data are read from it.
-    m: sparse-matrix
+    m : sparse-matrix
         the sparse matrix to write
-    hb_info: HBInfo
+    hb_info : HBInfo
         contains the meta-data for write
 
     Returns

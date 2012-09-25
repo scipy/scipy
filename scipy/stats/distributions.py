@@ -716,14 +716,14 @@ class rv_generic(object):
         arg1, arg2, ... : array_like
             The shape parameter(s) for the distribution (see docstring of the instance
             object for more information)
-        loc: array_like, optional
+        loc : array_like, optional
             location parameter (default = 0)
         scale : array_like, optional
             scale paramter (default = 1)
 
         Returns
         -------
-        a, b: array_like (float)
+        a, b : array_like (float)
             end-points of range that contain alpha % of the rvs
         """
         alpha = asarray(alpha)
@@ -1612,7 +1612,7 @@ class rv_continuous(rv_generic):
 
         Parameters
         ----------
-        n: int, n>=1
+        n : int, n>=1
             Order of moment.
         arg1, arg2, arg3,... : float
             The shape parameter(s) for the distribution (see docstring of the
@@ -6015,7 +6015,7 @@ class rv_discrete(rv_generic):
             instance object for more information).
         loc : array_like, optional
             Location parameter (default=0).
-        scale: array_like, optional
+        scale : array_like, optional
             Scale parameter (default=1).
 
         Returns
@@ -6214,7 +6214,7 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        n: int, n>=1
+        n : int, n>=1
             order of moment
         arg1, arg2, arg3,...: float
             The shape parameter(s) for the distribution (see docstring of the

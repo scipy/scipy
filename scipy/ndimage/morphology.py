@@ -71,7 +71,7 @@ def iterate_structure(structure, iterations, origin = None):
     Returns
     -------
 
-    output: ndarray of bools
+    output : ndarray of bools
         A new structuring element obtained by dilating `structure`
         (`iterations` - 1) times with itself.
 
@@ -330,17 +330,17 @@ def binary_erosion(input, structure = None, iterations = 1, mask = None,
         Array of the same shape as input, into which the output is placed.
         By default, a new array is created.
 
-    origin: int or tuple of ints, optional
+    origin : int or tuple of ints, optional
         Placement of the filter, by default 0.
 
-    border_value: int (cast to 0 or 1)
+    border_value : int (cast to 0 or 1)
         Value at the border in the output array.
 
 
     Returns
     -------
 
-    out: ndarray of bools
+    out : ndarray of bools
         Erosion of the input by the structuring element.
 
 
@@ -1063,27 +1063,27 @@ def binary_fill_holes(input, structure = None, output = None, origin = 0):
     Parameters
     ----------
 
-    input: array_like
+    input : array_like
         n-dimensional binary array with holes to be filled
 
-    structure: array_like, optional
+    structure : array_like, optional
         Structuring element used in the computation; large-size elements
         make computations faster but may miss holes separated from the
         background by thin regions. The default element (with a square
         connectivity equal to one) yields the intuitive result where all
         holes in the input have been filled.
 
-    output: ndarray, optional
+    output : ndarray, optional
         Array of the same shape as input, into which the output is placed.
         By default, a new array is created.
 
-    origin: int, tuple of ints, optional
+    origin : int, tuple of ints, optional
         Position of the structuring element.
 
     Returns
     -------
 
-    out: ndarray
+    out : ndarray
         Transformation of the initial image `input` where holes have been
         filled.
 

@@ -133,7 +133,7 @@ def is_writable(dir):
 
     Parameters
     ----------
-    dir: str
+    dir : str
         A string represeting a path to a directory on the filesystem.
 
     Returns

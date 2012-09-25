@@ -584,7 +584,7 @@ class VarWriter5(object):
         name : str, optional
             name as it will appear in matlab workspace
             default is empty string
-        is_global : {False, True} optional
+        is_global : {False, True}, optional
             whether variable will be global on load into matlab
         """
         # these are set before the top-level header write, and unset at
