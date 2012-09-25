@@ -56,30 +56,30 @@ def correlate(in1, in2, mode='full'):
     """
     Cross-correlate two N-dimensional arrays.
 
-    Cross-correlate in1 and in2 with the output size determined by the mode
+    Cross-correlate `in1` and `in2` with the output size determined by the mode
     argument.
 
     Parameters
     ----------
-    in1: array
+    in1 : array
         first input.
-    in2: array
-        second input. Should have the same number of dimensions as in1.
-    mode: str {'valid', 'same', 'full'}, optional
+    in2 : array
+        second input. Should have the same number of dimensions as `in1`.
+    mode : str {'valid', 'same', 'full'}, optional
         A string indicating the size of the output:
 
             - 'valid': the output consists only of those elements that do not
               rely on the zero-padding.
-            - 'same': the output is the same size as ``in1`` centered
+            - 'same': the output is the same size as `in1` centered
               with respect to the 'full' output.
             - 'full': the output is the full discrete linear cross-correlation
               of the inputs (default).
 
     Returns
     -------
-    out: array
+    out : array
         an N-dimensional array containing a subset of the discrete linear
-        cross-correlation of in1 with in2.
+        cross-correlation of `in1` with `in2`.
 
     Notes
     -----
@@ -132,7 +132,7 @@ def _centered(arr, newsize):
 
 
 def fftconvolve(in1, in2, mode="full"):
-    """Convolve two N-dimensional arrays using FFT. See convolve.
+    """Convolve two N-dimensional arrays using FFT. See :func:`convolve`.
 
     """
     s1 = array(in1.shape)
@@ -166,21 +166,21 @@ def convolve(in1, in2, mode='full'):
     """
     Convolve two N-dimensional arrays.
 
-    Convolve in1 and in2 with output size determined by mode.
+    Convolve `in1` and `in2` with output size determined by mode.
 
     Parameters
     ----------
-    in1: array
+    in1 : array
         first input.
-    in2: array
-        second input. Should have the same number of dimensions as in1.
-    mode: str {'valid', 'same', 'full'}
+    in2 : array
+        second input. Should have the same number of dimensions as `in1`.
+    mode : str {'valid', 'same', 'full'}
         a string indicating the size of the output:
 
         ``valid`` : the output consists only of those elements that do not
            rely on the zero-padding.
 
-        ``same`` : the output is the same size as ``in1`` centered
+        ``same`` : the output is the same size as `in1` centered
            with respect to the 'full' output.
 
         ``full`` : the output is the full discrete linear cross-correlation
@@ -189,9 +189,9 @@ def convolve(in1, in2, mode='full'):
 
     Returns
     -------
-    out: array
+    out : array
         an N-dimensional array containing a subset of the discrete linear
-        cross-correlation of in1 with in2.
+        cross-correlation of `in1` with `in2`.
 
     """
     volume = asarray(in1)
@@ -380,7 +380,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     ----------
     in1, in2 : ndarray
         Two-dimensional input arrays to be convolved.
-    mode: str, optional
+    mode : str, optional
         A string indicating the size of the output:
 
         ``valid`` : the output consists only of those elements that do not
@@ -432,7 +432,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     ----------
     in1, in2 : ndarray
         Two-dimensional input arrays to be convolved.
-    mode: str, optional
+    mode : str, optional
         A string indicating the size of the output:
 
         ``valid`` : the output consists only of those elements that do not
