@@ -626,7 +626,7 @@ def hann(M, sym=True):
     -----
     The Hann window is defined as
 
-    .. math::  w(n) = 0.5 - 0.5cos\left(\frac{2\pi{n}}{M-1}\right)
+    .. math::  w(n) = 0.5 - 0.5 \cos\left(\frac{2\pi{n}}{M-1}\right)
                \qquad 0 \leq n \leq M-1
 
     The window was named for Julius van Hann, an Austrian meterologist. It is
@@ -776,7 +776,7 @@ def hamming(M, sym=True):
     -----
     The Hamming window is defined as
 
-    .. math::  w(n) = 0.54 - 0.46cos\left(\frac{2\pi{n}}{M-1}\right)
+    .. math::  w(n) = 0.54 - 0.46 \cos\left(\frac{2\pi{n}}{M-1}\right)
                \qquad 0 \leq n \leq M-1
 
     The Hamming was named for R. W. Hamming, an associate of J. W. Tukey and
@@ -896,7 +896,7 @@ def kaiser(M, beta, sym=True):
 
     A beta value of 14 is probably a good starting point. Note that as beta
     gets large, the window narrows, and so the number of samples needs to be
-    large enough to sample the increasingly narrow spike, otherwise nans will
+    large enough to sample the increasingly narrow spike, otherwise NaNs will
     get returned.
 
     Most references to the Kaiser window come from the signal processing
