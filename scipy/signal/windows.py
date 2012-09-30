@@ -1032,7 +1032,7 @@ def general_gaussian(M, p, sig, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     p : float
-        Shape parameter.  p = 1 is identical to :func:`~gaussian`, p = 0.5 is
+        Shape parameter.  p = 1 is identical to `gaussian`, p = 0.5 is
         the same shape as the Laplace distribution.
     sig : float
         The standard deviation, sigma.

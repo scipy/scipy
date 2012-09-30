@@ -677,7 +677,7 @@ def readsav(file_name, idict=None, python_dict=False,
         Name of the IDL save file.
     idict : dict, optional
         Dictionary in which to insert .sav file variables
-    python_dict: bool, optional
+    python_dict : bool, optional
         By default, the object return is not a Python dictionary, but a
         case-insensitive dictionary with item, attribute, and call access
         to variables. To get a standard Python dictionary, set this option

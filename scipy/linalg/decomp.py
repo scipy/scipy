@@ -228,7 +228,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         Indexes of the smallest and largest (in ascending order) eigenvalues
         and corresponding eigenvectors to be returned: 0 <= lo < hi <= M-1.
         If omitted, all eigenvalues and eigenvectors are returned.
-    type: integer
+    type : integer
         Specifies the problem type to be solved:
            type = 1: a   v[:,i] = w[i] b v[:,i]
            type = 2: a b v[:,i] = w[i]   v[:,i]
@@ -425,7 +425,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         (Default: calculate also eigenvectors)
     overwrite_a_band:
         Discard data in a_band (may enhance performance)
-    select: {'a', 'v', 'i'}
+    select : {'a', 'v', 'i'}
         Which eigenvalues to calculate
 
         ======  ========================================
@@ -604,7 +604,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         Indexes of the smallest and largest (in ascending order) eigenvalues
         and corresponding eigenvectors to be returned: 0 <= lo < hi <= M-1.
         If omitted, all eigenvalues and eigenvectors are returned.
-    type: integer
+    type : integer
         Specifies the problem type to be solved:
            type = 1: a   v[:,i] = w[i] b v[:,i]
            type = 2: a b v[:,i] = w[i]   v[:,i]
@@ -675,7 +675,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
         Is the matrix in the lower form. (Default is upper form)
     overwrite_a_band:
         Discard data in a_band (may enhance performance)
-    select: {'a', 'v', 'i'}
+    select : {'a', 'v', 'i'}
         Which eigenvalues to calculate
 
         ======  ========================================

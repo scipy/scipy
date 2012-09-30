@@ -37,9 +37,9 @@ are calculated as a weighted linear combination of order statistics.
 
 Parameters
 ----------
-    data: ndarray
+    data : ndarray
         Data array.
-    prob: sequence
+    prob : sequence
         Sequence of quantiles to compute.
     axis : int
         Axis along which to compute the quantiles. If None, use a flattened array.
@@ -104,7 +104,7 @@ def hdmedian(data, axis=-1, var=False):
 
 Parameters
 ----------
-    data: ndarray
+    data : ndarray
         Data array.
     axis : int
         Axis along which to compute the quantiles. If None, use a flattened array.
@@ -123,9 +123,9 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
 
 Parameters
 ----------
-    data: ndarray
+    data : ndarray
         Data array.
-    prob: sequence
+    prob : sequence
         Sequence of quantiles to compute.
     axis : int
         Axis along which to compute the quantiles. If None, use a flattened array.
@@ -212,9 +212,9 @@ experimental quantiles of the data.
 
 Parameters
 -----------
-    data: ndarray
+    data : ndarray
         Data array.
-    prob: sequence
+    prob : sequence
         Sequence of quantiles to compute.
     axis : int
         Axis along which to compute the quantiles. If None, use a flattened array.
@@ -255,9 +255,9 @@ def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
 
     Parameters
     ----------
-    data: ndarray
+    data : ndarray
         Data array.
-    prob: sequence
+    prob : sequence
         Sequence of quantiles to compute.
     alpha : float
         Confidence level of the intervals.

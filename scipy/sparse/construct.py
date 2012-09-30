@@ -582,14 +582,14 @@ def rand(m, n, density=0.01, format="coo", dtype=None):
 
     Parameters
     ----------
-    m, n: int
+    m, n : int
         shape of the matrix
-    density: real
+    density : real
         density of the generated matrix: density equal to one means a full
         matrix, density of 0 means a matrix with no non-zero items.
-    format: str
+    format : str
         sparse matrix format.
-    dtype: dtype
+    dtype : dtype
         type of the returned matrix values.
 
     Notes

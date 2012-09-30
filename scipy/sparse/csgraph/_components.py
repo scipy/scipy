@@ -21,15 +21,15 @@ def cs_graph_components(x):
 
     Parameters
     -----------
-    x: array_like or sparse matrix, 2 dimensions
+    x : array_like or sparse matrix, 2 dimensions
         The adjacency matrix of the graph. Only the upper triangular part
         is used.
 
     Returns
     --------
-    n_comp: int
+    n_comp : int
         The number of connected components.
-    label: ndarray (ints, 1 dimension):
+    label : ndarray (ints, 1 dimension):
         The label array of each connected component (-2 is used to
         indicate empty rows in the matrix: 0 everywhere, including
         diagonal). This array has the length of the number of nodes,

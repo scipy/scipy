@@ -42,14 +42,14 @@ class IntFormat(object):
 
         Parameters
         ----------
-        n: int
+        n : int
             max number one wants to be able to represent
-        min: int
+        min : int
             minimum number of characters to use for the format
 
         Returns
         -------
-        res: IntFormat
+        res : IntFormat
             IntFormat instance with reasonable (see Notes) computed width
 
         Notes
@@ -102,14 +102,14 @@ class ExpFormat(object):
 
         Parameters
         ----------
-        n: float
+        n : float
             max number one wants to be able to represent
-        min: int
+        min : int
             minimum number of characters to use for the format
 
         Returns
         -------
-        res: ExpFormat
+        res : ExpFormat
             ExpFormat instance with reasonable (see Notes) computed width
 
         Notes
@@ -135,7 +135,7 @@ class ExpFormat(object):
         """\
         Parameters
         ----------
-        width: int
+        width : int
             number of characters taken by the string (includes space).
         """
         self.width = width

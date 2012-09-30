@@ -195,7 +195,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         than explicit conjugation.
     overwrite_a : bool, optional
         Whether data in a is overwritten (may improve performance)
-    overwrite_c: bool, optional
+    overwrite_c : bool, optional
         Whether data in c is overwritten (may improve performance).
         If this is used, c must be big enough to keep the result,
         i.e. c.shape[0] = a.shape[0] if mode is 'left'.
