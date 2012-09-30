@@ -1,9 +1,166 @@
 import numpy as np
 from scipy.misc import factorial
 
-__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial", "pchip"]
+__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial", "Pchip", "pchip_interpolate", "pchip"]
 
-class KroghInterpolator(object):
+def _isscalar(x):
+    """Check whether x is if a scalar type, or 0-dim"""
+    return np.isscalar(x) or hasattr(x, 'shape') and x.shape == ()
+
+class _InterpolatorBase(object):
+    """
+    Common features in univariate interpolation
+
+    Deal with input data type and interpolation axis rolling.  The
+    actual interpolator can assume the y-data is of shape (n, r) where
+    `n` is the number of x-points, and `r` the number of variables,
+    and use self.dtype as the y-data type.
+    """
+
+    def __init__(self, xi=None, yi=None, axis=None):
+        self._y_axis = axis
+        self._y_extra_shape = None
+        self.dtype = None
+        if yi is not None:
+            self._set_yi(yi, xi=xi, axis=axis)
+
+    def __call__(self, x):
+        """
+        Evaluate the interpolant
+
+        Parameters
+        ----------
+        x : array-like
+            Points to evaluate the interpolant at
+
+        Returns
+        -------
+        y : array-like
+            Interpolant values at the points
+        """
+        x, x_shape = self._prepare_x(x)
+        y = self._evaluate(x)
+        return self._finish_y(y, x_shape)
+
+    def _prepare_x(self, x):
+        """Reshape input x array to 1-D"""
+        x = np.asarray(x)
+        x_shape = x.shape
+        return x.ravel(), x_shape
+
+    def _finish_y(self, y, x_shape):
+        """Reshape interpolated y back to n-d array similar to initial y"""
+        y = y.reshape(x_shape + self._y_extra_shape)
+        if self._y_axis != 0 and x_shape != ():
+            nx = len(x_shape)
+            ny = len(self._y_extra_shape)
+            s = (range(nx, nx + self._y_axis)
+                 + range(nx) + range(nx+self._y_axis, nx+ny))
+            y = y.transpose(s)
+        return y
+
+    def _reshape_yi(self, yi, check=False):
+        yi = np.rollaxis(np.asarray(yi), self._y_axis)
+        if check and yi.shape[1:] != self._y_extra_shape:
+            ok_shape = "%r + (N,) + %r" % (self._y_extra_shape[-self._y_axis:],
+                                           self._y_extra_shape[:-self._y_axis])
+            raise ValueError("Data must be of shape %s" % ok_shape)
+        return yi.reshape((yi.shape[0], -1))
+
+    def _set_yi(self, yi, xi=None, axis=None):
+        if axis is None:
+            axis = self._y_axis
+        if axis is None:
+            raise ValueError("no interpolation axis specified")
+
+        yi = np.asarray(yi)
+
+        if xi is not None and yi.shape[axis] != len(xi):
+            raise ValueError("yi dimensions do not match xi dimensions")
+
+        self._y_axis = (axis % yi.ndim)
+        self._y_extra_shape = yi.shape[:self._y_axis]+yi.shape[self._y_axis+1:]
+        self.dtype = None
+        self._set_dtype(yi.dtype)
+
+    def _set_dtype(self, dtype, union=False):
+        if np.issubdtype(dtype, np.complexfloating) \
+               or np.issubdtype(self.dtype, np.complexfloating):
+            self.dtype = np.complex_
+        else:
+            if not union or self.dtype != np.complex_:
+                self.dtype = np.float_
+
+class _InterpolatorBaseWithDerivatives(_InterpolatorBase):
+    def derivatives(self, x, der=None):
+        """
+        Evaluate many derivatives of the polynomial at the point x
+
+        Produce an array of all derivative values at the point x.
+
+        Parameters
+        ----------
+        x : array-like of shape S
+            Point or points at which to evaluate the derivatives
+
+        der : None or integer
+            How many derivatives to extract; None for all potentially
+            nonzero derivatives (that is a number equal to the number
+            of points). This number includes the function value as 0th
+            derivative.
+
+        Returns
+        -------
+        d : ndarray
+            If the interpolator's values are R-dimensional then the
+            returned array will be der by S by R. If R is 1 then the
+            last dimension will be dropped.
+
+        Examples
+        --------
+        >>> KroghInterpolator([0,0,0],[1,2,3]).derivatives(0)
+        array([1.0,2.0,3.0])
+        >>> KroghInterpolator([0,0,0],[1,2,3]).derivatives([0,0])
+        array([[1.0,1.0],
+               [2.0,2.0],
+               [3.0,3.0]])
+
+        """
+        x, x_shape = self._prepare_x(x)
+        y = self._evaluate_derivatives(x, der)
+        return self._finish_y(y, (y.shape[0],) + x_shape)
+
+    def derivative(self, x, der=1):
+        """
+        Evaluate one derivative of the polynomial at the point x
+
+        Parameters
+        ----------
+        x : array-like of shape S
+            Point or points at which to evaluate the derivatives
+
+        der : integer, optional
+            Which derivative to extract. This number includes the
+            function value as 0th derivative.
+
+        Returns
+        -------
+        d : ndarray
+            If the interpolator's values are R-dimensional then the
+            returned array will be S by R.
+
+        Notes
+        -----
+        This is computed by evaluating all derivatives up to the desired
+        one (using self.derivatives()) and then discarding the rest.
+
+        """
+        x, x_shape = self._prepare_x(x)
+        y = self._evaluate_derivatives(x, der+1)
+        return self._finish_y(y[der], x_shape)
+
+
+class KroghInterpolator(_InterpolatorBaseWithDerivatives):
     """
     The interpolating polynomial for a set of points
 
@@ -40,7 +197,7 @@ class KroghInterpolator(object):
         and Numerical Differentiation", 1970.
 
     """
-    def __init__(self, xi, yi):
+    def __init__(self, xi, yi, axis=0):
         """Construct an interpolator passing through the specified points
 
         The polynomial passes through all the pairs (xi,yi). One may additionally
@@ -56,6 +213,8 @@ class KroghInterpolator(object):
             known y-coordinates, interpreted as vectors of length R,
             or scalars if R=1. When an xi occurs two or more times in
             a row, the corresponding yi's represent derivative values.
+        axis : int, optional
+            interpolation axis
 
         Examples
         --------
@@ -82,23 +241,16 @@ class KroghInterpolator(object):
         This constructs a linear polynomial giving (2,3) at 0 and (4,5) at 1.
 
         """
+        _InterpolatorBase.__init__(self, xi, yi, axis)
+
         self.xi = np.asarray(xi)
-        self.yi = np.asarray(yi)
+        self.yi = self._reshape_yi(yi)
+        self.n, self.r = self.yi.shape
 
-        self.y_shape = self.yi.shape[1:]
-        self.yi = self.yi.reshape(self.yi.shape[0], -1)
-
-        n = len(xi)
-        self.n = n
-        nn, r = self.yi.shape
-        if nn!=n:
-            raise ValueError("%d x values provided and %d y values; must be equal" % (n, nn))
-        self.r = r
-
-        c = np.zeros((n+1,r), dtype=self.yi.dtype)
+        c = np.zeros((self.n+1, self.r), dtype=self.dtype)
         c[0] = self.yi[0]
-        Vk = np.zeros((n,r), dtype=self.yi.dtype)
-        for k in xrange(1,n):
+        Vk = np.zeros((self.n, self.r), dtype=self.dtype)
+        for k in xrange(1,self.n):
             s = 0
             while s<=k and xi[k-s]==xi[k]:
                 s += 1
@@ -114,88 +266,35 @@ class KroghInterpolator(object):
             c[k] = Vk[k-s]
         self.c = c
 
-    def __call__(self,x):
-        """Evaluate the polynomial at the point x
-
-        Parameters
-        ----------
-        x : scalar, array-like of shape S
-
-        Returns
-        -------
-        y : array-like of shape S or S+(R,)
-            If x is a scalar, returns either a vector or a scalar depending on
-            whether the interpolator is vector-valued or scalar-valued.
-            If x is a vector, returns a vector of values.
-        """
-        x = np.asarray(x)
-
-        n = self.n
+    def _evaluate(self, x):
         pi = 1
-        p = np.zeros(x.shape+(self.r,), dtype=self.yi.dtype)
-        p += self.c[(0,)+(np.newaxis,)*len(x.shape)+(slice(None,None,None),)]
-        for k in range(1,n):
+        p = np.zeros((len(x), self.r), dtype=self.dtype)
+        p += self.c[(0, None, slice(None,None,None))]
+        for k in range(1, self.n):
             w = x - self.xi[k-1]
             pi = w*pi
-            p += pi[...,np.newaxis]*self.c[k]
+            p += pi[...,np.newaxis] * self.c[k]
+        return p
 
-        return p.reshape(x.shape + self.y_shape)
-
-    def derivatives(self,x,der=None):
-        """
-        Evaluate many derivatives of the polynomial at the point x
-
-        Produce an array of all derivative values at the point x.
-
-        Parameters
-        ----------
-        x : array-like of shape S
-            Point or points at which to evaluate the derivatives
-
-        der : None or integer
-            How many derivatives to extract; None for all potentially
-            nonzero derivatives (that is a number equal to the number
-            of points). This number includes the function value as 0th
-            derivative.
-
-        Returns
-        -------
-        d : ndarray
-            If the interpolator's values are R-dimensional then the
-            returned array will be der by S by R. If R is 1 then the
-            last dimension will be dropped.
-
-        Examples
-        --------
-        >>> KroghInterpolator([0,0,0],[1,2,3]).derivatives(0)
-        array([1.0,2.0,3.0])
-        >>> KroghInterpolator([0,0,0],[1,2,3]).derivatives([0,0])
-        array([[1.0,1.0],
-               [2.0,2.0],
-               [3.0,3.0]])
-
-        """
-        x = np.asarray(x)
-
+    def _evaluate_derivatives(self, x, der=None):
         n = self.n
         r = self.r
 
         if der is None:
             der = self.n
-        dern = min(self.n,der)
         pi = np.zeros((n,)+x.shape)
         w = np.zeros((n,)+x.shape)
         pi[0] = 1
         p = np.zeros(x.shape+(self.r,))
-        p += self.c[(0,)+(np.newaxis,)*len(x.shape)+(slice(None,None,None),)]
+        p += self.c[(0,)+(np.newaxis,)+(slice(None,None,None),)]
 
         for k in xrange(1,n):
             w[k-1] = x - self.xi[k-1]
             pi[k] = w[k-1]*pi[k-1]
             p += pi[k][...,np.newaxis]*self.c[k]
 
-        cn = np.zeros((max(der,n+1),)+x.shape+(r,), dtype=self.yi.dtype)
-        cn[:n+1,...] += self.c[(slice(n+1),)+(np.newaxis,)*len(x.shape)+(slice(None,None,None),)]
+        cn = np.zeros((max(der,n+1),)+x.shape+(r,), dtype=self.dtype)
+        cn[:n+1,...] += self.c[(slice(n+1),)+(np.newaxis,)+(slice(None,None,None),)]
         cn[0] = p
         for k in xrange(1,n):
             for i in xrange(1,n-k+1):
@@ -204,38 +303,9 @@ class KroghInterpolator(object):
             cn[k]*=factorial(k)
 
         cn[n,...] = 0
+        return cn[:der]
 
-        return cn[:der].reshape((der,) + x.shape + self.y_shape)
-
-    def derivative(self, x, der=1):
-        """
-        Evaluate one derivative of the polynomial at the point x
-
-        Parameters
-        ----------
-        x : array-like of shape S
-            Point or points at which to evaluate the derivatives
-
-        der : integer, optional
-            Which derivative to extract. This number includes the
-            function value as 0th derivative.
-
-        Returns
-        -------
-        d : ndarray
-            If the interpolator's values are R-dimensional then the
-            returned array will be S by R. If R is 1 then the
-            last dimension will be dropped.
-
-        Notes
-        -----
-        This is computed by evaluating all derivatives up to the desired
-        one (using self.derivatives()) and then discarding the rest.
-
-        """
-        return self.derivatives(x,der=der+1)[der]
-
-def krogh_interpolate(xi,yi,x,der=0):
+def krogh_interpolate(xi,yi,x,der=0,axis=0):
     """
     Convenience function for polynomial interpolation.
 
@@ -277,6 +347,8 @@ def krogh_interpolate(xi,yi,x,der=0):
         nonzero derivatives (that is a number equal to the number
         of points), or a list of derivatives to extract. This number
         includes the function value as 0th derivative.
+    axis : int, optional
+        Interpolation axis.
 
     Returns
     -------
@@ -293,7 +365,7 @@ def krogh_interpolate(xi,yi,x,der=0):
     KroghInterpolator (which is what this function uses).
 
     """
-    P = KroghInterpolator(xi, yi)
+    P = KroghInterpolator(xi, yi, axis=axis)
     if der==0:
         return P(x)
     elif _isscalar(der):
@@ -359,7 +431,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     return np.poly1d((d/factorial(np.arange(degree+1)))[::-1])
 
 
-class BarycentricInterpolator(object):
+class BarycentricInterpolator(_InterpolatorBase):
     """The interpolating polynomial for a set of points
 
     Constructs a polynomial that passes through a given set of points.
@@ -378,7 +450,7 @@ class BarycentricInterpolator(object):
 
     Based on Berrut and Trefethen 2004, "Barycentric Lagrange Interpolation".
     """
-    def __init__(self, xi, yi=None):
+    def __init__(self, xi, yi=None, axis=0):
         """Construct an object capable of interpolating functions sampled at xi
 
         The values yi need to be provided before the function is evaluated,
@@ -393,12 +465,15 @@ class BarycentricInterpolator(object):
             The y coordinates of the points the polynomial should pass through;
             if R>1 the polynomial is vector-valued. If None the y values
             will be supplied later.
+        axis : int, optional
+            interpolation axis
         """
-        self.n = len(xi)
+        _InterpolatorBase.__init__(self, xi, yi, axis)
+
         self.xi = np.asarray(xi)
-        if yi is not None and len(yi)!=len(self.xi):
-            raise ValueError("yi dimensions do not match xi dimensions")
         self.set_yi(yi)
+        self.n = len(self.xi)
+
         self.wi = np.zeros(self.n)
         self.wi[0] = 1
         for j in xrange(1,self.n):
@@ -406,7 +481,7 @@ class BarycentricInterpolator(object):
             self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
         self.wi**=-1
 
-    def set_yi(self, yi):
+    def set_yi(self, yi, axis=None):
         """
         Update the y values to be interpolated
 
@@ -420,22 +495,16 @@ class BarycentricInterpolator(object):
             The y coordinates of the points the polynomial should pass through;
             if R>1 the polynomial is vector-valued. If None the y values
             will be supplied later.
+        axis : int, optional
+            interpolation axis
 
         """
         if yi is None:
             self.yi = None
             return
-        yi = np.asarray(yi)
-
-        self.y_shape = yi.shape[1:]
-        yi = yi.reshape(yi.shape[0], -1)
-
-        n, r = yi.shape
-        if n!=len(self.xi):
-            raise ValueError("yi dimensions do not match xi dimensions")
-        self.yi = yi
-        self.r = r
-
+        self._set_yi(yi, xi=self.xi, axis=axis)
+        self.yi = self._reshape_yi(yi)
+        self.n, self.r = self.yi.shape
 
     def add_xi(self, xi, yi=None):
         """
@@ -458,12 +527,7 @@ class BarycentricInterpolator(object):
         if yi is not None:
             if self.yi is None:
                 raise ValueError("No previous yi value to update!")
-            yi = np.asarray(yi)
-            if yi.shape[1:] != self.y_shape:
-                raise ValueError("Added data must be of shape (N,) + %r" % (self.y_shape,))
-            else:
-                yi = yi.reshape(yi.shape[0], -1)
-                n, r = yi.shape
+            yi = self._reshape_yi(yi, check=True)
             self.yi = np.vstack((self.yi,yi))
         else:
             if self.yi is not None:
@@ -499,25 +563,27 @@ class BarycentricInterpolator(object):
         weights, that is, it constructs an intermediate array of size
         N by S, where N is the degree of the polynomial.
         """
-        x = np.asarray(x)
+        return _InterpolatorBase.__call__(self, x)
+
+    def _evaluate(self, x):
         if x.size == 0:
-            return np.zeros(x.shape + self.y_shape, dtype=self.yi.dtype)
-        c = x[...,np.newaxis]-self.xi
-        z = c==0
-        c[z] = 1
-        c = self.wi/c
-        p = np.dot(c,self.yi)/np.sum(c,axis=-1)[...,np.newaxis]
-        # Now fix where x==some xi
-        r = np.nonzero(z)
-        if len(r)==1: # evaluation at a scalar
-            if len(r[0])>0: # equals one of the points
-                p = self.yi[r[0][0]]
+            p = np.zeros((0, self.r), dtype=self.dtype)
         else:
-            p[r[:-1]] = self.yi[r[-1]]
+            c = x[...,np.newaxis]-self.xi
+            z = c==0
+            c[z] = 1
+            c = self.wi/c
+            p = np.dot(c,self.yi)/np.sum(c,axis=-1)[...,np.newaxis]
+            # Now fix where x==some xi
+            r = np.nonzero(z)
+            if len(r)==1: # evaluation at a scalar
+                if len(r[0])>0: # equals one of the points
+                    p = self.yi[r[0][0]]
+            else:
+                p[r[:-1]] = self.yi[r[-1]]
+        return p
 
-        return p.reshape(x.shape + self.y_shape)
-
-def barycentric_interpolate(xi, yi, x):
+def barycentric_interpolate(xi, yi, x, axis=0):
     """
     Convenience function for polynomial interpolation
 
@@ -544,7 +610,8 @@ def barycentric_interpolate(xi, yi, x):
         The y coordinates of the points the polynomial should pass through;
         if R>1 the polynomial is vector-valued.
     x : scalar or array_like of length M
-
+    axis : int, optional
+        Interpolation axis.
 
     Returns
     -------
@@ -562,10 +629,10 @@ def barycentric_interpolate(xi, yi, x):
     This is what this function uses internally.
 
     """
-    return BarycentricInterpolator(xi, yi)(x)
+    return BarycentricInterpolator(xi, yi, axis=axis)(x)
 
 
-class PiecewisePolynomial(object):
+class PiecewisePolynomial(_InterpolatorBaseWithDerivatives):
     """Piecewise polynomial curve specified by points and derivatives
 
     This class represents a curve that is a piecewise polynomial. It
@@ -576,7 +643,7 @@ class PiecewisePolynomial(object):
 
     Appending points to the end of the curve is efficient.
     """
-    def __init__(self, xi, yi, orders=None, direction=None):
+    def __init__(self, xi, yi, orders=None, direction=None, axis=0):
         """Construct a piecewise polynomial
 
         Parameters
@@ -592,6 +659,8 @@ class PiecewisePolynomial(object):
             +1 indicates increasing
             -1 indicates decreasing
             None indicates that it should be deduced from the first two xi
+        axis : int, optional
+            interpolation axis
 
         Notes
         -----
@@ -603,28 +672,33 @@ class PiecewisePolynomial(object):
         derivatives needed is odd, it will prefer the rightmost endpoint. If
         not enough derivatives are available, an exception is raised.
         """
-        yi0 = np.asarray(yi[0])
+        _InterpolatorBaseWithDerivatives.__init__(self, axis=axis)
 
-        self.y_shape = yi0.shape[1:]
-        self.is_complex = np.issubdtype(yi0.dtype, np.complexfloating)
+        if axis != 0:
+            try:
+                yi = np.asarray(yi)
+            except ValueError:
+                raise ValueError("If yi is a list, then axis must be 0")
 
-        yi0 = yi0.reshape(yi0.shape[0], -1)
+            preslice = ((slice(None,None,None),) * (axis % yi.ndim))
+            slice0 = preslice + (0,)
+            slice1 = preslice + (slice(1, None, None),)
+        else:
+            slice0 = 0
+            slice1 = slice(1, None, None)
+
+        yi0 = np.asarray(yi[slice0])
+        self._set_yi(yi0)
 
         self.xi = [xi[0]]
-        self.yi = [yi0]
+        self.yi = [self._reshape_yi(yi0)]
         self.n = 1
+        self.r = np.prod(self._y_extra_shape)
 
         self.direction = direction
         self.orders = []
         self.polynomials = []
-        self.extend(xi[1:],yi[1:],orders)
-
-    @property
-    def dtype(self):
-        if self.is_complex:
-            return np.complex_
-        else:
-            return np.float_
+        self.extend(xi[1:],yi[slice1],orders)
 
     def _make_polynomial(self,x1,y1,x2,y2,order,direction):
         """Construct the interpolating polynomial object
@@ -647,14 +721,14 @@ class PiecewisePolynomial(object):
             raise ValueError("`order` input incompatible with length y1 or y2.")
 
         xi = np.zeros(n)
-        yi = np.zeros((n,) + self.y_shape, dtype=self.dtype)
+        yi = np.zeros((n, self.r), dtype=self.dtype)
 
         xi[:n1] = x1
-        yi[:n1] = y1[:n1].reshape((n1,) + self.y_shape)
+        yi[:n1] = y1[:n1].reshape((n1, self.r))
         xi[n1:] = x2
-        yi[n1:] = y2[:n2].reshape((n2,) + self.y_shape)
+        yi[n1:] = y2[:n2].reshape((n2, self.r))
 
-        return KroghInterpolator(xi,yi)
+        return KroghInterpolator(xi,yi,axis=0)
 
     def append(self, xi, yi, order=None):
         """
@@ -672,15 +746,8 @@ class PiecewisePolynomial(object):
             possible order
 
         """
-
-        yi = np.asarray(yi)
-
-        if yi.shape[1:] != self.y_shape:
-            raise ValueError("Each derivative must be of shape %r" % self.y_shape)
-        yi = yi.reshape(yi.shape[0], -1)
-
-        self.is_complex = (self.is_complex
-                           or np.issubdtype(yi.dtype, np.complexfloating))
+        yi = self._reshape_yi(yi, check=True)
+        self._set_dtype(yi.dtype, union=True)
 
         if self.direction is None:
             self.direction = np.sign(xi-self.xi[-1])
@@ -689,7 +756,6 @@ class PiecewisePolynomial(object):
 
         self.xi.append(xi)
         self.yi.append(yi)
-
 
         if order is None:
             n1 = len(self.yi[-2])
@@ -724,102 +790,53 @@ class PiecewisePolynomial(object):
             None indicates that it should be deduced from the first two xi
 
         """
+        if self._y_axis == 0:
+            # allow yi to be a ragged list
+            for i in xrange(len(xi)):
+                if orders is None or _isscalar(orders):
+                    self.append(xi[i],yi[i],orders)
+                else:
+                    self.append(xi[i],yi[i],orders[i])
+        else:
+            preslice = (slice(None,None,None),) * self._y_axis
+            for i in xrange(len(xi)):
+                if orders is None or _isscalar(orders):
+                    self.append(xi[i],yi[preslice + (i,)],orders)
+                else:
+                    self.append(xi[i],yi[preslice + (i,)],orders[i])
 
-        for i in xrange(len(xi)):
-            if orders is None or _isscalar(orders):
-                self.append(xi[i],yi[i],orders)
-            else:
-                self.append(xi[i],yi[i],orders[i])
-
-    def __call__(self, x):
-        """Evaluate the piecewise polynomial
-
-        Parameters
-        ----------
-        x : scalar or array-like of length N
-
-        Returns
-        -------
-        y : scalar or array-like of length R or length N or N by R
-        """
+    def _evaluate(self, x):
         if _isscalar(x):
             pos = np.clip(np.searchsorted(self.xi, x) - 1, 0, self.n-2)
             y = self.polynomials[pos](x)
         else:
-            x = np.asarray(x)
-            x_shape = x.shape
-            x = x.ravel()
             m = len(x)
             pos = np.clip(np.searchsorted(self.xi, x) - 1, 0, self.n-2)
-            y = np.zeros((m,) + self.y_shape, dtype=self.dtype)
+            y = np.zeros((m, self.r), dtype=self.dtype)
             if y.size > 0:
                 for i in xrange(self.n-1):
                     c = pos==i
                     y[c] = self.polynomials[i](x[c])
-            y = y.reshape(x_shape + self.y_shape)
         return y
 
-    def derivative(self, x, der=1):
-        """
-        Evaluate a derivative of the piecewise polynomial
-
-        Parameters
-        ----------
-        x : scalar or array_like of length N
-
-        der : integer, optional
-            which single derivative to extract
-
-        Returns
-        -------
-        y : scalar or array_like of length R or length N or N by R
-
-        Notes
-        -----
-        This currently computes (using self.derivatives()) all derivatives
-        of the curve segment containing each x but returns only one.
-
-        """
-        return self.derivatives(x,der=der+1)[der]
-
-    def derivatives(self, x, der=None):
-        """
-        Evaluate a derivative of the piecewise polynomial
-
-        Parameters
-        ----------
-        x : scalar or array_like of length N
-
-        der : integer
-            how many derivatives (including the function value as
-            0th derivative) to extract
-
-        Returns
-        -------
-        y : array_like of shape der by R or der by N or der by N by R
-
-        """
+    def _evaluate_derivatives(self, x, der=None):
         if der is None and self.polynomials:
             der = self.polynomials[0].n
         if _isscalar(x):
             pos = np.clip(np.searchsorted(self.xi, x) - 1, 0, self.n-2)
             y = self.polynomials[pos].derivatives(x,der=der)
         else:
-            x = np.asarray(x)
-            x_shape = x.shape
-            x = x.ravel()
             m = len(x)
             pos = np.clip(np.searchsorted(self.xi, x) - 1, 0, self.n-2)
-            y = np.zeros((der,m)+self.y_shape, dtype=self.dtype)
+            y = np.zeros((der,m,self.r), dtype=self.dtype)
             if y.size > 0:
                 for i in xrange(self.n-1):
                     c = pos==i
                     y[:,c] = self.polynomials[i].derivatives(x[c],der=der)
-            y = y.reshape((der,) + x_shape + self.y_shape)
         return y
 
 
-def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0):
+def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
     """
     Convenience function for piecewise polynomial interpolation
 
@@ -857,7 +874,7 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0):
 
     """
 
-    P = PiecewisePolynomial(xi, yi, orders)
+    P = PiecewisePolynomial(xi, yi, orders, axis=axis)
     if der==0:
         return P(x)
     elif _isscalar(der):
@@ -865,46 +882,7 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0):
     else:
         return P.derivatives(x,der=np.amax(der)+1)[der]
 
-def _isscalar(x):
-    """Check whether x is if a scalar type, or 0-dim"""
-    return np.isscalar(x) or hasattr(x, 'shape') and x.shape == ()
-
-def _edge_case(m0, d1):
-    return np.where((d1==0) | (m0==0), 0.0, 1.0/(1.0/m0+1.0/d1))
-
-def _find_derivatives(x, y):
-    # Determine the derivatives at the points y_k, d_k, by using
-    #  PCHIP algorithm is:
-    # We choose the derivatives at the point x_k by
-    # Let m_k be the slope of the kth segment (between k and k+1)
-    # If m_k=0 or m_{k-1}=0 or sgn(m_k) != sgn(m_{k-1}) then d_k == 0
-    # else use weighted harmonic mean:
-    #   w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
-    #   1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
-    #   where h_k is the spacing between x_k and x_{k+1}
-
-    hk = x[1:] - x[:-1]
-    mk = (y[1:] - y[:-1]) / hk
-    smk = np.sign(mk)
-    condition = ((smk[1:] != smk[:-1]) | (mk[1:]==0) | (mk[:-1]==0))
-
-    w1 = 2*hk[1:] + hk[:-1]
-    w2 = hk[1:] + 2*hk[:-1]
-    whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
-
-    dk = np.zeros_like(y)
-    dk[1:-1][condition] = 0.0
-    dk[1:-1][~condition] = 1.0/whmean[~condition]
-
-    # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
-    #  one of d_1 or m_0 is 0, then choose d_0 = 0
-
-    dk[0] = _edge_case(mk[0],dk[1])
-    dk[-1] = _edge_case(mk[-1],dk[-2])
-    return dk
-
-
-def pchip(x, y):
+class Pchip(PiecewisePolynomial):
     """PCHIP 1-d monotonic cubic interpolation
 
     x and y are arrays of values used to approximate some function f, with
@@ -920,17 +898,112 @@ def pchip(x, y):
     y : array
         A 1-D array of real values.  y's length along the interpolation
         axis must be equal to the length of x.
+    axis : int, optional
+        Interpolation axis.
 
     Assumes x is sorted in monotonic order (e.g. ``x[1] > x[0]``).
 
+    """
+
+    def __init__(self, x, y, axis=0):
+        x = np.asarray(x)
+        y = np.asarray(y)
+
+        axis = axis % y.ndim
+
+        xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
+        yp = np.rollaxis(y, axis)
+
+        data = np.empty((yp.shape[0], 2) + yp.shape[1:], y.dtype)
+        data[:,0] = yp
+        data[:,1] = Pchip._find_derivatives(xp, yp)
+
+        s = range(2, y.ndim + 1)
+        s.insert(axis, 1)
+        s.insert(axis, 0)
+        data = data.transpose(s)
+
+        PiecewisePolynomial.__init__(self, x, data, orders=3, direction=None,
+                                     axis=axis)
+
+    @staticmethod
+    def _edge_case(m0, d1):
+        return np.where((d1==0) | (m0==0), 0.0, 1.0/(1.0/m0+1.0/d1))
+
+    @staticmethod
+    def _find_derivatives(x, y):
+        # Determine the derivatives at the points y_k, d_k, by using
+        #  PCHIP algorithm is:
+        # We choose the derivatives at the point x_k by
+        # Let m_k be the slope of the kth segment (between k and k+1)
+        # If m_k=0 or m_{k-1}=0 or sgn(m_k) != sgn(m_{k-1}) then d_k == 0
+        # else use weighted harmonic mean:
+        #   w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
+        #   1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
+        #   where h_k is the spacing between x_k and x_{k+1}
+
+        hk = x[1:] - x[:-1]
+        mk = (y[1:] - y[:-1]) / hk
+        smk = np.sign(mk)
+        condition = ((smk[1:] != smk[:-1]) | (mk[1:]==0) | (mk[:-1]==0))
+
+        w1 = 2*hk[1:] + hk[:-1]
+        w2 = hk[1:] + 2*hk[:-1]
+        whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
+
+        dk = np.zeros_like(y)
+        dk[1:-1][condition] = 0.0
+        dk[1:-1][~condition] = 1.0/whmean[~condition]
+
+        # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
+        #  one of d_1 or m_0 is 0, then choose d_0 = 0
+
+        dk[0] = Pchip._edge_case(mk[0],dk[1])
+        dk[-1] = Pchip._edge_case(mk[-1],dk[-2])
+        return dk
+
+def pchip_interpolate(xi, yi, x, der=0, axis=0):
+    """
+    Convenience function for pchip interpolation
+
+    Parameters
+    ----------
+    xi : array_like
+        A sorted list of x-coordinates, of length N.
+    yi : list of lists
+        yi[i] is the list of derivatives known at xi[i]. Of length N.
+    x : scalar or array_like
+        Of length M.
+    der : int
+        Which single derivative to extract.
+
     Returns
     -------
-    pchip : PiecewisePolynomial instance
-        The result of the interpolation.
+    y : scalar or array_like
+        The result, of length R or length M or M by R,
+
+    Notes
+    -----
+    If orders is None, or orders[i] is None, then the degree of the
+    polynomial segment is exactly the degree required to match all i
+    available derivatives at both endpoints. If orders[i] is not None,
+    then some derivatives will be ignored. The code will try to use an
+    equal number of derivatives from each end; if the total number of
+    derivatives needed is odd, it will prefer the rightmost endpoint. If
+    not enough derivatives are available, an exception is raised.
+
+    Construction of these piecewise polynomials can be an expensive process;
+    if you repeatedly evaluate the same polynomial, consider using the class
+    PiecewisePolynomial (which is what this function does).
 
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
-    xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
-    derivs = _find_derivatives(xp, y)
-    return PiecewisePolynomial(x, zip(y, derivs), orders=3, direction=None)
+    P = Pchip(xi, yi, axis=axis)
+    if der == 0:
+        return P(x)
+    elif _isscalar(der):
+        return P.derivative(x,der=der)
+    else:
+        return P.derivatives(x,der=np.amax(der)+1)[der]
+
+# Backwards compatibility
+pchip = Pchip
