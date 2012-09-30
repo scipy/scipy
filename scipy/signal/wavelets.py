@@ -326,8 +326,8 @@ def cwt(data, wavelet, widths):
         The first argument is the number of points that the returned vector
         will have (len(wavelet(width,length)) == length).
         The second is a width parameter, defining the size of the wavelet
-        (e.g. standard deviation of a gaussian). See
-        :func:`scipy.signal.ricker`, which satisfies these requirements.
+        (e.g. standard deviation of a gaussian). See `ricker`, which 
+        satisfies these requirements.
     widths : sequence
         Widths to use for transform.
 

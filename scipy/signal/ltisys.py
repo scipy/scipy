@@ -402,10 +402,10 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     Notes
     -----
-    This function uses :func:`scipy.integrate.odeint` to solve the
+    This function uses `scipy.integrate.odeint` to solve the
     system's differential equations.  Additional keyword arguments
     given to `lsim2` are passed on to `odeint`.  See the documentation
-    for :func:`scipy.integrate.odeint` for the full list of arguments.
+    for `scipy.integrate.odeint` for the full list of arguments.
 
     """
     if isinstance(system, lti):
