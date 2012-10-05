@@ -189,7 +189,7 @@ def lobpcg( A, X,
     tol : scalar, optional
         Solver tolerance (stopping criterion)
         by default: tol=n*sqrt(eps)
-    maxiter: integer, optional
+    maxiter : integer, optional
         maximum number of iterations
         by default: maxiter=min(n,20)
     largest : boolean, optional

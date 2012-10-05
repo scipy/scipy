@@ -78,10 +78,10 @@ class Result(dict):
         Description of the cause of the termination.
     fun, jac, hess : ndarray
         Values of objective function, Jacobian and Hessian (if available).
-    nfev, njev, nhev: int
+    nfev, njev, nhev : int
         Number of evaluations of the objective functions and of its
         Jacobian and Hessian.
-    nit: int
+    nit : int
         Number of iterations performed by the optimizer.
     maxcv : float
         The maximum constraint violation.
@@ -605,19 +605,19 @@ def check_grad(func, grad, x0, *args):
 
     Parameters
     ----------
-    func: callable func(x0,*args)
+    func : callable func(x0,*args)
         Function whose derivative is to be checked.
-    grad: callable grad(x0, *args)
+    grad : callable grad(x0, *args)
         Gradient of `func`.
-    x0: ndarray
+    x0 : ndarray
         Points to check `grad` against forward difference approximation of grad
         using `func`.
-    args: \*args, optional
+    args : \*args, optional
         Extra arguments passed to `func` and `grad`.
 
     Returns
     -------
-    err: float
+    err : float
         The square root of the sum of squares (i.e. the 2-norm) of the
         difference between ``grad(x0, *args)`` and the finite difference
         approximation of `grad` using func at the points `x0`.

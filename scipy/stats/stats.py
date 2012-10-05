@@ -461,14 +461,14 @@ def gmean(a, axis=0, dtype=None):
 
     Returns
     -------
-    gmean : ndarray,
+    gmean : ndarray
         see dtype parameter above
 
     See Also
     --------
     numpy.mean : Arithmetic average
     numpy.average : Weighted average
-    hmean: Harmonic mean
+    hmean : Harmonic mean
 
     Notes
     -----
@@ -513,14 +513,14 @@ def hmean(a, axis=0, dtype=None):
 
     Returns
     -------
-    hmean : ndarray,
+    hmean : ndarray
         see `dtype` parameter above
 
     See Also
     --------
     numpy.mean : Arithmetic average
     numpy.average : Weighted average
-    gmean: Geometric mean
+    gmean : Geometric mean
 
     Notes
     -----
@@ -805,7 +805,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
 
     Returns
     -------
-    tmin: float
+    tmin : float
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1439,11 +1439,11 @@ def percentileofscore(a, score, kind='rank'):
 
     Parameters
     ----------
-    a: array like
+    a : array like
         Array of scores to which `score` is compared.
-    score: int or float
+    score : int or float
         Score that is compared to the elements in `a`.
-    kind: {'rank', 'weak', 'strict', 'mean'}, optional
+    kind : {'rank', 'weak', 'strict', 'mean'}, optional
         This optional parameter specifies the interpretation of the
         resulting score:
 
@@ -1559,31 +1559,31 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
 
     Parameters
     ----------
-    a: array_like
+    a : array_like
         Array of scores which will be put into bins.
-    numbins: int, optional
+    numbins : int, optional
         The number of bins to use for the histogram. Default is 10.
-    defaultlimits: tuple (lower, upper), optional
+    defaultlimits : tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
         If no value is given, a range slightly larger then the range of the
         values in a is used. Specifically ``(a.min() - s, a.max() + s)``,
             where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
-    weights: array_like, optional
+    weights : array_like, optional
         The weights for each value in `a`. Default is None, which gives each
         value a weight of 1.0
-    printextras: bool, optional
+    printextras : bool, optional
         If True, the number of extra points is printed to standard output.
         Default is False.
 
     Returns
     -------
-    histogram: ndarray
+    histogram : ndarray
         Number of points (or sum of weights) in each bin.
-    low_range: float
+    low_range : float
         Lowest value of histogram, the lower limit of the first bin.
-    binsize: float
+    binsize : float
         The size of the bins (all bins have the same size).
-    extrapoints: int
+    extrapoints : int
         The number of points outside the range of the histogram.
 
     See Also
@@ -1624,14 +1624,14 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     ----------
     a : array_like
         Input array.
-    numbins: int, optional
+    numbins : int, optional
         The number of bins to use for the histogram. Default is 10.
-    defaultlimits: tuple (lower, upper), optional
+    defaultlimits : tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
         If no value is given, a range slightly larger then the range of the
         values in a is used. Specifically ``(a.min() - s, a.max() + s)``,
             where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
-    weights: array_like, optional
+    weights : array_like, optional
         The weights for each value in `a`. Default is None, which gives each
         value a weight of 1.0
 
@@ -1673,14 +1673,14 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     ----------
     a : array_like
         Input array.
-    numbins: int, optional
+    numbins : int, optional
         The number of bins to use for the histogram. Default is 10.
-    defaultreallimits: tuple (lower, upper), optional
+    defaultreallimits : tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
         If no value is given, a range slightly larger then the range of the
         values in a is used. Specifically ``(a.min() - s, a.max() + s)``,
             where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
-    weights: array_like, optional
+    weights : array_like, optional
         The weights for each value in `a`. Default is None, which gives each
         value a weight of 1.0
 
@@ -1770,9 +1770,9 @@ def signaltonoise(a, axis=0, ddof=0):
 
     Parameters
     ----------
-    a: array_like
+    a : array_like
         An array_like object containing the sample data.
-    axis: int or None, optional
+    axis : int or None, optional
         If axis is equal to None, the array is first ravel'd. If axis is an
         integer, this is the axis over which to operate. Default is 0.
     ddof : int, optional
@@ -2477,7 +2477,7 @@ def spearmanr(a, b=None, axis=0):
 
     Returns
     -------
-    rho: float or ndarray (2-D square)
+    rho : float or ndarray (2-D square)
         Spearman correlation matrix or correlation coefficient (if only 2
         variables are given as parameters. Correlation matrix is square with
         length equal to total number of variables (columns or rows) in a and b

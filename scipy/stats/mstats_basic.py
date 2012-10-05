@@ -198,11 +198,11 @@ def rankdata(data, axis=None, use_missing=False):
     ----------
         data : sequence
             Input data. The data is transformed to a masked array
-        axis : {None,int} optional
+        axis : {None,int}, optional
             Axis along which to perform the ranking.
             If None, the array is first flattened. An exception is raised if
             the axis is specified for arrays with a dimension larger than 2
-        use_missing : {boolean} optional
+        use_missing : {boolean}, optional
             Whether the masked values have a rank of 0 (False) or equal to the
             average rank of the unmasked values (True).
     """
@@ -388,7 +388,7 @@ Parameters
     x : 1D array
     y : 1D array the same length as x
         The lengths of both arrays must be > 2.
-    use_ties : {True, False} optional
+    use_ties : {True, False}, optional
         Whether the correction for ties should be computed.
 
 Returns
@@ -443,13 +443,13 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
 
     Parameters
     ----------
-    xdata: sequence
+    xdata : sequence
         First data list (for example, time).
-    ydata: sequence
+    ydata : sequence
         Second data list.
-    use_ties: {True, False} optional
+    use_ties : {True, False}, optional
         Whether ties correction should be performed.
-    use_missing: {False, True} optional
+    use_missing : {False, True}, optional
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
 
@@ -656,7 +656,7 @@ def theilslopes(y, x=None, alpha=0.05):
     ----------
         y : sequence
             Dependent variable.
-        x : {None, sequence} optional
+        x : {None, sequence}, optional
             Independent variable. If None, use arange(len(y)) instead.
         alpha : float
             Confidence degree.
@@ -788,7 +788,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     ----------
         x : sequence
         y : sequence
-        use_continuity : {True, False} optional
+        use_continuity : {True, False}, optional
             Whether a continuity correction (1/2.) should be taken into account.
 
     Returns
@@ -867,7 +867,7 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
             First data set
         data2 : sequence
             Second data set
-        alternative : {'two-sided', 'less', 'greater'} optional
+        alternative : {'two-sided', 'less', 'greater'}, optional
             Indicates the alternative hypothesis.
 
     Returns
@@ -932,11 +932,11 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
     ----------
     a : ndarray
         Input data
-    threshmin : {None, float} optional
+    threshmin : {None, float}, optional
         Lower threshold. If None, set to the minimum value.
-    threshmax : {None, float} optional
+    threshmax : {None, float}, optional
         Upper threshold. If None, set to the maximum value.
-    newval : {0, float} optional
+    newval : {0, float}, optional
         Value outside the thresholds.
 
     Returns
@@ -962,11 +962,11 @@ def trima(a, limits=None, inclusive=(True,True)):
     ----------
     a : sequence
         Input array.
-    limits : {None, tuple} optional
+    limits : {None, tuple}, optional
         Tuple of (lower limit, upper limit) in absolute values.
         Values of the input array lower (greater) than the lower (upper) limit
         will be masked. A limit is None indicates an open interval.
-    inclusive : {(True,True) tuple} optional
+    inclusive : {(True,True) tuple}, optional
         Tuple of (lower flag, upper flag), indicating whether values exactly
         equal to the lower (upper) limit are allowed.
 
@@ -1000,17 +1000,17 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
     ----------
     a : sequence
         Input array.
-    limits : {None, tuple} optional
+    limits : {None, tuple}, optional
         Tuple of the percentages to cut on each side of the array, with respect
         to the number of unmasked data, as floats between 0. and 1.
         Noting n the number of unmasked data before trimming, the (n*limits[0])th
         smallest data and the (n*limits[1])th largest data are masked, and the
         total number of unmasked data after trimming is n*(1.-sum(limits))
         The value of one limit can be set to None to indicate an open interval.
-    inclusive : {(True,True) tuple} optional
+    inclusive : {(True,True) tuple}, optional
         Tuple of flags indicating whether the number of data being masked on the
         left (right) end should be truncated (True) or rounded (False) to integers.
-    axis : {None,int} optional
+    axis : {None,int}, optional
         Axis along which to trim. If None, the whole array is trimmed, but its
         shape is maintained.
 
@@ -1059,7 +1059,7 @@ trimdoc = """
     ----------
     a : sequence
         Input array
-    limits : {None, tuple} optional
+    limits : {None, tuple}, optional
         If relative == False, tuple (lower limit, upper limit) in absolute values.
         Values of the input array lower (greater) than the lower (upper) limit are
         masked.
@@ -1071,12 +1071,12 @@ trimdoc = """
         In each case, the value of one limit can be set to None to indicate an
         open interval.
         If limits is None, no trimming is performed
-    inclusive : {(True, True) tuple} optional
+    inclusive : {(True, True) tuple}, optional
         If relative==False, tuple indicating whether values exactly equal to the
         absolute limits are allowed.
         If relative==True, tuple indicating whether the number of data being masked
         on each side should be rounded (True) or truncated (False).
-    relative : {False, True} optional
+    relative : {False, True}, optional
         Whether to consider the limits as absolute values (False) or proportions
         to cut (True).
     axis : {None, integer}, optional
@@ -1118,12 +1118,12 @@ Parameters
 ----------
     data : ndarray
         Data to trim.
-    proportiontocut : {0.2, float} optional
+    proportiontocut : {0.2, float}, optional
         Percentage of trimming (as a float between 0 and 1).
         If n is the number of unmasked values before trimming, the number of
         values after trimming is:
             (1-2*proportiontocut)*n.
-    inclusive : {(True, True) tuple} optional
+    inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
     axis : {None, integer}, optional
@@ -1144,14 +1144,14 @@ Parameters
 ----------
     data : {ndarray}
         Data to trim.
-    proportiontocut : {0.2, float} optional
+    proportiontocut : {0.2, float}, optional
         Percentage of trimming. If n is the number of unmasked values
         before trimming, the number of values after trimming is
         (1-proportiontocut)*n.
-    tail : {'left','right'} optional
+    tail : {'left','right'}, optional
         If left (right), the ``proportiontocut`` lowest (greatest) values will
         be masked.
-    inclusive : {(True, True) tuple} optional
+    inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
     axis : {None, integer}, optional
@@ -1232,7 +1232,7 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     ----------
     a : sequence
         Input array
-    limits : {(0.1,0.1), tuple of float} optional
+    limits : {(0.1,0.1), tuple of float}, optional
         tuple (lower percentage, upper percentage) to cut  on each side of the
         array, with respect to the number of unmasked data.
         Noting n the number of unmasked data before trimming, the (n*limits[0])th
@@ -1241,7 +1241,7 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
         In each case, the value of one limit can be set to None to indicate an
         open interval.
         If limits is None, no trimming is performed
-    inclusive : {(True, True) tuple} optional
+    inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
     axis : {None, integer}, optional
@@ -1341,19 +1341,19 @@ def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
     ----------
     a : sequence
         Input array.
-    limits : {None, tuple of float} optional
+    limits : {None, tuple of float}, optional
         Tuple of the percentages to cut on each side of the array, with respect
         to the number of unmasked data, as floats between 0. and 1.
         Noting n the number of unmasked data before trimming, the (n*limits[0])th
         smallest data and the (n*limits[1])th largest data are masked, and the
         total number of unmasked data after trimming is n*(1.-sum(limits))
         The value of one limit can be set to None to indicate an open interval.
-    inclusive : {(True, True) tuple} optional
+    inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
-    inplace : {False, True} optional
+    inplace : {False, True}, optional
         Whether to winsorize in place (True) or to use a copy (False)
-    axis : {None, int} optional
+    axis : {None, int}, optional
         Axis along which to trim. If None, the whole array is trimmed, but its
         shape is maintained.
 
@@ -1524,7 +1524,7 @@ median along the given axis. masked values are discarded.
     ----------
         data : ndarray
             Data to trim.
-        axis : {None,int} optional
+        axis : {None,int}, optional
             Axis along which to perform the trimming.
             If None, the input array is first flattened.
 
@@ -1880,7 +1880,7 @@ def signaltonoise(data, axis=0):
     ----------
         data : sequence
             Input data
-        axis : {0, int} optional
+        axis : {0, int}, optional
             Axis along which to compute. If None, the computation is performed
             on a flat version of the array.
 """

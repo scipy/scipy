@@ -115,7 +115,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         (min, max) pairs for each element in x0, defining the
         bounds on that parameter. Use None or +/-inf for one of
         min or max when there is no bound in that direction.
-    epsilon: float
+    epsilon : float
         Used if approx_grad is True. The stepsize in a finite
         difference approximation for fprime.
     scale : list of floats
@@ -268,7 +268,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     Newton (TNC) algorithm.
 
     Options for the TNC algorithm are:
-        eps: float
+        eps : float
             Step size used for numerical approximation of the jacobian.
         scale : list of floats
             Scaling factors to apply to each variable.  If None, the
