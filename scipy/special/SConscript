@@ -76,7 +76,6 @@ build_lib('cephes', '.c', 'sc_cephes')
 # F libraries
 # XXX: handle no opt flags for mach
 build_lib('mach', '.f', 'sc_mach')
-build_lib('toms', '.f', 'sc_toms')
 build_lib('amos', '.f', 'sc_amos')
 build_lib('cdflib', '.f', 'sc_cdf')
 build_lib('specfun', '.f', 'sc_specfunlib')
@@ -95,18 +94,18 @@ env.NumpyPythonExtension('_logit', source = logit_src)
 
 # faddeeva extension
 env.NumpyPythonExtension('_faddeeva', source=['_faddeeva.cxx',
-                                              '_faddeeva_w.cxx'])
+                                              'faddeeva_w.cxx'])
 
 # lambertw extension
 env.NumpyPythonExtension('lambertw', source = 'lambertw.c')
 
 # Cephes extension
 src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
-       'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
+       'cdf_wrappers.c','ufunc_extras.c']
 
 env.NumpyPythonExtension('_cephes', 
                          source = src, 
-                         LIBS = ['sc_amos', 'sc_toms', 'sc_c_misc', 'sc_cephes', 'sc_mach',\
+                         LIBS = ['sc_amos', 'sc_c_misc', 'sc_cephes', 'sc_mach',\
                                  'sc_cdf', 'sc_specfunlib']) 
 
 # Specfun extension

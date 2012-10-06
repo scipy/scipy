@@ -15,7 +15,6 @@
 #include "abstract.h"
 #include "cephes.h"
 #include "amos_wrappers.h"
-#include "faddeeva_w.h"
 #include "cdf_wrappers.h"
 #include "specfun_wrappers.h"
 #include "c_misc/misc.h"
