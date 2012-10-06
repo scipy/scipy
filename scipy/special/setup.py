@@ -67,15 +67,13 @@ def configuration(parent_package='',top_path=None):
                          define_macros=[],
                          extra_info=get_info("npymath"))
 
-    # Extension lambertw
-    config.add_extension('lambertw',
-                         sources=['lambertw.c'],
-                         define_macros=[],
-                         extra_info=get_info("npymath"))
-
-    # Extension _logit
-    config.add_extension('_logit',
-                         sources=['_logit.c.src'],
+    # Extension _ufuncs
+    curdir = os.path.abspath(os.path.dirname(__file__))
+    config.add_extension('_ufuncs',
+                         libraries=['sc_amos','sc_toms','sc_c_misc','sc_cephes','sc_mach',
+                                    'sc_cdf', 'sc_specfun'],
+                         sources=['_ufuncs.c', '_logit.c.src'],
+                         include_dirs=[curdir],
                          extra_info=get_info("npymath"))
 
     config.add_data_files('tests/*.py')
