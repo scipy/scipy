@@ -12,3 +12,5 @@ def pre_build(context):
     context.tweak_extension("_cephes",
                           use="sc_amos sc_toms sc_c_misc sc_cephes sc_mach " \
                               "sc_cdf sc_specfunlib NPYMATH CLIB")
+
+    context.tweak_extension("_faddeeva", features="cxx cxxshlib pyext bento")

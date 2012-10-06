@@ -93,6 +93,10 @@ env.NumpyPythonExtension('orthogonal_eval', source = 'orthogonal_eval.c')
 logit_src = env.GenerateFromTemplate('_logit.c.src')
 env.NumpyPythonExtension('_logit', source = logit_src)
 
+# faddeeva extension
+env.NumpyPythonExtension('_faddeeva', source=['_faddeeva.cxx',
+                                              '_faddeeva_w.cxx'])
+
 # lambertw extension
 env.NumpyPythonExtension('lambertw', source = 'lambertw.c')
 
