@@ -927,8 +927,11 @@ class PchipInterpolator(PiecewisePolynomial):
                                      axis=axis)
 
     @staticmethod
-    def _edge_case(m0, d1):
-        return np.where((d1==0) | (m0==0), 0.0, 1.0/(1.0/m0+1.0/d1))
+    def _edge_case(m0, d1, out):
+        m0 = np.atleast_1d(m0)
+        d1 = np.atleast_1d(d1)
+        mask = (d1!=0) & (m0!=0)
+        out[mask] = 1.0/(1.0/m0[mask]+1.0/d1[mask])
 
     @staticmethod
     def _find_derivatives(x, y):
@@ -941,6 +944,12 @@ class PchipInterpolator(PiecewisePolynomial):
         #   w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
         #   1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
         #   where h_k is the spacing between x_k and x_{k+1}
+
+        y_shape = y.shape
+        if y.ndim == 1:
+            # So that _edge_case doesn't end up assigning to scalars
+            x = x[:,None]
+            y = y[:,None]
 
         hk = x[1:] - x[:-1]
         mk = (y[1:] - y[:-1]) / hk
@@ -957,10 +966,10 @@ class PchipInterpolator(PiecewisePolynomial):
 
         # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
         #  one of d_1 or m_0 is 0, then choose d_0 = 0
+        PchipInterpolator._edge_case(mk[0],dk[1], dk[0])
+        PchipInterpolator._edge_case(mk[-1],dk[-2], dk[-1])
 
-        dk[0] = PchipInterpolator._edge_case(mk[0],dk[1])
-        dk[-1] = PchipInterpolator._edge_case(mk[-1],dk[-2])
-        return dk
+        return dk.reshape(y_shape)
 
 def pchip_interpolate(xi, yi, x, der=0, axis=0):
     """
