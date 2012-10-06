@@ -292,7 +292,6 @@ static double dcsevl_(double x, const double *cs, int n)
     double b0, b1, b2;
     int ni;
     double twox;
-    double onepl;
 
 /* DESCRIPTION */
 /*  Evaluate the N-term Chebyshev series CS at X.  Adapted from */
@@ -327,8 +326,6 @@ static double dcsevl_(double x, const double *cs, int n)
 
     /* Function Body */
 /* FIRST EXECUTABLE STATEMENT  DCSEVL */
-    onepl = 1. + DBL_EPSILON;
-
     b1 = 0.;
     b0 = 0.;
     twox = x * 2.;

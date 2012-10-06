@@ -1,11 +1,10 @@
 #include <complex>
+#include <Python.h>
+#include <math.h>
 
 extern std::complex<double> Faddeeva_w(std::complex<double> z, double relerr);
 
 extern "C" {
-
-#include <Python.h>
-#include <math.h>
 
 #include "numpy/npy_math.h"
 #include "numpy/ndarraytypes.h"
@@ -56,11 +55,11 @@ static void _init_funcs(PyObject *m)
     d = PyModule_GetDict(m);
 
     f = PyUFunc_FromFuncAndData(wofz_funcs, data, types, 3, 1, 1,
-                                PyUFunc_None, "wofz", NULL , 0);
+                                PyUFunc_None, (char*)"wofz", NULL , 0);
     PyDict_SetItemString(d, "wofz", f);
     Py_DECREF(f);
 }
-    
+
 #if PY_VERSION_HEX >= 0x03000000
 
 static PyModuleDef moduledef = {
@@ -78,7 +77,7 @@ static PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__faddeeva()
 {
-    PyObject *m, *f, *d;
+    PyObject *m;
     m = PyModule_Create(&moduledef);
     if (!m) {
         return NULL;
@@ -94,7 +93,7 @@ PyInit__faddeeva()
 PyMODINIT_FUNC
 init_faddeeva()
 {
-    PyObject *m, *f,  *d;
+    PyObject *m;
     m  = Py_InitModule("_faddeeva", module_methods);
     if (m == NULL) {
         return;
