@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.misc import factorial
 
-__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial", "Pchip", "pchip_interpolate", "pchip"]
+__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial", "PchipInterpolator", "pchip_interpolate", "pchip"]
 
 def _isscalar(x):
     """Check whether x is if a scalar type, or 0-dim"""
@@ -882,7 +882,7 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
     else:
         return P.derivatives(x,der=np.amax(der)+1)[der]
 
-class Pchip(PiecewisePolynomial):
+class PchipInterpolator(PiecewisePolynomial):
     """PCHIP 1-d monotonic cubic interpolation
 
     x and y are arrays of values used to approximate some function f, with
@@ -916,7 +916,7 @@ class Pchip(PiecewisePolynomial):
 
         data = np.empty((yp.shape[0], 2) + yp.shape[1:], y.dtype)
         data[:,0] = yp
-        data[:,1] = Pchip._find_derivatives(xp, yp)
+        data[:,1] = PchipInterpolator._find_derivatives(xp, yp)
 
         s = range(2, y.ndim + 1)
         s.insert(axis, 1)
@@ -958,8 +958,8 @@ class Pchip(PiecewisePolynomial):
         # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
         #  one of d_1 or m_0 is 0, then choose d_0 = 0
 
-        dk[0] = Pchip._edge_case(mk[0],dk[1])
-        dk[-1] = Pchip._edge_case(mk[-1],dk[-2])
+        dk[0] = PchipInterpolator._edge_case(mk[0],dk[1])
+        dk[-1] = PchipInterpolator._edge_case(mk[-1],dk[-2])
         return dk
 
 def pchip_interpolate(xi, yi, x, der=0, axis=0):
@@ -982,22 +982,8 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     y : scalar or array_like
         The result, of length R or length M or M by R,
 
-    Notes
-    -----
-    If orders is None, or orders[i] is None, then the degree of the
-    polynomial segment is exactly the degree required to match all i
-    available derivatives at both endpoints. If orders[i] is not None,
-    then some derivatives will be ignored. The code will try to use an
-    equal number of derivatives from each end; if the total number of
-    derivatives needed is odd, it will prefer the rightmost endpoint. If
-    not enough derivatives are available, an exception is raised.
-
-    Construction of these piecewise polynomials can be an expensive process;
-    if you repeatedly evaluate the same polynomial, consider using the class
-    PiecewisePolynomial (which is what this function does).
-
     """
-    P = Pchip(xi, yi, axis=axis)
+    P = PchipInterpolator(xi, yi, axis=axis)
     if der == 0:
         return P(x)
     elif _isscalar(der):
@@ -1006,4 +992,4 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         return P.derivatives(x,der=np.amax(der)+1)[der]
 
 # Backwards compatibility
-pchip = Pchip
+pchip = PchipInterpolator
