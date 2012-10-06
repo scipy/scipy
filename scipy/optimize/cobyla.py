@@ -235,7 +235,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
                                   dinfo=info)
 
     return Result(x=xopt,
-                  status=info[0],
+                  status=int(info[0]),
                   success=info[0]==1,
                   message={1: 'Optimization terminated successfully.',
                            2: 'Maximum number of function evaluations has '
