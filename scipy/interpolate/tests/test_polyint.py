@@ -20,7 +20,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
     xi = np.zeros(x_shape)
     yi = interpolator_cls(x, y, axis=axis)(xi)
 
-    target_shape = (y.shape[:axis] + (deriv_shape or ())
+    target_shape = ((deriv_shape or ()) + y.shape[:axis]
                     + x_shape + y.shape[axis:][1:])
     assert_equal(yi.shape, target_shape)
 

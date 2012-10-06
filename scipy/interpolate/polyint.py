@@ -128,7 +128,15 @@ class _InterpolatorBaseWithDerivatives(_InterpolatorBase):
         """
         x, x_shape = self._prepare_x(x)
         y = self._evaluate_derivatives(x, der)
-        return self._finish_y(y, (y.shape[0],) + x_shape)
+
+        y = y.reshape((y.shape[0],) + x_shape + self._y_extra_shape)
+        if self._y_axis != 0 and x_shape != ():
+            nx = len(x_shape)
+            ny = len(self._y_extra_shape)
+            s = ([0] + range(nx+1, nx + self._y_axis+1)
+                 + range(1,nx+1) + range(nx+1+self._y_axis, nx+ny+1))
+            y = y.transpose(s)
+        return y
 
     def derivative(self, x, der=1):
         """
