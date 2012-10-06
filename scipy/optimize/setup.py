@@ -43,8 +43,8 @@ def configuration(parent_package='',top_path=None):
     if needs_cblas_wrapper(lapack):
         # Veclib/Accelerate ABI is g77
         lapack = dict(lapack)
-        lapack.setdefault('extra_compile_f77_args', []).append('-ff2c')
-        lapack.setdefault('extra_compile_f90_args', []).append('-ff2c')
+        lapack.setdefault('extra_f77_compile_args', []).append('-ff2c')
+        lapack.setdefault('extra_f90_compile_args', []).append('-ff2c')
 
     sources=['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
     config.add_extension('_lbfgsb',

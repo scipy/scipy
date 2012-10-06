@@ -79,8 +79,8 @@ def configuration(parent_package='',top_path=None):
     if needs_cblas_wrapper(lapack_opt):
         # Veclib/Accelerate ABI is g77
         lapack_opt = dict(lapack_opt)
-        lapack_opt.setdefault('extra_compile_f77_args', []).append('-ff2c')
-        lapack_opt.setdefault('extra_compile_f90_args', []).append('-ff2c')
+        lapack_opt.setdefault('extra_f77_compile_args', []).append('-ff2c')
+        lapack_opt.setdefault('extra_f90_compile_args', []).append('-ff2c')
 
     # flapack:
     config.add_extension('flapack',
