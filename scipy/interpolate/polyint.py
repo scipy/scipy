@@ -7,7 +7,7 @@ def _isscalar(x):
     """Check whether x is if a scalar type, or 0-dim"""
     return np.isscalar(x) or hasattr(x, 'shape') and x.shape == ()
 
-class _InterpolatorBase(object):
+class _Interpolator1D(object):
     """
     Common features in univariate interpolation
 
@@ -77,8 +77,12 @@ class _InterpolatorBase(object):
 
         yi = np.asarray(yi)
 
-        if xi is not None and yi.shape[axis] != len(xi):
-            raise ValueError("yi dimensions do not match xi dimensions")
+        shape = yi.shape
+        if shape == ():
+            shape = (1,)
+        if xi is not None and shape[axis] != len(xi):
+            raise ValueError("x and y arrays must be equal in length along "
+                             "interpolation axis.")
 
         self._y_axis = (axis % yi.ndim)
         self._y_extra_shape = yi.shape[:self._y_axis]+yi.shape[self._y_axis+1:]
@@ -93,7 +97,7 @@ class _InterpolatorBase(object):
             if not union or self.dtype != np.complex_:
                 self.dtype = np.float_
 
-class _InterpolatorBaseWithDerivatives(_InterpolatorBase):
+class _Interpolator1DWithDerivatives(_Interpolator1D):
     def derivatives(self, x, der=None):
         """
         Evaluate many derivatives of the polynomial at the point x
@@ -171,7 +175,7 @@ class _InterpolatorBaseWithDerivatives(_InterpolatorBase):
         return self._finish_y(y[der], x_shape)
 
 
-class KroghInterpolator(_InterpolatorBaseWithDerivatives):
+class KroghInterpolator(_Interpolator1DWithDerivatives):
     """
     Interpolating polynomial for a set of points.
 
@@ -240,7 +244,7 @@ class KroghInterpolator(_InterpolatorBaseWithDerivatives):
     """
 
     def __init__(self, xi, yi, axis=0):
-        _InterpolatorBase.__init__(self, xi, yi, axis)
+        _Interpolator1DWithDerivatives.__init__(self, xi, yi, axis)
 
         self.xi = np.asarray(xi)
         self.yi = self._reshape_yi(yi)
@@ -407,7 +411,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     return np.poly1d((d/factorial(np.arange(degree+1)))[::-1])
 
 
-class BarycentricInterpolator(_InterpolatorBase):
+class BarycentricInterpolator(_Interpolator1D):
     """The interpolating polynomial for a set of points
 
     Constructs a polynomial that passes through a given set of points.
@@ -445,7 +449,7 @@ class BarycentricInterpolator(_InterpolatorBase):
 
     """
     def __init__(self, xi, yi=None, axis=0):
-        _InterpolatorBase.__init__(self, xi, yi, axis)
+        _Interpolator1D.__init__(self, xi, yi, axis)
 
         self.xi = np.asarray(xi)
         self.set_yi(yi)
@@ -539,7 +543,7 @@ class BarycentricInterpolator(_InterpolatorBase):
         weights, that is, it constructs an intermediate array of size
         N by len(x), where N is the degree of the polynomial.
         """
-        return _InterpolatorBase.__call__(self, x)
+        return _Interpolator1D.__call__(self, x)
 
     def _evaluate(self, x):
         if x.size == 0:
@@ -598,7 +602,7 @@ def barycentric_interpolate(xi, yi, x, axis=0):
     return BarycentricInterpolator(xi, yi, axis=axis)(x)
 
 
-class PiecewisePolynomial(_InterpolatorBaseWithDerivatives):
+class PiecewisePolynomial(_Interpolator1DWithDerivatives):
     """Piecewise polynomial curve specified by points and derivatives
 
     This class represents a curve that is a piecewise polynomial. It
@@ -638,7 +642,7 @@ class PiecewisePolynomial(_InterpolatorBaseWithDerivatives):
     """
 
     def __init__(self, xi, yi, orders=None, direction=None, axis=0):
-        _InterpolatorBaseWithDerivatives.__init__(self, axis=axis)
+        _Interpolator1DWithDerivatives.__init__(self, axis=axis)
 
         if axis != 0:
             try:
