@@ -15,8 +15,9 @@ import math
 from scipy.lib.six.moves import xrange
 
 from . import fitpack
-from . import _fitpack
 from . import dfitpack
+from . import _fitpack
+from .polyint import _Interpolator1D
 
 def reduce_sometrue(a):
     all = a
@@ -248,7 +249,7 @@ class interp2d(object):
         return array(z)
 
 
-class interp1d(object):
+class interp1d(_Interpolator1D):
     """
     interp1d(x, y, kind='linear', axis=-1, copy=True, bounds_error=True,
              fill_value=np.nan)
@@ -311,6 +312,7 @@ class interp1d(object):
     def __init__(self, x, y, kind='linear', axis=-1,
                  copy=True, bounds_error=True, fill_value=np.nan):
         """ Initialize a 1D linear interpolation class."""
+        _Interpolator1D.__init__(self, x, y, axis=axis)
 
         self.copy = copy
         self.bounds_error = bounds_error
@@ -338,46 +340,36 @@ class interp1d(object):
         if not issubclass(y.dtype.type, np.inexact):
             y = y.astype(np.float_)
 
-        # Normalize the axis to ensure that it is positive.
-        self.axis = axis % len(y.shape)
-        self._kind = kind
+        # Backward compatibility
+        self.axis = axis % y.ndim
+
+        # Interpolation goes internally along the first axis
+        self.y = y
+        y = self._reshape_yi(y)
 
         if kind in ('linear', 'nearest'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
-            axes = list(range(y.ndim))
-            del axes[self.axis]
-            axes.append(self.axis)
-            oriented_y = y.transpose(axes)
             minval = 2
-            len_y = oriented_y.shape[-1]
             if kind == 'linear':
                 self._call = self._call_linear
             elif kind == 'nearest':
                 self.x_bds = (x[1:] + x[:-1]) / 2.0
                 self._call = self._call_nearest
         else:
-            axes = list(range(y.ndim))
-            del axes[self.axis]
-            axes.insert(0, self.axis)
-            oriented_y = y.transpose(axes)
             minval = order + 1
-            len_y = oriented_y.shape[0]
             self._call = self._call_spline
-            self._spline = splmake(x,oriented_y,order=order)
+            self._spline = splmake(x, y, order=order)
 
-        len_x = len(x)
-        if len_x != len_y:
-            raise ValueError("x and y arrays must be equal in length along "
-                             "interpolation axis.")
-        if len_x < minval:
+        if len(x) < minval:
             raise ValueError("x and y arrays must have at "
                              "least %d entries" % minval)
+
+        self._kind = kind
         self.x = x
-        self.y = oriented_y
+        self._y = y
 
     def _call_linear(self, x_new):
-
         # 2. Find where in the orignal data, the values to interpolate
         #    would be inserted.
         #    Note: If x_new[n] == x[m], then m is returned by searchsorted.
@@ -394,15 +386,15 @@ class interp1d(object):
 
         x_lo = self.x[lo]
         x_hi = self.x[hi]
-        y_lo = self.y[..., lo]
-        y_hi = self.y[..., hi]
+        y_lo = self._y[lo]
+        y_hi = self._y[hi]
 
         # Note that the following two expressions rely on the specifics of the
         # broadcasting semantics.
-        slope = (y_hi-y_lo) / (x_hi-x_lo)
+        slope = (y_hi-y_lo) / (x_hi-x_lo)[:,None]
 
         # 5. Calculate the actual value for each entry in x_new.
-        y_new = slope*(x_new-x_lo) + y_lo
+        y_new = slope*(x_new-x_lo)[:,None] + y_lo
 
         return y_new
 
@@ -419,67 +411,23 @@ class interp1d(object):
         x_new_indices = x_new_indices.clip(0,  len(self.x)-1).astype(intp)
 
         # 4. Calculate the actual value for each entry in x_new.
-        y_new = self.y[..., x_new_indices]
+        y_new = self._y[x_new_indices]
 
         return y_new
 
     def _call_spline(self, x_new):
-        x_new =np.asarray(x_new)
-        result = spleval(self._spline,x_new.ravel())
-        return result.reshape(x_new.shape+result.shape[1:])
+        return spleval(self._spline, x_new)
 
-    def __call__(self, x_new):
-        """Find interpolated y_new = f(x_new).
-
-        Parameters
-        ----------
-        x_new : number or array
-            New independent variable(s).
-
-        Returns
-        -------
-        y_new : ndarray
-            Interpolated value(s) corresponding to x_new.
-
-        """
-
+    def _evaluate(self, x_new):
         # 1. Handle values in x_new that are outside of x.  Throw error,
         #    or return a list of mask array indicating the outofbounds values.
         #    The behavior is set by the bounds_error variable.
         x_new = asarray(x_new)
         out_of_bounds = self._check_bounds(x_new)
-
         y_new = self._call(x_new)
-
-        # Rotate the values of y_new back so that they correspond to the
-        # correct x_new values. For N-D x_new, take the last (for linear)
-        # or first (for other splines) N axes
-        # from y_new and insert them where self.axis was in the list of axes.
-        nx = x_new.ndim
-        ny = y_new.ndim
-
-        # 6. Fill any values that were out of bounds with fill_value.
-        # and
-        # 7. Rotate the values back to their proper place.
-
-        if nx == 0:
-            # special case: x is a scalar
-            if out_of_bounds:
-                if ny == 0:
-                    return asarray(self.fill_value)
-                else:
-                    y_new[...] = self.fill_value
-            return asarray(y_new)
-        elif self._kind in ('linear', 'nearest'):
-            y_new[..., out_of_bounds] = self.fill_value
-            axes = list(range(ny - nx))
-            axes[self.axis:self.axis] = list(range(ny - nx, ny))
-            return y_new.transpose(axes)
-        else:
+        if len(y_new) > 0:
             y_new[out_of_bounds] = self.fill_value
-            axes = list(range(nx, ny))
-            axes[self.axis:self.axis] = list(range(nx))
-            return y_new.transpose(axes)
+        return y_new
 
     def _check_bounds(self, x_new):
         """Check the inputs for being in the bounds of the interpolated data.
