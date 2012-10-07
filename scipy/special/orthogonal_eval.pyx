@@ -91,7 +91,7 @@ _eval_chebyt = PyUFunc_FromFuncAndData(_id_d_funcs, chebyt_data,
 #------------------------------------------------------------------------------
 
 import numpy as np
-from scipy.special._cephes import gamma, hyp2f1, hyp1f1, gammaln
+from scipy.special._ufuncs import gamma, hyp2f1, hyp1f1, gammaln
 from numpy import exp
 
 def binom(n, k):

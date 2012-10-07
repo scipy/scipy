@@ -56,6 +56,22 @@ add_newdoc("scipy.special", "bdtri",
     given cumulative probability y.
     """)
 
+add_newdoc("scipy.special", "bdtrik",
+    """
+    """)
+
+add_newdoc("scipy.special", "bdtrin",
+    """
+    """)
+
+add_newdoc("scipy.special", "btdtria",
+    """
+    """)
+
+add_newdoc("scipy.special", "btdtrib",
+    """
+    """)
+
 add_newdoc("scipy.special", "bei",
     """
     y=bei(x) returns the Kelvin function bei x
@@ -142,6 +158,26 @@ add_newdoc("scipy.special", "chdtri",
     """
     x=chdtri(v,p) returns the argument x such that chdtrc(v,x) is equal
     to p.
+    """)
+
+add_newdoc("scipy.special", "chdtriv",
+    """
+    """)
+
+add_newdoc("scipy.special", "chndtr",
+    """
+    """)
+
+add_newdoc("scipy.special", "chndtrix",
+    """
+    """)
+
+add_newdoc("scipy.special", "chndtridf",
+    """
+    """)
+
+add_newdoc("scipy.special", "chndtrinc",
+    """
     """)
 
 add_newdoc("scipy.special", "cosdg",
@@ -356,6 +392,18 @@ add_newdoc("scipy.special", "gdtri",
     x=gdtri(a,b,p) returns pth quantile of the gamma distribution.  It is 
     the inverse of the gamma cdf returning the value of x for which 
     gdtr(b,a,x) = p.
+    """)
+
+add_newdoc("scipy.special", "gdtria",
+    """
+    """)
+
+add_newdoc("scipy.special", "gdtrib",
+    """
+    """)
+
+add_newdoc("scipy.special", "gdtrix",
+    """
     """)
 
 add_newdoc("scipy.special", "hankel1",
@@ -748,11 +796,59 @@ add_newdoc("scipy.special", "nbdtrin",
     n=nbdtrin(k,y,p) finds the argument n such that nbdtr(k,n,p)=y.
     """)
 
+add_newdoc("scipy.special", "ncfdtr",
+    """
+    """)
+
+add_newdoc("scipy.special", "ncfdtri",
+    """
+    """)
+
+add_newdoc("scipy.special", "ncfdtrifn",
+    """
+    """)
+
+add_newdoc("scipy.special", "ncfdtridfd",
+    """
+    """)
+
+add_newdoc("scipy.special", "ncfdtridfn",
+    """
+    """)
+
+add_newdoc("scipy.special", "ncfdtrinc",
+    """
+    """)
+
+add_newdoc("scipy.special", "nctdtr",
+    """
+    """)
+
+add_newdoc("scipy.special", "nctdtridf",
+    """
+    """)
+
+add_newdoc("scipy.special", "nctdtrinc",
+    """
+    """)
+
+add_newdoc("scipy.special", "nctdtrit",
+    """
+    """)
+
 add_newdoc("scipy.special", "ndtr",
     """
     y=ndtr(x) returns the area under the standard Gaussian probability 
     density function, integrated from minus infinity to x:
     1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)
+    """)
+
+add_newdoc("scipy.special", "nrdtrimn",
+    """
+    """)
+
+add_newdoc("scipy.special", "nrdtrisd",
+    """
     """)
 
 add_newdoc("scipy.special", "log_ndtr",
@@ -1007,6 +1103,10 @@ add_newdoc("scipy.special", "struve",
 add_newdoc("scipy.special", "tandg",
     """
     y=tandg(x) calculates the tangent of the angle x given in degrees.
+    """)
+
+add_newdoc("scipy.special", "tklmbda",
+    """
     """)
 
 add_newdoc("scipy.special", "wofz",

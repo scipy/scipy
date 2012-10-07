@@ -28,7 +28,7 @@ from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, assert_approx_equal, assert_, \
         rand, dec, TestCase, run_module_suite, assert_allclose
 from scipy import special
-import scipy.special._cephes as cephes
+import scipy.special._ufuncs as cephes
 from scipy.special import ellipk
 
 from scipy.special._testutils import assert_tol_equal, with_special_errors

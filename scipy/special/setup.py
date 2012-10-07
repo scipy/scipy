@@ -39,21 +39,6 @@ def configuration(parent_package='',top_path=None):
     config.add_library('sc_cdf',sources=[join('cdflib','*.f')])
     config.add_library('sc_specfun',sources=[join('specfun','*.f')])
 
-    # Extension _cephes
-    sources = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c',
-               'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
-    config.add_extension('_cephes', sources=sources,
-                         libraries=['sc_amos','sc_toms','sc_c_misc','sc_cephes','sc_mach',
-                                    'sc_cdf', 'sc_specfun'],
-                         depends=["ufunc_extras.h", "cephes.h",
-                                  "amos_wrappers.h", "toms_wrappers.h",
-                                  "cdf_wrappers.h", "specfun_wrappers.h",
-                                  "c_misc/misc.h", "cephes_doc.h",
-                                  "cephes/mconf.h", "cephes/cephes_names.h"],
-                         define_macros = define_macros,
-                         extra_info=get_info("npymath")
-                         )
-
     # Extension specfun
     config.add_extension('specfun',
                          sources=['specfun.pyf'],
@@ -72,8 +57,15 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_ufuncs',
                          libraries=['sc_amos','sc_toms','sc_c_misc','sc_cephes','sc_mach',
                                     'sc_cdf', 'sc_specfun'],
-                         sources=['_ufuncs.c', '_logit.c.src'],
+                         depends=["_logit.h", "cephes.h",
+                                  "amos_wrappers.h", "toms_wrappers.h",
+                                  "cdf_wrappers.h", "specfun_wrappers.h",
+                                  "c_misc/misc.h", "cephes/mconf.h", "cephes/cephes_names.h"],
+                         sources=['_ufuncs.c', '_logit.c.src',
+                                  "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c",
+                                  "toms_wrappers.c"],
                          include_dirs=[curdir],
+                         define_macros = define_macros,
                          extra_info=get_info("npymath"))
 
     config.add_data_files('tests/*.py')
