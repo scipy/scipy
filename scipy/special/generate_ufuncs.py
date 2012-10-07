@@ -14,6 +14,7 @@ Produces files '_ufuncs.c' and '_ufuncs_cxx.c'.
 # Ufuncs without C++
 UFUNCS = """
 _lambertw -- lambertw_scalar: Dld->D                       -- lambertw.pxd
+_eval_chebyt -- eval_poly_chebyt: ld->d                    -- orthogonal_eval.pxd
 logit -- logitf: f->f, logit: d->d, logitl: g->g           -- _logit.h
 expit -- expitf: f->f, expit: d->d, expitl: g->g           -- _logit.h
 bdtrc -- bdtrc: iid->d                                     -- cephes.h

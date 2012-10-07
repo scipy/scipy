@@ -21,6 +21,11 @@ add_newdoc("scipy.special", "_lambertw",
     Internal function, use `lambertw` instead.
     """)
 
+add_newdoc("scipy.special", "_eval_chebyt",
+    """
+    Internal function, use `eval_chebyt` instead.
+    """)
+
 add_newdoc("scipy.special", "airy",
     """
     (Ai,Aip,Bi,Bip)=airy(z) calculates the Airy functions and their derivatives

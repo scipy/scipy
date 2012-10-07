@@ -46,12 +46,6 @@ def configuration(parent_package='',top_path=None):
                          define_macros=[],
                          libraries=['sc_specfun'])
 
-    # Extension orthogonal_eval
-    config.add_extension('orthogonal_eval',
-                         sources=['orthogonal_eval.c'],
-                         define_macros=[],
-                         extra_info=get_info("npymath"))
-
     # Extension _ufuncs
     curdir = os.path.abspath(os.path.dirname(__file__))
     config.add_extension('_ufuncs',

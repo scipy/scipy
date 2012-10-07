@@ -19,6 +19,5 @@ scipy/spatial/ckdtree.c binary
 scipy/spatial/qhull.c binary
 scipy/special/_ufuncs.c binary
 scipy/special/_ufuncs_cxx.c binary
-scipy/special/orthogonal_eval.c binary
 scipy/stats/_rank.c binary
 scipy/stats/vonmises_cython.c binary

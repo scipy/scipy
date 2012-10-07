@@ -1,6 +1,6 @@
 """
-Evaluate orthogonal polynomial values using recurrence relations
-or by calling special functions.
+Evaluate orthogonal polynomial values using special functions or
+recurrence relations.
 
 References
 ----------
@@ -16,83 +16,12 @@ References
 #
 
 #------------------------------------------------------------------------------
-# Direct evaluation of polynomials
-#------------------------------------------------------------------------------
-
-cdef extern from "math.h":
-    double sqrt(double x) nogil
-
-cdef double eval_poly_chebyt(long k, double x) nogil:
-    # Use Chebyshev T recurrence directly, see [MH]
-    cdef long m
-    cdef double b2, b1, b0
-
-    b2 = 0
-    b1 = -1
-    b0 = 0
-    x = 2*x
-    for m in range(k+1):
-        b2 = b1
-        b1 = b0
-        b0 = x*b1 - b2
-    return (b0 - b2)/2.0
-
-#------------------------------------------------------------------------------
-# Ufunc boilerplate
-#------------------------------------------------------------------------------
-
-cdef extern from "numpy/arrayobject.h":
-    void import_array()
-    ctypedef int npy_intp
-    cdef enum NPY_TYPES:
-        NPY_LONG
-        NPY_DOUBLE
-
-cdef extern from "numpy/ufuncobject.h":
-    void import_ufunc()
-    ctypedef void (*PyUFuncGenericFunction)(char**, npy_intp*, npy_intp*, void*)
-    object PyUFunc_FromFuncAndData(PyUFuncGenericFunction* func, void** data,
-                                   char* types, int ntypes, int nin, int nout,
-                                   int identity, char* name, char* doc, int c)
-
-cdef void _loop_id_d(char **args, npy_intp *dimensions, npy_intp *steps,
-                     void *func) nogil:
-    cdef int i
-    cdef double x
-    cdef char *ip1=args[0], *ip2=args[1], *op=args[2]
-    for i in range(0, dimensions[0]):
-        (<double*>op)[0] = (<double(*)(long,double) nogil>func)(
-            (<long*>ip1)[0], (<double*>ip2)[0])
-        ip1 += steps[0]; ip2 += steps[1]; op += steps[2]
-
-cdef char _id_d_types[3]
-
-cdef PyUFuncGenericFunction _id_d_funcs[1]
-
-_id_d_types[0] = NPY_LONG
-_id_d_types[1] = NPY_DOUBLE
-_id_d_types[2] = NPY_DOUBLE
-
-_id_d_funcs[0] = _loop_id_d
-
-import_array()
-import_ufunc()
-
-#--
-
-cdef void *chebyt_data[1]
-chebyt_data[0] = <void*>eval_poly_chebyt
-_eval_chebyt = PyUFunc_FromFuncAndData(_id_d_funcs, chebyt_data,
-                                       _id_d_types, 1, 2, 1, 0, "", "", 0)
-
-
-#------------------------------------------------------------------------------
 # Actual evaluation functions
 #------------------------------------------------------------------------------
 
 import numpy as np
-from scipy.special._ufuncs import gamma, hyp2f1, hyp1f1, gammaln
-from numpy import exp
+from scipy.special._ufuncs import gamma, hyp2f1, hyp1f1, gammaln, _eval_chebyt
+from numpy import exp, sqrt
 
 def binom(n, k):
     """
@@ -100,7 +29,7 @@ def binom(n, k):
 
     Binomial coefficient
     """
-    return np.exp(gammaln(1+n) - gammaln(1+k) - gammaln(1+n-k))
+    return exp(gammaln(1+n) - gammaln(1+k) - gammaln(1+n-k))
 
 def eval_jacobi(n, alpha, beta, x, out=None):
     """
@@ -121,7 +50,7 @@ def eval_sh_jacobi(n, p, q, x, out=None):
 
     Evaluate shifted Jacobi polynomial at a point.
     """
-    factor = np.exp(gammaln(1+n) + gammaln(n+p) - gammaln(2*n+p))
+    factor = exp(gammaln(1+n) + gammaln(n+p) - gammaln(2*n+p))
     return factor * eval_jacobi(n, p-q, q-1, 2*x-1)
 
 def eval_gegenbauer(n, alpha, x, out=None):
