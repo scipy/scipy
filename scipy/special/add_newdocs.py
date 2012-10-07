@@ -29,15 +29,15 @@ add_newdoc("scipy.special", "_eval_chebyt",
 add_newdoc("scipy.special", "airy",
     """
     (Ai,Aip,Bi,Bip)=airy(z) calculates the Airy functions and their derivatives
-    evaluated at real or complex number z.  The Airy functions Ai and Bi 
+    evaluated at real or complex number z.  The Airy functions Ai and Bi
     are two independent solutions of y''(x)=xy.  Aip and Bip are the first derivatives
     evaluated at x of Ai and Bi respectively.
     """)
 
 add_newdoc("scipy.special", "airye",
     """
-    (Aie,Aipe,Bie,Bipe)=airye(z) calculates the exponentially scaled Airy functions and 
-    their derivatives evaluated at real or complex number z.  
+    (Aie,Aipe,Bie,Bipe)=airye(z) calculates the exponentially scaled Airy functions and
+    their derivatives evaluated at real or complex number z.
     airye(z)[0:1] = airy(z)[0:1] * exp(2.0/3.0*z*sqrt(z))
     airye(z)[2:3] = airy(z)[2:3] * exp(-abs((2.0/3.0*z*sqrt(z)).real))
     """)
@@ -110,13 +110,27 @@ add_newdoc("scipy.special", "beta",
 
 add_newdoc("scipy.special", "betainc",
     """
-    y=betainc(a,b,x) returns the incomplete beta integral of the
-    
+    betainc(a, b, x)
+
+    Compute the incomplete beta integral of the arguments, evaluated
+    from zero to x::
+
+        gamma(a+b) / (gamma(a)*gamma(b)) * integral(t**(a-1) (1-t)**(b-1), t=0..x).
+
+    Notes
+    -----
+    The incomplete beta is also sometimes defined without the terms
+    in gamma, in which case the above definition is the so-called regularized
+    incomplete beta. Under this definition, you can get the incomplete beta by
+    multiplying the result of the scipy function by beta(a, b).
+
     """)
 
 add_newdoc("scipy.special", "betaincinv",
     """
-    x=betaincinv(a,b,y) returns x such that betainc(a,b,x) = y.
+    betaincinv(a,b,y)
+
+    Compute x such that betainc(a,b,x) = y.
     """)
 
 add_newdoc("scipy.special", "betaln",
@@ -135,7 +149,7 @@ add_newdoc("scipy.special", "btdtr",
 add_newdoc("scipy.special", "btdtri",
     """
     x=btdtri(a,b,p) returns the pth quantile of the beta distribution.  It is
-    effectively the inverse of btdtr returning the value of x for which 
+    effectively the inverse of btdtr returning the value of x for which
     btdtr(a,b,x) = p.   SEE ALSO betaincinv
     """)
 
@@ -240,7 +254,38 @@ add_newdoc("scipy.special", "ellipkinc",
 
 add_newdoc("scipy.special", "erf",
     """
+    erf(z)
+
     Returns the error function of complex argument.
+
+    It is defined as ``2/sqrt(pi)*integral(exp(-t**2), t=0..z)``.
+
+    Parameters
+    ----------
+    x : ndarray
+        Input array.
+
+    Returns
+    -------
+    res : ndarray
+        The values of the error function at the given points x.
+
+    See Also
+    --------
+    erfc, erfinv, erfcinv
+
+    Notes
+    -----
+    The cumulative of the unit normal distribution is given by
+    ``Phi(z) = 1/2[1 + erf(z/sqrt(2))]``.
+
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/wiki/Error_function
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover,
+        1972. http://www.math.sfu.ca/~cbm/aands/page_297.htm
 
     """)
 
@@ -324,33 +369,33 @@ add_newdoc("scipy.special", "fdtrc",
 
 add_newdoc("scipy.special", "fdtri",
     """
-    x=fdtri(dfn,dfd,p) finds the F density argument x such that 
+    x=fdtri(dfn,dfd,p) finds the F density argument x such that
     fdtr(dfn,dfd,x)=p.
     """)
 
 add_newdoc("scipy.special", "fdtridfd",
     """
-    x=fdtridfd(dfn,p,x) finds the F density argument dfd such that 
+    x=fdtridfd(dfn,p,x) finds the F density argument dfd such that
     fdtr(dfn,dfd,x)=p.
     """)
 
 add_newdoc("scipy.special", "fdtridfn",
     """
-    x=fdtridfn(p,dfd,x) finds the F density argument dfn such that 
+    x=fdtridfn(p,dfd,x) finds the F density argument dfn such that
     fdtr(dfn,dfd,x)=p.
     """)
 
 add_newdoc("scipy.special", "fresnel",
     """
     (ssa,cca)=fresnel(z) returns the fresnel sin and cos integrals: integral(sin(pi/2
-    * t**2),t=0..z) and integral(cos(pi/2 * t**2),t=0..z) for real or 
+    * t**2),t=0..z) and integral(cos(pi/2 * t**2),t=0..z) for real or
     complex z.
     """)
 
 add_newdoc("scipy.special", "gamma",
     """
     y=gamma(z) returns the gamma function of the argument.  The gamma
-    function is often referred to as the generalized factorial since 
+    function is often referred to as the generalized factorial since
     z*gamma(z) = gamma(z+1) and gamma(n+1) = n! for natural number n.
     """)
 
@@ -399,8 +444,8 @@ add_newdoc("scipy.special", "gdtrc",
 
 add_newdoc("scipy.special", "gdtri",
     """
-    x=gdtri(a,b,p) returns pth quantile of the gamma distribution.  It is 
-    the inverse of the gamma cdf returning the value of x for which 
+    x=gdtri(a,b,p) returns pth quantile of the gamma distribution.  It is
+    the inverse of the gamma cdf returning the value of x for which
     gdtr(b,a,x) = p.
     """)
 
@@ -498,19 +543,19 @@ add_newdoc("scipy.special", "i1e",
 
 add_newdoc("scipy.special", "it2i0k0",
     """
-    (ii0,ik0)=it2i0k0(x) returns the integrals int((i0(t)-1)/t,t=0..x) and 
+    (ii0,ik0)=it2i0k0(x) returns the integrals int((i0(t)-1)/t,t=0..x) and
     int(k0(t)/t,t=x..infinitity).
     """)
 
 add_newdoc("scipy.special", "it2j0y0",
     """
-    (ij0,iy0)=it2j0y0(x) returns the integrals int((1-j0(t))/t,t=0..x) and 
+    (ij0,iy0)=it2j0y0(x) returns the integrals int((1-j0(t))/t,t=0..x) and
     int(y0(t)/t,t=x..infinitity).
     """)
 
 add_newdoc("scipy.special", "it2struve0",
     """
-    y=it2struve0(x) returns the integral of the Struve function of order 0 
+    y=it2struve0(x) returns the integral of the Struve function of order 0
     divided by t from x to infinity:  integral(H0(t)/t, t=x..inf).
     """)
 
@@ -522,13 +567,13 @@ add_newdoc("scipy.special", "itairy",
 
 add_newdoc("scipy.special", "iti0k0",
     """
-    (ii0,ik0)=iti0k0(x) returns simple integrals from 0 to x of the zeroth order 
+    (ii0,ik0)=iti0k0(x) returns simple integrals from 0 to x of the zeroth order
     modified bessel functions i0 and k0.
     """)
 
 add_newdoc("scipy.special", "itj0y0",
     """
-    (ij0,iy0)=itj0y0(x) returns simple integrals from 0 to x of the zeroth order 
+    (ij0,iy0)=itj0y0(x) returns simple integrals from 0 to x of the zeroth order
     bessel functions j0 and y0.
     """)
 
@@ -540,7 +585,7 @@ add_newdoc("scipy.special", "itmodstruve0",
 
 add_newdoc("scipy.special", "itstruve0",
     """
-    y=itstruve0(x) returns the integral of the Struve function of order 0 
+    y=itstruve0(x) returns the integral of the Struve function of order 0
     from 0 to x:  integral(H0(t), t=0..x).
     """)
 
@@ -552,7 +597,7 @@ add_newdoc("scipy.special", "iv",
 
 add_newdoc("scipy.special", "ive",
     """
-    y=ive(v,z) returns the exponentially scaled modified Bessel function of 
+    y=ive(v,z) returns the exponentially scaled modified Bessel function of
     real order v and complex z: ive(v,z) = iv(v,z) * exp(-abs(z.real))
     """)
 
@@ -618,10 +663,10 @@ add_newdoc("scipy.special", "keip",
 
 add_newdoc("scipy.special", "kelvin",
     """
-    (Be, Ke, Bep, Kep)=kelvin(x) returns the tuple (Be, Ke, Bep, Kep) which containes 
-    complex numbers representing the real and imaginary Kelvin functions 
-    and their derivatives evaluated at x.  For example, 
-    kelvin(x)[0].real = ber x and kelvin(x)[0].imag = bei x with similar 
+    (Be, Ke, Bep, Kep)=kelvin(x) returns the tuple (Be, Ke, Bep, Kep) which containes
+    complex numbers representing the real and imaginary Kelvin functions
+    and their derivatives evaluated at x.  For example,
+    kelvin(x)[0].real = ber x and kelvin(x)[0].imag = bei x with similar
     relationships for ker and kei.
     """)
 
@@ -648,10 +693,10 @@ add_newdoc("scipy.special", "kolmogi",
 
 add_newdoc("scipy.special", "kolmogorov",
     """
-    p=kolmogorov(y) returns the complementary cumulative distribution 
-    function of Kolmogorov's limiting distribution (Kn* for large n) 
-    of a two-sided test for equality between an empirical and a theoretical 
-    distribution. It is equal to the (limit as n->infinity of the) probability 
+    p=kolmogorov(y) returns the complementary cumulative distribution
+    function of Kolmogorov's limiting distribution (Kn* for large n)
+    of a two-sided test for equality between an empirical and a theoretical
+    distribution. It is equal to the (limit as n->infinity of the) probability
     that sqrt(n) * max absolute deviation > y.
     """)
 
@@ -706,40 +751,40 @@ add_newdoc("scipy.special", "lpmv",
 
 add_newdoc("scipy.special", "mathieu_a",
     """
-    lmbda=mathieu_a(m,q) returns the characteristic value for the even solution, 
+    lmbda=mathieu_a(m,q) returns the characteristic value for the even solution,
     ce_m(z,q), of Mathieu's equation
     """)
 
 add_newdoc("scipy.special", "mathieu_b",
     """
-    lmbda=mathieu_b(m,q) returns the characteristic value for the odd solution, 
+    lmbda=mathieu_b(m,q) returns the characteristic value for the odd solution,
     se_m(z,q), of Mathieu's equation
     """)
 
 add_newdoc("scipy.special", "mathieu_cem",
     """
-    (y,yp)=mathieu_cem(m,q,x) returns the even Mathieu function, ce_m(x,q), 
+    (y,yp)=mathieu_cem(m,q,x) returns the even Mathieu function, ce_m(x,q),
     of order m and parameter q evaluated at x (given in degrees).
     Also returns the derivative with respect to x of ce_m(x,q)
     """)
 
 add_newdoc("scipy.special", "mathieu_modcem1",
     """
-    (y,yp)=mathieu_modcem1(m,q,x) evaluates the even modified Mathieu function 
+    (y,yp)=mathieu_modcem1(m,q,x) evaluates the even modified Mathieu function
     of the first kind, Mc1m(x,q), and its derivative at x for order m and
     parameter q.
     """)
 
 add_newdoc("scipy.special", "mathieu_modcem2",
     """
-    (y,yp)=mathieu_modcem2(m,q,x) evaluates the even modified Mathieu function 
+    (y,yp)=mathieu_modcem2(m,q,x) evaluates the even modified Mathieu function
     of the second kind, Mc2m(x,q), and its derivative at x (given in degrees)
     for order m and parameter q.
     """)
 
 add_newdoc("scipy.special", "mathieu_modsem1",
     """
-    (y,yp)=mathieu_modsem1(m,q,x) evaluates the odd modified Mathieu function 
+    (y,yp)=mathieu_modsem1(m,q,x) evaluates the odd modified Mathieu function
     of the first kind, Ms1m(x,q), and its derivative at x (given in degrees)
     for order m and parameter q.
     """)
@@ -753,7 +798,7 @@ add_newdoc("scipy.special", "mathieu_modsem2",
 
 add_newdoc("scipy.special", "mathieu_sem",
     """
-    (y,yp)=mathieu_sem(m,q,x) returns the odd Mathieu function, se_m(x,q), 
+    (y,yp)=mathieu_sem(m,q,x) returns the odd Mathieu function, se_m(x,q),
     of order m and parameter q evaluated at x (given in degrees).
     Also returns the derivative with respect to x of se_m(x,q).
     """)
@@ -848,7 +893,7 @@ add_newdoc("scipy.special", "nctdtrit",
 
 add_newdoc("scipy.special", "ndtr",
     """
-    y=ndtr(x) returns the area under the standard Gaussian probability 
+    y=ndtr(x) returns the area under the standard Gaussian probability
     density function, integrated from minus infinity to x:
     1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)
     """)
@@ -863,7 +908,7 @@ add_newdoc("scipy.special", "nrdtrisd",
 
 add_newdoc("scipy.special", "log_ndtr",
     """
-    y=log_ndtr(x) returns the log of the area under the standard Gaussian probability 
+    y=log_ndtr(x) returns the log of the area under the standard Gaussian probability
     density function, integrated from minus infinity to x:
     1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)
     """)
@@ -877,14 +922,14 @@ add_newdoc("scipy.special", "ndtri",
 
 add_newdoc("scipy.special", "obl_ang1",
     """
-    (s,sp)=obl_ang1(m,n,c,x) computes the oblate sheroidal angular function 
+    (s,sp)=obl_ang1(m,n,c,x) computes the oblate sheroidal angular function
     of the first kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.
     """)
 
 add_newdoc("scipy.special", "obl_ang1_cv",
     """
-    (s,sp)=obl_ang1_cv(m,n,c,cv,x) computes the oblate sheroidal angular function 
+    (s,sp)=obl_ang1_cv(m,n,c,cv,x) computes the oblate sheroidal angular function
     of the first kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed
     characteristic value.
@@ -892,20 +937,20 @@ add_newdoc("scipy.special", "obl_ang1_cv",
 
 add_newdoc("scipy.special", "obl_cv",
     """
-    cv=obl_cv(m,n,c) computes the characteristic value of oblate spheroidal 
+    cv=obl_cv(m,n,c) computes the characteristic value of oblate spheroidal
     wave functions of order m,n (n>=m) and spheroidal parameter c.
     """)
 
 add_newdoc("scipy.special", "obl_rad1",
     """
-    (s,sp)=obl_rad1(m,n,c,x) computes the oblate sheroidal radial function 
+    (s,sp)=obl_rad1(m,n,c,x) computes the oblate sheroidal radial function
     of the first kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.
     """)
 
 add_newdoc("scipy.special", "obl_rad1_cv",
     """
-    (s,sp)=obl_rad1_cv(m,n,c,cv,x) computes the oblate sheroidal radial function 
+    (s,sp)=obl_rad1_cv(m,n,c,cv,x) computes the oblate sheroidal radial function
     of the first kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed
     characteristic value.
@@ -913,14 +958,14 @@ add_newdoc("scipy.special", "obl_rad1_cv",
 
 add_newdoc("scipy.special", "obl_rad2",
     """
-    (s,sp)=obl_rad2(m,n,c,x) computes the oblate sheroidal radial function 
+    (s,sp)=obl_rad2(m,n,c,x) computes the oblate sheroidal radial function
     of the second kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.
     """)
 
 add_newdoc("scipy.special", "obl_rad2_cv",
     """
-    (s,sp)=obl_rad2_cv(m,n,c,cv,x) computes the oblate sheroidal radial function 
+    (s,sp)=obl_rad2_cv(m,n,c,cv,x) computes the oblate sheroidal radial function
     of the second kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed
     characteristic value.
@@ -928,20 +973,20 @@ add_newdoc("scipy.special", "obl_rad2_cv",
 
 add_newdoc("scipy.special", "pbdv",
     """
-    (d,dp)=pbdv(v,x) returns (d,dp) with the parabolic cylinder function Dv(x) in 
+    (d,dp)=pbdv(v,x) returns (d,dp) with the parabolic cylinder function Dv(x) in
     d and the derivative, Dv'(x) in dp.
     """)
 
 add_newdoc("scipy.special", "pbvv",
     """
-    (v,vp)=pbvv(v,x) returns (v,vp) with the parabolic cylinder function Vv(x) in 
+    (v,vp)=pbvv(v,x) returns (v,vp) with the parabolic cylinder function Vv(x) in
     v and the derivative, Vv'(x) in vp.
     """)
 
 add_newdoc("scipy.special", "pbwa",
     """
-    (w,wp)=pbwa(a,x) returns (w,wp) with the parabolic cylinder function W(a,x) in 
-    w and the derivative, W'(a,x) in wp.  May not be accurate for large (>5) 
+    (w,wp)=pbwa(a,x) returns (w,wp) with the parabolic cylinder function W(a,x) in
+    w and the derivative, W'(a,x) in wp.  May not be accurate for large (>5)
     arguments in a and/or x.
     """)
 
@@ -974,14 +1019,14 @@ add_newdoc("scipy.special", "pdtrik",
 
 add_newdoc("scipy.special", "pro_ang1",
     """
-    (s,sp)=pro_ang1(m,n,c,x) computes the prolate sheroidal angular function 
+    (s,sp)=pro_ang1(m,n,c,x) computes the prolate sheroidal angular function
     of the first kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.
     """)
 
 add_newdoc("scipy.special", "pro_ang1_cv",
     """
-    (s,sp)=pro_ang1_cv(m,n,c,cv,x) computes the prolate sheroidal angular function 
+    (s,sp)=pro_ang1_cv(m,n,c,cv,x) computes the prolate sheroidal angular function
     of the first kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed
     characteristic value.
@@ -989,20 +1034,20 @@ add_newdoc("scipy.special", "pro_ang1_cv",
 
 add_newdoc("scipy.special", "pro_cv",
     """
-    cv=pro_cv(m,n,c) computes the characteristic value of prolate spheroidal 
+    cv=pro_cv(m,n,c) computes the characteristic value of prolate spheroidal
     wave functions of order m,n (n>=m) and spheroidal parameter c.
     """)
 
 add_newdoc("scipy.special", "pro_rad1",
     """
-    (s,sp)=pro_rad1(m,n,c,x) computes the prolate sheroidal radial function 
+    (s,sp)=pro_rad1(m,n,c,x) computes the prolate sheroidal radial function
     of the first kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.
     """)
 
 add_newdoc("scipy.special", "pro_rad1_cv",
     """
-    (s,sp)=pro_rad1_cv(m,n,c,cv,x) computes the prolate sheroidal radial function 
+    (s,sp)=pro_rad1_cv(m,n,c,cv,x) computes the prolate sheroidal radial function
     of the first kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed
     characteristic value.
@@ -1010,14 +1055,14 @@ add_newdoc("scipy.special", "pro_rad1_cv",
 
 add_newdoc("scipy.special", "pro_rad2",
     """
-    (s,sp)=pro_rad2(m,n,c,x) computes the prolate sheroidal radial function 
+    (s,sp)=pro_rad2(m,n,c,x) computes the prolate sheroidal radial function
     of the second kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and |x|<1.0.
     """)
 
 add_newdoc("scipy.special", "pro_rad2_cv",
     """
-    (s,sp)=pro_rad2_cv(m,n,c,cv,x) computes the prolate sheroidal radial function 
+    (s,sp)=pro_rad2_cv(m,n,c,cv,x) computes the prolate sheroidal radial function
     of the second kind and its derivative (with respect to x) for mode paramters
     m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed
     characteristic value.
@@ -1068,10 +1113,10 @@ add_newdoc("scipy.special", "sindg",
 
 add_newdoc("scipy.special", "smirnov",
     """
-    y=smirnov(n,e) returns the exact Kolmogorov-Smirnov complementary 
-    cumulative distribution function (Dn+ or Dn-) for a one-sided test of 
-    equality between an empirical and a theoretical distribution. It is equal 
-    to the probability that the maximum difference between a theoretical 
+    y=smirnov(n,e) returns the exact Kolmogorov-Smirnov complementary
+    cumulative distribution function (Dn+ or Dn-) for a one-sided test of
+    equality between an empirical and a theoretical distribution. It is equal
+    to the probability that the maximum difference between a theoretical
     distribution and an empirical one based on n samples is greater than e.
     """)
 
@@ -1149,7 +1194,7 @@ add_newdoc("scipy.special", "yv",
 
 add_newdoc("scipy.special", "yve",
     """
-    y=yve(v,z) returns the exponentially scaled Bessel function of the second 
+    y=yve(v,z) returns the exponentially scaled Bessel function of the second
     kind of real order v at complex z: yve(v,z) = yv(v,z) * exp(-abs(z.imag))
     """)
 
