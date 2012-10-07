@@ -530,7 +530,6 @@ import orthogonal
 from orthogonal import *
 from spfun_stats import multigammaln
 from lambertw import lambertw
-import add_newdocs
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 
