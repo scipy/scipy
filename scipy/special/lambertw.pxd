@@ -23,7 +23,6 @@
 # at `-1/e` and make sure that the proper branch is chosen there
 
 import cython
-import warnings
 
 cimport sf_error
 
@@ -32,9 +31,6 @@ cdef extern from "math.h":
     double log(double x) nogil
 
 from _complexstuff cimport *
-
-cdef inline void lambertw_raise_warning(double complex z) with gil:
-    warnings.warn(": %r" % z)
 
 # Heavy lifting is here:
 
