@@ -25,8 +25,11 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn', 'riccati_yn',
            'sinc', 'sph_harm', 'sph_in', 'sph_inkn',
            'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
-           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
+           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta',
+           'SpecialFunctionWarning']
 
+class SpecialFunctionWarning(Warning):
+    pass
 
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.

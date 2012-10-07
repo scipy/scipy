@@ -368,6 +368,11 @@ add_newdoc("scipy.special", "gammainccinv",
     x=gammainccinv(a,y) returns x such that gammaincc(a,x) = y.
     """)
 
+add_newdoc("scipy.special", "gammaincinv",
+    """
+    gammaincinv(a, y) returns x such that gammainc(a, x) = y.
+    """)
+
 add_newdoc("scipy.special", "gammaln",
     """
     y=gammaln(z) returns the base e logarithm of the absolute value of the

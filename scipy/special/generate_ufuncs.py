@@ -3,6 +3,7 @@
 generate_ufuncs.py
 
 Generate Ufunc definition source files for scipy.special.
+Produces files '_ufuncs.c' and '_ufuncs_cxx.c'.
 
 """
 
@@ -26,11 +27,11 @@ fdtri -- fdtri: ddd->d                                     -- cephes.h
 gdtrc -- gdtrc: ddd->d                                     -- cephes.h
 gdtr -- gdtr: ddd->d                                       -- cephes.h
 hyp2f1 -- hyp2f1: dddd->d, chyp2f1_wrap: dddD->D           -- cephes.h, specfun_wrappers.h
-hyp1f1 -- chyp1f1_wrap: ddD->D, hyp1f1_wrap: ddd->d        -- specfun_wrappers.h
+hyp1f1 -- hyp1f1_wrap: ddd->d, chyp1f1_wrap: ddD->D        -- specfun_wrappers.h
 hyperu -- hypU_wrap: ddd->d                                -- specfun_wrappers.h
-hyp2f0 -- hyp2f0: dddi*dd->i                               -- cephes.h
-hyp1f2 -- onef2: dddd*dd->i                                -- cephes.h
-hyp3f0 -- threef0: dddd*dd->i                              -- cephes.h
+hyp2f0 -- hyp2f0: dddi*d->d                                -- cephes.h
+hyp1f2 -- onef2: dddd*d->d                                 -- cephes.h
+hyp3f0 -- threef0: dddd*d->d                               -- cephes.h
 betainc -- incbet: ddd->d                                  -- cephes.h
 betaincinv -- incbi: ddd->d                                -- cephes.h
 nbdtrc -- nbdtrc: iid->d                                   -- cephes.h
@@ -57,13 +58,14 @@ i1 -- i1: d->d                                             -- cephes.h
 i1e -- i1e: d->d                                           -- cephes.h
 gammaincc -- igamc: dd->d                                  -- cephes.h
 gammainc -- igam: dd->d                                    -- cephes.h
+gammaincinv -- gammaincinv: dd->d                          -- cephes.h
 gammainccinv -- igami: dd->d                               -- cephes.h
 iv -- iv: dd->d, cbesi_wrap: dD->D                         -- cephes.h, amos_wrappers.h
 ive -- cbesi_wrap_e_real: dd->d, cbesi_wrap_e: dD->D       -- amos_wrappers.h
-ellipj -- ellpj: dd*dddd->i                                -- cephes.h
+ellipj -- ellpj: dd*dddd->*i                               -- cephes.h
 expn -- expn: id->d                                        -- cephes.h
-exp1 -- cexp1_wrap: D->D, exp1_wrap: d->d                  -- specfun_wrappers.h
-expi -- cexpi_wrap: D->D, expi_wrap: d->d                  -- specfun_wrappers.h
+exp1 -- exp1_wrap: d->d, cexp1_wrap: D->D                  -- specfun_wrappers.h
+expi -- expi_wrap: d->d, cexpi_wrap: D->D                  -- specfun_wrappers.h
 kn -- kn: id->d                                            -- cephes.h
 pdtrc -- pdtrc: id->d                                      -- cephes.h
 pdtr -- pdtr: id->d                                        -- cephes.h
@@ -71,30 +73,29 @@ pdtri -- pdtri: id->d                                      -- cephes.h
 yn -- yn: id->d                                            -- cephes.h
 smirnov -- smirnov: id->d                                  -- cephes.h
 smirnovi -- smirnovi: id->d                                -- cephes.h
-airy -- airy: d*dddd->i, cairy_wrap: D*DDDD->i             -- cephes.h, amos_wrappers.h
-itairy -- itairy_wrap: d*dddd->i                           -- specfun_wrappers.h
-airye -- cairy_wrap_e: D*DDDD->i, cairy_wrap_e_real: d*dddd->i -- amos_wrappers.h
-fresnel -- fresnl: d*dd->i, cfresnl_wrap: D*DD->i          -- cephes.h, specfun_wrappers.h
-shichi -- shichi: d*dd->i                                  -- cephes.h
-sici -- sici: d*dd->i                                      -- cephes.h
-itj0y0 -- it1j0y0_wrap: d*dd->i                            -- specfun_wrappers.h
-it2j0y0 -- it2j0y0_wrap: d*dd->i                           -- specfun_wrappers.h
-iti0k0 -- it1i0k0_wrap: d*dd->i                            -- specfun_wrappers.h
-it2i0k0 -- it2i0k0_wrap: d*dd->i                           -- specfun_wrappers.h
+airy -- airy: d*dddd->*i, cairy_wrap: D*DDDD->*i           -- cephes.h, amos_wrappers.h
+itairy -- itairy_wrap: d*dddd->*i                          -- specfun_wrappers.h
+airye -- cairy_wrap_e_real: d*dddd->*i, cairy_wrap_e: D*DDDD->*i -- amos_wrappers.h
+fresnel -- fresnl: d*dd->*i, cfresnl_wrap: D*DD->*i        -- cephes.h, specfun_wrappers.h
+shichi -- shichi: d*dd->*i                                 -- cephes.h
+sici -- sici: d*dd->*i                                     -- cephes.h
+itj0y0 -- it1j0y0_wrap: d*dd->*i                           -- specfun_wrappers.h
+it2j0y0 -- it2j0y0_wrap: d*dd->*i                          -- specfun_wrappers.h
+iti0k0 -- it1i0k0_wrap: d*dd->*i                           -- specfun_wrappers.h
+it2i0k0 -- it2i0k0_wrap: d*dd->*i                          -- specfun_wrappers.h
 j0 -- j0: d->d                                             -- cephes.h
 y0 -- y0: d->d                                             -- cephes.h
 j1 -- j1: d->d                                             -- cephes.h
 y1 -- y1: d->d                                             -- cephes.h
 jv -- jv: dd->d, cbesj_wrap: dD->D                         -- cephes.h, amos_wrappers.h
-jn -- jv: dd->d, cbesj_wrap: dD->D                         -- cephes.h, amos_wrappers.h
-jve -- cbesj_wrap_e: dD->D, cbesj_wrap_e_real: dd->d       -- amos_wrappers.h
+jve -- cbesj_wrap_e_real: dd->d, cbesj_wrap_e: dD->D       -- amos_wrappers.h
 yv -- yv: dd->d, cbesy_wrap: dD->D                         -- cephes.h, amos_wrappers.h
 yve -- cbesy_wrap_e_real: dd->d, cbesy_wrap_e: dD->D       -- amos_wrappers.h
 k0 -- k0: d->d                                             -- cephes.h
 k0e -- k0e: d->d                                           -- cephes.h
 k1 -- k1: d->d                                             -- cephes.h
 k1e -- k1e: d->d                                           -- cephes.h
-kv -- cbesk_wrap: dD->D, cbesk_wrap_real: dd->d            -- amos_wrappers.h
+kv -- cbesk_wrap_real: dd->d, cbesk_wrap: dD->D            -- amos_wrappers.h
 kve -- cbesk_wrap_e_real: dd->d, cbesk_wrap_e: dD->D       -- amos_wrappers.h
 hankel1 -- cbesh_wrap1: dD->D                              -- amos_wrappers.h
 hankel1e -- cbesh_wrap1_e: dD->D                           -- amos_wrappers.h
@@ -123,7 +124,7 @@ modstruve -- modstruve_wrap: dd->d                         -- specfun_wrappers.h
 itstruve0 -- itstruve0_wrap: d->d                          -- specfun_wrappers.h
 it2struve0 -- it2struve0_wrap: d->d                        -- specfun_wrappers.h
 itmodstruve0 -- itmodstruve0_wrap: d->d                    -- specfun_wrappers.h
-kelvin -- kelvin_wrap: d*DDDD->i                           -- specfun_wrappers.h
+kelvin -- kelvin_wrap: d*DDDD->*i                          -- specfun_wrappers.h
 ber -- ber_wrap: d->d                                      -- specfun_wrappers.h
 bei -- bei_wrap: d->d                                      -- specfun_wrappers.h
 ker -- ker_wrap: d->d                                      -- specfun_wrappers.h
@@ -170,32 +171,32 @@ nctdtrinc -- cdftnc4_wrap: ddd->d                          -- cdf_wrappers.h
 tklmbda -- tukeylambdacdf: dd->d                           -- cdf_wrappers.h
 mathieu_a -- cem_cva_wrap: dd->d                           -- specfun_wrappers.h
 mathieu_b -- sem_cva_wrap: dd->d                           -- specfun_wrappers.h
-mathieu_cem -- cem_wrap: ddd*dd->i                         -- specfun_wrappers.h
-mathieu_sem -- sem_wrap: ddd*dd->i                         -- specfun_wrappers.h
-mathieu_modcem1 -- mcm1_wrap: ddd*dd->i                    -- specfun_wrappers.h
-mathieu_modcem2 -- mcm2_wrap: ddd*dd->i                    -- specfun_wrappers.h
-mathieu_modsem1 -- msm1_wrap: ddd*dd->i                    -- specfun_wrappers.h
-mathieu_modsem2 -- msm2_wrap: ddd*dd->i                    -- specfun_wrappers.h
+mathieu_cem -- cem_wrap: ddd*dd->*i                        -- specfun_wrappers.h
+mathieu_sem -- sem_wrap: ddd*dd->*i                        -- specfun_wrappers.h
+mathieu_modcem1 -- mcm1_wrap: ddd*dd->*i                   -- specfun_wrappers.h
+mathieu_modcem2 -- mcm2_wrap: ddd*dd->*i                   -- specfun_wrappers.h
+mathieu_modsem1 -- msm1_wrap: ddd*dd->*i                   -- specfun_wrappers.h
+mathieu_modsem2 -- msm2_wrap: ddd*dd->*i                   -- specfun_wrappers.h
 lpmv -- pmv_wrap: ddd->d                                   -- specfun_wrappers.h
-pbwa -- pbwa_wrap: dd*dd->i                                -- specfun_wrappers.h
-pbdv -- pbdv_wrap: dd*dd->i                                -- specfun_wrappers.h
-pbvv -- pbvv_wrap: dd*dd->i                                -- specfun_wrappers.h
+pbwa -- pbwa_wrap: dd*dd->*i                               -- specfun_wrappers.h
+pbdv -- pbdv_wrap: dd*dd->*i                               -- specfun_wrappers.h
+pbvv -- pbvv_wrap: dd*dd->*i                               -- specfun_wrappers.h
 pro_cv -- prolate_segv_wrap: ddd->d                        -- specfun_wrappers.h
 obl_cv -- oblate_segv_wrap: ddd->d                         -- specfun_wrappers.h
-pro_ang1_cv -- prolate_aswfa_wrap: ddddd*dd->i             -- specfun_wrappers.h
-pro_rad1_cv -- prolate_radial1_wrap: ddddd*dd->i           -- specfun_wrappers.h
-pro_rad2_cv -- prolate_radial2_wrap: ddddd*dd->i           -- specfun_wrappers.h
-obl_ang1_cv -- oblate_aswfa_wrap: ddddd*dd->i              -- specfun_wrappers.h
-obl_rad1_cv -- oblate_radial1_wrap: ddddd*dd->i            -- specfun_wrappers.h
-obl_rad2_cv -- oblate_radial2_wrap: ddddd*dd->i            -- specfun_wrappers.h
-pro_ang1 -- prolate_aswfa_nocv_wrap: dddd*dd->i            -- specfun_wrappers.h
-pro_rad1 -- prolate_radial1_nocv_wrap: dddd*dd->i          -- specfun_wrappers.h
-pro_rad2 -- prolate_radial2_nocv_wrap: dddd*dd->i          -- specfun_wrappers.h
-obl_ang1 -- oblate_aswfa_nocv_wrap: dddd*dd->i             -- specfun_wrappers.h
-obl_rad1 -- oblate_radial1_nocv_wrap: dddd*dd->i           -- specfun_wrappers.h
-obl_rad2 -- oblate_radial2_nocv_wrap: dddd*dd->i           -- specfun_wrappers.h
-modfresnelp -- modified_fresnel_plus_wrap: d*DD->i         -- specfun_wrappers.h
-modfresnelm -- modified_fresnel_minus_wrap: d*DD->i        -- specfun_wrappers.h
+pro_ang1_cv -- prolate_aswfa_wrap: ddddd*dd->*i            -- specfun_wrappers.h
+pro_rad1_cv -- prolate_radial1_wrap: ddddd*dd->*i          -- specfun_wrappers.h
+pro_rad2_cv -- prolate_radial2_wrap: ddddd*dd->*i          -- specfun_wrappers.h
+obl_ang1_cv -- oblate_aswfa_wrap: ddddd*dd->*i             -- specfun_wrappers.h
+obl_rad1_cv -- oblate_radial1_wrap: ddddd*dd->*i           -- specfun_wrappers.h
+obl_rad2_cv -- oblate_radial2_wrap: ddddd*dd->*i           -- specfun_wrappers.h
+pro_ang1 -- prolate_aswfa_nocv_wrap: dddd*dd->*i           -- specfun_wrappers.h
+pro_rad1 -- prolate_radial1_nocv_wrap: dddd*dd->*i         -- specfun_wrappers.h
+pro_rad2 -- prolate_radial2_nocv_wrap: dddd*dd->*i         -- specfun_wrappers.h
+obl_ang1 -- oblate_aswfa_nocv_wrap: dddd*dd->*i            -- specfun_wrappers.h
+obl_rad1 -- oblate_radial1_nocv_wrap: dddd*dd->*i          -- specfun_wrappers.h
+obl_rad2 -- oblate_radial2_nocv_wrap: dddd*dd->*i          -- specfun_wrappers.h
+modfresnelp -- modified_fresnel_plus_wrap: d*DD->*i        -- specfun_wrappers.h
+modfresnelm -- modified_fresnel_minus_wrap: d*DD->*i       -- specfun_wrappers.h
 """
 
 # Ufuncs with C++
@@ -203,10 +204,13 @@ UFUNCS_CXX = """
 """
 
 #---------------------------------------------------------------------------------
-# Extra code (error handling system)
+# Extra code
 #---------------------------------------------------------------------------------
 
-EXTRA_CODE = """
+EXTRA_CODE_COMMON = """
+#
+# Error handling system
+#
 
 cdef extern int scipy_special_print_error_messages
 
@@ -258,6 +262,19 @@ def errprint(inflag=None):
 
 """
 
+EXTRA_CODE = EXTRA_CODE_COMMON + """
+#
+# Aliases
+#
+
+jn = jv
+"""
+
+EXTRA_CODE_CXX = EXTRA_CODE_COMMON + """
+"""
+
+
+
 #---------------------------------------------------------------------------------
 # Code generation
 #---------------------------------------------------------------------------------
@@ -291,7 +308,7 @@ TYPE_NAMES = {
 }
 
 def generate_loop(func_inputs, func_outputs, func_retval,
-                  ufunc_inputs=None, ufunc_outputs=None):
+                  ufunc_inputs, ufunc_outputs):
     """
     Generate a UFunc loop function that calls a function given as its
     data parameter with the specified input and output arguments and
@@ -311,8 +328,8 @@ def generate_loop(func_inputs, func_outputs, func_retval,
 
             retval func(intype1 iv1, intype2 iv2, ..., outtype1 *ov1, ...);
 
-        If the function does not have any output arguments, its return
-        value is considered to be the output. Otherwise, the return
+        If len(func_outputs) == len(ufunc_outputs)+1, the return value
+        is treated as the first output argument. Otherwise, the return
         value is ignored.
 
     ufunc_inputs, ufunc_outputs : str
@@ -329,21 +346,12 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         Generated C code for the loop.
 
     """
-    if ufunc_inputs is None:
-        ufunc_inputs = func_inputs
-        if not func_outputs:
-            ufunc_outputs = func_retval
-        else:
-            ufunc_outputs = func_outputs
-
     if len(func_inputs) != len(ufunc_inputs):
         raise ValueError("Function and ufunc have different number of inputs")
-    if not func_outputs:
-        if len(func_retval) != 1 or len(ufunc_outputs) != 1:
-            raise ValueError("Function retval and ufunc outputs don't match")
-    else:
-        if len(func_outputs) != len(ufunc_outputs):
-            raise ValueError("Function and ufunc have different number of outputs")
+
+    if len(func_outputs) != len(ufunc_outputs) and not (
+            func_retval != "v" and len(func_outputs)+1 == len(ufunc_outputs)):
+        raise ValueError("Function retval and ufunc outputs don't match")
 
     name = "loop_%s_%s_%s_As_%s_%s" % (
         func_retval, func_inputs, func_outputs, ufunc_inputs, ufunc_outputs
@@ -363,24 +371,29 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     outtypecodes = []
     for j in range(len(func_inputs)):
         ftypes.append(C_TYPES[func_inputs[j]])
-        fvars.append("(<%s*>ip%d)[0]" % (C_TYPES[ufunc_inputs[j]], j))
-    for j, outtype in enumerate(func_outputs):
-        body += "    cdef %s ov%d\n" % (C_TYPES[outtype], j)
-        ftypes.append("%s *" % C_TYPES[outtype])
-        fvars.append("&ov%d" % j)
-        outtypecodes.append(outtype)
+        fvars.append("<%s>(<%s*>ip%d)[0]" % (C_TYPES[func_inputs[j]], C_TYPES[ufunc_inputs[j]], j))
 
-    if not func_outputs:
+    if len(func_outputs)+1 == len(ufunc_outputs):
+        func_joff = 1
         outtypecodes.append(func_retval)
         body += "    cdef %s ov0\n" % (C_TYPES[func_retval],)
+    else:
+        func_joff = 0
+
+    for j, outtype in enumerate(func_outputs):
+        body += "    cdef %s ov%d\n" % (C_TYPES[outtype], j+func_joff)
+        ftypes.append("%s *" % C_TYPES[outtype])
+        fvars.append("&ov%d" % (j+func_joff))
+        outtypecodes.append(outtype)
 
     body += "    for i in range(n):\n"
-    if not func_outputs:
-        body += "        ov0 = (<%s(*)(%s) nogil>func)(%s)\n" % (
-            C_TYPES[func_retval], ", ".join(ftypes), ", ".join(fvars))
+    if len(func_outputs)+1 == len(ufunc_outputs):
+        rv = "ov0 = "
     else:
-        body += "        (<%s(*)(%s) nogil>func)(%s)\n" % (
-            C_TYPES[func_retval], ", ".join(ftypes), ", ".join(fvars))
+        rv = ""
+
+    body += "        %s(<%s(*)(%s) nogil>func)(%s)\n" % (
+        rv, C_TYPES[func_retval], ", ".join(ftypes), ", ".join(fvars))
 
     for j, (outtype, fouttype) in enumerate(zip(ufunc_outputs, outtypecodes)):
         body += "        (<%s *>op%d)[0] = <%s>ov%d\n" % (
@@ -413,9 +426,10 @@ def iter_variants(inputs, outputs):
         Also the original input/output pair is yielded.
 
     """
-    yield inputs, outputs
     yield inputs.replace('d', 'f').replace('D', 'F'), outputs.replace('d', 'f').replace('D', 'F')
+    yield inputs, outputs
     yield inputs.replace('i', 'l'), outputs.replace('i', 'l')
+    yield inputs.replace('i', 'd'), outputs.replace('i', 'd')
 
 class Ufunc(object):
     """
@@ -444,11 +458,10 @@ class Ufunc(object):
                 if x.strip()]
 
     def _parse_signature(self, sig):
-        m = re.match("\s*(.*):\s*([fdgFDGil]*)\\*([fdgFDGil]*)->([fdgFDGil]*)\s*$", sig)
+        m = re.match("\s*(.*):\s*([fdgFDGil]*)\\*([fdgFDGil]*)->([*fdgFDGil]*)\s*$", sig)
         if m:
             func, inarg, outarg, ret = map(lambda x: x.strip(), m.groups())
             return (func, inarg, outarg, ret)
-            raise ValueError("Invalid signature: %r" % sig)
         m = re.match("\s*(.*):\s*([fdgFDGil]*)->([fdgFDGil]?)\s*$", sig)
         if m:
             func, inarg, ret = map(lambda x: x.strip(), m.groups())
@@ -458,45 +471,47 @@ class Ufunc(object):
     def _get_signatures_and_loops(self, all_loops):
         inarg_num = None
         outarg_num = None
-        
-        variants = {}
+
+        seen = set()
+        variants = []
+
+        def add_variant(func_name, inarg, outarg, ret, inp, outp):
+            if (inp, outp) in seen:
+                return
+            seen.add((inp, outp))
+
+            sig = (func_name, inp, outp)
+            if "v" in outp:
+                raise ValueError("%s: void signature %r" % (self.name, sig))
+            if len(inp) != inarg_num or len(outp) != outarg_num:
+                raise ValueError("%s: signature %r does not have %d/%d input/output args" % (
+                    self.name, sig,
+                    inarg_num, outarg_num))
+
+            loop_name, loop = generate_loop(inarg, outarg, ret, inp, outp)
+            all_loops[loop_name] = loop
+            variants.append((func_name, loop_name, inp, outp))
+
         for func_name, inarg, outarg, ret in self.signatures:
-            base_input = inarg
-            base_output = outarg or ret
-
+            outp = re.sub(r'\*.*', '', ret) + outarg
+            ret = ret.replace('*', '')
             if inarg_num is None:
-                inarg_num = len(base_input)
-                outarg_num = len(base_output)
-
-            for inp, outp in iter_variants(base_input, base_output):
-                sig = (func_name, inp, outp)
-                if (inp, outp) in variants:
-                    continue
-                if "v" in outp:
-                    raise ValueError("%s: void signature %r" % (self.name, sig))
-                if len(inp) != inarg_num or len(outp) != outarg_num:
-                    raise ValueError("%s: signature %r does not have %d/%d input/output args" % (
-                        self.name, sig,
-                        inarg_num, outarg_num))
-
-                loop_name, loop = generate_loop(inarg, outarg, ret,
-                                                inp, outp)
-                all_loops[loop_name] = loop
-                variants[(inp, outp)] = (func_name, loop_name, inp, outp)
+                inarg_num = len(inarg)
+                outarg_num = len(outp)
+            for inp2, outp2 in iter_variants(inarg, outp):
+                add_variant(func_name, inarg, outarg, ret, inp2, outp2)
         return variants, inarg_num, outarg_num
 
     def generate(self, all_loops):
         toplevel = ""
 
         variants, inarg_num, outarg_num = self._get_signatures_and_loops(all_loops)
-        variants = variants.items()
-        variants.sort()
 
         loops = []
         datas = []
         types = []
 
-        for (inp, outp), (func_name, loop_name, inputs, outputs) in variants:
+        for func_name, loop_name, inputs, outputs in variants:
             for x in inputs:
                 types.append(TYPE_NAMES[x])
             for x in outputs:
@@ -527,7 +542,7 @@ class Ufunc(object):
 
         return toplevel, list(set(datas))
 
-def generate(filename, ufunc_str):
+def generate(filename, ufunc_str, extra_code):
     ufuncs = []
     headers = {}
 
@@ -588,15 +603,30 @@ np.import_ufunc()
 
     f.write(toplevel)
 
-    f.write(EXTRA_CODE)
+    f.write(extra_code)
 
     f.close()
 
+
 def main():
-    generate("_ufuncs.pyx", UFUNCS)
-    generate("_ufuncs_cxx.pyx", UFUNCS_CXX)
+    generate("_ufuncs.pyx", UFUNCS, EXTRA_CODE)
+    generate("_ufuncs_cxx.pyx", UFUNCS_CXX, EXTRA_CODE_CXX)
 
     subprocess.call(['cython', '_ufuncs.pyx'])
+    subprocess.call(['cython', '_ufuncs_cxx.pyx'])
+
+    # Strip comments
+    for fn in ['_ufuncs.c', '_ufuncs_cxx.c']:
+        f = open(fn, 'r')
+        text = f.read()
+        f.close()
+
+        r = re.compile(r'/\*(.*?)\*/', re.S)
+
+        text = r.sub('', text)
+        f = open(fn, 'w')
+        f.write(text)
+        f.close()
 
 if __name__ == "__main__":
     main()
