@@ -27,6 +27,7 @@ Library:
     Extension: _ufuncs
         Sources:
             _ufuncs.c,
+            sf_error.c,
             amos_wrappers.c,
             specfun_wrappers.c,
             cdf_wrappers.c,
@@ -35,6 +36,7 @@ Library:
     Extension: _ufuncs_cxx
         Sources:
             _ufuncs_cxx.cxx,
+            sf_error.c,
             _faddeeva.cxx,
             Faddeeva.cc
     Extension: specfun

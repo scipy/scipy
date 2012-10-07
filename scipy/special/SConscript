@@ -86,11 +86,12 @@ env.MergeFlags(math_info.libs())
 env.PrependUnique(LIBPATH = ['.'])
 
 # Ufuncs extension
-src = ['_ufuncs.c', 'amos_wrappers.c', 'cdf_wrappers.c', 'specfun_wrappers.c']
+src = ['_ufuncs.c', 'amos_wrappers.c', 'cdf_wrappers.c', 'specfun_wrappers.c',
+       'sf_error.c']
 src_logit = env.GenerateFromTemplate('_logit.c.src')
 src.extend(src_logit)
 
-src_cxx = ['_ufuncs_cxx.cxx', '_faddeeva.cxx', 'Faddeeva.cc']
+src_cxx = ['_ufuncs_cxx.cxx', 'sf_error.c', '_faddeeva.cxx', 'Faddeeva.cc']
 
 
 env.Prepend(LIBS = ['sc_amos', 'sc_c_misc', 'sc_cephes', 'sc_mach',

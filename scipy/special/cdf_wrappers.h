@@ -9,8 +9,9 @@
 #define _CDF_WRAPPERS_H
 #ifndef _AMOS_WRAPPERS_H
 #include "Python.h"
-#include "cephes/mconf.h"
 #endif
+
+#include "sf_error.h"
 
 #include <numpy/npy_math.h>
 

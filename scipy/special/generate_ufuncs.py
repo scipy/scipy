@@ -261,25 +261,45 @@ EXTRA_CODE_COMMON = """
 cdef extern from "stdarg.h":
      ctypedef struct va_list:
          pass
-     ctypedef struct fake_type:
-         pass
      void va_start(va_list, void* arg) nogil
-     void* va_arg(va_list, fake_type) nogil
      void va_end(va_list) nogil
-     fake_type int_type "int"
 
 cdef extern from "Python.h":
     int PyOS_vsnprintf(char *, size_t, char *, va_list va) nogil
+    int PyOS_snprintf(char *, size_t, char *, ...) nogil
+
+cdef extern from "sf_error.h":
+    ctypedef enum sf_error_t:
+        SF_ERROR_OK
+    char **sf_error_messages
 
 from cpython.exc cimport PyErr_WarnEx
 
-cdef public void scipy_special_raise_warning(char *fmt, ...) nogil except *:
-    cdef char msg[1024]
+cdef int _print_error_messages = 0
+cdef sf_error_t _last_error = SF_ERROR_OK
+
+cdef public void sf_error(char *func_name, sf_error_t code, char *fmt, ...) nogil except *:
+    cdef char msg[1024], info[2048]
     cdef va_list ap
 
-    va_start(ap, fmt)
-    PyOS_vsnprintf(msg, 1024, fmt, ap)
-    va_end(ap)
+    global _print_error_messages, _last_error
+
+    _last_error = code
+    if not _print_error_messages:
+        return
+
+    if func_name == NULL:
+        func_name = "?"
+
+    if fmt != NULL and fmt[0] != '\0':
+        va_start(ap, fmt)
+        PyOS_vsnprintf(info, 1024, fmt, ap)
+        va_end(ap)
+        PyOS_snprintf(msg, 2048, "scipy.special/%s: (%s) %s",
+                      func_name, sf_error_messages[<int>code], info)
+    else:
+        PyOS_snprintf(msg, 2048, "scipy.special/%s: %s",
+                      func_name, sf_error_messages[<int>code])
 
     with gil:
         from scipy.special import SpecialFunctionWarning
@@ -298,12 +318,12 @@ def _errprint(inflag=None):
     change occurs.
 
     \"\"\"
-    global scipy_special_print_error_messages
+    global _print_error_messages
     cdef int oldflag
 
-    oldflag = scipy_special_print_error_messages
+    oldflag = _print_error_messages
     if inflag is not None:
-        scipy_special_print_error_messages = int(bool(inflag))
+        _print_error_messages = int(bool(inflag))
 
     return oldflag
 
@@ -416,7 +436,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     name = "loop_%s_%s_%s_As_%s_%s" % (
         func_retval, func_inputs, func_outputs, ufunc_inputs, ufunc_outputs
         )
-    body = "cdef void %s(char **args, np.npy_intp *dims, np.npy_intp *steps, void *func) nogil:\n" % name
+    body = "cdef void %s(char **args, np.npy_intp *dims, np.npy_intp *steps, void *func) nogil except *:\n" % name
     body += "    cdef np.npy_intp i, n = dims[0]\n"
 
     pointers = []

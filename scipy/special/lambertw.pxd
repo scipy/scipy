@@ -25,6 +25,8 @@
 import cython
 import warnings
 
+cimport sf_error
+
 cdef extern from "math.h":
     double exp(double x) nogil
     double log(double x) nogil
@@ -32,7 +34,7 @@ cdef extern from "math.h":
 from _complexstuff cimport *
 
 cdef inline void lambertw_raise_warning(double complex z) with gil:
-    warnings.warn("Lambert W iteration failed to converge: %r" % z)
+    warnings.warn(": %r" % z)
 
 # Heavy lifting is here:
 
@@ -46,6 +48,10 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
     if zisnan(z):
         return z
     
+    sf_error.error("lambertw", sf_error.SLOW,
+                   "iteration failed to converge: %g + %gj",
+                   <double>z.real, <double>z.imag)
+
     # Return value:
     cdef double complex w
     
@@ -60,6 +66,7 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
             #> w(0,0) = 0; for all other branches we hit the pole
             if k == 0:
                 return z
+            sf_error.error("lambertw", sf_error.SINGULAR, NULL)
             return -inf
         
         if k == 0:
@@ -114,5 +121,7 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
         else:
             w = wn
 
-    lambertw_raise_warning(z)
+    sf_error.error("lambertw", sf_error.SLOW,
+                   "iteration failed to converge: %g + %gj",
+                   <double>z.real, <double>z.imag)
     return wn

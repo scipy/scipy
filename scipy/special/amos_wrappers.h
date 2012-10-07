@@ -8,19 +8,19 @@
 #ifndef _AMOS_WRAPPERS_H
 #define _AMOS_WRAPPERS_H
 #include "Python.h"
-#include "cephes/mconf.h"
+#include "sf_error.h"
 
 #include <numpy/npy_math.h>
 
-#define DO_MTHERR(name, varp)                         \
+#define DO_SFERR(name, varp)                          \
     do {                                              \
       if (nz !=0 || ierr != 0) {                      \
-        mtherr(name, ierr_to_mtherr(nz, ierr));       \
+        sf_error(name, ierr_to_sferr(nz, ierr), NULL);\
         set_nan_if_no_computation_done(varp, ierr);   \
       }                                               \
     } while (0)
 
-int ierr_to_mtherr( int nz, int ierr);
+int ierr_to_sferr( int nz, int ierr);
 void set_nan_if_no_computation_done(npy_cdouble *var, int ierr);
 int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
 int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
