@@ -2,14 +2,57 @@
 """
 generate_ufuncs.py
 
-Generate Ufunc definition source files for scipy.special.
-Produces files '_ufuncs.c' and '_ufuncs_cxx.c'.
+Generate Ufunc definition source files for scipy.special.  Produces
+files '_ufuncs.c' and '_ufuncs_cxx.c' by first producing Cython.
+
+This will generate both calls to PyUFunc_FromFuncAndData and the
+required ufunc inner loops.
+
+The syntax in the ufunc signature list is
+
+    <line>:           <ufunc_name> '--' <kernels> '--' <headers>
+    <kernels>:        <function> [',' <function>]*
+    <function>:       <name> ':' <input> '*' <output>
+                        '->' <retval> '*' <ignored_retval>
+    <input>:          <typecode>*
+    <output>:         <typecode>*
+    <retval>:         <typecode>?
+    <ignored_retval>: <typecode>?
+    <headers>:        <header_name> [',' <header_name>]*
+
+The input parameter types are denoted by single character type
+codes, according to
+
+   'f': 'float'
+   'd': 'double'
+   'g': 'long double'
+   'F': 'float complex'
+   'D': 'double complex'
+   'G': 'long double complex'
+   'i': 'int'
+   'l': 'long'
+   'v': 'void'
+
+If multiple kernel functions are given for a single ufunc, the one
+which is used is determined by the standard ufunc mechanism. Kernel
+functions that are listed first are also matched first against the
+ufunc input types, so functions listed earlier take precedence.
+
+In addition, versions with casted variables, such as d->f,D->F and
+i->d are automatically generated.
+
+There should be either a single header that contains all of the kernel
+functions listed, or there should be one header for each kernel
+function. Cython pxd files are allowed in addition to .h files.
 
 """
 
 #---------------------------------------------------------------------------------
 # Ufunc listing
 #---------------------------------------------------------------------------------
+
+#
+#
 
 # Ufuncs without C++
 UFUNCS = """
@@ -281,6 +324,7 @@ EXTRA_CODE_CXX = EXTRA_CODE_COMMON + """
 #---------------------------------------------------------------------------------
 
 import subprocess
+import optparse
 import re
 import textwrap
 import add_newdocs
@@ -441,10 +485,12 @@ class Ufunc(object):
     name
         Name of the ufunc to create
     signature
-        String of form 'func: fff->f, func2: ddd->d' describing
+        String of form 'func: fff*ff->f, func2: ddd->*i' describing
         the C-level functions and types of their input arguments
         and return values.
-    
+
+        The syntax is 'function_name: inputparams*outputparams->output_retval*ignored_retval'
+
     """
     def __init__(self, name, signatures):
         self.name = name
@@ -459,15 +505,17 @@ class Ufunc(object):
                 if x.strip()]
 
     def _parse_signature(self, sig):
-        m = re.match("\s*(.*):\s*([fdgFDGil]*)\\*([fdgFDGil]*)->([*fdgFDGil]*)\s*$", sig)
+        m = re.match("\s*(.*):\s*([fdgFDGil]*)\s*\\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
         if m:
             func, inarg, outarg, ret = map(lambda x: x.strip(), m.groups())
+            if ret.count('*') > 1:
+                raise ValueError("%s: Invalid signature: %r" % (self.name, sig))
             return (func, inarg, outarg, ret)
-        m = re.match("\s*(.*):\s*([fdgFDGil]*)->([fdgFDGil]?)\s*$", sig)
+        m = re.match("\s*(.*):\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
         if m:
             func, inarg, ret = map(lambda x: x.strip(), m.groups())
             return (func, inarg, "", ret)
-        raise ValueError("Invalid signature: %r" % sig)
+        raise ValueError("%s: Invalid signature: %r" % (self.name, sig))
 
     def _get_signatures_and_loops(self, all_loops):
         inarg_num = None
@@ -610,6 +658,11 @@ np.import_ufunc()
 
 
 def main():
+    p = optparse.OptionParser(usage=__doc__.strip())
+    options, args = p.parse_args()
+    if len(args) != 0:
+        p.error('invalid number of arguments')
+
     generate("_ufuncs.pyx", UFUNCS, EXTRA_CODE)
     generate("_ufuncs_cxx.pyx", UFUNCS_CXX, EXTRA_CODE_CXX)
 
