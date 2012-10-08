@@ -486,10 +486,28 @@ def iter_variants(inputs, outputs):
         Also the original input/output pair is yielded.
 
     """
-    yield inputs.replace('d', 'f').replace('D', 'F'), outputs.replace('d', 'f').replace('D', 'F')
-    yield inputs, outputs
-    yield inputs.replace('i', 'l'), outputs.replace('i', 'l')
-    yield inputs.replace('i', 'd'), outputs.replace('i', 'd')
+    maps = [
+        # always use long instead of int (more common type on 64-bit)
+        ('i', 'l'),
+    ]
+
+    # allow doubles in integer args
+    if 'd' in inputs+outputs or 'D' in inputs+outputs:
+        maps.append(('il', 'dd'))
+    if 'f' in inputs+outputs or 'F' in inputs+outputs:
+        maps.append(('il', 'ff'))
+
+    # float32-preserving signatures
+    maps = [(a + 'dD', b + 'fF') for a, b in maps] + maps
+
+    # do the replacements
+    for src, dst in maps:
+        new_inputs = inputs
+        new_outputs = outputs
+        for a, b in zip(src, dst):
+            new_inputs = new_inputs.replace(a, b)
+            new_outputs = new_outputs.replace(a, b)
+        yield new_inputs, new_outputs
 
 class Ufunc(object):
     """
