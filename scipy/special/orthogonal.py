@@ -87,7 +87,7 @@ from numpy import all, any, exp, inf, pi, sqrt
 from numpy.dual import eig
 
 # Local imports.
-import _cephes as cephes
+import _ufuncs as cephes
 _gam = cephes.gamma
 
 __all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',

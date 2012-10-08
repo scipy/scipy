@@ -13,6 +13,6 @@
 
 #define CADDR(z) (double *)&z.real, (double*)&z.imag
 #endif /*_AMOS */
-extern Py_complex cwofz_wrap(Py_complex z);
+extern npy_cdouble cwofz_wrap(npy_cdouble z);
 
 #endif

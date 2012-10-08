@@ -86,21 +86,12 @@ env.MergeFlags(math_info.cflags())
 env.MergeFlags(math_info.libs())
 env.PrependUnique(LIBPATH = ['.'])
 
-# orthogonal_eval extension
-env.NumpyPythonExtension('orthogonal_eval', source = 'orthogonal_eval.c')
+# Ufuncs extension
+src = ['_ufuncs.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
+       'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c',
+       '_logit.c.src']
 
-# logit extension
-logit_src = env.GenerateFromTemplate('_logit.c.src')
-env.NumpyPythonExtension('_logit', source = logit_src)
-
-# lambertw extension
-env.NumpyPythonExtension('lambertw', source = 'lambertw.c')
-
-# Cephes extension
-src = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
-       'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c']
-
-env.NumpyPythonExtension('_cephes', 
+env.NumpyPythonExtension('_ufuncs', 
                          source = src, 
                          LIBS = ['sc_amos', 'sc_toms', 'sc_c_misc', 'sc_cephes', 'sc_mach',\
                                  'sc_cdf', 'sc_specfunlib']) 

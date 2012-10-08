@@ -21,9 +21,9 @@
  */
 extern void F_FUNC(wofz,WOFZ)(double*,double*,double*,double*,int*);
 
-Py_complex cwofz_wrap( Py_complex z) {
+npy_cdouble cwofz_wrap( npy_cdouble z) {
   int errflag;
-  Py_complex cy;
+  npy_cdouble cy;
 
   F_FUNC(wofz,WOFZ)(CADDR(z), CADDR(cy), &errflag);
   if (errflag==1) mtherr("wofz:",3); /* wofz returns a single flag both
