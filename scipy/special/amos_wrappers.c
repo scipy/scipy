@@ -62,17 +62,17 @@ int ierr_to_mtherr( int nz, int ierr) {
   return -1;
 }
 
-void set_nan_if_no_computation_done(Py_complex *v, int ierr) {
+void set_nan_if_no_computation_done(npy_cdouble *v, int ierr) {
   if (v != NULL && (ierr == 1 || ierr == 2 || ierr == 4 || ierr == 5)) {
     v->real = NPY_NAN;
     v->imag = NPY_NAN;
   }
 }
 
-static Py_complex
-rotate(Py_complex z, double v)
+static npy_cdouble
+rotate(npy_cdouble z, double v)
 {
-    Py_complex w;
+    npy_cdouble w;
     double c = cos(v * NPY_PI);
     double s = sin(v * NPY_PI);
     w.real = z.real*c - z.imag*s;
@@ -80,10 +80,10 @@ rotate(Py_complex z, double v)
     return w;
 }
 
-static Py_complex
-rotate_jy(Py_complex j, Py_complex y, double v)
+static npy_cdouble
+rotate_jy(npy_cdouble j, npy_cdouble y, double v)
 {
-    Py_complex w;
+    npy_cdouble w;
     double c = cos(v * NPY_PI);
     double s = sin(v * NPY_PI);
     w.real = j.real * c - y.real * s;
@@ -92,7 +92,7 @@ rotate_jy(Py_complex j, Py_complex y, double v)
 }
 
 static int
-reflect_jy(Py_complex *jy, double v)
+reflect_jy(npy_cdouble *jy, double v)
 {
     /* NB: Y_v may be huge near negative integers -- so handle exact
      *     integers carefully
@@ -110,24 +110,24 @@ reflect_jy(Py_complex *jy, double v)
 }
 
 static int
-reflect_i(Py_complex *ik, double v)
+reflect_i(npy_cdouble *ik, double v)
 {
     if (v != floor(v))
         return 0;
     return 1; /* I is symmetric for integer v */
 }
 
-static Py_complex
-rotate_i(Py_complex i, Py_complex k, double v)
+static npy_cdouble
+rotate_i(npy_cdouble i, npy_cdouble k, double v)
 {
-    Py_complex w;
+    npy_cdouble w;
     double s = sin(v * NPY_PI)*(2.0/NPY_PI);
     w.real = i.real + s*k.real;
     w.imag = i.imag + s*k.imag;
     return w;
 }
 
-int cairy_wrap(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, Py_complex *bip) {
+int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
   int id = 0;
   int ierr = 0;
   int kode = 1;
@@ -148,7 +148,7 @@ int cairy_wrap(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, Py
   return 0;
 }
 
-int cairy_wrap_e(Py_complex z, Py_complex *ai, Py_complex *aip, Py_complex *bi, Py_complex *bip) {
+int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
   int id = 0;
   int kode = 2;        /* Exponential scaling */
   int nz, ierr;
@@ -172,7 +172,7 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   int id = 0;
   int kode = 2;        /* Exponential scaling */
   int nz, ierr;
-  Py_complex cz, cai, caip, cbi, cbip;
+  npy_cdouble cz, cai, caip, cbi, cbip;
 
   cz.real = z;
   cz.imag = 0;
@@ -204,12 +204,12 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   return 0;
 }
 
-Py_complex cbesi_wrap( double v, Py_complex z) {
+npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
   int sign = 1;
   int nz, ierr;
-  Py_complex cy, cy_k;
+  npy_cdouble cy, cy_k;
 
   if (v < 0) {
     v = -v;
@@ -243,12 +243,12 @@ Py_complex cbesi_wrap( double v, Py_complex z) {
   return cy;
 }
 
-Py_complex cbesi_wrap_e( double v, Py_complex z) {
+npy_cdouble cbesi_wrap_e( double v, npy_cdouble z) {
   int n = 1;
   int kode = 2;
   int sign = 1;
   int nz, ierr;
-  Py_complex cy, cy_k;
+  npy_cdouble cy, cy_k;
 
   if (v < 0) {
     v = -v;
@@ -276,7 +276,7 @@ Py_complex cbesi_wrap_e( double v, Py_complex z) {
 }
 
 double cbesi_wrap_e_real(double v, double z) {
-  Py_complex cy, w;
+  npy_cdouble cy, w;
   if (v != floor(v) && z < 0) {
     return NPY_NAN;
   } else {
@@ -287,12 +287,12 @@ double cbesi_wrap_e_real(double v, double z) {
   }
 }
   
-Py_complex cbesj_wrap( double v, Py_complex z) {
+npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy_j, cy_y, cwork;
+  npy_cdouble cy_j, cy_y, cwork;
 
   if (v < 0) {
     v = -v;
@@ -317,12 +317,12 @@ Py_complex cbesj_wrap( double v, Py_complex z) {
   return cy_j;
 }
 
-Py_complex cbesj_wrap_e( double v, Py_complex z) {
+npy_cdouble cbesj_wrap_e( double v, npy_cdouble z) {
   int n = 1;
   int kode = 2;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy_j, cy_y, cwork;
+  npy_cdouble cy_j, cy_y, cwork;
 
   if (v < 0) {
     v = -v;
@@ -341,7 +341,7 @@ Py_complex cbesj_wrap_e( double v, Py_complex z) {
 }
 
 double cbesj_wrap_e_real(double v, double z) {
-  Py_complex cy, w;
+  npy_cdouble cy, w;
   if (v != floor(v) && z < 0) {
     return NPY_NAN;
   } else {
@@ -352,12 +352,12 @@ double cbesj_wrap_e_real(double v, double z) {
   }
 }
   
-Py_complex cbesy_wrap( double v, Py_complex z) {
+npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy_y, cy_j, cwork;
+  npy_cdouble cy_y, cy_j, cwork;
 
   if (v < 0) {
     v = -v;
@@ -383,12 +383,12 @@ Py_complex cbesy_wrap( double v, Py_complex z) {
   return cy_y;
 }
 
-Py_complex cbesy_wrap_e( double v, Py_complex z) {
+npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
   int n = 1;
   int kode = 2;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy_y, cy_j, cwork;
+  npy_cdouble cy_y, cy_j, cwork;
 
   if (v < 0) {
     v = -v;
@@ -415,7 +415,7 @@ Py_complex cbesy_wrap_e( double v, Py_complex z) {
 }
 
 double cbesy_wrap_e_real(double v, double z) {
-  Py_complex cy, w;
+  npy_cdouble cy, w;
   if (z < 0) {
     return NPY_NAN;
   } else {
@@ -426,11 +426,11 @@ double cbesy_wrap_e_real(double v, double z) {
   }
 }
   
-Py_complex cbesk_wrap( double v, Py_complex z) {
+npy_cdouble cbesk_wrap( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
   int nz, ierr;
-  Py_complex cy;
+  npy_cdouble cy;
 
   if (v < 0) {
     /* K_v == K_{-v} even for non-integer v */
@@ -449,11 +449,11 @@ Py_complex cbesk_wrap( double v, Py_complex z) {
   return cy;
 }
 
-Py_complex cbesk_wrap_e( double v, Py_complex z) {
+npy_cdouble cbesk_wrap_e( double v, npy_cdouble z) {
   int n = 1;
   int kode = 2;
   int nz, ierr;
-  Py_complex cy;
+  npy_cdouble cy;
 
   if (v < 0) {
     /* K_v == K_{-v} even for non-integer v */
@@ -473,7 +473,7 @@ Py_complex cbesk_wrap_e( double v, Py_complex z) {
 }
   
 double cbesk_wrap_real( double v, double z) {
-  Py_complex cy, w;
+  npy_cdouble cy, w;
   if (z < 0) {
     return NPY_NAN;
   } else {
@@ -485,7 +485,7 @@ double cbesk_wrap_real( double v, double z) {
 }
 
 double cbesk_wrap_e_real( double v, double z) {
-  Py_complex cy, w;
+  npy_cdouble cy, w;
   if (z < 0) {
     return NPY_NAN;
   } else {
@@ -496,13 +496,13 @@ double cbesk_wrap_e_real( double v, double z) {
   }
 }
   
-Py_complex cbesh_wrap1( double v, Py_complex z) {
+npy_cdouble cbesh_wrap1( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
   int m = 1;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy;
+  npy_cdouble cy;
 
   if (v < 0) {
     v = -v;
@@ -516,13 +516,13 @@ Py_complex cbesh_wrap1( double v, Py_complex z) {
   return cy;
 }
 
-Py_complex cbesh_wrap1_e( double v, Py_complex z) {
+npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z) {
   int n = 1;
   int kode = 2;
   int m = 1;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy;
+  npy_cdouble cy;
 
   if (v < 0) {
     v = -v;
@@ -536,13 +536,13 @@ Py_complex cbesh_wrap1_e( double v, Py_complex z) {
   return cy;
 }
   
-Py_complex cbesh_wrap2( double v, Py_complex z) {
+npy_cdouble cbesh_wrap2( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
   int m = 2;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy;
+  npy_cdouble cy;
 
   if (v < 0) {
     v = -v;
@@ -556,13 +556,13 @@ Py_complex cbesh_wrap2( double v, Py_complex z) {
   return cy;
 }
 
-Py_complex cbesh_wrap2_e( double v, Py_complex z) {
+npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z) {
   int n = 1;
   int kode = 2;
   int m = 2;
   int nz, ierr;
   int sign = 1;
-  Py_complex cy;
+  npy_cdouble cy;
 
   if (v < 0) {
     v = -v;

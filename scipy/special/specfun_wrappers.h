@@ -21,19 +21,19 @@ extern double PI;
 #define CONVINF(x) if ((x)==1.0e300) (x)=NPY_INFINITY; if ((x)==-1.0e300) (x)=-NPY_INFINITY
 #define ABS(x) ((x)<0 ? -(x) : (x))
 
-Py_complex cgamma_wrap( Py_complex z);
-Py_complex clngamma_wrap( Py_complex z);
-Py_complex cpsi_wrap( Py_complex z);
-Py_complex crgamma_wrap( Py_complex z);
-Py_complex chyp2f1_wrap( double a, double b, double c, Py_complex z);
-Py_complex chyp1f1_wrap( double a, double b, Py_complex z);
+npy_cdouble cgamma_wrap( npy_cdouble z);
+npy_cdouble clngamma_wrap( npy_cdouble z);
+npy_cdouble cpsi_wrap( npy_cdouble z);
+npy_cdouble crgamma_wrap( npy_cdouble z);
+npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z);
+npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z);
 double hyp1f1_wrap( double a, double b, double x);
 double hypU_wrap(double a, double b, double x);
 double exp1_wrap(double x);
 double expi_wrap(double x);
-Py_complex cexp1_wrap(Py_complex z);
-Py_complex cexpi_wrap(Py_complex z);
-Py_complex cerf_wrap(Py_complex z);
+npy_cdouble cexp1_wrap(npy_cdouble z);
+npy_cdouble cexpi_wrap(npy_cdouble z);
+npy_cdouble cerf_wrap(npy_cdouble z);
 int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt);
 
 double struve_wrap(double v, double x);
@@ -52,14 +52,14 @@ double beip_wrap(double x);
 double kerp_wrap(double x);
 double keip_wrap(double x);
 
-int kelvin_wrap(double x, Py_complex *Be, Py_complex *Ke, Py_complex *Bep, Py_complex *Kep);
+int kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep);
 
 int it1j0y0_wrap(double x, double *, double *);
 int it2j0y0_wrap(double x, double *, double *);
 int it1i0k0_wrap(double x, double *, double *);
 int it2i0k0_wrap(double x, double *, double *);
 
-int cfresnl_wrap(Py_complex x, Py_complex *sf, Py_complex *cf);
+int cfresnl_wrap(npy_cdouble x, npy_cdouble *sf, npy_cdouble *cf);
 double cem_cva_wrap(double m, double q);
 double sem_cva_wrap(double m, double q);
 int cem_wrap(double m, double q, double x, double *csf, double *csd);
@@ -90,8 +90,8 @@ double oblate_segv_wrap(double, double, double);
 
 
 
-int modified_fresnel_plus_wrap(double x, Py_complex *F, Py_complex *K);
-int modified_fresnel_minus_wrap(double x, Py_complex *F, Py_complex *K);
+int modified_fresnel_plus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
+int modified_fresnel_minus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 #endif
 
 
