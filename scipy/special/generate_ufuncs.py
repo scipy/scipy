@@ -233,12 +233,12 @@ pro_rad2_cv -- prolate_radial2_wrap: ddddd*dd->*i          -- specfun_wrappers.h
 obl_ang1_cv -- oblate_aswfa_wrap: ddddd*dd->*i             -- specfun_wrappers.h
 obl_rad1_cv -- oblate_radial1_wrap: ddddd*dd->*i           -- specfun_wrappers.h
 obl_rad2_cv -- oblate_radial2_wrap: ddddd*dd->*i           -- specfun_wrappers.h
-pro_ang1 -- prolate_aswfa_nocv_wrap: dddd*dd->*i           -- specfun_wrappers.h
-pro_rad1 -- prolate_radial1_nocv_wrap: dddd*dd->*i         -- specfun_wrappers.h
-pro_rad2 -- prolate_radial2_nocv_wrap: dddd*dd->*i         -- specfun_wrappers.h
-obl_ang1 -- oblate_aswfa_nocv_wrap: dddd*dd->*i            -- specfun_wrappers.h
-obl_rad1 -- oblate_radial1_nocv_wrap: dddd*dd->*i          -- specfun_wrappers.h
-obl_rad2 -- oblate_radial2_nocv_wrap: dddd*dd->*i          -- specfun_wrappers.h
+pro_ang1 -- prolate_aswfa_nocv_wrap: dddd*d->d             -- specfun_wrappers.h
+pro_rad1 -- prolate_radial1_nocv_wrap: dddd*d->d           -- specfun_wrappers.h
+pro_rad2 -- prolate_radial2_nocv_wrap: dddd*d->d           -- specfun_wrappers.h
+obl_ang1 -- oblate_aswfa_nocv_wrap: dddd*d->d              -- specfun_wrappers.h
+obl_rad1 -- oblate_radial1_nocv_wrap: dddd*d->d            -- specfun_wrappers.h
+obl_rad2 -- oblate_radial2_nocv_wrap: dddd*d->d            -- specfun_wrappers.h
 modfresnelp -- modified_fresnel_plus_wrap: d*DD->*i        -- specfun_wrappers.h
 modfresnelm -- modified_fresnel_minus_wrap: d*DD->*i       -- specfun_wrappers.h
 """
