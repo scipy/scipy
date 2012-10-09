@@ -14,6 +14,9 @@ from numpy.distutils.from_template \
 from bento.backends.waf_backend \
     import \
         WAF_TOOLDIR
+from bento.backends.waf_tools \
+    import \
+        blas_lapack
 from bento.installed_package_description \
     import \
         InstalledSection
@@ -162,77 +165,7 @@ def post_configure(context):
 
     conf.env.INCLUDES = get_numpy_include_dirs()
 
-    conf.env.HAS_FBLAS = False
-    conf.env.HAS_CBLAS = False
-    conf.env.HAS_FLAPACK = False
-    conf.env.HAS_CLAPACK = False
-    conf.env.HAS_ATLAS = False
-
-    if sys.platform == "win32":
-        mkl_libs = "mkl_lapack95,mkl_blas95,mkl_intel_c,mkl_intel_thread,mkl_core,libiomp5md".split(",")
-        mkl_base = r"C:\Program Files\Intel\Compiler\11.1\051"
-        conf.env.INCLUDES.append("%s\mkl\include" % mkl_base)
-        conf.env.LIBPATH.extend(["%s\mkl\ia32\lib" % mkl_base,
-                                 "%s\lib\ia32" % mkl_base])
-
-        try:
-            conf.check_cc(lib=mkl_libs, msg="Checking for MKL (CBLAS)",
-                          uselib_store="CBLAS")
-            conf.env.HAS_CBLAS = True
-
-            conf.check_cc(lib=mkl_libs, msg="Checking for MKL (FLAPACK)",
-                          uselib_store="FLAPACK")
-            conf.env.HAS_FLAPACK = True
-
-            conf.check_cc(lib=mkl_libs, msg="Checking for MKL (FBLAS)",
-                          uselib_store="FBLAS")
-            conf.env.HAS_FBLAS = True
-
-        except waflib.Errors.ConfigurationError:
-            pass
-        conf.env['FCFLAGS'] = []
-        conf.env['FCFLAGS'].extend(['/MD'])
-    elif sys.platform == "darwin":
-        try:
-            conf.check(framework="Accelerate", msg="Checking for framework Accelerate", uselib_store="CBLAS")
-            conf.env.HAS_CBLAS = True
-
-            conf.check(framework="Accelerate", msg="Checking for framework Accelerate", uselib_store="FLAPACK")
-            conf.env.HAS_FLAPACK = True
-
-            conf.check(framework="Accelerate", msg="Checking for framework Accelerate", uselib_store="FBLAS")
-            conf.env.HAS_FBLAS = True
-
-        except waflib.Errors.ConfigurationError:
-            pass
-        # FIXME: bug in waf ?
-        conf.env.FRAMEWORK_ST = ["-framework"]
-    else:
-        try:
-            conf.check_cc(lib=["f77blas", "cblas", "atlas"], uselib_store="FBLAS")
-            conf.env.HAS_FBLAS = True
-
-            conf.check_cc(lib=["cblas", "atlas"], uselib_store="CBLAS")
-            conf.env.HAS_CBLAS = True
-
-            conf.check_cc(lib=["lapack", "f77blas", "cblas", "atlas"], uselib_store="FLAPACK")
-            conf.env.HAS_FLAPACK = True
-
-            conf.check_cc(lib=["lapack", "f77blas", "cblas", "atlas"], uselib_store="CLAPACK")
-
-            conf.env.HAS_CLAPACK = True
-        except waflib.Errors.ConfigurationError:
-            pass
-
-        # FIXME: waf bug ? Did not find a way to compile both fortran and c
-        # files with -fPIC
-        fcflags = conf.env.FCFLAGS
-        fcflags.extend(["-fPIC"])
-        conf.env.FCFLAGS = fcflags
-
-        conf.env.CFLAGS_cstlib = ["-fPIC"]
-        conf.env.FCFLAGS_cstlib = ["-fPIC"]
-
+    blas_lapack.check_blas_lapack(context)
     if not (conf.env.HAS_FBLAS and conf.env.HAS_FLAPACK):
         raise waflib.Errors.ConfigurationError("You need blas and lapack")
 
@@ -259,3 +192,7 @@ short_version = version
 is_released = True
 """,
         always=True)
+
+@hooks.options
+def options(global_context):
+    blas_lapack.add_options(global_context)
