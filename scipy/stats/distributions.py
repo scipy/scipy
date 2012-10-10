@@ -4621,7 +4621,7 @@ class pearson3_gen(rv_continuous):
     -----
     The probability density function for `pearson3` is::
 
-        pearson3.pdf(x, loc, stddev, skew) =
+        pearson3.pdf(x, skew, loc, stddev) =
             absolute(beta)/gamma(alpha)*
             (beta*(x - zeta))**(alpha - 1)*
             exp(-beta*(x - zeta))
@@ -4639,22 +4639,19 @@ class pearson3_gen(rv_continuous):
 
     http://projecteuclid.org/DPubS/Repository/1.0/Disseminate?view=body&id=pdf_1&handle=euclid.aoms/1177733130
     """
-    def _argcheck(self, *args):
-        # Can limit range somewhat.  Stops "RuntimeWarning: invalid value
-        # encountered in log"
-        self.a = -10.0
-        self.b = 10.0
-
+    def _argcheck(self, skew):
         # The _argcheck function in rv_continuous only allows positive
-        # arguments.  The skewness argument for pearson3 can be zero (which I
-        # want to handle inside pearson3._pdf) or negative.  So just return
-        # True for all skewness args.
-        cond = []
-        for arg in args:
-            cond.append(True)
-        return np.array(cond)
+        # arguments.  The skew argument for pearson3 can be zero (which I want
+        # to handle inside pearson3._pdf) or negative.  So just return True
+        # for all skew args.
+        cond, skew = np.broadcast_arrays([True], [skew])
+        return cond.flatten()
 
-    def _pdf(self, x, skewness):
+    def _stats(self, skew, loc=0, scale=1):
+        m,v,s,k = np.broadcast_arrays([loc], [scale], [skew], [0])
+        return m.flatten(),v.flatten(),s.flatten(),k.flatten()
+
+    def _pdf(self, x, skew):
         # The real 'loc' and 'scale' are handled in the calling pdf(...). The
         # local variables 'loc' and 'scale' within pearson3._pdf are set to
         # the defaults just to keep them as part of the equations for
@@ -4662,21 +4659,21 @@ class pearson3_gen(rv_continuous):
         loc = 0.0
         scale = 1.0
 
-        x, skewness = np.broadcast_arrays([x], [skewness])
+        x, skew = np.broadcast_arrays([x], [skew])
         x = x.flatten()
-        skewness = skewness.flatten()
+        skew = skew.flatten()
 
         ans = []
-        for ix, iskewness in zip(x, skewness):
-            # If skewness is small, return _norm_pdf. The divide between
-            # pearson3 and norm was found by brute force and is approximately
-            # a skewness of 0.000016.  No one, I hope, would actually use a
-            # skewness value even close to this small.
-            if np.absolute(iskewness) < 0.000016:
+        for ix, iskew in zip(x, skew):
+            # If skew is small, return _norm_pdf. The divide between pearson3
+            # and norm was found by brute force and is approximately a skew of
+            # 0.000016.  No one, I hope, would actually use a skew value even
+            # close to this small.
+            if np.absolute(iskew) < 0.000016:
                 ans.append(_norm_pdf(ix))
                 continue
 
-            beta = 2.0/(iskewness*scale)
+            beta = 2.0/(iskew*scale)
             alpha = (scale*beta)**2
             zeta = loc - alpha/beta
 
@@ -4693,7 +4690,7 @@ class pearson3_gen(rv_continuous):
             return ans[0]
         return ans
 
-pearson3 = pearson3_gen(name="pearson3", shapes="skewness")
+pearson3 = pearson3_gen(name="pearson3", shapes="skew")
 
 ## Power-function distribution
 ##   Special case of beta dist. with d =1.0
