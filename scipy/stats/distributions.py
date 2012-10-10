@@ -47,13 +47,13 @@ __all__ = [
            'johnsonsb', 'johnsonsu', 'laplace', 'levy', 'levy_l',
            'levy_stable', 'logistic', 'loggamma', 'loglaplace', 'lognorm',
            'gilbrat', 'maxwell', 'mielke', 'nakagami', 'ncx2', 'ncf', 't',
-           'nct', 'pareto', 'lomax', 'powerlaw', 'powerlognorm', 'powernorm',
-           'rdist', 'rayleigh', 'reciprocal', 'rice', 'recipinvgauss',
-           'semicircular', 'triang', 'truncexpon', 'truncnorm',
-           'tukeylambda', 'uniform', 'vonmises', 'wald', 'wrapcauchy',
-           'entropy', 'rv_discrete', 'binom', 'bernoulli', 'nbinom', 'geom',
-           'hypergeom', 'logser', 'poisson', 'planck', 'boltzmann', 'randint',
-           'zipf', 'dlaplace', 'skellam'
+           'nct', 'pareto', 'lomax', 'pearson3', 'powerlaw', 'powerlognorm',
+           'powernorm', 'rdist', 'rayleigh', 'reciprocal', 'rice',
+           'recipinvgauss', 'semicircular', 'triang', 'truncexpon',
+           'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'wald',
+           'wrapcauchy', 'entropy', 'rv_discrete', 'binom', 'bernoulli',
+           'nbinom', 'geom', 'hypergeom', 'logser', 'poisson', 'planck',
+           'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
           ]
 
 floatinfo = numpy.finfo(float)
@@ -4625,6 +4625,88 @@ class lomax_gen(rv_continuous):
         return 1+1.0/c-log(c)
 lomax = lomax_gen(a=0.0, name="lomax", shapes="c")
 
+
+## Pearson Type III
+
+class pearson3_gen(rv_continuous):
+    """A pearson type III distribution
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `pearson3` is::
+
+        pearson3.pdf(x, skew, loc, stddev) =
+            absolute(beta)/gamma(alpha)*
+            (beta*(x - zeta))**(alpha - 1)*
+            exp(-beta*(x - zeta))
+
+        where:
+            beta = 2/(skew*stddev)
+            alpha = (stddev*beta)**2
+            zeta = loc - alpha/beta
+
+    %(example)s
+
+    References
+    ----------
+    http://engineering.tufts.edu/cee/people/vogel/publications/probability-plot.pdf
+
+    http://projecteuclid.org/DPubS/Repository/1.0/Disseminate?view=body&id=pdf_1&handle=euclid.aoms/1177733130
+    """
+    def _argcheck(self, skew):
+        # The _argcheck function in rv_continuous only allows positive
+        # arguments.  The skew argument for pearson3 can be zero (which I want
+        # to handle inside pearson3._pdf) or negative.  So just return True
+        # for all skew args.
+        cond, skew = np.broadcast_arrays([True], [skew])
+        return cond.flatten()
+
+    def _stats(self, skew, loc=0, scale=1):
+        m,v,s,k = np.broadcast_arrays([loc], [scale], [skew], [0])
+        return m.flatten(),v.flatten(),s.flatten(),k.flatten()
+
+    def _pdf(self, x, skew):
+        # The real 'loc' and 'scale' are handled in the calling pdf(...). The
+        # local variables 'loc' and 'scale' within pearson3._pdf are set to
+        # the defaults just to keep them as part of the equations for
+        # documentation.
+        loc = 0.0
+        scale = 1.0
+
+        x, skew = np.broadcast_arrays([x], [skew])
+        x = x.flatten()
+        skew = skew.flatten()
+
+        ans = []
+        for ix, iskew in zip(x, skew):
+            # If skew is small, return _norm_pdf. The divide between pearson3
+            # and norm was found by brute force and is approximately a skew of
+            # 0.000016.  No one, I hope, would actually use a skew value even
+            # close to this small.
+            if np.absolute(iskew) < 0.000016:
+                ans.append(_norm_pdf(ix))
+                continue
+
+            beta = 2.0/(iskew*scale)
+            alpha = (scale*beta)**2
+            zeta = loc - alpha/beta
+
+            # Use log form of the equation to handle the large and small terms
+            # without overflow or underflow.
+            log_equation = np.log(np.absolute(beta)) - gamln(alpha) + np.log(
+                    beta*(ix - zeta))*(alpha - 1) - beta*(ix - zeta)
+
+            tempans = np.exp(log_equation)
+            if np.isnan(tempans):
+                tempans = 0.0
+            ans.append(tempans)
+        if len(ans) == 1:
+            return ans[0]
+        return ans
+
+pearson3 = pearson3_gen(name="pearson3", shapes="skew")
 
 ## Power-function distribution
 ##   Special case of beta dist. with d =1.0
