@@ -29,9 +29,11 @@ from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal,
         rand, dec, TestCase, run_module_suite, assert_allclose
 from scipy import special
 import scipy.special._cephes as cephes
+from scipy.special import _faddeeva
 from scipy.special import ellipk
 
-from scipy.special._testutils import assert_tol_equal, with_special_errors
+from scipy.special._testutils import assert_tol_equal, with_special_errors, \
+     assert_func_equal
 
 class TestCephes(TestCase):
     def test_airy(self):
@@ -467,7 +469,34 @@ class TestCephes(TestCase):
     def test_zetac(self):
         assert_equal(cephes.zetac(0),-1.5)
     def test_wofz(self):
-        cephes.wofz(0)
+        z = [complex(624.2,-0.26123), complex(-0.4,3.), complex(0.6,2.),
+             complex(-1.,1.), complex(-1.,-9.), complex(-1.,9.),
+             complex(-0.0000000234545,1.1234), complex(-3.,5.1),
+             complex(-53,30.1), complex(0.0,0.12345)
+        ]
+        w = [
+            complex(-3.78270245518980507452677445620103199303131110e-7,
+		    0.000903861276433172057331093754199933411710053155),
+            complex(0.1764906227004816847297495349730234591778719532788,
+		    -0.02146550539468457616788719893991501311573031095617),
+            complex(0.2410250715772692146133539023007113781272362309451,
+		    0.06087579663428089745895459735240964093522265589350),
+            complex(0.30474420525691259245713884106959496013413834051768,
+		    -0.20821893820283162728743734725471561394145872072738),
+            complex(7.317131068972378096865595229600561710140617977e34,
+		    8.321873499714402777186848353320412813066170427e34),
+            complex(0.0615698507236323685519612934241429530190806818395,
+		    -0.00676005783716575013073036218018565206070072304635),
+            complex(0.3960793007699874918961319170187598400134746631,
+                    -5.593152259116644920546186222529802777409274656e-9),
+            complex(0.08217199226739447943295069917990417630675021771804,
+		    -0.04701291087643609891018366143118110965272615832184),
+            complex(0.00457246000350281640952328010227885008541748668738,
+		    -0.00804900791411691821818731763401840373998654987934),
+            complex(0.8746342859608052666092782112565360755791467973338452,
+		    0.),
+        ]
+        assert_func_equal(_faddeeva.wofz, w, z, rtol=1e-13)
 
 class TestAiry(TestCase):
     def test_airy(self):

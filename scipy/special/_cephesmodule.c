@@ -15,7 +15,6 @@
 #include "abstract.h"
 #include "cephes.h"
 #include "amos_wrappers.h"
-#include "toms_wrappers.h"
 #include "cdf_wrappers.h"
 #include "specfun_wrappers.h"
 #include "c_misc/misc.h"
@@ -205,8 +204,6 @@ static void * zetac_data[] = { (void *)zetac, (void *)zetac, };
 
 static void * kolmogorov_data[] = { (void *)kolmogorov, (void *)kolmogorov, };
 static void * kolmogi_data[] = { (void *)kolmogi, (void *)kolmogi, };
-
-static void * wofz_data[] = { (void *)cwofz_wrap, (void *)cwofz_wrap, };
 
 static void * besselpoly_data[] = {(void *)besselpoly, (void *)besselpoly,};
 
@@ -819,10 +816,6 @@ static void Cephes_InitOperators(PyObject *dictionary) {
 
 	f = PyUFunc_FromFuncAndData(cephes1_functions, kolmogi_data, cephes_2_types, 2, 1, 1, PyUFunc_None, "kolmogi", kolmogi_doc, 0);
 	PyDict_SetItemString(dictionary, "kolmogi", f);
-	Py_DECREF(f);
-
-	f = PyUFunc_FromFuncAndData(cephes1c_functions, wofz_data, cephes_1c_types, 2, 1, 1, PyUFunc_None, "wofz", wofz_doc, 0);
-	PyDict_SetItemString(dictionary, "wofz", f);
 	Py_DECREF(f);
 
 	f = PyUFunc_FromFuncAndData(cephes3_functions, besselpoly_data, cephes_4_types, 2, 3, 1, PyUFunc_None, "besselpoly", besselpoly_doc, 0);

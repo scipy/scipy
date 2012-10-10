@@ -531,6 +531,7 @@ from orthogonal import *
 from spfun_stats import multigammaln
 from lambertw import lambertw
 from _logit import logit, expit
+from _faddeeva import wofz
 import add_newdocs
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())

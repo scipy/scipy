@@ -15,9 +15,6 @@ Library:
             mach/i1mach.f,
             mach/r1mach.f,
             mach/xerror.f
-    CompiledLibrary: sc_toms
-        Sources:
-            toms/wofz.f
     CompiledLibrary: sc_amos
         Sources:
             amos/*.f
@@ -41,9 +38,11 @@ Library:
             _cephesmodule.c,
             amos_wrappers.c,
             specfun_wrappers.c,
-            toms_wrappers.c,
             cdf_wrappers.c,
             ufunc_extras.c
     Extension: specfun
          Sources:
             specfun.pyf
+    Extension: _faddeeva
+         Sources:
+            _faddeeva.cxx, faddeeva_w.cxx
