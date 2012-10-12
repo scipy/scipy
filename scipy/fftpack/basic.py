@@ -308,7 +308,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     Parameters
     ----------
     x : array_like, real-valued
-        The data to tranform.
+        The data to transform.
     n : int, optional
         Defines the length of the Fourier transform.  If `n` is not specified
         (the default) then ``n = x.shape[axis]``.  If ``n < x.shape[axis]``,
