@@ -99,9 +99,9 @@ def correlate(in1, in2, mode='full'):
         out = np.empty(ps, in1.dtype)
         for i in range(len(ps)):
             if ps[i] <= 0:
-                raise ValueError("Dimension of x(%d) < y(%d) " \
-                                 "not compatible with valid mode" % \
-                                 (in1.shape[i], in2.shape[i]))
+                raise ValueError(
+                    "in1 should have at least as many items as in2 in "
+                    "every dimension for 'valid' mode.")
 
         z = sigtools._correlateND(in1, in2, out, val)
     else:
@@ -211,8 +211,9 @@ def convolve(in1, in2, mode='full'):
         for d1, d2 in zip(volume.shape, kernel.shape):
             if not d1 >= d2:
                 raise ValueError(
-                    "in1 should have at least as many items as in2 in " \
-                    "every dimension for valid mode.")
+                    "in1 should have at least as many items as in2 in "
+                    "every dimension for 'valid' mode.")
+
     if np.iscomplexobj(kernel):
         return correlate(volume, kernel[slice_obj].conj(), mode)
     else:
@@ -420,8 +421,8 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         for d1, d2 in zip(np.shape(in1), np.shape(in2)):
             if not d1 >= d2:
                 raise ValueError(
-                    "in1 should have at least as many items as in2 in " \
-                    "every dimension for valid mode.")
+                    "in1 should have at least as many items as in2 in "
+                    "every dimension for 'valid' mode.")
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
@@ -472,6 +473,13 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         cross-correlation of `in1` with `in2`.
 
     """
+    if mode == 'valid':
+        for d1, d2 in zip(np.shape(in1), np.shape(in2)):
+            if not d1 >= d2:
+                raise ValueError(
+                    "in1 should have at least as many items as in2 in "
+                    "every dimension for 'valid' mode.")
+
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
 
