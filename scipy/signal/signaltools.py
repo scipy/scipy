@@ -8,6 +8,7 @@ from scipy.lib.six import callable
 from scipy import linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, \
         ifftn, fftfreq
+from numpy.fft import rfftn, irfftn
 from numpy import polyadd, polymul, polydiv, polysub, roots, \
         poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
         ones, real_if_close, zeros, array, arange, where, rank, \
@@ -146,14 +147,19 @@ def fftconvolve(in1, in2, mode="full"):
     size = s1 + s2 - 1
 
     # Always use 2**n-sized FFT
-    fsize = 2 ** np.ceil(np.log2(size))
-    IN1 = fftn(in1, fsize)
-    IN1 *= fftn(in2, fsize)
+    fsize = 2 ** np.ceil(np.log2(size)).astype(int)
     fslice = tuple([slice(0, int(sz)) for sz in size])
-    ret = ifftn(IN1)[fslice].copy()
-    del IN1
     if not complex_result:
+        IN1 = rfftn(in1, fsize)
+        IN1 *= rfftn(in2, fsize)        
+        ret = irfftn(IN1)[fslice].copy()
         ret = ret.real
+    else:
+        IN1 = fftn(in1, fsize)
+        IN1 *= fftn(in2, fsize)
+        ret = ifftn(IN1)[fslice].copy()
+    del IN1
+
     if mode == "full":
         return ret
     elif mode == "same":
