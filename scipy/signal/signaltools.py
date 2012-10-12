@@ -56,29 +56,32 @@ def correlate(in1, in2, mode='full'):
     """
     Cross-correlate two N-dimensional arrays.
 
-    Cross-correlate `in1` and `in2` with the output size determined by the 
+    Cross-correlate `in1` and `in2`, with the output size determined by the 
     `mode` argument.
 
     Parameters
     ----------
     in1 : array
-        first input.
+        First input.
     in2 : array
-        second input. Should have the same number of dimensions as `in1`.
-    mode : str {'valid', 'same', 'full'}, optional
+        Second input. Should have the same number of dimensions as `in1`.
+    mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
-
-            - 'valid': the output consists only of those elements that do not
-              rely on the zero-padding.
-            - 'same': the output is the same size as `in1` centered
-              with respect to the 'full' output.
-            - 'full': the output is the full discrete linear cross-correlation
-              of the inputs (default).
+    
+        ``valid``
+           The output consists only of those elements that do not
+           rely on the zero-padding.
+        ``same``
+           The output is the same size as `in1`, centered
+           with respect to the 'full' output.
+        ``full``
+           The output is the full discrete linear cross-correlation
+           of the inputs. (Default)
 
     Returns
     -------
     out : array
-        an N-dimensional array containing a subset of the discrete linear
+        An N-dimensional array containing a subset of the discrete linear
         cross-correlation of `in1` with `in2`.
 
     Notes
@@ -113,10 +116,9 @@ def correlate(in1, in2, mode='full'):
             z = sigtools._correlateND(in1zpadded, in2, out, val)
         elif mode == 'same':
             out = np.empty(in1.shape, in1.dtype)
-
             z = sigtools._correlateND(in1zpadded, in2, out, val)
         else:
-            raise ValueError("Uknown mode %s" % mode)
+            raise ValueError("Unknown mode %s" % mode)
 
     return z
 
@@ -166,32 +168,33 @@ def convolve(in1, in2, mode='full'):
     """
     Convolve two N-dimensional arrays.
 
-    Convolve `in1` and `in2` with output size determined by `mode`.
+    Convolve `in1` and `in2`, with the output size determined by the 
+    `mode` argument.
 
     Parameters
     ----------
     in1 : array
-        first input.
+        First input.
     in2 : array
-        second input. Should have the same number of dimensions as `in1`.
-    mode : str {'valid', 'same', 'full'}
-        a string indicating the size of the output:
-
-        ``valid`` : the output consists only of those elements that do not
+        Second input. Should have the same number of dimensions as `in1`.
+    mode : str {'full', 'valid', 'same'}, optional
+        A string indicating the size of the output:
+    
+        ``valid``
+           The output consists only of those elements that do not
            rely on the zero-padding.
-
-        ``same`` : the output is the same size as `in1` centered
+        ``same``
+           The output is the same size as `in1`, centered
            with respect to the 'full' output.
-
-        ``full`` : the output is the full discrete linear cross-correlation
+        ``full``
+           The output is the full discrete linear convolution
            of the inputs. (Default)
-
 
     Returns
     -------
     out : array
-        an N-dimensional array containing a subset of the discrete linear
-        cross-correlation of `in1` with `in2`.
+        An N-dimensional array containing a subset of the discrete linear
+        convolution of `in1` with `in2`.
 
     """
     volume = asarray(in1)
@@ -373,31 +376,35 @@ def wiener(im, mysize=None, noise=None):
 def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """Convolve two 2-dimensional arrays.
 
-    Convolve `in1` and `in2` with output size determined by `mode` and boundary
-    conditions determined by `boundary` and `fillvalue`.
+    Convolve `in1` and `in2` with output size determined by `mode`, and 
+    boundary conditions determined by `boundary` and `fillvalue`.
 
     Parameters
     ----------
     in1, in2 : ndarray
         Two-dimensional input arrays to be convolved.
-    mode : str, optional
+    mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
-
-        ``valid`` : the output consists only of those elements that do not
+    
+        ``valid``
+           The output consists only of those elements that do not
            rely on the zero-padding.
-
-        ``same`` : the output is the same size as `in1` centered
+        ``same``
+           The output is the same size as `in1`, centered
            with respect to the 'full' output.
-
-        ``full`` : the output is the full discrete linear cross-correlation
+        ``full``
+           The output is the full discrete linear convolution
            of the inputs. (Default)
 
-    boundary : str, optional
+    boundary : str {'fill', 'wrap', 'symm'}, optional
         A flag indicating how to handle boundaries:
-
-          - 'fill' : pad input arrays with fillvalue. (default)
-          - 'wrap' : circular boundary conditions.
-          - 'symm' : symmetrical boundary conditions.
+    
+        ``fill``
+           pad input arrays with fillvalue. (default)
+        ``wrap``
+           circular boundary conditions.
+        ``symm``
+           symmetrical boundary conditions.
 
     fillvalue : scalar, optional
         Value to fill pad input arrays with. Default is 0.
@@ -425,31 +432,35 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """Cross-correlate two 2-dimensional arrays.
 
-    Cross correlate `in1` and `in2` with output size determined by `mode` and
+    Cross correlate `in1` and `in2` with output size determined by `mode`, and
     boundary conditions determined by `boundary` and `fillvalue`.
 
     Parameters
     ----------
     in1, in2 : ndarray
         Two-dimensional input arrays to be convolved.
-    mode : str, optional
+    mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
-
-        ``valid`` : the output consists only of those elements that do not
+    
+        ``valid``
+           The output consists only of those elements that do not
            rely on the zero-padding.
-
-        ``same`` : the output is the same size as `in1` centered
+        ``same``
+           The output is the same size as `in1`, centered
            with respect to the 'full' output.
-
-        ``full`` : the output is the full discrete linear cross-correlation
+        ``full``
+           The output is the full discrete linear cross-correlation
            of the inputs. (Default)
 
-    boundary : str, optional
+    boundary : str {'fill', 'wrap', 'symm'}, optional
         A flag indicating how to handle boundaries:
-
-          - 'fill' : pad input arrays with fillvalue. (default)
-          - 'wrap' : circular boundary conditions.
-          - 'symm' : symmetrical boundary conditions.
+    
+        ``fill``
+           pad input arrays with fillvalue. (default)
+        ``wrap``
+           circular boundary conditions.
+        ``symm``
+           symmetrical boundary conditions.
 
     fillvalue : scalar, optional
         Value to fill pad input arrays with. Default is 0.
