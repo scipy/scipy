@@ -1225,7 +1225,7 @@ def oneway(*args,**kwds):
     return F, pval
 
 
-def wilcoxon(x,y=None):
+def wilcoxon(x,y=None,include_zeros=False):
     """
     Calculate the Wilcoxon signed-rank test.
 
@@ -1242,6 +1242,9 @@ def wilcoxon(x,y=None):
         The second set of measurements.  If y is not given, then the x array
         is considered to be the differences between the two sets of
         measurements.
+    include_zeros : bool, optional
+        Whether ranks of zero-differences should account for the ranksums
+        or not
 
     Returns
     -------
@@ -1269,24 +1272,29 @@ def wilcoxon(x,y=None):
         if len(x) != len(y):
             raise ValueError('Unequal N in wilcoxon.  Aborting.')
         d = x-y
-    d = compress(not_equal(d,0),d,axis=-1) # Keep all non-zero differences
+    if not include_zeros:
+        d = compress(not_equal(d,0),d,axis=-1) # Keep all non-zero differences
     count = len(d)
     if (count < 10):
         warnings.warn("Warning: sample size too small for normal approximation.")
     r = stats.rankdata(abs(d))
     r_plus = sum((d > 0)*r,axis=0)
     r_minus = sum((d < 0)*r,axis=0)
+    if include_zeros:
+        r_zero = sum((d == 0)*r,axis=0)
+        r_plus += r_zero / 2
+        r_minus += r_zero / 2
     T = min(r_plus, r_minus)
     mn = count*(count+1.0)*0.25
-    se = math.sqrt(count*(count+1)*(2*count+1.0)/24)
+    se = count*(count+1)*(2*count+1.0)
     if (len(r) != len(unique(r))):  # handle ties in data
         replist, repnum = find_repeats(r)
         corr = 0.0
         for i in range(len(replist)):
             si = repnum[i]
             corr += 0.5*si*(si*si-1.0)
-        V = se*se - corr
-        se = sqrt((count*V - T*T)/(count-1.0))
+        se -= corr
+    se = sqrt(se/24)
     z = (T - mn)/se
     prob = 2 * distributions.norm.sf(abs(z))
     return T, prob
