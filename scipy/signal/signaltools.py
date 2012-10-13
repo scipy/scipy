@@ -71,15 +71,15 @@ def correlate(in1, in2, mode='full'):
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
+        ``full``
+           The output is the full discrete linear cross-correlation
+           of the inputs. (Default)
         ``valid``
            The output consists only of those elements that do not
            rely on the zero-padding.
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
-        ``full``
-           The output is the full discrete linear cross-correlation
-           of the inputs. (Default)
 
     Returns
     -------
@@ -151,7 +151,7 @@ def fftconvolve(in1, in2, mode="full"):
     fslice = tuple([slice(0, int(sz)) for sz in size])
     if not complex_result:
         IN1 = rfftn(in1, fsize)
-        IN1 *= rfftn(in2, fsize)        
+        IN1 *= rfftn(in2, fsize)
         ret = irfftn(IN1)[fslice].copy()
         ret = ret.real
     else:
@@ -188,15 +188,15 @@ def convolve(in1, in2, mode='full'):
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
+        ``full``
+           The output is the full discrete linear convolution
+           of the inputs. (Default)
         ``valid``
            The output consists only of those elements that do not
            rely on the zero-padding.
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
-        ``full``
-           The output is the full discrete linear convolution
-           of the inputs. (Default)
 
     Returns
     -------
@@ -395,15 +395,15 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
+        ``full``
+           The output is the full discrete linear convolution
+           of the inputs. (Default)
         ``valid``
            The output consists only of those elements that do not
            rely on the zero-padding.
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
-        ``full``
-           The output is the full discrete linear convolution
-           of the inputs. (Default)
 
     boundary : str {'fill', 'wrap', 'symm'}, optional
         A flag indicating how to handle boundaries:
@@ -451,15 +451,15 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
+        ``full``
+           The output is the full discrete linear cross-correlation
+           of the inputs. (Default)
         ``valid``
            The output consists only of those elements that do not
            rely on the zero-padding.
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
-        ``full``
-           The output is the full discrete linear cross-correlation
-           of the inputs. (Default)
 
     boundary : str {'fill', 'wrap', 'symm'}, optional
         A flag indicating how to handle boundaries:
