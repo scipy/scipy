@@ -163,13 +163,14 @@ def fftconvolve(in1, in2, mode="full"):
     if mode == "full":
         return ret
     elif mode == "same":
-        if product(s1, axis=0) > product(s2, axis=0):
-            osize = s1
-        else:
-            osize = s2
-        return _centered(ret, osize)
+        return _centered(ret, s1)
     elif mode == "valid":
-        return _centered(ret, abs(s2 - s1) + 1)
+        for d1, d2 in zip(in1.shape, in2.shape):
+            if not d1 >= d2:
+                raise ValueError(
+                    "in1 should have at least as many items as in2 in "
+                    "every dimension for 'valid' mode.")
+        return _centered(ret, s1 - s2 + 1)
 
 
 def convolve(in1, in2, mode='full'):
