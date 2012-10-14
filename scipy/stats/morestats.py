@@ -1225,7 +1225,7 @@ def oneway(*args,**kwds):
     return F, pval
 
 
-def wilcoxon(x,y=None,include_zeros=False):
+def wilcoxon(x,y=None,zero_method="wilcox"):
     """
     Calculate the Wilcoxon signed-rank test.
 
@@ -1242,9 +1242,12 @@ def wilcoxon(x,y=None,include_zeros=False):
         The second set of measurements.  If y is not given, then the x array
         is considered to be the differences between the two sets of
         measurements.
-    include_zeros : bool, optional
-        Whether ranks of zero-differences should account for the ranksums
-        or not
+    zero_method : string, {"pratt", "wilcox", "zsplitt"}, optional
+        Pratt treatment: Includes zero-differences in the ranking process
+                         (More conservative)
+        Wilcox treatment: Discards all zero-differences
+        Zero rank splitt: Just like Pratt, but splitting the zero rank
+                          between positive and negative ones
 
     Returns
     -------
@@ -1265,6 +1268,10 @@ def wilcoxon(x,y=None,include_zeros=False):
     .. [1] http://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
 
     """
+    if not zero_method in ["wilcox", "pratt", "zsplitt"]:
+        raise ValueError('Zero method should be either \'wilcox\' \
+                          or \'pratt \' or \'zsplitt\'')
+
     if y is None:
         d = x
     else:
@@ -1272,7 +1279,7 @@ def wilcoxon(x,y=None,include_zeros=False):
         if len(x) != len(y):
             raise ValueError('Unequal N in wilcoxon.  Aborting.')
         d = x-y
-    if not include_zeros:
+    if zero_method == "wilcox":
         d = compress(not_equal(d,0),d,axis=-1) # Keep all non-zero differences
     count = len(d)
     if (count < 10):
@@ -1280,10 +1287,11 @@ def wilcoxon(x,y=None,include_zeros=False):
     r = stats.rankdata(abs(d))
     r_plus = sum((d > 0)*r,axis=0)
     r_minus = sum((d < 0)*r,axis=0)
-    if include_zeros:
+    if zero_method == "zsplitt":
         r_zero = sum((d == 0)*r,axis=0)
         r_plus += r_zero / 2
         r_minus += r_zero / 2
+
     T = min(r_plus, r_minus)
     mn = count*(count+1.0)*0.25
     se = count*(count+1)*(2*count+1.0)
@@ -1294,6 +1302,7 @@ def wilcoxon(x,y=None,include_zeros=False):
             si = repnum[i]
             corr += 0.5*si*(si*si-1.0)
         se -= corr
+
     se = sqrt(se/24)
     z = (T - mn)/se
     prob = 2 * distributions.norm.sf(abs(z))

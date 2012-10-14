@@ -274,8 +274,10 @@ def test_oneway_bad_arg():
     assert_raises(ValueError, stats.oneway, [1])
 
 def test_wilcoxon_bad_arg():
-    """Raise ValueError when two args of different lengths are given."""
+    """Raise ValueError when two args of different lengths are given or
+       zero_method is unknwon"""
     assert_raises(ValueError, stats.wilcoxon, [1], [1,2])
+    assert_raises(ValueError, stats.wilcoxon, [1,2], [1,2], "dummy")
 
 def test_mvsdist_bad_arg():
     """Raise ValueError if fewer than two data points are given."""
@@ -394,13 +396,17 @@ def test_accuracy_wilcoxon():
     x = np.concatenate([[u] * v for u, v in zip(nums, freq)])
     y = np.zeros(x.size)
 
-    T, p = stats.wilcoxon(x, y)
+    T, p = stats.wilcoxon(x, y, "pratt")
+    assert_allclose(T, 423)
+    assert_allclose(p, 0.001968119953739742)
+
+    T, p = stats.wilcoxon(x, y, "zsplitt")
+    assert_allclose(T, 441)
+    assert_allclose(p, 0.0032145343172473055)
+
+    T, p = stats.wilcoxon(x, y, "wilcox")
     assert_allclose(T, 327)
     assert_allclose(p, 0.00641346115861)
-
-    T, p = stats.wilcoxon(x, y, True)
-    assert_allclose(T, 441)
-    assert_allclose(p, 0.00321453431725)
 
 if __name__ == "__main__":
     run_module_suite()
