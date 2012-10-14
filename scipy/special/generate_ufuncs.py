@@ -271,6 +271,7 @@ cdef extern from "Python.h":
 cdef extern from "sf_error.h":
     ctypedef enum sf_error_t:
         SF_ERROR_OK
+        SF_ERROR_DOMAIN
     char **sf_error_messages
 
 from cpython.exc cimport PyErr_WarnEx
@@ -387,6 +388,29 @@ TYPE_NAMES = {
     'l': 'np.NPY_LONG',
 }
 
+# These downcasts will cause the function to return NaNs, unless the
+# values happen to coincide exactly.
+DANGEROUS_DOWNCAST = set([
+    ('F', 'i'), ('F', 'l'), ('F', 'f'), ('F', 'd'), ('F', 'g'),
+    ('D', 'i'), ('D', 'l'), ('D', 'f'), ('D', 'd'), ('D', 'g'),
+    ('G', 'i'), ('G', 'l'), ('G', 'f'), ('G', 'd'), ('G', 'g'),
+    ('f', 'i'), ('f', 'l'),
+    ('d', 'i'), ('d', 'l'),
+    ('g', 'i'), ('g', 'l'),
+    ('l', 'i'),
+])
+
+NAN_VALUE = {
+    'f': 'NPY_NAN',
+    'd': 'NPY_NAN',
+    'g': 'NPY_NAN',
+    'F': 'NPY_NAN',
+    'D': 'NPY_NAN',
+    'G': 'NPY_NAN',
+    'i': '0xdeadbeef',
+    'l': '0xdeadbeef',
+}
+
 def generate_loop(func_inputs, func_outputs, func_retval,
                   ufunc_inputs, ufunc_outputs):
     """
@@ -408,7 +432,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
 
             retval func(intype1 iv1, intype2 iv2, ..., outtype1 *ov1, ...);
 
-        If len(func_outputs) == len(ufunc_outputs)+1, the return value
+        If len(ufunc_outputs) == len(func_outputs)+1, the return value
         is treated as the first output argument. Otherwise, the return
         value is ignored.
 
@@ -474,13 +498,42 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     else:
         rv = ""
 
-    body += "        %s(<%s(*)(%s) nogil>func)(%s)\n" % (
-        rv, CY_TYPES[func_retval],
-        ", ".join(ftypes), ", ".join(fvars))
+    funcall = "        %s(<%s(*)(%s) nogil>func)(%s)\n" % (
+        rv, CY_TYPES[func_retval], ", ".join(ftypes), ", ".join(fvars))
 
+    # Cast-check inputs and call function
+    input_checks = []
+    for j in range(len(func_inputs)):
+        if (ufunc_inputs[j], func_inputs[j]) in DANGEROUS_DOWNCAST:
+            chk = "<%s>(<%s*>ip%d)[0] == (<%s*>ip%d)[0]" % (
+                CY_TYPES[func_inputs[j]], CY_TYPES[ufunc_inputs[j]], j,
+                CY_TYPES[ufunc_inputs[j]], j)
+            input_checks.append(chk)
+
+    if input_checks:
+        body += "        if %s:\n" % (" and ".join(input_checks))
+        body += "    " + funcall
+        body += "        else:\n"
+        body += "            sf_error(NULL, SF_ERROR_DOMAIN, \"invalid input argument\")\n"
+        for j, outtype in enumerate(outtypecodes):
+            body += "            ov%d = <%s>%s\n" % (
+                j, CY_TYPES[outtype], NAN_VALUE[outtype])
+    else:
+        body += funcall
+
+    # Assign and cast-check output values
     for j, (outtype, fouttype) in enumerate(zip(ufunc_outputs, outtypecodes)):
-        body += "        (<%s *>op%d)[0] = <%s>ov%d\n" % (
-            CY_TYPES[outtype], j, CY_TYPES[outtype], j)
+        if (fouttype, outtype) in DANGEROUS_DOWNCAST:
+            body += "        if ov%d == <%s>ov%d:\n" % (j, CY_TYPES[outtype], j)
+            body += "            (<%s *>op%d)[0] = <%s>ov%d\n" % (
+                CY_TYPES[outtype], j, CY_TYPES[outtype], j)
+            body += "        else:\n"
+            body += "            sf_error(NULL, SF_ERROR_DOMAIN, \"invalid output\")\n"
+            body += "            (<%s *>op%d)[0] = <%s>%s\n" % (
+                CY_TYPES[outtype], j, CY_TYPES[outtype], NAN_VALUE[outtype])
+        else:
+            body += "        (<%s *>op%d)[0] = <%s>ov%d\n" % (
+                CY_TYPES[outtype], j, CY_TYPES[outtype], j)
     for j in range(len(ufunc_inputs)):
         body += "        ip%d += steps[%d]\n" % (j, j)
     for j in range(len(ufunc_outputs)):
@@ -723,6 +776,9 @@ cdef extern from "_complexstuff.h":
     # numpy/npy_math.h doesn't have correct extern "C" declarations,
     # so we must include a wrapped version first
     pass
+
+cdef extern from "numpy/npy_math.h":
+    double NPY_NAN
 
 cimport numpy as np
 cimport libc
