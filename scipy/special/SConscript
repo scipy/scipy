@@ -91,10 +91,14 @@ src = ['_ufuncs.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
        'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c',
        '_logit.c.src']
 
+src_cxx = ['_ufuncs_cxx.cxx']
+
 env.NumpyPythonExtension('_ufuncs', 
                          source = src, 
                          LIBS = ['sc_amos', 'sc_toms', 'sc_c_misc', 'sc_cephes', 'sc_mach',\
                                  'sc_cdf', 'sc_specfunlib']) 
+
+env.NumpyPythonExtension('_ufuncs_cxx', source = src_cxx)
 
 # Specfun extension
 env.Prepend(LIBS = ['sc_specfunlib'])

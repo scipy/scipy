@@ -523,6 +523,7 @@ Convenience Functions
 #from special_version import special_version as __version__
 
 from _ufuncs import *
+from _ufuncs_cxx import *
 
 from basic import *
 import specfun

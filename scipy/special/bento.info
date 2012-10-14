@@ -36,6 +36,9 @@ Library:
             cdf_wrappers.c,
             ufunc_extras.c,
             _logit.c.src
+    Extension: _ufuncs_cxx
+        Sources:
+            _ufuncs_cxx.cxx
     Extension: specfun
          Sources:
             specfun.pyf
