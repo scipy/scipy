@@ -65,12 +65,12 @@ for the user.
 # Ufuncs without C++
 UFUNCS = """
 _lambertw -- lambertw_scalar: Dld->D                       -- lambertw.pxd
-_eval_chebyt -- eval_poly_chebyt: ld->d                    -- orthogonal_eval.pxd
 logit -- logitf: f->f, logit: d->d, logitl: g->g           -- _logit.h
 expit -- expitf: f->f, expit: d->d, expitl: g->g           -- _logit.h
 bdtrc -- bdtrc: iid->d, bdtrc_unsafe: ddd->d               -- cephes.h, _legacy.pxd
 bdtr -- bdtr: iid->d, bdtr_unsafe: ddd->d                  -- cephes.h, _legacy.pxd
 bdtri -- bdtri: iid->d, bdtri_unsafe: ddd->d               -- cephes.h, _legacy.pxd
+binom -- binom: dd->d                                      -- orthogonal_eval.pxd
 btdtr -- btdtr: ddd->d                                     -- cephes.h
 btdtri -- incbi: ddd->d                                    -- cephes.h
 fdtrc -- fdtrc: ddd->d                                     -- cephes.h
@@ -99,6 +99,21 @@ ellipeinc -- ellie: dd->d                                  -- cephes.h
 ellipkinc -- ellik: dd->d                                  -- cephes.h
 ellipe -- ellpe: d->d                                      -- cephes.h
 ellipkm1 -- ellpk: d->d                                    -- cephes.h
+eval_jacobi -- eval_jacobi: dddd->d                        -- orthogonal_eval.pxd
+eval_sh_jacobi -- eval_sh_jacobi: dddd->d                  -- orthogonal_eval.pxd
+eval_gegenbauer -- eval_gegenbauer: ddd->d                 -- orthogonal_eval.pxd
+eval_chebyt -- eval_chebyt: ld->d                          -- orthogonal_eval.pxd
+eval_chebyu -- eval_chebyu: dd->d                          -- orthogonal_eval.pxd
+eval_chebyc -- eval_chebyc: ld->d                          -- orthogonal_eval.pxd
+eval_chebys -- eval_chebys: dd->d                          -- orthogonal_eval.pxd
+eval_sh_chebyt -- eval_sh_chebyt: ld->d                    -- orthogonal_eval.pxd
+eval_sh_chebyu -- eval_sh_chebyu: dd->d                    -- orthogonal_eval.pxd
+eval_legendre -- eval_legendre: dd->d                      -- orthogonal_eval.pxd
+eval_sh_legendre -- eval_sh_legendre: dd->d                -- orthogonal_eval.pxd
+eval_genlaguerre -- eval_genlaguerre: ddd->d               -- orthogonal_eval.pxd
+eval_laguerre -- eval_laguerre: dd->d                      -- orthogonal_eval.pxd
+eval_hermite  -- eval_hermite: ld->d                       -- orthogonal_eval.pxd
+eval_hermitenorm -- eval_hermitenorm: ld->d                -- orthogonal_eval.pxd
 exp10 -- exp10: d->d                                       -- cephes.h
 exp2 -- exp2: d->d                                         -- cephes.h
 gamma -- Gamma: d->d, cgamma_wrap: D->D                    -- cephes.h, specfun_wrappers.h

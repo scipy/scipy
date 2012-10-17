@@ -694,7 +694,7 @@ def sh_legendre(n, monic=0):
 #------------------------------------------------------------------------------
 # Vectorized functions for evaluation
 #------------------------------------------------------------------------------
-from orthogonal_eval import \
+from _ufuncs import \
      binom, eval_jacobi, eval_sh_jacobi, eval_gegenbauer, eval_chebyt, \
      eval_chebyu, eval_chebys, eval_chebyc, eval_sh_chebyt, eval_sh_chebyu, \
      eval_legendre, eval_sh_legendre, eval_genlaguerre, eval_laguerre, \
