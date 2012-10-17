@@ -4637,7 +4637,7 @@ class pearson3_gen(rv_continuous):
     -----
     The probability density function for `pearson3` is::
 
-        pearson3.pdf(x, skew, loc, stddev) =
+        pearson3.pdf(x, skew) =
             abs(beta)/gamma(alpha)*
             (beta*(x - zeta))**(alpha - 1)*
             exp(-beta*(x - zeta))
@@ -4697,14 +4697,21 @@ class pearson3_gen(rv_continuous):
         ans = ans.copy()
 
         mask = np.absolute(skew) < norm2pearson_transition
+        invmask = ~mask
 
-        beta = 2.0/(skew[~mask]*scale)
+        beta = 2.0/(skew[invmask]*scale)
         alpha = (scale*beta)**2
         zeta = loc - alpha/beta
 
         ans[mask] = np.log(_norm_pdf(x[mask]))
-        ans[~mask] = np.log(abs(beta)) - gamln(alpha) + np.log( beta*(x[~mask] -
-                        zeta))*(alpha - 1) - beta*(x[~mask] - zeta)
+
+        #  PEARSON3 logpdf                               GAMMA logpdf
+        #  np.log(abs(beta))
+        #+ (alpha - 1)*log(beta*(x - zeta))              + (a - 1)*log(x)
+        #- beta*(x - zeta)                               - x
+        #- gamln(alpha)                                  - gamln(a)
+        ans[invmask] = log(abs(beta)) + gamma.logpdf(
+                beta*(x[invmask] - zeta), alpha)
         return ans
 pearson3 = pearson3_gen(name="pearson3", shapes="skew")
 
