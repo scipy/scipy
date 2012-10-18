@@ -520,9 +520,8 @@ Convenience Functions
 
 """
 
-#from special_version import special_version as __version__
-
-from _cephes import *
+from _ufuncs import *
+from _ufuncs_cxx import *
 
 from basic import *
 import specfun
@@ -530,9 +529,6 @@ import orthogonal
 from orthogonal import *
 from spfun_stats import multigammaln
 from lambertw import lambertw
-from _logit import logit, expit
-from _faddeeva import wofz
-import add_newdocs
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 

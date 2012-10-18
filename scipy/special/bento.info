@@ -24,25 +24,19 @@ Library:
     CompiledLibrary: sc_specfunlib
         Sources:
             specfun/specfun.f
-    Extension: orthogonal_eval
+    Extension: _ufuncs
         Sources:
-            orthogonal_eval.c
-    Extension: lambertw
-        Sources:
-            lambertw.c
-    Extension: _logit
-        Sources:
-            _logit.c.src
-    Extension: _cephes
-        Sources:
-            _cephesmodule.c,
+            _ufuncs.c,
             amos_wrappers.c,
             specfun_wrappers.c,
             cdf_wrappers.c,
-            ufunc_extras.c
+            ufunc_extras.c,
+            _logit.c.src
+    Extension: _ufuncs_cxx
+        Sources:
+            _ufuncs_cxx.cxx,
+            _faddeeva.cxx,
+            faddeeva_w.cxx
     Extension: specfun
          Sources:
             specfun.pyf
-    Extension: _faddeeva
-         Sources:
-            _faddeeva.cxx, faddeeva_w.cxx

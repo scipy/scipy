@@ -27,15 +27,15 @@ extern double cephes_struve(double, double);
 
 extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
 extern void F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
-extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,Py_complex*,Py_complex*);
-extern void F_FUNC(cchg,CCHG)(double*,double*,Py_complex*,Py_complex*);
+extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
+extern void F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
 extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
 extern void F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
 extern void F_FUNC(e1xb,E1XB)(double*,double*);
-extern void F_FUNC(e1z,E1Z)(Py_complex*,Py_complex*);
+extern void F_FUNC(e1z,E1Z)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(eix,EIX)(double*,double*);
-extern void F_FUNC(cerror,CERROR)(Py_complex*,Py_complex*);
+extern void F_FUNC(cerror,CERROR)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(stvh0,STVH0)(double*,double*);
 extern void F_FUNC(stvh1,STVH1)(double*,double*);
 extern void F_FUNC(stvhv,STVHV)(double*,double*,double*);
@@ -50,8 +50,8 @@ extern void F_FUNC(itjya,ITJYA)(double*,double*,double*);
 extern void F_FUNC(ittjya,ITTJYA)(double*,double*,double*);
 extern void F_FUNC(itika,ITIKA)(double*,double*,double*);
 extern void F_FUNC(ittika,ITTIKA)(double*,double*,double*);
-extern void F_FUNC(cfc,CFC)(Py_complex*,Py_complex*,Py_complex*);
-extern void F_FUNC(cfs,CFS)(Py_complex*,Py_complex*,Py_complex*);
+extern void F_FUNC(cfc,CFC)(npy_cdouble*,npy_cdouble*,npy_cdouble*);
+extern void F_FUNC(cfs,CFS)(npy_cdouble*,npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(cva2,CVA2)(int*,int*,double*,double*);
 extern void F_FUNC(mtu0,MTU0)(int*,int*,double*,double*,double*,double*);
 extern void F_FUNC(mtu12,MTU12)(int*,int*,int*,double*,double*,double*,double*,double*,double*);
@@ -69,24 +69,24 @@ extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*
 /* This must be linked with fortran
  */
 
-Py_complex cgamma_wrap( Py_complex z) {
+npy_cdouble cgamma_wrap( npy_cdouble z) {
   int kf = 1;
-  Py_complex cy;
+  npy_cdouble cy;
 
   F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
   return cy;
 }
 
-Py_complex clngamma_wrap( Py_complex z) {
+npy_cdouble clngamma_wrap( npy_cdouble z) {
   int kf = 0;
-  Py_complex cy;
+  npy_cdouble cy;
 
   F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
   return cy;
 }
 
-Py_complex cpsi_wrap( Py_complex z) {
-  Py_complex cy;
+npy_cdouble cpsi_wrap( npy_cdouble z) {
+  npy_cdouble cy;
   
   if (IMAG(z)==0.0) {
     REAL(cy) = cephes_psi(REAL(z));
@@ -98,10 +98,10 @@ Py_complex cpsi_wrap( Py_complex z) {
   return cy;
 }
 
-Py_complex crgamma_wrap( Py_complex z) {
+npy_cdouble crgamma_wrap( npy_cdouble z) {
   int kf = 1;
-  Py_complex cy;
-  Py_complex cy2;
+  npy_cdouble cy;
+  npy_cdouble cy2;
   double magsq;
 
   F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
@@ -111,8 +111,8 @@ Py_complex crgamma_wrap( Py_complex z) {
   return cy2;
 }
 
-Py_complex chyp2f1_wrap( double a, double b, double c, Py_complex z) {
-  Py_complex outz;
+npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
+  npy_cdouble outz;
   int l1, l0;
  
  
@@ -127,8 +127,8 @@ Py_complex chyp2f1_wrap( double a, double b, double c, Py_complex z) {
   return outz;
 }
 
-Py_complex chyp1f1_wrap(double a, double b, Py_complex z) {
-  Py_complex outz;
+npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) {
+  npy_cdouble outz;
 
   F_FUNC(cchg,CCHG)(&a, &b, &z, &outz);
   if (REAL(outz) == 1e300) {
@@ -187,8 +187,8 @@ double exp1_wrap(double x) {
   return out;
 }
 
-Py_complex cexp1_wrap(Py_complex z) {
-  Py_complex outz;
+npy_cdouble cexp1_wrap(npy_cdouble z) {
+  npy_cdouble outz;
   
   F_FUNC(e1z,E1Z)(&z, &outz);
   ZCONVINF(outz);
@@ -203,16 +203,16 @@ double expi_wrap(double x) {
   return out;
 }
 
-Py_complex cexpi_wrap(Py_complex z) {
-  Py_complex outz;
+npy_cdouble cexpi_wrap(npy_cdouble z) {
+  npy_cdouble outz;
 
   F_FUNC(eixz,EIXZ)(&z, &outz);
   ZCONVINF(outz);
   return outz;
 }
 
-Py_complex cerf_wrap(Py_complex z) {
-  Py_complex outz;
+npy_cdouble cerf_wrap(npy_cdouble z) {
+  npy_cdouble outz;
   
   F_FUNC(cerror,CERROR)(&z, &outz);
   return outz;
@@ -318,7 +318,7 @@ double itmodstruve0_wrap(double x) {
 
 double ber_wrap(double x)
 {
-  Py_complex Be, Ke, Bep, Kep;
+  npy_cdouble Be, Ke, Bep, Kep;
 
   if (x<0) x=-x;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
@@ -328,7 +328,7 @@ double ber_wrap(double x)
 
 double bei_wrap(double x)
 {
-  Py_complex Be, Ke, Bep, Kep;
+  npy_cdouble Be, Ke, Bep, Kep;
 
   if (x<0) x=-x;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
@@ -338,7 +338,7 @@ double bei_wrap(double x)
 
 double ker_wrap(double x)
 {
-  Py_complex Be, Ke, Bep, Kep;
+  npy_cdouble Be, Ke, Bep, Kep;
 
   if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
@@ -348,7 +348,7 @@ double ker_wrap(double x)
 
 double kei_wrap(double x)
 {
-  Py_complex Be, Ke, Bep, Kep;
+  npy_cdouble Be, Ke, Bep, Kep;
 
   if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
@@ -358,7 +358,7 @@ double kei_wrap(double x)
 
 double berp_wrap(double x)
 {
-  Py_complex Be, Ke, Bep, Kep;
+  npy_cdouble Be, Ke, Bep, Kep;
   int flag = 0;
 
   if (x<0) {x=-x; flag=1;}
@@ -370,7 +370,7 @@ double berp_wrap(double x)
 
 double beip_wrap(double x)
 {
-  Py_complex Be, Ke, Bep, Kep;
+  npy_cdouble Be, Ke, Bep, Kep;
   int flag = 0;
 
   if (x<0) {x=-x; flag=1;}
@@ -382,7 +382,7 @@ double beip_wrap(double x)
 
 double kerp_wrap(double x)
 {
-  Py_complex Be, Ke, Bep, Kep;
+  npy_cdouble Be, Ke, Bep, Kep;
 
   if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
@@ -392,7 +392,7 @@ double kerp_wrap(double x)
 
 double keip_wrap(double x)
 {
-  Py_complex Be, Ke, Bep, Kep;
+  npy_cdouble Be, Ke, Bep, Kep;
 
   if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
@@ -401,7 +401,7 @@ double keip_wrap(double x)
 }
 
 
-int kelvin_wrap(double x, Py_complex *Be, Py_complex *Ke, Py_complex *Bep, Py_complex *Kep) {
+int kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep) {
   int flag = 0;
   
   if (x<0) {x=-x; flag=1;}
@@ -484,9 +484,9 @@ int it2i0k0_wrap(double x, double *i0int, double *k0int)
 
 /* Fresnel integrals of complex numbers */
 
-int cfresnl_wrap(Py_complex z, Py_complex *zfs, Py_complex *zfc)
+int cfresnl_wrap(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc)
 {
-  Py_complex zfd;
+  npy_cdouble zfd;
   F_FUNC(cfs,CFS)(&z,zfs,&zfd);
   F_FUNC(cfc,CFC)(&z,zfc,&zfd); 
   return 0;
@@ -978,7 +978,7 @@ int oblate_radial2_wrap(double m, double n, double c, double cv, double x, doubl
 }
 
 
-int modified_fresnel_plus_wrap(double x, Py_complex *Fplus, Py_complex *Kplus)
+int modified_fresnel_plus_wrap(double x, npy_cdouble *Fplus, npy_cdouble *Kplus)
 {
   int ks=0;
   double fm, fa, gm, ga;
@@ -987,7 +987,7 @@ int modified_fresnel_plus_wrap(double x, Py_complex *Fplus, Py_complex *Kplus)
   return 0;
 }
 
-int modified_fresnel_minus_wrap(double x, Py_complex *Fminus, Py_complex *Kminus)
+int modified_fresnel_minus_wrap(double x, npy_cdouble *Fminus, npy_cdouble *Kminus)
 {
   int ks=1;
   double fm, fa, gm, ga;

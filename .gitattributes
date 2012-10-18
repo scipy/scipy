@@ -17,7 +17,7 @@ scipy/sparse/csgraph/_tools.c binary
 scipy/sparse/csgraph/_traversal.c binary
 scipy/spatial/ckdtree.c binary
 scipy/spatial/qhull.c binary
-scipy/special/lambertw.c binary
-scipy/special/orthogonal_eval.c binary
+scipy/special/_ufuncs.c binary
+scipy/special/_ufuncs_cxx.cxx binary
 scipy/stats/_rank.c binary
 scipy/stats/vonmises_cython.c binary

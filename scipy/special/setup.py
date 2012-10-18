@@ -38,21 +38,6 @@ def configuration(parent_package='',top_path=None):
     config.add_library('sc_cdf',sources=[join('cdflib','*.f')])
     config.add_library('sc_specfun',sources=[join('specfun','*.f')])
 
-    # Extension _cephes
-    sources = ['_cephesmodule.c', 'amos_wrappers.c', 'specfun_wrappers.c',
-               'cdf_wrappers.c','ufunc_extras.c']
-    config.add_extension('_cephes', sources=sources,
-                         libraries=['sc_amos','sc_c_misc','sc_cephes','sc_mach',
-                                    'sc_cdf', 'sc_specfun'],
-                         depends=["ufunc_extras.h", "cephes.h",
-                                  "amos_wrappers.h",
-                                  "cdf_wrappers.h", "specfun_wrappers.h",
-                                  "c_misc/misc.h", "cephes_doc.h",
-                                  "cephes/mconf.h", "cephes/cephes_names.h"],
-                         define_macros = define_macros,
-                         extra_info=get_info("npymath")
-                         )
-
     # Extension specfun
     config.add_extension('specfun',
                          sources=['specfun.pyf'],
@@ -60,26 +45,30 @@ def configuration(parent_package='',top_path=None):
                          define_macros=[],
                          libraries=['sc_specfun'])
 
-    # Extension orthogonal_eval
-    config.add_extension('orthogonal_eval',
-                         sources=['orthogonal_eval.c'],
-                         define_macros=[],
+    # Extension _ufuncs
+    curdir = os.path.abspath(os.path.dirname(__file__))
+    config.add_extension('_ufuncs',
+                         libraries=['sc_amos','sc_c_misc','sc_cephes','sc_mach',
+                                    'sc_cdf', 'sc_specfun'],
+                         depends=["_logit.h", "cephes.h",
+                                  "amos_wrappers.h",
+                                  "cdf_wrappers.h", "specfun_wrappers.h",
+                                  "c_misc/misc.h", "cephes/mconf.h", "cephes/cephes_names.h"],
+                         sources=['_ufuncs.c', '_logit.c.src',
+                                  "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"],
+                         include_dirs=[curdir],
+                         define_macros = define_macros,
                          extra_info=get_info("npymath"))
 
-    # Extension lambertw
-    config.add_extension('lambertw',
-                         sources=['lambertw.c'],
-                         define_macros=[],
-                         extra_info=get_info("npymath"))
-
-    # Extension _logit
-    config.add_extension('_logit',
-                         sources=['_logit.c.src'],
-                         extra_info=get_info("npymath"))
-
-    # Extension _faddeeva
-    config.add_extension('_faddeeva',
-                         sources=['_faddeeva.cxx', 'faddeeva_w.cxx'],
+    # Extension _ufuncs_cxx
+    curdir = os.path.abspath(os.path.dirname(__file__))
+    config.add_extension('_ufuncs_cxx',
+                         sources=['_ufuncs_cxx.cxx',
+                                  '_faddeeva.cxx',
+                                  'faddeeva_w.cxx',
+                                  ],
+                         include_dirs=[curdir],
+                         define_macros=define_macros,
                          extra_info=get_info("npymath"))
 
     config.add_data_files('tests/*.py')

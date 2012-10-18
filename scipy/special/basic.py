@@ -5,8 +5,10 @@
 from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
         complexfloating, less, vectorize, inexact, nan, zeros, sometrue
-from _cephes import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
-        hankel1, hankel2, yv, kv, gammaln, errprint, ndtri
+from _ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
+        hankel1, hankel2, yv, kv, gammaln, ndtri
+import _ufuncs
+import _ufuncs_cxx
 import types
 import specfun
 import orthogonal
@@ -25,8 +27,16 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn', 'riccati_yn',
            'sinc', 'sph_harm', 'sph_in', 'sph_inkn',
            'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
-           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
+           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta',
+           'SpecialFunctionWarning']
 
+class SpecialFunctionWarning(Warning):
+    pass
+
+def errprint(inflag=None):
+    _ufuncs_cxx._errprint(inflag)
+    return _ufuncs._errprint(inflag)
+errprint.__doc__ = _ufuncs._errprint.__doc__
 
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.
