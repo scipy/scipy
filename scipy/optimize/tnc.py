@@ -389,14 +389,15 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     if maxfun is None:
         maxfun = max(100, 10*len(x0))
 
-    rc, nf, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale, offset,
-            messages, maxCGit, maxfun, eta, stepmx, accuracy,
-            fmin, ftol, xtol, pgtol, rescale, callback)
+    rc, nf, nit, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale,
+                                        offset, messages, maxCGit, maxfun,
+                                        eta, stepmx, accuracy, fmin, ftol,
+                                        xtol, pgtol, rescale, callback)
 
     xopt = array(x)
     funv, jacv = func_and_grad(xopt)
 
-    return Result(x=xopt, fun=funv, jac=jacv, nfev=nf, status=rc,
+    return Result(x=xopt, fun=funv, jac=jacv, nfev=nf, nit=nit, status=rc,
                   message=RCSTRINGS[rc], success=(-1 < rc < 3))
 
 if __name__ == '__main__':

@@ -204,7 +204,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
   int n, n1, n2, n3, n4;
   tnc_callback *callback_function = NULL;
 
-  int rc, msg, maxCGit, maxnfeval, nfeval = 0;
+  int rc, msg, maxCGit, maxnfeval, nfeval = 0, niter = 0;
   double *x, *low, *up, *scale = NULL, *offset = NULL;
   double f, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol, rescale;
 
@@ -299,7 +299,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 
   rc = tnc(n, x, &f, NULL, function, &py_state, low, up, scale, offset, msg,
     maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol, rescale,
-    &nfeval, callback_function);
+    &nfeval, &niter, callback_function);
 
   Py_DECREF(py_function);
   if (py_callback != Py_None) Py_DECREF(py_callback);
@@ -330,7 +330,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  return Py_BuildValue("(iiN)", rc, nfeval, py_list);;
+  return Py_BuildValue("(iiiN)", rc, nfeval, niter, py_list);;
 }
 
 static PyMethodDef moduleTNC_methods[] =
