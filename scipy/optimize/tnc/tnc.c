@@ -762,6 +762,14 @@ static tnc_rc tnc_minimize(int n, double x[],
 
     (*niter)++;
 
+    /* Invoke the callback function */
+    if (callback)
+    {
+      unscalex(n, x, xscale, xoffset);
+      callback(x, state);
+      scalex(n, x, xscale, xoffset);
+    }
+
     /* Set up parameters used in convergence and resetting tests */
     difold = difnew;
     difnew = oldf - *f;
@@ -841,14 +849,6 @@ static tnc_rc tnc_minimize(int n, double x[],
         else lreset = TNC_FALSE;
       }
       upd1 = TNC_FALSE;
-    }
-
-    /* Invoke the callback function */
-    if (callback)
-    {
-      unscalex(n, x, xscale, xoffset);
-      callback(x, state);
-      scalex(n, x, xscale, xoffset);
     }
   }
 
