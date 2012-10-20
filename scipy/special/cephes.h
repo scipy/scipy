@@ -12,6 +12,10 @@
 
 #include "cephes/cephes_names.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int airy ( double x, double *ai, double *aip, double *bi, double *bip );
 
 extern double bdtrc ( int k, int n, double p ); 
@@ -197,5 +201,9 @@ extern double smirnov (int n, double e );
 extern double smirnovi (int n, double p );
 extern double kolmogorov ( double x );
 extern double kolmogi ( double p );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CEPHES_H */
