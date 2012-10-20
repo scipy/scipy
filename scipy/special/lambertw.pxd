@@ -29,37 +29,7 @@ cdef extern from "math.h":
     double exp(double x) nogil
     double log(double x) nogil
 
-# Use Numpy's portable C99-compatible complex functios
-
-cdef extern from "numpy/npy_math.h":
-    ctypedef struct npy_cdouble:
-        double real
-        double imag
-
-    double npy_cabs(npy_cdouble z) nogil
-    npy_cdouble npy_clog(npy_cdouble z) nogil
-    npy_cdouble npy_cexp(npy_cdouble z) nogil
-    int npy_isnan(double x) nogil
-    double NPY_INFINITY
-    double NPY_PI
-
-cdef inline bint zisnan(double complex x) nogil:
-    return npy_isnan(x.real) or npy_isnan(x.imag)
-
-cdef inline double zabs(double complex x) nogil:
-    cdef double r
-    r = npy_cabs((<npy_cdouble*>&x)[0])
-    return r
-
-cdef inline double complex zlog(double complex x) nogil:
-    cdef npy_cdouble r
-    r = npy_clog((<npy_cdouble*>&x)[0])
-    return (<double complex*>&r)[0]
-
-cdef inline double complex zexp(double complex x) nogil:
-    cdef npy_cdouble r
-    r = npy_cexp((<npy_cdouble*>&x)[0])
-    return (<double complex*>&r)[0]
+from _complexstuff cimport *
 
 cdef inline void lambertw_raise_warning(double complex z) with gil:
     warnings.warn("Lambert W iteration failed to converge: %r" % z)
@@ -90,7 +60,7 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
             #> w(0,0) = 0; for all other branches we hit the pole
             if k == 0:
                 return z
-            return -NPY_INFINITY
+            return -inf
         
         if k == 0:
             w = z # Initial guess for iteration
@@ -103,7 +73,7 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
             #> The branches are roughly logarithmic. This approximation
             #> gets better for large |k|; need to check that this always
             #> works for k ~= -1, 0, 1.
-            if k: w = w + k*2*NPY_PI*1j
+            if k: w = w + k*2*pi*1j
     
     elif k == 0 and z.imag and zabs(z) <= 0.7:
         #> Both the W(z) ~= z and W(z) ~= ln(z) approximations break
@@ -118,18 +88,18 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
             w = z
     
     else:
-        if z.real == NPY_INFINITY:
+        if z.real == inf:
             if k == 0:
                 return z
             else:
-                return z + 2*k*NPY_PI*1j
+                return z + 2*k*pi*1j
         
-        if z.real == -NPY_INFINITY:
-            return (-z) + (2*k+1)*NPY_PI*1j
+        if z.real == -inf:
+            return (-z) + (2*k+1)*pi*1j
                 
         #> Simple asymptotic approximation as above
         w = zlog(z)
-        if k: w = w + k*2*NPY_PI*1j
+        if k: w = w + k*2*pi*1j
 
     #> Use Halley iteration to solve w*exp(w) = z
     cdef double complex ew, wew, wewz, wn
