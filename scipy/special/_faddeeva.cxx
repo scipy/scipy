@@ -6,7 +6,7 @@ extern "C" {
 #include <numpy/npy_math.h>
 }
 
-extern std::complex<double> Faddeeva_w(std::complex<double> z, double relerr);
+extern std::complex<double> Faddeeva_w(std::complex<double> z, double relerr=0);
 
 extern "C" {
 
