@@ -1,8 +1,10 @@
 #include <complex>
 
 #include <Python.h>
+
+extern "C" {
 #include <numpy/npy_math.h>
-#include <math.h>
+}
 
 extern std::complex<double> Faddeeva_w(std::complex<double> z, double relerr);
 
