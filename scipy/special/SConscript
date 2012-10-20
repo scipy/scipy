@@ -97,7 +97,7 @@ env.NumpyPythonExtension('_ufuncs',
                          LIBS = ['sc_amos', 'sc_c_misc', 'sc_cephes', 'sc_mach',\
                                  'sc_cdf', 'sc_specfunlib']) 
 
-env.NumpyPythonExtension('_ufuncs_cxx', source = src_cxx)
+env.NumpyPythonExtension('_ufuncs_cxx', source = src_cxx, LIBS = ['sc_cephes'])
 
 # Specfun extension
 env.Prepend(LIBS = ['sc_specfunlib'])

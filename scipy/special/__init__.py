@@ -260,6 +260,8 @@ Error Function and Fresnel Integrals
    erfc          -- Complemented error function (1- erf(x))
    erfinv        -- Inverse of error function
    erfcinv       -- Inverse of erfc
+   wofz          -- Fadeeva function.
+   dawsn         -- Dawson's integral.
    fresnel       -- Fresnel sine and cosine integrals.
    fresnel_zeros -- Complex zeros of both Fresnel integrals
    modfresnelp   -- Modified Fresnel integrals F_+(x) and K_+(x)
@@ -486,8 +488,6 @@ Other Special Functions
    expn         -- Exponential integral.
    exp1         -- Exponential integral of order 1 (for complex argument)
    expi         -- Another exponential integral -- Ei(x)
-   wofz         -- Fadeeva function.
-   dawsn        -- Dawson's integral.
    shichi       -- Hyperbolic sine and cosine integrals.
    sici         -- Integral of the sinc and "cosinc" functions.
    spence       -- Dilogarithm integral.

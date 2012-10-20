@@ -67,6 +67,7 @@ def configuration(parent_package='',top_path=None):
                                   '_faddeeva.cxx',
                                   'faddeeva_w.cxx',
                                   ],
+                         libraries=['sc_cephes'],
                          include_dirs=[curdir],
                          define_macros=define_macros,
                          extra_info=get_info("npymath"))
