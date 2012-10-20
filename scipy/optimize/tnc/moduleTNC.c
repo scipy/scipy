@@ -302,7 +302,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     &nfeval, callback_function);
 
   Py_DECREF(py_function);
-  Py_XDECREF(py_callback);
+  if (py_callback != Py_None) Py_DECREF(py_callback);
 
   if (low) free(low);
   if (up) free(up);
