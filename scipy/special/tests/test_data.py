@@ -77,7 +77,7 @@ def test_boost():
         data(erf, 'erf_large_data_ipp-erf_large_data', 0j, 1),
         data(erfc, 'erf_large_data_ipp-erf_large_data', 0, 2),
         data(erf, 'erf_small_data_ipp-erf_small_data', 0, 1),
-        data(erf, 'erf_small_data_ipp-erf_small_data', 0j, 1),
+        data(erf, 'erf_small_data_ipp-erf_small_data', 0j, 1, rtol=1e-14),
         data(erfc, 'erf_small_data_ipp-erf_small_data', 0, 2),
 
         data(erfinv, 'erf_inv_data_ipp-erf_inv_data', 0, 1),

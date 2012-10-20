@@ -147,8 +147,6 @@ hankel2 -- cbesh_wrap2: dD->D                              -- amos_wrappers.h
 hankel2e -- cbesh_wrap2_e: dD->D                           -- amos_wrappers.h
 ndtr -- ndtr: d->d                                         -- cephes.h
 log_ndtr -- log_ndtr: d->d                                 -- cephes.h
-erfc -- erfc: d->d                                         -- cephes.h
-erf -- erf: d->d, cerf_wrap: D->D                          -- cephes.h, specfun_wrappers.h
 ndtri -- ndtri: d->d                                       -- cephes.h
 psi -- psi: d->d, cpsi_wrap: D->D                          -- cephes.h, specfun_wrappers.h
 rgamma -- rgamma: d->d, crgamma_wrap: D->D                 -- cephes.h, specfun_wrappers.h
@@ -244,7 +242,9 @@ modfresnelm -- modified_fresnel_minus_wrap: d*DD->*i       -- specfun_wrappers.h
 
 # Ufuncs with C++
 UFUNCS_CXX = """
-wofz -- wofz: D->D                                         -- _faddeeva.pxd
+wofz -- faddeeva_w: D->D                                   -- _faddeeva.h
+erfc -- erfc: d->d, faddeeva_erfc: D->D                    -- cephes.h, _faddeeva.h
+erf -- erf: d->d, faddeeva_erf: D->D                       -- cephes.h, _faddeeva.h
 """
 
 #---------------------------------------------------------------------------------
@@ -283,6 +283,8 @@ cdef public void scipy_special_raise_warning(char *fmt, ...) nogil except *:
         from scipy.special import SpecialFunctionWarning
         PyErr_WarnEx(SpecialFunctionWarning, msg, 1)
 
+cdef extern int scipy_special_print_error_messages
+
 def _errprint(inflag=None):
     \"\"\"
     errprint(flag)
@@ -306,8 +308,6 @@ def _errprint(inflag=None):
 """
 
 EXTRA_CODE = EXTRA_CODE_COMMON + """
-cdef extern int scipy_special_print_error_messages
-
 #
 # Aliases
 #
@@ -316,7 +316,6 @@ jn = jv
 """
 
 EXTRA_CODE_CXX = EXTRA_CODE_COMMON + """
-cdef public int scipy_special_print_error_messages
 """
 
 

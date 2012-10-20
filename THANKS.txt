@@ -109,6 +109,7 @@ Alex Reinhart for documentation improvements.
 Patrick Varilly for cKDTree improvements.
 Sturla Molden for cKDTree improvements.
 Nathan Crock for bug fixes.
+Steven G. Johnson for Faddeeva W and erf* implementations.
 
 
 Institutions
