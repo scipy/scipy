@@ -1,3 +1,4 @@
+#include <stdio.h>
 /* Copyright (c) 2012 Massachusetts Institute of Technology
  * 
  * [Also included are functions derived from derfc in SLATEC
@@ -26,7 +27,7 @@
 
 // include this declaration in your code or header file to call:
 #include <complex>
-extern std::complex<double> Faddeeva_w(std::complex<double> z, double relerr);
+extern std::complex<double> Faddeeva_w(std::complex<double> z,double relerr=0);
 
 /* Compute the Faddeyeva function w(z) = exp(-z^2) * erfc(-i*z),
    to a desired relative accuracy relerr, for arbitrary complex
@@ -63,7 +64,10 @@ extern std::complex<double> Faddeeva_w(std::complex<double> z, double relerr);
                        start summation for large x at round(x/a) (> 1)
 		       rather than ceil(x/a) as in the original
 		       paper, which should slightly improve performance
-		       (and, apparently, slightly improves accuracy)
+     		       (and, apparently, slightly improves accuracy)
+      19 October 2012: revised (SGJ) to fix bugs for large x, large -y,
+                       and 15<x<26. Performance improvements. Prototype
+		       now supplies default value for relerr.
 */
 
 #include <cfloat>
@@ -88,10 +92,67 @@ static inline double sinh_taylor(double x) {
 
 static inline double sqr(double x) { return x*x; }
 
+// precomputed table of expa2n2[n-1] = exp(-a2*n*n)
+// for double-precision a2 = 0.26865... in Faddeeva_w, below.
+static const double expa2n2[] = {
+  7.64405281671221563e-01,
+  3.41424527166548425e-01,
+  8.91072646929412548e-02,
+  1.35887299055460086e-02,
+  1.21085455253437481e-03,
+  6.30452613933449404e-05,
+  1.91805156577114683e-06,
+  3.40969447714832381e-08,
+  3.54175089099469393e-10,
+  2.14965079583260682e-12,
+  7.62368911833724354e-15,
+  1.57982797110681093e-17,
+  1.91294189103582677e-20,
+  1.35344656764205340e-23,
+  5.59535712428588720e-27,
+  1.35164257972401769e-30,
+  1.90784582843501167e-34,
+  1.57351920291442930e-38,
+  7.58312432328032845e-43,
+  2.13536275438697082e-47,
+  3.51352063787195769e-52,
+  3.37800830266396920e-57,
+  1.89769439468301000e-62,
+  6.22929926072668851e-68,
+  1.19481172006938722e-73,
+  1.33908181133005953e-79,
+  8.76924303483223939e-86,
+  3.35555576166254986e-92,
+  7.50264110688173024e-99,
+  9.80192200745410268e-106,
+  7.48265412822268959e-113,
+  3.33770122566809425e-120,
+  8.69934598159861140e-128,
+  1.32486951484088852e-135,
+  1.17898144201315253e-143,
+  6.13039120236180012e-152,
+  1.86258785950822098e-160,
+  3.30668408201432783e-169,
+  3.43017280887946235e-178,
+  2.07915397775808219e-187,
+  7.36384545323984966e-197,
+  1.52394760394085741e-206,
+  1.84281935046532100e-216,
+  1.30209553802992923e-226,
+  5.37588903521080531e-237,
+  1.29689584599763145e-247,
+  1.82813078022866562e-258,
+  1.50576355348684241e-269,
+  7.24692320799294194e-281,
+  2.03797051314726829e-292,
+  3.34880215927873807e-304,
+  0.0 // underflow (also prevents reads past array end, below)
+};
+
 complex<double> Faddeeva_w(complex<double> z, double relerr)
 {
   double a, a2, c;
-  if (relerr < DBL_EPSILON) {
+  if (relerr <= DBL_EPSILON) {
     relerr = DBL_EPSILON;
     a = 0.518321480430085929872; // pi / sqrt(-log(eps*0.5))
     c = 0.329973702884629072537; // (2/pi) * a;
@@ -111,67 +172,141 @@ complex<double> Faddeeva_w(complex<double> z, double relerr)
   double sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0, sum5 = 0;
 
   if (x == 0.0)
-    return erfcx(y);
-  else if (x < 26.61571750925126020252554553) { // (x < sqrt(-log(DBL_MIN)))
-    const double expx2 = exp(-x*x);
-    const double exp2ax = exp((2*a)*x), expm2ax = 1 / exp2ax;
+    return complex<double>(erfcx(y), x); // give correct sign of 0 in imag(w)
+
+  /* Note: The test that seems to be suggested in the paper is x <
+     sqrt(-log(DBL_MIN)), about 26.6, since otherwise exp(-x^2)
+     underflows to zero and sum1,sum2,sum4 are zero.  However, long
+     before this occurs, the sum1,sum2,sum4 contributions are
+     negligible in double precision; I find that this happens for x >
+     about 6, for all y.  On the other hand, I find that the case
+     where we compute all of the sums is faster (at least with the
+     precomputed expa2n2 table) until about x=10.  Furthermore, if we
+     try to compute all of the sums for x > 20, I find that we
+     sometimes run into numerical problems because underflow/overflow
+     problems start to appear in the various coefficients of the sums,
+     below.  Therefore, we use x < 10 here. */
+  else if (x < 10) {
     double prod2ax = 1, prodm2ax = 1;
+    double expx2;
     
-    if (x < 5e-4) { // compute sum4 and sum5 together as sum5-sum4
-      for (int n = 1; 1; ++n) {
-	const double coef = exp(-a2*(n*n)) * expx2 / (a2*(n*n) + y*y);
-	prod2ax *= exp2ax;
-	prodm2ax *= expm2ax;
-	sum1 += coef;
-	sum2 += coef * prodm2ax;
-	sum3 += coef * prod2ax;
-	
-	// really = sum5 - sum4
-	sum5 += coef * (2*a) * n * sinh_taylor((2*a)*n*x);
-	
-	// test convergence via sum3
-	if (coef * prod2ax < relerr * sum3) break;
+    /* Somewhat ugly copy-and-paste duplication here, but I see significant
+       speedups from using the special-case code with the precomputed
+       exponential, and the x < 5e-4 special case is needed for accuracy. */
+
+    if (relerr == DBL_EPSILON) { // use precomputed exp(-a2*(n*n)) table
+      if (x < 5e-4) { // compute sum4 and sum5 together as sum5-sum4
+	const double x2 = x*x;
+	expx2 = 1 - x2 * (1 - 0.5*x2); // exp(-x*x) via Taylor
+        // compute exp(2*a*x) and exp(-2*a*x) via Taylor, to double precision
+	const double ax2 = 1.036642960860171859744*x; // 2*a*x
+	const double exp2ax =
+	  1 + ax2 * (1 + ax2 * (0.5 + 0.166666666666666666667*ax2));
+	const double expm2ax =
+	  1 - ax2 * (1 - ax2 * (0.5 - 0.166666666666666666667*ax2));
+	for (int n = 1; 1; ++n) {
+	  const double coef = expa2n2[n-1] * expx2 / (a2*(n*n) + y*y);
+	  prod2ax *= exp2ax;
+	  prodm2ax *= expm2ax;
+	  sum1 += coef;
+	  sum2 += coef * prodm2ax;
+	  sum3 += coef * prod2ax;
+	  
+	  // really = sum5 - sum4
+	  sum5 += coef * (2*a) * n * sinh_taylor((2*a)*n*x);
+	  
+	  // test convergence via sum3
+	  if (coef * prod2ax < relerr * sum3) break;
+	}
+      }
+      else { // x > 5e-4, compute sum4 and sum5 separately
+	expx2 = exp(-x*x);
+	const double exp2ax = exp((2*a)*x), expm2ax = 1 / exp2ax;
+	for (int n = 1; 1; ++n) {
+	  const double coef = expa2n2[n-1] * expx2 / (a2*(n*n) + y*y);
+	  prod2ax *= exp2ax;
+	  prodm2ax *= expm2ax;
+	  sum1 += coef;
+	  sum2 += coef * prodm2ax;
+	  sum4 += (coef * prodm2ax) * (a*n);
+	  sum3 += coef * prod2ax;
+	  sum5 += (coef * prod2ax) * (a*n);
+	  // test convergence via sum5, since this sum has the slowest decay
+	  if ((coef * prod2ax) * (a*n) < relerr * sum5) break;
+	}
       }
     }
-    else { // x > 5e-4, compute sum4 and sum5 separately
-      for (int n = 1; 1; ++n) {
-	const double coef = exp(-a2*(n*n)) * expx2 / (a2*(n*n) + y*y);
-	prod2ax *= exp2ax;
-	prodm2ax *= expm2ax;
-	sum1 += coef;
-	sum2 += coef * prodm2ax;
-	sum4 += (coef * prodm2ax) * (a*n);
-	sum3 += coef * prod2ax;
-	sum5 += (coef * prod2ax) * (a*n);
-	// test convergence via sum5, since this sum has the slowest decay
-	if ((coef * prod2ax) * (a*n) < relerr * sum5) break;
+    else { // relerr != DBL_EPSILON, compute exp(-a2*(n*n)) on the fly
+      const double exp2ax = exp((2*a)*x), expm2ax = 1 / exp2ax;
+      if (x < 5e-4) { // compute sum4 and sum5 together as sum5-sum4
+	const double x2 = x*x;
+	expx2 = 1 - x2 * (1 - 0.5*x2); // exp(-x*x) via Taylor
+	for (int n = 1; 1; ++n) {
+	  const double coef = exp(-a2*(n*n)) * expx2 / (a2*(n*n) + y*y);
+	  prod2ax *= exp2ax;
+	  prodm2ax *= expm2ax;
+	  sum1 += coef;
+	  sum2 += coef * prodm2ax;
+	  sum3 += coef * prod2ax;
+	  
+	  // really = sum5 - sum4
+	  sum5 += coef * (2*a) * n * sinh_taylor((2*a)*n*x);
+	  
+	  // test convergence via sum3
+	  if (coef * prod2ax < relerr * sum3) break;
+	}
+      }
+      else { // x > 5e-4, compute sum4 and sum5 separately
+	expx2 = exp(-x*x);
+	for (int n = 1; 1; ++n) {
+	  const double coef = exp(-a2*(n*n)) * expx2 / (a2*(n*n) + y*y);
+	  prod2ax *= exp2ax;
+	  prodm2ax *= expm2ax;
+	  sum1 += coef;
+	  sum2 += coef * prodm2ax;
+	  sum4 += (coef * prodm2ax) * (a*n);
+	  sum3 += coef * prod2ax;
+	  sum5 += (coef * prod2ax) * (a*n);
+	  // test convergence via sum5, since this sum has the slowest decay
+	  if ((coef * prod2ax) * (a*n) < relerr * sum5) break;
+	}
       }
     }
+    const double expx2erfcxy = // avoid spurious overflow for large negative y
+      y > -6 // for y < -6, erfcx(y) = 2*exp(y*y) to double precision
+      ? expx2*erfcx(y) : 2*exp(y*y-x*x);
     if (y > 5) { // imaginary terms cancel
       const double sinxy = sin(x*y);
-      ret = (expx2*erfcx(y) - c*y*sum1) * cos(2*x*y)
+      ret = (expx2erfcxy - c*y*sum1) * cos(2*x*y)
 	+ (c*x*expx2) * sinxy * sinc(x*y, sinxy);
     }
     else {
       double xs = real(z);
       const double sinxy = sin(xs*y);
       const double sin2xy = sin(2*xs*y), cos2xy = cos(2*xs*y);
-      const double coef1 = expx2*erfcx(y) - c*y*sum1;
+      const double coef1 = expx2erfcxy - c*y*sum1;
       const double coef2 = c*xs*expx2;
       ret = complex<double>(coef1 * cos2xy + coef2 * sinxy * sinc(xs*y, sinxy),
 			    coef2 * sinc(2*xs*y, sin2xy) - coef1 * sin2xy);
     }
   }
-  else { // x > sqrt(log(-DBL_MIN)): exp(-x^2)=0 & only sum3 & sum5 contribute
+  else { // x large: only sum3 & sum5 contribute (see above note)
+    if (y < 0) {
+      /* erfcx(y) ~ 2*exp(y*y) + (< 1) if y < 0, so
+	 erfcx(y)*exp(-x*x) ~ 2*exp(y*y-x*x) term may not be negligible
+	 if y*y - x*x > -36 or so.  So, compute this term just in case. */
+      ret = polar(2*exp(y*y-x*x), -2*real(z)*y);
+    }
     // (round instead of ceil as in original paper; note that x/a > 1 here)
-    int n0 = int(x/a + 0.5); // sum in both directions, starting at n0
-    sum3 = exp(-sqr(a*n0-x)) / (a2*(n0*n0) + y*y);
+    double n0 = floor(x/a + 0.5); // sum in both directions, starting at n0
+    double dx = a*n0 - x;
+    sum3 = exp(-dx*dx) / (a2*(n0*n0) + y*y);
     sum5 = a*n0 * sum3;
-    double exp1 = exp(4*(a2*n0 - a*x)), exp1dn = 1;
+    double exp1 = exp(4*a*dx), exp1dn = 1;
     int dn;
     for (dn = 1; n0 - dn > 0; ++dn) { // loop over n0-dn and n0+dn terms
-      int np = n0 + dn, nm = n0 - dn;
-      double tp = exp(-sqr(a*np-x));
+      double np = n0 + dn, nm = n0 - dn;
+      double tp = exp(-sqr(a*dn+dx));
       double tm = tp * (exp1dn *= exp1); // trick to get tm from tp
       tp /= (a2*(np*np) + y*y);
       tm /= (a2*(nm*nm) + y*y);
@@ -180,14 +315,14 @@ complex<double> Faddeeva_w(complex<double> z, double relerr)
       if (a * (np * tp + nm * tm) < relerr * sum5) goto finish;
     }
     while (1) { // loop over n0+dn terms only (since n0-dn <= 0)
-      int np = n0 + dn++;
-      double tp = exp(-sqr(a*np-x)) / (a2*(np*np) + y*y);
+      double np = n0 + dn++;
+      double tp = exp(-sqr(a*dn+dx)) / (a2*(np*np) + y*y);
       sum3 += tp;
       sum5 += a * np * tp;
       if (a * np * tp < relerr * sum5) goto finish;
     }
   }
-  
+
  finish:
   return ret + complex<double>((0.5*c)*y*(sum2+sum3), 
 			       (0.5*c)*copysign(sum5-sum4, real(z)));
@@ -325,7 +460,6 @@ static double dcsevl_(double x, const double *cs, int n)
     --cs;
 
     /* Function Body */
-/* FIRST EXECUTABLE STATEMENT  DCSEVL */
     b1 = 0.;
     b0 = 0.;
     twox = x * 2.;
@@ -626,7 +760,7 @@ L30:
 #include <cstdio>
 
 int main(void) {
-  complex<double> z[10] = {
+  complex<double> z[16] = {
     complex<double>(624.2,-0.26123),
     complex<double>(-0.4,3.),
     complex<double>(0.6,2.),
@@ -636,9 +770,15 @@ int main(void) {
     complex<double>(-0.0000000234545,1.1234),
     complex<double>(-3.,5.1),
     complex<double>(-53,30.1),
-    complex<double>(0.0,0.12345)
+    complex<double>(0.0,0.12345),
+    complex<double>(11,1),
+    complex<double>(-22,-2),
+    complex<double>(9,-28),
+    complex<double>(21,-33),
+    complex<double>(1e5,1e5),
+    complex<double>(1e14,1e14)
   };
-  complex<double> w[10] = { // w(z), computed with WolframAlpha
+  complex<double> w[16] = { // w(z), computed with WolframAlpha
     complex<double>(-3.78270245518980507452677445620103199303131110e-7,
 		    0.000903861276433172057331093754199933411710053155),
     complex<double>(0.1764906227004816847297495349730234591778719532788,
@@ -659,8 +799,20 @@ int main(void) {
 		    -0.00804900791411691821818731763401840373998654987934),
     complex<double>(0.8746342859608052666092782112565360755791467973338452,
 		    0.),
+    complex<double>(0.00468190164965444174367477874864366058339647648741,
+		    0.0510735563901306197993676329845149741675029197050),
+    complex<double>(-0.0023193175200187620902125853834909543869428763219,
+		    -0.025460054739731556004902057663500272721780776336),
+    complex<double>(9.11463368405637174660562096516414499772662584e304,
+		    3.97101807145263333769664875189354358563218932e305),
+    complex<double>(-4.4927207857715598976165541011143706155432296e281,
+		    -2.8019591213423077494444700357168707775769028e281),
+    complex<double>(2.820947917809305132678577516325951485807107151e-6,
+		    2.820947917668257736791638444590253942253354058e-6),
+    complex<double>(2.82094791773878143474039725787438662716372268e-15,
+		    2.82094791773878143474039725773333923127678361e-15)
   };
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 16; ++i) {
     complex<double> fw = Faddeeva_w(z[i],0.);
     double err = abs((fw - w[i]) / w[i]);
     printf("w(%g%+gi) = %g%+gi (vs. %g%+gi), rel. err. = %0.2g\n",
