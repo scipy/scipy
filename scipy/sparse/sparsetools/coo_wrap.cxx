@@ -3074,7 +3074,7 @@ namespace swig {
 
 /* Given a PyObject, return a string describing its type.
  */
-const char* pytype_string(PyObject* py_obj) {
+static const char* pytype_string(PyObject* py_obj) {
   if (py_obj == NULL          ) return "C NULL value";
   if (py_obj == Py_None       ) return "Python None" ;
   if (PyCallable_Check(py_obj)) return "callable"    ;
@@ -3093,7 +3093,7 @@ const char* pytype_string(PyObject* py_obj) {
 
 /* Given a NumPy typecode, return a string describing the type.
  */
-const char* typecode_string(int typecode) {
+static const char* typecode_string(int typecode) {
   static const char* type_names[25] = {"bool", "byte", "unsigned byte",
 				 "short", "unsigned short", "int",
 				 "unsigned int", "long", "unsigned long",
@@ -3110,7 +3110,7 @@ const char* typecode_string(int typecode) {
  * to match.  Also allow int and long to match.  This is deprecated.
  * You should use PyArray_EquivTypenums() instead.
  */
-int type_match(int actual_type, int desired_type) {
+static int type_match(int actual_type, int desired_type) {
   return PyArray_EquivTypenums(actual_type, desired_type);
 }
 
@@ -3118,7 +3118,7 @@ int type_match(int actual_type, int desired_type) {
  * legal.  If not, set the python error string appropriately and
  * return NULL.
  */
-PyArrayObject* obj_to_array_no_conversion(PyObject* input, int typecode) {
+static PyArrayObject* obj_to_array_no_conversion(PyObject* input, int typecode) {
   PyArrayObject* ary = NULL;
   if (is_array(input) && (typecode == NPY_NOTYPE ||
 			  PyArray_EquivTypenums(array_type(input), typecode))) {
@@ -3148,7 +3148,7 @@ PyArrayObject* obj_to_array_no_conversion(PyObject* input, int typecode) {
  * correct type.  On failure, the python error string will be set and
  * the routine returns NULL.
  */
-PyArrayObject* obj_to_array_allow_conversion(PyObject* input, int typecode,
+static PyArrayObject* obj_to_array_allow_conversion(PyObject* input, int typecode,
                                              int* is_new_object) {
   PyArrayObject* ary = NULL;
   PyObject* py_obj;
@@ -3171,7 +3171,7 @@ PyArrayObject* obj_to_array_allow_conversion(PyObject* input, int typecode,
  * not contiguous, create a new PyArrayObject using the original data,
  * flag it as a new object and return the pointer.
  */
-PyArrayObject* make_contiguous(PyArrayObject* ary, int* is_new_object,
+static PyArrayObject* make_contiguous(PyArrayObject* ary, int* is_new_object,
                                int min_dims, int max_dims) {
   PyArrayObject* result;
   if (array_is_contiguous(ary)) {
@@ -3193,7 +3193,7 @@ PyArrayObject* make_contiguous(PyArrayObject* ary, int* is_new_object,
  * PyArrayObject, a new one will be created and the new object flag
  * will be set.
  */
-PyArrayObject* obj_to_array_contiguous_allow_conversion(PyObject* input,
+static PyArrayObject* obj_to_array_contiguous_allow_conversion(PyObject* input,
                                                         int typecode,
                                                         int* is_new_object) {
   int is_new1 = 0;
@@ -3215,7 +3215,7 @@ PyArrayObject* obj_to_array_contiguous_allow_conversion(PyObject* input,
  * contiguous, return 1.  Otherwise, set the python error string and
  * return 0.
  */
-int require_contiguous(PyArrayObject* ary) {
+static int require_contiguous(PyArrayObject* ary) {
   int contiguous = 1;
   if (!array_is_contiguous(ary)) {
     PyErr_SetString(PyExc_TypeError,
@@ -3229,7 +3229,7 @@ int require_contiguous(PyArrayObject* ary) {
  * not byte-swapped, return 1.  Otherwise, set the python error string
  * and return 0.
  */
-int require_native(PyArrayObject* ary) {
+static int require_native(PyArrayObject* ary) {
   int native = 1;
   if (!array_is_native(ary)) {
     PyErr_SetString(PyExc_TypeError,
@@ -3243,7 +3243,7 @@ int require_native(PyArrayObject* ary) {
  * dimensions.  If the array has the specified number of dimensions,
  * return 1.  Otherwise, set the python error string and return 0.
  */
-int require_dimensions(PyArrayObject* ary, int exact_dimensions) {
+static int require_dimensions(PyArrayObject* ary, int exact_dimensions) {
   int success = 1;
   if (array_numdims(ary) != exact_dimensions) {
     PyErr_Format(PyExc_TypeError, 
@@ -3259,7 +3259,7 @@ int require_dimensions(PyArrayObject* ary, int exact_dimensions) {
  * of dimensions, return 1.  Otherwise, set the python error string
  * and return 0.
  */
-int require_dimensions_n(PyArrayObject* ary, int* exact_dimensions, int n) {
+static int require_dimensions_n(PyArrayObject* ary, int* exact_dimensions, int n) {
   int success = 0;
   int i;
   char dims_str[255] = "";
@@ -3287,7 +3287,7 @@ int require_dimensions_n(PyArrayObject* ary, int* exact_dimensions, int n) {
  * array has the specified shape, return 1.  Otherwise, set the python
  * error string and return 0.
  */
-int require_size(PyArrayObject* ary, npy_intp* size, int n) {
+static int require_size(PyArrayObject* ary, npy_intp* size, int n) {
   int i;
   int success = 1;
   int len;
@@ -3337,7 +3337,7 @@ int require_size(PyArrayObject* ary, npy_intp* size, int n) {
   @par Revision history:
   - 17.02.2005, c
 */
-PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
+static PyObject *helper_appendToTuple( PyObject *where, PyObject *what ) {
   PyObject *o2, *o3;
 
   if ((!where) || (where == Py_None)) {
