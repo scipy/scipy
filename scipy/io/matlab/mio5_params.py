@@ -90,7 +90,6 @@ mclass_dtypes_template = {
     mxUINT64_CLASS: 'u8',
     mxSINGLE_CLASS: 'f4',
     mxDOUBLE_CLASS: 'f8',
-    mxCHAR_CLASS:	'S1',
     }
 
 

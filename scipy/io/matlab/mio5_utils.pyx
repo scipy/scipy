@@ -687,6 +687,21 @@ cdef class VarReader5:
             return squeeze_element(arr)
         return arr
 
+    def shape_from_header(self, VarHeader5 header):
+        cdef int mc = header.mclass
+        cdef tuple shape
+        if mc == mxSPARSE_CLASS:
+            shape = tuple(header.dims)
+        elif mc == mxCHAR_CLASS:
+            shape = tuple(header.dims)
+            if self.chars_as_strings:
+                shape = shape[:-1]
+        else:
+            shape = tuple(header.dims)
+        if self.squeeze_me:
+            shape = tuple([x for x in shape if x != 1])
+        return shape
+
     cpdef cnp.ndarray read_real_complex(self, VarHeader5 header):
         ''' Read real / complex matrices from stream '''
         cdef:

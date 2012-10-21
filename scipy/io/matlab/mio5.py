@@ -100,7 +100,7 @@ from mio5_params import MatlabObject, MatlabFunction, \
         MDTYPES, NP_TO_MTYPES, NP_TO_MXTYPES, \
         miCOMPRESSED, miMATRIX, miINT8, miUTF8, miUINT32, \
         mxCELL_CLASS, mxSTRUCT_CLASS, mxOBJECT_CLASS, mxCHAR_CLASS, \
-        mxSPARSE_CLASS, mxDOUBLE_CLASS,mclass_dtypes_template
+        mxSPARSE_CLASS, mxDOUBLE_CLASS
 
 
 class MatFile5Reader(MatFileReader):
@@ -314,8 +314,6 @@ class MatFile5Reader(MatFileReader):
         self.read_file_header()
         var_names = []
         var_shape = []
-        # var_types = []
-        # var_bytesize = []
         while not self.end_of_stream():
             start_position = self.mat_stream.tell()+8 # 8-byte header
             hdr, next_position = self.read_var_header()
@@ -323,17 +321,9 @@ class MatFile5Reader(MatFileReader):
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
-                # We want to keep this raw because mat_dtype processing
-                # will break the format (uint8 as mxDOUBLE_CLASS)
-                process = False
-            else:
-                process = True
             var_names.append(name)
-            var_shape.append(hdr.dims)
-            # var_types.append(hdr.mclass)
-            # var_bytesize.append(np.dtype(mclass_dtypes_template[hdr.mclass]).itemsize*np.prod(hdr.dims))
+            var_shape.append(self._matrix_reader.shape_from_header(hdr))
             self.mat_stream.seek(next_position)
-        #return zip(var_names,var_shape,var_types,var_bytesize)
         return zip(var_names,var_shape)
 
 def varmats_from_mat(file_obj):

@@ -208,6 +208,40 @@ class VarReader4(object):
             V.imag = tmp[:,3]
         return scipy.sparse.coo_matrix((V,(I,J)), dims)
 
+    def shape_from_header(self, hdr):
+        '''Read the shape of the array described by the header.
+        The file position after this call is unspecified.
+        '''
+        mclass = hdr.mclass
+        if mclass == mxFULL_CLASS:
+            shape = tuple(map(int, hdr.dims))
+        elif mclass == mxCHAR_CLASS:
+            shape = tuple(map(int, hdr.dims))
+            if self.chars_as_strings:
+                shape = shape[:-1]
+        elif mclass == mxSPARSE_CLASS:
+            dt = hdr.dtype
+            dims = hdr.dims
+
+            if not (len(dims) == 2 and dims[0] >= 1 and dims[1] >= 1):
+                return ()
+
+            # Read only the row and column counts
+            self.mat_stream.seek(dt.itemsize * (dims[0] - 1), 1)
+            rows = np.ndarray(shape=(1,), dtype=dt,
+                              buffer=self.mat_stream.read(dt.itemsize))
+            self.mat_stream.seek(dt.itemsize * (dims[0] - 1), 1)
+            cols = np.ndarray(shape=(1,), dtype=dt,
+                              buffer=self.mat_stream.read(dt.itemsize))
+
+            shape = (int(rows), int(cols))
+        else:
+            raise TypeError('No reader for class code %s' % mclass)
+
+        if self.squeeze_me:
+            shape = tuple([x for x in shape if x != 1])
+        return shape
+
 
 class MatFile4Reader(MatFileReader):
     ''' Reader for Mat4 files '''
@@ -311,6 +345,7 @@ class MatFile4Reader(MatFileReader):
                 if len(variable_names) == 0:
                     break
         return mdict
+
     def list_variables(self):
         ''' list variables from stream '''
         self.mat_stream.seek(0)
@@ -318,17 +353,12 @@ class MatFile4Reader(MatFileReader):
         self.initialize_read()
         var_names = []
         var_shape = []
-        # var_types = []
-        # var_bytesize = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
             name = asstr(hdr.name)
             var_names.append(name)
-            var_shape.append(map(int,hdr.dims))
-            # var_types.append(hdr.mclass)
-            # var_bytesize.append(next_position-self.mat_stream.tell())
+            var_shape.append(self._matrix_reader.shape_from_header(hdr))
             self.mat_stream.seek(next_position)
-        # return zip(var_names,var_shape,var_types,var_bytesize)
         return zip(var_names,var_shape)
 
 

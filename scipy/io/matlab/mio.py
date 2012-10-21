@@ -15,7 +15,8 @@ from miobase import get_matfile_version, docfiller
 from mio4 import MatFile4Reader, MatFile4Writer
 from mio5 import MatFile5Reader, MatFile5Writer
 
-__all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat','whosmat']
+__all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat',
+           'whosmat']
 
 @docfiller
 def find_mat_file(file_name, appendmat=True):
@@ -269,6 +270,7 @@ def savemat(file_name, mdict,
     MW.put_variables(mdict)
     if file_is_string:
         file_stream.close()
+
 @docfiller
 def whosmat(file_name, appendmat=True, **kwargs):
     """
@@ -278,11 +280,14 @@ def whosmat(file_name, appendmat=True, **kwargs):
     ----------
     %(file_arg)s
     %(append_arg)s
+    %(load_args)s
+    %(struct_arg)s
 
     Returns
     -------
-    variables : list
-       list with variable names
+    variables : list of tuples
+        A list of tuples, where each tuple holds the matrix name (a string)
+        and its shape (tuple of ints).
 
     Notes
     -----
@@ -293,7 +298,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
     HDF5 / 7.3 interface here.
 
     """
-    ML = mat_reader_factory(file_name,**kwargs)
+    ML = mat_reader_factory(file_name, **kwargs)
     variables = ML.list_variables()
     if isinstance(file_name, basestring):
         ML.mat_stream.close()
