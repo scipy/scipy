@@ -40,7 +40,7 @@ import scipy.io.matlab.byteordercodes as boc
 from scipy.io.matlab.miobase import matdims, MatFileReader, \
     MatWriteError
 from scipy.io.matlab.mio import find_mat_file, mat_reader_factory, \
-    loadmat, savemat
+    loadmat, savemat, whosmat
 from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
       MatFile5Reader, MatlabFunction, varmats_from_mat
 
@@ -294,6 +294,23 @@ def _load_check_case(name, files, case):
             _check_level(k_label, expected, matdict[k])
 
 
+def _whos_check_case(name, files, case):
+    for file_name in files:
+        label = "test %s; file %s" % (name, file_name)
+
+        whos = whosmat(file_name, struct_as_record=True)
+
+        expected_whos = []
+        for k, expected in case.items():
+            expected_whos.append((k, map(int, expected.shape)))
+
+        whos.sort()
+        expected_whos.sort()
+        assert_equal(whos, expected_whos,
+                     "%s: %r != %r" % (label, whos, expected_whos)
+                     )
+
+
 # Round trip tests
 def _rt_check_case(name, expected, format):
     mat_stream = BytesIO()
@@ -312,6 +329,18 @@ def test_load():
         assert_true(len(files) > 0,
                     "No files for test %s using filter %s" % (name, filt))
         yield _load_check_case, name, files, expected
+
+
+# generator for whos tests
+def test_whos():
+    for case in case_table4 + case_table5:
+        name = case['name']
+        expected = case['expected']
+        filt = pjoin(test_data_path, 'test%s_*.mat' % name)
+        files = glob(filt)
+        assert_true(len(files) > 0,
+                    "No files for test %s using filter %s" % (name, filt))
+        yield _whos_check_case, name, files, expected
 
 
 # generator for round trip tests
