@@ -92,6 +92,25 @@ mclass_dtypes_template = {
     mxDOUBLE_CLASS: 'f8',
     }
 
+mclass_info = {
+    mxINT8_CLASS: 'int8',
+    mxUINT8_CLASS: 'uint8',
+    mxINT16_CLASS: 'int16',
+    mxUINT16_CLASS: 'uint16',
+    mxINT32_CLASS: 'int32',
+    mxUINT32_CLASS: 'uint32',
+    mxINT64_CLASS: 'int64',
+    mxUINT64_CLASS: 'uint64',
+    mxSINGLE_CLASS: 'single',
+    mxDOUBLE_CLASS: 'double',
+    mxCELL_CLASS: 'cell',
+    mxSTRUCT_CLASS: 'struct',
+    mxOBJECT_CLASS: 'object',
+    mxCHAR_CLASS: 'char',
+    mxSPARSE_CLASS: 'sparse',
+    mxFUNCTION_CLASS: 'function',
+    mxOPAQUE_CLASS: 'opaque',
+    }
 
 NP_TO_MTYPES = {
     'f8': miDOUBLE,

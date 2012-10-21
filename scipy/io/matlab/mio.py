@@ -286,8 +286,11 @@ def whosmat(file_name, appendmat=True, **kwargs):
     Returns
     -------
     variables : list of tuples
-        A list of tuples, where each tuple holds the matrix name (a string)
-        and its shape (tuple of ints).
+        A list of tuples, where each tuple holds the matrix name (a string),
+        its shape (tuple of ints), and its data class (a string).
+        Possible data classes are: int8, uint8, int16, uint16, int32, uint32,
+        int64, uint64, single, double, cell, struct, object, char, sparse,
+        function, opaque, unknown.
 
     Notes
     -----

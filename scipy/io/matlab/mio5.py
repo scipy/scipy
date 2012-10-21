@@ -100,7 +100,7 @@ from mio5_params import MatlabObject, MatlabFunction, \
         MDTYPES, NP_TO_MTYPES, NP_TO_MXTYPES, \
         miCOMPRESSED, miMATRIX, miINT8, miUTF8, miUINT32, \
         mxCELL_CLASS, mxSTRUCT_CLASS, mxOBJECT_CLASS, mxCHAR_CLASS, \
-        mxSPARSE_CLASS, mxDOUBLE_CLASS
+        mxSPARSE_CLASS, mxDOUBLE_CLASS, mclass_info, mclass_dtypes_template
 
 
 class MatFile5Reader(MatFileReader):
@@ -312,19 +312,20 @@ class MatFile5Reader(MatFileReader):
         # Here we pass all the parameters in self to the reading objects
         self.initialize_read()
         self.read_file_header()
-        var_names = []
-        var_shape = []
+        vars = []
         while not self.end_of_stream():
-            start_position = self.mat_stream.tell()+8 # 8-byte header
             hdr, next_position = self.read_var_header()
             name = asstr(hdr.name)
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
-            var_names.append(name)
-            var_shape.append(self._matrix_reader.shape_from_header(hdr))
+
+            shape = self._matrix_reader.shape_from_header(hdr)
+            info = mclass_info.get(hdr.mclass, 'unknown')
+            vars.append((name, shape, info))
+
             self.mat_stream.seek(next_position)
-        return zip(var_names,var_shape)
+        return vars
 
 def varmats_from_mat(file_obj):
     """ Pull variables out of mat 5 file as a sequence of mat file objects

@@ -67,15 +67,18 @@ def mlarr(*args, **kwargs):
 theta = np.pi/4*np.arange(9,dtype=float).reshape(1,9)
 case_table4 = [
     {'name': 'double',
+     'classes': {'testdouble': 'double'},
      'expected': {'testdouble': theta}
      }]
 case_table4.append(
     {'name': 'string',
+     'classes': {'teststring': 'char'},
      'expected': {'teststring':
                   array([u'"Do nine men interpret?" "Nine men," I nod.'])},
      })
 case_table4.append(
     {'name': 'complex',
+     'classes': {'testcomplex': 'double'},
      'expected': {'testcomplex': np.cos(theta) + 1j*np.sin(theta)}
      })
 A = np.zeros((3,5))
@@ -83,29 +86,35 @@ A[0] = range(1,6)
 A[:,0] = range(1,4)
 case_table4.append(
     {'name': 'matrix',
+     'classes': {'testmatrix': 'double'},
      'expected': {'testmatrix': A},
      })
 case_table4.append(
     {'name': 'sparse',
+     'classes': {'testsparse': 'sparse'},
      'expected': {'testsparse': SP.coo_matrix(A)},
      })
 B = A.astype(complex)
 B[0,0] += 1j
 case_table4.append(
     {'name': 'sparsecomplex',
+     'classes': {'testsparsecomplex': 'sparse'},
      'expected': {'testsparsecomplex': SP.coo_matrix(B)},
      })
 case_table4.append(
     {'name': 'multi',
+     'classes': {'theta': 'double', 'a': 'double'},
      'expected': {'theta': theta,
                   'a': A},
      })
 case_table4.append(
     {'name': 'minus',
+     'classes': {'testminus': 'double'},
      'expected': {'testminus': mlarr(-1)},
      })
 case_table4.append(
     {'name': 'onechar',
+     'classes': {'testonechar': 'char'},
      'expected': {'testonechar': array([u'r'])},
      })
 # Cell arrays stored as object arrays
@@ -118,6 +127,7 @@ CA[0,0] = array(
     [u'This cell contains this string and 3 arrays of increasing length'])
 case_table5 = [
     {'name': 'cell',
+     'classes': {'testcell': 'cell'},
      'expected': {'testcell': CA}}]
 CAE = mlarr(( # tuple for object array creation
     mlarr(1),
@@ -129,18 +139,22 @@ objarr = np.empty((1,1),dtype=object)
 objarr[0,0] = mlarr(1)
 case_table5.append(
     {'name': 'scalarcell',
+     'classes': {'testscalarcell': 'cell'},
      'expected': {'testscalarcell': objarr}
      })
 case_table5.append(
     {'name': 'emptycell',
+     'classes': {'testemptycell': 'cell'},
      'expected': {'testemptycell': CAE}})
 case_table5.append(
     {'name': 'stringarray',
+     'classes': {'teststringarray': 'char'},
      'expected': {'teststringarray': array(
     [u'one  ', u'two  ', u'three'])},
      })
 case_table5.append(
     {'name': '3dmatrix',
+     'classes': {'test3dmatrix': 'double'},
      'expected': {
     'test3dmatrix': np.transpose(np.reshape(range(1,25), (4,3,2)))}
      })
@@ -152,6 +166,7 @@ st1['doublefield'][0,0] = st_sub_arr
 st1['complexfield'][0,0] = st_sub_arr * (1 + 1j)
 case_table5.append(
     {'name': 'struct',
+     'classes': {'teststruct': 'struct'},
      'expected': {'teststruct': st1}
      })
 CN = np.zeros((1,2), dtype=object)
@@ -164,6 +179,7 @@ CN[0,1][0,2][0,0] = mlarr(4, dtype=np.uint8)
 CN[0,1][0,2][0,1] = mlarr(5, dtype=np.uint8)
 case_table5.append(
     {'name': 'cellnest',
+     'classes': {'testcellnest': 'cell'},
      'expected': {'testcellnest': CN},
      })
 st2 = np.empty((1,1), dtype=[(n, object) for n in ['one', 'two']])
@@ -172,6 +188,7 @@ st2[0,0]['two'] = np.empty((1,1), dtype=[('three', object)])
 st2[0,0]['two'][0,0]['three'] = array([u'number 3'])
 case_table5.append(
     {'name': 'structnest',
+     'classes': {'teststructnest': 'struct'},
      'expected': {'teststructnest': st2}
      })
 a = np.empty((1,2), dtype=[(n, object) for n in ['one', 'two']])
@@ -181,6 +198,7 @@ a[0,1]['one'] = array([u'number 1'])
 a[0,1]['two'] = array([u'number 2'])
 case_table5.append(
     {'name': 'structarr',
+     'classes': {'teststructarr': 'struct'},
      'expected': {'teststructarr': a}
      })
 ODT = np.dtype([(n, object) for n in
@@ -196,6 +214,7 @@ m0['numArgs'] = mlarr(1)
 m0['version'] = mlarr(1)
 case_table5.append(
     {'name': 'object',
+     'classes': {'testobject': 'object'},
      'expected': {'testobject': MO}
      })
 fp_u_str = open(pjoin(test_data_path, 'japanese_utf8.txt'), 'rb')
@@ -203,14 +222,17 @@ u_str = fp_u_str.read().decode('utf-8')
 fp_u_str.close()
 case_table5.append(
     {'name': 'unicode',
+     'classes': {'testunicode': 'char'},
     'expected': {'testunicode': array([u_str])}
     })
 case_table5.append(
     {'name': 'sparse',
+     'classes': {'testsparse': 'sparse'},
      'expected': {'testsparse': SP.coo_matrix(A)},
      })
 case_table5.append(
     {'name': 'sparsecomplex',
+     'classes': {'testsparsecomplex': 'sparse'},
      'expected': {'testsparsecomplex': SP.coo_matrix(B)},
      })
 
@@ -218,6 +240,7 @@ case_table5_rt = case_table5[:]
 # Inline functions can't be concatenated in matlab, so RT only
 case_table5_rt.append(
     {'name': 'objectarray',
+     'classes': {'testobjectarray': 'object'},
      'expected': {'testobjectarray': np.repeat(MO, 2).reshape(1,2)}})
 
 
@@ -294,15 +317,15 @@ def _load_check_case(name, files, case):
             _check_level(k_label, expected, matdict[k])
 
 
-def _whos_check_case(name, files, case):
+def _whos_check_case(name, files, case, classes):
     for file_name in files:
         label = "test %s; file %s" % (name, file_name)
 
-        whos = whosmat(file_name, struct_as_record=True)
+        whos = whosmat(file_name)
 
         expected_whos = []
         for k, expected in case.items():
-            expected_whos.append((k, map(int, expected.shape)))
+            expected_whos.append((k, expected.shape, classes[k]))
 
         whos.sort()
         expected_whos.sort()
@@ -336,11 +359,12 @@ def test_whos():
     for case in case_table4 + case_table5:
         name = case['name']
         expected = case['expected']
+        classes = case['classes']
         filt = pjoin(test_data_path, 'test%s_*.mat' % name)
         files = glob(filt)
         assert_true(len(files) > 0,
                     "No files for test %s using filter %s" % (name, filt))
-        yield _whos_check_case, name, files, expected
+        yield _whos_check_case, name, files, expected, classes
 
 
 # generator for round trip tests

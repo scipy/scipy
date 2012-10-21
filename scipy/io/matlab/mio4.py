@@ -66,6 +66,12 @@ order_codes = {
     4: 'Cray', #!!
     }
 
+mclass_info = {
+    mxFULL_CLASS: 'double',
+    mxCHAR_CLASS: 'char',
+    mxSPARSE_CLASS: 'sparse',
+    }
+
 class VarHeader4(object):
     # Mat4 variables never logical or global
     is_logical = False
@@ -351,15 +357,16 @@ class MatFile4Reader(MatFileReader):
         self.mat_stream.seek(0)
         # set up variable reader
         self.initialize_read()
-        var_names = []
-        var_shape = []
+        vars = []
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
             name = asstr(hdr.name)
-            var_names.append(name)
-            var_shape.append(self._matrix_reader.shape_from_header(hdr))
+            shape = self._matrix_reader.shape_from_header(hdr)
+            info = mclass_info.get(hdr.mclass, 'unknown')
+            vars.append((name, shape, info))
+
             self.mat_stream.seek(next_position)
-        return zip(var_names,var_shape)
+        return vars
 
 
 def arr_to_2d(arr, oned_as='row'):
