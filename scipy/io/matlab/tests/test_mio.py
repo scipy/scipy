@@ -516,23 +516,29 @@ def test_use_small_element():
 
 def test_save_dict():
     # Test that dict can be saved (as recarray), loaded as matstruct
-    dict_types = (dict,)
+    dict_types = ((dict, False),)
     try:
         from collections import OrderedDict
     except ImportError:
         pass
     else:
-        dict_types += (OrderedDict,)
-    exp_arr = np.zeros((1, 1), dtype = [('a', object), ('b', object)])
-    exp_arr['a'] = 1
-    exp_arr['b'] = 2
-    for dict_type in dict_types:
+        dict_types += ((OrderedDict, True),)
+    ab_exp = np.array([[(1, 2)]], dtype=[('a', object), ('b', object)])
+    ba_exp = np.array([[(2, 1)]], dtype=[('b', object), ('a', object)])
+    for dict_type, is_ordered in dict_types:
         d = dict_type(a=1, b=2)
         stream = BytesIO()
         savemat_future(stream, {'dict': d})
         stream.seek(0)
-        vals = loadmat(stream)
-        assert_array_equal(vals['dict'], exp_arr)
+        vals = loadmat(stream)['dict']
+        assert_equal(set(vals.dtype.names), set(['a', 'b']))
+        if is_ordered: # Input was ordered, output in ab order
+            assert_array_equal(vals, ab_exp)
+        else: # Not ordered input, either order output
+            if vals.dtype.names[0] == 'a':
+                assert_array_equal(vals, ab_exp)
+            else:
+                assert_array_equal(vals, ba_exp)
 
 
 def test_1d_shape():
