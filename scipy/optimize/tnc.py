@@ -107,7 +107,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
         If the function returns None, the minimization
         is aborted.
-    x0 : list of floats
+    x0 : array_like
         Initial estimate of minimum.
     fprime : callable ``fprime(x, *args)``
         Gradient of `func`. If None, then either `func` must return the
@@ -124,11 +124,11 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     epsilon : float
         Used if approx_grad is True. The stepsize in a finite
         difference approximation for fprime.
-    scale : list of floats
+    scale : array_like
         Scaling factors to apply to each variable.  If None, the
         factors are up-low for interval bounded variables and
-        1+|x] fo the others.  Defaults to None
-    offset : float
+        1+|x| for the others.  Defaults to None.
+    offset : array_like
         Value to substract from each variable.  If None, the
         offsets are (up+low)/2 for interval bounded variables
         and x for the others.
@@ -181,7 +181,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
     Returns
     -------
-    x : list of floats
+    x : ndarray
         The solution.
     nfeval : int
         The number of function evaluations.
@@ -367,10 +367,11 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                 if up is None, the upper bounds are removed.
                 low and up defaults to None
     """
-    low = [0]*n
-    up = [0]*n
+    low = zeros(n)
+    up = zeros(n)
     for i in range(n):
-        if bounds[i] is None: l, u = -inf, inf
+        if bounds[i] is None:
+            l, u = -inf, inf
         else:
             l,u = bounds[i]
             if l is None:
@@ -383,10 +384,14 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                 up[i] = u
 
     if scale is None:
-        scale = []
+        scale = array([])
+    else:
+        scale = asarray(scale)
 
     if offset is None:
-        offset = []
+        offset = array([])
+    else:
+        offset = asarray(offset)
 
     if maxfun is None:
         maxfun = max(100, 10*len(x0))
@@ -396,10 +401,9 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                                         eta, stepmx, accuracy, fmin, ftol,
                                         xtol, pgtol, rescale, callback)
 
-    xopt = array(x)
-    funv, jacv = func_and_grad(xopt)
+    funv, jacv = func_and_grad(x)
 
-    return Result(x=xopt, fun=funv, jac=jacv, nfev=nf, nit=nit, status=rc,
+    return Result(x=x, fun=funv, jac=jacv, nfev=nf, nit=nit, status=rc,
                   message=RCSTRINGS[rc], success=(-1 < rc < 3))
 
 if __name__ == '__main__':
