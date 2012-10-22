@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 
   rc = tnc(2, x, &f, g, function, NULL, low, up, NULL, NULL, TNC_MSG_ALL,
     maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
-    rescale, &nfeval);
+    rescale, &nfeval, NULL);
 
   printf("After %d function evaluations, TNC returned:\n%s\n", nfeval,
     tnc_rc_string[rc - TNC_MINRC]);
