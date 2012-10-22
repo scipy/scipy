@@ -303,7 +303,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
-    if (meth in ['anneal', 'tnc', 'cobyla', 'slsqp'] and
+    if (meth in ['anneal', 'cobyla', 'slsqp'] and
         callback is not None):
         warn('Method %s does not support callback.' % method,
              RuntimeWarning)
@@ -351,7 +351,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         return _minimize_lbfgsb(fun, x0, args, jac, bounds,
                                 callback=callback, **options)
     elif meth == 'tnc':
-        return _minimize_tnc(fun, x0, args, jac, bounds, **options)
+        return _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
+                             **options)
     elif meth == 'cobyla':
         return _minimize_cobyla(fun, x0, args, constraints, **options)
     elif meth == 'slsqp':

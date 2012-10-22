@@ -107,6 +107,12 @@ extern char *tnc_rc_string[11];
 typedef int tnc_function(double x[], double *f, double g[], void *state);
 
 /*
+ * A callback function accepting x as input parameter along with the state
+ * pointer.
+ */
+typedef void tnc_callback(double x[], void *state);
+
+/*
  * tnc : minimize a function with variables subject to bounds, using
  *       gradient information.
  *
@@ -165,7 +171,7 @@ extern int tnc(int n, double x[], double *f, double g[],
   double low[], double up[], double scale[], double offset[],
   int messages, int maxCGit, int maxnfeval, double eta, double stepmx,
   double accuracy, double fmin, double ftol, double xtol, double pgtol,
-  double rescale, int *nfeval);
+  double rescale, int *nfeval, int *niter, tnc_callback *callback);
 
 #ifdef __cplusplus
 }

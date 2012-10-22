@@ -36,6 +36,7 @@ static char const rcsid[] =
 typedef struct _pytnc_state
 {
   PyObject *py_function;
+  PyObject *py_callback;
   int n;
   int failed;
 } pytnc_state;
@@ -177,18 +178,37 @@ failure:
   return 1;
 }
 
+static void callback(double x[], void *state)
+{
+  PyObject *py_list, *arglist, *result = NULL;
+  pytnc_state *py_state = (pytnc_state *)state;
+
+  py_list = PyDoubleArray_AsList(py_state->n, x);
+  if (py_list == NULL)
+  {
+    PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
+  }
+
+  arglist = Py_BuildValue("(N)", py_list);
+  result = PyEval_CallObject(py_state->py_callback, arglist);
+  Py_DECREF(arglist);
+  Py_XDECREF(result);
+}
+
 PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 {
   PyObject *py_x0, *py_low, *py_up, *py_list, *py_scale, *py_offset;
   PyObject *py_function = NULL;
+  PyObject *py_callback = NULL;
   pytnc_state py_state;
   int n, n1, n2, n3, n4;
+  tnc_callback *callback_function = NULL;
 
-  int rc, msg, maxCGit, maxnfeval, nfeval = 0;
+  int rc, msg, maxCGit, maxnfeval, nfeval = 0, niter = 0;
   double *x, *low, *up, *scale = NULL, *offset = NULL;
   double f, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol, rescale;
 
-  if (!PyArg_ParseTuple(args, "OO!O!O!O!O!iiidddddddd",
+  if (!PyArg_ParseTuple(args, "OO!O!O!O!O!iiiddddddddO",
     &py_function,
     &PyList_Type, &py_x0,
     &PyList_Type, &py_low,
@@ -197,7 +217,8 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     &PyList_Type, &py_offset,
     &msg, &maxCGit, &maxnfeval, &eta, &stepmx, &accuracy, &fmin, &ftol,
     &xtol, &pgtol,
-    &rescale
+    &rescale,
+    &py_callback
     ))
     return NULL;
 
@@ -263,11 +284,25 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 
   Py_INCREF(py_function);
 
+  if (py_callback != Py_None)
+  {
+      if (!PyCallable_Check(py_callback))
+      {
+        PyErr_SetString(PyExc_TypeError,
+                        "tnc: callback must be callable or None.");
+        return NULL;
+      }
+      py_state.py_callback = py_callback;
+      Py_INCREF(py_callback);
+      callback_function = callback;
+  }
+
   rc = tnc(n, x, &f, NULL, function, &py_state, low, up, scale, offset, msg,
     maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol, rescale,
-    &nfeval);
+    &nfeval, &niter, callback_function);
 
   Py_DECREF(py_function);
+  if (py_callback != Py_None) Py_DECREF(py_callback);
 
   if (low) free(low);
   if (up) free(up);
@@ -295,7 +330,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  return Py_BuildValue("(iiN)", rc, nfeval, py_list);;
+  return Py_BuildValue("(iiiN)", rc, nfeval, niter, py_list);;
 }
 
 static PyMethodDef moduleTNC_methods[] =

@@ -112,9 +112,10 @@ static tnc_rc tnc_minimize(int n, double x[], double *f, double g[],
   tnc_function *function, void *state,
   double xscale[], double xoffset[], double *fscale,
   double low[], double up[], tnc_message messages,
-  int maxCGit, int maxnfeval, int *nfeval,
+  int maxCGit, int maxnfeval, int *nfeval, int *niter,
   double eta, double stepmx, double accuracy,
-  double fmin, double ftol, double xtol, double pgtol, double rescale);
+  double fmin, double ftol, double xtol, double pgtol, double rescale,
+  tnc_callback *callback);
 
 static getptc_rc getptcInit(double *reltol, double *abstol, double tnytol,
   double eta, double rmu, double xbnd,
@@ -235,7 +236,7 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
   void *state, double low[], double up[], double scale[], double offset[],
   int messages, int maxCGit, int maxnfeval, double eta, double stepmx,
   double accuracy, double fmin, double ftol, double xtol, double pgtol,
-  double rescale, int *nfeval)
+  double rescale, int *nfeval, int *niter, tnc_callback *callback)
 {
   int rc, frc, i, nc, nfeval_local,
     free_low = TNC_FALSE, free_up = TNC_FALSE,
@@ -403,8 +404,8 @@ extern int tnc(int n, double x[], double *f, double g[], tnc_function *function,
   /* Optimisation */
   rc = tnc_minimize(n, x, f, g, function, state,
     xscale, xoffset, &fscale, low, up, messages,
-    maxCGit, maxnfeval, nfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol,
-    rescale);
+    maxCGit, maxnfeval, nfeval, niter, eta, stepmx, accuracy, fmin, ftol,
+    xtol, pgtol, rescale, callback);
 
 cleanup:
   if (messages & TNC_MSG_EXIT)
@@ -500,9 +501,9 @@ static tnc_rc tnc_minimize(int n, double x[],
   double *f, double gfull[], tnc_function *function, void *state,
   double xscale[], double xoffset[], double *fscale,
   double low[], double up[], tnc_message messages,
-  int maxCGit, int maxnfeval, int *nfeval, double eta, double stepmx,
-  double accuracy, double fmin, double ftol, double xtol, double pgtol,
-  double rescale)
+  int maxCGit, int maxnfeval, int *nfeval, int *niter, double eta, double
+  stepmx, double accuracy, double fmin, double ftol, double xtol, double
+  pgtol, double rescale, tnc_callback *callback)
 {
   double fLastReset, difnew, epsmch, epsred, oldgtp,
     difold, oldf, xnorm, newscale,
@@ -510,9 +511,11 @@ static tnc_rc tnc_minimize(int n, double x[],
     *temp = NULL, *sk = NULL, *yk = NULL, *diagb = NULL, *sr = NULL,
     *yr = NULL, *oldg = NULL, *pk = NULL, *g = NULL;
   double alpha = 0.0; /* Default unused value */
-  int i, icycle, niter = 0, oldnfeval, *pivot = NULL, frc;
+  int i, icycle, oldnfeval, *pivot = NULL, frc;
   logical lreset, newcon, upd1, remcon;
   tnc_rc rc = TNC_ENOMEM; /* Default error */
+
+  *niter = 0;
 
   /* Allocate temporary vectors */
   oldg = malloc(sizeof(*oldg)*n);
@@ -578,7 +581,7 @@ static tnc_rc tnc_minimize(int n, double x[],
   if (messages & TNC_MSG_ITER) fprintf(stderr,
     "  NIT   NF   F                       GTG\n");
   if (messages & TNC_MSG_ITER) printCurrentIteration(n, *f / *fscale, gfull,
-    niter, *nfeval, pivot);
+    *niter, *nfeval, pivot);
 
   /* Set the diagonal of the approximate hessian to unity. */
   for (i = 0; i < n; i++) diagb[i] = 1.0;
@@ -757,7 +760,15 @@ static tnc_rc tnc_minimize(int n, double x[],
       fLastConstraint = *f;
     }
 
-    niter++;
+    (*niter)++;
+
+    /* Invoke the callback function */
+    if (callback)
+    {
+      unscalex(n, x, xscale, xoffset);
+      callback(x, state);
+      scalex(n, x, xscale, xoffset);
+    }
 
     /* Set up parameters used in convergence and resetting tests */
     difold = difnew;
@@ -814,7 +825,7 @@ static tnc_rc tnc_minimize(int n, double x[],
     project(n, g, pivot);
 
     if (messages & TNC_MSG_ITER) printCurrentIteration(n, *f / *fscale, gfull,
-      niter, *nfeval, pivot);
+      *niter, *nfeval, pivot);
 
     /* Compute the change in the iterates and the corresponding change in the
       gradients */
@@ -842,7 +853,7 @@ static tnc_rc tnc_minimize(int n, double x[],
   }
 
   if (messages & TNC_MSG_ITER) printCurrentIteration(n, *f / *fscale, gfull,
-    niter, *nfeval, pivot);
+    *niter, *nfeval, pivot);
 
   /* Unscaling */
   unscalex(n, x, xscale, xoffset);
