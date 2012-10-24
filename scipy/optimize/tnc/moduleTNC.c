@@ -38,14 +38,13 @@ typedef struct _pytnc_state
 {
   PyObject *py_function;
   PyObject *py_callback;
-  int n;
+  npy_intp n;
   int failed;
 } pytnc_state;
 
 static tnc_function function;
 static PyObject *moduleTNC_minimize(PyObject *self, PyObject *args);
 static int PyObject_AsDouble(PyObject *py_obj, double *x);
-static PyObject *PyDoubleArray_AsList(int size, double *x);
 static int PyList_IntoDoubleArray(PyObject *py_list, double *x, int size);
 
 int PyObject_AsDouble(PyObject *py_obj, double *x)
@@ -82,41 +81,21 @@ int PyList_IntoDoubleArray(PyObject *py_list, double *x, int size)
   return 0;
 }
 
-PyObject *PyDoubleArray_AsList(int size, double *x)
-{
-  int i;
-  PyObject *py_list;
-
-  py_list = PyList_New(size);
-  if (py_list == NULL) return NULL;
-
-  for (i=0; i<size; i++)
-  {
-    PyObject *py_float;
-    py_float = PyFloat_FromDouble(x[i]);
-    if (py_float == NULL || PyList_SetItem(py_list, i, py_float))
-    {
-      Py_DECREF(py_list);
-      return NULL;
-    }
-  }
-
-  return py_list;
-}
-
 static int function(double x[], double *f, double g[], void *state)
 {
-  PyObject *py_list, *arglist, *py_grad, *result = NULL;
+  PyArrayObject *py_x;
+  PyObject *arglist, *py_grad, *result = NULL;
   pytnc_state *py_state = (pytnc_state *)state;
 
-  py_list = PyDoubleArray_AsList(py_state->n, x);
-  if (py_list == NULL)
+  py_x = (PyArrayObject *)PyArray_SimpleNewFromData(1, &py_state->n,
+                                                    NPY_DOUBLE, x);
+  if (py_x == NULL)
   {
     PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
     goto failure;
   }
 
-  arglist = Py_BuildValue("(N)", py_list);
+  arglist = Py_BuildValue("(N)", py_x);
   result = PyEval_CallObject(py_state->py_function, arglist);
   Py_DECREF(arglist);
 
@@ -151,16 +130,19 @@ failure:
 
 static void callback(double x[], void *state)
 {
-  PyObject *py_list, *arglist, *result = NULL;
+  PyArrayObject *py_x;
+  PyObject *arglist, *result = NULL;
   pytnc_state *py_state = (pytnc_state *)state;
 
-  py_list = PyDoubleArray_AsList(py_state->n, x);
-  if (py_list == NULL)
+  py_x = (PyArrayObject *)PyArray_SimpleNewFromData(1, &py_state->n,
+                                                    NPY_DOUBLE, x);
+  if (py_x == NULL)
   {
     PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
+    return;
   }
 
-  arglist = Py_BuildValue("(N)", py_list);
+  arglist = Py_BuildValue("(N)", py_x);
   result = PyEval_CallObject(py_state->py_callback, arglist);
   Py_DECREF(arglist);
   Py_XDECREF(result);
