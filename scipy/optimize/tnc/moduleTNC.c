@@ -44,47 +44,11 @@ typedef struct _pytnc_state
 
 static tnc_function function;
 static PyObject *moduleTNC_minimize(PyObject *self, PyObject *args);
-static int PyObject_AsDouble(PyObject *py_obj, double *x);
-static int PyList_IntoDoubleArray(PyObject *py_list, double *x, int size);
-
-int PyObject_AsDouble(PyObject *py_obj, double *x)
-{
-  PyObject *py_float;
-
-  py_float = PyNumber_Float(py_obj);
-
-  if (py_float == NULL) return -1;
-
-  *x = PyFloat_AsDouble(py_float);
-
-  Py_DECREF(py_float);
-  return 0;
-}
-
-int PyList_IntoDoubleArray(PyObject *py_list, double *x, int size)
-{
-  int i;
-
-  if (py_list == NULL) return 1;
-
-  if (!PyList_Check(py_list)) return 1;
-
-  if (size != PyList_Size(py_list)) return 1;
-
-  for (i=0; i<size; i++)
-  {
-    PyObject *py_float = PyList_GetItem(py_list, i);
-    if (py_float == NULL || PyObject_AsDouble(py_float, &(x[i])))
-      return 1;
-  }
-
-  return 0;
-}
 
 static int function(double x[], double *f, double g[], void *state)
 {
-  PyArrayObject *py_x;
-  PyObject *arglist, *py_grad, *result = NULL;
+  PyArrayObject *py_x, *py_grad;
+  PyObject *arglist, *result = NULL;
   pytnc_state *py_state = (pytnc_state *)state;
 
   py_x = (PyArrayObject *)PyArray_SimpleNewFromData(1, &py_state->n,
@@ -108,15 +72,20 @@ static int function(double x[], double *f, double g[], void *state)
     return 1;
   }
 
-  if (!PyArg_ParseTuple(result, "dO!", f, &PyList_Type, &py_grad))
+  if (!PyArg_ParseTuple(result, "dO!", f, &PyArray_Type, &py_grad))
   {
     PyErr_SetString(PyExc_ValueError,
       "tnc: invalid return value from minimized function.");
     goto failure;
   }
 
-  if (PyList_IntoDoubleArray(py_grad, g, py_state->n))
+  if (PyArray_SIZE(py_grad) != py_state->n)
+  {
+    PyErr_SetString(PyExc_ValueError,
+      "tnc: invalid gradient vector from minimized function.");
     goto failure;
+  }
+  memcpy(g, py_grad->data, (py_state->n)*sizeof(double));
 
   Py_DECREF(result);
 

@@ -353,13 +353,13 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
             x = asarray(x)
             f = fun(x, *args)
             g = approx_fprime(x, fun, epsilon, *args)
-            return f, list(g)
+            return f, g
     else:
         def func_and_grad(x):
             x = asarray(x)
             f = fun(x, *args)
             g = jac(x, *args)
-            return f, list(g)
+            return f, asarray(g)
 
     """
     low, up   : the bounds (lists of floats)
@@ -419,7 +419,7 @@ if __name__ == '__main__':
             g[1] = 3.0*pow(abs(x[1]),2.0)
             if x[1]<0:
                 g[1] = -g[1]
-            return f, g
+            return f, asarray(g)
 
         # Optimizer call
         x, nf, rc = fmin_tnc(function, [-7, 3], bounds=([-10, 1], [10, 10]))
