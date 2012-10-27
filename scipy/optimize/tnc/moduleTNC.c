@@ -51,13 +51,13 @@ static int function(double x[], double *f, double g[], void *state)
   PyObject *arglist, *result = NULL;
   pytnc_state *py_state = (pytnc_state *)state;
 
-  py_x = (PyArrayObject *)PyArray_SimpleNewFromData(1, &py_state->n,
-                                                    NPY_DOUBLE, x);
+  py_x = (PyArrayObject *)PyArray_SimpleNew(1, &py_state->n, NPY_DOUBLE);
   if (py_x == NULL)
   {
     PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
     goto failure;
   }
+  memcpy(py_x->data, x, (py_state->n)*sizeof(double));
 
   arglist = Py_BuildValue("(N)", py_x);
   result = PyEval_CallObject(py_state->py_function, arglist);
@@ -103,13 +103,13 @@ static void callback(double x[], void *state)
   PyObject *arglist, *result = NULL;
   pytnc_state *py_state = (pytnc_state *)state;
 
-  py_x = (PyArrayObject *)PyArray_SimpleNewFromData(1, &py_state->n,
-                                                    NPY_DOUBLE, x);
+  py_x = (PyArrayObject *)PyArray_SimpleNew(1, &py_state->n, NPY_DOUBLE);
   if (py_x == NULL)
   {
     PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
     return;
   }
+  memcpy(py_x->data, x, (py_state->n)*sizeof(double));
 
   arglist = Py_BuildValue("(N)", py_x);
   result = PyEval_CallObject(py_state->py_callback, arglist);
