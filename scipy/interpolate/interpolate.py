@@ -1,5 +1,4 @@
 
-
 """ Classes for interpolating values.
 """
 
@@ -208,8 +207,8 @@ class interp1d(object):
     x : array_like
         A 1-D array of monotonically increasing real values.
     y : array_like
-        A N-D array of real values. The length of `y` along the interpolation
-        axis must be equal to the length of `x`.
+        A N-D array of real or complex values. The length of `y` along the
+        interpolation axis must be equal to the length of `x`.
     kind : str or int, optional
         Specifies the kind of interpolation as a string
         ('linear','nearest', 'zero', 'slinear', 'quadratic, 'cubic')
