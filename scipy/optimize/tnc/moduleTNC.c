@@ -119,7 +119,9 @@ static void callback(double x[], void *state)
 
 PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 {
-  PyArrayObject *py_x0, *py_low, *py_up, *py_scale, *py_offset;
+  PyArrayObject *arr_x=NULL, *arr_low=NULL, *arr_up=NULL, *arr_scale=NULL,
+                *arr_offset=NULL;
+  PyObject *py_x0, *py_low, *py_up, *py_scale, *py_offset;
   PyObject *py_function = NULL;
   PyObject *py_callback = NULL;
   pytnc_state py_state;
@@ -130,19 +132,10 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
   double *x = NULL, *low = NULL, *up = NULL, *scale = NULL, *offset = NULL;
   double f, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol, rescale;
 
-  if (!PyArg_ParseTuple(args, "OO!O!O!O!O!iiiddddddddO",
-    &py_function,
-    &PyArray_Type, &py_x0,
-    &PyArray_Type, &py_low,
-    &PyArray_Type, &py_up,
-    &PyArray_Type, &py_scale,
-    &PyArray_Type, &py_offset,
-    &msg, &maxCGit, &maxnfeval, &eta, &stepmx, &accuracy, &fmin, &ftol,
-    &xtol, &pgtol,
-    &rescale,
-    &py_callback
-    ))
-    return NULL;
+  if (!PyArg_ParseTuple(args, "OOOOOOiiiddddddddO",
+      &py_function, &py_x0, &py_low, &py_up, &py_scale, &py_offset,
+      &msg, &maxCGit, &maxnfeval, &eta, &stepmx, &accuracy, &fmin, &ftol,
+      &xtol, &pgtol, &rescale, &py_callback)) return NULL;
 
   if (!PyCallable_Check(py_function))
   {
@@ -150,56 +143,66 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  if ((n3 = PyArray_Size((PyObject *)py_scale)) != 0)
+  arr_scale = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_scale,
+                                                NPY_DOUBLE, NPY_IN_ARRAY);
+  if ((n3 = PyArray_Size((PyObject *)arr_scale)) != 0)
   {
-    scale = (double *)PyArray_GETPTR1(py_scale, 0);
+    scale = (double *)PyArray_GETPTR1(arr_scale, 0);
     if (scale == NULL)
     {
       PyErr_SetString(PyExc_ValueError, "tnc: invalid scaling parameters.");
-      return NULL;
+      goto failure;
     }
   }
 
-  if ((n4 = PyArray_Size((PyObject *)py_offset)) != 0)
+  arr_offset = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_offset,
+                                                 NPY_DOUBLE, NPY_IN_ARRAY);
+  if ((n4 = PyArray_Size((PyObject *)arr_offset)) != 0)
   {
-    offset = (double *)PyArray_GETPTR1(py_offset, 0);
+    offset = (double *)PyArray_GETPTR1(arr_offset, 0);
     if (offset == NULL)
     {
       PyErr_SetString(PyExc_ValueError, "tnc: invalid offset parameters.");
-      return NULL;
+      goto failure;
     }
   }
 
-  if ((n = PyArray_Size((PyObject *)py_x0)) != 0)
+  arr_x = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_x0,
+                                            NPY_DOUBLE, NPY_INOUT_ARRAY);
+  if ((n = PyArray_Size((PyObject *)arr_x)) != 0)
   {
-    x = (double *)PyArray_GETPTR1(py_x0, 0);
+    x = (double *)PyArray_GETPTR1(arr_x, 0);
     if (x == NULL)
     {
       PyErr_SetString(PyExc_ValueError, "tnc: invalid initial vector.");
-      return NULL;
+      goto failure;
     }
   }
 
-  if ((n1 = PyArray_Size((PyObject *)py_low)) != 0)
+  arr_low = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_low,
+                                              NPY_DOUBLE, NPY_IN_ARRAY);
+  if ((n1 = PyArray_Size((PyObject *)arr_low)) != 0)
   {
-    low = (double *)PyArray_GETPTR1(py_low, 0);
+    low = (double *)PyArray_GETPTR1(arr_low, 0);
   }
-  if ((n2 = PyArray_Size((PyObject *)py_up)) != 0)
+  arr_up = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_up,
+                                             NPY_DOUBLE, NPY_IN_ARRAY);
+  if ((n2 = PyArray_Size((PyObject *)arr_up)) != 0)
   {
-    up = (double *)PyArray_GETPTR1(py_up, 0);
+    up = (double *)PyArray_GETPTR1(arr_up, 0);
   }
 
   if ((n1 != 0 && low == NULL) || (n2 != 0 && up == NULL))
   {
     PyErr_SetString(PyExc_ValueError, "tnc: invalid bounds.");
-    return NULL;
+    goto failure;
   }
 
   if (n1 != n2 || n != n1 || (scale != NULL && n != n3)
     || (offset != NULL && n != n4))
   {
     PyErr_SetString(PyExc_ValueError, "tnc: vector sizes must be equal.");
-    return NULL;
+    goto failure;
   }
 
   py_state.py_function = py_function;
@@ -214,7 +217,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
       {
         PyErr_SetString(PyExc_TypeError,
                         "tnc: callback must be callable or None.");
-        return NULL;
+        goto failure;
       }
       py_state.py_callback = py_callback;
       Py_INCREF(py_callback);
@@ -228,15 +231,28 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
   Py_DECREF(py_function);
   if (py_callback != Py_None) Py_DECREF(py_callback);
 
-  if (py_state.failed) return NULL;
+  if (py_state.failed) goto failure;
 
   if (rc == TNC_ENOMEM)
   {
     PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
-    return NULL;
+    goto failure;
   }
 
-  return Py_BuildValue("(iiiO)", rc, nfeval, niter, PyArray_Return(py_x0));
+  Py_DECREF(arr_scale);
+  Py_DECREF(arr_offset);
+  Py_DECREF(arr_low);
+  Py_DECREF(arr_up);
+
+  return Py_BuildValue("(iiiN)", rc, nfeval, niter, PyArray_Return(arr_x));
+
+failure:
+  Py_XDECREF(arr_scale);
+  Py_XDECREF(arr_offset);
+  Py_XDECREF(arr_low);
+  Py_XDECREF(arr_up);
+  Py_XDECREF(arr_x);
+  return NULL;
 }
 
 static PyMethodDef moduleTNC_methods[] =
