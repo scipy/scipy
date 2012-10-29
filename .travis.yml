@@ -1,0 +1,16 @@
+language: python
+
+python:
+  - 2.5
+  - 2.6
+  - 2.7
+  - 3.2
+
+install:
+  - sudo apt-get install gfortran swig libumfpack5.4.0 liblapack-dev libatlas-base-dev
+  - pip install --use-mirrors numpy nose
+
+script:
+  - python setup.py clean
+  - CFLAGS=-O0 python setup.py install
+  - cd /tmp && python -c "import sys, scipy; sys.exit(0 if scipy.test('full', verbose=2).wasSuccessful() else 1)"

@@ -18,6 +18,7 @@ give SciPy a try!
 
 DOCLINES = __doc__.split("\n")
 
+import gzip
 import os
 import sys
 import subprocess
