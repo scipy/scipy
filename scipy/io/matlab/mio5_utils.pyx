@@ -408,14 +408,14 @@ cdef class VarReader5:
             if mod8:
                 self.cstream.seek(8 - mod8, 1)
         return 0
-    
-    cpdef inline cnp.ndarray read_numeric(self, int copy=True):
+
+    cpdef cnp.ndarray read_numeric(self, int copy=True):
         ''' Read numeric data element into ndarray
 
-        Reads element, then casts to ndarray. 
+        Reads element, then casts to ndarray.
 
         The type of the array is given by the ``mdtype`` returned via
-        ``read_element``. 
+        ``read_element``.
         '''
         cdef cnp.uint32_t mdtype, byte_count
         cdef void *data_ptr
@@ -440,7 +440,7 @@ cdef class VarReader5:
         Py_INCREF(<object> data)
         PyArray_Set_BASE(el, data)
         return el
-            
+
     cdef inline object read_int8_string(self):
         ''' Read, return int8 type string
 
