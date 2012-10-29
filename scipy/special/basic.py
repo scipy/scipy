@@ -41,7 +41,8 @@ errprint.__doc__ = _ufuncs._errprint.__doc__
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.
     """
-    w = pi * asarray(x)
+    x = asarray(x)
+    w = pi * x
     # w might contain 0, and so temporarily turn off warnings
     # while calculating sin(w)/w.
     old_settings = seterr(all='ignore')
