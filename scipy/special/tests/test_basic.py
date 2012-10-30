@@ -1202,7 +1202,15 @@ class TestHyper(TestCase):
         assert_almost_equal(h2,h2real,8)
 
     def test_hyp0f1(self):
-        pass
+        # float input, expected values match mpmath
+        x = special.hyp0f1(3.0, [-1.5, -1, 0, 1, 1.5])
+        expected = np.array([0.58493659229143, 0.70566805723127, 1.0,
+                             1.37789689539747, 1.60373685288480])
+        assert_allclose(x, expected, rtol=1e-12)
+
+        # complex input
+        x = special.hyp0f1(3.0, np.array([-1.5, -1, 0, 1, 1.5]) + 0.j)
+        assert_allclose(x, expected.astype(np.complex), rtol=1e-12)
 
     def test_hyp1f1(self):
         hyp1 = special.hyp1f1(.1,.1,.3)

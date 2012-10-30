@@ -447,20 +447,36 @@ def fresnel_zeros(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(2,nt), specfun.fcszo(1,nt)
 
-def hyp0f1(v,z):
-    """Confluent hypergeometric limit function 0F1.
-    Limit as q->infinity of 1F1(q;a;z/q)
+def hyp0f1(a, z):
+    r"""Confluent hypergeometric limit function 0F1.
+
+    Parameters
+    ----------
+    a, z : array_like
+        Input values.
+
+    Returns
+    -------
+    hyp0f1 : ndarray
+        The confluent hypergeometric limit function.
+
+    Notes
+    -----
+    This function is defined as:
+
+    .. math:: _0F_1(a,z) = \sum_{k=0}^{\inf}\frac{z^k}{(a)_k k!}.
+
+    It's also the limit as q -> infinity of ``1F1(q;a;z/q)``, and satisfies
+    the differential equation :math:``f''(z) + af'(z) = f(z)`.
     """
+    a = asarray(a)
     z = asarray(z)
-    if issubdtype(z.dtype, complexfloating):
-        arg = 2*sqrt(abs(z))
-        num = where(z>=0, iv(v-1,arg), jv(v-1,arg))
-        den = abs(z)**((v-1.0)/2)
-    else:
-        num = iv(v-1,2*sqrt(z))
-        den = z**((v-1.0)/2.0)
-    num *= gamma(v)
-    return where(z==0,1.0,num/ asarray(den))
+    arg = 2 * sqrt(abs(z))
+    num = where(z >= 0, iv(a - 1, arg), jv(a - 1, arg))
+    den = abs(z)**((a - 1.0) / 2)
+    num *= gamma(a)
+    den[z == 0] = 1  # Avoid RuntimeWarning in next line
+    return where(z == 0, 1.0, num / den)
 
 def assoc_laguerre(x,n,k=0.0):
     return orthogonal.eval_genlaguerre(n, k, x)
