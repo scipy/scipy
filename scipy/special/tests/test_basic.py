@@ -152,7 +152,10 @@ class TestCephes(TestCase):
     def test_fdtrc(self):
         assert_equal(cephes.fdtrc(1,1,0),1.0)
     def test_fdtri(self):
-        cephes.fdtri(1,1,0.5)
+        #cephes.fdtri(1,1,0.5)  #BUG: gives NaN, should be 1
+        assert_allclose(cephes.fdtri(1, 1, [0.499, 0.501]),
+                        array([0.9937365, 1.00630298]), rtol=1e-6)
+
     def test_fdtridfd(self):
         assert_equal(cephes.fdtridfd(1,0,0),5.0)
 
