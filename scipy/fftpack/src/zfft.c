@@ -57,8 +57,9 @@ void zfft(complex_double * inout, int n, int direction, int howmany,
 	if (normalize) {
 		ptr = inout;
 		for (i = n * howmany - 1; i >= 0; --i) {
-			*((double *) (ptr)) /= n;
-			*((double *) (ptr++) + 1) /= n;
+                        ptr->r /= n;
+                        ptr->i /= n;
+                        ptr++;
 		}
 	}
 }
@@ -92,8 +93,9 @@ void cfft(complex_float * inout, int n, int direction, int howmany,
 	if (normalize) {
 		ptr = inout;
 		for (i = n * howmany - 1; i >= 0; --i) {
-			*((float *) (ptr)) /= n;
-			*((float *) (ptr++) + 1) /= n;
+                        ptr->r /= n;
+                        ptr->i /= n;
+                        ptr++;
 		}
 	}
 }
