@@ -30,23 +30,27 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     """
     Byte scales an array (image).
 
+    Byte scaling means converting the input image to uint8 dtype and scaling
+    the range to ``(low, high)`` (default 0-255).
+    If the input image already has dtype uint8, no scaling is done.
+
     Parameters
     ----------
     data : ndarray
         PIL image data array.
-    cmin :  Scalar
-        Bias scaling of small values, Default is data.min().
-    cmax : scalar
-        Bias scaling of large values, Default is data.max().
-    high : scalar
-        Scale max value to `high`.
-    low : scalar
-        Scale min value to `low`.
+    cmin : scalar, optional
+        Bias scaling of small values. Default is ``data.min()``.
+    cmax : scalar, optional
+        Bias scaling of large values. Default is ``data.max()``.
+    high : scalar, optional
+        Scale max value to `high`.  Default is 255.
+    low : scalar, optional
+        Scale min value to `low`.  Default is 0.
 
     Returns
     -------
-    img_array : ndarray
-        Bytescaled array.
+    img_array : uint8 ndarray
+        The byte-scaled array.
 
     Examples
     --------
@@ -69,12 +73,26 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     """
     if data.dtype == uint8:
         return data
-    high = high - low
-    if cmin is None: cmin = data.min()
-    if cmax is None: cmax = data.max()
-    scale = high *1.0 / (cmax-cmin or 1)
-    bytedata = ((data*1.0-cmin)*scale + 0.4999).astype(uint8)
-    return bytedata + cast[uint8](low)
+
+    if high < low:
+        raise ValueError("`high` should be larger than `low`.")
+
+    if cmin is None:
+        cmin = data.min()
+    if cmax is None:
+        cmax = data.max()
+
+    cscale = cmax - cmin
+    if cscale < 0:
+        raise ValueError("`cmax` should be larger than `cmin`.")
+    elif cscale == 0:
+        cscale = 1
+
+    scale = float(high - low) / cscale
+    bytedata = (data * 1.0 - cmin) * scale + 0.4999
+    bytedata[bytedata > high] = high
+    bytedata[bytedata < 0] = 0
+    return cast[uint8](bytedata) + cast[uint8](low)
 
 def imread(name,flatten=0):
     """
