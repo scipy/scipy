@@ -127,7 +127,7 @@ class orthopoly1d(np.poly1d):
         self.__dict__['_eval_func'] = eval_func
 
     def __call__(self, v):
-        if self._eval_func:
+        if self._eval_func and not isinstance(v, np.poly1d):
             return self._eval_func(v)
         else:
             return np.poly1d.__call__(self, v)
