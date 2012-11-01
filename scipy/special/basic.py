@@ -2,9 +2,10 @@
 # Author:  Travis Oliphant, 2002
 #
 
+import numpy as np
 from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
-        complexfloating, less, vectorize, inexact, nan, zeros, sometrue
+        less, vectorize, inexact, nan, zeros, sometrue, atleast_1d
 from _ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
         hankel1, hankel2, yv, kv, gammaln, ndtri
 import _ufuncs
@@ -469,14 +470,18 @@ def hyp0f1(a, z):
     It's also the limit as q -> infinity of ``1F1(q;a;z/q)``, and satisfies
     the differential equation :math:``f''(z) + af'(z) = f(z)`.
     """
-    a = asarray(a)
-    z = asarray(z)
+    a = atleast_1d(a)
+    z = atleast_1d(z)
+    a, z = np.broadcast_arrays(a, z)
     arg = 2 * sqrt(abs(z))
-    num = where(z >= 0, iv(a - 1, arg), jv(a - 1, arg))
+    old_err = np.seterr(all='ignore')  # for z=0, a<1 and num=inf, next lines
+    num = where(z.real >= 0, iv(a - 1, arg), jv(a - 1, arg))
     den = abs(z)**((a - 1.0) / 2)
     num *= gamma(a)
-    den[z == 0] = 1  # Avoid RuntimeWarning in next line
-    return where(z == 0, 1.0, num / den)
+    np.seterr(**old_err)
+    num[z == 0] = 1
+    den[z == 0] = 1
+    return num / den
 
 def assoc_laguerre(x,n,k=0.0):
     return orthogonal.eval_genlaguerre(n, k, x)
