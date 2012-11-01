@@ -447,12 +447,12 @@ def fresnel_zeros(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(2,nt), specfun.fcszo(1,nt)
 
-def hyp0f1(a, z):
+def hyp0f1(v, z):
     r"""Confluent hypergeometric limit function 0F1.
 
     Parameters
     ----------
-    a, z : array_like
+    v, z : array_like
         Input values.
 
     Returns
@@ -464,19 +464,19 @@ def hyp0f1(a, z):
     -----
     This function is defined as:
 
-    .. math:: _0F_1(a,z) = \sum_{k=0}^{\inf}\frac{z^k}{(a)_k k!}.
+    .. math:: _0F_1(v,z) = \sum_{k=0}^{\inf}\frac{z^k}{(v)_k k!}.
 
-    It's also the limit as q -> infinity of ``1F1(q;a;z/q)``, and satisfies
-    the differential equation :math:``f''(z) + af'(z) = f(z)`.
+    It's also the limit as q -> infinity of ``1F1(q;v;z/q)``, and satisfies
+    the differential equation :math:``f''(z) + vf'(z) = f(z)`.
     """
-    a = atleast_1d(a)
+    v = atleast_1d(v)
     z = atleast_1d(z)
-    a, z = np.broadcast_arrays(a, z)
+    v, z = np.broadcast_arrays(v, z)
     arg = 2 * sqrt(abs(z))
     old_err = np.seterr(all='ignore')  # for z=0, a<1 and num=inf, next lines
-    num = where(z.real >= 0, iv(a - 1, arg), jv(a - 1, arg))
-    den = abs(z)**((a - 1.0) / 2)
-    num *= gamma(a)
+    num = where(z.real >= 0, iv(v - 1, arg), jv(v - 1, arg))
+    den = abs(z)**((v - 1.0) / 2)
+    num *= gamma(v)
     np.seterr(**old_err)
     num[z == 0] = 1
     den[z == 0] = 1
