@@ -2156,6 +2156,22 @@ class TestPolygamma(TestCase):
         assert_almost_equal(poly2,-2.4041138063,10)
         assert_almost_equal(poly3,6.4939394023,10)
 
+        # Test polygamma(0, x) == psi(x)
+        x = [2, 3, 1.1e14]
+        assert_almost_equal(special.polygamma(0, x), special.psi(x))
+
+        # Test broadcasting
+        n = [0, 1, 2]
+        x = [0.5, 1.5, 2.5]
+        expected = [-1.9635100260214238, 0.93480220054467933,
+                    -0.23620405164172739]
+        assert_almost_equal(special.polygamma(n, x), expected)
+        expected = np.row_stack([expected]*2)
+        assert_almost_equal(special.polygamma(n, np.row_stack([x]*2)),
+                            expected)
+        assert_almost_equal(special.polygamma(np.row_stack([n]*2), x),
+                            expected)
+
 class TestProCvSeq(TestCase):
     def test_pro_cv_seq(self):
         prol = special.pro_cv_seq(0,3,1)
