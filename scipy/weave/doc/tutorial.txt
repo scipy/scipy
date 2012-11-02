@@ -15,12 +15,12 @@ Outline
  Introduction
 ==============
 
-The ``weave`` package provides tools for including C/C++ code within in
+The ``weave`` package provides tools for including C/C++ code within
 Python code. This offers both another level of optimization to those who need
 it, and an easy way to modify and extend any supported extension libraries
 such as wxPython and hopefully VTK soon. Inlining C/C++ code within Python
-generally results in speed ups of 1.5x to 30x speed-up over algorithms
-written in pure Python (However, it is also possible to slow things down...).
+generally results in speedups of 1.5x to 30x over algorithms
+written in pure Python (however, it is also possible to slow things down...).
 Generally algorithms that require a large number of calls to the Python API
 don't benefit as much from the conversion to C/C++ as algorithms that have
 inner loops completely convertable to C.
@@ -39,17 +39,17 @@ that handles templates well. Up to now, most testing has been done on Windows
 2.95.3-6). All tests also pass on Linux (RH 7.1 with gcc 2.96), and I've had
 reports that it works on Debian also (thanks Pearu).
 
-The ``inline`` and ``blitz`` provide new functionality to Python (although
+The ``inline`` and ``blitz`` functions provide new functionality to Python (although
 I've recently learned about the `PyInline`_ project which may offer similar
 functionality to ``inline``). On the other hand, tools for building Python
-extension modules already exists (SWIG, SIP, pycpp, CXX, and others). As of
+extension modules already exist (SWIG, SIP, pycpp, CXX, and others). As of
 yet, I'm not sure where ``weave`` fits in this spectrum. It is closest in
 flavor to CXX in that it makes creating new C/C++ extension modules pretty
 easy. However, if you're wrapping a gaggle of legacy functions or classes,
 SWIG and friends are definitely the better choice. ``weave`` is set up so
 that you can customize how Python types are converted to C types in
 ``weave``. This is great for ``inline()``, but, for wrapping legacy code, it
-is more flexible to specify things the other way around -- that is how C
+is more flexible to specify things the other way around -- that is, how C
 types map to Python types. This ``weave`` does not do. I guess it would be
 possible to build such a tool on top of ``weave``, but with good tools like
 SWIG around, I'm not sure the effort produces any new capabilities. Things
@@ -116,7 +116,7 @@ etc.
 -   NumPy
 
     The python `NumPy`_ module is required for ``blitz()`` to
-    work and for numpy.distutils which is used by weave.
+    work and for numpy.distutils, which is used by weave.
 
 
 ==============
@@ -124,9 +124,9 @@ etc.
 ==============
 
 There are currently two ways to get ``weave``. First, ``weave`` is part of
-SciPy and installed automatically (as a sub- package) whenever SciPy is
+SciPy and is installed automatically (as a sub-package) whenever SciPy is
 installed. Second, since ``weave`` is useful outside of the scientific
-community, it has been setup so that it can be used as a stand-alone module.
+community, it has been set up so that it can be used as a stand-alone module.
 
 The stand-alone version can be downloaded from `here`_.  Instructions for
 installing should be found there as well.  setup.py file to simplify
@@ -249,10 +249,10 @@ a = b + c + d 512x512   4.59
 5 pt avg. filter, 2D Image 512x512   9.01
 Electromagnetics (FDTD) 100x100x100   8.61
 
-The benchmarks shown ``blitz`` in the best possible light. NumPy (at least on
-my machine) is significantly worse for double precision than it is for single
-precision calculations. If your interested in single precision results, you
-can pretty much divide the double precision speed up by 3 and you'll be
+These benchmarks show ``blitz`` in the best possible light. NumPy (at least on
+my machine) is significantly worse for double-precision than it is for 
+single-precision calculations. If you're interested in single-precision results, you
+can pretty much divide the double-precision speed up by 3 and you'll be
 close.
 
 
@@ -261,7 +261,7 @@ close.
 ========
 
 ``inline()`` compiles and executes C/C++ code on the fly. Variables in the
-local and global Python scope are also available in the C/C++ code. Values
+local and global Python scopes are also available in the C/C++ code. Values
 are passed to the C/C++ code by assignment much like variables are passed
 into a standard Python function. Values are returned from the C/C++ code
 through a special argument called return_val. Also, the contents of mutable
@@ -2506,8 +2506,8 @@ not written
  Things I wish ``weave`` did
 =============================
 
-It is possible to get name clashes if you uses a variable name that is
-already defined in a header automatically included (such as ``stdio.h``) For
+It is possible to get name clashes if you use a variable name that is
+already defined in a header automatically included (such as ``stdio.h``). For
 instance, if you try to pass in a variable named ``stdout``, you'll get a
 cryptic error report due to the fact that ``stdio.h`` also defines the name.
 ``weave`` should probably try and handle this in some way. Other things...
