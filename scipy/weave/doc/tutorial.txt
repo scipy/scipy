@@ -23,7 +23,7 @@ generally results in speedups of 1.5x to 30x over algorithms
 written in pure Python (however, it is also possible to slow things down...).
 Generally algorithms that require a large number of calls to the Python API
 don't benefit as much from the conversion to C/C++ as algorithms that have
-inner loops completely convertable to C.
+inner loops completely convertible to C.
 
 There are three basic ways to use ``weave``. The ``weave.inline()`` function
 executes C code directly within Python, and ``weave.blitz()`` translates
@@ -156,7 +156,7 @@ Once ``weave`` is installed, fire up python and run its unit tests.
     >>>
 
 
-This takes a while, usually several minutes. On Unix with remote file
+This takes a while -- usually several minutes. On Unix with remote file
 systems, I've had it take 15 or so minutes. In the end, it should run about
 180 tests and spew some speed results along the way. If you get errors,
 they'll be reported at the end of the output. Please report errors that you
@@ -220,7 +220,7 @@ the test actually do, their value is limited. Still, their here for the
 curious. Look at the example scripts for more specifics about what problem
 was actually solved by each run. These examples are run under windows 2000
 using Microsoft Visual C++ and python2.1 on a 850 MHz PIII laptop with 320 MB
-of RAM. Speed up is the improvement (degredation) factor of ``weave``
+of RAM. Speed up is the improvement (degradation) factor of ``weave``
 compared to conventional Python functions. ``The blitz()`` comparisons are
 shown compared to NumPy.
 
@@ -306,7 +306,7 @@ equivalent Python code. The simple ``printf`` example is actually slower by
 30% or so than using Python ``print`` statement. And, it is not difficult to
 create code fragments that are 8-10 times slower using inline than equivalent
 Python. However, for more complicated algorithms, the speed up can be worth
-while -- anywhwere from 1.5- 30 times faster. Algorithms that have to
+while -- anywhere from 1.5-30 times faster. Algorithms that have to
 manipulate Python objects (sorting a list) usually only see a factor of 2 or
 so improvement. Algorithms that are highly computational or manipulate NumPy
 arrays can see much larger improvements. The examples/vq.py file shows a
@@ -330,7 +330,7 @@ supress the first time the code executes::
 Nothing bad is happening, its just a bit annoying. * Anyone know how to turn
 this off?*
 
-This example also demonstrates using 'raw strings'. The ``r`` preceeding the
+This example also demonstrates using 'raw strings'. The ``r`` preceding the
 code string in the last example denotes that this is a 'raw string'. In raw
 strings, the backslash character is not interpreted as an escape character,
 and so it isn't necessary to use a double backslash to indicate that the '\n'
@@ -351,7 +351,7 @@ The result?
         32956972
 
 
-In this case, the result is non-sensical, but also non-fatal. In other
+In this case, the result is nonsensical, but also non-fatal. In other
 situations, it might produce a compile time error because ``a`` is required
 to be an integer at some point in the code, or it could produce a
 segmentation fault. Its possible to protect against passing ``inline``
@@ -437,7 +437,7 @@ This Python version works for arbitrary Python data types. The C version
 below is specialized to handle integer values. There is a little type
 checking done in Python to assure that we're working with the correct data
 types before heading into C. The variables ``seq`` and ``t`` don't need to be
-declared beacuse ``weave`` handles converting and declaring them in the C
+declared because ``weave`` handles converting and declaring them in the C
 code. All other temporary variables such as ``min, max``, etc. must be
 declared -- it is C after all. Here's the new mixed Python/C function::
 
@@ -514,7 +514,7 @@ The second big differences shows up in the retrieval of integer values from
 the Python list. The simple Python ``seq[i]`` call balloons into a C Python
 API call to grab the value out of the list and then a separate call to
 ``py_to_int()`` that converts the PyObject* to an integer. ``py_to_int()``
-includes both a NULL cheack and a ``PyInt_Check()`` call as well as the
+includes both a NULL check and a ``PyInt_Check()`` call as well as the
 conversion call. If either of the checks fail, an exception is raised. The
 entire C++ code block is executed with in a ``try/catch`` block that handles
 exceptions much like Python does. This removes the need for most error
@@ -619,10 +619,10 @@ NumPy -- cast/copy/transpose
 
 CastCopyTranspose is a function called quite heavily by Linear Algebra
 routines in the NumPy library. Its needed in part because of the row-major
-memory layout of multi-demensional Python (and C) arrays vs. the col-major
+memory layout of multi-dimensional Python (and C) arrays vs. the col-major
 order of the underlying Fortran algorithms. For small matrices (say 100x100
 or less), a significant portion of the common routines such as LU
-decompisition or singular value decompostion are spent in this setup routine.
+decomposition or singular value decomposition are spent in this setup routine.
 This shouldn't happen. Here is the Python version of the function using
 standard NumPy operations.
 
@@ -657,7 +657,7 @@ And the following is a inline C version of the same function::
 
 
 This example uses blitz++ arrays instead of the standard representation of
-NumPy arrays so that indexing is simplier to write. This is accomplished by
+NumPy arrays so that indexing is simpler to write. This is accomplished by
 passing in the blitz++ "type factories" to override the standard Python to
 C++ type conversions. Blitz++ arrays allow you to write clean, fast code, but
 they also are sloooow to compile (20 seconds or more for this snippet). This
@@ -780,7 +780,7 @@ is called. This is really only useful for debugging, and probably only useful
 if you're editing support_code a lot.  compiler  optional. string. The name
 of compiler to use when compiling. On windows, it understands 'msvc' and
 'gcc' as well as all the compiler names understood by distutils. On Unix,
-it'll only understand the values understoof by distutils. (I should add 'gcc'
+it'll only understand the values understood by distutils. (I should add 'gcc'
 though to this).
 
 On windows, the compiler defaults to the Microsoft C++ compiler. If this
@@ -789,7 +789,7 @@ isn't available, it looks for mingw32 (the gcc compiler).
 On Unix, it'll probably use the same compiler that was used when compiling
 Python. Cygwin's behavior should be similar.
 
-verbose  optional. 0,1, or 2. defualt 0. Speficies how much much
+verbose  optional. 0,1, or 2. default 0. Specifies how much much
 information is printed during the compile phase of inlining code. 0 is silent
 (except on windows with msvc where it still prints some garbage). 1 informs
 you when compiling starts, finishes, and how long it took. 2 prints out the
@@ -799,7 +799,7 @@ file if you need to examine it. verbose has no affect if the compilation
 isn't necessary.  support_code  optional. string. A string of valid C++ code
 declaring extra code that might be needed by your compiled function. This
 could be declarations of functions, classes, or structures.  customize
-optional. base_info.custom_info object. An alternative way to specifiy
+optional. base_info.custom_info object. An alternative way to specify
 support_code, headers, etc. needed by the function see the weave.base_info
 module for more details. (not sure this'll be used much).  type_factories
 optional. list of type specification factories. These guys are what convert
@@ -880,8 +880,8 @@ Microsoft VC++ installed.
 
 
 When ``inline`` is first run, you'll notice that pause and some trash printed
-to the screen. The "trash" is acutually part of the compilers output that
-distutils does not supress. The name of the extension file,
+to the screen. The "trash" is actually part of the compilers output that
+distutils does not suppress. The name of the extension file,
 ``sc_bighonkingnumber.cpp``, is generated from the md5 check sum of the C/C++
 code fragment. On Unix or windows machines with only gcc installed, the trash
 will not appear. On the second call, the code fragment is not compiled since
@@ -921,7 +921,7 @@ example from above::
         21
 
 
-Everytime, the ``code`` is changed, ``inline`` does a recompile. However,
+Every time the ``code`` is changed, ``inline`` does a recompile. However,
 changing any of the other options in inline does not force a recompile. The
 ``force`` option was added so that one could force a recompile when tinkering
 with other variables. In practice, it is just as easy to change the ``code``
@@ -995,7 +995,7 @@ that you want to use in the ``code`` string. Note that changes to
 ``code`` (for performance reasons) to determine whether recompiling is
 necessary. So, if you make a change to support_code, you'll need to alter
 ``code`` in some way or use the ``force`` argument to get the code to
-recompile. I usually just add some inocuous whitespace to the end of one of
+recompile. I usually just add some innocuous whitespace to the end of one of
 the lines in ``code`` somewhere. Here's an example of defining a separate
 method for calculating the string length:
 
@@ -1043,7 +1043,7 @@ default type, set ``auto_downcast`` to 0.
 Returning Values
 ----------------
 
-Python variables in the local and global scope transfer seemlessly from
+Python variables in the local and global scope transfer seamlessly from
 Python into the C++ snippets. And, if ``inline`` were to completely live up
 to its name, any modifications to variables in the C++ code would be
 reflected in the Python variables when control was passed back to Python. For
@@ -1136,7 +1136,7 @@ confirm or correct this? Another thing I'd like to know is whether there is a
 way to write to the local namespace of another stack frame from C/C++. If so,
 it would be possible to have some clean up code in compiled functions that
 wrote final values of variables in C++ back to the correct Python stack
-frame. I think this goes a long way toward making ``inline`` truely live up
+frame. I think this goes a long way toward making ``inline`` truly live up
 to its name. I don't think we'll get to the point of creating variables in
 Python for variables created in C -- although I suppose with a C/C++ parser
 you could do that also.
@@ -1244,7 +1244,7 @@ TypeError.
             if(PyFile_Check(py_obj)) return "file";
             if(PyModule_Check(py_obj)) return "module";
 
-            //should probably do more interagation (and thinking) on these.
+            //should probably do more integration (and thinking) on these.
             if(PyCallable_Check(py_obj) && PyInstance_Check(py_obj)) return "callable";
             if(PyInstance_Check(py_obj)) return "instance";
             if(PyCallable_Check(py_obj)) return "callable";
@@ -1288,7 +1288,7 @@ Passing Variables in/out of the C/C++ code
 
 .. note::
   Passing variables into the C code is pretty straight forward, but
-  there are subtlties to how variable modifications in C are returned to
+  there are subtleties to how variable modifications in C are returned to
   Python. see `Returning Values`_ for a more thorough discussion of this issue.
 
 Type Conversions
@@ -1337,10 +1337,10 @@ This is actually the exact code that is generated by calling
 
 
 The ``/* inline code */`` section is filled with the code passed to the
-``inline()`` function call. The ``/*argument convserion code*/`` and ``/*
+``inline()`` function call. The ``/*argument conversion code*/`` and ``/*
 cleanup code */`` sections are filled with code that handles conversion from
 Python to C++ types and code that deallocates memory or manipulates reference
-counts before the function returns. The following sections demostrate how
+counts before the function returns. The following sections demonstrate how
 these two areas are filled in by the default conversion methods. * Note: I'm
 not sure I have reference counting correct on a few of these. The only thing
 I increase/decrease the ref count on is NumPy arrays. If you see an issue,
@@ -1636,12 +1636,12 @@ The Catalog
 
 ``catalog.py`` has a class called ``catalog`` that helps keep track of
 previously compiled functions. This prevents ``inline()`` and related
-functions from having to compile functions everytime they are called.
+functions from having to compile functions every time they are called.
 Instead, catalog will check an in memory cache to see if the function has
 already been loaded into python. If it hasn't, then it starts searching
-through persisent catalogs on disk to see if it finds an entry for the given
+through persistent catalogs on disk to see if it finds an entry for the given
 function. By saving information about compiled functions to disk, it isn't
-necessary to re-compile functions everytime you stop and restart the
+necessary to re-compile functions every time you stop and restart the
 interpreter. Functions are compiled once and stored for future use.
 
 When ``inline(cpp_code)`` is called the following things happen:
@@ -1723,7 +1723,7 @@ These directories will be searched prior to the default directory for a
 compiled function catalog. Also, the first writable directory in the list is
 where all new compiled function catalogs, .cpp and .so or .pyd files are
 written. Relative directory paths ('.' and '..') should work fine in the
-PYTHONCOMPILED variable as should environement variables.
+PYTHONCOMPILED variable as should environment variables.
 
 There is a "special" path variable called MODULE that can be placed in the
 PYTHONCOMPILED variable. It specifies that the compiled catalog should reside
@@ -1802,15 +1802,15 @@ quotes around it and then use ``weave.blitz``::
 
 
 The first time ``weave.blitz`` is run for a given expression and set of
-arguements, C++ code that accomplishes the exact same task as the Python
+arguments, C++ code that accomplishes the exact same task as the Python
 expression is generated and compiled to an extension module. This can take up
 to a couple of minutes depending on the complexity of the function.
-Subsequent calls to the function are very fast. Futher, the generated module
+Subsequent calls to the function are very fast. Further, the generated module
 is saved between program executions so that the compilation is only done once
 for a given expression and associated set of array types. If the given
 expression is executed with a new set of array types, the code most be
 compiled again. This does not overwrite the previously compiled function --
-both of them are saved and available for exectution.
+both of them are saved and available for execution.
 
 The following table compares the run times for standard NumPy code and
 compiled code for the 5 point averaging.
@@ -1845,7 +1845,7 @@ Limitations
 ===========
 
 1.  Currently, ``weave.blitz`` handles all standard mathematic operators
-    except for the ** power operator. The built-in trigonmetric, log,
+    except for the ** power operator. The built-in trigonometric, log,
     floor/ceil, and fabs functions might work (but haven't been tested). It
     also handles all types of array indexing supported by the NumPy module.
     numarray's NumPy compatible array indexing modes are likewise supported,
@@ -1882,7 +1882,7 @@ Limitations
     situations. It can happen when the array receiving the results of a
     calculation is also used during the calculation. The NumPy behavior is to
     carry out the entire calculation on the right hand side of an equation
-    and store it in a temporary array. This temprorary array is assigned to
+    and store it in a temporary array. This temporary array is assigned to
     the array on the left hand side of the equation. blitz, on the other
     hand, does a "running" calculation of the array elements assigning values
     from the right hand side to the elements on the left hand side
@@ -1930,7 +1930,7 @@ Limitations
 5.  One other point deserves mention lest people be confused.
     ``weave.blitz`` is not a general purpose Python->C compiler. It only
     works for expressions that contain NumPy arrays and/or Python scalar
-    values. This focused scope concentrates effort on the compuationally
+    values. This focused scope concentrates effort on the computationally
     intensive regions of the program and sidesteps the difficult issues
     associated with a general purpose Python->C compiler.
 
@@ -2094,7 +2094,7 @@ In Blitz it is as follows::
 
 Here the range object works exactly like Python slice objects with the
 exception that the top index (3) is inclusive where as Python's (4) is
-exclusive. Other differences include the type declaraions in C++ and
+exclusive. Other differences include the type declarations in C++ and
 parentheses instead of brackets for indexing arrays. Currently,
 ``weave.blitz`` handles the inclusive/exclusive issue by subtracting one from
 upper indices during the translation. An alternative that is likely more
@@ -2157,7 +2157,7 @@ expression with the following translations::
 ``_all`` is defined in the compiled function as ``blitz::Range.all()``. These
 translations could of course happen directly in the syntax tree. But the
 string replacement is slightly easier. Note that name spaces are maintained
-in the C++ code to lessen the likelyhood of name clashes. Currently no effort
+in the C++ code to lessen the likelihood of name clashes. Currently no effort
 is made to detect name clashes. A good rule of thumb is don't use values that
 start with '_' or 'py\_' in compiled expressions and you'll be fine.
 
@@ -2217,7 +2217,7 @@ and left hand side (assignment side) of your equation in the compiled
 expression. Also, the array being assigned to must be created prior to
 calling ``weave.blitz``. I'm pretty sure this is easily changed so that a
 compiled_eval expression can be defined, but no effort has been made to
-allocate new arrays (and decern their type) on the fly.
+allocate new arrays (and discern their type) on the fly.
 
 
 Cataloging Compiled Functions
@@ -2258,7 +2258,7 @@ compatible before evaluating the expression.
 
 The solution chosen converts input arrays to "dummy arrays" that only
 represent the dimensions of the arrays, not the data. Binary operations on
-dummy arrays check that input array sizes are comptible and return a dummy
+dummy arrays check that input array sizes are compatible and return a dummy
 array with the size correct size. Evaluating an expression of dummy arrays
 traces the changing array sizes through all operations and fails if
 incompatible array sizes are ever found.
@@ -2308,7 +2308,7 @@ automatically.
   The main difference is that the standard class converts function
   arguments to C types, while inline always has two arguments, the
   local and global dicts, and the grabs the variables that need to be
-  convereted to C from these.
+  converted to C from these.
 
 A Simple Example
 ================
