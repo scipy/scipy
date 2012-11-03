@@ -45,6 +45,11 @@ There should be either a single header that contains all of the kernel
 functions listed, or there should be one header for each kernel
 function. Cython pxd files are allowed in addition to .h files.
 
+Floating-point exceptions inside these Ufuncs are converted to
+special function errors --- which are separately controlled by the
+user, and off by default, as they are usually not especially useful
+for the user.
+
 """
 
 #---------------------------------------------------------------------------------
@@ -258,28 +263,29 @@ EXTRA_CODE_COMMON = """
 # Error handling system
 #
 
+cimport sf_error as sferr
+
 cdef extern from "stdarg.h":
-     ctypedef struct va_list:
-         pass
-     void va_start(va_list, void* arg) nogil
-     void va_end(va_list) nogil
+    ctypedef struct va_list:
+        pass
+    void va_start(va_list, void* arg) nogil
+    void va_end(va_list) nogil
 
 cdef extern from "Python.h":
     int PyOS_vsnprintf(char *, size_t, char *, va_list va) nogil
     int PyOS_snprintf(char *, size_t, char *, ...) nogil
 
-cdef extern from "sf_error.h":
-    ctypedef enum sf_error_t:
-        SF_ERROR_OK
-        SF_ERROR_DOMAIN
-    char **sf_error_messages
+cimport numpy as cnp
+
+cdef extern from "numpy/ufuncobject.h":
+    int PyUFunc_getfperr() nogil
 
 from cpython.exc cimport PyErr_WarnEx
 
 cdef int _print_error_messages = 0
-cdef sf_error_t _last_error = SF_ERROR_OK
+cdef sferr.sf_error_t _last_error = sferr.OK
 
-cdef public void sf_error(char *func_name, sf_error_t code, char *fmt, ...) nogil except *:
+cdef public void sf_error(char *func_name, sferr.sf_error_t code, char *fmt, ...) nogil except *:
     cdef char msg[1024], info[2048]
     cdef va_list ap
 
@@ -297,16 +303,28 @@ cdef public void sf_error(char *func_name, sf_error_t code, char *fmt, ...) nogi
         PyOS_vsnprintf(info, 1024, fmt, ap)
         va_end(ap)
         PyOS_snprintf(msg, 2048, "scipy.special/%s: (%s) %s",
-                      func_name, sf_error_messages[<int>code], info)
+                      func_name, sferr.sf_error_messages[<int>code], info)
     else:
         PyOS_snprintf(msg, 2048, "scipy.special/%s: %s",
-                      func_name, sf_error_messages[<int>code])
+                      func_name, sferr.sf_error_messages[<int>code])
 
     with gil:
         from scipy.special import SpecialFunctionWarning
         PyErr_WarnEx(SpecialFunctionWarning, msg, 1)
 
-cdef extern int scipy_special_print_error_messages
+cdef public void sf_error_check_fpe(char *func_name) nogil:
+    cdef int status
+    status = PyUFunc_getfperr()
+    if not _print_error_messages:
+        return
+    if status & cnp.UFUNC_FPE_DIVIDEBYZERO:
+        sf_error(func_name, sferr.SINGULAR, "floating point division by zero")
+    if status & cnp.UFUNC_FPE_UNDERFLOW:
+        sf_error(func_name, sferr.UNDERFLOW, "floating point underflow")
+    if status & cnp.UFUNC_FPE_OVERFLOW:
+        sf_error(func_name, sferr.OVERFLOW, "floating point overflow")
+    if status & cnp.UFUNC_FPE_INVALID:
+        sf_error(func_name, sferr.DOMAIN, "floating point invalid value")
 
 def _errprint(inflag=None):
     \"\"\"
@@ -514,7 +532,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         body += "        if %s:\n" % (" and ".join(input_checks))
         body += "    " + funcall
         body += "        else:\n"
-        body += "            sf_error(NULL, SF_ERROR_DOMAIN, \"invalid input argument\")\n"
+        body += "            sf_error(NULL, sferr.DOMAIN, \"invalid input argument\")\n"
         for j, outtype in enumerate(outtypecodes):
             body += "            ov%d = <%s>%s\n" % (
                 j, CY_TYPES[outtype], NAN_VALUE[outtype])
@@ -528,7 +546,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
             body += "            (<%s *>op%d)[0] = <%s>ov%d\n" % (
                 CY_TYPES[outtype], j, CY_TYPES[outtype], j)
             body += "        else:\n"
-            body += "            sf_error(NULL, SF_ERROR_DOMAIN, \"invalid output\")\n"
+            body += "            sf_error(NULL, sferr.DOMAIN, \"invalid output\")\n"
             body += "            (<%s *>op%d)[0] = <%s>%s\n" % (
                 CY_TYPES[outtype], j, CY_TYPES[outtype], NAN_VALUE[outtype])
         else:
@@ -538,6 +556,8 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         body += "        ip%d += steps[%d]\n" % (j, j)
     for j in range(len(ufunc_outputs)):
         body += "        op%d += steps[%d]\n" % (j, j + len(ufunc_inputs))
+
+    body += "    sf_error_check_fpe(NULL)\n"
 
     return name, body
 

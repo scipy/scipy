@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <Python.h>
+
 #include "sf_error.h"
 
 const char *sf_error_messages[] = {

@@ -13,4 +13,6 @@ cdef extern from "sf_error.h":
           ARG "SF_ERROR_ARG"
           OTHER "SF_ERROR_OTHER"
 
+     char **sf_error_messages
      void error "sf_error" (char *func_name, sf_error_t code, char *fmt, ...) nogil
+     void check_fpe "sf_error_check_fpe" (char *func_name) nogil

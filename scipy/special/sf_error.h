@@ -21,6 +21,7 @@ typedef enum {
 
 extern const char *sf_error_messages[];
 void sf_error(char *func_name, sf_error_t code, char *fmt, ...);
+void sf_error_check_fpe(char *func_name);
 
 #ifdef __cplusplus
 }
