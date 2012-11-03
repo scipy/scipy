@@ -111,7 +111,7 @@ extern double ImFaddeeva_w(double x); // special-case code for Im[w(x)]
 
 using namespace std;
 
-static double erfcx(double x);
+double erfcx(double x);
 
 // return sinc(x) = sin(x)/x, given both x and sin(x) 
 // [since we only use this in cases where sin(x) has already been computed]
@@ -915,7 +915,7 @@ return 0.97771701335885035464e0 + (0.22000938572830479551e-1 + (0.27951610702682
   return 1.0;
 }
 
-static double erfcx(double x)
+double erfcx(double x)
 {
   if (x >= 0) {
     if (x > 50) { // continued-fraction expansion is faster
