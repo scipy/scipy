@@ -1770,17 +1770,23 @@ class TestBessel(TestCase):
         x = np.random.pareto(0.2, N) * (-1)**np.random.randint(2, size=N)
 
         imsk = (np.random.randint(8, size=N) == 0)
-        v[imsk] = v.astype(int)
+        v[imsk] = v[imsk].astype(int)
 
-        c1 = special.iv(v, x)
-        c2 = special.iv(v, x+0j)
+        old_err = np.seterr(all='ignore')
+        try:
+            c1 = special.iv(v, x)
+            c2 = special.iv(v, x+0j)
 
-        # deal with differences in the inf cutoffs
-        c1[abs(c1) > 1e300] = np.inf
-        c2[abs(c2) > 1e300] = np.inf
+            # deal with differences in the inf and zero cutoffs
+            c1[abs(c1) > 1e300] = np.inf
+            c2[abs(c2) > 1e300] = np.inf
+            c1[abs(c1) < 1e-300] = 0
+            c2[abs(c2) < 1e-300] = 0
 
-        dc = abs(c1/c2 - 1)
-        dc[np.isnan(dc)] = 0
+            dc = abs(c1/c2 - 1)
+            dc[np.isnan(dc)] = 0
+        finally:
+            np.seterr(**old_err)
 
         k = np.argmax(dc)
 
