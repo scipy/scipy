@@ -258,6 +258,7 @@ Error Function and Fresnel Integrals
 
    erf           -- Error function.
    erfc          -- Complemented error function (1- erf(x))
+   erfcx         -- Scaled complemented error function exp(x**2)*erfc(x)
    erfinv        -- Inverse of error function
    erfcinv       -- Inverse of erfc
    wofz          -- Fadeeva function.

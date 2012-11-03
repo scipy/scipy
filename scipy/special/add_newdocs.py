@@ -294,6 +294,11 @@ add_newdoc("scipy.special", "erfc",
     y=erfc(x) returns 1 - erf(x).
     """)
 
+add_newdoc("scipy.special", "erfcx",
+    """
+    Scaled complementary error function, exp(x^2) erfc(x)
+    """)
+
 add_newdoc("scipy.special", "exp1",
     """
     y=exp1(z) returns the exponential integral (n=1) of complex argument
