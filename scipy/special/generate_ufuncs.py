@@ -87,7 +87,6 @@ cbrt -- cbrt: d->d                                         -- cephes.h
 chdtrc -- chdtrc: dd->d                                    -- cephes.h
 chdtr -- chdtr: dd->d                                      -- cephes.h
 chdtri -- chdtri: dd->d                                    -- cephes.h
-dawsn -- dawsn: d->d                                       -- cephes.h
 ellipeinc -- ellie: dd->d                                  -- cephes.h
 ellipkinc -- ellik: dd->d                                  -- cephes.h
 ellipe -- ellpe: d->d                                      -- cephes.h
@@ -245,6 +244,7 @@ UFUNCS_CXX = """
 wofz -- faddeeva_w: D->D                                   -- _faddeeva.h
 erfc -- erfc: d->d, faddeeva_erfc: D->D                    -- cephes.h, _faddeeva.h
 erf -- erf: d->d, faddeeva_erf: D->D                       -- cephes.h, _faddeeva.h
+dawsn -- faddeeva_dawsn: d->d                              -- _faddeeva.h
 erfcx -- faddeeva_erfcx: d->d, faddeeva_erfcx_complex: D->D -- _faddeeva.h
 """
 

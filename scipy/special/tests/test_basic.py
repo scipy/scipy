@@ -110,7 +110,8 @@ class TestCephes(TestCase):
         assert_almost_equal(cephes.cotdg(45),1.0)
 
     def test_dawsn(self):
-        assert_equal(cephes.dawsn(0),0.0)
+        assert_equal(_ufuncs_cxx.dawsn(0),0.0)
+        assert_allclose(_ufuncs_cxx.dawsn(1.23), 0.50053727749081767)
 
     def test_ellipe(self):
         assert_equal(cephes.ellipe(1),1.0)
