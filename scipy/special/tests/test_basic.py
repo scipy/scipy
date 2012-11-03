@@ -820,6 +820,9 @@ class TestTrigonometric(TestCase):
         yre[20] = 1.0
         assert_array_almost_equal(y, yre, 4)
 
+        # Regression test for ticket 1751.
+        assert_array_almost_equal(special.sinc([0]), 1)
+
     def test_0(self):
         x = 0.0
         assert_equal(special.sinc(x),1.0)
