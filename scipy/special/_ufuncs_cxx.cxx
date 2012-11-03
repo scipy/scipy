@@ -788,9 +788,9 @@ static char *__pyx_v_5scipy_7special_11_ufuncs_cxx_ufunc_wofz_doc;
 static int __pyx_v_5scipy_7special_11_ufuncs_cxx__print_error_messages;
 static sf_error_t __pyx_v_5scipy_7special_11_ufuncs_cxx__last_error;
 static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_d_d__As_f_f(char **, npy_intp *, npy_intp *, void *); 
-static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_D_D__As_F_F(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_D_D__As_D_D(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_d_d__As_d_d(char **, npy_intp *, npy_intp *, void *); 
+static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_D_D__As_F_F(char **, npy_intp *, npy_intp *, void *); 
 __PYX_EXTERN_C DL_IMPORT(npy_double) faddeeva_dawsn(npy_double); 
 __PYX_EXTERN_C DL_IMPORT(npy_cdouble) faddeeva_dawsn_complex(npy_cdouble); 
 __PYX_EXTERN_C DL_IMPORT(npy_double) erf(npy_double); 
@@ -945,47 +945,6 @@ static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_d_d__As_f_f(char **__pyx_
 
 
 
-static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_D_D__As_F_F(char **__pyx_v_args, npy_intp *__pyx_v_dims, npy_intp *__pyx_v_steps, void *__pyx_v_func) {
-  CYTHON_UNUSED npy_intp __pyx_v_i;
-  npy_intp __pyx_v_n;
-  char *__pyx_v_ip0;
-  char *__pyx_v_op0;
-  __pyx_t_double_complex __pyx_v_ov0;
-  npy_intp __pyx_t_1;
-  npy_intp __pyx_t_2;
-
-  
-  __pyx_v_n = (__pyx_v_dims[0]);
-
-  
-  __pyx_v_ip0 = (__pyx_v_args[0]);
-  __pyx_v_op0 = (__pyx_v_args[1]);
-
-  
-  __pyx_t_1 = __pyx_v_n;
-  for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
-    __pyx_v_i = __pyx_t_2;
-
-    
-    __pyx_v_ov0 = ((__pyx_t_double_complex (*)(__pyx_t_double_complex))__pyx_v_func)(__pyx_t_double_complex_from_parts(((double)__Pyx_CREAL((((__pyx_t_float_complex *)__pyx_v_ip0)[0]))), ((double)__Pyx_CIMAG((((__pyx_t_float_complex *)__pyx_v_ip0)[0])))));
-
-    
-    (((__pyx_t_float_complex *)__pyx_v_op0)[0]) = __pyx_t_float_complex_from_parts(((float)__Pyx_CREAL(__pyx_v_ov0)), ((float)__Pyx_CIMAG(__pyx_v_ov0)));
-
-    
-    __pyx_v_ip0 = (__pyx_v_ip0 + (__pyx_v_steps[0]));
-
-    
-    __pyx_v_op0 = (__pyx_v_op0 + (__pyx_v_steps[1]));
-  }
-
-  
-  sf_error_check_fpe(NULL);
-
-}
-
-
-
 static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_D_D__As_D_D(char **__pyx_v_args, npy_intp *__pyx_v_dims, npy_intp *__pyx_v_steps, void *__pyx_v_func) {
   CYTHON_UNUSED npy_intp __pyx_v_i;
   npy_intp __pyx_v_n;
@@ -1053,6 +1012,47 @@ static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_d_d__As_d_d(char **__pyx_
 
     
     (((double *)__pyx_v_op0)[0]) = ((double)__pyx_v_ov0);
+
+    
+    __pyx_v_ip0 = (__pyx_v_ip0 + (__pyx_v_steps[0]));
+
+    
+    __pyx_v_op0 = (__pyx_v_op0 + (__pyx_v_steps[1]));
+  }
+
+  
+  sf_error_check_fpe(NULL);
+
+}
+
+
+
+static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_D_D__As_F_F(char **__pyx_v_args, npy_intp *__pyx_v_dims, npy_intp *__pyx_v_steps, void *__pyx_v_func) {
+  CYTHON_UNUSED npy_intp __pyx_v_i;
+  npy_intp __pyx_v_n;
+  char *__pyx_v_ip0;
+  char *__pyx_v_op0;
+  __pyx_t_double_complex __pyx_v_ov0;
+  npy_intp __pyx_t_1;
+  npy_intp __pyx_t_2;
+
+  
+  __pyx_v_n = (__pyx_v_dims[0]);
+
+  
+  __pyx_v_ip0 = (__pyx_v_args[0]);
+  __pyx_v_op0 = (__pyx_v_args[1]);
+
+  
+  __pyx_t_1 = __pyx_v_n;
+  for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
+    __pyx_v_i = __pyx_t_2;
+
+    
+    __pyx_v_ov0 = ((__pyx_t_double_complex (*)(__pyx_t_double_complex))__pyx_v_func)(__pyx_t_double_complex_from_parts(((double)__Pyx_CREAL((((__pyx_t_float_complex *)__pyx_v_ip0)[0]))), ((double)__Pyx_CIMAG((((__pyx_t_float_complex *)__pyx_v_ip0)[0])))));
+
+    
+    (((__pyx_t_float_complex *)__pyx_v_op0)[0]) = __pyx_t_float_complex_from_parts(((float)__Pyx_CREAL(__pyx_v_ov0)), ((float)__Pyx_CIMAG(__pyx_v_ov0)));
 
     
     __pyx_v_ip0 = (__pyx_v_ip0 + (__pyx_v_steps[0]));

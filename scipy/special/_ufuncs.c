@@ -1516,7 +1516,7 @@ static int __pyx_v_5scipy_7special_7_ufuncs__print_error_messages;
 static sf_error_t __pyx_v_5scipy_7special_7_ufuncs__last_error;
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_dd_d(char **, npy_intp *, npy_intp *, void *); 
-static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_ffff_ff(char **, npy_intp *, npy_intp *, void *); 
+static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddd_dd(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_ddddd_dd(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_d_dd(char **, npy_intp *, npy_intp *, void *); 
@@ -1532,7 +1532,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_dd_dd(char **, npy_
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_ff_ffff(char **, npy_intp *, npy_intp *, void *); 
-static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddd_dd(char **, npy_intp *, npy_intp *, void *); 
+static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_ffff_ff(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_Dld__As_Fff_F(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ddD_D(char **, npy_intp *, npy_intp *, void *); 
@@ -2517,7 +2517,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_dd_d(char **__pyx_v_a
 
 
 
-static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_ffff_ff(char **__pyx_v_args, npy_intp *__pyx_v_dims, npy_intp *__pyx_v_steps, void *__pyx_v_func) {
+static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddd_dd(char **__pyx_v_args, npy_intp *__pyx_v_dims, npy_intp *__pyx_v_steps, void *__pyx_v_func) {
   CYTHON_UNUSED npy_intp __pyx_v_i;
   npy_intp __pyx_v_n;
   char *__pyx_v_ip0;
@@ -2552,11 +2552,11 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_ffff_ff(char **__p
     __pyx_v_i = __pyx_t_2;
 
     
-    __pyx_t_3 = (((int)(((float *)__pyx_v_ip3)[0])) == (((float *)__pyx_v_ip3)[0]));
+    __pyx_t_3 = (((int)(((double *)__pyx_v_ip3)[0])) == (((double *)__pyx_v_ip3)[0]));
     if (__pyx_t_3) {
 
       
-      __pyx_v_ov0 = ((double (*)(double, double, double, int, double *))__pyx_v_func)(((double)(((float *)__pyx_v_ip0)[0])), ((double)(((float *)__pyx_v_ip1)[0])), ((double)(((float *)__pyx_v_ip2)[0])), ((int)(((float *)__pyx_v_ip3)[0])), (&__pyx_v_ov1));
+      __pyx_v_ov0 = ((double (*)(double, double, double, int, double *))__pyx_v_func)(((double)(((double *)__pyx_v_ip0)[0])), ((double)(((double *)__pyx_v_ip1)[0])), ((double)(((double *)__pyx_v_ip2)[0])), ((int)(((double *)__pyx_v_ip3)[0])), (&__pyx_v_ov1));
       goto __pyx_L5;
     }
      {
@@ -2573,10 +2573,10 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_ffff_ff(char **__p
     __pyx_L5:;
 
     
-    (((float *)__pyx_v_op0)[0]) = ((float)__pyx_v_ov0);
+    (((double *)__pyx_v_op0)[0]) = ((double)__pyx_v_ov0);
 
     
-    (((float *)__pyx_v_op1)[0]) = ((float)__pyx_v_ov1);
+    (((double *)__pyx_v_op1)[0]) = ((double)__pyx_v_ov1);
 
     
     __pyx_v_ip0 = (__pyx_v_ip0 + (__pyx_v_steps[0]));
@@ -2606,7 +2606,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_ffff_ff(char **__p
     #ifdef WITH_THREAD
     PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
     #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddi_d_As_ffff_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddi_d_As_dddd_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
     #ifdef WITH_THREAD
     PyGILState_Release(__pyx_gilstate_save);
     #endif
@@ -3560,7 +3560,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_ff_ffff(char **__
 
 
 
-static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddd_dd(char **__pyx_v_args, npy_intp *__pyx_v_dims, npy_intp *__pyx_v_steps, void *__pyx_v_func) {
+static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_ffff_ff(char **__pyx_v_args, npy_intp *__pyx_v_dims, npy_intp *__pyx_v_steps, void *__pyx_v_func) {
   CYTHON_UNUSED npy_intp __pyx_v_i;
   npy_intp __pyx_v_n;
   char *__pyx_v_ip0;
@@ -3595,11 +3595,11 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddd_dd(char **__p
     __pyx_v_i = __pyx_t_2;
 
     
-    __pyx_t_3 = (((int)(((double *)__pyx_v_ip3)[0])) == (((double *)__pyx_v_ip3)[0]));
+    __pyx_t_3 = (((int)(((float *)__pyx_v_ip3)[0])) == (((float *)__pyx_v_ip3)[0]));
     if (__pyx_t_3) {
 
       
-      __pyx_v_ov0 = ((double (*)(double, double, double, int, double *))__pyx_v_func)(((double)(((double *)__pyx_v_ip0)[0])), ((double)(((double *)__pyx_v_ip1)[0])), ((double)(((double *)__pyx_v_ip2)[0])), ((int)(((double *)__pyx_v_ip3)[0])), (&__pyx_v_ov1));
+      __pyx_v_ov0 = ((double (*)(double, double, double, int, double *))__pyx_v_func)(((double)(((float *)__pyx_v_ip0)[0])), ((double)(((float *)__pyx_v_ip1)[0])), ((double)(((float *)__pyx_v_ip2)[0])), ((int)(((float *)__pyx_v_ip3)[0])), (&__pyx_v_ov1));
       goto __pyx_L5;
     }
      {
@@ -3616,10 +3616,10 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddd_dd(char **__p
     __pyx_L5:;
 
     
-    (((double *)__pyx_v_op0)[0]) = ((double)__pyx_v_ov0);
+    (((float *)__pyx_v_op0)[0]) = ((float)__pyx_v_ov0);
 
     
-    (((double *)__pyx_v_op1)[0]) = ((double)__pyx_v_ov1);
+    (((float *)__pyx_v_op1)[0]) = ((float)__pyx_v_ov1);
 
     
     __pyx_v_ip0 = (__pyx_v_ip0 + (__pyx_v_steps[0]));
@@ -3649,7 +3649,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddd_dd(char **__p
     #ifdef WITH_THREAD
     PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
     #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddi_d_As_dddd_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddi_d_As_ffff_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
     #ifdef WITH_THREAD
     PyGILState_Release(__pyx_gilstate_save);
     #endif
@@ -8465,10 +8465,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_lf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_ff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_ld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_ld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_ff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_dd_d);
@@ -8483,22 +8483,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[3]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[3]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[4]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[5]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[6]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[6]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[7]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[8]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[8]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_types[9]) = ((char)NPY_DOUBLE);
@@ -8801,10 +8801,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_ddd_d);
@@ -8822,28 +8822,28 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[4]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[5]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[7]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[8]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[8]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[9]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[9]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[10]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[10]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[11]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[11]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_types[12]) = ((char)NPY_DOUBLE);
@@ -8882,10 +8882,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_ddd_d);
@@ -8903,28 +8903,28 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[4]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[5]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[7]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[8]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[8]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[9]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[9]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[10]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[10]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[11]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[11]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_types[12]) = ((char)NPY_DOUBLE);
@@ -8963,10 +8963,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_ddd_d);
@@ -8984,28 +8984,28 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[4]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[5]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[7]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[8]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[8]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[9]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[9]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[10]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[10]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[11]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[11]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_types[12]) = ((char)NPY_DOUBLE);
@@ -10586,10 +10586,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_dd_d);
@@ -10604,22 +10604,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[3]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[3]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[4]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[5]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[6]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[6]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[7]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[8]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[8]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_types[9]) = ((char)NPY_DOUBLE);
@@ -11555,10 +11555,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_ddd_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ffF_F);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ffF_F);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_ddd_d);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ddD_D);
@@ -11576,28 +11576,28 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[4]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[4]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[5]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[5]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[6]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[6]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[7]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[8]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[8]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[9]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[9]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[10]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[10]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[11]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[11]) = ((char)NPY_DOUBLE);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_types[12]) = ((char)NPY_DOUBLE);
@@ -11615,10 +11615,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_data[0]) = ((void *)hyp1f1_wrap);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_data[1]) = ((void *)hyp1f1_wrap);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_data[1]) = ((void *)chyp1f1_wrap);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_data[2]) = ((void *)chyp1f1_wrap);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_data[2]) = ((void *)hyp1f1_wrap);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_data[3]) = ((void *)chyp1f1_wrap);
@@ -11798,10 +11798,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_dddd_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_fffF_F);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_fffF_F);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_dddd_d);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_dddD_D);
@@ -11822,34 +11822,34 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[4]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[5]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[5]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[6]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[6]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[7]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[8]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[8]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[9]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[9]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[10]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[10]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[11]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[11]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[12]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[12]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[13]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[13]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[14]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[14]) = ((char)NPY_DOUBLE);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_types[15]) = ((char)NPY_DOUBLE);
@@ -11870,10 +11870,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_data[0]) = ((void *)hyp2f1);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_data[1]) = ((void *)hyp2f1);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_data[1]) = ((void *)chyp2f1_wrap);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_data[2]) = ((void *)chyp2f1_wrap);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_data[2]) = ((void *)hyp2f1);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_data[3]) = ((void *)chyp2f1_wrap);
@@ -12431,10 +12431,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D);
@@ -12449,22 +12449,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[3]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[4]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[4]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[5]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[5]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[7]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[8]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[8]) = ((char)NPY_DOUBLE);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_types[9]) = ((char)NPY_DOUBLE);
@@ -12479,10 +12479,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_data[0]) = ((void *)iv);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_data[1]) = ((void *)iv);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_data[1]) = ((void *)cbesi_wrap);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_data[2]) = ((void *)cbesi_wrap);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_data[2]) = ((void *)iv);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_data[3]) = ((void *)cbesi_wrap);
@@ -12500,10 +12500,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D);
@@ -12518,22 +12518,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[3]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[4]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[4]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[5]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[5]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[7]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[8]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[8]) = ((char)NPY_DOUBLE);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_types[9]) = ((char)NPY_DOUBLE);
@@ -12548,10 +12548,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_data[0]) = ((void *)cbesi_wrap_e_real);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_data[1]) = ((void *)cbesi_wrap_e_real);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_data[1]) = ((void *)cbesi_wrap_e);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_data[2]) = ((void *)cbesi_wrap_e);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_data[2]) = ((void *)cbesi_wrap_e_real);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_data[3]) = ((void *)cbesi_wrap_e);
@@ -12635,10 +12635,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D);
@@ -12653,22 +12653,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[3]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[4]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[4]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[5]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[5]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[7]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[8]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[8]) = ((char)NPY_DOUBLE);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_types[9]) = ((char)NPY_DOUBLE);
@@ -12683,10 +12683,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_data[0]) = ((void *)jv);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_data[1]) = ((void *)jv);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_data[1]) = ((void *)cbesj_wrap);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_data[2]) = ((void *)cbesj_wrap);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_data[2]) = ((void *)jv);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_data[3]) = ((void *)cbesj_wrap);
@@ -12704,10 +12704,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D);
@@ -12722,22 +12722,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[3]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[4]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[4]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[5]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[5]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[7]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[8]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[8]) = ((char)NPY_DOUBLE);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_types[9]) = ((char)NPY_DOUBLE);
@@ -12752,10 +12752,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_data[0]) = ((void *)cbesj_wrap_e_real);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_data[1]) = ((void *)cbesj_wrap_e_real);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_data[1]) = ((void *)cbesj_wrap_e);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_data[2]) = ((void *)cbesj_wrap_e);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_data[2]) = ((void *)cbesj_wrap_e_real);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_data[3]) = ((void *)cbesj_wrap_e);
@@ -13088,10 +13088,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_dd_d);
@@ -13106,22 +13106,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[3]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[3]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[4]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[5]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[6]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[6]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[7]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[8]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[8]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_types[9]) = ((char)NPY_DOUBLE);
@@ -13223,10 +13223,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D);
@@ -13241,22 +13241,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[3]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[4]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[4]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[5]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[5]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[7]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[8]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[8]) = ((char)NPY_DOUBLE);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_types[9]) = ((char)NPY_DOUBLE);
@@ -13271,10 +13271,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_data[0]) = ((void *)cbesk_wrap_real);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_data[1]) = ((void *)cbesk_wrap_real);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_data[1]) = ((void *)cbesk_wrap);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_data[2]) = ((void *)cbesk_wrap);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_data[2]) = ((void *)cbesk_wrap_real);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_data[3]) = ((void *)cbesk_wrap);
@@ -13292,10 +13292,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D);
@@ -13310,22 +13310,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[3]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[4]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[4]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[5]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[5]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[7]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[8]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[8]) = ((char)NPY_DOUBLE);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_types[9]) = ((char)NPY_DOUBLE);
@@ -13340,10 +13340,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_data[0]) = ((void *)cbesk_wrap_e_real);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_data[1]) = ((void *)cbesk_wrap_e_real);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_data[1]) = ((void *)cbesk_wrap_e);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_data[2]) = ((void *)cbesk_wrap_e);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_data[2]) = ((void *)cbesk_wrap_e_real);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_data[3]) = ((void *)cbesk_wrap_e);
@@ -14018,10 +14018,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_ddd_d);
@@ -14039,28 +14039,28 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[4]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[5]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[7]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[8]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[8]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[9]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[9]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[10]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[10]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[11]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[11]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_types[12]) = ((char)NPY_DOUBLE);
@@ -14099,10 +14099,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_ddd_d);
@@ -14120,28 +14120,28 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[4]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[5]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[7]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[8]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[8]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[9]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[9]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[10]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[10]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[11]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[11]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_types[12]) = ((char)NPY_DOUBLE);
@@ -14180,10 +14180,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_fff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_ddd_d);
@@ -14201,28 +14201,28 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[4]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[5]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[7]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[8]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[8]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[9]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[9]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[10]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[10]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[11]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[11]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_types[12]) = ((char)NPY_DOUBLE);
@@ -15482,10 +15482,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_dd_d);
@@ -15500,22 +15500,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[3]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[3]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[4]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[5]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[6]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[6]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[7]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[8]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[8]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_types[9]) = ((char)NPY_DOUBLE);
@@ -15551,10 +15551,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_dd_d);
@@ -15569,22 +15569,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[3]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[3]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[4]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[5]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[6]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[6]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[7]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[8]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[8]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_types[9]) = ((char)NPY_DOUBLE);
@@ -15620,10 +15620,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_dd_d);
@@ -15638,22 +15638,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[3]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[3]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[4]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[5]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[6]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[6]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[7]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[8]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[8]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_types[9]) = ((char)NPY_DOUBLE);
@@ -16436,10 +16436,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_dd_d);
@@ -16454,22 +16454,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[3]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[3]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[4]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[5]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[6]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[6]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[7]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[8]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[8]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_types[9]) = ((char)NPY_DOUBLE);
@@ -16505,10 +16505,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_dd_d);
@@ -16523,22 +16523,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[3]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[3]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[4]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[5]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[6]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[6]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[7]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[8]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[8]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_types[9]) = ((char)NPY_DOUBLE);
@@ -16901,10 +16901,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ff_f);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_dd_d);
@@ -16919,22 +16919,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[3]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[3]) = ((char)NPY_LONG);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[4]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[4]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[5]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[5]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[6]) = ((char)NPY_LONG);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[6]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[7]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[7]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[8]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[8]) = ((char)NPY_FLOAT);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_types[9]) = ((char)NPY_DOUBLE);
@@ -16970,10 +16970,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D);
@@ -16988,22 +16988,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[3]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[4]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[4]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[5]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[5]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[7]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[8]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[8]) = ((char)NPY_DOUBLE);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_types[9]) = ((char)NPY_DOUBLE);
@@ -17018,10 +17018,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_data[0]) = ((void *)yv);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_data[1]) = ((void *)yv);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_data[1]) = ((void *)cbesy_wrap);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_data[2]) = ((void *)cbesy_wrap);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_data[2]) = ((void *)yv);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_data[3]) = ((void *)cbesy_wrap);
@@ -17039,10 +17039,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_loops[1]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_loops[2]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_loops[3]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D);
@@ -17057,22 +17057,22 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[2]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[3]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[3]) = ((char)NPY_FLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[4]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[4]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[5]) = ((char)NPY_DOUBLE);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[5]) = ((char)NPY_CFLOAT);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[6]) = ((char)NPY_FLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[6]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[7]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[7]) = ((char)NPY_DOUBLE);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[8]) = ((char)NPY_CFLOAT);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[8]) = ((char)NPY_DOUBLE);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_types[9]) = ((char)NPY_DOUBLE);
@@ -17087,10 +17087,10 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_data[0]) = ((void *)cbesy_wrap_e_real);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_data[1]) = ((void *)cbesy_wrap_e_real);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_data[1]) = ((void *)cbesy_wrap_e);
 
   
-  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_data[2]) = ((void *)cbesy_wrap_e);
+  (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_data[2]) = ((void *)cbesy_wrap_e_real);
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_data[3]) = ((void *)cbesy_wrap_e);
