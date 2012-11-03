@@ -406,6 +406,9 @@ TYPE_NAMES = {
     'l': 'np.NPY_LONG',
 }
 
+def cast_order(c):
+    return map(lambda x: 'ilfdgFDG'.index(x), c)
+
 # These downcasts will cause the function to return NaNs, unless the
 # values happen to coincide exactly.
 DANGEROUS_DOWNCAST = set([
@@ -594,7 +597,7 @@ def iter_variants(inputs, outputs):
         maps.append(('il', 'ff'))
 
     # float32-preserving signatures
-    maps = [(a + 'dD', b + 'fF') for a, b in maps] + maps
+    maps = maps + [(a + 'dD', b + 'fF') for a, b in maps]
 
     # do the replacements
     for src, dst in maps:
@@ -654,9 +657,9 @@ class Ufunc(object):
         variants = []
 
         def add_variant(func_name, inarg, outarg, ret, inp, outp):
-            if (inp, outp) in seen:
+            if inp in seen:
                 return
-            seen.add((inp, outp))
+            seen.add(inp)
 
             sig = (func_name, inp, outp)
             if "v" in outp:
@@ -670,14 +673,29 @@ class Ufunc(object):
             all_loops[loop_name] = loop
             variants.append((func_name, loop_name, inp, outp))
 
+        # First add base variants
         for func_name, inarg, outarg, ret in self.signatures:
             outp = re.sub(r'\*.*', '', ret) + outarg
             ret = ret.replace('*', '')
             if inarg_num is None:
                 inarg_num = len(inarg)
                 outarg_num = len(outp)
-            for inp2, outp2 in iter_variants(inarg, outp):
-                add_variant(func_name, inarg, outarg, ret, inp2, outp2)
+
+            inp, outp = list(iter_variants(inarg, outp))[0]
+            add_variant(func_name, inarg, outarg, ret, inp, outp)
+
+        # Then the supplementary ones
+        for func_name, inarg, outarg, ret in self.signatures:
+            outp = re.sub(r'\*.*', '', ret) + outarg
+            ret = ret.replace('*', '')
+            for inp, outp in iter_variants(inarg, outp):
+                add_variant(func_name, inarg, outarg, ret, inp, outp)
+
+        # Then sort variants to input argument cast order
+        # -- the sort is stable, so functions earlier in the signature list
+        #    are still preferred
+        variants.sort(key=lambda v: cast_order(v[2]))
+
         return variants, inarg_num, outarg_num
 
     def get_prototypes(self):
