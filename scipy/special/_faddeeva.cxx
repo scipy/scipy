@@ -125,4 +125,10 @@ npy_cdouble faddeeva_erfcx_complex(npy_cdouble zp)
     return faddeeva_w(npy_cpack(-zp.imag, zp.real));
 }
 
+double faddeeva_dawsn(double x)
+{
+    return 0.88622692545275801364908374167057 // sqrt(pi)/2
+        * ImFaddeeva_w(x);
+}
+
 EXTERN_C_END

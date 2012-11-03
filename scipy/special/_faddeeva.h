@@ -25,6 +25,7 @@ npy_cdouble faddeeva_erf(npy_cdouble zp);
 npy_cdouble faddeeva_erfc(npy_cdouble zp);
 double faddeeva_erfcx(double zp);
 npy_cdouble faddeeva_erfcx_complex(npy_cdouble zp);
+double faddeeva_dawsn(double zp);
 
 EXTERN_C_END
 
