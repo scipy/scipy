@@ -73,7 +73,7 @@ programming interface) is defined.  For most modules the API is two levels
 deep, which means your new function should appear as
 ``scipy.submodule.my_new_func``.  ``my_new_func`` can be put in an existing or
 new file under ``/scipy/<submodule>/``, its name is added to the ``__all__``
-dict in that file (which lists all public functions in the file), and those
+list in that file (which lists all public functions in the file), and those
 public functions are then imported in  ``/scipy/<submodule>/__init__.py``.  Any
 private functions/classes should have a leading underscore (``_``) in their
 name.  A more detailed description of what the public API of SciPy is, is given
