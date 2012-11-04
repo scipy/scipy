@@ -45,6 +45,9 @@ There should be either a single header that contains all of the kernel
 functions listed, or there should be one header for each kernel
 function. Cython pxd files are allowed in addition to .h files.
 
+Cython functions may use fused types, but the names in the list
+should be the specialized ones, such as 'somefunc[float]'.
+
 Floating-point exceptions inside these Ufuncs are converted to
 special function errors --- which are separately controlled by the
 user, and off by default, as they are usually not especially useful
@@ -698,6 +701,18 @@ class Ufunc(object):
 
         return variants, inarg_num, outarg_num
 
+    def cython_func_name(self, c_name, specialized=False, prefix="_func_"):
+        # support fused types
+        m = re.match(r'^(.*?)(\[.*\])$', c_name)
+        if m:
+            c_base_name, fused_part = m.groups()
+        else:
+            c_base_name, fused_part = c_name, ""
+        if specialized:
+            return "%s%s%s" % (prefix, c_base_name, fused_part)
+        else:
+            return "%s%s" % (prefix, c_base_name,)
+
     def get_prototypes(self):
         prototypes = []
         for func_name, inarg, outarg, ret in self.signatures:
@@ -741,7 +756,8 @@ class Ufunc(object):
         for j, type in enumerate(types):
             toplevel += "ufunc_%s_types[%d] = <char>%s\n" % (self.name, j, type)
         for j, data in enumerate(datas):
-            toplevel += "ufunc_%s_data[%d] = <void*>_func_%s\n" % (self.name, j, data)
+            toplevel += "ufunc_%s_data[%d] = <void*>%s\n" % (self.name, j,
+                                                             self.cython_func_name(data, specialized=True))
 
         toplevel += ('@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, '
                      'ufunc_@_data, ufunc_@_types, %d, %d, %d, 0, '
@@ -788,19 +804,23 @@ def generate(filename, ufunc_str, extra_code):
 
         for (c_name, c_proto, cy_proto), header in zip(cfuncs, hdrs):
             if header.endswith('.pxd'):
-                defs += "from %s cimport %s as _func_%s\n" % (header[:-4], c_name, c_name)
+                defs += "from %s cimport %s as %s\n" % (header[:-4],
+                                                        ufunc.cython_func_name(c_name,
+                                                                               prefix=""),
+                                                        ufunc.cython_func_name(c_name))
 
                 # check function signature at compile time
-                proto_name = '_proto_%s_t' % c_name
+                var_name = c_name.replace('[', '_').replace(']', '_')
+                proto_name = '_proto_%s_t' % var_name
                 defs += "ctypedef %s\n" % (cy_proto.replace('(*)', proto_name))
-                defs += "cdef %s *%s_var\n" % (proto_name, proto_name)
-                defs += "%s_var = &_func_%s\n" % (proto_name, c_name)
+                defs += "cdef %s *%s_var = &%s\n" % (
+                    proto_name, proto_name, ufunc.cython_func_name(c_name, specialized=True))
             else:
                 # redeclare the function, so that the assumed
                 # signature is checked at compile time
                 defs += "cdef extern from \"%s\":\n" % header
                 defs += "    pass\n"
-                new_name = "_func_%s \"%s\"" % (c_name, c_name)
+                new_name = "%s \"%s\"" % (ufunc.cython_func_name(c_name), c_name)
                 defs += "cdef extern %s\n" % (c_proto.replace('(*)', new_name))
 
     toplevel = "\n".join(all_loops.values() + [defs, toplevel])
