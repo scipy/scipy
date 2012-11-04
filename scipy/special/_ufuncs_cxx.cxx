@@ -1050,7 +1050,7 @@ int wrap_PyUFunc_getfperr(void) {
 
 
 static PyObject *__pyx_pw_5scipy_7special_11_ufuncs_cxx_1_errprint(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); 
-static char __pyx_doc_5scipy_7special_11_ufuncs_cxx__errprint[] = "\n    errprint(flag)\n\n    Sets the error printing flag for special functions (from the\n    cephesmodule). The output is the previous state.  With errprint(0)\n    no error messages are shown; the default is errprint(1).  If no\n    argument is given the current state of the flag is returned and no\n    change occurs.\n\n    ";
+static char __pyx_doc_5scipy_7special_11_ufuncs_cxx__errprint[] = "\n    errprint(flag=None)\n\n    Sets or returns the error printing flag for special functions.\n\n    Parameters\n    ----------\n    flag : bool, optional\n        Whether warnings concerning evaluation of special functions in\n        scipy.special are shown. If omitted, no change is made to the\n        current setting.\n\n    Returns\n    -------\n    old_flag\n        Previous value of the error flag\n\n    ";
 static PyMethodDef __pyx_mdef_5scipy_7special_11_ufuncs_cxx_1_errprint = {__Pyx_NAMESTR("_errprint"), (PyCFunction)__pyx_pw_5scipy_7special_11_ufuncs_cxx_1_errprint, METH_VARARGS|METH_KEYWORDS, __Pyx_DOCSTR(__pyx_doc_5scipy_7special_11_ufuncs_cxx__errprint)};
 static PyObject *__pyx_pw_5scipy_7special_11_ufuncs_cxx_1_errprint(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_inflag = 0;
@@ -1120,8 +1120,8 @@ static PyObject *__pyx_pf_5scipy_7special_11_ufuncs_cxx__errprint(CYTHON_UNUSED 
 
     
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_inflag); if (unlikely(__pyx_t_1 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 315; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __pyx_t_2 = PyInt_FromLong(sf_error_set_print(((int)(!(!__pyx_t_1))))); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 315; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_inflag); if (unlikely(__pyx_t_1 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 323; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = PyInt_FromLong(sf_error_set_print(((int)(!(!__pyx_t_1))))); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 323; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
@@ -1132,7 +1132,7 @@ static PyObject *__pyx_pf_5scipy_7special_11_ufuncs_cxx__errprint(CYTHON_UNUSED 
 
     
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = PyInt_FromLong(sf_error_get_print()); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 317; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = PyInt_FromLong(sf_error_get_print()); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 325; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
