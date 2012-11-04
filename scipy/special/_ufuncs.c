@@ -748,9 +748,6 @@ static CYTHON_INLINE signed long __Pyx_PyInt_AsSignedLong(PyObject *);
 
 static CYTHON_INLINE signed PY_LONG_LONG __Pyx_PyInt_AsSignedLongLong(PyObject *);
 
-static void __Pyx_WriteUnraisable(const char *name, int clineno,
-                                  int lineno, const char *filename); 
-
 static int __Pyx_check_binary_version(void);
 
 #if !defined(__Pyx_PyIdentifier_FromString)
@@ -2462,6 +2459,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f(char **__pyx
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2501,8 +2501,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f(char **__pyx
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 30; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddd__As_ffff_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -2515,6 +2527,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_f_f__As_f_f(char **__pyx_v_arg
   float __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2542,8 +2557,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_f_f__As_f_f(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_f_f__As_f_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -2562,6 +2589,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_ddddd_dd(char **
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2612,8 +2642,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_ddddd_dd(char **
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_ddddd_dd_As_ddddd_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -2627,6 +2669,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D(char **__pyx_v_a
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2658,8 +2703,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_dD__As_dD_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -2674,6 +2731,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_d_dd(char **__pyx_v_
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2708,8 +2768,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_d_dd(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 85; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_dd_As_d_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -2722,6 +2794,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_D__As_D_D(char **__pyx_v_arg
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2749,8 +2824,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_D__As_D_D(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 96; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_D__As_D_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -2836,7 +2923,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_fffl_ff(char **__p
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 118; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   goto __pyx_L0;
   __pyx_L1_error:;
@@ -2867,6 +2954,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff(char **__p
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2913,8 +3003,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff(char **__p
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 135; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddd_d_As_ffff_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -2933,6 +3035,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DDDD_As_f_FFFF(char **__py
   __pyx_t_double_complex __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2981,8 +3086,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DDDD_As_f_FFFF(char **__py
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 155; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_DDDD_As_f_FFFF", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3001,6 +3118,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DDDD_As_F_FFFF(char **__py
   __pyx_t_double_complex __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3049,8 +3169,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DDDD_As_F_FFFF(char **__py
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 175; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_D_DDDD_As_F_FFFF", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3136,7 +3268,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddl_dd(char **__p
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 197; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   goto __pyx_L0;
   __pyx_L1_error:;
@@ -3165,6 +3297,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_dd_dd(char **__pyx_
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3203,8 +3338,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_dd_dd(char **__pyx_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 212; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_dd_dd_As_dd_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3219,6 +3366,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f(char **__pyx_v
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3254,8 +3404,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_ddd__As_fff_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3269,6 +3431,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f(char **__pyx_v_a
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3300,8 +3465,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dd__As_ff_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3321,6 +3498,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_ff_ffff(char **__
   double __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3373,8 +3553,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_ff_ffff(char **__
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 258; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_dd_dddd_As_ff_ffff", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3391,6 +3583,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_fff_ff(char **__py
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3433,8 +3628,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_fff_ff(char **__py
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 274; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_ddd_dd_As_fff_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3449,6 +3656,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ddD_D(char **__pyx_v
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3484,8 +3694,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ddD_D(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 287; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_ddD__As_ddD_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3501,6 +3723,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_dddD_D(char **__pyx
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3540,8 +3765,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_dddD_D(char **__pyx
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 301; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_dddD__As_dddD_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3560,6 +3797,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_d_dddd(char **__py
   double __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3608,8 +3848,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_d_dddd(char **__py
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 321; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_dddd_As_d_dddd", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3628,6 +3880,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_fffff_ff(char **
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3678,8 +3933,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_fffff_ff(char **
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 339; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_ddddd_dd_As_fffff_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3692,6 +3959,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_D__As_F_F(char **__pyx_v_arg
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3719,8 +3989,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_D__As_F_F(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 350; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_D__As_F_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3739,6 +4021,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DDDD_As_d_DDDD(char **__py
   __pyx_t_double_complex __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3787,8 +4072,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DDDD_As_d_DDDD(char **__py
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 370; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_DDDD_As_d_DDDD", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3805,6 +4102,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_ddd_dd(char **__py
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3847,8 +4147,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_ddd_dd(char **__py
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 386; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_ddd_dd_As_ddd_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3863,6 +4175,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_Dld__As_Dld_D(char **__pyx_v
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3898,8 +4213,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_Dld__As_Dld_D(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 399; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_Dld__As_Dld_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3915,6 +4242,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_ff_ff(char **__pyx_
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3953,8 +4283,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_ff_ff(char **__pyx_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 414; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_dd_dd_As_ff_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -3970,6 +4312,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_fffF_F(char **__pyx
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4009,8 +4354,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_fffF_F(char **__pyx
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 428; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_dddD__As_fffF_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4074,7 +4431,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 444; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   goto __pyx_L0;
   __pyx_L1_error:;
@@ -4103,6 +4460,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_dddd_d(char **__pyx
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4142,8 +4502,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_dddd_d(char **__pyx
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 458; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddd__As_dddd_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4220,7 +4592,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 475; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   goto __pyx_L0;
   __pyx_L1_error:;
@@ -4248,6 +4620,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DD_As_d_DD(char **__pyx_v_
   __pyx_t_double_complex __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4282,8 +4657,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DD_As_d_DD(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 489; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_DD_As_d_DD", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4296,6 +4683,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f(char **__pyx_v_arg
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4323,8 +4713,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 500; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_d__As_f_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4337,6 +4739,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_d_d(char **__pyx_v_arg
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4364,8 +4769,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_d_d(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_d__As_d_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4442,7 +4859,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   goto __pyx_L0;
   __pyx_L1_error:;
@@ -4470,6 +4887,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ffF_F(char **__pyx_v
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4505,8 +4925,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ffF_F(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 541; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_ddD__As_ffF_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4525,6 +4957,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_f_ffff(char **__py
   double __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4573,8 +5008,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_f_ffff(char **__py
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 561; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_dddd_As_f_ffff", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4592,6 +5039,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_dddd_dd(char **__p
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4638,8 +5088,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_dddd_dd(char **__p
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 578; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddd_d_As_dddd_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4654,6 +5116,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DD_As_D_DD(char **__pyx_v_
   __pyx_t_double_complex __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4688,8 +5153,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DD_As_D_DD(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 592; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_D_DD_As_D_DD", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4704,6 +5181,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_Dld__As_Flf_F(char **__pyx_v
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4739,8 +5219,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_Dld__As_Flf_F(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 605; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_Dld__As_Flf_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4760,6 +5252,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_dd_dddd(char **__
   double __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4812,8 +5307,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_dd_dddd(char **__
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 626; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_dd_dddd_As_dd_dddd", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4828,6 +5335,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DD_As_F_FF(char **__pyx_v_
   __pyx_t_double_complex __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4862,8 +5372,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DD_As_F_FF(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 640; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_D_DD_As_F_FF", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4878,6 +5400,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff(char **__pyx_v_
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4912,8 +5437,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 654; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_dd_As_f_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -4927,6 +5464,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_lf_f(char **__pyx_v_a
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4958,8 +5498,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_lf_f(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 666; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_ld__As_lf_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -5023,7 +5575,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 682; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   goto __pyx_L0;
   __pyx_L1_error:;
@@ -5050,6 +5602,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d(char **__pyx_v_a
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5081,8 +5636,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 694; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dd__As_dd_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -5097,6 +5664,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DD_As_f_FF(char **__pyx_v_
   __pyx_t_double_complex __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5131,8 +5701,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DD_As_f_FF(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 708; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_DD_As_f_FF", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -5147,6 +5729,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_ddd_d(char **__pyx_v
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5182,8 +5767,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_ddd_d(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 721; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_ddd__As_ddd_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -5197,6 +5794,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F(char **__pyx_v_a
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5228,8 +5828,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 733; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_dD__As_fF_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -5248,6 +5860,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DDDD_As_D_DDDD(char **__py
   __pyx_t_double_complex __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5296,8 +5911,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DDDD_As_D_DDDD(char **__py
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 753; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_D_DDDD_As_D_DDDD", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -5310,6 +5937,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_g_g__As_g_g(char **__pyx_v_arg
   long double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5337,8 +5967,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_g_g__As_g_g(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 764; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_g_g__As_g_g", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -5352,6 +5994,9 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_ld_d(char **__pyx_v_a
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5383,8 +6028,20 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_ld_d(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 776; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_ld__As_ld_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -5603,7 +6260,15 @@ void sf_error_check_fpe(char *__pyx_v_func_name) {
 
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_WriteUnraisable("scipy.special._ufuncs.sf_error_check_fpe", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs.sf_error_check_fpe", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
   __pyx_L0:;
 }
 
@@ -17847,25 +18512,6 @@ static CYTHON_INLINE signed PY_LONG_LONG __Pyx_PyInt_AsSignedLongLong(PyObject* 
         val = __Pyx_PyInt_AsSignedLongLong(tmp);
         Py_DECREF(tmp);
         return val;
-    }
-}
-
-static void __Pyx_WriteUnraisable(const char *name, CYTHON_UNUSED int clineno,
-                                  CYTHON_UNUSED int lineno, CYTHON_UNUSED const char *filename) {
-    PyObject *old_exc, *old_val, *old_tb;
-    PyObject *ctx;
-    __Pyx_ErrFetch(&old_exc, &old_val, &old_tb);
-    #if PY_MAJOR_VERSION < 3
-    ctx = PyString_FromString(name);
-    #else
-    ctx = PyUnicode_FromString(name);
-    #endif
-    __Pyx_ErrRestore(old_exc, old_val, old_tb);
-    if (!ctx) {
-        PyErr_WriteUnraisable(Py_None);
-    } else {
-        PyErr_WriteUnraisable(ctx);
-        Py_DECREF(ctx);
     }
 }
 

@@ -615,6 +615,8 @@ static CYTHON_INLINE PyObject *__Pyx_PyInt_to_py_Py_intptr_t(Py_intptr_t);
 
 static CYTHON_INLINE Py_intptr_t __Pyx_PyInt_from_py_Py_intptr_t(PyObject *);
 
+static CYTHON_INLINE int __Pyx_ErrOccurredWithGIL(void); 
+
 static CYTHON_INLINE __pyx_t_float_complex __pyx_t_float_complex_from_parts(float, float);
 
 #if CYTHON_CCOMPLEX
@@ -658,8 +660,6 @@ static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, long level);
 
 static CYTHON_INLINE void __Pyx_RaiseImportError(PyObject *name);
 
-static CYTHON_INLINE int __Pyx_ErrOccurredWithGIL(void); 
-
 static CYTHON_INLINE unsigned char __Pyx_PyInt_AsUnsignedChar(PyObject *);
 
 static CYTHON_INLINE unsigned short __Pyx_PyInt_AsUnsignedShort(PyObject *);
@@ -691,9 +691,6 @@ static CYTHON_INLINE PY_LONG_LONG __Pyx_PyInt_AsLongLong(PyObject *);
 static CYTHON_INLINE signed long __Pyx_PyInt_AsSignedLong(PyObject *);
 
 static CYTHON_INLINE signed PY_LONG_LONG __Pyx_PyInt_AsSignedLongLong(PyObject *);
-
-static void __Pyx_WriteUnraisable(const char *name, int clineno,
-                                  int lineno, const char *filename); 
 
 static int __Pyx_check_binary_version(void);
 
@@ -912,6 +909,9 @@ static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_d_d__As_f_f(char **__pyx_
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -939,8 +939,20 @@ static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_d_d__As_f_f(char **__pyx_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs_cxx.loop_d_d__As_f_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -953,6 +965,9 @@ static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_D_D__As_D_D(char **__pyx_
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -980,8 +995,20 @@ static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_D_D__As_D_D(char **__pyx_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 38; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs_cxx.loop_D_D__As_D_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -994,6 +1021,9 @@ static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_d_d__As_d_d(char **__pyx_
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -1021,8 +1051,20 @@ static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_d_d__As_d_d(char **__pyx_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs_cxx.loop_d_d__As_d_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -1035,6 +1077,9 @@ static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_D_D__As_F_F(char **__pyx_
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -1062,8 +1107,20 @@ static void __pyx_f_5scipy_7special_11_ufuncs_cxx_loop_D_D__As_F_F(char **__pyx_
   }
 
   
-  sf_error_check_fpe(NULL);
+  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 60; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs_cxx.loop_D_D__As_F_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
+  __pyx_L0:;
 }
 
 
@@ -1282,7 +1339,15 @@ void sf_error_check_fpe(char *__pyx_v_func_name) {
 
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_WriteUnraisable("scipy.special._ufuncs_cxx.sf_error_check_fpe", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
+    #endif
+    __Pyx_AddTraceback("scipy.special._ufuncs_cxx.sf_error_check_fpe", __pyx_clineno, __pyx_lineno, __pyx_filename);
+    #ifdef WITH_THREAD
+    PyGILState_Release(__pyx_gilstate_save);
+    #endif
+  }
   __pyx_L0:;
 }
 
@@ -3774,6 +3839,18 @@ static CYTHON_INLINE Py_intptr_t __Pyx_PyInt_from_py_Py_intptr_t(PyObject* x) {
     }
 }
 
+static CYTHON_INLINE int __Pyx_ErrOccurredWithGIL(void) {
+  int err;
+  #ifdef WITH_THREAD
+  PyGILState_STATE _save = PyGILState_Ensure();
+  #endif
+  err = !!PyErr_Occurred();
+  #ifdef WITH_THREAD
+  PyGILState_Release(_save);
+  #endif
+  return err;
+}
+
 #if CYTHON_CCOMPLEX
   #ifdef __cplusplus
     static CYTHON_INLINE __pyx_t_float_complex __pyx_t_float_complex_from_parts(float x, float y) {
@@ -3970,18 +4047,6 @@ static CYTHON_INLINE void __Pyx_RaiseImportError(PyObject *name) {
 #else
     PyErr_Format(PyExc_ImportError, "cannot import name %S", name);
 #endif
-}
-
-static CYTHON_INLINE int __Pyx_ErrOccurredWithGIL(void) {
-  int err;
-  #ifdef WITH_THREAD
-  PyGILState_STATE _save = PyGILState_Ensure();
-  #endif
-  err = !!PyErr_Occurred();
-  #ifdef WITH_THREAD
-  PyGILState_Release(_save);
-  #endif
-  return err;
 }
 
 static CYTHON_INLINE unsigned char __Pyx_PyInt_AsUnsignedChar(PyObject* x) {
@@ -4381,25 +4446,6 @@ static CYTHON_INLINE signed PY_LONG_LONG __Pyx_PyInt_AsSignedLongLong(PyObject* 
         val = __Pyx_PyInt_AsSignedLongLong(tmp);
         Py_DECREF(tmp);
         return val;
-    }
-}
-
-static void __Pyx_WriteUnraisable(const char *name, CYTHON_UNUSED int clineno,
-                                  CYTHON_UNUSED int lineno, CYTHON_UNUSED const char *filename) {
-    PyObject *old_exc, *old_val, *old_tb;
-    PyObject *ctx;
-    __Pyx_ErrFetch(&old_exc, &old_val, &old_tb);
-    #if PY_MAJOR_VERSION < 3
-    ctx = PyString_FromString(name);
-    #else
-    ctx = PyUnicode_FromString(name);
-    #endif
-    __Pyx_ErrRestore(old_exc, old_val, old_tb);
-    if (!ctx) {
-        PyErr_WriteUnraisable(Py_None);
-    } else {
-        PyErr_WriteUnraisable(ctx);
-        Py_DECREF(ctx);
     }
 }
 
