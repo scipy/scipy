@@ -301,7 +301,7 @@ cdef public void sf_error(char *func_name, sferr.sf_error_t code, char *fmt, ...
     if func_name == NULL:
         func_name = "?"
 
-    if fmt != NULL and fmt[0] != '\0':
+    if fmt != NULL and fmt[0] != '\\0':
         va_start(ap, fmt)
         PyOS_vsnprintf(info, 1024, fmt, ap)
         va_end(ap)
