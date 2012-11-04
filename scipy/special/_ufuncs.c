@@ -262,7 +262,6 @@
 #include "specfun_wrappers.h"
 #include "c_misc/misc.h"
 #include "_logit.h"
-#include "stdarg.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif 
@@ -578,10 +577,6 @@ typedef double __pyx_t_5scipy_7special_7_ufuncs__proto_yn_unsafe_t(double, doubl
 
 static PyObject *__Pyx_GetName(PyObject *dict, PyObject *name); 
 
-#ifndef __PYX_FORCE_INIT_THREADS
-  #define __PYX_FORCE_INIT_THREADS 0
-#endif
-
 static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name); 
 
 static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[], \
@@ -670,8 +665,6 @@ static CYTHON_INLINE __pyx_t_double_complex __pyx_t_double_complex_from_parts(do
 static CYTHON_INLINE PyObject *__Pyx_PyInt_to_py_Py_intptr_t(Py_intptr_t);
 
 static CYTHON_INLINE Py_intptr_t __Pyx_PyInt_from_py_Py_intptr_t(PyObject *);
-
-static CYTHON_INLINE int __Pyx_ErrOccurredWithGIL(void); 
 
 static CYTHON_INLINE __pyx_t_float_complex __pyx_t_float_complex_from_parts(float, float);
 
@@ -826,6 +819,7 @@ static CYTHON_INLINE __pyx_t_double_complex __pyx_f_5scipy_7special_13_complexst
 static CYTHON_INLINE __pyx_t_double_complex __pyx_f_5scipy_7special_8lambertw_lambertw_scalar(__pyx_t_double_complex, long, double); 
 
 
+static CYTHON_INLINE void __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(char *, double, double); 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_bdtrc_unsafe(double, double, double); 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_bdtr_unsafe(double, double, double); 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_bdtri_unsafe(double, double, double); 
@@ -841,8 +835,6 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_kn_unsafe(double, d
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_yn_unsafe(double, double); 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_smirnov_unsafe(double, double); 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_smirnovi_unsafe(double, double); 
-
-
 
 
 static __pyx_t_5scipy_7special_7_ufuncs__proto_eval_poly_chebyt_t *__pyx_v_5scipy_7special_7_ufuncs__proto_eval_poly_chebyt_t_var;
@@ -1586,8 +1578,6 @@ static PyUFuncGenericFunction __pyx_v_5scipy_7special_7_ufuncs_ufunc_zetac_loops
 static void *__pyx_v_5scipy_7special_7_ufuncs_ufunc_zetac_data[2];
 static char __pyx_v_5scipy_7special_7_ufuncs_ufunc_zetac_types[4];
 static char *__pyx_v_5scipy_7special_7_ufuncs_ufunc_zetac_doc;
-static int __pyx_v_5scipy_7special_7_ufuncs__print_error_messages;
-static sf_error_t __pyx_v_5scipy_7special_7_ufuncs__last_error;
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_f_f__As_f_f(char **, npy_intp *, npy_intp *, void *); 
 static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_ddddd_dd(char **, npy_intp *, npy_intp *, void *); 
@@ -1839,8 +1829,7 @@ __PYX_EXTERN_C DL_IMPORT(npy_double) cbesy_wrap_e_real(npy_double, npy_double);
 __PYX_EXTERN_C DL_IMPORT(npy_cdouble) cbesy_wrap_e(npy_double, npy_cdouble); 
 __PYX_EXTERN_C DL_IMPORT(npy_double) zeta(npy_double, npy_double); 
 __PYX_EXTERN_C DL_IMPORT(npy_double) zetac(npy_double); 
-__PYX_EXTERN_C DL_EXPORT(void) sf_error(char *, sf_error_t, char *, ...); 
-__PYX_EXTERN_C DL_EXPORT(void) sf_error_check_fpe(char *); 
+__PYX_EXTERN_C DL_EXPORT(int) wrap_PyUFunc_getfperr(void); 
 #define __Pyx_MODULE_NAME "scipy.special._ufuncs"
 int __pyx_module_is_main_scipy__special___ufuncs = 0;
 
@@ -1852,98 +1841,98 @@ static PyObject *__pyx_pf_5scipy_7special_7_ufuncs__errprint(CYTHON_UNUSED PyObj
 static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); 
 static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info); 
 static char __pyx_k_1[] = "invalid input argument";
-static char __pyx_k_2[] = "?";
-static char __pyx_k_3[] = "scipy.special/%s: (%s) %s";
-static char __pyx_k_4[] = "scipy.special/%s: %s";
-static char __pyx_k_5[] = "scipy.special";
-static char __pyx_k_6[] = "SpecialFunctionWarning";
-static char __pyx_k_7[] = "floating point division by zero";
-static char __pyx_k_8[] = "floating point underflow";
-static char __pyx_k_9[] = "floating point overflow";
-static char __pyx_k_10[] = "floating point invalid value";
-static char __pyx_k_11[] = "iteration failed to converge: %g + %gj";
-static char __pyx_k_12[] = "ndarray is not C contiguous";
-static char __pyx_k_14[] = "ndarray is not Fortran contiguous";
-static char __pyx_k_16[] = "Non-native byte order not supported";
-static char __pyx_k_18[] = "unknown dtype code in numpy.pxd (%d)";
-static char __pyx_k_19[] = "Format string allocated too short, see comment in numpy.pxd";
-static char __pyx_k_22[] = "Format string allocated too short.";
-static char __pyx_k_24[] = "Internal function, use `eval_chebyt` instead.";
-static char __pyx_k_25[] = "Internal function, use `lambertw` instead.";
-static char __pyx_k_26[] = "(Ai,Aip,Bi,Bip)=airy(z) calculates the Airy functions and their derivatives\nevaluated at real or complex number z.  The Airy functions Ai and Bi\nare two independent solutions of y''(x)=xy.  Aip and Bip are the first derivatives\nevaluated at x of Ai and Bi respectively.";
-static char __pyx_k_27[] = "(Aie,Aipe,Bie,Bipe)=airye(z) calculates the exponentially scaled Airy functions and\ntheir derivatives evaluated at real or complex number z.\nairye(z)[0:1] = airy(z)[0:1] * exp(2.0/3.0*z*sqrt(z))\nairye(z)[2:3] = airy(z)[2:3] * exp(-abs((2.0/3.0*z*sqrt(z)).real))";
-static char __pyx_k_28[] = "y=bdtr(k,n,p) returns the sum of the terms 0 through k of the\nBinomial probability density:  sum(nCj p**j (1-p)**(n-j),j=0..k)";
-static char __pyx_k_29[] = "y=bdtrc(k,n,p) returns the sum of the terms k+1 through n of the\nBinomial probability density: sum(nCj p**j (1-p)**(n-j), j=k+1..n)";
-static char __pyx_k_30[] = "p=bdtri(k,n,y) finds the probability p such that the sum of the\nterms 0 through k of the Binomial probability density is equal to the\ngiven cumulative probability y.";
-static char __pyx_k_31[] = "";
-static char __pyx_k_32[] = "y=bei(x) returns the Kelvin function bei x";
-static char __pyx_k_33[] = "y=beip(x) returns the derivative of the Kelvin function bei x";
-static char __pyx_k_34[] = "y=ber(x) returns the Kelvin function ber x";
-static char __pyx_k_35[] = "y=berp(x) returns the derivative of the Kelvin function ber x";
-static char __pyx_k_36[] = "y=besselpoly(a,lam,nu) returns the value of the integral:\nintegral(x**lam * jv(nu,2*a*x),x=0..1).";
-static char __pyx_k_37[] = "y=beta(a,b) returns gamma(a) * gamma(b) / gamma(a+b)";
-static char __pyx_k_38[] = "betainc(a, b, x)\n\nCompute the incomplete beta integral of the arguments, evaluated\nfrom zero to x::\n\n    gamma(a+b) / (gamma(a)*gamma(b)) * integral(t**(a-1) (1-t)**(b-1), t=0..x).\n\nNotes\n-----\nThe incomplete beta is also sometimes defined without the terms\nin gamma, in which case the above definition is the so-called regularized\nincomplete beta. Under this definition, you can get the incomplete beta by\nmultiplying the result of the scipy function by beta(a, b).";
-static char __pyx_k_39[] = "betaincinv(a,b,y)\n\nCompute x such that betainc(a,b,x) = y.";
-static char __pyx_k_40[] = "y=betaln(a,b) returns the natural logarithm of the absolute value of\nbeta: ln(abs(beta(x))).";
-static char __pyx_k_41[] = "y=btdtr(a,b,x) returns the area from zero to x under the beta\ndensity function: gamma(a+b)/(gamma(a)*gamma(b)))*integral(t**(a-1)\n(1-t)**(b-1), t=0..x).  SEE ALSO betainc";
-static char __pyx_k_42[] = "x=btdtri(a,b,p) returns the pth quantile of the beta distribution.  It is\neffectively the inverse of btdtr returning the value of x for which\nbtdtr(a,b,x) = p.   SEE ALSO betaincinv";
-static char __pyx_k_43[] = "y=cbrt(x) returns the real cube root of x.";
-static char __pyx_k_44[] = "p=chdtr(v,x) Returns the area under the left hand tail (from 0 to x) of the Chi\nsquare probability density function with v degrees of freedom:\n1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)";
-static char __pyx_k_45[] = "p=chdtrc(v,x) returns the area under the right hand tail (from x to\ninfinity) of the Chi square probability density function with v\ndegrees of freedom:\n1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=x..inf)";
-static char __pyx_k_46[] = "x=chdtri(v,p) returns the argument x such that chdtrc(v,x) is equal\nto p.";
-static char __pyx_k_47[] = "y=cosdg(x) calculates the cosine of the angle x given in degrees.";
-static char __pyx_k_48[] = "y=calculates cos(x) - 1 for use when x is near zero.";
-static char __pyx_k_49[] = "y=cotdg(x) calculates the cotangent of the angle x given in degrees.";
-static char __pyx_k_50[] = "y=ellipe(m) returns the complete integral of the second kind:\nintegral(sqrt(1-m*sin(t)**2),t=0..pi/2)";
-static char __pyx_k_51[] = "y=ellipeinc(phi,m) returns the incomplete elliptic integral of the\nsecond kind: integral(sqrt(1-m*sin(t)**2),t=0..phi)";
-static char __pyx_k_52[] = "(sn,cn,dn,ph)=ellipj(u,m) calculates the Jacobian elliptic functions of\nparameter m between 0 and 1, and real u.  The returned functions are\noften written sn(u|m), cn(u|m), and dn(u|m).  The value of ph is such\nthat if u = ellik(ph,m), then sn(u|m) = sin(ph) and cn(u|m) = cos(ph).";
-static char __pyx_k_53[] = "y=ellipkinc(phi,m) returns the incomplete elliptic integral of the first\nkind: integral(1/sqrt(1-m*sin(t)**2),t=0..phi)";
-static char __pyx_k_54[] = "y=ellipkm1(1 - m) returns the complete integral of the first kind:\nintegral(1/sqrt(1-m*sin(t)**2),t=0..pi/2)";
-static char __pyx_k_55[] = "y=exp1(z) returns the exponential integral (n=1) of complex argument\nz: integral(exp(-z*t)/t,t=1..inf).";
-static char __pyx_k_56[] = "y=exp10(x) returns 10 raised to the x power.";
-static char __pyx_k_57[] = "y=exp2(x) returns 2 raised to the x power.";
-static char __pyx_k_58[] = "y=expi(x) returns an exponential integral of argument x defined as\nintegral(exp(t)/t,t=-inf..x).  See expn for a different exponential\nintegral.";
-static char __pyx_k_59[] = "Expit ufunc for ndarrays.\n\nThe expit function is defined as expit(x) = 1/(1+exp(-x)).\nNote that expit is the inverse logit function.\n\nParameters\n----------\nx : ndarray\n    The ndarray to apply expit to element-wise.\n\nReturns\n-------\nout : ndarray\n    An ndarray of the same shape as x. Its entries\n    are expit of the corresponding entry of x.\n\nNotes\n-----\nAs a ufunc logit takes a number of optional\nkeywork arguments. For more information\nsee `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_";
-static char __pyx_k_60[] = "y=expm1(x) calculates exp(x) - 1 for use when x is near zero.";
-static char __pyx_k_61[] = "y=expn(n,x) returns the exponential integral for integer n and\nnon-negative x and n: integral(exp(-x*t) / t**n, t=1..inf).";
-static char __pyx_k_62[] = "y=fdtr(dfn,dfd,x) returns the area from zero to x under the F density\nfunction (also known as Snedcor's density or the variance ratio\ndensity).  This is the density of X = (unum/dfn)/(uden/dfd), where unum and\nuden are random variables having Chi square distributions with dfn and\ndfd degrees of freedom, respectively.";
-static char __pyx_k_63[] = "y=fdtrc(dfn,dfd,x) returns the complemented F distribution function.";
-static char __pyx_k_64[] = "x=fdtri(dfn,dfd,p) finds the F density argument x such that\nfdtr(dfn,dfd,x)=p.";
-static char __pyx_k_65[] = "x=fdtridfd(dfn,p,x) finds the F density argument dfd such that\nfdtr(dfn,dfd,x)=p.";
-static char __pyx_k_66[] = "(ssa,cca)=fresnel(z) returns the fresnel sin and cos integrals: integral(sin(pi/2\n* t**2),t=0..z) and integral(cos(pi/2 * t**2),t=0..z) for real or\ncomplex z.";
-static char __pyx_k_67[] = "y=gamma(z) returns the gamma function of the argument.  The gamma\nfunction is often referred to as the generalized factorial since\nz*gamma(z) = gamma(z+1) and gamma(n+1) = n! for natural number n.";
-static char __pyx_k_68[] = "y=gammainc(a,x) returns the incomplete gamma integral defined as\n1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x).  a must be\npositive and x must be >= 0.";
-static char __pyx_k_69[] = "y=gammaincc(a,x) returns the complemented incomplete gamma integral\ndefined as 1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 -\ngammainc(a,x).  a must be positive and x must be >= 0.";
-static char __pyx_k_70[] = "x=gammainccinv(a,y) returns x such that gammaincc(a,x) = y.";
-static char __pyx_k_71[] = "gammaincinv(a, y) returns x such that gammainc(a, x) = y.";
-static char __pyx_k_72[] = "y=gammaln(z) returns the base e logarithm of the absolute value of the\ngamma function of z: ln(abs(gamma(z)))";
-static char __pyx_k_73[] = "y=gdtr(a,b,x) returns the integral from zero to x of the gamma\nprobability density function: a**b / gamma(b) * integral(t**(b-1) exp(-at),t=0..x).\nThe arguments a and b are used differently here than in other definitions.";
-static char __pyx_k_74[] = "y=gdtrc(a,b,x) returns the integral from x to infinity of the gamma\nprobability density function.  SEE gdtr, gdtri";
-static char __pyx_k_75[] = "y=hankel1(v,z) returns the Hankel function of the first kind for real order v and complex argument z.";
-static char __pyx_k_76[] = "y=hankel1e(v,z) returns the exponentially scaled Hankel function of the first\nkind for real order v and complex argument z:\nhankel1e(v,z) = hankel1(v,z) * exp(-1j * z)";
-static char __pyx_k_77[] = "y=hankel2(v,z) returns the Hankel function of the second kind for real order v and complex argument z.";
-static char __pyx_k_78[] = "y=hankel2e(v,z) returns the exponentially scaled Hankel function of the second\nkind for real order v and complex argument z:\nhankel1e(v,z) = hankel1(v,z) * exp(1j * z)";
-static char __pyx_k_79[] = "y=hyp1f1(a,b,x) returns the confluent hypergeometeric function\n( 1F1(a,b;x) ) evaluated at the values a, b, and x.";
-static char __pyx_k_80[] = "(y,err)=hyp1f2(a,b,c,x) returns (y,err) with the hypergeometric function 1F2 in y and an error estimate in err.";
-static char __pyx_k_81[] = "(y,err)=hyp2f0(a,b,x,type) returns (y,err) with the hypergeometric function 2F0 in y and an error estimate in err.  The input type determines a convergence factor and\ncan be either 1 or 2.";
-static char __pyx_k_82[] = "y=hyp2f1(a,b,c,z) returns the gauss hypergeometric function\n( 2F1(a,b;c;z) ).";
-static char __pyx_k_83[] = "(y,err)=hyp3f0(a,b,c,x) returns (y,err) with the hypergeometric function 3F0 in y and an error estimate in err.";
-static char __pyx_k_84[] = "y=hyperu(a,b,x) returns the confluent hypergeometric function of the\nsecond kind U(a,b,x).";
-static char __pyx_k_85[] = "y=i0(x) returns the modified Bessel function of order 0 at x.";
-static char __pyx_k_86[] = "y=i0e(x) returns the exponentially scaled modified Bessel function\nof order 0 at x.  i0e(x) = exp(-abs(x)) * i0(x).";
-static char __pyx_k_87[] = "y=i1(x) returns the modified Bessel function of order 1 at x.";
-static char __pyx_k_88[] = "y=i1e(x) returns the exponentially scaled modified Bessel function\nof order 0 at x.  i1e(x) = exp(-abs(x)) * i1(x).";
-static char __pyx_k_89[] = "(ii0,ik0)=it2i0k0(x) returns the integrals int((i0(t)-1)/t,t=0..x) and\nint(k0(t)/t,t=x..infinitity).";
-static char __pyx_k_90[] = "(ij0,iy0)=it2j0y0(x) returns the integrals int((1-j0(t))/t,t=0..x) and\nint(y0(t)/t,t=x..infinitity).";
-static char __pyx_k_91[] = "y=it2struve0(x) returns the integral of the Struve function of order 0\ndivided by t from x to infinity:  integral(H0(t)/t, t=x..inf).";
-static char __pyx_k_92[] = "(Apt,Bpt,Ant,Bnt)=itairy(x) calculates the integral of Airy functions from 0 to x\nfor positive (Apt, Bpt) and negative (Ant, Bnt) arguments.";
-static char __pyx_k_93[] = "(ii0,ik0)=iti0k0(x) returns simple integrals from 0 to x of the zeroth order\nmodified bessel functions i0 and k0.";
-static char __pyx_k_94[] = "(ij0,iy0)=itj0y0(x) returns simple integrals from 0 to x of the zeroth order\nbessel functions j0 and y0.";
-static char __pyx_k_95[] = "y=itmodstruve0(x) returns the integral of the modified Struve function\nof order 0 from 0 to x:  integral(L0(t), t=0..x).";
-static char __pyx_k_96[] = "y=itstruve0(x) returns the integral of the Struve function of order 0\nfrom 0 to x:  integral(H0(t), t=0..x).";
-static char __pyx_k_97[] = "y=iv(v,z) returns the modified Bessel function of real order v of\nz.  If z is of real type and negative, v must be integer valued.";
-static char __pyx_k_98[] = "y=ive(v,z) returns the exponentially scaled modified Bessel function of\nreal order v and complex z: ive(v,z) = iv(v,z) * exp(-abs(z.real))";
-static char __pyx_k_99[] = "y=j0(x) returns the Bessel function of order 0 at x.";
+static char __pyx_k_2[] = "floating point number truncated to integer";
+static char __pyx_k_3[] = "iteration failed to converge: %g + %gj";
+static char __pyx_k_4[] = "ndarray is not C contiguous";
+static char __pyx_k_6[] = "ndarray is not Fortran contiguous";
+static char __pyx_k_8[] = "Non-native byte order not supported";
+static char __pyx_k_10[] = "unknown dtype code in numpy.pxd (%d)";
+static char __pyx_k_11[] = "Format string allocated too short, see comment in numpy.pxd";
+static char __pyx_k_14[] = "Format string allocated too short.";
+static char __pyx_k_16[] = "Internal function, use `eval_chebyt` instead.";
+static char __pyx_k_17[] = "Internal function, use `lambertw` instead.";
+static char __pyx_k_18[] = "(Ai,Aip,Bi,Bip)=airy(z) calculates the Airy functions and their derivatives\nevaluated at real or complex number z.  The Airy functions Ai and Bi\nare two independent solutions of y''(x)=xy.  Aip and Bip are the first derivatives\nevaluated at x of Ai and Bi respectively.";
+static char __pyx_k_19[] = "(Aie,Aipe,Bie,Bipe)=airye(z) calculates the exponentially scaled Airy functions and\ntheir derivatives evaluated at real or complex number z.\nairye(z)[0:1] = airy(z)[0:1] * exp(2.0/3.0*z*sqrt(z))\nairye(z)[2:3] = airy(z)[2:3] * exp(-abs((2.0/3.0*z*sqrt(z)).real))";
+static char __pyx_k_20[] = "y=bdtr(k,n,p) returns the sum of the terms 0 through k of the\nBinomial probability density:  sum(nCj p**j (1-p)**(n-j),j=0..k)";
+static char __pyx_k_21[] = "y=bdtrc(k,n,p) returns the sum of the terms k+1 through n of the\nBinomial probability density: sum(nCj p**j (1-p)**(n-j), j=k+1..n)";
+static char __pyx_k_22[] = "p=bdtri(k,n,y) finds the probability p such that the sum of the\nterms 0 through k of the Binomial probability density is equal to the\ngiven cumulative probability y.";
+static char __pyx_k_23[] = "";
+static char __pyx_k_24[] = "y=bei(x) returns the Kelvin function bei x";
+static char __pyx_k_25[] = "y=beip(x) returns the derivative of the Kelvin function bei x";
+static char __pyx_k_26[] = "y=ber(x) returns the Kelvin function ber x";
+static char __pyx_k_27[] = "y=berp(x) returns the derivative of the Kelvin function ber x";
+static char __pyx_k_28[] = "y=besselpoly(a,lam,nu) returns the value of the integral:\nintegral(x**lam * jv(nu,2*a*x),x=0..1).";
+static char __pyx_k_29[] = "y=beta(a,b) returns gamma(a) * gamma(b) / gamma(a+b)";
+static char __pyx_k_30[] = "betainc(a, b, x)\n\nCompute the incomplete beta integral of the arguments, evaluated\nfrom zero to x::\n\n    gamma(a+b) / (gamma(a)*gamma(b)) * integral(t**(a-1) (1-t)**(b-1), t=0..x).\n\nNotes\n-----\nThe incomplete beta is also sometimes defined without the terms\nin gamma, in which case the above definition is the so-called regularized\nincomplete beta. Under this definition, you can get the incomplete beta by\nmultiplying the result of the scipy function by beta(a, b).";
+static char __pyx_k_31[] = "betaincinv(a,b,y)\n\nCompute x such that betainc(a,b,x) = y.";
+static char __pyx_k_32[] = "y=betaln(a,b) returns the natural logarithm of the absolute value of\nbeta: ln(abs(beta(x))).";
+static char __pyx_k_33[] = "y=btdtr(a,b,x) returns the area from zero to x under the beta\ndensity function: gamma(a+b)/(gamma(a)*gamma(b)))*integral(t**(a-1)\n(1-t)**(b-1), t=0..x).  SEE ALSO betainc";
+static char __pyx_k_34[] = "x=btdtri(a,b,p) returns the pth quantile of the beta distribution.  It is\neffectively the inverse of btdtr returning the value of x for which\nbtdtr(a,b,x) = p.   SEE ALSO betaincinv";
+static char __pyx_k_35[] = "y=cbrt(x) returns the real cube root of x.";
+static char __pyx_k_36[] = "p=chdtr(v,x) Returns the area under the left hand tail (from 0 to x) of the Chi\nsquare probability density function with v degrees of freedom:\n1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)";
+static char __pyx_k_37[] = "p=chdtrc(v,x) returns the area under the right hand tail (from x to\ninfinity) of the Chi square probability density function with v\ndegrees of freedom:\n1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=x..inf)";
+static char __pyx_k_38[] = "x=chdtri(v,p) returns the argument x such that chdtrc(v,x) is equal\nto p.";
+static char __pyx_k_39[] = "y=cosdg(x) calculates the cosine of the angle x given in degrees.";
+static char __pyx_k_40[] = "y=calculates cos(x) - 1 for use when x is near zero.";
+static char __pyx_k_41[] = "y=cotdg(x) calculates the cotangent of the angle x given in degrees.";
+static char __pyx_k_42[] = "y=ellipe(m) returns the complete integral of the second kind:\nintegral(sqrt(1-m*sin(t)**2),t=0..pi/2)";
+static char __pyx_k_43[] = "y=ellipeinc(phi,m) returns the incomplete elliptic integral of the\nsecond kind: integral(sqrt(1-m*sin(t)**2),t=0..phi)";
+static char __pyx_k_44[] = "(sn,cn,dn,ph)=ellipj(u,m) calculates the Jacobian elliptic functions of\nparameter m between 0 and 1, and real u.  The returned functions are\noften written sn(u|m), cn(u|m), and dn(u|m).  The value of ph is such\nthat if u = ellik(ph,m), then sn(u|m) = sin(ph) and cn(u|m) = cos(ph).";
+static char __pyx_k_45[] = "y=ellipkinc(phi,m) returns the incomplete elliptic integral of the first\nkind: integral(1/sqrt(1-m*sin(t)**2),t=0..phi)";
+static char __pyx_k_46[] = "y=ellipkm1(1 - m) returns the complete integral of the first kind:\nintegral(1/sqrt(1-m*sin(t)**2),t=0..pi/2)";
+static char __pyx_k_47[] = "y=exp1(z) returns the exponential integral (n=1) of complex argument\nz: integral(exp(-z*t)/t,t=1..inf).";
+static char __pyx_k_48[] = "y=exp10(x) returns 10 raised to the x power.";
+static char __pyx_k_49[] = "y=exp2(x) returns 2 raised to the x power.";
+static char __pyx_k_50[] = "y=expi(x) returns an exponential integral of argument x defined as\nintegral(exp(t)/t,t=-inf..x).  See expn for a different exponential\nintegral.";
+static char __pyx_k_51[] = "Expit ufunc for ndarrays.\n\nThe expit function is defined as expit(x) = 1/(1+exp(-x)).\nNote that expit is the inverse logit function.\n\nParameters\n----------\nx : ndarray\n    The ndarray to apply expit to element-wise.\n\nReturns\n-------\nout : ndarray\n    An ndarray of the same shape as x. Its entries\n    are expit of the corresponding entry of x.\n\nNotes\n-----\nAs a ufunc logit takes a number of optional\nkeywork arguments. For more information\nsee `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_";
+static char __pyx_k_52[] = "y=expm1(x) calculates exp(x) - 1 for use when x is near zero.";
+static char __pyx_k_53[] = "y=expn(n,x) returns the exponential integral for integer n and\nnon-negative x and n: integral(exp(-x*t) / t**n, t=1..inf).";
+static char __pyx_k_54[] = "y=fdtr(dfn,dfd,x) returns the area from zero to x under the F density\nfunction (also known as Snedcor's density or the variance ratio\ndensity).  This is the density of X = (unum/dfn)/(uden/dfd), where unum and\nuden are random variables having Chi square distributions with dfn and\ndfd degrees of freedom, respectively.";
+static char __pyx_k_55[] = "y=fdtrc(dfn,dfd,x) returns the complemented F distribution function.";
+static char __pyx_k_56[] = "x=fdtri(dfn,dfd,p) finds the F density argument x such that\nfdtr(dfn,dfd,x)=p.";
+static char __pyx_k_57[] = "x=fdtridfd(dfn,p,x) finds the F density argument dfd such that\nfdtr(dfn,dfd,x)=p.";
+static char __pyx_k_58[] = "(ssa,cca)=fresnel(z) returns the fresnel sin and cos integrals: integral(sin(pi/2\n* t**2),t=0..z) and integral(cos(pi/2 * t**2),t=0..z) for real or\ncomplex z.";
+static char __pyx_k_59[] = "y=gamma(z) returns the gamma function of the argument.  The gamma\nfunction is often referred to as the generalized factorial since\nz*gamma(z) = gamma(z+1) and gamma(n+1) = n! for natural number n.";
+static char __pyx_k_60[] = "y=gammainc(a,x) returns the incomplete gamma integral defined as\n1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x).  a must be\npositive and x must be >= 0.";
+static char __pyx_k_61[] = "y=gammaincc(a,x) returns the complemented incomplete gamma integral\ndefined as 1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 -\ngammainc(a,x).  a must be positive and x must be >= 0.";
+static char __pyx_k_62[] = "x=gammainccinv(a,y) returns x such that gammaincc(a,x) = y.";
+static char __pyx_k_63[] = "gammaincinv(a, y) returns x such that gammainc(a, x) = y.";
+static char __pyx_k_64[] = "y=gammaln(z) returns the base e logarithm of the absolute value of the\ngamma function of z: ln(abs(gamma(z)))";
+static char __pyx_k_65[] = "y=gdtr(a,b,x) returns the integral from zero to x of the gamma\nprobability density function: a**b / gamma(b) * integral(t**(b-1) exp(-at),t=0..x).\nThe arguments a and b are used differently here than in other definitions.";
+static char __pyx_k_66[] = "y=gdtrc(a,b,x) returns the integral from x to infinity of the gamma\nprobability density function.  SEE gdtr, gdtri";
+static char __pyx_k_67[] = "y=hankel1(v,z) returns the Hankel function of the first kind for real order v and complex argument z.";
+static char __pyx_k_68[] = "y=hankel1e(v,z) returns the exponentially scaled Hankel function of the first\nkind for real order v and complex argument z:\nhankel1e(v,z) = hankel1(v,z) * exp(-1j * z)";
+static char __pyx_k_69[] = "y=hankel2(v,z) returns the Hankel function of the second kind for real order v and complex argument z.";
+static char __pyx_k_70[] = "y=hankel2e(v,z) returns the exponentially scaled Hankel function of the second\nkind for real order v and complex argument z:\nhankel1e(v,z) = hankel1(v,z) * exp(1j * z)";
+static char __pyx_k_71[] = "y=hyp1f1(a,b,x) returns the confluent hypergeometeric function\n( 1F1(a,b;x) ) evaluated at the values a, b, and x.";
+static char __pyx_k_72[] = "(y,err)=hyp1f2(a,b,c,x) returns (y,err) with the hypergeometric function 1F2 in y and an error estimate in err.";
+static char __pyx_k_73[] = "(y,err)=hyp2f0(a,b,x,type) returns (y,err) with the hypergeometric function 2F0 in y and an error estimate in err.  The input type determines a convergence factor and\ncan be either 1 or 2.";
+static char __pyx_k_74[] = "y=hyp2f1(a,b,c,z) returns the gauss hypergeometric function\n( 2F1(a,b;c;z) ).";
+static char __pyx_k_75[] = "(y,err)=hyp3f0(a,b,c,x) returns (y,err) with the hypergeometric function 3F0 in y and an error estimate in err.";
+static char __pyx_k_76[] = "y=hyperu(a,b,x) returns the confluent hypergeometric function of the\nsecond kind U(a,b,x).";
+static char __pyx_k_77[] = "y=i0(x) returns the modified Bessel function of order 0 at x.";
+static char __pyx_k_78[] = "y=i0e(x) returns the exponentially scaled modified Bessel function\nof order 0 at x.  i0e(x) = exp(-abs(x)) * i0(x).";
+static char __pyx_k_79[] = "y=i1(x) returns the modified Bessel function of order 1 at x.";
+static char __pyx_k_80[] = "y=i1e(x) returns the exponentially scaled modified Bessel function\nof order 0 at x.  i1e(x) = exp(-abs(x)) * i1(x).";
+static char __pyx_k_81[] = "(ii0,ik0)=it2i0k0(x) returns the integrals int((i0(t)-1)/t,t=0..x) and\nint(k0(t)/t,t=x..infinitity).";
+static char __pyx_k_82[] = "(ij0,iy0)=it2j0y0(x) returns the integrals int((1-j0(t))/t,t=0..x) and\nint(y0(t)/t,t=x..infinitity).";
+static char __pyx_k_83[] = "y=it2struve0(x) returns the integral of the Struve function of order 0\ndivided by t from x to infinity:  integral(H0(t)/t, t=x..inf).";
+static char __pyx_k_84[] = "(Apt,Bpt,Ant,Bnt)=itairy(x) calculates the integral of Airy functions from 0 to x\nfor positive (Apt, Bpt) and negative (Ant, Bnt) arguments.";
+static char __pyx_k_85[] = "(ii0,ik0)=iti0k0(x) returns simple integrals from 0 to x of the zeroth order\nmodified bessel functions i0 and k0.";
+static char __pyx_k_86[] = "(ij0,iy0)=itj0y0(x) returns simple integrals from 0 to x of the zeroth order\nbessel functions j0 and y0.";
+static char __pyx_k_87[] = "y=itmodstruve0(x) returns the integral of the modified Struve function\nof order 0 from 0 to x:  integral(L0(t), t=0..x).";
+static char __pyx_k_88[] = "y=itstruve0(x) returns the integral of the Struve function of order 0\nfrom 0 to x:  integral(H0(t), t=0..x).";
+static char __pyx_k_89[] = "y=iv(v,z) returns the modified Bessel function of real order v of\nz.  If z is of real type and negative, v must be integer valued.";
+static char __pyx_k_90[] = "y=ive(v,z) returns the exponentially scaled modified Bessel function of\nreal order v and complex z: ive(v,z) = iv(v,z) * exp(-abs(z.real))";
+static char __pyx_k_91[] = "y=j0(x) returns the Bessel function of order 0 at x.";
+static char __pyx_k_92[] = "y=j1(x) returns the Bessel function of order 1 at x.";
+static char __pyx_k_93[] = "y=jv(v,z) returns the Bessel function of real order v at complex z.";
+static char __pyx_k_94[] = "y=jve(v,z) returns the exponentially scaled Bessel function of real order\nv at complex z: jve(v,z) = jv(v,z) * exp(-abs(z.imag))";
+static char __pyx_k_95[] = "y=k0(x) returns the modified Bessel function of the second kind (sometimes called the third kind) of\norder 0 at x.";
+static char __pyx_k_96[] = "y=k0e(x) returns the exponentially scaled modified Bessel function\nof the second kind (sometimes called the third kind) of order 0 at x.  k0e(x) = exp(x) * k0(x).";
+static char __pyx_k_97[] = "y=i1(x) returns the modified Bessel function of the second kind (sometimes called the third kind) of\norder 1 at x.";
+static char __pyx_k_98[] = "y=k1e(x) returns the exponentially scaled modified Bessel function\nof the second kind (sometimes called the third kind) of order 1 at x.  k1e(x) = exp(x) * k1(x)";
+static char __pyx_k_99[] = "y=kei(x) returns the Kelvin function ker x";
 static char __pyx_k__B[] = "B";
 static char __pyx_k__H[] = "H";
 static char __pyx_k__I[] = "I";
@@ -1958,90 +1947,82 @@ static char __pyx_k__h[] = "h";
 static char __pyx_k__i[] = "i";
 static char __pyx_k__l[] = "l";
 static char __pyx_k__q[] = "q";
-static char __pyx_k_100[] = "y=j1(x) returns the Bessel function of order 1 at x.";
-static char __pyx_k_101[] = "y=jv(v,z) returns the Bessel function of real order v at complex z.";
-static char __pyx_k_102[] = "y=jve(v,z) returns the exponentially scaled Bessel function of real order\nv at complex z: jve(v,z) = jv(v,z) * exp(-abs(z.imag))";
-static char __pyx_k_103[] = "y=k0(x) returns the modified Bessel function of the second kind (sometimes called the third kind) of\norder 0 at x.";
-static char __pyx_k_104[] = "y=k0e(x) returns the exponentially scaled modified Bessel function\nof the second kind (sometimes called the third kind) of order 0 at x.  k0e(x) = exp(x) * k0(x).";
-static char __pyx_k_105[] = "y=i1(x) returns the modified Bessel function of the second kind (sometimes called the third kind) of\norder 1 at x.";
-static char __pyx_k_106[] = "y=k1e(x) returns the exponentially scaled modified Bessel function\nof the second kind (sometimes called the third kind) of order 1 at x.  k1e(x) = exp(x) * k1(x)";
-static char __pyx_k_107[] = "y=kei(x) returns the Kelvin function ker x";
-static char __pyx_k_108[] = "y=keip(x) returns the derivative of the Kelvin function kei x";
-static char __pyx_k_109[] = "(Be, Ke, Bep, Kep)=kelvin(x) returns the tuple (Be, Ke, Bep, Kep) which containes\ncomplex numbers representing the real and imaginary Kelvin functions\nand their derivatives evaluated at x.  For example,\nkelvin(x)[0].real = ber x and kelvin(x)[0].imag = bei x with similar\nrelationships for ker and kei.";
-static char __pyx_k_110[] = "y=ker(x) returns the Kelvin function ker x";
-static char __pyx_k_111[] = "y=kerp(x) returns the derivative of the Kelvin function ker x";
-static char __pyx_k_112[] = "y=kn(n,x) returns the modified Bessel function of the second kind (sometimes called the third kind) for\ninteger order n at x.";
-static char __pyx_k_113[] = "y=kolmogi(p) returns y such that kolmogorov(y) = p";
-static char __pyx_k_114[] = "p=kolmogorov(y) returns the complementary cumulative distribution\nfunction of Kolmogorov's limiting distribution (Kn* for large n)\nof a two-sided test for equality between an empirical and a theoretical\ndistribution. It is equal to the (limit as n->infinity of the) probability\nthat sqrt(n) * max absolute deviation > y.";
-static char __pyx_k_115[] = "y=kv(v,z) returns the modified Bessel function of the second kind (sometimes called the third kind) for\nreal order v at complex z.";
-static char __pyx_k_116[] = "y=kve(v,z) returns the exponentially scaled, modified Bessel function\nof the second kind (sometimes called the third kind) for real order v at complex z: kve(v,z) = kv(v,z) * exp(z)";
-static char __pyx_k_117[] = "y=log1p(x) calculates log(1+x) for use when x is near zero.";
-static char __pyx_k_118[] = "y=log_ndtr(x) returns the log of the area under the standard Gaussian probability\ndensity function, integrated from minus infinity to x:\n1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)";
-static char __pyx_k_119[] = "Logit ufunc for ndarrays.\n\nThe logit function is defined as logit(p) = log(p/(1-p)).\nNote that logit(0) = -inf, logit(1) = inf, and logit(p)\nfor p<0 or p>1 yields nan.\n\nParameters\n----------\nx : ndarray\n    The ndarray to apply logit to element-wise.\n\nReturns\n-------\nout : ndarray\n    An ndarray of the same shape as x. Its entries\n    are logit of the corresponding entry of x.\n\nNotes\n-----\nAs a ufunc logit takes a number of optional\nkeywork arguments. For more information\nsee `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_";
-static char __pyx_k_120[] = "y=lpmv(m,v,x) returns the associated legendre function of integer order\nm and real degree v (s.t. v>-m-1 or v<m): ``|x| <= 1``.";
-static char __pyx_k_121[] = "lmbda=mathieu_a(m,q) returns the characteristic value for the even solution,\nce_m(z,q), of Mathieu's equation";
-static char __pyx_k_122[] = "lmbda=mathieu_b(m,q) returns the characteristic value for the odd solution,\nse_m(z,q), of Mathieu's equation";
-static char __pyx_k_123[] = "(y,yp)=mathieu_cem(m,q,x) returns the even Mathieu function, ce_m(x,q),\nof order m and parameter q evaluated at x (given in degrees).\nAlso returns the derivative with respect to x of ce_m(x,q)";
-static char __pyx_k_124[] = "(y,yp)=mathieu_modcem1(m,q,x) evaluates the even modified Mathieu function\nof the first kind, Mc1m(x,q), and its derivative at x for order m and\nparameter q.";
-static char __pyx_k_125[] = "(y,yp)=mathieu_modcem2(m,q,x) evaluates the even modified Mathieu function\nof the second kind, Mc2m(x,q), and its derivative at x (given in degrees)\nfor order m and parameter q.";
-static char __pyx_k_126[] = "(y,yp)=mathieu_modsem1(m,q,x) evaluates the odd modified Mathieu function\nof the first kind, Ms1m(x,q), and its derivative at x (given in degrees)\nfor order m and parameter q.";
-static char __pyx_k_127[] = "(y,yp)=mathieu_modsem2(m,q,x) evaluates the odd modified Mathieu function\nof the second kind, Ms2m(x,q), and its derivative at x (given in degrees)\nfor order m and parameter q.";
-static char __pyx_k_128[] = "(y,yp)=mathieu_sem(m,q,x) returns the odd Mathieu function, se_m(x,q),\nof order m and parameter q evaluated at x (given in degrees).\nAlso returns the derivative with respect to x of se_m(x,q).";
-static char __pyx_k_129[] = "(fm,km)=modfresnelp(x) returns the modified fresnel integrals ``F_-(x)`` and ``K_-(x)``\nas ``fp=integral(exp(-1j*t*t),t=x..inf)`` and ``kp=1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``";
-static char __pyx_k_130[] = "(fp,kp)=modfresnelp(x) returns the modified fresnel integrals F_+(x) and K_+(x)\nas fp=integral(exp(1j*t*t),t=x..inf) and kp=1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp";
-static char __pyx_k_131[] = "y=modstruve(v,x) returns the modified Struve function Lv(x) of order\nv at x, x must be positive unless v is an integer and it is recommended\nthat ``|v| <= 20``.";
-static char __pyx_k_132[] = "y=nbdtr(k,n,p) returns the sum of the terms 0 through k of the\nnegative binomial distribution: sum((n+j-1)Cj p**n (1-p)**j,j=0..k).\nIn a sequence of Bernoulli trials this is the probability that k or\nfewer failures precede the nth success.";
-static char __pyx_k_133[] = "y=nbdtrc(k,n,p) returns the sum of the terms k+1 to infinity of the\nnegative binomial distribution.";
-static char __pyx_k_134[] = "p=nbdtri(k,n,y) finds the argument p such that nbdtr(k,n,p)=y.";
-static char __pyx_k_135[] = "k=nbdtrik(y,n,p) finds the argument k such that nbdtr(k,n,p)=y.";
-static char __pyx_k_136[] = "n=nbdtrin(k,y,p) finds the argument n such that nbdtr(k,n,p)=y.";
-static char __pyx_k_137[] = "y=ndtr(x) returns the area under the standard Gaussian probability\ndensity function, integrated from minus infinity to x:\n1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)";
-static char __pyx_k_138[] = "x=ndtri(y) returns the argument x for which the area udnder the\nGaussian probability density function (integrated from minus infinity\nto x) is equal to y.";
-static char __pyx_k_139[] = "(s,sp)=obl_ang1(m,n,c,x) computes the oblate sheroidal angular function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.";
-static char __pyx_k_140[] = "(s,sp)=obl_ang1_cv(m,n,c,cv,x) computes the oblate sheroidal angular function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
-static char __pyx_k_141[] = "cv=obl_cv(m,n,c) computes the characteristic value of oblate spheroidal\nwave functions of order m,n (n>=m) and spheroidal parameter c.";
-static char __pyx_k_142[] = "(s,sp)=obl_rad1(m,n,c,x) computes the oblate sheroidal radial function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.";
-static char __pyx_k_143[] = "(s,sp)=obl_rad1_cv(m,n,c,cv,x) computes the oblate sheroidal radial function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
-static char __pyx_k_144[] = "(s,sp)=obl_rad2(m,n,c,x) computes the oblate sheroidal radial function\nof the second kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.";
-static char __pyx_k_145[] = "(s,sp)=obl_rad2_cv(m,n,c,cv,x) computes the oblate sheroidal radial function\nof the second kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
-static char __pyx_k_146[] = "(d,dp)=pbdv(v,x) returns (d,dp) with the parabolic cylinder function Dv(x) in\nd and the derivative, Dv'(x) in dp.";
-static char __pyx_k_147[] = "(v,vp)=pbvv(v,x) returns (v,vp) with the parabolic cylinder function Vv(x) in\nv and the derivative, Vv'(x) in vp.";
-static char __pyx_k_148[] = "(w,wp)=pbwa(a,x) returns (w,wp) with the parabolic cylinder function W(a,x) in\nw and the derivative, W'(a,x) in wp.  May not be accurate for large (>5)\narguments in a and/or x.";
-static char __pyx_k_149[] = "y=pdtr(k,m) returns the sum of the first k terms of the Poisson\ndistribution: sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).\nArguments must both be positive and k an integer.";
-static char __pyx_k_150[] = "y=pdtrc(k,m) returns the sum of the terms from k+1 to infinity of the\nPoisson distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc( k+1, m).\nArguments must both be positive and k an integer.";
-static char __pyx_k_151[] = "m=pdtri(k,y) returns the Poisson variable m such that the sum\nfrom 0 to k of the Poisson density is equal to the given probability\ny:  calculated by gammaincinv( k+1, y).  k must be a nonnegative integer and\ny between 0 and 1.";
-static char __pyx_k_152[] = "k=pdtrik(p,m) returns the quantile k such that pdtr(k,m)=p";
-static char __pyx_k_153[] = "(s,sp)=pro_ang1(m,n,c,x) computes the prolate sheroidal angular function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.";
-static char __pyx_k_154[] = "(s,sp)=pro_ang1_cv(m,n,c,cv,x) computes the prolate sheroidal angular function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
-static char __pyx_k_155[] = "cv=pro_cv(m,n,c) computes the characteristic value of prolate spheroidal\nwave functions of order m,n (n>=m) and spheroidal parameter c.";
-static char __pyx_k_156[] = "(s,sp)=pro_rad1(m,n,c,x) computes the prolate sheroidal radial function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.";
-static char __pyx_k_157[] = "(s,sp)=pro_rad1_cv(m,n,c,cv,x) computes the prolate sheroidal radial function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
-static char __pyx_k_158[] = "(s,sp)=pro_rad2(m,n,c,x) computes the prolate sheroidal radial function\nof the second kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and |x|<1.0.";
-static char __pyx_k_159[] = "(s,sp)=pro_rad2_cv(m,n,c,cv,x) computes the prolate sheroidal radial function\nof the second kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
-static char __pyx_k_160[] = "y=psi(z) is the derivative of the logarithm of the gamma function\nevaluated at z (also called the digamma function).";
-static char __pyx_k_161[] = "y=radian(d,m,s) returns the angle given in (d)egrees, (m)inutes, and\n(s)econds in radians.";
-static char __pyx_k_162[] = "y=rgamma(z) returns one divided by the gamma function of x.";
-static char __pyx_k_163[] = "y=Returns the nearest integer to x as a double precision\nfloating point result.  If x ends in 0.5 exactly, the\nnearest even integer is chosen.";
-static char __pyx_k_164[] = "(shi,chi)=shichi(x) returns the hyperbolic sine and cosine integrals:\nintegral(sinh(t)/t,t=0..x) and eul + ln x +\nintegral((cosh(t)-1)/t,t=0..x) where eul is Euler's Constant.";
-static char __pyx_k_165[] = "(si,ci)=sici(x) returns in si the integral of the sinc function from 0 to x:\nintegral(sin(t)/t,t=0..x).  It returns in ci the cosine integral: eul + ln x +\nintegral((cos(t) - 1)/t,t=0..x).";
-static char __pyx_k_166[] = "y=sindg(x) calculates the sine of the angle x given in degrees.";
-static char __pyx_k_167[] = "y=smirnov(n,e) returns the exact Kolmogorov-Smirnov complementary\ncumulative distribution function (Dn+ or Dn-) for a one-sided test of\nequality between an empirical and a theoretical distribution. It is equal\nto the probability that the maximum difference between a theoretical\ndistribution and an empirical one based on n samples is greater than e.";
-static char __pyx_k_168[] = "e=smirnovi(n,y) returns e such that smirnov(n,e) = y.";
-static char __pyx_k_169[] = "y=spence(x) returns the dilogarithm integral: -integral(log t /\n(t-1),t=1..x)";
-static char __pyx_k_170[] = "p=stdtr(df,t) returns the integral from minus infinity to t of the Student t\ndistribution with df > 0 degrees of freedom:\ngamma((df+1)/2)/(sqrt(df*pi)*gamma(df/2)) * integral((1+x**2/df)**(-df/2-1/2),\nx=-inf..t)";
-static char __pyx_k_171[] = "t=stdtridf(p,t) returns the argument df such that stdtr(df,t) is equal to p.";
-static char __pyx_k_172[] = "t=stdtrit(df,p) returns the argument t such that stdtr(df,t) is equal to p.";
-static char __pyx_k_173[] = "y=struve(v,x) returns the Struve function Hv(x) of order v at x, x\nmust be positive unless v is an integer.";
-static char __pyx_k_174[] = "y=tandg(x) calculates the tangent of the angle x given in degrees.";
-static char __pyx_k_175[] = "y=y0(x) returns the Bessel function of the second kind of order 0 at x.";
-static char __pyx_k_176[] = "y=y1(x) returns the Bessel function of the second kind of order 1 at x.";
-static char __pyx_k_177[] = "y=yn(n,x) returns the Bessel function of the second kind of integer\norder n at x.";
-static char __pyx_k_178[] = "y=yv(v,z) returns the Bessel function of the second kind of real\norder v at complex z.";
-static char __pyx_k_179[] = "y=yve(v,z) returns the exponentially scaled Bessel function of the second\nkind of real order v at complex z: yve(v,z) = yv(v,z) * exp(-abs(z.imag))";
-static char __pyx_k_180[] = "y=zeta(x,q) returns the Riemann zeta function of two arguments:\nsum((k+q)**(-x),k=0..inf)";
-static char __pyx_k_181[] = "y=zetac(x) returns 1.0 - the Riemann zeta function: sum(k**(-x), k=2..inf)";
-static char __pyx_k_184[] = "/home/pauli/prj/scipy/scipy/scipy/special/_ufuncs.pyx";
-static char __pyx_k_185[] = "scipy.special._ufuncs";
+static char __pyx_k_100[] = "y=keip(x) returns the derivative of the Kelvin function kei x";
+static char __pyx_k_101[] = "(Be, Ke, Bep, Kep)=kelvin(x) returns the tuple (Be, Ke, Bep, Kep) which containes\ncomplex numbers representing the real and imaginary Kelvin functions\nand their derivatives evaluated at x.  For example,\nkelvin(x)[0].real = ber x and kelvin(x)[0].imag = bei x with similar\nrelationships for ker and kei.";
+static char __pyx_k_102[] = "y=ker(x) returns the Kelvin function ker x";
+static char __pyx_k_103[] = "y=kerp(x) returns the derivative of the Kelvin function ker x";
+static char __pyx_k_104[] = "y=kn(n,x) returns the modified Bessel function of the second kind (sometimes called the third kind) for\ninteger order n at x.";
+static char __pyx_k_105[] = "y=kolmogi(p) returns y such that kolmogorov(y) = p";
+static char __pyx_k_106[] = "p=kolmogorov(y) returns the complementary cumulative distribution\nfunction of Kolmogorov's limiting distribution (Kn* for large n)\nof a two-sided test for equality between an empirical and a theoretical\ndistribution. It is equal to the (limit as n->infinity of the) probability\nthat sqrt(n) * max absolute deviation > y.";
+static char __pyx_k_107[] = "y=kv(v,z) returns the modified Bessel function of the second kind (sometimes called the third kind) for\nreal order v at complex z.";
+static char __pyx_k_108[] = "y=kve(v,z) returns the exponentially scaled, modified Bessel function\nof the second kind (sometimes called the third kind) for real order v at complex z: kve(v,z) = kv(v,z) * exp(z)";
+static char __pyx_k_109[] = "y=log1p(x) calculates log(1+x) for use when x is near zero.";
+static char __pyx_k_110[] = "y=log_ndtr(x) returns the log of the area under the standard Gaussian probability\ndensity function, integrated from minus infinity to x:\n1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)";
+static char __pyx_k_111[] = "Logit ufunc for ndarrays.\n\nThe logit function is defined as logit(p) = log(p/(1-p)).\nNote that logit(0) = -inf, logit(1) = inf, and logit(p)\nfor p<0 or p>1 yields nan.\n\nParameters\n----------\nx : ndarray\n    The ndarray to apply logit to element-wise.\n\nReturns\n-------\nout : ndarray\n    An ndarray of the same shape as x. Its entries\n    are logit of the corresponding entry of x.\n\nNotes\n-----\nAs a ufunc logit takes a number of optional\nkeywork arguments. For more information\nsee `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_";
+static char __pyx_k_112[] = "y=lpmv(m,v,x) returns the associated legendre function of integer order\nm and real degree v (s.t. v>-m-1 or v<m): ``|x| <= 1``.";
+static char __pyx_k_113[] = "lmbda=mathieu_a(m,q) returns the characteristic value for the even solution,\nce_m(z,q), of Mathieu's equation";
+static char __pyx_k_114[] = "lmbda=mathieu_b(m,q) returns the characteristic value for the odd solution,\nse_m(z,q), of Mathieu's equation";
+static char __pyx_k_115[] = "(y,yp)=mathieu_cem(m,q,x) returns the even Mathieu function, ce_m(x,q),\nof order m and parameter q evaluated at x (given in degrees).\nAlso returns the derivative with respect to x of ce_m(x,q)";
+static char __pyx_k_116[] = "(y,yp)=mathieu_modcem1(m,q,x) evaluates the even modified Mathieu function\nof the first kind, Mc1m(x,q), and its derivative at x for order m and\nparameter q.";
+static char __pyx_k_117[] = "(y,yp)=mathieu_modcem2(m,q,x) evaluates the even modified Mathieu function\nof the second kind, Mc2m(x,q), and its derivative at x (given in degrees)\nfor order m and parameter q.";
+static char __pyx_k_118[] = "(y,yp)=mathieu_modsem1(m,q,x) evaluates the odd modified Mathieu function\nof the first kind, Ms1m(x,q), and its derivative at x (given in degrees)\nfor order m and parameter q.";
+static char __pyx_k_119[] = "(y,yp)=mathieu_modsem2(m,q,x) evaluates the odd modified Mathieu function\nof the second kind, Ms2m(x,q), and its derivative at x (given in degrees)\nfor order m and parameter q.";
+static char __pyx_k_120[] = "(y,yp)=mathieu_sem(m,q,x) returns the odd Mathieu function, se_m(x,q),\nof order m and parameter q evaluated at x (given in degrees).\nAlso returns the derivative with respect to x of se_m(x,q).";
+static char __pyx_k_121[] = "(fm,km)=modfresnelp(x) returns the modified fresnel integrals ``F_-(x)`` and ``K_-(x)``\nas ``fp=integral(exp(-1j*t*t),t=x..inf)`` and ``kp=1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``";
+static char __pyx_k_122[] = "(fp,kp)=modfresnelp(x) returns the modified fresnel integrals F_+(x) and K_+(x)\nas fp=integral(exp(1j*t*t),t=x..inf) and kp=1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp";
+static char __pyx_k_123[] = "y=modstruve(v,x) returns the modified Struve function Lv(x) of order\nv at x, x must be positive unless v is an integer and it is recommended\nthat ``|v| <= 20``.";
+static char __pyx_k_124[] = "y=nbdtr(k,n,p) returns the sum of the terms 0 through k of the\nnegative binomial distribution: sum((n+j-1)Cj p**n (1-p)**j,j=0..k).\nIn a sequence of Bernoulli trials this is the probability that k or\nfewer failures precede the nth success.";
+static char __pyx_k_125[] = "y=nbdtrc(k,n,p) returns the sum of the terms k+1 to infinity of the\nnegative binomial distribution.";
+static char __pyx_k_126[] = "p=nbdtri(k,n,y) finds the argument p such that nbdtr(k,n,p)=y.";
+static char __pyx_k_127[] = "k=nbdtrik(y,n,p) finds the argument k such that nbdtr(k,n,p)=y.";
+static char __pyx_k_128[] = "n=nbdtrin(k,y,p) finds the argument n such that nbdtr(k,n,p)=y.";
+static char __pyx_k_129[] = "y=ndtr(x) returns the area under the standard Gaussian probability\ndensity function, integrated from minus infinity to x:\n1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)";
+static char __pyx_k_130[] = "x=ndtri(y) returns the argument x for which the area udnder the\nGaussian probability density function (integrated from minus infinity\nto x) is equal to y.";
+static char __pyx_k_131[] = "(s,sp)=obl_ang1(m,n,c,x) computes the oblate sheroidal angular function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.";
+static char __pyx_k_132[] = "(s,sp)=obl_ang1_cv(m,n,c,cv,x) computes the oblate sheroidal angular function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
+static char __pyx_k_133[] = "cv=obl_cv(m,n,c) computes the characteristic value of oblate spheroidal\nwave functions of order m,n (n>=m) and spheroidal parameter c.";
+static char __pyx_k_134[] = "(s,sp)=obl_rad1(m,n,c,x) computes the oblate sheroidal radial function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.";
+static char __pyx_k_135[] = "(s,sp)=obl_rad1_cv(m,n,c,cv,x) computes the oblate sheroidal radial function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
+static char __pyx_k_136[] = "(s,sp)=obl_rad2(m,n,c,x) computes the oblate sheroidal radial function\nof the second kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.";
+static char __pyx_k_137[] = "(s,sp)=obl_rad2_cv(m,n,c,cv,x) computes the oblate sheroidal radial function\nof the second kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
+static char __pyx_k_138[] = "(d,dp)=pbdv(v,x) returns (d,dp) with the parabolic cylinder function Dv(x) in\nd and the derivative, Dv'(x) in dp.";
+static char __pyx_k_139[] = "(v,vp)=pbvv(v,x) returns (v,vp) with the parabolic cylinder function Vv(x) in\nv and the derivative, Vv'(x) in vp.";
+static char __pyx_k_140[] = "(w,wp)=pbwa(a,x) returns (w,wp) with the parabolic cylinder function W(a,x) in\nw and the derivative, W'(a,x) in wp.  May not be accurate for large (>5)\narguments in a and/or x.";
+static char __pyx_k_141[] = "y=pdtr(k,m) returns the sum of the first k terms of the Poisson\ndistribution: sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).\nArguments must both be positive and k an integer.";
+static char __pyx_k_142[] = "y=pdtrc(k,m) returns the sum of the terms from k+1 to infinity of the\nPoisson distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc( k+1, m).\nArguments must both be positive and k an integer.";
+static char __pyx_k_143[] = "m=pdtri(k,y) returns the Poisson variable m such that the sum\nfrom 0 to k of the Poisson density is equal to the given probability\ny:  calculated by gammaincinv( k+1, y).  k must be a nonnegative integer and\ny between 0 and 1.";
+static char __pyx_k_144[] = "k=pdtrik(p,m) returns the quantile k such that pdtr(k,m)=p";
+static char __pyx_k_145[] = "(s,sp)=pro_ang1(m,n,c,x) computes the prolate sheroidal angular function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.";
+static char __pyx_k_146[] = "(s,sp)=pro_ang1_cv(m,n,c,cv,x) computes the prolate sheroidal angular function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
+static char __pyx_k_147[] = "cv=pro_cv(m,n,c) computes the characteristic value of prolate spheroidal\nwave functions of order m,n (n>=m) and spheroidal parameter c.";
+static char __pyx_k_148[] = "(s,sp)=pro_rad1(m,n,c,x) computes the prolate sheroidal radial function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.";
+static char __pyx_k_149[] = "(s,sp)=pro_rad1_cv(m,n,c,cv,x) computes the prolate sheroidal radial function\nof the first kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
+static char __pyx_k_150[] = "(s,sp)=pro_rad2(m,n,c,x) computes the prolate sheroidal radial function\nof the second kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and |x|<1.0.";
+static char __pyx_k_151[] = "(s,sp)=pro_rad2_cv(m,n,c,cv,x) computes the prolate sheroidal radial function\nof the second kind and its derivative (with respect to x) for mode paramters\nm>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\ncharacteristic value.";
+static char __pyx_k_152[] = "y=psi(z) is the derivative of the logarithm of the gamma function\nevaluated at z (also called the digamma function).";
+static char __pyx_k_153[] = "y=radian(d,m,s) returns the angle given in (d)egrees, (m)inutes, and\n(s)econds in radians.";
+static char __pyx_k_154[] = "y=rgamma(z) returns one divided by the gamma function of x.";
+static char __pyx_k_155[] = "y=Returns the nearest integer to x as a double precision\nfloating point result.  If x ends in 0.5 exactly, the\nnearest even integer is chosen.";
+static char __pyx_k_156[] = "(shi,chi)=shichi(x) returns the hyperbolic sine and cosine integrals:\nintegral(sinh(t)/t,t=0..x) and eul + ln x +\nintegral((cosh(t)-1)/t,t=0..x) where eul is Euler's Constant.";
+static char __pyx_k_157[] = "(si,ci)=sici(x) returns in si the integral of the sinc function from 0 to x:\nintegral(sin(t)/t,t=0..x).  It returns in ci the cosine integral: eul + ln x +\nintegral((cos(t) - 1)/t,t=0..x).";
+static char __pyx_k_158[] = "y=sindg(x) calculates the sine of the angle x given in degrees.";
+static char __pyx_k_159[] = "y=smirnov(n,e) returns the exact Kolmogorov-Smirnov complementary\ncumulative distribution function (Dn+ or Dn-) for a one-sided test of\nequality between an empirical and a theoretical distribution. It is equal\nto the probability that the maximum difference between a theoretical\ndistribution and an empirical one based on n samples is greater than e.";
+static char __pyx_k_160[] = "e=smirnovi(n,y) returns e such that smirnov(n,e) = y.";
+static char __pyx_k_161[] = "y=spence(x) returns the dilogarithm integral: -integral(log t /\n(t-1),t=1..x)";
+static char __pyx_k_162[] = "p=stdtr(df,t) returns the integral from minus infinity to t of the Student t\ndistribution with df > 0 degrees of freedom:\ngamma((df+1)/2)/(sqrt(df*pi)*gamma(df/2)) * integral((1+x**2/df)**(-df/2-1/2),\nx=-inf..t)";
+static char __pyx_k_163[] = "t=stdtridf(p,t) returns the argument df such that stdtr(df,t) is equal to p.";
+static char __pyx_k_164[] = "t=stdtrit(df,p) returns the argument t such that stdtr(df,t) is equal to p.";
+static char __pyx_k_165[] = "y=struve(v,x) returns the Struve function Hv(x) of order v at x, x\nmust be positive unless v is an integer.";
+static char __pyx_k_166[] = "y=tandg(x) calculates the tangent of the angle x given in degrees.";
+static char __pyx_k_167[] = "y=y0(x) returns the Bessel function of the second kind of order 0 at x.";
+static char __pyx_k_168[] = "y=y1(x) returns the Bessel function of the second kind of order 1 at x.";
+static char __pyx_k_169[] = "y=yn(n,x) returns the Bessel function of the second kind of integer\norder n at x.";
+static char __pyx_k_170[] = "y=yv(v,z) returns the Bessel function of the second kind of real\norder v at complex z.";
+static char __pyx_k_171[] = "y=yve(v,z) returns the exponentially scaled Bessel function of the second\nkind of real order v at complex z: yve(v,z) = yv(v,z) * exp(-abs(z.imag))";
+static char __pyx_k_172[] = "y=zeta(x,q) returns the Riemann zeta function of two arguments:\nsum((k+q)**(-x),k=0..inf)";
+static char __pyx_k_173[] = "y=zetac(x) returns 1.0 - the Riemann zeta function: sum(k**(-x), k=2..inf)";
+static char __pyx_k_176[] = "/home/pauli/prj/scipy/scipy/scipy/special/_ufuncs.pyx";
+static char __pyx_k_177[] = "scipy.special._ufuncs";
 static char __pyx_k__Zd[] = "Zd";
 static char __pyx_k__Zf[] = "Zf";
 static char __pyx_k__Zg[] = "Zg";
@@ -2171,7 +2152,6 @@ static char __pyx_k__kolmogi[] = "kolmogi";
 static char __pyx_k__nbdtrik[] = "nbdtrik";
 static char __pyx_k__nbdtrin[] = "nbdtrin";
 static char __pyx_k__ncfdtri[] = "ncfdtri";
-static char __pyx_k__oldflag[] = "oldflag";
 static char __pyx_k__smirnov[] = "smirnov";
 static char __pyx_k__stdtrit[] = "stdtrit";
 static char __pyx_k__tklmbda[] = "tklmbda";
@@ -2236,16 +2216,14 @@ static char __pyx_k__mathieu_modcem1[] = "mathieu_modcem1";
 static char __pyx_k__mathieu_modcem2[] = "mathieu_modcem2";
 static char __pyx_k__mathieu_modsem1[] = "mathieu_modsem1";
 static char __pyx_k__mathieu_modsem2[] = "mathieu_modsem2";
-static PyObject *__pyx_kp_u_12;
+static PyObject *__pyx_kp_u_10;
+static PyObject *__pyx_kp_u_11;
 static PyObject *__pyx_kp_u_14;
-static PyObject *__pyx_kp_u_16;
-static PyObject *__pyx_kp_u_18;
-static PyObject *__pyx_kp_s_184;
-static PyObject *__pyx_n_s_185;
-static PyObject *__pyx_kp_u_19;
-static PyObject *__pyx_kp_u_22;
-static PyObject *__pyx_n_s_5;
-static PyObject *__pyx_n_s_6;
+static PyObject *__pyx_kp_s_176;
+static PyObject *__pyx_n_s_177;
+static PyObject *__pyx_kp_u_4;
+static PyObject *__pyx_kp_u_6;
+static PyObject *__pyx_kp_u_8;
 static PyObject *__pyx_n_s__RuntimeError;
 static PyObject *__pyx_n_s__ValueError;
 static PyObject *__pyx_n_s____main__;
@@ -2397,7 +2375,6 @@ static PyObject *__pyx_n_s__obl_rad1;
 static PyObject *__pyx_n_s__obl_rad1_cv;
 static PyObject *__pyx_n_s__obl_rad2;
 static PyObject *__pyx_n_s__obl_rad2_cv;
-static PyObject *__pyx_n_s__oldflag;
 static PyObject *__pyx_n_s__pbdv;
 static PyObject *__pyx_n_s__pbvv;
 static PyObject *__pyx_n_s__pbwa;
@@ -2437,14 +2414,14 @@ static PyObject *__pyx_n_s__yve;
 static PyObject *__pyx_n_s__zeta;
 static PyObject *__pyx_n_s__zetac;
 static PyObject *__pyx_int_15;
+static PyObject *__pyx_k_tuple_5;
+static PyObject *__pyx_k_tuple_7;
+static PyObject *__pyx_k_tuple_9;
+static PyObject *__pyx_k_tuple_12;
 static PyObject *__pyx_k_tuple_13;
 static PyObject *__pyx_k_tuple_15;
-static PyObject *__pyx_k_tuple_17;
-static PyObject *__pyx_k_tuple_20;
-static PyObject *__pyx_k_tuple_21;
-static PyObject *__pyx_k_tuple_23;
-static PyObject *__pyx_k_tuple_182;
-static PyObject *__pyx_k_codeobj_183;
+static PyObject *__pyx_k_tuple_174;
+static PyObject *__pyx_k_codeobj_175;
 
 
 
@@ -2459,9 +2436,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f(char **__pyx
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2501,20 +2475,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f(char **__pyx
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 30; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddd__As_ffff_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -2527,9 +2489,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_f_f__As_f_f(char **__pyx_v_arg
   float __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2557,20 +2516,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_f_f__As_f_f(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_f_f__As_f_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -2589,9 +2536,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_ddddd_dd(char **
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2642,20 +2586,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_ddddd_dd(char **
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_ddddd_dd_As_ddddd_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -2669,9 +2601,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D(char **__pyx_v_a
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2703,20 +2632,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_dD_D(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_dD__As_dD_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -2731,9 +2648,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_d_dd(char **__pyx_v_
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2768,20 +2682,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_d_dd(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 85; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_dd_As_d_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -2794,9 +2696,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_D__As_D_D(char **__pyx_v_arg
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2824,20 +2723,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_D__As_D_D(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 96; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_D__As_D_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -2856,9 +2743,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_fffl_ff(char **__p
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
   int __pyx_t_3;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -2887,7 +2771,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_fffl_ff(char **__p
      {
 
       
-      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 107; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1);
 
       
       __pyx_v_ov0 = ((double)NPY_NAN);
@@ -2923,20 +2807,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_fffl_ff(char **__p
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 118; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddi_d_As_fffl_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -2954,9 +2826,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff(char **__p
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3003,20 +2872,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff(char **__p
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 135; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddd_d_As_ffff_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3035,9 +2892,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DDDD_As_f_FFFF(char **__py
   __pyx_t_double_complex __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3086,20 +2940,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DDDD_As_f_FFFF(char **__py
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 155; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_DDDD_As_f_FFFF", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3118,9 +2960,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DDDD_As_F_FFFF(char **__py
   __pyx_t_double_complex __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3169,20 +3008,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DDDD_As_F_FFFF(char **__py
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 175; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_D_DDDD_As_F_FFFF", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3201,9 +3028,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddl_dd(char **__p
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
   int __pyx_t_3;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3232,7 +3056,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddl_dd(char **__p
      {
 
       
-      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 186; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1);
 
       
       __pyx_v_ov0 = ((double)NPY_NAN);
@@ -3268,20 +3092,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_dddl_dd(char **__p
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 197; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddi_d_As_dddl_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3297,9 +3109,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_dd_dd(char **__pyx_
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3338,20 +3147,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_dd_dd(char **__pyx_
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 212; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_dd_dd_As_dd_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3366,9 +3163,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f(char **__pyx_v
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3404,20 +3198,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 225; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_ddd__As_fff_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3431,9 +3213,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f(char **__pyx_v_a
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3465,20 +3244,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 237; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dd__As_ff_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3498,9 +3265,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_ff_ffff(char **__
   double __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3553,20 +3317,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_ff_ffff(char **__
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 258; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_dd_dddd_As_ff_ffff", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3583,9 +3335,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_fff_ff(char **__py
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3628,20 +3377,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_fff_ff(char **__py
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 274; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_ddd_dd_As_fff_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3656,9 +3393,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ddD_D(char **__pyx_v
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3694,20 +3428,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ddD_D(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 287; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_ddD__As_ddD_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3723,9 +3445,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_dddD_D(char **__pyx
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3765,20 +3484,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_dddD_D(char **__pyx
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 301; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_dddD__As_dddD_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3797,9 +3504,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_d_dddd(char **__py
   double __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3848,20 +3552,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_d_dddd(char **__py
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 321; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_dddd_As_d_dddd", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3880,9 +3572,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_fffff_ff(char **
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3933,20 +3622,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_fffff_ff(char **
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 339; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_ddddd_dd_As_fffff_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -3959,9 +3636,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_D__As_F_F(char **__pyx_v_arg
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -3989,20 +3663,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_D__As_F_F(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 350; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_D__As_F_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4021,9 +3683,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DDDD_As_d_DDDD(char **__py
   __pyx_t_double_complex __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4072,20 +3731,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DDDD_As_d_DDDD(char **__py
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 370; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_DDDD_As_d_DDDD", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4102,9 +3749,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_ddd_dd(char **__py
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4147,20 +3791,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_ddd_dd(char **__py
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 386; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_ddd_dd_As_ddd_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4175,9 +3807,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_Dld__As_Dld_D(char **__pyx_v
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4213,20 +3842,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_Dld__As_Dld_D(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 399; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_Dld__As_Dld_D", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4242,9 +3859,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_ff_ff(char **__pyx_
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4283,20 +3897,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_ff_ff(char **__pyx_
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 414; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_dd_dd_As_ff_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4312,9 +3914,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_fffF_F(char **__pyx
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4354,20 +3953,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dddD__As_fffF_F(char **__pyx
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 428; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_dddD__As_fffF_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4382,9 +3969,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f(char **__pyx_v_a
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
   int __pyx_t_3;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4410,7 +3994,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f(char **__pyx_v_a
      {
 
       
-      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 438; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1);
 
       
       __pyx_v_ov0 = ((double)NPY_NAN);
@@ -4431,20 +4015,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 444; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_id__As_lf_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4460,9 +4032,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_dddd_d(char **__pyx
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4502,20 +4071,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_dddd_d(char **__pyx
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 458; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddd__As_dddd_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4533,9 +4090,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d(char **__pyx_v
   int __pyx_t_3;
   int __pyx_t_4;
   int __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4568,7 +4122,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d(char **__pyx_v
      {
 
       
-      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 468; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1);
 
       
       __pyx_v_ov0 = ((double)NPY_NAN);
@@ -4592,20 +4146,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_lld_d(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 475; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_iid__As_lld_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4620,9 +4162,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DD_As_d_DD(char **__pyx_v_
   __pyx_t_double_complex __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4657,20 +4196,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DD_As_d_DD(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 489; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_DD_As_d_DD", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4683,9 +4210,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f(char **__pyx_v_arg
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4713,20 +4237,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 500; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_d__As_f_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4739,9 +4251,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_d_d(char **__pyx_v_arg
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4769,20 +4278,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_d_d(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 511; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_d__As_d_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4800,9 +4297,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f(char **__pyx_v
   int __pyx_t_3;
   int __pyx_t_4;
   int __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4835,7 +4329,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f(char **__pyx_v
      {
 
       
-      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 521; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1);
 
       
       __pyx_v_ov0 = ((double)NPY_NAN);
@@ -4859,20 +4353,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 528; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_iid__As_llf_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4887,9 +4369,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ffF_F(char **__pyx_v
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -4925,20 +4404,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_ddD__As_ffF_F(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 541; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_ddD__As_ffF_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -4957,9 +4424,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_f_ffff(char **__py
   double __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5008,20 +4472,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_f_ffff(char **__py
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 561; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_dddd_As_f_ffff", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5039,9 +4491,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_dddd_dd(char **__p
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5088,20 +4537,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_dddd_dd(char **__p
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 578; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dddd_d_As_dddd_dd", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5116,9 +4553,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DD_As_D_DD(char **__pyx_v_
   __pyx_t_double_complex __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5153,20 +4587,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DD_As_D_DD(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 592; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_D_DD_As_D_DD", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5181,9 +4603,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_Dld__As_Flf_F(char **__pyx_v
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5219,20 +4638,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_Dld__As_Flf_F(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 605; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_Dld__As_Flf_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5252,9 +4659,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_dd_dddd(char **__
   double __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5307,20 +4711,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_dd_dddd(char **__
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 626; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_dd_dddd_As_dd_dddd", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5335,9 +4727,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DD_As_F_FF(char **__pyx_v_
   __pyx_t_double_complex __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5372,20 +4761,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DD_As_F_FF(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 640; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_D_DD_As_F_FF", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5400,9 +4777,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff(char **__pyx_v_
   double __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5437,20 +4811,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 654; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_dd_As_f_ff", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5464,9 +4826,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_lf_f(char **__pyx_v_a
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5498,20 +4857,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_lf_f(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 666; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_ld__As_lf_f", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5526,9 +4873,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d(char **__pyx_v_a
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
   int __pyx_t_3;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5554,7 +4898,7 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d(char **__pyx_v_a
      {
 
       
-      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 676; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      sf_error(NULL, SF_ERROR_DOMAIN, __pyx_k_1);
 
       
       __pyx_v_ov0 = ((double)NPY_NAN);
@@ -5575,20 +4919,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_ld_d(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 682; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_id__As_ld_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5602,9 +4934,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d(char **__pyx_v_a
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5636,20 +4965,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_dd_d(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 694; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_dd__As_dd_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5664,9 +4981,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DD_As_f_FF(char **__pyx_v_
   __pyx_t_double_complex __pyx_v_ov1;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5701,20 +5015,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DD_As_f_FF(char **__pyx_v_
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 708; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_d_DD_As_f_FF", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5729,9 +5031,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_ddd_d(char **__pyx_v
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5767,20 +5066,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_ddd_d(char **__pyx_v
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 721; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_ddd__As_ddd_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5794,9 +5081,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F(char **__pyx_v_a
   __pyx_t_double_complex __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5828,20 +5112,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 733; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_D_dD__As_fF_F", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5860,9 +5132,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DDDD_As_D_DDDD(char **__py
   __pyx_t_double_complex __pyx_v_ov3;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5911,20 +5180,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_i_D_DDDD_As_D_DDDD(char **__py
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 753; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_i_D_DDDD_As_D_DDDD", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5937,9 +5194,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_g_g__As_g_g(char **__pyx_v_arg
   long double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -5967,20 +5221,8 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_g_g__As_g_g(char **__pyx_v_arg
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 764; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_g_g__As_g_g", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
@@ -5994,9 +5236,6 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_ld_d(char **__pyx_v_a
   double __pyx_v_ov0;
   npy_intp __pyx_t_1;
   npy_intp __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
   
   __pyx_v_n = (__pyx_v_dims[0]);
@@ -6028,248 +5267,22 @@ static void __pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_ld_d(char **__pyx_v_a
   }
 
   
-  sf_error_check_fpe(NULL); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 776; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  sf_error_check_fpe(NULL);
 
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.loop_d_ld__As_ld_d", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
 }
 
 
 
-void sf_error(char *__pyx_v_func_name, sf_error_t __pyx_v_code, char *__pyx_v_fmt, ...) {
-  char __pyx_v_msg[1024];
-  char __pyx_v_info[2048];
-  va_list __pyx_v_ap;
-  PyObject *__pyx_v_SpecialFunctionWarning = NULL;
-  __Pyx_RefNannyDeclarations
-  int __pyx_t_1;
-  int __pyx_t_2;
-  int __pyx_t_3;
-  PyObject *__pyx_t_4 = NULL;
-  PyObject *__pyx_t_5 = NULL;
-  int __pyx_t_6;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  #ifdef WITH_THREAD
-  PyGILState_STATE __pyx_gilstate_save;
-  #endif
-  __Pyx_RefNannySetupContext("sf_error", 1);
-   {
-
-    
-    __pyx_v_5scipy_7special_7_ufuncs__last_error = __pyx_v_code;
-
-    
-    __pyx_t_1 = (!__pyx_v_5scipy_7special_7_ufuncs__print_error_messages);
-    if (__pyx_t_1) {
-
-      
-      goto __pyx_L3;
-      goto __pyx_L6;
-    }
-    __pyx_L6:;
-
-    
-    __pyx_t_1 = (__pyx_v_func_name == NULL);
-    if (__pyx_t_1) {
-
-      
-      __pyx_v_func_name = __pyx_k_2;
-      goto __pyx_L7;
-    }
-    __pyx_L7:;
-
-    
-    __pyx_t_1 = (__pyx_v_fmt != NULL);
-    if (__pyx_t_1) {
-      __pyx_t_2 = ((__pyx_v_fmt[0]) != '\x00');
-      __pyx_t_3 = __pyx_t_2;
-    } else {
-      __pyx_t_3 = __pyx_t_1;
-    }
-    if (__pyx_t_3) {
-
-      
-      va_start(__pyx_v_ap, __pyx_v_fmt);
-
-      
-      PyOS_vsnprintf(__pyx_v_info, 1024, __pyx_v_fmt, __pyx_v_ap);
-
-      
-      va_end(__pyx_v_ap);
-
-      
-      PyOS_snprintf(__pyx_v_msg, 2048, __pyx_k_3, __pyx_v_func_name, (sf_error_messages[((int)__pyx_v_code)]), __pyx_v_info);
-      goto __pyx_L8;
-    }
-     {
-
-      
-      PyOS_snprintf(__pyx_v_msg, 2048, __pyx_k_4, __pyx_v_func_name, (sf_error_messages[((int)__pyx_v_code)]));
-    }
-    __pyx_L8:;
-
-    
-    {
-        #ifdef WITH_THREAD
-        PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-        #endif
-         {
-
-          
-          __pyx_t_4 = PyList_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5329; __pyx_clineno = __LINE__; goto __pyx_L10;}
-          __Pyx_GOTREF(__pyx_t_4);
-          __Pyx_INCREF(((PyObject *)__pyx_n_s_6));
-          PyList_SET_ITEM(__pyx_t_4, 0, ((PyObject *)__pyx_n_s_6));
-          __Pyx_GIVEREF(((PyObject *)__pyx_n_s_6));
-          __pyx_t_5 = __Pyx_Import(((PyObject *)__pyx_n_s_5), ((PyObject *)__pyx_t_4), -1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5329; __pyx_clineno = __LINE__; goto __pyx_L10;}
-          __Pyx_GOTREF(__pyx_t_5);
-          __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
-          __pyx_t_4 = PyObject_GetAttr(__pyx_t_5, __pyx_n_s_6);
-          if (__pyx_t_4 == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) __Pyx_RaiseImportError(__pyx_n_s_6);
-            if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5329; __pyx_clineno = __LINE__; goto __pyx_L10;}
-          }
-          __Pyx_GOTREF(__pyx_t_4);
-          __Pyx_INCREF(__pyx_t_4);
-          __pyx_v_SpecialFunctionWarning = __pyx_t_4;
-          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-
-          
-          __pyx_t_6 = PyErr_WarnEx(__pyx_v_SpecialFunctionWarning, __pyx_v_msg, 1); if (unlikely(__pyx_t_6 == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5330; __pyx_clineno = __LINE__; goto __pyx_L10;}
-        }
-
-        
-         {
-          int __pyx_why;
-          __pyx_why = 0; goto __pyx_L11;
-          __pyx_L10: __pyx_why = 4; goto __pyx_L11;
-          __pyx_L11:;
-          #ifdef WITH_THREAD
-          PyGILState_Release(__pyx_gilstate_save);
-          #endif
-          switch (__pyx_why) {
-            case 4: goto __pyx_L4;
-          }
-        }
-    }
-  }
+int wrap_PyUFunc_getfperr(void) {
+  int __pyx_r;
 
   
-   {
-    int __pyx_why;
-    __pyx_why = 0; goto __pyx_L5;
-    __pyx_L3: __pyx_why = 3; goto __pyx_L5;
-    __pyx_L4: __pyx_why = 4; goto __pyx_L5;
-    __pyx_L5:;
-    #ifdef WITH_THREAD
-    __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    switch (__pyx_why) {
-      case 3: goto __pyx_L0;
-      case 4: goto __pyx_L1_error;
-    }
-  }
-
+  __pyx_r = PyUFunc_getfperr();
   goto __pyx_L0;
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_AddTraceback("scipy.special._ufuncs.sf_error", __pyx_clineno, __pyx_lineno, __pyx_filename);
+
+  __pyx_r = 0;
   __pyx_L0:;
-  __Pyx_XDECREF(__pyx_v_SpecialFunctionWarning);
-  #ifdef WITH_THREAD
-  PyGILState_Release(__pyx_gilstate_save);
-  #endif
-}
-
-
-
-void sf_error_check_fpe(char *__pyx_v_func_name) {
-  int __pyx_v_status;
-  int __pyx_t_1;
-  int __pyx_t_2;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-
-  
-  __pyx_v_status = PyUFunc_getfperr();
-
-  
-  __pyx_t_1 = (!__pyx_v_5scipy_7special_7_ufuncs__print_error_messages);
-  if (__pyx_t_1) {
-
-    
-    goto __pyx_L0;
-    goto __pyx_L3;
-  }
-  __pyx_L3:;
-
-  
-  __pyx_t_2 = (__pyx_v_status & UFUNC_FPE_DIVIDEBYZERO);
-  if (__pyx_t_2) {
-
-    
-    sf_error(__pyx_v_func_name, SF_ERROR_SINGULAR, __pyx_k_7); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5338; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    goto __pyx_L4;
-  }
-  __pyx_L4:;
-
-  
-  __pyx_t_2 = (__pyx_v_status & UFUNC_FPE_UNDERFLOW);
-  if (__pyx_t_2) {
-
-    
-    sf_error(__pyx_v_func_name, SF_ERROR_UNDERFLOW, __pyx_k_8); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5340; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    goto __pyx_L5;
-  }
-  __pyx_L5:;
-
-  
-  __pyx_t_2 = (__pyx_v_status & UFUNC_FPE_OVERFLOW);
-  if (__pyx_t_2) {
-
-    
-    sf_error(__pyx_v_func_name, SF_ERROR_OVERFLOW, __pyx_k_9); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5342; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    goto __pyx_L6;
-  }
-  __pyx_L6:;
-
-  
-  __pyx_t_2 = (__pyx_v_status & UFUNC_FPE_INVALID);
-  if (__pyx_t_2) {
-
-    
-    sf_error(__pyx_v_func_name, SF_ERROR_DOMAIN, __pyx_k_10); if (unlikely(__Pyx_ErrOccurredWithGIL())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5344; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    goto __pyx_L7;
-  }
-  __pyx_L7:;
-
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = PyGILState_Ensure();
-    #endif
-    __Pyx_AddTraceback("scipy.special._ufuncs.sf_error_check_fpe", __pyx_clineno, __pyx_lineno, __pyx_filename);
-    #ifdef WITH_THREAD
-    PyGILState_Release(__pyx_gilstate_save);
-    #endif
-  }
-  __pyx_L0:;
+  return __pyx_r;
 }
 
 
@@ -6304,7 +5317,7 @@ static PyObject *__pyx_pw_5scipy_7special_7_ufuncs_1_errprint(PyObject *__pyx_se
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_errprint") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5346; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_errprint") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5295; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -6317,7 +5330,7 @@ static PyObject *__pyx_pw_5scipy_7special_7_ufuncs_1_errprint(PyObject *__pyx_se
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_errprint", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5346; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("_errprint", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5295; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("scipy.special._ufuncs._errprint", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6329,7 +5342,6 @@ static PyObject *__pyx_pw_5scipy_7special_7_ufuncs_1_errprint(PyObject *__pyx_se
 }
 
 static PyObject *__pyx_pf_5scipy_7special_7_ufuncs__errprint(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_inflag) {
-  int __pyx_v_oldflag;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -6340,26 +5352,30 @@ static PyObject *__pyx_pf_5scipy_7special_7_ufuncs__errprint(CYTHON_UNUSED PyObj
   __Pyx_RefNannySetupContext("_errprint", 0);
 
   
-  __pyx_v_oldflag = __pyx_v_5scipy_7special_7_ufuncs__print_error_messages;
-
-  
   __pyx_t_1 = (__pyx_v_inflag != Py_None);
   if (__pyx_t_1) {
 
     
-    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_inflag); if (unlikely(__pyx_t_1 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5362; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __pyx_v_5scipy_7special_7_ufuncs__print_error_messages = ((int)(!(!__pyx_t_1)));
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_inflag); if (unlikely(__pyx_t_1 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5307; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = PyInt_FromLong(sf_error_set_print(((int)(!(!__pyx_t_1))))); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5307; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_r = __pyx_t_2;
+    __pyx_t_2 = 0;
+    goto __pyx_L0;
     goto __pyx_L3;
   }
-  __pyx_L3:;
+   {
 
-  
-  __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = PyInt_FromLong(__pyx_v_oldflag); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5364; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_r = __pyx_t_2;
-  __pyx_t_2 = 0;
-  goto __pyx_L0;
+    
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_t_2 = PyInt_FromLong(sf_error_get_print()); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5309; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_r = __pyx_t_2;
+    __pyx_t_2 = 0;
+    goto __pyx_L0;
+  }
+  __pyx_L3:;
 
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
   goto __pyx_L0;
@@ -6453,8 +5469,36 @@ static CYTHON_INLINE __pyx_t_double_complex __pyx_f_5scipy_7special_13_complexst
 
 
 
+static CYTHON_INLINE void __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(char *__pyx_v_func_name, double __pyx_v_x, double __pyx_v_y) {
+  int __pyx_t_1;
+  int __pyx_t_2;
+  int __pyx_t_3;
+
+  
+  __pyx_t_1 = (((int)__pyx_v_x) != __pyx_v_x);
+  if (!__pyx_t_1) {
+    __pyx_t_2 = (((int)__pyx_v_y) != __pyx_v_y);
+    __pyx_t_3 = __pyx_t_2;
+  } else {
+    __pyx_t_3 = __pyx_t_1;
+  }
+  if (__pyx_t_3) {
+
+    
+    sf_error(__pyx_v_func_name, SF_ERROR_OTHER, __pyx_k_2);
+    goto __pyx_L3;
+  }
+  __pyx_L3:;
+
+}
+
+
+
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_bdtrc_unsafe(double __pyx_v_k, double __pyx_v_n, double __pyx_v_p) {
   double __pyx_r;
+
+  
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__bdtrc, __pyx_v_k, __pyx_v_n);
 
   
   __pyx_r = bdtrc(((int)__pyx_v_k), ((int)__pyx_v_n), __pyx_v_p);
@@ -6471,6 +5515,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_bdtr_unsafe(double 
   double __pyx_r;
 
   
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__bdtr, __pyx_v_k, __pyx_v_n);
+
+  
   __pyx_r = bdtr(((int)__pyx_v_k), ((int)__pyx_v_n), __pyx_v_p);
   goto __pyx_L0;
 
@@ -6483,6 +5530,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_bdtr_unsafe(double 
 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_bdtri_unsafe(double __pyx_v_k, double __pyx_v_n, double __pyx_v_y) {
   double __pyx_r;
+
+  
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__bdtri, __pyx_v_k, __pyx_v_n);
 
   
   __pyx_r = bdtri(((int)__pyx_v_k), ((int)__pyx_v_n), __pyx_v_y);
@@ -6499,6 +5549,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_expn_unsafe(double 
   double __pyx_r;
 
   
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__expn, __pyx_v_n, 0.0);
+
+  
   __pyx_r = expn(((int)__pyx_v_n), __pyx_v_x);
   goto __pyx_L0;
 
@@ -6511,6 +5564,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_expn_unsafe(double 
 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_hyp2f0_unsafe(double __pyx_v_a, double __pyx_v_b, double __pyx_v_x, double __pyx_v_type, double *__pyx_v_err) {
   double __pyx_r;
+
+  
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__hyp2f0, __pyx_v_type, 0.0);
 
   
   __pyx_r = hyp2f0(__pyx_v_a, __pyx_v_b, __pyx_v_x, ((int)__pyx_v_type), __pyx_v_err);
@@ -6527,6 +5583,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_nbdtrc_unsafe(doubl
   double __pyx_r;
 
   
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__nbdtrc, __pyx_v_k, __pyx_v_n);
+
+  
   __pyx_r = nbdtrc(((int)__pyx_v_k), ((int)__pyx_v_n), __pyx_v_p);
   goto __pyx_L0;
 
@@ -6539,6 +5598,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_nbdtrc_unsafe(doubl
 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_nbdtr_unsafe(double __pyx_v_k, double __pyx_v_n, double __pyx_v_p) {
   double __pyx_r;
+
+  
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__nbdtr, __pyx_v_k, __pyx_v_n);
 
   
   __pyx_r = nbdtr(((int)__pyx_v_k), ((int)__pyx_v_n), __pyx_v_p);
@@ -6555,6 +5617,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_nbdtri_unsafe(doubl
   double __pyx_r;
 
   
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__nbdtri, __pyx_v_k, __pyx_v_n);
+
+  
   __pyx_r = nbdtri(((int)__pyx_v_k), ((int)__pyx_v_n), __pyx_v_p);
   goto __pyx_L0;
 
@@ -6567,6 +5632,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_nbdtri_unsafe(doubl
 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_pdtrc_unsafe(double __pyx_v_k, double __pyx_v_m) {
   double __pyx_r;
+
+  
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__pdtrc, __pyx_v_k, 0.0);
 
   
   __pyx_r = pdtrc(((int)__pyx_v_k), __pyx_v_m);
@@ -6583,6 +5651,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_pdtr_unsafe(double 
   double __pyx_r;
 
   
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__pdtr, __pyx_v_k, 0.0);
+
+  
   __pyx_r = pdtr(((int)__pyx_v_k), __pyx_v_m);
   goto __pyx_L0;
 
@@ -6595,6 +5666,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_pdtr_unsafe(double 
 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_pdtri_unsafe(double __pyx_v_k, double __pyx_v_y) {
   double __pyx_r;
+
+  
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__pdtri, __pyx_v_k, 0.0);
 
   
   __pyx_r = pdtri(((int)__pyx_v_k), __pyx_v_y);
@@ -6611,6 +5685,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_kn_unsafe(double __
   double __pyx_r;
 
   
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__kn, __pyx_v_n, 0.0);
+
+  
   __pyx_r = kn(((int)__pyx_v_n), __pyx_v_x);
   goto __pyx_L0;
 
@@ -6623,6 +5700,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_kn_unsafe(double __
 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_yn_unsafe(double __pyx_v_n, double __pyx_v_x) {
   double __pyx_r;
+
+  
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__yn, __pyx_v_n, 0.0);
 
   
   __pyx_r = yn(((int)__pyx_v_n), __pyx_v_x);
@@ -6639,6 +5719,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_smirnov_unsafe(doub
   double __pyx_r;
 
   
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__smirnov, __pyx_v_n, 0.0);
+
+  
   __pyx_r = smirnov(((int)__pyx_v_n), __pyx_v_e);
   goto __pyx_L0;
 
@@ -6651,6 +5734,9 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_smirnov_unsafe(doub
 
 static CYTHON_INLINE double __pyx_f_5scipy_7special_7_legacy_smirnovi_unsafe(double __pyx_v_n, double __pyx_v_p) {
   double __pyx_r;
+
+  
+  __pyx_f_5scipy_7special_7_legacy__legacy_cast_check(__pyx_k__smirnovi, __pyx_v_n, 0.0);
 
   
   __pyx_r = smirnovi(((int)__pyx_v_n), __pyx_v_p);
@@ -6896,7 +5982,7 @@ static CYTHON_INLINE __pyx_t_double_complex __pyx_f_5scipy_7special_8lambertw_la
   }
 
   
-  sf_error(__pyx_k__lambertw, SF_ERROR_SLOW, __pyx_k_11, ((double)__Pyx_CREAL(__pyx_v_z)), ((double)__Pyx_CIMAG(__pyx_v_z)));
+  sf_error(__pyx_k__lambertw, SF_ERROR_SLOW, __pyx_k_3, ((double)__Pyx_CREAL(__pyx_v_z)), ((double)__Pyx_CIMAG(__pyx_v_z)));
 
   
   __pyx_r = __pyx_t_double_complex_from_parts(NPY_NAN, 0);
@@ -7044,7 +6130,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   if (__pyx_t_3) {
 
     
-    __pyx_t_4 = PyObject_Call(__pyx_builtin_ValueError, ((PyObject *)__pyx_k_tuple_13), NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = PyObject_Call(__pyx_builtin_ValueError, ((PyObject *)__pyx_k_tuple_5), NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_Raise(__pyx_t_4, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -7066,7 +6152,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   if (__pyx_t_2) {
 
     
-    __pyx_t_4 = PyObject_Call(__pyx_builtin_ValueError, ((PyObject *)__pyx_k_tuple_15), NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_4 = PyObject_Call(__pyx_builtin_ValueError, ((PyObject *)__pyx_k_tuple_7), NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_Raise(__pyx_t_4, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -7192,7 +6278,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
     if (__pyx_t_1) {
 
       
-      __pyx_t_4 = PyObject_Call(__pyx_builtin_ValueError, ((PyObject *)__pyx_k_tuple_17), NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 257; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_4 = PyObject_Call(__pyx_builtin_ValueError, ((PyObject *)__pyx_k_tuple_9), NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 257; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_Raise(__pyx_t_4, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -7324,7 +6410,7 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
       
       __pyx_t_4 = PyInt_FromLong(__pyx_v_t); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 276; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_8 = PyNumber_Remainder(((PyObject *)__pyx_kp_u_18), __pyx_t_4); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 276; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_8 = PyNumber_Remainder(((PyObject *)__pyx_kp_u_10), __pyx_t_4); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 276; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(((PyObject *)__pyx_t_8));
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 276; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -7718,7 +6804,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     if (__pyx_t_7) {
 
       
-      __pyx_t_5 = PyObject_Call(__pyx_builtin_RuntimeError, ((PyObject *)__pyx_k_tuple_20), NULL); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 799; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = PyObject_Call(__pyx_builtin_RuntimeError, ((PyObject *)__pyx_k_tuple_12), NULL); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 799; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_Raise(__pyx_t_5, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -7751,7 +6837,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
     if (__pyx_t_7) {
 
       
-      __pyx_t_5 = PyObject_Call(__pyx_builtin_ValueError, ((PyObject *)__pyx_k_tuple_21), NULL); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 803; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = PyObject_Call(__pyx_builtin_ValueError, ((PyObject *)__pyx_k_tuple_13), NULL); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 803; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_Raise(__pyx_t_5, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -7801,7 +6887,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
       if (__pyx_t_7) {
 
         
-        __pyx_t_3 = PyObject_Call(__pyx_builtin_RuntimeError, ((PyObject *)__pyx_k_tuple_23), NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 823; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_3 = PyObject_Call(__pyx_builtin_RuntimeError, ((PyObject *)__pyx_k_tuple_15), NULL); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 823; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_Raise(__pyx_t_3, 0, 0, 0);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -8022,7 +7108,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *__pyx
        {
 
         
-        __pyx_t_5 = PyNumber_Remainder(((PyObject *)__pyx_kp_u_18), __pyx_v_t); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 844; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_5 = PyNumber_Remainder(((PyObject *)__pyx_kp_u_10), __pyx_v_t); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 844; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(((PyObject *)__pyx_t_5));
         __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 844; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_3);
@@ -8165,16 +7251,14 @@ static struct PyModuleDef __pyx_moduledef = {
 #endif
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
-  {&__pyx_kp_u_12, __pyx_k_12, sizeof(__pyx_k_12), 0, 1, 0, 0},
+  {&__pyx_kp_u_10, __pyx_k_10, sizeof(__pyx_k_10), 0, 1, 0, 0},
+  {&__pyx_kp_u_11, __pyx_k_11, sizeof(__pyx_k_11), 0, 1, 0, 0},
   {&__pyx_kp_u_14, __pyx_k_14, sizeof(__pyx_k_14), 0, 1, 0, 0},
-  {&__pyx_kp_u_16, __pyx_k_16, sizeof(__pyx_k_16), 0, 1, 0, 0},
-  {&__pyx_kp_u_18, __pyx_k_18, sizeof(__pyx_k_18), 0, 1, 0, 0},
-  {&__pyx_kp_s_184, __pyx_k_184, sizeof(__pyx_k_184), 0, 0, 1, 0},
-  {&__pyx_n_s_185, __pyx_k_185, sizeof(__pyx_k_185), 0, 0, 1, 1},
-  {&__pyx_kp_u_19, __pyx_k_19, sizeof(__pyx_k_19), 0, 1, 0, 0},
-  {&__pyx_kp_u_22, __pyx_k_22, sizeof(__pyx_k_22), 0, 1, 0, 0},
-  {&__pyx_n_s_5, __pyx_k_5, sizeof(__pyx_k_5), 0, 0, 1, 1},
-  {&__pyx_n_s_6, __pyx_k_6, sizeof(__pyx_k_6), 0, 0, 1, 1},
+  {&__pyx_kp_s_176, __pyx_k_176, sizeof(__pyx_k_176), 0, 0, 1, 0},
+  {&__pyx_n_s_177, __pyx_k_177, sizeof(__pyx_k_177), 0, 0, 1, 1},
+  {&__pyx_kp_u_4, __pyx_k_4, sizeof(__pyx_k_4), 0, 1, 0, 0},
+  {&__pyx_kp_u_6, __pyx_k_6, sizeof(__pyx_k_6), 0, 1, 0, 0},
+  {&__pyx_kp_u_8, __pyx_k_8, sizeof(__pyx_k_8), 0, 1, 0, 0},
   {&__pyx_n_s__RuntimeError, __pyx_k__RuntimeError, sizeof(__pyx_k__RuntimeError), 0, 0, 1, 1},
   {&__pyx_n_s__ValueError, __pyx_k__ValueError, sizeof(__pyx_k__ValueError), 0, 0, 1, 1},
   {&__pyx_n_s____main__, __pyx_k____main__, sizeof(__pyx_k____main__), 0, 0, 1, 1},
@@ -8326,7 +7410,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s__obl_rad1_cv, __pyx_k__obl_rad1_cv, sizeof(__pyx_k__obl_rad1_cv), 0, 0, 1, 1},
   {&__pyx_n_s__obl_rad2, __pyx_k__obl_rad2, sizeof(__pyx_k__obl_rad2), 0, 0, 1, 1},
   {&__pyx_n_s__obl_rad2_cv, __pyx_k__obl_rad2_cv, sizeof(__pyx_k__obl_rad2_cv), 0, 0, 1, 1},
-  {&__pyx_n_s__oldflag, __pyx_k__oldflag, sizeof(__pyx_k__oldflag), 0, 0, 1, 1},
   {&__pyx_n_s__pbdv, __pyx_k__pbdv, sizeof(__pyx_k__pbdv), 0, 0, 1, 1},
   {&__pyx_n_s__pbvv, __pyx_k__pbvv, sizeof(__pyx_k__pbvv), 0, 0, 1, 1},
   {&__pyx_n_s__pbwa, __pyx_k__pbwa, sizeof(__pyx_k__pbwa), 0, 0, 1, 1},
@@ -8381,15 +7464,47 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
   
-  __pyx_k_tuple_13 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_13)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_k_tuple_5 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_5)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 215; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_k_tuple_5);
+  __Pyx_INCREF(((PyObject *)__pyx_kp_u_4));
+  PyTuple_SET_ITEM(__pyx_k_tuple_5, 0, ((PyObject *)__pyx_kp_u_4));
+  __Pyx_GIVEREF(((PyObject *)__pyx_kp_u_4));
+  __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_5));
+
+  
+  __pyx_k_tuple_7 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_7)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_k_tuple_7);
+  __Pyx_INCREF(((PyObject *)__pyx_kp_u_6));
+  PyTuple_SET_ITEM(__pyx_k_tuple_7, 0, ((PyObject *)__pyx_kp_u_6));
+  __Pyx_GIVEREF(((PyObject *)__pyx_kp_u_6));
+  __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_7));
+
+  
+  __pyx_k_tuple_9 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_9)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 257; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_k_tuple_9);
+  __Pyx_INCREF(((PyObject *)__pyx_kp_u_8));
+  PyTuple_SET_ITEM(__pyx_k_tuple_9, 0, ((PyObject *)__pyx_kp_u_8));
+  __Pyx_GIVEREF(((PyObject *)__pyx_kp_u_8));
+  __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_9));
+
+  
+  __pyx_k_tuple_12 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_12)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 799; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_k_tuple_12);
+  __Pyx_INCREF(((PyObject *)__pyx_kp_u_11));
+  PyTuple_SET_ITEM(__pyx_k_tuple_12, 0, ((PyObject *)__pyx_kp_u_11));
+  __Pyx_GIVEREF(((PyObject *)__pyx_kp_u_11));
+  __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_12));
+
+  
+  __pyx_k_tuple_13 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_13)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 803; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_k_tuple_13);
-  __Pyx_INCREF(((PyObject *)__pyx_kp_u_12));
-  PyTuple_SET_ITEM(__pyx_k_tuple_13, 0, ((PyObject *)__pyx_kp_u_12));
-  __Pyx_GIVEREF(((PyObject *)__pyx_kp_u_12));
+  __Pyx_INCREF(((PyObject *)__pyx_kp_u_8));
+  PyTuple_SET_ITEM(__pyx_k_tuple_13, 0, ((PyObject *)__pyx_kp_u_8));
+  __Pyx_GIVEREF(((PyObject *)__pyx_kp_u_8));
   __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_13));
 
   
-  __pyx_k_tuple_15 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_15)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_k_tuple_15 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_15)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 823; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_k_tuple_15);
   __Pyx_INCREF(((PyObject *)__pyx_kp_u_14));
   PyTuple_SET_ITEM(__pyx_k_tuple_15, 0, ((PyObject *)__pyx_kp_u_14));
@@ -8397,48 +7512,13 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_15));
 
   
-  __pyx_k_tuple_17 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_17)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 257; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_k_tuple_17);
-  __Pyx_INCREF(((PyObject *)__pyx_kp_u_16));
-  PyTuple_SET_ITEM(__pyx_k_tuple_17, 0, ((PyObject *)__pyx_kp_u_16));
-  __Pyx_GIVEREF(((PyObject *)__pyx_kp_u_16));
-  __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_17));
-
-  
-  __pyx_k_tuple_20 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_20)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 799; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_k_tuple_20);
-  __Pyx_INCREF(((PyObject *)__pyx_kp_u_19));
-  PyTuple_SET_ITEM(__pyx_k_tuple_20, 0, ((PyObject *)__pyx_kp_u_19));
-  __Pyx_GIVEREF(((PyObject *)__pyx_kp_u_19));
-  __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_20));
-
-  
-  __pyx_k_tuple_21 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_21)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 803; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_k_tuple_21);
-  __Pyx_INCREF(((PyObject *)__pyx_kp_u_16));
-  PyTuple_SET_ITEM(__pyx_k_tuple_21, 0, ((PyObject *)__pyx_kp_u_16));
-  __Pyx_GIVEREF(((PyObject *)__pyx_kp_u_16));
-  __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_21));
-
-  
-  __pyx_k_tuple_23 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_23)) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 823; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_k_tuple_23);
-  __Pyx_INCREF(((PyObject *)__pyx_kp_u_22));
-  PyTuple_SET_ITEM(__pyx_k_tuple_23, 0, ((PyObject *)__pyx_kp_u_22));
-  __Pyx_GIVEREF(((PyObject *)__pyx_kp_u_22));
-  __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_23));
-
-  
-  __pyx_k_tuple_182 = PyTuple_New(2); if (unlikely(!__pyx_k_tuple_182)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5346; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_k_tuple_182);
+  __pyx_k_tuple_174 = PyTuple_New(1); if (unlikely(!__pyx_k_tuple_174)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5295; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_k_tuple_174);
   __Pyx_INCREF(((PyObject *)__pyx_n_s__inflag));
-  PyTuple_SET_ITEM(__pyx_k_tuple_182, 0, ((PyObject *)__pyx_n_s__inflag));
+  PyTuple_SET_ITEM(__pyx_k_tuple_174, 0, ((PyObject *)__pyx_n_s__inflag));
   __Pyx_GIVEREF(((PyObject *)__pyx_n_s__inflag));
-  __Pyx_INCREF(((PyObject *)__pyx_n_s__oldflag));
-  PyTuple_SET_ITEM(__pyx_k_tuple_182, 1, ((PyObject *)__pyx_n_s__oldflag));
-  __Pyx_GIVEREF(((PyObject *)__pyx_n_s__oldflag));
-  __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_182));
-  __pyx_k_codeobj_183 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_k_tuple_182, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_184, __pyx_n_s___errprint, 5346, __pyx_empty_bytes); if (unlikely(!__pyx_k_codeobj_183)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5346; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GIVEREF(((PyObject *)__pyx_k_tuple_174));
+  __pyx_k_codeobj_175 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_k_tuple_174, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_176, __pyx_n_s___errprint, 5295, __pyx_empty_bytes); if (unlikely(!__pyx_k_codeobj_175)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5295; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -8593,7 +7673,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __pyx_v_5scipy_7special_7_ufuncs__proto_yn_unsafe_t_var = (&__pyx_f_5scipy_7special_7_legacy_yn_unsafe);
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_doc = __pyx_k_24;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_doc = __pyx_k_16;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc__eval_chebyt_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ld__As_lf_f);
@@ -8632,7 +7712,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc__lambertw_doc = __pyx_k_25;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc__lambertw_doc = __pyx_k_17;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc__lambertw_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_Dld__As_Flf_F);
@@ -8677,7 +7757,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_airy_doc = __pyx_k_26;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_airy_doc = __pyx_k_18;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_airy_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_f_ffff);
@@ -8770,7 +7850,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_airye_doc = __pyx_k_27;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_airye_doc = __pyx_k_19;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_airye_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_f_ffff);
@@ -8863,7 +7943,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_doc = __pyx_k_28;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_doc = __pyx_k_20;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
@@ -8944,7 +8024,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_doc = __pyx_k_29;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_doc = __pyx_k_21;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
@@ -9025,7 +8105,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_doc = __pyx_k_30;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_doc = __pyx_k_22;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
@@ -9106,7 +8186,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrik_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrik_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrik_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -9151,7 +8231,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrin_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrin_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bdtrin_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -9196,7 +8276,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bei_doc = __pyx_k_32;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_bei_doc = __pyx_k_24;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_bei_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -9229,7 +8309,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_beip_doc = __pyx_k_33;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_beip_doc = __pyx_k_25;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_beip_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -9262,7 +8342,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ber_doc = __pyx_k_34;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ber_doc = __pyx_k_26;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ber_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -9295,7 +8375,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_berp_doc = __pyx_k_35;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_berp_doc = __pyx_k_27;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_berp_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -9328,7 +8408,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_besselpoly_doc = __pyx_k_36;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_besselpoly_doc = __pyx_k_28;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_besselpoly_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -9373,7 +8453,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_beta_doc = __pyx_k_37;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_beta_doc = __pyx_k_29;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_beta_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -9412,7 +8492,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_betainc_doc = __pyx_k_38;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_betainc_doc = __pyx_k_30;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_betainc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -9457,7 +8537,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_betaincinv_doc = __pyx_k_39;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_betaincinv_doc = __pyx_k_31;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_betaincinv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -9502,7 +8582,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_betaln_doc = __pyx_k_40;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_betaln_doc = __pyx_k_32;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_betaln_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -9541,7 +8621,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtr_doc = __pyx_k_41;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtr_doc = __pyx_k_33;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -9586,7 +8666,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtri_doc = __pyx_k_42;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtri_doc = __pyx_k_34;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -9631,7 +8711,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtria_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtria_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtria_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -9676,7 +8756,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtrib_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtrib_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_btdtrib_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -9721,7 +8801,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_cbrt_doc = __pyx_k_43;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_cbrt_doc = __pyx_k_35;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_cbrt_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -9754,7 +8834,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtr_doc = __pyx_k_44;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtr_doc = __pyx_k_36;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -9793,7 +8873,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtrc_doc = __pyx_k_45;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtrc_doc = __pyx_k_37;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtrc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -9832,7 +8912,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtri_doc = __pyx_k_46;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtri_doc = __pyx_k_38;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -9871,7 +8951,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtriv_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtriv_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_chdtriv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -9910,7 +8990,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtr_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtr_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -9955,7 +9035,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtridf_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtridf_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtridf_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -10000,7 +9080,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtrinc_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtrinc_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtrinc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -10045,7 +9125,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtrix_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtrix_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_chndtrix_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -10090,7 +9170,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_cosdg_doc = __pyx_k_47;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_cosdg_doc = __pyx_k_39;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_cosdg_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -10123,7 +9203,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_cosm1_doc = __pyx_k_48;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_cosm1_doc = __pyx_k_40;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_cosm1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -10156,7 +9236,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_cotdg_doc = __pyx_k_49;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_cotdg_doc = __pyx_k_41;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_cotdg_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -10189,7 +9269,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipe_doc = __pyx_k_50;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipe_doc = __pyx_k_42;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipe_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -10222,7 +9302,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipeinc_doc = __pyx_k_51;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipeinc_doc = __pyx_k_43;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipeinc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -10261,7 +9341,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipj_doc = __pyx_k_52;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipj_doc = __pyx_k_44;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipj_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dddd_As_ff_ffff);
@@ -10318,7 +9398,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipkinc_doc = __pyx_k_53;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipkinc_doc = __pyx_k_45;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipkinc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -10357,7 +9437,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipkm1_doc = __pyx_k_54;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipkm1_doc = __pyx_k_46;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ellipkm1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -10390,7 +9470,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_exp1_doc = __pyx_k_55;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_exp1_doc = __pyx_k_47;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_exp1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -10447,7 +9527,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_exp10_doc = __pyx_k_56;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_exp10_doc = __pyx_k_48;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_exp10_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -10480,7 +9560,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_exp2_doc = __pyx_k_57;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_exp2_doc = __pyx_k_49;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_exp2_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -10513,7 +9593,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_expi_doc = __pyx_k_58;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_expi_doc = __pyx_k_50;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expi_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -10570,7 +9650,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_expit_doc = __pyx_k_59;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_expit_doc = __pyx_k_51;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expit_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_f_f__As_f_f);
@@ -10615,7 +9695,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_expm1_doc = __pyx_k_60;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_expm1_doc = __pyx_k_52;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expm1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -10648,7 +9728,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_doc = __pyx_k_61;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_doc = __pyx_k_53;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_expn_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
@@ -10717,7 +9797,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtr_doc = __pyx_k_62;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtr_doc = __pyx_k_54;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -10762,7 +9842,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtrc_doc = __pyx_k_63;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtrc_doc = __pyx_k_55;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtrc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -10807,7 +9887,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtri_doc = __pyx_k_64;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtri_doc = __pyx_k_56;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -10852,7 +9932,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtridfd_doc = __pyx_k_65;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtridfd_doc = __pyx_k_57;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_fdtridfd_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -10897,7 +9977,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_fresnel_doc = __pyx_k_66;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_fresnel_doc = __pyx_k_58;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_fresnel_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff);
@@ -10966,7 +10046,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gamma_doc = __pyx_k_67;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gamma_doc = __pyx_k_59;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gamma_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -11023,7 +10103,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gammainc_doc = __pyx_k_68;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gammainc_doc = __pyx_k_60;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gammainc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -11062,7 +10142,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gammaincc_doc = __pyx_k_69;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gammaincc_doc = __pyx_k_61;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gammaincc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -11101,7 +10181,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gammainccinv_doc = __pyx_k_70;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gammainccinv_doc = __pyx_k_62;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gammainccinv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -11140,7 +10220,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gammaincinv_doc = __pyx_k_71;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gammaincinv_doc = __pyx_k_63;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gammaincinv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -11179,7 +10259,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gammaln_doc = __pyx_k_72;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gammaln_doc = __pyx_k_64;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gammaln_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -11236,7 +10316,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtr_doc = __pyx_k_73;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtr_doc = __pyx_k_65;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -11281,7 +10361,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtrc_doc = __pyx_k_74;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtrc_doc = __pyx_k_66;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtrc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -11326,7 +10406,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtria_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtria_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtria_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -11371,7 +10451,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtrib_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtrib_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtrib_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -11416,7 +10496,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtrix_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtrix_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_gdtrix_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -11461,7 +10541,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel1_doc = __pyx_k_75;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel1_doc = __pyx_k_67;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
@@ -11500,7 +10580,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel1e_doc = __pyx_k_76;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel1e_doc = __pyx_k_68;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel1e_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
@@ -11539,7 +10619,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel2_doc = __pyx_k_77;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel2_doc = __pyx_k_69;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel2_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
@@ -11578,7 +10658,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel2e_doc = __pyx_k_78;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel2e_doc = __pyx_k_70;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hankel2e_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_D_dD__As_fF_F);
@@ -11617,7 +10697,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_doc = __pyx_k_79;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_doc = __pyx_k_71;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -11698,7 +10778,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f2_doc = __pyx_k_80;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f2_doc = __pyx_k_72;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp1f2_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff);
@@ -11755,7 +10835,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f0_doc = __pyx_k_81;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f0_doc = __pyx_k_73;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddi_d_As_fffl_ff);
@@ -11860,7 +10940,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_doc = __pyx_k_82;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_doc = __pyx_k_74;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp2f1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f);
@@ -11953,7 +11033,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp3f0_doc = __pyx_k_83;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp3f0_doc = __pyx_k_75;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyp3f0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff);
@@ -12010,7 +11090,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyperu_doc = __pyx_k_84;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_hyperu_doc = __pyx_k_76;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_hyperu_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -12055,7 +11135,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_i0_doc = __pyx_k_85;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_i0_doc = __pyx_k_77;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_i0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12088,7 +11168,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_i0e_doc = __pyx_k_86;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_i0e_doc = __pyx_k_78;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_i0e_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12121,7 +11201,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_i1_doc = __pyx_k_87;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_i1_doc = __pyx_k_79;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_i1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12154,7 +11234,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_i1e_doc = __pyx_k_88;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_i1e_doc = __pyx_k_80;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_i1e_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12187,7 +11267,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_it2i0k0_doc = __pyx_k_89;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_it2i0k0_doc = __pyx_k_81;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_it2i0k0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff);
@@ -12226,7 +11306,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_it2j0y0_doc = __pyx_k_90;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_it2j0y0_doc = __pyx_k_82;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_it2j0y0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff);
@@ -12265,7 +11345,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_it2struve0_doc = __pyx_k_91;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_it2struve0_doc = __pyx_k_83;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_it2struve0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12298,7 +11378,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_itairy_doc = __pyx_k_92;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_itairy_doc = __pyx_k_84;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_itairy_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dddd_As_f_ffff);
@@ -12349,7 +11429,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_iti0k0_doc = __pyx_k_93;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_iti0k0_doc = __pyx_k_85;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iti0k0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff);
@@ -12388,7 +11468,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_itj0y0_doc = __pyx_k_94;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_itj0y0_doc = __pyx_k_86;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_itj0y0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff);
@@ -12427,7 +11507,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_itmodstruve0_doc = __pyx_k_95;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_itmodstruve0_doc = __pyx_k_87;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_itmodstruve0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12460,7 +11540,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_itstruve0_doc = __pyx_k_96;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_itstruve0_doc = __pyx_k_88;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_itstruve0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12493,7 +11573,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_doc = __pyx_k_97;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_doc = __pyx_k_89;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_iv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -12562,7 +11642,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_doc = __pyx_k_98;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_doc = __pyx_k_90;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ive_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -12631,7 +11711,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_j0_doc = __pyx_k_99;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_j0_doc = __pyx_k_91;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_j0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12664,7 +11744,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_j1_doc = __pyx_k_100;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_j1_doc = __pyx_k_92;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_j1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12697,7 +11777,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_doc = __pyx_k_101;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_doc = __pyx_k_93;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -12766,7 +11846,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_doc = __pyx_k_102;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_doc = __pyx_k_94;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_jve_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -12835,7 +11915,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_k0_doc = __pyx_k_103;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_k0_doc = __pyx_k_95;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_k0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12868,7 +11948,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_k0e_doc = __pyx_k_104;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_k0e_doc = __pyx_k_96;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_k0e_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12901,7 +11981,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_k1_doc = __pyx_k_105;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_k1_doc = __pyx_k_97;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_k1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12934,7 +12014,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_k1e_doc = __pyx_k_106;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_k1e_doc = __pyx_k_98;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_k1e_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -12967,7 +12047,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kei_doc = __pyx_k_107;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kei_doc = __pyx_k_99;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kei_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -13000,7 +12080,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_keip_doc = __pyx_k_108;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_keip_doc = __pyx_k_100;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_keip_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -13033,7 +12113,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kelvin_doc = __pyx_k_109;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kelvin_doc = __pyx_k_101;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kelvin_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DDDD_As_f_FFFF);
@@ -13084,7 +12164,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ker_doc = __pyx_k_110;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ker_doc = __pyx_k_102;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ker_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -13117,7 +12197,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kerp_doc = __pyx_k_111;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kerp_doc = __pyx_k_103;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kerp_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -13150,7 +12230,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_doc = __pyx_k_112;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_doc = __pyx_k_104;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kn_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
@@ -13219,7 +12299,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kolmogi_doc = __pyx_k_113;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kolmogi_doc = __pyx_k_105;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kolmogi_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -13252,7 +12332,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kolmogorov_doc = __pyx_k_114;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kolmogorov_doc = __pyx_k_106;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kolmogorov_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -13285,7 +12365,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_doc = __pyx_k_115;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_doc = __pyx_k_107;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -13354,7 +12434,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_doc = __pyx_k_116;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_doc = __pyx_k_108;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_kve_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -13423,7 +12503,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_log1p_doc = __pyx_k_117;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_log1p_doc = __pyx_k_109;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_log1p_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -13456,7 +12536,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_log_ndtr_doc = __pyx_k_118;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_log_ndtr_doc = __pyx_k_110;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_log_ndtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -13489,7 +12569,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_logit_doc = __pyx_k_119;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_logit_doc = __pyx_k_111;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_logit_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_f_f__As_f_f);
@@ -13534,7 +12614,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_lpmv_doc = __pyx_k_120;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_lpmv_doc = __pyx_k_112;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_lpmv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -13579,7 +12659,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_a_doc = __pyx_k_121;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_a_doc = __pyx_k_113;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_a_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -13618,7 +12698,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_b_doc = __pyx_k_122;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_b_doc = __pyx_k_114;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_b_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -13657,7 +12737,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_cem_doc = __pyx_k_123;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_cem_doc = __pyx_k_115;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_cem_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_fff_ff);
@@ -13708,7 +12788,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modcem1_doc = __pyx_k_124;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modcem1_doc = __pyx_k_116;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modcem1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_fff_ff);
@@ -13759,7 +12839,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modcem2_doc = __pyx_k_125;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modcem2_doc = __pyx_k_117;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modcem2_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_fff_ff);
@@ -13810,7 +12890,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modsem1_doc = __pyx_k_126;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modsem1_doc = __pyx_k_118;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modsem1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_fff_ff);
@@ -13861,7 +12941,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modsem2_doc = __pyx_k_127;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modsem2_doc = __pyx_k_119;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_modsem2_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_fff_ff);
@@ -13912,7 +12992,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_sem_doc = __pyx_k_128;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_sem_doc = __pyx_k_120;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_mathieu_sem_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddd_dd_As_fff_ff);
@@ -13963,7 +13043,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_modfresnelm_doc = __pyx_k_129;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_modfresnelm_doc = __pyx_k_121;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_modfresnelm_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DD_As_f_FF);
@@ -14002,7 +13082,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_modfresnelp_doc = __pyx_k_130;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_modfresnelp_doc = __pyx_k_122;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_modfresnelp_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_DD_As_f_FF);
@@ -14041,7 +13121,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_modstruve_doc = __pyx_k_131;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_modstruve_doc = __pyx_k_123;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_modstruve_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -14080,7 +13160,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_doc = __pyx_k_132;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_doc = __pyx_k_124;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
@@ -14161,7 +13241,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_doc = __pyx_k_133;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_doc = __pyx_k_125;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
@@ -14242,7 +13322,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_doc = __pyx_k_134;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_doc = __pyx_k_126;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_iid__As_llf_f);
@@ -14323,7 +13403,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrik_doc = __pyx_k_135;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrik_doc = __pyx_k_127;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrik_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -14368,7 +13448,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrin_doc = __pyx_k_136;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrin_doc = __pyx_k_128;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nbdtrin_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -14413,7 +13493,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtr_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtr_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f);
@@ -14464,7 +13544,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtri_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtri_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f);
@@ -14515,7 +13595,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtridfd_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtridfd_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtridfd_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f);
@@ -14566,7 +13646,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtridfn_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtridfn_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtridfn_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f);
@@ -14617,7 +13697,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtrinc_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtrinc_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ncfdtrinc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd__As_ffff_f);
@@ -14668,7 +13748,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtr_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtr_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -14713,7 +13793,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtridf_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtridf_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtridf_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -14758,7 +13838,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtrinc_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtrinc_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtrinc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -14803,7 +13883,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtrit_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtrit_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nctdtrit_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -14848,7 +13928,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ndtr_doc = __pyx_k_137;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ndtr_doc = __pyx_k_129;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ndtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -14881,7 +13961,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ndtri_doc = __pyx_k_138;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_ndtri_doc = __pyx_k_130;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_ndtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -14914,7 +13994,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nrdtrimn_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nrdtrimn_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nrdtrimn_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -14959,7 +14039,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nrdtrisd_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_nrdtrisd_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_nrdtrisd_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -15004,7 +14084,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_ang1_doc = __pyx_k_139;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_ang1_doc = __pyx_k_131;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_ang1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff);
@@ -15061,7 +14141,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_ang1_cv_doc = __pyx_k_140;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_ang1_cv_doc = __pyx_k_132;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_ang1_cv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_fffff_ff);
@@ -15124,7 +14204,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_cv_doc = __pyx_k_141;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_cv_doc = __pyx_k_133;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_cv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -15169,7 +14249,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad1_doc = __pyx_k_142;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad1_doc = __pyx_k_134;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff);
@@ -15226,7 +14306,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad1_cv_doc = __pyx_k_143;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad1_cv_doc = __pyx_k_135;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad1_cv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_fffff_ff);
@@ -15289,7 +14369,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad2_doc = __pyx_k_144;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad2_doc = __pyx_k_136;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad2_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff);
@@ -15346,7 +14426,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad2_cv_doc = __pyx_k_145;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad2_cv_doc = __pyx_k_137;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_obl_rad2_cv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_fffff_ff);
@@ -15409,7 +14489,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pbdv_doc = __pyx_k_146;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pbdv_doc = __pyx_k_138;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pbdv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_ff_ff);
@@ -15454,7 +14534,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pbvv_doc = __pyx_k_147;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pbvv_doc = __pyx_k_139;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pbvv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_ff_ff);
@@ -15499,7 +14579,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pbwa_doc = __pyx_k_148;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pbwa_doc = __pyx_k_140;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pbwa_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_dd_dd_As_ff_ff);
@@ -15544,7 +14624,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_doc = __pyx_k_149;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_doc = __pyx_k_141;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
@@ -15613,7 +14693,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_doc = __pyx_k_150;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_doc = __pyx_k_142;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrc_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
@@ -15682,7 +14762,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_doc = __pyx_k_151;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_doc = __pyx_k_143;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtri_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
@@ -15751,7 +14831,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrik_doc = __pyx_k_152;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrik_doc = __pyx_k_144;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pdtrik_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -15790,7 +14870,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_ang1_doc = __pyx_k_153;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_ang1_doc = __pyx_k_145;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_ang1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff);
@@ -15847,7 +14927,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_ang1_cv_doc = __pyx_k_154;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_ang1_cv_doc = __pyx_k_146;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_ang1_cv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_fffff_ff);
@@ -15910,7 +14990,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_cv_doc = __pyx_k_155;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_cv_doc = __pyx_k_147;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_cv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -15955,7 +15035,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad1_doc = __pyx_k_156;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad1_doc = __pyx_k_148;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff);
@@ -16012,7 +15092,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad1_cv_doc = __pyx_k_157;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad1_cv_doc = __pyx_k_149;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad1_cv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_fffff_ff);
@@ -16075,7 +15155,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad2_doc = __pyx_k_158;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad2_doc = __pyx_k_150;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad2_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dddd_d_As_ffff_ff);
@@ -16132,7 +15212,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad2_cv_doc = __pyx_k_159;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad2_cv_doc = __pyx_k_151;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_pro_rad2_cv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_ddddd_dd_As_fffff_ff);
@@ -16195,7 +15275,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_psi_doc = __pyx_k_160;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_psi_doc = __pyx_k_152;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_psi_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -16252,7 +15332,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_radian_doc = __pyx_k_161;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_radian_doc = __pyx_k_153;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_radian_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_ddd__As_fff_f);
@@ -16297,7 +15377,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_rgamma_doc = __pyx_k_162;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_rgamma_doc = __pyx_k_154;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_rgamma_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -16354,7 +15434,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_round_doc = __pyx_k_163;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_round_doc = __pyx_k_155;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_round_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -16387,7 +15467,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_shichi_doc = __pyx_k_164;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_shichi_doc = __pyx_k_156;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_shichi_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff);
@@ -16426,7 +15506,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_sici_doc = __pyx_k_165;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_sici_doc = __pyx_k_157;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_sici_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_i_d_dd_As_f_ff);
@@ -16465,7 +15545,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_sindg_doc = __pyx_k_166;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_sindg_doc = __pyx_k_158;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_sindg_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -16498,7 +15578,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_doc = __pyx_k_167;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_doc = __pyx_k_159;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnov_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
@@ -16567,7 +15647,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_doc = __pyx_k_168;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_doc = __pyx_k_160;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_smirnovi_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
@@ -16636,7 +15716,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_spence_doc = __pyx_k_169;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_spence_doc = __pyx_k_161;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_spence_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -16669,7 +15749,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_stdtr_doc = __pyx_k_170;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_stdtr_doc = __pyx_k_162;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_stdtr_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -16708,7 +15788,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_stdtridf_doc = __pyx_k_171;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_stdtridf_doc = __pyx_k_163;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_stdtridf_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -16747,7 +15827,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_stdtrit_doc = __pyx_k_172;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_stdtrit_doc = __pyx_k_164;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_stdtrit_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -16786,7 +15866,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_struve_doc = __pyx_k_173;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_struve_doc = __pyx_k_165;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_struve_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -16825,7 +15905,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_tandg_doc = __pyx_k_174;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_tandg_doc = __pyx_k_166;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_tandg_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -16858,7 +15938,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_tklmbda_doc = __pyx_k_31;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_tklmbda_doc = __pyx_k_23;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_tklmbda_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -16897,7 +15977,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_y0_doc = __pyx_k_175;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_y0_doc = __pyx_k_167;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_y0_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -16930,7 +16010,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_y1_doc = __pyx_k_176;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_y1_doc = __pyx_k_168;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_y1_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -16963,7 +16043,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_doc = __pyx_k_177;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_doc = __pyx_k_169;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yn_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_id__As_lf_f);
@@ -17032,7 +16112,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_doc = __pyx_k_178;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_doc = __pyx_k_170;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yv_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -17101,7 +16181,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_doc = __pyx_k_179;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_doc = __pyx_k_171;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_yve_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -17170,7 +16250,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_zeta_doc = __pyx_k_180;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_zeta_doc = __pyx_k_172;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_zeta_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_dd__As_ff_f);
@@ -17209,7 +16289,7 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs_ufunc_zetac_doc = __pyx_k_181;
+  __pyx_v_5scipy_7special_7_ufuncs_ufunc_zetac_doc = __pyx_k_173;
 
   
   (__pyx_v_5scipy_7special_7_ufuncs_ufunc_zetac_loops[0]) = ((PyUFuncGenericFunction)__pyx_f_5scipy_7special_7_ufuncs_loop_d_d__As_f_f);
@@ -17242,21 +16322,15 @@ PyMODINIT_FUNC PyInit__ufuncs(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_v_5scipy_7special_7_ufuncs__print_error_messages = 0;
-
-  
-  __pyx_v_5scipy_7special_7_ufuncs__last_error = SF_ERROR_OK;
-
-  
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5scipy_7special_7_ufuncs_1_errprint, NULL, __pyx_n_s_185); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5346; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5scipy_7special_7_ufuncs_1_errprint, NULL, __pyx_n_s_177); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5295; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s___errprint, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5346; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s___errprint, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5295; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
-  __pyx_t_1 = __Pyx_GetName(__pyx_m, __pyx_n_s__jv); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5371; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_GetName(__pyx_m, __pyx_n_s__jv); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5316; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s__jn, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5371; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s__jn, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 5316; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   
@@ -17903,18 +16977,6 @@ static CYTHON_INLINE Py_intptr_t __Pyx_PyInt_from_py_Py_intptr_t(PyObject* x) {
         }
         return (Py_intptr_t)-1;
     }
-}
-
-static CYTHON_INLINE int __Pyx_ErrOccurredWithGIL(void) {
-  int err;
-  #ifdef WITH_THREAD
-  PyGILState_STATE _save = PyGILState_Ensure();
-  #endif
-  err = !!PyErr_Occurred();
-  #ifdef WITH_THREAD
-  PyGILState_Release(_save);
-  #endif
-  return err;
 }
 
 #if CYTHON_CCOMPLEX
