@@ -2370,5 +2370,9 @@ def test_legacy():
     assert_equal(special.smirnov(1, 0.3), special.smirnov(1.8, 0.3))
     assert_equal(special.smirnovi(1, 0.3), special.smirnovi(1.8, 0.3))
 
+@with_special_errors
+def test_error_raising():
+    assert_raises(special.SpecialFunctionWarning, special.iv, 1, 1e99j)
+
 if __name__ == "__main__":
     run_module_suite()
