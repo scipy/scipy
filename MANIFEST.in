@@ -8,8 +8,11 @@ include setupscons.py
 include setupegg.py
 include setup.py
 include scipy/*.py
+# Add Cython files
+recursive-include scipy *.pyx *.pxd *.pxi
 # Adding scons build related files not found by distutils
 recursive-include scipy SConstruct SConscript
+recursive-include scipy README
 # Add files to allow Bento build
 include f2py.py
 include interface_gen.py
@@ -26,3 +29,4 @@ recursive-include doc/release *
 recursive-include doc/source *
 recursive-include doc/sphinxext *
 prune scipy/special/tests/data/boost
+include scipy/special/Faddeeva.hh
