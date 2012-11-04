@@ -280,13 +280,21 @@ cdef public int wrap_PyUFunc_getfperr() nogil:
 
 def _errprint(inflag=None):
     \"\"\"
-    errprint(flag)
+    errprint(flag=None)
 
-    Sets the error printing flag for special functions (from the
-    cephesmodule). The output is the previous state.  With errprint(0)
-    no error messages are shown; the default is errprint(1).  If no
-    argument is given the current state of the flag is returned and no
-    change occurs.
+    Sets or returns the error printing flag for special functions.
+
+    Parameters
+    ----------
+    flag : bool, optional
+        Whether warnings concerning evaluation of special functions in
+        scipy.special are shown. If omitted, no change is made to the
+        current setting.
+
+    Returns
+    -------
+    old_flag
+        Previous value of the error flag
 
     \"\"\"
     if inflag is not None:
