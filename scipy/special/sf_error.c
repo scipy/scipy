@@ -19,7 +19,7 @@ const char *sf_error_messages[] = {
     NULL
 };
 
-static int print_error_messages;
+static int print_error_messages = 0;
 
 extern int wrap_PyUFunc_getfperr();
 
