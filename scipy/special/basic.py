@@ -2,9 +2,10 @@
 # Author:  Travis Oliphant, 2002
 #
 
+import numpy as np
 from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
-        complexfloating, less, vectorize, inexact, nan, zeros, sometrue
+        less, vectorize, inexact, nan, zeros, sometrue, atleast_1d
 from _ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
         hankel1, hankel2, yv, kv, gammaln, ndtri
 import _ufuncs
@@ -447,20 +448,40 @@ def fresnel_zeros(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(2,nt), specfun.fcszo(1,nt)
 
-def hyp0f1(v,z):
-    """Confluent hypergeometric limit function 0F1.
-    Limit as q->infinity of 1F1(q;a;z/q)
+def hyp0f1(v, z):
+    r"""Confluent hypergeometric limit function 0F1.
+
+    Parameters
+    ----------
+    v, z : array_like
+        Input values.
+
+    Returns
+    -------
+    hyp0f1 : ndarray
+        The confluent hypergeometric limit function.
+
+    Notes
+    -----
+    This function is defined as:
+
+    .. math:: _0F_1(v,z) = \sum_{k=0}^{\inf}\frac{z^k}{(v)_k k!}.
+
+    It's also the limit as q -> infinity of ``1F1(q;v;z/q)``, and satisfies
+    the differential equation :math:``f''(z) + vf'(z) = f(z)`.
     """
-    z = asarray(z)
-    if issubdtype(z.dtype, complexfloating):
-        arg = 2*sqrt(abs(z))
-        num = where(z>=0, iv(v-1,arg), jv(v-1,arg))
-        den = abs(z)**((v-1.0)/2)
-    else:
-        num = iv(v-1,2*sqrt(z))
-        den = z**((v-1.0)/2.0)
+    v = atleast_1d(v)
+    z = atleast_1d(z)
+    v, z = np.broadcast_arrays(v, z)
+    arg = 2 * sqrt(abs(z))
+    old_err = np.seterr(all='ignore')  # for z=0, a<1 and num=inf, next lines
+    num = where(z.real >= 0, iv(v - 1, arg), jv(v - 1, arg))
+    den = abs(z)**((v - 1.0) / 2)
     num *= gamma(v)
-    return where(z==0,1.0,num/ asarray(den))
+    np.seterr(**old_err)
+    num[z == 0] = 1
+    den[z == 0] = 1
+    return num / den
 
 def assoc_laguerre(x,n,k=0.0):
     return orthogonal.eval_genlaguerre(n, k, x)
@@ -469,13 +490,33 @@ digamma = psi
 
 def polygamma(n, x):
     """Polygamma function which is the nth derivative of the digamma (psi)
-    function."""
+    function.
+
+    Parameters
+    ----------
+    n : array_like of int
+        The order of the derivative of `psi`.
+    x : array_like
+        Where to evaluate the polygamma function.
+
+    Returns
+    -------
+    polygamma : ndarray
+        The result.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> x = [2, 3, 25.5]
+    >>> special.polygamma(1, x)
+    array([ 0.64493407,  0.39493407,  0.03999467])
+    >>> special.polygamma(0, x) == special.psi(x)
+    array([ True,  True,  True], dtype=bool)
+
+    """
     n, x = asarray(n), asarray(x)
-    cond = (n==0)
     fac2 = (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1,x)
-    if sometrue(cond,axis=0):
-        return where(cond, psi(x), fac2)
-    return fac2
+    return where(n == 0, psi(x), fac2)
 
 def mathieu_even_coef(m,q):
     """Compute expansion coefficients for even mathieu functions and
