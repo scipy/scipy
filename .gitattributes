@@ -5,7 +5,8 @@ tools/win32/build_scripts/nsis_scripts/*.nsi.in eol=crlf
 # Windows
 scipy/io/matlab/tests/data/japanese_utf8.txt binary
 
-# Cython-generated files
+# Generated files
+scipy/integrate/_doubleexp_coefs.py binary
 scipy/interpolate/interpnd.c binary
 scipy/io/matlab/mio_utils.c binary
 scipy/io/matlab/mio5_utils.c binary
