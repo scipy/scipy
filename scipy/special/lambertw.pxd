@@ -116,4 +116,4 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
     sf_error.error("lambertw", sf_error.SLOW,
                    "iteration failed to converge: %g + %gj",
                    <double>z.real, <double>z.imag)
-    return wn
+    return nan
