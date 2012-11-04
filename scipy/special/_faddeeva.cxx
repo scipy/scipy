@@ -56,4 +56,11 @@ double faddeeva_dawsn(double x)
     return Faddeeva::Dawson(x);
 }
 
+npy_cdouble faddeeva_dawsn_complex(npy_cdouble zp)
+{
+    complex<double> z(zp.real, zp.imag);
+    complex<double> w = Faddeeva::Dawson(z);
+    return npy_cpack(real(w), imag(w));
+}
+
 EXTERN_C_END
