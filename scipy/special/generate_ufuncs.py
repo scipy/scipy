@@ -315,7 +315,7 @@ cdef public void sf_error(char *func_name, sferr.sf_error_t code, char *fmt, ...
         from scipy.special import SpecialFunctionWarning
         PyErr_WarnEx(SpecialFunctionWarning, msg, 1)
 
-cdef public void sf_error_check_fpe(char *func_name) nogil:
+cdef public void sf_error_check_fpe(char *func_name) nogil except *:
     cdef int status
     status = PyUFunc_getfperr()
     if not _print_error_messages:
