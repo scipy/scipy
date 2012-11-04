@@ -949,6 +949,36 @@ class TestErf(TestCase):
         assert_func_equal(_ufuncs_cxx.erfcx, w, z, rtol=1e-12)
         assert_func_equal(_ufuncs_cxx.erfcx, w_real, x, rtol=1e-12)
 
+    def test_erfi(self):
+        np.random.seed(1234)
+        n = 10000
+        x = np.random.pareto(0.02, n) * (2*np.random.randint(0, 2, n) - 1)
+        y = np.random.pareto(0.02, n) * (2*np.random.randint(0, 2, n) - 1)
+        z = x + 1j*y
+
+        old_errors = np.seterr(all='ignore')
+        try:
+            w = -1j * _ufuncs_cxx.erf(1j*z)
+            w_real = (-1j * _ufuncs_cxx.erf(1j*x)).real
+        finally:
+            np.seterr(**old_errors)
+
+        mask = np.isfinite(w)
+        w = w[mask]
+        z = z[mask]
+
+        mask = np.isfinite(w_real)
+        w_real = w_real[mask]
+        x = x[mask]
+
+        # test both real and complex variants
+        old_errors = np.seterr(all='ignore')
+        try:
+            assert_func_equal(_ufuncs_cxx.erfi, w, z, rtol=1e-12)
+            assert_func_equal(_ufuncs_cxx.erfi, w_real, x, rtol=1e-12)
+        finally:
+            np.seterr(**old_errors)
+
     def test_erfcinv(self):
         i = special.erfcinv(1)
         assert_equal(i,0)

@@ -90,7 +90,7 @@ src = ['_ufuncs.c', 'amos_wrappers.c', 'specfun_wrappers.c', \
        'toms_wrappers.c','cdf_wrappers.c','ufunc_extras.c',
        '_logit.c.src']
 
-src_cxx = ['_ufuncs_cxx.cxx', '_faddeeva.cxx', 'faddeeva_w.cxx']
+src_cxx = ['_ufuncs_cxx.cxx', '_faddeeva.cxx', 'Faddeeva.cc']
 
 env.NumpyPythonExtension('_ufuncs', 
                          source = src, 

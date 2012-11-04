@@ -241,11 +241,12 @@ modfresnelm -- modified_fresnel_minus_wrap: d*DD->*i       -- specfun_wrappers.h
 
 # Ufuncs with C++
 UFUNCS_CXX = """
-wofz -- faddeeva_w: D->D                                   -- _faddeeva.h
-erfc -- erfc: d->d, faddeeva_erfc: D->D                    -- cephes.h, _faddeeva.h
-erf -- erf: d->d, faddeeva_erf: D->D                       -- cephes.h, _faddeeva.h
-dawsn -- faddeeva_dawsn: d->d                              -- _faddeeva.h
+wofz -- faddeeva_w: D->D                                    -- _faddeeva.h
+erfc -- erfc: d->d, faddeeva_erfc: D->D                     -- cephes.h, _faddeeva.h
+erf -- erf: d->d, faddeeva_erf: D->D                        -- cephes.h, _faddeeva.h
+dawsn -- faddeeva_dawsn: d->d                               -- _faddeeva.h
 erfcx -- faddeeva_erfcx: d->d, faddeeva_erfcx_complex: D->D -- _faddeeva.h
+erfi -- faddeeva_erfi: d->d, faddeeva_erfi_complex: D->D    -- _faddeeva.h
 """
 
 #---------------------------------------------------------------------------------

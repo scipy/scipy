@@ -12,9 +12,7 @@
 #include <complex>
 #include <Python.h>
 
-extern std::complex<double> Faddeeva_w(std::complex<double> z,double relerr=0);
-extern double ImFaddeeva_w(double x); // special-case code for Im[w(x)]
-extern double erfcx(double x);
+#include "Faddeeva.hh"
 
 EXTERN_C_START
 
@@ -23,8 +21,13 @@ EXTERN_C_START
 npy_cdouble faddeeva_w(npy_cdouble zp);
 npy_cdouble faddeeva_erf(npy_cdouble zp);
 npy_cdouble faddeeva_erfc(npy_cdouble zp);
+
 double faddeeva_erfcx(double zp);
 npy_cdouble faddeeva_erfcx_complex(npy_cdouble zp);
+
+double faddeeva_erfi(double zp);
+npy_cdouble faddeeva_erfi_complex(npy_cdouble zp);
+
 double faddeeva_dawsn(double zp);
 
 EXTERN_C_END
