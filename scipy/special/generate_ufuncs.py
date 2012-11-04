@@ -431,8 +431,8 @@ NAN_VALUE = {
     'F': 'NPY_NAN',
     'D': 'NPY_NAN',
     'G': 'NPY_NAN',
-    'i': '0xdeadbeef',
-    'l': '0xdeadbeef',
+    'i': '0xbad0bad0',
+    'l': '0xbad0bad0',
 }
 
 def generate_loop(func_inputs, func_outputs, func_retval,
@@ -592,12 +592,6 @@ def iter_variants(inputs, outputs):
         # always use long instead of int (more common type on 64-bit)
         ('i', 'l'),
     ]
-
-    # allow doubles in integer args
-    if 'd' in inputs+outputs or 'D' in inputs+outputs:
-        maps.append(('il', 'dd'))
-    if 'f' in inputs+outputs or 'F' in inputs+outputs:
-        maps.append(('il', 'ff'))
 
     # float32-preserving signatures
     maps = maps + [(a + 'dD', b + 'fF') for a, b in maps]
