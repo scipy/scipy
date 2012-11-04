@@ -68,9 +68,9 @@ _lambertw -- lambertw_scalar: Dld->D                       -- lambertw.pxd
 _eval_chebyt -- eval_poly_chebyt: ld->d                    -- orthogonal_eval.pxd
 logit -- logitf: f->f, logit: d->d, logitl: g->g           -- _logit.h
 expit -- expitf: f->f, expit: d->d, expitl: g->g           -- _logit.h
-bdtrc -- bdtrc: iid->d                                     -- cephes.h
-bdtr -- bdtr: iid->d                                       -- cephes.h
-bdtri -- bdtri: iid->d                                     -- cephes.h
+bdtrc -- bdtrc: iid->d, bdtrc_unsafe: ddd->d               -- cephes.h, _legacy.pxd
+bdtr -- bdtr: iid->d, bdtr_unsafe: ddd->d                  -- cephes.h, _legacy.pxd
+bdtri -- bdtri: iid->d, bdtri_unsafe: ddd->d               -- cephes.h, _legacy.pxd
 btdtr -- btdtr: ddd->d                                     -- cephes.h
 btdtri -- incbi: ddd->d                                    -- cephes.h
 fdtrc -- fdtrc: ddd->d                                     -- cephes.h
@@ -81,14 +81,14 @@ gdtr -- gdtr: ddd->d                                       -- cephes.h
 hyp2f1 -- hyp2f1: dddd->d, chyp2f1_wrap: dddD->D           -- cephes.h, specfun_wrappers.h
 hyp1f1 -- hyp1f1_wrap: ddd->d, chyp1f1_wrap: ddD->D        -- specfun_wrappers.h
 hyperu -- hypU_wrap: ddd->d                                -- specfun_wrappers.h
-hyp2f0 -- hyp2f0: dddi*d->d                                -- cephes.h
+hyp2f0 -- hyp2f0: dddi*d->d, hyp2f0_unsafe: dddd*d->d      -- cephes.h, _legacy.pxd
 hyp1f2 -- onef2: dddd*d->d                                 -- cephes.h
 hyp3f0 -- threef0: dddd*d->d                               -- cephes.h
 betainc -- incbet: ddd->d                                  -- cephes.h
 betaincinv -- incbi: ddd->d                                -- cephes.h
-nbdtrc -- nbdtrc: iid->d                                   -- cephes.h
-nbdtr -- nbdtr: iid->d                                     -- cephes.h
-nbdtri -- nbdtri: iid->d                                   -- cephes.h
+nbdtrc -- nbdtrc: iid->d, nbdtrc_unsafe: ddd->d            -- cephes.h, _legacy.pxd
+nbdtr -- nbdtr: iid->d, nbdtr_unsafe: ddd->d               -- cephes.h, _legacy.pxd
+nbdtri -- nbdtri: iid->d, nbdtri_unsafe: ddd->d            -- cephes.h, _legacy.pxd
 beta -- beta: dd->d                                        -- cephes.h
 betaln -- lbeta: dd->d                                     -- cephes.h
 cbrt -- cbrt: d->d                                         -- cephes.h
@@ -114,16 +114,16 @@ gammainccinv -- igami: dd->d                               -- cephes.h
 iv -- iv: dd->d, cbesi_wrap: dD->D                         -- cephes.h, amos_wrappers.h
 ive -- cbesi_wrap_e_real: dd->d, cbesi_wrap_e: dD->D       -- amos_wrappers.h
 ellipj -- ellpj: dd*dddd->*i                               -- cephes.h
-expn -- expn: id->d                                        -- cephes.h
+expn -- expn: id->d, expn_unsafe: dd->d                    -- cephes.h, _legacy.pxd
 exp1 -- exp1_wrap: d->d, cexp1_wrap: D->D                  -- specfun_wrappers.h
 expi -- expi_wrap: d->d, cexpi_wrap: D->D                  -- specfun_wrappers.h
-kn -- kn: id->d                                            -- cephes.h
-pdtrc -- pdtrc: id->d                                      -- cephes.h
-pdtr -- pdtr: id->d                                        -- cephes.h
-pdtri -- pdtri: id->d                                      -- cephes.h
-yn -- yn: id->d                                            -- cephes.h
-smirnov -- smirnov: id->d                                  -- cephes.h
-smirnovi -- smirnovi: id->d                                -- cephes.h
+kn -- kn: id->d, kn_unsafe: dd->d                          -- cephes.h, _legacy.pxd
+pdtrc -- pdtrc: id->d, pdtrc_unsafe: dd->d                 -- cephes.h, _legacy.pxd
+pdtr -- pdtr: id->d, pdtr_unsafe: dd->d                    -- cephes.h, _legacy.pxd
+pdtri -- pdtri: id->d, pdtri_unsafe: dd->d                 -- cephes.h, _legacy.pxd
+yn -- yn: id->d, yn_unsafe: dd->d                          -- cephes.h, _legacy.pxd
+smirnov -- smirnov: id->d, smirnov_unsafe: dd->d           -- cephes.h, _legacy.pxd
+smirnovi -- smirnovi: id->d, smirnovi_unsafe: dd->d        -- cephes.h, _legacy.pxd
 airy -- airy: d*dddd->*i, cairy_wrap: D*DDDD->*i           -- cephes.h, amos_wrappers.h
 itairy -- itairy_wrap: d*dddd->*i                          -- specfun_wrappers.h
 airye -- cairy_wrap_e_real: d*dddd->*i, cairy_wrap_e: D*DDDD->*i -- amos_wrappers.h
