@@ -218,6 +218,11 @@ add_newdoc("scipy.special", "dawsn",
     """
     y=dawsn(x) returns dawson's integral: exp(-x**2) *
     integral(exp(t**2),t=0..x).
+
+    References
+    ----------
+    .. [1] Steven G. Johnson, Faddeeva W function implementation.
+       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
     """)
 
 add_newdoc("scipy.special", "ellipe",
@@ -286,12 +291,42 @@ add_newdoc("scipy.special", "erf",
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover,
         1972. http://www.math.sfu.ca/~cbm/aands/page_297.htm
+    .. [3] Steven G. Johnson, Faddeeva W function implementation.
+       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
 
     """)
 
 add_newdoc("scipy.special", "erfc",
     """
     y=erfc(x) returns 1 - erf(x).
+
+    References
+    ----------
+    .. [1] Steven G. Johnson, Faddeeva W function implementation.
+       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
+
+    """)
+
+add_newdoc("scipy.special", "erfi",
+    """
+    Imaginary error function, -i erf(i z)
+
+    References
+    ----------
+    .. [1] Steven G. Johnson, Faddeeva W function implementation.
+       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
+
+    """)
+
+add_newdoc("scipy.special", "erfcx",
+    """
+    Scaled complementary error function, exp(x^2) erfc(x)
+
+    References
+    ----------
+    .. [1] Steven G. Johnson, Faddeeva W function implementation.
+       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
+
     """)
 
 add_newdoc("scipy.special", "exp1",
@@ -1168,6 +1203,11 @@ add_newdoc("scipy.special", "wofz",
     """
     y=wofz(z) returns the value of the fadeeva function for complex argument
     z: exp(-z**2)*erfc(-i*z)
+
+    References
+    ----------
+    .. [1] Steven G. Johnson, Faddeeva W function implementation.
+       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
     """)
 
 add_newdoc("scipy.special", "y0",
