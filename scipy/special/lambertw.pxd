@@ -43,10 +43,6 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
     # Comments copied verbatim from [2] are marked with '>'
     if zisnan(z):
         return z
-    
-    sf_error.error("lambertw", sf_error.SLOW,
-                   "iteration failed to converge: %g + %gj",
-                   <double>z.real, <double>z.imag)
 
     # Return value:
     cdef double complex w
