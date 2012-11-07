@@ -19,6 +19,7 @@ MATLAB® files
 
    loadmat - Read a MATLAB style mat file (version 4 through 7.1)
    savemat - Write a MATLAB style mat file (version 4 through 7.1)
+   whosmat - List contents of a MATLAB style mat file (version 4 through 7.1)
 
 IDL® files
 ==========

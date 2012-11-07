@@ -48,6 +48,7 @@ NAME_MAP = {
     u'honnorat': u'Marc Honnorat',
     u'lmwang': u'Liming Wang',
     u'wa03': u'Josh Lawrence',
+    u'loluengo': u'Lorenzo Luengo',
 }
 
 def main():

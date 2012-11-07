@@ -276,6 +276,8 @@ def whosmat(file_name, appendmat=True, **kwargs):
     """
     List variables inside a MATLAB file
 
+    .. versionadded:: 0.12.0
+
     Parameters
     ----------
     %(file_arg)s
