@@ -12,12 +12,25 @@ Interaction with Numpy
 
 To begin with, all of the Numpy functions have been subsumed into the
 :mod:`scipy` namespace so that all of those functions are available
-without additionally importing Numpy. In addition, the universal
+without additionally importing Numpy. 
+
+In addition, the universal
 functions (addition, subtraction, division) have been altered to not
 raise exceptions if floating-point errors are encountered; instead,
 NaN's and Inf's are returned in the arrays. To assist in detection of
 these events, several functions (:func:`sp.isnan`, :func:`sp.isfinite`,
 :func:`sp.isinf`) are available.
+
+Moreover, some functions present in Numpy are not imported in Scipy.
+Among others, the following functions have a different name in Scipy.
+
+ * :func:`numpy.max` is :func:`sp.amax`
+ * :func:`numpy.min` is :func:`sp.amin`
+ * :func:`numpy.round` is :func:`sp.round_`
+ * :func:`numpy.abs` is :func:`sp.absolute`
+
+Note that all the equivalent scipy functions above are in fact defined in Numpy.
+For instance :func:`sp.amax` is simply :func:`numpy.amax`.
 
 Finally, some of the basic functions like log, sqrt, and inverse trig
 functions have been modified to return complex numbers instead of
