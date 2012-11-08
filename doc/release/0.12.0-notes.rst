@@ -47,9 +47,8 @@ A callback mechanism was added to L-BFGS-B and TNC minimization solvers.
 Complex error functions in ``scipy.special``
 --------------------------------------------
 The computation of special functions related to the error function now uses a
-new `Faddeeva library from MIT
-<http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w>`__ which increases their
-numerical precision. The scaled and imaginary error functions ``erfcx`` and
+new `Faddeeva library from MIT <http://ab-initio.mit.edu/Faddeeva>`__ which
+increases their numerical precision. The scaled and imaginary error functions ``erfcx`` and
 ``erfi`` were also added, and the Dawson integral ``dawsn`` can now be
 evaluated for a complex argument.
 

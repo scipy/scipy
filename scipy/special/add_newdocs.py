@@ -222,7 +222,7 @@ add_newdoc("scipy.special", "dawsn",
     References
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
+       http://ab-initio.mit.edu/Faddeeva
     """)
 
 add_newdoc("scipy.special", "ellipe",
@@ -292,7 +292,7 @@ add_newdoc("scipy.special", "erf",
         Graphs, and Mathematical Tables. New York: Dover,
         1972. http://www.math.sfu.ca/~cbm/aands/page_297.htm
     .. [3] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
+       http://ab-initio.mit.edu/Faddeeva
 
     """)
 
@@ -303,7 +303,7 @@ add_newdoc("scipy.special", "erfc",
     References
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
+       http://ab-initio.mit.edu/Faddeeva
 
     """)
 
@@ -314,7 +314,7 @@ add_newdoc("scipy.special", "erfi",
     References
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
+       http://ab-initio.mit.edu/Faddeeva
 
     """)
 
@@ -325,7 +325,7 @@ add_newdoc("scipy.special", "erfcx",
     References
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
+       http://ab-initio.mit.edu/Faddeeva
 
     """)
 
@@ -1207,7 +1207,7 @@ add_newdoc("scipy.special", "wofz",
     References
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/wiki/index.php/Faddeeva_w
+       http://ab-initio.mit.edu/Faddeeva
     """)
 
 add_newdoc("scipy.special", "y0",
