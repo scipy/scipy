@@ -1,5 +1,5 @@
-Basic functions in Numpy (and top-level scipy)
-==============================================
+Basic functions
+===============
 
 .. sectionauthor:: Travis E. Oliphant
 
@@ -8,94 +8,42 @@ Basic functions in Numpy (and top-level scipy)
 .. contents::
 
 Interaction with Numpy
-------------------------
+----------------------
 
-To begin with, all of the Numpy functions have been subsumed into the
-:mod:`scipy` namespace so that all of those functions are available
-without additionally importing Numpy. In addition, the universal
-functions (addition, subtraction, division) have been altered to not
-raise exceptions if floating-point errors are encountered; instead,
-NaN's and Inf's are returned in the arrays. To assist in detection of
-these events, several functions (:func:`sp.isnan`, :func:`sp.isfinite`,
-:func:`sp.isinf`) are available.
+Scipy builds on Numpy, and for all basic array handling needs you can
+use Numpy functions:
 
-Finally, some of the basic functions like log, sqrt, and inverse trig
-functions have been modified to return complex numbers instead of
-NaN's where appropriate (*i.e.* ``sp.sqrt(-1)`` returns ``1j``).
+    >>> import numpy as np
+    >>> np.some_function()
 
+Rather than giving a detailed description of each of these functions
+(which is available in the Numpy Reference Guide or by using the
+:func:`help`, :func:`info` and :func:`source` commands), this tutorial
+will discuss some of the more useful commands which require a little
+introduction to use to their full potential.
 
-Top-level scipy routines
-------------------------
+To use functions from some of the Scipy modules, you can do:
 
-The purpose of the top level of scipy is to collect general-purpose
-routines that the other sub-packages can use and to provide a simple
-replacement for Numpy. Anytime you might think to import Numpy, you
-can import scipy instead and remove yourself from direct dependence on
-Numpy. These routines are divided into several files for
-organizational purposes, but they are all available under the numpy
-namespace (and the scipy namespace). There are routines for type
-handling and type checking, shape and matrix manipulation, polynomial
-processing, and other useful functions. Rather than giving a detailed
-description of each of these functions (which is available in the
-Numpy Reference Guide or by using the :func:`help`, :func:`info` and
-:func:`source` commands), this tutorial will discuss some of the more
-useful commands which require a little introduction to use to their
-full potential.
+    >>> from scipy import some_module
+    >>> some_module.some_function()
 
-
-Type handling
-^^^^^^^^^^^^^
-
-Note the difference between :func:`sp.iscomplex`/:func:`sp.isreal` and
-:func:`sp.iscomplexobj`/:func:`sp.isrealobj`. The former command is
-array based and returns byte arrays of ones and zeros providing the
-result of the element-wise test. The latter command is object based
-and returns a scalar describing the result of the test on the entire
-object.
-
-Often it is required to get just the real and/or imaginary part of a
-complex number. While complex numbers and arrays have attributes that
-return those values, if one is not sure whether or not the object will
-be complex-valued, it is better to use the functional forms
-:func:`sp.real` and :func:`sp.imag` . These functions succeed for anything
-that can be turned into a Numpy array. Consider also the function
-:func:`sp.real_if_close` which transforms a complex-valued number with
-tiny imaginary part into a real number.
-
-Occasionally the need to check whether or not a number is a scalar
-(Python (long)int, Python float, Python complex, or rank-0 array)
-occurs in coding. This functionality is provided in the convenient
-function :func:`sp.isscalar` which returns a 1 or a 0.
-
-Finally, ensuring that objects are a certain Numpy type occurs often
-enough that it has been given a convenient interface in SciPy through
-the use of the :obj:`sp.cast` dictionary. The dictionary is keyed by the
-type it is desired to cast to and the dictionary stores functions to
-perform the casting. Thus, ``sp.cast['f'](d)`` returns an array
-of :class:`sp.float32` from *d*. This function is also useful as an easy
-way to get a scalar of a certain type::
-
-    >>> sp.cast['f'](sp.pi)
-    array(3.1415927410125732, dtype=float32)
+The top level of :mod:`scipy` also contains functions from
+:mod:`numpy` and :mod:`numpy.lib.scimath`. However, it is better to
+use them directly from the :mod:`numpy` module instead.
 
 Index Tricks
 ^^^^^^^^^^^^
 
 There are some class instances that make special use of the slicing
 functionality to provide efficient means for array construction. This
-part will discuss the operation of :obj:`sp.mgrid` , :obj:`sp.ogrid` ,
-:obj:`sp.r_` , and :obj:`sp.c_` for quickly constructing arrays.
+part will discuss the operation of :obj:`np.mgrid` , :obj:`np.ogrid` ,
+:obj:`np.r_` , and :obj:`np.c_` for quickly constructing arrays.
 
-One familiar with MATLAB (R) may complain that it is difficult to
-construct arrays from the interactive session with Python. Suppose,
-for example that one wants to construct an array that begins with 3
-followed by 5 zeros and then contains 10 numbers spanning the range -1
-to 1 (inclusive on both ends). Before SciPy, you would need to enter
-something like the following
+For example, rather than writing something like the following
 
     >>> concatenate(([3],[0]*5,arange(-1,1.002,2/9.0)))
 
-With the :obj:`r_` command one can enter this as
+with the :obj:`r_` command one can enter this as
 
     >>> r_[3,[0]*5,-1:1:10j]
 
@@ -153,7 +101,7 @@ Having meshed arrays like this is sometimes very useful. However, it
 is not always needed just to evaluate some N-dimensional function over
 a grid due to the array-broadcasting rules of Numpy and SciPy. If this
 is the only purpose for generating a meshgrid, you should instead use
-the function :obj:`ogrid` which generates an "open "grid using NewAxis
+the function :obj:`ogrid` which generates an "open" grid using :obj:`newaxis`
 judiciously to create N, N-d arrays where only one dimension in each
 array has length greater than 1. This will save memory and create the
 same result if the only purpose for the meshgrid is to generate sample
@@ -231,34 +179,60 @@ result:
     array([1, 6, 1, 2])
 
 This particular function could have been written in vector form
-without the use of :obj:`vectorize` . But, what if the function you have written is the result of some
-optimization or integration routine. Such functions can likely only be
-vectorized using ``vectorize.``
+without the use of :obj:`vectorize` . But, what if the function you
+have written is the result of some optimization or integration
+routine. Such functions can likely only be vectorized using
+``vectorize.``
+
+Type handling
+^^^^^^^^^^^^^
+
+Note the difference between :func:`np.iscomplex`/:func:`np.isreal` and
+:func:`np.iscomplexobj`/:func:`np.isrealobj`. The former command is
+array based and returns byte arrays of ones and zeros providing the
+result of the element-wise test. The latter command is object based
+and returns a scalar describing the result of the test on the entire
+object.
+
+Often it is required to get just the real and/or imaginary part of a
+complex number. While complex numbers and arrays have attributes that
+return those values, if one is not sure whether or not the object will
+be complex-valued, it is better to use the functional forms
+:func:`np.real` and :func:`np.imag` . These functions succeed for anything
+that can be turned into a Numpy array. Consider also the function
+:func:`np.real_if_close` which transforms a complex-valued number with
+tiny imaginary part into a real number.
+
+Occasionally the need to check whether or not a number is a scalar
+(Python (long)int, Python float, Python complex, or rank-0 array)
+occurs in coding. This functionality is provided in the convenient
+function :func:`np.isscalar` which returns a 1 or a 0.
+
+Finally, ensuring that objects are a certain Numpy type occurs often
+enough that it has been given a convenient interface in SciPy through
+the use of the :obj:`np.cast` dictionary. The dictionary is keyed by the
+type it is desired to cast to and the dictionary stores functions to
+perform the casting. Thus, ``np.cast['f'](d)`` returns an array
+of :class:`np.float32` from *d*. This function is also useful as an easy
+way to get a scalar of a certain type::
+
+    >>> np.cast['f'](np.pi)
+    array(3.1415927410125732, dtype=float32)
 
 
 Other useful functions
 ^^^^^^^^^^^^^^^^^^^^^^
 
-There are several other functions in the scipy_base package including
-most of the other functions that are also in the Numpy package. The
-reason for duplicating these functions is to allow SciPy to
-potentially alter their original interface and make it easier for
-users to know how to get access to functions
-
-    >>> from scipy import *
-
-Functions which should be mentioned are :obj:`mod(x,y)` which can
-replace ``x % y`` when it is desired that the result take the sign of
-*y* instead of *x* . Also included is :obj:`fix` which always rounds
-to the nearest integer towards zero. For doing phase processing, the
-functions :func:`angle`, and :obj:`unwrap` are also useful. Also, the
-:obj:`linspace` and :obj:`logspace` functions return equally spaced samples
-in a linear or log scale.  Finally, it's useful to be aware of the indexing
-capabilities of Numpy. Mention should be made of the new
-function :obj:`select` which extends the functionality of :obj:`where` to
+There are also several other useful functions which should be
+mentioned. For doing phase processing, the functions :func:`angle`,
+and :obj:`unwrap` are useful. Also, the :obj:`linspace` and
+:obj:`logspace` functions return equally spaced samples in a linear or
+log scale.  Finally, it's useful to be aware of the indexing
+capabilities of Numpy. Mention should be made of the function
+:obj:`select` which extends the functionality of :obj:`where` to
 include multiple conditions and multiple choices. The calling
-convention is ``select(condlist,choicelist,default=0).`` :obj:`select` is
-a vectorized form of the multiple if-statement. It allows rapid
+convention is ``select(condlist,choicelist,default=0).`` :obj:`select`
+is a vectorized form of the multiple if-statement. It allows rapid
 construction of a function which returns an array of results based on
 a list of conditions. Each element of the return array is taken from
 the array in a ``choicelist`` corresponding to the first condition in
@@ -267,26 +241,15 @@ the array in a ``choicelist`` corresponding to the first condition in
     >>> x = r_[-2:3]
     >>> x
     array([-2, -1,  0,  1,  2])
-    >>> select([x > 3, x >= 0],[0,x+2])
+    >>> np.select([x > 3, x >= 0],[0,x+2])
     array([0, 0, 2, 3, 4])
 
-
-Common functions
-----------------
-
-Some functions depend on sub-packages of SciPy but should be available
-from the top-level of SciPy due to their common use. These are
-functions that might have been placed in scipy_base except for their
-dependence on other sub-packages of SciPy. For example the
-:obj:`factorial` and :obj:`comb` functions compute :math:`n!` and
-:math:`n!/k!(n-k)!` using either exact integer arithmetic (thanks to
-Python's Long integer object), or by using floating-point precision
-and the gamma function.  The functions :obj:`rand` and :obj:`randn`
-are used so often that they warranted a place at the top level. There
-are convenience functions for the interactive use: :obj:`disp`
-(similar to print), and :obj:`who` (returns a list of defined
-variables and memory consumption--upper bounded). Another function
-returns a common image used in image processing: :obj:`lena`.
+Some additional useful functions can also be found in the module
+:mod:`scipy.misc`. For example the :obj:`factorial` and :obj:`comb`
+functions compute :math:`n!` and :math:`n!/k!(n-k)!` using either
+exact integer arithmetic (thanks to Python's Long integer object), or
+by using floating-point precision and the gamma function. Another
+function returns a common image used in image processing: :obj:`lena`.
 
 Finally, two functions are provided that are useful for approximating
 derivatives of functions using discrete-differences. The function
