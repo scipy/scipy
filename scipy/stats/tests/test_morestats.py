@@ -387,5 +387,17 @@ def test_circstats_small():
     S2 = stats.circstd(x, high=360)
     assert_allclose(S2, S1, rtol=1e-4)
 
+
+def test_kullback_leibler():
+    x = np.linspace(-20, 20, 10000)
+    P = stats.norm.pdf(x, 0, 1)
+    Q = stats.norm.pdf(x, 0.1, 1)
+
+    for mu in range(1, 10, 2):
+        for sigma in range(1, 10, 2):
+            R = stats.norm.pdf(x, 0 + mu * 0.1, 1 + sigma * 0.1)
+            assert stats.kullback_leibler(P, Q) < stats.kullback_leibler(P, R)
+
+
 if __name__ == "__main__":
     run_module_suite()
