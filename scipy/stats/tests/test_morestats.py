@@ -399,5 +399,16 @@ def test_kullback_leibler():
             assert stats.kullback_leibler(P, Q) < stats.kullback_leibler(P, R)
 
 
+def test_jarque_bera():
+    np.random.seed(987654321)
+    x = np.random.normal(0, 1, 100000)
+    y = np.random.chisquare(10000, 100000)
+    z = np.random.rayleigh(1, 100000)
+
+    assert stats.jarque_bera(x)[1] > stats.jarque_bera(y)[1]
+    assert stats.jarque_bera(x)[1] > stats.jarque_bera(z)[1]
+    assert stats.jarque_bera(y)[1] > stats.jarque_bera(z)[1]
+
+
 if __name__ == "__main__":
     run_module_suite()
