@@ -1424,6 +1424,55 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     return ((high-low)/2.0/pi) * sqrt(-2*log(R))
 
 
+def kullback_leibler(P, Q):
+    """
+    Kullback-Leibler divergence as a non-symmetric measure of the difference
+    between two probability distributions.
+
+    Parameters
+    ----------
+    P : array_like
+        Discrete probability distribution.
+    Q : array_like
+        Discrete probability distribution.
+
+    Returns
+    -------
+    div : float
+        Kullback-Leibler divergence.
+
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+    .. [2] S. Kullback, R.A. Leibler, "On information and sufficiency",
+           Ann. Math. Stat., 22 (1951) pp. 79–86
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> x = np.linspace(-20, 20, 10000)
+    >>> P = stats.norm.pdf(x, 0, 1)
+    >>> P /= P.sum()
+    >>> Q = stats.norm.pdf(x, 0.1, 1)
+    >>> Q /= Q.sum()
+    >>> R = stats.norm.pdf(x, 0.1, 1.1)
+    >>> R /= R.sum()
+    >>> stats.kullback_leibler(P, Q)
+    0.00721347520444
+    >>> stats.kullback_leibler(P, R)
+    0.0182725286351
+
+    """
+
+    P = np.asarray(P)
+    Q = np.asarray(Q)
+
+    nonzeros = np.logical_and(P != 0, Q != 0)
+    div = np.sum(P[nonzeros] * np.log2(P[nonzeros] / Q[nonzeros]))
+
+    return div
+
 
 #Tests to include (from R) -- some of these already in stats.
 ########
