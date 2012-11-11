@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "sf_error.h"
+
 #include "../cephes.h"
 #undef fabs
 #include "misc.h"
@@ -11,8 +13,6 @@
 /* Limits after which to issue warnings about non-convergence */
 #define ALLOWED_ATOL (1e-306)
 #define ALLOWED_RTOL (1e-6)
-
-void scipy_special_raise_warning(char *fmt, ...);
 
 /*
   Inverse of the (regularised) incomplete Gamma integral.
@@ -64,9 +64,9 @@ gammaincinv(double a, double y)
                        &best_x, &best_f, &errest);
     if (!(r == FSOLVE_CONVERGED || r == FSOLVE_EXACT) &&
             errest > ALLOWED_ATOL + ALLOWED_RTOL*fabs(best_x)) {
-        scipy_special_raise_warning(
-            "gammaincinv: failed to converge at (a, y) = (%.20g, %.20g): got %g +- %g, code %d\n",
-            a, y, best_x, errest, r);
+        sf_error("gammaincinv", SF_ERROR_NO_RESULT,
+                 "failed to converge at (a, y) = (%.20g, %.20g): got %g +- %g, code %d\n",
+                 a, y, best_x, errest, r);
         best_x = NPY_NAN;
     }
     return best_x;

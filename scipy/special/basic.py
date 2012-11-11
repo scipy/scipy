@@ -13,6 +13,7 @@ import _ufuncs_cxx
 import types
 import specfun
 import orthogonal
+import warnings
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
@@ -33,6 +34,7 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
 
 class SpecialFunctionWarning(Warning):
     pass
+warnings.simplefilter("always", category=SpecialFunctionWarning)
 
 def errprint(inflag=None):
     _ufuncs_cxx._errprint(inflag)
