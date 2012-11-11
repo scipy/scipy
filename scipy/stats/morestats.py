@@ -1469,7 +1469,14 @@ def kullback_leibler(P, Q):
     P = np.asarray(P)
     Q = np.asarray(Q)
 
+    if np.any(P < 0) or np.any(Q < 0):
+        raise ValueError('Negative probabilities not allowed.')
+
     nonzeros = np.logical_and(P != 0, Q != 0)
+    if not nonzeros.any():
+        raise ValueError('There must be at least one non-zero probability in '
+                         'P and Q.')
+
     div = np.sum(P[nonzeros] * np.log2(P[nonzeros] / Q[nonzeros]))
 
     return div
