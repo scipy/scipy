@@ -446,5 +446,9 @@ def test_jarque_bera_array_like():
     assert p1 == p2 == p3
 
 
+def test_jarque_bera_size():
+    assert_raises(ValueError, stats.jarque_bera, [])
+
+
 if __name__ == "__main__":
     run_module_suite()

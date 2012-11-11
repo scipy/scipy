@@ -1540,6 +1540,9 @@ def jarque_bera(x):
     x = np.asarray(x)
 
     n = float(x.size)
+    if n == 0:
+        raise ValueError('At least one observation is required.')
+
     mu = x.mean()
     diffx = x - mu
 
