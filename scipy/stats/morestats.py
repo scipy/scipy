@@ -1459,10 +1459,22 @@ def kullback_leibler(P, Q):
     >>> Q /= Q.sum()
     >>> R = stats.norm.pdf(x, 0.1, 1.1)
     >>> R /= R.sum()
+
+    As expexted we now see, that the P is most similar to itself while the Q
+    distribution is more similar to P than R, which implies a larger Kullback-
+    Leibler divergence.
+
+    >>> stats.kullback_leibler(P, P)
+    0.0
     >>> stats.kullback_leibler(P, Q)
     0.00721347520444
     >>> stats.kullback_leibler(P, R)
     0.0182725286351
+
+    Note the slight asymmetry in the computation.
+
+    >>> stats.kullback_leibler(P, Q) == stats.kullback_leibler(Q, P)
+    False
 
     """
 
