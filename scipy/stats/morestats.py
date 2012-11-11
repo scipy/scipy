@@ -1481,6 +1481,9 @@ def kullback_leibler(P, Q):
     P = np.asarray(P)
     Q = np.asarray(Q)
 
+    if P.size != Q.size:
+        raise ValueError('P and Q must have the same size.')
+
     if np.any(P < 0) or np.any(Q < 0):
         raise ValueError('Negative probabilities not allowed.')
 

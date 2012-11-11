@@ -419,6 +419,10 @@ def test_kullback_leibler_zero():
     assert_raises(ValueError, stats.kullback_leibler, [0, 1], [1, 0])
 
 
+def test_kullback_leibler_size():
+    assert_raises(ValueError, stats.kullback_leibler, [0], [1, 0])
+
+
 def test_jarque_bera_stats():
     np.random.seed(987654321)
     x = np.random.normal(0, 1, 100000)
