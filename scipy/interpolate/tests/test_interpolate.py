@@ -25,6 +25,13 @@ class TestInterp2D(TestCase):
         I = interp2d(x, y, z)
         assert_almost_equal(I(1.0, 2.0), sin(2.0), decimal=2)
 
+    def test_interp2d_large_data_input(self):
+        # Ticket #776
+        x = np.arange(2000, dtype=np.float64)
+        y = np.arange(1000, dtype=np.float64)
+        z = np.zeros((2000,1000), dtype=np.float64)
+        I = interp2d(x, y, z)
+
 class TestInterp1D(object):
 
     def setUp(self):
