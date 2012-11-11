@@ -388,7 +388,7 @@ def test_circstats_small():
     assert_allclose(S2, S1, rtol=1e-4)
 
 
-def test_kullback_leibler():
+def test_kullback_leibler_stats():
     x = np.linspace(-20, 20, 10000)
     P = stats.norm.pdf(x, 0, 1)
     Q = stats.norm.pdf(x, 0.1, 1)
@@ -399,7 +399,19 @@ def test_kullback_leibler():
             assert stats.kullback_leibler(P, Q) < stats.kullback_leibler(P, R)
 
 
-def test_jarque_bera():
+def test_kullback_leibler_array():
+    x = np.linspace(-20, 20, 10000)
+    P = stats.norm.pdf(x, 0, 1)
+    Q = stats.norm.pdf(x, 0.1, 1)
+
+    div1 = stats.kullback_leibler(list(P), list(Q))
+    div2 = stats.kullback_leibler(tuple(P), tuple(Q))
+    div3 = stats.kullback_leibler(P.reshape(2, 5000), Q.reshape(2, 5000))
+
+    assert div1 == div2 == div3
+
+
+def test_jarque_bera_stats():
     np.random.seed(987654321)
     x = np.random.normal(0, 1, 100000)
     y = np.random.chisquare(10000, 100000)
@@ -408,6 +420,18 @@ def test_jarque_bera():
     assert stats.jarque_bera(x)[1] > stats.jarque_bera(y)[1]
     assert stats.jarque_bera(x)[1] > stats.jarque_bera(z)[1]
     assert stats.jarque_bera(y)[1] > stats.jarque_bera(z)[1]
+
+
+def test_jarque_bera_array():
+    np.random.seed(987654321)
+    x = np.random.normal(0, 1, 100000)
+
+    JB1, p1 = stats.jarque_bera(list(x))
+    JB2, p2 = stats.jarque_bera(tuple(x))
+    JB3, p3 = stats.jarque_bera(x.reshape(2, 50000))
+
+    assert JB1 == JB2 == JB3
+    assert p1 == p2 == p3
 
 
 if __name__ == "__main__":
