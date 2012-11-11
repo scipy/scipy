@@ -42,22 +42,22 @@ extern int F_FUNC(zbesh,ZBESH)
 /* This must be linked with fortran
  */
 
-int ierr_to_mtherr( int nz, int ierr) {
-     /* Return mtherr equivalents for ierr values */
+int ierr_to_sferr(int nz, int ierr) {
+  /* Return sf_error equivalents for ierr values */
   
-  if (nz != 0) return UNDERFLOW;
+  if (nz != 0) return SF_ERROR_UNDERFLOW;
 
   switch (ierr) {
   case 1:
-    return DOMAIN;
+    return SF_ERROR_DOMAIN;
   case 2:
-    return OVERFLOW;
+    return SF_ERROR_OVERFLOW;
   case 3:
-    return PLOSS;
+    return SF_ERROR_LOSS;
   case 4:
-    return TLOSS;
+    return SF_ERROR_NO_RESULT;
   case 5:   /* Algorithm termination condition not met */
-    return TLOSS;    
+    return SF_ERROR_NO_RESULT;
   }
   return -1;
 }
@@ -134,17 +134,17 @@ int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi
   int nz;
 
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
-  DO_MTHERR("airy:", ai);
+  DO_SFERR("airy:", ai);
   nz = 0;
   F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &ierr);
-  DO_MTHERR("airy:", bi);
+  DO_SFERR("airy:", bi);
   
   id = 1;
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
-  DO_MTHERR("airy:", aip);
+  DO_SFERR("airy:", aip);
   nz = 0;
   F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bip), &ierr);
-  DO_MTHERR("airy:", bip);
+  DO_SFERR("airy:", bip);
   return 0;
 }
 
@@ -154,17 +154,17 @@ int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *
   int nz, ierr;
 
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
-  DO_MTHERR("airye:", ai);
+  DO_SFERR("airye:", ai);
   nz = 0;
   F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &ierr);
-  DO_MTHERR("airye:", bi);
+  DO_SFERR("airye:", bi);
   
   id = 1;
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
-  DO_MTHERR("airye:", aip);
+  DO_SFERR("airye:", aip);
   nz = 0;
   F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bip), &ierr);
-  DO_MTHERR("airye:", bip);
+  DO_SFERR("airye:", bip);
   return 0;
 }
 
@@ -181,12 +181,12 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
       *ai = NPY_NAN;
   } else {
       F_FUNC(zairy,ZAIRY)(CADDR(cz), &id, &kode, CADDR(cai), &nz, &ierr);
-      DO_MTHERR("airye:", &cai);
+      DO_SFERR("airye:", &cai);
       *ai = cai.real;
   }
   nz = 0;
   F_FUNC(zbiry,ZBIRY)(CADDR(cz), &id, &kode, CADDR(cbi), &ierr);
-  DO_MTHERR("airye:", &cbi);
+  DO_SFERR("airye:", &cbi);
   *bi = cbi.real;
   
   id = 1;
@@ -194,12 +194,12 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
       *aip = NPY_NAN;
   } else {
       F_FUNC(zairy,ZAIRY)(CADDR(cz), &id, &kode, CADDR(caip), &nz, &ierr);
-      DO_MTHERR("airye:", &caip);
+      DO_SFERR("airye:", &caip);
       *aip = caip.real;
   }
   nz = 0;
   F_FUNC(zbiry,ZBIRY)(CADDR(cz), &id, &kode, CADDR(cbip), &ierr);
-  DO_MTHERR("airye:", &cbip);
+  DO_SFERR("airye:", &cbip);
   *bip = cbip.real;
   return 0;
 }
@@ -216,7 +216,7 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
     sign = -1;
   }
   F_FUNC(zbesi,ZBESI)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
-  DO_MTHERR("iv:", &cy);
+  DO_SFERR("iv:", &cy);
   if (ierr == 2) {
     /* overflow */
     if (z.imag == 0 && (z.real >= 0 || v == floor(v))) {
@@ -235,7 +235,7 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
   if (sign == -1) {
     if (!reflect_i(&cy, v)) {
       F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy_k), &nz, &ierr);
-      DO_MTHERR("iv(kv):", &cy_k);
+      DO_SFERR("iv(kv):", &cy_k);
       cy = rotate_i(cy, cy_k, v);
     }
   }
@@ -255,12 +255,12 @@ npy_cdouble cbesi_wrap_e( double v, npy_cdouble z) {
     sign = -1;
   }
   F_FUNC(zbesi,ZBESI)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
-  DO_MTHERR("ive:", &cy);
+  DO_SFERR("ive:", &cy);
 
   if (sign == -1) {
     if (!reflect_i(&cy, v)) {
       F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy_k), &nz, &ierr);
-      DO_MTHERR("ive(kv):", &cy_k);
+      DO_SFERR("ive(kv):", &cy_k);
       /* adjust scaling to match zbesi */
       cy_k = rotate(cy_k, -z.imag/NPY_PI);
       if (z.real > 0) {
@@ -299,7 +299,7 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
     sign = -1;
   }
   F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
-  DO_MTHERR("jv:", &cy_j);
+  DO_SFERR("jv:", &cy_j);
   if (ierr == 2) {
     /* overflow */
     cy_j = cbesj_wrap_e(v, z);
@@ -310,7 +310,7 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   if (sign == -1) {
     if (!reflect_jy(&cy_j, v)) {
       F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
-      DO_MTHERR("jv(yv):", &cy_y);
+      DO_SFERR("jv(yv):", &cy_y);
       cy_j = rotate_jy(cy_j, cy_y, v);
     }
   }
@@ -329,11 +329,11 @@ npy_cdouble cbesj_wrap_e( double v, npy_cdouble z) {
     sign = -1;
   }
   F_FUNC(zbesj,ZBESJ)(CADDR(z), &v, &kode, &n, CADDR(cy_j), &nz, &ierr);
-  DO_MTHERR("jve:", &cy_j);
+  DO_SFERR("jve:", &cy_j);
   if (sign == -1) {
     if (!reflect_jy(&cy_j, v)) {
       F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
-      DO_MTHERR("jve(yve):", &cy_y);
+      DO_SFERR("jve(yve):", &cy_y);
       cy_j = rotate_jy(cy_j, cy_y, v);
     }
   }
@@ -364,7 +364,7 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
     sign = -1;
   }
   F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
-  DO_MTHERR("yv:", &cy_y);
+  DO_SFERR("yv:", &cy_y);
   if (ierr == 2) {
     if (z.real >= 0 && z.imag == 0) {
       /* overflow */
@@ -376,7 +376,7 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   if (sign == -1) {
     if (!reflect_jy(&cy_y, v)) {
       F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
-      DO_MTHERR("yv(jv):", &cy_j);
+      DO_SFERR("yv(jv):", &cy_j);
       cy_y = rotate_jy(cy_y, cy_j, -v);
     }
   }
@@ -395,7 +395,7 @@ npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
     sign = -1;
   }
   F_FUNC(zbesy,ZBESY)(CADDR(z), &v, &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
-  DO_MTHERR("yve:", &cy_y);
+  DO_SFERR("yve:", &cy_y);
   if (ierr == 2) {
     if (z.real >= 0 && z.imag == 0) {
       /* overflow */
@@ -407,7 +407,7 @@ npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
   if (sign == -1) {
     if (!reflect_jy(&cy_y, v)) {
       F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
-      DO_MTHERR("yv(jv):", &cy_j);
+      DO_SFERR("yv(jv):", &cy_j);
       cy_y = rotate_jy(cy_y, cy_j, -v);
     }
   }
@@ -437,7 +437,7 @@ npy_cdouble cbesk_wrap( double v, npy_cdouble z) {
     v = -v;
   }
   F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
-  DO_MTHERR("kv:", &cy);
+  DO_SFERR("kv:", &cy);
   if (ierr == 2) {
     if (z.real >= 0 && z.imag == 0) {
       /* overflow */
@@ -460,7 +460,7 @@ npy_cdouble cbesk_wrap_e( double v, npy_cdouble z) {
     v = -v;
   }
   F_FUNC(zbesk,ZBESK)(CADDR(z), &v, &kode, &n, CADDR(cy), &nz, &ierr);
-  DO_MTHERR("kve:", &cy);
+  DO_SFERR("kve:", &cy);
   if (ierr == 2) {
     if (z.real >= 0 && z.imag == 0) {
       /* overflow */
@@ -509,7 +509,7 @@ npy_cdouble cbesh_wrap1( double v, npy_cdouble z) {
     sign = -1;
   }
   F_FUNC(zbesh,ZBESH)(CADDR(z), &v,  &kode, &m, &n, CADDR(cy), &nz, &ierr);
-  DO_MTHERR("hankel1:", &cy);
+  DO_SFERR("hankel1:", &cy);
   if (sign == -1) {
     cy = rotate(cy, v);
   }
@@ -529,7 +529,7 @@ npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z) {
     sign = -1;
   }
   F_FUNC(zbesh,ZBESH)(CADDR(z), &v, &kode, &m, &n, CADDR(cy), &nz, &ierr);
-  DO_MTHERR("hankel1e:", &cy);
+  DO_SFERR("hankel1e:", &cy);
   if (sign == -1) {
     cy = rotate(cy, v);
   }
@@ -549,7 +549,7 @@ npy_cdouble cbesh_wrap2( double v, npy_cdouble z) {
     sign = -1;
   }
   F_FUNC(zbesh,ZBESH)(CADDR(z), &v, &kode, &m, &n, CADDR(cy), &nz, &ierr);
-  DO_MTHERR("hankel2:", &cy);
+  DO_SFERR("hankel2:", &cy);
   if (sign == -1) {
     cy = rotate(cy, -v);
   }
@@ -569,7 +569,7 @@ npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z) {
     sign = -1;
   }
   F_FUNC(zbesh,ZBESH)(CADDR(z), &v, &kode, &m, &n, CADDR(cy), &nz, &ierr);
-  DO_MTHERR("hankel2e:", &cy);
+  DO_SFERR("hankel2e:", &cy);
   if (sign == -1) {
     cy = rotate(cy, -v);
   }

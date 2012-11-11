@@ -45,6 +45,14 @@ There should be either a single header that contains all of the kernel
 functions listed, or there should be one header for each kernel
 function. Cython pxd files are allowed in addition to .h files.
 
+Cython functions may use fused types, but the names in the list
+should be the specialized ones, such as 'somefunc[float]'.
+
+Floating-point exceptions inside these Ufuncs are converted to
+special function errors --- which are separately controlled by the
+user, and off by default, as they are usually not especially useful
+for the user.
+
 """
 
 #---------------------------------------------------------------------------------
@@ -60,9 +68,9 @@ _lambertw -- lambertw_scalar: Dld->D                       -- lambertw.pxd
 _eval_chebyt -- eval_poly_chebyt: ld->d                    -- orthogonal_eval.pxd
 logit -- logitf: f->f, logit: d->d, logitl: g->g           -- _logit.h
 expit -- expitf: f->f, expit: d->d, expitl: g->g           -- _logit.h
-bdtrc -- bdtrc: iid->d                                     -- cephes.h
-bdtr -- bdtr: iid->d                                       -- cephes.h
-bdtri -- bdtri: iid->d                                     -- cephes.h
+bdtrc -- bdtrc: iid->d, bdtrc_unsafe: ddd->d               -- cephes.h, _legacy.pxd
+bdtr -- bdtr: iid->d, bdtr_unsafe: ddd->d                  -- cephes.h, _legacy.pxd
+bdtri -- bdtri: iid->d, bdtri_unsafe: ddd->d               -- cephes.h, _legacy.pxd
 btdtr -- btdtr: ddd->d                                     -- cephes.h
 btdtri -- incbi: ddd->d                                    -- cephes.h
 fdtrc -- fdtrc: ddd->d                                     -- cephes.h
@@ -73,14 +81,14 @@ gdtr -- gdtr: ddd->d                                       -- cephes.h
 hyp2f1 -- hyp2f1: dddd->d, chyp2f1_wrap: dddD->D           -- cephes.h, specfun_wrappers.h
 hyp1f1 -- hyp1f1_wrap: ddd->d, chyp1f1_wrap: ddD->D        -- specfun_wrappers.h
 hyperu -- hypU_wrap: ddd->d                                -- specfun_wrappers.h
-hyp2f0 -- hyp2f0: dddi*d->d                                -- cephes.h
+hyp2f0 -- hyp2f0: dddi*d->d, hyp2f0_unsafe: dddd*d->d      -- cephes.h, _legacy.pxd
 hyp1f2 -- onef2: dddd*d->d                                 -- cephes.h
 hyp3f0 -- threef0: dddd*d->d                               -- cephes.h
 betainc -- incbet: ddd->d                                  -- cephes.h
 betaincinv -- incbi: ddd->d                                -- cephes.h
-nbdtrc -- nbdtrc: iid->d                                   -- cephes.h
-nbdtr -- nbdtr: iid->d                                     -- cephes.h
-nbdtri -- nbdtri: iid->d                                   -- cephes.h
+nbdtrc -- nbdtrc: iid->d, nbdtrc_unsafe: ddd->d            -- cephes.h, _legacy.pxd
+nbdtr -- nbdtr: iid->d, nbdtr_unsafe: ddd->d               -- cephes.h, _legacy.pxd
+nbdtri -- nbdtri: iid->d, nbdtri_unsafe: ddd->d            -- cephes.h, _legacy.pxd
 beta -- beta: dd->d                                        -- cephes.h
 betaln -- lbeta: dd->d                                     -- cephes.h
 cbrt -- cbrt: d->d                                         -- cephes.h
@@ -106,16 +114,16 @@ gammainccinv -- igami: dd->d                               -- cephes.h
 iv -- iv: dd->d, cbesi_wrap: dD->D                         -- cephes.h, amos_wrappers.h
 ive -- cbesi_wrap_e_real: dd->d, cbesi_wrap_e: dD->D       -- amos_wrappers.h
 ellipj -- ellpj: dd*dddd->*i                               -- cephes.h
-expn -- expn: id->d                                        -- cephes.h
+expn -- expn: id->d, expn_unsafe: dd->d                    -- cephes.h, _legacy.pxd
 exp1 -- exp1_wrap: d->d, cexp1_wrap: D->D                  -- specfun_wrappers.h
 expi -- expi_wrap: d->d, cexpi_wrap: D->D                  -- specfun_wrappers.h
-kn -- kn: id->d                                            -- cephes.h
-pdtrc -- pdtrc: id->d                                      -- cephes.h
-pdtr -- pdtr: id->d                                        -- cephes.h
-pdtri -- pdtri: id->d                                      -- cephes.h
-yn -- yn: id->d                                            -- cephes.h
-smirnov -- smirnov: id->d                                  -- cephes.h
-smirnovi -- smirnovi: id->d                                -- cephes.h
+kn -- kn: id->d, kn_unsafe: dd->d                          -- cephes.h, _legacy.pxd
+pdtrc -- pdtrc: id->d, pdtrc_unsafe: dd->d                 -- cephes.h, _legacy.pxd
+pdtr -- pdtr: id->d, pdtr_unsafe: dd->d                    -- cephes.h, _legacy.pxd
+pdtri -- pdtri: id->d, pdtri_unsafe: dd->d                 -- cephes.h, _legacy.pxd
+yn -- yn: id->d, yn_unsafe: dd->d                          -- cephes.h, _legacy.pxd
+smirnov -- smirnov: id->d, smirnov_unsafe: dd->d           -- cephes.h, _legacy.pxd
+smirnovi -- smirnovi: id->d, smirnovi_unsafe: dd->d        -- cephes.h, _legacy.pxd
 airy -- airy: d*dddd->*i, cairy_wrap: D*DDDD->*i           -- cephes.h, amos_wrappers.h
 itairy -- itairy_wrap: d*dddd->*i                          -- specfun_wrappers.h
 airye -- cairy_wrap_e_real: d*dddd->*i, cairy_wrap_e: D*DDDD->*i -- amos_wrappers.h
@@ -258,54 +266,41 @@ EXTRA_CODE_COMMON = """
 # Error handling system
 #
 
-cdef extern from "stdarg.h":
-     ctypedef struct va_list:
-         pass
-     ctypedef struct fake_type:
-         pass
-     void va_start(va_list, void* arg) nogil
-     void* va_arg(va_list, fake_type) nogil
-     void va_end(va_list) nogil
-     fake_type int_type "int"
+cimport sf_error
 
-cdef extern from "Python.h":
-    int PyOS_vsnprintf(char *, size_t, char *, va_list va) nogil
+cdef extern from "numpy/ufuncobject.h":
+    int PyUFunc_getfperr() nogil
 
-from cpython.exc cimport PyErr_WarnEx
-
-cdef public void scipy_special_raise_warning(char *fmt, ...) nogil except *:
-    cdef char msg[1024]
-    cdef va_list ap
-
-    va_start(ap, fmt)
-    PyOS_vsnprintf(msg, 1024, fmt, ap)
-    va_end(ap)
-
-    with gil:
-        from scipy.special import SpecialFunctionWarning
-        PyErr_WarnEx(SpecialFunctionWarning, msg, 1)
-
-cdef extern int scipy_special_print_error_messages
+cdef public int wrap_PyUFunc_getfperr() nogil:
+    \"\"\"
+    Call PyUFunc_getfperr in a context where PyUFunc_API array is initialized;
+    this avoids messing with the UNIQUE_SYMBOL #defines
+    \"\"\"
+    return PyUFunc_getfperr()
 
 def _errprint(inflag=None):
     \"\"\"
-    errprint(flag)
+    errprint(flag=None)
 
-    Sets the error printing flag for special functions (from the
-    cephesmodule). The output is the previous state.  With errprint(0)
-    no error messages are shown; the default is errprint(1).  If no
-    argument is given the current state of the flag is returned and no
-    change occurs.
+    Sets or returns the error printing flag for special functions.
+
+    Parameters
+    ----------
+    flag : bool, optional
+        Whether warnings concerning evaluation of special functions in
+        scipy.special are shown. If omitted, no change is made to the
+        current setting.
+
+    Returns
+    -------
+    old_flag
+        Previous value of the error flag
 
     \"\"\"
-    global scipy_special_print_error_messages
-    cdef int oldflag
-
-    oldflag = scipy_special_print_error_messages
     if inflag is not None:
-        scipy_special_print_error_messages = int(bool(inflag))
-
-    return oldflag
+        return sf_error.set_print(int(bool(inflag)))
+    else:
+        return sf_error.get_print()
 
 """
 
@@ -367,6 +362,32 @@ TYPE_NAMES = {
     'l': 'np.NPY_LONG',
 }
 
+def cast_order(c):
+    return map(lambda x: 'ilfdgFDG'.index(x), c)
+
+# These downcasts will cause the function to return NaNs, unless the
+# values happen to coincide exactly.
+DANGEROUS_DOWNCAST = set([
+    ('F', 'i'), ('F', 'l'), ('F', 'f'), ('F', 'd'), ('F', 'g'),
+    ('D', 'i'), ('D', 'l'), ('D', 'f'), ('D', 'd'), ('D', 'g'),
+    ('G', 'i'), ('G', 'l'), ('G', 'f'), ('G', 'd'), ('G', 'g'),
+    ('f', 'i'), ('f', 'l'),
+    ('d', 'i'), ('d', 'l'),
+    ('g', 'i'), ('g', 'l'),
+    ('l', 'i'),
+])
+
+NAN_VALUE = {
+    'f': 'NPY_NAN',
+    'd': 'NPY_NAN',
+    'g': 'NPY_NAN',
+    'F': 'NPY_NAN',
+    'D': 'NPY_NAN',
+    'G': 'NPY_NAN',
+    'i': '0xbad0bad0',
+    'l': '0xbad0bad0',
+}
+
 def generate_loop(func_inputs, func_outputs, func_retval,
                   ufunc_inputs, ufunc_outputs):
     """
@@ -388,7 +409,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
 
             retval func(intype1 iv1, intype2 iv2, ..., outtype1 *ov1, ...);
 
-        If len(func_outputs) == len(ufunc_outputs)+1, the return value
+        If len(ufunc_outputs) == len(func_outputs)+1, the return value
         is treated as the first output argument. Otherwise, the return
         value is ignored.
 
@@ -416,8 +437,10 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     name = "loop_%s_%s_%s_As_%s_%s" % (
         func_retval, func_inputs, func_outputs, ufunc_inputs, ufunc_outputs
         )
-    body = "cdef void %s(char **args, np.npy_intp *dims, np.npy_intp *steps, void *func) nogil:\n" % name
+    body = "cdef void %s(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:\n" % name
     body += "    cdef np.npy_intp i, n = dims[0]\n"
+    body += "    cdef void *func = (<void**>data)[0]\n"
+    body += "    cdef char *func_name = <char*>(<void**>data)[1]\n"
 
     pointers = []
     for j in range(len(ufunc_inputs)):
@@ -454,17 +477,48 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     else:
         rv = ""
 
-    body += "        %s(<%s(*)(%s) nogil>func)(%s)\n" % (
-        rv, CY_TYPES[func_retval],
-        ", ".join(ftypes), ", ".join(fvars))
+    funcall = "        %s(<%s(*)(%s) nogil>func)(%s)\n" % (
+        rv, CY_TYPES[func_retval], ", ".join(ftypes), ", ".join(fvars))
 
+    # Cast-check inputs and call function
+    input_checks = []
+    for j in range(len(func_inputs)):
+        if (ufunc_inputs[j], func_inputs[j]) in DANGEROUS_DOWNCAST:
+            chk = "<%s>(<%s*>ip%d)[0] == (<%s*>ip%d)[0]" % (
+                CY_TYPES[func_inputs[j]], CY_TYPES[ufunc_inputs[j]], j,
+                CY_TYPES[ufunc_inputs[j]], j)
+            input_checks.append(chk)
+
+    if input_checks:
+        body += "        if %s:\n" % (" and ".join(input_checks))
+        body += "    " + funcall
+        body += "        else:\n"
+        body += "            sf_error.error(func_name, sf_error.DOMAIN, \"invalid input argument\")\n"
+        for j, outtype in enumerate(outtypecodes):
+            body += "            ov%d = <%s>%s\n" % (
+                j, CY_TYPES[outtype], NAN_VALUE[outtype])
+    else:
+        body += funcall
+
+    # Assign and cast-check output values
     for j, (outtype, fouttype) in enumerate(zip(ufunc_outputs, outtypecodes)):
-        body += "        (<%s *>op%d)[0] = <%s>ov%d\n" % (
-            CY_TYPES[outtype], j, CY_TYPES[outtype], j)
+        if (fouttype, outtype) in DANGEROUS_DOWNCAST:
+            body += "        if ov%d == <%s>ov%d:\n" % (j, CY_TYPES[outtype], j)
+            body += "            (<%s *>op%d)[0] = <%s>ov%d\n" % (
+                CY_TYPES[outtype], j, CY_TYPES[outtype], j)
+            body += "        else:\n"
+            body += "            sf_error.error(func_name, sf_error.DOMAIN, \"invalid output\")\n"
+            body += "            (<%s *>op%d)[0] = <%s>%s\n" % (
+                CY_TYPES[outtype], j, CY_TYPES[outtype], NAN_VALUE[outtype])
+        else:
+            body += "        (<%s *>op%d)[0] = <%s>ov%d\n" % (
+                CY_TYPES[outtype], j, CY_TYPES[outtype], j)
     for j in range(len(ufunc_inputs)):
         body += "        ip%d += steps[%d]\n" % (j, j)
     for j in range(len(ufunc_outputs)):
         body += "        op%d += steps[%d]\n" % (j, j + len(ufunc_inputs))
+
+    body += "    sf_error.check_fpe(func_name)\n"
 
     return name, body
 
@@ -494,14 +548,8 @@ def iter_variants(inputs, outputs):
         ('i', 'l'),
     ]
 
-    # allow doubles in integer args
-    if 'd' in inputs+outputs or 'D' in inputs+outputs:
-        maps.append(('il', 'dd'))
-    if 'f' in inputs+outputs or 'F' in inputs+outputs:
-        maps.append(('il', 'ff'))
-
     # float32-preserving signatures
-    maps = [(a + 'dD', b + 'fF') for a, b in maps] + maps
+    maps = maps + [(a + 'dD', b + 'fF') for a, b in maps]
 
     # do the replacements
     for src, dst in maps:
@@ -561,9 +609,9 @@ class Ufunc(object):
         variants = []
 
         def add_variant(func_name, inarg, outarg, ret, inp, outp):
-            if (inp, outp) in seen:
+            if inp in seen:
                 return
-            seen.add((inp, outp))
+            seen.add(inp)
 
             sig = (func_name, inp, outp)
             if "v" in outp:
@@ -577,15 +625,42 @@ class Ufunc(object):
             all_loops[loop_name] = loop
             variants.append((func_name, loop_name, inp, outp))
 
+        # First add base variants
         for func_name, inarg, outarg, ret in self.signatures:
             outp = re.sub(r'\*.*', '', ret) + outarg
             ret = ret.replace('*', '')
             if inarg_num is None:
                 inarg_num = len(inarg)
                 outarg_num = len(outp)
-            for inp2, outp2 in iter_variants(inarg, outp):
-                add_variant(func_name, inarg, outarg, ret, inp2, outp2)
+
+            inp, outp = list(iter_variants(inarg, outp))[0]
+            add_variant(func_name, inarg, outarg, ret, inp, outp)
+
+        # Then the supplementary ones
+        for func_name, inarg, outarg, ret in self.signatures:
+            outp = re.sub(r'\*.*', '', ret) + outarg
+            ret = ret.replace('*', '')
+            for inp, outp in iter_variants(inarg, outp):
+                add_variant(func_name, inarg, outarg, ret, inp, outp)
+
+        # Then sort variants to input argument cast order
+        # -- the sort is stable, so functions earlier in the signature list
+        #    are still preferred
+        variants.sort(key=lambda v: cast_order(v[2]))
+
         return variants, inarg_num, outarg_num
+
+    def cython_func_name(self, c_name, specialized=False, prefix="_func_"):
+        # support fused types
+        m = re.match(r'^(.*?)(\[.*\])$', c_name)
+        if m:
+            c_base_name, fused_part = m.groups()
+        else:
+            c_base_name, fused_part = c_name, ""
+        if specialized:
+            return "%s%s%s" % (prefix, c_base_name, fused_part)
+        else:
+            return "%s%s" % (prefix, c_base_name,)
 
     def get_prototypes(self):
         prototypes = []
@@ -596,7 +671,7 @@ class Ufunc(object):
             cy_args = ([CY_TYPES[x] for x in inarg]
                        + [CY_TYPES[x] + ' *' for x in outarg])
             c_proto = "%s (*)(%s)" % (C_TYPES[ret], ", ".join(c_args))
-            cy_proto = "%s (*)(%s)" % (CY_TYPES[ret], ", ".join(cy_args))
+            cy_proto = "%s (*)(%s) nogil" % (CY_TYPES[ret], ", ".join(cy_args))
             prototypes.append((func_name, c_proto, cy_proto))
         return prototypes
 
@@ -618,6 +693,7 @@ class Ufunc(object):
             datas.append(func_name)
 
         toplevel += "cdef np.PyUFuncGenericFunction ufunc_%s_loops[%d]\n" % (self.name, len(loops))
+        toplevel += "cdef void *ufunc_%s_ptr[%d]\n" % (self.name, 2*len(datas))
         toplevel += "cdef void *ufunc_%s_data[%d]\n" % (self.name, len(datas))
         toplevel += "cdef char ufunc_%s_types[%d]\n" % (self.name, len(types))
         toplevel += 'cdef char *ufunc_%s_doc = (\n    "%s")\n' % (
@@ -630,7 +706,13 @@ class Ufunc(object):
         for j, type in enumerate(types):
             toplevel += "ufunc_%s_types[%d] = <char>%s\n" % (self.name, j, type)
         for j, data in enumerate(datas):
-            toplevel += "ufunc_%s_data[%d] = <void*>_func_%s\n" % (self.name, j, data)
+            toplevel += "ufunc_%s_ptr[2*%d] = <void*>%s\n" % (self.name, j,
+                                                              self.cython_func_name(data, specialized=True))
+            toplevel += "ufunc_%s_ptr[2*%d+1] = <void*>(<char*>\"%s\")\n" % (self.name, j,
+                                                                             self.name)
+        for j, data in enumerate(datas):
+            toplevel += "ufunc_%s_data[%d] = &ufunc_%s_ptr[2*%d]\n" % (
+                self.name, j, self.name, j)
 
         toplevel += ('@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, '
                      'ufunc_@_data, ufunc_@_types, %d, %d, %d, 0, '
@@ -677,19 +759,23 @@ def generate(filename, ufunc_str, extra_code):
 
         for (c_name, c_proto, cy_proto), header in zip(cfuncs, hdrs):
             if header.endswith('.pxd'):
-                defs += "from %s cimport %s as _func_%s\n" % (header[:-4], c_name, c_name)
+                defs += "from %s cimport %s as %s\n" % (header[:-4],
+                                                        ufunc.cython_func_name(c_name,
+                                                                               prefix=""),
+                                                        ufunc.cython_func_name(c_name))
 
                 # check function signature at compile time
-                proto_name = '_proto_%s_t' % c_name
+                var_name = c_name.replace('[', '_').replace(']', '_')
+                proto_name = '_proto_%s_t' % var_name
                 defs += "ctypedef %s\n" % (cy_proto.replace('(*)', proto_name))
-                defs += "cdef %s *%s_var\n" % (proto_name, proto_name)
-                defs += "%s_var = &_func_%s\n" % (proto_name, c_name)
+                defs += "cdef %s *%s_var = &%s\n" % (
+                    proto_name, proto_name, ufunc.cython_func_name(c_name, specialized=True))
             else:
                 # redeclare the function, so that the assumed
                 # signature is checked at compile time
                 defs += "cdef extern from \"%s\":\n" % header
                 defs += "    pass\n"
-                new_name = "_func_%s \"%s\"" % (c_name, c_name)
+                new_name = "%s \"%s\"" % (ufunc.cython_func_name(c_name), c_name)
                 defs += "cdef extern %s\n" % (c_proto.replace('(*)', new_name))
 
     toplevel = "\n".join(all_loops.values() + [defs, toplevel])
@@ -703,6 +789,9 @@ cdef extern from "_complexstuff.h":
     # numpy/npy_math.h doesn't have correct extern "C" declarations,
     # so we must include a wrapped version first
     pass
+
+cdef extern from "numpy/npy_math.h":
+    double NPY_NAN
 
 cimport numpy as np
 cimport libc

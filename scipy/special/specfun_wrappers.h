@@ -11,14 +11,35 @@
 #define _SPEC_WRAPPERS_H
 #include "Python.h"
 #include <numpy/npy_math.h>
+#include <math.h>
 
-extern double PI;
+#include "sf_error.h"
 
 #define REAL(z) (z).real
 #define IMAG(z) (z).imag
 #define ABSQ(z) (z).real*(z).real + (z).imag*(z).imag;
-#define ZCONVINF(z) if (REAL((z))==1.0e300) REAL((z))=NPY_INFINITY; if (REAL((z))==-1.0e300) REAL((z))=-NPY_INFINITY
-#define CONVINF(x) if ((x)==1.0e300) (x)=NPY_INFINITY; if ((x)==-1.0e300) (x)=-NPY_INFINITY
+#define ZCONVINF(func,z)                                                \
+    do {                                                                \
+        if (REAL((z)) == 1.0e300) {                                     \
+            sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
+            REAL((z)) = NPY_INFINITY;                                   \
+        }                                                               \
+        if (REAL((z)) == -1.0e300) {                                    \
+            sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
+            REAL((z)) = -NPY_INFINITY;                                  \
+        }                                                               \
+    } while (0)
+#define CONVINF(func, x)                                                \
+    do {                                                                \
+        if ((x) == 1.0e300) {                                           \
+            sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
+            (x)=NPY_INFINITY;                                           \
+        }                                                               \
+        if ((x)==-1.0e300) {                                            \
+            sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
+            (x)=-NPY_INFINITY;                                          \
+        }                                                               \
+    } while (0)
 #define ABS(x) ((x)<0 ? -(x) : (x))
 
 npy_cdouble cgamma_wrap( npy_cdouble z);
