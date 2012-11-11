@@ -1447,7 +1447,7 @@ def kullback_leibler(P, Q):
     ----------
     .. [1] http://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
     .. [2] S. Kullback, R.A. Leibler, "On information and sufficiency",
-           Ann. Math. Stat., 22 (1951) pp. 79–86
+           Ann. Math. Stat., 22 (1951) pp. 79-86
 
     Examples
     --------
@@ -1517,7 +1517,9 @@ def jarque_bera(x):
 
     """
 
-    n = float(len(x))
+    x = np.asarray(x)
+
+    n = float(x.size)
     mu = x.mean()
     diffx = x - mu
 
