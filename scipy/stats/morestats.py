@@ -21,12 +21,14 @@ import futil
 from numpy.testing.decorators import setastest
 import warnings
 
+
 __all__ = ['mvsdist',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'oneway', 'wilcoxon',
            'pdf_fromgamma', 'circmean', 'circvar', 'circstd',
+           'kullback_leibler', 'jarque_bera',
           ]
 
 
