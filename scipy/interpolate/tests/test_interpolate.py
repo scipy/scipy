@@ -32,6 +32,16 @@ class TestInterp2D(TestCase):
         z = np.zeros((2000,1000), dtype=np.float64)
         I = interp2d(x, y, z)
 
+    def test_interp2d_linear(self):
+        # Ticket #898
+        a = np.zeros([5, 5])
+        a[2, 2] = 1.0
+        x = y = np.arange(5)
+        b = interp2d(x, y, a, 'linear')
+        assert_almost_equal(b(2.0, 1.5), np.array([0.5]), decimal=2)
+        assert_almost_equal(b(2.0, 2.5), np.array([0.5]), decimal=2)
+
+        
 class TestInterp1D(object):
 
     def setUp(self):
