@@ -37,7 +37,7 @@ int sf_error_get_print()
 
 void sf_error(char *func_name, sf_error_t code, char *fmt, ...)
 {
-    char msg[1024], info[2048];
+    char msg[2048], info[1024];
     static PyObject *py_SpecialFunctionWarning = NULL;
     va_list ap;
 
