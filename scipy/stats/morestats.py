@@ -21,12 +21,14 @@ import futil
 from numpy.testing.decorators import setastest
 import warnings
 
+
 __all__ = ['mvsdist',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'oneway', 'wilcoxon',
            'pdf_fromgamma', 'circmean', 'circvar', 'circstd',
+           'kullback_leibler', 'jarque_bera',
           ]
 
 
@@ -1423,6 +1425,65 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     R = abs(res)
     return ((high-low)/2.0/pi) * sqrt(-2*log(R))
 
+
+def jarque_bera(x):
+    """
+    Perform the Jarque-Bera goodness of fit test of whether the sample data has
+    the skewness and kurtosis matching a normal distribution.
+
+    Note that this test only works for a large enough number of data samples
+    (>2000) as the test statistic asymptotically has a Chi-squared distribution
+    with 2 degrees of freedom.
+
+    Parameters
+    ----------
+    x : array_like
+        Observations of a random variable.
+
+    Returns
+    -------
+    JB : float
+        The test statistic.
+    p : float
+        The p-value for the hypothesis test.
+
+    References
+    ----------
+    .. [1] Jarque, C. and Bera, A. (1980) "Efficient tests for normality,
+           homoscedasticity and serial independence of regression residuals",
+           6 Econometric Letters 255-259.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> np.random.seed(987654321)
+    >>> x = np.random.normal(0, 1, 100000)
+    >>> y = np.random.rayleigh(1, 100000)
+    >>> stats.jarque_bera(x)
+    (4.7165707989581342, 0.09458225503041906)
+    >>> stats.jarque_bera(y)
+    (6713.7098548143422, 0.0)
+
+    """
+
+    x = np.asarray(x)
+
+    n = float(x.size)
+    if n == 0:
+        raise ValueError('At least one observation is required.')
+
+    mu = x.mean()
+    diffx = x - mu
+
+    # skewness
+    S = (1 / n * np.sum(diffx**3)) / (1 / n * np.sum(diffx**2))**(3 / 2.)
+    # kurtosis
+    K = (1 / n * np.sum(diffx**4)) / (1 / n * np.sum(diffx**2))**2
+
+    JB = n / 6 * (S**2 + (K - 3)**2 / 4)
+    p = 1 - distributions.chi2.cdf(JB, 2)
+
+    return JB, p
 
 
 #Tests to include (from R) -- some of these already in stats.
