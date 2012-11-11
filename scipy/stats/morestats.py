@@ -1451,7 +1451,6 @@ def kullback_leibler(P, Q):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy import stats
     >>> x = np.linspace(-20, 20, 10000)
     >>> P = stats.norm.pdf(x, 0, 1)
@@ -1505,7 +1504,6 @@ def jarque_bera(x):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy import stats
     >>> np.random.seed(987654321)
     >>> x = np.random.normal(0, 1, 100000)
