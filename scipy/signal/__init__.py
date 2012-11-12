@@ -209,6 +209,14 @@ Peak finding
    argrelmax      -- Calculate the relative maxima of data
    argrelextrema  -- Calculate the relative extrema of data
 
+Spectral Analysis
+=================
+
+.. autosummary::
+   :toctree: generated/
+
+   lombscargle    -- Computes the Lomb-Scargle periodogram
+
 """
 
 import sigtools

@@ -457,8 +457,8 @@ where :math:`H` is 2 for positive frequencies, :math:`0` for negative
 frequencies and :math:`1` for zero-frequencies.
 
 
-Least-Squares Spectral Analysis (:mod:`spectral`)
--------------------------------------------------
+Least-Squares Spectral Analysis
+-------------------------------
 
 Least-squares spectral analysis (LSSA) is a method of estimating a frequency
 spectrum, based on a least squares fit of sinusoids to data samples, similar to
@@ -467,8 +467,8 @@ generally boosts long-periodic noise in long gapped records; LSSA mitigates
 such problems.
 
 
-Lomb-Scargle Periodograms (:func:`spectral.lombscargle`)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Lomb-Scargle Periodograms (:func:`lombscargle`)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Lomb-Scargle method performs spectral analysis on unevenly sampled data and
 is known to be a powerful way to find, and test the significance of, weak
@@ -491,7 +491,7 @@ The frequency dependent time offset :math:`\tau` is given by
 
     \tan 2\omega\tau = \frac{\sum_{j}^{N_{t}}\sin 2\omega t_{j}}{\sum_{j}^{N_{t}}\cos 2\omega t_{j}}.
 
-The :func:`~scipy.signal.spectral.lombscargle` function
+The :func:`~scipy.signal.lombscargle` function
 calculates the periodogram using a slightly
 modified algorithm due to Townsend [3]_ which allows the
 periodogram to be calculated using only a single pass through
