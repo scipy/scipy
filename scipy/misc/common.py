@@ -492,12 +492,12 @@ def face(gray=False):
     Parameters
     ----------
     gray : bool, optional
-        If True then return color image, otherwise return a 8-bit gray-scale
+        If True then return color image, otherwise return an 8-bit gray-scale
 
     Returns
     -------
-    cute : ndarray
-        cute image
+    face : ndarray
+        image of a racoon face
 
     Examples
     --------
@@ -522,5 +522,5 @@ def face(gray=False):
     face = fromstring(data, dtype='uint8')
     face.shape = (768, 1024, 3)
     if gray is True:
-        face = 0.21 * face[:,:,0] + 0.71 * face[:,:,1] + 0.07 * face[:,:,2]
+        face = (0.21 * face[:,:,0] + 0.71 * face[:,:,1] + 0.07 * face[:,:,2]).astype('uint8')
     return face
