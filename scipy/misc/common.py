@@ -512,7 +512,7 @@ def face(gray=False):
 
     >>> import matplotlib.pyplot as plt
     >>> plt.gray()
-    >>> plt.imshow(lena)
+    >>> plt.imshow(face)
     >>> plt.show()
 
     """
