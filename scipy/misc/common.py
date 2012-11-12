@@ -8,7 +8,7 @@ from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   r_, rollaxis, sum
 
 __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
-           'central_diff_weights', 'derivative', 'pade', 'lena']
+           'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'cute']
 
 # XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
@@ -444,3 +444,80 @@ def lena():
     lena = array(cPickle.load(f))
     f.close()
     return lena
+
+def ascent():
+    """
+    Get an 8-bit grayscale bit-depth, 512 x 512 derived image for easy use in demos
+
+    The image is derived from accent-to-the-top.jpg at
+    http://www.public-domain-image.com/people-public-domain-images-pictures/
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    ascent : ndarray
+       convenient image to use for testing and demonstration
+
+    Examples
+    --------
+    >>> import scipy.misc
+    >>> ascent = scipy.misc.ascent()
+    >>> ascent.shape
+    (512, 512)
+    >>> ascent.max()
+    255
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.gray()
+    >>> plt.imshow(ascent)
+    >>> plt.show()
+
+    """
+    import cPickle, os
+    fname = os.path.join(os.path.dirname(__file__),'ascent.dat')
+    f = open(fname,'rb')
+    ascent = array(cPickle.load(f))
+    f.close()
+    return ascent
+
+def cute():
+    """
+    Get a 512 x 768, 8-bit image of a cute boy pointing.
+
+    cute-young-afro-american-boy-child.jpg at http://www.public-domain-image.com
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    cute : ndarray
+        cute image
+
+    Examples
+    --------
+    >>> import scipy.misc
+    >>> cute = scipy.misc.cute()
+    >>> cute.shape
+    (512, 768)
+    >>> cute.max()
+    230
+    >>> lena.dtype
+    dtype('uint8')
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.gray()
+    >>> plt.imshow(lena)
+    >>> plt.show()
+
+    """
+    import cPickle, os
+    fname = os.path.join(os.path.dirname(__file__),'cute.dat')
+    f = open(fname,'rb')
+    cute = array(cPickle.load(f), dtype='u1')
+    f.close()
+    return cute
