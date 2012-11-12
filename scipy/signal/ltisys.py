@@ -342,6 +342,8 @@ class lti(object):
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
         [dB] and phase [deg]. See scipy.signal.bode for details.
 
+        .. versionadded:: 0.11.0
+
         Examples
         --------
         >>> from scipy import signal
@@ -865,6 +867,8 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
 
 def bode(system, w=None, n=100):
     """Calculate bode magnitude and phase data of a continuous-time system.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------

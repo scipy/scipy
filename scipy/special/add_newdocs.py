@@ -311,6 +311,8 @@ add_newdoc("scipy.special", "erfi",
     """
     Imaginary error function, -i erf(i z)
 
+    .. versionadded:: 0.12.0
+
     References
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
@@ -321,6 +323,8 @@ add_newdoc("scipy.special", "erfi",
 add_newdoc("scipy.special", "erfcx",
     """
     Scaled complementary error function, exp(x^2) erfc(x)
+
+    .. versionadded:: 0.12.0
 
     References
     ----------

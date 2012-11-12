@@ -71,6 +71,8 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     A and B are complex matrices, Z' denotes the conjugate-transpose of Z.
     Q and Z are unitary matrices.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     A : array_like, shape (N,N)
@@ -119,8 +121,6 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     Notes
     -----
     Q is transposed versus the equivalent function in Matlab.
-
-    .. versionadded:: 0.11.0
 
     Examples
     --------

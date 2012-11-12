@@ -245,6 +245,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     """
     Return the Discrete Sine Transform of arbitrary type sequence x.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     x : array_like
@@ -331,6 +333,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     """
     Return the Inverse Discrete Sine Transform of an arbitrary type sequence.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------

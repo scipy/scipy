@@ -25,6 +25,8 @@ from scipy.sparse.linalg import spsolve
 def inv(A):
     """Compute the inverse of a sparse matrix
 
+    .. versionadded:: 0.12.0
+
     Parameters
     ----------
     A : ndarray or sparse matrix
@@ -46,6 +48,8 @@ def inv(A):
 
 def expm(A):
     """Compute the matrix exponential using Pade approximation.
+
+    .. versionadded:: 0.12.0
 
     Parameters
     ----------

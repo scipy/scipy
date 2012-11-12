@@ -173,7 +173,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     Calculate the decomposition ``A = Q R`` where Q is unitary/orthogonal
     and R upper triangular. Multiply Q with a vector or a matrix c.
 
-    .. versionadded:: 0.11
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------

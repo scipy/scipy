@@ -19,6 +19,8 @@ def csgraph_from_masked(graph):
 
     Construct a CSR-format graph from a masked array.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     graph: MaskedArray
@@ -67,6 +69,8 @@ def csgraph_masked_from_dense(graph,
     csgraph_masked_from_dense(graph, null_value=0, nan_null=True, infinity_null=True, copy=True)
 
     Construct a masked array graph representation from a dense matrix.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -129,6 +133,8 @@ def csgraph_from_dense(graph,
 
     Construct a CSR-format sparse graph from a dense matrix.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     graph: array_like
@@ -157,6 +163,8 @@ def csgraph_to_dense(csgraph, null_value=0):
     csgraph_to_dense(csgraph, null_value=0)
 
     Convert a sparse graph representation to a dense representation
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -250,6 +258,8 @@ def csgraph_to_masked(csgraph):
 
     Convert a sparse graph representation to a masked array representation
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     csgraph: csr_matrix, csc_matrix, or lil_matrix
@@ -293,6 +303,8 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     reconstruct_path(csgraph, predecessors, directed=True)
 
     Construct a tree from a graph and a predecessor list.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -347,6 +359,8 @@ def construct_dist_matrix(graph,
     construct_dist_matrix(graph, predecessors, directed=True, null_value=np.inf)
 
     Construct distance matrix from a predecessor matrix
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------

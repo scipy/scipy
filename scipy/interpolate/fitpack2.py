@@ -793,8 +793,11 @@ WARNING. The coefficients of the spline returned have been computed as the
 
 
 class SphereBivariateSpline(_BivariateSplineBase):
-    """ Bivariate spline s(x,y) of degrees 3 on a sphere, calculated from a
+    """
+    Bivariate spline s(x,y) of degrees 3 on a sphere, calculated from a
     given set of data points (theta,phi,r).
+
+    .. versionadded:: 0.11.0
 
     See Also
     --------
@@ -847,7 +850,10 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
 
 class SmoothSphereBivariateSpline(SphereBivariateSpline):
-    """ Smooth bivariate spline approximation in spherical coordinates.
+    """
+    Smooth bivariate spline approximation in spherical coordinates.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -872,8 +878,6 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     For more information, see the FITPACK_ site about this function.
 
     .. _FITPACK: http://www.netlib.org/dierckx/sphere.f
-
-    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -936,8 +940,11 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
 
 
 class LSQSphereBivariateSpline(SphereBivariateSpline):
-    """ Weighted least-squares bivariate spline approximation in spherical
+    """
+    Weighted least-squares bivariate spline approximation in spherical
     coordinates.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -960,8 +967,6 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     For more information, see the FITPACK_ site about this function.
 
     .. _FITPACK: http://www.netlib.org/dierckx/sphere.f
-
-    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -1070,6 +1075,8 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     Can be used for smoothing data.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     u : array_like
@@ -1119,8 +1126,6 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     For more information, see the FITPACK_ site about this function.
 
     .. _FITPACK: http://www.netlib.org/dierckx/spgrid.f
-
-    .. versionadded:: 0.11.0
 
     Examples
     --------

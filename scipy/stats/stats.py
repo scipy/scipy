@@ -2976,6 +2976,8 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
 
+        .. versionadded:: 0.11.0
+  
     Returns
     -------
     t : float or array

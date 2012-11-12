@@ -19,6 +19,8 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     which together connect all connected nodes, while minimizing the total
     sum of weights on the edges.  This is computed using the Kruskal algorithm.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     csgraph: array_like or sparse matrix, 2 dimensions

@@ -73,6 +73,8 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
     """
     Calculate the relative minima of `data`.
 
+    .. versionadded:: 0.11.0
+
     See also
     --------
     argrelextrema,argrelmax
@@ -83,6 +85,8 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
 def argrelmax(data, axis=0, order=1, mode='clip'):
     """
     Calculate the relative maxima of `data`.
+
+    .. versionadded:: 0.11.0
 
     See also
     --------
@@ -95,6 +99,8 @@ def argrelextrema(data, comparator,
                   axis=0, order=1, mode='clip'):
     """
     Calculate the relative extrema of `data`
+
+    .. versionadded:: 0.11.0
 
     Returns
     -------
@@ -304,6 +310,8 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=
     The general approach is to smooth `vector` by convolving it with `wavelet(width)`
     for each width in `widths`. Relative maxima which appear at enough length scales,
     and with sufficiently high SNR, are accepted.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------

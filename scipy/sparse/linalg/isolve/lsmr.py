@@ -35,6 +35,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     allowed: m = n, m > n, or m < n. B is a vector of length m.
     The matrix A may be dense or sparse (usually sparse).
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     A : {matrix, sparse matrix, ndarray, LinearOperator}

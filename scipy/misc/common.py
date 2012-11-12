@@ -23,10 +23,13 @@ def logsumexp(a, axis=None, b=None):
     axis : int, optional
         Axis over which the sum is taken. By default `axis` is None,
         and all elements are summed.
+
+        .. versionadded:: 0.11.0
     b : array-like, optional
         Scaling factor for exp(`a`) must be of the same shape as `a` or
         broadcastable to `a`.
 
+        .. versionadded:: 0.12.0
 
     Returns
     -------

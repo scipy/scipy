@@ -11,6 +11,8 @@ def binned_statistic(x, values, statistic='mean',
     each bin.  This function allows the computation of the sum, mean, median,
     or other statistic of the values within each bin.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     x : array_like
@@ -104,6 +106,8 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     each bin.  This function allows the computation of the sum, mean, median,
     or other statistic of the values within each bin.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     x : array_like
@@ -187,6 +191,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
     the space into bins, and returns the count of the number of points in
     each bin.  This function allows the computation of the sum, mean, median,
     or other statistic of the values within each bin.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------

@@ -40,6 +40,8 @@ def shortest_path(csgraph, method='auto',
     Perform a shortest-path graph search on a positive directed or
     undirected graph.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     csgraph : array, matrix, or sparse matrix, 2 dimensions
@@ -164,6 +166,8 @@ def floyd_warshall(csgraph, directed=True,
     floyd_warshall(csgraph, directed=True, return_predecessors=False, unweighted=False, overwrite=False)
 
     Compute the shortest path lengths using the Floyd-Warshall algorithm
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -315,6 +319,8 @@ def dijkstra(csgraph, directed=True, indices=None,
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False, unweighted=False)
 
     Dijkstra algorithm using Fibonacci Heaps
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -581,6 +587,8 @@ def bellman_ford(csgraph, directed=True, indices=None,
     weights.  If a negative cycle is detected, an error is raised.  For
     graphs without negative edge weights, dijkstra's algorithm may be faster.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     csgraph : array, matrix, or sparse matrix, 2 dimensions
@@ -792,6 +800,8 @@ def johnson(csgraph, directed=True, indices=None,
     the presence of negative cycles.  If a negative cycle is detected,
     an error is raised.  For graphs without negative edge weights,
     dijkstra() may be faster.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------

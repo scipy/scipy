@@ -17,6 +17,8 @@ __all__ = ['solve_sylvester', 'solve_lyapunov', 'solve_discrete_lyapunov',
 def solve_sylvester(a,b,q):
     """Computes a solution (X) to the Sylvester equation (AX + XB = Q).
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     a : array, shape (M, M)
@@ -74,6 +76,8 @@ def solve_lyapunov(a, q):
     """Solves the continuous Lyapunov equation (AX + XA^H = Q) given the values
     of A and Q using the Bartels-Stewart algorithm.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     a : array_like
@@ -102,6 +106,8 @@ def solve_lyapunov(a, q):
 
 def solve_discrete_lyapunov(a, q):
     """Solves the Discrete Lyapunov Equation (A'XA-X=-Q) directly.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -134,6 +140,8 @@ def solve_continuous_are(a, b, q, r):
     """Solves the continuous algebraic Riccati equation, or CARE, defined
     as (A'X + XA - XBR^-1B'X+Q=0) directly using a Schur decomposition
     method.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -199,6 +207,8 @@ def solve_discrete_are(a, b, q, r):
     """Solves the disctrete algebraic Riccati equation, or DARE, defined as
     (X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q), directly using a Schur decomposition
     method.
+
+    .. versionadded:: 0.11.0
 
     Parameters
     ----------

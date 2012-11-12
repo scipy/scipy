@@ -533,6 +533,8 @@ def block_diag(mats, format=None, dtype=None):
     """
     Build a block diagonal sparse matrix from provided matrices.
 
+    .. versionadded:: 0.11.0
+
     Parameters
     ----------
     A, B, ... : sequence of matrices
