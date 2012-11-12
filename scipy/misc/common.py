@@ -5,10 +5,10 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
-                  r_, rollaxis, sum
+                  r_, rollaxis, sum, fromstring
 
 __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
-           'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'cute']
+           'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'face']
 
 # XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
@@ -483,15 +483,16 @@ def ascent():
     f.close()
     return ascent
 
-def cute():
+def face(gray=False):
     """
-    Get a 512 x 768, 8-bit image of a cute boy pointing.
+    Get a 1024 x 768, color image of a raccoon face.
 
-    cute-young-afro-american-boy-child.jpg at http://www.public-domain-image.com
+    raccoon-procyon-lotor.jpg at http://www.public-domain-image.com
 
     Parameters
     ----------
-    None
+    gray : bool, optional
+        If True then return color image, otherwise return a 8-bit gray-scale
 
     Returns
     -------
@@ -501,12 +502,12 @@ def cute():
     Examples
     --------
     >>> import scipy.misc
-    >>> cute = scipy.misc.cute()
-    >>> cute.shape
-    (512, 768)
-    >>> cute.max()
+    >>> face = scipy.misc.face()
+    >>> face.shape
+    (768, 1024, 3)
+    >>> face.max()
     230
-    >>> lena.dtype
+    >>> face.dtype
     dtype('uint8')
 
     >>> import matplotlib.pyplot as plt
@@ -515,9 +516,11 @@ def cute():
     >>> plt.show()
 
     """
-    import cPickle, os
-    fname = os.path.join(os.path.dirname(__file__),'cute.dat')
-    f = open(fname,'rb')
-    cute = array(cPickle.load(f), dtype='u1')
-    f.close()
-    return cute
+    import bz2, os
+    rawdata = open(os.path.join(os.path.dirname(__file__), 'face.dat')).read()
+    data = bz2.decompress(rawdata)
+    face = fromstring(data, dtype='uint8')
+    face.shape = (768, 1024, 3)
+    if gray is True:
+        face = 0.21 * face[:,:,0] + 0.71 * face[:,:,1] + 0.07 * face[:,:,2]
+    return face
