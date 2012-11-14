@@ -4,6 +4,9 @@
 #
 
 import math
+import types
+import warnings
+
 import statlib
 import stats
 from stats import find_repeats
@@ -12,14 +15,9 @@ from numpy import isscalar, r_, log, sum, around, unique, asarray
 from numpy import zeros, arange, sort, amin, amax, any, where, \
      atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
      pi, exp, ravel, angle
-import scipy
 import numpy as np
-import types
 import scipy.optimize as optimize
-import scipy.special as special
-import futil
 from numpy.testing.decorators import setastest
-import warnings
 
 
 __all__ = ['mvsdist',
@@ -28,7 +26,7 @@ __all__ = ['mvsdist',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'oneway', 'wilcoxon',
            'pdf_fromgamma', 'circmean', 'circvar', 'circstd',
-           'kullback_leibler', 'jarque_bera',
+           'jarque_bera',
           ]
 
 
@@ -1428,8 +1426,10 @@ def circstd(samples, high=2*pi, low=0, axis=None):
 
 def jarque_bera(x):
     """
-    Perform the Jarque-Bera goodness of fit test of whether the sample data has
-    the skewness and kurtosis matching a normal distribution.
+    Perform the Jarque-Bera goodness of fit test on sample data.
+
+    The Jarque-Bera test tests whether the sample data has the skewness and
+    kurtosis matching a normal distribution.
 
     Note that this test only works for a large enough number of data samples
     (>2000) as the test statistic asymptotically has a Chi-squared distribution
@@ -1442,7 +1442,7 @@ def jarque_bera(x):
 
     Returns
     -------
-    JB : float
+    jb_value : float
         The test statistic.
     p : float
         The p-value for the hypothesis test.
@@ -1465,25 +1465,19 @@ def jarque_bera(x):
     (6713.7098548143422, 0.0)
 
     """
-
     x = np.asarray(x)
-
     n = float(x.size)
     if n == 0:
         raise ValueError('At least one observation is required.')
 
     mu = x.mean()
     diffx = x - mu
+    skewness = (1 / n * np.sum(diffx**3)) / (1 / n * np.sum(diffx**2))**(3 / 2.)
+    kurtosis = (1 / n * np.sum(diffx**4)) / (1 / n * np.sum(diffx**2))**2
+    jb_value = n / 6 * (skewness**2 + (kurtosis - 3)**2 / 4)
+    p = 1 - distributions.chi2.cdf(jb_value, 2)
 
-    # skewness
-    S = (1 / n * np.sum(diffx**3)) / (1 / n * np.sum(diffx**2))**(3 / 2.)
-    # kurtosis
-    K = (1 / n * np.sum(diffx**4)) / (1 / n * np.sum(diffx**2))**2
-
-    JB = n / 6 * (S**2 + (K - 3)**2 / 4)
-    p = 1 - distributions.chi2.cdf(JB, 2)
-
-    return JB, p
+    return jb_value, p
 
 
 #Tests to include (from R) -- some of these already in stats.
