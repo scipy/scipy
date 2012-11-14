@@ -387,5 +387,33 @@ def test_circstats_small():
     S2 = stats.circstd(x, high=360)
     assert_allclose(S2, S1, rtol=1e-4)
 
+
+def test_jarque_bera_stats():
+    np.random.seed(987654321)
+    x = np.random.normal(0, 1, 100000)
+    y = np.random.chisquare(10000, 100000)
+    z = np.random.rayleigh(1, 100000)
+
+    assert stats.jarque_bera(x)[1] > stats.jarque_bera(y)[1]
+    assert stats.jarque_bera(x)[1] > stats.jarque_bera(z)[1]
+    assert stats.jarque_bera(y)[1] > stats.jarque_bera(z)[1]
+
+
+def test_jarque_bera_array_like():
+    np.random.seed(987654321)
+    x = np.random.normal(0, 1, 100000)
+
+    JB1, p1 = stats.jarque_bera(list(x))
+    JB2, p2 = stats.jarque_bera(tuple(x))
+    JB3, p3 = stats.jarque_bera(x.reshape(2, 50000))
+
+    assert JB1 == JB2 == JB3
+    assert p1 == p2 == p3
+
+
+def test_jarque_bera_size():
+    assert_raises(ValueError, stats.jarque_bera, [])
+
+
 if __name__ == "__main__":
     run_module_suite()
