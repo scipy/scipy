@@ -388,41 +388,6 @@ def test_circstats_small():
     assert_allclose(S2, S1, rtol=1e-4)
 
 
-def test_kullback_leibler_stats():
-    x = np.linspace(-20, 20, 10000)
-    P = stats.norm.pdf(x, 0, 1)
-    Q = stats.norm.pdf(x, 0.1, 1)
-
-    for mu in range(1, 10, 2):
-        for sigma in range(1, 10, 2):
-            R = stats.norm.pdf(x, 0 + mu * 0.1, 1 + sigma * 0.1)
-            assert stats.kullback_leibler(P, Q) < stats.kullback_leibler(P, R)
-
-
-def test_kullback_leibler_array_like():
-    x = np.linspace(-20, 20, 10000)
-    P = stats.norm.pdf(x, 0, 1)
-    Q = stats.norm.pdf(x, 0.1, 1)
-
-    div1 = stats.kullback_leibler(list(P), list(Q))
-    div2 = stats.kullback_leibler(tuple(P), tuple(Q))
-    div3 = stats.kullback_leibler(P.reshape(2, 5000), Q.reshape(2, 5000))
-
-    assert div1 == div2 == div3
-
-
-def test_kullback_leibler_negative():
-    assert_raises(ValueError, stats.kullback_leibler, [-1, 1], [1, 1])
-
-
-def test_kullback_leibler_zero():
-    assert_raises(ValueError, stats.kullback_leibler, [0, 1], [1, 0])
-
-
-def test_kullback_leibler_size():
-    assert_raises(ValueError, stats.kullback_leibler, [0], [1, 0])
-
-
 def test_jarque_bera_stats():
     np.random.seed(987654321)
     x = np.random.normal(0, 1, 100000)
