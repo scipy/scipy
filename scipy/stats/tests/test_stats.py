@@ -7,13 +7,14 @@
     Additional tests by a host of SciPy developers.
 """
 
-from numpy.testing import TestCase, rand, assert_, assert_equal, \
+import sys
+
+from numpy.testing import TestCase, assert_, assert_equal, \
     assert_almost_equal, assert_array_almost_equal, assert_array_equal, \
     assert_approx_equal, assert_raises, run_module_suite, \
     assert_allclose, dec
-from numpy import array, arange, zeros, ravel, float32, float64, power
+from numpy import array, arange, float32, float64, power
 import numpy as np
-import sys
 
 import scipy.stats as stats
 
@@ -1586,7 +1587,7 @@ def test_ttest_ind():
         np.seterr(**olderr)
 
 def test_ttest_ind_with_uneq_var():
-      
+
     # check vs. R
     a = (1, 2, 3)
     b = (1.1, 2.9, 4.2)
@@ -1594,7 +1595,7 @@ def test_ttest_ind_with_uneq_var():
     tr = -0.68649512735572582
     t, p = stats.ttest_ind(a, b, equal_var = False)
     assert_array_almost_equal([t,p], [tr, pr])
-    
+
     a = (1, 2, 3, 4)
     pr = 0.84354139131608286
     tr = -0.2108663315950719
@@ -1631,7 +1632,7 @@ def test_ttest_ind_with_uneq_var():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2), 
+    t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2),
                                    axis=2, equal_var = False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
@@ -1722,6 +1723,33 @@ def test_normalitytests():
     yield assert_array_almost_equal, stats.normaltest(x), (st_normal, pv_normal)
     yield assert_array_almost_equal, stats.skewtest(x), (st_skew, pv_skew)
     yield assert_array_almost_equal, stats.kurtosistest(x), (st_kurt, pv_kurt)
+
+
+class TestJarqueBera(TestCase):
+    def test_jarque_bera_stats(self):
+        np.random.seed(987654321)
+        x = np.random.normal(0, 1, 100000)
+        y = np.random.chisquare(10000, 100000)
+        z = np.random.rayleigh(1, 100000)
+
+        assert_(stats.jarque_bera(x)[1] > stats.jarque_bera(y)[1])
+        assert_(stats.jarque_bera(x)[1] > stats.jarque_bera(z)[1])
+        assert_(stats.jarque_bera(y)[1] > stats.jarque_bera(z)[1])
+
+    def test_jarque_bera_array_like(self):
+        np.random.seed(987654321)
+        x = np.random.normal(0, 1, 100000)
+
+        JB1, p1 = stats.jarque_bera(list(x))
+        JB2, p2 = stats.jarque_bera(tuple(x))
+        JB3, p3 = stats.jarque_bera(x.reshape(2, 50000))
+
+        assert_(JB1 == JB2 == JB3)
+        assert_(p1 == p2 == p3)
+
+    def test_jarque_bera_size(self):
+        assert_raises(ValueError, stats.jarque_bera, [])
+
 
 def test_skewtest_too_few_samples():
     """Regression test for ticket #1492.
