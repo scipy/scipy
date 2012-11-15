@@ -6,22 +6,116 @@
 ! Modified: 
 !
 ! Implemented:
+!   dgpadm, zgpadm
+! 
+! Working on:
+!   dgexpv, zgexpv
 !
-!   dgchbv, dgexpv, dgpadm, dgphiv, dmexpv
-!   dnchbv, dschbv, dsexpv, dspadm, dsphiv
-!   zgchbv, zgexpv, zgpadm, zgphiv,
-!   zhexpv, zhpadm, zhphiv, znchbv
-!
-! Not Implemented: NONE
-!
-! NOTE: Avoiding wrappers hack does not work under 64-bit Gentoo system
-! with single precision routines, so they are removed.
+! Not Implemented:
+!   dgchbv, dgphiv, dmexpv, dnchbv,
+!   dschbv, dsexpv, dspadm, dsphiv
+!   zgchbv, zgphiv, zhexpv, 
+!   zhpadm, zhphiv, znchbv
 !
 
 python module expokit
     interface expokit_user_interface
-    
+
+
+!   Padé approximation routines
+
+    subroutine dgpadm(ideg,m,t,h,ldh,wsp,lwsp,ipiv,iexph,ns,iflag)
+        ! double precision dense matrix
+        '''
+        Computes exp(t*H), the matrix exponential of a general matrix in
+        full, using the irreducible rational Pade approximation to the 
+        exponential function exp(x) = r(x) = (+/-)( I + 2*(q(x)/p(x)) ),
+        combined with scaling-and-squaring.
+        '''
+        integer intent(hide) :: ideg=6
+        integer intent(hide),depend(h) :: m=shape(h,1)
+        double precision, optional :: t=1.
+        double precision dimension(ldh,m) :: h
+        integer intent(hide),depend(h) :: ldh=shape(h,0)
+        double precision intent(out),dimension(lwsp) :: wsp
+        integer intent(hide),depend(m,ideg) :: lwsp=4*m*m+ideg+1
+        integer intent(hide),dimension(m),depend(m) :: ipiv
+        integer intent(inout) :: iexph
+        integer intent(inout) :: ns
+        integer intent(inout) :: iflag
+    end subroutine dgpadm
+
+    subroutine zgpadm(ideg,m,t,h,ldh,wsp,lwsp,ipiv,iexph,ns,iflag)
+        ! complex dense matrix
+        '''
+        Computes exp(t*H), the matrix exponential of a general complex 
+        matrix in full, using the irreducible rational Pade approximation
+        to the exponential exp(z) = r(z) = (+/-)( I + 2*(q(z)/p(z)) ),
+        combined with scaling-and-squaring.
+        '''
+        integer intent(hide) :: ideg=6
+        integer intent(hide),depend(h) :: m=shape(h,1)
+        double precision, optional :: t=1.
+        complex*16 dimension(ldh,m) :: h
+        integer intent(hide),depend(h) :: ldh=shape(h,0)
+        complex*16 intent(out),dimension(lwsp) :: wsp
+! integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
+        integer intent(hide),depend(m,ideg) :: lwsp=4*m*m+ideg+1
+        integer intent(hide),dimension(m),depend(m) :: ipiv
+        integer intent(inout) :: iexph
+        integer intent(inout) :: ns
+        integer intent(inout) :: iflag
+    end subroutine zgpadm
+
+    subroutine dspadm(ideg,m,t,h,ldh,wsp,lwsp,ipiv,iexph,ns,iflag)
+        ! double precision symmetric matrix.
+        '''
+        Computes exp(t*H), the matrix exponential of a symmetric matrix
+        in full, using the irreducible rational Pade approximation to the 
+        exponential function exp(x) = r(x) = (+/-)( I + 2*(q(x)/p(x)) ),
+        combined with scaling-and-squaring.
+        '''
+        integer intent(hide):: ideg=6
+        integer intent(hide),depend(h) :: m=shape(h,1)
+        double precision, optional :: t=1.
+        double precision dimension(ldh,m) :: h
+        integer intent(hide),depend(h) :: ldh=shape(h,0)
+        double precision intent(out),dimension(lwsp) :: wsp
+        ! integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
+        integer intent(hide),depend(m,ideg) :: lwsp=4*m*m+ideg+1
+        integer intent(hide),dimension(m),depend(m) :: ipiv
+        integer intent(inout) :: iexph
+        integer intent(inout) :: ns
+        integer intent(inout) :: iflag
+    end subroutine dspadm
+
+    subroutine zhpadm(ideg,m,t,h,ldh,wsp,lwsp,ipiv,iexph,ns,iflag)
+        ! Complex Hermitian matrix
+        ''' 
+        Computes exp(t*H), the matrix exponential of an Hermitian matrix
+        in full, using the irreducible rational Pade approximation to the
+        exponential function exp(z) = r(z) = (+/-)( I + 2*(q(z)/p(z)) ),
+        combined with scaling-and-squaring.
+        '''
+        integer intent(hide) :: ideg=6
+        integer intent(hide),depend(h) :: m=shape(h,1)
+        double precision, optional :: t=1.
+        complex*16 dimension(ldh,m) :: h
+        integer intent(hide),depend(h) :: ldh=shape(h,0)
+        complex*16 intent(out),dimension(lwsp) :: wsp
+        ! integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
+        integer intent(hide),depend(m,ideg) :: lwsp=4*m*m+ideg+1
+        integer intent(hide),dimension(m),depend(m) :: ipiv
+        integer intent(inout) :: iexph
+        integer intent(inout) :: ns
+        integer intent(inout) :: iflag
+    end subroutine zhpadm
+
+
+! Krylov Projection for Sparse matrices
+
     subroutine dmexpv(n, m, t, v, w, tol, anorm, wsp, lwsp, iwsp,liwsp, matvec, itrace, iflag)
+        ! Real Markov matrix
         '''
         DMEXPV computes w = exp(t*A)*v - Customised for MARKOV CHAINS."
         
@@ -67,40 +161,22 @@ python module expokit
         integer intent(inout) :: iflag
     end subroutine dmexpv
 
-    python module dmatvec__user__routines 
-        interface dmatvec_user_interface 
-            subroutine matvec(n, v, w)
-!                integer, optional, check(len(v)>=n), depend(v) :: n=len(v)
-                integer intent(hide),depend(v) :: n=len(v)
-                double precision dimension(n), intent(in)  :: v
-                double precision dimension(n), intent(out) :: w
-            end subroutine matvec
-        end interface dmatvec_user_interface
-    end python module dmatvec__user__routines
-
-    python module cmatvec__user__routines 
-        interface cmatvec_user_interface 
-            subroutine matvec(n, v, w)
-                integer optional, check(len(v)>=n), depend(v) :: n=len(v)
-                complex*16 dimension(n), intent(in)  :: v
-                complex*16 dimension(n), intent(out) :: w
-            end subroutine matvec
-        end interface cmatvec_user_interface
-    end python module cmatvec__user__routines
-
     subroutine dgexpv(n,m,t,v,w,tol,anorm,wsp,lwsp,iwsp,liwsp,matvec,itrace,iflag)
-      !  DGEXPV computes w = exp(t*A)*v - for a General matrix A.
-      !                                                                  
-      !  It does not compute the matrix exponential in isolation but
-      !  instead, it computes directly the action of the exponential
-      !  operator on the operand vector. This way of doing so allows 
-      !  for addressing large sparse problems. 
-      !                                                                  
-      !  The method used is based on Krylov subspace projection
-      !  techniques and the matrix under consideration interacts only
-      !  via the external routine `matvec' performing the matrix-vector 
-      !  product (matrix-free method).
-      !  use dgexpv__user__routines
+        ! Real general sparse matrix
+        '''
+        DGEXPV computes w = exp(t*A)*v - for a General matrix A.
+        
+        It does not compute the matrix exponential in isolation but
+        instead, it computes directly the action of the exponential
+        operator on the operand vector. This way of doing so allows 
+        for addressing large sparse problems. 
+        
+        The method used is based on Krylov subspace projection
+        techniques and the matrix under consideration interacts only
+        via the external routine `matvec' performing the matrix-vector 
+        product (matrix-free method).
+        '''
+        use dgexpv__user__routines
         use dmatvec__user__routines
 !        integer, optional,check(len(v)>=n),depend(v) :: n=len(v)
         integer, intent(hide),depend(v) :: n=len(v)
@@ -113,7 +189,8 @@ python module expokit
         double precision intent(out),dimension(lwsp) :: wsp
 !        integer, optional,check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
 !       #  if ( lwsp.lt.n*(m+2)+5*(m+2)**2+ideg+1 ) iflag = -1
-        integer intent(hide),depend(n,m)      :: lwsp=n*(m+1)+n+((m+2)^2)+4*((m+2)^2)+7
+!        integer intent(hide),depend(n,m)      :: lwsp=n*(m+1)+n+((m+2)^2)+4*((m+2)^2)+7
+        integer intent(hide),depend(n,m)      :: lwsp=n*(m+1)+n+((m+2)*(m+2))+4*((m+2)*(m+2))+7
         integer intent(hide),dimension(liwsp) :: iwsp
 !        integer, optional,check(len(iwsp)>=liwsp),depend(iwsp) :: liwsp=len(iwsp)
         integer, intent(hide),depend(m) :: liwsp=m+2
@@ -122,7 +199,57 @@ python module expokit
         integer intent(inout) :: iflag
     end subroutine dgexpv
 
+    subroutine zgexpv(n,m,t,v,w,tol,anorm,wsp,lwsp,iwsp,liwsp,matvec,itrace,iflag)
+        ! Complex general sparse matrix
+        '''
+        ZGEXPV computes w = exp(t*A)*v
+        for a Zomplex (i.e., complex double precision) matrix A 
+        
+        It does not compute the matrix exponential in isolation but
+        instead, it computes directly the action of the exponential
+        operator on the operand vector. This way of doing so allows 
+        for addressing large sparse problems. 
+        
+        The method used is based on Krylov subspace projection
+        techniques and the matrix under consideration interacts only
+        via the external routine `matvec' performing the matrix-vector 
+        product (matrix-free method).
+        '''
+        use cmatvec__user__routines
+!        integer, optional,check(len(v)>=n),depend(v) :: n=len(v)
+        integer intent(hide),depend(v) :: n=len(v)
+        integer, optional :: m=min(30,len(v)-1)
+        double precision optional :: t=1.
+        complex*16 intent(in),dimension(n) :: v
+        complex*16 intent(out),dimension(n),depend(n) :: w
+        double precision intent(inout) :: tol
+        double precision :: anorm
+        complex*16 intent(out),dimension(lwsp) :: wsp
+!        integer, optional,check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
+        integer intent(hide),depend(n,m)      :: lwsp=n*(m+1)+n+((m+2)*(m+2))+4*((m+2)*(m+2))+7
+        integer intent(hide),dimension(liwsp) :: iwsp
+!        integer, optional,check(len(iwsp)>=liwsp),depend(iwsp) :: liwsp=len(iwsp)
+        integer intent(hide),depend(m)        :: liwsp=m+2
+        external matvec
+        integer intent(inout) :: itrace
+        integer intent(inout) :: iflag
+    end subroutine zgexpv
+
     subroutine dsexpv(n,m,t,v,w,tol,anorm,wsp,lwsp,iwsp,liwsp,matvec,itrace,iflag)
+        ! Real symmetric matrix
+        '''
+        DSEXPV computes w = exp(t*A)*v - for a Symmetric matrix A.
+        
+        It does not compute the matrix exponential in isolation but
+        instead, it computes directly the action of the exponential
+        operator on the operand vector. This way of doing so allows 
+        for addressing large sparse problems. 
+        
+        The method used is based on Krylov subspace projection
+        techniques and the matrix under consideration interacts only
+        via the external routine `matvec' performing the matrix-vector 
+        product (matrix-free method).
+        '''
         use dmatvec__user__routines
         integer, optional,check(len(v)>=n),depend(v) :: n=len(v)
         integer :: m
@@ -140,25 +267,21 @@ python module expokit
         integer intent(inout) :: iflag
     end subroutine dsexpv
 
-    subroutine zgexpv(n,m,t,v,w,tol,anorm,wsp,lwsp,iwsp,liwsp,matvec,itrace,iflag)
-        use cmatvec__user__routines
-        integer, optional,check(len(v)>=n),depend(v) :: n=len(v)
-        integer :: m
-        double precision :: t
-        complex*16 dimension(n) :: v
-        complex*16 dimension(n),intent(inout),depend(n) :: w
-        double precision intent(inout) :: tol
-        double precision :: anorm
-        complex*16 dimension(lwsp) :: wsp
-        integer, optional,check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
-        integer dimension(liwsp) :: iwsp
-        integer, optional,check(len(iwsp)>=liwsp),depend(iwsp) :: liwsp=len(iwsp)
-        external matvec
-        integer :: itrace
-        integer intent(inout) :: iflag
-    end subroutine zgexpv
-
     subroutine zhexpv(n,m,t,v,w,tol,anorm,wsp,lwsp,iwsp,liwsp,matvec,itrace,iflag)
+        ! Complex Hermitian sparse matrix
+        '''
+        ZHEXPV computes w = exp(t*A)*v for a Hermitian matrix A.
+        
+        It does not compute the matrix exponential in isolation but
+        instead, it computes directly the action of the exponential
+        operator on the operand vector. This way of doing so allows 
+        for addressing large sparse problems. 
+        
+        The method used is based on Krylov subspace projection
+        techniques and the matrix under consideration interacts only
+        via the external routine `matvec' performing the matrix-vector 
+        product (matrix-free method).
+        '''
         use cmatvec__user__routines
         integer, optional,check(len(v)>=n),depend(v) :: n=len(v)
         integer :: m
@@ -253,94 +376,17 @@ python module expokit
     end subroutine zhphiv
 
 
-!   Padé approximation routines
-
-    subroutine dgpadm(ideg,m,t,h,ldh,wsp,lwsp,ipiv,iexph,ns,iflag)
-        ! double precision Padé approximation of small, dense matrix
-        !  Computes exp(t*H), the matrix exponential of a general matrix in
-        !  full, using the irreducible rational Pade approximation to the 
-        !  exponential function exp(x) = r(x) = (+/-)( I + 2*(q(x)/p(x)) ),
-        !  combined with scaling-and-squaring.
-        integer intent(hide) :: ideg=6
-        integer intent(hide),depend(h) :: m=shape(h,1)
-        double precision, optional :: t=1.
-        double precision dimension(ldh,m) :: h
-        integer intent(hide),depend(h) :: ldh=shape(h,0)
-        double precision dimension(lwsp), intent(out) :: wsp
-!    integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp), intent(hide) :: lwsp=len(wsp)
-        integer intent(hide),depend(m,ideg)     :: lwsp=4*m*m+ideg+1
-        integer intent(hide),dimension(m),depend(m) :: ipiv
-        integer intent(inout) :: iexph
-        integer intent(inout) :: ns
-        integer intent(inout) :: iflag
-        !  np.reshape( wsp[ iexph[0]-1 : iexph[0] + m*ldh-1 ], (m,ldh), order='F' )
-        ! double precision intent(out),dimension(m*ldh) :: wsp[iexph[0]-1 : iexph[0]+m*ldh-1]
-    end subroutine dgpadm
-
-    subroutine zgpadm(ideg,m,t,h,ldh,wsp,lwsp,ipiv,iexph,ns,iflag)
-        ! complex Padé approximation of dense matrix
-        !  Computes exp(t*H), the matrix exponential of a general complex 
-        !  matrix in full, using the irreducible rational Pade approximation
-        !  to the exponential exp(z) = r(z) = (+/-)( I + 2*(q(z)/p(z)) ),
-        !  combined with scaling-and-squaring.
-        integer intent(hide) :: ideg=6
-        integer intent(hide),depend(h) :: m=shape(h,1)
-        double precision, optional :: t=1.
-        complex*16 dimension(ldh,m) :: h
-        integer intent(hide),depend(h) :: ldh=shape(h,0)
-        complex*16 intent(out),dimension(lwsp) :: wsp
-! integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
-        integer intent(hide),depend(m,ideg) :: lwsp=4*m*m+ideg+1
-        integer intent(hide),dimension(m),depend(m) :: ipiv
-        integer intent(inout) :: iexph
-        integer intent(inout) :: ns
-        integer intent(inout) :: iflag
-    end subroutine zgpadm
-
-    subroutine dspadm(ideg,m,t,h,ldh,wsp,lwsp,ipiv,iexph,ns,iflag)
-        ! double precision symmetric matrix.
-        !  Computes exp(t*H), the matrix exponential of a symmetric matrix
-        !  in full, using the irreducible rational Pade approximation to the 
-        !  exponential function exp(x) = r(x) = (+/-)( I + 2*(q(x)/p(x)) ),
-        !  combined with scaling-and-squaring.
-        integer intent(hide):: ideg=6
-        integer intent(hide),depend(h) :: m=shape(h,1)
-        double precision, optional :: t=1.
-        double precision dimension(ldh,m) :: h
-        integer intent(hide),depend(h) :: ldh=shape(h,0)
-        double precision intent(out),dimension(lwsp) :: wsp
-        ! integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
-        integer intent(hide),depend(m,ideg) :: lwsp=4*m*m+ideg+1
-        integer intent(hide),dimension(m),depend(m) :: ipiv
-        integer intent(inout) :: iexph
-        integer intent(inout) :: ns
-        integer intent(inout) :: iflag
-    end subroutine dspadm
-
-    subroutine zhpadm(ideg,m,t,h,ldh,wsp,lwsp,ipiv,iexph,ns,iflag)
-        ! complex Hermitian matrix
-        !  Computes exp(t*H), the matrix exponential of an Hermitian matrix
-        !  in full, using the irreducible rational Pade approximation to the
-        !  exponential function exp(z) = r(z) = (+/-)( I + 2*(q(z)/p(z)) ),
-        !  combined with scaling-and-squaring.
-        integer intent(hide) :: ideg=6
-        integer intent(hide),depend(h) :: m=shape(h,1)
-        double precision, optional :: t=1.
-        complex*16 dimension(ldh,m) :: h
-        integer intent(hide),depend(h) :: ldh=shape(h,0)
-        complex*16 intent(out),dimension(lwsp) :: wsp
-        ! integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
-        integer intent(hide),depend(m,ideg) :: lwsp=4*m*m+ideg+1
-        integer intent(hide),dimension(m),depend(m) :: ipiv
-        integer intent(inout) :: iexph
-        integer intent(inout) :: ns
-        integer intent(inout) :: iflag
-    end subroutine zhpadm
-
-
-! Chebichev routines
+! Chebyshev routines
 
     subroutine dgchbv(m,t,h,ldh,y,wsp,iwsp,iflag)
+        '''
+        DGCHBV computes y = exp(t*H)*y using the partial fraction
+        expansion of the uniform rational Chebyshev approximation
+        to exp(-x) of type (14,14). H is a General matrix.
+        About 14-digit accuracy is expected if the matrix H is negative
+        definite. The algorithm may behave poorly otherwise. 
+
+        '''
         integer, optional,intent(inout),check(shape(h,1)==m),depend(h) :: m=shape(h,1)
         double precision :: t
         double precision dimension(ldh,m) :: h
@@ -352,6 +398,13 @@ python module expokit
     end subroutine dgchbv
 
     subroutine dnchbv(m,t,h,ldh,y,wsp)
+        '''
+        DNCHBV computes y = exp(t*H)*y using the partial fraction
+        expansion of the uniform rational Chebyshev approximation
+        to exp(-x) of type (14,14). H is assumed to be upper-Hessenberg.
+        About 14-digit accuracy is expected if the matrix H is negative
+        definite. The algorithm may behave poorly otherwise. 
+        '''
         integer, optional,intent(inout),check(shape(h,1)==m),depend(h) :: m=shape(h,1)
         double precision :: t
         double precision dimension(ldh,m) :: h
@@ -390,6 +443,30 @@ python module expokit
         complex*16 dimension(m),depend(m) :: y
         complex*16 dimension(m*(m+2)),depend(m) :: wsp
     end subroutine znchbv
+
+
+! Python callback functions (matvec declarations for real and complex data-types)
+
+    python module dmatvec__user__routines 
+        interface dmatvec_user_interface 
+            subroutine matvec(n, v, w)
+                integer intent(hide),depend(v) :: n=len(v)
+                double precision dimension(n), intent(in)  :: v
+                double precision dimension(n), intent(out) :: w
+            end subroutine matvec
+        end interface dmatvec_user_interface
+    end python module dmatvec__user__routines
+
+    python module cmatvec__user__routines 
+        interface cmatvec_user_interface 
+            subroutine matvec(n, v, w)
+                integer optional, check(len(v)>=n), depend(v) :: n=len(v)
+                complex*16 dimension(n), intent(in)  :: v
+                complex*16 dimension(n), intent(out) :: w
+            end subroutine matvec
+        end interface cmatvec_user_interface
+    end python module cmatvec__user__routines
+
 
     end interface expokit_user_interface
 end python module expokit

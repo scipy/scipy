@@ -2,7 +2,8 @@
 # Author: Alex LB Leach, November 2012
 #
 
-from scipy.linalg.expokit import dgpadm, zgpadm, dspadm, zspadm
+import numpy as np
+from scipy.linalg.expokit import dgpadm, zgpadm, dspadm, zhpadm
 from scipy.sparse.base import isspmatrix
 
 
@@ -61,6 +62,6 @@ def expm(A, t=None ):
         elif dtype in ('complex128', 'complex64', complex):
             wsp = zgpadm( A, iexph, ns, iflag, t=t )
     if iflag[0] != 0:
-        raise IOError("Expokit routine returned error code: {0}".format(iflag[0]))
+        raise IOError("Expokit error ({0}) in routine {1}".format(iflag[0]))
     return np.reshape(wsp[iexph[0]-1 : iexph[0] + m*m - 1], (m,m), order='F')
 

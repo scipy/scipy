@@ -1789,12 +1789,9 @@ Cf2py intent(inout) w,tol,iflag
 
 *---  check restrictions on input parameters ...
       iflag = 0
-      ! if ( lwsp.lt.n*(m+2)+5*(m+2)**2+ideg+1 ) iflag = -1
-      print *, iflag, 'lwsp = ', lwsp, 'n = ', n, 'm = ', m, ideg
+      if ( lwsp.lt.n*(m+2)+5*(m+2)**2+ideg+1 ) iflag = -1
       if ( liwsp.lt.m+2 ) iflag = -2
-      print *, iflag
       if ( m.ge.n .or. m.le.0 ) iflag = -3
-      print *, iflag
       if ( iflag.ne.0 ) stop 'bad sizes (in input of DGEXPV)' 
 *
 *---  initialisations ...

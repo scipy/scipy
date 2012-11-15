@@ -35,18 +35,20 @@ def expmwrap(A, t=None):
     if isspmatrix(A):
         def matvec( v ):
             return A.dot( v )
-        #matvec = lambda v : A.dot(v)
+            #return w
         itrace = np.array([0])
         tol = np.array([1e-7])
+        v = np.ones(m, dtype=dtype) 
+        anorm = np.linalg.norm(A.todense(), np.inf)
         # Should use the general Krylov methods here: dgexpv & zgexpv
         if dtype in ('float64', 'float32', float,):
             # w,wsp = dgexpv(v,tol,anorm,matvec,itrace,iflag,[m,t,matvec_extra_args])
-            v = np.ones(ldh, dtype=dtype) 
-            anorm = np.linalg.norm(A.todense(),np.inf)
             w, wsp = dgexpv(v, tol, anorm, matvec, itrace, iflag, t=t )
         elif dtype in ('complex128', 'complex64', complex):
-            wsp = zgexpv( A.todense(), iexph, ns, iflag, t=t )
-        print 'done dgexpv'
+            w, wsp = zgexpv(v * 1+1j, tol, anorm, matvec, itrace, iflag, t=t )
+            #wsp = zgexpv( A.todense(), iexph, ns, iflag, t=t )
+        #retmat = wsp[m*(m+1)+m+(m+2)**2:]
+        retmat = w
     else:
         iexph = np.array([0])
         ns    = np.array([0])
@@ -54,26 +56,35 @@ def expmwrap(A, t=None):
             wsp = dgpadm( A, iexph, ns, iflag, t=t )
         elif dtype in ('complex128', 'complex64', complex):
             wsp = zgpadm( A, iexph, ns, iflag, t=t )
+        retmat = np.reshape( wsp[ iexph[0]-1 : iexph[0] + m*m -1 ], (m,m), order='F' )
 
     if iflag[0] != 0:
         raise IOError( "DGPADM returned error code: {0}".format( iflag[0] ) )
-    return np.reshape( wsp[ iexph[0]-1 : iexph[0] + m*m -1 ], (m,m), order='F' )
+    return retmat
 
-def sanity_test(array):
+def sanity_test(array, precision=10):
+    """Call scipy.linalg.expm and expmwrap, above.
+    Compare results to specified precision, and raise
+    and AssertionError if there are differences"""
     padm = expmwrap( array )
     pypd = pyexpm( array )
     test = np.all(padm == pypd)
-    if test is False:
-        print "Matrices differ!\n"
-        print "EXPOKIT:\n{0}\n\nexpm:\n{1}\n\n{2}".format( padm, pypd, test )
-        assert padm.shape == pypd.shape
+    if test == False:
+        print "np.all says matrices differ!"
+        print 'EXPOKIT result:\n', padm
+        print 'SciPy   result:\n', pypd
+        assert padm.shape == pypd.shape, 'Shapes differ: EXPOKIT: {0}, SciPy: {1}'\
+                .format( padm.shape, pypd.shape )
         for xi,x in enumerate(pypd):
-            for yi,y in enumerate(x):
-                assert '{0:.10f}'.format(padm[xi][yi]) == '{0:.10f}'.format(y), \
-                        'expokit:{0}, expm: {1} at ({2},{3})'.format(padm[xi][yi], y, xi, yi)
-    print 'padm result:\n',padm
-    print 'pyex result:\n',pypd
-    print 'arrays equal to 10 decimal places :)'
+            for yi,xy in enumerate(x):
+                #assert '{0:.10f}'.format(padm[xi][yi]) == '{0:.10f}'.format(xy), \
+                #        'expokit:{0}, expm: {1} at ({2},{3})'.format(padm[xi][yi], xy, xi, yi)
+                assert '{0:.{1}f}'.format(padm[xi][yi], precision) == \
+                       '{0:.{1}f}'.format(pypd[xi][yi], precision), \
+                        'Matrices differ to {0} decimal places.'.format(precision) + \
+                        'expokit:{0}, expm: {1} at ({2},{3})'.format( \
+                            padm[xi][yi], pypd[xi][yi], xi, yi )
+    print 'arrays equal to {0} decimal places :)'.format( precision )
 
 def time_dgpadm():
     return expmwrap( array )
@@ -89,56 +100,46 @@ def make_arrays(arrsize):
 
 def make_small_arrays(arrsize):
     """Make a real and complex array, using data-types used by default 
-    32bit machines."""
+    on 32bit machines."""
     array = np.array( random.rand(arrsize,arrsize), dtype = np.float32 )
     carray = np.array( np.dot( array, np.eye(arrsize)*np.complex(1+1j) ), dtype=np.complex64 )
     return array, carray
 
 def make_sparse_arrays(arrsize=50):
     from scipy.sparse import diags
-    print 'diags:-'
-    ddiags = [random.rand( arrsize )]
-    #ddiags  = np.array([i[:len(i)+1-n] for n,i in enumerate(random.rand(arrsize, arrsize))])
-    #ddiags = [random.randint(arrsize)/2 for i in xrange(arrsize) ]
-    #ddiags  = random.rand(arrsize, arrsize)
-    print ddiags
-    #print len( ddiags[0] )
-    print 'offsets'
-    #offsets = np.array( range( arrsize ), dtype=int )  / 2 
-    offsets = np.array([0])
-    print offsets
-    #print abs( int( offsets[0] ) )
-    #data  = np.array( [[1,2,3,4],[1,2,3,4],[1,2,3,4]], dtype=float )
-    #diags = np.array( [0, -1, 2], dtype=float )
+    # real sparse matrix
+    ddiags = [ random.rand( arrsize ),
+               random.rand(arrsize-1),
+               random.rand(arrsize-1) ]
+    offsets = np.array([0, 1, -1])
     array = diags( ddiags, offsets)
 
-    cdata  = np.dot( ddiags,  np.eye(arrsize) * np.complex(1+1j) )
-    #cdiags = np.dot( ddiags, np.eye(arrsize-2) * np.complex(1+1j) )
+    # complex sparse matrix
+    cdata  = [ np.dot( ddiags[0],  np.eye(arrsize)   * np.complex(1+1j) ),
+               np.dot( ddiags[1],  np.eye(arrsize-1) * np.complex(1+1j) ),
+               np.dot( ddiags[1],  np.eye(arrsize-1) * np.complex(1+1j) ) ]
     carray = diags( cdata, offsets )
     return array, carray
 
 if __name__ == '__main__':
-    array, carray = make_small_arrays(minarrsize)
-    #print "dgpadm small sanity test on dtype:", array.dtype
-    #sanity_test(array)
-    #print "zgpadm small sanity test on dtype:", carray.dtype
-    #sanity_test(carray)
+    prec = 4
+    #array, carray = make_small_arrays(minarrsize)
+    #print "\nDGPADM small sanity test on dtype:", array.dtype
+    #sanity_test(array, precision=prec)
+    #print "\nZGPADM small sanity test on dtype:", carray.dtype
+    #sanity_test(carray, precision=prec)
 
-    array, carray = make_arrays(minarrsize)
-    #print "dgpadm sanity test on dtype:", array.dtype
-    #sanity_test(array)
-    #print "zgpadm sanity test on dtype:", carray.dtype
-    #sanity_test(carray)
+    #array, carray = make_arrays(minarrsize)
+    #print "\nDGPADM sanity test on dtype:", array.dtype
+    #sanity_test(array, precision=prec)
+    #print "\nZGPADM sanity test on dtype:", carray.dtype
+    #sanity_test(carray, precision=prec)
 
     array, carray = make_sparse_arrays()
-    print "dgpadm sparse sanity test on dtype:", array.dtype
-    sanity_test(array)
-    print "zgpadm sparse sanity test on dtype:", carray.dtype
-    try:
-        sanity_test(carray)
-    except TypeError:
-        print carray
-        raise
+    print "\nDGEXPV sparse sanity test on dtype:", array.dtype
+    sanity_test(array, precision=prec)
+    print "\nZGEXPV sparse sanity test on dtype:", carray.dtype
+    sanity_test(carray, precision=prec)
 
     exit()
 
