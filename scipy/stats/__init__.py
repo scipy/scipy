@@ -214,6 +214,13 @@ which work for masked arrays.
 .. autosummary::
    :toctree: generated/
 
+   binned_statistic     -- Compute a binned statistic for a set of data.
+   binned_statistic_2d  -- Compute a 2-D binned statistic for a set of data.
+   binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
+
+.. autosummary::
+   :toctree: generated/
+
    obrientransform
    signaltonoise
    bayes_mvs
