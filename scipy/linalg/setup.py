@@ -161,6 +161,12 @@ def configuration(parent_package='',top_path=None):
                          extra_info = lapack_opt
                          )
 
+    # expokit:
+    config.add_extension('expokit',
+                         [join('src','expokit.f')],
+                         extra_info = lapack_opt
+                         )
+
     # atlas_version:
     if os.name == 'nt' and 'FPATH' in os.environ:
         define_macros = [('NO_ATLAS_INFO', 1)]
