@@ -118,7 +118,9 @@
 */
 
 #include "Python.h"
+extern "C" {
 #include "numpy/npy_math.h"
+}
 
 #include <cfloat>
 #include <cmath>
