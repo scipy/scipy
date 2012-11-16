@@ -5,10 +5,10 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
-                  r_, rollaxis, sum
+                  r_, rollaxis, sum, fromstring
 
 __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
-           'central_diff_weights', 'derivative', 'pade', 'lena']
+           'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'face']
 
 # XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
@@ -447,3 +447,83 @@ def lena():
     lena = array(cPickle.load(f))
     f.close()
     return lena
+
+def ascent():
+    """
+    Get an 8-bit grayscale bit-depth, 512 x 512 derived image for easy use in demos
+
+    The image is derived from accent-to-the-top.jpg at
+    http://www.public-domain-image.com/people-public-domain-images-pictures/
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    ascent : ndarray
+       convenient image to use for testing and demonstration
+
+    Examples
+    --------
+    >>> import scipy.misc
+    >>> ascent = scipy.misc.ascent()
+    >>> ascent.shape
+    (512, 512)
+    >>> ascent.max()
+    255
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.gray()
+    >>> plt.imshow(ascent)
+    >>> plt.show()
+
+    """
+    import cPickle, os
+    fname = os.path.join(os.path.dirname(__file__),'ascent.dat')
+    f = open(fname,'rb')
+    ascent = array(cPickle.load(f))
+    f.close()
+    return ascent
+
+def face(gray=False):
+    """
+    Get a 1024 x 768, color image of a raccoon face.
+
+    raccoon-procyon-lotor.jpg at http://www.public-domain-image.com
+
+    Parameters
+    ----------
+    gray : bool, optional
+        If True then return color image, otherwise return an 8-bit gray-scale
+
+    Returns
+    -------
+    face : ndarray
+        image of a racoon face
+
+    Examples
+    --------
+    >>> import scipy.misc
+    >>> face = scipy.misc.face()
+    >>> face.shape
+    (768, 1024, 3)
+    >>> face.max()
+    230
+    >>> face.dtype
+    dtype('uint8')
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.gray()
+    >>> plt.imshow(face)
+    >>> plt.show()
+
+    """
+    import bz2, os
+    rawdata = open(os.path.join(os.path.dirname(__file__), 'face.dat')).read()
+    data = bz2.decompress(rawdata)
+    face = fromstring(data, dtype='uint8')
+    face.shape = (768, 1024, 3)
+    if gray is True:
+        face = (0.21 * face[:,:,0] + 0.71 * face[:,:,1] + 0.07 * face[:,:,2]).astype('uint8')
+    return face
