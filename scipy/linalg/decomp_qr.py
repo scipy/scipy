@@ -4,7 +4,7 @@ import numpy
 
 # Local imports
 from blas import get_blas_funcs
-from lapack import get_lapack_funcs, find_best_lapack_type
+from lapack import get_lapack_funcs
 from misc import _datacopied
 
 # XXX: what is qr_old, should it be kept?
@@ -154,10 +154,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     elif mode == 'raw':
         return ((qr, tau),) + Rj
 
-    if find_best_lapack_type((a1,))[0] in ('s', 'd'):
-        gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
-    else:
-        gor_un_gqr, = get_lapack_funcs(('ungqr',), (qr,))
+    gor_un_gqr, = get_lapack_funcs(('orgqr',), (qr,))
 
     if M < N:
         Q, = safecall(gor_un_gqr, "gorgqr/gungqr", qr[:, :M], tau,
@@ -249,11 +246,10 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     raw = qr(a, overwrite_a, None, "raw", pivoting)
     Q, tau = raw[0]
 
-    if find_best_lapack_type((Q,))[0] in ('s', 'd'):
-        gor_un_mqr, = get_lapack_funcs(('ormqr',), (Q,))
+    gor_un_mqr, = get_lapack_funcs(('ormqr',), (Q,))
+    if gor_un_mqr.typecode in ('s', 'd'):
         trans = "T"
     else:
-        gor_un_mqr, = get_lapack_funcs(('unmqr',), (Q,))
         trans = "C"
 
     Q = Q[:, :min(M, N)]
@@ -435,10 +431,7 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     if mode == 'r':
         return R
 
-    if find_best_lapack_type((a1,))[0] in ('s', 'd'):
-        gor_un_grq, = get_lapack_funcs(('orgrq',), (rq,))
-    else:
-        gor_un_grq, = get_lapack_funcs(('ungrq',), (rq,))
+    gor_un_grq, = get_lapack_funcs(('orgrq',), (rq,))
 
     if N < M:
         # get optimal work array

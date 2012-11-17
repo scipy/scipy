@@ -22,7 +22,12 @@ if clapack is None:
 elif hasattr(flapack,'empty_module'):
     flapack = clapack
 
-_lapack_alias = {}
+# some convenience alias for complex functions
+_lapack_alias = {
+    'corgqr': 'cungqr', 'zorgqr': 'zungqr',
+    'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
+    'corgrq': 'cungrq', 'zorgrq': 'zungrq',
+}
 
 def get_lapack_funcs(names, arrays=(), dtype=None):
     """Return available LAPACK function objects from names.
