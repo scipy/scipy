@@ -1004,6 +1004,73 @@ interface
      integer intent(out) :: info
    end subroutine <prefix2c>heev
 
+
+   subroutine <prefix2>syevd(compute_v,lower,n,w,a,work,lwork,iwork,liwork,info)
+   ! w,v,info = syevd(a,compute_v=1,lower=0,lwork=min_lwork,overwrite_a=0)
+   ! Compute all eigenvalues and, optionally, eigenvectors of a
+   ! real symmetric matrix A using D&C.
+   !
+   ! Performance tip:
+   !   If compute_v=0 then set also overwrite_a=1.
+
+     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,a,&n,w,work,&lwork,iwork,&liwork,&info)
+     callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*,int*,int*
+
+     integer optional,intent(in):: compute_v = 1
+     check(compute_v==1||compute_v==0) compute_v
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0   
+
+     integer intent(hide),depend(a):: n = shape(a,0)
+     <ftype2> dimension(n,n),check(shape(a,0)==shape(a,1)) :: a
+     intent(in,copy,out,out=v) :: a
+
+     <ftype2> dimension(n),intent(out),depend(n) :: w
+
+     integer optional,intent(in),depend(n,compute_v) :: lwork=(compute_v?1+6*n+2*n*n:2*n+1)
+     check(lwork>=(compute_v?1+6*n+2*n*n:2*n+1)) :: lwork
+     <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+
+     integer intent(hide),depend(n,compute_v) :: liwork = (compute_v?3+5*n:1)
+     integer dimension(liwork),intent(hide,cache),depend(liwork) :: iwork
+
+     integer intent(out) :: info
+   end subroutine <prefix2>syevd
+
+   subroutine <prefix2c>heevd(compute_v,lower,n,w,a,work,lwork,iwork,liwork,rwork,lrwork,info)
+   ! w,v,info = heevd(a,compute_v=1,lower=0,lwork=min_lwork,overwrite_a=0)
+   ! Compute all eigenvalues and, optionally, eigenvectors of a
+   ! complex Hermitian matrix A using D&C.
+   !
+   ! Warning:
+   !   If compute_v=0 and overwrite_a=1, the contents of a is destroyed.
+
+     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,a,&n,w,work,&lwork,rwork,&lrwork,iwork,&liwork,&info)
+     callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2>*,int*,int*,int*,int*
+
+     integer optional,intent(in):: compute_v = 1
+     check(compute_v==1||compute_v==0) compute_v
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0   
+
+     integer intent(hide),depend(a):: n = shape(a,0)
+     <ftype2c> dimension(n,n),check(shape(a,0)==shape(a,1)) :: a
+     intent(in,copy,out,out=v) :: a
+
+     <ftype2> dimension(n),intent(out),depend(n) :: w
+
+     integer optional,intent(in),depend(n,compute_v) :: lwork=(compute_v?2*n+n*n:n+1)
+     check(lwork>=(compute_v?2*n+n*n:n+1)) :: lwork
+     <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+
+     integer intent(hide),depend(n,compute_v) :: liwork = (compute_v?3+5*n:1)
+     integer dimension(liwork),intent(hide,cache),depend(liwork) :: iwork
+
+     integer intent(hide),depend(n,compute_v) :: lrwork = (compute_v?1+5*n+2*n*n:n)
+     <ftype2> dimension(lrwork),intent(hide,cache),depend(n,lrwork) :: rwork
+
+     integer intent(out) :: info
+   end subroutine <prefix2c>heevd
+
+
    subroutine <prefix>posv(n,nrhs,a,b,info,lower)
 
    ! c,x,info = posv(a,b,lower=0,overwrite_a=0,overwrite_b=0)
