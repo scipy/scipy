@@ -111,9 +111,9 @@ import numpy as _np
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
 
-from scipy.linalg import fblas as _fblas
+from scipy.linalg import _fblas
 try:
-    from scipy.linalg import cblas as _cblas
+    from scipy.linalg import _cblas
 except ImportError:
     _cblas = None
 if _cblas is None:
@@ -122,7 +122,9 @@ elif hasattr(_fblas, 'empty_module'):
     _fblas = _cblas
 
 # Expose all functions (only fblas --- cblas is an implementation detail)
-from scipy.linalg.fblas import *
+empty_module = None
+from scipy.linalg._fblas import *
+del empty_module
 
 # 'd' will be default for 'i',..
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z', 'G':'z'}
@@ -178,7 +180,8 @@ def find_best_blas_type(arrays=(), dtype=None):
     return prefix, dtype, prefer_fortran
 
 def _get_funcs(names, arrays, dtype,
-               lib_name, fmodule, cmodule, alias):
+               lib_name, fmodule, cmodule,
+               fmodule_name, cmodule_name, alias):
     """
     Return available BLAS/LAPACK functions.
 
@@ -188,8 +191,8 @@ def _get_funcs(names, arrays, dtype,
     funcs = []
     unpack = False
     dtype = _np.dtype(dtype)
-    module1 = (cmodule, cmodule.__name__.split('.')[-1])
-    module2 = (fmodule, fmodule.__name__.split('.')[-1])
+    module1 = (cmodule, cmodule_name)
+    module2 = (fmodule, fmodule_name)
 
     if isinstance(names, str):
         names = (names,)
@@ -260,4 +263,5 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     of the returned functions.
     """
     return _get_funcs(names, arrays, dtype,
-                      "BLAS", _fblas, _cblas, _blas_alias)
+                      "BLAS", _fblas, _cblas, "fblas", "cblas",
+                      _blas_alias)

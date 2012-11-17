@@ -11,7 +11,7 @@
 ! <prefix2=s,d> <ctype2=float,double> <ftype2=real,double precision>
 ! <prefix2c=c,z> <ftype2c=complex,double complex> <ctype2c=complex_float,complex_double>
 
-python module flapack
+python module _flapack
 interface
 
    include 'flapack_user.pyf.src'
@@ -2142,7 +2142,7 @@ end subroutine zhegvx
 
 end interface
 
-end python module flapack
+end python module _flapack
 
 ! This file was auto-generated with f2py (version:2.10.173).
 ! See http://cens.ioc.ee/projects/f2py2e/

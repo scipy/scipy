@@ -12,7 +12,7 @@
 !  trtri
 !
 
-python module clapack
+python module _clapack
   interface
    
    function <prefix>gesv(n,nrhs,a,piv,b,info,rowmajor)
@@ -202,4 +202,4 @@ python module clapack
 
 
   end interface
-end python module clapack
+end python module _clapack

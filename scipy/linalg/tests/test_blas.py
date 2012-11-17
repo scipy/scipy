@@ -16,7 +16,7 @@ import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_almost_equal
 
-from scipy.linalg import fblas, cblas, get_blas_funcs
+from scipy.linalg import _fblas as fblas, _cblas as cblas, get_blas_funcs
 
 def test_get_blas_funcs():
     # check that it returns Fortran code for arrays that are
