@@ -4,6 +4,8 @@ Low-level LAPACK functions
 
 This module contains low-level functions from the LAPACK library.
 
+.. versionadded:: 0.12.0
+
 .. warning::
 
    These functions do little to no error checking.
