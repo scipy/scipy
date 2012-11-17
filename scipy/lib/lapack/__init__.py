@@ -137,6 +137,7 @@ Optimal lwork is maxwrk. Default is minwrk.
 
 __all__ = ['get_lapack_funcs','calc_lwork','flapack','clapack']
 
+from numpy import deprecate
 
 import calc_lwork
 
@@ -146,7 +147,6 @@ import calc_lwork
 
 import flapack
 import clapack
-
 
 _use_force_clapack = 1
 if hasattr(clapack,'empty_module'):
@@ -159,7 +159,7 @@ elif hasattr(flapack,'empty_module'):
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
 _inv_type_conv = {'s':'f','d':'d','c':'F','z':'D'}
 
-
+@deprecate
 def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
     """Return available LAPACK function objects with names.
     arrays are used to determine the optimal prefix of
