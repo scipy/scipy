@@ -48,7 +48,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
         raise NotImplementedError('calling ggev from %s' % ggev.module_name)
     res = ggev(a1, b1, lwork=-1)
     lwork = res[-2][0].real.astype(numpy.int)
-    if ggev.prefix in 'cz':
+    if ggev.typecode in 'cz':
         alpha, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
                                                     overwrite_a, overwrite_b)
         w = alpha / beta
@@ -64,7 +64,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
                                                                     % info)
 
     only_real = numpy.logical_and.reduce(numpy.equal(w.imag, 0.0))
-    if not (ggev.prefix in 'cz' or only_real):
+    if not (ggev.typecode in 'cz' or only_real):
         t = w.dtype.char
         if left:
             vl = _make_complex_eigvecs(w, vl, t)
@@ -156,9 +156,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     geev, = get_lapack_funcs(('geev',), (a1,))
     compute_vl, compute_vr = left, right
     if geev.module_name[:7] == 'flapack':
-        lwork = calc_lwork.geev(geev.prefix, a1.shape[0],
+        lwork = calc_lwork.geev(geev.typecode, a1.shape[0],
                                     compute_vl, compute_vr)[1]
-        if geev.prefix in 'cz':
+        if geev.typecode in 'cz':
             w, vl, vr, info = geev(a1, lwork=lwork,
                                         compute_vl=compute_vl,
                                         compute_vr=compute_vr,
@@ -171,7 +171,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             t = {'f':'F','d':'D'}[wr.dtype.char]
             w = wr + _I * wi
     else: # 'clapack'
-        if geev.prefix in 'cz':
+        if geev.typecode in 'cz':
             w, vl, vr, info = geev(a1,
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
@@ -191,7 +191,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                             "with order >= %d have converged)" % info)
 
     only_real = numpy.logical_and.reduce(numpy.equal(w.imag, 0.0))
-    if not (geev.prefix in 'cz' or only_real):
+    if not (geev.typecode in 'cz' or only_real):
         t = w.dtype.char
         if left:
             vl = _make_complex_eigvecs(w, vl, t)
@@ -505,13 +505,13 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
             # FIXME: implement this somewhen, for now go with builtin values
             # FIXME: calc optimal lwork by calling ?hbevd(lwork=-1)
             #        or by using calc_lwork.f ???
-            # lwork = calc_lwork.hbevd(bevd.prefix, a1.shape[0], lower)
+            # lwork = calc_lwork.hbevd(bevd.typecode, a1.shape[0], lower)
             internal_name = 'hbevd'
         else: # a1.dtype.char in 'fd':
             bevd, = get_lapack_funcs(('sbevd',), (a1,))
             # FIXME: implement this somewhen, for now go with builtin values
             #         see above
-            # lwork = calc_lwork.sbevd(bevd.prefix, a1.shape[0], lower)
+            # lwork = calc_lwork.sbevd(bevd.typecode, a1.shape[0], lower)
             internal_name = 'sbevd'
         w,v,info = bevd(a1, compute_v=not eigvals_only,
                         lower=lower,
@@ -803,7 +803,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
         raise ValueError('illegal value in %d-th argument of internal gebal '
                                                     '(hessenberg)' % -info)
     n = len(a1)
-    lwork = calc_lwork.gehrd(gehrd.prefix, n, lo, hi)
+    lwork = calc_lwork.gehrd(gehrd.typecode, n, lo, hi)
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gehrd '
