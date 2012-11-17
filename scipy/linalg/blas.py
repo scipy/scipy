@@ -4,6 +4,7 @@ Low-level BLAS functions
 
 This module contains low-level functions from the BLAS library.
 
+.. versionadded:: 0.12.0
 
 .. warning::
 
