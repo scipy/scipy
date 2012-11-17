@@ -2,6 +2,8 @@
 Wrappers to BLAS library
 ========================
 
+NOTE: this module is deprecated -- use scipy.linalg.blas instead!
+
 fblas -- wrappers for Fortran [*] BLAS routines
 cblas -- wrappers for ATLAS BLAS routines
 get_blas_funcs -- query for wrapper functions.
@@ -88,6 +90,15 @@ import cblas
 
 from numpy import deprecate
 
+@deprecate(old_name="scipy.lib.blas", new_name="scipy.linalg.blas")
+def _deprecated():
+    pass
+try:
+    _deprecated()
+except DeprecationWarning, e:
+    # don't fail import if DeprecationWarnings raise error -- works around
+    # the situation with Numpy's test framework
+    pass
 
 _use_force_cblas = 1
 if hasattr(cblas,'empty_module'):

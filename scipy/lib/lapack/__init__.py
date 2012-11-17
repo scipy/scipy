@@ -2,6 +2,8 @@
 Wrappers to LAPACK library
 ==========================
 
+NOTE: this module is deprecated -- use scipy.linalg.lapack instead!
+
   flapack -- wrappers for Fortran [*] LAPACK routines
   clapack -- wrappers for ATLAS LAPACK routines
   calc_lwork -- calculate optimal lwork parameters
@@ -144,6 +146,16 @@ import calc_lwork
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
+
+@deprecate(old_name="scipy.lib.lapack", new_name="scipy.linalg.lapack")
+def _deprecated():
+    pass
+try:
+    _deprecated()
+except DeprecationWarning, e:
+    # don't fail import if DeprecationWarnings raise error -- works around
+    # the situation with Numpy's test framework
+    pass
 
 import flapack
 import clapack
