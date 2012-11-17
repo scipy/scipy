@@ -95,7 +95,7 @@ def _get_funcs(names, arrays, dtype,
 
     for i, name in enumerate(names):
         func_name = prefix + name
-        func_name = _blas_alias.get(func_name, func_name)
+        func_name = alias.get(func_name, func_name)
         func = getattr(module1[0], func_name, None)
         module_name = module1[1]
         if func is None:
@@ -105,6 +105,8 @@ def _get_funcs(names, arrays, dtype,
             raise ValueError(
                 '%s function %s could not be found' % (lib_name, func_name))
         func.module_name, func.typecode = module_name, prefix
+        func.dtype = dtype
+        func.prefix = prefix # Backward compatibility
         funcs.append(func)
 
     if unpack:
@@ -146,8 +148,9 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     In BLAS, the naming convention is that all functions start with a
     type prefix, which depends on the type of the principal
     matrix. These can be one of {'s', 'd', 'c', 'z'} for the numpy
-    types {float32, float64, complex64, complex128} respectevely, and
-    are stored in attribute `typecode` of the returned functions.
+    types {float32, float64, complex64, complex128} respectively.
+    The code and the dtype are stored in attributes `typecode` and `dtype`
+    of the returned functions.
     """
     return _get_funcs(names, arrays, dtype,
                       "BLAS", fblas, cblas, _blas_alias)
