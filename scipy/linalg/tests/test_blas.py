@@ -48,6 +48,14 @@ def test_get_blas_funcs():
     f1 = get_blas_funcs('gemm', dtype=np.longcomplex)
     assert_equal(f1.typecode, 'z')
 
+    # check safe complex upcasting
+    f1 = get_blas_funcs('axpy',
+                        (np.empty((2,2), dtype=np.float64),
+                         np.empty((2,2), dtype=np.complex64))
+                        )
+    assert_equal(f1.typecode, 'z')
+
+
 def test_get_blas_funcs_alias():
     # check alias for get_blas_funcs
     f, g = get_blas_funcs(('nrm2', 'dot'), dtype=np.complex64)

@@ -60,8 +60,12 @@ def find_best_blas_type(arrays=(), dtype=None):
 
     if arrays:
         # use the most generic type in arrays
-        dtype, index = max(
-            [(ar.dtype, i) for i, ar in enumerate(arrays)])
+        dtypes = [ar.dtype for ar in arrays]
+        dtype = np.find_common_type(dtypes, ())
+        try:
+            index = dtypes.index(dtype)
+        except ValueError:
+            index = 0
         if arrays[index].flags['FORTRAN']:
             # prefer Fortran for leading array with column major order
             prefer_fortran = True
