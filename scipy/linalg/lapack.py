@@ -200,9 +200,6 @@ All functions
 
 __all__ = ['get_lapack_funcs']
 
-# The following ensures that possibly missing flavor (C or Fortran) is
-# replaced with the available one. If none is available, exception
-# is raised at the first attempt to use the resources.
 from blas import _get_funcs
 
 # Backward compatibility:
@@ -213,11 +210,6 @@ try:
     from scipy.linalg import _clapack
 except ImportError:
     _clapack = None
-
-if _clapack is None:
-    _clapack = _flapack
-elif hasattr(_flapack,'empty_module'):
-    _flapack = _clapack
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
