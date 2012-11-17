@@ -117,9 +117,9 @@
 		       file Faddeeva.hh.
 */
 
-#include "Python.h"
+#include <Python.h>
 extern "C" {
-#include "numpy/npy_math.h"
+#include <numpy/npy_math.h>
 }
 
 #include <cfloat>
@@ -129,15 +129,12 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
 
-// use numpy's isnan & isinf, since std:: versions only available in C++11
-#define isnan npy_isnan
-#define isinf npy_isinf
-#define Inf NPY_INFINITY // infinity
-#define NaN NPY_NAN // NaN
-
-#ifdef _MSC_VER
-#define copysign _copysign
-#endif
+// use numpy's versions, since std:: versions only available in C++11
+#define my_isinf npy_isinf
+#define my_isnan npy_isnan
+#define my_copysign npy_copysign
+#define Inf NPY_INFINITY
+#define NaN NPY_NAN
 
 /////////////////////////////////////////////////////////////////////////
 // Auxiliary routines to compute other special functions based on w(z)
@@ -213,7 +210,7 @@ complex<double> Faddeeva::erf(complex<double> z, double relerr)
       else if (fabs(mIm_z2) < 5e-3)
 	goto taylor_erfi;
     }
-    else if (isnan(x))
+    else if (my_isnan(x))
       return complex<double>(NaN, y == 0 ? 0 : NaN);
     /* don't use complex exp function, since that will produce spurious NaN
        values when multiplying w in an overflow situation. */
@@ -369,7 +366,7 @@ complex<double> Faddeeva::Dawson(complex<double> z, double relerr)
       else if (fabs(mIm_z2) < 5e-3)
 	goto taylor_realaxis;
     }
-    else if (isnan(y))
+    else if (my_isnan(y))
       return complex<double>(x == 0 ? 0 : NaN, NaN);
     complex<double> res = Faddeeva::w(-z) - exp(mz2);
     return spi2 * complex<double>(-imag(res), real(res));
@@ -588,8 +585,8 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
 	  double denom = ispi / (xs + yax*ya);
 	  ret = complex<double>(denom*yax, denom);
 	}
-	else if (isinf(ya))
-	  return ((isnan(x) || y < 0) 
+	else if (my_isinf(ya))
+	  return ((my_isnan(x) || y < 0) 
 		  ? complex<double>(NaN,NaN) : complex<double>(0,0));
 	else {
 	  double xya = xs / ya;
@@ -669,7 +666,7 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
     double prod2ax = 1, prodm2ax = 1;
     double expx2;
 
-    if (isnan(y))
+    if (my_isnan(y))
       return complex<double>(y,y);
     
     /* Somewhat ugly copy-and-paste duplication here, but I see significant
@@ -773,9 +770,9 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
     }
   }
   else { // x large: only sum3 & sum5 contribute (see above note)    
-    if (isnan(x))
+    if (my_isnan(x))
       return complex<double>(x,x);
-    if (isnan(y))
+    if (my_isnan(y))
       return complex<double>(y,y);
 
 #if USE_CONTINUED_FRACTION
@@ -819,7 +816,7 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
   }
  finish:
   return ret + complex<double>((0.5*c)*y*(sum2+sum3), 
-			       (0.5*c)*copysign(sum5-sum4, real(z)));
+			       (0.5*c)*my_copysign(sum5-sum4, real(z)));
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -1753,10 +1750,10 @@ double Faddeeva::w_im(double x)
 
 // compute relative error |b-a|/|a|, handling case of NaN and Inf,
 static double relerr(double a, double b) {
-  if (isnan(a) || isnan(b) || isinf(a) || isinf(b)) {
-    if ((isnan(a) && !isnan(b)) || (!isnan(a) && isnan(b)) ||
-	(isinf(a) && !isinf(b)) || (!isinf(a) && isinf(b)) ||
-	(isinf(a) && isinf(b) && a*b < 0))
+  if (my_isnan(a) || my_isnan(b) || my_isinf(a) || my_isinf(b)) {
+    if ((my_isnan(a) && !my_isnan(b)) || (!my_isnan(a) && my_isnan(b)) ||
+	(my_isinf(a) && !my_isinf(b)) || (!my_isinf(a) && my_isinf(b)) ||
+	(my_isinf(a) && my_isinf(b) && a*b < 0))
       return Inf; // "infinite" error
     return 0; // matching infinity/nan results counted as zero error
   }
