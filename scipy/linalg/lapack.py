@@ -48,6 +48,7 @@ All functions
    chbevd
    chbevx
    cheev
+   cheevd
    cheevr
    chegv
    chegvd
@@ -103,6 +104,7 @@ All functions
    dsbevd
    dsbevx
    dsyev
+   dsyevd
    dsyevr
    dsygv
    dsygvd
@@ -146,6 +148,7 @@ All functions
    ssbevd
    ssbevx
    ssyev
+   ssyevd
    ssyevr
    ssygv
    ssygvd
@@ -175,6 +178,7 @@ All functions
    zhbevd
    zhbevx
    zheev
+   zheevd
    zheevr
    zhegv
    zhegvd
