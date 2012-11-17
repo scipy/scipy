@@ -1,7 +1,9 @@
 # Authors: Travis Oliphant, Matthew Brett
 
 """
-Base classes for matlab (TM) file stream reading
+Base classes for MATLAB file stream reading.
+
+MATLAB is a registered trademark of the Mathworks inc.
 """
 import sys
 import numpy as np
@@ -51,7 +53,7 @@ matlab_compatible : bool, optional
          '''struct_as_record : bool, optional
    Whether to load MATLAB structs as numpy record arrays, or as
    old-style numpy arrays with dtype=object.  Setting this flag to
-   False replicates the behaviour of scipy version 0.7.x (returning
+   False replicates the behavior of scipy version 0.7.x (returning
    numpy object arrays).  The default setting is True, because it
    allows easier round-trip load and save of MATLAB files.''',
      'matstream_arg':
@@ -62,7 +64,7 @@ matlab_compatible : bool, optional
    * False - maximum field name length in a structure is 31 characters
      which is the documented maximum length. This is the default.
    * True - maximum field name length in a structure is 63 characters
-     which works for Matlab 7.6''',
+     which works for MATLAB 7.6''',
      'do_compression':
          '''do_compression : bool, optional
    Whether to compress matrices on write. Default is False.''',
@@ -72,7 +74,7 @@ matlab_compatible : bool, optional
    If 'row', write 1D numpy arrays as row vectors.''',
      'unicode_strings':
          '''unicode_strings : bool, optional
-   If True, write strings as Unicode, else matlab usual encoding.'''}
+   If True, write strings as Unicode, else MATLAB usual encoding.'''}
 
 docfiller = doccer.filldoc(doc_dict)
 
@@ -91,13 +93,13 @@ file. At the moment these are:
 * byte_order
 * chars_as_strings
 * squeeze_me
-* struct_as_record (matlab 5 files)
-* class_dtypes (derived from order code, matlab 5 files)
-* codecs (matlab 5 files)
-* uint16_codec (matlab 5 files)
+* struct_as_record (MATLAB 5 files)
+* class_dtypes (derived from order code, MATLAB 5 files)
+* codecs (MATLAB 5 files)
+* uint16_codec (MATLAB 5 files)
 
-Another set of parameters are those that apply only the the current
-variable being read - the header**:
+Another set of parameters are those that apply only to the current
+variable being read - the *header*:
 
 * header related variables (different for v4 and v5 mat files)
 * is_complex
@@ -107,8 +109,8 @@ variable being read - the header**:
 With the header, we need ``next_position`` to tell us where the next
 variable in the stream is.
 
-Then, there can be, for each element in a matrix, *element read
-parameters*.  An element is, for example, one element in a Matlab cell
+Then, for each element in a matrix, there can be *element read
+parameters*.  An element is, for example, one element in a MATLAB cell
 array.  At the moment these are:
 
 * mat_dtype
@@ -151,16 +153,15 @@ def read_dtype(mat_stream, a_dtype):
     Parameters
     ----------
     mat_stream : file-like object
-        Matlam (TM) stream
+        MATLAB mat file stream
     a_dtype : dtype
        dtype of array to read.  `a_dtype` is assumed to be correct
        endianness
 
     Returns
     -------
-    arr : array
-        Array of given datatype obtained from stream.
-
+    arr : ndarray
+        Array of dtype `a_dtype` read from stream.
     """
     num_bytes = a_dtype.itemsize
     arr = np.ndarray(shape=(),
@@ -181,15 +182,15 @@ def get_matfile_version(fileobj):
 
     Parameters
     ----------
-    fileobj : {file-like}
-              object implementing seek() and read()
+    fileobj : file-like
+        object implementing seek() and read()
 
     Returns
     -------
     major_version : {0, 1, 2}
-                    major matlab file format version
+        major MATLAB File format version
     minor_version : int
-                    major matlab file format version
+        minor MATLAB file format version
 
     Notes
     -----
@@ -223,28 +224,28 @@ def get_matfile_version(fileobj):
 
 def matdims(arr, oned_as='column'):
     """
-    Determine equivalent matlab dimensions for given array
+    Determine equivalent MATLAB dimensions for given array
 
     Parameters
     ----------
     arr : ndarray
-        Input array.
+        Input array
     oned_as : {'column', 'row'}, optional
-        Whether 1-D arrays are returned as Matlab row or column matrices.
+        Whether 1-D arrays are returned as MATLAB row or column matrices.
         Default is 'column'.
 
     Returns
     -------
     dims : tuple
-        Shape tuple, in the form Matlab expects it.
+        Shape tuple, in the form MATLAB expects it.
 
     Notes
     -----
     We had to decide what shape a 1 dimensional array would be by
     default.  ``np.atleast_2d`` thinks it is a row vector.  The
-    default for a vector in matlab (e.g. ``>> 1:12``) is a row vector.
+    default for a vector in MATLAB (e.g. ``>> 1:12``) is a row vector.
 
-    Versions of scipy up to and including 0.7 resulted (accidentally)
+    Versions of scipy up to and including 0.11 resulted (accidentally)
     in 1-D arrays being read as column vectors.  For the moment, we
     maintain the same tradition here.
 
@@ -355,7 +356,7 @@ class MatFileReader(object):
             self.mat_dtype = mat_dtype
 
     def set_matlab_compatible(self):
-        ''' Sets options to return arrays as matlab (tm) loads them '''
+        ''' Sets options to return arrays as MATLAB loads them '''
         self.mat_dtype = True
         self.squeeze_me = False
         self.chars_as_strings = False

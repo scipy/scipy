@@ -101,17 +101,21 @@ class VarReader4(object):
         self.squeeze_me = file_reader.squeeze_me
 
     def read_header(self):
-        ''' Reads and return header for variable '''
+        ''' Read and return header for variable '''
         data = read_dtype(self.mat_stream, self.dtypes['header'])
         name = self.mat_stream.read(int(data['namlen'])).strip(asbytes('\x00'))
-        if data['mopt'] < 0 or  data['mopt'] > 5000:
-            ValueError, 'Mat 4 mopt wrong format, byteswapping problem?'
-        M,rest = divmod(data['mopt'], 1000)
-        O,rest = divmod(rest,100)
-        P,rest = divmod(rest,10)
-        T = rest
+        if data['mopt'] < 0 or data['mopt'] > 5000:
+            raise ValueError('Mat 4 mopt wrong format, byteswapping problem?')
+        M, rest = divmod(data['mopt'], 1000) # order code
+        if M not in (0, 1):
+            warnings.warn("We do not support byte ordering '%s'; returned "
+                          "data may be corrupt" % order_codes[M],
+                          UserWarning)
+        O, rest = divmod(rest, 100) # unused, should be 0
         if O != 0:
             raise ValueError('O in MOPT integer should be 0, wrong format?')
+        P, rest = divmod(rest, 10) # data type code e.g miDOUBLE (see above)
+        T = rest # matrix type code e.g. mxFULL_CLASS (see above)
         dims = (data['mrows'], data['ncols'])
         is_complex = data['imagf'] == 1
         dtype = self.dtypes[P]
@@ -140,14 +144,21 @@ class VarReader4(object):
         return arr
 
     def read_sub_array(self, hdr, copy=True):
-        ''' Mat4 read always uses header dtype and dims
+        ''' Mat4 read using header `hdr` dtype and dims
+
+        Parameters
+        ----------
         hdr : object
-           object with attributes 'dtype', 'dims'
-        copy : bool
-           copies array if True (default True)
+           object with attributes ``dtype``, ``dims``.  dtype is assumed to be
+           the correct endianness
+        copy : bool, optional
+           copies array before return if True (default True)
            (buffer is usually read only)
 
-        self.dtype is assumed to be correct endianness
+        Returns
+        -------
+        arr : ndarray
+            of dtype givem by `hdr` ``dtype`` and shape givem by `hdr` ``dims``
         '''
         dt = hdr.dtype
         dims = hdr.dims
@@ -163,7 +174,19 @@ class VarReader4(object):
         return arr
 
     def read_full_array(self, hdr):
-        ''' Full (rather than sparse matrix) getter
+        ''' Full (rather than sparse) matrix getter
+
+        Read matrix (array) can be real or complex
+
+        Parameters
+        ----------
+        hdr : ``VarHeader4`` instance
+
+        Returns
+        -------
+        arr : ndarray
+            complex array if ``hdr.is_complex`` is True, otherwise a real
+            numeric array
         '''
         if hdr.is_complex:
             # avoid array copy to save memory
@@ -175,6 +198,14 @@ class VarReader4(object):
     def read_char_array(self, hdr):
         ''' Ascii text matrix (char matrix) reader
 
+        Parameters
+        ----------
+        hdr : ``VarHeader4`` instance
+
+        Returns
+        -------
+        arr : ndarray
+            with dtype 'U1', shape given by `hdr` ``dims``
         '''
         arr = self.read_sub_array(hdr).astype(np.uint8)
         # ascii to unicode
@@ -184,21 +215,31 @@ class VarReader4(object):
                           buffer = np.array(S)).copy()
 
     def read_sparse_array(self, hdr):
-        ''' Read sparse matrix type
+        ''' Read and return sparse matrix type
 
-        Matlab (TM) 4 real sparse arrays are saved in a N+1 by 3 array
-        format, where N is the number of non-zero values.  Column 1 values
-        [0:N] are the (1-based) row indices of the each non-zero value,
-        column 2 [0:N] are the column indices, column 3 [0:N] are the
-        (real) values.  The last values [-1,0:2] of the rows, column
-        indices are shape[0] and shape[1] respectively of the output
-        matrix. The last value for the values column is a padding 0. mrows
-        and ncols values from the header give the shape of the stored
-        matrix, here [N+1, 3].  Complex data is saved as a 4 column
-        matrix, where the fourth column contains the imaginary component;
-        the last value is again 0.  Complex sparse data do _not_ have the
-        header imagf field set to True; the fact that the data are complex
-        is only detectable because there are 4 storage columns
+        Parameters
+        ----------
+        hdr : ``VarHeader4`` instance
+
+        Returns
+        -------
+        arr : ``scipy.sparse.coo_matrix``
+            with dtype ``float`` and shape read from the sparse matrix data
+
+        Notes
+        -----
+        MATLAB 4 real sparse arrays are saved in a N+1 by 3 array format, where
+        N is the number of non-zero values.  Column 1 values [0:N] are the
+        (1-based) row indices of the each non-zero value, column 2 [0:N] are the
+        column indices, column 3 [0:N] are the (real) values.  The last values
+        [-1,0:2] of the rows, column indices are shape[0] and shape[1]
+        respectively of the output matrix. The last value for the values column
+        is a padding 0. mrows and ncols values from the header give the shape of
+        the stored matrix, here [N+1, 3].  Complex data is saved as a 4 column
+        matrix, where the fourth column contains the imaginary component; the
+        last value is again 0.  Complex sparse data do *not* have the header
+        ``imagf`` field set to True; the fact that the data are complex is only
+        detectable because there are 4 storage columns
         '''
         res = self.read_sub_array(hdr)
         tmp = res[:-1,:]
@@ -282,9 +323,7 @@ class MatFile4Reader(MatFileReader):
         self._matrix_reader = VarReader4(self)
 
     def read_var_header(self):
-        ''' Read header, return header, next position
-
-        Header has to define at least .name and .is_global
+        ''' Read and return header, next position
 
         Parameters
         ----------
@@ -294,7 +333,7 @@ class MatFile4Reader(MatFileReader):
         -------
         header : object
            object that can be passed to self.read_var_array, and that
-           has attributes .name and .is_global
+           has attributes ``name`` and ``is_global``
         next_position : int
            position in stream of next variable
         '''
@@ -313,9 +352,8 @@ class MatFile4Reader(MatFileReader):
         ----------
         header : header object
            object with fields defining variable header
-        process : {True, False} bool, optional
-           If True, apply recursive post-processing during loading of
-           array.
+        process : {True, False}, optional
+           If True, apply recursive post-processing during loading of array.
 
         Returns
         -------
@@ -328,9 +366,11 @@ class MatFile4Reader(MatFileReader):
     def get_variables(self, variable_names=None):
         ''' get variables from stream as dictionary
 
-        variable_names   - optional list of variable names to get
-
-        If variable_names is None, then get all variables in file
+        Parameters
+        ----------
+        variable_names : None or str or sequence of str, optional
+            variable name, or sequence of variable names to get from Mat file /
+            file stream.  If None, then get all variables in file
         '''
         if isinstance(variable_names, basestring):
             variable_names = [variable_names]
@@ -413,17 +453,23 @@ class VarWriter4(object):
     def write_string(self, s):
         self.file_stream.write(s)
 
-    def write_header(self, name, shape, P=0,  T=0, imagf=0):
+    def write_header(self, name, shape, P=miDOUBLE,  T=mxFULL_CLASS, imagf=0):
         ''' Write header for given data options
 
         Parameters
         ----------
         name : str
+            name of variable
         shape : sequence
            Shape of array as it will be read in matlab
-        P      - mat4 data type
-        T      - mat4 matrix class
-        imagf  - complex flag
+        P : int, optional
+            code for mat4 data type, one of ``miDOUBLE, miSINGLE, miINT32,
+            miINT16, miUINT16, miUINT8``
+        T : int, optional
+            code for mat4 matrix class, one of ``mxFULL_CLASS, mxCHAR_CLASS,
+            mxSPARSE_CLASS``
+        imagf : int, optional
+            flag indicating complex
         '''
         header = np.empty((), mdtypes_template['header'])
         M = not SYS_LITTLE_ENDIAN
