@@ -1,3 +1,103 @@
+"""
+Low-level BLAS functions
+========================
+
+This module contains low-level functions from the BLAS library.
+
+
+.. warning::
+
+   These functions do little to no error checking.
+   It is possible to cause crashes by mis-using them,
+   so prefer using the higher-level routines in `scipy.linalg`.
+
+Finding functions
+=================
+
+.. autosummary::
+
+   get_blas_funcs
+   find_best_blas_type
+
+All functions
+=============
+
+.. autosummary::
+   :toctree: generated/
+
+   caxpy
+   ccopy
+   cdotc
+   cdotu
+   cgemm
+   cgemv
+   cgerc
+   cgeru
+   chemv
+   crotg
+   cscal
+   csrot
+   csscal
+   cswap
+   ctrmv
+   dasum
+   daxpy
+   dcopy
+   ddot
+   dgemm
+   dgemv
+   dger
+   dnrm2
+   drot
+   drotg
+   drotm
+   drotmg
+   dscal
+   dswap
+   dsymv
+   dtrmv
+   dzasum
+   dznrm2
+   icamax
+   idamax
+   isamax
+   izamax
+   sasum
+   saxpy
+   scasum
+   scnrm2
+   scopy
+   sdot
+   sgemm
+   sgemv
+   sger
+   snrm2
+   srot
+   srotg
+   srotm
+   srotmg
+   sscal
+   sswap
+   ssymv
+   strmv
+   zaxpy
+   zcopy
+   zdotc
+   zdotu
+   zdrot
+   zdscal
+   zgemm
+   zgemv
+   zgerc
+   zgeru
+   zhemv
+   zrotg
+   zscal
+   zswap
+   ztrmv
+
+
+"""
 #
 # Author: Pearu Peterson, March 2002
 #         refactoring by Fabian Pedregosa, March 2010
@@ -5,21 +105,24 @@
 
 __all__ = ['get_blas_funcs', 'find_best_blas_type']
 
-import numpy as np
+import numpy as _np
 
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
 
-from scipy.linalg import fblas
+from scipy.linalg import fblas as _fblas
 try:
-    from scipy.linalg import cblas
+    from scipy.linalg import cblas as _cblas
 except ImportError:
-    cblas = None
-if cblas is None:
-    cblas = fblas
-elif hasattr(fblas, 'empty_module'):
-    fblas = cblas
+    _cblas = None
+if _cblas is None:
+    _cblas = _fblas
+elif hasattr(_fblas, 'empty_module'):
+    _fblas = _cblas
+
+# Expose all functions (only fblas --- cblas is an implementation detail)
+from scipy.linalg.fblas import *
 
 # 'd' will be default for 'i',..
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z', 'G':'z'}
@@ -55,13 +158,13 @@ def find_best_blas_type(arrays=(), dtype=None):
         Whether to prefer Fortran order routines over C order.
 
     """
-    dtype = np.dtype(dtype)
+    dtype = _np.dtype(dtype)
     prefer_fortran = False
 
     if arrays:
         # use the most generic type in arrays
         dtypes = [ar.dtype for ar in arrays]
-        dtype = np.find_common_type(dtypes, ())
+        dtype = _np.find_common_type(dtypes, ())
         try:
             index = dtypes.index(dtype)
         except ValueError:
@@ -84,9 +187,9 @@ def _get_funcs(names, arrays, dtype,
 
     funcs = []
     unpack = False
-    dtype = np.dtype(dtype)
-    module1 = (cmodule, 'cblas')
-    module2 = (fmodule, 'fblas')
+    dtype = _np.dtype(dtype)
+    module1 = (cmodule, cmodule.__name__.split('.')[-1])
+    module2 = (fmodule, fmodule.__name__.split('.')[-1])
 
     if isinstance(names, str):
         names = (names,)
@@ -157,4 +260,4 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     of the returned functions.
     """
     return _get_funcs(names, arrays, dtype,
-                      "BLAS", fblas, cblas, _blas_alias)
+                      "BLAS", _fblas, _cblas, _blas_alias)
