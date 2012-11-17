@@ -545,12 +545,12 @@ the probabilities.
      [  1.00000000e+01   0.00000000e+00   2.95019349e-02]]
 
 
-.. plot:: examples/normdiscr_plot1.py
+.. plot:: tutorial/examples/normdiscr_plot1.py
    :align: center
    :include-source: 0
 
 
-.. plot:: examples/normdiscr_plot2.py
+.. plot:: tutorial/examples/normdiscr_plot2.py
    :align: center
    :include-source: 0
 
@@ -908,7 +908,7 @@ get a less smoothed out result.
 
     >>> plt.show()
 
-.. plot:: stats/plots/kde_plot2.py
+.. plot:: tutorial/stats/plots/kde_plot2.py
    :align: center
    :include-source: 0
 
@@ -922,7 +922,7 @@ for (close to) normal distributions, but even for unimodal distributions that
 are quite strongly non-normal they work reasonably well.  As a non-normal
 distribution we take a Student's T distribution with 5 degrees of freedom.
 
-.. plot:: stats/plots/kde_plot3.py
+.. plot:: tutorial/stats/plots/kde_plot3.py
    :align: center
    :include-source: 1
 
@@ -965,7 +965,7 @@ each feature.
     >>> ax.set_ylabel('Density')
     >>> plt.show()
 
-.. plot:: stats/plots/kde_plot4.py
+.. plot:: tutorial/stats/plots/kde_plot4.py
    :align: center
    :include-source: 0
 
@@ -1019,7 +1019,7 @@ the individual data points on top.
 
     >>> plt.show()
 
-.. plot:: stats/plots/kde_plot5.py
+.. plot:: tutorial/stats/plots/kde_plot5.py
    :align: center
    :include-source: 0
 

@@ -23,7 +23,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'numpydoc',
               'sphinx.ext.autosummary']
 
 # Determine if the matplotlib has a recent enough version of the
-# plot_directive, otherwise use the local fork.
+# plot_directive.
 try:
     from matplotlib.sphinxext import plot_directive
 except ImportError:
@@ -37,7 +37,7 @@ else:
 if use_matplotlib_plot_directive:
     extensions.append('matplotlib.sphinxext.plot_directive')
 else:
-    extensions.append('plot_directive')
+    raise RuntimeError("You need a recent enough version of matplotlib")
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
