@@ -107,19 +107,11 @@ __all__ = ['get_blas_funcs', 'find_best_blas_type']
 
 import numpy as _np
 
-# The following ensures that possibly missing flavor (C or Fortran) is
-# replaced with the available one. If none is available, exception
-# is raised at the first attempt to use the resources.
-
 from scipy.linalg import _fblas
 try:
     from scipy.linalg import _cblas
 except ImportError:
     _cblas = None
-if _cblas is None:
-    _cblas = _fblas
-elif hasattr(_fblas, 'empty_module'):
-    _fblas = _cblas
 
 # Expose all functions (only fblas --- cblas is an implementation detail)
 empty_module = None
