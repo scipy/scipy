@@ -208,22 +208,20 @@ from blas import _get_funcs
 # Backward compatibility:
 from blas import find_best_blas_type as find_best_lapack_type
 
-from scipy.linalg import flapack as _flapack
+from scipy.linalg import _flapack
 try:
-    from scipy.linalg import clapack as _clapack
+    from scipy.linalg import _clapack
 except ImportError:
     _clapack = None
 
-_use_force_clapack = 1
 if _clapack is None:
     _clapack = _flapack
-    _use_force_clapack = 0
 elif hasattr(_flapack,'empty_module'):
     _flapack = _clapack
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
-from scipy.linalg.flapack import *
+from scipy.linalg._flapack import *
 del empty_module
 
 # some convenience alias for complex functions
@@ -271,4 +269,5 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     are stored in attribute `typecode` of the returned functions.
     """
     return _get_funcs(names, arrays, dtype,
-                      "LAPACK", _flapack, _clapack, _lapack_alias)
+                      "LAPACK", _flapack, _clapack,
+                      "flapack", "clapack", _lapack_alias)

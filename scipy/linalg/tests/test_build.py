@@ -5,7 +5,7 @@ import re
 from numpy.testing import TestCase, dec
 from numpy.compat import asbytes
 
-from scipy.linalg import flapack
+from scipy.linalg import _flapack as flapack
 
 # XXX: this is copied from numpy trunk. Can be removed when we will depend on
 # numpy 1.3

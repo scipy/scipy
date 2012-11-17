@@ -1,17 +1,17 @@
 HookFile: bscript
 
 Library:
-    Extension: fblas
+    Extension: _fblas
         Sources:
             fblas.pyf.src,
             src/fblaswrap.f
-    Extension: cblas
+    Extension: _cblas
         Sources:
             generic_cblas.pyf
-    Extension: flapack
+    Extension: _flapack
         Sources:
             flapack.pyf.src
-    Extension: clapack
+    Extension: _clapack
         Sources:
             generic_clapack.pyf
     Extension: _flinalg
