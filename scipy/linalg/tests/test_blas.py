@@ -64,11 +64,11 @@ class TestCBLAS1Simple(TestCase):
         for p in 'sd':
             f = getattr(cblas,p+'axpy',None)
             if f is None: continue
-            assert_array_almost_equal(f(5,[1,2,3],[2,-1,3]),[7,9,18])
+            assert_array_almost_equal(f([1,2,3],[2,-1,3],a=5),[7,9,18])
         for p in 'cz':
             f = getattr(cblas,p+'axpy',None)
             if f is None: continue
-            assert_array_almost_equal(f(5,[1,2j,3],[2,-1,3]),[7,10j-1,18])
+            assert_array_almost_equal(f([1,2j,3],[2,-1,3],a=5),[7,10j-1,18])
 
 class TestFBLAS1Simple(TestCase):
 

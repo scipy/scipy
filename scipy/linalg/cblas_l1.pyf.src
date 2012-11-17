@@ -23,7 +23,7 @@ subroutine <prefix>axpy(n,a,x,incx,y,incy)
   intent(c) <prefix>axpy
 
   integer optional,intent(in),depend(x,incx) :: n = len(x)/abs(incx)
-  <ftype> intent(in):: a
+  <ftype> optional, intent(in):: a=<1.0,\0,(1.0\,0.0),\2>
   <ftype> dimension(n),intent(in) :: x
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
   <ftype> dimension(n),depend(x),check(len(x)==len(y)) :: y
