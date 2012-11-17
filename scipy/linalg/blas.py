@@ -3,7 +3,7 @@
 #         refactoring by Fabian Pedregosa, March 2010
 #
 
-__all__ = ['get_blas_funcs']
+__all__ = ['get_blas_funcs', 'find_best_blas_type']
 
 import numpy as np
 
@@ -31,6 +31,45 @@ _blas_alias = {'cnrm2' : 'scnrm2', 'znrm2' : 'dznrm2',
                'sdotc': 'sdot', 'sdotu': 'sdot',
                'ddotc': 'ddot', 'ddotu': 'ddot'}
 
+def find_best_blas_type(arrays=(), dtype=None):
+    """Find best-matching BLAS/LAPACK type.
+
+    Arrays are used to determine the optimal prefix of BLAS routines.
+
+    Parameters
+    ----------
+    arrays : sequency of ndarrays, optional
+        Arrays can be given to determine optiomal prefix of BLAS
+        routines. If not given, double-precision routines will be
+        used, otherwise the most generic type in arrays will be used.
+    dtype : str or dtype, optional
+        Data-type specifier. Not used if `arrays` is non-empty.
+
+    Returns
+    -------
+    prefix : str
+        BLAS/LAPACK prefix character.
+    dtype : dtype
+        Inferred Numpy data type.
+    prefer_fortran : bool
+        Whether to prefer Fortran order routines over C order.
+
+    """
+    dtype = np.dtype(dtype)
+    prefer_fortran = False
+
+    if arrays:
+        # use the most generic type in arrays
+        dtype, index = max(
+            [(ar.dtype, i) for i, ar in enumerate(arrays)])
+        if arrays[index].flags['FORTRAN']:
+            # prefer Fortran for leading array with column major order
+            prefer_fortran = True
+
+    prefix = _type_conv.get(dtype.char, 'd')
+
+    return prefix, dtype, prefer_fortran
+
 def _get_funcs(names, arrays, dtype,
                lib_name, fmodule, cmodule, alias):
     """
@@ -49,15 +88,10 @@ def _get_funcs(names, arrays, dtype,
         names = (names,)
         unpack = True
 
-    if arrays:
-        # use the most generic type in arrays
-        dtype, index = max(
-            [(ar.dtype, i) for i, ar in enumerate(arrays)])
-        if arrays[index].flags['FORTRAN']:
-            # prefer Fortran for leading array with column major order
-            module1, module2 = module2, module1
+    prefix, dtype, prefer_fortran = find_best_blas_type(arrays, dtype)
 
-    prefix = _type_conv.get(dtype.char, 'd')
+    if prefer_fortran:
+        module1, module2 = module2, module1
 
     for i, name in enumerate(names):
         func_name = prefix + name

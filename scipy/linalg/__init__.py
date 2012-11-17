@@ -126,6 +126,16 @@ Special Matrices
    toeplitz - Toeplitz matrix
    tri - Construct a matrix filled with ones at and below a given diagonal
 
+Low-level routines
+==================
+
+.. autosummary::
+   :toctree: generated/
+
+   get_blas_funcs
+   get_lapack_funcs
+   find_best_blas_type
+
 """
 
 from linalg_version import linalg_version as __version__
