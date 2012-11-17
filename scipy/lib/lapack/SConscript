@@ -79,8 +79,3 @@ env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
 calc_src = env.F2py(pjoin('calc_lworkmodule.c'), 
                          source = pjoin('calc_lwork.f'))
 env.NumpyPythonExtension('calc_lwork', source = calc_src + ['calc_lwork.f'])
-
-#--------------
-# Atlas version
-#--------------
-env.NumpyPythonExtension('atlas_version', 'atlas_version.c')
