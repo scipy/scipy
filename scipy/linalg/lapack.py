@@ -9,6 +9,9 @@ __all__ = ['get_lapack_funcs']
 # is raised at the first attempt to use the resources.
 from blas import _get_funcs
 
+# Backward compatibility:
+from blas import find_best_blas_type as find_best_lapack_type
+
 from scipy.linalg import flapack
 try:
     from scipy.linalg import clapack
