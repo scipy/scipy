@@ -387,5 +387,6 @@ def test_circstats_small():
     S2 = stats.circstd(x, high=360)
     assert_allclose(S2, S1, rtol=1e-4)
 
+
 if __name__ == "__main__":
     run_module_suite()

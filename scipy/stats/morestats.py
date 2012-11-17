@@ -4,6 +4,9 @@
 #
 
 import math
+import types
+import warnings
+
 import statlib
 import stats
 from stats import find_repeats
@@ -12,14 +15,10 @@ from numpy import isscalar, r_, log, sum, around, unique, asarray
 from numpy import zeros, arange, sort, amin, amax, any, where, \
      atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
      pi, exp, ravel, angle
-import scipy
 import numpy as np
-import types
 import scipy.optimize as optimize
-import scipy.special as special
-import futil
 from numpy.testing.decorators import setastest
-import warnings
+
 
 __all__ = ['mvsdist',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
@@ -1422,7 +1421,6 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     res = np.mean(exp(1j*ang), axis=axis)
     R = abs(res)
     return ((high-low)/2.0/pi) * sqrt(-2*log(R))
-
 
 
 #Tests to include (from R) -- some of these already in stats.
