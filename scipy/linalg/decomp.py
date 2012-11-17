@@ -44,8 +44,6 @@ def _make_complex_eigvecs(w, vin, dtype):
 def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
     cvl, cvr = left, right
-    if ggev.module_name[:7] == 'clapack':
-        raise NotImplementedError('calling ggev from %s' % ggev.module_name)
     res = ggev(a1, b1, lwork=-1)
     lwork = res[-2][0].real.astype(numpy.int)
     if ggev.typecode in 'cz':
@@ -155,34 +153,22 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         return _geneig(a1, b1, left, right, overwrite_a, overwrite_b)
     geev, = get_lapack_funcs(('geev',), (a1,))
     compute_vl, compute_vr = left, right
-    if geev.module_name[:7] == 'flapack':
-        lwork = calc_lwork.geev(geev.typecode, a1.shape[0],
-                                    compute_vl, compute_vr)[1]
-        if geev.typecode in 'cz':
-            w, vl, vr, info = geev(a1, lwork=lwork,
-                                        compute_vl=compute_vl,
-                                        compute_vr=compute_vr,
-                                        overwrite_a=overwrite_a)
-        else:
-            wr, wi, vl, vr, info = geev(a1, lwork=lwork,
-                                        compute_vl=compute_vl,
-                                        compute_vr=compute_vr,
-                                        overwrite_a=overwrite_a)
-            t = {'f':'F','d':'D'}[wr.dtype.char]
-            w = wr + _I * wi
-    else: # 'clapack'
-        if geev.typecode in 'cz':
-            w, vl, vr, info = geev(a1,
+
+    lwork = calc_lwork.geev(geev.typecode, a1.shape[0],
+                                compute_vl, compute_vr)[1]
+    if geev.typecode in 'cz':
+        w, vl, vr, info = geev(a1, lwork=lwork,
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
                                     overwrite_a=overwrite_a)
-        else:
-            wr, wi, vl, vr, info = geev(a1,
-                                        compute_vl=compute_vl,
-                                        compute_vr=compute_vr,
-                                        overwrite_a=overwrite_a)
-            t = {'f':'F','d':'D'}[wr.dtype.char]
-            w = wr + _I * wi
+    else:
+        wr, wi, vl, vr, info = geev(a1, lwork=lwork,
+                                    compute_vl=compute_vl,
+                                    compute_vr=compute_vr,
+                                    overwrite_a=overwrite_a)
+        t = {'f':'F','d':'D'}[wr.dtype.char]
+        w = wr + _I * wi
+
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal geev'
                                                                     % -info)
