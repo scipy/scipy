@@ -5,13 +5,11 @@
 ! Created: Jan-Feb 2002
 ! $Revision$ $Date$
 ! 
-! Usage:
-!  f2py -c cblas.pyf -L/usr/local/lib/atlas -lf77blas -lcblas  -latlas -lg2c
 
 python module cblas
     interface
 
-       <include_file=generic_cblas1.pyf>
+       include "cblas_l1.pyf.src"
 
     end interface
 end python module cblas

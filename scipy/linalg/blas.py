@@ -10,8 +10,12 @@ import numpy as np
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
 
-from scipy.linalg import cblas, fblas
-if hasattr(cblas,'empty_module'):
+from scipy.linalg import fblas
+try:
+    from scipy.linalg import cblas
+except ImportError:
+    cblas = None
+if cblas is None:
     cblas = fblas
 elif hasattr(fblas,'empty_module'):
     fblas = cblas
