@@ -1,3 +1,199 @@
+"""
+Low-level LAPACK functions
+==========================
+
+This module contains low-level functions from the LAPACK library.
+
+.. warning::
+
+   These functions do little to no error checking.
+   It is possible to cause crashes by mis-using them,
+   so prefer using the higher-level routines in `scipy.linalg`.
+
+Finding functions
+=================
+
+.. autosummary::
+
+   get_lapack_funcs
+   find_best_blas_type
+
+All functions
+=============
+
+.. autosummary::
+   :toctree: generated/
+
+   cgbsv
+   cgbtrf
+   cgbtrs
+   cgebal
+   cgees
+   cgeev
+   cgegv
+   cgehrd
+   cgelss
+   cgeqp3
+   cgeqrf
+   cgerqf
+   cgesdd
+   cgesv
+   cgetrf
+   cgetri
+   cgetrs
+   cgges
+   cggev
+   chbevd
+   chbevx
+   cheev
+   cheevr
+   chegv
+   chegvd
+   chegvx
+   claswp
+   clauum
+   cpbsv
+   cpbtrf
+   cpbtrs
+   cposv
+   cpotrf
+   cpotri
+   cpotrs
+   ctrsyl
+   ctrtri
+   ctrtrs
+   cungqr
+   cungrq
+   cunmqr
+   dgbsv
+   dgbtrf
+   dgbtrs
+   dgebal
+   dgees
+   dgeev
+   dgegv
+   dgehrd
+   dgelss
+   dgeqp3
+   dgeqrf
+   dgerqf
+   dgesdd
+   dgesv
+   dgetrf
+   dgetri
+   dgetrs
+   dgges
+   dggev
+   dlamch
+   dlaswp
+   dlauum
+   dorgqr
+   dorgrq
+   dormqr
+   dpbsv
+   dpbtrf
+   dpbtrs
+   dposv
+   dpotrf
+   dpotri
+   dpotrs
+   dsbev
+   dsbevd
+   dsbevx
+   dsyev
+   dsyevr
+   dsygv
+   dsygvd
+   dsygvx
+   dtrsyl
+   dtrtri
+   dtrtrs
+   sgbsv
+   sgbtrf
+   sgbtrs
+   sgebal
+   sgees
+   sgeev
+   sgegv
+   sgehrd
+   sgelss
+   sgeqp3
+   sgeqrf
+   sgerqf
+   sgesdd
+   sgesv
+   sgetrf
+   sgetri
+   sgetrs
+   sgges
+   sggev
+   slamch
+   slaswp
+   slauum
+   sorgqr
+   sorgrq
+   sormqr
+   spbsv
+   spbtrf
+   spbtrs
+   sposv
+   spotrf
+   spotri
+   spotrs
+   ssbev
+   ssbevd
+   ssbevx
+   ssyev
+   ssyevr
+   ssygv
+   ssygvd
+   ssygvx
+   strsyl
+   strtri
+   strtrs
+   zgbsv
+   zgbtrf
+   zgbtrs
+   zgebal
+   zgees
+   zgeev
+   zgegv
+   zgehrd
+   zgelss
+   zgeqp3
+   zgeqrf
+   zgerqf
+   zgesdd
+   zgesv
+   zgetrf
+   zgetri
+   zgetrs
+   zgges
+   zggev
+   zhbevd
+   zhbevx
+   zheev
+   zheevr
+   zhegv
+   zhegvd
+   zhegvx
+   zlaswp
+   zlauum
+   zpbsv
+   zpbtrf
+   zpbtrs
+   zposv
+   zpotrf
+   zpotri
+   zpotrs
+   ztrsyl
+   ztrtri
+   ztrtrs
+   zungqr
+   zungrq
+   zunmqr
+
+"""
 #
 # Author: Pearu Peterson, March 2002
 #
@@ -12,18 +208,23 @@ from blas import _get_funcs
 # Backward compatibility:
 from blas import find_best_blas_type as find_best_lapack_type
 
-from scipy.linalg import flapack
+from scipy.linalg import flapack as _flapack
 try:
-    from scipy.linalg import clapack
+    from scipy.linalg import clapack as _clapack
 except ImportError:
-    clapack = None
+    _clapack = None
 
 _use_force_clapack = 1
-if clapack is None:
-    clapack = flapack
+if _clapack is None:
+    _clapack = _flapack
     _use_force_clapack = 0
-elif hasattr(flapack,'empty_module'):
-    flapack = clapack
+elif hasattr(_flapack,'empty_module'):
+    _flapack = _clapack
+
+# Expose all functions (only flapack --- clapack is an implementation detail)
+empty_module = None
+from scipy.linalg.flapack import *
+del empty_module
 
 # some convenience alias for complex functions
 _lapack_alias = {
@@ -70,4 +271,4 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     are stored in attribute `typecode` of the returned functions.
     """
     return _get_funcs(names, arrays, dtype,
-                      "LAPACK", flapack, clapack, _lapack_alias)
+                      "LAPACK", _flapack, _clapack, _lapack_alias)

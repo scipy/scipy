@@ -135,6 +135,8 @@ Low-level routines
    get_blas_funcs
    get_lapack_funcs
    find_best_blas_type
+   scipy.linalg.blas
+   scipy.linalg.lapack
 
 """
 
@@ -151,6 +153,7 @@ from decomp_svd import *
 from decomp_schur import *
 from matfuncs import *
 from blas import *
+from lapack import *
 from special_matrices import *
 from _solvers import *
 
