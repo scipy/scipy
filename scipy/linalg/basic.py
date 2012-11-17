@@ -356,31 +356,18 @@ def inv(a, overwrite_a=False, check_finite=True):
 ##         if info<0: raise ValueError,\
 ##            'illegal value in %d-th argument of internal inv.getrf|getri'%(-info)
     getrf, getri = get_lapack_funcs(('getrf','getri'), (a1,))
-    #XXX: C ATLAS versions of getrf/i have rowmajor=1, this could be
-    #     exploited for further optimization. But it will be probably
-    #     a mess. So, a good testing site is required before trying
-    #     to do that.
-    if getrf.module_name[:7] == 'clapack' != getri.module_name[:7]:
-        # ATLAS 3.2.1 has getrf but not getri.
-        lu, piv, info = getrf(np.transpose(a1), rowmajor=0,
-                                                overwrite_a=overwrite_a)
-        lu = np.transpose(lu)
-    else:
-        lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
+    lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info == 0:
-        if getri.module_name[:7] == 'flapack':
-            lwork = calc_lwork.getri(getri.prefix, a1.shape[0])
-            lwork = lwork[1]
-            # XXX: the following line fixes curious SEGFAULT when
-            # benchmarking 500x500 matrix inverse. This seems to
-            # be a bug in LAPACK ?getri routine because if lwork is
-            # minimal (when using lwork[0] instead of lwork[1]) then
-            # all tests pass. Further investigation is required if
-            # more such SEGFAULTs occur.
-            lwork = int(1.01 * lwork)
-            inv_a, info = getri(lu, piv, lwork=lwork, overwrite_lu=1)
-        else: # clapack
-            inv_a, info = getri(lu, piv, overwrite_lu=1)
+        lwork = calc_lwork.getri(getri.typecode, a1.shape[0])
+        lwork = lwork[1]
+        # XXX: the following line fixes curious SEGFAULT when
+        # benchmarking 500x500 matrix inverse. This seems to
+        # be a bug in LAPACK ?getri routine because if lwork is
+        # minimal (when using lwork[0] instead of lwork[1]) then
+        # all tests pass. Further investigation is required if
+        # more such SEGFAULTs occur.
+        lwork = int(1.01 * lwork)
+        inv_a, info = getri(lu, piv, lwork=lwork, overwrite_lu=1)
     if info > 0:
         raise LinAlgError("singular matrix")
     if info < 0:
@@ -531,16 +518,14 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
     overwrite_b = overwrite_b or _datacopied(b1, b)
-    if gelss.module_name[:7] == 'flapack':
-        # get optimal work array
-        work = gelss(a1, b1, lwork=-1)[4]
-        lwork = work[0].real.astype(np.int)
-        v, x, s, rank, work, info = gelss(
-            a1, b1, cond=cond, lwork=lwork, overwrite_a=overwrite_a,
-            overwrite_b=overwrite_b)
 
-    else:
-        raise NotImplementedError('calling gelss from %s' % gelss.module_name)
+    # get optimal work array
+    work = gelss(a1, b1, lwork=-1)[4]
+    lwork = work[0].real.astype(np.int)
+    v, x, s, rank, work, info = gelss(
+        a1, b1, cond=cond, lwork=lwork, overwrite_a=overwrite_a,
+        overwrite_b=overwrite_b)
+
     if info > 0:
         raise LinAlgError("SVD did not converge in Linear Least Squares")
     if info < 0:
