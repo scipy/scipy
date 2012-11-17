@@ -117,6 +117,11 @@
 		       file Faddeeva.hh.
 */
 
+#include "Python.h"
+extern "C" {
+#include "numpy/npy_math.h"
+}
+
 #include <cfloat>
 #include <cmath>
 
@@ -124,13 +129,15 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
 
-// define my own isnan & isinf, since std:: versions only available in C++11
-static inline bool my_isnan(double x) { return x != x; }
-#define isnan my_isnan
-static inline bool my_isinf(double x) { return 1/x == 0.; }
-#define isinf my_isinf
-#define Inf (1./0.) // infinity
-#define NaN (0./0.) // NaN
+// use numpy's isnan & isinf, since std:: versions only available in C++11
+#define isnan npy_isnan
+#define isinf npy_isinf
+#define Inf NPY_INFINITY // infinity
+#define NaN NPY_NAN // NaN
+
+#ifdef _MSC_VER
+#define copysign _copysign
+#endif
 
 /////////////////////////////////////////////////////////////////////////
 // Auxiliary routines to compute other special functions based on w(z)
