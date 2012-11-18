@@ -84,10 +84,10 @@ def test_boost():
         data(erfcinv, 'erfc_inv_data_ipp-erfc_inv_data', 0, 1),
         #data(erfcinv, 'erfc_inv_big_data_ipp-erfc_inv_big_data', 0, 1),
 
-        data(exp1, 'expint_1_data_ipp-expint_1_data', 1, 2),
+        data(exp1, 'expint_1_data_ipp-expint_1_data', 1, 2, rtol=1e-13),
         data(exp1, 'expint_1_data_ipp-expint_1_data', 1j, 2, rtol=5e-9),
         data(expi, 'expinti_data_ipp-expinti_data', 0, 1, rtol=1e-13),
-        data(expi, 'expinti_data_double_ipp-expinti_data_double', 0, 1),
+        data(expi, 'expinti_data_double_ipp-expinti_data_double', 0, 1, rtol=1e-13),
 
         data(expn, 'expint_small_data_ipp-expint_small_data', (0,1), 2),
         data(expn, 'expint_data_ipp-expint_data', (0,1), 2, rtol=1e-14),
