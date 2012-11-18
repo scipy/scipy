@@ -321,6 +321,7 @@ EXTRA_CODE_CXX = EXTRA_CODE_COMMON + """
 # Code generation
 #---------------------------------------------------------------------------------
 
+import os
 import subprocess
 import optparse
 import re
@@ -340,26 +341,26 @@ CY_TYPES = {
 }
 
 C_TYPES = {
-    'f': 'np.npy_float',
-    'd': 'np.npy_double',
-    'g': 'np.npy_longdouble',
-    'F': 'np.npy_cfloat',
-    'D': 'np.npy_cdouble',
-    'G': 'np.npy_clongdouble',
-    'i': 'np.npy_int',
-    'l': 'np.npy_long',
+    'f': 'npy_float',
+    'd': 'npy_double',
+    'g': 'npy_longdouble',
+    'F': 'npy_cfloat',
+    'D': 'npy_cdouble',
+    'G': 'npy_clongdouble',
+    'i': 'npy_int',
+    'l': 'npy_long',
     'v': 'void',
 }
 
 TYPE_NAMES = {
-    'f': 'np.NPY_FLOAT',
-    'd': 'np.NPY_DOUBLE',
-    'g': 'np.NPY_LONGDOUBLE',
-    'F': 'np.NPY_CFLOAT',
-    'D': 'np.NPY_CDOUBLE',
-    'G': 'np.NPY_CLONGDOUBLE',
-    'i': 'np.NPY_INT',
-    'l': 'np.NPY_LONG',
+    'f': 'NPY_FLOAT',
+    'd': 'NPY_DOUBLE',
+    'g': 'NPY_LONGDOUBLE',
+    'F': 'NPY_CFLOAT',
+    'D': 'NPY_CDOUBLE',
+    'G': 'NPY_CLONGDOUBLE',
+    'i': 'NPY_INT',
+    'l': 'NPY_LONG',
 }
 
 def cast_order(c):
@@ -723,6 +724,9 @@ class Ufunc(object):
         return toplevel
 
 def generate(filename, ufunc_str, extra_code):
+    proto_h_filename = os.path.splitext(filename)[0] + '_defs.h'
+    proto_h_basename = os.path.basename(proto_h_filename)
+
     ufuncs = []
     headers = {}
 
@@ -742,6 +746,7 @@ def generate(filename, ufunc_str, extra_code):
 
     toplevel = ""
     defs = ""
+    defs_h = []
     all_loops = {}
 
     ufuncs.sort(key=lambda u: u.name)
@@ -773,10 +778,11 @@ def generate(filename, ufunc_str, extra_code):
             else:
                 # redeclare the function, so that the assumed
                 # signature is checked at compile time
-                defs += "cdef extern from \"%s\":\n" % header
-                defs += "    pass\n"
                 new_name = "%s \"%s\"" % (ufunc.cython_func_name(c_name), c_name)
-                defs += "cdef extern %s\n" % (c_proto.replace('(*)', new_name))
+                defs += "cdef extern from \"%s\":\n" % proto_h_filename
+                defs += "    cdef %s\n" % (cy_proto.replace('(*)', new_name))
+                defs_h.append("#include \"%s\"" % header)
+                defs_h.append("%s;" % (c_proto.replace('(*)', c_name)))
 
     toplevel = "\n".join(all_loops.values() + [defs, toplevel])
 
@@ -794,6 +800,14 @@ cdef extern from "numpy/npy_math.h":
     double NPY_NAN
 
 cimport numpy as np
+from numpy cimport (
+    npy_float, npy_double, npy_longdouble,
+    npy_cfloat, npy_cdouble, npy_clongdouble,
+    npy_int, npy_long,
+    NPY_FLOAT, NPY_DOUBLE, NPY_LONGDOUBLE,
+    NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE,
+    NPY_INT, NPY_LONG)
+
 cimport libc
 
 np.import_array()
@@ -807,6 +821,26 @@ np.import_ufunc()
 
     f.close()
 
+    defs_h = unique(defs_h)
+    f = open(proto_h_filename, 'wb')
+    f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
+    f.write("\n".join(defs_h))
+    f.write("\n#endif\n")
+    f.close()
+
+def unique(lst):
+    """
+    Return a list without repeated entries (first occurrence is kept),
+    preserving order.
+    """
+    seen = set()
+    new_lst = []
+    for item in lst:
+        if item in seen:
+            continue
+        seen.add(item)
+        new_lst.append(item)
+    return new_lst
 
 def main():
     p = optparse.OptionParser(usage=__doc__.strip())
