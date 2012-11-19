@@ -285,5 +285,9 @@ class TestSLSQP(TestCase):
                        iprint=0)
         assert_array_almost_equal(x, [1.])
 
+    def test_integer_bounds(self):
+        # this should not raise an exception
+        fmin_slsqp(lambda z: z**2 - 1, [0], bounds=[[0, 1]], iprint=0)
+
 if __name__ == "__main__":
     run_module_suite()

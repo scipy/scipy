@@ -315,7 +315,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     jw = zeros(len_jw)
 
     # Decompose bounds into xl and xu
-    bnds = array(bounds)
+    bnds = array(bounds, float)
     if not bnds.any():
         xl, xu = array([-1.0E12]*n), array([1.0E12]*n)
     elif bnds.shape[0] != n:
