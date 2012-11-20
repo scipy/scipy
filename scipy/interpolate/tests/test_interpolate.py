@@ -59,6 +59,24 @@ class TestInterp2D(TestCase):
         assert_almost_equal(b(2.0, 1.5), np.array([0.5]), decimal=2)
         assert_almost_equal(b(2.0, 2.5), np.array([0.5]), decimal=2)
 
+    def test_interp2d_bounds(self):
+        x = np.linspace(0, 1, 5)
+        y = np.linspace(0, 2, 7)
+        z = x[:,None]**2 + y[None,:]
+
+        ix = np.linspace(-1, 3, 31)
+        iy = np.linspace(-1, 3, 33)
+
+        b = interp2d(x, y, z, bounds_error=True)
+        assert_raises(ValueError, b, ix, iy)
+
+        b = interp2d(x, y, z, fill_value=np.nan)
+        iz = b(ix, iy)
+        mx = (ix<0) | (ix>1)
+        my = (iy<0) | (iy>2)
+        assert_(np.isnan(iz[my,:]).all())
+        assert_(np.isnan(iz[:,mx]).all())
+        assert_(np.isfinite(iz[~my,:][:,~mx]).all())
 
 class TestInterp1D(object):
 
