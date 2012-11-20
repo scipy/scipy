@@ -95,10 +95,11 @@ class interp2d(object):
     kind : {'linear', 'cubic', 'quintic'}, optional
         The kind of spline interpolation to use. Default is 'linear'.
     copy : bool, optional
-        If True, then data is copied, otherwise only a reference is held.
+        If True, the class makes internal copies of x, y and z.
+        If False, references may be used. The default is to copy.
     bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
-        domain of the input data, an error is raised.
+        domain of the input data (x,y), an error is raised.
         If False, then `fill_value` is used.
     fill_value : number, optional
         If provided, the value to use for points outside of the
@@ -144,27 +145,27 @@ class interp2d(object):
 
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
                  fill_value=np.nan):
-        self.x, self.y, self.z = map(asarray, [x, y, z])
-        self.x, self.y = map(ravel, [self.x, self.y])
+        x = ravel(x)
+        y = ravel(y)
+        z = asarray(z)
 
-        if self.z.size == len(self.x) * len(self.y):
-            rectangular_grid = True
-            if not np.all(self.x[1:] > self.x[:-1]):
-                j = np.argsort(self.x)
-                self.x = self.x[j]
-                self.z = self.z[:,j]
-            if not np.all(self.y[1:] > self.y[:-1]):
-                j = np.argsort(self.y)
-                self.y = self.y[j]
-                self.z = self.z[j,:]
-            self.z = ravel(self.z.T)
+        rectangular_grid = z.size == len(x) * len(y)
+        if rectangular_grid:
+            if not np.all(x[1:] > x[:-1]):
+                j = np.argsort(x)
+                x = x[j]
+                z = z[:,j]
+            if not np.all(y[1:] > y[:-1]):
+                j = np.argsort(y)
+                y = y[j]
+                z = z[j,:]
+            z = ravel(z.T)
         else:
-            rectangular_grid = False
-            self.z = ravel(self.z)
-            if len(self.x) != len(self.y):
+            z = ravel(z)
+            if len(x) != len(y):
                 raise ValueError(
                     "x and y must have equal lengths for non rectangular grid")
-            if len(self.z) != len(self.x):
+            if len(z) != len(x):
                 raise ValueError(
                     "Invalid length for input z for non rectangular grid")
 
@@ -177,14 +178,20 @@ class interp2d(object):
 
         if not rectangular_grid:
             # TODO: surfit is really not meant for interpolation!
-            self.tck = fitpack.bisplrep(self.x, self.y, self.z,
-                                        kx=kx, ky=ky, s=0.0)
+            self.tck = fitpack.bisplrep(x, y, z, kx=kx, ky=ky, s=0.0)
         else:
             nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(
-                self.x, self.y, self.z, None, None, None, None,
+                x, y, self.z, None, None, None, None,
                 kx=kx, ky=ky, s=0.0)
             self.tck = (tx[:nx], ty[:ny], c[:(nx - kx - 1) * (ny - ky - 1)],
                         kx, ky)
+
+        self.bounds_error = bounds_error
+        self.fill_value = fill_value
+        self.x, self.y, self.z = [array(a, copy=copy) for a in x, y, z]
+
+        self.x_min, self.x_max = np.amin(x), np.amax(x)
+        self.y_min, self.y_max = np.amin(y), np.amax(y)
 
     def __call__(self,x,y,dx=0,dy=0):
         """Interpolate the function.
@@ -209,9 +216,18 @@ class interp2d(object):
 
         x = atleast_1d(x)
         y = atleast_1d(y)
+
+        out_of_bounds = np.logical_or.reduce([x < self.x_min, x > self.x_max,
+                                              y < self.y_min, y > self.y_max])
+        if self.bounds_error and np.any(out_of_bounds):
+            raise ValueError("Values out of range; x must be in %r, y in %r"
+                             % ((self.x_min, self.x_max),
+                                (self.y_min, self.y_max)))
+
         z = fitpack.bisplev(x, y, self.tck, dx, dy)
         z = atleast_2d(z)
         z = transpose(z)
+        z[out_of_bounds] = self.fill_value
         if len(z)==1:
             z = z[0]
         return array(z)
