@@ -315,13 +315,14 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     jw = zeros(len_jw)
 
     # Decompose bounds into xl and xu
-    bnds = array(bounds, float)
-    if not bnds.any():
+    if bounds is None or len(bounds) == 0:
         xl, xu = array([-1.0E12]*n), array([1.0E12]*n)
-    elif bnds.shape[0] != n:
-        raise IndexError('SLSQP Error: the length of bounds is not '
-                         'compatible with that of x0.')
     else:
+        bnds = array(bounds, float)
+        if bnds.shape[0] != n:
+            raise IndexError('SLSQP Error: the length of bounds is not '
+                             'compatible with that of x0.')
+
         bnderr = where(bnds[:, 0] > bnds[:, 1])[0]
         if bnderr.any():
             raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
