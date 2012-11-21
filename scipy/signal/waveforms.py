@@ -19,14 +19,20 @@ def sawtooth(t, width=1):
     interval 0 to ``width*2*pi``, then drops from 1 to -1 on the interval
     ``width*2*pi`` to ``2*pi``. `width` must be in the interval [0, 1].
 
+    Note that this is not band-limited.  It produces an infinite number 
+    of harmonics, which are aliased back and forth across the frequency 
+    spectrum.
+
     Parameters
     ----------
     t : array_like
         Time.
-    width : float, optional
+    width : float or array_like, optional
         Width of the rising ramp as a proportion of the total cycle.
         Default is 1, producing a rising ramp, while 0 produces a falling
         ramp.  `t` = 0.5 produces a triangle wave.
+        If an array, must be the same length as t, causes wave shape to change 
+        over time.
 
     Returns
     -------
@@ -84,12 +90,18 @@ def square(t, duty=0.5):
     ``2*pi*duty`` and -1 from ``2*pi*duty`` to ``2*pi``. `duty` must be in
     the interval [0,1].
 
+    Note that this is not band-limited.  It produces an infinite number 
+    of harmonics, which are aliased back and forth across the frequency 
+    spectrum.
+
     Parameters
     ----------
     t : array_like
         The input time array.
-    duty : float, optional
+    duty : float or array_like, optional
         Duty cycle.  Default is 0.5 (50% duty cycle)
+        If an array, must be the same length as t, causes wave shape to change 
+        over time.
 
     Returns
     -------
@@ -105,6 +117,16 @@ def square(t, duty=0.5):
     >>> t = np.linspace(0, 1, 500, endpoint=False)
     >>> plt.plot(t, signal.square(2 * np.pi * 5 * t))
     >>> plt.ylim(-2, 2)
+
+    A pulse-width modulated sine wave:
+
+    >>> sig = np.sin(2 * np.pi * t)
+    >>> pwm = scipy.signal.square(2 * np.pi * 30 * t, duty=(sig + 1)/2)
+    >>> plt.subplot(2, 1, 1)
+    >>> plt.plot(t, sig)
+    >>> plt.subplot(2, 1, 2)
+    >>> plt.plot(t, pwm)
+    >>> plt.ylim(-1.5, 1.5)
 
     """
     t, w = asarray(t), asarray(duty)
