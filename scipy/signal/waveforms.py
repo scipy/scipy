@@ -98,8 +98,8 @@ def square(t, duty=0.5):
     ----------
     t : array_like
         The input time array.
-    duty : float or array_like, optional
-        Duty cycle.  Default is 0.5 (50% duty cycle)
+    duty : array_like, optional
+        Duty cycle.  Default is 0.5 (50% duty cycle).
         If an array, must be the same length as t, causes wave shape to change
         over time.
 
@@ -136,28 +136,21 @@ def square(t, duty=0.5):
         ytype = t.dtype.char
     else:
         ytype = 'd'
+
     y = zeros(t.shape, ytype)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
     place(y, mask1, nan)
 
-    # take t modulo 2*pi
+    # on the interval 0 to duty*2*pi function is 1
     tmod = mod(t, 2 * pi)
-
-    # on the interval 0 to duty*2*pi function is
-    #  1
     mask2 = (1 - mask1) & (tmod < w * 2 * pi)
-    tsub = extract(mask2, tmod)
-    wsub = extract(mask2, w)
     place(y, mask2, 1)
 
     # on the interval duty*2*pi to 2*pi function is
     #  (pi*(w+1)-tmod) / (pi*(1-w))
-
     mask3 = (1 - mask1) & (1 - mask2)
-    tsub = extract(mask3, tmod)
-    wsub = extract(mask3, w)
     place(y, mask3, -1)
     return y
 
@@ -176,7 +169,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
 
     Parameters
     ----------
-    t : ndarray, or the string 'cutoff'
+    t : ndarray or the string 'cutoff'
         Input array.
     fc : int, optional
         Center frequency (Hz).  Default is 1000.
@@ -214,9 +207,10 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     Plot real component, imaginary component, and envelope for a 5 Hz pulse,
     sampled at 100 Hz for 2 seconds:
 
+    >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t = np.linspace(-1, 1, 2 * 100, endpoint=False)
-    >>> i, q, e = scipy.signal.gausspulse(t, fc=5, retquad=True, retenv=True)
+    >>> i, q, e = signal.gausspulse(t, fc=5, retquad=True, retenv=True)
     >>> plt.plot(t, i, t, q, t, e, '--')
 
     """
@@ -295,7 +289,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
     See Also
     --------
-    scipy.signal.waveforms.sweep_poly
+    sweep_poly
 
     Notes
     -----
@@ -405,7 +399,7 @@ def sweep_poly(t, poly, phi=0):
     ----------
     t : ndarray
         Times at which to evaluate the waveform.
-    poly : 1D ndarray (or array-like), or instance of numpy.poly1d
+    poly : 1-D array-like or instance of numpy.poly1d
         The desired frequency expressed as a polynomial.  If `poly` is
         a list or ndarray of length n, then the elements of `poly` are
         the coefficients of the polynomial, and the instantaneous
@@ -431,7 +425,7 @@ def sweep_poly(t, poly, phi=0):
 
     See Also
     --------
-    scipy.signal.waveforms.chirp
+    chirp
 
     Notes
     -----
