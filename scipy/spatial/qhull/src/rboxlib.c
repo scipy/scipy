@@ -26,7 +26,7 @@
 
 #ifdef _MSC_VER  /* Microsoft Visual C++ */
 #pragma warning( disable : 4706)  /* assignment within conditional expression. */
-#pragma warning( disable : 4996)  /* this function (strncat) or variable may be unsafe. */
+#pragma warning( disable : 4996)  /* this function (strncat,sprintf,strcpy) or variable may be unsafe. */
 #endif
 
 #define MAXdim 200
@@ -76,6 +76,7 @@ rboxT rbox;
 
   notes:
     To avoid stdio, redefine qh_malloc, qh_free, and qh_fprintf_rbox (user.c)
+    Rbox is not multithreaded.
 
   design:
     Straight line code (consider defining a struct and functions):

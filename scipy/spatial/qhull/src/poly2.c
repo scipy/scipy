@@ -8,9 +8,9 @@
 
    frequently used code is in poly.c
 
-   copyright (c) 1993-2010 The Geometry Center.
-   $Id: //product/qhull/main/rel/src/poly2.c#40 $$Change: 1164 $
-   $DateTime: 2010/01/07 21:52:00 $$Author: bbarber $
+   Copyright (c) 1993-2012 The Geometry Center.
+   $Id: //main/2011/qhull/src/libqhull/poly2.c#5 $$Change: 1490 $
+   $DateTime: 2012/02/19 20:27:01 $$Author: bbarber $
 */
 
 #include "qhull_a.h"
@@ -1779,6 +1779,13 @@ void qh_initialhull(setT *vertices) {
   }
   FORALLfacets {
     if (!qh_checkflipped(facet, NULL, !qh_ALL)) {  /* can happen with 'R0.1' */
+      if (qh DELAUNAY && ! qh ATinfinity) {
+        if (qh UPPERdelaunay)
+          qh_fprintf(qh ferr, 6240, "Qhull input error: Can not compute the upper Delaunay triangulation or upper Voronoi diagram of cocircular/cospherical points.\n");
+        else
+          qh_fprintf(qh ferr, 6239, "Qhull input error: Use option 'Qz' for the Delaunay triangulation or Voronoi diagram of cocircular/cospherical points.  Option 'Qz' adds a point \"at infinity\" (above the corresponding paraboloid).\n");
+        qh_errexit(qh_ERRinput, NULL, NULL);
+      }
       qh_precision("initial facet is coplanar with interior point");
       qh_fprintf(qh ferr, 6154, "qhull precision error: initial facet %d is coplanar with the interior point\n",
                    facet->id);
@@ -2241,6 +2248,10 @@ int qh_newhashtable(int newsize) {
 
   size= ((newsize+1)*qh_HASHfactor) | 0x1;  /* odd number */
   while (True) {
+    if (newsize<0 || size<0) {
+        qh_fprintf(qhmem.ferr, 6236, "qhull error (qh_newhashtable): negative request (%d) or size (%d).  Did int overflow due to high-D?\n", newsize, size); /* WARN64 */
+        qh_errexit(qhmem_ERRmem, NULL, NULL);
+    }
     if ((size%3) && (size%5))
       break;
     size += 2;
@@ -2264,9 +2275,9 @@ vertexT *qh_newvertex(pointT *point) {
   vertex= (vertexT *)qh_memalloc((int)sizeof(vertexT));
   memset((char *) vertex, (size_t)0, sizeof(vertexT));
   if (qh vertex_id == 0xFFFFFF) {
-    qh_fprintf(qh ferr, 6159, "qhull input error: more than %d vertices.  ID field overflows and two vertices\n\
-may have the same identifier.  Vertices not sorted correctly.\n", 0xFFFFFF);
-    qh_errexit(qh_ERRinput, NULL, NULL);
+    qh_fprintf(qh ferr, 6159, "qhull error: more than %d vertices.  ID field overflows and two vertices\n\
+may have the same identifier.  Vertices will not be sorted correctly.\n", 0xFFFFFF);
+    qh_errexit(qh_ERRqhull, NULL, NULL);
   }
   if (qh vertex_id == qh tracevertex_id)
     qh tracevertex= vertex;

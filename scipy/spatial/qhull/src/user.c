@@ -76,6 +76,15 @@
   facetT *facet;            /* set by FORALLfacets */
   int curlong, totlong;     /* memory remaining after qh_memfreeshort */
 
+#if qh_QHpointer  /* see user.h */
+  if (qh_qh){
+      printf ("QH6238: Qhull link error.  The global variable qh_qh was not initialized\n\
+              to NULL by global.c.  Please compile this program with -Dqh_QHpointer_dllimport\n\
+              as well as -Dqh_QHpointer, or use libqhullstatic, or use a different tool chain.\n\n");
+      exit -1;
+  }
+#endif
+
   /* initialize dim, numpoints, points[], ismalloc here */
   exitcode= qh_new_qhull(dim, numpoints, points, ismalloc,
                       flags, outfile, errfile);
@@ -159,8 +168,11 @@ int qh_new_qhull(int dim, int numpoints, coordT *points, boolT ismalloc,
     qh_init_B(new_points, numpoints, hulldim, new_ismalloc);
     qh_qhull();
     qh_check_output();
-    if (outfile)
+    if (outfile) {
       qh_produce_output();
+    }else {
+      qh_prepare_output();
+    }
     if (qh VERIFYoutput && !qh STOPpoint && !qh STOPcone)
       qh_check_points();
   }
@@ -214,7 +226,7 @@ void qh_errexit(int exitcode, facetT *facet, ridgeT *ridge) {
   }
   if (qh FORCEoutput && (qh QHULLfinished || (!facet && !ridge)))
     qh_produce_output();
-  else {
+  else if (exitcode != qh_ERRinput) {
     if (exitcode != qh_ERRsingular && zzval_(Zsetplane) > qh hull_dim+1) {
       qh_fprintf(qh ferr, 8134, "\nAt error exit:\n");
       qh_printsummary(qh ferr);
@@ -403,9 +415,10 @@ void qh_printhelp_narrowhull(FILE *fp, realT minangle) {
 
     qh_fprintf(fp, 9375, "qhull precision warning: \n\
 The initial hull is narrow (cosine of min. angle is %.16f).\n\
-A coplanar point may lead to a wide facet.  Options 'QbB' (scale to unit box)\n\
-or 'Qbb' (scale last coordinate) may remove this warning.  Use 'Pp' to skip\n\
-this warning.  See 'Limitations' in qh-impre.htm.\n",
+Is the input lower dimensional (e.g., on a plane in 3-d)?  Qhull may\n\
+produce a wide facet.  Options 'QbB' (scale to unit box) or 'Qbb' (scale\n\
+last coordinate) may remove this warning.  Use 'Pp' to skip this warning.\n\
+See 'Limitations' in qh-impre.htm.\n",
           -minangle);   /* convert from angle between normals to angle between facets */
 } /* printhelp_narrowhull */
 
@@ -494,11 +507,6 @@ If the input is lower dimensional:\n\
     into a coordinate plane, and delete the other coordinates.\n\
   - add one or more points to make the input full dimensional.\n\
 ");
-    if (qh DELAUNAY && !qh ATinfinity)
-      qh_fprintf(fp, 9390, "\n\n\
-This is a Delaunay triangulation and the input is co-circular or co-spherical:\n\
-  - use 'Qz' to add a point \"at infinity\" (i.e., above the paraboloid)\n\
-  - or use 'QJ' to joggle the input and avoid co-circular data\n");
   }
 } /* printhelp_singular */
 

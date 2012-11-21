@@ -13,9 +13,9 @@
    unix.c and user.c are the only callers of io.c functions
    This allows the user to avoid loading io.o from qhull.a
 
-   copyright (c) 1993-2010 The Geometry Center.
-   $Id: //product/qhull/main/rel/src/io.c#38 $$Change: 1179 $
-   $DateTime: 2010/01/12 19:53:15 $$Author: bbarber $
+   Copyright (c) 1993-2012 The Geometry Center.
+   $Id: //main/2011/qhull/src/libqhull/io.c#3 $$Change: 1464 $
+   $DateTime: 2012/01/25 22:58:41 $$Author: bbarber $
 */
 
 #include "qhull_a.h"
@@ -3443,7 +3443,7 @@ void qh_printvoronoi(FILE *fp, qh_PRINT format, facetT *facetlist, setT *facets,
       if (qh hull_dim == 3)
         qh_order_vertexneighbors(vertex);
       else if (qh hull_dim >= 4)
-        qsort(SETaddr_(vertex->neighbors, vertexT),
+        qsort(SETaddr_(vertex->neighbors, facetT),
              (size_t)qh_setsize(vertex->neighbors),
              sizeof(facetT *), qh_compare_facetvisit);
       FOREACHneighbor_(vertex) {
@@ -3456,11 +3456,9 @@ void qh_printvoronoi(FILE *fp, qh_PRINT format, facetT *facetlist, setT *facets,
     if (format == qh_PRINTgeom) {
       if (vertex) {
         qh_fprintf(fp, 9262, "%d", numneighbors);
-        if (vertex) {
-          FOREACHneighbor_(vertex) {
-            if (neighbor->visitid && neighbor->visitid < numfacets)
-              qh_fprintf(fp, 9263, " %d", neighbor->visitid);
-          }
+        FOREACHneighbor_(vertex) {
+          if (neighbor->visitid && neighbor->visitid < numfacets)
+            qh_fprintf(fp, 9263, " %d", neighbor->visitid);
         }
         qh_fprintf(fp, 9264, " # p%d(v%d)\n", vertex_i, vertex->id);
       }else
@@ -3669,7 +3667,7 @@ int qh_readfeasible(int dim, const char *curline) {
   notes:
     dimension will change in qh_initqhull_globals if qh.PROJECTinput
     uses malloc() since qh_mem not initialized
-    FIXUP QH10012: qh_readpoints needs rewriting, too long
+    FIXUP QH11012: qh_readpoints needs rewriting, too long
 */
 coordT *qh_readpoints(int *numpoints, int *dimension, boolT *ismalloc) {
   coordT *points, *coords, *infinity= NULL;

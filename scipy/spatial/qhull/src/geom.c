@@ -6,9 +6,9 @@
 
    see qh-geom.htm and geom.h
 
-   copyright (c) 1993-2010 The Geometry Center.
-   $Id: //product/qhull/main/rel/src/geom.c#29 $$Change: 1164 $
-   $DateTime: 2010/01/07 21:52:00 $$Author: bbarber $
+   Copyright (c) 1993-2012 The Geometry Center.
+   $Id: //main/2011/qhull/src/libqhull/geom.c#3 $$Change: 1464 $
+   $DateTime: 2012/01/25 22:58:41 $$Author: bbarber $
 
    infrequent code goes into geom2.c
 */
