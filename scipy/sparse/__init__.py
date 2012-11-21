@@ -176,6 +176,11 @@ sorted indices are required (e.g. when passing data to other libraries).
 # Modified and extended by Ed Schofield, Robert Cimrman,
 # Nathan Bell, and Jake Vanderplas.
 
+# Filter annoying Cython warnings that serve no good purpose.
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+
 from base import *
 from csr import *
 from csc import *
@@ -196,3 +201,4 @@ __all__ = filter(lambda s:not s.startswith('_'),dir())
 from numpy.testing import Tester
 test = Tester().test
 bench = Tester().bench
+

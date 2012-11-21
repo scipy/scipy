@@ -117,3 +117,8 @@ else:
     from numpy.testing import Tester
     test = Tester().test
     bench = Tester().bench
+
+    # Filter annoying Cython warnings that serve no good purpose.
+    import warnings
+    warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+    warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
