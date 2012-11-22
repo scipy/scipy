@@ -147,11 +147,15 @@ class interp2d(object):
 
         if self.z.size == len(self.x) * len(self.y):
             rectangular_grid = True
+            if not all(self.x[1:] > self.x[:-1]):
+                j = np.argsort(self.x)
+                self.x = self.x[j]
+                self.z = self.z[:,j]
+            if not all(self.y[1:] > self.y[:-1]):
+                j = np.argsort(self.y)
+                self.y = self.y[j]
+                self.z = self.z[j,:]
             self.z = ravel(self.z.T)
-            if not all(np.diff(self.x) > 0.0):
-                raise ValueError('x must be strictly increasing')
-            if not all(np.diff(self.y) > 0.0):
-                raise ValueError('y must be strictly increasing')
         else:
             rectangular_grid = False
             self.z = ravel(self.z)
@@ -177,7 +181,8 @@ class interp2d(object):
             nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(
                 self.x, self.y, self.z, None, None, None, None,
                 kx=kx, ky=ky, s=0.0)
-            self.tck = [tx, ty, c, kx, ky]
+            self.tck = (tx[:nx], ty[:ny], c[:(nx - kx - 1) * (ny - ky - 1)],
+                        kx, ky)
 
     def __call__(self,x,y,dx=0,dy=0):
         """Interpolate the function.

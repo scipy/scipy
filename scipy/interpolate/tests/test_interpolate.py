@@ -25,6 +25,29 @@ class TestInterp2D(TestCase):
         I = interp2d(x, y, z)
         assert_almost_equal(I(1.0, 2.0), sin(2.0), decimal=2)
 
+    def test_interp2d_meshgrid_input_unsorted(self):
+        np.random.seed(1234)
+        x = linspace(0, 2, 16)
+        y = linspace(0, pi, 21)
+
+        z = sin(x[None,:] + y[:,None]/2.)
+        ip1 = interp2d(x.copy(), y.copy(), z, kind='cubic')
+
+        np.random.shuffle(x)
+        z = sin(x[None,:] + y[:,None]/2.)
+        ip2 = interp2d(x.copy(), y.copy(), z, kind='cubic')
+
+        np.random.shuffle(x)
+        np.random.shuffle(y)
+        z = sin(x[None,:] + y[:,None]/2.)
+        ip3 = interp2d(x, y, z, kind='cubic')
+
+        x = linspace(0, 2, 31)
+        y = linspace(0, pi, 30)
+
+        assert_equal(ip1(x, y), ip2(x, y))
+        assert_equal(ip1(x, y), ip3(x, y))
+
     def test_interp2d_linear(self):
         # Ticket #898
         a = np.zeros([5, 5])
