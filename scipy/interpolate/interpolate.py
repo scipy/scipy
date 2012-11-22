@@ -14,6 +14,7 @@ import math
 
 import fitpack
 import _fitpack
+import dfitpack
 
 def reduce_sometrue(a):
     all = a
@@ -141,15 +142,25 @@ class interp2d(object):
 
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
                  fill_value=np.nan):
-        self.x, self.y, self.z = map(ravel, map(asarray, [x, y, z]))
+        self.x, self.y, self.z = map(asarray, [x, y, z])
+        self.x, self.y = map(ravel, [self.x, self.y])
 
-        if len(self.z) == len(self.x) * len(self.y):
-            self.x, self.y = meshgrid(x,y)
-            self.x, self.y = map(ravel, [self.x, self.y])
-        if len(self.x) != len(self.y):
-            raise ValueError("x and y must have equal lengths")
-        if len(self.z) != len(self.x):
-            raise ValueError("Invalid length for input z")
+        if self.z.size == len(self.x) * len(self.y):
+            rectangular_grid = True
+            self.z = ravel(self.z.T)
+            if not all(np.diff(self.x) > 0.0):
+                raise ValueError('x must be strictly increasing')
+            if not all(np.diff(self.y) > 0.0):
+                raise ValueError('y must be strictly increasing')
+        else:
+            rectangular_grid = False
+            self.z = ravel(self.z)
+            if len(self.x) != len(self.y):
+                raise ValueError(
+                    "x and y must have equal lengths for non rectangular grid")
+            if len(self.z) != len(self.x):
+                raise ValueError(
+                    "Invalid length for input z for non rectangular grid")
 
         try:
             kx = ky = {'linear' : 1,
@@ -158,7 +169,15 @@ class interp2d(object):
         except KeyError:
             raise ValueError("Unsupported interpolation type.")
 
-        self.tck = fitpack.bisplrep(self.x, self.y, self.z, kx=kx, ky=ky, s=0.)
+        if not rectangular_grid:
+            # TODO: surfit is really not meant for interpolation!
+            self.tck = fitpack.bisplrep(self.x, self.y, self.z,
+                                        kx=kx, ky=ky, s=0.0)
+        else:
+            nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(
+                self.x, self.y, self.z, None, None, None, None,
+                kx=kx, ky=ky, s=0.0)
+            self.tck = [tx, ty, c, kx, ky]
 
     def __call__(self,x,y,dx=0,dy=0):
         """Interpolate the function.
