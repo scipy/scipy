@@ -60,6 +60,7 @@ use_c_calling = IsAccelerate(env, "lapack") or IsVeclib(env, "lapack")
 
 if use_c_calling: 
     blas_wrapper = ['veclib_cabi_c.c', 'veclib_cabi_f.f'] 
+    env.Append(F77FLAGS='-ff2c')
 else: 
     blas_wrapper = ['dummy.f'] 
 

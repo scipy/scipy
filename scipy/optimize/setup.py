@@ -2,6 +2,23 @@
 
 from os.path import join
 
+def needs_cblas_wrapper(info):
+    """Returns true if needs c wrapper around cblas for calling from
+    fortran."""
+    import re
+    r_accel = re.compile("Accelerate")
+    r_vec = re.compile("vecLib")
+    res = False
+    try:
+        tmpstr = info['extra_link_args']
+        for i in tmpstr:
+            if r_accel.search(i) or r_vec.search(i):
+                res = True
+    except KeyError:
+        pass
+
+    return res
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
@@ -22,6 +39,13 @@ def configuration(parent_package='',top_path=None):
                          libraries=['rootfind'])
 
     lapack = get_info('lapack_opt')
+
+    if needs_cblas_wrapper(lapack):
+        # Veclib/Accelerate ABI is g77
+        lapack = dict(lapack)
+        lapack.setdefault('extra_f77_compile_args', []).append('-ff2c')
+        lapack.setdefault('extra_f90_compile_args', []).append('-ff2c')
+
     sources=['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
     config.add_extension('_lbfgsb',
                          sources=[join('lbfgsb',x) for x in sources],

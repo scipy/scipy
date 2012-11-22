@@ -8,7 +8,7 @@ from numscons import GetNumpyEnvironment
 from numscons import CheckF77LAPACK,\
                                   CheckCLAPACK, \
                                   IsATLAS, GetATLASVersion, \
-                                  CheckF77Clib
+                                  CheckF77Clib, IsAccelerate, IsVeclib
 from numscons import write_info
 
 from scons_support import do_generate_fake_interface, \
@@ -41,6 +41,9 @@ if IsATLAS(env, 'lapack'):
     env.Append(CPPDEFINES = [('ATLAS_INFO', '"\\"%s"\\"' % version)])
 else:
     env.Append(CPPDEFINES = [('NO_ATLAS_INFO', 1)])
+
+if IsAccelerate(env, "lapack") or IsVeclib(env, "lapack"):
+    env.Append(F77FLAGS='-ff2c')
 
 if config.CheckCLAPACK():
     has_clapack = 1

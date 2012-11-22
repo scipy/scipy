@@ -52,6 +52,11 @@ def configuration(parent_package='',top_path=None):
     if needs_veclib_wrapper(lapack_opt):
         methods += [join('FWRAPPERS', 'veclib_cabi_f.f'),
                     join('FWRAPPERS', 'veclib_cabi_c.c')]
+
+        # Veclib/Accelerate ABI is g77
+        lapack_opt = dict(lapack_opt)
+        lapack_opt.setdefault('extra_f77_compile_args', []).append('-ff2c')
+        lapack_opt.setdefault('extra_f90_compile_args', []).append('-ff2c')
     else:
         methods += [join('FWRAPPERS', 'dummy.f')]
 

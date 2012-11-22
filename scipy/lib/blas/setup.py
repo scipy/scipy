@@ -82,8 +82,14 @@ def configuration(parent_package='',top_path=None):
     # fblas:
     if needs_cblas_wrapper(blas_opt):
         sources = ['fblas.pyf.src', 'fblaswrap_veclib_c.c.src'],
+
+        # Veclib/Accelerate ABI is g77
+        blas_opt = dict(blas_opt)
+        blas_opt.setdefault('extra_f77_compile_args', []).append('-ff2c')
+        blas_opt.setdefault('extra_f90_compile_args', []).append('-ff2c')
     else:
         sources = ['fblas.pyf.src','fblaswrap.f.src']
+
     config.add_extension('fblas',
                          sources = sources,
                          depends = depends,

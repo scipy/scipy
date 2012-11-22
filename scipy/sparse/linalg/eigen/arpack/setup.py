@@ -38,6 +38,11 @@ def configuration(parent_package='',top_path=None):
     if needs_veclib_wrapper(lapack_opt):
         arpack_sources += [join('ARPACK', 'FWRAPPERS', 'veclib_cabi_f.f'),
                            join('ARPACK', 'FWRAPPERS', 'veclib_cabi_c.c')]
+
+        # Veclib/Accelerate ABI is g77
+        lapack_opt = dict(lapack_opt)
+        lapack_opt.setdefault('extra_f77_compile_args', []).append('-ff2c')
+        lapack_opt.setdefault('extra_f90_compile_args', []).append('-ff2c')
     else:
         arpack_sources += [join('ARPACK', 'FWRAPPERS', 'dummy.f')]
 

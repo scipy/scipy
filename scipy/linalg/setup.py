@@ -112,6 +112,11 @@ def configuration(parent_package='',top_path=None):
     # fblas:
     if needs_cblas_wrapper(lapack_opt):
         sources = ['fblas.pyf.src', join('src', 'fblaswrap_veclib_c.c')],
+
+        # Veclib/Accelerate ABI is g77
+        lapack_opt = dict(lapack_opt)
+        lapack_opt.setdefault('extra_f77_compile_args', []).append('-ff2c')
+        lapack_opt.setdefault('extra_f90_compile_args', []).append('-ff2c')
     else:
         sources = ['fblas.pyf.src', join('src', 'fblaswrap.f')]
 
