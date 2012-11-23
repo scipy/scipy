@@ -380,8 +380,8 @@ def kronsum(A, B, format=None):
 
     dtype = upcast(A.dtype, B.dtype)
 
-    L = kron(identity(B.shape[0],dtype=dtype), A, format=format)
-    R = kron(B, identity(A.shape[0],dtype=dtype), format=format)
+    L = kron(eye(B.shape[0],dtype=dtype), A, format=format)
+    R = kron(B, eye(A.shape[0],dtype=dtype), format=format)
 
     return (L+R).asformat(format) #since L + R is not always same format
 

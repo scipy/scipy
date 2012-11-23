@@ -47,7 +47,7 @@ class BenchmarkSparse(TestCase):
 
     def bench_arithmetic(self):
         matrices = []
-        #matrices.append( ('A','Identity', sparse.identity(500**2,format='csr')) )
+        #matrices.append( ('A','Identity', sparse.eye(500**2,format='csr')) )
         matrices.append( ('A','Poisson5pt', poisson2d(250,format='csr'))  )
         matrices.append( ('B','Poisson5pt^2', poisson2d(250,format='csr')**2)  )
 
@@ -128,8 +128,8 @@ class BenchmarkSparse(TestCase):
 
     def bench_matvec(self):
         matrices = []
-        matrices.append(('Identity',   sparse.identity(10**4,format='dia')))
-        matrices.append(('Identity',   sparse.identity(10**4,format='csr')))
+        matrices.append(('Identity',   sparse.eye(10**4,format='dia')))
+        matrices.append(('Identity',   sparse.eye(10**4,format='csr')))
         matrices.append(('Poisson5pt', poisson2d(300,format='lil')))
         matrices.append(('Poisson5pt', poisson2d(300,format='dok')))
         matrices.append(('Poisson5pt', poisson2d(300,format='dia')))
@@ -217,7 +217,7 @@ class BenchmarkSparse(TestCase):
         """build matrices by inserting single values"""
         matrices = []
         matrices.append( ('Empty',csr_matrix((10000,10000))) )
-        matrices.append( ('Identity',sparse.identity(10000)) )
+        matrices.append( ('Identity',sparse.eye(10000)) )
         matrices.append( ('Poisson5pt', poisson2d(100)) )
 
         print

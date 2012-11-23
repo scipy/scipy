@@ -15,7 +15,7 @@ Systems Optimization Laboratory
 Dept of MS&E, Stanford University.
 
 """
-from numpy import arange, concatenate, identity, zeros, ones, sqrt, \
+from numpy import arange, concatenate, eye, zeros, ones, sqrt, \
                   transpose, hstack
 from numpy.linalg import norm
 from numpy.testing import run_module_suite, assert_almost_equal
@@ -36,17 +36,17 @@ class TestLSMR:
         assert_almost_equal(norm(x - xtrue), 0, 6)
 
     def testIdentityACase1(self):
-        A = identity(self.n)
+        A = eye(self.n)
         xtrue = zeros((self.n, 1))
         self.assertCompatibleSystem(A, xtrue)
 
     def testIdentityACase2(self):
-        A = identity(self.n)
+        A = eye(self.n)
         xtrue = ones((self.n,1))
         self.assertCompatibleSystem(A, xtrue)
 
     def testIdentityACase3(self):
-        A = identity(self.n)
+        A = eye(self.n)
         xtrue = transpose(arange(self.n,0,-1))
         self.assertCompatibleSystem(A, xtrue)
 

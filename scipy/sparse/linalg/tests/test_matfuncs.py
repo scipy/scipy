@@ -6,7 +6,7 @@
 
 """
 import numpy as np
-from numpy import array, identity, dot, sqrt, double, exp, random
+from numpy import array, eye, dot, sqrt, double, exp, random
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
      assert_array_almost_equal_nulp
 
@@ -28,8 +28,8 @@ class TestExpM(TestCase):
         for dtype in [np.float32, np.float64, np.complex64, np.complex128]:
             # test double-precision cases
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
-                a = scale * identity(3, dtype=dtype)
-                e = exp(scale) * identity(3, dtype=dtype)
+                a = scale * eye(3, dtype=dtype)
+                e = exp(scale) * eye(3, dtype=dtype)
                 assert_array_almost_equal_nulp(expm(a), e, nulp=100)
 
     def test_padecases_dtype_sparse(self):
@@ -38,7 +38,7 @@ class TestExpM(TestCase):
             # test double-precision cases
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 a = scale * speye(3, 3, dtype=dtype, format='csc')
-                e = exp(scale) * identity(3, dtype=dtype)
+                e = exp(scale) * eye(3, dtype=dtype)
                 assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 
     def test_logm_consistency(self):
@@ -47,7 +47,7 @@ class TestExpM(TestCase):
             for n in range(1, 10):
                 for scale in [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2]:
                     # make logm(a) be of a given scale
-                    a = (identity(n) + random.rand(n, n) * scale).astype(dtype)
+                    a = (eye(n) + random.rand(n, n) * scale).astype(dtype)
                     if np.iscomplexobj(a):
                         a = a + 1j * random.rand(n, n) * scale
                     assert_array_almost_equal(expm(logm(a)), a)
