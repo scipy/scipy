@@ -207,6 +207,21 @@ class TestConstructUtils(TestCase):
             for n in [3, 5]:
                 for k in range(-5,6):
                     assert_equal(construct.eye(m, n, k=k).toarray(), np.eye(m, n, k=k))
+                    if m == n:
+                        assert_equal(construct.eye(m, k=k).toarray(), np.eye(m, n, k=k))
+
+    def test_eye_one(self):
+        assert_equal(construct.eye(1).toarray(), [[1]])
+        assert_equal(construct.eye(2).toarray(), [[1,0],[0,1]])
+
+        I = construct.eye(3, dtype='int8', format='dia')
+        assert_equal( I.dtype, np.dtype('int8') )
+        assert_equal( I.format, 'dia' )
+
+        for fmt in sparse_formats:
+            I = construct.eye( 3, format=fmt )
+            assert_equal( I.format, fmt )
+            assert_equal( I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
     def test_kron(self):
         cases = []
