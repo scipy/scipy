@@ -1,10 +1,12 @@
 """test sparse matrix construction functions"""
 
+import warnings
+
 import numpy as np
 from numpy import array, matrix
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
         assert_array_equal, assert_raises, assert_array_almost_equal_nulp
-
+from numpy.testing.utils import WarningManager
 
 from scipy.sparse import csr_matrix, coo_matrix
 
@@ -183,17 +185,24 @@ class TestConstructUtils(TestCase):
                          construct.diags([d], [k]).toarray())
 
     def test_identity(self):
-        assert_equal(construct.identity(1).toarray(), [[1]])
-        assert_equal(construct.identity(2).toarray(), [[1,0],[0,1]])
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            warnings.simplefilter('ignore', DeprecationWarning)
 
-        I = construct.identity(3, dtype='int8', format='dia')
-        assert_equal( I.dtype, np.dtype('int8') )
-        assert_equal( I.format, 'dia' )
+            assert_equal(construct.identity(1).toarray(), [[1]])
+            assert_equal(construct.identity(2).toarray(), [[1,0],[0,1]])
 
-        for fmt in sparse_formats:
-            I = construct.identity( 3, format=fmt )
-            assert_equal( I.format, fmt )
-            assert_equal( I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
+            I = construct.identity(3, dtype='int8', format='dia')
+            assert_equal( I.dtype, np.dtype('int8') )
+            assert_equal( I.format, 'dia' )
+
+            for fmt in sparse_formats:
+                I = construct.identity( 3, format=fmt )
+                assert_equal( I.format, fmt )
+                assert_equal( I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
+        finally:
+            warn_ctx.__exit__()
 
     def test_eye(self):
         assert_equal(construct.eye(1,1).toarray(), [[1]])
