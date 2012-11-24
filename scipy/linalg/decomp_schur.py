@@ -1,7 +1,7 @@
 """Schur decomposition functions."""
 
 import numpy
-from numpy import asarray_chkfinite, single
+from numpy import asarray_chkfinite, single, asarray
 
 # Local imports.
 import misc
@@ -14,7 +14,8 @@ __all__ = ['schur', 'rsf2csf']
 
 _double_precision = ['i','l','d']
 
-def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
+def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
+          check_finite=True):
     """Compute Schur decomposition of a matrix.
 
     The Schur decomposition is::
@@ -48,6 +49,10 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
             'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
         Defaults to None (no sorting).
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -80,7 +85,10 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None):
     """
     if not output in ['real','complex','r','c']:
         raise ValueError("argument must be 'real', or 'complex'")
-    a1 = asarray_chkfinite(a)
+    if check_finite:
+        a1 = asarray_chkfinite(a)
+    else:
+        a1 = asarray(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
     typ = a1.dtype.char
@@ -166,7 +174,7 @@ def _castCopy(type, *arrays):
         return cast_arrays
 
 
-def rsf2csf(T, Z):
+def rsf2csf(T, Z, check_finite=True):
     """Convert real Schur form to complex Schur form.
 
     Convert a quasi-diagonal real-valued Schur form to the upper triangular
@@ -178,6 +186,10 @@ def rsf2csf(T, Z):
         Real Schur form of the original matrix
     Z : array, shape (M, M)
         Schur transformation matrix
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -191,7 +203,10 @@ def rsf2csf(T, Z):
     schur : Schur decompose a matrix
 
     """
-    Z, T = map(asarray_chkfinite, (Z, T))
+    if check_finite:
+        Z, T = map(asarray_chkfinite, (Z, T))
+    else:
+        Z,T = map(asarray, (Z,T))
     if len(Z.shape) != 2 or Z.shape[0] != Z.shape[1]:
         raise ValueError("matrix must be square.")
     if len(T.shape) != 2 or T.shape[0] != T.shape[1]:

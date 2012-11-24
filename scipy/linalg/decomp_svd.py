@@ -1,7 +1,7 @@
 """SVD decomposition functions."""
 
 import numpy
-from numpy import asarray_chkfinite, zeros, r_, diag
+from numpy import asarray_chkfinite, asarray, zeros, r_, diag
 from scipy.linalg import calc_lwork
 
 # Local imports.
@@ -11,7 +11,8 @@ from lapack import get_lapack_funcs
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth']
 
 
-def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
+def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
+        check_finite=True):
     """
     Singular Value Decomposition.
 
@@ -34,6 +35,10 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     overwrite_a : bool, optional
         Whether to overwrite `a`; may improve performance.
         Default is False.
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -79,7 +84,10 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     True
 
     """
-    a1 = asarray_chkfinite(a)
+    if check_finite:
+        a1 = asarray_chkfinite(a)
+    else:
+        a1 = asarray(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m,n = a1.shape
@@ -101,7 +109,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False):
     else:
         return s
 
-def svdvals(a, overwrite_a=False):
+def svdvals(a, overwrite_a=False, check_finite=True):
     """
     Compute singular values of a matrix.
 
@@ -112,6 +120,10 @@ def svdvals(a, overwrite_a=False):
     overwrite_a : bool, optional
         Whether to overwrite `a`; may improve performance.
         Default is False.
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -130,7 +142,8 @@ def svdvals(a, overwrite_a=False):
     diagsvd : Construct the Sigma matrix, given the vector s.
 
     """
-    return svd(a, compute_uv=0, overwrite_a=overwrite_a)
+    return svd(a, compute_uv=0, overwrite_a=overwrite_a,
+                check_finite=check_finite)
 
 def diagsvd(s, M, N):
     """

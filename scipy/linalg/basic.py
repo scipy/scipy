@@ -19,7 +19,7 @@ import decomp, decomp_svd
 
 # Linear equations
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False,
-          debug=False):
+          debug=False, check_finite=True):
     """
     Solve the equation ``a x = b`` for ``x``.
 
@@ -40,6 +40,10 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
     overwrite_b : bool
         Allow overwriting data in `b` (may enhance performance).
         Default is False.
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -64,7 +68,10 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
     array([ True,  True,  True], dtype=bool)
 
     """
-    a1, b1 = map(np.asarray_chkfinite,(a,b))
+    if check_finite:
+        a1, b1 = map(np.asarray_chkfinite,(a,b))
+    else:
+        a1, b1 = map(np.asarray, (a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -92,7 +99,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
                                                                     % -info)
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
-                     overwrite_b=False, debug=False):
+                     overwrite_b=False, debug=False, check_finite=True):
     """Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
 
     Parameters
@@ -120,6 +127,11 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     overwrite_b : boolean
         Allow overwriting data in b (may enhance performance)
 
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
     Returns
     -------
     x : array, shape (M,) or (M, N) depending on b
@@ -135,7 +147,10 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     .. versionadded:: 0.9.0
     """
 
-    a1, b1 = map(np.asarray_chkfinite,(a,b))
+    if check_finite:
+        a1, b1 = map(np.asarray_chkfinite,(a,b))
+    else:
+        a1, b1 = map(np.asarray, (a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -155,10 +170,9 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     raise ValueError('illegal value in %d-th argument of internal trtrs')
 
 def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
-          debug=False):
+                debug=False, check_finite=True):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
-
     The matrix a is stored in ab using the matrix diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]
@@ -182,6 +196,10 @@ def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
         Discard data in ab (may enhance performance)
     overwrite_b : boolean
         Discard data in b (may enhance performance)
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -189,8 +207,11 @@ def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
         The solution to the system a x = b
 
     """
-    a1, b1 = map(np.asarray_chkfinite, (ab, b))
 
+    if check_finite:
+        a1, b1 = map(np.asarray_chkfinite, (ab, b))
+    else:
+        a1, b1 = map(np.asarray, (ab,b))
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
@@ -211,7 +232,8 @@ def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
         raise LinAlgError("singular matrix")
     raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 
-def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
+def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
+                    check_finite=True):
     """Solve equation a x = b. a is Hermitian positive-definite banded matrix.
 
     The matrix a is stored in ab either in lower diagonal or upper
@@ -246,6 +268,10 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
         Discard data in b (may enhance performance)
     lower : boolean
         Is the matrix in the lower form. (Default is upper form)
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -254,8 +280,10 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
 
     """
 
-    ab, b = map(np.asarray_chkfinite, (ab, b))
-
+    if check_finite:
+        ab, b = map(np.asarray_chkfinite, (ab, b))
+    else:
+        ab, b = map(np.asarray, (ab,b))
     # Validate shapes.
     if ab.shape[-1] != b.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
@@ -272,7 +300,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False):
 
 
 # matrix inversion
-def inv(a, overwrite_a=False):
+def inv(a, overwrite_a=False, check_finite=True):
     """
     Compute the inverse of a matrix.
 
@@ -282,6 +310,10 @@ def inv(a, overwrite_a=False):
         Square matrix to be inverted.
     overwrite_a : bool, optional
         Discard data in `a` (may improve performance). Default is False.
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -306,7 +338,11 @@ def inv(a, overwrite_a=False):
            [ 0.,  1.]])
 
     """
-    a1 = np.asarray_chkfinite(a)
+
+    if check_finite:
+        a1 = np.asarray_chkfinite(a)
+    else:
+        a1 = np.asarray(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -355,7 +391,7 @@ def inv(a, overwrite_a=False):
 
 ### Determinant
 
-def det(a, overwrite_a=False):
+def det(a, overwrite_a=False, check_finite=True):
     """
     Compute the determinant of a matrix
 
@@ -376,6 +412,10 @@ def det(a, overwrite_a=False):
         A square matrix.
     overwrite_a : bool
         Allow overwriting data in a (may enhance performance).
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -396,7 +436,10 @@ def det(a, overwrite_a=False):
     3.0
 
     """
-    a1 = np.asarray_chkfinite(a)
+    if check_finite:
+        a1 = np.asarray_chkfinite(a)
+    else:
+        a1 = np.asarray(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -409,7 +452,8 @@ def det(a, overwrite_a=False):
 
 ### Linear Least Squares
 
-def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
+def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
+          check_finite=True):
     """
     Compute least-squares solution to equation Ax = b.
 
@@ -429,6 +473,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
         Discard data in `a` (may enhance performance). Default is False.
     overwrite_b : bool, optional
         Discard data in `b` (may enhance performance). Default is False.
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -455,7 +503,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     optimize.nnls : linear least squares with non-negativity constraint
 
     """
-    a1, b1 = map(np.asarray_chkfinite, (a, b))
+
+    if check_finite:
+        a1,b1 = map(np.asarray_chkfinite, (a,b))
+    else:
+        a1,b1 = map(np.asarray, (a,b))
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m, n = a1.shape
@@ -503,7 +555,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False):
     return x, resids, rank, s
 
 
-def pinv(a, cond=None, rcond=None, return_rank=False):
+def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
@@ -520,6 +572,10 @@ def pinv(a, cond=None, rcond=None, return_rank=False):
         are considered zero.
     return_rank : bool, optional
         if True, return the effective rank of the matrix
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -543,7 +599,10 @@ def pinv(a, cond=None, rcond=None, return_rank=False):
     True
 
     """
-    a = np.asarray_chkfinite(a)
+    if check_finite:
+        a = np.asarray_chkfinite(a)
+    else:
+        a = np.asarray(a)
     b = np.identity(a.shape[0], dtype=a.dtype)
     if rcond is not None:
         cond = rcond
@@ -556,7 +615,7 @@ def pinv(a, cond=None, rcond=None, return_rank=False):
         return x
 
 
-def pinv2(a, cond=None, rcond=None, return_rank=False):
+def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
@@ -575,6 +634,10 @@ def pinv2(a, cond=None, rcond=None, return_rank=False):
         If None or -1, suitable machine precision is used.
     return_rank : bool, optional
         if True, return the effective rank of the matrix
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -598,7 +661,10 @@ def pinv2(a, cond=None, rcond=None, return_rank=False):
     True
 
     """
-    a = np.asarray_chkfinite(a)
+    if check_finite:
+        a = np.asarray_chkfinite(a)
+    else:
+        a = np.asarray(a)
     u, s, vh = decomp_svd.svd(a, full_matrices=False)
     
     if rcond is not None:
@@ -620,7 +686,8 @@ def pinv2(a, cond=None, rcond=None, return_rank=False):
         return B
 
 
-def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False):
+def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
+          check_finite=True):
     """Compute the (Moore-Penrose) pseudo-inverse of a hermetian matrix.
 
     Calculate a generalized inverse of a symmetric matrix using its
@@ -641,6 +708,10 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False):
         triangle of a. (Default: lower)
     return_rank : bool, optional
         if True, return the effective rank of the matrix
+    check_finite : boolean, optional
+        Whether to check the input matrixes contain only finite numbers.
+        Disabling may give a performance gain, but may result to problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -666,9 +737,12 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False):
     True
 
     """
-    a = np.asarray_chkfinite(a)
+    if check_finite:
+        a = np.asarray_chkfinite(a)
+    else:
+        a = np.asarray(a)
     s, u = decomp.eigh(a, lower=lower)
-    
+
     if rcond is not None:
         cond = rcond
     if cond in [None, -1]:

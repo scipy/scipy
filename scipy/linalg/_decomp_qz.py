@@ -47,7 +47,7 @@ def _select_function(sort, typ):
 
 
 def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
-       overwrite_b=False):
+       overwrite_b=False, check_finite=True):
     """
     QZ decompostion for generalized eigenvalues of a pair of matrices.
 
@@ -103,6 +103,10 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
             - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
         Defaults to None (no sorting).
+    check_finite : boolean
+        If true checks the elements of `A` and `B` are finite numbers. If
+        false does no checking and passes matrix through to
+        underlying algorithm.
 
     Returns
     -------
@@ -156,8 +160,12 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     if not output in ['real','complex','r','c']:
         raise ValueError("argument must be 'real', or 'complex'")
 
-    a1 = asarray_chkfinite(A)
-    b1 = asarray_chkfinite(B)
+    if check_finite:
+        a1 = asarray_chkfinite(A)
+        b1 = asarray_chkfinite(B)
+    else:
+        a1 = np.asarray(A)
+        b1 = np.asarray(B)
 
     a_m, a_n = a1.shape
     b_m, b_n = b1.shape

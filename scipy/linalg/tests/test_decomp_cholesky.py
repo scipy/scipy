@@ -23,6 +23,14 @@ class TestCholesky(TestCase):
         a = dot(c,transpose(c))
         assert_array_almost_equal(cholesky(a,lower=1),c)
 
+    def test_check_finite(self):
+        a = [[8,2,3],[2,9,3],[3,3,6]]
+        c = cholesky(a, check_finite=False)
+        assert_array_almost_equal(dot(transpose(c),c),a)
+        c = transpose(c)
+        a = dot(c,transpose(c))
+        assert_array_almost_equal(cholesky(a,lower=1, check_finite=False),c)
+
     def test_simple_complex(self):
         m = array([[3+1j,3+4j,5],[0,2+2j,2+7j],[0,0,7+4j]])
         a = dot(transpose(conjugate(m)),m)
@@ -64,6 +72,25 @@ class TestCholesky(TestCase):
 
 class TestCholeskyBanded(TestCase):
     """Tests for cholesky_banded() and cho_solve_banded."""
+
+    def test_check_finite(self):
+        # Symmetric positive definite banded matrix `a`
+        a = array([[4.0, 1.0, 0.0, 0.0],
+                    [1.0, 4.0, 0.5, 0.0],
+                    [0.0, 0.5, 4.0, 0.2],
+                    [0.0, 0.0, 0.2, 4.0]])
+        # Banded storage form of `a`.
+        ab = array([[-1.0, 1.0, 0.5, 0.2],
+                     [4.0, 4.0, 4.0, 4.0]])
+        c = cholesky_banded(ab, lower=False, check_finite=False)
+        ufac = zeros_like(a)
+        ufac[range(4),range(4)] = c[-1]
+        ufac[(0,1,2),(1,2,3)] = c[0,1:]
+        assert_array_almost_equal(a, dot(ufac.T, ufac))
+
+        b = array([0.0, 0.5, 4.2, 4.2])
+        x = cho_solve_banded((c, False), b, check_finite=False)
+        assert_array_almost_equal(x, [0.0, 0.0, 1.0, 1.0])
 
     def test_upper_real(self):
         # Symmetric positive definite banded matrix `a`
