@@ -209,34 +209,59 @@ def identity(n, dtype='d', format=None):
             with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
+    return eye(n, n, dtype=dtype, format=format)
 
-    if format in ['csr','csc']:
-        indptr  = np.arange(n+1, dtype=np.intc)
-        indices = np.arange(n,   dtype=np.intc)
-        data    = np.ones(n,     dtype=dtype)
-        cls = eval('%s_matrix' % format)
-        return cls((data,indices,indptr),(n,n))
-    elif format == 'coo':
-        row  = np.arange(n, dtype=np.intc)
-        col  = np.arange(n, dtype=np.intc)
-        data = np.ones(n, dtype=dtype)
-        return coo_matrix((data,(row,col)),(n,n))
-    elif format == 'dia':
-        data = np.ones(n, dtype=dtype)
-        diags = [0]
-        return dia_matrix((data,diags), shape=(n,n))
-    else:
-        return identity(n, dtype=dtype, format='csr').asformat(format)
+def eye(m, n=None, k=0, dtype=float, format=None):
+    """Sparse matrix with ones on diagonal
 
-
-def eye(m, n, k=0, dtype='d', format=None):
-    """eye(m, n) returns a sparse (m x n) matrix where the k-th diagonal
+    Returns a sparse (m x n) matrix where the k-th diagonal
     is all ones and everything else is zeros.
+
+    Parameters
+    ----------
+    n : integer
+        Number of rows in the matrix.
+    m : integer, optional
+        Number of columns. Default: n
+    k : integer, optional
+        Diagonal to place ones on. Default: 0 (main diagonal)
+    dtype :
+        Data type of the matrix
+    format : string
+        Sparse format of the result, e.g. format="csr", etc.
+
+    Examples
+    --------
+    >>> from scipy import sparse
+    >>> sparse.eye(3).todense()
+    matrix([[ 1.,  0.,  0.],
+            [ 0.,  1.,  0.],
+            [ 0.,  0.,  1.]])
+    >>> sparse.eye(3, dtype=np.int8)
+    <3x3 sparse matrix of type '<type 'numpy.int8'>'
+        with 3 stored elements (1 diagonals) in DIAgonal format>
+
     """
+    if n is None:
+        n = m
     m,n = int(m),int(n)
+
+    if m == n and k == 0:
+        # fast branch for special formats
+        if format in ['csr', 'csc']:
+            indptr  = np.arange(n+1, dtype=np.intc)
+            indices = np.arange(n,   dtype=np.intc)
+            data    = np.ones(n,     dtype=dtype)
+            cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
+            return cls((data,indices,indptr),(n,n))
+        elif format == 'coo':
+            row  = np.arange(n, dtype=np.intc)
+            col  = np.arange(n, dtype=np.intc)
+            data = np.ones(n, dtype=dtype)
+            return coo_matrix((data,(row,col)),(n,n))
+
     diags = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
     return spdiags(diags, k, m, n).asformat(format)
-
 
 def kron(A, B, format=None):
     """kronecker product of sparse matrices A and B
@@ -355,8 +380,8 @@ def kronsum(A, B, format=None):
 
     dtype = upcast(A.dtype, B.dtype)
 
-    L = kron(identity(B.shape[0],dtype=dtype), A, format=format)
-    R = kron(B, identity(A.shape[0],dtype=dtype), format=format)
+    L = kron(eye(B.shape[0],dtype=dtype), A, format=format)
+    R = kron(B, eye(A.shape[0],dtype=dtype), format=format)
 
     return (L+R).asformat(format) #since L + R is not always same format
 

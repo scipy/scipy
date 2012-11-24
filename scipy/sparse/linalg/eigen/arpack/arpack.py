@@ -47,7 +47,7 @@ import warnings
 import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
-from scipy.sparse import identity, csc_matrix, csr_matrix, \
+from scipy.sparse import eye, csc_matrix, csr_matrix, \
     isspmatrix, isspmatrix_csr
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
@@ -1035,7 +1035,7 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
             A.flat[::A.shape[1] + 1] -= sigma
             return LuInv(A).matvec
         elif isspmatrix(A):
-            A = A - sigma * identity(A.shape[0])
+            A = A - sigma * eye(A.shape[0])
             if symmetric and isspmatrix_csr(A):
                 A = A.T
             return SpLuInv(A.tocsc()).matvec
@@ -1181,7 +1181,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     --------
     Find 6 eigenvectors of the identity matrix:
 
-    >>> id = np.identity(13)
+    >>> id = np.eye(13)
     >>> vals, vecs = sp.sparse.linalg.eigs(id, k=6)
     >>> vals
     array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
@@ -1425,7 +1425,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Examples
     --------
-    >>> id = np.identity(13)
+    >>> id = np.eye(13)
     >>> vals, vecs = sp.sparse.linalg.eigsh(id, k=6)
     >>> vals
     array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
