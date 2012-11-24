@@ -183,6 +183,7 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
 
     return dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)
 
+@np.deprecate(old_name="identity", new_name="eye")
 def identity(n, dtype='d', format=None):
     """Identity matrix in sparse format
 
