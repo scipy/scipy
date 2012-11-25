@@ -127,11 +127,3 @@ fenv.NumpyPythonExtension('_flinalg', source = flinalg_src + flinalg_fsrc)
 calc_fsrc = [pjoin('src', 'calc_lwork.f')]
 calc_src = env.F2py(pjoin('src', 'calc_lworkmodule.c'), calc_fsrc)
 fenv.NumpyPythonExtension('calc_lwork', calc_src + calc_fsrc)
-
-#--------------
-# Atlas version
-#--------------
-atlas_env = env.Clone()
-if not IsATLAS(env, 'cblas'):
-    atlas_env.AppendUnique(CPPDEFINES = "NO_ATLAS_INFO")
-atlas_env.NumpyPythonExtension('atlas_version', 'atlas_version.c')

@@ -7,19 +7,6 @@ from distutils.dep_util import newer_group, newer
 from glob import glob
 from os.path import join
 
-#-------------------
-# To skip wrapping single precision atlas/lapack/blas routines, set
-# the following flag to True:
-skip_single_routines = 0
-
-# Some OS distributions (e.g. Redhat, Suse) provide a blas library that
-# is built using incomplete blas sources that come with lapack tar-ball.
-# In order to use such a library in scipy.linalg, the following flag
-# must be set to True:
-using_lapack_blas = 0
-
-#--------------------
-
 def needs_cblas_wrapper(info):
     """Returns true if needs c wrapper around cblas for calling from
     fortran."""
@@ -61,21 +48,6 @@ def configuration(parent_package='',top_path=None):
         print ('ATLAS version: %s' % atlas_version)
 
     target_dir = ''
-    skip_names = {'cblas':[],'fblas':[]}
-    if skip_single_routines:
-        target_dir = 'dbl'
-        skip_names['cblas'].extend('saxpy caxpy'.split())
-        skip_names['fblas'].extend(skip_names['cblas'])
-        skip_names['fblas'].extend(\
-            'srotg crotg srotmg srot csrot srotm sswap cswap sscal cscal'\
-            ' csscal scopy ccopy sdot cdotu cdotc snrm2 scnrm2 sasum scasum'\
-            ' isamax icamax sgemv cgemv chemv ssymv strmv ctrmv'\
-            ' sgemm cgemm'.split())
-
-    if using_lapack_blas:
-        target_dir = join(target_dir,'blas')
-        skip_names['fblas'].extend(\
-            'drotmg srotmg drotm srotm'.split())
 
     depends = [__file__, 'fblas_l?.pyf.src', 'fblas.pyf.src','fblaswrap.f.src',
                'fblaswrap_veclib_c.c.src']
@@ -87,7 +59,6 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('fblas',
                          sources = sources,
                          depends = depends,
-                         f2py_options = ['skip:']+skip_names['fblas']+[':'],
                          extra_info = blas_opt
                          )
     # cblas:
@@ -109,7 +80,6 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('cblas',
                          sources = [get_cblas_source],
                          depends = ['cblas.pyf.src','cblas_l?.pyf.src'],
-                         f2py_options = ['skip:']+skip_names['cblas']+[':'],
                          extra_info = blas_opt
                          )
 

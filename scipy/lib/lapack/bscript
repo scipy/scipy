@@ -19,4 +19,3 @@ def pre_build(context):
     context.tweak_extension("calc_lwork",
                           features="c fc pyext bento cshlib f2py f2py_fortran",
                           use="FLAPACK CLIB")
-    context.disable_extension("atlas_version")

@@ -20,5 +20,3 @@ Library:
     Extension: calc_lwork
         Sources:
             src/calc_lwork.f
-    Extension: atlas_version
-        Sources: atlas_version.c
