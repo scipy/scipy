@@ -674,7 +674,7 @@ class Ufunc(object):
         else:
             c_base_name, fused_part = c_name, ""
         if specialized:
-            return "%s%s%s" % (prefix, c_base_name, fused_part)
+            return "%s%s%s" % (prefix, c_base_name, fused_part.replace(' ', '_'))
         else:
             return "%s%s" % (prefix, c_base_name,)
 
@@ -785,7 +785,7 @@ def generate(filename, ufunc_str, extra_code):
                                                         ufunc.cython_func_name(c_name))
 
                 # check function signature at compile time
-                var_name = c_name.replace('[', '_').replace(']', '_')
+                var_name = c_name.replace('[', '_').replace(']', '_').replace(' ', '_')
                 proto_name = '_proto_%s_t' % var_name
                 defs += "ctypedef %s\n" % (cy_proto.replace('(*)', proto_name))
                 defs += "cdef %s *%s_var = &%s\n" % (
@@ -822,6 +822,8 @@ from numpy cimport (
     NPY_FLOAT, NPY_DOUBLE, NPY_LONGDOUBLE,
     NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE,
     NPY_INT, NPY_LONG)
+
+ctypedef double complex double_complex
 
 cimport libc
 
