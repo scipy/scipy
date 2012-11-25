@@ -12,9 +12,13 @@ import types
 import numpy
 
 from scipy.linalg import flapack
-from scipy.linalg import clapack
+try:
+    from scipy.linalg import clapack
+except ImportError:
+    clapack = None
+
 _use_force_clapack = 1
-if hasattr(clapack,'empty_module'):
+if clapack is None:
     clapack = flapack
     _use_force_clapack = 0
 elif hasattr(flapack,'empty_module'):
