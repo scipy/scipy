@@ -111,7 +111,7 @@ cdef inline double eval_sh_jacobi_l(long n, double p, double q, double x) nogil:
     cdef double factor
 
     factor = exp(lgam(1+n) + lgam(n+p) - lgam(2*n+p))
-    return factor * eval_jacobi_l(n, p-q, q+1, 2*x-1)
+    return factor * eval_jacobi_l(n, p-q, q-1, 2*x-1)
 
 #-----------------------------------------------------------------------------
 # Gegenbauer (Ultraspherical)

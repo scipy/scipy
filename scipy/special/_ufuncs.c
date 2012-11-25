@@ -7020,7 +7020,7 @@ static CYTHON_INLINE double __pyx_f_5scipy_7special_15orthogonal_eval_eval_sh_ja
   __pyx_v_factor = exp(((lgam((1 + __pyx_v_n)) + lgam((__pyx_v_n + __pyx_v_p))) - lgam(((2 * __pyx_v_n) + __pyx_v_p))));
 
   
-  __pyx_r = (__pyx_v_factor * __pyx_f_5scipy_7special_15orthogonal_eval_eval_jacobi_l(__pyx_v_n, (__pyx_v_p - __pyx_v_q), (__pyx_v_q + 1.0), ((2.0 * __pyx_v_x) - 1.0)));
+  __pyx_r = (__pyx_v_factor * __pyx_f_5scipy_7special_15orthogonal_eval_eval_jacobi_l(__pyx_v_n, (__pyx_v_p - __pyx_v_q), (__pyx_v_q - 1.0), ((2.0 * __pyx_v_x) - 1.0)));
   goto __pyx_L0;
 
   __pyx_r = 0;
