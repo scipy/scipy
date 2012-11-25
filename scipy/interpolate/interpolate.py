@@ -147,11 +147,11 @@ class interp2d(object):
 
         if self.z.size == len(self.x) * len(self.y):
             rectangular_grid = True
-            if not all(self.x[1:] > self.x[:-1]):
+            if not np.all(self.x[1:] > self.x[:-1]):
                 j = np.argsort(self.x)
                 self.x = self.x[j]
                 self.z = self.z[:,j]
-            if not all(self.y[1:] > self.y[:-1]):
+            if not np.all(self.y[1:] > self.y[:-1]):
                 j = np.argsort(self.y)
                 self.y = self.y[j]
                 self.z = self.z[j,:]
