@@ -1,5 +1,6 @@
 # vim:syntax=python
-from os.path import join as pjoin, dirname as pdirname, basename as pbasename
+from os.path import join as pjoin, dirname as pdirname, \
+    basename as pbasename, abspath as pabspath
 import sys
 from numpy.distutils.misc_util import get_numpy_include_dirs, get_pkg_info
 
@@ -60,7 +61,9 @@ if not config.CheckF77Clib():
 config.CheckF77Mangling()
 config.Finish()
 
-env.PrependUnique(CPPPATH=[get_numpy_include_dirs(), env["PYEXTCPPPATH"]])
+# Note, __file__ undefined, therefore use abspath('.')
+env.PrependUnique(CPPPATH=[get_numpy_include_dirs(), env["PYEXTCPPPATH"], 
+                           pabspath('.')])
 def build_lib(name, ext, libname = None):
     """ext should be .f or .c"""
     if not libname:
@@ -80,6 +83,8 @@ build_lib('amos', '.f', 'sc_amos')
 build_lib('cdflib', '.f', 'sc_cdf')
 build_lib('specfun', '.f', 'sc_specfunlib')
 
+# Note: cflags only passed to C but not to C++ compiler.  Therefore add npymath
+# to _ufuncs_cxx
 math_info = get_pkg_info("npymath")
 env.MergeFlags(math_info.cflags())
 env.MergeFlags(math_info.libs())
@@ -98,7 +103,8 @@ env.Prepend(LIBS = ['sc_amos', 'sc_c_misc', 'sc_cephes', 'sc_mach',
                     'sc_cdf', 'sc_specfunlib']) 
 env.NumpyPythonExtension('_ufuncs', source = src)
 
-env.NumpyPythonExtension('_ufuncs_cxx', source = src_cxx, LIBS = ['sc_cephes'])
+env.NumpyPythonExtension('_ufuncs_cxx', source = src_cxx, 
+                         LIBS = ['sc_cephes', 'npymath'])
 
 # Specfun extension
 env.Prepend(LIBS = ['sc_specfunlib'])
