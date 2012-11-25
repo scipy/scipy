@@ -99,19 +99,19 @@ ellipeinc -- ellie: dd->d                                  -- cephes.h
 ellipkinc -- ellik: dd->d                                  -- cephes.h
 ellipe -- ellpe: d->d                                      -- cephes.h
 ellipkm1 -- ellpk: d->d                                    -- cephes.h
-eval_jacobi -- eval_jacobi_dddd: dddd->d, eval_jacobi_dddD: dddD->D, eval_jacobi_lddd: lddd->d -- orthogonal_eval.pxd
-eval_sh_jacobi -- eval_sh_jacobi_dddd: dddd->d, eval_sh_jacobi_dddD: dddD->D, eval_sh_jacobi_lddd: lddd->d -- orthogonal_eval.pxd
-eval_gegenbauer -- eval_gegenbauer_ddd: ddd->d, eval_gegenbauer_ddD: ddD->D, eval_gegenbauer_ldd: ldd->d -- orthogonal_eval.pxd
-eval_chebyt -- eval_chebyt_dd: dd->d, eval_chebyt_dD: dD->D, eval_chebyt_ld: ld->d -- orthogonal_eval.pxd
-eval_chebyu -- eval_chebyu_dd: dd->d, eval_chebyu_dD: dD->D, eval_chebyu_ld: ld->d -- orthogonal_eval.pxd
-eval_chebyc -- eval_chebyc_dd: dd->d, eval_chebyc_dD: dD->D, eval_chebyc_ld: ld->d -- orthogonal_eval.pxd
-eval_chebys -- eval_chebys_dd: dd->d, eval_chebys_dD: dD->D, eval_chebys_ld: ld->d -- orthogonal_eval.pxd
-eval_sh_chebyt -- eval_sh_chebyt_dd: dd->d, eval_sh_chebyt_dD: dD->D, eval_sh_chebyt_ld:ld->d -- orthogonal_eval.pxd
-eval_sh_chebyu -- eval_sh_chebyu_dd: dd->d, eval_sh_chebyu_dD: dD->D, eval_sh_chebyu_ld:ld->d -- orthogonal_eval.pxd
-eval_legendre --  eval_legendre_dd: dd->d, eval_legendre_dD: dD->D, eval_legendre_ld: ld->d -- orthogonal_eval.pxd
-eval_sh_legendre -- eval_sh_legendre_dd: dd->d, eval_sh_legendre_dD: dD->D, eval_sh_legendre_ld:ld->d -- orthogonal_eval.pxd
-eval_genlaguerre -- eval_genlaguerre_ddd: ddd->d, eval_genlaguerre_ddD: ddD->D, eval_genlaguerre_ldd:ldd->d -- orthogonal_eval.pxd
-eval_laguerre -- eval_laguerre_dd: dd->d, eval_laguerre_dD: dD->D, eval_laguerre_ld:ld->d -- orthogonal_eval.pxd
+eval_jacobi --      eval_jacobi[double]: dddd->d,     eval_jacobi[double complex]: dddD->D,     eval_jacobi_l: lddd->d -- orthogonal_eval.pxd
+eval_sh_jacobi --   eval_sh_jacobi[double]: dddd->d,  eval_sh_jacobi[double complex]: dddD->D,  eval_sh_jacobi_l: lddd->d -- orthogonal_eval.pxd
+eval_gegenbauer --  eval_gegenbauer[double]: ddd->d,  eval_gegenbauer[double complex]: ddD->D,  eval_gegenbauer_l: ldd->d -- orthogonal_eval.pxd
+eval_chebyt --      eval_chebyt[double]: dd->d,       eval_chebyt[double complex]: dD->D,       eval_chebyt_l: ld->d -- orthogonal_eval.pxd
+eval_chebyu --      eval_chebyu[double]: dd->d,       eval_chebyu[double complex]: dD->D,       eval_chebyu_l: ld->d -- orthogonal_eval.pxd
+eval_chebyc --      eval_chebyc[double]: dd->d,       eval_chebyc[double complex]: dD->D,       eval_chebyc_l: ld->d -- orthogonal_eval.pxd
+eval_chebys --      eval_chebys[double]: dd->d,       eval_chebys[double complex]: dD->D,       eval_chebys_l: ld->d -- orthogonal_eval.pxd
+eval_sh_chebyt --   eval_sh_chebyt[double]: dd->d,    eval_sh_chebyt[double complex]: dD->D,    eval_sh_chebyt_l:ld->d -- orthogonal_eval.pxd
+eval_sh_chebyu --   eval_sh_chebyu[double]: dd->d,    eval_sh_chebyu[double complex]: dD->D,    eval_sh_chebyu_l:ld->d -- orthogonal_eval.pxd
+eval_legendre --    eval_legendre[double]: dd->d,     eval_legendre[double complex]: dD->D,     eval_legendre_l: ld->d -- orthogonal_eval.pxd
+eval_sh_legendre -- eval_sh_legendre[double]: dd->d,  eval_sh_legendre[double complex]: dD->D,  eval_sh_legendre_l:ld->d -- orthogonal_eval.pxd
+eval_genlaguerre -- eval_genlaguerre[double]: ddd->d, eval_genlaguerre[double complex]: ddD->D, eval_genlaguerre_l:ldd->d -- orthogonal_eval.pxd
+eval_laguerre --    eval_laguerre[double]: dd->d,     eval_laguerre[double complex]: dD->D,     eval_laguerre_l:ld->d -- orthogonal_eval.pxd
 eval_hermite  -- eval_hermite: ld->d                       -- orthogonal_eval.pxd
 eval_hermitenorm -- eval_hermitenorm: ld->d                -- orthogonal_eval.pxd
 exp10 -- exp10: d->d                                       -- cephes.h
