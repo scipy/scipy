@@ -39,8 +39,6 @@ def configuration(parent_package='',top_path=None):
 
     from numpy.distutils.misc_util import Configuration
 
-    from interface_gen import generate_interface
-
     config = Configuration('linalg',parent_package,top_path)
 
     lapack_opt = get_info('lapack_opt')
@@ -87,28 +85,6 @@ def configuration(parent_package='',top_path=None):
     elif atlas_version and atlas_version>'3.4.0' and atlas_version<='3.5.12':
         skip_names['clapack'].extend('cpotrf zpotrf'.split())
 
-    def generate_pyf(extension, build_dir):
-        name = extension.name.split('.')[-1]
-        target = join(build_dir,target_dir,name+'.pyf')
-        if name[0]=='c' and atlas_version is None and newer(__file__,target):
-            f = open(target,'w')
-            f.write('python module '+name+'\n')
-            f.write('usercode void empty_module(void) {}\n')
-            f.write('interface\n')
-            f.write('subroutine empty_module()\n')
-            f.write('intent(c) empty_module\n')
-            f.write('end subroutine empty_module\n')
-            f.write('end interface\nend python module'+name+'\n')
-            f.close()
-            return target
-        if newer_group(extension.depends,target):
-            generate_interface(name,
-                               extension.depends[0],
-                               target,
-                               skip_names[name])
-        return target
-
-
     # fblas:
     if needs_cblas_wrapper(lapack_opt):
         sources = ['fblas.pyf.src', join('src', 'fblaswrap_veclib_c.c')],
@@ -125,15 +101,6 @@ def configuration(parent_package='',top_path=None):
                          extra_info = lapack_opt
                          )
 
-    # cblas:
-    config.add_extension('cblas',
-                         sources = [generate_pyf],
-                         depends = ['generic_cblas.pyf',
-                                    'generic_cblas1.pyf',
-                                    'interface_gen.py'],
-                         extra_info = lapack_opt
-                         )
-
     # flapack:
     config.add_extension('flapack',
                          sources = ['flapack.pyf.src'],
@@ -141,13 +108,22 @@ def configuration(parent_package='',top_path=None):
                          extra_info = lapack_opt
                          )
 
-    # clapack:
-    config.add_extension('clapack',
-                         sources = [generate_pyf],
-                         depends = ['generic_clapack.pyf',
-                                    'interface_gen.py'],
-                         extra_info = lapack_opt
-                         )
+    if atlas_version is not None:
+        # cblas:
+        config.add_extension('cblas',
+                             sources = ['cblas.pyf.src'],
+                             depends = ['cblas.pyf.src', 'cblas_l1.pyf.src'],
+                             f2py_options = ['skip:']+skip_names['cblas']+[':'],
+                             extra_info = lapack_opt
+                             )
+
+        # clapack:
+        config.add_extension('clapack',
+                             sources = ['clapack.pyf.src'],
+                             depends = ['clapack.pyf.src'],
+                             f2py_options = ['skip:']+skip_names['clapack']+[':'],
+                             extra_info = lapack_opt
+                             )
 
     # _flinalg:
     config.add_extension('_flinalg',

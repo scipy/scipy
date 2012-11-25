@@ -20,28 +20,20 @@ def pre_build(context):
     context.register_builder("fblas", fblas_builder)
 
     def cblas_builder(extension):
-        t = default_builder(extension,
-                            features="c fc pyext bento cshlib f2py",
-                            use="CBLAS")
-        t.mappings[".pyf"] = f2py.interface_gen_callback
-        return t
+        if bld.env.HAS_CBLAS:
+            return default_builder(extension,
+                                   features="c fc pyext bento cshlib f2py",
+                                   use="CBLAS")
     context.register_builder("cblas", cblas_builder)
 
     context.tweak_extension("flapack", features="c fc pyext bento cshlib f2py",
                           use="FLAPACK CLIB")
 
     def builder(extension):
-        kw = {}
         if bld.env.HAS_CLAPACK:
-            kw["use"] = "CLAPACK"
-            kw["features"] = "c pyext bento cshlib f2py"
-            interface_gen_callback = f2py.interface_gen_callback
-        else:
-            kw["features"] = "c fc pyext bento cshlib f2py"
-            interface_gen_callback = f2py.fake_interface_gen_callback
-        t = default_builder(extension, **kw)
-        t.mappings[".pyf"] = interface_gen_callback
-        return t
+            return default_builder(extension,
+                                   features="c pyext bento cshlib f2py",
+                                   use="CLAPACK")
     context.register_builder("clapack", builder)
 
     context.tweak_extension("_flinalg", features="c fc pyext bento cshlib f2py f2py_fortran",

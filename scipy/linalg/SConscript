@@ -10,23 +10,11 @@ from numscons import CheckCBLAS, CheckF77BLAS, CheckF77LAPACK,\
                                   IsATLAS, GetATLASVersion, CheckF77Clib
 from numscons import write_info
 
-from scons_support import do_generate_interface, do_generate_fake_interface, \
-                          generate_interface_emitter
-
-#from scons_support import CheckBrokenMathlib, define_no_smp, \
-#    generate_config_header, generate_config_header_emitter
-
 env = GetNumpyEnvironment(ARGUMENTS)
 env.Tool('f2py')
 
 # XXX: handle cblas wrapper for complex (check in numpy.scons or here ?)
 env.AppendUnique(F2PYOPTIONS = '--quiet')
-
-env['BUILDERS']['haha'] = Builder(action = do_generate_interface,
-                                  emitter = generate_interface_emitter)
-
-env['BUILDERS']['hihi'] = Builder(action = do_generate_fake_interface,
-                                  emitter = generate_interface_emitter)
 
 #if os.name == 'nt':
 #    # NT needs the pythonlib to run any code importing Python.h, including
@@ -109,26 +97,21 @@ fenv.NumpyPythonExtension('fblas', source)
 #   cblas
 #------------
 if has_cblas:
-    env.haha('cblas', 'generic_cblas.pyf')
-else:
-    env.hihi('cblas', 'generic_cblas.pyf')
-env.NumpyPythonExtension('cblas', source = 'cblas.pyf')
+    fenv.FromFTemplate('clapack.pyf', 'clapack.pyf.src')
+    env.NumpyPythonExtension('cblas', source = 'clapack.pyf')
 
 #------------
 #   flapack
 #------------
 fenv.FromFTemplate('flapack.pyf', 'flapack.pyf.src')
-source = ['flapack.pyf']
 fenv.NumpyPythonExtension('flapack', 'flapack.pyf')
 
 #------------
 #   clapack
 #------------
 if has_clapack:
-    env.haha('clapack', 'generic_clapack.pyf')
-else:
-    env.hihi('clapack', 'generic_clapack.pyf')
-env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
+    fenv.FromFTemplate('clapack.pyf', 'clapack.pyf.src')
+    env.NumpyPythonExtension('clapack', source = 'clapack.pyf')
 
 #----------------
 #   _flinalg
