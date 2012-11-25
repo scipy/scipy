@@ -4,19 +4,6 @@ import os
 from distutils.dep_util import newer_group, newer
 from os.path import join
 
-#-------------------
-# To skip wrapping single precision atlas/lapack/blas routines, set
-# the following flag to True:
-skip_single_routines = 0
-
-# Some OS distributions (e.g. Redhat, Suse) provide a blas library that
-# is built using incomplete blas sources that come with lapack tar-ball.
-# In order to use such a library in scipy.linalg, the following flag
-# must be set to True:
-using_lapack_blas = 0
-
-#--------------------
-
 def needs_cblas_wrapper(info):
     """Returns true if needs c wrapper around cblas for calling from
     fortran."""
@@ -52,38 +39,6 @@ def configuration(parent_package='',top_path=None):
         print ('ATLAS version: %s' % atlas_version)
 
     target_dir = ''
-    skip_names = {'clapack':[],'flapack':[],'cblas':[],'fblas':[]}
-    if skip_single_routines:
-        target_dir = 'dbl'
-        skip_names['clapack'].extend(\
-            'sgesv cgesv sgetrf cgetrf sgetrs cgetrs sgetri cgetri'\
-            ' sposv cposv spotrf cpotrf spotrs cpotrs spotri cpotri'\
-            ' slauum clauum strtri ctrtri'.split())
-        skip_names['flapack'].extend(skip_names['clapack'])
-        skip_names['flapack'].extend(\
-            'sgesdd cgesdd sgelss cgelss sgeqrf cgeqrf sgeev cgeev'\
-            ' sgegv cgegv ssyev cheev slaswp claswp sgees cgees'
-            ' sggev cggev'.split())
-        skip_names['cblas'].extend('saxpy caxpy'.split())
-        skip_names['fblas'].extend(skip_names['cblas'])
-        skip_names['fblas'].extend(\
-            'srotg crotg srotmg srot csrot srotm sswap cswap sscal cscal'\
-            ' csscal scopy ccopy sdot cdotu cdotc snrm2 scnrm2 sasum scasum'\
-            ' isamax icamax sgemv cgemv chemv ssymv strmv ctrmv'\
-            ' sgemm cgemm'.split())
-
-    if using_lapack_blas:
-        target_dir = join(target_dir,'blas')
-        skip_names['fblas'].extend(\
-            'drotmg srotmg drotm srotm'.split())
-
-    if atlas_version=='3.2.1_pre3.3.6':
-        target_dir = join(target_dir,'atlas321')
-        skip_names['clapack'].extend(\
-            'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
-            ' slauum dlauum clauum zlauum strtri dtrtri ctrtri ztrtri'.split())
-    elif atlas_version and atlas_version>'3.4.0' and atlas_version<='3.5.12':
-        skip_names['clapack'].extend('cpotrf zpotrf'.split())
 
     # fblas:
     if needs_cblas_wrapper(lapack_opt):
@@ -113,7 +68,6 @@ def configuration(parent_package='',top_path=None):
         config.add_extension('cblas',
                              sources = ['cblas.pyf.src'],
                              depends = ['cblas.pyf.src', 'cblas_l1.pyf.src'],
-                             f2py_options = ['skip:']+skip_names['cblas']+[':'],
                              extra_info = lapack_opt
                              )
 
@@ -121,7 +75,6 @@ def configuration(parent_package='',top_path=None):
         config.add_extension('clapack',
                              sources = ['clapack.pyf.src'],
                              depends = ['clapack.pyf.src'],
-                             f2py_options = ['skip:']+skip_names['clapack']+[':'],
                              extra_info = lapack_opt
                              )
 

@@ -3,14 +3,6 @@
 import os
 from glob import glob
 
-#-------------------
-# To skip wrapping single precision atlas/lapack routines, set
-# the following flag to True:
-
-skip_single_routines = 0
-
-#--------------------
-
 tmpl_empty_clapack_pyf = '''
 python module clapack
   usercode void empty_module(void) {}
@@ -37,32 +29,11 @@ def configuration(parent_package='',top_path=None):
         print ('ATLAS version: %s' % atlas_version)
 
     target_dir = ''
-    skip_names = {'clapack':[],'flapack':[]}
-    if skip_single_routines:
-        target_dir = 'dbl'
-        skip_names['clapack'].extend(\
-            'sgesv cgesv sgetrf cgetrf sgetrs cgetrs sgetri cgetri'\
-            ' sposv cposv spotrf cpotrf spotrs cpotrs spotri cpotri'\
-            ' slauum clauum strtri ctrtri'.split())
-        skip_names['flapack'].extend(skip_names['clapack'])
-        skip_names['flapack'].extend(\
-            'sgesdd cgesdd sgelss cgelss sgeqrf cgeqrf sgeev cgeev'\
-            ' sgegv cgegv ssyev cheev slaswp claswp sgees cgees'
-            ' sggev cggev'.split())
-
-    if atlas_version=='3.2.1_pre3.3.6':
-        target_dir = os.path.join(target_dir,'atlas321')
-        skip_names['clapack'].extend(\
-            'sgetri dgetri cgetri zgetri spotri dpotri cpotri zpotri'\
-            ' slauum dlauum clauum zlauum strtri dtrtri ctrtri ztrtri'.split())
-    elif atlas_version and atlas_version>'3.4.0' and atlas_version<='3.5.12':
-        skip_names['clapack'].extend('cpotrf zpotrf'.split())
 
     # flapack:
     config.add_extension('flapack',
                          sources = ['flapack.pyf.src'],
                          depends = [__file__,'flapack_*.pyf.src'],
-                         f2py_options = ['skip:']+skip_names['flapack']+[':'],
                          extra_info = lapack_opt
                          )
 
@@ -85,7 +56,6 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('clapack',
                          sources = [get_clapack_source],
                          depends = ['clapack.pyf.src'],
-                         f2py_options = ['skip:']+skip_names['clapack']+[':'],
                          extra_info = lapack_opt
                          )
 
