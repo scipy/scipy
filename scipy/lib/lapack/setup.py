@@ -96,7 +96,7 @@ def configuration(parent_package='',top_path=None):
                          )
 
     # atlas_version:
-    if os.name == 'nt' and 'FPATH' in os.environ:
+    if os.name == 'nt' and ('FPATH' in os.environ or 'MKLROOT' in os.environ):
         define_macros = [('NO_ATLAS_INFO', 1)]
     else:
         define_macros = []
