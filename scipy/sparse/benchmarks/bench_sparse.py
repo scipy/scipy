@@ -22,7 +22,7 @@ def random_sparse(m,n,nnz_per_row):
 #TODO move this to a matrix gallery and add unittests
 def poisson2d(N,dtype='d',format=None):
     """
-    Return a sparse matrix for the 2d poisson problem
+    Return a sparse matrix for the 2D Poisson problem
     with standard 5-point finite difference stencil on a
     square N-by-N grid.
     """
