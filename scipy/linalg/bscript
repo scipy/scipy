@@ -40,10 +40,3 @@ def pre_build(context):
                           use="FLAPACK CLIB")
     context.tweak_extension("calc_lwork", features="c fc pyext bento cshlib f2py f2py_fortran",
                           use="FLAPACK CLIB")
-
-    defines = []
-    if bld.env.HAS_ATLAS:
-        raise NotImplementedError("Atlas not implemented yet")
-    else:
-        defines.append("NO_ATLAS_INFO=1")
-    context.tweak_extension("atlas_version", defines=defines)
