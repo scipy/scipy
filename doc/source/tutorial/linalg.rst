@@ -182,6 +182,23 @@ For matrix :math:`\mathbf{A}` the only valid values for norm are :math:`\pm2,\pm
 
 where :math:`\sigma_{i}` are the singular values of :math:`\mathbf{A}` .
 
+Examples:
+
+    >>> A=mat('[1, 2; 3, 4]')
+    >>> A
+    matrix([[1, 2],
+            [3, 4]])
+    >>> linalg.norm(A)
+    5.4772255750516612
+    >>> linalg.norm(A,'fro') #'fro' is default
+    5.4772255750516612
+    >>> linalg.norm(A,1)
+    6
+    >>> linalg.norm(A,-1)
+    4
+    >>> linalg.norm(A,inf)
+    7
+
 
 Solving linear least-squares problems and pseudo-inverses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
