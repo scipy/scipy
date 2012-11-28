@@ -35,9 +35,10 @@ def test_get_blas_funcs():
     # get_blas_funcs will choose libraries depending on most generic
     # array
     assert_equal(f1.typecode, 'z')
-    assert_equal(f1.module_name, 'cblas')
     assert_equal(f2.typecode, 'z')
-    assert_equal(f2.module_name, 'cblas')
+    if cblas is not None:
+        assert_equal(f1.module_name, 'cblas')
+        assert_equal(f2.module_name, 'cblas')
 
     # check defaults.
     f1 = get_blas_funcs('rotg')
