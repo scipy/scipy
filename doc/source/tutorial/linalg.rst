@@ -184,15 +184,15 @@ where :math:`\sigma_{i}` are the singular values of :math:`\mathbf{A}` .
 
 Examples:
 
-    >>> A=mat('[1, 2; 3, 4]')
+    >>> A=np.array([[1, 2],[3, 4]])
     >>> A
-    matrix([[1, 2],
-            [3, 4]])
+    array([[1, 2],
+          [3, 4]])
     >>> linalg.norm(A)
     5.4772255750516612
-    >>> linalg.norm(A,'fro') #'fro' is default
+    >>> linalg.norm(A,'fro') #frobenius norm is the default
     5.4772255750516612
-    >>> linalg.norm(A,1)
+    >>> linalg.norm(A,1) #L1-norm
     6
     >>> linalg.norm(A,-1)
     4
