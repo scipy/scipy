@@ -18,7 +18,6 @@ Simple N-D interpolation
 #
 
 import numpy as np
-cimport numpy as np
 
 import scipy.spatial.qhull as qhull
 cimport scipy.spatial.qhull as qhull
@@ -66,11 +65,11 @@ class NDInterpolatorBase(object):
         C-contiguous, and of correct type.
         """
         points = _ndim_coords_from_arrays(points)
-        values = np.ascontiguousarray(values)
+        values = np.asarray(values)
 
         self._check_init_shape(points, values, ndim=ndim)
 
-        points = np.ascontiguousarray(points.astype(np.double))
+        points = np.ascontiguousarray(points, dtype=np.double)
 
         self.values_shape = values.shape[1:]
         if values.ndim == 1:
@@ -84,10 +83,10 @@ class NDInterpolatorBase(object):
         # Complex or real?
         self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
         if self.is_complex:
-            self.values = self.values.astype(np.complex)
+            self.values = np.ascontiguousarray(self.values, dtype=np.complex)
             self.fill_value = complex(fill_value)
         else:
-            self.values = self.values.astype(np.double)
+            self.values = np.ascontiguousarray(self.values, dtype=np.double)
             self.fill_value = float(fill_value)
 
         self.points = points
@@ -127,9 +126,9 @@ class NDInterpolatorBase(object):
         """
         xi = _ndim_coords_from_arrays(args)
         xi = self._check_call_shape(xi)
-        xi = np.ascontiguousarray(xi.astype(np.double))
         shape = xi.shape
         xi = xi.reshape(np.prod(shape[:-1]), shape[-1])
+        xi = np.ascontiguousarray(xi, dtype=np.double)
 
         if self.is_complex:
             r = self._evaluate_complex(xi)
@@ -206,11 +205,12 @@ class LinearNDInterpolator(NDInterpolatorBase):
         return self._do_evaluate(xi, 1.0j)
 
     @cython.boundscheck(False)
-    def _do_evaluate(self, np.ndarray[np.double_t, ndim=2] xi, double_or_complex dummy):
-        cdef double_or_complex[:,:] values = self.values
-        cdef double_or_complex[:,:] out
-        cdef double[:,:] points = self.points
-        cdef int[:,:] simplices = self.tri.simplices
+    @cython.wraparound(False)
+    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
+        cdef double_or_complex[:,::1] values = self.values
+        cdef double_or_complex[:,::1] out
+        cdef double[:,::1] points = self.points
+        cdef int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
@@ -236,7 +236,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
                 # 1) Find the simplex
 
                 isimplex = qhull._find_simplex(&info, c,
-                                               (<double*>xi.data) + i*ndim,
+                                               &xi[0,0] + i*ndim,
                                                &start, eps, eps_broad)
 
                 # 2) Linear barycentric interpolation
@@ -440,9 +440,11 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
     # Didn't converge before maxiter
     return 0
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
-    cdef np.ndarray[np.double_t, ndim=2] data
-    cdef np.ndarray[np.double_t, ndim=3] grad
+    cdef double[:,::1] data
+    cdef double[:,:,::1] grad
     cdef qhull.DelaunayInfo_t info
     cdef int k, ret, nvalues
 
@@ -465,7 +467,7 @@ def estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
         y = y[:,None]
 
     y = y.reshape(tri.npoints, -1).T
-    y = np.ascontiguousarray(y).astype(np.double)
+    y = np.ascontiguousarray(y, dtype=np.double)
     yi = np.empty((y.shape[0], y.shape[1], 2))
 
     data = y
@@ -478,10 +480,10 @@ def estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
         with nogil:
             ret = _estimate_gradients_2d_global(
                 &info,
-                <double*>data.data + info.npoints*k,
+                &data[k,0],
                 maxiter,
                 tol,
-                <double*>grad.data + 2*info.npoints*k)
+                &grad[k,0,0])
 
         if ret == 0:
             warnings.warn("Gradient estimation did not converge, "
@@ -802,12 +804,13 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         return self._do_evaluate(xi, 1.0j)
 
     @cython.boundscheck(False)
-    def _do_evaluate(self, np.ndarray[np.double_t, ndim=2] xi, double_or_complex dummy):
-        cdef double_or_complex[:,:] values = self.values
+    @cython.wraparound(False)
+    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
+        cdef double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,:,:] grad = self.grad
-        cdef double_or_complex[:,:] out
-        cdef double[:,:] points = self.points
-        cdef int[:,:] simplices = self.tri.simplices
+        cdef double_or_complex[:,::1] out
+        cdef double[:,::1] points = self.points
+        cdef int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
@@ -835,7 +838,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                 # 1) Find the simplex
 
                 isimplex = qhull._find_simplex(&info, c,
-                                               (<double*>xi.data) + i*ndim,
+                                               &xi[i,0],
                                                &start, eps, eps_broad)
 
                 # 2) Clough-Tocher interpolation
