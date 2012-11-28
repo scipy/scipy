@@ -104,6 +104,9 @@ change is made.
 
 * scipy.linalg
 
+  - scipy.linalg.blas
+  - scipy.linalg.lapack
+
 * scipy.misc
 
 * scipy.ndimage

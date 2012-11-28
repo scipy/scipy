@@ -16,7 +16,12 @@ import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_almost_equal
 
-from scipy.linalg import fblas, cblas, get_blas_funcs
+from scipy.linalg import _fblas as fblas, get_blas_funcs
+
+try:
+    from scipy.linalg import _cblas as cblas
+except ImportError:
+    cblas = None
 
 def test_get_blas_funcs():
     # check that it returns Fortran code for arrays that are
@@ -30,9 +35,10 @@ def test_get_blas_funcs():
     # get_blas_funcs will choose libraries depending on most generic
     # array
     assert_equal(f1.typecode, 'z')
-    assert_equal(f1.module_name, 'cblas')
     assert_equal(f2.typecode, 'z')
-    assert_equal(f2.module_name, 'cblas')
+    if cblas is not None:
+        assert_equal(f1.module_name, 'cblas')
+        assert_equal(f2.module_name, 'cblas')
 
     # check defaults.
     f1 = get_blas_funcs('rotg')
@@ -47,6 +53,14 @@ def test_get_blas_funcs():
     # extended precision complex
     f1 = get_blas_funcs('gemm', dtype=np.longcomplex)
     assert_equal(f1.typecode, 'z')
+
+    # check safe complex upcasting
+    f1 = get_blas_funcs('axpy',
+                        (np.empty((2,2), dtype=np.float64),
+                         np.empty((2,2), dtype=np.complex64))
+                        )
+    assert_equal(f1.typecode, 'z')
+
 
 def test_get_blas_funcs_alias():
     # check alias for get_blas_funcs

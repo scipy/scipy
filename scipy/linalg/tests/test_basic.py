@@ -263,6 +263,8 @@ class TestSolveHBanded(TestCase):
 
 
 class TestSolve(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
 
     def test_20Feb04_bug(self):
         a = [[1,1],[1.0,0]] # ok
@@ -416,6 +418,8 @@ class TestSolveTriangular(TestCase):
 
 
 class TestInv(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
 
     def test_simple(self):
         a = [[1,2],[3,4]]
@@ -457,6 +461,8 @@ class TestInv(TestCase):
 
 
 class TestDet(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
 
     def test_simple(self):
         a = [[1,2],[3,4]]
@@ -501,6 +507,9 @@ def direct_lstsq(a,b,cmplx=0):
     return solve(a1, b1)
 
 class TestLstsq(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
+
     def test_random_overdet_large(self):
         #bug report: Nils Wagner
         n = 200

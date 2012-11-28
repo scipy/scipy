@@ -18,7 +18,7 @@ from scipy.linalg import eig, eigvals, lu, svd, svdvals, cholesky, qr, \
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq, \
      eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, LinAlgError, \
      qz
-from scipy.linalg.flapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
+from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 
 from numpy import array, transpose, sometrue, diag, ones, linalg, \
