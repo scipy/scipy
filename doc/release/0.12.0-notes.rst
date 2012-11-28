@@ -43,7 +43,6 @@ exactly the same interface as KDTree, and can be used as a drop-in replacement.
 -------------------------------
 A callback mechanism was added to L-BFGS-B and TNC minimization solvers.
 
-
 Complex error functions in ``scipy.special``
 --------------------------------------------
 The computation of special functions related to the error function now uses a
@@ -63,9 +62,26 @@ Evaluation of orthogonal polynomials (the ``eval_*`` routines) in now
 faster in ``scipy.special``, and their ``out=`` argument functions
 properly.
 
+Documented BLAS and LAPACK low-level interfaces
+-----------------------------------------------
+The modules `scipy.linalg.blas` and `scipy.linalg.lapack` can be used
+to access low-level BLAS and LAPACK functions.
+
 
 Deprecated features
 ===================
+
+`scipy.lib.lapack`
+------------------
+The module `scipy.lib.lapack` is deprecated. You can use
+`scipy.linalg.lapack` instead. The module `scipy.lib.blas` was
+deprecated earlier in Scipy 0.10.0.
+
+`fblas` and `cblas`
+-------------------
+Accessing the modules `scipy.linalg.fblas`, `cblas`, `flapack`,
+`clapack` is deprecated. Instead, use the modules
+`scipy.linalg.lapack` and `scipy.linalg.blas`.
 
 
 Backwards incompatible changes
