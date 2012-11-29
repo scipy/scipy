@@ -42,7 +42,7 @@ python module _dop
          double precision dimension(*),intent(in),check(len(rtol)==len(atol)), &
               depend(atol) :: rtol
          integer intent(hide), depend(atol) :: itol = (len(atol)<=1?0:1)
-         integer intent(hide) :: iout=0
+         integer intent(in) :: iout
          double precision dimension(*), intent(in), check(len(work)>=8*n+21), &
                               :: work
          integer intent(hide), depend(work) :: lwork = len(work)
@@ -65,7 +65,7 @@ python module _dop
          double precision dimension(*),intent(in),check(len(rtol)==len(atol)), &
               depend(atol) :: rtol
          integer intent(hide), depend(atol) :: itol = (len(atol)<=1?0:1)
-         integer intent(hide) :: iout=0
+         integer intent(in) :: iout
          double precision dimension(*), intent(in), check(len(work)>=8*n+21), &
                               :: work
          integer intent(hide), depend(work) :: lwork = len(work)

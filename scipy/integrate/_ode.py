@@ -279,6 +279,12 @@ class ode(object):
           Maximum factor to increase/decrease step size by in one step
         - beta : float
           Beta parameter for stabilised step size control.
+        - solout: callable ``solout(t, y)``
+                  called at each internal integrator step,
+                  t is a scalar providing the current independent position 
+                  y is the current soloution ``y.shape == (n,)``
+                  return -1 to stop integration
+                  otherwise return None or 0
 
     "dop853"
 
@@ -845,7 +851,8 @@ class dopri5(IntegratorBase):
                  ifactor=10.0,
                  dfactor=0.2,
                  beta=0.0,
-                 method=None
+                 method=None,
+                 solout = None
                  ):
         self.rtol = rtol
         self.atol = atol
@@ -857,6 +864,11 @@ class dopri5(IntegratorBase):
         self.dfactor = dfactor
         self.beta = beta
         self.success = 1
+        self.solout = solout
+        if solout is None:
+            self.iout = 0
+        else:
+            self.iout = 1
 
     def reset(self, n, has_jac):
         work = zeros((8 * n + 21,), float)
@@ -871,7 +883,7 @@ class dopri5(IntegratorBase):
         iwork[0] = self.nsteps
         self.iwork = iwork
         self.call_args = [self.rtol, self.atol, self._solout,
-                          self.work, self.iwork]
+                          self.iout, self.work, self.iwork]
         self.success = 1
 
     def run(self, f, jac, y0, t0, t1, f_params, jac_params):
@@ -883,10 +895,11 @@ class dopri5(IntegratorBase):
             self.success = 0
         return y, x
 
-    def _solout(self, *args):
-        # dummy solout function
-        pass
-
+    def _solout(self, nr, xold, x, y, nd, icomp, con):
+        if self.solout is not None:
+            return self.solout(x, y)
+        else:
+            return 1
 
 if dopri5.runner is not None:
     IntegratorBase.integrator_classes.append(dopri5)
@@ -906,7 +919,8 @@ class dop853(dopri5):
                  ifactor=6.0,
                  dfactor=0.3,
                  beta=0.0,
-                 method=None
+                 method=None,
+                 solout=None
                  ):
         self.rtol = rtol
         self.atol = atol
@@ -918,6 +932,11 @@ class dop853(dopri5):
         self.dfactor = dfactor
         self.beta = beta
         self.success = 1
+        self.solout = solout
+        if solout is None:
+            self.iout = 0
+        else:
+            self.iout = 1
 
     def reset(self, n, has_jac):
         work = zeros((11 * n + 21,), float)
@@ -932,9 +951,8 @@ class dop853(dopri5):
         iwork[0] = self.nsteps
         self.iwork = iwork
         self.call_args = [self.rtol, self.atol, self._solout,
-                          self.work, self.iwork]
+                          self.iout, self.work, self.iwork]
         self.success = 1
-
 
 if dop853.runner is not None:
     IntegratorBase.integrator_classes.append(dop853)
