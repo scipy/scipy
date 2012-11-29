@@ -175,6 +175,9 @@ class TestCephes(TestCase):
         assert_equal(cephes.gammainccinv(5,1),0.0)
     def test_gammaln(self):
         cephes.gammaln(10)
+    def test_gammasgn(self):
+        vals = np.array([-4, -3.5, -2.3, 1, 4.2], np.float64)
+        assert_array_equal(cephes.gammasgn(vals), np.sign(cephes.rgamma(vals)))
 
     def test_gdtr(self):
         assert_equal(cephes.gdtr(1,1,0),0.0)

@@ -578,6 +578,11 @@ add_newdoc("scipy.special", "gammaln",
     gamma function of z: ln(abs(gamma(z)))
     """)
 
+add_newdoc("scipy.special", "gammasgn",
+    """
+    y=gammasgn(x) returns the sign of the gamma function.
+    """)
+
 add_newdoc("scipy.special", "gdtr",
     """
     y=gdtr(a,b,x) returns the integral from zero to x of the gamma
