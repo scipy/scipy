@@ -279,12 +279,6 @@ class ode(object):
           Maximum factor to increase/decrease step size by in one step
         - beta : float
           Beta parameter for stabilised step size control.
-        - solout: callable ``solout(t, y)``
-                  called at each internal integrator step,
-                  t is a scalar providing the current independent position 
-                  y is the current soloution ``y.shape == (n,)``
-                  return -1 to stop integration
-                  otherwise return None or 0
 
     "dop853"
 
@@ -405,6 +399,22 @@ class ode(object):
         self.jac_params = args
         return self
 
+    def set_solout(self, solout):
+        """Set callable to be called at every successful integration step.
+
+        - solout: callable ``solout(t, y)``
+                  called at each internal integrator step,
+                  t is a scalar providing the current independent position 
+                  y is the current soloution ``y.shape == (n,)``
+                  solout should return -1 to stop integration
+                  otherwise it should return None or 0
+        """
+        if self._integrator.supports_solout:
+            self._integrator.set_solout(solout)
+        else:
+            raise TypeError("selected integrator does not support solout,"
+                            + " choose another one")
+
 
 class complex_ode(ode):
     """
@@ -490,6 +500,22 @@ class complex_ode(ode):
         y = ode.integrate(self, t, step, relax)
         return y[::2] + 1j * y[1::2]
 
+    def set_solout(self, solout):
+        """Set callable to be called at every successful integration step.
+
+        - solout: callable ``solout(t, y)``
+                  called at each internal integrator step,
+                  t is a scalar providing the current independent position 
+                  y is the current soloution ``y.shape == (n,)``
+                  solout should return -1 to stop integration
+                  otherwise it should return None or 0
+        """
+        if self._integrator.supports_solout:
+            self._integrator.set_solout(solout, complex=True)
+        else:
+            raise TypeError("selected integrator does not support solouta,"
+                            + "choose another one")
+
 
 #------------------------------------------------------------------------------
 # ODE integrators
@@ -520,6 +546,7 @@ class IntegratorBase(object):
     success = None           # success==1 if integrator was called successfully
     supports_run_relax = None
     supports_step = None
+    supports_solout = False
     integrator_classes = []
     scalar = float
 
@@ -833,6 +860,7 @@ class dopri5(IntegratorBase):
 
     runner = getattr(_dop, 'dopri5', None)
     name = 'dopri5'
+    supports_solout = True
 
     messages = {1: 'computation successful',
                 2: 'comput. successful (interrupted by solout)',
@@ -851,8 +879,7 @@ class dopri5(IntegratorBase):
                  ifactor=10.0,
                  dfactor=0.2,
                  beta=0.0,
-                 method=None,
-                 solout = None
+                 method=None
                  ):
         self.rtol = rtol
         self.atol = atol
@@ -864,7 +891,11 @@ class dopri5(IntegratorBase):
         self.dfactor = dfactor
         self.beta = beta
         self.success = 1
+        self.set_solout(None)
+
+    def set_solout(self, solout, complex=False):
         self.solout = solout
+        self.solout_cmplx = complex
         if solout is None:
             self.iout = 0
         else:
@@ -897,6 +928,8 @@ class dopri5(IntegratorBase):
 
     def _solout(self, nr, xold, x, y, nd, icomp, con):
         if self.solout is not None:
+            if self.solout_cmplx:
+                y = y[::2] + 1j * y[1::2]
             return self.solout(x, y)
         else:
             return 1
@@ -919,8 +952,7 @@ class dop853(dopri5):
                  ifactor=6.0,
                  dfactor=0.3,
                  beta=0.0,
-                 method=None,
-                 solout=None
+                 method=None
                  ):
         self.rtol = rtol
         self.atol = atol
@@ -932,11 +964,7 @@ class dop853(dopri5):
         self.dfactor = dfactor
         self.beta = beta
         self.success = 1
-        self.solout = solout
-        if solout is None:
-            self.iout = 0
-        else:
-            self.iout = 1
+        self.set_solout(None)
 
     def reset(self, n, has_jac):
         work = zeros((11 * n + 21,), float)
