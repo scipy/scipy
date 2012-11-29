@@ -9,9 +9,14 @@ References
 
 .. [MH] Mason & Handscombe, Chebyshev Polynomials, CRC Press (2003).
 
+.. [LP] P. Levrie & R. Piessens, A note on the evaluation of orthogonal
+        polynomials using recurrence relations, Internal Report TW74 (1985)
+        Dept. of Computer Science, K.U. Leuven, Belgium 
+        https://lirias.kuleuven.be/handle/123456789/131600
+
 """
 #
-# Authors: Pauli Virtanen, E. W. Moore
+# Authors: Pauli Virtanen, Eric Moore
 #
 
 #------------------------------------------------------------------------------
@@ -31,6 +36,9 @@ cdef extern from "specfun_wrappers.h":
     double hyp1f1_wrap(double a, double b, double x) nogil
     npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) nogil 
     npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
+
+cdef extern from "c_misc/misc.h":
+    double gammasgn(double x) nogil
 
 # Fused type wrappers
 
@@ -59,7 +67,7 @@ cdef inline number_t hyp1f1(double a, double b, number_t z) nogil:
 #-----------------------------------------------------------------------------
 
 cdef inline double binom(double n, double k) nogil:
-    return exp(lgam(n+1) - lgam(k+1) - lgam(1+n-k))
+    return gammasgn(n+1)*gammasgn(k+1)*gammasgn(1+n-k)*exp(lgam(n+1) - lgam(k+1) - lgam(1+n-k))
 
 #-----------------------------------------------------------------------------
 # Jacobi
