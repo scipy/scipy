@@ -457,6 +457,7 @@ def gegenbauer(n, alpha, monic=0):
     #  Abrahmowitz and Stegan 22.5.20
     factor = _gam(2*alpha+n)*_gam(alpha+0.5) / _gam(2*alpha) / _gam(alpha+0.5+n)
     base._scale(factor)
+    base.__dict__['_eval_func'] = lambda x: eval_gegenbauer(float(n), alpha, x)
     return base
 
 # Chebyshev of the first kind: T_n(x)  = n! sqrt(pi) / _gam(n+1./2)* P^(-1/2,-1/2)_n(x)
