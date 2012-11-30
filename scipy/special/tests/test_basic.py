@@ -45,12 +45,63 @@ class TestCephes(TestCase):
     def test_binom(self):
         n = np.array([0.264, 4, 5.2, 17])
         k = np.array([2, 0.4, 7, 3.3])
-        r = cephes.binom.outer(n,k)
+        nk = np.array(np.broadcast_arrays(n[:,None], k[None,:])
+                      ).reshape(2, -1).T
         rknown = np.array([[-0.097152, 0.9263051596159367, 0.01858423645695389,
             -0.007581020651518199],[6, 2.0214389119675666, 0, 2.9827344527963846],
             [10.92, 2.22993515861399, -0.00585728, 10.468891352063146],
             [136, 3.5252179590758828, 19448, 1024.5526916174495]])
-        assert_allclose(r, rknown)
+        assert_func_equal(cephes.binom, rknown.ravel(), nk, rtol=1e-13)
+
+        # Test branches in implementation
+        np.random.seed(1234)
+        n = np.r_[np.arange(-7, 30), 1000*np.random.rand(30) - 500]
+        k = np.arange(0, 102)
+        nk = np.array(np.broadcast_arrays(n[:,None], k[None,:])
+                      ).reshape(2, -1).T
+
+        assert_func_equal(cephes.binom,
+                          cephes.binom(nk[:,0], nk[:,1] * (1 + 1e-15)),
+                          nk,
+                          atol=1e-10, rtol=1e-10)
+
+    @dec.knownfailureif(True, "beta function overflow bug for a >> b")
+    def test_binom_2(self):
+        # Test branches in implementation
+        np.random.seed(1234)
+        n = np.r_[np.logspace(1, 300, 20)]
+        k = np.arange(0, 102)
+        nk = np.array(np.broadcast_arrays(n[:,None], k[None,:])
+                      ).reshape(2, -1).T
+
+        assert_func_equal(cephes.binom,
+                          cephes.binom(nk[:,0], nk[:,1] * (1 + 1e-15)),
+                          nk,
+                          atol=1e-10, rtol=1e-10)
+
+    def test_binom_exact(self):
+        @np.vectorize
+        def binom_int(n, k):
+            n = long(n)
+            k = long(k)
+            num = long(1)
+            den = long(1)
+            for i in range(1, k+1):
+                num *= i + n - k
+                den *= i
+            return float(num/den)
+
+        np.random.seed(1234)
+        n = np.arange(1, 15)
+        k = np.arange(0, 15)
+        nk = np.array(np.broadcast_arrays(n[:,None], k[None,:])
+                      ).reshape(2, -1).T
+        nk = nk[nk[:,0] >= nk[:,1]]
+        assert_func_equal(cephes.binom,
+                          binom_int(nk[:,0], nk[:,1]),
+                          nk,
+                          atol=0, rtol=0)
+
     def test_bdtr(self):
         assert_equal(cephes.bdtr(1,1,0.5),1.0)
     def test_bdtri(self):

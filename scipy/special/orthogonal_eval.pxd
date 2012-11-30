@@ -23,13 +23,15 @@ References
 # Direct evaluation of polynomials
 #------------------------------------------------------------------------------
 cimport cython
-from libc.math cimport sqrt, exp
+from libc.math cimport sqrt, exp, floor, fabs
 
 from numpy cimport npy_cdouble
+from _complexstuff cimport nan, inf
 
 cdef extern from "cephes.h":
     double Gamma(double x) nogil
     double lgam(double x) nogil
+    double beta (double a, double b) nogil
     double hyp2f1_wrap "hyp2f1" (double a, double b, double c, double x) nogil 
 
 cdef extern from "specfun_wrappers.h":
@@ -66,8 +68,40 @@ cdef inline number_t hyp1f1(double a, double b, number_t z) nogil:
 # Binomial coefficient
 #-----------------------------------------------------------------------------
 
+@cython.cdivision(True)
 cdef inline double binom(double n, double k) nogil:
-    return gammasgn(n+1)*gammasgn(k+1)*gammasgn(1+n-k)*exp(lgam(n+1) - lgam(k+1) - lgam(1+n-k))
+    cdef double kx, nx, num, den
+    cdef int i
+
+    if n < 0:
+        nx = floor(n)
+        if n == nx:
+            # undefined
+            return nan
+
+    kx = floor(k)
+    if k == kx:
+        # Integer case: use multiplication formula for less rounding error
+        # for cases where the result is an integer.
+
+        nx = floor(n)
+        if nx == n and kx > nx/2 and nx > 0:
+            # Reduce kx by symmetry
+            kx = nx - kx
+
+        if kx >= 1 and kx < 20:
+            num = 1.0
+            den = 1.0
+            for i in range(1, 1 + <int>kx):
+                num *= i + n - kx
+                den *= i
+                if fabs(num) > 1e50:
+                    num /= den
+                    den = 1.0
+            return num/den
+
+    # general case:
+    return 1/beta(1 + n - k, 1 + k)/(n + 1)
 
 #-----------------------------------------------------------------------------
 # Jacobi
@@ -110,17 +144,13 @@ cdef inline double eval_jacobi_l(long n, double alpha, double beta, double x) no
 # Shifted Jacobi
 #-----------------------------------------------------------------------------
 
+@cython.cdivision(True)
 cdef inline number_t eval_sh_jacobi(double n, double p, double q, number_t x) nogil:
-    cdef double factor
+    return eval_jacobi(n, p-q, q-1, 2*x-1) / binom(2*n + p - 1, n)
 
-    factor = exp(lgam(1+n) + lgam(n+p) - lgam(2*n+p))
-    return factor * eval_jacobi(n, p-q, q-1, 2*x-1) 
-
+@cython.cdivision(True)
 cdef inline double eval_sh_jacobi_l(long n, double p, double q, double x) nogil:
-    cdef double factor
-
-    factor = exp(lgam(1+n) + lgam(n+p) - lgam(2*n+p))
-    return factor * eval_jacobi_l(n, p-q, q-1, 2*x-1)
+    return eval_jacobi_l(n, p-q, q-1, 2*x-1) / binom(2*n + p - 1, n)
 
 #-----------------------------------------------------------------------------
 # Gegenbauer (Ultraspherical)

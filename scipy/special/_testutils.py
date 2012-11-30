@@ -203,7 +203,7 @@ class FuncData(object):
             finally:
                 np.seterr(**olderr)
 
-            tol_mask = (diff < atol + rtol*abs_y)
+            tol_mask = (diff <= atol + rtol*abs_y)
             pinf_mask = (pinf_x == pinf_y)
             minf_mask = (minf_x == minf_y)
             nan_mask = (nan_x == nan_y)
