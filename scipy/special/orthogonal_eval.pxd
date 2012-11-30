@@ -88,7 +88,7 @@ cdef inline number_t eval_jacobi(double n, double alpha, double beta, number_t x
 cdef inline double eval_jacobi_l(long n, double alpha, double beta, double x) nogil:
     cdef long kk
     cdef double p, d
-    cdef double k
+    cdef double k, t
 
     if n < 0:
         return 0.0
@@ -101,7 +101,8 @@ cdef inline double eval_jacobi_l(long n, double alpha, double beta, double x) no
         p = d + 1 
         for kk in range(n-1):
             k = kk+1.0
-            d = (2*k+alpha+beta)/(2*(k+alpha+1)*(k+alpha+beta+1)*(2*k+alpha+beta))*(x-1)*p + (2*k*(k+alpha)*(2*k+alpha+beta+2))/(2*(k+alpha+1)*(k+alpha+beta+1)*(2*k+alpha+beta)) * d
+            t = 2*k+alpha+beta
+            d = ((t*(t+1)*(t+2))*(x-1)*p + 2*k*(k+beta)*(t+2)*d) / (2*(k+alpha+1)*(k+alpha+beta+1)*t)
             p = d + p
         return binom(n+alpha, n)*p
 
