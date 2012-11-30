@@ -20,6 +20,8 @@
 #    test_sph_jn
 #    test_sph_kn
 
+import warnings
+
 import numpy as np
 from numpy import array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp, \
         log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_
@@ -28,6 +30,8 @@ from numpy.testing import assert_equal, assert_almost_equal, \
         assert_array_equal, assert_array_almost_equal, assert_approx_equal, \
         assert_, rand, dec, TestCase, run_module_suite, assert_allclose, \
         assert_raises
+
+from numpy.testing.utils import WarningManager
 
 from scipy import special
 import scipy.special._ufuncs as cephes
@@ -385,7 +389,13 @@ class TestCephes(TestCase):
     def test_pdtrc(self):
         cephes.pdtrc(0,1)
     def test_pdtri(self):
-        cephes.pdtri(0.5,0.5)
+        warn_ctx = WarningManager()
+        warn_ctx.__enter__()
+        try:
+            warnings.simplefilter("ignore", RuntimeWarning)
+            cephes.pdtri(0.5,0.5)
+        finally:
+            warn_ctx.__exit__()
     def test_pdtrik(self):
         cephes.pdtrik(0.5,1)
 
@@ -2355,22 +2365,29 @@ def test_agm_simple():
     assert_allclose(special.agm(1e30, 1), 2.2292230559453832047768593e28)
 
 def test_legacy():
-    # Legacy behavior: truncating arguments to integers
-    assert_equal(special.bdtrc(1, 2, 0.3), special.bdtrc(1.8, 2.8, 0.3))
-    assert_equal(special.bdtr(1, 2, 0.3), special.bdtr(1.8, 2.8, 0.3))
-    assert_equal(special.bdtri(1, 2, 0.3), special.bdtri(1.8, 2.8, 0.3))
-    assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
-    assert_equal(special.hyp2f0(1, 2, 0.3, 1), special.hyp2f0(1, 2, 0.3, 1.8))
-    assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
-    assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
-    assert_equal(special.nbdtri(1, 2, 0.3), special.nbdtri(1.8, 2.8, 0.3))
-    assert_equal(special.pdtrc(1, 0.3), special.pdtrc(1.8, 0.3))
-    assert_equal(special.pdtr(1, 0.3), special.pdtr(1.8, 0.3))
-    assert_equal(special.pdtri(1, 0.3), special.pdtri(1.8, 0.3))
-    assert_equal(special.kn(1, 0.3), special.kn(1.8, 0.3))
-    assert_equal(special.yn(1, 0.3), special.yn(1.8, 0.3))
-    assert_equal(special.smirnov(1, 0.3), special.smirnov(1.8, 0.3))
-    assert_equal(special.smirnovi(1, 0.3), special.smirnovi(1.8, 0.3))
+    warn_ctx = WarningManager()
+    warn_ctx.__enter__()
+    try:
+        warnings.simplefilter("ignore", RuntimeWarning)
+
+        # Legacy behavior: truncating arguments to integers
+        assert_equal(special.bdtrc(1, 2, 0.3), special.bdtrc(1.8, 2.8, 0.3))
+        assert_equal(special.bdtr(1, 2, 0.3), special.bdtr(1.8, 2.8, 0.3))
+        assert_equal(special.bdtri(1, 2, 0.3), special.bdtri(1.8, 2.8, 0.3))
+        assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
+        assert_equal(special.hyp2f0(1, 2, 0.3, 1), special.hyp2f0(1, 2, 0.3, 1.8))
+        assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
+        assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
+        assert_equal(special.nbdtri(1, 2, 0.3), special.nbdtri(1.8, 2.8, 0.3))
+        assert_equal(special.pdtrc(1, 0.3), special.pdtrc(1.8, 0.3))
+        assert_equal(special.pdtr(1, 0.3), special.pdtr(1.8, 0.3))
+        assert_equal(special.pdtri(1, 0.3), special.pdtri(1.8, 0.3))
+        assert_equal(special.kn(1, 0.3), special.kn(1.8, 0.3))
+        assert_equal(special.yn(1, 0.3), special.yn(1.8, 0.3))
+        assert_equal(special.smirnov(1, 0.3), special.smirnov(1.8, 0.3))
+        assert_equal(special.smirnovi(1, 0.3), special.smirnovi(1.8, 0.3))
+    finally:
+        warn_ctx.__exit__()
 
 @with_special_errors
 def test_error_raising():
