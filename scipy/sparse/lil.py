@@ -195,7 +195,7 @@ class lil_matrix(spmatrix):
         if pos != len(data) and row[pos] == j:
             return data[pos]
         else:
-            return 0
+            return self.dtype.type(0)
 
     def _slicetoseq(self, j, shape):
         if j.start is not None and j.start < 0:
