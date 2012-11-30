@@ -69,6 +69,7 @@ npy_double igami(npy_double, npy_double);
 npy_double gammaincinv(npy_double, npy_double);
 npy_double lgam(npy_double);
 npy_cdouble clngamma_wrap(npy_cdouble);
+npy_double gammasgn(npy_double);
 npy_double gdtr(npy_double, npy_double, npy_double);
 npy_double gdtrc(npy_double, npy_double, npy_double);
 npy_double cdfgam4_wrap(npy_double, npy_double, npy_double);

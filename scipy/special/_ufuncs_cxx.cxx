@@ -804,7 +804,7 @@ static char __pyx_k_15[] = "y=erfc(x) returns 1 - erf(x).\n\nReferences\n-------
 static char __pyx_k_16[] = "Scaled complementary error function, exp(x^2) erfc(x)\n\n.. versionadded:: 0.12.0\n\nReferences\n----------\n.. [1] Steven G. Johnson, Faddeeva W function implementation.\n   http://ab-initio.mit.edu/Faddeeva";
 static char __pyx_k_17[] = "Imaginary error function, -i erf(i z)\n\n.. versionadded:: 0.12.0\n\nReferences\n----------\n.. [1] Steven G. Johnson, Faddeeva W function implementation.\n   http://ab-initio.mit.edu/Faddeeva";
 static char __pyx_k_18[] = "y=wofz(z) returns the value of the fadeeva function for complex argument\nz: exp(-z**2)*erfc(-i*z)\n\nReferences\n----------\n.. [1] Steven G. Johnson, Faddeeva W function implementation.\n   http://ab-initio.mit.edu/Faddeeva";
-static char __pyx_k_21[] = "/home/pauli/prj/scipy/scipy/scipy/special/_ufuncs_cxx.pyx";
+static char __pyx_k_21[] = "/home/ewm/scipy/scipy/special/_ufuncs_cxx.pyx";
 static char __pyx_k_22[] = "scipy.special._ufuncs_cxx";
 static char __pyx_k__B[] = "B";
 static char __pyx_k__H[] = "H";
