@@ -2173,7 +2173,7 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
     return
 
 
-def brute(func, ranges, args=(), Ns=20, full_output=0, finish='fmin'):
+def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
     """
     Seek the minimum of a multivariate, multimodal function.
 
@@ -2198,93 +2198,83 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish='fmin'):
         Any additional fixed parameters needed to completely specify
         the function.
     Ns : int, optional
-        Default number of grid points along the axes, if they are not
-        otherwise provided. `See Note2`.
+        Number of grid points along the axes, if not otherwise
+        specified. See `Note2`.
     full_output : bool, optional
-        If True, return the evaluation grid and the objective functions's
+        If True, return the evaluation grid and the objective function's
         values on it.
     finish : callable, optional
         Another optimization function to "polish" `brute's` output. Use
-        None if no "polishing" function is to be used. See `Note 1`
-        for details..
+        None if no "polishing" function is to be used. See `Note 1` for
+        details.
 
     Returns
     -------
     x0 : ndarray
         A 1-D array containing the coordinates of a point at which the
         objective function had its minimum value. (See `Note 1` for
-        which point is returned, depending on whether `finish` is
-        None or a polishing function.)
+        which point is returned.)
     fval : float
         Function value at the point `x0`.
     grid : tuple
         Representation of the evaluation grid.  It has the same
         length as `x0`. (Returned when `full_output` is True.)
     Jout : ndarray
-        Function values at each point of the evaluation grid,
-        i.e., ``Jout = func(*grid)``. (Returned when `full_output`
-        is True.)
+        Function values at each point of the evaluation
+        grid, `i.e.`, ``Jout = func(*grid)``. (Returned
+        when `full_output` is True.)
 
     See Also
     --------
-    SciPy's `anneal`, another approach to seeking the global minimum
-    of multimodal functions.
+    anneal : Another approach to seeking the global minimum of
+    multivariate, multimodal functions.
 
     Notes
     -----
-    *Note 1*: This routine finds a gridpoint that is likely to be in the
-    neighborhood of the global minimum of its objective function. If
-    `finish` is None, that is the point returned, together with its
-    associated function value.
+    *Note 1*: The program finds the gridpoint at which the lowest value
+    of the objective function occurs. If `finish` is None, that is the
+    point returned. When the global minimum occurs within (or not very far
+    outside) the grid's boundaries, and the grid is fine enough, that
+    point will be in the neighborhood of the gobal minimum.
 
     However, users often employ some other optimization program to
     "polish" the gridpoint values, `i.e.`, to seek a more precise
-    (local) minimum near `brute's` best gridpoint. The `brute`
-    program's `finish` option provides a convenient way to do that.
-    Any polishing program specified in the `finish` option must
-    take `brute's` output as its initial guess as a positional
-    argument, and take `brute's` input values for `args`,
-    `full_output`, and `disp` as keyword  arguments, otherwise
-    an error will be raised. (NOTE: This does not provide a
-    convenient way to pass a non-default tolerance parameter to
-    the `finish` program.)
+    (local) minimum near `brute's` best gridpoint.
+    The `brute` program's `finish` option provides a convenient way to do
+    that. Any polishing program used must take `brute's` output as its
+    initial guess as a positional argument, and take `brute's` input values
+    for `args` and `full_output` as keyword arguments, otherwise an error
+    will be raised.
 
     The `brute` routine assumes that the `finish` program returns a
-    tuple in the form: ``(xmin, Jmin, ... , statuscode)``, where
-    ``xmin`` is the minimizing value of the argument, ``Jmin`` is the
+    tuple in the form: ``(xmin, Jmin, ... , statuscode)``,
+    where ``xmin`` is the minimizing value of the argument, ``Jmin`` is the
     minimum value of the objective function, "..." may be some other
     returned values (which are not used by `brute`), and ``statuscode``
-    is the status code of the `finish` program. The default `finish`
-    program is SciPy's `fmin` routine, `q.v.`
+    is the status code of the `finish` program.
 
-    Note that when a `finish` program is supplied, the values returned
-    are those of the `finish` program, *not* the gridpoint ones.
-    Consequently, while `brute` confines its search to the input grid points,
+    Note that when `finish` is not None, the values returned are those
+    of the `finish` program, *not* the gridpoint ones. Consequently,
+    while `brute` confines its search to the input grid points,
     the `finish` program's results usually will not coincide with any
     gridpoint, and may fall outside the grid's boundary.
 
-    *Note 2*: The grid of points is a `numpy.mgrid` object. For `brute` the
-    `ranges` and `Ns` inputs have the following effect. Each component of
-    the `ranges` tuple can be either a slice object (a Python "Built-in"),
-    or a two-tuple giving a range of values, such as (0, 5). If the component
-    is a slice object, `brute` uses it directly. If the component is a
-    two-tuple range, `brute` internally converts it to a slice object that
-    interpolates `Ns` points from its low-value to its high-value, inclusive.
-    For example,  if `ranges` is
-    ``(slice(0, 5, 11j), slice(0, 5.5, 0.5), (0, 5))``
-    and `Ns` is 10, then `brute` will use a three-dimensional `mgrid` that
-    has points from 0.0 to 5.0 (inclusive) in steps of 0.5 along each axis,
-    because for the given valueof `Ns` each of these range specifications
-    gives the same sequence of points. (See the Reference Guide's Section
-    1.2.2 (Index Tricks) and the `mgrid` docstring for the interpretation
-    of ``j`` in this context).
+    *Note 2*: The grid of points is a `numpy.mgrid` object.
+    For `brute` the `ranges` and `Ns` inputs have the following effect.
+    Each component of the `ranges` tuple can be either a slice object (a
+    Python "Built-in"), or a two-tuple giving a range of values, such as
+    (0, 5). If the component is a slice object, `brute` uses it directly.
+    If the component is a two-tuple range, `brute` internally converts it
+    to a slice object that interpolates `Ns` points from its low-value to
+    its high-value, inclusive. (See the *NumPy Reference Guide* for more
+    information about `mgrid`.)
 
     Examples
     --------
     We illustrate the use of `brute` to seek the global minimum of a function
     of two variables that is given as the sum of a positive-definite
     quadratic and two deep "Gaussian-shaped" craters. Specifically, define
-    the objective function `f` as the sum of three other functions, `i.e.`,
+    the objective function `f` as the sum of three other functions,
     ``f = f1 + f2 + f3``. We suppose each of these has a signature
     ``(z, *params)``, where ``z = (x, y)``,  and ``params`` and the functions
     are as defined below.
@@ -2298,7 +2288,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish='fmin'):
     >>> def f2(z, *params):     # Gaussian crater #1.
     >>>... x, y = z
     >>>... a, b, c, d, e, f, g, h, i, j, k, l, scale = params
-    >>>... return (-g*sp.exp(-((x-h)**2 + (y-i)**2) / scale))
+    >>>... return (-g*np.exp(-((x-h)**2 + (y-i)**2) / scale))
     >>>
     >>> def f3(z, *params):     # Gaussian crater #2.
     >>>... x, y = z
@@ -2311,37 +2301,26 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish='fmin'):
     >>>... return f1(z, *params) + f2(z, *params) + f3(z, *params)
 
     Thus, the objective function may have local minima near the minimum
-    of each of the three functions of which it is composed. Suppose
-    also that we want to use SciPy's `fmin` optimization function
-    to polish its gridpoint result. We may then continue as follows:
+    of each of the three functions of which it is composed. To
+    use `fmin` to polish its gridpoint result, we may then continue as
+    follows:
 
-    >>> rranges = (slice(-3, 3, 61j), slice(-4, 4, 41j))
+    >>> rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
     >>> from scipy import optimize
+    >>> from scipy.optimize import fmin      # Define fmin.
     >>> resbrute = optimize.brute(f,
                       rranges,
                       args = params,
                       full_output = True,
-                      finish = 'fmin')
+                      finish = fmin)
     >>> print "resbrute = ", resbrute
 
-    Omitting the grid and function array outputs, this run produced the
-    following::
-
-        resbrute =  (array([-1.0566169 ,  1.80828147]), -3.408582053831283, )
-
-        Optimization terminated sucessfully.
-            Current function value: -3.408582,
-            Iterations: 53,
-            Function evaluations: 102
-
-    NOTE: These reported numbers of iterations and function evaluations,
-    as well as the optimal point and objective function value,
-    are those of the `finish` program, not those of `brute` iteself.
-
-    If `finish` had been set to None, we would have gotten the
-    gridpoint [-1.1  1.8], at which the function value is
-    -3.25284639358, and these are slightly different from the
-    polished values.
+    This prints resbrute = (array([-1.05665192,  1.80834843]),
+    -3.4085818767996527,...) where the grid and function array outputs have
+    been omitted. The (rounded) polished minimum point and function value
+    are [-1.057  1.808] and -3.409. If `finish` had been set to None, we
+    would have gotten the gridpoint [-1.0  1.75] where the rounded function
+    value is -2.892.
 
     """
     N = len(ranges)
