@@ -57,6 +57,12 @@ Listing Matlab(R) file contents
 A new function ``whosmat`` is available in ``scipy.io`` for inspecting contents
 of MAT files without reading them to memory.
 
+Faster orthogonal polynomials
+-----------------------------
+Evaluation of orthogonal polynomials (the ``eval_*`` routines) in now
+faster in ``scipy.special``, and their ``out=`` argument functions
+properly.
+
 
 Deprecated features
 ===================

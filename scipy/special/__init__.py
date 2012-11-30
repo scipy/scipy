@@ -236,6 +236,7 @@ Gamma and Related Functions
 
    gamma        -- Gamma function.
    gammaln      -- Log of the absolute value of the gamma function.
+   gammasgn     -- Sign of the gamma function.
    gammainc     -- Incomplete gamma integral.
    gammaincinv  -- Inverse of gammainc.
    gammaincc    -- Complemented incomplete gamma integral.
@@ -487,6 +488,7 @@ Other Special Functions
 .. autosummary::
    :toctree: generated/
 
+   binom        -- Binomial coefficient.
    expn         -- Exponential integral.
    exp1         -- Exponential integral of order 1 (for complex argument)
    expi         -- Another exponential integral -- Ei(x)

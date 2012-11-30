@@ -576,11 +576,19 @@ add_newdoc("scipy.special", "gammaln",
     """
     y=gammaln(z) returns the base e logarithm of the absolute value of the
     gamma function of z: ln(abs(gamma(z)))
+
+    See Also
+    --------
+    gammasgn
     """)
 
 add_newdoc("scipy.special", "gammasgn",
     """
     y=gammasgn(x) returns the sign of the gamma function.
+
+    See Also
+    --------
+    gammaln
     """)
 
 add_newdoc("scipy.special", "gdtr",
