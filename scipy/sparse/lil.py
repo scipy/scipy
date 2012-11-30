@@ -193,7 +193,7 @@ class lil_matrix(spmatrix):
 
         pos = bisect_left(row, j)
         if pos != len(data) and row[pos] == j:
-            return data[pos]
+            return self.dtype.type(data[pos])
         else:
             return self.dtype.type(0)
 
@@ -328,7 +328,7 @@ class lil_matrix(spmatrix):
         if isspmatrix(x):
             if isinstance(i, slice) and i == slice(None) and \
                isinstance(j, slice) and j == slice(None):
-                x = lil_matrix(x)
+                x = lil_matrix(x, dtype=self.dtype)
                 self.rows = x.rows
                 self.data = x.data
                 return
