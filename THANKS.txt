@@ -111,6 +111,7 @@ Sturla Molden for cKDTree improvements.
 Nathan Crock for bug fixes.
 Steven G. Johnson for Faddeeva W and erf* implementations.
 Lorenzo Luengo for whosmat() in scipy.io.
+Eric Moore for orthogonal polynomial recurrences in scipy.special.
 
 
 Institutions

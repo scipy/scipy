@@ -21,11 +21,6 @@ add_newdoc("scipy.special", "_lambertw",
     Internal function, use `lambertw` instead.
     """)
 
-add_newdoc("scipy.special", "_eval_chebyt",
-    """
-    Internal function, use `eval_chebyt` instead.
-    """)
-
 add_newdoc("scipy.special", "airy",
     """
     (Ai,Aip,Bi,Bip)=airy(z) calculates the Airy functions and their derivatives
@@ -69,6 +64,13 @@ add_newdoc("scipy.special", "bdtrin",
     """
     """)
 
+add_newdoc("scipy.special", "binom",
+    """
+    binom(n, k)
+
+    Binomial coefficient
+    """)
+ 
 add_newdoc("scipy.special", "btdtria",
     """
     """)
@@ -333,6 +335,114 @@ add_newdoc("scipy.special", "erfcx",
 
     """)
 
+add_newdoc("scipy.special", "eval_jacobi",
+    """
+    eval_jacobi(n, alpha, beta, x, out=None)
+
+    Evaluate Jacobi polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_sh_jacobi",
+    """
+    eval_sh_jacobi(n, p, q, x, out=None)
+
+    Evaluate shifted Jacobi polynomial at a point.
+    """)
+ 
+add_newdoc("scipy.special", "eval_gegenbauer",
+    """
+    eval_gegenbauer(n, alpha, x, out=None)
+
+    Evaluate Gegenbauer polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_chebyt",
+    """
+    eval_chebyt(n, x, out=None)
+
+    Evaluate Chebyshev T polynomial at a point.
+
+    This routine is numerically stable for `x` in ``[-1, 1]`` at least
+    up to order ``10000``.
+    """)
+
+add_newdoc("scipy.special", "eval_chebyu",
+    """
+    eval_chebyu(n, x, out=None)
+
+    Evaluate Chebyshev U polynomial at a point.
+    """)
+ 
+add_newdoc("scipy.special", "eval_chebys",
+    """
+    eval_chebys(n, x, out=None)
+
+    Evaluate Chebyshev S polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_chebyc",
+    """
+    eval_chebyc(n, x, out=None)
+
+    Evaluate Chebyshev C polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_sh_chebyt",
+    """
+    eval_sh_chebyt(n, x, out=None)
+
+    Evaluate shifted Chebyshev T polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_sh_chebyu",
+    """
+    eval_sh_chebyu(n, x, out=None)
+
+    Evaluate shifted Chebyshev U polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_legendre",
+    """
+    eval_legendre(n, x, out=None)
+
+    Evaluate Legendre polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_sh_legendre",
+    """
+    eval_sh_legendre(n, x, out=None)
+
+    Evaluate shifted Legendre polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_genlaguerre",
+    """
+    eval_genlaguerre(n, alpha, x, out=None)
+
+    Evaluate generalized Laguerre polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_laguerre",
+     """
+    eval_laguerre(n, x, out=None)
+
+    Evaluate Laguerre polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_hermite",
+    """
+    eval_hermite(n, x, out=None)
+
+    Evaluate Hermite polynomial at a point.
+    """)
+
+add_newdoc("scipy.special", "eval_hermitenorm",
+    """
+    eval_hermitenorm(n, x, out=None)
+
+    Evaluate normalized Hermite polynomial at a point.
+    """)
+ 
 add_newdoc("scipy.special", "exp1",
     """
     y=exp1(z) returns the exponential integral (n=1) of complex argument
@@ -466,6 +576,19 @@ add_newdoc("scipy.special", "gammaln",
     """
     y=gammaln(z) returns the base e logarithm of the absolute value of the
     gamma function of z: ln(abs(gamma(z)))
+
+    See Also
+    --------
+    gammasgn
+    """)
+
+add_newdoc("scipy.special", "gammasgn",
+    """
+    y=gammasgn(x) returns the sign of the gamma function.
+
+    See Also
+    --------
+    gammaln
     """)
 
 add_newdoc("scipy.special", "gdtr",
