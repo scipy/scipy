@@ -1,6 +1,6 @@
-/*							bdtr.c
+/*                                                     bdtr.c
  *
- *	Binomial distribution
+ *     Binomial distribution
  *
  *
  *
@@ -138,117 +138,108 @@
  *                  x < 0, x > 1
  */
 
-/*								bdtr() */
+/*                                                             bdtr() */
 
 
 /*
-Cephes Math Library Release 2.3:  March, 1995
-Copyright 1984, 1987, 1995 by Stephen L. Moshier
-*/
+ * Cephes Math Library Release 2.3:  March, 1995
+ * Copyright 1984, 1987, 1995 by Stephen L. Moshier
+ */
 
 #include "mconf.h"
 
-double bdtrc( k, n, p )
+double bdtrc(k, n, p)
 int k, n;
 double p;
 {
-double dk, dn;
+    double dk, dn;
 
-if( (p < 0.0) || (p > 1.0) )
+    if ((p < 0.0) || (p > 1.0))
 	goto domerr;
-if( k < 0 )
-	return( 1.0 );
+    if (k < 0)
+	return (1.0);
 
-if( n < k )
-	{
-domerr:
-	mtherr( "bdtrc", DOMAIN );
-	return( NPY_NAN);
-	}
+    if (n < k) {
+      domerr:
+	mtherr("bdtrc", DOMAIN);
+	return (NPY_NAN);
+    }
 
-if( k == n )
-	return( 0.0 );
-dn = n - k;
-if( k == 0 )
-	{
-	if( p < .01 )
-		dk = -expm1( dn * log1p(-p) );
+    if (k == n)
+	return (0.0);
+    dn = n - k;
+    if (k == 0) {
+	if (p < .01)
+	    dk = -expm1(dn * log1p(-p));
 	else
-		dk = 1.0 - pow( 1.0-p, dn );
-	}
-else
-	{
+	    dk = 1.0 - pow(1.0 - p, dn);
+    }
+    else {
 	dk = k + 1;
-	dk = incbet( dk, dn, p );
-	}
-return( dk );
+	dk = incbet(dk, dn, p);
+    }
+    return (dk);
 }
 
 
 
-double bdtr( k, n, p )
+double bdtr(k, n, p)
 int k, n;
 double p;
 {
-double dk, dn;
+    double dk, dn;
 
-if( (p < 0.0) || (p > 1.0) )
+    if ((p < 0.0) || (p > 1.0))
 	goto domerr;
-if( (k < 0) || (n < k) )
-	{
-domerr:
-	mtherr( "bdtr", DOMAIN );
-	return( NPY_NAN );
-	}
+    if ((k < 0) || (n < k)) {
+      domerr:
+	mtherr("bdtr", DOMAIN);
+	return (NPY_NAN);
+    }
 
-if( k == n )
-	return( 1.0 );
+    if (k == n)
+	return (1.0);
 
-dn = n - k;
-if( k == 0 )
-	{
-	dk = pow( 1.0-p, dn );
-	}
-else
-	{
+    dn = n - k;
+    if (k == 0) {
+	dk = pow(1.0 - p, dn);
+    }
+    else {
 	dk = k + 1;
-	dk = incbet( dn, dk, 1.0 - p );
-	}
-return( dk );
+	dk = incbet(dn, dk, 1.0 - p);
+    }
+    return (dk);
 }
 
 
-double bdtri( k, n, y )
+double bdtri(k, n, y)
 int k, n;
 double y;
 {
-double dk, dn, p;
+    double dk, dn, p;
 
-if( (y < 0.0) || (y > 1.0) )
+    if ((y < 0.0) || (y > 1.0))
 	goto domerr;
-if( (k < 0) || (n <= k) )
-	{
-domerr:
-	mtherr( "bdtri", DOMAIN );
-	return( NPY_NAN );
-	}
+    if ((k < 0) || (n <= k)) {
+      domerr:
+	mtherr("bdtri", DOMAIN);
+	return (NPY_NAN);
+    }
 
-dn = n - k;
-if( k == 0 )
-	{
-	if( y > 0.8 )
-		p = -expm1( log1p(y-1.0) / dn );
+    dn = n - k;
+    if (k == 0) {
+	if (y > 0.8)
+	    p = -expm1(log1p(y - 1.0) / dn);
 	else
-		p = 1.0 - pow( y, 1.0/dn );
-	}
-else
-	{
+	    p = 1.0 - pow(y, 1.0 / dn);
+    }
+    else {
 	dk = k + 1;
-	p = incbet( dn, dk, 0.5 );
-	if( p > 0.5 )
-		p = incbi( dk, dn, 1.0-y );
+	p = incbet(dn, dk, 0.5);
+	if (p > 0.5)
+	    p = incbi(dk, dn, 1.0 - y);
 	else
-		p = 1.0 - incbi( dn, dk, y );
-	}
-return( p );
+	    p = 1.0 - incbi(dn, dk, y);
+    }
+    return (p);
 }

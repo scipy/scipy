@@ -1,6 +1,6 @@
-/*							tandg.c
+/*                                                     tandg.c
  *
- *	Circular tangent of argument in degrees
+ *     Circular tangent of argument in degrees
  *
  *
  *
@@ -68,10 +68,10 @@
  */
 
 /*
-Cephes Math Library Release 2.0:  April, 1987
-Copyright 1984, 1987 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
-*/
+ * Cephes Math Library Release 2.0:  April, 1987
+ * Copyright 1984, 1987 by Stephen L. Moshier
+ * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
 
 #include "mconf.h"
 
@@ -81,21 +81,24 @@ static double lossth = 1.0e14;
 #endif
 
 #ifdef DEC
-static unsigned short P1[] = {0036616,0175065,0011224,0164711};
+static unsigned short P1[] = { 0036616, 0175065, 0011224, 0164711 };
+
 #define PI180 *(double *)P1
 static double lossth = 8.0e14;
 #endif
 
 #ifdef IBMPC
-static unsigned short P1[] = {0x9d39,0xa252,0xdf46,0x3f91};
+static unsigned short P1[] = { 0x9d39, 0xa252, 0xdf46, 0x3f91 };
+
 #define PI180 *(double *)P1
 static double lossth = 1.0e14;
 #endif
 
 #ifdef MIEEE
 static unsigned short P1[] = {
-0x3f91,0xdf46,0xa252,0x9d39
+    0x3f91, 0xdf46, 0xa252, 0x9d39
 };
+
 #define PI180 *(double *)P1
 static double lossth = 1.0e14;
 #endif
@@ -103,63 +106,65 @@ static double lossth = 1.0e14;
 static double tancot(double, int);
 extern double MAXNUM;
 
-double
-tandg(double x)
+double tandg(double x)
 {
-    return( tancot(x,0) );
+    return (tancot(x, 0));
 }
 
 
-double
-cotdg(double x)
+double cotdg(double x)
 {
-    return( tancot(x,1) );
+    return (tancot(x, 1));
 }
 
 
-static double
-tancot(double xx, int cotflg)
+static double tancot(double xx, int cotflg)
 {
     double x;
     int sign;
 
     /* make argument positive but save the sign */
-    if( xx < 0 ) {
-        x = -xx;
-        sign = -1;
-    } else {
-        x = xx;
-        sign = 1;
+    if (xx < 0) {
+	x = -xx;
+	sign = -1;
+    }
+    else {
+	x = xx;
+	sign = 1;
     }
 
-    if( x > lossth ) {
-        mtherr("tandg", TLOSS);
-        return 0.0;
+    if (x > lossth) {
+	mtherr("tandg", TLOSS);
+	return 0.0;
     }
 
     /* modulo 180 */
-    x = x - 180.0*floor(x/180.0);
+    x = x - 180.0 * floor(x / 180.0);
     if (cotflg) {
-        if (x <= 90.0) {
-            x = 90.0 - x;
-        } else {
-            x = x - 90.0;
-            sign *= -1;
-        }
-    } else {
-        if (x > 90.0) {
-            x = 180.0 - x;
-            sign *= -1;
-        }
+	if (x <= 90.0) {
+	    x = 90.0 - x;
+	}
+	else {
+	    x = x - 90.0;
+	    sign *= -1;
+	}
+    }
+    else {
+	if (x > 90.0) {
+	    x = 180.0 - x;
+	    sign *= -1;
+	}
     }
     if (x == 0.0) {
-        return 0.0;
-    } else if (x == 45.0) {
-        return sign*1.0;
-    } else if (x == 90.0) {
-        mtherr( (cotflg ? "cotdg" : "tandg"), SING );
-        return MAXNUM;
+	return 0.0;
+    }
+    else if (x == 45.0) {
+	return sign * 1.0;
+    }
+    else if (x == 90.0) {
+	mtherr((cotflg ? "cotdg" : "tandg"), SING);
+	return MAXNUM;
     }
     /* x is now transformed into [0, 90) */
-    return sign * tan(x*PI180);
+    return sign * tan(x * PI180);
 }

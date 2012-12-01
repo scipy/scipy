@@ -1,16 +1,16 @@
-/*							cpmul.c
+/*                                                     cpmul.c
  *
- *	Multiply two polynomials with complex coefficients
+ *     Multiply two polynomials with complex coefficients
  *
  *
  *
  * SYNOPSIS:
  *
  * typedef struct
- *		{
- *		double r;
- *		double i;
- *		}cmplx;
+ *             {
+ *             double r;
+ *             double i;
+ *             }cmplx;
  *
  * cmplx a[], b[], c[];
  * int da, db, dc;
@@ -43,64 +43,58 @@
  *
  */
 
-/*							cpmul	*/
+/*                                                     cpmul   */
 
-typedef struct
-	{
-	double r;
-	double i;
-	}cmplx;
+typedef struct {
+    double r;
+    double i;
+} cmplx;
 
-void cpmul( cmplx*, int, cmplx*, int, cmplx*, int* );
+void cpmul(cmplx *, int, cmplx *, int, cmplx *, int *);
 
-void
-cpmul( a, da, b, db, c, dc )
+void cpmul(a, da, b, db, c, dc)
 cmplx *a, *b, *c;
 int da, db;
 int *dc;
 {
-int i, j, k;
-cmplx y;
-register cmplx *pa, *pb, *pc;
+    int i, j, k;
+    cmplx y;
+    register cmplx *pa, *pb, *pc;
 
-if( da > db )	/* Know which polynomial has higher degree */
-	{
-	i = da;	/* Swapping is OK because args are on the stack */
+    if (da > db) {		/* Know which polynomial has higher degree */
+	i = da;			/* Swapping is OK because args are on the stack */
 	da = db;
 	db = i;
 	pa = a;
 	a = b;
 	b = pa;
-	}
-	
-k = da + db;
-*dc = k;		/* Output the degree of the product */
-pc = &c[db+1];
-for( i=db+1; i<=k; i++ )	/* Clear high order terms of output */
-	{
+    }
+
+    k = da + db;
+    *dc = k;			/* Output the degree of the product */
+    pc = &c[db + 1];
+    for (i = db + 1; i <= k; i++) {	/* Clear high order terms of output */
 	pc->r = 0;
 	pc->i = 0;
 	pc++;
-	}
-/* To permit replacement of input, work backward from highest degree */
-pb = &b[db];
-for( j=0; j<=db; j++ )
-	{
+    }
+    /* To permit replacement of input, work backward from highest degree */
+    pb = &b[db];
+    for (j = 0; j <= db; j++) {
 	pa = &a[da];
-	pc = &c[k-j];
-	for( i=0; i<da; i++ )
-		{
-		y.r = pa->r * pb->r  -  pa->i * pb->i;	/* cmpx multiply */
-		y.i = pa->r * pb->i  +  pa->i * pb->r;
-		pc->r += y.r;	/* accumulate partial product */
-		pc->i += y.i;
-		pa--;
-		pc--;
-		}
-	y.r = pa->r * pb->r  -  pa->i * pb->i;	/* replace last term,	*/
-	y.i = pa->r * pb->i  +  pa->i * pb->r;	/* ...do not accumulate	*/
+	pc = &c[k - j];
+	for (i = 0; i < da; i++) {
+	    y.r = pa->r * pb->r - pa->i * pb->i;	/* cmpx multiply */
+	    y.i = pa->r * pb->i + pa->i * pb->r;
+	    pc->r += y.r;	/* accumulate partial product */
+	    pc->i += y.i;
+	    pa--;
+	    pc--;
+	}
+	y.r = pa->r * pb->r - pa->i * pb->i;	/* replace last term,   */
+	y.i = pa->r * pb->i + pa->i * pb->r;	/* ...do not accumulate */
 	pc->r = y.r;
 	pc->i = y.i;
 	pb--;
-	}
+    }
 }
