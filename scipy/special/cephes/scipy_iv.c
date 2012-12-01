@@ -1,6 +1,6 @@
-/*							iv.c
+/*                                                     iv.c
  *
- *	Modified Bessel function of noninteger order
+ *     Modified Bessel function of noninteger order
  *
  *
  *
@@ -18,8 +18,8 @@
  * argument.  If x is negative, v must be integer valued.
  *
  */
-/*							iv.c	*/
-/*	Modified Bessel function of noninteger order		*/
+/*                                                     iv.c    */
+/*     Modified Bessel function of noninteger order            */
 /* If x < 0, then v must be an integer. */
 
 
@@ -97,34 +97,35 @@ double iv(double v, double x)
 	}
 	if (v != 2.0 * floor(v / 2.0)) {
 	    sign = -1;
-        }
+	}
     }
 
     /* Avoid logarithm singularity */
     if (x == 0.0) {
 	if (v == 0.0) {
 	    return 1.0;
-        }
+	}
 	if (v < 0.0) {
 	    mtherr("iv", OVERFLOW);
 	    return MAXNUM;
-	} else
+	}
+	else
 	    return 0.0;
     }
 
     ax = fabs(x);
     if (fabs(v) > 50) {
-        /*
-         * Uniform asymptotic expansion for large orders.
-         *
-         * This appears to overflow slightly later than the Boost
-         * implementation of Temme's method.
-         */
-        ikv_asymptotic_uniform(v, ax, &res, NULL);
+	/*
+	 * Uniform asymptotic expansion for large orders.
+	 *
+	 * This appears to overflow slightly later than the Boost
+	 * implementation of Temme's method.
+	 */
+	ikv_asymptotic_uniform(v, ax, &res, NULL);
     }
     else {
-        /* Otherwise: Temme's method */
-        ikv_temme(v, ax, &res, NULL);
+	/* Otherwise: Temme's method */
+	ikv_temme(v, ax, &res, NULL);
     }
     res *= sign;
     return res;
@@ -172,18 +173,18 @@ static double iv_asymptotic(double v, double x)
  *
  * Computed with:
  * --------------------
-   import numpy as np
-   t = np.poly1d([1,0])
-   def up1(p):
-       return .5*t*t*(1-t*t)*p.deriv() + 1/8. * ((1-5*t*t)*p).integ()
-   us = [np.poly1d([1])]
-   for k in range(10):
-       us.append(up1(us[-1]))
-   n = us[-1].order
-   for p in us:
-       print "{" + ", ".join(["0"]*(n-p.order) + map(repr, p)) + "},"
-   print "N_UFACTORS", len(us)
-   print "N_UFACTOR_TERMS", us[-1].order + 1
+  import numpy as np
+  t = np.poly1d([1,0])
+  def up1(p):
+  return .5*t*t*(1-t*t)*p.deriv() + 1/8. * ((1-5*t*t)*p).integ()
+  us = [np.poly1d([1])]
+  for k in range(10):
+  us.append(up1(us[-1]))
+  n = us[-1].order
+  for p in us:
+  print "{" + ", ".join(["0"]*(n-p.order) + map(repr, p)) + "},"
+  print "N_UFACTORS", len(us)
+  print "N_UFACTOR_TERMS", us[-1].order + 1
  * --------------------
  */
 #define N_UFACTORS 11
@@ -240,7 +241,7 @@ static const double asymptotic_ufactors[N_UFACTORS][N_UFACTOR_TERMS] = {
  * Compute Iv, Kv from (AMS5 9.7.7 + 9.7.8), asymptotic expansion for large v
  */
 void ikv_asymptotic_uniform(double v, double x,
-                            double *i_value, double *k_value)
+			    double *i_value, double *k_value)
 {
     double i_prefactor, k_prefactor;
     double t, t2, eta, z;
@@ -268,7 +269,7 @@ void ikv_asymptotic_uniform(double v, double x,
     divisor = v;
     for (n = 1; n < N_UFACTORS; ++n) {
 	/*
-         * Evaluate u_k(t) with Horner's scheme;
+	 * Evaluate u_k(t) with Horner's scheme;
 	 * (using the knowledge about which coefficients are zero)
 	 */
 	term = 0;
@@ -279,47 +280,47 @@ void ikv_asymptotic_uniform(double v, double x,
 	}
 	for (k = 1; k < n; k += 2) {
 	    term *= t2;
-        }
+	}
 	if (n % 2 == 1) {
 	    term *= t;
-        }
+	}
 
 	/* Sum terms */
 	term /= divisor;
 	i_sum += term;
-        k_sum += (n % 2 == 0) ? term : -term;
+	k_sum += (n % 2 == 0) ? term : -term;
 
 	/* Check convergence */
 	if (fabs(term) < MACHEP) {
 	    break;
-        }
+	}
 
 	divisor *= v;
     }
 
-    if (fabs(term) > 1e-3*fabs(i_sum)) {
+    if (fabs(term) > 1e-3 * fabs(i_sum)) {
 	/* Didn't converge */
 	mtherr("ikv_asymptotic_uniform", TLOSS);
     }
-    if (fabs(term) > MACHEP*fabs(i_sum)) {
+    if (fabs(term) > MACHEP * fabs(i_sum)) {
 	/* Some precision lost */
 	mtherr("ikv_asymptotic_uniform", PLOSS);
     }
 
     if (k_value != NULL) {
-        /* symmetric in v */
-        *k_value = k_prefactor * k_sum;
+	/* symmetric in v */
+	*k_value = k_prefactor * k_sum;
     }
 
     if (i_value != NULL) {
-        if (sign == 1) {
-            *i_value = i_prefactor * i_sum;
-        }
-        else {
-            /* (AMS 9.6.2) */
-            *i_value = (i_prefactor * i_sum
-                        + (2/PI) * sin(PI*v) * k_prefactor * k_sum);
-        }
+	if (sign == 1) {
+	    *i_value = i_prefactor * i_sum;
+	}
+	else {
+	    /* (AMS 9.6.2) */
+	    *i_value = (i_prefactor * i_sum
+			+ (2 / PI) * sin(PI * v) * k_prefactor * k_sum);
+	}
     }
 }
 
@@ -481,8 +482,7 @@ static int CF2_ik(double v, double x, double *Kv, double *Kv1)
     current = 1;		/* q1 */
     Q = C = -a;			/* Q1 = C1 because q1 = 1 */
     S = 1 + Q * delta;		/* S1 */
-    for (k = 2; k < MAXITER; k++)	/* starting from 2 */
-    {
+    for (k = 2; k < MAXITER; k++) {	/* starting from 2 */
 	/* continued fraction f = z1 / z0 */
 	a -= 2 * (k - 1);
 	b += 2;
@@ -550,8 +550,10 @@ void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
     u = v - n;			/* -1/2 <= u < 1/2 */
 
     if (x < 0) {
-        if (Iv_p != NULL) *Iv_p = NPY_NAN;
-        if (Kv_p != NULL) *Kv_p = NPY_NAN;
+	if (Iv_p != NULL)
+	    *Iv_p = NPY_NAN;
+	if (Kv_p != NULL)
+	    *Kv_p = NPY_NAN;
 	mtherr("ikv_temme", DOMAIN);
 	return;
     }
@@ -561,24 +563,25 @@ void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 	    mtherr("ikv_temme", OVERFLOW);
 	    Kv = NPY_INFINITY;
 	}
-        else {
-	    Kv = NPY_NAN;		/* any value will do */
+	else {
+	    Kv = NPY_NAN;	/* any value will do */
 	}
 
 	if (reflect && (kind & need_i)) {
 	    double z = (u + n % 2);
+
 	    Iv = sin(PI * z) == 0 ? Iv : NPY_INFINITY;
 	    if (Iv == NPY_INFINITY || Iv == -NPY_INFINITY) {
 		mtherr("ikv_temme", OVERFLOW);
-            }
+	    }
 	}
 
 	if (Iv_p != NULL) {
-            *Iv_p = Iv;
-        }
+	    *Iv_p = Iv;
+	}
 	if (Kv_p != NULL) {
-            *Kv_p = Kv;
-        }
+	    *Kv_p = Kv;
+	}
 	return;
     }
     /* x is positive until reflection */
@@ -586,7 +589,7 @@ void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
     if (x <= 2) {		/* x in (0, 2] */
 	temme_ik_series(u, x, &Ku, &Ku1);	/* Temme series */
     }
-    else {		                 	/* x in (2, \infty) */
+    else {			/* x in (2, \infty) */
 	CF2_ik(u, x, &Ku, &Ku1);	/* continued fraction CF2_ik */
     }
     prev = Ku;
@@ -600,20 +603,21 @@ void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
     Kv1 = current;
     if (kind & need_i) {
 	double lim = (4 * v * v + 10) / (8 * x);
+
 	lim *= lim;
 	lim *= lim;
 	lim /= 24;
 	if ((lim < MACHEP * 10) && (x > 100)) {
 	    /*
-             * x is huge compared to v, CF1 may be very slow 
+	     * x is huge compared to v, CF1 may be very slow 
 	     * to converge so use asymptotic expansion for large
 	     * x case instead.  Note that the asymptotic expansion
 	     * isn't very accurate - so it's deliberately very hard
 	     * to get here - probably we're going to overflow:
-             */
+	     */
 	    Iv = iv_asymptotic(v, x);
 	}
-        else {
+	else {
 	    CF1_ik(v, x, &fv);	/* continued fraction CF1_ik */
 	    Iv = W / (Kv * fv + Kv1);	/* Wronskian relation */
 	}
@@ -624,19 +628,21 @@ void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 
     if (reflect) {
 	double z = (u + n % 2);
+
 	if (Iv_p != NULL) {
-            *Iv_p = Iv + (2 / PI) * sin(PI * z) * Kv;	/* reflection formula */
-        }
+	    *Iv_p = Iv + (2 / PI) * sin(PI * z) * Kv;	/* reflection formula */
+	}
 	if (Kv_p != NULL) {
-            *Kv_p = Kv;
-        }
-    } else {
+	    *Kv_p = Kv;
+	}
+    }
+    else {
 	if (Iv_p != NULL) {
-            *Iv_p = Iv;
-        }
+	    *Iv_p = Iv;
+	}
 	if (Kv_p != NULL) {
-            *Kv_p = Kv;
-        }
+	    *Kv_p = Kv;
+	}
     }
     return;
 }

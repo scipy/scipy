@@ -1,6 +1,6 @@
-/*							beta.c
+/*                                                     beta.c
  *
- *	Beta function
+ *     Beta function
  *
  *
  *
@@ -40,14 +40,14 @@
  *
  */
 
-/*							beta.c	*/
+/*                                                     beta.c  */
 
 
 /*
-Cephes Math Library Release 2.0:  April, 1987
-Copyright 1984, 1987 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
-*/
+ * Cephes Math Library Release 2.0:  April, 1987
+ * Copyright 1984, 1987 by Stephen L. Moshier
+ * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
 
 #include "mconf.h"
 
@@ -64,128 +64,157 @@ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 #define MAXGAM 171.624376956302725
 #endif
 
-extern double MAXLOG, MAXNUM;
+extern double MAXLOG;
 extern int sgngam;
 
-double beta( a, b )
+#define ASYMP_FACTOR 1e6
+
+static double lbeta_asymp(double a, double b, int *sgn);
+
+double beta(a, b)
 double a, b;
 {
-double y;
-int sign;
+    double y;
+    int sign;
 
-sign = 1;
+    sign = 1;
 
-if( a <= 0.0 )
-	{
-	if( a == floor(a) )
-		goto over;
-	}
-if( b <= 0.0 )
-	{
-	if( b == floor(b) )
-		goto over;
-	}
+    if (a <= 0.0) {
+	if (a == floor(a))
+	    goto over;
+    }
 
+    if (b <= 0.0) {
+	if (b == floor(b))
+	    goto over;
+    }
 
-y = a + b;
-if( fabs(y) > MAXGAM )
-	{
+    if (fabs(a) < fabs(b)) {
+        y = a; a = b; b = y;
+    }
+
+    if (fabs(a) > ASYMP_FACTOR * fabs(b) && a > ASYMP_FACTOR) {
+        /* Avoid loss of precision in lgam(a + b) - lgam(a) */
+        y = lbeta_asymp(a, b, &sign);
+        return sign * exp(y);
+    }
+
+    y = a + b;
+    if (fabs(y) > MAXGAM) {
 	y = lgam(y);
-	sign *= sgngam; /* keep track of the sign */
+	sign *= sgngam;		/* keep track of the sign */
 	y = lgam(b) - y;
 	sign *= sgngam;
 	y = lgam(a) + y;
 	sign *= sgngam;
-	if( y > MAXLOG )
-		{
-over:
-		mtherr( "beta", OVERFLOW );
-		return( sign * MAXNUM );
-		}
-	return( sign * exp(y) );
+	if (y > MAXLOG) {
+	  over:
+	    mtherr("beta", OVERFLOW);
+	    return (sign * NPY_INFINITY);
 	}
+	return (sign * exp(y));
+    }
 
-y = Gamma(y);
-if( y == 0.0 )
+    y = Gamma(y);
+    if (y == 0.0)
 	goto over;
 
-if( a > b )
-	{
-	y = Gamma(a)/y;
+    if (a > b) {
+	y = Gamma(a) / y;
 	y *= Gamma(b);
-	}
-else
-	{
-	y = Gamma(b)/y;
+    }
+    else {
+	y = Gamma(b) / y;
 	y *= Gamma(a);
-	}
+    }
 
-return(y);
+    return (y);
 }
-
 
 
 /* Natural log of |beta|.  Return the sign of beta in sgngam.  */
 
-double lbeta( a, b )
+double lbeta(a, b)
 double a, b;
 {
-double y;
-int sign;
+    double y;
+    int sign;
 
-sign = 1;
+    sign = 1;
 
-if( a <= 0.0 )
-	{
-	if( a == floor(a) )
-		goto over;
-	}
-if( b <= 0.0 )
-	{
-	if( b == floor(b) )
-		goto over;
-	}
+    if (a <= 0.0) {
+	if (a == floor(a))
+	    goto over;
+    }
 
+    if (b <= 0.0) {
+	if (b == floor(b))
+	    goto over;
+    }
 
-y = a + b;
-if( fabs(y) > MAXGAM )
-	{
+    if (fabs(a) < fabs(b)) {
+        y = a; a = b; b = y;
+    }
+
+    if (fabs(a) > ASYMP_FACTOR * fabs(b) && a > ASYMP_FACTOR) {
+        /* Avoid loss of precision in lgam(a + b) - lgam(a) */
+        y = lbeta_asymp(a, b, &sign);
+        sgngam = sign;
+        return y;
+    }
+
+    y = a + b;
+    if (fabs(y) > MAXGAM) {
 	y = lgam(y);
-	sign *= sgngam; /* keep track of the sign */
+	sign *= sgngam;		/* keep track of the sign */
 	y = lgam(b) - y;
 	sign *= sgngam;
 	y = lgam(a) + y;
 	sign *= sgngam;
 	sgngam = sign;
-	return( y );
-	}
+	return (y);
+    }
 
-y = Gamma(y);
-if( y == 0.0 )
-	{
-over:
-	mtherr( "lbeta", OVERFLOW );
-	return( sign * MAXNUM );
-	}
+    y = Gamma(y);
+    if (y == 0.0) {
+      over:
+	mtherr("lbeta", OVERFLOW);
+	return (sign * NPY_INFINITY);
+    }
 
-if( a > b )
-	{
-	y = Gamma(a)/y;
+    if (a > b) {
+	y = Gamma(a) / y;
 	y *= Gamma(b);
-	}
-else
-	{
-	y = Gamma(b)/y;
+    }
+    else {
+	y = Gamma(b) / y;
 	y *= Gamma(a);
-	}
+    }
 
-if( y < 0 )
-  {
-    sgngam = -1;
-    y = -y;
-  }
-else
-  sgngam = 1;
+    if (y < 0) {
+	sgngam = -1;
+	y = -y;
+    }
+    else
+	sgngam = 1;
 
-return( log(y) );
+    return (log(y));
+}
+
+/*
+ * Asymptotic expansion for  ln(|B(a, b)|) for a > ASYMP_FACTOR*max(|b|, 1).
+ */
+static double lbeta_asymp(double a, double b, int *sgn)
+{
+    double r, sum;
+
+    r = lgam(b);
+    *sgn = sgngam;
+    r -= b * log(a);
+
+    r += b*(1-b)/(2*a);
+    r += b*(1-b)*(1-2*b)/(12*a*a);
+    r += - b*b*(1-b)*(1-b)/(12*a*a*a);
+
+    return r;
 }

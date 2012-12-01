@@ -1,6 +1,6 @@
-/*							mvmpy.c
+/*                                                     mvmpy.c
  *
- *	Matrix times vector
+ *     Matrix times vector
  *
  *
  *
@@ -31,26 +31,22 @@
  */
 
 
-void
-mvmpy( r, c, A, V, Y )
+void mvmpy(r, c, A, V, Y)
 int r, c;
 double *A, *V, *Y;
 {
-register double s;
-double *pA, *pV, *pY;
-int i, j;
+    register double s;
+    double *pA, *pV, *pY;
+    int i, j;
 
-pA = A;
-pY = Y;
-for( i=0; i<r; i++ )
-	{
+    pA = A;
+    pY = Y;
+    for (i = 0; i < r; i++) {
 	pV = V;
 	s = 0.0;
-	for( j=0; j<c; j++ )
-		{
-		s += *pA++ * *pV++;
-		}
-	*pY++ = s;
+	for (j = 0; j < c; j++) {
+	    s += *pA++ * *pV++;
 	}
+	*pY++ = s;
+    }
 }
-
