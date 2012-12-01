@@ -39,7 +39,7 @@
  *
  *   message         condition      value returned
  * exp10 underflow    x < -MAXL10        0.0
- * exp10 overflow     x > MAXL10       MAXNUM
+ * exp10 overflow     x > MAXL10       NPY_INFINITY
  *
  * DEC arithmetic: MAXL10 = 38.230809449325611792.
  * IEEE arithmetic: MAXL10 = 308.2547155599167.
@@ -173,8 +173,6 @@ static unsigned short L102B[] = { 0x3ed3, 0x509f, 0x79fe, 0xf312, };
 #define LG102B *(double *)L102B
 static double MAXL10 = 308.2547155599167;
 #endif
-
-extern double MAXNUM;
 
 double exp10(double x)
 {

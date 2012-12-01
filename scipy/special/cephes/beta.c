@@ -64,7 +64,7 @@
 #define MAXGAM 171.624376956302725
 #endif
 
-extern double MAXLOG, MAXNUM;
+extern double MAXLOG;
 extern int sgngam;
 
 double beta(a, b)
@@ -96,7 +96,7 @@ double a, b;
 	if (y > MAXLOG) {
 	  over:
 	    mtherr("beta", OVERFLOW);
-	    return (sign * MAXNUM);
+	    return (sign * NPY_INFINITY);
 	}
 	return (sign * exp(y));
     }
@@ -155,7 +155,7 @@ double a, b;
     if (y == 0.0) {
       over:
 	mtherr("lbeta", OVERFLOW);
-	return (sign * MAXNUM);
+	return (sign * NPY_INFINITY);
     }
 
     if (a > b) {

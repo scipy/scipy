@@ -61,7 +61,7 @@
  */
 
 #include "mconf.h"
-extern double MAXNUM, MACHEP;
+extern double MACHEP;
 
 /* Expansion coefficients
  * for Euler-Maclaurin summation formula
@@ -105,7 +105,7 @@ double x, q;
 	if (q == floor(q)) {
 	    mtherr("zeta", SING);
 	  retinf:
-	    return (MAXNUM);
+	    return (NPY_INFINITY);
 	}
 	if (x != floor(x))
 	    goto domerr;	/* because q^-x not defined */

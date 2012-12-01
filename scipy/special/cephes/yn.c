@@ -40,8 +40,8 @@
  * ERROR MESSAGES:
  *
  *   message         condition      value returned
- * yn singularity   x = 0              MAXNUM
- * yn overflow                         MAXNUM
+ * yn singularity   x = 0              NPY_INFINITY
+ * yn overflow                         NPY_INFINITY
  *
  * Spot checked against tables for x, n between 0 and 100.
  *
@@ -53,7 +53,7 @@
  */
 
 #include "mconf.h"
-extern double MAXNUM, MAXLOG;
+extern double MAXLOG;
 
 double yn(n, x)
 int n;

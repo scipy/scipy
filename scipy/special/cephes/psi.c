@@ -48,7 +48,7 @@
  *
  * ERROR MESSAGES:
  *     message         condition      value returned
- * psi singularity    x integer <=0      MAXNUM
+ * psi singularity    x integer <=0      NPY_INFINITY
  */
 
 /*
@@ -108,7 +108,7 @@ static unsigned short A[] = {
 
 #define EUL 0.57721566490153286061
 
-extern double PI, MAXNUM;
+extern double PI;
 
 
 double psi(x)
@@ -126,7 +126,7 @@ double x;
 	p = floor(q);
 	if (p == q) {
 	    mtherr("psi", SING);
-	    return (MAXNUM);
+	    return (NPY_INFINITY);
 	}
 	/* Remove the zeros of tan(PI x)
 	 * by subtracting the nearest integer from x

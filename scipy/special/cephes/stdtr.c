@@ -86,7 +86,7 @@
 
 #include "mconf.h"
 
-extern double PI, MACHEP, MAXNUM;
+extern double MAXNUM, PI, MACHEP;
 
 double stdtr(k, t)
 int k;
@@ -200,7 +200,7 @@ double p;
     z = incbi(0.5 * rk, 0.5, 2.0 * p);
 
     if (MAXNUM * z < rk)
-	return (rflg * MAXNUM);
+	return (rflg * NPY_INFINITY);
     t = sqrt(rk / z - rk);
     return (rflg * t);
 }

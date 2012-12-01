@@ -63,7 +63,7 @@ static double sqrt3 = 1.732050807568877293527;
 static double sqpii = 5.64189583547756286948E-1;
 extern double PI;
 
-extern double MAXNUM, MACHEP;
+extern double MACHEP;
 
 #ifdef UNK
 #define MAXAIRY 25.77
@@ -865,8 +865,8 @@ double x, *ai, *aip, *bi, *bip;
     if (x > MAXAIRY) {
 	*ai = 0;
 	*aip = 0;
-	*bi = MAXNUM;
-	*bip = MAXNUM;
+	*bi = NPY_INFINITY;
+	*bip = NPY_INFINITY;
 	return (-1);
     }
 

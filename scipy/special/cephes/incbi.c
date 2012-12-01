@@ -46,7 +46,7 @@
 
 #include "mconf.h"
 
-extern double MACHEP, MAXNUM, MAXLOG, MINLOG;
+extern double MACHEP, MAXLOG, MINLOG;
 
 double incbi(aa, bb, yy0)
 double aa, bb, yy0;

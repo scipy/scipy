@@ -42,7 +42,7 @@
  *
  *   message         condition      value returned
  * exp underflow    x < -MAXL2        0.0
- * exp overflow     x > MAXL2         MAXNUM
+ * exp overflow     x > MAXL2         NPY_INFINITY
  *
  * For DEC arithmetic, MAXL2 = 127.
  * For IEEE arithmetic, MAXL2 = 1024.
@@ -125,8 +125,6 @@ static unsigned short Q[] = {
 #define MAXL2 1024.0
 #define MINL2 -1022.0
 #endif
-
-extern double MAXNUM;
 
 double exp2(double x)
 {

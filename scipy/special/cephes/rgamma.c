@@ -19,14 +19,14 @@
  * The function is approximated by a Chebyshev expansion in
  * the interval [0,1].  Range reduction is by recurrence
  * for arguments between -34.034 and +34.84425627277176174.
- * 1/MAXNUM is returned for positive arguments outside this
+ * 0 is returned for positive arguments outside this
  * range.  For arguments less than -34.034 the cosecant
  * reflection formula is applied; lograrithms are employed
  * to avoid unnecessary overflow.
  *
  * The reciprocal Gamma function has no singularities,
  * but overflow and underflow may occur for large arguments.
- * These conditions return either MAXNUM or 1/MAXNUM with
+ * These conditions return either NPY_INFINITY or 0 with
  * appropriate sign.
  *
  * ACCURACY:
@@ -137,7 +137,7 @@ static unsigned short R[] = {
 
 static char name[] = "rgamma";
 
-extern double PI, MAXLOG, MAXNUM;
+extern double PI, MAXLOG;
 
 
 double rgamma(x)
@@ -148,7 +148,7 @@ double x;
 
     if (x > 34.84425627277176174) {
 	mtherr(name, UNDERFLOW);
-	return (1.0 / MAXNUM);
+	return 0.0;
     }
     if (x < -34.034) {
 	w = -x;
@@ -165,11 +165,11 @@ double x;
 	y = log(w * z) - log(PI) + lgam(w);
 	if (y < -MAXLOG) {
 	    mtherr(name, UNDERFLOW);
-	    return (sign * 1.0 / MAXNUM);
+	    return (sign * 0.0);
 	}
 	if (y > MAXLOG) {
 	    mtherr(name, OVERFLOW);
-	    return (sign * MAXNUM);
+	    return (sign * NPY_INFINITY);
 	}
 	return (sign * exp(y));
     }

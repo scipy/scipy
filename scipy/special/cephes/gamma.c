@@ -71,7 +71,7 @@
  * The cosecant reflection formula is employed for arguments
  * less than -33.
  *
- * Arguments greater than MAXLGM return MAXNUM and an error
+ * Arguments greater than MAXLGM return NPY_INFINITY and an error
  * message.  MAXLGM = 2.035093e36 for DEC
  * arithmetic or 2.556348e305 for IEEE arithmetic.
  *
@@ -287,7 +287,7 @@ static unsigned short SQT[4] = {
 
 int sgngam = 0;
 extern int sgngam;
-extern double MAXLOG, MAXNUM, PI;
+extern double MAXLOG, PI;
 static double stirf(double);
 
 /* Gamma function computed by Stirling's formula.
@@ -333,7 +333,7 @@ double Gamma(double x)
 	    if (p == q) {
 	      gamnan:
 		mtherr("Gamma", OVERFLOW);
-		return (MAXNUM);
+		return (NPY_INFINITY);
 	    }
 	    i = p;
 	    if ((i & 1) == 0)

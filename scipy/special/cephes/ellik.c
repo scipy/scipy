@@ -55,7 +55,7 @@
 /*     Incomplete elliptic integral of first kind      */
 
 #include "mconf.h"
-extern double PI, PIO2, MACHEP, MAXNUM;
+extern double PI, PIO2, MACHEP;
 
 double ellik(phi, m)
 double phi, m;
@@ -69,7 +69,7 @@ double phi, m;
     if (a == 0.0) {
 	if (fabs(phi) >= PIO2) {
 	    mtherr("ellik", SING);
-	    return (MAXNUM);
+	    return (NPY_INFINITY);
 	}
 	return (log(tan((PIO2 + phi) / 2.0)));
     }

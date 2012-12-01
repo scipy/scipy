@@ -201,7 +201,7 @@ static double Q[] = {
 static double C1 = 1.3862943611198906188E0;	/* log(4) */
 #endif
 
-extern double MACHEP, MAXNUM;
+extern double MACHEP;
 
 double ellpk(x)
 double x;
@@ -218,7 +218,7 @@ double x;
     else {
 	if (x == 0.0) {
 	    mtherr("ellpk", SING);
-	    return (MAXNUM);
+	    return (NPY_INFINITY);
 	}
 	else {
 	    return (C1 - 0.5 * log(x));

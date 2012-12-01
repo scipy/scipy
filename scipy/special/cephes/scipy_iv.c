@@ -69,7 +69,7 @@
 
 #include <stdlib.h>
 #include "mconf.h"
-extern double MACHEP, MAXNUM, PI, EULER;
+extern double MAXNUM, MACHEP, PI, EULER;
 
 static double iv_asymptotic(double v, double x);
 void ikv_asymptotic_uniform(double v, double x, double *Iv, double *Kv);
@@ -107,7 +107,7 @@ double iv(double v, double x)
 	}
 	if (v < 0.0) {
 	    mtherr("iv", OVERFLOW);
-	    return MAXNUM;
+	    return NPY_INFINITY;
 	}
 	else
 	    return 0.0;

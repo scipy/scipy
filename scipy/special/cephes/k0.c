@@ -35,7 +35,7 @@
  * ERROR MESSAGES:
  *
  *   message         condition      value returned
- *  K0 domain          x <= 0          MAXNUM
+ *  K0 domain          x <= 0          NPY_INFINITY
  *
  */
 /*							k0e()

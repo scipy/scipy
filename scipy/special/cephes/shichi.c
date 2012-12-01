@@ -35,7 +35,7 @@
  * The integrals are evaluated by power series for x < 8
  * and by Chebyshev expansions for x between 8 and 88.
  * For large x, both functions approach exp(x)/2x.
- * Arguments greater than 88 in magnitude return MAXNUM.
+ * Arguments greater than 88 in magnitude return NPY_INFINITY.
  *
  *
  * ACCURACY:
@@ -501,7 +501,7 @@ static unsigned short C2[] = {
 /* Sine and cosine integrals */
 
 #define EUL 0.57721566490153286061
-extern double MACHEP, MAXNUM, PIO2;
+extern double MACHEP, PIO2;
 
 int shichi(x, si, ci)
 double x;
@@ -520,7 +520,7 @@ double *si, *ci;
 
     if (x == 0.0) {
 	*si = 0.0;
-	*ci = -MAXNUM;
+	*ci = -NPY_INFINITY;
 	return (0);
     }
 
@@ -569,10 +569,10 @@ double *si, *ci;
     }
     else {
 	if (sign)
-	    *si = -MAXNUM;
+	    *si = -NPY_INFINITY;
 	else
-	    *si = MAXNUM;
-	*ci = MAXNUM;
+	    *si = NPY_INFINITY;
+	*ci = NPY_INFINITY;
 	return (0);
     }
   done:

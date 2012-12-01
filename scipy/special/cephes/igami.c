@@ -51,7 +51,7 @@
 #include "mconf.h"
 #include <stdio.h>
 
-extern double MACHEP, MAXNUM, MAXLOG, MINLOG;
+extern double MACHEP, MAXLOG, MINLOG;
 
 double igami(a, y0)
 double a, y0;
@@ -60,7 +60,7 @@ double a, y0;
     int i, dir;
 
     /* bound the solution */
-    x0 = MAXNUM;
+    x0 = NPY_INFINITY;
     yl = 0;
     x1 = 0;
     yh = 1.0;
@@ -72,7 +72,7 @@ double a, y0;
     }
 
     if (y0 == 0.0) {
-	return (MAXNUM);
+	return (NPY_INFINITY);
     }
 
     if (y0 == 1.0) {
@@ -116,10 +116,10 @@ double a, y0;
   ihalve:
 
     d = 0.0625;
-    if (x0 == MAXNUM) {
+    if (x0 == NPY_INFINITY) {
 	if (x <= 0.0)
 	    x = 1.0;
-	while (x0 == MAXNUM) {
+	while (x0 == NPY_INFINITY) {
 	    x = (1.0 + d) * x;
 	    y = igamc(a, x);
 	    if (y < y0) {

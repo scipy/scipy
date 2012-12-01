@@ -34,7 +34,7 @@
  *   message         condition          value returned
  * tandg total loss   x > 8.0e14 (DEC)      0.0
  *                    x > 1.0e14 (IEEE)
- * tandg singularity  x = 180 k  +  90     MAXNUM
+ * tandg singularity  x = 180 k  +  90     NPY_INFINITY
  */
 /*							cotdg.c
  *
@@ -64,7 +64,7 @@
  *   message         condition          value returned
  * cotdg total loss   x > 8.0e14 (DEC)      0.0
  *                    x > 1.0e14 (IEEE)
- * cotdg singularity  x = 180 k            MAXNUM
+ * cotdg singularity  x = 180 k            NPY_INFINITY
  */
 
 /*
@@ -104,7 +104,6 @@ static double lossth = 1.0e14;
 #endif
 
 static double tancot(double, int);
-extern double MAXNUM;
 
 double tandg(double x)
 {
@@ -163,7 +162,7 @@ static double tancot(double xx, int cotflg)
     }
     else if (x == 90.0) {
 	mtherr((cotflg ? "cotdg" : "tandg"), SING);
-	return MAXNUM;
+	return NPY_INFINITY;
     }
     /* x is now transformed into [0, 90) */
     return sign * tan(x * PI180);

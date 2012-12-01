@@ -33,7 +33,7 @@
  * ERROR MESSAGES:
  *
  *   message         condition      value returned
- * k1 domain          x <= 0          MAXNUM
+ * k1 domain          x <= 0          NPY_INFINITY
  *
  */
 /*							k1e.c

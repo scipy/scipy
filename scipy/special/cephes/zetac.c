@@ -27,7 +27,7 @@
  *     Riemann zeta(x) = zetac(x) + 1.
  *
  * Extension of the function definition for x < 1 is implemented.
- * Zero is returned for x > log2(MAXNUM).
+ * Zero is returned for x > log2(NPY_INFINITY).
  *
  * An overflow error may occur for large negative x, due to the
  * Gamma function in the reflection formula.
@@ -52,7 +52,7 @@
 
 #include "mconf.h"
 
-extern double MAXNUM, PI;
+extern double PI;
 
 /* Riemann zeta(x) - 1
  * for integer arguments between 0 and 30.
@@ -551,7 +551,7 @@ double x;
 
     if (x == 1.0) {
 	mtherr("zetac", SING);
-	return (MAXNUM);
+	return (NPY_INFINITY);
     }
 
     if (x <= 10.0) {

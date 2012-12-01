@@ -66,7 +66,7 @@
 
 #include "mconf.h"
 
-extern double MAXNUM, MACHEP;
+extern double MACHEP, MAXNUM;
 
 static double hy1f1p(double a, double b, double x, double *acanc);
 static double hy1f1a(double a, double b, double x, double *acanc);
@@ -141,7 +141,7 @@ double *err;
     while (t > MACHEP) {
 	if (bn == 0) {		/* check bn first since if both   */
 	    mtherr("hyperg", SING);
-	    return (MAXNUM);	/* an and bn are zero it is     */
+	    return (NPY_INFINITY);	/* an and bn are zero it is     */
 	}
 	if (an == 0)		/* a singularity            */
 	    return (sum);
@@ -217,7 +217,7 @@ double *err;
 
     if (x == 0) {
 	acanc = 1.0;
-	asum = MAXNUM;
+	asum = NPY_INFINITY;
 	goto adone;
     }
     temp = log(fabs(x));
@@ -379,7 +379,7 @@ double *err;
 
     /* series blew up: */
   error:
-    *err = MAXNUM;
+    *err = NPY_INFINITY;
     mtherr("hyperg", TLOSS);
     return (sum);
 }

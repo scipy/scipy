@@ -602,7 +602,7 @@ static unsigned short GD8[] = {
 #endif
 
 #define EUL 0.57721566490153286061
-extern double MAXNUM, PIO2, MACHEP;
+extern double PIO2, MACHEP;
 
 
 int sici(x, si, ci)
@@ -622,7 +622,7 @@ double *si, *ci;
 
     if (x == 0.0) {
 	*si = 0.0;
-	*ci = -MAXNUM;
+	*ci = -NPY_INFINITY;
 	return (0);
     }
 

@@ -99,7 +99,7 @@ double x;
     if (n > MAXFAC) {
       overf:
 	mtherr("kn", OVERFLOW);
-	return (MAXNUM);
+	return (NPY_INFINITY);
     }
 
     if (x <= 0.0) {
@@ -214,7 +214,7 @@ double x;
     fn = 1.0;
     t = 1.0;
     s = t;
-    nkf = MAXNUM;
+    nkf = NPY_INFINITY;
     i = 0;
     do {
 	z = pn - pk * pk;

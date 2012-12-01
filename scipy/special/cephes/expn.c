@@ -52,7 +52,7 @@
 #include "mconf.h"
 #define EUL 0.57721566490153286060
 #define BIG  1.44115188075855872E+17
-extern double MAXNUM, MACHEP, MAXLOG;
+extern double MACHEP, MAXLOG;
 
 double expn(n, x)
 int n;
@@ -69,7 +69,7 @@ double x;
 
     if (x < 0) {
       domerr:mtherr("expn", DOMAIN);
-	return (MAXNUM);
+	return (NPY_INFINITY);
     }
 
     if (x > MAXLOG)
@@ -78,7 +78,7 @@ double x;
     if (x == 0.0) {
 	if (n < 2) {
 	    mtherr("expn", SING);
-	    return (MAXNUM);
+	    return (NPY_INFINITY);
 	}
 	else
 	    return (1.0 / (n - 1.0));

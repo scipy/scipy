@@ -60,7 +60,7 @@
 #define MAXGAM 171.624376956302725
 #endif
 
-extern double MAXNUM, MACHEP, MINLOG, MAXLOG;
+extern double MACHEP, MINLOG, MAXLOG;
 
 #define BIG  1.44115188075855872E+17
 
@@ -452,7 +452,7 @@ static double jvs(double n, double x)
 	}
 	if (t > MAXLOG) {
 	    mtherr("Jv", OVERFLOW);
-	    return (MAXNUM);
+	    return (NPY_INFINITY);
 	}
 	y = sgngam * exp(t);
     }
@@ -678,8 +678,8 @@ static double jnx(double n, double x)
     /* flags to stop when terms get larger */
     doa = 1;
     dob = 1;
-    akl = MAXNUM;
-    bkl = MAXNUM;
+    akl = NPY_INFINITY;
+    bkl = NPY_INFINITY;
 
     for (k = 0; k <= 3; k++) {
 	tk = 2 * k;
