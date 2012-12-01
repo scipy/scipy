@@ -64,7 +64,7 @@
  * The domain is divided into the intervals [0, 5] and
  * (5, infinity). In the first interval a rational approximation
  * R(x) is employed to compute
- *   y0(x)  = R(x)  +   2 * log(x) * j0(x) / PI.
+ *   y0(x)  = R(x)  +   2 * log(x) * j0(x) / NPY_PI.
  * Thus a call to j0() is required.
  *
  * In the second interval, the Hankel asymptotic expansion
@@ -481,7 +481,7 @@ static unsigned short RQ[32] = {
 };
 #endif
 
-extern double TWOOPI, SQ2OPI;
+extern double SQ2OPI;
 
 double j0(x)
 double x;
@@ -514,8 +514,8 @@ double x;
 /* Bessel function of second kind, order zero  */
 
 /* Rational approximation coefficients YP[], YQ[] are used here.
- * The function computed is  y0(x)  -  2 * log(x) * j0(x) / PI,
- * whose value at x = 0 is  2 * ( log(0.5) + EUL ) / PI
+ * The function computed is  y0(x)  -  2 * log(x) * j0(x) / NPY_PI,
+ * whose value at x = 0 is  2 * ( log(0.5) + EUL ) / NPY_PI
  * = 0.073804295108687225.
  */
 
@@ -540,7 +540,7 @@ double x;
 	}
 	z = x * x;
 	w = polevl(z, YP, 7) / p1evl(z, YQ, 7);
-	w += TWOOPI * log(x) * j0(x);
+	w += NPY_2_PI * log(x) * j0(x);
 	return (w);
     }
 

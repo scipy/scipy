@@ -394,7 +394,6 @@ static double recur(double *n, double x, double *newn, int cancel)
  * AMS55 #9.1.10.
  */
 
-extern double PI;
 extern int sgngam;
 
 static double jvs(double n, double x)
@@ -511,8 +510,8 @@ static double hankel(double n, double x)
     }
 
   hank1:
-    u = x - (0.5 * n + 0.25) * PI;
-    t = sqrt(2.0 / (PI * x)) * (pp * cos(u) - qq * sin(u));
+    u = x - (0.5 * n + 0.25) * NPY_PI;
+    t = sqrt(2.0 / (NPY_PI * x)) * (pp * cos(u) - qq * sin(u));
 #if CEPHES_DEBUG
     printf("hank: %.6e\n", t);
 #endif

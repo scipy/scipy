@@ -61,7 +61,6 @@ static double c1 = 0.35502805388781723926;
 static double c2 = 0.258819403792806798405;
 static double sqrt3 = 1.732050807568877293527;
 static double sqpii = 5.64189583547756286948E-1;
-extern double PI;
 
 extern double MACHEP;
 
@@ -880,7 +879,7 @@ double x, *ai, *aip, *bi, *bip;
 	zz = z * z;
 	uf = 1.0 + zz * polevl(zz, AFN, 8) / p1evl(zz, AFD, 9);
 	ug = z * polevl(zz, AGN, 10) / p1evl(zz, AGD, 10);
-	theta = zeta + 0.25 * PI;
+	theta = zeta + 0.25 * NPY_PI;
 	f = sin(theta);
 	g = cos(theta);
 	*ai = k * (f * uf - g * ug);

@@ -52,8 +52,6 @@
 
 #include "mconf.h"
 
-extern double PI;
-
 /* Riemann zeta(x) - 1
  * for integer arguments between 0 and 30.
  */
@@ -521,8 +519,8 @@ double x;
 	}
 	s = 1.0 - x;
 	w = zetac(s);
-	b = sin(0.5 * PI * x) * pow(2.0 * PI,
-				    x) * Gamma(s) * (1.0 + w) / PI;
+	b = sin(0.5 * NPY_PI * x) * pow(2.0 * NPY_PI,
+				    x) * Gamma(s) * (1.0 + w) / NPY_PI;
 	return (b - 1.0);
     }
 

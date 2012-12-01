@@ -193,8 +193,6 @@ double *err;
 
 
 
-extern double PI;
-
 double struve(v, x)
 double v, x;
 {
@@ -212,7 +210,7 @@ double v, x;
 		return NPY_INFINITY;
 	}
 	else {
-	    return 2.0 / PI;
+	    return 2.0 / NPY_PI;
 	}
     }
 
@@ -244,7 +242,7 @@ double v, x;
 	ya = threef0(1.0, 0.5, 0.5 - v, -1.0 / t, &threef0err);
     }
 
-    f = sqrt(PI);
+    f = sqrt(NPY_PI);
     h = pow(0.5 * x, v - 1.0);
 
     if (onef2err <= threef0err) {
@@ -278,7 +276,7 @@ double v, x;
 	y = yn(n, x);
 	return (y);
     }
-    t = PI * v;
+    t = NPY_PI * v;
     y = (cos(t) * jv(v, x) - jv(-v, x)) / sin(t);
     return (y);
 }

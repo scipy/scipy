@@ -86,7 +86,7 @@
 
 #include "mconf.h"
 
-extern double MAXNUM, PI, MACHEP;
+extern double MAXNUM, MACHEP;
 
 double stdtr(k, t)
 int k;
@@ -138,7 +138,7 @@ double t;
 	    }
 	    p += f * xsqk / z;
 	}
-	p *= 2.0 / PI;
+	p *= 2.0 / NPY_PI;
     }
 
 

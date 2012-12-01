@@ -63,7 +63,7 @@
  */
 
 #include "mconf.h"
-extern double PIO2, MACHEP;
+extern double MACHEP;
 
 int ellpj(u, m, sn, cn, dn, ph)
 double u, m;
@@ -102,7 +102,7 @@ double *sn, *cn, *dn, *ph;
 	phi = 1.0 / b;
 	twon = b * sinh(u);
 	*sn = t + ai * (twon - u) / (b * b);
-	*ph = 2.0 * atan(exp(u)) - PIO2 + ai * (twon - u) / b;
+	*ph = 2.0 * atan(exp(u)) - NPY_PI_2 + ai * (twon - u) / b;
 	ai *= t * phi;
 	*cn = phi - ai * (twon - u);
 	*dn = phi + ai * (twon + u);

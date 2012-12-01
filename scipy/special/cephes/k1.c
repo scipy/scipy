@@ -274,7 +274,6 @@ static unsigned short B[] = {
 };
 #endif
 
-extern double PI;
 extern double MINLOG;
 
 double k1(x)

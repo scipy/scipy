@@ -462,7 +462,7 @@ static unsigned short gd[44] = {
 };
 #endif
 
-extern double PI, PIO2, MACHEP;
+extern double MACHEP;
 
 int fresnl(xxa, ssa, cca)
 double xxa, *ssa, *cca;
@@ -495,16 +495,16 @@ double xxa, *ssa, *cca;
      *             for large argument
      */
     x2 = x * x;
-    t = PI * x2;
+    t = NPY_PI * x2;
     u = 1.0 / (t * t);
     t = 1.0 / t;
     f = 1.0 - u * polevl(u, fn, 9) / p1evl(u, fd, 10);
     g = t * polevl(u, gn, 10) / p1evl(u, gd, 11);
 
-    t = PIO2 * x2;
+    t = NPY_PI_2 * x2;
     c = cos(t);
     s = sin(t);
-    t = PI * x;
+    t = NPY_PI * x;
     cc = 0.5 + (f * s - g * c) / t;
     ss = 0.5 - (f * c + g * s) / t;
 

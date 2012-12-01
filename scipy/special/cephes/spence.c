@@ -144,7 +144,7 @@ static unsigned short B[32] = {
 };
 #endif
 
-extern double PI, MACHEP;
+extern double MACHEP;
 
 double spence(x)
 double x;
@@ -161,7 +161,7 @@ double x;
 	return (0.0);
 
     if (x == 0.0)
-	return (PI * PI / 6.0);
+	return (NPY_PI * NPY_PI / 6.0);
 
     flag = 0;
 
@@ -187,7 +187,7 @@ double x;
     y = -w * polevl(w, A, 7) / polevl(w, B, 7);
 
     if (flag & 1)
-	y = (PI * PI) / 6.0 - log(x) * log(1.0 - x) - y;
+	y = (NPY_PI * NPY_PI) / 6.0 - log(x) * log(1.0 - x) - y;
 
     if (flag & 2) {
 	z = log(x);

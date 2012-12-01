@@ -272,7 +272,6 @@ static unsigned short B[] = {
 #endif
 
 /*                                                     k0.c    */
-extern double PI;
 
 double k0(x)
 double x;

@@ -137,7 +137,7 @@ static unsigned short R[] = {
 
 static char name[] = "rgamma";
 
-extern double PI, MAXLOG;
+extern double MAXLOG;
 
 
 double rgamma(x)
@@ -152,7 +152,7 @@ double x;
     }
     if (x < -34.034) {
 	w = -x;
-	z = sin(PI * w);
+	z = sin(NPY_PI * w);
 	if (z == 0.0)
 	    return (0.0);
 	if (z < 0.0) {
@@ -162,7 +162,7 @@ double x;
 	else
 	    sign = -1;
 
-	y = log(w * z) - log(PI) + lgam(w);
+	y = log(w * z) - log(NPY_PI) + lgam(w);
 	if (y < -MAXLOG) {
 	    mtherr(name, UNDERFLOW);
 	    return (sign * 0.0);

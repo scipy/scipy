@@ -55,7 +55,7 @@
 /*     Incomplete elliptic integral of first kind      */
 
 #include "mconf.h"
-extern double PI, PIO2, MACHEP;
+extern double MACHEP;
 
 double ellik(phi, m)
 double phi, m;
@@ -67,18 +67,18 @@ double phi, m;
 	return (phi);
     a = 1.0 - m;
     if (a == 0.0) {
-	if (fabs(phi) >= PIO2) {
+	if (fabs(phi) >= NPY_PI_2) {
 	    mtherr("ellik", SING);
 	    return (NPY_INFINITY);
 	}
-	return (log(tan((PIO2 + phi) / 2.0)));
+	return (log(tan((NPY_PI_2 + phi) / 2.0)));
     }
-    npio2 = floor(phi / PIO2);
+    npio2 = floor(phi / NPY_PI_2);
     if (npio2 & 1)
 	npio2 += 1;
     if (npio2) {
 	K = ellpk(a);
-	phi = phi - npio2 * PIO2;
+	phi = phi - npio2 * NPY_PI_2;
     }
     else
 	K = 0.0;
@@ -109,8 +109,8 @@ double phi, m;
 
     while (fabs(c / a) > MACHEP) {
 	temp = b / a;
-	phi = phi + atan(t * temp) + mod * PI;
-	mod = (phi + PIO2) / PI;
+	phi = phi + atan(t * temp) + mod * NPY_PI;
+	mod = (phi + NPY_PI_2) / NPY_PI;
 	t = t * (1.0 + temp) / (1.0 - temp * t * t);
 	c = (a - b) / 2.0;
 	temp = sqrt(a * b);
@@ -119,7 +119,7 @@ double phi, m;
 	d += d;
     }
 
-    temp = (atan(t) + mod * PI) / (d * a);
+    temp = (atan(t) + mod * NPY_PI) / (d * a);
 
   done:
     if (sign < 0)

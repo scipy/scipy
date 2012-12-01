@@ -106,11 +106,6 @@ static unsigned short A[] = {
 };
 #endif
 
-#define EUL 0.57721566490153286061
-
-extern double PI;
-
-
 double psi(x)
 double x;
 {
@@ -128,7 +123,7 @@ double x;
 	    mtherr("psi", SING);
 	    return (NPY_INFINITY);
 	}
-	/* Remove the zeros of tan(PI x)
+	/* Remove the zeros of tan(NPY_PI x)
 	 * by subtracting the nearest integer from x
 	 */
 	nz = q - p;
@@ -137,7 +132,7 @@ double x;
 		p += 1.0;
 		nz = q - p;
 	    }
-	    nz = PI / tan(PI * nz);
+	    nz = NPY_PI / tan(NPY_PI * nz);
 	}
 	else {
 	    nz = 0.0;
@@ -153,7 +148,7 @@ double x;
 	    w = i;
 	    y += 1.0 / w;
 	}
-	y -= EUL;
+	y -= NPY_EULER;
 	goto done;
     }
 

@@ -55,7 +55,7 @@
 
 #include "mconf.h"
 
-extern double PI, PIO2, MACHEP;
+extern double MACHEP;
 
 double ellie(phi, m)
 double phi, m;
@@ -67,10 +67,10 @@ double phi, m;
     if (m == 0.0)
 	return (phi);
     lphi = phi;
-    npio2 = floor(lphi / PIO2);
+    npio2 = floor(lphi / NPY_PI_2);
     if (npio2 & 1)
 	npio2 += 1;
-    lphi = lphi - npio2 * PIO2;
+    lphi = lphi - npio2 * NPY_PI_2;
     if (lphi < 0.0) {
 	lphi = -lphi;
 	sign = -1;
@@ -106,8 +106,8 @@ double phi, m;
 
     while (fabs(c / a) > MACHEP) {
 	temp = b / a;
-	lphi = lphi + atan(t * temp) + mod * PI;
-	mod = (lphi + PIO2) / PI;
+	lphi = lphi + atan(t * temp) + mod * NPY_PI;
+	mod = (lphi + NPY_PI_2) / NPY_PI;
 	t = t * (1.0 + temp) / (1.0 - temp * t * t);
 	c = (a - b) / 2.0;
 	temp = sqrt(a * b);
@@ -118,7 +118,7 @@ double phi, m;
     }
 
     temp = E / ellpk(1.0 - m);
-    temp *= (atan(t) + mod * PI) / (d * a);
+    temp *= (atan(t) + mod * NPY_PI) / (d * a);
     temp += e;
 
   done:

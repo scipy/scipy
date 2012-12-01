@@ -500,8 +500,7 @@ static unsigned short C2[] = {
 
 /* Sine and cosine integrals */
 
-#define EUL 0.57721566490153286061
-extern double MACHEP, PIO2;
+extern double MACHEP;
 
 int shichi(x, si, ci)
 double x;
@@ -581,6 +580,6 @@ double *si, *ci;
 
     *si = s;
 
-    *ci = EUL + log(x) + c;
+    *ci = NPY_EULER + log(x) + c;
     return (0);
 }

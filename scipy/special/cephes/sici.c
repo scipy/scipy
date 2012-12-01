@@ -601,8 +601,7 @@ static unsigned short GD8[] = {
 };
 #endif
 
-#define EUL 0.57721566490153286061
-extern double PIO2, MACHEP;
+extern double MACHEP;
 
 
 int sici(x, si, ci)
@@ -630,16 +629,16 @@ double *si, *ci;
     if (x > 1.0e9) {
 	if (npy_isinf(x)) {
 	    if (sign == -1) {
-		*si = -PIO2;
+		*si = -NPY_PI_2;
 		*ci = NPY_NAN;
 	    }
 	    else {
-		*si = PIO2;
+		*si = NPY_PI_2;
 		*ci = 0;
 	    }
 	    return 0;
 	}
-	*si = PIO2 - cos(x) / x;
+	*si = NPY_PI_2 - cos(x) / x;
 	*ci = sin(x) / x;
     }
 
@@ -655,7 +654,7 @@ double *si, *ci;
     if (sign)
 	s = -s;
     *si = s;
-    *ci = EUL + log(x) + c;	/* real part if x < 0 */
+    *ci = NPY_EULER + log(x) + c;	/* real part if x < 0 */
     return (0);
 
 
@@ -663,7 +662,7 @@ double *si, *ci;
     /* The auxiliary functions are:
      *
      *
-     * *si = *si - PIO2;
+     * *si = *si - NPY_PI_2;
      * c = cos(x);
      * s = sin(x);
      *
@@ -688,7 +687,7 @@ double *si, *ci;
 	f = polevl(z, FN8, 8) / (x * p1evl(z, FD8, 8));
 	g = z * polevl(z, GN8, 8) / p1evl(z, GD8, 9);
     }
-    *si = PIO2 - f * c - g * s;
+    *si = NPY_PI_2 - f * c - g * s;
     if (sign)
 	*si = -(*si);
     *ci = f * s - g * c;

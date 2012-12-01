@@ -287,7 +287,7 @@ static unsigned short SQT[4] = {
 
 int sgngam = 0;
 extern int sgngam;
-extern double MAXLOG, PI;
+extern double MAXLOG;
 static double stirf(double);
 
 /* Gamma function computed by Stirling's formula.
@@ -343,12 +343,12 @@ double Gamma(double x)
 		p += 1.0;
 		z = q - p;
 	    }
-	    z = q * sin(PI * z);
+	    z = q * sin(NPY_PI * z);
 	    if (z == 0.0) {
 		return (sgngam * NPY_INFINITY);
 	    }
 	    z = fabs(z);
-	    z = PI / (z * stirf(q));
+	    z = NPY_PI / (z * stirf(q));
 	}
 	else {
 	    z = stirf(x);
@@ -572,10 +572,10 @@ double lgam(double x)
 	    p += 1.0;
 	    z = p - q;
 	}
-	z = q * sin(PI * z);
+	z = q * sin(NPY_PI * z);
 	if (z == 0.0)
 	    goto lgsing;
-	/*     z = log(PI) - log( z ) - w; */
+	/*     z = log(NPY_PI) - log( z ) - w; */
 	z = LOGPI - log(z) - w;
 	return (z);
     }

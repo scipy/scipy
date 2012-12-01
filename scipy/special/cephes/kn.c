@@ -81,7 +81,7 @@
 
 #define EUL 5.772156649015328606065e-1
 #define MAXFAC 31
-extern double MACHEP, MAXNUM, MAXLOG, PI;
+extern double MACHEP, MAXNUM, MAXLOG;
 
 double kn(nn, x)
 int nn;
@@ -232,6 +232,6 @@ double x;
     while (fabs(t / s) > MACHEP);
 
   adone:
-    ans = exp(-x) * sqrt(PI / (2.0 * x)) * s;
+    ans = exp(-x) * sqrt(NPY_PI / (2.0 * x)) * s;
     return (ans);
 }
