@@ -44,7 +44,7 @@
  */
 
 #include "mconf.h"
-extern double NEGZERO, MAXLOG, MINLOG, LOGE2;
+extern double MAXLOG, MINLOG, LOGE2;
 
 double powi(x, nn)
 double x;
@@ -158,7 +158,7 @@ int nn;
     if (asign) {
 	/* odd power of negative number */
 	if (y == 0.0)
-	    y = NEGZERO;
+	    y = NPY_NZERO;
 	else
 	    y = -y;
     }
