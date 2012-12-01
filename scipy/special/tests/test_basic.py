@@ -46,6 +46,15 @@ class TestCephes(TestCase):
         cephes.airy(0)
     def test_airye(self):
         cephes.airye(0)
+    def test_binom(self):
+        n = np.array([0.264, 4, 5.2, 17])
+        k = np.array([2, 0.4, 7, 3.3])
+        r = cephes.binom.outer(n,k)
+        rknown = np.array([[-0.097152, 0.9263051596159367, 0.01858423645695389,
+            -0.007581020651518199],[6, 2.0214389119675666, 0, 2.9827344527963846],
+            [10.92, 2.22993515861399, -0.00585728, 10.468891352063146],
+            [136, 3.5252179590758828, 19448, 1024.5526916174495]])
+        assert_allclose(r, rknown)
     def test_bdtr(self):
         assert_equal(cephes.bdtr(1,1,0.5),1.0)
     def test_bdtri(self):
@@ -179,6 +188,9 @@ class TestCephes(TestCase):
         assert_equal(cephes.gammainccinv(5,1),0.0)
     def test_gammaln(self):
         cephes.gammaln(10)
+    def test_gammasgn(self):
+        vals = np.array([-4, -3.5, -2.3, 1, 4.2], np.float64)
+        assert_array_equal(cephes.gammasgn(vals), np.sign(cephes.rgamma(vals)))
 
     def test_gdtr(self):
         assert_equal(cephes.gdtr(1,1,0),0.0)

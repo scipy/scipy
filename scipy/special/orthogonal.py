@@ -127,7 +127,7 @@ class orthopoly1d(np.poly1d):
         self.__dict__['_eval_func'] = eval_func
 
     def __call__(self, v):
-        if self._eval_func and (isinstance(v, np.ndarray) or np.isscalar(v)):
+        if self._eval_func and not isinstance(v, np.poly1d):
             return self._eval_func(v)
         else:
             return np.poly1d.__call__(self, v)
@@ -457,6 +457,7 @@ def gegenbauer(n, alpha, monic=0):
     #  Abrahmowitz and Stegan 22.5.20
     factor = _gam(2*alpha+n)*_gam(alpha+0.5) / _gam(2*alpha) / _gam(alpha+0.5+n)
     base._scale(factor)
+    base.__dict__['_eval_func'] = lambda x: eval_gegenbauer(float(n), alpha, x)
     return base
 
 # Chebyshev of the first kind: T_n(x)  = n! sqrt(pi) / _gam(n+1./2)* P^(-1/2,-1/2)_n(x)
@@ -694,7 +695,7 @@ def sh_legendre(n, monic=0):
 #------------------------------------------------------------------------------
 # Vectorized functions for evaluation
 #------------------------------------------------------------------------------
-from orthogonal_eval import \
+from _ufuncs import \
      binom, eval_jacobi, eval_sh_jacobi, eval_gegenbauer, eval_chebyt, \
      eval_chebyu, eval_chebys, eval_chebyc, eval_sh_chebyt, eval_sh_chebyu, \
      eval_legendre, eval_sh_legendre, eval_genlaguerre, eval_laguerre, \
