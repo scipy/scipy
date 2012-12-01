@@ -1,6 +1,6 @@
-/*							fdtr.c
+/*                                                     fdtr.c
  *
- *	F distribution
+ *     F distribution
  *
  *
  *
@@ -23,7 +23,7 @@
  * The incomplete beta integral is used, according to the
  * formula
  *
- *	P(x) = incbet( df1/2, df2/2, (df1*x/(df2 + df1*x) ).
+ *     P(x) = incbet( df1/2, df2/2, (df1*x/(df2 + df1*x) ).
  *
  *
  * The arguments a and b are greater than zero, and x is
@@ -155,72 +155,67 @@
 
 
 /*
-Cephes Math Library Release 2.3:  March, 1995
-Copyright 1984, 1987, 1995 by Stephen L. Moshier
-*/
+ * Cephes Math Library Release 2.3:  March, 1995
+ * Copyright 1984, 1987, 1995 by Stephen L. Moshier
+ */
 
 
 #include "mconf.h"
 
-double fdtrc( a, b, x )
+double fdtrc(a, b, x)
 double a, b;
 double x;
 {
-double w;
+    double w;
 
-if( (a < 1.0) || (b < 1.0) || (x < 0.0) )
-	{
-	mtherr( "fdtrc", DOMAIN );
-	return( NPY_NAN );
-	}
-w = b / (b + a * x);
-return( incbet( 0.5*b, 0.5*a, w ) );
+    if ((a < 1.0) || (b < 1.0) || (x < 0.0)) {
+	mtherr("fdtrc", DOMAIN);
+	return (NPY_NAN);
+    }
+    w = b / (b + a * x);
+    return (incbet(0.5 * b, 0.5 * a, w));
 }
 
-double fdtr( a, b, x )
+double fdtr(a, b, x)
 double a, b;
 double x;
 {
-double w;
+    double w;
 
-if( (a < 1.0) || (b < 1.0) || (x < 0.0) )
-	{
-	mtherr( "fdtr", DOMAIN );
-	return( NPY_NAN );
-	}
-w = a * x;
-w = w / (b + w);
-return( incbet(0.5*a, 0.5*b, w) );
+    if ((a < 1.0) || (b < 1.0) || (x < 0.0)) {
+	mtherr("fdtr", DOMAIN);
+	return (NPY_NAN);
+    }
+    w = a * x;
+    w = w / (b + w);
+    return (incbet(0.5 * a, 0.5 * b, w));
 }
 
 
-double fdtri( a, b, y )
+double fdtri(a, b, y)
 double a, b;
 double y;
 {
-double w, x;
+    double w, x;
 
-if( (a < 1.0) || (b < 1.0) || (y <= 0.0) || (y > 1.0) )
-	{
-	mtherr( "fdtri", DOMAIN );
-	return( NPY_NAN );
-	}
-y = 1.0-y;
-a = a;
-b = b;
-/* Compute probability for x = 0.5.  */
-w = incbet( 0.5*b, 0.5*a, 0.5 );
-/* If that is greater than y, then the solution w < .5.
-   Otherwise, solve at 1-y to remove cancellation in (b - b*w).  */
-if( w > y || y < 0.001)
-	{
-	w = incbi( 0.5*b, 0.5*a, y );
-	x = (b - b*w)/(a*w);
-	}
-else
-	{
-	w = incbi( 0.5*a, 0.5*b, 1.0-y );
-	x = b*w/(a*(1.0-w));
-	}
-return(x);
+    if ((a < 1.0) || (b < 1.0) || (y <= 0.0) || (y > 1.0)) {
+	mtherr("fdtri", DOMAIN);
+	return (NPY_NAN);
+    }
+    y = 1.0 - y;
+    a = a;
+    b = b;
+    /* Compute probability for x = 0.5.  */
+    w = incbet(0.5 * b, 0.5 * a, 0.5);
+    /* If that is greater than y, then the solution w < .5.
+     * Otherwise, solve at 1-y to remove cancellation in (b - b*w).  */
+    if (w > y || y < 0.001) {
+	w = incbi(0.5 * b, 0.5 * a, y);
+	x = (b - b * w) / (a * w);
+    }
+    else {
+	w = incbi(0.5 * a, 0.5 * b, 1.0 - y);
+	x = b * w / (a * (1.0 - w));
+    }
+    return (x);
 }

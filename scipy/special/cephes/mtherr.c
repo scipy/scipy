@@ -1,6 +1,6 @@
-/*							mtherr.c
+/*                                                     mtherr.c
  *
- *	Library common error handling routine
+ *     Library common error handling routine
  *
  *
  *
@@ -49,10 +49,10 @@
  */
 
 /*
-Cephes Math Library Release 2.0:  April, 1987
-Copyright 1984, 1987 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
-*/
+ * Cephes Math Library Release 2.0:  April, 1987
+ * Copyright 1984, 1987 by Stephen L. Moshier
+ * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
 
 #include <stdio.h>
 #include "mconf.h"
