@@ -22,7 +22,6 @@
 #define exp1m cephes_exp1m
 #define exp2 cephes_exp2
 #define expn cephes_expn
-#define fabs cephes_fabs
 #define fdtrc cephes_fdtrc
 #define fdtr cephes_fdtr
 #define fdtri cephes_fdtri

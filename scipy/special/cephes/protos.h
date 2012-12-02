@@ -59,7 +59,6 @@ extern double exp10 ( double x );
 extern double exp1m ( double x );
 extern double exp2 ( double x );
 extern double expn ( int n, double x );
-extern double fabs ( double x );
 extern double fac ( int i );
 extern double fdtrc ( double a, double b, double x );
 extern double fdtr ( double a, double b, double x );
