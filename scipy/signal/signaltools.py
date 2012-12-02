@@ -60,7 +60,7 @@ def _check_valid_mode_shapes(shape1, shape2):
         if not d1 >= d2:
             raise ValueError(
                 "in1 should have at least as many items as in2 in "
-                "every dimension for 'valid' mode.")    
+                "every dimension for 'valid' mode.")
 
 
 def correlate(in1, in2, mode='full'):
@@ -103,7 +103,15 @@ def correlate(in1, in2, mode='full'):
             x[..., i_l,...] * conj(y[..., i_l + k,...])
 
     """
+    in1 = asarray(in1)
+    in2 = asarray(in2)
+
     val = _valfrommode(mode)
+
+    if rank(in1) == rank(in2) == 0:
+        return in1 * in2
+    elif not in1.ndim == in2.ndim:
+        raise ValueError("in1 and in2 should have the same rank")
 
     if mode == 'valid':
         _check_valid_mode_shapes(in1.shape, in2.shape)
@@ -120,12 +128,10 @@ def correlate(in1, in2, mode='full'):
 
         if mode == 'full':
             out = np.empty(ps, in1.dtype)
-            z = sigtools._correlateND(in1zpadded, in2, out, val)
         elif mode == 'same':
             out = np.empty(in1.shape, in1.dtype)
-            z = sigtools._correlateND(in1zpadded, in2, out, val)
-        else:
-            raise ValueError("Unknown mode %s" % mode)
+
+        z = sigtools._correlateND(in1zpadded, in2, out, val)
 
     return z
 
@@ -152,20 +158,15 @@ def fftconvolve(in1, in2, mode="full"):
 
     if mode == "valid":
         _check_valid_mode_shapes(s1, s2)
-    
+
     # Always use 2**n-sized FFT
     fsize = 2 ** np.ceil(np.log2(size)).astype(int)
     fslice = tuple([slice(0, int(sz)) for sz in size])
     if not complex_result:
-        IN1 = rfftn(in1, fsize)
-        IN1 *= rfftn(in2, fsize)
-        ret = irfftn(IN1)[fslice].copy()
+        ret = irfftn(rfftn(in1, fsize) * rfftn(in2, fsize))[fslice].copy()
         ret = ret.real
     else:
-        IN1 = fftn(in1, fsize)
-        IN1 *= fftn(in2, fsize)
-        ret = ifftn(IN1)[fslice].copy()
-    del IN1
+        ret = ifftn(fftn(in1, fsize) * fftn(in2, fsize))[fslice].copy()
 
     if mode == "full":
         return ret
@@ -213,8 +214,6 @@ def convolve(in1, in2, mode='full'):
 
     if rank(volume) == rank(kernel) == 0:
         return volume * kernel
-    elif not volume.ndim == kernel.ndim:
-        raise ValueError("in1 and in2 should have the same rank")
 
     slice_obj = [slice(None, None, -1)] * len(kernel.shape)
 
