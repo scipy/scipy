@@ -693,7 +693,8 @@ class TestNorm(object):
         a = array([1e4] + [1]*10000, dtype=float32)
         try:
             # snrm in double precision; we obtain the same as for float64
-            assert_almost_equal(norm(a) - 1e4, 0.5)
+            # -- large atol needed due to varying blas implementations
+            assert_allclose(norm(a) - 1e4, 0.5, atol=1e-2)
         except AssertionError:
             # snrm implemented in single precision, == np.linalg.norm result
             msg = ": Result should equal either 0.0 or 0.5 (depending on " \
