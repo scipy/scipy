@@ -55,6 +55,14 @@ def _bvalfromboundary(boundary):
     return val
 
 
+def _check_valid_mode_shapes(shape1, shape2):
+    for d1, d2 in zip(shape1, shape2):
+        if not d1 >= d2:
+            raise ValueError(
+                "in1 should have at least as many items as in2 in "
+                "every dimension for 'valid' mode.")    
+
+
 def correlate(in1, in2, mode='full'):
     """
     Cross-correlate two N-dimensional arrays.
@@ -98,13 +106,9 @@ def correlate(in1, in2, mode='full'):
     val = _valfrommode(mode)
 
     if mode == 'valid':
+        _check_valid_mode_shapes(in1.shape, in2.shape)
         ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
         out = np.empty(ps, in1.dtype)
-        for i in range(len(ps)):
-            if ps[i] <= 0:
-                raise ValueError(
-                    "in1 should have at least as many items as in2 in "
-                    "every dimension for 'valid' mode.")
 
         z = sigtools._correlateND(in1, in2, out, val)
     else:
@@ -146,6 +150,9 @@ def fftconvolve(in1, in2, mode="full"):
                       np.issubdtype(in2.dtype, np.complex))
     size = s1 + s2 - 1
 
+    if mode == "valid":
+        _check_valid_mode_shapes(s1, s2)
+    
     # Always use 2**n-sized FFT
     fsize = 2 ** np.ceil(np.log2(size)).astype(int)
     fslice = tuple([slice(0, int(sz)) for sz in size])
@@ -165,11 +172,6 @@ def fftconvolve(in1, in2, mode="full"):
     elif mode == "same":
         return _centered(ret, s1)
     elif mode == "valid":
-        for d1, d2 in zip(in1.shape, in2.shape):
-            if not d1 >= d2:
-                raise ValueError(
-                    "in1 should have at least as many items as in2 in "
-                    "every dimension for 'valid' mode.")
         return _centered(ret, s1 - s2 + 1)
 
 
@@ -215,13 +217,6 @@ def convolve(in1, in2, mode='full'):
         raise ValueError("in1 and in2 should have the same rank")
 
     slice_obj = [slice(None, None, -1)] * len(kernel.shape)
-
-    if mode == 'valid':
-        for d1, d2 in zip(volume.shape, kernel.shape):
-            if not d1 >= d2:
-                raise ValueError(
-                    "in1 should have at least as many items as in2 in "
-                    "every dimension for 'valid' mode.")
 
     if np.iscomplexobj(kernel):
         return correlate(volume, kernel[slice_obj].conj(), mode)
@@ -427,11 +422,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     """
     if mode == 'valid':
-        for d1, d2 in zip(np.shape(in1), np.shape(in2)):
-            if not d1 >= d2:
-                raise ValueError(
-                    "in1 should have at least as many items as in2 in "
-                    "every dimension for 'valid' mode.")
+        _check_valid_mode_shapes(in1.shape, in2.shape)
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
@@ -483,11 +474,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     """
     if mode == 'valid':
-        for d1, d2 in zip(np.shape(in1), np.shape(in2)):
-            if not d1 >= d2:
-                raise ValueError(
-                    "in1 should have at least as many items as in2 in "
-                    "every dimension for 'valid' mode.")
+        _check_valid_mode_shapes(in1.shape, in2.shape)
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
