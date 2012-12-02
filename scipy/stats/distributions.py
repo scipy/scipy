@@ -6529,8 +6529,7 @@ class nbinom_gen(rv_discrete):
     def _argcheck(self, n, p):
         return (n >= 0) & (p >= 0) & (p <= 1)
     def _pmf(self, x, n, p):
-        coeff = exp(gamln(n+x) - gamln(x+1) - gamln(n))
-        return coeff * power(p,n) * power(1-p,x)
+        return exp(self._logpmf(x, n, p))
     def _logpmf(self, x, n, p):
         coeff = gamln(n+x) - gamln(x+1) - gamln(n)
         return coeff + n*log(p) + x*log(1-p)

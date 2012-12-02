@@ -160,6 +160,12 @@ class TestNBinom(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_pmf(self):
+        # regression test for ticket 1779
+        assert_allclose(np.exp(stats.nbinom.logpmf(700, 721, 0.52)),
+                        stats.nbinom.pmf(700, 721, 0.52))
+
+
 class TestGeom(TestCase):
     def test_rvs(self):
         vals = stats.geom.rvs(0.75, size=(2, 50))
