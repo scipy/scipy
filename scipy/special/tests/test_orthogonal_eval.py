@@ -162,16 +162,16 @@ class TestRecurrence(object):
                 x = x_range[0] + (x_range[1] - x_range[0])*np.random.rand(nx)
                 x[0] = x_range[0] # always include domain start point
                 x[1] = x_range[1] # always include domain end point
-                #poly = np.poly1d(cls(*p))
-                z = np.c_[np.tile(p, (nx,1)), x, func(*(p + (x,)), sig=(len(p)+1)*'d'+'->d')]
-                #z = np.c_[np.tile(p, (nx,1)), x, poly(x)]
+                kw = dict(sig=(len(p)+1)*'d'+'->d')
+                z = np.c_[np.tile(p, (nx,1)), x, func(*(p + (x,)), **kw)]
                 dataset.append(z)
 
         dataset = np.concatenate(dataset, axis=0)
 
         def polyfunc(*p):
             p = (p[0].astype(int),) + p[1:]
-            return func(*p, sig='l'+(len(p)-1)*'d'+'->d')
+            kw = dict(sig='l'+(len(p)-1)*'d'+'->d')
+            return func(*p, **kw)
 
         olderr = np.seterr(all='raise')
         try:
