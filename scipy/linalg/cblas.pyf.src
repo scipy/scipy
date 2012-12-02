@@ -6,10 +6,10 @@
 ! $Revision$ $Date$
 ! 
 
-python module cblas
+python module _cblas
     interface
 
        include "cblas_l1.pyf.src"
 
     end interface
-end python module cblas
+end python module _cblas

@@ -1,26 +1,125 @@
+"""
+Low-level BLAS functions
+========================
+
+This module contains low-level functions from the BLAS library.
+
+.. versionadded:: 0.12.0
+
+.. warning::
+
+   These functions do little to no error checking.
+   It is possible to cause crashes by mis-using them,
+   so prefer using the higher-level routines in `scipy.linalg`.
+
+Finding functions
+=================
+
+.. autosummary::
+
+   get_blas_funcs
+   find_best_blas_type
+
+All functions
+=============
+
+.. autosummary::
+   :toctree: generated/
+
+   caxpy
+   ccopy
+   cdotc
+   cdotu
+   cgemm
+   cgemv
+   cgerc
+   cgeru
+   chemv
+   crotg
+   cscal
+   csrot
+   csscal
+   cswap
+   ctrmv
+   dasum
+   daxpy
+   dcopy
+   ddot
+   dgemm
+   dgemv
+   dger
+   dnrm2
+   drot
+   drotg
+   drotm
+   drotmg
+   dscal
+   dswap
+   dsymv
+   dtrmv
+   dzasum
+   dznrm2
+   icamax
+   idamax
+   isamax
+   izamax
+   sasum
+   saxpy
+   scasum
+   scnrm2
+   scopy
+   sdot
+   sgemm
+   sgemv
+   sger
+   snrm2
+   srot
+   srotg
+   srotm
+   srotmg
+   sscal
+   sswap
+   ssymv
+   strmv
+   zaxpy
+   zcopy
+   zdotc
+   zdotu
+   zdrot
+   zdscal
+   zgemm
+   zgemv
+   zgerc
+   zgeru
+   zhemv
+   zrotg
+   zscal
+   zswap
+   ztrmv
+
+
+"""
 #
 # Author: Pearu Peterson, March 2002
 #         refactoring by Fabian Pedregosa, March 2010
 #
 
-__all__ = ['get_blas_funcs']
+__all__ = ['get_blas_funcs', 'find_best_blas_type']
 
-import numpy as np
-# The following ensures that possibly missing flavor (C or Fortran) is
-# replaced with the available one. If none is available, exception
-# is raised at the first attempt to use the resources.
+import numpy as _np
 
-from scipy.linalg import fblas
+from scipy.linalg import _fblas
 try:
-    from scipy.linalg import cblas
+    from scipy.linalg import _cblas
 except ImportError:
-    cblas = None
-if cblas is None:
-    cblas = fblas
-elif hasattr(fblas,'empty_module'):
-    fblas = cblas
+    _cblas = None
 
- # 'd' will be default for 'i',..
+# Expose all functions (only fblas --- cblas is an implementation detail)
+empty_module = None
+from scipy.linalg._fblas import *
+del empty_module
+
+# 'd' will be default for 'i',..
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z', 'G':'z'}
 
 # some convenience alias for complex functions
@@ -30,6 +129,93 @@ _blas_alias = {'cnrm2' : 'scnrm2', 'znrm2' : 'dznrm2',
                'sdotc': 'sdot', 'sdotu': 'sdot',
                'ddotc': 'ddot', 'ddotu': 'ddot'}
 
+def find_best_blas_type(arrays=(), dtype=None):
+    """Find best-matching BLAS/LAPACK type.
+
+    Arrays are used to determine the optimal prefix of BLAS routines.
+
+    Parameters
+    ----------
+    arrays : sequency of ndarrays, optional
+        Arrays can be given to determine optiomal prefix of BLAS
+        routines. If not given, double-precision routines will be
+        used, otherwise the most generic type in arrays will be used.
+    dtype : str or dtype, optional
+        Data-type specifier. Not used if `arrays` is non-empty.
+
+    Returns
+    -------
+    prefix : str
+        BLAS/LAPACK prefix character.
+    dtype : dtype
+        Inferred Numpy data type.
+    prefer_fortran : bool
+        Whether to prefer Fortran order routines over C order.
+
+    """
+    dtype = _np.dtype(dtype)
+    prefer_fortran = False
+
+    if arrays:
+        # use the most generic type in arrays
+        dtypes = [ar.dtype for ar in arrays]
+        dtype = _np.find_common_type(dtypes, ())
+        try:
+            index = dtypes.index(dtype)
+        except ValueError:
+            index = 0
+        if arrays[index].flags['FORTRAN']:
+            # prefer Fortran for leading array with column major order
+            prefer_fortran = True
+
+    prefix = _type_conv.get(dtype.char, 'd')
+
+    return prefix, dtype, prefer_fortran
+
+def _get_funcs(names, arrays, dtype,
+               lib_name, fmodule, cmodule,
+               fmodule_name, cmodule_name, alias):
+    """
+    Return available BLAS/LAPACK functions.
+
+    Used also in lapack.py. See get_blas_funcs for docstring.
+    """
+
+    funcs = []
+    unpack = False
+    dtype = _np.dtype(dtype)
+    module1 = (cmodule, cmodule_name)
+    module2 = (fmodule, fmodule_name)
+
+    if isinstance(names, str):
+        names = (names,)
+        unpack = True
+
+    prefix, dtype, prefer_fortran = find_best_blas_type(arrays, dtype)
+
+    if prefer_fortran:
+        module1, module2 = module2, module1
+
+    for i, name in enumerate(names):
+        func_name = prefix + name
+        func_name = alias.get(func_name, func_name)
+        func = getattr(module1[0], func_name, None)
+        module_name = module1[1]
+        if func is None:
+            func = getattr(module2[0], func_name, None)
+            module_name = module2[1]
+        if func is None:
+            raise ValueError(
+                '%s function %s could not be found' % (lib_name, func_name))
+        func.module_name, func.typecode = module_name, prefix
+        func.dtype = dtype
+        func.prefix = prefix # Backward compatibility
+        funcs.append(func)
+
+    if unpack:
+        return funcs[0]
+    else:
+        return funcs
 
 def get_blas_funcs(names, arrays=(), dtype=None):
     """Return available BLAS function objects from names.
@@ -65,45 +251,10 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     In BLAS, the naming convention is that all functions start with a
     type prefix, which depends on the type of the principal
     matrix. These can be one of {'s', 'd', 'c', 'z'} for the numpy
-    types {float32, float64, complex64, complex128} respectevely, and
-    are stored in attribute `typecode` of the returned functions.
+    types {float32, float64, complex64, complex128} respectively.
+    The code and the dtype are stored in attributes `typecode` and `dtype`
+    of the returned functions.
     """
-
-    blas_funcs = []
-    unpack = False
-    dtype = np.dtype(dtype)
-    module1 = (cblas, 'cblas')
-    module2 = (fblas, 'fblas')
-
-    if isinstance(names, str):
-        names = (names,)
-        unpack = True
-
-    if arrays:
-        # use the most generic type in arrays
-        dtype, index = max(
-            [(ar.dtype, i) for i, ar in enumerate(arrays)])
-        if arrays[index].flags['FORTRAN']:
-            # prefer Fortran for leading array with column major order
-            module1, module2 = module2, module1
-
-    prefix = _type_conv.get(dtype.char, 'd')
-
-    for i, name in enumerate(names):
-        func_name = prefix + name
-        func_name = _blas_alias.get(func_name, func_name)
-        func = getattr(module1[0], func_name, None)
-        module_name = module1[1]
-        if func is None:
-            func = getattr(module2[0], func_name, None)
-            module_name = module2[1]
-        if func is None:
-            raise ValueError(
-                'BLAS function %s could not be found' % func_name)
-        func.module_name, func.typecode = module_name, prefix
-        blas_funcs.append(func)
-
-    if unpack:
-        return blas_funcs[0]
-    else:
-        return blas_funcs
+    return _get_funcs(names, arrays, dtype,
+                      "BLAS", _fblas, _cblas, "fblas", "cblas",
+                      _blas_alias)

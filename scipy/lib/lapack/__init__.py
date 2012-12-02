@@ -2,6 +2,8 @@
 Wrappers to LAPACK library
 ==========================
 
+NOTE: this module is deprecated -- use scipy.linalg.lapack instead!
+
   flapack -- wrappers for Fortran [*] LAPACK routines
   clapack -- wrappers for ATLAS LAPACK routines
   calc_lwork -- calculate optimal lwork parameters
@@ -137,6 +139,7 @@ Optimal lwork is maxwrk. Default is minwrk.
 
 __all__ = ['get_lapack_funcs','calc_lwork','flapack','clapack']
 
+from numpy import deprecate
 
 import calc_lwork
 
@@ -144,9 +147,18 @@ import calc_lwork
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
 
+@deprecate(old_name="scipy.lib.lapack", new_name="scipy.linalg.lapack")
+def _deprecated():
+    pass
+try:
+    _deprecated()
+except DeprecationWarning, e:
+    # don't fail import if DeprecationWarnings raise error -- works around
+    # the situation with Numpy's test framework
+    pass
+
 import flapack
 import clapack
-
 
 _use_force_clapack = 1
 if hasattr(clapack,'empty_module'):
@@ -159,7 +171,7 @@ elif hasattr(flapack,'empty_module'):
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
 _inv_type_conv = {'s':'f','d':'d','c':'F','z':'D'}
 
-
+@deprecate
 def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
     """Return available LAPACK function objects with names.
     arrays are used to determine the optimal prefix of

@@ -1,119 +1,271 @@
+"""
+Low-level LAPACK functions
+==========================
+
+This module contains low-level functions from the LAPACK library.
+
+.. versionadded:: 0.12.0
+
+.. warning::
+
+   These functions do little to no error checking.
+   It is possible to cause crashes by mis-using them,
+   so prefer using the higher-level routines in `scipy.linalg`.
+
+Finding functions
+=================
+
+.. autosummary::
+
+   get_lapack_funcs
+   find_best_blas_type
+
+All functions
+=============
+
+.. autosummary::
+   :toctree: generated/
+
+   cgbsv
+   cgbtrf
+   cgbtrs
+   cgebal
+   cgees
+   cgeev
+   cgegv
+   cgehrd
+   cgelss
+   cgeqp3
+   cgeqrf
+   cgerqf
+   cgesdd
+   cgesv
+   cgetrf
+   cgetri
+   cgetrs
+   cgges
+   cggev
+   chbevd
+   chbevx
+   cheev
+   cheevd
+   cheevr
+   chegv
+   chegvd
+   chegvx
+   claswp
+   clauum
+   cpbsv
+   cpbtrf
+   cpbtrs
+   cposv
+   cpotrf
+   cpotri
+   cpotrs
+   ctrsyl
+   ctrtri
+   ctrtrs
+   cungqr
+   cungrq
+   cunmqr
+   dgbsv
+   dgbtrf
+   dgbtrs
+   dgebal
+   dgees
+   dgeev
+   dgegv
+   dgehrd
+   dgelss
+   dgeqp3
+   dgeqrf
+   dgerqf
+   dgesdd
+   dgesv
+   dgetrf
+   dgetri
+   dgetrs
+   dgges
+   dggev
+   dlamch
+   dlaswp
+   dlauum
+   dorgqr
+   dorgrq
+   dormqr
+   dpbsv
+   dpbtrf
+   dpbtrs
+   dposv
+   dpotrf
+   dpotri
+   dpotrs
+   dsbev
+   dsbevd
+   dsbevx
+   dsyev
+   dsyevd
+   dsyevr
+   dsygv
+   dsygvd
+   dsygvx
+   dtrsyl
+   dtrtri
+   dtrtrs
+   sgbsv
+   sgbtrf
+   sgbtrs
+   sgebal
+   sgees
+   sgeev
+   sgegv
+   sgehrd
+   sgelss
+   sgeqp3
+   sgeqrf
+   sgerqf
+   sgesdd
+   sgesv
+   sgetrf
+   sgetri
+   sgetrs
+   sgges
+   sggev
+   slamch
+   slaswp
+   slauum
+   sorgqr
+   sorgrq
+   sormqr
+   spbsv
+   spbtrf
+   spbtrs
+   sposv
+   spotrf
+   spotri
+   spotrs
+   ssbev
+   ssbevd
+   ssbevx
+   ssyev
+   ssyevd
+   ssyevr
+   ssygv
+   ssygvd
+   ssygvx
+   strsyl
+   strtri
+   strtrs
+   zgbsv
+   zgbtrf
+   zgbtrs
+   zgebal
+   zgees
+   zgeev
+   zgegv
+   zgehrd
+   zgelss
+   zgeqp3
+   zgeqrf
+   zgerqf
+   zgesdd
+   zgesv
+   zgetrf
+   zgetri
+   zgetrs
+   zgges
+   zggev
+   zhbevd
+   zhbevx
+   zheev
+   zheevd
+   zheevr
+   zhegv
+   zhegvd
+   zhegvx
+   zlaswp
+   zlauum
+   zpbsv
+   zpbtrf
+   zpbtrs
+   zposv
+   zpotrf
+   zpotri
+   zpotrs
+   ztrsyl
+   ztrtri
+   ztrtrs
+   zungqr
+   zungrq
+   zunmqr
+
+"""
 #
 # Author: Pearu Peterson, March 2002
 #
 
 __all__ = ['get_lapack_funcs']
 
-# The following ensures that possibly missing flavor (C or Fortran) is
-# replaced with the available one. If none is available, exception
-# is raised at the first attempt to use the resources.
-import types
+from blas import _get_funcs
 
-import numpy
+# Backward compatibility:
+from blas import find_best_blas_type as find_best_lapack_type
 
-from scipy.linalg import flapack
+from scipy.linalg import _flapack
 try:
-    from scipy.linalg import clapack
+    from scipy.linalg import _clapack
 except ImportError:
-    clapack = None
+    _clapack = None
 
-_use_force_clapack = 1
-if clapack is None:
-    clapack = flapack
-    _use_force_clapack = 0
-elif hasattr(flapack,'empty_module'):
-    flapack = clapack
+# Expose all functions (only flapack --- clapack is an implementation detail)
+empty_module = None
+from scipy.linalg._flapack import *
+del empty_module
 
-def cast_to_lapack_prefix(t):
-    if issubclass(t, numpy.single):
-        prefix = 's'
-    elif issubclass(t, numpy.double):
-        prefix = 'd'
-    elif issubclass(t, numpy.longdouble):
-        prefix = 'd'
-    elif issubclass(t, numpy.csingle):
-        prefix = 'c'
-    elif issubclass(t, numpy.cdouble):
-        prefix = 'z'
-    elif issubclass(t, numpy.clongdouble):
-        prefix = 'z'
-    else:
-        prefix = 'd'
-    return prefix
+# some convenience alias for complex functions
+_lapack_alias = {
+    'corgqr': 'cungqr', 'zorgqr': 'zungqr',
+    'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
+    'corgrq': 'cungrq', 'zorgrq': 'zungrq',
+}
 
-prefix_to_order = dict(s=3, d=2, c=1, z=0)
-order_to_prefix = ['s', 'd', 'c', 'z']
-prefix_to_dtype = dict(s=numpy.single, d=numpy.double,
-                       c=numpy.csingle, z=numpy.cdouble)
+def get_lapack_funcs(names, arrays=(), dtype=None):
+    """Return available LAPACK function objects from names.
 
-def find_best_lapack_type(arrays):
-    if not arrays:
-        return 'd', numpy.double, False
-    ordering = []
-    for i in range(len(arrays)):
-        t = arrays[i].dtype.type
-        prefix = cast_to_lapack_prefix(t)
-        order = prefix_to_order[prefix]
-        ordering.append((order, prefix, i))
-    ordering.sort()
-    _, required_prefix, lowest_array_index = ordering[0]
-    dtype = prefix_to_dtype[required_prefix]
-    isfortran = numpy.isfortran(arrays[lowest_array_index])
-    return required_prefix, dtype, isfortran
+    Arrays are used to determine the optimal prefix of LAPACK routines.
 
-def get_lapack_funcs(names, arrays=()):
-    """Return available LAPACK function objects with names.
-    arrays are used to determine the optimal prefix of
-    LAPACK routines.
+    Parameters
+    ----------
+    names : str or sequence of str
+        Name(s) of LAPACK functions withouth type prefix.
+
+    arrays : sequency of ndarrays, optional
+        Arrays can be given to determine optiomal prefix of LAPACK
+        routines. If not given, double-precision routines will be
+        used, otherwise the most generic type in arrays will be used.
+
+    dtype : str or dtype, optional
+        Data-type specifier. Not used if `arrays` is non-empty.
+
+
+    Returns
+    -------
+    funcs : list
+        List containing the found function(s).
+
+
+    Notes
+    -----
+    This routines automatically chooses between Fortran/C
+    interfaces. Fortran code is used whenever possible for arrays with
+    column major order. In all other cases, C code is preferred.
+
+    In LAPACK, the naming convention is that all functions start with a
+    type prefix, which depends on the type of the principal
+    matrix. These can be one of {'s', 'd', 'c', 'z'} for the numpy
+    types {float32, float64, complex64, complex128} respectevely, and
+    are stored in attribute `typecode` of the returned functions.
     """
-    #If force_clapack is True then available Atlas routine
-    #is returned for column major storaged arrays with
-    #rowmajor argument set to False.
-    force_clapack=False  #XXX: Don't set it true! The feature is unreliable
-                         #     and may cause incorrect results.
-                         #     See test_basic.test_solve.check_20Feb04_bug.
-
-    required_prefix, dtype, isfortran = find_best_lapack_type(arrays)
-    # Default lookup:
-    if isfortran:
-        # prefer Fortran code for leading array with column major order
-        m1, m2 = flapack, clapack
-    else:
-        # in all other cases, C code is preferred
-        m1, m2 = clapack, flapack
-    if not _use_force_clapack:
-        force_clapack = False
-    funcs = []
-    m1_name = m1.__name__.split('.')[-1]
-    m2_name = m2.__name__.split('.')[-1]
-    for name in names:
-        func_name = required_prefix + name
-        func = getattr(m1,func_name,None)
-        if func is None:
-            func = getattr(m2,func_name)
-            func.module_name = m2_name
-        else:
-            func.module_name = m1_name
-            if force_clapack and m1 is flapack:
-                func2 = getattr(m2,func_name,None)
-                if func2 is not None:
-                    exec _colmajor_func_template % {'func_name':func_name}
-                    func = types.FunctionType(func_code,
-                                              {'clapack_func':func2},
-                                              func_name)
-                    func.module_name = m2_name
-                    func.__doc__ = func2.__doc__
-        func.prefix = required_prefix
-        func.dtype = dtype
-        funcs.append(func)
-    return tuple(funcs)
-
-
-
-_colmajor_func_template = '''\
-def %(func_name)s(*args,**kws):
-    if "rowmajor" not in kws:
-        kws["rowmajor"] = 0
-    return clapack_func(*args,**kws)
-func_code = %(func_name)s.func_code
-'''
+    return _get_funcs(names, arrays, dtype,
+                      "LAPACK", _flapack, _clapack,
+                      "flapack", "clapack", _lapack_alias)

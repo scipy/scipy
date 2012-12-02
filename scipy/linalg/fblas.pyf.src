@@ -7,7 +7,7 @@
 !
 
 
-python module fblas
+python module _fblas
     interface
 
        include 'fblas_l1.pyf.src'
@@ -15,4 +15,4 @@ python module fblas
        include 'fblas_l3.pyf.src'
 
     end interface
-end python module fblas
+end python module _fblas

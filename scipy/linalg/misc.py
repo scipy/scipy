@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.linalg import LinAlgError
-import fblas
+import blas
 
 __all__ = ['LinAlgError', 'norm']
 
@@ -13,7 +13,7 @@ def norm(a, ord=None):
     if ord in (None, 2) and (a.ndim == 1) and (a.dtype.char in 'fdFD'):
         # use blas for fast and stable euclidean norm
         func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
-        nrm2 = getattr(fblas, func_name)
+        nrm2 = getattr(blas, func_name)
         return nrm2(a)
     return np.linalg.norm(a, ord=ord)
 

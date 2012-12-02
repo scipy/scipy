@@ -48,7 +48,7 @@ def configuration(parent_package='',top_path=None):
 
     # Note: `depends` needs to include fblaswrap(_veclib) for both files to be
     # included by "python setup.py sdist"
-    config.add_extension('fblas',
+    config.add_extension('_fblas',
                          sources = sources,
                          depends = ['fblas_l?.pyf.src',
                                     join('src', 'fblaswrap_veclib_c.c'),
@@ -57,7 +57,7 @@ def configuration(parent_package='',top_path=None):
                          )
 
     # flapack:
-    config.add_extension('flapack',
+    config.add_extension('_flapack',
                          sources = ['flapack.pyf.src'],
                          depends = ['flapack_user.pyf.src'],
                          extra_info = lapack_opt
@@ -65,14 +65,14 @@ def configuration(parent_package='',top_path=None):
 
     if atlas_version is not None:
         # cblas:
-        config.add_extension('cblas',
+        config.add_extension('_cblas',
                              sources = ['cblas.pyf.src'],
                              depends = ['cblas.pyf.src', 'cblas_l1.pyf.src'],
                              extra_info = lapack_opt
                              )
 
         # clapack:
-        config.add_extension('clapack',
+        config.add_extension('_clapack',
                              sources = ['clapack.pyf.src'],
                              depends = ['clapack.pyf.src'],
                              extra_info = lapack_opt

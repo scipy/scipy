@@ -8,7 +8,11 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
 
 import numpy as np
 
-from scipy.linalg import flapack, clapack
+from scipy.linalg import _flapack as flapack
+try:
+    from scipy.linalg import _clapack as clapack
+except ImportError:
+    clapack = None
 from scipy.linalg.lapack import get_lapack_funcs
 
 REAL_DTYPES = [np.float32, np.float64]
