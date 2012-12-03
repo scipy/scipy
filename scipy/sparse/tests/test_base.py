@@ -1609,6 +1609,11 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
 
             assert_array_equal(result.todense(), expected.todense())
 
+        # Ticket 1604. 
+        A = lil_matrix((1,3), dtype=np.dtype('float64'))
+        B = array([0.1,0.1,0.1])
+        A[0,:] += B
+        assert_array_equal(A[0,:].toarray().squeeze(), B)
 
     def test_lil_slice_assignment(self):
         B = lil_matrix((4,3))

@@ -378,7 +378,7 @@ class _cs_matrix(_data_matrix):
 
         if num_matches == 0:
             # entry does not appear in the matrix
-            return 0
+            return self.dtype.type(0)
         elif num_matches == 1:
             return self.data[start:end][indxs[0]]
         else:
