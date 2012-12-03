@@ -1,6 +1,6 @@
-/*							round.c
+/*                                                     round.c
  *
- *	Round double to nearest or even integer valued double
+ *     Round double to nearest or even integer valued double
  *
  *
  *
@@ -28,38 +28,36 @@
  */
 
 /*
-Cephes Math Library Release 2.1:  January, 1989
-Copyright 1984, 1987, 1989 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
-*/
+ * Cephes Math Library Release 2.1:  January, 1989
+ * Copyright 1984, 1987, 1989 by Stephen L. Moshier
+ * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
 
 #include "mconf.h"
 
 double round(double x)
 {
-double y, r;
+    double y, r;
 
-/* Largest integer <= x */
-y = floor(x);
+    /* Largest integer <= x */
+    y = floor(x);
 
-/* Fractional part */
-r = x - y;
+    /* Fractional part */
+    r = x - y;
 
-/* Round up to nearest. */
-if( r > 0.5 )
+    /* Round up to nearest. */
+    if (r > 0.5)
 	goto rndup;
 
-/* Round to even */
-if( r == 0.5 )
-	{
-	r = y - 2.0 * floor( 0.5 * y );
-	if( r == 1.0 )
-		{
-rndup:
-		y += 1.0;
-		}
+    /* Round to even */
+    if (r == 0.5) {
+	r = y - 2.0 * floor(0.5 * y);
+	if (r == 1.0) {
+	  rndup:
+	    y += 1.0;
 	}
+    }
 
-/* Else round down. */
-return(y);
+    /* Else round down. */
+    return (y);
 }

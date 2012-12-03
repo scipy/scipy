@@ -1,6 +1,6 @@
-/*							pdtr.c
+/*                                                     pdtr.c
  *
- *	Poisson distribution
+ *     Poisson distribution
  *
  *
  *
@@ -121,57 +121,54 @@
  */
 
 /*
-Cephes Math Library Release 2.3:  March, 1995
-Copyright 1984, 1987, 1995 by Stephen L. Moshier
-*/
+ * Cephes Math Library Release 2.3:  March, 1995
+ * Copyright 1984, 1987, 1995 by Stephen L. Moshier
+ */
 
 #include "mconf.h"
 
-double pdtrc( k, m )
+double pdtrc(k, m)
 int k;
 double m;
 {
-double v;
+    double v;
 
-if( (k < 0) || (m <= 0.0) )
-	{
-	mtherr( "pdtrc", DOMAIN );
-	return( NPY_NAN );
-	}
-v = k+1;
-return( igam( v, m ) );
+    if ((k < 0) || (m <= 0.0)) {
+	mtherr("pdtrc", DOMAIN);
+	return (NPY_NAN);
+    }
+    v = k + 1;
+    return (igam(v, m));
 }
 
 
 
-double pdtr( k, m )
+double pdtr(k, m)
 int k;
 double m;
 {
-double v;
+    double v;
 
-if( (k < 0) || (m <= 0.0) )
-	{
-	mtherr( "pdtr", DOMAIN );
-	return( NPY_NAN );
-	}
-v = k+1;
-return( igamc( v, m ) );
+    if ((k < 0) || (m <= 0.0)) {
+	mtherr("pdtr", DOMAIN);
+	return (NPY_NAN);
+    }
+    v = k + 1;
+    return (igamc(v, m));
 }
 
 
-double pdtri( k, y )
+double pdtri(k, y)
 int k;
 double y;
 {
-double v;
+    double v;
 
-if( (k < 0) || (y < 0.0) || (y >= 1.0) )
-	{
-	mtherr( "pdtri", DOMAIN );
-	return( NPY_NAN );
-	}
-v = k+1;
-v = igami( v, y );
-return( v );
+    if ((k < 0) || (y < 0.0) || (y >= 1.0)) {
+	mtherr("pdtri", DOMAIN);
+	return (NPY_NAN);
+    }
+    v = k + 1;
+    v = igami(v, y);
+    return (v);
 }

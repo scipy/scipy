@@ -137,6 +137,8 @@ class TestCephes(TestCase):
         assert_equal(cephes.betaln(1,1),0.0)
     def test_betaincinv(self):
         assert_equal(cephes.betaincinv(1,1,1),1.0)
+    def test_beta_inf(self):
+        assert_(np.isinf(special.beta(-1, 2)))
 
     def test_btdtr(self):
         assert_equal(cephes.btdtr(1,1,1),1.0)
@@ -1235,6 +1237,10 @@ class TestGamma(TestCase):
         rgam = special.rgamma(8)
         rlgam = 1/special.gamma(8)
         assert_almost_equal(rgam,rlgam,8)
+
+    def test_infinity(self):
+        assert_(np.isinf(special.gamma(-1)))
+        assert_equal(special.rgamma(-1), 0)
 
 class TestHankel(TestCase):
 
