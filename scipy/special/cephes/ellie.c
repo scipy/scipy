@@ -1,6 +1,6 @@
-/*							ellie.c
+/*                                                     ellie.c
  *
- *	Incomplete elliptic integral of the second kind
+ *     Incomplete elliptic integral of the second kind
  *
  *
  *
@@ -46,91 +46,85 @@
 
 
 /*
-Cephes Math Library Release 2.0:  April, 1987
-Copyright 1984, 1987, 1993 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
-*/
+ * Cephes Math Library Release 2.0:  April, 1987
+ * Copyright 1984, 1987, 1993 by Stephen L. Moshier
+ * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
 
-/*	Incomplete elliptic integral of second kind	*/
+/*     Incomplete elliptic integral of second kind     */
 
 #include "mconf.h"
 
-extern double PI, PIO2, MACHEP;
+extern double MACHEP;
 
-double ellie( phi, m )
+double ellie(phi, m)
 double phi, m;
 {
-double a, b, c, e, temp;
-double lphi, t, E;
-int d, mod, npio2, sign;
+    double a, b, c, e, temp;
+    double lphi, t, E;
+    int d, mod, npio2, sign;
 
-if( m == 0.0 )
-	return( phi );
-lphi = phi;
-npio2 = floor( lphi/PIO2 );
-if( npio2 & 1 )
+    if (m == 0.0)
+	return (phi);
+    lphi = phi;
+    npio2 = floor(lphi / NPY_PI_2);
+    if (npio2 & 1)
 	npio2 += 1;
-lphi = lphi - npio2 * PIO2;
-if( lphi < 0.0 )
-	{
+    lphi = lphi - npio2 * NPY_PI_2;
+    if (lphi < 0.0) {
 	lphi = -lphi;
 	sign = -1;
-	}
-else
-	{
+    }
+    else {
 	sign = 1;
-	}
-a = 1.0 - m;
-E = ellpe( m );
-if( a == 0.0 )
-	{
-	temp = sin( lphi );
+    }
+    a = 1.0 - m;
+    E = ellpe(m);
+    if (a == 0.0) {
+	temp = sin(lphi);
 	goto done;
-	}
-t = tan( lphi );
-b = sqrt(a);
-/* Thanks to Brian Fitzgerald <fitzgb@mml0.meche.rpi.edu>
-   for pointing out an instability near odd multiples of pi/2.  */
-if( fabs(t) > 10.0 )
-	{
+    }
+    t = tan(lphi);
+    b = sqrt(a);
+    /* Thanks to Brian Fitzgerald <fitzgb@mml0.meche.rpi.edu>
+     * for pointing out an instability near odd multiples of pi/2.  */
+    if (fabs(t) > 10.0) {
 	/* Transform the amplitude */
-	e = 1.0/(b*t);
+	e = 1.0 / (b * t);
 	/* ... but avoid multiple recursions.  */
-	if( fabs(e) < 10.0 )
-		{
-		e = atan(e);
-		temp = E + m * sin( lphi ) * sin( e ) - ellie( e, m );
-		goto done;
-		}
+	if (fabs(e) < 10.0) {
+	    e = atan(e);
+	    temp = E + m * sin(lphi) * sin(e) - ellie(e, m);
+	    goto done;
 	}
-c = sqrt(m);
-a = 1.0;
-d = 1;
-e = 0.0;
-mod = 0;
+    }
+    c = sqrt(m);
+    a = 1.0;
+    d = 1;
+    e = 0.0;
+    mod = 0;
 
-while( fabs(c/a) > MACHEP )
-	{
-	temp = b/a;
-	lphi = lphi + atan(t*temp) + mod * PI;
-	mod = (lphi + PIO2)/PI;
-	t = t * ( 1.0 + temp )/( 1.0 - temp * t * t );
-	c = ( a - b )/2.0;
-	temp = sqrt( a * b );
-	a = ( a + b )/2.0;
+    while (fabs(c / a) > MACHEP) {
+	temp = b / a;
+	lphi = lphi + atan(t * temp) + mod * NPY_PI;
+	mod = (lphi + NPY_PI_2) / NPY_PI;
+	t = t * (1.0 + temp) / (1.0 - temp * t * t);
+	c = (a - b) / 2.0;
+	temp = sqrt(a * b);
+	a = (a + b) / 2.0;
 	b = temp;
 	d += d;
 	e += c * sin(lphi);
-	}
+    }
 
-temp = E / ellpk( 1.0 - m ); 
-temp *= (atan(t) + mod * PI)/(d * a);
-temp += e;
+    temp = E / ellpk(1.0 - m);
+    temp *= (atan(t) + mod * NPY_PI) / (d * a);
+    temp += e;
 
-done:
+  done:
 
-if( sign < 0 )
+    if (sign < 0)
 	temp = -temp;
-temp += npio2 * E;
-return( temp );
+    temp += npio2 * E;
+    return (temp);
 }

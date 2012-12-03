@@ -1,6 +1,6 @@
-/*							mconf.h
+/*                                                     mconf.h
  *
- *	Common include file for math routines
+ *     Common include file for math routines
  *
  *
  *
@@ -58,9 +58,9 @@
  */
 
 /*
-Cephes Math Library Release 2.3:  June, 1995
-Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
-*/
+ * Cephes Math Library Release 2.3:  June, 1995
+ * Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
+ */
 
 #ifndef CEPHES_MCONF_H
 #define CEPHES_MCONF_H
@@ -80,7 +80,7 @@ Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 #define UNDERFLOW	4	/* underflow range error */
 #define TLOSS		5	/* total loss of precision */
 #define PLOSS		6	/* partial loss of precision */
-#define TOOMANY         7       /* too many iterations */
+#define TOOMANY         7	/* too many iterations */
 #define MAXITER        500
 
 #define EDOM		33
@@ -88,12 +88,12 @@ Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 
 /* Long double complex numeral.  */
 /*
-typedef struct
-	{
-	long double r;
-	long double i;
-	} cmplxl;
-*/
+ * typedef struct
+ * {
+ * long double r;
+ * long double i;
+ * } cmplxl;
+ */
 
 /* Type of computer arithmetic */
 
@@ -138,7 +138,7 @@ typedef struct
 #define MINUSZERO 1
 
 /* Define 1 for ANSI C atan2() function
-   See atan.c and clog.c. */
+ * See atan.c and clog.c. */
 #define ANSIC 1
 
 /* Variable for error reporting.  See mtherr.c.  */
@@ -146,4 +146,4 @@ extern int merror;
 
 #define gamma Gamma
 
-#endif /* CEPHES_MCONF_H */
+#endif				/* CEPHES_MCONF_H */
