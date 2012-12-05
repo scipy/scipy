@@ -138,21 +138,23 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
         x = fftpack.rfft(x, nfft)
         outshape = list(x.shape)
         if nfft % 2 == 0: # even
-            outshape[-1] = nfft/2
+            outshape[-1] = nfft/2+1
             Pxx = np.empty(outshape, x.dtype)
             Pxx[..., (0,-1)] = x[..., (0,-1)]**2
-            Pxx[..., 1:] = x[..., 1:-1:2]**2 + x[..., 2::2]**2
+            Pxx[..., 1:-1] = x[..., 1:-1:2]**2 + x[..., 2::2]**2
         else: # odd
             outshape[-1] = (nfft+1)/2
             Pxx = np.empty(outshape, x.dtype)
             Pxx[..., 0] = x[..., 0]**2
             Pxx[..., 1:] = x[..., 1::2]**2 + x[..., 2::2]**2
-        scale *= 2
-        f = np.arange(Pxx.shape[-1])*(0.5*fs/Pxx.shape[-1])
+        Pxx[..., 1:-1] *= 2*scale
+        Pxx[..., (0,-1)] *= scale
+        f = np.arange(Pxx.shape[-1])*(fs/nfft)
     elif (np.iscomplexobj(x) and sides == 'default') or sides == 'twosided':
         x = fftpack.fft(x, nfft)
         Pxx = (x * x.conj()).real
         f = fftpack.fftfreq(nfft, 1.0/fs)
+        Pxx *= scale
     elif np.iscomplexobj(x) and sides == 'onesided':
         raise ValueError('Cannot compute onsided spectrum of complex data')
     else: 
@@ -160,7 +162,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
 
     if axis != -1:
         Pxx = np.rollaxis(Pxx, len(Pxx.shape)-1, axis)
-    return f, Pxx*scale
+    return f, Pxx
 
 
 def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default', scaling='density', axis=-1):
@@ -290,7 +292,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
         x = np.rollaxis(x, axis, len(x.shape))
 
     if type(window) is str or type(window) is tuple:
-        win = get_window(window, nfft)
+        win = get_window(window, nfft, False)
     else:
         win = np.asarray(window)
         if len(win.shape) != 1:
@@ -305,7 +307,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
         raise  ValueError('Unknown scaling "{0}".'.format(scaling))
 
     if noverlap is None:
-        noverlap = nfft / 2
+        noverlap = nfft // 2
 
     step = nfft - noverlap
     indices = np.arange(0, x.shape[-1]-nfft+1, step)
@@ -313,17 +315,17 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
     if np.isrealobj(x) and (sides == 'default' or sides == 'onesided'):
         outshape = list(x.shape)
         if nfft % 2 == 0: # even
-            outshape[-1] = nfft/2
+            outshape[-1] = nfft/2+1
             Pxx = np.empty(outshape, x.dtype)
             for k, ind in enumerate(indices):
                 xft = fftpack.rfft(x[..., ind:ind+nfft]*win, nfft)
                 if k == 0:
                     Pxx[..., (0,-1)] = xft[..., (0,-1)]**2
-                    Pxx[..., 1:] = xft[..., 1:-1:2]**2 + xft[..., 2::2]**2
+                    Pxx[..., 1:-1] = xft[..., 1:-1:2]**2 + xft[..., 2::2]**2
                 else:
                     Pxx *= k/(k+1.0)
                     Pxx[..., (0,-1)] += xft[..., (0,-1)]**2 / (k+1.0)
-                    Pxx[..., 1:] += (xft[..., 1:-1:2]**2 + xft[..., 2::2]**2) / (k+1.0)
+                    Pxx[..., 1:-1] += (xft[..., 1:-1:2]**2 + xft[..., 2::2]**2) / (k+1.0)
         else: # odd
             outshape[-1] = (nfft+1)/2
             Pxx = np.empty(outshape, x.dtype)
@@ -331,13 +333,14 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
                 xft = fftpack.rfft(x[..., ind:ind+nfft]*win, nfft)
                 if k == 0:
                     Pxx[..., 0] = xft[..., 0]**2
-                    Pxx[..., 1:] = xft[..., 1::]**2 + xft[..., 2::2]**2
+                    Pxx[..., 1:] = xft[..., 1::2]**2 + xft[..., 2::2]**2
                 else:
                     Pxx *= k/(k+1.0)
                     Pxx[..., 0] += xft[..., 0]**2 / (k+1)
                     Pxx[..., 1:] += (xft[..., 1::2]**2 + xft[..., 2::2]**2) / (k+1.0)
-        scale *= 2
-        f = np.arange(Pxx.shape[-1])*(0.5*fs/Pxx.shape[-1])
+        Pxx[..., 1:-1] *= 2*scale
+        Pxx[..., (0,-1)] *= scale
+        f = np.arange(Pxx.shape[-1])*(fs/nfft)
     elif (np.iscomplexobj(x) and sides == 'default') or sides == 'twosided':
         for k, ind in enumerate(indices):
             xft = fftpack.fft(x[..., ind:ind+nfft]*win, nfft)
@@ -346,7 +349,8 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
             else:
                 Pxx *= k/(k+1.0)
                 Pxx += (xft * xft.conj()).real / (k+1.0)
-            f = fftpack.fftfreq(nfft, 1.0/fs)
+        Pxx *= scale
+        f = fftpack.fftfreq(nfft, 1.0/fs)
     elif np.iscomplexobj(x) and sides == 'onesided':
         raise ValueError('Cannot compute onsided spectrum of complex data')
     else: 
@@ -354,5 +358,5 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
 
     if axis != -1:
         Pxx = np.rollaxis(Pxx, len(Pxx.shape)-1, axis)
-    return f, Pxx*scale
+    return f, Pxx
 
