@@ -235,7 +235,7 @@ cdef class _Qhull:
 
         Returns
         -------
-        vertices : array of int, shape (nfacets, ndim+1)
+        facets : array of int, shape (nfacets, ndim+1)
             Indices of coordinates of vertices forming the simplical facets
         neighbors : array of int, shape (nfacets, ndim)
             Indices of neighboring facets.  The kth neighbor is opposite
@@ -250,7 +250,7 @@ cdef class _Qhull:
         cdef facetT* neighbor
         cdef vertexT *vertex
         cdef int i, j, point
-        cdef np.ndarray[np.npy_int, ndim=2] vertices
+        cdef np.ndarray[np.npy_int, ndim=2] facets
         cdef np.ndarray[np.npy_int, ndim=2] neighbors
         cdef np.ndarray[np.double_t, ndim=2] equations
         cdef np.ndarray[np.npy_int, ndim=1] id_map
@@ -284,7 +284,7 @@ cdef class _Qhull:
                 facet = facet.next
 
         # Allocate output
-        vertices = np.zeros((j, facet_ndim), dtype=np.intc)
+        facets = np.zeros((j, facet_ndim), dtype=np.intc)
         neighbors = np.zeros((j, facet_ndim), dtype=np.intc)
         equations = np.zeros((j, facet_ndim+1), dtype=np.double)
 
@@ -303,7 +303,7 @@ cdef class _Qhull:
                 for i in xrange(facet_ndim):
                     vertex = <vertexT*>facet.vertices.e[i].p
                     point = qh_pointid(vertex.point)
-                    vertices[j, i] = point
+                    facets[j, i] = point
 
                 # Save neighbor info
                 for i in xrange(facet_ndim):
@@ -318,7 +318,7 @@ cdef class _Qhull:
                 j += 1
                 facet = facet.next
 
-        return vertices, neighbors, equations
+        return facets, neighbors, equations
 
 
 #------------------------------------------------------------------------------
@@ -328,7 +328,7 @@ cdef class _Qhull:
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
-                                np.ndarray[np.npy_int, ndim=2] vertices,
+                                np.ndarray[np.npy_int, ndim=2] simplices,
                                 double eps):
     """
     Compute barycentric affine coordinate transformations for given
@@ -381,7 +381,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
 
     nan = np.nan
     ndim = points.shape[1]
-    nsimplex = vertices.shape[0]
+    nsimplex = simplices.shape[0]
 
     T = np.zeros((ndim, ndim), dtype=np.double)
     Tinvs = np.zeros((nsimplex, ndim+1, ndim), dtype=np.double)
@@ -393,9 +393,9 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     with nogil:
         for isimplex in xrange(nsimplex):
             for i in xrange(ndim):
-                Tinvs[isimplex,ndim,i] = points[vertices[isimplex,ndim],i]
+                Tinvs[isimplex,ndim,i] = points[simplices[isimplex,ndim],i]
                 for j in xrange(ndim):
-                    T[i,j] = (points[vertices[isimplex,j],i]
+                    T[i,j] = (points[simplices[isimplex,j],i]
                               - Tinvs[isimplex,ndim,i])
                 Tinvs[isimplex,i,i] = 1
 
@@ -553,7 +553,7 @@ cdef void _RidgeIter2D_init(RidgeIter2D_t *it, DelaunayInfo_t *d,
     if it.triangle != -1:
         # find some edge connected to this vertex
         for k in xrange(3):
-            ivertex = it.info.vertices[it.triangle*3 + k]
+            ivertex = it.info.simplices[it.triangle*3 + k]
             if ivertex != vertex:
                 it.vertex2 = ivertex
                 it.index = k
@@ -588,7 +588,7 @@ cdef void _RidgeIter2D_next(RidgeIter2D_t *it) nogil:
         # restart to opposite direction
         it.triangle = it.start_triangle
         for k in xrange(3):
-            ivertex = it.info.vertices[it.triangle*3 + k]
+            ivertex = it.info.simplices[it.triangle*3 + k]
             if ivertex != it.vertex and k != it.start_index:
                 it.index = k
                 it.vertex2 = ivertex
@@ -611,7 +611,7 @@ cdef void _RidgeIter2D_next(RidgeIter2D_t *it) nogil:
     # restart to the opposite direction
     if itri == -1:
         for k in xrange(3):
-            ivertex = it.info.vertices[it.triangle*3 + k]
+            ivertex = it.info.simplices[it.triangle*3 + k]
             if ivertex != it.vertex and k != it.index:
                 it.index = k
                 it.vertex2 = ivertex
@@ -636,7 +636,7 @@ cdef void _RidgeIter2D_next(RidgeIter2D_t *it) nogil:
     # O = it.vertex
     #
     for k in xrange(3):
-        ivertex = it.info.vertices[itri*3 + k]
+        ivertex = it.info.simplices[itri*3 + k]
         if it.info.neighbors[itri*3 + k] != it.triangle and \
                ivertex != it.vertex:
             it.index = k
@@ -885,7 +885,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
         >>> points = np.array([(0,0), (1, 1), (1, 0), (0.99189033, 0.37674127),
         ...                    (0.99440079, 0.45182168)], dtype=np.double)
         >>> tri = qhull.delaunay(points)
-        >>> tri.vertices
+        >>> tri.simplices
         array([[4, 1, 0],
                [4, 2, 1],
                [3, 2, 0],
@@ -895,7 +895,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
         >>> dist
         array([[-0.12231439,  0.00184863,  0.01049659, -0.04714842,
                 0.00425905]])
-        >>> tri.vertices[dist.argmax()]
+        >>> tri.simplices[dist.argmax()]
         array([3, 2, 0]
 
         Now, the maximally positive-distant simplex is [3, 2, 0], although
@@ -981,8 +981,8 @@ class Delaunay(object):
     ----------
     points : ndarray of double, shape (npoints, ndim)
         Points in the triangulation.
-    vertices : ndarray of ints, shape (nsimplex, ndim+1)
-        Indices of vertices forming simplices in the triangulation.
+    simplices : ndarray of ints, shape (nsimplex, ndim+1)
+        Indices of the points forming the simplices in the triangulation.
     neighbors : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of neighbor simplices for each simplex.
         The kth neighbor is opposite to the kth vertex.
@@ -1052,15 +1052,18 @@ class Delaunay(object):
             self.paraboloid_scale, self.paraboloid_shift = \
                                    qhull.get_paraboloid_shift_scale()
 
-            self.vertices, self.neighbors, self.equations = \
+            self.simplices, self.neighbors, self.equations = \
                            qhull.get_simplex_facet_array(is_delaunay=1)
         finally:
             qhull.close()
 
 
-        self.nsimplex = self.vertices.shape[0]
+        self.nsimplex = self.simplices.shape[0]
         self._transform = None
         self._vertex_to_simplex = None
+
+        # Backwards compatibility (Scipy < 0.12.0)
+        self.vertices = self.simplices
 
     @property
     def transform(self):
@@ -1082,7 +1085,7 @@ class Delaunay(object):
         """
         if self._transform is None:
             self._transform = _get_barycentric_transforms(self.points,
-                                                          self.vertices,
+                                                          self.simplices,
                                                           np.finfo(float).eps)
         return self._transform
 
@@ -1095,7 +1098,7 @@ class Delaunay(object):
         :type: ndarray of int, shape (npoints,)
         """
         cdef int isimplex, k, ivertex, nsimplex, ndim
-        cdef np.ndarray[np.npy_int, ndim=2] vertices
+        cdef np.ndarray[np.npy_int, ndim=2] simplices
         cdef np.ndarray[np.npy_int, ndim=1] arr
 
         if self._vertex_to_simplex is None:
@@ -1103,7 +1106,7 @@ class Delaunay(object):
             self._vertex_to_simplex.fill(-1)
 
             arr = self._vertex_to_simplex
-            vertices = self.vertices
+            simplices = self.simplices
 
             nsimplex = self.nsimplex
             ndim = self.ndim
@@ -1111,7 +1114,7 @@ class Delaunay(object):
             with nogil:
                 for isimplex in xrange(nsimplex):
                     for k in xrange(ndim+1):
-                        ivertex = vertices[isimplex, k]
+                        ivertex = simplices[isimplex, k]
                         if arr[ivertex] == -1:
                             arr[ivertex] = isimplex
 
@@ -1140,10 +1143,10 @@ class Delaunay(object):
         cdef object out
         cdef np.ndarray[np.npy_int, ndim=2] arr
         cdef np.ndarray[np.npy_int, ndim=2] neighbors
-        cdef np.ndarray[np.npy_int, ndim=2] vertices
+        cdef np.ndarray[np.npy_int, ndim=2] simplices
 
         neighbors = self.neighbors
-        vertices = self.vertices
+        simplices = self.simplices
         ndim = self.ndim
         nsimplex = self.nsimplex
 
@@ -1157,9 +1160,9 @@ class Delaunay(object):
                 if neighbors[isimplex,k] == -1:
                     for j in xrange(ndim+1):
                         if j < k:
-                            arr[m,j] = vertices[isimplex,j]
+                            arr[m,j] = simplices[isimplex,j]
                         elif j > k:
-                            arr[m,j-1] = vertices[isimplex,j]
+                            arr[m,j-1] = simplices[isimplex,j]
                     m += 1
 
                     if m >= msize:
@@ -1336,7 +1339,7 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
     cdef np.ndarray[np.double_t, ndim=3] transform
     cdef np.ndarray[np.npy_int, ndim=1] vertex_to_simplex
     cdef np.ndarray[np.double_t, ndim=2] points = obj.points
-    cdef np.ndarray[np.npy_int, ndim=2] vertices = obj.vertices
+    cdef np.ndarray[np.npy_int, ndim=2] simplices = obj.simplices
     cdef np.ndarray[np.npy_int, ndim=2] neighbors = obj.neighbors
     cdef np.ndarray[np.double_t, ndim=2] equations = obj.equations
     cdef np.ndarray[np.double_t, ndim=1] min_bound = obj.min_bound
@@ -1344,9 +1347,9 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
 
     info.ndim = points.shape[1]
     info.npoints = points.shape[0]
-    info.nsimplex = vertices.shape[0]
+    info.nsimplex = simplices.shape[0]
     info.points = <double*>points.data
-    info.vertices = <int*>vertices.data
+    info.simplices = <int*>simplices.data
     info.neighbors = <int*>neighbors.data
     info.equations = <double*>equations.data
     info.paraboloid_scale = obj.paraboloid_scale
@@ -1386,13 +1389,13 @@ class ConvexHull(object):
     ----------
     points : ndarray of double, shape (npoints, ndim)
         Points in the convex hull.
-    vertices : ndarray of ints, shape (nsimplex, ndim+1)
-        Indices of vertices forming simplices in the convex hull.
-    neighbors : ndarray of ints, shape (nsimplex, ndim+1)
-        Indices of neighbor simplices for each simplex.
+    facets : ndarray of ints, shape (nfacet, ndim)
+        Indices of points forming the facets (simplices) of the convex hull.
+    neighbors : ndarray of ints, shape (nfacet, ndim)
+        Indices of neighbor facets for each facet.
         The kth neighbor is opposite to the kth vertex.
         -1 denotes no neighbor.
-    equations : ndarray of double, shape (nsimplex, ndim+2)
+    equations : ndarray of double, shape (nfacet, ndim+2)
         [normal, offset] forming the hyperplane equation of the facet
         (see [Qhull]_ documentation for more).
 
@@ -1426,9 +1429,9 @@ class ConvexHull(object):
         try:
             qhull.triangulate()
 
-            self.vertices, self.neighbors, self.equations = \
+            self.facets, self.neighbors, self.equations = \
                            qhull.get_simplex_facet_array(is_delaunay=0)
         finally:
             qhull.close()
 
-        self.nsimplex = self.vertices.shape[0]
+        self.nfacet = self.facets.shape[0]
