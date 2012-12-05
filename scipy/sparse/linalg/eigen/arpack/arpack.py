@@ -1561,7 +1561,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     return params.extract(return_eigenvectors)
 
 
-def svds(A, k=6, ncv=None, tol=0):
+def svds(A, k=6, ncv=None, tol=0, maxiter=None):
     """Compute the largest k singular values/vectors for a sparse matrix.
 
     Parameters
@@ -1570,12 +1570,14 @@ def svds(A, k=6, ncv=None, tol=0):
         Array to compute the SVD on
     k : int, optional
         Number of singular values and vectors to compute.
-    ncv : integer
+    ncv : integer, optional
         The number of Lanczos vectors generated
         ncv must be greater than k+1 and smaller than n;
         it is recommended that ncv > 2*k
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
+    maxiter: integer, optional
+        Maximum number of iterations.
 
     Notes
     -----
@@ -1608,7 +1610,7 @@ def svds(A, k=6, ncv=None, tol=0):
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=X.dtype,
                           shape=(X.shape[1], X.shape[1]))
 
-    eigvals, eigvec = eigensolver(XH_X, k=k, tol=tol ** 2)
+    eigvals, eigvec = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter)
     s = np.sqrt(eigvals)
 
     if n > m:
