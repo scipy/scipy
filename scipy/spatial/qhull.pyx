@@ -16,7 +16,7 @@ cimport numpy as np
 cimport cython
 cimport qhull
 
-__all__ = ['Delaunay', 'ConvexHull', 'tsearch']
+__all__ = ['Delaunay', 'ConvexHull', 'Voronoi', 'tsearch']
 
 #------------------------------------------------------------------------------
 # Qhull interface
@@ -40,6 +40,8 @@ cdef extern from "qhull/src/qset.h":
         int maxsize
         setelemT e[1]
 
+    int qh_setsize(setT *set)
+
 cdef extern from "qhull/src/qhull.h":
     ctypedef double realT
     ctypedef double coordT
@@ -56,16 +58,24 @@ cdef extern from "qhull/src/qhull.h":
         unsigned id
         setT *vertices
         setT *neighbors
+        setT *ridges
+        setT *coplanarset
         flagT simplicial
         flagT flipped
         flagT upperdelaunay
+        unsigned visitid
 
     ctypedef struct vertexT:
         vertexT *next
         vertexT *previous
         unsigned int id, visitid
         pointT *point
-        setT *neighbours
+        setT *neighbors
+
+    ctypedef struct ridgeT:
+        setT *vertices
+        facetT *top
+        facetT *bottom
 
     ctypedef struct qhT:
         boolT DELAUNAY
@@ -79,7 +89,10 @@ cdef extern from "qhull/src/qhull.h":
         char *qhull_command
         facetT *facet_list
         facetT *facet_tail
+        vertexT *vertex_list
+        vertexT *vertex_tail
         int num_facets
+        int num_points
         unsigned int facet_id
         pointT *first_point
         pointT *input_points
@@ -89,7 +102,6 @@ cdef extern from "qhull/src/qhull.h":
         realT max_outside
         realT MINoutside
         realT DISTround
-
 
     extern qhT qh_qh
     extern int qh_PRINToff
@@ -109,15 +121,34 @@ cdef extern from "qhull/src/qhull.h":
     void qh_checkpolygon() nogil
     void qh_findgood_all() nogil
     void qh_appendprint(int format) nogil
+    setT *qh_pointvertex() nogil
     realT *qh_readpoints(int* num, int *dim, boolT* ismalloc) nogil
     int qh_new_qhull(int dim, int numpoints, realT *points,
                      boolT ismalloc, char* qhull_cmd, void *outfile,
                      void *errfile) nogil
     int qh_pointid(pointT *point) nogil
+    vertexT *qh_nearvertex(facetT *facet, pointT *point, double *dist)
 
-# Qhull is not threadsafe: needs locking
-_qhull_lock = threading.Lock()
+cdef extern from "qhull/src/io.h":
+    ctypedef enum qh_RIDGE:
+        qh_RIDGEall
+        qh_RIDGEinner
+        qh_RIDGEouter
 
+    ctypedef void printvridgeT(void *fp, vertexT *vertex, vertexT *vertexA,
+                               setT *centers, boolT unbounded)
+    int qh_eachvoronoi_all(void *fp, void* printvridge,
+                           boolT isUpper, qh_RIDGE innerouter,
+                           boolT inorder) nogil
+
+    void qh_order_vertexneighbors(vertexT *vertex) nogil
+    int qh_compare_facetvisit(void *p1, void *p2) nogil
+
+cdef extern from "qhull/src/geom.h":
+    pointT *qh_facetcenter(setT *vertices)
+
+from libc.string cimport memcpy
+from libc.stdlib cimport qsort
 
 #------------------------------------------------------------------------------
 # LAPACK interface
@@ -142,6 +173,13 @@ _qhull_lock = threading.Lock()
 @cython.final
 cdef class _Qhull:
     cdef int _active, numpoints, ndim
+    cdef np.ndarray _ridge_points
+
+    cdef list _ridge_vertices
+    cdef object _ridge_error
+    cdef int _nridges
+
+    cdef np.ndarray _ridge_equations
 
     @cython.final
     def __init__(self,
@@ -289,8 +327,6 @@ cdef class _Qhull:
         equations = np.zeros((j, facet_ndim+1), dtype=np.double)
 
         # Retrieve facet information
-        error_non_simplical = 0
-
         with nogil:
             facet = qh_qh.facet_list
             j = 0
@@ -319,6 +355,168 @@ cdef class _Qhull:
                 facet = facet.next
 
         return facets, neighbors, equations
+
+    @cython.final
+    @cython.boundscheck(False)
+    @cython.cdivision(True)
+    def get_voronoi_diagram(_Qhull self, get_equations=True):
+        """
+        Return the voronoi diagram currently in Qhull.
+
+        Returns
+        -------
+        voronoi_vertices : array of double, shape (nvoronoi_vertices, ndim)
+            Coordinates of the Voronoi vertices
+
+        ridge_points : array of double, shape (nridges, 2)
+            Voronoi ridges, as indices to the points array.
+
+        ridge_vertices : list of lists, shape (nridges, *)
+            Voronoi vertices for each Voronoi ridge, as indices to
+            the Voronoi vertices array.
+            Infinity is indicated by index ``-1``.
+
+        regions : list of lists, shape (nregion, *)
+            Voronoi vertices of all regions.
+
+        point_region : array of int, shape (npoint,)
+            Index of the Voronoi region for each input point.
+
+        """
+        cdef int i, j, k
+        cdef vertexT *vertex
+        cdef facetT *neighbor
+        cdef facetT *facet
+
+        cdef object tmp
+        cdef np.ndarray[np.double_t, ndim=2] voronoi_vertices
+        cdef np.ndarray[np.intp_t, ndim=1] point_region
+        cdef int nvoronoi_vertices
+        cdef pointT infty_point[NPY_MAXDIMS+1]
+        cdef pointT *point
+        cdef double dist
+
+        cdef list regions
+        cdef list cur_region
+
+        # -- Grab Voronoi ridges
+        self._nridges = 0
+        self._ridge_error = None
+        self._ridge_points = np.empty((10, 2), np.intc)
+        self._ridge_vertices = []
+
+        qh_eachvoronoi_all(<void*>self, &_visit_voronoi, 0, qh_RIDGEall, 1)
+
+        self._ridge_points = self._ridge_points[:self._nridges]
+
+        if self._ridge_error is not None:
+            raise self._ridge_error
+
+        # -- Grab Voronoi regions
+        regions = []
+
+        point_region = np.empty((self.numpoints,), np.intp)
+        point_region.fill(-1)
+
+        vertex = qh_qh.vertex_list
+        while vertex and vertex.next:
+            qh_order_vertexneighbors_nd(self.ndim+1, vertex)
+
+            i = qh_pointid(vertex.point)
+            point_region[i] = len(regions)
+
+            cur_region = []
+            for k in xrange(qh_setsize(vertex.neighbors)):
+                neighbor = <facetT*>vertex.neighbors.e[k].p
+                i = neighbor.visitid
+                if i == 0:
+                    i = -neighbor.id
+                else:
+                    i -= 1
+                cur_region.append(int(i))
+            regions.append(cur_region)
+
+            vertex = vertex.next
+
+        # -- Grab Voronoi vertices and point-to-region map
+        nvoronoi_vertices = 0
+        voronoi_vertices = np.empty((10, self.ndim), np.double)
+
+        facet = qh_qh.facet_list
+        while facet and facet.next:
+            if facet.visitid > 0:
+                # finite Voronoi vertex
+
+                if facet.center == NULL:
+                    facet.center = qh_facetcenter(facet.vertices)
+
+                nvoronoi_vertices = max(facet.visitid, nvoronoi_vertices)
+                if nvoronoi_vertices >= voronoi_vertices.shape[0]:
+                    tmp = voronoi_vertices
+                    voronoi_vertices = None
+                    tmp.resize(2*nvoronoi_vertices + 1, self.ndim)
+                    voronoi_vertices = tmp
+
+                for k in range(self.ndim):
+                    voronoi_vertices[facet.visitid-1, k] = facet.center[k]
+
+                if facet.coplanarset:
+                    for k in range(qh_setsize(facet.coplanarset)):
+                        point = <pointT*>facet.coplanarset.e[k].p
+                        vertex = qh_nearvertex(facet, point, &dist)
+                        i = qh_pointid(point)
+                        j = qh_pointid(vertex.point)
+                        print i, j
+                        point_region[i] = point_region[j]
+
+            facet = facet.next
+
+        voronoi_vertices = voronoi_vertices[:nvoronoi_vertices]
+
+        return voronoi_vertices, self._ridge_points, self._ridge_vertices, \
+               regions, point_region
+
+cdef int _visit_voronoi(void *ptr, vertexT *vertex, vertexT *vertexA,
+                        setT *centers, boolT unbounded):
+    cdef _Qhull qh = <_Qhull>ptr
+    cdef int point_1, point_2, ix
+    cdef list cur_vertices
+
+    if qh._ridge_error is not None:
+        return 1
+
+    if qh._nridges >= qh._ridge_points.shape[0]:
+        try:
+            qh._ridge_points.resize(2*qh._nridges + 1, 2)
+        except Exception, e:
+            qh._ridge_error = e
+            return 1
+
+    # Record which points the ridge is between
+    point_1 = qh_pointid(vertex.point)
+    point_2 = qh_pointid(vertexA.point)
+
+    p = <int*>qh._ridge_points.data
+    p[2*qh._nridges + 0] = point_1
+    p[2*qh._nridges + 1] = point_2
+
+    # Record which voronoi vertices constitute the ridge
+    cur_vertices = []
+    for i in xrange(qh_setsize(centers)):
+        ix = (<facetT*>centers.e[i].p).visitid - 1
+        cur_vertices.append(ix)
+    qh._ridge_vertices.append(cur_vertices)
+
+    qh._nridges += 1
+
+    return 0
+
+cdef void qh_order_vertexneighbors_nd(int nd, vertexT *vertex):
+    if nd == 3:
+        qh_order_vertexneighbors(vertex)
+    elif nd >= 4:
+        qsort(<facetT**>&vertex.neighbors.e[0].p, qh_setsize(vertex.neighbors),
+              sizeof(facetT*), qh_compare_facetvisit)
 
 
 #------------------------------------------------------------------------------
@@ -976,6 +1174,10 @@ class Delaunay(object):
     ----------
     points : ndarray of floats, shape (npoints, ndim)
         Coordinates of points to triangulate
+    qhull_options : str, optional
+        Additional options to pass to Qhull. See Qhull manual
+        for details. (Default: "Qx" for ndim > 4 and "" otherwise)
+        Option "Qt" is always enabled.
 
     Attributes
     ----------
@@ -1015,12 +1217,16 @@ class Delaunay(object):
         .. note::
 
            Computing convex hulls via the Delaunay triangulation is
-           inefficient and subject to more numerical instability.  Use
-           `ConvexHull` instead.
+           inefficient and subject to increased numerical instability.
+           Use `ConvexHull` instead.
 
     Notes
     -----
     The tesselation is computed using the Qhull libary [Qhull]_.
+
+    Note that unless you pass in the Qhull option "QJ", Qhull does
+    not guarantee that each input point appears as a vertex in the
+    Delaunay triangulation.
 
     .. versionadded:: 0.9
 
@@ -1384,18 +1590,22 @@ class ConvexHull(object):
     ----------
     points : ndarray of floats, shape (npoints, ndim)
         Coordinates of points to construct a convex hull from
+    qhull_options : str, optional
+        Additional options to pass to Qhull. See Qhull manual
+        for details. (Default: "Qx" for ndim > 4 and "" otherwise)
+        Option "Qt" is always enabled.
 
     Attributes
     ----------
     points : ndarray of double, shape (npoints, ndim)
         Points in the convex hull.
-    facets : ndarray of ints, shape (nfacet, ndim)
-        Indices of points forming the facets (simplices) of the convex hull.
+    simplices : ndarray of ints, shape (nfacet, ndim)
+        Indices of points forming the simplical facets of the convex hull.
     neighbors : ndarray of ints, shape (nfacet, ndim)
         Indices of neighbor facets for each facet.
         The kth neighbor is opposite to the kth vertex.
         -1 denotes no neighbor.
-    equations : ndarray of double, shape (nfacet, ndim+2)
+    equations : ndarray of double, shape (nfacet, ndim+1)
         [normal, offset] forming the hyperplane equation of the facet
         (see [Qhull]_ documentation for more).
 
@@ -1429,9 +1639,87 @@ class ConvexHull(object):
         try:
             qhull.triangulate()
 
-            self.facets, self.neighbors, self.equations = \
+            self.simplices, self.neighbors, self.equations = \
                            qhull.get_simplex_facet_array(is_delaunay=0)
         finally:
             qhull.close()
 
-        self.nfacet = self.facets.shape[0]
+        self.nsimplex = self.simplices.shape[0]
+
+
+#------------------------------------------------------------------------------
+# Voronoi diagrams
+#------------------------------------------------------------------------------
+
+class Voronoi(object):
+    """
+    Voronoi(points)
+
+    Voronoi diagrams in N dimensions.
+
+    Parameters
+    ----------
+    points : ndarray of floats, shape (npoints, ndim)
+        Coordinates of points to construct a convex hull from
+    qhull_options : str, optional
+        Additional options to pass to Qhull. See Qhull manual
+        for details. (Default: "Qbb Qx" for ndim > 4 and "Qbb" otherwise)
+
+    Attributes
+    ----------
+    points : ndarray of double, shape (npoints, ndim)
+        Points used for constructing the Voronoi diagram.
+    vertices : ndarray of double, shape (nvertices, ndim)
+        Coordinates of the Voronoi vertices.
+    ridge_points : ndarray of ints, shape (nridges, 2)
+        Indices of the points between which each Voronoi ridge lies.
+    ridge_vertices : list of list of ints, shape (nridges, *)
+        Indices of the Voronoi vertices forming each Voronoi ridge.
+    regions : list of list of ints, shape (nregions, *)
+        Indices of the Voronoi vertices forming each Voronoi region.
+        Negative indices indicate vertices outside the Voronoi diagram.
+    point_region : list of ints, shape (npoints)
+        Index of the Voronoi region for each input point.
+
+    Notes
+    -----
+    The Voronoi diagram is computed using the Qhull libary [Qhull]_.
+
+    .. versionadded:: 0.12.0
+
+    References
+    ----------
+    .. [Qhull] http://www.qhull.org/
+
+    """
+    def __init__(self, points, qhull_options=None):
+        points = np.ascontiguousarray(points).astype(np.double)
+
+        if qhull_options is not None:
+            qhull_options = "Qbb"
+            if points.shape[1] >= 5:
+                qhull_options += " Qx"
+
+        self.ndim = points.shape[1]
+        self.npoints = points.shape[0]
+        self.points = points
+        self.min_bound = self.points.min(axis=0)
+        self.max_bound = self.points.max(axis=0)
+
+        # Run qhull
+        qhull = _Qhull("v", points, qhull_options, "Qc")
+        try:
+            self.vertices, self.ridge_points, self.ridge_vertices, \
+                           self.regions, self.point_region = \
+                           qhull.get_voronoi_diagram()
+        finally:
+            qhull.close()
+
+        self._ridge_dict = None
+
+    @property
+    def ridge_dict(self):
+        if self._ridge_dict is None:
+            self._ridge_dict = dict(zip(map(tuple, self.ridge_points.tolist()),
+                                        self.ridge_vertices))
+        return self._ridge_dict
