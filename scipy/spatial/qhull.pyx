@@ -16,7 +16,7 @@ cimport numpy as np
 cimport cython
 cimport qhull
 
-__all__ = ['Delaunay', 'tsearch']
+__all__ = ['Delaunay', 'ConvexHull', 'tsearch']
 
 #------------------------------------------------------------------------------
 # Qhull interface
@@ -133,159 +133,192 @@ cdef extern from "qhull_blas.h":
 
 
 #------------------------------------------------------------------------------
-# Delaunay triangulation using Qhull
+# Qhull wrapper
 #------------------------------------------------------------------------------
 
-def _construct_delaunay(np.ndarray[np.double_t, ndim=2] points):
-    """
-    Perform Delaunay triangulation of the given set of points.
+# Qhull is not threadsafe: needs locking
+_qhull_lock = threading.Lock()
 
-    """
+@cython.final
+cdef class _Qhull:
+    cdef int _active, numpoints, ndim
 
-    # Run qhull with the options
-    #
-    # - d: perform delaunay triangulation
-    # - Qbb: scale last coordinate for Delaunay
-    # - Qz: reduces Delaunay precision errors for cospherical sites
-    # - Qt: output only simplical facets (can produce degenerate 0-area ones)
-    #
-    cdef char *options = "qhull d Qz Qbb Qt"
-    cdef int curlong, totlong
-    cdef int dim
-    cdef int numpoints
-    cdef int exitcode
+    @cython.final
+    def __init__(self,
+                 str mode_option,
+                 np.ndarray[np.double_t, ndim=2] points,
+                 bytes options=None,
+                 bytes required_options=None):
+        global _qhull_instance
+        cdef char *options_c
+        cdef int exitcode
 
-    points = np.ascontiguousarray(points)
-    numpoints = points.shape[0]
-    dim = points.shape[1]
+        self._active = 0
 
-    if numpoints <= 0:
-        raise ValueError("No points to triangulate")
+        points = np.ascontiguousarray(points)
 
-    if dim < 2:
-        raise ValueError("Need at least 2-D data to triangulate")
+        self.numpoints = points.shape[0]
+        self.ndim = points.shape[1]
 
-    _qhull_lock.acquire()
-    try:
-        qh_qh.NOerrexit = 1
+        if self.numpoints <= 0:
+            raise ValueError("No points given")
+        if self.ndim < 2:
+            raise ValueError("Need at least 2-D data")
+
+        # Process options
+        if options is None:
+            options = b""
+        if required_options is None:
+            required_options = b""
+        options += b" " + required_options
+        options = b"qhull %s %s " % (mode_option,
+                                     b" ".join(set(options.split())))
+
+        _qhull_lock.acquire()
+        self._active = 1
+
+        options_c = <char*>options
         with nogil:
-            exitcode = qh_new_qhull(dim, numpoints, <realT*>points.data, 0,
-                                    options, NULL, stderr)
+            exitcode = qh_new_qhull(self.ndim, self.numpoints,
+                                    <realT*>points.data, 0,
+                                    options_c, NULL, stderr)
 
-        try:
-            if exitcode != 0:
-                raise RuntimeError("Qhull error")
+        if exitcode != 0:
+            _qhull_lock.release()
+            raise RuntimeError("Qhull error")
 
-            with nogil:
-                qh_triangulate() # get rid of non-simplical facets
+    @cython.final
+    def close(self):
+        cdef int curlong, totlong
+        if self._active:
+            try:
+                with nogil:
+                    qh_freeqhull(0)
+                    qh_memfreeshort(&curlong, &totlong)
+                if curlong != 0 or totlong != 0:
+                    raise RuntimeError(
+                        "qhull: did not free %d bytes (%d pieces)" %
+                        (totlong, curlong))
+            finally:
+                _qhull_lock.release()
 
-            if qh_qh.SCALElast:
-                paraboloid_scale = qh_qh.last_newhigh / (
-                    qh_qh.last_high - qh_qh.last_low)
-                paraboloid_shift = - qh_qh.last_low * paraboloid_scale
-            else:
-                paraboloid_scale = 1.0
-                paraboloid_shift = 0.0
+    @cython.final
+    def __del__(self):
+        self.close()
 
-            vertices, neighbors, equations = \
-                      _qhull_get_facet_array(dim, numpoints)
+    @cython.final
+    def get_paraboloid_shift_scale(self):
+        cdef double paraboloid_scale
+        cdef double paraboloid_shift
 
-            return (vertices, neighbors, equations,
-                    paraboloid_scale, paraboloid_shift)
-        finally:
-            with nogil:
-                qh_freeqhull(0)
-                qh_memfreeshort(&curlong, &totlong)
-            if curlong != 0 or totlong != 0:
-                raise RuntimeError("qhull: did not free %d bytes (%d pieces)" %
-                                   (totlong, curlong))
-    finally:
-        _qhull_lock.release()
+        if qh_qh.SCALElast:
+            paraboloid_scale = qh_qh.last_newhigh / (
+                qh_qh.last_high - qh_qh.last_low)
+            paraboloid_shift = - qh_qh.last_low * paraboloid_scale
+        else:
+            paraboloid_scale = 1.0
+            paraboloid_shift = 0.0
 
+        return paraboloid_scale, paraboloid_shift
 
-@cython.boundscheck(False)
-@cython.cdivision(True)
-def _qhull_get_facet_array(int ndim, int numpoints):
-    """
-    Return array of simplical facets currently in Qhull.
+    @cython.final
+    def triangulate(self):
+        with nogil:
+            qh_triangulate() # get rid of non-simplical facets
 
-    Returns
-    -------
-    vertices : array of int, shape (nfacets, ndim+1)
-        Indices of coordinates of vertices forming the simplical facets
-    neighbors : array of int, shape (nfacets, ndim)
-        Indices of neighboring facets.  The kth neighbor is opposite
-        the kth vertex, and the first neighbor is the horizon facet
-        for the first vertex.
+    @cython.final
+    @cython.boundscheck(False)
+    @cython.cdivision(True)
+    def get_simplex_facet_array(self, int is_delaunay=0):
+        """
+        Return array of simplical facets currently in Qhull.
 
-        Facets extending to infinity are denoted with index -1.
+        Returns
+        -------
+        vertices : array of int, shape (nfacets, ndim+1)
+            Indices of coordinates of vertices forming the simplical facets
+        neighbors : array of int, shape (nfacets, ndim)
+            Indices of neighboring facets.  The kth neighbor is opposite
+            the kth vertex, and the first neighbor is the horizon facet
+            for the first vertex.
 
-    """
+            Facets extending to infinity are denoted with index -1.
+        equations : array of double, shape (nfacets, ndim+2)
 
-    cdef facetT* facet
-    cdef facetT* neighbor
-    cdef vertexT *vertex
-    cdef int i, j, point, error_non_simplical
-    cdef np.ndarray[np.npy_int, ndim=2] vertices
-    cdef np.ndarray[np.npy_int, ndim=2] neighbors
-    cdef np.ndarray[np.double_t, ndim=2] equations
-    cdef np.ndarray[np.npy_int, ndim=1] id_map
+        """
+        cdef facetT* facet
+        cdef facetT* neighbor
+        cdef vertexT *vertex
+        cdef int i, j, point
+        cdef np.ndarray[np.npy_int, ndim=2] vertices
+        cdef np.ndarray[np.npy_int, ndim=2] neighbors
+        cdef np.ndarray[np.double_t, ndim=2] equations
+        cdef np.ndarray[np.npy_int, ndim=1] id_map
+        cdef int facet_ndim
+        cdef int numpoints
 
-    id_map = np.empty((qh_qh.facet_id,), dtype=np.intc)
-    id_map.fill(-1)
+        assert self._active
 
-    # Compute facet indices
-    facet = qh_qh.facet_list
-    j = 0
-    while facet and facet.next:
-        if facet.simplicial and not facet.upperdelaunay:
-            id_map[facet.id] = j
-            j += 1
-        facet = facet.next
+        facet_ndim = self.ndim
+        numpoints = self.numpoints
 
-    # Allocate output
-    vertices = np.zeros((j, ndim+1), dtype=np.intc)
-    neighbors = np.zeros((j, ndim+1), dtype=np.intc)
-    equations = np.zeros((j, ndim+2), dtype=np.double)
+        if is_delaunay:
+            facet_ndim += 1
 
-    # Retrieve facet information
-    error_non_simplical = 0
+        id_map = np.empty((qh_qh.facet_id,), dtype=np.intc)
+        id_map.fill(-1)
 
-    with nogil:
-        facet = qh_qh.facet_list
-        j = 0
-        while facet and facet.next:
-            if not facet.simplicial:
-                error_non_simplical = 1
-                break
+        # Compute facet indices
+        with nogil:
+            facet = qh_qh.facet_list
+            j = 0
+            while facet and facet.next:
+                if not facet.simplicial:
+                    with gil:
+                        raise ValueError("non-simplical facet encountered")
 
-            if facet.upperdelaunay:
+                if not is_delaunay or not facet.upperdelaunay:
+                    id_map[facet.id] = j
+                    j += 1
+
                 facet = facet.next
-                continue
 
-            # Save vertex info
-            for i in xrange(ndim+1):
-                vertex = <vertexT*>facet.vertices.e[i].p
-                point = qh_pointid(vertex.point)
-                vertices[j, i] = point
+        # Allocate output
+        vertices = np.zeros((j, facet_ndim), dtype=np.intc)
+        neighbors = np.zeros((j, facet_ndim), dtype=np.intc)
+        equations = np.zeros((j, facet_ndim+1), dtype=np.double)
 
-            # Save neighbor info
-            for i in xrange(ndim+1):
-                neighbor = <facetT*>facet.neighbors.e[i].p
-                neighbors[j,i] = id_map[neighbor.id]
+        # Retrieve facet information
+        error_non_simplical = 0
 
-            # Save simplex equation info
-            for i in xrange(ndim+1):
-                equations[j,i] = facet.normal[i]
-            equations[j,ndim+1] = facet.offset
+        with nogil:
+            facet = qh_qh.facet_list
+            j = 0
+            while facet and facet.next:
+                if is_delaunay and facet.upperdelaunay:
+                    facet = facet.next
+                    continue
 
-            j += 1
-            facet = facet.next
+                # Save vertex info
+                for i in xrange(facet_ndim):
+                    vertex = <vertexT*>facet.vertices.e[i].p
+                    point = qh_pointid(vertex.point)
+                    vertices[j, i] = point
 
-    if error_non_simplical:
-        raise ValueError("non-simplical facet encountered")
+                # Save neighbor info
+                for i in xrange(facet_ndim):
+                    neighbor = <facetT*>facet.neighbors.e[i].p
+                    neighbors[j,i] = id_map[neighbor.id]
 
-    return vertices, neighbors, equations
+                # Save simplex equation info
+                for i in xrange(facet_ndim):
+                    equations[j,i] = facet.normal[i]
+                equations[j,facet_ndim] = facet.offset
+
+                j += 1
+                facet = facet.next
+
+        return vertices, neighbors, equations
 
 
 #------------------------------------------------------------------------------
@@ -979,6 +1012,12 @@ class Delaunay(object):
         the (N-1)-dimensional facets that form the convex hull
         of the triangulation.
 
+        .. note::
+
+           Computing convex hulls via the Delaunay triangulation is
+           inefficient and subject to more numerical instability.  Use
+           `ConvexHull` instead.
+
     Notes
     -----
     The tesselation is computed using the Qhull libary [Qhull]_.
@@ -990,22 +1029,36 @@ class Delaunay(object):
     .. [Qhull] http://www.qhull.org/
 
     """
-    def __init__(self, points):
+
+    def __init__(self, points, qhull_options=None):
         points = np.ascontiguousarray(points).astype(np.double)
-        vertices, neighbors, equations, paraboloid_scale, paraboloid_shift = \
-                  _construct_delaunay(points)
+
+        if qhull_options is None:
+            qhull_options = "Qbb Qc Qz"
+            if points.shape[1] >= 5:
+                qhull_options += " Qx"
 
         self.ndim = points.shape[1]
         self.npoints = points.shape[0]
-        self.nsimplex = vertices.shape[0]
         self.points = points
-        self.vertices = vertices
-        self.neighbors = neighbors
-        self.equations = equations
-        self.paraboloid_scale = paraboloid_scale
-        self.paraboloid_shift = paraboloid_shift
         self.min_bound = self.points.min(axis=0)
         self.max_bound = self.points.max(axis=0)
+
+        # Run qhull
+        qhull = _Qhull("d", points, qhull_options, required_options=b"Qt")
+        try:
+            qhull.triangulate()
+
+            self.paraboloid_scale, self.paraboloid_shift = \
+                                   qhull.get_paraboloid_shift_scale()
+
+            self.vertices, self.neighbors, self.equations = \
+                           qhull.get_simplex_facet_array(is_delaunay=1)
+        finally:
+            qhull.close()
+
+
+        self.nsimplex = self.vertices.shape[0]
         self._transform = None
         self._vertex_to_simplex = None
 
@@ -1075,6 +1128,12 @@ class Delaunay(object):
         The array contains the indices of the points
         belonging to the (N-1)-dimensional facets that form the convex
         hull of the triangulation.
+
+        .. note::
+
+           Computing convex hulls via the Delaunay triangulation is
+           inefficient and subject to increased numerical instability.
+           Use `ConvexHull` instead.
 
         """
         cdef int isimplex, k, j, ndim, nsimplex, m, msize
@@ -1248,7 +1307,7 @@ class Delaunay(object):
         z[...,-1] += self.paraboloid_shift
         return z
 
-# Alias familiar from other environments
+
 def tsearch(tri, xi):
     """
     tsearch(tri, xi)
@@ -1306,3 +1365,70 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
     info.max_bound = <double*>max_bound.data
 
     return 0
+
+
+#------------------------------------------------------------------------------
+# Convex hulls
+#------------------------------------------------------------------------------
+
+class ConvexHull(object):
+    """
+    ConvexHull(points)
+
+    Convex hulls in N dimensions.
+
+    Parameters
+    ----------
+    points : ndarray of floats, shape (npoints, ndim)
+        Coordinates of points to construct a convex hull from
+
+    Attributes
+    ----------
+    points : ndarray of double, shape (npoints, ndim)
+        Points in the convex hull.
+    vertices : ndarray of ints, shape (nsimplex, ndim+1)
+        Indices of vertices forming simplices in the convex hull.
+    neighbors : ndarray of ints, shape (nsimplex, ndim+1)
+        Indices of neighbor simplices for each simplex.
+        The kth neighbor is opposite to the kth vertex.
+        -1 denotes no neighbor.
+    equations : ndarray of double, shape (nsimplex, ndim+2)
+        [normal, offset] forming the hyperplane equation of the facet
+        (see [Qhull]_ documentation for more).
+
+    Notes
+    -----
+    The convex hull is computed using the Qhull libary [Qhull]_.
+
+    .. versionadded:: 0.12.0
+
+    References
+    ----------
+    .. [Qhull] http://www.qhull.org/
+
+    """
+    def __init__(self, points, qhull_options=None):
+        points = np.ascontiguousarray(points).astype(np.double)
+
+        if qhull_options is not None:
+            qhull_options = ""
+            if points.shape[1] >= 5:
+                qhull_options += "Qx"
+
+        self.ndim = points.shape[1]
+        self.npoints = points.shape[0]
+        self.points = points
+        self.min_bound = self.points.min(axis=0)
+        self.max_bound = self.points.max(axis=0)
+
+        # Run qhull
+        qhull = _Qhull("i", points, qhull_options, required_options=b"Qt")
+        try:
+            qhull.triangulate()
+
+            self.vertices, self.neighbors, self.equations = \
+                           qhull.get_simplex_facet_array(is_delaunay=0)
+        finally:
+            qhull.close()
+
+        self.nsimplex = self.vertices.shape[0]
