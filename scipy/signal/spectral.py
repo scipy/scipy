@@ -292,7 +292,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
         x = np.rollaxis(x, axis, len(x.shape))
 
     if type(window) is str or type(window) is tuple:
-        win = get_window(window, nfft, False)
+        win = get_window(window, nfft)
     else:
         win = np.asarray(window)
         if len(win.shape) != 1:
