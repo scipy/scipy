@@ -53,12 +53,15 @@
                                 (PyErr_Format(PyExc_TypeError, \
                                               "expected index value, got %.200s", Py_TYPE(o)->tp_name), \
                                  (PyObject*)0))
-  #define PyIndex_Check(o)     (PyNumber_Check(o) && !PyFloat_Check(o) && !PyComplex_Check(o))
+  #define __Pyx_PyIndex_Check(o) (PyNumber_Check(o) && !PyFloat_Check(o) && \
+                                  !PyComplex_Check(o))
+  #define PyIndex_Check __Pyx_PyIndex_Check
   #define PyErr_WarnEx(category, message, stacklevel) PyErr_Warn(category, message)
   #define __PYX_BUILD_PY_SSIZE_T "i"
 #else
   #define __PYX_BUILD_PY_SSIZE_T "n"
   #define CYTHON_FORMAT_SSIZE_T "z"
+  #define __Pyx_PyIndex_Check PyIndex_Check
 #endif
 #if PY_VERSION_HEX < 0x02060000
   #define Py_REFCNT(ob) (((PyObject*)(ob))->ob_refcnt)
@@ -508,7 +511,7 @@ struct __pyx_t_5scipy_7spatial_5qhull_DelaunayInfo_t {
   int npoints;
   int nsimplex;
   double *points;
-  int *vertices;
+  int *simplices;
   int *neighbors;
   double *equations;
   double *transform;
@@ -1080,7 +1083,7 @@ static char __pyx_k_35[] = "Format string allocated too short.";
 static char __pyx_k_37[] = "\nSimple N-D interpolation\n\n.. versionadded:: 0.9\n\n";
 static char __pyx_k_38[] = "scipy.spatial.qhull";
 static char __pyx_k_39[] = "*";
-static char __pyx_k_42[] = "/home/rgommers/Code/scipy/scipy/interpolate/interpnd.pyx";
+static char __pyx_k_42[] = "/home/pauli/prj/scipy/scipy/scipy/interpolate/interpnd.pyx";
 static char __pyx_k_43[] = "scipy.interpolate.interpnd";
 static char __pyx_k_51[] = "\n    Common routines for interpolators.\n\n    .. versionadded:: 0.9\n\n    ";
 static char __pyx_k_60[] = "\n    LinearNDInterpolator(points, values)\n\n    Piecewise linear interpolant in N dimensions.\n\n    .. versionadded:: 0.9\n\n    Parameters\n    ----------\n    points : ndarray of floats, shape (npoints, ndims)\n        Data point coordinates.\n    values : ndarray of float or complex, shape (npoints, ...)\n        Data values.\n    fill_value : float, optional\n        Value used to fill in for requested points outside of the\n        convex hull of the input points.  If not provided, then\n        the default is ``nan``.\n\n    Notes\n    -----\n    The interpolant is constructed by triangulating the input data\n    with Qhull [1]_, and on each triangle performing linear\n    barycentric interpolation.\n\n    References\n    ----------\n    .. [1] http://www.qhull.org/\n\n    ";
@@ -1165,10 +1168,10 @@ static char __pyx_k____init__[] = "__init__";
 static char __pyx_k____main__[] = "__main__";
 static char __pyx_k____test__[] = "__test__";
 static char __pyx_k__isimplex[] = "isimplex";
-static char __pyx_k__vertices[] = "vertices";
 static char __pyx_k__warnings[] = "warnings";
 static char __pyx_k__enumerate[] = "enumerate";
 static char __pyx_k__eps_broad[] = "eps_broad";
+static char __pyx_k__simplices[] = "simplices";
 static char __pyx_k__transpose[] = "transpose";
 static char __pyx_k__ValueError[] = "ValueError";
 static char __pyx_k__asanyarray[] = "asanyarray";
@@ -1278,13 +1281,13 @@ static PyObject *__pyx_n_s__ret;
 static PyObject *__pyx_n_s__rg;
 static PyObject *__pyx_n_s__self;
 static PyObject *__pyx_n_s__shape;
+static PyObject *__pyx_n_s__simplices;
 static PyObject *__pyx_n_s__start;
 static PyObject *__pyx_n_s__tol;
 static PyObject *__pyx_n_s__transpose;
 static PyObject *__pyx_n_s__tri;
 static PyObject *__pyx_n_s__values;
 static PyObject *__pyx_n_s__values_shape;
-static PyObject *__pyx_n_s__vertices;
 static PyObject *__pyx_n_s__w;
 static PyObject *__pyx_n_s__warn;
 static PyObject *__pyx_n_s__warnings;
@@ -3023,7 +3026,7 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
   PyArrayObject *__pyx_v_values = 0;
   PyArrayObject *__pyx_v_out = 0;
   CYTHON_UNUSED PyArrayObject *__pyx_v_points = 0;
-  PyArrayObject *__pyx_v_vertices = 0;
+  PyArrayObject *__pyx_v_simplices = 0;
   double __pyx_v_c[NPY_MAXDIMS];
   double __pyx_v_fill_value;
   int __pyx_v_i;
@@ -3041,10 +3044,10 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
   __Pyx_Buffer __pyx_pybuffer_out;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_points;
   __Pyx_Buffer __pyx_pybuffer_points;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_simplices;
+  __Pyx_Buffer __pyx_pybuffer_simplices;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_values;
   __Pyx_Buffer __pyx_pybuffer_values;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_vertices;
-  __Pyx_Buffer __pyx_pybuffer_vertices;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_xi;
   __Pyx_Buffer __pyx_pybuffer_xi;
   PyObject *__pyx_r = NULL;
@@ -3095,10 +3098,10 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
   __pyx_pybuffer_points.refcount = 0;
   __pyx_pybuffernd_points.data = NULL;
   __pyx_pybuffernd_points.rcbuffer = &__pyx_pybuffer_points;
-  __pyx_pybuffer_vertices.pybuffer.buf = NULL;
-  __pyx_pybuffer_vertices.refcount = 0;
-  __pyx_pybuffernd_vertices.data = NULL;
-  __pyx_pybuffernd_vertices.rcbuffer = &__pyx_pybuffer_vertices;
+  __pyx_pybuffer_simplices.pybuffer.buf = NULL;
+  __pyx_pybuffer_simplices.refcount = 0;
+  __pyx_pybuffernd_simplices.data = NULL;
+  __pyx_pybuffernd_simplices.rcbuffer = &__pyx_pybuffer_simplices;
   __pyx_pybuffer_xi.pybuffer.buf = NULL;
   __pyx_pybuffer_xi.refcount = 0;
   __pyx_pybuffernd_xi.data = NULL;
@@ -3146,21 +3149,21 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
   
   __pyx_t_1 = PyObject_GetAttr(__pyx_v_self, __pyx_n_s__tri); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = PyObject_GetAttr(__pyx_t_1, __pyx_n_s__vertices); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyObject_GetAttr(__pyx_t_1, __pyx_n_s__simplices); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_5 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer, (PyObject*)__pyx_t_5, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
-      __pyx_v_vertices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf = NULL;
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer, (PyObject*)__pyx_t_5, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
+      __pyx_v_simplices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf = NULL;
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 199; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    } else {__pyx_pybuffernd_vertices.diminfo[0].strides = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_vertices.diminfo[0].shape = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_vertices.diminfo[1].strides = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_vertices.diminfo[1].shape = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.shape[1];
+    } else {__pyx_pybuffernd_simplices.diminfo[0].strides = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_simplices.diminfo[0].shape = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_simplices.diminfo[1].strides = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_simplices.diminfo[1].shape = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.shape[1];
     }
   }
   __pyx_t_5 = 0;
-  __pyx_v_vertices = ((PyArrayObject *)__pyx_t_4);
+  __pyx_v_simplices = ((PyArrayObject *)__pyx_t_4);
   __pyx_t_4 = 0;
 
   
@@ -3372,9 +3375,9 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
               
               __pyx_t_25 = __pyx_v_isimplex;
               __pyx_t_26 = __pyx_v_j;
-              if (__pyx_t_25 < 0) __pyx_t_25 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_26 < 0) __pyx_t_26 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_v_m = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_25, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_26, __pyx_pybuffernd_vertices.diminfo[1].strides));
+              if (__pyx_t_25 < 0) __pyx_t_25 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_26 < 0) __pyx_t_26 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_v_m = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_25, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_26, __pyx_pybuffernd_simplices.diminfo[1].strides));
 
               
               __pyx_t_27 = __pyx_v_m;
@@ -3416,8 +3419,8 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
     __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_out.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_points.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_values.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_xi.rcbuffer->pybuffer);
   __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
   __Pyx_AddTraceback("scipy.interpolate.interpnd.LinearNDInterpolator._evaluate_double", __pyx_clineno, __pyx_lineno, __pyx_filename);
@@ -3426,14 +3429,14 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
   __pyx_L0:;
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_out.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_points.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_values.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_xi.rcbuffer->pybuffer);
   __pyx_L2:;
   __Pyx_XDECREF((PyObject *)__pyx_v_values);
   __Pyx_XDECREF((PyObject *)__pyx_v_out);
   __Pyx_XDECREF((PyObject *)__pyx_v_points);
-  __Pyx_XDECREF((PyObject *)__pyx_v_vertices);
+  __Pyx_XDECREF((PyObject *)__pyx_v_simplices);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
@@ -3507,7 +3510,7 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
   PyArrayObject *__pyx_v_values = 0;
   PyArrayObject *__pyx_v_out = 0;
   CYTHON_UNUSED PyArrayObject *__pyx_v_points = 0;
-  PyArrayObject *__pyx_v_vertices = 0;
+  PyArrayObject *__pyx_v_simplices = 0;
   double __pyx_v_c[NPY_MAXDIMS];
   __pyx_t_double_complex __pyx_v_fill_value;
   int __pyx_v_i;
@@ -3525,10 +3528,10 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
   __Pyx_Buffer __pyx_pybuffer_out;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_points;
   __Pyx_Buffer __pyx_pybuffer_points;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_simplices;
+  __Pyx_Buffer __pyx_pybuffer_simplices;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_values;
   __Pyx_Buffer __pyx_pybuffer_values;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_vertices;
-  __Pyx_Buffer __pyx_pybuffer_vertices;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_xi;
   __Pyx_Buffer __pyx_pybuffer_xi;
   PyObject *__pyx_r = NULL;
@@ -3588,10 +3591,10 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
   __pyx_pybuffer_points.refcount = 0;
   __pyx_pybuffernd_points.data = NULL;
   __pyx_pybuffernd_points.rcbuffer = &__pyx_pybuffer_points;
-  __pyx_pybuffer_vertices.pybuffer.buf = NULL;
-  __pyx_pybuffer_vertices.refcount = 0;
-  __pyx_pybuffernd_vertices.data = NULL;
-  __pyx_pybuffernd_vertices.rcbuffer = &__pyx_pybuffer_vertices;
+  __pyx_pybuffer_simplices.pybuffer.buf = NULL;
+  __pyx_pybuffer_simplices.refcount = 0;
+  __pyx_pybuffernd_simplices.data = NULL;
+  __pyx_pybuffernd_simplices.rcbuffer = &__pyx_pybuffer_simplices;
   __pyx_pybuffer_xi.pybuffer.buf = NULL;
   __pyx_pybuffer_xi.refcount = 0;
   __pyx_pybuffernd_xi.data = NULL;
@@ -3639,21 +3642,21 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
   
   __pyx_t_1 = PyObject_GetAttr(__pyx_v_self, __pyx_n_s__tri); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 249; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = PyObject_GetAttr(__pyx_t_1, __pyx_n_s__vertices); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 249; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = PyObject_GetAttr(__pyx_t_1, __pyx_n_s__simplices); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 249; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 249; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_5 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer, (PyObject*)__pyx_t_5, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
-      __pyx_v_vertices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf = NULL;
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer, (PyObject*)__pyx_t_5, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
+      __pyx_v_simplices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf = NULL;
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 249; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    } else {__pyx_pybuffernd_vertices.diminfo[0].strides = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_vertices.diminfo[0].shape = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_vertices.diminfo[1].strides = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_vertices.diminfo[1].shape = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.shape[1];
+    } else {__pyx_pybuffernd_simplices.diminfo[0].strides = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_simplices.diminfo[0].shape = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_simplices.diminfo[1].strides = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_simplices.diminfo[1].shape = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.shape[1];
     }
   }
   __pyx_t_5 = 0;
-  __pyx_v_vertices = ((PyArrayObject *)__pyx_t_4);
+  __pyx_v_simplices = ((PyArrayObject *)__pyx_t_4);
   __pyx_t_4 = 0;
 
   
@@ -3826,18 +3829,20 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
               __pyx_v_k = __pyx_t_19;
 
               
+              __pyx_t_15 = __Pyx_CREAL(__pyx_v_fill_value);
               __pyx_t_20 = __pyx_v_i;
               __pyx_t_21 = __pyx_v_k;
               if (__pyx_t_20 < 0) __pyx_t_20 += __pyx_pybuffernd_out.diminfo[0].shape;
               if (__pyx_t_21 < 0) __pyx_t_21 += __pyx_pybuffernd_out.diminfo[1].shape;
-              (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_out.diminfo[1].strides)).real = __Pyx_CREAL(__pyx_v_fill_value);
+              (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_out.diminfo[1].strides)).real = __pyx_t_15;
 
               
+              __pyx_t_15 = __Pyx_CIMAG(__pyx_v_fill_value);
               __pyx_t_22 = __pyx_v_i;
               __pyx_t_23 = __pyx_v_k;
               if (__pyx_t_22 < 0) __pyx_t_22 += __pyx_pybuffernd_out.diminfo[0].shape;
               if (__pyx_t_23 < 0) __pyx_t_23 += __pyx_pybuffernd_out.diminfo[1].shape;
-              (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_23, __pyx_pybuffernd_out.diminfo[1].strides)).imag = __Pyx_CIMAG(__pyx_v_fill_value);
+              (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_23, __pyx_pybuffernd_out.diminfo[1].strides)).imag = __pyx_t_15;
             }
 
             
@@ -3879,9 +3884,9 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
               
               __pyx_t_30 = __pyx_v_isimplex;
               __pyx_t_31 = __pyx_v_j;
-              if (__pyx_t_30 < 0) __pyx_t_30 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_31 < 0) __pyx_t_31 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_v_m = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_30, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_31, __pyx_pybuffernd_vertices.diminfo[1].strides));
+              if (__pyx_t_30 < 0) __pyx_t_30 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_31 < 0) __pyx_t_31 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_v_m = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_30, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_31, __pyx_pybuffernd_simplices.diminfo[1].strides));
 
               
               __pyx_t_32 = __pyx_v_m;
@@ -3934,8 +3939,8 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
     __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_out.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_points.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_values.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_xi.rcbuffer->pybuffer);
   __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
   __Pyx_AddTraceback("scipy.interpolate.interpnd.LinearNDInterpolator._evaluate_complex", __pyx_clineno, __pyx_lineno, __pyx_filename);
@@ -3944,14 +3949,14 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_20LinearNDInterpolator_
   __pyx_L0:;
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_out.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_points.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_values.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_xi.rcbuffer->pybuffer);
   __pyx_L2:;
   __Pyx_XDECREF((PyObject *)__pyx_v_values);
   __Pyx_XDECREF((PyObject *)__pyx_v_out);
   __Pyx_XDECREF((PyObject *)__pyx_v_points);
-  __Pyx_XDECREF((PyObject *)__pyx_v_vertices);
+  __Pyx_XDECREF((PyObject *)__pyx_v_simplices);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
@@ -4815,22 +4820,22 @@ static double __pyx_f_5scipy_11interpolate_8interpnd__clough_tocher_2d_single_do
   int __pyx_t_2;
 
   
-  __pyx_v_e12x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 1)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 0)])))]));
+  __pyx_v_e12x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 1)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 0)])))]));
 
   
-  __pyx_v_e12y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 1)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 0)])))]));
+  __pyx_v_e12y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 1)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 0)])))]));
 
   
-  __pyx_v_e23x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 2)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 1)])))]));
+  __pyx_v_e23x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 2)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 1)])))]));
 
   
-  __pyx_v_e23y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 2)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 1)])))]));
+  __pyx_v_e23y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 2)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 1)])))]));
 
   
-  __pyx_v_e31x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 0)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 2)])))]));
+  __pyx_v_e31x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 0)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 2)])))]));
 
   
-  __pyx_v_e31y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 0)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 2)])))]));
+  __pyx_v_e31y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 0)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 2)])))]));
 
   
   __pyx_v_e14x = ((__pyx_v_e12x - __pyx_v_e31x) / 3.0);
@@ -4956,10 +4961,10 @@ static double __pyx_f_5scipy_11interpolate_8interpnd__clough_tocher_2d_single_do
     __pyx_L5:;
 
     
-    (__pyx_v_y[0]) = ((((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 0)])))]) + (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 1)])))])) + (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 2)])))])) / 3.0);
+    (__pyx_v_y[0]) = ((((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 0)])))]) + (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 1)])))])) + (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 2)])))])) / 3.0);
 
     
-    (__pyx_v_y[1]) = ((((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 0)])))]) + (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 1)])))])) + (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 2)])))])) / 3.0);
+    (__pyx_v_y[1]) = ((((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 0)])))]) + (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 1)])))])) + (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 2)])))])) / 3.0);
 
     
     __pyx_f_5scipy_7spatial_5qhull__barycentric_coordinates(2, (__pyx_v_d->transform + ((__pyx_v_isimplex * 2) * 3)), __pyx_v_y, __pyx_v_c);
@@ -5115,22 +5120,22 @@ static __pyx_t_double_complex __pyx_f_5scipy_11interpolate_8interpnd__clough_toc
   int __pyx_t_2;
 
   
-  __pyx_v_e12x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 1)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 0)])))]));
+  __pyx_v_e12x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 1)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 0)])))]));
 
   
-  __pyx_v_e12y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 1)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 0)])))]));
+  __pyx_v_e12y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 1)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 0)])))]));
 
   
-  __pyx_v_e23x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 2)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 1)])))]));
+  __pyx_v_e23x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 2)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 1)])))]));
 
   
-  __pyx_v_e23y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 2)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 1)])))]));
+  __pyx_v_e23y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 2)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 1)])))]));
 
   
-  __pyx_v_e31x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 0)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 2)])))]));
+  __pyx_v_e31x = ((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 0)])))]) - (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 2)])))]));
 
   
-  __pyx_v_e31y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 0)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_isimplex) + 2)])))]));
+  __pyx_v_e31y = ((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 0)])))]) - (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_isimplex) + 2)])))]));
 
   
   __pyx_v_e14x = ((__pyx_v_e12x - __pyx_v_e31x) / 3.0);
@@ -5256,10 +5261,10 @@ static __pyx_t_double_complex __pyx_f_5scipy_11interpolate_8interpnd__clough_toc
     __pyx_L5:;
 
     
-    (__pyx_v_y[0]) = ((((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 0)])))]) + (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 1)])))])) + (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 2)])))])) / 3.0);
+    (__pyx_v_y[0]) = ((((__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 0)])))]) + (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 1)])))])) + (__pyx_v_d->points[(0 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 2)])))])) / 3.0);
 
     
-    (__pyx_v_y[1]) = ((((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 0)])))]) + (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 1)])))])) + (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->vertices[((3 * __pyx_v_itri) + 2)])))])) / 3.0);
+    (__pyx_v_y[1]) = ((((__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 0)])))]) + (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 1)])))])) + (__pyx_v_d->points[(1 + (2 * (__pyx_v_d->simplices[((3 * __pyx_v_itri) + 2)])))])) / 3.0);
 
     
     __pyx_f_5scipy_7spatial_5qhull__barycentric_coordinates(2, (__pyx_v_d->transform + ((__pyx_v_isimplex * 2) * 3)), __pyx_v_y, __pyx_v_c);
@@ -5668,7 +5673,7 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   PyArrayObject *__pyx_v_grad = 0;
   PyArrayObject *__pyx_v_out = 0;
   CYTHON_UNUSED PyArrayObject *__pyx_v_points = 0;
-  PyArrayObject *__pyx_v_vertices = 0;
+  PyArrayObject *__pyx_v_simplices = 0;
   double __pyx_v_c[NPY_MAXDIMS];
   double __pyx_v_f[(NPY_MAXDIMS + 1)];
   double __pyx_v_df[((2 * NPY_MAXDIMS) + 2)];
@@ -5690,10 +5695,10 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   __Pyx_Buffer __pyx_pybuffer_out;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_points;
   __Pyx_Buffer __pyx_pybuffer_points;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_simplices;
+  __Pyx_Buffer __pyx_pybuffer_simplices;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_values;
   __Pyx_Buffer __pyx_pybuffer_values;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_vertices;
-  __Pyx_Buffer __pyx_pybuffer_vertices;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_xi;
   __Pyx_Buffer __pyx_pybuffer_xi;
   PyObject *__pyx_r = NULL;
@@ -5756,10 +5761,10 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   __pyx_pybuffer_points.refcount = 0;
   __pyx_pybuffernd_points.data = NULL;
   __pyx_pybuffernd_points.rcbuffer = &__pyx_pybuffer_points;
-  __pyx_pybuffer_vertices.pybuffer.buf = NULL;
-  __pyx_pybuffer_vertices.refcount = 0;
-  __pyx_pybuffernd_vertices.data = NULL;
-  __pyx_pybuffernd_vertices.rcbuffer = &__pyx_pybuffer_vertices;
+  __pyx_pybuffer_simplices.pybuffer.buf = NULL;
+  __pyx_pybuffer_simplices.refcount = 0;
+  __pyx_pybuffernd_simplices.data = NULL;
+  __pyx_pybuffernd_simplices.rcbuffer = &__pyx_pybuffer_simplices;
   __pyx_pybuffer_xi.pybuffer.buf = NULL;
   __pyx_pybuffer_xi.refcount = 0;
   __pyx_pybuffernd_xi.data = NULL;
@@ -5824,21 +5829,21 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   
   __pyx_t_1 = PyObject_GetAttr(__pyx_v_self, __pyx_n_s__tri); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1062; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = PyObject_GetAttr(__pyx_t_1, __pyx_n_s__vertices); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1062; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = PyObject_GetAttr(__pyx_t_1, __pyx_n_s__simplices); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1062; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1062; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
-      __pyx_v_vertices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf = NULL;
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
+      __pyx_v_simplices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf = NULL;
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1062; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    } else {__pyx_pybuffernd_vertices.diminfo[0].strides = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_vertices.diminfo[0].shape = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_vertices.diminfo[1].strides = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_vertices.diminfo[1].shape = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.shape[1];
+    } else {__pyx_pybuffernd_simplices.diminfo[0].strides = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_simplices.diminfo[0].shape = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_simplices.diminfo[1].strides = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_simplices.diminfo[1].shape = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.shape[1];
     }
   }
   __pyx_t_6 = 0;
-  __pyx_v_vertices = ((PyArrayObject *)__pyx_t_5);
+  __pyx_v_simplices = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
   
@@ -6013,9 +6018,9 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
               
               __pyx_t_24 = __pyx_v_isimplex;
               __pyx_t_25 = __pyx_v_j;
-              if (__pyx_t_24 < 0) __pyx_t_24 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_25 < 0) __pyx_t_25 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_t_26 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_24, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_25, __pyx_pybuffernd_vertices.diminfo[1].strides));
+              if (__pyx_t_24 < 0) __pyx_t_24 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_25 < 0) __pyx_t_25 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_t_26 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_24, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_25, __pyx_pybuffernd_simplices.diminfo[1].strides));
               __pyx_t_27 = __pyx_v_k;
               if (__pyx_t_26 < 0) __pyx_t_26 += __pyx_pybuffernd_values.diminfo[0].shape;
               if (__pyx_t_27 < 0) __pyx_t_27 += __pyx_pybuffernd_values.diminfo[1].shape;
@@ -6024,9 +6029,9 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
               
               __pyx_t_28 = __pyx_v_isimplex;
               __pyx_t_29 = __pyx_v_j;
-              if (__pyx_t_28 < 0) __pyx_t_28 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_29 < 0) __pyx_t_29 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_t_30 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_28, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_29, __pyx_pybuffernd_vertices.diminfo[1].strides));
+              if (__pyx_t_28 < 0) __pyx_t_28 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_29 < 0) __pyx_t_29 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_t_30 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_28, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_29, __pyx_pybuffernd_simplices.diminfo[1].strides));
               __pyx_t_31 = __pyx_v_k;
               __pyx_t_32 = 0;
               if (__pyx_t_30 < 0) __pyx_t_30 += __pyx_pybuffernd_grad.diminfo[0].shape;
@@ -6037,9 +6042,9 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
               
               __pyx_t_33 = __pyx_v_isimplex;
               __pyx_t_34 = __pyx_v_j;
-              if (__pyx_t_33 < 0) __pyx_t_33 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_34 < 0) __pyx_t_34 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_t_35 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_33, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_34, __pyx_pybuffernd_vertices.diminfo[1].strides));
+              if (__pyx_t_33 < 0) __pyx_t_33 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_34 < 0) __pyx_t_34 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_t_35 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_33, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_34, __pyx_pybuffernd_simplices.diminfo[1].strides));
               __pyx_t_36 = __pyx_v_k;
               __pyx_t_37 = 1;
               if (__pyx_t_35 < 0) __pyx_t_35 += __pyx_pybuffernd_grad.diminfo[0].shape;
@@ -6087,8 +6092,8 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_grad.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_out.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_points.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_values.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_xi.rcbuffer->pybuffer);
   __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
   __Pyx_AddTraceback("scipy.interpolate.interpnd.CloughTocher2DInterpolator._evaluate_double", __pyx_clineno, __pyx_lineno, __pyx_filename);
@@ -6098,15 +6103,15 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_grad.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_out.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_points.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_values.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_xi.rcbuffer->pybuffer);
   __pyx_L2:;
   __Pyx_XDECREF((PyObject *)__pyx_v_values);
   __Pyx_XDECREF((PyObject *)__pyx_v_grad);
   __Pyx_XDECREF((PyObject *)__pyx_v_out);
   __Pyx_XDECREF((PyObject *)__pyx_v_points);
-  __Pyx_XDECREF((PyObject *)__pyx_v_vertices);
+  __Pyx_XDECREF((PyObject *)__pyx_v_simplices);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
@@ -6181,7 +6186,7 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   PyArrayObject *__pyx_v_grad = 0;
   PyArrayObject *__pyx_v_out = 0;
   CYTHON_UNUSED PyArrayObject *__pyx_v_points = 0;
-  PyArrayObject *__pyx_v_vertices = 0;
+  PyArrayObject *__pyx_v_simplices = 0;
   double __pyx_v_c[NPY_MAXDIMS];
   __pyx_t_double_complex __pyx_v_f[(NPY_MAXDIMS + 1)];
   __pyx_t_double_complex __pyx_v_df[((2 * NPY_MAXDIMS) + 2)];
@@ -6203,10 +6208,10 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   __Pyx_Buffer __pyx_pybuffer_out;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_points;
   __Pyx_Buffer __pyx_pybuffer_points;
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_simplices;
+  __Pyx_Buffer __pyx_pybuffer_simplices;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_values;
   __Pyx_Buffer __pyx_pybuffer_values;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_vertices;
-  __Pyx_Buffer __pyx_pybuffer_vertices;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_xi;
   __Pyx_Buffer __pyx_pybuffer_xi;
   PyObject *__pyx_r = NULL;
@@ -6245,29 +6250,35 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   int __pyx_t_32;
   npy_int __pyx_t_33;
   int __pyx_t_34;
-  int __pyx_t_35;
+  double __pyx_t_35;
   int __pyx_t_36;
-  npy_int __pyx_t_37;
-  int __pyx_t_38;
-  long __pyx_t_39;
-  int __pyx_t_40;
-  int __pyx_t_41;
-  npy_int __pyx_t_42;
+  int __pyx_t_37;
+  npy_int __pyx_t_38;
+  int __pyx_t_39;
+  long __pyx_t_40;
+  double __pyx_t_41;
+  int __pyx_t_42;
   int __pyx_t_43;
-  long __pyx_t_44;
+  npy_int __pyx_t_44;
   int __pyx_t_45;
-  int __pyx_t_46;
-  npy_int __pyx_t_47;
+  long __pyx_t_46;
+  double __pyx_t_47;
   int __pyx_t_48;
-  long __pyx_t_49;
-  int __pyx_t_50;
+  int __pyx_t_49;
+  npy_int __pyx_t_50;
   int __pyx_t_51;
-  npy_int __pyx_t_52;
-  int __pyx_t_53;
-  long __pyx_t_54;
+  long __pyx_t_52;
+  double __pyx_t_53;
+  int __pyx_t_54;
   int __pyx_t_55;
-  int __pyx_t_56;
+  npy_int __pyx_t_56;
   int __pyx_t_57;
+  long __pyx_t_58;
+  double __pyx_t_59;
+  double __pyx_t_60;
+  int __pyx_t_61;
+  int __pyx_t_62;
+  int __pyx_t_63;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -6288,10 +6299,10 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   __pyx_pybuffer_points.refcount = 0;
   __pyx_pybuffernd_points.data = NULL;
   __pyx_pybuffernd_points.rcbuffer = &__pyx_pybuffer_points;
-  __pyx_pybuffer_vertices.pybuffer.buf = NULL;
-  __pyx_pybuffer_vertices.refcount = 0;
-  __pyx_pybuffernd_vertices.data = NULL;
-  __pyx_pybuffernd_vertices.rcbuffer = &__pyx_pybuffer_vertices;
+  __pyx_pybuffer_simplices.pybuffer.buf = NULL;
+  __pyx_pybuffer_simplices.refcount = 0;
+  __pyx_pybuffernd_simplices.data = NULL;
+  __pyx_pybuffernd_simplices.rcbuffer = &__pyx_pybuffer_simplices;
   __pyx_pybuffer_xi.pybuffer.buf = NULL;
   __pyx_pybuffer_xi.refcount = 0;
   __pyx_pybuffernd_xi.data = NULL;
@@ -6356,21 +6367,21 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   
   __pyx_t_1 = PyObject_GetAttr(__pyx_v_self, __pyx_n_s__tri); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = PyObject_GetAttr(__pyx_t_1, __pyx_n_s__vertices); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = PyObject_GetAttr(__pyx_t_1, __pyx_n_s__simplices); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
-      __pyx_v_vertices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf = NULL;
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn_npy_int, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
+      __pyx_v_simplices = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf = NULL;
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    } else {__pyx_pybuffernd_vertices.diminfo[0].strides = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_vertices.diminfo[0].shape = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_vertices.diminfo[1].strides = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_vertices.diminfo[1].shape = __pyx_pybuffernd_vertices.rcbuffer->pybuffer.shape[1];
+    } else {__pyx_pybuffernd_simplices.diminfo[0].strides = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_simplices.diminfo[0].shape = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_simplices.diminfo[1].strides = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_simplices.diminfo[1].shape = __pyx_pybuffernd_simplices.rcbuffer->pybuffer.shape[1];
     }
   }
   __pyx_t_6 = 0;
-  __pyx_v_vertices = ((PyArrayObject *)__pyx_t_5);
+  __pyx_v_simplices = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
   
@@ -6519,18 +6530,20 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
               __pyx_v_k = __pyx_t_20;
 
               
+              __pyx_t_16 = __Pyx_CREAL(__pyx_v_fill_value);
               __pyx_t_21 = __pyx_v_i;
               __pyx_t_22 = __pyx_v_k;
               if (__pyx_t_21 < 0) __pyx_t_21 += __pyx_pybuffernd_out.diminfo[0].shape;
               if (__pyx_t_22 < 0) __pyx_t_22 += __pyx_pybuffernd_out.diminfo[1].shape;
-              (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_21, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_22, __pyx_pybuffernd_out.diminfo[1].strides)).real = __Pyx_CREAL(__pyx_v_fill_value);
+              (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_21, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_22, __pyx_pybuffernd_out.diminfo[1].strides)).real = __pyx_t_16;
 
               
+              __pyx_t_16 = __Pyx_CIMAG(__pyx_v_fill_value);
               __pyx_t_23 = __pyx_v_i;
               __pyx_t_24 = __pyx_v_k;
               if (__pyx_t_23 < 0) __pyx_t_23 += __pyx_pybuffernd_out.diminfo[0].shape;
               if (__pyx_t_24 < 0) __pyx_t_24 += __pyx_pybuffernd_out.diminfo[1].shape;
-              (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_23, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_24, __pyx_pybuffernd_out.diminfo[1].strides)).imag = __Pyx_CIMAG(__pyx_v_fill_value);
+              (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_23, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_24, __pyx_pybuffernd_out.diminfo[1].strides)).imag = __pyx_t_16;
             }
 
             
@@ -6552,94 +6565,102 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
               
               __pyx_t_27 = __pyx_v_isimplex;
               __pyx_t_28 = __pyx_v_j;
-              if (__pyx_t_27 < 0) __pyx_t_27 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_28 < 0) __pyx_t_28 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_t_29 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_27, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_28, __pyx_pybuffernd_vertices.diminfo[1].strides));
+              if (__pyx_t_27 < 0) __pyx_t_27 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_28 < 0) __pyx_t_28 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_t_29 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_27, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_28, __pyx_pybuffernd_simplices.diminfo[1].strides));
               __pyx_t_30 = __pyx_v_k;
               if (__pyx_t_29 < 0) __pyx_t_29 += __pyx_pybuffernd_values.diminfo[0].shape;
               if (__pyx_t_30 < 0) __pyx_t_30 += __pyx_pybuffernd_values.diminfo[1].shape;
-              __Pyx_SET_CREAL((__pyx_v_f[__pyx_v_j]), (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_values.rcbuffer->pybuffer.buf, __pyx_t_29, __pyx_pybuffernd_values.diminfo[0].strides, __pyx_t_30, __pyx_pybuffernd_values.diminfo[1].strides)).real);
+              __pyx_t_16 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_values.rcbuffer->pybuffer.buf, __pyx_t_29, __pyx_pybuffernd_values.diminfo[0].strides, __pyx_t_30, __pyx_pybuffernd_values.diminfo[1].strides)).real;
+              __Pyx_SET_CREAL((__pyx_v_f[__pyx_v_j]), __pyx_t_16);
 
               
               __pyx_t_31 = __pyx_v_isimplex;
               __pyx_t_32 = __pyx_v_j;
-              if (__pyx_t_31 < 0) __pyx_t_31 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_32 < 0) __pyx_t_32 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_t_33 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_31, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_32, __pyx_pybuffernd_vertices.diminfo[1].strides));
+              if (__pyx_t_31 < 0) __pyx_t_31 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_32 < 0) __pyx_t_32 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_t_33 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_31, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_32, __pyx_pybuffernd_simplices.diminfo[1].strides));
               __pyx_t_34 = __pyx_v_k;
               if (__pyx_t_33 < 0) __pyx_t_33 += __pyx_pybuffernd_values.diminfo[0].shape;
               if (__pyx_t_34 < 0) __pyx_t_34 += __pyx_pybuffernd_values.diminfo[1].shape;
-              __Pyx_SET_CIMAG((__pyx_v_f[__pyx_v_j]), (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_values.rcbuffer->pybuffer.buf, __pyx_t_33, __pyx_pybuffernd_values.diminfo[0].strides, __pyx_t_34, __pyx_pybuffernd_values.diminfo[1].strides)).imag);
+              __pyx_t_35 = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_values.rcbuffer->pybuffer.buf, __pyx_t_33, __pyx_pybuffernd_values.diminfo[0].strides, __pyx_t_34, __pyx_pybuffernd_values.diminfo[1].strides)).imag;
+              __Pyx_SET_CIMAG((__pyx_v_f[__pyx_v_j]), __pyx_t_35);
 
               
-              __pyx_t_35 = __pyx_v_isimplex;
-              __pyx_t_36 = __pyx_v_j;
-              if (__pyx_t_35 < 0) __pyx_t_35 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_36 < 0) __pyx_t_36 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_t_37 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_35, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_36, __pyx_pybuffernd_vertices.diminfo[1].strides));
-              __pyx_t_38 = __pyx_v_k;
-              __pyx_t_39 = 0;
-              if (__pyx_t_37 < 0) __pyx_t_37 += __pyx_pybuffernd_grad.diminfo[0].shape;
-              if (__pyx_t_38 < 0) __pyx_t_38 += __pyx_pybuffernd_grad.diminfo[1].shape;
-              if (__pyx_t_39 < 0) __pyx_t_39 += __pyx_pybuffernd_grad.diminfo[2].shape;
-              __Pyx_SET_CREAL((__pyx_v_df[(2 * __pyx_v_j)]), (*__Pyx_BufPtrStrided3d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_grad.rcbuffer->pybuffer.buf, __pyx_t_37, __pyx_pybuffernd_grad.diminfo[0].strides, __pyx_t_38, __pyx_pybuffernd_grad.diminfo[1].strides, __pyx_t_39, __pyx_pybuffernd_grad.diminfo[2].strides)).real);
+              __pyx_t_36 = __pyx_v_isimplex;
+              __pyx_t_37 = __pyx_v_j;
+              if (__pyx_t_36 < 0) __pyx_t_36 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_37 < 0) __pyx_t_37 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_t_38 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_36, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_37, __pyx_pybuffernd_simplices.diminfo[1].strides));
+              __pyx_t_39 = __pyx_v_k;
+              __pyx_t_40 = 0;
+              if (__pyx_t_38 < 0) __pyx_t_38 += __pyx_pybuffernd_grad.diminfo[0].shape;
+              if (__pyx_t_39 < 0) __pyx_t_39 += __pyx_pybuffernd_grad.diminfo[1].shape;
+              if (__pyx_t_40 < 0) __pyx_t_40 += __pyx_pybuffernd_grad.diminfo[2].shape;
+              __pyx_t_41 = (*__Pyx_BufPtrStrided3d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_grad.rcbuffer->pybuffer.buf, __pyx_t_38, __pyx_pybuffernd_grad.diminfo[0].strides, __pyx_t_39, __pyx_pybuffernd_grad.diminfo[1].strides, __pyx_t_40, __pyx_pybuffernd_grad.diminfo[2].strides)).real;
+              __Pyx_SET_CREAL((__pyx_v_df[(2 * __pyx_v_j)]), __pyx_t_41);
 
               
-              __pyx_t_40 = __pyx_v_isimplex;
-              __pyx_t_41 = __pyx_v_j;
-              if (__pyx_t_40 < 0) __pyx_t_40 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_41 < 0) __pyx_t_41 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_t_42 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_40, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_41, __pyx_pybuffernd_vertices.diminfo[1].strides));
-              __pyx_t_43 = __pyx_v_k;
-              __pyx_t_44 = 0;
-              if (__pyx_t_42 < 0) __pyx_t_42 += __pyx_pybuffernd_grad.diminfo[0].shape;
-              if (__pyx_t_43 < 0) __pyx_t_43 += __pyx_pybuffernd_grad.diminfo[1].shape;
-              if (__pyx_t_44 < 0) __pyx_t_44 += __pyx_pybuffernd_grad.diminfo[2].shape;
-              __Pyx_SET_CIMAG((__pyx_v_df[(2 * __pyx_v_j)]), (*__Pyx_BufPtrStrided3d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_grad.rcbuffer->pybuffer.buf, __pyx_t_42, __pyx_pybuffernd_grad.diminfo[0].strides, __pyx_t_43, __pyx_pybuffernd_grad.diminfo[1].strides, __pyx_t_44, __pyx_pybuffernd_grad.diminfo[2].strides)).imag);
+              __pyx_t_42 = __pyx_v_isimplex;
+              __pyx_t_43 = __pyx_v_j;
+              if (__pyx_t_42 < 0) __pyx_t_42 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_43 < 0) __pyx_t_43 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_t_44 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_42, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_43, __pyx_pybuffernd_simplices.diminfo[1].strides));
+              __pyx_t_45 = __pyx_v_k;
+              __pyx_t_46 = 0;
+              if (__pyx_t_44 < 0) __pyx_t_44 += __pyx_pybuffernd_grad.diminfo[0].shape;
+              if (__pyx_t_45 < 0) __pyx_t_45 += __pyx_pybuffernd_grad.diminfo[1].shape;
+              if (__pyx_t_46 < 0) __pyx_t_46 += __pyx_pybuffernd_grad.diminfo[2].shape;
+              __pyx_t_47 = (*__Pyx_BufPtrStrided3d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_grad.rcbuffer->pybuffer.buf, __pyx_t_44, __pyx_pybuffernd_grad.diminfo[0].strides, __pyx_t_45, __pyx_pybuffernd_grad.diminfo[1].strides, __pyx_t_46, __pyx_pybuffernd_grad.diminfo[2].strides)).imag;
+              __Pyx_SET_CIMAG((__pyx_v_df[(2 * __pyx_v_j)]), __pyx_t_47);
 
               
-              __pyx_t_45 = __pyx_v_isimplex;
-              __pyx_t_46 = __pyx_v_j;
-              if (__pyx_t_45 < 0) __pyx_t_45 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_46 < 0) __pyx_t_46 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_t_47 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_45, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_46, __pyx_pybuffernd_vertices.diminfo[1].strides));
-              __pyx_t_48 = __pyx_v_k;
-              __pyx_t_49 = 1;
-              if (__pyx_t_47 < 0) __pyx_t_47 += __pyx_pybuffernd_grad.diminfo[0].shape;
-              if (__pyx_t_48 < 0) __pyx_t_48 += __pyx_pybuffernd_grad.diminfo[1].shape;
-              if (__pyx_t_49 < 0) __pyx_t_49 += __pyx_pybuffernd_grad.diminfo[2].shape;
-              __Pyx_SET_CREAL((__pyx_v_df[((2 * __pyx_v_j) + 1)]), (*__Pyx_BufPtrStrided3d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_grad.rcbuffer->pybuffer.buf, __pyx_t_47, __pyx_pybuffernd_grad.diminfo[0].strides, __pyx_t_48, __pyx_pybuffernd_grad.diminfo[1].strides, __pyx_t_49, __pyx_pybuffernd_grad.diminfo[2].strides)).real);
+              __pyx_t_48 = __pyx_v_isimplex;
+              __pyx_t_49 = __pyx_v_j;
+              if (__pyx_t_48 < 0) __pyx_t_48 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_49 < 0) __pyx_t_49 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_t_50 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_48, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_49, __pyx_pybuffernd_simplices.diminfo[1].strides));
+              __pyx_t_51 = __pyx_v_k;
+              __pyx_t_52 = 1;
+              if (__pyx_t_50 < 0) __pyx_t_50 += __pyx_pybuffernd_grad.diminfo[0].shape;
+              if (__pyx_t_51 < 0) __pyx_t_51 += __pyx_pybuffernd_grad.diminfo[1].shape;
+              if (__pyx_t_52 < 0) __pyx_t_52 += __pyx_pybuffernd_grad.diminfo[2].shape;
+              __pyx_t_53 = (*__Pyx_BufPtrStrided3d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_grad.rcbuffer->pybuffer.buf, __pyx_t_50, __pyx_pybuffernd_grad.diminfo[0].strides, __pyx_t_51, __pyx_pybuffernd_grad.diminfo[1].strides, __pyx_t_52, __pyx_pybuffernd_grad.diminfo[2].strides)).real;
+              __Pyx_SET_CREAL((__pyx_v_df[((2 * __pyx_v_j) + 1)]), __pyx_t_53);
 
               
-              __pyx_t_50 = __pyx_v_isimplex;
-              __pyx_t_51 = __pyx_v_j;
-              if (__pyx_t_50 < 0) __pyx_t_50 += __pyx_pybuffernd_vertices.diminfo[0].shape;
-              if (__pyx_t_51 < 0) __pyx_t_51 += __pyx_pybuffernd_vertices.diminfo[1].shape;
-              __pyx_t_52 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_vertices.rcbuffer->pybuffer.buf, __pyx_t_50, __pyx_pybuffernd_vertices.diminfo[0].strides, __pyx_t_51, __pyx_pybuffernd_vertices.diminfo[1].strides));
-              __pyx_t_53 = __pyx_v_k;
-              __pyx_t_54 = 1;
-              if (__pyx_t_52 < 0) __pyx_t_52 += __pyx_pybuffernd_grad.diminfo[0].shape;
-              if (__pyx_t_53 < 0) __pyx_t_53 += __pyx_pybuffernd_grad.diminfo[1].shape;
-              if (__pyx_t_54 < 0) __pyx_t_54 += __pyx_pybuffernd_grad.diminfo[2].shape;
-              __Pyx_SET_CIMAG((__pyx_v_df[((2 * __pyx_v_j) + 1)]), (*__Pyx_BufPtrStrided3d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_grad.rcbuffer->pybuffer.buf, __pyx_t_52, __pyx_pybuffernd_grad.diminfo[0].strides, __pyx_t_53, __pyx_pybuffernd_grad.diminfo[1].strides, __pyx_t_54, __pyx_pybuffernd_grad.diminfo[2].strides)).imag);
+              __pyx_t_54 = __pyx_v_isimplex;
+              __pyx_t_55 = __pyx_v_j;
+              if (__pyx_t_54 < 0) __pyx_t_54 += __pyx_pybuffernd_simplices.diminfo[0].shape;
+              if (__pyx_t_55 < 0) __pyx_t_55 += __pyx_pybuffernd_simplices.diminfo[1].shape;
+              __pyx_t_56 = (*__Pyx_BufPtrStrided2d(npy_int *, __pyx_pybuffernd_simplices.rcbuffer->pybuffer.buf, __pyx_t_54, __pyx_pybuffernd_simplices.diminfo[0].strides, __pyx_t_55, __pyx_pybuffernd_simplices.diminfo[1].strides));
+              __pyx_t_57 = __pyx_v_k;
+              __pyx_t_58 = 1;
+              if (__pyx_t_56 < 0) __pyx_t_56 += __pyx_pybuffernd_grad.diminfo[0].shape;
+              if (__pyx_t_57 < 0) __pyx_t_57 += __pyx_pybuffernd_grad.diminfo[1].shape;
+              if (__pyx_t_58 < 0) __pyx_t_58 += __pyx_pybuffernd_grad.diminfo[2].shape;
+              __pyx_t_59 = (*__Pyx_BufPtrStrided3d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_grad.rcbuffer->pybuffer.buf, __pyx_t_56, __pyx_pybuffernd_grad.diminfo[0].strides, __pyx_t_57, __pyx_pybuffernd_grad.diminfo[1].strides, __pyx_t_58, __pyx_pybuffernd_grad.diminfo[2].strides)).imag;
+              __Pyx_SET_CIMAG((__pyx_v_df[((2 * __pyx_v_j) + 1)]), __pyx_t_59);
             }
 
             
             __pyx_v_w = __pyx_f_5scipy_11interpolate_8interpnd__clough_tocher_2d_single_complex((&__pyx_v_info), __pyx_v_isimplex, __pyx_v_c, __pyx_v_f, __pyx_v_df);
 
             
+            __pyx_t_60 = __Pyx_CREAL(__pyx_v_w);
             __pyx_t_26 = __pyx_v_i;
-            __pyx_t_55 = __pyx_v_k;
+            __pyx_t_61 = __pyx_v_k;
             if (__pyx_t_26 < 0) __pyx_t_26 += __pyx_pybuffernd_out.diminfo[0].shape;
-            if (__pyx_t_55 < 0) __pyx_t_55 += __pyx_pybuffernd_out.diminfo[1].shape;
-            (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_26, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_55, __pyx_pybuffernd_out.diminfo[1].strides)).real = __Pyx_CREAL(__pyx_v_w);
+            if (__pyx_t_61 < 0) __pyx_t_61 += __pyx_pybuffernd_out.diminfo[1].shape;
+            (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_26, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_61, __pyx_pybuffernd_out.diminfo[1].strides)).real = __pyx_t_60;
 
             
-            __pyx_t_56 = __pyx_v_i;
-            __pyx_t_57 = __pyx_v_k;
-            if (__pyx_t_56 < 0) __pyx_t_56 += __pyx_pybuffernd_out.diminfo[0].shape;
-            if (__pyx_t_57 < 0) __pyx_t_57 += __pyx_pybuffernd_out.diminfo[1].shape;
-            (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_56, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_57, __pyx_pybuffernd_out.diminfo[1].strides)).imag = __Pyx_CIMAG(__pyx_v_w);
+            __pyx_t_60 = __Pyx_CIMAG(__pyx_v_w);
+            __pyx_t_62 = __pyx_v_i;
+            __pyx_t_63 = __pyx_v_k;
+            if (__pyx_t_62 < 0) __pyx_t_62 += __pyx_pybuffernd_out.diminfo[0].shape;
+            if (__pyx_t_63 < 0) __pyx_t_63 += __pyx_pybuffernd_out.diminfo[1].shape;
+            (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_complex_t *, __pyx_pybuffernd_out.rcbuffer->pybuffer.buf, __pyx_t_62, __pyx_pybuffernd_out.diminfo[0].strides, __pyx_t_63, __pyx_pybuffernd_out.diminfo[1].strides)).imag = __pyx_t_60;
           }
           __pyx_L6_continue:;
         }
@@ -6670,8 +6691,8 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_grad.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_out.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_points.rcbuffer->pybuffer);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_values.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_xi.rcbuffer->pybuffer);
   __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
   __Pyx_AddTraceback("scipy.interpolate.interpnd.CloughTocher2DInterpolator._evaluate_complex", __pyx_clineno, __pyx_lineno, __pyx_filename);
@@ -6681,15 +6702,15 @@ static PyObject *__pyx_pf_5scipy_11interpolate_8interpnd_26CloughTocher2DInterpo
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_grad.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_out.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_points.rcbuffer->pybuffer);
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_simplices.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_values.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_vertices.rcbuffer->pybuffer);
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_xi.rcbuffer->pybuffer);
   __pyx_L2:;
   __Pyx_XDECREF((PyObject *)__pyx_v_values);
   __Pyx_XDECREF((PyObject *)__pyx_v_grad);
   __Pyx_XDECREF((PyObject *)__pyx_v_out);
   __Pyx_XDECREF((PyObject *)__pyx_v_points);
-  __Pyx_XDECREF((PyObject *)__pyx_v_vertices);
+  __Pyx_XDECREF((PyObject *)__pyx_v_simplices);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
@@ -6867,8 +6888,10 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   __pyx_v_f = NULL;
 
   
-  __Pyx_INCREF(((PyObject *)__pyx_v_self->descr));
-  __pyx_v_descr = __pyx_v_self->descr;
+  __pyx_t_4 = ((PyObject *)__pyx_v_self->descr);
+  __Pyx_INCREF(__pyx_t_4);
+  __pyx_v_descr = ((PyArray_Descr *)__pyx_t_4);
+  __pyx_t_4 = 0;
 
   
   __pyx_v_hasfields = PyDataType_HASFIELDS(__pyx_v_descr);
@@ -6907,7 +6930,8 @@ static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, P
   if (__pyx_t_1) {
 
     
-    __pyx_v_t = __pyx_v_descr->type_num;
+    __pyx_t_5 = __pyx_v_descr->type_num;
+    __pyx_v_t = __pyx_t_5;
 
     
     __pyx_t_1 = (__pyx_v_descr->byteorder == '>');
@@ -7999,13 +8023,13 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s__rg, __pyx_k__rg, sizeof(__pyx_k__rg), 0, 0, 1, 1},
   {&__pyx_n_s__self, __pyx_k__self, sizeof(__pyx_k__self), 0, 0, 1, 1},
   {&__pyx_n_s__shape, __pyx_k__shape, sizeof(__pyx_k__shape), 0, 0, 1, 1},
+  {&__pyx_n_s__simplices, __pyx_k__simplices, sizeof(__pyx_k__simplices), 0, 0, 1, 1},
   {&__pyx_n_s__start, __pyx_k__start, sizeof(__pyx_k__start), 0, 0, 1, 1},
   {&__pyx_n_s__tol, __pyx_k__tol, sizeof(__pyx_k__tol), 0, 0, 1, 1},
   {&__pyx_n_s__transpose, __pyx_k__transpose, sizeof(__pyx_k__transpose), 0, 0, 1, 1},
   {&__pyx_n_s__tri, __pyx_k__tri, sizeof(__pyx_k__tri), 0, 0, 1, 1},
   {&__pyx_n_s__values, __pyx_k__values, sizeof(__pyx_k__values), 0, 0, 1, 1},
   {&__pyx_n_s__values_shape, __pyx_k__values_shape, sizeof(__pyx_k__values_shape), 0, 0, 1, 1},
-  {&__pyx_n_s__vertices, __pyx_k__vertices, sizeof(__pyx_k__vertices), 0, 0, 1, 1},
   {&__pyx_n_s__w, __pyx_k__w, sizeof(__pyx_k__w), 0, 0, 1, 1},
   {&__pyx_n_s__warn, __pyx_k__warn, sizeof(__pyx_k__warn), 0, 0, 1, 1},
   {&__pyx_n_s__warnings, __pyx_k__warnings, sizeof(__pyx_k__warnings), 0, 0, 1, 1},
@@ -8328,9 +8352,9 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_INCREF(((PyObject *)__pyx_n_s__points));
   PyTuple_SET_ITEM(__pyx_k_tuple_56, 4, ((PyObject *)__pyx_n_s__points));
   __Pyx_GIVEREF(((PyObject *)__pyx_n_s__points));
-  __Pyx_INCREF(((PyObject *)__pyx_n_s__vertices));
-  PyTuple_SET_ITEM(__pyx_k_tuple_56, 5, ((PyObject *)__pyx_n_s__vertices));
-  __Pyx_GIVEREF(((PyObject *)__pyx_n_s__vertices));
+  __Pyx_INCREF(((PyObject *)__pyx_n_s__simplices));
+  PyTuple_SET_ITEM(__pyx_k_tuple_56, 5, ((PyObject *)__pyx_n_s__simplices));
+  __Pyx_GIVEREF(((PyObject *)__pyx_n_s__simplices));
   __Pyx_INCREF(((PyObject *)__pyx_n_s__c));
   PyTuple_SET_ITEM(__pyx_k_tuple_56, 6, ((PyObject *)__pyx_n_s__c));
   __Pyx_GIVEREF(((PyObject *)__pyx_n_s__c));
@@ -8394,9 +8418,9 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_INCREF(((PyObject *)__pyx_n_s__points));
   PyTuple_SET_ITEM(__pyx_k_tuple_58, 4, ((PyObject *)__pyx_n_s__points));
   __Pyx_GIVEREF(((PyObject *)__pyx_n_s__points));
-  __Pyx_INCREF(((PyObject *)__pyx_n_s__vertices));
-  PyTuple_SET_ITEM(__pyx_k_tuple_58, 5, ((PyObject *)__pyx_n_s__vertices));
-  __Pyx_GIVEREF(((PyObject *)__pyx_n_s__vertices));
+  __Pyx_INCREF(((PyObject *)__pyx_n_s__simplices));
+  PyTuple_SET_ITEM(__pyx_k_tuple_58, 5, ((PyObject *)__pyx_n_s__simplices));
+  __Pyx_GIVEREF(((PyObject *)__pyx_n_s__simplices));
   __Pyx_INCREF(((PyObject *)__pyx_n_s__c));
   PyTuple_SET_ITEM(__pyx_k_tuple_58, 6, ((PyObject *)__pyx_n_s__c));
   __Pyx_GIVEREF(((PyObject *)__pyx_n_s__c));
@@ -8538,9 +8562,9 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_INCREF(((PyObject *)__pyx_n_s__points));
   PyTuple_SET_ITEM(__pyx_k_tuple_66, 5, ((PyObject *)__pyx_n_s__points));
   __Pyx_GIVEREF(((PyObject *)__pyx_n_s__points));
-  __Pyx_INCREF(((PyObject *)__pyx_n_s__vertices));
-  PyTuple_SET_ITEM(__pyx_k_tuple_66, 6, ((PyObject *)__pyx_n_s__vertices));
-  __Pyx_GIVEREF(((PyObject *)__pyx_n_s__vertices));
+  __Pyx_INCREF(((PyObject *)__pyx_n_s__simplices));
+  PyTuple_SET_ITEM(__pyx_k_tuple_66, 6, ((PyObject *)__pyx_n_s__simplices));
+  __Pyx_GIVEREF(((PyObject *)__pyx_n_s__simplices));
   __Pyx_INCREF(((PyObject *)__pyx_n_s__c));
   PyTuple_SET_ITEM(__pyx_k_tuple_66, 7, ((PyObject *)__pyx_n_s__c));
   __Pyx_GIVEREF(((PyObject *)__pyx_n_s__c));
@@ -8616,9 +8640,9 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_INCREF(((PyObject *)__pyx_n_s__points));
   PyTuple_SET_ITEM(__pyx_k_tuple_68, 5, ((PyObject *)__pyx_n_s__points));
   __Pyx_GIVEREF(((PyObject *)__pyx_n_s__points));
-  __Pyx_INCREF(((PyObject *)__pyx_n_s__vertices));
-  PyTuple_SET_ITEM(__pyx_k_tuple_68, 6, ((PyObject *)__pyx_n_s__vertices));
-  __Pyx_GIVEREF(((PyObject *)__pyx_n_s__vertices));
+  __Pyx_INCREF(((PyObject *)__pyx_n_s__simplices));
+  PyTuple_SET_ITEM(__pyx_k_tuple_68, 6, ((PyObject *)__pyx_n_s__simplices));
+  __Pyx_GIVEREF(((PyObject *)__pyx_n_s__simplices));
   __Pyx_INCREF(((PyObject *)__pyx_n_s__c));
   PyTuple_SET_ITEM(__pyx_k_tuple_68, 7, ((PyObject *)__pyx_n_s__c));
   __Pyx_GIVEREF(((PyObject *)__pyx_n_s__c));
@@ -8743,6 +8767,14 @@ PyMODINIT_FUNC PyInit_interpnd(void)
   __pyx_m = PyModule_Create(&__pyx_moduledef);
   #endif
   if (unlikely(!__pyx_m)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  #if PY_MAJOR_VERSION >= 3
+  {
+    PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!PyDict_GetItemString(modules, "scipy.interpolate.interpnd")) {
+      if (unlikely(PyDict_SetItemString(modules, "scipy.interpolate.interpnd", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    }
+  }
+  #endif
   __pyx_b = PyImport_AddModule(__Pyx_NAMESTR(__Pyx_BUILTIN_MODULE_NAME)); if (unlikely(!__pyx_b)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   #if CYTHON_COMPILING_IN_PYPY
   Py_INCREF(__pyx_b);
