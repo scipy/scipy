@@ -353,5 +353,79 @@ class TestTriangulation(object):
         assert_equal(tri.points[tri.vertices].min(),
                      self.pathological_data_2.min())
 
+class TestConvexHull:
+    def test_hull_consistency_tri(self):
+        # Check that a convex hull returned by qhull in ndim
+        # and the hull constructed from ndim delaunay agree
+        np.random.seed(1234)
+
+        datasets = {'pathological_1': TestTriangulation.pathological_data_1,
+                    'pathological_2': TestTriangulation.pathological_data_2}
+        for nd in range(2, 8):
+            points = np.random.rand(30, nd)
+            datasets['random-%dd' % nd] = points
+
+        def check(name):
+            points = datasets[name]
+
+            tri = qhull.Delaunay(points)
+            hull = qhull.ConvexHull(points)
+
+            def sorted_tuple(x):
+                return tuple(sorted(x))
+
+            facets_1 = set(map(sorted_tuple, tri.convex_hull.tolist()))
+            facets_2 = set(map(sorted_tuple, hull.simplices.tolist()))
+
+            if facets_1 == facets_2:
+                return # OK
+
+            if points.shape[1] == 2:
+                # The direct check fails for the pathological cases
+                # --- then the convex hull from Delaunay differs (due
+                # to rounding error etc.) from the hull computed
+                # otherwise, by the question whether (tricoplanar)
+                # points that lie almost exactly on the hull are
+                # included as vertices of the hull or not.
+                #
+                # So we check the result, and accept it if the Delaunay
+                # hull line segments are a subset of the usual hull.
+
+                eps = 1000 * np.finfo(float).eps
+
+                for a, b in facets_1:
+                    for ap, bp in facets_2:
+                        t = points[bp] - points[ap]
+                        t /= np.linalg.norm(t)       # tangent
+                        n = np.array([-t[1], t[0]])  # normal
+
+                        # check that the two line segments are parallel
+                        # to the same line
+                        c1 = np.dot(n, points[b] - points[ap])
+                        c2 = np.dot(n, points[a] - points[ap])
+                        if not np.allclose(np.dot(c1, n), 0):
+                            continue
+                        if not np.allclose(np.dot(c2, n), 0):
+                            continue
+
+                        # Check that the segment (a, b) is contained in (ap, bp)
+                        c1 = np.dot(t, points[a] - points[ap])
+                        c2 = np.dot(t, points[b] - points[ap])
+                        c3 = np.dot(t, points[bp] - points[ap])
+                        if c1 < -eps or c1 > c3 + eps:
+                            continue
+                        if c2 < -eps or c2 > c3 + eps:
+                            continue
+
+                        # OK:
+                        break
+                    else:
+                        raise AssertionError("comparison fails")
+                return
+            raise AssertionError("comparison fails...")
+
+        for name in datasets.keys():
+            yield check, name
+
 if __name__ == "__main__":
     run_module_suite()
