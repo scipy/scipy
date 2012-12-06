@@ -3,9 +3,10 @@ import sys
 
 import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, run_module_suite,\
-     assert_, dec
+     assert_, dec, assert_allclose, assert_array_equal
 
 import scipy.spatial.qhull as qhull
+from scipy.spatial import cKDTree as KDTree
 
 class TestUtilities(object):
     """
@@ -423,6 +424,122 @@ class TestConvexHull:
                         raise AssertionError("comparison fails")
                 return
             raise AssertionError("comparison fails...")
+
+        for name in datasets.keys():
+            yield check, name
+
+class TestVoronoi:
+    def test_simple(self):
+        # Simple case with known Voronoi diagram
+        points = [(0, 0), (0, 1), (0, 2),
+                  (1, 0), (1, 1), (1, 2),
+                  (2, 0), (2, 1), (2, 2)]
+
+        # qvoronoi o Fv < dat
+        output = """
+        2
+        5 9 1
+        -10.101 -10.101 
+           0.5    0.5 
+           1.5    0.5 
+           0.5    1.5 
+           1.5    1.5 
+        2 0 1
+        3 3 0 1
+        2 0 3
+        3 2 0 1
+        4 4 2 1 3
+        3 4 0 3
+        2 0 2
+        3 4 0 2
+        2 0 4
+        12
+        4 0 1 0 1
+        4 0 3 0 1
+        4 1 4 1 3
+        4 1 2 0 3
+        4 2 5 0 3
+        4 3 4 1 2
+        4 3 6 0 2
+        4 4 5 3 4
+        4 4 7 2 4
+        4 5 8 0 4
+        4 6 7 0 2
+        4 7 8 0 4
+        """
+        self._compare_qvoronoi(points, output)
+
+    def _compare_qvoronoi(self, points, output):
+        """Compare to output from 'qvoronoi o Fv < data' to Voronoi()"""
+
+        # Parse output
+        output = map(lambda x: map(float, x.split()),
+                     output.strip().splitlines())
+        nvertex = int(output[1][0])
+        vertices = map(tuple, output[3:2+nvertex]) # exclude inf
+        nregion = int(output[1][1])
+        regions = [[int(y)-1 for y in x[1:]]
+                   for x in output[2+nvertex:2+nvertex+nregion]]
+        nridge = int(output[2+nvertex+nregion][0])
+        ridge_points = [[int(y) for y in x[1:3]]
+                        for x in output[3+nvertex+nregion:]]
+        ridge_vertices = [[int(y)-1 for y in x[3:]]
+                          for x in output[3+nvertex+nregion:]]
+
+        # Compare results
+        vor = qhull.Voronoi(points)
+
+        def sorttuple(x):
+            return tuple(sorted(x))
+
+        assert_allclose(vor.vertices, vertices)
+        assert_equal(set(map(tuple, vor.regions)),
+                     set(map(tuple, regions)))
+
+        p1 = zip(map(sorttuple, ridge_points), map(sorttuple, ridge_vertices))
+        p2 = zip(map(sorttuple, vor.ridge_points.tolist()),
+                 map(sorttuple, vor.ridge_vertices))
+        p1.sort()
+        p2.sort()
+
+        print "\n".join(map(repr, p1))
+        print "--"
+        print "\n".join(map(repr, p2))
+
+        assert_equal(p1, p2)
+    
+    def test_ridges(self):
+        # Check that the ridges computed by Voronoi indeed separate
+        # the regions of nearest neighborhood, by comparing the result
+        # to KDTree.
+
+        np.random.seed(1234)
+
+        datasets = {'pathological_1': TestTriangulation.pathological_data_1,
+                    'pathological_2': TestTriangulation.pathological_data_2}
+        for nd in range(2, 8):
+            points = np.random.rand(30, nd)
+            datasets['random-%dd' % nd] = points
+
+        def check(name):
+            points = datasets[name]
+
+            tree = KDTree(points)
+            vor = qhull.Voronoi(points)
+
+            for p, v in vor.ridge_dict.items():
+                # consider only finite ridges
+                if not np.all(np.asarray(v) >= 0):
+                    continue
+
+                ridge_midpoint = vor.vertices[v].mean(axis=0)
+                d = 1e-6 * (points[p[0]] - ridge_midpoint)
+
+                dist, k = tree.query(ridge_midpoint + d, k=1)
+                assert_equal(k, p[0])
+
+                dist, k = tree.query(ridge_midpoint - d, k=1)
+                assert_equal(k, p[1])
 
         for name in datasets.keys():
             yield check, name
