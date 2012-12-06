@@ -204,13 +204,15 @@ cdef class _Qhull:
             raise ValueError("Need at least 2-D data")
 
         # Process options
-        if options is None:
-            options = b""
-        if required_options is None:
-            required_options = b""
-        options += b" " + required_options
-        options = b"qhull %s %s " % (mode_option,
-                                     b" ".join(set(options.split())))
+        options_set = set()
+        if options is not None:
+            options_set.update(options.split())
+        if required_options is not None:
+            options_set.update(required_options.split())
+        if b"QJ" in options_set and b"Qt" in options_set:
+            # not compatible, but safe
+            options_set.remove(b"Qt")
+        options = b"qhull %s %s " % (mode_option, b" ".join(options_set))
 
         _qhull_lock.acquire()
         self._active = 1
