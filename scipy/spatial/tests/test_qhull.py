@@ -271,7 +271,7 @@ class TestRidgeIter2D(object):
         self._check_ridges(tri, 5, [(5, 2), (5, 3), (5, 4)])
 
 
-class TestTriangulation(object):
+class TestDelaunay(object):
     """
     Check that triangulation works.
 
@@ -354,14 +354,31 @@ class TestTriangulation(object):
         assert_equal(tri.points[tri.vertices].min(),
                      self.pathological_data_2.min())
 
+    def test_joggle(self):
+        # Check that the option QJ indeed guarantees that all input points
+        # occur as vertices of the triangulation
+
+        points = np.random.rand(10, 2)
+        points = np.r_[points, points] # duplicate input data
+
+        tri1 = qhull.Delaunay(points)
+        tri2 = qhull.Delaunay(points, qhull_options="QJ")
+
+        tri1_vertices = np.unique(tri1.vertices.ravel())
+        tri2_vertices = np.unique(tri2.vertices.ravel())
+
+        assert_(len(tri1_vertices) == len(points)//2)
+        assert_array_equal(tri2_vertices, np.arange(len(points)))
+
+
 class TestConvexHull:
     def test_hull_consistency_tri(self):
         # Check that a convex hull returned by qhull in ndim
         # and the hull constructed from ndim delaunay agree
         np.random.seed(1234)
 
-        datasets = {'pathological_1': TestTriangulation.pathological_data_1,
-                    'pathological_2': TestTriangulation.pathological_data_2}
+        datasets = {'pathological_1': TestDelaunay.pathological_data_1,
+                    'pathological_2': TestDelaunay.pathological_data_2}
         for nd in range(2, 8):
             points = np.random.rand(30, nd)
             datasets['random-%dd' % nd] = points
@@ -515,8 +532,8 @@ class TestVoronoi:
 
         np.random.seed(1234)
 
-        datasets = {'pathological_1': TestTriangulation.pathological_data_1,
-                    'pathological_2': TestTriangulation.pathological_data_2}
+        datasets = {'pathological_1': TestDelaunay.pathological_data_1,
+                    'pathological_2': TestDelaunay.pathological_data_2}
         for nd in range(2, 8):
             points = np.random.rand(30, nd)
             datasets['random-%dd' % nd] = points
