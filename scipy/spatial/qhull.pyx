@@ -397,6 +397,7 @@ cdef class _Qhull:
         cdef pointT infty_point[NPY_MAXDIMS+1]
         cdef pointT *point
         cdef double dist
+        cdef int inf_seen
 
         cdef list regions
         cdef list cur_region
@@ -427,14 +428,16 @@ cdef class _Qhull:
             i = qh_pointid(vertex.point)
             point_region[i] = len(regions)
 
+            inf_seen = 0
             cur_region = []
             for k in xrange(qh_setsize(vertex.neighbors)):
                 neighbor = <facetT*>vertex.neighbors.e[k].p
-                i = neighbor.visitid
-                if i == 0:
-                    i = -neighbor.id
-                else:
-                    i -= 1
+                i = neighbor.visitid - 1
+                if i == -1:
+                    if not inf_seen:
+                        inf_seen = 1
+                    else:
+                        continue
                 cur_region.append(int(i))
             regions.append(cur_region)
 
@@ -1679,7 +1682,7 @@ class Voronoi(object):
         Indices of the Voronoi vertices forming each Voronoi ridge.
     regions : list of list of ints, shape (nregions, *)
         Indices of the Voronoi vertices forming each Voronoi region.
-        Negative indices indicate vertices outside the Voronoi diagram.
+        -1 indicates vertex outside the Voronoi diagram.
     point_region : list of ints, shape (npoints)
         Index of the Voronoi region for each input point.
 
