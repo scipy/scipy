@@ -17,8 +17,45 @@ Delaunay triangulation:
 .. autosummary::
    :toctree: generated/
 
-   Delaunay
-   tsearch
+   Delaunay    -- compute Delaunay triangulation of input points
+   ConvexHull  -- compute a convex hull for input points
+   Voronoi     -- compute a Voronoi diagram hull from input points
+
+
+Simplex representation
+======================
+
+The simplices (triangles, tetrahedra, ...) appearing in the Delaunay
+tesselation (N-dim simplices), convex hull facets, and Voronoi ridges
+(N-1 dim simplices) are represented in the following scheme::
+
+    tess = Delaunay(points)
+    hull = ConvexHull(points)
+    voro = Voronoi(points)
+
+    # coordinates of the j-th vertex of the i-th simplex 
+    tess.points[tess.simplices[i, j], :]        # tesselation element
+    hull.points[hull.simplices[i, j], :]        # convex hull facet
+    voro.vertices[voro.ridge_vertices[i, j], :] # ridge between Voronoi cells
+
+For Delaunay triangulations and convex hulls, the neighborhood
+structure of the simplices satisfies the condition:
+
+    ``tess.neighbors[i,j]`` is the neighboring simplex of the i-th
+    simplex, opposite to the j-vertex. It is -1 in case of no
+    neighbor.
+
+Convex hull facets also define a hyperplane equation:
+
+    (hull.equations[i,:-1] * coord).sum() + hull.equations[i,-1] == 0
+
+Similar hyperplane equations for the Delaunay triangulation correspond
+to the convex hull facets on the corresponding N+1 dimensional
+paraboloid.
+
+The Delaunay triangulation objects offer a method for locating the
+simplex containing a given point, and barycentric coordinate
+computations.
 
 """
 

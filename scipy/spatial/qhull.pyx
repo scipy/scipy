@@ -1211,6 +1211,9 @@ class Delaunay(object):
         For simplex ``i``, ``transform[i,:ndim,:ndim]`` contains
         inverse of the matrix ``T``, and ``transform[i,ndim,:]``
         contains the vector ``r``.
+
+        If the simplex is degenerate or nearly degenerate, its
+        barycentric transform contains NaNs.
     vertex_to_simplex : ndarray of int, shape (npoints,)
         Lookup array, from a vertex, to some simplex which it is a part of.
     convex_hull : ndarray of int, shape (nfaces, ndim)
