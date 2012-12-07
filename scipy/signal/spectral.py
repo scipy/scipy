@@ -2,6 +2,7 @@
 """
 
 import numpy as np
+import numpy.polynomial.polynomial as poly
 from scipy import fftpack
 from windows import get_window
 from _spectral import *
@@ -165,7 +166,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
     return f, Pxx
 
 
-def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default', scaling='density', axis=-1):
+def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend=0, sides='default', scaling='density', axis=-1):
     """
     Estimate power spectral density using Welch's method.  
 
@@ -194,6 +195,12 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
     noverlap: int or None, optional 
         Number of points to overlap between segments. If None, `noverlap`
         = nfft / 2.  Defaults to None.
+
+    detrend : int or function, optional
+        If `detrend` is an int, detrend each segment by subtracting a
+        polynomial of that order.  Otherwise use the result of calling
+        `detrend` in place of the segment.  Defaults to `0` (i.e.
+        subtracting the mean).
 
     sides : { 'default', 'onesided', 'twosided' }, optional
         Selects which sides of the periodogram to return. 'default'
@@ -309,6 +316,15 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
     if noverlap is None:
         noverlap = nfft // 2
 
+    if not hasattr(detrend, '__call__'):
+        if detrend == 0:
+            detrend_func = lambda seg: seg - np.mean(seg)
+        else:
+            time = np.linspace(0, (nfft-1)/fs, nfft)
+            detrend_func = lambda seg: seg - poly.polyval(time, poly.polyfit(time, seg, detrend))
+    else:
+        detrend_func = detrend
+
     step = nfft - noverlap
     indices = np.arange(0, x.shape[-1]-nfft+1, step)
 
@@ -318,7 +334,8 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
             outshape[-1] = nfft/2+1
             Pxx = np.empty(outshape, x.dtype)
             for k, ind in enumerate(indices):
-                xft = fftpack.rfft(x[..., ind:ind+nfft]*win, nfft)
+                x_dt = detrend_func(x[..., ind:ind+nfft])
+                xft = fftpack.rfft(x_dt*win, nfft)
                 if k == 0:
                     Pxx[..., (0,-1)] = xft[..., (0,-1)]**2
                     Pxx[..., 1:-1] = xft[..., 1:-1:2]**2 + xft[..., 2::2]**2
@@ -330,7 +347,8 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
             outshape[-1] = (nfft+1)/2
             Pxx = np.empty(outshape, x.dtype)
             for k, ind in enumerate(indices):
-                xft = fftpack.rfft(x[..., ind:ind+nfft]*win, nfft)
+                x_dt = detrend_func(x[..., ind:ind+nfft])
+                xft = fftpack.rfft(x_dt*win, nfft)
                 if k == 0:
                     Pxx[..., 0] = xft[..., 0]**2
                     Pxx[..., 1:] = xft[..., 1::2]**2 + xft[..., 2::2]**2
@@ -343,7 +361,8 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, sides='default',
         f = np.arange(Pxx.shape[-1])*(fs/nfft)
     elif (np.iscomplexobj(x) and sides == 'default') or sides == 'twosided':
         for k, ind in enumerate(indices):
-            xft = fftpack.fft(x[..., ind:ind+nfft]*win, nfft)
+            x_dt = detrend_func(x[..., ind:ind+nfft])
+            xft = fftpack.fft(x_dt*win, nfft)
             if k == 0:
                 Pxx = (xft * xft.conj()).real
             else:
