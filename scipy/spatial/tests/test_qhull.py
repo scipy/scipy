@@ -361,14 +361,23 @@ class TestDelaunay(object):
         points = np.random.rand(10, 2)
         points = np.r_[points, points] # duplicate input data
 
-        tri1 = qhull.Delaunay(points)
-        tri2 = qhull.Delaunay(points, qhull_options="QJ")
+        tri = qhull.Delaunay(points, qhull_options="QJ Qbb Pp")
+        assert_array_equal(np.unique(tri.simplices.ravel()),
+                           np.arange(len(points)))
 
-        tri1_vertices = np.unique(tri1.vertices.ravel())
-        tri2_vertices = np.unique(tri2.vertices.ravel())
+    def test_coplanar(self):
+        # Check that the coplanar point output option indeed works
+        points = np.random.rand(10, 2)
+        points = np.r_[points, points] # duplicate input data
 
-        assert_(len(tri1_vertices) == len(points)//2)
-        assert_array_equal(tri2_vertices, np.arange(len(points)))
+        tri = qhull.Delaunay(points)
+
+        assert_(len(np.unique(tri.simplices.ravel())) == len(points)//2)
+        assert_(len(tri.coplanar) == len(points)//2)
+
+        assert_(len(np.unique(tri.coplanar[:,2])) == len(points)//2)
+
+        assert_(np.all(tri.vertex_to_simplex >= 0))
 
 
 class TestConvexHull:

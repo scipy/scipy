@@ -40,7 +40,7 @@ cdef extern from "qhull/src/qset.h":
         int maxsize
         setelemT e[1]
 
-    int qh_setsize(setT *set)
+    int qh_setsize(setT *set) nogil
 
 cdef extern from "qhull/src/qhull.h":
     ctypedef double realT
@@ -127,7 +127,7 @@ cdef extern from "qhull/src/qhull.h":
                      boolT ismalloc, char* qhull_cmd, void *outfile,
                      void *errfile) nogil
     int qh_pointid(pointT *point) nogil
-    vertexT *qh_nearvertex(facetT *facet, pointT *point, double *dist)
+    vertexT *qh_nearvertex(facetT *facet, pointT *point, double *dist) nogil
 
 cdef extern from "qhull/src/io.h":
     ctypedef enum qh_RIDGE:
@@ -289,11 +289,15 @@ cdef class _Qhull:
         cdef facetT* facet
         cdef facetT* neighbor
         cdef vertexT *vertex
-        cdef int i, j, point
+        cdef pointT *point
+        cdef int i, j, ipoint, ipoint2, ncoplanar
+        cdef object tmp
         cdef np.ndarray[np.npy_int, ndim=2] facets
         cdef np.ndarray[np.npy_int, ndim=2] neighbors
+        cdef np.ndarray[np.npy_int, ndim=2] coplanar
         cdef np.ndarray[np.double_t, ndim=2] equations
         cdef np.ndarray[np.npy_int, ndim=1] id_map
+        cdef double dist
         cdef int facet_ndim
         cdef int numpoints
 
@@ -328,6 +332,9 @@ cdef class _Qhull:
         neighbors = np.zeros((j, facet_ndim), dtype=np.intc)
         equations = np.zeros((j, facet_ndim+1), dtype=np.double)
 
+        ncoplanar = 0
+        coplanar = np.zeros((10, 3), dtype=np.intc)
+
         # Retrieve facet information
         with nogil:
             facet = qh_qh.facet_list
@@ -340,8 +347,8 @@ cdef class _Qhull:
                 # Save vertex info
                 for i in xrange(facet_ndim):
                     vertex = <vertexT*>facet.vertices.e[i].p
-                    point = qh_pointid(vertex.point)
-                    facets[j, i] = point
+                    ipoint = qh_pointid(vertex.point)
+                    facets[j, i] = ipoint
 
                 # Save neighbor info
                 for i in xrange(facet_ndim):
@@ -353,10 +360,28 @@ cdef class _Qhull:
                     equations[j,i] = facet.normal[i]
                 equations[j,facet_ndim] = facet.offset
 
+                # Save coplanar info
+                if facet.coplanarset:
+                    for i in range(qh_setsize(facet.coplanarset)):
+                        point = <pointT*>facet.coplanarset.e[i].p
+                        vertex = qh_nearvertex(facet, point, &dist)
+
+                        if ncoplanar >= coplanar.shape[0]:
+                            with gil:
+                                tmp = coplanar
+                                coplanar = None
+                                tmp.resize(2*ncoplanar+1, 3)
+                                coplanar = tmp
+
+                        coplanar[ncoplanar,0] = qh_pointid(point)
+                        coplanar[ncoplanar,1] = id_map[facet.id]
+                        coplanar[ncoplanar,2] = qh_pointid(vertex.point)
+                        ncoplanar += 1
+
                 j += 1
                 facet = facet.next
 
-        return facets, neighbors, equations
+        return facets, neighbors, equations, coplanar[:ncoplanar]
 
     @cython.final
     @cython.boundscheck(False)
@@ -415,6 +440,9 @@ cdef class _Qhull:
         if self._ridge_error is not None:
             raise self._ridge_error
 
+        # Now, qh_eachvoronoi_all has initialized the visitids of facets
+        # to correspond do the Voronoi vertex indices.
+
         # -- Grab Voronoi regions
         regions = []
 
@@ -469,6 +497,7 @@ cdef class _Qhull:
                     for k in range(qh_setsize(facet.coplanarset)):
                         point = <pointT*>facet.coplanarset.e[k].p
                         vertex = qh_nearvertex(facet, point, &dist)
+
                         i = qh_pointid(point)
                         j = qh_pointid(vertex.point)
                         print i, j
@@ -1180,9 +1209,9 @@ class Delaunay(object):
     points : ndarray of floats, shape (npoints, ndim)
         Coordinates of points to triangulate
     qhull_options : str, optional
-        Additional options to pass to Qhull. See Qhull manual
-        for details. (Default: "Qx" for ndim > 4 and "" otherwise)
-        Option "Qt" is always enabled.
+        Additional options to pass to Qhull. See Qhull manual for
+        details. Option "Qt" is always enabled.
+        Default:"Qbb Qc Qz Qx" for ndim > 4 and "Qbb Qc Qz" otherwise.
 
     Attributes
     ----------
@@ -1216,6 +1245,8 @@ class Delaunay(object):
         barycentric transform contains NaNs.
     vertex_to_simplex : ndarray of int, shape (npoints,)
         Lookup array, from a vertex, to some simplex which it is a part of.
+        If qhull option "Qc" was not specified, the list will contain -1
+        for points that are not vertices of the tesselation.
     convex_hull : ndarray of int, shape (nfaces, ndim)
         Vertices of facets forming the convex hull of the point set.
         The array contains the indices of the points belonging to
@@ -1227,14 +1258,24 @@ class Delaunay(object):
            Computing convex hulls via the Delaunay triangulation is
            inefficient and subject to increased numerical instability.
            Use `ConvexHull` instead.
+    coplanar : ndarray of int, shape (ncoplanar, 3)
+        Indices of coplanar points and the corresponding indices of
+        the nearest facet and the nearest vertex.  Coplanar
+        points are input points which were *not* included in the
+        triangulation due to numerical precision issues.
+
+        If option "Qc" is not specified, this list is not computed.
 
     Notes
     -----
     The tesselation is computed using the Qhull libary [Qhull]_.
 
-    Note that unless you pass in the Qhull option "QJ", Qhull does
-    not guarantee that each input point appears as a vertex in the
-    Delaunay triangulation.
+    .. note::
+
+       Unless you pass in the Qhull option "QJ", Qhull does not
+       guarantee that each input point appears as a vertex in the
+       Delaunay triangulation. Omitted points are listed in the
+       `coplanar` attribute.
 
     .. versionadded:: 0.9
 
@@ -1266,7 +1307,7 @@ class Delaunay(object):
             self.paraboloid_scale, self.paraboloid_shift = \
                                    qhull.get_paraboloid_shift_scale()
 
-            self.simplices, self.neighbors, self.equations = \
+            self.simplices, self.neighbors, self.equations, self.coplanar = \
                            qhull.get_simplex_facet_array(is_delaunay=1)
         finally:
             qhull.close()
@@ -1319,8 +1360,15 @@ class Delaunay(object):
             self._vertex_to_simplex = np.empty((self.npoints,), dtype=np.intc)
             self._vertex_to_simplex.fill(-1)
 
+            # include coplanar points
+            self._vertex_to_simplex[self.coplanar[:,0]] = self.coplanar[:,2]
+
+            # include other points
             arr = self._vertex_to_simplex
             simplices = self.simplices
+
+            coplanar = self.coplanar
+            ncoplanar = coplanar.shape[0]
 
             nsimplex = self.nsimplex
             ndim = self.ndim
@@ -1616,6 +1664,13 @@ class ConvexHull(object):
     equations : ndarray of double, shape (nfacet, ndim+1)
         [normal, offset] forming the hyperplane equation of the facet
         (see [Qhull]_ documentation for more).
+    coplanar : ndarray of int, shape (ncoplanar, 3)
+        Indices of coplanar points and the corresponding indices of
+        the nearest facets and nearest vertex indices.  Coplanar
+        points are input points which were *not* included in the
+        triangulation due to numerical precision issues.
+
+        If option "Qc" is not specified, this list is not computed.
 
     Notes
     -----
@@ -1647,7 +1702,7 @@ class ConvexHull(object):
         try:
             qhull.triangulate()
 
-            self.simplices, self.neighbors, self.equations = \
+            self.simplices, self.neighbors, self.equations, self.coplanar = \
                            qhull.get_simplex_facet_array(is_delaunay=0)
         finally:
             qhull.close()
