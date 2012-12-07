@@ -18,6 +18,7 @@ SciPy Tutorial
    linalg
    arpack
    csgraph
+   spatial
    stats
    ndimage
    io
