@@ -3,13 +3,17 @@
 Spatial data structures and algorithms (`scipy.spatial`)
 ========================================================
 
-
-Delaunay triangulations
-=======================
+.. currentmodule:: scipy.spatial
 
 `scipy.spatial` can compute triangulations, Voronoi diagrams, and
 convex hulls of a set of points, by leveraging the `Qhull
 <http://qhull.org/>`__ library.
+
+Moreover, it contains `KDTree` implementations for nearest-neighbor point
+queries, and utilities for distance computations in various metrics.
+
+Delaunay triangulations
+-----------------------
 
 The Delaunay triangulation is a subdivision of a set of points into a
 non-overlapping set of triangles, such that no point is inside the
@@ -72,7 +76,7 @@ tetrahedra in 3-D).
 
 
 Coplanar points
----------------
+^^^^^^^^^^^^^^^
 
 It is important to note that not *all* points necessarily appear as
 vertices of the triangulation, due to numerical precision issues in
@@ -120,7 +124,7 @@ and have zero area.
 
 
 Convex hulls
-============
+------------
 
 Convex hull is the smallest convex object containing all points in a
 given point set.
@@ -151,7 +155,7 @@ The same can be achieved with `scipy.spatial.convex_hull_plot_2d`.
 
 
 Voronoi diagrams
-================
+----------------
 
 Voronoi diagram is a subdivision of the space into the nearest
 neighborhoods of a given set of points.
