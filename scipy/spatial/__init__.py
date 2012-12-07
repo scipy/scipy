@@ -21,8 +21,6 @@ Delaunay triangulation, convex hulls and Voronoi diagrams:
    ConvexHull  -- compute a convex hull for input points
    Voronoi     -- compute a Voronoi diagram hull from input points
 
-.. seealso:: `Spatial triangulation tutorial <qhull_tutorial>`
-
 Plotting helpers:
 
 .. autosummary::
@@ -31,6 +29,8 @@ Plotting helpers:
    delaunay_plot_2d     -- plot 2-D triangulation
    convex_hull_plot_2d  -- plot 2-D convex hull
    voronoi_plot_2d      -- plot 2-D voronoi diagram
+
+.. seealso:: :ref:`Tutorial <qhulltutorial>`
 
 
 Simplex representation
