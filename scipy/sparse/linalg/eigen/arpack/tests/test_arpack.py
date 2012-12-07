@@ -21,7 +21,7 @@ from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence
 
-from scipy.linalg import svd
+from scipy.linalg import svd, hilbert
 
 
 # eigs() and eigsh() are called many times, so apply a filter for the warnings
@@ -568,6 +568,17 @@ def test_svd_simple_complex():
             sm_hat = svd_estimate(su, ss, svh)
 
             assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
+
+
+def test_svd_maxiter():
+    # check that maxiter works as expected
+    x = hilbert(6)
+    # ARPACK shouldn't converge on such an ill-conditioned matrix with just
+    # one iteration
+    assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1)
+    # but 100 iterations should be more than enough
+    u, s, vt = svds(x, 1, maxiter=100)
+    assert_allclose(s, [1.7], atol=0.5)
 
 
 if __name__ == "__main__":
