@@ -12,7 +12,7 @@ Nearest-neighbor queries:
    cKDTree     -- class for efficient nearest-neighbor queries (faster impl.)
    distance    -- module containing many different distance measures
 
-Delaunay triangulation:
+Delaunay triangulation, convex hulls and Voronoi diagrams:
 
 .. autosummary::
    :toctree: generated/
@@ -20,6 +20,17 @@ Delaunay triangulation:
    Delaunay    -- compute Delaunay triangulation of input points
    ConvexHull  -- compute a convex hull for input points
    Voronoi     -- compute a Voronoi diagram hull from input points
+
+.. seealso:: `Spatial triangulation tutorial <qhull_tutorial>`
+
+Plotting helpers:
+
+.. autosummary::
+   :toctree: generated/
+
+   delaunay_plot_2d     -- plot 2-D triangulation
+   convex_hull_plot_2d  -- plot 2-D convex hull
+   voronoi_plot_2d      -- plot 2-D voronoi diagram
 
 
 Simplex representation
@@ -62,6 +73,7 @@ computations.
 from kdtree import *
 from ckdtree import *
 from qhull import *
+from _plotutils import *
 
 __all__ = filter(lambda s:not s.startswith('_'),dir())
 __all__ += ['distance']
