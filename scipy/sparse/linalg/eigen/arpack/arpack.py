@@ -1567,7 +1567,7 @@ def svds(A, k=6, ncv=None, tol=0, maxiter=None):
     Parameters
     ----------
     A : sparse matrix
-        Array to compute the SVD on
+        Array to compute the SVD on, of shape (M, N)
     k : int, optional
         Number of singular values and vectors to compute.
     ncv : integer, optional
@@ -1579,11 +1579,19 @@ def svds(A, k=6, ncv=None, tol=0, maxiter=None):
     maxiter: integer, optional
         Maximum number of iterations.
 
+    Returns
+    -------
+    u : ndarray, shape=(M, k)
+        Unitary matrix having left singular vectors as columns.
+    s : ndarray, shape=(k,)
+        The singular values.
+    vt : ndarray, shape=(k, N)
+        Unitary matrix having right singular vectors as rows.
+
     Notes
     -----
     This is a naive implementation using an ARPACK as eigensolver on A.H * A
     or A * A.H, depending on which one is more efficient.
-
     """
     if not (isinstance(A, np.ndarray) or isspmatrix(A)):
         A = np.asarray(A)
