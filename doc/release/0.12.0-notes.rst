@@ -39,6 +39,17 @@ count_neighbors and sparse_distance_matrix) are between 200 and 1000 times
 faster in cKDTree than in KDTree.  With very minor caveats, cKDTree has
 exactly the same interface as KDTree, and can be used as a drop-in replacement.
 
+Voronoi diagrams and convex hulls
+---------------------------------
+`scipy.spatial` contains now functionality for computing Voronoi
+diagrams and convex hulls using the Qhull library. (Delaunay
+triangulation was available since Scipy 0.9.0.)
+
+Delaunay improvements
+---------------------
+It's now possible to pass in custom Qhull options in Delaunay
+triangulation. Coplanar points are also now recorded, if present.
+
 ``scipy.optimize`` improvements
 -------------------------------
 A callback mechanism was added to L-BFGS-B and TNC minimization solvers.
