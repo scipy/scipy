@@ -2,8 +2,8 @@
 """
 
 import numpy as np
-import numpy.polynomial.polynomial as poly
 from scipy import fftpack
+import signaltools
 from windows import get_window
 from _spectral import *
 
@@ -166,7 +166,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
     return f, Pxx
 
 
-def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend=0, sides='default', scaling='density', axis=-1):
+def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constant', sides='default', scaling='density', axis=-1):
     """
     Estimate power spectral density using Welch's method.  
 
@@ -196,11 +196,11 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend=0, sides
         Number of points to overlap between segments. If None, `noverlap`
         = nfft / 2.  Defaults to None.
 
-    detrend : int or function, optional
-        If `detrend` is an int, detrend each segment by subtracting a
-        polynomial of that order.  Otherwise use the result of calling
-        `detrend` in place of the segment.  Defaults to `0` (i.e.
-        subtracting the mean).
+    detrend : string or function, optional
+        Specifies how to detend each segment. If `detrend` is a string,
+        it is passed as the `type` argument to scipy.signal.detrend. 
+        If it is a function, it takes a segment and returns a detrended
+        segment.  Defaults to 'constant'
 
     sides : { 'default', 'onesided', 'twosided' }, optional
         Selects which sides of the periodogram to return. 'default'
@@ -317,11 +317,14 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend=0, sides
         noverlap = nfft // 2
 
     if not hasattr(detrend, '__call__'):
-        if detrend == 0:
-            detrend_func = lambda seg: seg - np.mean(seg)
-        else:
-            time = np.linspace(0, (nfft-1)/fs, nfft)
-            detrend_func = lambda seg: seg - poly.polyval(time, poly.polyfit(time, seg, detrend))
+        detrend_func = lambda seg: signaltools.detrend(seg, type=detrend)
+    elif axis != -1:
+    # Wrap this function so that it receives a shape that it could reasonably
+    # expect to receive.
+        def detrend_func(seg):
+            seg = np.rollaxis(seg, len(seg.shape)-1, axis)
+            seg = seg - detrend(seg)
+            return np.rollaxis(seg, axis, len(seg.shape))
     else:
         detrend_func = detrend
 
@@ -371,7 +374,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend=0, sides
         Pxx *= scale
         f = fftpack.fftfreq(nfft, 1.0/fs)
     elif np.iscomplexobj(x) and sides == 'onesided':
-        raise ValueError('Cannot compute onsided spectrum of complex data')
+        raise ValueError('Cannot compute a one-sided spectrum of complex data')
     else: 
         raise ValueError('Unknown sides: "{0}".'.format(sides))
 
