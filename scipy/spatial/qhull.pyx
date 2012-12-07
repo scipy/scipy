@@ -1204,6 +1204,8 @@ class Delaunay(object):
 
     Delaunay tesselation in N dimensions.
 
+    .. versionadded:: 0.9
+
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndim)
@@ -1212,6 +1214,8 @@ class Delaunay(object):
         Additional options to pass to Qhull. See Qhull manual for
         details. Option "Qt" is always enabled.
         Default:"Qbb Qc Qz Qx" for ndim > 4 and "Qbb Qc Qz" otherwise.
+
+        .. versionadded:: 0.12.0
 
     Attributes
     ----------
@@ -1266,6 +1270,8 @@ class Delaunay(object):
 
         If option "Qc" is not specified, this list is not computed.
 
+        .. versionadded:: 0.12.0
+
     Notes
     -----
     The tesselation is computed using the Qhull libary [Qhull]_.
@@ -1276,8 +1282,6 @@ class Delaunay(object):
        guarantee that each input point appears as a vertex in the
        Delaunay triangulation. Omitted points are listed in the
        `coplanar` attribute.
-
-    .. versionadded:: 0.9
 
     References
     ----------
@@ -1642,6 +1646,8 @@ class ConvexHull(object):
 
     Convex hulls in N dimensions.
 
+    .. versionadded:: 0.12.0
+
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndim)
@@ -1675,8 +1681,6 @@ class ConvexHull(object):
     Notes
     -----
     The convex hull is computed using the Qhull libary [Qhull]_.
-
-    .. versionadded:: 0.12.0
 
     References
     ----------
@@ -1720,6 +1724,8 @@ class Voronoi(object):
 
     Voronoi diagrams in N dimensions.
 
+    .. versionadded:: 0.12.0
+
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndim)
@@ -1747,8 +1753,6 @@ class Voronoi(object):
     Notes
     -----
     The Voronoi diagram is computed using the Qhull libary [Qhull]_.
-
-    .. versionadded:: 0.12.0
 
     References
     ----------
