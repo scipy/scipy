@@ -380,7 +380,11 @@ cdef class _Qhull:
                             with gil:
                                 tmp = coplanar
                                 coplanar = None
-                                tmp.resize(2*ncoplanar+1, 3)
+                                try:
+                                    tmp.resize(2*ncoplanar+1, 3)
+                                except ValueError:
+                                    # Work around Cython issue on Python 2.4
+                                    tmp = np.resize(tmp, (2*ncoplanar+1, 3))
                                 coplanar = tmp
 
                         coplanar[ncoplanar,0] = qh_pointid(point)
@@ -503,7 +507,10 @@ cdef class _Qhull:
                 if nvoronoi_vertices >= voronoi_vertices.shape[0]:
                     tmp = voronoi_vertices
                     voronoi_vertices = None
-                    tmp.resize(2*nvoronoi_vertices + 1, self.ndim)
+                    try:
+                        tmp.resize(2*nvoronoi_vertices + 1, self.ndim)
+                    except ValueError:
+                        tmp = np.resize(tmp, (2*nvoronoi_vertices+1, self.ndim))
                     voronoi_vertices = tmp
 
                 for k in range(self.ndim):
@@ -1516,7 +1523,11 @@ class Delaunay(object):
                     if m >= msize:
                         arr = None
                         msize = 2*msize + 1
-                        out.resize(msize, ndim)
+                        try:
+                            out.resize(msize, ndim)
+                        except ValueError:
+                            # Work around Cython bug on Python 2.4
+                            out = np.resize(out, (msize, ndim))
                         arr = out
 
         arr = None
