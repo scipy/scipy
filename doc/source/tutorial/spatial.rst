@@ -25,7 +25,7 @@ Delaunay triangulation can be computed using `scipy.spatial` as follows:
 .. plot::
 
    >>> from scipy.spatial import Delaunay
-   >>> points = np.array([[0, 0], [0, 1], [1, 0], [1, 1], [0.5, 0.5]])
+   >>> points = np.array([[0, 0], [0, 1], [1, 0], [1.1, 1.1]])
    >>> tri = Delaunay(points)
    
    We can visualize it:
