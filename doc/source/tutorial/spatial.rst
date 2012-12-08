@@ -25,7 +25,7 @@ Delaunay triangulation can be computed using `scipy.spatial` as follows:
 .. plot::
 
    >>> from scipy.spatial import Delaunay
-   >>> points = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+   >>> points = np.array([[0, 0], [0, 1], [1, 0], [1, 1], [0.5, 0.5]])
    >>> tri = Delaunay(points)
    
    We can visualize it:
@@ -61,7 +61,7 @@ Moreover, neighboring triangles can also be found out:
 >>> tri.neighbors[i]
 array([-1,  0, -1], dtype=int32)
 
-What this tells us that this triangle has triangle #0 as a neighbor,
+What this tells us is that this triangle has triangle #0 as a neighbor,
 but no other neighbors. Moreover, it tells us that neighbor 0 is
 opposite the vertex 1 of the triangle:
 
@@ -157,7 +157,7 @@ The same can be achieved with `scipy.spatial.convex_hull_plot_2d`.
 Voronoi diagrams
 ----------------
 
-Voronoi diagram is a subdivision of the space into the nearest
+A Voronoi diagram is a subdivision of the space into the nearest
 neighborhoods of a given set of points.
 
 There are two ways to approach this object using `scipy.spatial`.
@@ -222,8 +222,8 @@ points is closest to this one", and define the regions that way:
    infinity.
    
    The Voronoi ridges are perpendicular to lines drawn between the
-   of the input points. Which two points each ridge corresponds to,
-   is also recorded:
+   input points. Which two points each ridge corresponds to is also
+   recorded:
    
    >>> vor.ridge_points
    array([[0, 3],
