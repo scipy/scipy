@@ -1294,6 +1294,8 @@ class Delaunay(object):
         If option "Qc" is not specified, this list is not computed.
 
         .. versionadded:: 0.12.0
+    vertices
+        Same as `simplices`, but deprecated.
 
     Notes
     -----
@@ -1305,6 +1307,60 @@ class Delaunay(object):
        guarantee that each input point appears as a vertex in the
        Delaunay triangulation. Omitted points are listed in the
        `coplanar` attribute.
+
+    Examples
+    --------
+    Triangulation of a set of points:
+
+    >>> points = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
+    >>> from scipy.spatial import Delaunay
+    >>> tri = Delaunay(points)
+
+    We can plot it:
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+    >>> plt.plot(points[:,0], points[:,1], 'o')
+    >>> plt.show()
+
+    Point indices and coordinates for the two triangles forming the
+    triangulation:
+
+    >>> tri.simplices
+    array([[3, 2, 0],
+           [3, 1, 0]], dtype=int32)
+    >>> points[tri.simplices]
+    array([[[ 1. ,  1. ],
+            [ 1. ,  0. ],
+            [ 0. ,  0. ]],
+           [[ 1. ,  1. ],
+            [ 0. ,  1.1],
+            [ 0. ,  0. ]]])
+
+    Triangle 0 is the only neighbor of triangle 1, and it's opposite to
+    vertex 1 of triangle 1:
+
+    >>> tri.neighbors[1]
+    array([-1,  0, -1], dtype=int32)
+    >>> points[tri.simplices[1,1]]
+    array([ 0. ,  1.1])
+
+    We can find out which triangle points are in:
+
+    >>> p = np.array([(0.1, 0.2), (1.5, 0.5)])
+    >>> tri.find_simplex(p)
+    array([ 1, -1], dtype=int32)
+
+    We can also compute barycentric coordinates in triangle 1 for
+    these points:
+
+    >>> b = tri.transform[1,:2].dot(p - tri.transform[1,2])
+    >>> np.c_[b, 1 - b.sum(axis=1)]
+    array([[ 0.1       ,  0.2       ,  0.7       ],
+           [ 1.27272727,  0.27272727, -0.54545455]])
+
+    The coordinates for the first point are all positive, meaning it
+    is indeed inside the triangle.
 
     References
     ----------
@@ -1708,6 +1764,23 @@ class ConvexHull(object):
     -----
     The convex hull is computed using the Qhull libary [Qhull]_.
 
+    Examples
+    --------
+
+    Convex hull of a random set of points:
+
+    >>> from scipy.spatial import ConvexHull
+    >>> points = np.random.rand(30, 2)   # 30 random points in 2-D
+    >>> hull = ConvexHull(points)
+
+    Plot it:
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(points[:,0], points[:,1], 'o')
+    >>> for simplex in hull.simplices:
+    >>>     plt.plot(points[simplex,0], points[simplex,1], 'k-')
+    >>> plt.show()
+
     References
     ----------
     .. [Qhull] http://www.qhull.org/
@@ -1786,6 +1859,54 @@ class Voronoi(object):
     Notes
     -----
     The Voronoi diagram is computed using the Qhull libary [Qhull]_.
+
+    Examples
+    --------
+    Voronoi diagram for a set of point:
+
+    >>> points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],
+    ...                    [2, 0], [2, 1], [2, 2]])
+    >>> from scipy.spatial import Voronoi, voronoi_plot_2d
+    >>> vor = Voronoi(points)
+
+    Plot it:
+
+    >>> import matplotlib.pyplot as plt
+    >>> voronoi_plot_2d(vor)
+    >>> plt.show()
+
+    The Voronoi vertices:
+
+    >>> vor.vertices
+    array([[ 0.5,  0.5],
+           [ 1.5,  0.5],
+           [ 0.5,  1.5],
+           [ 1.5,  1.5]])
+
+    There is a single finite Voronoi region, and four finite Voronoi
+    ridges:
+
+    >>> vor.regions
+    [[], [-1, 0], [-1, 1], [1, -1, 0], [3, -1, 2], [-1, 3], [-1, 2], [3, 2, 0, 1], [2, -1, 0], [3, -1, 1]]
+    >>> vor.ridge_vertices
+    [[-1, 0], [-1, 0], [-1, 1], [-1, 1], [0, 1], [-1, 3], [-1, 2], [2, 3], [-1, 3], [-1, 2], [0, 2], [1, 3]]
+
+    The ridges are perpendicular between lines drawn between the following
+    input points:
+
+    >>> vor.ridge_points
+    array([[0, 1],
+           [0, 3],
+           [6, 3],
+           [6, 7],
+           [3, 4],
+           [5, 8],
+           [5, 2],
+           [5, 4],
+           [8, 7],
+           [2, 1],
+           [4, 1],
+           [4, 7]], dtype=int32)
 
     References
     ----------
