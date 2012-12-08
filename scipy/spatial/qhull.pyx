@@ -473,6 +473,9 @@ cdef class _Qhull:
                     else:
                         continue
                 cur_region.append(int(i))
+            if len(cur_region) == 1 and cur_region[0] == -1:
+                # report similarly as qvoronoi o
+                cur_region = []
             regions.append(cur_region)
 
             vertex = vertex.next
