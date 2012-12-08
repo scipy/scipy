@@ -15,29 +15,20 @@ def configuration(parent_package = '', top_path = None):
     qhull_src = ['geom2.c', 'geom.c', 'global.c', 'io.c', 'libqhull.c',
                  'mem.c', 'merge.c', 'poly2.c', 'poly.c', 'qset.c',
                  'random.c', 'rboxlib.c', 'stat.c', 'user.c', 'usermem.c',
-                 'userprintf.c']
+                 'userprintf.c', 'userprintf_rbox.c']
+    qhull_src = [join('qhull', 'src', x) for x in qhull_src]
 
     inc_dirs = [get_python_inc()]
     if inc_dirs[0] != get_python_inc(plat_specific=1):
         inc_dirs.append(get_python_inc(plat_specific=1))
     inc_dirs.append(get_numpy_include_dirs())
 
-    config.add_library('qhull',
-                       sources=[join('qhull', 'src', x) for x in qhull_src],
-                       include_dirs=inc_dirs,
-                       # XXX: GCC dependency!
-                       #extra_compiler_args=['-fno-strict-aliasing'],
-                       )
-
-    lapack = dict(get_info('lapack_opt'))
-    try:
-        libs = ['qhull'] + lapack.pop('libraries')
-    except KeyError:
-        libs = ['qhull']
+    cfg = dict(get_info('lapack_opt'))
+    cfg.setdefault('include_dirs', []).extend(inc_dirs)
+    cfg.setdefault('define_macros', []).append(('qh_QHpointer','1'))
     config.add_extension('qhull',
-                         sources=['qhull.c'],
-                         libraries=libs,
-                         **lapack)
+                         sources=['qhull.c'] + qhull_src,
+                         **cfg)
 
     config.add_extension('ckdtree', sources=['ckdtree.c']) # FIXME: cython
 

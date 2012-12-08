@@ -106,7 +106,7 @@ cdef extern from "qhull/src/qhull.h":
         realT MINoutside
         realT DISTround
 
-    extern qhT qh_qh
+    extern qhT *qh_qh
     extern int qh_PRINToff
     extern int qh_ALL
 

@@ -48,4 +48,5 @@ src = [join('qhull', 'src', s) for s in [
     'random.c', 'rboxlib.c', 'stat.c', 'user.c', 'usermem.c',
     'userprintf.c']]
 
-env.NumpyPythonExtension('qhull', source = ['qhull.c'] + src)
+env.NumpyPythonExtension('qhull', source = ['qhull.c'] + src,
+                         CDEFINES={'qh_QHpointer': '1'})
