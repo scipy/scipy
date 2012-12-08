@@ -210,10 +210,11 @@ cdef class _Qhull:
         if options is not None:
             options_set.update(options.split())
         if required_options is not None:
-            options_set.update(required_options.split())
-        if b"QJ" in options_set and b"Qt" in options_set:
-            # not compatible, but safe
-            options_set.remove(b"Qt")
+            required_options_set = set(required_options.split())
+            if b"QJ" in options_set and b"Qt" in required_options_set:
+                # safe to remove, QJ always produces simplical output
+                required_options_set.remove(b"Qt")
+            options_set.update(required_options_set)
         options = b"qhull %s %s " % (mode_option, b" ".join(options_set))
 
         _qhull_lock.acquire()
