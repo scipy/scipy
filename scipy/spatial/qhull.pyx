@@ -504,7 +504,6 @@ cdef class _Qhull:
 
                         i = qh_pointid(point)
                         j = qh_pointid(vertex.point)
-                        print i, j
                         point_region[i] = point_region[j]
 
             facet = facet.next
@@ -1696,7 +1695,7 @@ class ConvexHull(object):
     def __init__(self, points, qhull_options=None):
         points = np.ascontiguousarray(points).astype(np.double)
 
-        if qhull_options is not None:
+        if qhull_options is None:
             qhull_options = b""
             if points.shape[1] >= 5:
                 qhull_options += b"Qx"
@@ -1740,7 +1739,8 @@ class Voronoi(object):
         Coordinates of points to construct a convex hull from
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual
-        for details. (Default: "Qbb Qx" for ndim > 4 and "Qbb" otherwise)
+        for details. (Default: "Qbb Qc Qz Qx" for ndim > 4 and
+        "Qbb Qc Qz" otherwise)
 
     Attributes
     ----------
@@ -1757,6 +1757,8 @@ class Voronoi(object):
         -1 indicates vertex outside the Voronoi diagram.
     point_region : list of ints, shape (npoints)
         Index of the Voronoi region for each input point.
+        If qhull option "Qc" was not specified, the list will contain -1
+        for points that are not associated with a Voronoi region.
 
     Notes
     -----
@@ -1770,8 +1772,8 @@ class Voronoi(object):
     def __init__(self, points, qhull_options=None):
         points = np.ascontiguousarray(points).astype(np.double)
 
-        if qhull_options is not None:
-            qhull_options = b"Qbb"
+        if qhull_options is None:
+            qhull_options = b"Qbb Qc Qz"
             if points.shape[1] >= 5:
                 qhull_options += b" Qx"
         else:
@@ -1784,7 +1786,7 @@ class Voronoi(object):
         self.max_bound = self.points.max(axis=0)
 
         # Run qhull
-        qhull = _Qhull(b"v", points, qhull_options, b"Qc")
+        qhull = _Qhull(b"v", points, qhull_options)
         try:
             self.vertices, self.ridge_points, self.ridge_vertices, \
                            self.regions, self.point_region = \
