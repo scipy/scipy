@@ -224,7 +224,7 @@ cdef class _Qhull:
                                     options_c, NULL, stderr)
 
         if exitcode != 0:
-            _qhull_lock.release()
+            self.close()
             raise RuntimeError("Qhull error")
 
     @cython.final
@@ -233,13 +233,14 @@ cdef class _Qhull:
         if self._active:
             try:
                 with nogil:
-                    qh_freeqhull(0)
+                    qh_freeqhull(1)
                     qh_memfreeshort(&curlong, &totlong)
                 if curlong != 0 or totlong != 0:
                     raise RuntimeError(
                         "qhull: did not free %d bytes (%d pieces)" %
                         (totlong, curlong))
             finally:
+                self._active = 0
                 _qhull_lock.release()
 
     @cython.final
