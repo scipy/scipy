@@ -25,13 +25,13 @@ Delaunay triangulation can be computed using `scipy.spatial` as follows:
 .. plot::
 
    >>> from scipy.spatial import Delaunay
-   >>> points = np.array([[0, 0], [0, 1], [1, 0], [1.1, 1.1]])
+   >>> points = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
    >>> tri = Delaunay(points)
    
    We can visualize it:
    
    >>> import matplotlib.pyplot as plt
-   >>> plt.triplot(points[:,0], points[:,1], tri.simplices)
+   >>> plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
    >>> plt.plot(points[:,0], points[:,1], 'o')
    
    And add some further decorations:
@@ -50,11 +50,11 @@ the ``simplices`` attribute contains the indices of the points in the
 
 >>> i = 1
 >>> tri.simplices[i,:]
-array([3, 0, 2], dtype=int32)
+array([3, 1, 0], dtype=int32)
 >>> points[tri.simplices[i,:]]
-array([[1, 1],
-       [0, 0],
-       [1, 0]])
+array([[ 1. ,  1. ],
+       [ 0. ,  1.1],
+       [ 0. ,  0. ]])
 
 Moreover, neighboring triangles can also be found out:
 
@@ -66,7 +66,7 @@ but no other neighbors. Moreover, it tells us that neighbor 0 is
 opposite the vertex 1 of the triangle:
 
 >>> points[tri.simplices[i, 1]]
-array([1, 0])
+array([ 0. ,  1.1])
 
 Indeed, from the figure we see that this is the case.
 
