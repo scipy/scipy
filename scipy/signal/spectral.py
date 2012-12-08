@@ -323,7 +323,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
     # expect to receive.
         def detrend_func(seg):
             seg = np.rollaxis(seg, len(seg.shape)-1, axis)
-            seg = seg - detrend(seg)
+            seg = detrend(seg)
             return np.rollaxis(seg, axis, len(seg.shape))
     else:
         detrend_func = detrend
