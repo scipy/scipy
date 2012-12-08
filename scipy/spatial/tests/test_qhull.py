@@ -197,7 +197,7 @@ class TestUtilities(object):
             tri = qhull.Delaunay(grid)
             self._check_barycentric_transforms(tri, err_msg=err_msg,
                                                unit_cube=True,
-                                               unit_cube_tol=1.5e6*eps)
+                                               unit_cube_tol=1e7*eps)
 
 
 class TestRidgeIter2D(object):
