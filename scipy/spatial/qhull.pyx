@@ -458,7 +458,9 @@ cdef class _Qhull:
             qh_order_vertexneighbors_nd(self.ndim+1, vertex)
 
             i = qh_pointid(vertex.point)
-            point_region[i] = len(regions)
+            if i < self.numpoints:
+                # Qz results to one extra point
+                point_region[i] = len(regions)
 
             inf_seen = 0
             cur_region = []
@@ -504,7 +506,10 @@ cdef class _Qhull:
 
                         i = qh_pointid(point)
                         j = qh_pointid(vertex.point)
-                        point_region[i] = point_region[j]
+
+                        if i < self.numpoints:
+                            # Qz can result to one extra point
+                            point_region[i] = point_region[j]
 
             facet = facet.next
 
