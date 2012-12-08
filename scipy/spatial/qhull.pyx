@@ -87,6 +87,7 @@ cdef extern from "qhull/src/qhull.h":
         boolT NOerrexit
         boolT PROJECTdelaunay
         boolT ATinfinity
+        boolT UPPERdelaunay
         int normal_size
         char *qhull_command
         facetT *facet_list
@@ -188,14 +189,15 @@ cdef class _Qhull:
                  bytes mode_option,
                  np.ndarray[np.double_t, ndim=2] points,
                  bytes options=None,
-                 bytes required_options=None):
+                 bytes required_options=None,
+                 furthest_site=False):
         global _qhull_instance
         cdef char *options_c
         cdef int exitcode
 
         self._active = 0
 
-        points = np.ascontiguousarray(points)
+        points = np.ascontiguousarray(points, dtype=np.double)
 
         self.numpoints = points.shape[0]
         self.ndim = points.shape[1]
@@ -209,6 +211,10 @@ cdef class _Qhull:
         options_set = set()
         if options is not None:
             options_set.update(options.split())
+        if furthest_site:
+            if b"Qz" in options_set:
+                options_set.remove(b"Qz")
+            options_set.add(b"Qu")
         if required_options is not None:
             required_options_set = set(required_options.split())
             if b"QJ" in options_set and b"Qt" in required_options_set:
@@ -325,7 +331,7 @@ cdef class _Qhull:
                     with gil:
                         raise ValueError("non-simplical facet encountered")
 
-                if not is_delaunay or not facet.upperdelaunay:
+                if not is_delaunay or facet.upperdelaunay == qh_qh.UPPERdelaunay:
                     id_map[facet.id] = j
                     j += 1
 
@@ -344,7 +350,7 @@ cdef class _Qhull:
             facet = qh_qh.facet_list
             j = 0
             while facet and facet.next:
-                if is_delaunay and facet.upperdelaunay:
+                if is_delaunay and facet.upperdelaunay != qh_qh.UPPERdelaunay:
                     facet = facet.next
                     continue
 
@@ -437,7 +443,8 @@ cdef class _Qhull:
         self._ridge_points = np.empty((10, 2), np.intc)
         self._ridge_vertices = []
 
-        qh_eachvoronoi_all(<void*>self, &_visit_voronoi, 0, qh_RIDGEall, 1)
+        qh_eachvoronoi_all(<void*>self, &_visit_voronoi, qh_qh.UPPERdelaunay,
+                           qh_RIDGEall, 1)
 
         self._ridge_points = self._ridge_points[:self._nridges]
 
@@ -1221,6 +1228,11 @@ class Delaunay(object):
     ----------
     points : ndarray of floats, shape (npoints, ndim)
         Coordinates of points to triangulate
+    furthest_site : bool, optional
+        Whether to compute a furthest-site Delaunay triangulation.
+        Default: False
+
+        .. versionadded:: 0.12.0
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual for
         details. Option "Qt" is always enabled.
@@ -1300,8 +1312,8 @@ class Delaunay(object):
 
     """
 
-    def __init__(self, points, qhull_options=None):
-        points = np.ascontiguousarray(points).astype(np.double)
+    def __init__(self, points, furthest_site=False, qhull_options=None):
+        points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
             qhull_options = b"Qbb Qc Qz"
@@ -1317,7 +1329,8 @@ class Delaunay(object):
         self.max_bound = self.points.max(axis=0)
 
         # Run qhull
-        qhull = _Qhull(b"d", points, qhull_options, required_options=b"Qt")
+        qhull = _Qhull(b"d", points, qhull_options, required_options=b"Qt",
+                       furthest_site=furthest_site)
         try:
             qhull.triangulate()
 
@@ -1701,7 +1714,7 @@ class ConvexHull(object):
 
     """
     def __init__(self, points, qhull_options=None):
-        points = np.ascontiguousarray(points).astype(np.double)
+        points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
             qhull_options = b""
@@ -1745,6 +1758,8 @@ class Voronoi(object):
     ----------
     points : ndarray of floats, shape (npoints, ndim)
         Coordinates of points to construct a convex hull from
+    furthest_site : bool, optional
+        Whether to compute a furthest-site Voronoi diagram. Default: False
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual
         for details. (Default: "Qbb Qc Qz Qx" for ndim > 4 and
@@ -1777,8 +1792,8 @@ class Voronoi(object):
     .. [Qhull] http://www.qhull.org/
 
     """
-    def __init__(self, points, qhull_options=None):
-        points = np.ascontiguousarray(points).astype(np.double)
+    def __init__(self, points, furthest_site=False, qhull_options=None):
+        points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
             qhull_options = b"Qbb Qc Qz"
@@ -1794,7 +1809,7 @@ class Voronoi(object):
         self.max_bound = self.points.max(axis=0)
 
         # Run qhull
-        qhull = _Qhull(b"v", points, qhull_options)
+        qhull = _Qhull(b"v", points, qhull_options, furthest_site=furthest_site)
         try:
             self.vertices, self.ridge_points, self.ridge_vertices, \
                            self.regions, self.point_region = \

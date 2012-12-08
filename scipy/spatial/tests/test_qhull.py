@@ -379,6 +379,13 @@ class TestDelaunay(object):
 
         assert_(np.all(tri.vertex_to_simplex >= 0))
 
+    def test_furthest_site(self):
+        points = [(0, 0), (0, 1), (1, 0), (0.5, 0.5), (1.1, 1.1)]
+        tri = qhull.Delaunay(points, furthest_site=True)
+
+        expected = np.array([(1, 4, 0), (2, 4, 0)]) # from Qhull
+        assert_array_equal(tri.simplices, expected)
+
 
 class TestConvexHull:
     def test_hull_consistency_tri(self):
@@ -496,7 +503,7 @@ class TestVoronoi:
         """
         self._compare_qvoronoi(points, output)
 
-    def _compare_qvoronoi(self, points, output):
+    def _compare_qvoronoi(self, points, output, **kw):
         """Compare to output from 'qvoronoi o Fv < data' to Voronoi()"""
 
         # Parse output
@@ -514,7 +521,7 @@ class TestVoronoi:
                           for x in output[3+nvertex+nregion:]]
 
         # Compare results
-        vor = qhull.Voronoi(points)
+        vor = qhull.Voronoi(points, **kw)
 
         def sorttuple(x):
             return tuple(sorted(x))
@@ -570,6 +577,30 @@ class TestVoronoi:
 
         for name in datasets.keys():
             yield check, name
+
+    def test_furthest_site(self):
+        points = [(0, 0), (0, 1), (1, 0), (0.5, 0.5), (1.1, 1.1)]
+
+        # qhull v o Fv Qbb Qc Qu < dat
+        output = """
+        2
+        3 5 1
+        -10.101 -10.101 
+        0.6000000000000001    0.5 
+           0.5 0.6000000000000001 
+        3 0 1 2
+        2 0 1
+        2 0 2
+        0
+        3 0 1 2
+        5
+        4 0 2 0 2
+        4 0 1 0 1
+        4 0 4 1 2
+        4 1 4 0 1
+        4 2 4 0 2
+        """
+        self._compare_qvoronoi(points, output, furthest_site=True)
 
 if __name__ == "__main__":
     run_module_suite()
