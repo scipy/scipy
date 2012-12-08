@@ -56,7 +56,7 @@ def delaunay_plot_2d(tri, ax=None):
         raise ValueError("Delaunay triangulation is not 2-D")
 
     ax.plot(tri.points[:,0], tri.points[:,1], 'o')
-    ax.triplot(tri.points[:,0], tri.points[:,1], tri.simplices)
+    ax.triplot(tri.points[:,0], tri.points[:,1], tri.simplices.copy())
 
     _adjust_bounds(ax, tri.points)
 
