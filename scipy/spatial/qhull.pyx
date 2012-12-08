@@ -44,7 +44,7 @@ cdef extern from "qhull/src/qset.h":
 
     int qh_setsize(setT *set) nogil
 
-cdef extern from "qhull/src/qhull.h":
+cdef extern from "qhull/src/libqhull.h":
     ctypedef double realT
     ctypedef double coordT
     ctypedef double pointT
