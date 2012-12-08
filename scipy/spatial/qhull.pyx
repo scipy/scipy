@@ -215,7 +215,7 @@ cdef class _Qhull:
                 # safe to remove, QJ always produces simplical output
                 required_options_set.remove(b"Qt")
             options_set.update(required_options_set)
-        options = b"qhull %s %s " % (mode_option, b" ".join(options_set))
+        options = b"qhull "  + mode_option +  b" " + b" ".join(options_set)
 
         _qhull_lock.acquire()
         self._active = 1
