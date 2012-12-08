@@ -16,6 +16,8 @@ cimport numpy as np
 cimport cython
 cimport qhull
 
+from numpy.compat import asbytes
+
 __all__ = ['Delaunay', 'ConvexHull', 'Voronoi', 'tsearch']
 
 #------------------------------------------------------------------------------
@@ -183,7 +185,7 @@ cdef class _Qhull:
 
     @cython.final
     def __init__(self,
-                 str mode_option,
+                 bytes mode_option,
                  np.ndarray[np.double_t, ndim=2] points,
                  bytes options=None,
                  bytes required_options=None):
@@ -1294,9 +1296,11 @@ class Delaunay(object):
         points = np.ascontiguousarray(points).astype(np.double)
 
         if qhull_options is None:
-            qhull_options = "Qbb Qc Qz"
+            qhull_options = b"Qbb Qc Qz"
             if points.shape[1] >= 5:
-                qhull_options += " Qx"
+                qhull_options += b" Qx"
+        else:
+            qhull_options = asbytes(qhull_options)
 
         self.ndim = points.shape[1]
         self.npoints = points.shape[0]
@@ -1305,7 +1309,7 @@ class Delaunay(object):
         self.max_bound = self.points.max(axis=0)
 
         # Run qhull
-        qhull = _Qhull("d", points, qhull_options, required_options=b"Qt")
+        qhull = _Qhull(b"d", points, qhull_options, required_options=b"Qt")
         try:
             qhull.triangulate()
 
@@ -1692,9 +1696,11 @@ class ConvexHull(object):
         points = np.ascontiguousarray(points).astype(np.double)
 
         if qhull_options is not None:
-            qhull_options = ""
+            qhull_options = b""
             if points.shape[1] >= 5:
-                qhull_options += "Qx"
+                qhull_options += b"Qx"
+        else:
+            qhull_options = asbytes(qhull_options)
 
         self.ndim = points.shape[1]
         self.npoints = points.shape[0]
@@ -1703,7 +1709,7 @@ class ConvexHull(object):
         self.max_bound = self.points.max(axis=0)
 
         # Run qhull
-        qhull = _Qhull("i", points, qhull_options, required_options=b"Qt")
+        qhull = _Qhull(b"i", points, qhull_options, required_options=b"Qt")
         try:
             qhull.triangulate()
 
@@ -1764,9 +1770,11 @@ class Voronoi(object):
         points = np.ascontiguousarray(points).astype(np.double)
 
         if qhull_options is not None:
-            qhull_options = "Qbb"
+            qhull_options = b"Qbb"
             if points.shape[1] >= 5:
-                qhull_options += " Qx"
+                qhull_options += b" Qx"
+        else:
+            qhull_options = asbytes(qhull_options)
 
         self.ndim = points.shape[1]
         self.npoints = points.shape[0]
@@ -1775,7 +1783,7 @@ class Voronoi(object):
         self.max_bound = self.points.max(axis=0)
 
         # Run qhull
-        qhull = _Qhull("v", points, qhull_options, "Qc")
+        qhull = _Qhull(b"v", points, qhull_options, b"Qc")
         try:
             self.vertices, self.ridge_points, self.ridge_vertices, \
                            self.regions, self.point_region = \
