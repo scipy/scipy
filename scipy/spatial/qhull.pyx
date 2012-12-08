@@ -131,6 +131,12 @@ cdef extern from "qhull/src/libqhull.h":
                      void *errfile) nogil
     int qh_pointid(pointT *point) nogil
     vertexT *qh_nearvertex(facetT *facet, pointT *point, double *dist) nogil
+    boolT qh_addpoint(pointT *furthest, facetT *facet, boolT checkdist) nogil
+    facetT *qh_findbestfacet(pointT *point, boolT bestoutside,
+                             realT *bestdist, boolT *isoutside) nogil
+    void qh_setdelaunay(int dim, int count, pointT *points) nogil
+    void qh_restore_qhull(qhT **oldqh) nogil
+    qhT *qh_save_qhull() nogil
 
 cdef extern from "qhull/src/io.h":
     ctypedef enum qh_RIDGE:
@@ -173,9 +179,19 @@ cdef extern from "qhull_blas.h":
 # Qhull is not threadsafe: needs locking
 _qhull_lock = threading.Lock()
 
+# Qhull has (swappable) global state: keep track which Qhull instance is active
+# and how many instances are alive
+cdef _Qhull _active_qhull = None
+cdef int _qhull_count = 0
+
+class QhullError(RuntimeError):
+    pass
+
 @cython.final
 cdef class _Qhull:
-    cdef int _active, numpoints, ndim
+    cdef qhT *_saved_qh
+
+    cdef int numpoints, ndim
     cdef np.ndarray _ridge_points
 
     cdef list _ridge_vertices
@@ -191,11 +207,9 @@ cdef class _Qhull:
                  bytes options=None,
                  bytes required_options=None,
                  furthest_site=False):
-        global _qhull_instance
+        global _active_qhull, _qhull_count
         cdef char *options_c
         cdef int exitcode
-
-        self._active = 0
 
         points = np.ascontiguousarray(points, dtype=np.double)
 
@@ -221,65 +235,149 @@ cdef class _Qhull:
                 # safe to remove, QJ always produces simplical output
                 required_options_set.remove(b"Qt")
             options_set.update(required_options_set)
+
         options = b"qhull "  + mode_option +  b" " + b" ".join(options_set)
 
         _qhull_lock.acquire()
-        self._active = 1
+        try:
+            if _active_qhull is not None:
+                _active_qhull._deactivate()
 
-        options_c = <char*>options
-        with nogil:
-            exitcode = qh_new_qhull(self.ndim, self.numpoints,
-                                    <realT*>points.data, 0,
-                                    options_c, NULL, stderr)
+            _active_qhull = self
+            _qhull_count += 1
 
-        if exitcode != 0:
-            self.close()
-            raise RuntimeError("Qhull error")
+            options_c = <char*>options
+            with nogil:
+                exitcode = qh_new_qhull(self.ndim, self.numpoints,
+                                        <realT*>points.data, 0,
+                                        options_c, NULL, stderr)
+
+            if exitcode != 0:
+                self._uninit()
+                raise QhullError("Qhull error")
+        finally:
+            _qhull_lock.release()
 
     @cython.final
     def close(self):
-        cdef int curlong, totlong
-        if self._active:
-            try:
-                with nogil:
-                    qh_freeqhull(1)
-                    qh_memfreeshort(&curlong, &totlong)
-                if curlong != 0 or totlong != 0:
-                    raise RuntimeError(
-                        "qhull: did not free %d bytes (%d pieces)" %
-                        (totlong, curlong))
-            finally:
-                self._active = 0
-                _qhull_lock.release()
+        _qhull_lock.acquire()
+        try:
+            if _active_qhull is self or self._saved_qh != NULL:
+                self._uninit()
+        finally:
+            _qhull_lock.release()
 
     @cython.final
     def __del__(self):
         self.close()
 
     @cython.final
+    cdef int _activate(self) except -1:
+        """
+        Activate this instance (_qhull_lock MUST be held when calling this)
+        """
+        global _active_qhull
+
+        if _active_qhull is self:
+            return 0
+        elif _active_qhull is not None:
+            _active_qhull._deactivate()
+
+        assert _active_qhull is None
+
+        if self._saved_qh == NULL:
+            raise RuntimeError("Qhull instance is not open")
+
+        qh_restore_qhull(&self._saved_qh)
+        self._saved_qh = NULL
+        _active_qhull = self
+
+        return 0
+
+    @cython.final
+    cdef int _deactivate(self) except -1:
+        """
+        Deactivate this instance (_qhull_lock MUST be held when calling this)
+        """
+        global _active_qhull
+
+        assert _active_qhull is self
+        assert self._saved_qh == NULL
+
+        self._saved_qh = qh_save_qhull()
+        _active_qhull = None
+
+    @cython.final
+    cdef int _uninit(self) except -1:
+        """
+        Uninitialize this instance (_qhull_lock MUST be held when calling this)
+        """
+        global _active_qhull, _qhull_count
+        cdef int curlong, totlong
+
+        self._activate()
+
+        qh_freeqhull(qh_ALL)
+
+        _qhull_count -= 1
+        _active_qhull = None
+        self._saved_qh = NULL
+
+        if _qhull_count == 0:
+            # last one out cleans the house
+            qh_memfreeshort(&curlong, &totlong)
+            if curlong != 0 or totlong != 0:
+                raise RuntimeError(
+                    "qhull: did not free %d bytes (%d pieces)" %
+                    (totlong, curlong))
+
+        return 0
+
+    @cython.final
     def get_paraboloid_shift_scale(self):
         cdef double paraboloid_scale
         cdef double paraboloid_shift
 
-        if qh_qh.SCALElast:
-            paraboloid_scale = qh_qh.last_newhigh / (
-                qh_qh.last_high - qh_qh.last_low)
-            paraboloid_shift = - qh_qh.last_low * paraboloid_scale
-        else:
-            paraboloid_scale = 1.0
-            paraboloid_shift = 0.0
+        _qhull_lock.acquire()
+        try:
+            self._activate()
+
+            if qh_qh.SCALElast:
+                paraboloid_scale = qh_qh.last_newhigh / (
+                    qh_qh.last_high - qh_qh.last_low)
+                paraboloid_shift = - qh_qh.last_low * paraboloid_scale
+            else:
+                paraboloid_scale = 1.0
+                paraboloid_shift = 0.0
+        finally:
+            _qhull_lock.release()
 
         return paraboloid_scale, paraboloid_shift
 
     @cython.final
     def triangulate(self):
-        with nogil:
-            qh_triangulate() # get rid of non-simplical facets
+        _qhull_lock.acquire()
+        try:
+            self._activate()
+
+            with nogil:
+                qh_triangulate() # get rid of non-simplical facets
+        finally:
+            _qhull_lock.release()
+
+    @cython.final
+    def get_simplex_facet_array(self, int is_delaunay=0):
+        _qhull_lock.acquire()
+        try:
+            self._activate()
+            return self._get_simplex_facet_array(is_delaunay)
+        finally:
+            _qhull_lock.release()
 
     @cython.final
     @cython.boundscheck(False)
     @cython.cdivision(True)
-    def get_simplex_facet_array(self, int is_delaunay=0):
+    cdef _get_simplex_facet_array(self, int is_delaunay=0):
         """
         Return array of simplical facets currently in Qhull.
 
@@ -310,8 +408,6 @@ cdef class _Qhull:
         cdef double dist
         cdef int facet_ndim
         cdef int numpoints
-
-        assert self._active
 
         facet_ndim = self.ndim
         numpoints = self.numpoints
@@ -398,9 +494,18 @@ cdef class _Qhull:
         return facets, neighbors, equations, coplanar[:ncoplanar]
 
     @cython.final
+    def get_voronoi_diagram(_Qhull self):
+        _qhull_lock.acquire()
+        try:
+            self._activate()
+            return self._get_voronoi_diagram()
+        finally:
+            _qhull_lock.release()
+
+    @cython.final
     @cython.boundscheck(False)
     @cython.cdivision(True)
-    def get_voronoi_diagram(_Qhull self, get_equations=True):
+    cdef _get_voronoi_diagram(_Qhull self):
         """
         Return the voronoi diagram currently in Qhull.
 
