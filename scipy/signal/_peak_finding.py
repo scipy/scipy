@@ -75,9 +75,33 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
 
     .. versionadded:: 0.11.0
 
+    Parameters
+    ----------
+    data : ndarray
+    axis : int, optional
+        axis over which to select from `data`
+    order : int, optional
+        How many points on each side to require
+        a `comparator`(n,n+x) = True.
+    mode : string, optional
+        How the edges of the vector are treated.
+        'wrap' (wrap around) or 'clip' (treat overflow
+        as the same as the last (or first) element).
+        Default 'clip'. See numpy.take
+
+    Returns
+    -------
+    extrema : ndarray
+        Indices of the minima, as an array
+        of integers 
+
     See also
     --------
     argrelextrema,argrelmax
+
+    Notes:
+    ------
+    This function uses `argrelextrema` with np.less as comparator 
     """
     return argrelextrema(data, np.less, axis, order, mode)
 
@@ -88,9 +112,33 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
 
     .. versionadded:: 0.11.0
 
+    Parameters
+    ----------
+    data : ndarray
+    axis : int, optional
+        axis over which to select from `data`
+    order : int, optional
+        How many points on each side to require
+        a `comparator`(n,n+x) = True.
+    mode : string, optional
+        How the edges of the vector are treated.
+        'wrap' (wrap around) or 'clip' (treat overflow
+        as the same as the last (or first) element).
+        Default 'clip'. See numpy.take
+
+    Returns
+    -------
+    extrema : ndarray
+        Indices of the maxima, as an array
+        of integers 
+
     See also
     --------
     argrelextrema,argrelmin
+
+    Notes:
+    ------
+    This function uses `argrelextrema` with np.greater as comparator 
     """
     return argrelextrema(data, np.greater, axis, order, mode)
 
@@ -102,11 +150,28 @@ def argrelextrema(data, comparator,
 
     .. versionadded:: 0.11.0
 
+    Parameters
+    ----------
+    data : ndarray
+    comparator : function
+        function to use to compare two data points.
+        Should take 2 numbers as arguments
+    axis : int, optional
+        axis over which to select from `data`
+    order : int, optional
+        How many points on each side to require
+        a `comparator`(n,n+x) = True.
+    mode : string, optional
+        How the edges of the vector are treated.
+        'wrap' (wrap around) or 'clip' (treat overflow
+        as the same as the last (or first) element).
+        Default 'clip'. See numpy.take
+
     Returns
     -------
     extrema : ndarray
         Indices of the extrema, as an array
-        of integers (same format as argmin, argmax
+        of integers (same format as argmin, argmax)
 
     See also
     --------
