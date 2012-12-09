@@ -49,6 +49,8 @@ Delaunay improvements
 ---------------------
 It's now possible to pass in custom Qhull options in Delaunay
 triangulation. Coplanar points are now also recorded, if present.
+Incremental construction of Delaunay triangulations is now also
+possible.
 
 ``scipy.optimize`` improvements
 -------------------------------
