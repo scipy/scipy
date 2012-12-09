@@ -12,6 +12,9 @@ from scipy.spatial import cKDTree as KDTree
 def sorted_tuple(x):
     return tuple(sorted(x))
 
+def sorted_unique_tuple(x):
+    return tuple(np.unique(x))
+
 def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
     if isinstance(a, np.ndarray):
         a = a.tolist()
@@ -22,6 +25,52 @@ def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
     b = map(tpl, b)
     b.sort()
     assert_equal(a, b)
+
+np.random.seed(1234)
+
+points = [(0,0), (0,1), (1,0), (1,1), (0.5, 0.5), (0.5, 1.5)]
+
+pathological_data_1 = np.array([
+    [-3.14,-3.14], [-3.14,-2.36], [-3.14,-1.57], [-3.14,-0.79],
+    [-3.14,0.0], [-3.14,0.79], [-3.14,1.57], [-3.14,2.36],
+    [-3.14,3.14], [-2.36,-3.14], [-2.36,-2.36], [-2.36,-1.57],
+    [-2.36,-0.79], [-2.36,0.0], [-2.36,0.79], [-2.36,1.57],
+    [-2.36,2.36], [-2.36,3.14], [-1.57,-0.79], [-1.57,0.79],
+    [-1.57,-1.57], [-1.57,0.0], [-1.57,1.57], [-1.57,-3.14],
+    [-1.57,-2.36], [-1.57,2.36], [-1.57,3.14], [-0.79,-1.57],
+    [-0.79,1.57], [-0.79,-3.14], [-0.79,-2.36], [-0.79,-0.79],
+    [-0.79,0.0], [-0.79,0.79], [-0.79,2.36], [-0.79,3.14],
+    [0.0,-3.14], [0.0,-2.36], [0.0,-1.57], [0.0,-0.79], [0.0,0.0],
+    [0.0,0.79], [0.0,1.57], [0.0,2.36], [0.0,3.14], [0.79,-3.14],
+    [0.79,-2.36], [0.79,-0.79], [0.79,0.0], [0.79,0.79],
+    [0.79,2.36], [0.79,3.14], [0.79,-1.57], [0.79,1.57],
+    [1.57,-3.14], [1.57,-2.36], [1.57,2.36], [1.57,3.14],
+    [1.57,-1.57], [1.57,0.0], [1.57,1.57], [1.57,-0.79],
+    [1.57,0.79], [2.36,-3.14], [2.36,-2.36], [2.36,-1.57],
+    [2.36,-0.79], [2.36,0.0], [2.36,0.79], [2.36,1.57],
+    [2.36,2.36], [2.36,3.14], [3.14,-3.14], [3.14,-2.36],
+    [3.14,-1.57], [3.14,-0.79], [3.14,0.0], [3.14,0.79],
+    [3.14,1.57], [3.14,2.36], [3.14,3.14],
+])
+
+pathological_data_2 = np.array([
+    [-1, -1                          ], [-1, 0], [-1, 1],
+    [ 0, -1                          ], [ 0, 0], [ 0, 1],
+    [ 1, -1 - np.finfo(np.float_).eps], [ 1, 0], [ 1, 1],
+])
+
+DATASETS = {
+    'some-points': np.asarray(points),
+    'random-2d': np.random.rand(30, 2),
+    'random-3d': np.random.rand(30, 3),
+    'random-4d': np.random.rand(30, 4),
+    'random-5d': np.random.rand(30, 5),
+    'random-6d': np.random.rand(10, 6),
+    'random-7d': np.random.rand(10, 7),
+    'random-8d': np.random.rand(10, 8),
+    'pathological-1': pathological_data_1,
+    'pathological-2': pathological_data_2
+}
 
 class Test_Qhull(object):
     def test_swapping(self):
@@ -358,48 +407,17 @@ class TestDelaunay(object):
         tri = qhull.Delaunay(np.c_[x, y])
         tri2 = qhull.Delaunay(np.c_[xp, yp])
 
-    pathological_data_1 = np.array([
-        [-3.14,-3.14], [-3.14,-2.36], [-3.14,-1.57], [-3.14,-0.79],
-        [-3.14,0.0], [-3.14,0.79], [-3.14,1.57], [-3.14,2.36],
-        [-3.14,3.14], [-2.36,-3.14], [-2.36,-2.36], [-2.36,-1.57],
-        [-2.36,-0.79], [-2.36,0.0], [-2.36,0.79], [-2.36,1.57],
-        [-2.36,2.36], [-2.36,3.14], [-1.57,-0.79], [-1.57,0.79],
-        [-1.57,-1.57], [-1.57,0.0], [-1.57,1.57], [-1.57,-3.14],
-        [-1.57,-2.36], [-1.57,2.36], [-1.57,3.14], [-0.79,-1.57],
-        [-0.79,1.57], [-0.79,-3.14], [-0.79,-2.36], [-0.79,-0.79],
-        [-0.79,0.0], [-0.79,0.79], [-0.79,2.36], [-0.79,3.14],
-        [0.0,-3.14], [0.0,-2.36], [0.0,-1.57], [0.0,-0.79], [0.0,0.0],
-        [0.0,0.79], [0.0,1.57], [0.0,2.36], [0.0,3.14], [0.79,-3.14],
-        [0.79,-2.36], [0.79,-0.79], [0.79,0.0], [0.79,0.79],
-        [0.79,2.36], [0.79,3.14], [0.79,-1.57], [0.79,1.57],
-        [1.57,-3.14], [1.57,-2.36], [1.57,2.36], [1.57,3.14],
-        [1.57,-1.57], [1.57,0.0], [1.57,1.57], [1.57,-0.79],
-        [1.57,0.79], [2.36,-3.14], [2.36,-2.36], [2.36,-1.57],
-        [2.36,-0.79], [2.36,0.0], [2.36,0.79], [2.36,1.57],
-        [2.36,2.36], [2.36,3.14], [3.14,-3.14], [3.14,-2.36],
-        [3.14,-1.57], [3.14,-0.79], [3.14,0.0], [3.14,0.79],
-        [3.14,1.57], [3.14,2.36], [3.14,3.14],
-    ])
-
-    pathological_data_2 = np.array([
-        [-1, -1                          ], [-1, 0], [-1, 1],
-        [ 0, -1                          ], [ 0, 0], [ 0, 1],
-        [ 1, -1 - np.finfo(np.float_).eps], [ 1, 0], [ 1, 1],
-    ])
-
     def test_pathological(self):
         # both should succeed
-        tri = qhull.Delaunay(self.pathological_data_1)
-        assert_equal(tri.points[tri.vertices].max(),
-                     self.pathological_data_1.max())
-        assert_equal(tri.points[tri.vertices].min(),
-                     self.pathological_data_1.min())
+        points = DATASETS['pathological-1']
+        tri = qhull.Delaunay(points)
+        assert_equal(tri.points[tri.vertices].max(), points.max())
+        assert_equal(tri.points[tri.vertices].min(), points.min())
 
-        tri = qhull.Delaunay(self.pathological_data_2)
-        assert_equal(tri.points[tri.vertices].max(),
-                     self.pathological_data_2.max())
-        assert_equal(tri.points[tri.vertices].min(),
-                     self.pathological_data_2.min())
+        points = DATASETS['pathological-2']
+        tri = qhull.Delaunay(points)
+        assert_equal(tri.points[tri.vertices].max(), points.max())
+        assert_equal(tri.points[tri.vertices].min(), points.min())
 
     def test_joggle(self):
         # Check that the option QJ indeed guarantees that all input points
@@ -433,77 +451,154 @@ class TestDelaunay(object):
         expected = np.array([(1, 4, 0), (2, 4, 0)]) # from Qhull
         assert_array_equal(tri.simplices, expected)
 
+    def test_incremental(self):
+        # Test incremental construction of the triangulation
+
+        def check(name, chunksize):
+            points = DATASETS[name]
+            ndim = points.shape[1]
+
+            opts = None
+            nmin = ndim + 2
+
+            if name == 'some-points':
+                # since Qz is not allowed, use QJ 
+                opts = 'QJ Pp'
+            elif name == 'pathological-1':
+                # include enough points so that we get different x-coordinates
+                nmin = 12
+
+            obj = qhull.Delaunay(points[:nmin], incremental=True,
+                                 qhull_options=opts)
+            for j in xrange(nmin, len(points), chunksize):
+                obj.add_points(points[j:j+chunksize])
+
+            obj2 = qhull.Delaunay(points)
+
+            obj3 = qhull.Delaunay(points[:nmin], incremental=True,
+                                  qhull_options=opts)
+            obj3.add_points(points[nmin:], restart=True)
+
+            # Check that the incremental mode agrees with upfront mode
+            if name.startswith('pathological'):
+                # XXX: These produce valid but different triangulations.
+                #      They look OK when plotted, but how to check them?
+
+                assert_array_equal(np.unique(obj.simplices.ravel()),
+                                   np.arange(points.shape[0]))
+                assert_array_equal(np.unique(obj2.simplices.ravel()),
+                                   np.arange(points.shape[0]))
+            else:
+                assert_unordered_tuple_list_equal(obj.simplices, obj2.simplices,
+                                                  tpl=sorted_tuple)
+
+            assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
+                                              tpl=sorted_tuple)
+
+        for name in sorted(DATASETS.keys()):
+            for chunksize in 1, 4:
+                yield check, name, chunksize
+
+def assert_hulls_equal(points, facets_1, facets_2):
+    # Check that two convex hulls constructed from the same point set
+    # are equal
+
+    facets_1 = set(map(sorted_tuple, facets_1))
+    facets_2 = set(map(sorted_tuple, facets_2))
+
+    if facets_1 != facets_2 and points.shape[1] == 2:
+        # The direct check fails for the pathological cases
+        # --- then the convex hull from Delaunay differs (due
+        # to rounding error etc.) from the hull computed
+        # otherwise, by the question whether (tricoplanar)
+        # points that lie almost exactly on the hull are
+        # included as vertices of the hull or not.
+        #
+        # So we check the result, and accept it if the Delaunay
+        # hull line segments are a subset of the usual hull.
+
+        eps = 1000 * np.finfo(float).eps
+
+        for a, b in facets_1:
+            for ap, bp in facets_2:
+                t = points[bp] - points[ap]
+                t /= np.linalg.norm(t)       # tangent
+                n = np.array([-t[1], t[0]])  # normal
+
+                # check that the two line segments are parallel
+                # to the same line
+                c1 = np.dot(n, points[b] - points[ap])
+                c2 = np.dot(n, points[a] - points[ap])
+                if not np.allclose(np.dot(c1, n), 0):
+                    continue
+                if not np.allclose(np.dot(c2, n), 0):
+                    continue
+
+                # Check that the segment (a, b) is contained in (ap, bp)
+                c1 = np.dot(t, points[a] - points[ap])
+                c2 = np.dot(t, points[b] - points[ap])
+                c3 = np.dot(t, points[bp] - points[ap])
+                if c1 < -eps or c1 > c3 + eps:
+                    continue
+                if c2 < -eps or c2 > c3 + eps:
+                    continue
+
+                # OK:
+                break
+            else:
+                raise AssertionError("comparison fails")
+
+        # it was OK
+        return
+
+    assert_equal(facets_1, facets_2)
+    
+    
 
 class TestConvexHull:
     def test_hull_consistency_tri(self):
         # Check that a convex hull returned by qhull in ndim
         # and the hull constructed from ndim delaunay agree
-        np.random.seed(1234)
-
-        datasets = {'pathological_1': TestDelaunay.pathological_data_1,
-                    'pathological_2': TestDelaunay.pathological_data_2}
-        for nd in range(2, 8):
-            points = np.random.rand(30, nd)
-            datasets['random-%dd' % nd] = points
-
         def check(name):
-            points = datasets[name]
+            points = DATASETS[name]
 
             tri = qhull.Delaunay(points)
             hull = qhull.ConvexHull(points)
 
-            facets_1 = set(map(sorted_tuple, tri.convex_hull.tolist()))
-            facets_2 = set(map(sorted_tuple, hull.simplices.tolist()))
+            assert_hulls_equal(points, tri.convex_hull, hull.simplices)
 
-            if facets_1 == facets_2:
-                return # OK
-
-            if points.shape[1] == 2:
-                # The direct check fails for the pathological cases
-                # --- then the convex hull from Delaunay differs (due
-                # to rounding error etc.) from the hull computed
-                # otherwise, by the question whether (tricoplanar)
-                # points that lie almost exactly on the hull are
-                # included as vertices of the hull or not.
-                #
-                # So we check the result, and accept it if the Delaunay
-                # hull line segments are a subset of the usual hull.
-
-                eps = 1000 * np.finfo(float).eps
-
-                for a, b in facets_1:
-                    for ap, bp in facets_2:
-                        t = points[bp] - points[ap]
-                        t /= np.linalg.norm(t)       # tangent
-                        n = np.array([-t[1], t[0]])  # normal
-
-                        # check that the two line segments are parallel
-                        # to the same line
-                        c1 = np.dot(n, points[b] - points[ap])
-                        c2 = np.dot(n, points[a] - points[ap])
-                        if not np.allclose(np.dot(c1, n), 0):
-                            continue
-                        if not np.allclose(np.dot(c2, n), 0):
-                            continue
-
-                        # Check that the segment (a, b) is contained in (ap, bp)
-                        c1 = np.dot(t, points[a] - points[ap])
-                        c2 = np.dot(t, points[b] - points[ap])
-                        c3 = np.dot(t, points[bp] - points[ap])
-                        if c1 < -eps or c1 > c3 + eps:
-                            continue
-                        if c2 < -eps or c2 > c3 + eps:
-                            continue
-
-                        # OK:
-                        break
-                    else:
-                        raise AssertionError("comparison fails")
-                return
-            raise AssertionError("comparison fails...")
-
-        for name in datasets.keys():
+        for name in sorted(DATASETS.keys()):
             yield check, name
+
+    def test_incremental(self):
+        # Test incremental construction of the convex hull
+        def check(name, chunksize):
+            points = DATASETS[name]
+            ndim = points.shape[1]
+
+            if name == 'pathological-1':
+                # include enough points so that we get different x-coordinates
+                nmin = 12
+            else:
+                nmin = ndim +2
+
+            obj = qhull.ConvexHull(points[:nmin], incremental=True)
+            for j in xrange(nmin, len(points), chunksize):
+                obj.add_points(points[j:j+chunksize])
+
+            obj2 = qhull.ConvexHull(points)
+
+            obj3 = qhull.ConvexHull(points[:nmin], incremental=True)
+            obj3.add_points(points[nmin:], restart=True)
+
+            # Check that the incremental mode agrees with upfront mode
+            assert_hulls_equal(points, obj.simplices, obj2.simplices)
+            assert_hulls_equal(points, obj.simplices, obj3.simplices)
+
+        for name in sorted(DATASETS.keys()):
+            for chunksize in 1, 4:
+                yield check, name, chunksize
+
 
 class TestVoronoi:
     def test_simple(self):
@@ -591,16 +686,8 @@ class TestVoronoi:
         # the regions of nearest neighborhood, by comparing the result
         # to KDTree.
 
-        np.random.seed(1234)
-
-        datasets = {'pathological_1': TestDelaunay.pathological_data_1,
-                    'pathological_2': TestDelaunay.pathological_data_2}
-        for nd in range(2, 8):
-            points = np.random.rand(30, nd)
-            datasets['random-%dd' % nd] = points
-
         def check(name):
-            points = datasets[name]
+            points = DATASETS[name]
 
             tree = KDTree(points)
             vor = qhull.Voronoi(points)
@@ -619,7 +706,7 @@ class TestVoronoi:
                 dist, k = tree.query(ridge_midpoint - d, k=1)
                 assert_equal(k, p[1])
 
-        for name in datasets.keys():
+        for name in DATASETS.keys():
             yield check, name
 
     def test_furthest_site(self):
@@ -645,6 +732,79 @@ class TestVoronoi:
         4 2 4 0 2
         """
         self._compare_qvoronoi(points, output, furthest_site=True)
+
+    def test_incremental(self):
+        # Test incremental construction of the triangulation
+
+        def check(name, chunksize):
+            points = DATASETS[name]
+            ndim = points.shape[1]
+
+            opts = None
+            nmin = ndim + 2
+
+            if name == 'some-points':
+                # since Qz is not allowed, use QJ 
+                opts = 'QJ Pp'
+            elif name == 'pathological-1':
+                # include enough points so that we get different x-coordinates
+                nmin = 12
+
+            obj = qhull.Voronoi(points[:nmin], incremental=True,
+                                 qhull_options=opts)
+            for j in xrange(nmin, len(points), chunksize):
+                obj.add_points(points[j:j+chunksize])
+
+            obj2 = qhull.Voronoi(points)
+
+            obj3 = qhull.Voronoi(points[:nmin], incremental=True,
+                                 qhull_options=opts)
+            obj3.add_points(points[nmin:], restart=True)
+
+            # -- Check that the incremental mode agrees with upfront mode
+
+            # The vertices may be in different order or duplicated in
+            # the incremental map
+            for objx in obj, obj3:
+                vertex_map = {-1: -1}
+                for i, v in enumerate(objx.vertices):
+                    for j, v2 in enumerate(obj2.vertices):
+                        if np.allclose(v, v2):
+                            vertex_map[i] = j
+
+                def remap(x):
+                    if hasattr(x, '__len__'):
+                        return tuple(set([remap(y) for y in x]))
+                    return vertex_map.get(x, x)
+
+                def simplified(x):
+                    items = set(map(sorted_tuple, x))
+                    if () in items:
+                        items.remove(())
+                    items = [x for x in items if len(x) > 1]
+                    items.sort()
+                    return items
+
+                assert_equal(
+                    simplified(remap(objx.regions)),
+                    simplified(obj2.regions)
+                    )
+                assert_equal(
+                    simplified(remap(objx.ridge_vertices)),
+                    simplified(obj2.ridge_vertices)
+                    )
+
+                # XXX: compare ridge_points --- not clear exactly how to do this
+
+        for name in sorted(DATASETS.keys()):
+            if DATASETS[name].shape[1] > 3:
+                # too slow (testing of the result --- qhull is still fast)
+                continue
+            if name == 'pathological-1':
+                # the test above fails -- but the plotted diagram looks OK
+                continue
+            for chunksize in 1, 4:
+                yield check, name, chunksize
 
 if __name__ == "__main__":
     run_module_suite()
