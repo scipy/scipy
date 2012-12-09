@@ -764,21 +764,21 @@ cdef class _Qhull:
         return voronoi_vertices, self._ridge_points, self._ridge_vertices, \
                regions, point_region
 
-cdef int _visit_voronoi(void *ptr, vertexT *vertex, vertexT *vertexA,
-                        setT *centers, boolT unbounded):
+cdef void _visit_voronoi(void *ptr, vertexT *vertex, vertexT *vertexA,
+                         setT *centers, boolT unbounded):
     cdef _Qhull qh = <_Qhull>ptr
     cdef int point_1, point_2, ix
     cdef list cur_vertices
 
     if qh._ridge_error is not None:
-        return 1
+        return
 
     if qh._nridges >= qh._ridge_points.shape[0]:
         try:
             qh._ridge_points.resize(2*qh._nridges + 1, 2)
         except Exception, e:
             qh._ridge_error = e
-            return 1
+            return
 
     # Record which points the ridge is between
     point_1 = qh_pointid(vertex.point)
@@ -797,7 +797,7 @@ cdef int _visit_voronoi(void *ptr, vertexT *vertex, vertexT *vertexA,
 
     qh._nridges += 1
 
-    return 0
+    return
 
 cdef void qh_order_vertexneighbors_nd(int nd, vertexT *vertex):
     if nd == 3:
