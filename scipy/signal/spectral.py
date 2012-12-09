@@ -133,7 +133,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
     elif scaling == 'spectrum':
         scale = 1.0 / s1
     else:
-        raise ValueError('Unknown scaling "{2}".'.format(scaling))
+        raise ValueError('Unknown scaling "{0}".'.format(scaling))
 
     if np.isrealobj(x) and (sides == 'default' or sides == 'onesided'):
         x = fftpack.rfft(x, nfft)

@@ -7,6 +7,91 @@ from scipy import signal, fftpack
 from scipy.signal import periodogram, welch, lombscargle
 
 
+class TestPeriodogram(TestCase):
+    def test_real_onesided_even(self):
+        x = np.zeros(16)
+        x[0] = 1
+        f, p = periodogram(x)
+        assert_allclose(f, np.linspace(0, 0.5, 9))
+        q = np.ones(9)
+        q[...,(0,-1)] /= 2.0
+        q /= 8
+        assert_allclose(p, q)
+        
+    def test_real_onesided_odd(self):
+        x = np.zeros(15)
+        x[0] = 1
+        f, p = periodogram(x)
+        assert_allclose(f, np.arange(8.0)/15.0)
+        q = np.ones(8)
+        q[...,(0,-1)] /= 2.0
+        q *= 2.0/15.0
+        assert_allclose(p, q)
+
+    def test_real_twosided(self):
+        x = np.zeros(16)
+        x[0] = 1
+        f, p = periodogram(x, sides='twosided')
+        assert_allclose(f, fftpack.fftfreq(16, 1.0))
+        assert_allclose(p, np.ones(16)/16.0)
+
+    def test_real_spectrum(self):
+        x = np.zeros(16)
+        x[0] = 1
+        f, p = periodogram(x, scaling='spectrum')
+        g, q = periodogram(x, scaling='density')
+        assert_allclose(f, np.linspace(0, 0.5, 9))
+        assert_allclose(p, q/16.0) 
+
+    def test_complex(self):
+        x = np.zeros(16, np.complex128)
+        x[0] = 1.0 + 2.0j
+        f, p = periodogram(x)
+        assert_allclose(f, fftpack.fftfreq(16, 1.0))
+        assert_allclose(p, 5.0*np.ones(16)/16.0)
+    
+    def test_complex_one_sided(self):
+        assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),
+                sides='onesided')
+
+    def test_unk_sides(self):
+        assert_raises(ValueError, periodogram, np.zeros(4, np.double),
+                sides='threesided')
+
+    def test_unk_scaling(self):
+        assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),
+                scaling='foo')
+    
+    def test_nd_axis_m1(self):
+        x = np.zeros(20, dtype=np.float64)
+        x = x.reshape((2,1,10))
+        x[:,:,0] = 1.0
+        f, p = periodogram(x)
+        assert_array_equal(p.shape, (2, 1, 6))
+        assert_array_almost_equal_nulp(p[0,0,:], p[1,0,:], 60)
+        f0, p0 = periodogram(x[0,0,:])
+        assert_array_almost_equal_nulp(p0[np.newaxis,:], p[1,:], 60)
+
+    def test_nd_axis_0(self):
+        x = np.zeros(20, dtype=np.float64)
+        x = x.reshape((10,2,1))
+        x[0,:,:] = 1.0
+        f, p = periodogram(x, axis=0)
+        assert_array_equal(p.shape, (6,2,1))
+        assert_array_almost_equal_nulp(p[:,0,0], p[:,1,0], 60)
+        f0, p0 = periodogram(x[:,0,0])
+        assert_array_almost_equal_nulp(p0, p[:,1,0])        
+
+    def test_window_external(self):
+        x = np.zeros(16)
+        x[0] = 1
+        f, p = periodogram(x, 10, 'hanning')
+        win = signal.get_window('hanning', 16)
+        fe, pe = periodogram(x, 10, win)
+        assert_array_almost_equal_nulp(p, pe)
+        assert_array_almost_equal_nulp(f, fe)
+
+
 class TestWelch(TestCase):
     def test_real_onesided_even(self):
         x = np.zeros(16)
