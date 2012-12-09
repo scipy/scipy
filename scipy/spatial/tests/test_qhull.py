@@ -84,7 +84,12 @@ class Test_Qhull(object):
         yd = copy.deepcopy(y.get_voronoi_diagram())
 
         xd2 = copy.deepcopy(x.get_voronoi_diagram())
+        x.close()
         yd2 = copy.deepcopy(y.get_voronoi_diagram())
+        y.close()
+
+        assert_raises(RuntimeError, x.get_voronoi_diagram)
+        assert_raises(RuntimeError, y.get_voronoi_diagram)
 
         assert_allclose(xd[0], xd2[0])
         assert_unordered_tuple_list_equal(xd[1], xd2[1], tpl=sorted_tuple)
