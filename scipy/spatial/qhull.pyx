@@ -1472,6 +1472,8 @@ class _QhullUser(object):
 
     def close(self):
         """
+        close()
+
         Finish incremental processing.
 
         Call this to free resources taken up by Qhull, when using the
@@ -1495,19 +1497,34 @@ class _QhullUser(object):
 
     def add_points(self, points, restart=False):
         """
-        Process a set of new points
+        add_points(points, restart=False)
+
+        Process a set of additional new points.
 
         Parameters
         ----------
         points : ndarray
             New points to add. The dimensionality should match that of the
             initial points.
+        restart : bool, optional
+            Whether to restart processing from scratch, rather than
+            adding points incrementally.
 
         Raises
         ------
         QhullError
             Raised when Qhull encounters an error condition, such as
             geometrical degeneracy when options to resolve are not enabled.
+
+        See Also
+        --------
+        close
+
+        Notes
+        -----
+        You need to specify ``incremental=True`` when constructing the
+        object to be able to add points incrementally. Incremental addition
+        of points is also not possible after `close` has been called.
 
         """
         if self._qhull is None:
@@ -1533,7 +1550,7 @@ class _QhullUser(object):
 
 class Delaunay(_QhullUser):
     """
-    Delaunay(points)
+    Delaunay(points, furthest_site=False, incremental=False, qhull_options=None)
 
     Delaunay tesselation in N dimensions.
 
@@ -2052,7 +2069,7 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
 
 class ConvexHull(_QhullUser):
     """
-    ConvexHull(points)
+    ConvexHull(points, furthest_site=False, qhull_options=None)
 
     Convex hulls in N dimensions.
 
@@ -2156,7 +2173,7 @@ class ConvexHull(_QhullUser):
 
 class Voronoi(_QhullUser):
     """
-    Voronoi(points)
+    Voronoi(points, furthest_site=False, incremental=False, qhull_options=None)
 
     Voronoi diagrams in N dimensions.
 
