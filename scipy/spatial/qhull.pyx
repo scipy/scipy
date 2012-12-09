@@ -104,6 +104,7 @@ cdef extern from "qhull/src/libqhull.h":
         vertexT *vertex_tail
         int num_facets
         int num_points
+        int center_size
         unsigned int facet_id
         pointT *first_point
         pointT *input_points
@@ -168,6 +169,9 @@ cdef extern from "qhull/src/geom.h":
 
 cdef extern from "qhull/src/poly.h":
     void qh_check_maxout() nogil
+
+cdef extern from "qhull/src/mem.h":
+    void qh_memfree(void *object, int insize)
 
 from libc.string cimport memcpy
 from libc.stdlib cimport qsort
@@ -655,6 +659,7 @@ cdef class _Qhull:
         cdef int nvoronoi_vertices
         cdef pointT infty_point[NPY_MAXDIMS+1]
         cdef pointT *point
+        cdef pointT *center
         cdef double dist
         cdef int inf_seen
 
@@ -720,8 +725,9 @@ cdef class _Qhull:
             if facet.visitid > 0:
                 # finite Voronoi vertex
 
-                if facet.center == NULL:
-                    facet.center = qh_facetcenter(facet.vertices)
+                center = facet.center
+                if center == NULL:
+                    center = qh_facetcenter(facet.vertices)
 
                 nvoronoi_vertices = max(facet.visitid, nvoronoi_vertices)
                 if nvoronoi_vertices >= voronoi_vertices.shape[0]:
@@ -734,7 +740,10 @@ cdef class _Qhull:
                     voronoi_vertices = tmp
 
                 for k in range(self.ndim):
-                    voronoi_vertices[facet.visitid-1, k] = facet.center[k]
+                    voronoi_vertices[facet.visitid-1, k] = center[k]
+
+                if center != facet.center:
+                    qh_memfree(center, qh_qh.center_size)
 
                 if facet.coplanarset:
                     for k in range(qh_setsize(facet.coplanarset)):
