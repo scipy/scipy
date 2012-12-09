@@ -4,6 +4,7 @@ import sys
 import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, run_module_suite,\
      assert_, dec, assert_allclose, assert_array_equal, assert_raises
+from numpy.compat import asbytes
 
 import copy
 import scipy.spatial.qhull as qhull
@@ -76,11 +77,14 @@ class Test_Qhull(object):
     def test_swapping(self):
         # Check that Qhull state swapping works
 
-        x = qhull._Qhull('v', np.array([[0,0],[0,1],[1,0],[1,1.],[0.5,0.5]]),
-                         'Qz')
+        x = qhull._Qhull(asbytes('v'),
+                         np.array([[0,0],[0,1],[1,0],[1,1.],[0.5,0.5]]),
+                         asbytes('Qz'))
         xd = copy.deepcopy(x.get_voronoi_diagram())
         
-        y = qhull._Qhull('v', np.array([[0,0],[0,1],[1,0],[1,2.]]), 'Qz')
+        y = qhull._Qhull(asbytes('v'),
+                         np.array([[0,0],[0,1],[1,0],[1,2.]]),
+                         asbytes('Qz'))
         yd = copy.deepcopy(y.get_voronoi_diagram())
 
         xd2 = copy.deepcopy(x.get_voronoi_diagram())
@@ -679,10 +683,6 @@ class TestVoronoi:
                  map(sorttuple, vor.ridge_vertices))
         p1.sort()
         p2.sort()
-
-        print "\n".join(map(repr, p1))
-        print "--"
-        print "\n".join(map(repr, p2))
 
         assert_equal(p1, p2)
     
