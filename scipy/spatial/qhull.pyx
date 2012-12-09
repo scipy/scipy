@@ -49,6 +49,7 @@ cdef extern from "qhull/src/qset.h":
         setelemT e[1]
 
     int qh_setsize(setT *set) nogil
+    void qh_setappend(setT **setp, void *elem) nogil
 
 cdef extern from "qhull/src/libqhull.h":
     ctypedef double realT
@@ -94,6 +95,7 @@ cdef extern from "qhull/src/libqhull.h":
         boolT PROJECTdelaunay
         boolT ATinfinity
         boolT UPPERdelaunay
+        boolT hasTriangulation
         int normal_size
         char *qhull_command
         facetT *facet_list
@@ -112,6 +114,7 @@ cdef extern from "qhull/src/libqhull.h":
         realT MINoutside
         realT DISTround
         jmp_buf errexit
+        setT *other_points
 
     extern qhT *qh_qh
     extern int qh_PRINToff
@@ -161,7 +164,7 @@ cdef extern from "qhull/src/io.h":
     int qh_compare_facetvisit(void *p1, void *p2) nogil
 
 cdef extern from "qhull/src/geom.h":
-    pointT *qh_facetcenter(setT *vertices)
+    pointT *qh_facetcenter(setT *vertices) nogil
 
 cdef extern from "qhull/src/poly.h":
     void qh_check_maxout() nogil
@@ -201,6 +204,9 @@ class QhullError(RuntimeError):
 cdef class _Qhull:
     cdef qhT *_saved_qh
     cdef list _point_arrays
+    cdef public bytes options
+    cdef public bytes mode_option
+    cdef public object furthest_site
 
     cdef int numpoints, ndim, _is_delaunay
     cdef np.ndarray _ridge_points
@@ -220,7 +226,6 @@ cdef class _Qhull:
                  furthest_site=False,
                  incremental=False):
         global _active_qhull, _qhull_count
-        cdef char *options_c
         cdef int exitcode
 
         points = np.ascontiguousarray(points, dtype=np.double)
@@ -249,7 +254,7 @@ cdef class _Qhull:
             option_set.update(required_option_set)
 
         if incremental:
-            incremental_bad_ops = set([b'Qbb', b'Qbk', b'Qz', b'QBk', b'QbB'])
+            incremental_bad_ops = set([b'Qbb', b'Qbk', b'QBk', b'QbB', b'Qz'])
             bad_opts = []
             for bad_opt in incremental_bad_ops:
                 if bad_opt in options:
@@ -271,8 +276,11 @@ cdef class _Qhull:
             self._is_delaunay = 0
 
         self._point_arrays = [points]
+        self.options = b" ".join(option_set)
+        self.mode_option = mode_option
+        self.furthest_site = furthest_site
 
-        options = b"qhull "  + mode_option +  b" " + b" ".join(option_set)
+        options = b"qhull "  + mode_option +  b" " + self.options
 
         _qhull_lock.acquire()
         try:
@@ -363,7 +371,7 @@ cdef class _Qhull:
             # last one out cleans the house
             qh_memfreeshort(&curlong, &totlong)
             if curlong != 0 or totlong != 0:
-                raise RuntimeError(
+                raise QhullError(
                     "qhull: did not free %d bytes (%d pieces)" %
                     (totlong, curlong))
 
@@ -374,7 +382,9 @@ cdef class _Qhull:
         if len(self._point_arrays) == 1:
             return self._point_arrays[0]
         else:
-            return np.concatenate(self._point_arrays, axis=0)
+            return np.concatenate(
+                [x[:,:self.ndim] for x in self._point_arrays],
+                axis=0)
 
     @cython.final
     def add_points(self, points):
@@ -383,7 +393,7 @@ cdef class _Qhull:
         cdef facetT *facet
         cdef double bestdist
         cdef boolT isoutside
-        cdef np.ndarray[np.double_t, ndim=2, mode="c"] arr
+        cdef np.ndarray arr
 
         points = np.asarray(points)
         if points.ndim!=2 or points.shape[1] != self._point_arrays[0].shape[1]:
@@ -414,14 +424,20 @@ cdef class _Qhull:
 
             p = <realT*>arr.data
 
-            for j in xrange(points.shape[0]):
+            for j in xrange(arr.shape[0]):
                 facet = qh_findbestfacet(p, 0, &bestdist, &isoutside)
                 if isoutside:
                     if not qh_addpoint(p, facet, 0):
                         break
+                else:
+                    # append the point to the "other points" list, to
+                    # maintain the point IDs
+                    qh_setappend(&qh_qh.other_points, p)
+
                 p += arr.shape[1]
 
             qh_check_maxout()
+            qh_qh.hasTriangulation = 0
 
             self._point_arrays.append(arr)
         finally:
@@ -461,18 +477,18 @@ cdef class _Qhull:
             _qhull_lock.release()
 
     @cython.final
-    def get_simplex_facet_array(self, int is_delaunay=0):
+    def get_simplex_facet_array(self):
         _qhull_lock.acquire()
         try:
             self._activate()
-            return self._get_simplex_facet_array(is_delaunay)
+            return self._get_simplex_facet_array()
         finally:
             _qhull_lock.release()
 
     @cython.final
     @cython.boundscheck(False)
     @cython.cdivision(True)
-    cdef _get_simplex_facet_array(self, int is_delaunay=0):
+    cdef _get_simplex_facet_array(self):
         """
         Return array of simplical facets currently in Qhull.
 
@@ -507,7 +523,7 @@ cdef class _Qhull:
         facet_ndim = self.ndim
         numpoints = self.numpoints
 
-        if is_delaunay:
+        if self._is_delaunay:
             facet_ndim += 1
 
         id_map = np.empty((qh_qh.facet_id,), dtype=np.intc)
@@ -518,11 +534,15 @@ cdef class _Qhull:
             facet = qh_qh.facet_list
             j = 0
             while facet and facet.next:
-                if not facet.simplicial:
-                    with gil:
-                        raise ValueError("non-simplical facet encountered")
+                if not self._is_delaunay or facet.upperdelaunay == qh_qh.UPPERdelaunay:
+                    if not facet.simplicial and ( \
+                           qh_setsize(facet.vertices) != facet_ndim or \
+                           qh_setsize(facet.neighbors) != facet_ndim):
+                        with gil:
+                            raise QhullError(
+                                "non-simplical facet encountered: %r vertices"
+                                % (qh_setsize(facet.vertices),))
 
-                if not is_delaunay or facet.upperdelaunay == qh_qh.UPPERdelaunay:
                     id_map[facet.id] = j
                     j += 1
 
@@ -541,7 +561,7 @@ cdef class _Qhull:
             facet = qh_qh.facet_list
             j = 0
             while facet and facet.next:
-                if is_delaunay and facet.upperdelaunay != qh_qh.UPPERdelaunay:
+                if self._is_delaunay and facet.upperdelaunay != qh_qh.UPPERdelaunay:
                     facet = facet.next
                     continue
 
@@ -1442,6 +1462,13 @@ class _QhullUser(object):
                 qhull.close()
 
     def close(self):
+        """
+        Finish incremental processing.
+
+        Call this to free resources taken up by Qhull, when using the
+        incremental mode. After calling this, adding more points is no
+        longer possible.
+        """
         if self._qhull is not None:
             self._qhull.close()
             self._qhull = None
@@ -1457,9 +1484,40 @@ class _QhullUser(object):
         self.min_bound = self.points.min(axis=0)
         self.max_bound = self.points.max(axis=0)
 
-    def add_points(self, points):
+    def add_points(self, points, restart=False):
+        """
+        Process a set of new points
+
+        Parameters
+        ----------
+        points : ndarray
+            New points to add. The dimensionality should match that of the
+            initial points.
+
+        Raises
+        ------
+        QhullError
+            Raised when Qhull encounters an error condition, such as
+            geometrical degeneracy when options to resolve are not enabled.
+
+        """
         if self._qhull is None:
             raise RuntimeError("incremental mode not enabled or already closed")
+
+        if restart:
+            points = np.concatenate([self.points, points], axis=0)
+            qhull = _Qhull(self._qhull.mode_option, points,
+                           options=self._qhull.options,
+                           furthest_site=self._qhull.furthest_site,
+                           incremental=True)
+            try:
+                self._update(qhull)
+                self._qhull = qhull
+            finally:
+                if qhull is not self._qhull:
+                    qhull.close()
+            return
+
         self._qhull.add_points(points)
         self._update(self._qhull)
 
@@ -1482,11 +1540,13 @@ class Delaunay(_QhullUser):
 
         .. versionadded:: 0.12.0
     incremental : bool, optional
-        Allow adding points incrementally.
+        Allow adding new points incrementally. This takes up some additional
+        resources.
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual for
         details. Option "Qt" is always enabled.
         Default:"Qbb Qc Qz Qx" for ndim > 4 and "Qbb Qc Qz" otherwise.
+        Incremental mode omits "Qz".
 
         .. versionadded:: 0.12.0
 
@@ -1546,6 +1606,12 @@ class Delaunay(_QhullUser):
         .. versionadded:: 0.12.0
     vertices
         Same as `simplices`, but deprecated.
+
+    Raises
+    ------
+    QhullError
+        Raised when Qhull encounters an error condition, such as
+        geometrical degeneracy when options to resolve are not enabled.
 
     Notes
     -----
@@ -1626,7 +1692,7 @@ class Delaunay(_QhullUser):
             if not incremental:
                 qhull_options = b"Qbb Qc Qz"
             else:
-                qhull_options = b"Qc Qz"
+                qhull_options = b"Qc"
             if points.shape[1] >= 5:
                 qhull_options += b" Qx"
         else:
@@ -1638,15 +1704,13 @@ class Delaunay(_QhullUser):
         _QhullUser.__init__(self, qhull, incremental=incremental)
 
     def _update(self, qhull):
-        _QhullUser._update(self, qhull)
-
         qhull.triangulate()
 
         self.paraboloid_scale, self.paraboloid_shift = \
                                qhull.get_paraboloid_shift_scale()
 
         self.simplices, self.neighbors, self.equations, self.coplanar = \
-                       qhull.get_simplex_facet_array(is_delaunay=1)
+                       qhull.get_simplex_facet_array()
 
         self.nsimplex = self.simplices.shape[0]
         self._transform = None
@@ -1654,6 +1718,8 @@ class Delaunay(_QhullUser):
 
         # Backwards compatibility (Scipy < 0.12.0)
         self.vertices = self.simplices
+
+        _QhullUser._update(self, qhull)
 
     @property
     def transform(self):
@@ -1987,6 +2053,9 @@ class ConvexHull(_QhullUser):
     ----------
     points : ndarray of floats, shape (npoints, ndim)
         Coordinates of points to construct a convex hull from
+    incremental : bool, optional
+        Allow adding new points incrementally. This takes up some additional
+        resources.
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual
         for details. (Default: "Qx" for ndim > 4 and "" otherwise)
@@ -2012,6 +2081,12 @@ class ConvexHull(_QhullUser):
         triangulation due to numerical precision issues.
 
         If option "Qc" is not specified, this list is not computed.
+
+    Raises
+    ------
+    QhullError
+        Raised when Qhull encounters an error condition, such as
+        geometrical degeneracy when options to resolve are not enabled.
 
     Notes
     -----
@@ -2056,14 +2131,14 @@ class ConvexHull(_QhullUser):
         _QhullUser.__init__(self, qhull, incremental=incremental)
 
     def _update(self, qhull):
-        _QhullUser._update(self, qhull)
-
         qhull.triangulate()
 
         self.simplices, self.neighbors, self.equations, self.coplanar = \
-                       qhull.get_simplex_facet_array(is_delaunay=0)
+                       qhull.get_simplex_facet_array()
 
         self.nsimplex = self.simplices.shape[0]
+
+        _QhullUser._update(self, qhull)
 
 
 #------------------------------------------------------------------------------
@@ -2084,10 +2159,13 @@ class Voronoi(_QhullUser):
         Coordinates of points to construct a convex hull from
     furthest_site : bool, optional
         Whether to compute a furthest-site Voronoi diagram. Default: False
+    incremental : bool, optional
+        Allow adding new points incrementally. This takes up some additional
+        resources.
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual
         for details. (Default: "Qbb Qc Qz Qx" for ndim > 4 and
-        "Qbb Qc Qz" otherwise)
+        "Qbb Qc Qz" otherwise. Incremental mode omits "Qz".)
 
     Attributes
     ----------
@@ -2106,6 +2184,12 @@ class Voronoi(_QhullUser):
         Index of the Voronoi region for each input point.
         If qhull option "Qc" was not specified, the list will contain -1
         for points that are not associated with a Voronoi region.
+
+    Raises
+    ------
+    QhullError
+        Raised when Qhull encounters an error condition, such as
+        geometrical degeneracy when options to resolve are not enabled.
 
     Notes
     -----
@@ -2172,7 +2256,7 @@ class Voronoi(_QhullUser):
             if not incremental:
                 qhull_options = b"Qbb Qc Qz"
             else:
-                qhull_options = b"Qc Qz"
+                qhull_options = b"Qc"
             if points.shape[1] >= 5:
                 qhull_options += b" Qx"
         else:
@@ -2184,13 +2268,13 @@ class Voronoi(_QhullUser):
         _QhullUser.__init__(self, qhull, incremental=incremental)
 
     def _update(self, qhull):
-        _QhullUser._update(self, qhull)
-
         self.vertices, self.ridge_points, self.ridge_vertices, \
                        self.regions, self.point_region = \
                        qhull.get_voronoi_diagram()
 
         self._ridge_dict = None
+
+        _QhullUser._update(self, qhull)
 
     @property
     def ridge_dict(self):
