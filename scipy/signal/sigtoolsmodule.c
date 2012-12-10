@@ -772,8 +772,8 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char 
   int ndims = ap1->nd;
   intp *dims2 = ap2->dimensions;
   intp *dims1 = ap1->dimensions;
-  intp is1 = ap1->strides[ndims-1];
-  intp is2 = ap2->strides[ndims-1];
+  intp is1 = ap1->elsize;
+  intp is2 = ap2->elsize;
   char *ip2 = ap2->data;
   int elsize = ap1->descr->elsize;
   char *ptr;
