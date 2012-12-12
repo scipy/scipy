@@ -24,13 +24,17 @@ def configuration(parent_package='',top_path=None):
         define_macros.append(('_USE_MATH_DEFINES',None))
 
     curdir = os.path.abspath(os.path.dirname(__file__))
+    inc_dirs = [get_python_inc()]
+    if inc_dirs[0] != get_python_inc(plat_specific=1):
+        inc_dirs.append(get_python_inc(plat_specific=1))
+    inc_dirs.append(get_numpy_include_dirs())
 
     # C libraries
     config.add_library('sc_c_misc',sources=[join('c_misc','*.c')],
-                       include_dirs=[curdir, get_python_inc(), get_numpy_include_dirs()],
+                       include_dirs=[curdir] + inc_dirs,
                        macros=define_macros)
     config.add_library('sc_cephes',sources=[join('cephes','*.c')],
-                       include_dirs=[curdir, get_python_inc(), get_numpy_include_dirs()],
+                       include_dirs=[curdir] + inc_dirs,
                        macros=define_macros)
 
     # Fortran/C++ libraries
