@@ -5,9 +5,12 @@ from numpy.distutils.misc_util import get_numpy_include_dirs, get_pkg_info
 from distutils.sysconfig import get_python_inc
 from numscons import GetNumpyEnvironment, CheckF77LAPACK, CheckF77Clib
 from numscons import write_info
+inc_dirs = [get_python_inc()]
+if inc_dirs[0] != get_python_inc(plat_specific=1):
+    inc_dirs.append(get_python_inc(plat_specific=1))
 
 env = GetNumpyEnvironment(ARGUMENTS)
-env.PrependUnique(CPPPATH=[get_numpy_include_dirs(), get_python_inc(),
+env.PrependUnique(CPPPATH=[get_numpy_include_dirs(), inc_dirs,
                            env["PYEXTCPPPATH"]])
 
 #=======================

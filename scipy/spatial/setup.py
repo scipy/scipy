@@ -17,10 +17,14 @@ def configuration(parent_package = '', top_path = None):
                  'random.c', 'rboxlib.c', 'stat.c', 'user.c', 'usermem.c',
                  'userprintf.c']
 
+    inc_dirs = [get_python_inc()]
+    if inc_dirs[0] != get_python_inc(plat_specific=1):
+        inc_dirs.append(get_python_inc(plat_specific=1))
+    inc_dirs.append(get_numpy_include_dirs())
+
     config.add_library('qhull',
                        sources=[join('qhull', 'src', x) for x in qhull_src],
-                       include_dirs=[get_python_inc(),
-                                     get_numpy_include_dirs()],
+                       include_dirs=inc_dirs,
                        # XXX: GCC dependency!
                        #extra_compiler_args=['-fno-strict-aliasing'],
                        )
