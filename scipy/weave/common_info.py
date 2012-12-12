@@ -32,7 +32,7 @@ const char* find_type(PyObject* py_obj)
     if(PyCallable_Check(py_obj) && PyInstance_Check(py_obj)) return "callable";
     if(PyInstance_Check(py_obj)) return "instance";
     if(PyCallable_Check(py_obj)) return "callable";
-    return "unkown type";
+    return "unknown type";
 }
 
 void throw_error(PyObject* exc, const char* msg)
