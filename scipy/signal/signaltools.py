@@ -147,7 +147,39 @@ def _centered(arr, newsize):
 
 
 def fftconvolve(in1, in2, mode="full"):
-    """Convolve two N-dimensional arrays using FFT. See `convolve`.
+    """Convolve two N-dimensional arrays using FFT.
+
+    Convolve `in1` and `in2` using the fast Fourier transform method, with 
+    the output size determined by the `mode` argument.
+
+    This is generally much faster than `convolve` for large arrays (n > ~500), 
+    but can be slower when only a few output values are needed, and can only 
+    output float arrays (int or object array inputs will be cast to float).
+
+    Parameters
+    ----------
+    in1 : array
+        First input.
+    in2 : array
+        Second input. Should have the same number of dimensions as `in1`.
+    mode : str {'full', 'valid', 'same'}, optional
+        A string indicating the size of the output:
+
+        ``full``
+           The output is the full discrete linear convolution
+           of the inputs. (Default)
+        ``valid``
+           The output consists only of those elements that do not
+           rely on the zero-padding.
+        ``same``
+           The output is the same size as `in1`, centered
+           with respect to the 'full' output.
+
+    Returns
+    -------
+    out : array
+        An N-dimensional array containing a subset of the discrete linear
+        convolution of `in1` with `in2`.
 
     """
     s1 = array(in1.shape)
