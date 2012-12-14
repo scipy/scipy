@@ -5,14 +5,15 @@ import numpy as np
 from scipy import fftpack
 import signaltools
 from windows import get_window
-from _spectral import *
+from _spectral import lombscargle
 
 __all__ = ['periodogram', 'welch', 'lombscargle']
 
 
-def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='density', axis=-1):
+def periodogram(x, fs=1.0, window=None, nfft=None, return_onesided=True,
+        scaling='density', axis=-1):
     """
-    Estimate power spectal density using a periodogram.  
+    Estimate power spectral density using a periodogram.  
 
     Parameters
     ----------
@@ -23,21 +24,18 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
         Sampling frequency of the `x` time series in units of Hz. Defaults
         to 1.0.
 
-   window : string or tuple of string and parameter values or array_like
-        Desired window to use. See scipy.signal.get_window for a list of
-        windows and required parameters. If `window` is an array it will
-        be used directly as the window. Defaults to 'None'; equivalent to 
-        'boxcar'.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is an array it will be used 
+        directly as the window. Defaults to None; equivalent to 'boxcar'.
 
-    nfft : int or None, optional 
-        Length of the FFT used. If 'None' the length of `x` will be used.
+    nfft : int, optional 
+        Length of the FFT used. If None the length of `x` will be used.
 
-    sides : { 'default', 'onesided', 'twosided' }, optional
-        Selects which sides of the periodogram to return. 'Default'
-        computes a one-sided spectrum for real data and a two-sided
-        spectrum for complex data. 'onesided' or 'twosided' will force
-        a one- or two-sided spectrum.  'onesided' cannot be specified with
-        complex data.
+    return_onesided : bool, optional
+        If True, return a one-sided spectrum for real data. If False return
+        a two-sided spectrum. Note that for complex data, a two-sided
+        spectrum is always returned.
 
     scaling : { 'density', 'spectrum' }, optional 
         Selects between computing the power spectral density ('density')
@@ -52,7 +50,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
     Returns
     -------
     f : ndarray
-       Array of sample frequencies. 
+        Array of sample frequencies. 
 
     Pxx : ndarray
         Power spectral density or power spectrum of `x`.
@@ -65,6 +63,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
     Examples
     --------
     >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
 
     Generate a test signal, a 2 Vrms sine wave at 1234 Hz, corrupted by
     0.001 V**2/Hz of white noise sampled at 10 kHz.
@@ -84,6 +83,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
     >>> plt.semilogy(f, Pxx_den)
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('PSD [V/sqrt(Hz)]')
+    >>> plt.show()
 
     If we average the last half of the spectral density, to exclude the
     peak, we can recover the noise power on the signal. 
@@ -98,6 +98,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
     >>> plt.semilogy(f, np.sqrt(Pxx_spec))
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('Linear spectrum [V RMS]')
+    >>> plt.show()
 
     The peak height in the power spectrum is an estimate of the RMS amplitude.
 
@@ -113,7 +114,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
         nfft = x.shape[-1]
 
     if window is not None:
-        if type(window) is str or type(window) is tuple:
+        if isinstance(window, basestring) or type(window) is tuple:
             win = get_window(window, x.shape[-1])
         else:
             win = np.asarray(window)
@@ -133,9 +134,9 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
     elif scaling == 'spectrum':
         scale = 1.0 / s1
     else:
-        raise ValueError('Unknown scaling "{0}".'.format(scaling))
+        raise ValueError('Unknown scaling: %r' % scaling)
 
-    if np.isrealobj(x) and (sides == 'default' or sides == 'onesided'):
+    if np.isrealobj(x) and return_onesided:
         x = fftpack.rfft(x, nfft)
         outshape = list(x.shape)
         if nfft % 2 == 0: # even
@@ -151,27 +152,24 @@ def periodogram(x, fs=1.0, window=None, nfft=None, sides='default', scaling='den
         Pxx[..., 1:-1] *= 2*scale
         Pxx[..., (0,-1)] *= scale
         f = np.arange(Pxx.shape[-1])*(fs/nfft)
-    elif (np.iscomplexobj(x) and sides == 'default') or sides == 'twosided':
+    else:
         x = fftpack.fft(x, nfft)
         Pxx = (x * x.conj()).real
         f = fftpack.fftfreq(nfft, 1.0/fs)
         Pxx *= scale
-    elif np.iscomplexobj(x) and sides == 'onesided':
-        raise ValueError('Cannot compute onsided spectrum of complex data')
-    else: 
-        raise ValueError('Unknown sides: "{0}".'.format(sides))
 
     if axis != -1:
-        Pxx = np.rollaxis(Pxx, len(Pxx.shape)-1, axis)
+        Pxx = np.rollaxis(Pxx, -1, axis)
     return f, Pxx
 
 
-def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constant', sides='default', scaling='density', axis=-1):
+def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
+        detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
     Estimate power spectral density using Welch's method.  
 
-    Welch's method [1]_ computes an estimate of the power spectral desnsity 
-    by dividing the data into overlaping segments, computing a modified
+    Welch's method [1]_ computes an estimate of the power spectral desnsity
+    by dividing the data into overlapping segments, computing a modified
     periodogram for each segment and averaging the periodograms.
 
     Parameters
@@ -183,31 +181,29 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
         Sampling frequency of the `x` time series in units of Hz. Defaults
         to 1.0.
 
-   window : string or tuple of string and parameter values or array_like
-        Desired window to use. See scipy.signal.get_window for a list of
-        windows and required parameters. If 'window' is array_like it will
-        be used directly as the window and its length will be used for
-        nfft. Defaults to 'hanning'.
+   window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length will be used for nfft.
+        Defaults to 'hanning'.
 
-    nfft : int,  optional 
+    nfft : int, optional 
         Length of the FFT used. Defaults to 256.
 
-    noverlap: int or None, optional 
+    noverlap: int, optional 
         Number of points to overlap between segments. If None, `noverlap`
         = nfft / 2.  Defaults to None.
 
-    detrend : string or function, optional
+    detrend : str or function, optional
         Specifies how to detend each segment. If `detrend` is a string,
-        it is passed as the `type` argument to scipy.signal.detrend. 
-        If it is a function, it takes a segment and returns a detrended
-        segment.  Defaults to 'constant'
+        it is passed as the `type` argument to `detrend`. If it is a
+        function, it takes a segment and returns a detrended segment.
+        Defaults to 'constant'
 
-    sides : { 'default', 'onesided', 'twosided' }, optional
-        Selects which sides of the periodogram to return. 'default'
-        computes a one-sided spectrum for real data and a two-sided
-        spectrum for complex data. 'onesided' or 'twosided' will force
-        a one- or two-sided spectrum.  'onesided' cannot be specified with
-        complex data.
+    return_onesided : bool, optional
+        If True, return a one-sided spectrum for real data. If False return
+        a two-sided spectrum. Note that for complex data, a two-sided
+        spectrum is always returned.
 
     scaling : { 'density', 'spectrum' }, optional 
         Selects between computing the power spectral density ('density')
@@ -254,6 +250,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
     Examples
     --------
     >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
 
     Generate a test signal, a 2 Vrms sine wave at 1234 Hz, corrupted by
     0.001 V**2/Hz of white noise sampled at 10 kHz.
@@ -273,6 +270,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
     >>> plt.semilogy(f, Pxx_den)
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('PSD [V/sqrt(Hz)]')
+    >>> plt.show()
 
     If we average the last half of the spectral density, to exclude the
     peak, we can recover the noise power on the signal. 
@@ -287,6 +285,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
     >>> plt.semilogy(f, np.sqrt(Pxx_spec))
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('Linear spectrum [V RMS]')
+    >>> plt.show()
 
     The peak height in the power spectrum is an estimate of the RMS amplitude.
 
@@ -298,7 +297,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
     if axis != -1:
         x = np.rollaxis(x, axis, len(x.shape))
 
-    if type(window) is str or type(window) is tuple:
+    if isinstance(window, basestring) or type(window) is tuple:
         win = get_window(window, nfft)
     else:
         win = np.asarray(window)
@@ -311,7 +310,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
     elif scaling == 'spectrum':
         scale = 1.0 / win.sum()**2
     else:
-        raise  ValueError('Unknown scaling "{0}".'.format(scaling))
+        raise ValueError('Unknown scaling: %r' % scaling)
 
     if noverlap is None:
         noverlap = nfft // 2
@@ -322,7 +321,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
     # Wrap this function so that it receives a shape that it could reasonably
     # expect to receive.
         def detrend_func(seg):
-            seg = np.rollaxis(seg, len(seg.shape)-1, axis)
+            seg = np.rollaxis(seg, -1, axis)
             seg = detrend(seg)
             return np.rollaxis(seg, axis, len(seg.shape))
     else:
@@ -331,7 +330,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
     step = nfft - noverlap
     indices = np.arange(0, x.shape[-1]-nfft+1, step)
 
-    if np.isrealobj(x) and (sides == 'default' or sides == 'onesided'):
+    if np.isrealobj(x) and return_onesided:
         outshape = list(x.shape)
         if nfft % 2 == 0: # even
             outshape[-1] = nfft/2+1
@@ -362,7 +361,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
         Pxx[..., 1:-1] *= 2*scale
         Pxx[..., (0,-1)] *= scale
         f = np.arange(Pxx.shape[-1])*(fs/nfft)
-    elif (np.iscomplexobj(x) and sides == 'default') or sides == 'twosided':
+    else:
         for k, ind in enumerate(indices):
             x_dt = detrend_func(x[..., ind:ind+nfft])
             xft = fftpack.fft(x_dt*win, nfft)
@@ -373,12 +372,8 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None, detrend='constan
                 Pxx += (xft * xft.conj()).real / (k+1.0)
         Pxx *= scale
         f = fftpack.fftfreq(nfft, 1.0/fs)
-    elif np.iscomplexobj(x) and sides == 'onesided':
-        raise ValueError('Cannot compute a one-sided spectrum of complex data')
-    else: 
-        raise ValueError('Unknown sides: "{0}".'.format(sides))
 
     if axis != -1:
-        Pxx = np.rollaxis(Pxx, len(Pxx.shape)-1, axis)
+        Pxx = np.rollaxis(Pxx, -1, axis)
     return f, Pxx
 

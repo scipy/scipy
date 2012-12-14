@@ -31,7 +31,7 @@ class TestPeriodogram(TestCase):
     def test_real_twosided(self):
         x = np.zeros(16)
         x[0] = 1
-        f, p = periodogram(x, sides='twosided')
+        f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(16, 1.0))
         assert_allclose(p, np.ones(16)/16.0)
 
@@ -50,14 +50,6 @@ class TestPeriodogram(TestCase):
         assert_allclose(f, fftpack.fftfreq(16, 1.0))
         assert_allclose(p, 5.0*np.ones(16)/16.0)
     
-    def test_complex_one_sided(self):
-        assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),
-                sides='onesided')
-
-    def test_unk_sides(self):
-        assert_raises(ValueError, periodogram, np.zeros(4, np.double),
-                sides='threesided')
-
     def test_unk_scaling(self):
         assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),
                 scaling='foo')
@@ -115,7 +107,7 @@ class TestWelch(TestCase):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, nfft=8, sides='twosided')
+        f, p = welch(x, nfft=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         assert_allclose(p, np.array([ 0.08333333,  0.07638889,  0.11111111,
             0.11111111,  0.11111111,  0.11111111,  0.11111111,  0.07638889]))
@@ -138,14 +130,6 @@ class TestWelch(TestCase):
         assert_allclose(p, np.array([ 0.41666667,  0.38194444,  0.55555556,
             0.55555556,  0.55555556, 0.55555556,  0.55555556,  0.38194444]))
     
-    def test_complex_one_sided(self):
-        assert_raises(ValueError, welch, np.zeros(4, np.complex128),
-                sides='onesided')
-
-    def test_unk_sides(self):
-        assert_raises(ValueError, welch, np.zeros(4, np.double),
-                sides='threesided')
-
     def test_unk_scaling(self):
         assert_raises(ValueError, welch, np.zeros(4, np.complex128),
                 scaling='foo')
