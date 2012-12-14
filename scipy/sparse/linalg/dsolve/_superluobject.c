@@ -468,7 +468,7 @@ fail:
   SUPERLU_FREE(etree);
   Destroy_CompCol_Permuted(&AC);
   StatFree(&stat);
-  SciPyLU_dealloc(self);
+  Py_DECREF(self);
   return NULL;
 }
 
