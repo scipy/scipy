@@ -414,6 +414,9 @@ newSciPyLUObject(SuperMatrix *A, PyObject *option_dict, int intype, int ilu)
   self->U.Store = NULL;
   self->type = intype;
 
+  memset(&AC, 0, sizeof(SuperMatrix));
+  memset(&stat, 0, sizeof(SuperLUStat_t));
+
   if (setjmp(_superlu_py_jmpbuf)) goto fail;
   
   /* Calculate and apply minimum degree ordering*/
