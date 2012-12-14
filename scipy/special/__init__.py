@@ -131,7 +131,7 @@ Integrals of Bessel Functions
    it2j0y0    -- Integrals of (1-j0(t))/t from 0 to x and y0(t)/t from x to inf.
    iti0k0     -- Basic integrals of i0 and k0 from 0 to x.
    it2i0k0    -- Integrals of (i0(t)-1)/t from 0 to x and k0(t)/t from x to inf.
-   besselpoly -- Integral of a bessel function: Jv(2* a* x) * x[+]lambda from x=0 to 1.
+   besselpoly -- Integral of a Bessel function: Jv(2* a* x) * x[+]lambda from x=0 to 1.
 
 Derivatives of Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -179,7 +179,7 @@ Struve Functions
    :toctree: generated/
 
    struve       -- Struve function --- Hv(x)
-   modstruve    -- Modified struve function --- Lv(x)
+   modstruve    -- Modified Struve function --- Lv(x)
    itstruve0    -- Integral of H0(t) from 0 to x
    it2struve0   -- Integral of H0(t)/t from x to Inf.
    itmodstruve0 -- Integral of L0(t) from 0 to x.
@@ -275,9 +275,9 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   erf_zeros     -- [+]Complex zeros of erf(z)
-   fresnelc_zeros -- [+]Complex zeros of fresnel cosine integrals
-   fresnels_zeros -- [+]Complex zeros of fresnel sine integrals
+   erf_zeros      -- [+]Complex zeros of erf(z)
+   fresnelc_zeros -- [+]Complex zeros of Fresnel cosine integrals
+   fresnels_zeros -- [+]Complex zeros of Fresnel sine integrals
 
 Legendre Functions
 ------------------
@@ -415,12 +415,12 @@ The following return both function and first derivative:
 .. autosummary::
    :toctree: generated/
 
-   mathieu_cem     -- Even mathieu function
-   mathieu_sem     -- Odd mathieu function
-   mathieu_modcem1 -- Even modified mathieu function of the first kind
-   mathieu_modcem2 -- Even modified mathieu function of the second kind
-   mathieu_modsem1 -- Odd modified mathieu function of the first kind
-   mathieu_modsem2 -- Odd modified mathieu function of the second kind
+   mathieu_cem     -- Even Mathieu function
+   mathieu_sem     -- Odd Mathieu function
+   mathieu_modcem1 -- Even modified Mathieu function of the first kind
+   mathieu_modcem2 -- Even modified Mathieu function of the second kind
+   mathieu_modsem1 -- Odd modified Mathieu function of the first kind
+   mathieu_modsem2 -- Odd modified Mathieu function of the second kind
 
 Spheroidal Wave Functions
 -------------------------
@@ -431,7 +431,7 @@ Spheroidal Wave Functions
    pro_ang1   -- Prolate spheroidal angular function of the first kind
    pro_rad1   -- Prolate spheroidal radial function of the first kind
    pro_rad2   -- Prolate spheroidal radial function of the second kind
-   obl_ang1   -- Oblate spheroidal angluar function of the first kind
+   obl_ang1   -- Oblate spheroidal angular function of the first kind
    obl_rad1   -- Oblate spheroidal radial function of the first kind
    obl_rad2   -- Oblate spheroidal radial function of the second kind
    pro_cv     -- Compute characteristic value for prolate functions
@@ -447,7 +447,7 @@ The following functions require pre-computed characteristic value:
    pro_ang1_cv -- Prolate spheroidal angular function of the first kind
    pro_rad1_cv -- Prolate spheroidal radial function of the first kind
    pro_rad2_cv -- Prolate spheroidal radial function of the second kind
-   obl_ang1_cv -- Oblate spheroidal angluar function of the first kind
+   obl_ang1_cv -- Oblate spheroidal angular function of the first kind
    obl_rad1_cv -- Oblate spheroidal radial function of the first kind
    obl_rad2_cv -- Oblate spheroidal radial function of the second kind
 

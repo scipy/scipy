@@ -536,7 +536,7 @@ add_newdoc("scipy.special", "fdtridfn",
 
 add_newdoc("scipy.special", "fresnel",
     """
-    (ssa,cca)=fresnel(z) returns the fresnel sin and cos integrals: integral(sin(pi/2
+    (ssa,cca)=fresnel(z) returns the Fresnel sin and cos integrals: integral(sin(pi/2
     * t**2),t=0..z) and integral(cos(pi/2 * t**2),t=0..z) for real or
     complex z.
     """)
@@ -666,7 +666,7 @@ add_newdoc("scipy.special", "hyp2f0",
 
 add_newdoc("scipy.special", "hyp2f1",
     """
-    y=hyp2f1(a,b,c,z) returns the gauss hypergeometric function
+    y=hyp2f1(a,b,c,z) returns the Gauss hypergeometric function
     ( 2F1(a,b;c;z) ).
     """)
 
@@ -730,13 +730,13 @@ add_newdoc("scipy.special", "itairy",
 add_newdoc("scipy.special", "iti0k0",
     """
     (ii0,ik0)=iti0k0(x) returns simple integrals from 0 to x of the zeroth order
-    modified bessel functions i0 and k0.
+    modified Bessel functions i0 and k0.
     """)
 
 add_newdoc("scipy.special", "itj0y0",
     """
     (ij0,iy0)=itj0y0(x) returns simple integrals from 0 to x of the zeroth order
-    bessel functions j0 and y0.
+    Bessel functions j0 and y0.
     """)
 
 add_newdoc("scipy.special", "itmodstruve0",
@@ -967,13 +967,13 @@ add_newdoc("scipy.special", "mathieu_sem",
 
 add_newdoc("scipy.special", "modfresnelm",
     """
-    (fm,km)=modfresnelp(x) returns the modified fresnel integrals ``F_-(x)`` and ``K_-(x)``
+    (fm,km)=modfresnelp(x) returns the modified Fresnel integrals ``F_-(x)`` and ``K_-(x)``
     as ``fp=integral(exp(-1j*t*t),t=x..inf)`` and ``kp=1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
     """)
 
 add_newdoc("scipy.special", "modfresnelp",
     """
-    (fp,kp)=modfresnelp(x) returns the modified fresnel integrals F_+(x) and K_+(x)
+    (fp,kp)=modfresnelp(x) returns the modified Fresnel integrals F_+(x) and K_+(x)
     as fp=integral(exp(1j*t*t),t=x..inf) and kp=1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp
     """)
 
