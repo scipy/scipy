@@ -40,7 +40,7 @@ trans    'N': solve A   * x == b\n\
 static PyObject *
 SciPyLU_solve(SciPyLUObject *self, PyObject *args, PyObject *kwds) {
   PyArrayObject *b, *x=NULL;
-  SuperMatrix B;
+  SuperMatrix B = {0};
 #ifndef NPY_PY3K
   char itrans = 'N';
 #else
@@ -48,7 +48,7 @@ SciPyLU_solve(SciPyLUObject *self, PyObject *args, PyObject *kwds) {
 #endif
   int info;
   trans_t trans;
-  SuperLUStat_t stat;
+  SuperLUStat_t stat = {0};
 
   static char *kwlist[] = {"rhs","trans",NULL};
 
@@ -108,8 +108,8 @@ SciPyLU_solve(SciPyLUObject *self, PyObject *args, PyObject *kwds) {
   return (PyObject *)x;
 
 fail:
-  Destroy_SuperMatrix_Store(&B);  
-  StatFree(&stat);
+  XDestroy_SuperMatrix_Store(&B);
+  XStatFree(&stat);
   Py_XDECREF(x);
   return NULL;
 }
@@ -133,14 +133,8 @@ SciPyLU_dealloc(SciPyLUObject *self)
   SUPERLU_FREE(self->perm_c);
   self->perm_r = NULL;
   self->perm_c = NULL;
-  if (self->L.Store != NULL) {
-      Destroy_SuperNode_Matrix(&self->L);
-      self->L.Store = NULL;
-  }
-  if (self->U.Store != NULL) {
-      Destroy_CompCol_Matrix(&self->U);
-      self->U.Store = NULL;
-  }
+  XDestroy_SuperNode_Matrix(&self->L);
+  XDestroy_CompCol_Matrix(&self->U);
   PyObject_Del(self);
 }
 
@@ -386,13 +380,13 @@ newSciPyLUObject(SuperMatrix *A, PyObject *option_dict, int intype, int ilu)
 
    /* A must be in SLU_NC format used by the factorization routine. */
   SciPyLUObject *self;
-  SuperMatrix AC;     /* Matrix postmultiplied by Pc */
+  SuperMatrix AC = {0};     /* Matrix postmultiplied by Pc */
   int lwork = 0;
   int *etree=NULL;
   int info;
   int n;
   superlu_options_t options;
-  SuperLUStat_t stat;
+  SuperLUStat_t stat = {0};
   int panel_size, relax;
 
   n = A->ncol;
@@ -413,9 +407,6 @@ newSciPyLUObject(SuperMatrix *A, PyObject *option_dict, int intype, int ilu)
   self->L.Store = NULL;
   self->U.Store = NULL;
   self->type = intype;
-
-  memset(&AC, 0, sizeof(SuperMatrix));
-  memset(&stat, 0, sizeof(SuperLUStat_t));
 
   if (setjmp(_superlu_py_jmpbuf)) goto fail;
   
@@ -469,8 +460,8 @@ newSciPyLUObject(SuperMatrix *A, PyObject *option_dict, int intype, int ilu)
 
 fail:
   SUPERLU_FREE(etree);
-  Destroy_CompCol_Permuted(&AC);
-  StatFree(&stat);
+  XDestroy_CompCol_Permuted(&AC);
+  XStatFree(&stat);
   Py_DECREF(self);
   return NULL;
 }

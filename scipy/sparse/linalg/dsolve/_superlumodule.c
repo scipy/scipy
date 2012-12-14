@@ -23,6 +23,48 @@
 extern jmp_buf _superlu_py_jmpbuf;
 
 /*
+ * NULL-safe deconstruction functions
+ */
+void XDestroy_SuperMatrix_Store(SuperMatrix *A)
+{
+    Destroy_SuperMatrix_Store(A); /* safe as-is */
+    A->Store = NULL;
+}
+
+void XDestroy_SuperNode_Matrix(SuperMatrix *A)
+{
+    if (A->Store) {
+        Destroy_SuperNode_Matrix(A);
+    }
+    A->Store = NULL;
+}
+
+void XDestroy_CompCol_Matrix(SuperMatrix *A)
+{
+    if (A->Store) {
+        Destroy_CompCol_Matrix(A);
+    }
+    A->Store = NULL;
+}
+
+void XDestroy_CompCol_Permuted(SuperMatrix *A)
+{
+    if (A->Store) {
+        Destroy_CompCol_Permuted(A);
+    }
+    A->Store = NULL;
+}
+
+void XStatFree(SuperLUStat_t *stat)
+{
+    if (stat->ops) {
+        StatFree(stat);
+    }
+    stat->ops = NULL;
+}
+
+
+/*
  * Data-type dependent implementations for Xgssv and Xgstrf;
  *
  * These have to included from separate files because of SuperLU include
@@ -39,16 +81,16 @@ Py_gssv(PyObject *self, PyObject *args, PyObject *kwdict)
     int info;
     int csc=0;
     int *perm_r=NULL, *perm_c=NULL;
-    SuperMatrix A, B, L, U;
-    superlu_options_t options;
-    SuperLUStat_t stat;
+    SuperMatrix A = {0}, B = {0}, L = {0}, U = {0};
+    superlu_options_t options = {0};
+    SuperLUStat_t stat = {0};
     PyObject *option_dict = NULL;
     int type;
     int ssv_finished = 0;
 
     static char *kwlist[] = {"N","nnz","nzvals","colind","rowptr","B", "csc",
                              "options",NULL};
-    
+
     /* Get input arguments */
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO!O!O!O|iO", kwlist,
                                      &N, &nnz, &PyArray_Type, &nzvals,
@@ -129,15 +171,11 @@ Py_gssv(PyObject *self, PyObject *args, PyObject *kwdict)
 fail:
     SUPERLU_FREE(perm_r);
     SUPERLU_FREE(perm_c);
-    Destroy_SuperMatrix_Store(&A);  /* holds just a pointer to the data */
-    Destroy_SuperMatrix_Store(&B);
-    if (ssv_finished) {
-        /* Avoid trying to free partially initialized matrices;
-           might leak some memory, but avoids a crash */
-        Destroy_SuperNode_Matrix(&L);
-        Destroy_CompCol_Matrix(&U);
-    }
-    StatFree(&stat);  
+    XDestroy_SuperMatrix_Store(&A);  /* holds just a pointer to the data */
+    XDestroy_SuperMatrix_Store(&B);
+    XDestroy_SuperNode_Matrix(&L);
+    XDestroy_CompCol_Matrix(&U);
+    XStatFree(&stat);  
     Py_XDECREF(Py_X);
     return NULL;
 }
@@ -148,7 +186,7 @@ Py_gstrf(PyObject *self, PyObject *args, PyObject *keywds)
     /* default value for SuperLU parameters*/
     int N, nnz;
     PyArrayObject *rowind, *colptr, *nzvals;
-    SuperMatrix A;
+    SuperMatrix A = {0};
     PyObject *result;
     PyObject *option_dict = NULL;
     int type;
@@ -199,7 +237,7 @@ Py_gstrf(PyObject *self, PyObject *args, PyObject *keywds)
   
 fail:
     /* arrays of input matrix will not be freed */
-    Destroy_SuperMatrix_Store(&A); 
+    XDestroy_SuperMatrix_Store(&A); 
     return NULL;
 }
 

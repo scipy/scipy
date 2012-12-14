@@ -50,6 +50,12 @@ int set_superlu_options_from_dict(superlu_options_t *options,
                                   int ilu, PyObject *option_dict,
                                   int *panel_size, int *relax);
 
+void XDestroy_SuperMatrix_Store(SuperMatrix *);
+void XDestroy_SuperNode_Matrix(SuperMatrix *);
+void XDestroy_CompCol_Matrix(SuperMatrix *);
+void XDestroy_CompCol_Permuted(SuperMatrix *);
+void XStatFree(SuperLUStat_t *);
+
 /*
  * Definitions for other SuperLU data types than Z,
  * and type-generic definitions.
