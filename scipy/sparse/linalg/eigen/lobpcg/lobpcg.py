@@ -25,23 +25,23 @@ __all__ = ['lobpcg']
 
 def symeig( mtxA, mtxB = None, eigenvectors = True, select = None ):
     import scipy.linalg as sla
-    import scipy.lib.lapack as ll
     if select is None:
         if np.iscomplexobj( mtxA ):
             if mtxB is None:
-                fun = ll.get_lapack_funcs( ['heev'], arrays = (mtxA,) )[0]
+                fun = sla.get_lapack_funcs('heev', arrays=(mtxA,))
             else:
-                fun = ll.get_lapack_funcs( ['hegv'], arrays = (mtxA,) )[0]
+                fun = sla.get_lapack_funcs('hegv', arrays=(mtxA,))
         else:
             if mtxB is None:
-                fun = ll.get_lapack_funcs( ['syev'], arrays = (mtxA,) )[0]
+                fun = sla.get_lapack_funcs('syev', arrays=(mtxA,))
             else:
-                fun = ll.get_lapack_funcs( ['sygv'], arrays = (mtxA,) )[0]
+                fun = sla.get_lapack_funcs('sygv', arrays=(mtxA,))
 ##         print fun
         if mtxB is None:
             out = fun( mtxA )
         else:
             out = fun( mtxA, mtxB )
+            out = out[1], out[0], out[2]
 ##         print w
 ##         print v
 ##         print info
