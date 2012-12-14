@@ -131,11 +131,15 @@ SciPyLU_dealloc(SciPyLUObject *self)
 {
   SUPERLU_FREE(self->perm_r);
   SUPERLU_FREE(self->perm_c);
+  self->perm_r = NULL;
+  self->perm_c = NULL;
   if (self->L.Store != NULL) {
       Destroy_SuperNode_Matrix(&self->L);
+      self->L.Store = NULL;
   }
   if (self->U.Store != NULL) {
       Destroy_CompCol_Matrix(&self->U);
+      self->U.Store = NULL;
   }
   PyObject_Del(self);
 }
@@ -390,7 +394,6 @@ newSciPyLUObject(SuperMatrix *A, PyObject *option_dict, int intype, int ilu)
   superlu_options_t options;
   SuperLUStat_t stat;
   int panel_size, relax;
-  int trf_finished = 0;
 
   n = A->ncol;
 
@@ -407,6 +410,8 @@ newSciPyLUObject(SuperMatrix *A, PyObject *option_dict, int intype, int ilu)
   self->n = n;
   self->perm_r = NULL;
   self->perm_c = NULL;
+  self->L.Store = NULL;
+  self->U.Store = NULL;
   self->type = intype;
 
   if (setjmp(_superlu_py_jmpbuf)) goto fail;
@@ -438,7 +443,6 @@ newSciPyLUObject(SuperMatrix *A, PyObject *option_dict, int intype, int ilu)
             etree, NULL, lwork, self->perm_c, self->perm_r,
             &self->L, &self->U, &stat, &info);
   }
-  trf_finished = 1;
 
   if (info) {
     if (info < 0)
@@ -461,12 +465,6 @@ newSciPyLUObject(SuperMatrix *A, PyObject *option_dict, int intype, int ilu)
   return (PyObject *)self;
 
 fail:
-  if (!trf_finished) {
-      /* Avoid trying to free partially initialized matrices;
-         might leak some memory, but avoids a crash */
-      self->L.Store = NULL;
-      self->U.Store = NULL;
-  }
   SUPERLU_FREE(etree);
   Destroy_CompCol_Permuted(&AC);
   StatFree(&stat);
