@@ -54,7 +54,7 @@ def sinc(x):
     return where(x==0, 1.0, s)
 
 def diric(x,n):
-    """Returns the periodic sinc function also called the dirichlet function:
+    """Returns the periodic sinc function, also called the Dirichlet function:
 
     diric(x) = sin(x *n / 2) / (n sin(x / 2))
 
@@ -87,7 +87,7 @@ def diric(x,n):
 
 
 def jnjnp_zeros(nt):
-    """Compute nt (<=1200) zeros of the bessel functions Jn and Jn'
+    """Compute nt (<=1200) zeros of the Bessel functions Jn and Jn'
     and arange them in order of their magnitudes.
 
     Returns
@@ -429,21 +429,21 @@ def erf_zeros(nt):
     return specfun.cerzo(nt)
 
 def fresnelc_zeros(nt):
-    """Compute nt complex zeros of the cosine fresnel integral C(z).
+    """Compute nt complex zeros of the cosine Fresnel integral C(z).
     """
     if (floor(nt)!=nt) or (nt<=0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(1,nt)
 
 def fresnels_zeros(nt):
-    """Compute nt complex zeros of the sine fresnel integral S(z).
+    """Compute nt complex zeros of the sine Fresnel integral S(z).
     """
     if (floor(nt)!=nt) or (nt<=0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(2,nt)
 
 def fresnel_zeros(nt):
-    """Compute nt complex zeros of the sine and cosine fresnel integrals
+    """Compute nt complex zeros of the sine and cosine Fresnel integrals
     S(z) and C(z).
     """
     if (floor(nt)!=nt) or (nt<=0) or not isscalar(nt):
@@ -521,8 +521,8 @@ def polygamma(n, x):
     return where(n == 0, psi(x), fac2)
 
 def mathieu_even_coef(m,q):
-    """Compute expansion coefficients for even mathieu functions and
-    modified mathieu functions.
+    """Compute expansion coefficients for even Mathieu functions and
+    modified Mathieu functions.
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
@@ -548,8 +548,8 @@ def mathieu_even_coef(m,q):
     return fc[:km]
 
 def mathieu_odd_coef(m,q):
-    """Compute expansion coefficients for even mathieu functions and
-    modified mathieu functions.
+    """Compute expansion coefficients for even Mathieu functions and
+    modified Mathieu functions.
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
@@ -802,63 +802,63 @@ def pbdn_seq(n,z):
     return cpb[:n1+1],cpd[:n1+1]
 
 def ber_zeros(nt):
-    """Compute nt zeros of the kelvin function ber x
+    """Compute nt zeros of the Kelvin function ber x
     """
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,1)
 
 def bei_zeros(nt):
-    """Compute nt zeros of the kelvin function bei x
+    """Compute nt zeros of the Kelvin function bei x
     """
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,2)
 
 def ker_zeros(nt):
-    """Compute nt zeros of the kelvin function ker x
+    """Compute nt zeros of the Kelvin function ker x
     """
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,3)
 
 def kei_zeros(nt):
-    """Compute nt zeros of the kelvin function kei x
+    """Compute nt zeros of the Kelvin function kei x
     """
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,4)
 
 def berp_zeros(nt):
-    """Compute nt zeros of the kelvin function ber' x
+    """Compute nt zeros of the Kelvin function ber' x
     """
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,5)
 
 def beip_zeros(nt):
-    """Compute nt zeros of the kelvin function bei' x
+    """Compute nt zeros of the Kelvin function bei' x
     """
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,6)
 
 def kerp_zeros(nt):
-    """Compute nt zeros of the kelvin function ker' x
+    """Compute nt zeros of the Kelvin function ker' x
     """
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,7)
 
 def keip_zeros(nt):
-    """Compute nt zeros of the kelvin function kei' x
+    """Compute nt zeros of the Kelvin function kei' x
     """
     if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,8)
 
 def kelvin_zeros(nt):
-    """Compute nt zeros of all the kelvin functions returned in a
+    """Compute nt zeros of all the Kelvin functions returned in a
     length 8 tuple of arrays of length nt.
     The tuple containse the arrays of zeros of
     (ber, bei, ker, kei, ber', bei', ker', kei')
