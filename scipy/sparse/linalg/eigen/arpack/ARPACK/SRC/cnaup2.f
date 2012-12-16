@@ -135,7 +135,7 @@ c     cneigh  ARPACK compute Ritz values and error bounds routine.
 c     cngets  ARPACK reorder Ritz values and error bounds routine.
 c     csortc  ARPACK sorting routine.
 c     ivout   ARPACK utility routine that prints integers.
-c     second  ARPACK utility routine for timing.
+c     arscnd  ARPACK utility routine for timing.
 c     cmout   ARPACK utility routine that prints matrices
 c     cvout   ARPACK utility routine that prints vectors.
 c     svout   ARPACK utility routine that prints vectors.
@@ -240,7 +240,7 @@ c     | External Subroutines |
 c     %----------------------%
 c
       external   ccopy, cgetv0, cnaitr, cneigh, cngets, cnapps,
-     &           csortc, cswap, cmout, cvout, ivout, second
+     &           csortc, cswap, cmout, cvout, ivout, arscnd
 c
 c     %--------------------%
 c     | External functions |
@@ -264,7 +264,7 @@ c     %-----------------------%
 c
       if (ido .eq. 0) then
 c 
-         call second (t0)
+         call arscnd (t0)
 c 
          msglvl = mcaup2
 c 
@@ -724,7 +724,7 @@ c        | the first step of the next call to cnaitr.  |
 c        %---------------------------------------------%
 c
          cnorm = .true.
-         call second (t2)
+         call arscnd (t2)
          if (bmat .eq. 'G') then
             nbx = nbx + 1
             call ccopy (n, resid, 1, workd(n+1), 1)
@@ -749,7 +749,7 @@ c        | WORKD(1:N) := B*RESID            |
 c        %----------------------------------%
 c
          if (bmat .eq. 'G') then
-            call second (t3)
+            call arscnd (t3)
             tmvbx = tmvbx + (t3 - t2)
          end if
 c 
@@ -788,7 +788,7 @@ c     %------------%
 c     | Error Exit |
 c     %------------%
 c
-      call second (t1)
+      call arscnd (t1)
       tcaup2 = t1 - t0
 c     
  9000 continue

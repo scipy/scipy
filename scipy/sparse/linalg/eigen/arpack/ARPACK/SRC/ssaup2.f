@@ -148,11 +148,11 @@ c     sseigt  ARPACK compute Ritz values and error bounds routine.
 c     ssgets  ARPACK reorder Ritz values and error bounds routine.
 c     ssortr  ARPACK sorting routine.
 c     ivout   ARPACK utility routine that prints integers.
-c     second  ARPACK utility routine for timing.
+c     arscnd  ARPACK utility routine for timing.
 c     svout   ARPACK utility routine that prints vectors.
 c     slamch  LAPACK routine that determines machine constants.
 c     scopy   Level 1 BLAS that copies one vector to another.
-c     sdot    Level 1 BLAS that computes the scalar product of two vectors. 
+c     wsdot    Level 1 BLAS that computes the scalar product of two vectors. 
 c     snrm2   Level 1 BLAS that computes the norm of a vector.
 c     sscal   Level 1 BLAS that scales a vector.
 c     sswap   Level 1 BLAS that swaps two vectors.
@@ -235,15 +235,15 @@ c     | External Subroutines |
 c     %----------------------%
 c
       external   scopy, sgetv0, ssaitr, sscal, ssconv, sseigt, ssgets, 
-     &           ssapps, ssortr, svout, ivout, second, sswap
+     &           ssapps, ssortr, svout, ivout, arscnd, sswap
 c
 c     %--------------------%
 c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           sdot, snrm2, slamch
-      external   sdot, snrm2, slamch
+     &           wsdot, snrm2, slamch
+      external   wsdot, snrm2, slamch
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -262,7 +262,7 @@ c        | Initialize timing statistics  |
 c        | & message level for debugging |
 c        %-------------------------------%
 c
-         call second (t0)
+         call arscnd (t0)
          msglvl = msaup2
 c
 c        %---------------------------------%
@@ -770,7 +770,7 @@ c        | the first step of the next call to ssaitr.  |
 c        %---------------------------------------------%
 c
          cnorm = .true.
-         call second (t2)
+         call arscnd (t2)
          if (bmat .eq. 'G') then
             nbx = nbx + 1
             call scopy (n, resid, 1, workd(n+1), 1)
@@ -795,12 +795,12 @@ c        | WORKD(1:N) := B*RESID            |
 c        %----------------------------------%
 c
          if (bmat .eq. 'G') then
-            call second (t3)
+            call arscnd (t3)
             tmvbx = tmvbx + (t3 - t2)
          end if
 c 
          if (bmat .eq. 'G') then         
-            rnorm = sdot (n, resid, 1, workd, 1)
+            rnorm = wsdot (n, resid, 1, workd, 1)
             rnorm = sqrt(abs(rnorm))
          else if (bmat .eq. 'I') then
             rnorm = snrm2(n, resid, 1)
@@ -837,7 +837,7 @@ c     %------------%
 c     | Error exit |
 c     %------------%
 c
-      call second (t1)
+      call arscnd (t1)
       tsaup2 = t1 - t0
 c 
  9000 continue

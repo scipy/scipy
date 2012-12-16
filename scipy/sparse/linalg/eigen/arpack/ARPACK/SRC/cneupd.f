@@ -161,7 +161,7 @@ c                occurs.
 c
 c          = -1: N must be positive.
 c          = -2: NEV must be positive.
-c          = -3: NCV-NEV >= 1 and less than or equal to N.
+c          = -3: NCV-NEV >= 2 and less than or equal to N.
 c          = -5: WHICH must be one of 'LM', 'SM', 'LR', 'SR', 'LI', 'SI'
 c          = -6: BMAT must be one of 'I' or 'G'.
 c          = -7: Length of private work WORKL array is not sufficient.
@@ -240,7 +240,7 @@ c     Rice University
 c     Houston, Texas
 c
 c\SCCS Information: @(#)
-c FILE: neupd.F   SID: 2.8   DATE OF SID: 07/21/02   RELEASE: 2
+c FILE: neupd.F   SID: 2.7   DATE OF SID: 09/20/00   RELEASE: 2
 c
 c\EndLib
 c
@@ -302,7 +302,7 @@ c
      &           mode  , msglvl, ritz  , wr   , k     , irz   ,
      &           ibd   , outncv, iq    , np   , numcnv, jj    ,
      &           ishift, nconv2
-      Complex
+      Complex 
      &           rnorm, temp, vl(1)
       Real
      &           conds, sep, rtemp, eps23
@@ -362,7 +362,7 @@ c
          ierr = -1
       else if (nev .le. 0) then
          ierr = -2
-      else if (ncv .le. nev .or.  ncv .gt. n) then
+      else if (ncv .le. nev+1 .or.  ncv .gt. n) then
          ierr = -3
       else if (which .ne. 'LM' .and.
      &        which .ne. 'SM' .and.
@@ -524,7 +524,7 @@ c
      &          .le. tol*rtemp) then
                select(jj) = .true.
                numcnv = numcnv + 1
-               if (jj .gt. nev) reord = .true.
+               if (jj .gt. nconv) reord = .true.
             endif
    11    continue
 c

@@ -100,14 +100,14 @@ c
 c  NEV     Integer.  (INPUT)
 c          Number of eigenvalues of OP to be computed. 0 < NEV < N-1.
 c
-c  TOL     Real  scalar.  (INPUT)
+c  TOL     Real   scalar.  (INPUT)
 c          Stopping criteria: the relative accuracy of the Ritz value 
 c          is considered acceptable if BOUNDS(I) .LE. TOL*ABS(RITZ(I))
 c          where ABS(RITZ(I)) is the magnitude when RITZ(I) is complex.
 c          DEFAULT = slamch('EPS')  (machine precision as computed
 c                    by the LAPACK auxiliary subroutine slamch).
 c
-c  RESID   Complex array of length N.  (INPUT/OUTPUT)
+c  RESID   Complex  array of length N.  (INPUT/OUTPUT)
 c          On INPUT: 
 c          If INFO .EQ. 0, a random initial residual vector is used.
 c          If INFO .NE. 0, RESID contains the initial residual vector,
@@ -125,7 +125,7 @@ c          approximately NCV-NEV Arnoldi vectors at each subsequent update
 c          iteration. Most of the cost in generating each Arnoldi vector is 
 c          in the matrix-vector operation OP*x. (See remark 4 below.)
 c
-c  V       Complex array N by NCV.  (OUTPUT)
+c  V       Complex  array N by NCV.  (OUTPUT)
 c          Contains the final set of Arnoldi basis vectors. 
 c
 c  LDV     Integer.  (INPUT)
@@ -211,20 +211,20 @@ c                     cneupd if RVEC = .TRUE. See Remark 2 below.
 c
 c          -------------------------------------------------------------
 c          
-c  WORKD   Complex work array of length 3*N.  (REVERSE COMMUNICATION)
+c  WORKD   Complex  work array of length 3*N.  (REVERSE COMMUNICATION)
 c          Distributed array to be used in the basic Arnoldi iteration
 c          for reverse communication.  The user should not use WORKD 
 c          as temporary workspace during the iteration !!!!!!!!!!
 c          See Data Distribution Note below.  
 c
-c  WORKL   Complex work array of length LWORKL.  (OUTPUT/WORKSPACE)
+c  WORKL   Complex  work array of length LWORKL.  (OUTPUT/WORKSPACE)
 c          Private (replicated) array on each PE or array allocated on
 c          the front end.  See Data Distribution Note below.
 c
 c  LWORKL  Integer.  (INPUT)
 c          LWORKL must be at least 3*NCV**2 + 5*NCV.
 c
-c  RWORK   Real  work array of length NCV (WORKSPACE)
+c  RWORK   Real   work array of length NCV (WORKSPACE)
 c          Private (replicated) array on each PE or array allocated on
 c          the front end.
 c
@@ -246,7 +246,7 @@ c                is to increase the size of NCV relative to NEV.
 c                See remark 4 below.
 c          = -1: N must be positive.
 c          = -2: NEV must be positive.
-c          = -3: NCV-NEV >= 1 and less than or equal to N.
+c          = -3: NCV-NEV >= 2 and less than or equal to N.
 c          = -4: The maximum number of Arnoldi update iteration 
 c                must be greater than zero.
 c          = -5: WHICH must be one of 'LM', 'SM', 'LR', 'SR', 'LI', 'SI'
@@ -309,7 +309,7 @@ c\Data Distribution Note:
 c
 c  Fortran-D syntax:
 c  ================
-c  Complex resid(n), v(ldv,ncv), workd(3*n), workl(lworkl)
+c  Complex  resid(n), v(ldv,ncv), workd(3*n), workl(lworkl)
 c  decompose  d1(n), d2(n,ncv)
 c  align      resid(i) with d1(i)
 c  align      v(i,j)   with d2(i,j)
@@ -321,7 +321,7 @@ c  replicated workl(lworkl)
 c
 c  Cray MPP syntax:
 c  ===============
-c  Complex resid(n), v(ldv,ncv), workd(n,3), workl(lworkl)
+c  Complex  resid(n), v(ldv,ncv), workd(n,3), workl(lworkl)
 c  shared     resid(block), v(block,:), workd(block,:)
 c  replicated workl(lworkl)
 c  
@@ -337,7 +337,7 @@ c
 c\BeginLib
 c
 c\Local variables:
-c     xxxxxx  Complex
+c     xxxxxx  Complex 
 c
 c\References:
 c  1. D.C. Sorensen, "Implicit Application of Polynomial Filters in
@@ -347,7 +347,7 @@ c  2. R.B. Lehoucq, "Analysis and Implementation of an Implicitly
 c     Restarted Arnoldi Iteration", Rice University Technical Report
 c     TR95-13, Department of Computational and Applied Mathematics.
 c  3. B.N. Parlett & Y. Saad, "_Complex_ Shift and Invert Strategies for
-c     Real Matrices", Linear Algebra and its Applications, vol 88/89,
+c     _Real_ Matrices", Linear Algebra and its Applications, vol 88/89,
 c     pp 575-595, (1987).
 c
 c\Routines called:
@@ -356,7 +356,7 @@ c             Arnoldi Iteration.
 c     cstatn  ARPACK routine that initializes the timing variables.
 c     ivout   ARPACK utility routine that prints integers.
 c     cvout   ARPACK utility routine that prints vectors.
-c     second  ARPACK utility routine for timing.
+c     arscnd  ARPACK utility routine for timing.
 c     slamch  LAPACK routine that determines machine constants.
 c
 c\Author
@@ -368,7 +368,7 @@ c     Rice University
 c     Houston, Texas 
 c 
 c\SCCS Information: @(#)
-c FILE: naupd.F   SID: 2.9   DATE OF SID: 07/21/02   RELEASE: 2
+c FILE: naupd.F   SID: 2.8   DATE OF SID: 04/10/01   RELEASE: 2
 c
 c\Remarks
 c
@@ -393,7 +393,7 @@ c     %------------------%
 c
       character  bmat*1, which*2
       integer    ido, info, ldv, lworkl, n, ncv, nev
-      Real 
+      Real  
      &           tol
 c
 c     %-----------------%
@@ -401,18 +401,18 @@ c     | Array Arguments |
 c     %-----------------%
 c
       integer    iparam(11), ipntr(14)
-      Complex
+      Complex 
      &           resid(n), v(ldv,ncv), workd(3*n), workl(lworkl)
-      Real  
+      Real   
      &           rwork(ncv)
 c
 c     %------------%
 c     | Parameters |
 c     %------------%
 c
-      Complex
+      Complex 
      &           one, zero
-      parameter (one = (1.0E+0, 0.0E+0), zero = (0.0E+0, 0.0E+0))
+      parameter (one = (1.0E+0, 0.0E+0) , zero = (0.0E+0, 0.0E+0) )
 c
 c     %---------------%
 c     | Local Scalars |
@@ -429,13 +429,13 @@ c     %----------------------%
 c     | External Subroutines |
 c     %----------------------%
 c
-      external   cnaup2, cvout, ivout, second, cstatn
+      external   cnaup2, cvout, ivout, arscnd, cstatn
 c
 c     %--------------------%
 c     | External Functions |
 c     %--------------------%
 c
-      Real 
+      Real  
      &           slamch
       external   slamch
 c
@@ -451,7 +451,7 @@ c        | & message level for debugging |
 c        %-------------------------------%
 c
          call cstatn
-         call second (t0)
+         call arscnd (t0)
          msglvl = mcaupd
 c
 c        %----------------%
@@ -512,7 +512,7 @@ c        | Set default parameters |
 c        %------------------------%
 c
          if (nb .le. 0)				nb = 1
-         if (tol .le. 0.0E+0 )			tol = slamch('EpsMach')
+         if (tol .le. 0.0E+0  )			tol = slamch('EpsMach')
          if (ishift .ne. 0  .and.  
      &       ishift .ne. 1  .and.
      &       ishift .ne. 2) 			ishift = 1
@@ -611,7 +611,7 @@ c
      &               '_naupd: Associated Ritz estimates')
       end if
 c
-      call second (t1)
+      call arscnd (t1)
       tcaupd = t1 - t0
 c
       if (msglvl .gt. 0) then
@@ -627,8 +627,8 @@ c
  1000    format (//,
      &      5x, '=============================================',/
      &      5x, '= Complex implicit Arnoldi update code      =',/
-     &      5x, '= Version Number: ', ' 2.3', 21x, ' =',/
-     &      5x, '= Version Date:   ', ' 07/31/96', 16x,   ' =',/
+     &      5x, '= Version Number: ', ' 2.3' , 21x, ' =',/
+     &      5x, '= Version Date:   ', ' 07/31/96' , 16x,   ' =',/
      &      5x, '=============================================',/
      &      5x, '= Summary of timing statistics              =',/
      &      5x, '=============================================',//)
