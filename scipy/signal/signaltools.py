@@ -72,9 +72,9 @@ def correlate(in1, in2, mode='full'):
 
     Parameters
     ----------
-    in1 : array
+    in1 : array_like
         First input.
-    in2 : array
+    in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
@@ -158,9 +158,9 @@ def fftconvolve(in1, in2, mode="full"):
 
     Parameters
     ----------
-    in1 : array
+    in1 : array_like
         First input.
-    in2 : array
+    in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
@@ -182,6 +182,9 @@ def fftconvolve(in1, in2, mode="full"):
         convolution of `in1` with `in2`.
 
     """
+    in1 = asarray(in1)
+    in2 = asarray(in2)
+
     s1 = array(in1.shape)
     s2 = array(in2.shape)
     complex_result = (np.issubdtype(in1.dtype, np.complex) or
@@ -218,9 +221,9 @@ def convolve(in1, in2, mode='full'):
 
     Parameters
     ----------
-    in1 : array
+    in1 : array_like
         First input.
-    in2 : array
+    in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
@@ -418,7 +421,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Parameters
     ----------
-    in1, in2 : ndarray
+    in1, in2 : array_like
         Two-dimensional input arrays to be convolved.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
@@ -453,6 +456,9 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         convolution of `in1` with `in2`.
 
     """
+    in1 = asarray(in1)
+    in2 = asarray(in2)
+
     if mode == 'valid':
         _check_valid_mode_shapes(in1.shape, in2.shape)
 
@@ -470,7 +476,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Parameters
     ----------
-    in1, in2 : ndarray
+    in1, in2 : array_like
         Two-dimensional input arrays to be convolved.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
@@ -505,6 +511,9 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         cross-correlation of `in1` with `in2`.
 
     """
+    in1 = asarray(in1)
+    in2 = asarray(in2)
+
     if mode == 'valid':
         _check_valid_mode_shapes(in1.shape, in2.shape)
 
