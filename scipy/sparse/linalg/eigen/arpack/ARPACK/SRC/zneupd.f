@@ -302,7 +302,7 @@ c
      &           mode  , msglvl, ritz  , wr   , k     , irz   ,
      &           ibd   , outncv, iq    , np   , numcnv, jj    ,
      &           ishift, nconv2
-      Complex*16
+      Complex*16 
      &           rnorm, temp, vl(1)
       Double precision
      &           conds, sep, rtemp, eps23
@@ -325,8 +325,8 @@ c
       external   dznrm2, dlamch, dlapy2
 c
       Complex*16
-     &           wzdotc
-      external   wzdotc
+     &           zdotc
+      external   zdotc
 c
 c     %-----------------------%
 c     | Executable Statements |
@@ -362,7 +362,7 @@ c
          ierr = -1
       else if (nev .le. 0) then
          ierr = -2
-      else if (ncv .le. nev .or.  ncv .gt. n) then
+      else if (ncv .le. nev+1 .or.  ncv .gt. n) then
          ierr = -3
       else if (which .ne. 'LM' .and.
      &        which .ne. 'SM' .and.
@@ -524,7 +524,7 @@ c
      &          .le. tol*rtemp) then
                select(jj) = .true.
                numcnv = numcnv + 1
-               if (jj .gt. nev) reord = .true.
+               if (jj .gt. nconv) reord = .true.
             endif
    11    continue
 c
@@ -731,7 +731,7 @@ c                 | upper triangular, thus the length of the |
 c                 | inner product can be set to j.           |
 c                 %------------------------------------------%
 c 
-                  workev(j) = wzdotc(j, workl(ihbds), 1,
+                  workev(j) = zdotc(j, workl(ihbds), 1,
      &                        workl(invsub+(j-1)*ldq), 1)
  40         continue
 c

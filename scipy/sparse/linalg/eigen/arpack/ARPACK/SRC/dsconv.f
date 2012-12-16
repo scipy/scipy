@@ -34,7 +34,7 @@ c
 c\BeginLib
 c
 c\Routines called:
-c     second  ARPACK utility routine for timing.
+c     arscnd  ARPACK utility routine for timing.
 c     dlamch  LAPACK routine that determines machine constants. 
 c
 c\Author
@@ -106,7 +106,7 @@ c     %-----------------------%
 c     | Executable Statements |
 c     %-----------------------%
 c
-      call second (t0)
+      call arscnd (t0)
 c
       eps23 = dlamch('Epsilon-Machine') 
       eps23 = eps23**(2.0D+0 / 3.0D+0)
@@ -126,7 +126,7 @@ c
 c
    10 continue
 c 
-      call second (t1)
+      call arscnd (t1)
       tsconv = tsconv + (t1 - t0)
 c 
       return

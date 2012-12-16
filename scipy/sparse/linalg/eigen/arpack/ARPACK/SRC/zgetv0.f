@@ -89,12 +89,12 @@ c     a k-Step Arnoldi Method", SIAM J. Matr. Anal. Apps., 13 (1992),
 c     pp 357-385.
 c
 c\Routines called:
-c     second  ARPACK utility routine for timing.
+c     arscnd  ARPACK utility routine for timing.
 c     zvout   ARPACK utility routine that prints vectors.
 c     zlarnv  LAPACK routine for generating a random vector. 
 c     zgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     zcopy   Level 1 BLAS that copies one vector to another.
-c     wzdotc   Level 1 BLAS that computes the scalar product of two vectors.
+c     zdotc   Level 1 BLAS that computes the scalar product of two vectors.
 c     dznrm2  Level 1 BLAS that computes the norm of a vector. 
 c
 c\Author
@@ -168,7 +168,7 @@ c     %----------------------%
 c     | External Subroutines |
 c     %----------------------%
 c
-      external   zcopy, zgemv, zlarnv, zvout, second
+      external   zcopy, zgemv, zlarnv, zvout, arscnd
 c
 c     %--------------------%
 c     | External Functions |
@@ -177,8 +177,8 @@ c
       Double precision 
      &           dznrm2, dlapy2
       Complex*16
-     &           wzdotc
-      external   wzdotc, dznrm2, dlapy2
+     &           zdotc
+      external   zdotc, dznrm2, dlapy2
 c
 c     %-----------------%
 c     | Data Statements |
@@ -211,7 +211,7 @@ c        | Initialize timing statistics  |
 c        | & message level for debugging |
 c        %-------------------------------%
 c
-         call second (t0)
+         call arscnd (t0)
          msglvl = mgetv0
 c 
          ierr   = 0
@@ -238,7 +238,7 @@ c        | Force the starting vector into the range of OP to handle |
 c        | the generalized problem when B is possibly (singular).   |
 c        %----------------------------------------------------------%
 c
-         call second (t2)
+         call arscnd (t2)
          if (bmat .eq. 'G') then
             nopx = nopx + 1
             ipntr(1) = 1
@@ -261,7 +261,7 @@ c     %-----------------------------------------------%
 c
       if (orth)  go to 40
 c 
-      call second (t3)
+      call arscnd (t3)
       tmvopx = tmvopx + (t3 - t2)
 c 
 c     %------------------------------------------------------%
@@ -269,7 +269,7 @@ c     | Starting vector is now in the range of OP; r = OP*r; |
 c     | Compute B-norm of starting vector.                   |
 c     %------------------------------------------------------%
 c
-      call second (t2)
+      call arscnd (t2)
       first = .TRUE.
       if (bmat .eq. 'G') then
          nbx = nbx + 1
@@ -285,13 +285,13 @@ c
    20 continue
 c
       if (bmat .eq. 'G') then
-         call second (t3)
+         call arscnd (t3)
          tmvbx = tmvbx + (t3 - t2)
       end if
 c 
       first = .FALSE.
       if (bmat .eq. 'G') then
-          cnorm  = wzdotc (n, resid, 1, workd, 1)
+          cnorm  = zdotc (n, resid, 1, workd, 1)
           rnorm0 = sqrt(dlapy2(dble(cnorm),dimag(cnorm)))
       else if (bmat .eq. 'I') then
            rnorm0 = dznrm2(n, resid, 1)
@@ -328,7 +328,7 @@ c     %----------------------------------------------------------%
 c     | Compute the B-norm of the orthogonalized starting vector |
 c     %----------------------------------------------------------%
 c
-      call second (t2)
+      call arscnd (t2)
       if (bmat .eq. 'G') then
          nbx = nbx + 1
          call zcopy (n, resid, 1, workd(n+1), 1)
@@ -343,12 +343,12 @@ c
    40 continue
 c
       if (bmat .eq. 'G') then
-         call second (t3)
+         call arscnd (t3)
          tmvbx = tmvbx + (t3 - t2)
       end if
 c 
       if (bmat .eq. 'G') then
-         cnorm = wzdotc (n, resid, 1, workd, 1)
+         cnorm = zdotc (n, resid, 1, workd, 1)
          rnorm = sqrt(dlapy2(dble(cnorm),dimag(cnorm)))
       else if (bmat .eq. 'I') then
          rnorm = dznrm2(n, resid, 1)
@@ -401,7 +401,7 @@ c
       end if
       ido = 99
 c 
-      call second (t1)
+      call arscnd (t1)
       tgetv0 = tgetv0 + (t1 - t0)
 c 
  9000 continue

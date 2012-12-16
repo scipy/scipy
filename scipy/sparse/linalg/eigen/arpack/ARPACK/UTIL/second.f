@@ -1,4 +1,4 @@
-      SUBROUTINE SECOND( T )
+      SUBROUTINE ARSCND( T )
 *
       REAL       T
 *
@@ -11,13 +11,26 @@
 *  =======
 *
 *  SECOND returns the user time for a process in seconds.
-*  This version gets the time from the system function CPU_TIME.
+*  This version gets the time from the system function ETIME.
+*
+*     .. Local Scalars ..
+      REAL               T1
+*     ..
+*     .. Local Arrays ..
+      REAL               TARRAY( 2 )
+*     ..
+*     .. External Functions ..
+      REAL               ETIME
+      INTRINSIC          ETIME
+*     ..
+*     .. Executable Statements ..
 *
 
-      CALL CPU_TIME(T)
+      T1 = ETIME( TARRAY )
+      T  = TARRAY( 1 )
 
       RETURN
 *
-*     End of SECOND
+*     End of ARSCND
 *
       END
