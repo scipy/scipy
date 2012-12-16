@@ -7,7 +7,7 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_raises, assert_
 
 import scipy.signal as signal
-from scipy.signal import correlate, convolve, convolve2d, \
+from scipy.signal import correlate, convolve, convolve2d, fftconvolve, \
      hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk
 
 
@@ -28,11 +28,17 @@ class _TestConvolve(TestCase):
         z = convolve(x, y)
         assert_array_equal(z, array([2j, 2+6j, 5+8j, 5+5j]))
 
-    def test_zero_order(self):
+    def test_zero_rank(self):
         a = 1289
         b = 4567
         c = convolve(a,b)
-        assert_array_equal(c,a*b)
+        assert_equal(c,a*b)
+
+    def test_single_element(self):
+        a = array([4967])
+        b = array([3920])
+        c = convolve(a,b)
+        assert_equal(c,a*b)
 
     def test_2d_arrays(self):
         a = [[1,2,3],[3,4,5]]
@@ -149,7 +155,7 @@ class TestFFTConvolve(TestCase):
 
     def test_2d_complex_same(self):
         a = array([[1+2j,3+4j,5+6j],[2+1j,4+3j,6+5j]])
-        c = signal.fftconvolve(a,a)
+        c = fftconvolve(a,a)
         d = array([[-3+4j,-10+20j,-21+56j,-18+76j,-11+60j],\
                    [10j,44j,118j,156j,122j],\
                    [3+4j,10+20j,21+56j,18+76j,11+60j]])
@@ -158,29 +164,56 @@ class TestFFTConvolve(TestCase):
     def test_real_same_mode(self):
         a = array([1,2,3])
         b = array([3,3,5,6,8,7,9,0,1])
-        c = signal.fftconvolve(a,b,'same')
+        c = fftconvolve(a,b,'same')
+        d = array([ 35.,  41.,  47.])
+        assert_array_almost_equal(c,d)
+
+    def test_real_same_mode2(self):
+        a = array([3,3,5,6,8,7,9,0,1])
+        b = array([1,2,3])
+        c = fftconvolve(a,b,'same')
         d = array([9.,20.,25.,35.,41.,47.,39.,28.,2.])
         assert_array_almost_equal(c,d)
 
     def test_real_valid_mode(self):
         a = array([3,2,1])
         b = array([3,3,5,6,8,7,9,0,1])
-        c = signal.fftconvolve(a,b,'valid')
+        def _test():
+            fftconvolve(a,b,'valid')
+        self.assertRaises(ValueError, _test)
+
+    def test_real_valid_mode2(self):
+        a = array([3,3,5,6,8,7,9,0,1])
+        b = array([3,2,1])
+        c = fftconvolve(a,b,'valid')
         d = array([24.,31.,41.,43.,49.,25.,12.])
         assert_array_almost_equal(c,d)
 
-    def test_zero_order(self):
+    def test_empty(self):
+        """Regression test for #1745: crashes with 0-length input"""
+        a = array([5])
+        b = array([])
+        def _test():
+            fftconvolve(a,b)
+        self.assertRaises(ValueError, _test)
+
+    def test_zero_rank(self):
+        a = array(4967)
+        b = array(3920)
+        c = fftconvolve(a,b)
+        assert_equal(c,a*b)
+
+    def test_single_element(self):
         a = array([4967])
         b = array([3920])
-        c = signal.fftconvolve(a,b)
-        d = a*b
-        assert_equal(c,d)
+        c = fftconvolve(a,b)
+        assert_equal(c,a*b)
 
     def test_random_data(self):
         np.random.seed(1234)
         a = np.random.rand(1233) + 1j*np.random.rand(1233)
         b = np.random.rand(1321) + 1j*np.random.rand(1321)
-        c = signal.fftconvolve(a, b, 'full')
+        c = fftconvolve(a, b, 'full')
         d = np.convolve(a, b, 'full')
         assert_(np.allclose(c, d, rtol=1e-10))
 
