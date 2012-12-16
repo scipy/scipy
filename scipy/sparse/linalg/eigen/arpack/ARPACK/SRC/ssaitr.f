@@ -139,7 +139,7 @@ c     sgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     saxpy   Level 1 BLAS that computes a vector triad.
 c     sscal   Level 1 BLAS that scales a vector.
 c     scopy   Level 1 BLAS that copies one vector to another .
-c     sdot    Level 1 BLAS that computes the scalar product of two vectors. 
+c     wsdot    Level 1 BLAS that computes the scalar product of two vectors. 
 c     snrm2   Level 1 BLAS that computes the norm of a vector.
 c
 c\Author
@@ -269,8 +269,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           sdot, snrm2, slamch
-      external   sdot, snrm2, slamch
+     &           wsdot, snrm2, slamch
+      external   wsdot, snrm2, slamch
 c
 c     %-----------------%
 c     | Data statements |
@@ -543,10 +543,10 @@ c           | Note that the B-norm of OP*v_{j} |
 c           | is the inv(B)-norm of A*v_{j}.   |
 c           %----------------------------------%
 c
-            wnorm = sdot (n, resid, 1, workd(ivj), 1)
+            wnorm = wsdot (n, resid, 1, workd(ivj), 1)
             wnorm = sqrt(abs(wnorm))
          else if (bmat .eq. 'G') then         
-            wnorm = sdot (n, resid, 1, workd(ipj), 1)
+            wnorm = wsdot (n, resid, 1, workd(ipj), 1)
             wnorm = sqrt(abs(wnorm))
          else if (bmat .eq. 'I') then
             wnorm = snrm2(n, resid, 1)
@@ -632,7 +632,7 @@ c        | Compute the B-norm of r_{j}. |
 c        %------------------------------%
 c
          if (bmat .eq. 'G') then         
-            rnorm = sdot (n, resid, 1, workd(ipj), 1)
+            rnorm = wsdot (n, resid, 1, workd(ipj), 1)
             rnorm = sqrt(abs(rnorm))
          else if (bmat .eq. 'I') then
             rnorm = snrm2(n, resid, 1)
@@ -728,7 +728,7 @@ c        | Compute the B-norm of the corrected residual r_{j}. |
 c        %-----------------------------------------------------%
 c 
          if (bmat .eq. 'G') then         
-             rnorm1 = sdot (n, resid, 1, workd(ipj), 1)
+             rnorm1 = wsdot (n, resid, 1, workd(ipj), 1)
              rnorm1 = sqrt(abs(rnorm1))
          else if (bmat .eq. 'I') then
              rnorm1 = snrm2(n, resid, 1)

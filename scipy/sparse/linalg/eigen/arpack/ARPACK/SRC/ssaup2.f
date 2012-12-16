@@ -152,7 +152,7 @@ c     arscnd  ARPACK utility routine for timing.
 c     svout   ARPACK utility routine that prints vectors.
 c     slamch  LAPACK routine that determines machine constants.
 c     scopy   Level 1 BLAS that copies one vector to another.
-c     sdot    Level 1 BLAS that computes the scalar product of two vectors. 
+c     wsdot    Level 1 BLAS that computes the scalar product of two vectors. 
 c     snrm2   Level 1 BLAS that computes the norm of a vector.
 c     sscal   Level 1 BLAS that scales a vector.
 c     sswap   Level 1 BLAS that swaps two vectors.
@@ -242,8 +242,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           sdot, snrm2, slamch
-      external   sdot, snrm2, slamch
+     &           wsdot, snrm2, slamch
+      external   wsdot, snrm2, slamch
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -800,7 +800,7 @@ c
          end if
 c 
          if (bmat .eq. 'G') then         
-            rnorm = sdot (n, resid, 1, workd, 1)
+            rnorm = wsdot (n, resid, 1, workd, 1)
             rnorm = sqrt(abs(rnorm))
          else if (bmat .eq. 'I') then
             rnorm = snrm2(n, resid, 1)
