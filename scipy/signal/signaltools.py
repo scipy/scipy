@@ -185,6 +185,11 @@ def fftconvolve(in1, in2, mode="full"):
     in1 = asarray(in1)
     in2 = asarray(in2)
 
+    if rank(in1) == rank(in2) == 0:
+        return in1 * in2
+    elif not in1.ndim == in2.ndim:
+        raise ValueError("in1 and in2 should have the same rank")
+    
     s1 = array(in1.shape)
     s2 = array(in2.shape)
     complex_result = (np.issubdtype(in1.dtype, np.complex) or
