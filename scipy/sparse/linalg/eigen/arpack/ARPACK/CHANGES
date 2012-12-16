@@ -1,0 +1,82 @@
+arpack-ng - 3.1.2
+
+   * Wrong call to pdlamch was causing segfaults
+     Thanks to Kyrre Sjøbæk for finding the bug and the fix.
+   * Get rid of the mpif.h occurences in the source code (Closes: #782)
+   * Compile also PARPACK / MPI example (Closes: #783)
+   * Configure detected built-in LAPACK and BLAS, but refused to use them
+     (Closes: #784)
+   * Fixed division by zero in smlnum by usind p[d,s]lamch instead of the
+     serial. Thanks to Umberto De Giovannini.
+
+ -- Sylvestre Ledru <sylvestre.ledru@scilab-enterprises.com>  Fri, 22 Jun 2012 22:05:41 +0200
+
+arpack-ng - 3.1.1
+
+   * Option --enable-maintainer-mode added to the configure
+   * --disable-mpi disables the build of parpack (Closes: #714)
+   * Switch to automake 1.11.3
+
+ -- Sylvestre Ledru <sylvestre.ledru@scilab-enterprises.com>  Mon, 21 May 2012 09:08:41 +0200
+
+arpack-ng - 3.1.0
+
+   * Many bug fixes in the parpack lib. It is an old patch from upstream.
+     Thanks to Viral Shah for pinging us on this subject.
+     See the PARPACK_CHANGES file for the details.
+   * Change the bug report from arpack@caam.rice.edu to 
+     http://forge.scilab.org/index.php/p/arpack-ng/issues/
+   * Provide a M4 macro (detect_arpack_bug.m4) to check if the underlying
+     arpack is buggy (ie not arpack-ng). This allows developper applications
+     to perform the check in their autotools build system (configure).
+   * Fixed a lack of appropriate bounds check in DNAUP2. Thanks to Pauli Virtanen
+     for the patch (Closes: #632)
+   * Update of the doc about TOL in dnaupd.
+   * Reorder bug fixed when eigenvectors are requested and the resulting
+     number of converged eigenvalues is less than the number requested.
+     Patches from Tim Mitchell. (Closes: #664)
+   * TESTS/ directory added and built.
+
+ -- Sylvestre Ledru <sylvestre.ledru@scilab-enterprises.com>  Wed, 22 Feb 2012 10:58:39 +0100
+
+arpack-ng - 3.0.2
+
+   * Fix a long line in pznaup2.f which was showing some wrong symbols
+     (Closes: #620)
+   * README content updated regarding ARPACK-NG
+   * arpack.pc (pkg-config) file added
+   * Update the title & version in the configure.ac
+   * Always search for MPILIBS (in order to have the variable correctly set)
+   * Explicitly link against MPI fortran libs for parpack
+
+ -- Sylvestre Ledru <sylvestre.ledru@scilab-enterprises.com>  Wed, 28 Dec 2011 13:45:53 +0100
+
+arpack-ng - 3.0.1
+
+   * libtool was missing (Closes: #615)
+   * Missing license information (Closes: #614)
+   * TODO added
+
+ -- Sylvestre Ledru <sylvestre.ledru@scilab-enterprises.com>  Tue, 13 Dec 2011 16:33:25 +0100
+
+arpack-ng - 3.0
+
+   * Patches from Scilab
+     second_NONE used by default (TO DO replace by second in LAPACK)
+     second_NONE works with all fortrans compilers (used by default with Scilab)
+
+     sneupd.f, cneupd.f: modified for scilab add a check on nconv value (Scilab bug fix)
+     dnaupd.f: modified  NEV Integer: INPUT/OUTPUT before only INPUT (Scilab bug fix) 
+ 
+   * Patches from Octave: (Thanks to John W. EATON)
+     dneupd.f: Restore value of nconv
+     dseupd.f: Restore value of nconv
+     sseupd.f: Change GOTO target to eliminate warning about landing on end if.
+     zneupd.f: Restore value of nconv
+
+   * Compilation
+     Apply gentoo patches to use an autotools build system
+     Build system updated to build with Visual Studio 2010 + Intel fortran 2011 compiles on Windows.
+     Specify the SONAME to libarpack.so.2 (no API/ABI changes compare to version 2.0)
+
+ -- Sylvestre Ledru <sylvestre.ledru@scilab-enterprises.com>  Sat, 10 Dec 2011 20:32:45 +0100

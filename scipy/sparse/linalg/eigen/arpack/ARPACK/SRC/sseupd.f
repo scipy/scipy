@@ -501,7 +501,7 @@ c
      &          workl(ibd+jj-1) .le. tol*temp1) then
                select(jj) = .true.
                numcnv = numcnv + 1
-               if (jj .gt. nev) reord = .true.
+               if (jj .gt. nconv) reord = .true.
             endif
    11    continue
 c
@@ -609,9 +609,9 @@ c
 c
             if (leftptr .lt. rghtptr) go to 20
 c
- 30      end if
+         end if
 c
-         if (msglvl .gt. 2) then
+ 30      if (msglvl .gt. 2) then
              call svout (logfil, ncv, workl(ihd), ndigit,
      &       '_seupd: The eigenvalues of H--reordered')
          end if

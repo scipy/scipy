@@ -1,4 +1,4 @@
-      SUBROUTINE SECOND( T )
+      SUBROUTINE ARSCND( T )
 *
       REAL       T
 *

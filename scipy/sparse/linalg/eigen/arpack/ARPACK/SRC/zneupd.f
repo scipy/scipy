@@ -302,7 +302,7 @@ c
      &           mode  , msglvl, ritz  , wr   , k     , irz   ,
      &           ibd   , outncv, iq    , np   , numcnv, jj    ,
      &           ishift, nconv2
-      Complex*16
+      Complex*16 
      &           rnorm, temp, vl(1)
       Double precision
      &           conds, sep, rtemp, eps23
@@ -362,7 +362,7 @@ c
          ierr = -1
       else if (nev .le. 0) then
          ierr = -2
-      else if (ncv .le. nev .or.  ncv .gt. n) then
+      else if (ncv .le. nev+1 .or.  ncv .gt. n) then
          ierr = -3
       else if (which .ne. 'LM' .and.
      &        which .ne. 'SM' .and.
@@ -524,7 +524,7 @@ c
      &          .le. tol*rtemp) then
                select(jj) = .true.
                numcnv = numcnv + 1
-               if (jj .gt. nev) reord = .true.
+               if (jj .gt. nconv) reord = .true.
             endif
    11    continue
 c

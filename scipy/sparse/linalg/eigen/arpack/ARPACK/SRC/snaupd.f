@@ -110,17 +110,17 @@ c          'SR' -> want the NEV eigenvalues of smallest real part.
 c          'LI' -> want the NEV eigenvalues of largest imaginary part.
 c          'SI' -> want the NEV eigenvalues of smallest imaginary part.
 c
-c  NEV     Integer.  (INPUT/OUTPUT)
+c  NEV     Integer.  (INPUT)
 c          Number of eigenvalues of OP to be computed. 0 < NEV < N-1.
 c
-c  TOL     Real scalar.  (INPUT)
+c  TOL     Real  scalar.  (INPUT)
 c          Stopping criterion: the relative accuracy of the Ritz value 
 c          is considered acceptable if BOUNDS(I) .LE. TOL*ABS(RITZ(I))
 c          where ABS(RITZ(I)) is the magnitude when RITZ(I) is complex.
 c          DEFAULT = SLAMCH('EPS')  (machine precision as computed
 c                    by the LAPACK auxiliary subroutine SLAMCH).
 c
-c  RESID   Real array of length N.  (INPUT/OUTPUT)
+c  RESID   Real  array of length N.  (INPUT/OUTPUT)
 c          On INPUT: 
 c          If INFO .EQ. 0, a random initial residual vector is used.
 c          If INFO .NE. 0, RESID contains the initial residual vector,
@@ -140,7 +140,7 @@ c          in the matrix-vector operation OP*x.
 c          NOTE: 2 <= NCV-NEV in order that complex conjugate pairs of Ritz 
 c          values are kept together. (See remark 4 below)
 c
-c  V       Real array N by NCV.  (OUTPUT)
+c  V       Real  array N by NCV.  (OUTPUT)
 c          Contains the final set of Arnoldi basis vectors. 
 c
 c  LDV     Integer.  (INPUT)
@@ -231,7 +231,7 @@ c                     of the upper Hessenberg matrix H. Only referenced by
 c                     sneupd if RVEC = .TRUE. See Remark 2 below.
 c          -------------------------------------------------------------
 c          
-c  WORKD   Real work array of length 3*N.  (REVERSE COMMUNICATION)
+c  WORKD   Real  work array of length 3*N.  (REVERSE COMMUNICATION)
 c          Distributed array to be used in the basic Arnoldi iteration
 c          for reverse communication.  The user should not use WORKD 
 c          as temporary workspace during the iteration. Upon termination
@@ -240,7 +240,7 @@ c          associated with the converged Ritz values is desired, see remark
 c          2 below, subroutine sneupd uses this output.
 c          See Data Distribution Note below.  
 c
-c  WORKL   Real work array of length LWORKL.  (OUTPUT/WORKSPACE)
+c  WORKL   Real  work array of length LWORKL.  (OUTPUT/WORKSPACE)
 c          Private (replicated) array on each PE or array allocated on
 c          the front end.  See Data Distribution Note below.
 c
@@ -334,7 +334,7 @@ c\Data Distribution Note:
 c
 c  Fortran-D syntax:
 c  ================
-c  Real resid(n), v(ldv,ncv), workd(3*n), workl(lworkl)
+c  Real  resid(n), v(ldv,ncv), workd(3*n), workl(lworkl)
 c  decompose  d1(n), d2(n,ncv)
 c  align      resid(i) with d1(i)
 c  align      v(i,j)   with d2(i,j)
@@ -346,7 +346,7 @@ c  replicated workl(lworkl)
 c
 c  Cray MPP syntax:
 c  ===============
-c  Real  resid(n), v(ldv,ncv), workd(n,3), workl(lworkl)
+c  Real   resid(n), v(ldv,ncv), workd(n,3), workl(lworkl)
 c  shared     resid(block), v(block,:), workd(block,:)
 c  replicated workl(lworkl)
 c  
@@ -379,7 +379,7 @@ c\Routines called:
 c     snaup2  ARPACK routine that implements the Implicitly Restarted
 c             Arnoldi Iteration.
 c     ivout   ARPACK utility routine that prints integers.
-c     second  ARPACK utility routine for timing.
+c     arscnd  ARPACK utility routine for timing.
 c     svout   ARPACK utility routine that prints vectors.
 c     slamch  LAPACK routine that determines machine constants.
 c
@@ -395,7 +395,7 @@ c\Revision history:
 c     12/16/93: Version '1.1'
 c
 c\SCCS Information: @(#) 
-c FILE: naupd.F   SID: 2.10   DATE OF SID: 08/23/02   RELEASE: 2
+c FILE: naupd.F   SID: 2.8   DATE OF SID: 04/10/01   RELEASE: 2
 c
 c\Remarks
 c
@@ -420,7 +420,7 @@ c     %------------------%
 c
       character  bmat*1, which*2
       integer    ido, info, ldv, lworkl, n, ncv, nev
-      Real
+      Real 
      &           tol
 c
 c     %-----------------%
@@ -428,16 +428,16 @@ c     | Array Arguments |
 c     %-----------------%
 c
       integer    iparam(11), ipntr(14)
-      Real
+      Real 
      &           resid(n), v(ldv,ncv), workd(3*n), workl(lworkl)
 c
 c     %------------%
 c     | Parameters |
 c     %------------%
 c
-      Real
+      Real 
      &           one, zero
-      parameter (one = 1.0E+0, zero = 0.0E+0)
+      parameter (one = 1.0E+0 , zero = 0.0E+0 )
 c
 c     %---------------%
 c     | Local Scalars |
@@ -454,13 +454,13 @@ c     %----------------------%
 c     | External Subroutines |
 c     %----------------------%
 c
-      external   snaup2, svout, ivout, second, sstatn
+      external   snaup2, svout, ivout, arscnd, sstatn
 c
 c     %--------------------%
 c     | External Functions |
 c     %--------------------%
 c
-      Real
+      Real 
      &           slamch
       external   slamch
 c
@@ -476,7 +476,7 @@ c        | & message level for debugging |
 c        %-------------------------------%
 c
          call sstatn
-         call second (t0)
+         call arscnd (t0)
          msglvl = mnaupd
 c
 c        %----------------%
@@ -498,13 +498,13 @@ c
          mode   = iparam(7)
 c
          if (n .le. 0) then
-            ierr = -1
+             ierr = -1
          else if (nev .le. 0) then
-            ierr = -2
+             ierr = -2
          else if (ncv .le. nev+1 .or.  ncv .gt. n) then
-            ierr = -3
-         else if (mxiter .le.          0) then
-            ierr = 4
+             ierr = -3
+         else if (mxiter .le. 0) then
+             ierr = -4
          else if (which .ne. 'LM' .and.
      &       which .ne. 'SM' .and.
      &       which .ne. 'LR' .and.
@@ -517,11 +517,11 @@ c
          else if (lworkl .lt. 3*ncv**2 + 6*ncv) then
             ierr = -7
          else if (mode .lt. 1 .or. mode .gt. 4) then
-            ierr = -10
+                                                ierr = -10
          else if (mode .eq. 1 .and. bmat .eq. 'G') then
-            ierr = -11
+                                                ierr = -11
          else if (ishift .lt. 0 .or. ishift .gt. 1) then
-            ierr = -12
+                                                ierr = -12
          end if
 c 
 c        %------------%
@@ -640,7 +640,7 @@ c
      &               '_naupd: Associated Ritz estimates')
       end if
 c
-      call second (t1)
+      call arscnd (t1)
       tnaupd = t1 - t0
 c
       if (msglvl .gt. 0) then
@@ -656,8 +656,8 @@ c
  1000    format (//,
      &      5x, '=============================================',/
      &      5x, '= Nonsymmetric implicit Arnoldi update code =',/
-     &      5x, '= Version Number: ', ' 2.4', 21x, ' =',/
-     &      5x, '= Version Date:   ', ' 07/31/96', 16x,   ' =',/
+     &      5x, '= Version Number: ', ' 2.4' , 21x, ' =',/
+     &      5x, '= Version Date:   ', ' 07/31/96' , 16x,   ' =',/
      &      5x, '=============================================',/
      &      5x, '= Summary of timing statistics              =',/
      &      5x, '=============================================',//)

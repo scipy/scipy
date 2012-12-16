@@ -65,7 +65,7 @@ c
 c\Routines called:
 c     dsortr  ARPACK utility sorting routine.
 c     ivout   ARPACK utility routine that prints integers.
-c     second  ARPACK utility routine for timing.
+c     arscnd  ARPACK utility routine for timing.
 c     dvout   ARPACK utility routine that prints vectors.
 c     dcopy   Level 1 BLAS that copies one vector to another.
 c     dswap   Level 1 BLAS that swaps the contents of two vectors.
@@ -131,7 +131,7 @@ c     %----------------------%
 c     | External Subroutines |
 c     %----------------------%
 c
-      external   dswap, dcopy, dsortr, second
+      external   dswap, dcopy, dsortr, arscnd
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -148,7 +148,7 @@ c     | Initialize timing statistics  |
 c     | & message level for debugging |
 c     %-------------------------------%
 c
-      call second (t0)
+      call arscnd (t0)
       msglvl = msgets
 c 
       if (which .eq. 'BE') then
@@ -198,7 +198,7 @@ c
          call dcopy (np, ritz, 1, shifts, 1)
       end if
 c 
-      call second (t1)
+      call arscnd (t1)
       tsgets = tsgets + (t1 - t0)
 c
       if (msglvl .gt. 0) then
