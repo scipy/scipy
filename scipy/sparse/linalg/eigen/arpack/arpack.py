@@ -1561,7 +1561,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     return params.extract(return_eigenvectors)
 
 
-def svds(A, k=6, ncv=None, tol=0, maxiter=None):
+def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
+         maxiter=None, return_singular_vectors=True):
     """Compute the largest k singular values/vectors for a sparse matrix.
 
     Parameters
@@ -1576,8 +1577,18 @@ def svds(A, k=6, ncv=None, tol=0, maxiter=None):
         it is recommended that ncv > 2*k
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
+    which : str, ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI'], optional
+        Which `k` singular values to find:
+
+            - 'LM' : largest magnitude
+            - 'SM' : smallest magnitude
+
+    v0 : ndarray, optional
+        Starting vector for iteration, of length min(A.shape).
     maxiter: integer, optional
         Maximum number of iterations.
+    return_singular_vectors : bool, optional
+        Return singular vectors (True) in addition to singular values
 
     Returns
     -------
@@ -1590,8 +1601,8 @@ def svds(A, k=6, ncv=None, tol=0, maxiter=None):
 
     Notes
     -----
-    This is a naive implementation using an ARPACK as eigensolver on A.H * A
-    or A * A.H, depending on which one is more efficient.
+    This is a naive implementation using ARPACK as an eigensolver
+    on A.H * A or A * A.H, depending on which one is more efficient.
     """
     if not (isinstance(A, np.ndarray) or isspmatrix(A)):
         A = np.asarray(A)
@@ -1618,8 +1629,16 @@ def svds(A, k=6, ncv=None, tol=0, maxiter=None):
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=X.dtype,
                           shape=(X.shape[1], X.shape[1]))
 
-    eigvals, eigvec = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter)
-    s = np.sqrt(eigvals)
+    if return_singular_vectors:
+        eigvals, eigvec = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+                                      ncv=ncv, which=which, v0=v0)
+        s = np.sqrt(eigvals)
+    else:
+        eigvals = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+                              ncv=ncv, which=which, v0=v0,
+                              return_eigenvectors=False)
+        s = np.sqrt(eigvals)
+        return s
 
     if n > m:
         v = eigvec
