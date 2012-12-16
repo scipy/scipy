@@ -195,7 +195,8 @@ def fftconvolve(in1, in2, mode="full"):
     fsize = 2 ** np.ceil(np.log2(size)).astype(int)
     fslice = tuple([slice(0, int(sz)) for sz in size])
     if not complex_result:
-        ret = irfftn(rfftn(in1, fsize) * rfftn(in2, fsize))[fslice].copy()
+        ret = irfftn(rfftn(in1, fsize) * 
+                     rfftn(in2, fsize), fsize)[fslice].copy()
         ret = ret.real
     else:
         ret = ifftn(fftn(in1, fsize) * fftn(in2, fsize))[fslice].copy()
