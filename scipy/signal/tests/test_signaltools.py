@@ -119,22 +119,22 @@ class _TestConvolve2d(TestCase):
         assert_array_equal(c,d)
 
 
-#class TestConvolve2d(_TestConvolve2d):
-#    def test_same_mode(self):
-#        e = [[1,2,3],[3,4,5]]
-#        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
-#        g = convolve2d(e,f,'same')
-#        h = array([[80,98,116],\
-#                   [70,82,94]])
-#        assert_array_equal(g,h)
-#
-#    def test_valid_mode2(self):
-#        # Test when in2.size > in1.size
-#        e = [[1,2,3],[3,4,5]]
-#        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
-#        def _test():
-#            convolve2d(e,f,'valid')
-#        self.assertRaises(ValueError, _test)
+class TestConvolve2d(_TestConvolve2d):
+    def test_same_mode(self):
+        e = [[1,2,3],[3,4,5]]
+        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+        g = convolve2d(e,f,'same')
+        h = array([[22,28,34],\
+                   [80,98,116]])
+        assert_array_equal(g,h)
+
+    def test_valid_mode2(self):
+        # Test when in2.size > in1.size
+        e = [[1,2,3],[3,4,5]]
+        f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+        def _test():
+            convolve2d(e,f,'valid')
+        self.assertRaises(ValueError, _test)
 
 class TestFFTConvolve(TestCase):
     def test_real(self):
