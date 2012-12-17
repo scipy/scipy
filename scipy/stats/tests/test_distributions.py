@@ -182,6 +182,12 @@ class TestGeom(TestCase):
         vals = stats.geom.pmf([1,2,3],0.5)
         assert_array_almost_equal(vals,[0.5,0.25,0.125])
 
+    def test_logpmf(self):
+        # regression test for ticket 1793
+        vals1 = np.log(stats.geom.pmf([1,2,3], 0.5))
+        vals2 = stats.geom.logpmf([1,2,3], 0.5)
+        assert_allclose(vals1, vals2, rtol=1e-15, atol=0)
+
     def test_cdf_sf(self):
         vals = stats.geom.cdf([1,2,3],0.5)
         vals_sf = stats.geom.sf([1,2,3],0.5)

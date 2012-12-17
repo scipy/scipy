@@ -6582,7 +6582,7 @@ class geom_gen(rv_discrete):
     def _pmf(self, k, p):
         return (1-p)**(k-1) * p
     def _logpmf(self, k, p):
-        return (k-1)*log(1-p) + p
+        return (k-1)*log(1-p) + log(p)
     def _cdf(self, x, p):
         k = floor(x)
         return (1.0-(1.0-p)**k)
