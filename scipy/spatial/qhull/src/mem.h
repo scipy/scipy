@@ -11,16 +11,13 @@
        and
      qh_errexit(qhmem_ERRqhull, NULL, NULL) otherwise
 
-   copyright (c) 1993-2010 The Geometry Center.
-   $Id: //product/qhull/main/rel/src/mem.h#28 $$Change: 1164 $
-   $DateTime: 2010/01/07 21:52:00 $$Author: bbarber $
+   Copyright (c) 1993-2012 The Geometry Center.
+   $Id: //main/2011/qhull/src/libqhull/mem.h#4 $$Change: 1464 $
+   $DateTime: 2012/01/25 22:58:41 $$Author: bbarber $
 */
 
 #ifndef qhDEFmem
 #define qhDEFmem 1
-
-#include <Python.h>
-#include <numpy/ndarraytypes.h>
 
 #include <stdio.h>
 
@@ -76,13 +73,16 @@ Trace short and quick memory allocations at T5
     WARN64 -- these notes indicate 64-bit issues
     On 64-bit machines, a pointer may be larger than an 'int'.
     qh_meminit()/mem.c checks that 'ptr_intT' holds a 'void*'
-    ptr_intT is not defined as 'long long' for portability to older compilers
     ptr_intT is typically a signed value, but not necessarily so
     size_t is typically unsigned, but should match the parameter type
     Qhull uses int instead of size_t except for system calls such as malloc, qsort, qh_malloc, etc.
-    This matches Qt convention and is easier to work with.
+    This matches Qt convention and is easier to work with.  
 */
-typedef npy_intp ptr_intT;
+#if _MSC_VER && defined(_WIN64)
+typedef long long ptr_intT;
+#else
+typedef long ptr_intT;
+#endif
 
 /*-<a                             href="qh-mem.htm#TOC"
   >--------------------------------</a><a name="qhmemT">-</a>

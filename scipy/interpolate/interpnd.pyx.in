@@ -197,7 +197,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef np.ndarray[np.${DTYPE}_t, ndim=2] values = self.values
         cdef np.ndarray[np.${DTYPE}_t, ndim=2] out
         cdef np.ndarray[np.double_t, ndim=2] points = self.points
-        cdef np.ndarray[np.npy_int, ndim=2] vertices = self.tri.vertices
+        cdef np.ndarray[np.npy_int, ndim=2] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef ${CDTYPE} fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
@@ -248,7 +248,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
                 for j in xrange(ndim+1):
                     for k in xrange(nvalues):
-                        m = vertices[isimplex,j]
+                        m = simplices[isimplex,j]
 % if DTYPE == "double":
                         out[i,k] += c[j] * values[m,k]
 % else:
@@ -559,20 +559,20 @@ cdef ${CDTYPE} _clough_tocher_2d_single_${DTYPE}(qhull.DelaunayInfo_t *d,
 
     # XXX: optimize + refactor this!
 
-    e12x = (+ d.points[0 + 2*d.vertices[3*isimplex + 1]]
-            - d.points[0 + 2*d.vertices[3*isimplex + 0]])
-    e12y = (+ d.points[1 + 2*d.vertices[3*isimplex + 1]]
-            - d.points[1 + 2*d.vertices[3*isimplex + 0]])
+    e12x = (+ d.points[0 + 2*d.simplices[3*isimplex + 1]]
+            - d.points[0 + 2*d.simplices[3*isimplex + 0]])
+    e12y = (+ d.points[1 + 2*d.simplices[3*isimplex + 1]]
+            - d.points[1 + 2*d.simplices[3*isimplex + 0]])
 
-    e23x = (+ d.points[0 + 2*d.vertices[3*isimplex + 2]]
-            - d.points[0 + 2*d.vertices[3*isimplex + 1]])
-    e23y = (+ d.points[1 + 2*d.vertices[3*isimplex + 2]]
-            - d.points[1 + 2*d.vertices[3*isimplex + 1]])
+    e23x = (+ d.points[0 + 2*d.simplices[3*isimplex + 2]]
+            - d.points[0 + 2*d.simplices[3*isimplex + 1]])
+    e23y = (+ d.points[1 + 2*d.simplices[3*isimplex + 2]]
+            - d.points[1 + 2*d.simplices[3*isimplex + 1]])
 
-    e31x = (+ d.points[0 + 2*d.vertices[3*isimplex + 0]]
-            - d.points[0 + 2*d.vertices[3*isimplex + 2]])
-    e31y = (+ d.points[1 + 2*d.vertices[3*isimplex + 0]]
-            - d.points[1 + 2*d.vertices[3*isimplex + 2]])
+    e31x = (+ d.points[0 + 2*d.simplices[3*isimplex + 0]]
+            - d.points[0 + 2*d.simplices[3*isimplex + 2]])
+    e31y = (+ d.points[1 + 2*d.simplices[3*isimplex + 0]]
+            - d.points[1 + 2*d.simplices[3*isimplex + 2]])
 
     e14x = (e12x - e31x)/3
     e14y = (e12y - e31y)/3
@@ -672,13 +672,13 @@ cdef ${CDTYPE} _clough_tocher_2d_single_${DTYPE}(qhull.DelaunayInfo_t *d,
 
         # Centroid of the neighbour, in our local barycentric coordinates
 
-        y[0] = (+ d.points[0 + 2*d.vertices[3*itri + 0]]
-                + d.points[0 + 2*d.vertices[3*itri + 1]]
-                + d.points[0 + 2*d.vertices[3*itri + 2]]) / 3
+        y[0] = (+ d.points[0 + 2*d.simplices[3*itri + 0]]
+                + d.points[0 + 2*d.simplices[3*itri + 1]]
+                + d.points[0 + 2*d.simplices[3*itri + 2]]) / 3
 
-        y[1] = (+ d.points[1 + 2*d.vertices[3*itri + 0]]
-                + d.points[1 + 2*d.vertices[3*itri + 1]]
-                + d.points[1 + 2*d.vertices[3*itri + 2]]) / 3
+        y[1] = (+ d.points[1 + 2*d.simplices[3*itri + 0]]
+                + d.points[1 + 2*d.simplices[3*itri + 1]]
+                + d.points[1 + 2*d.simplices[3*itri + 2]]) / 3
 
         qhull._barycentric_coordinates(2, d.transform + isimplex*2*3, y, c)
 
@@ -809,7 +809,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef np.ndarray[np.${DTYPE}_t, ndim=3] grad = self.grad
         cdef np.ndarray[np.${DTYPE}_t, ndim=2] out
         cdef np.ndarray[np.double_t, ndim=2] points = self.points
-        cdef np.ndarray[np.npy_int, ndim=2] vertices = self.tri.vertices
+        cdef np.ndarray[np.npy_int, ndim=2] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef ${CDTYPE} f[NPY_MAXDIMS+1]
         cdef ${CDTYPE} df[2*NPY_MAXDIMS+2]
@@ -855,16 +855,16 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                 for k in xrange(nvalues):
                     for j in xrange(ndim+1):
 % if DTYPE == "double":
-                        f[j] = values[vertices[isimplex,j],k]
-                        df[2*j] = grad[vertices[isimplex,j],k,0]
-                        df[2*j+1] = grad[vertices[isimplex,j],k,1]
+                        f[j] = values[simplices[isimplex,j],k]
+                        df[2*j] = grad[simplices[isimplex,j],k,0]
+                        df[2*j+1] = grad[simplices[isimplex,j],k,1]
 % else:
-                        f[j].real = values[vertices[isimplex,j],k].real
-                        f[j].imag = values[vertices[isimplex,j],k].imag
-                        df[2*j].real = grad[vertices[isimplex,j],k,0].real
-                        df[2*j].imag = grad[vertices[isimplex,j],k,0].imag
-                        df[2*j+1].real = grad[vertices[isimplex,j],k,1].real
-                        df[2*j+1].imag = grad[vertices[isimplex,j],k,1].imag
+                        f[j].real = values[simplices[isimplex,j],k].real
+                        f[j].imag = values[simplices[isimplex,j],k].imag
+                        df[2*j].real = grad[simplices[isimplex,j],k,0].real
+                        df[2*j].imag = grad[simplices[isimplex,j],k,0].imag
+                        df[2*j+1].real = grad[simplices[isimplex,j],k,1].real
+                        df[2*j+1].imag = grad[simplices[isimplex,j],k,1].imag
 % endif
 
                     w = _clough_tocher_2d_single_${DTYPE}(&info, isimplex, c,

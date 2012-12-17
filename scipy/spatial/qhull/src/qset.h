@@ -16,9 +16,9 @@
     - every set is NULL terminated
     - sets may be sorted or unsorted, the caller must distinguish this
 
-   copyright (c) 1993-2010 The Geometry Center.
-   $Id: //product/qhull/main/rel/src/qset.h#20 $$Change: 1164 $
-   $DateTime: 2010/01/07 21:52:00 $$Author: bbarber $
+   Copyright (c) 1993-2012 The Geometry Center.
+   $Id: //main/2011/qhull/src/libqhull/qset.h#4 $$Change: 1464 $
+   $DateTime: 2012/01/25 22:58:41 $$Author: bbarber $
 */
 
 #ifndef qhDEFset
@@ -421,17 +421,20 @@ struct setT {
 
   SETsizeaddr_(set)
     return pointer to 'actual size+1' of set (set CANNOT be NULL!!)
+    Its type is setelemT* for strict aliasing
+    All SETelemaddr_ must be cast to setelemT
+
 
   notes:
     *SETsizeaddr==NULL or e[*SETsizeaddr-1].p==NULL
 */
-#define SETsizeaddr_(set) (&((set)->e[(set)->maxsize].i))
+#define SETsizeaddr_(set) (&((set)->e[(set)->maxsize]))
 
 /*-<a                                     href="qh-set.htm#TOC"
   >---------------------------------------</a><a name="SETtruncate_">-</a>
 
-   SETtruncate_(set)
-     return first element of set
+   SETtruncate_(set, size)
+     truncate set to size
 
    see:
      qh_settruncate()
@@ -459,6 +462,7 @@ setT *qh_setduplicate( setT *set, int elemsize);
 int   qh_setequal(setT *setA, setT *setB);
 int   qh_setequal_except(setT *setA, void *skipelemA, setT *setB, void *skipelemB);
 int   qh_setequal_skip(setT *setA, int skipA, setT *setB, int skipB);
+void **qh_setendpointer(setT *set);
 void  qh_setfree(setT **set);
 void  qh_setfree2( setT **setp, int elemsize);
 void  qh_setfreelong(setT **set);

@@ -11,9 +11,9 @@
 
    see qhull_a.h for internal functions
 
-   copyright (c) 1993-2010 The Geometry Center.
-   $Id: //product/qhull/main/rel/src/global.c#60 $$Change: 1183 $
-   $DateTime: 2010/01/13 20:59:32 $$Author: bbarber $
+   Copyright (c) 1993-2012 The Geometry Center.
+   $Id: //main/2011/qhull/src/libqhull/global.c#15 $$Change: 1490 $
+   $DateTime: 2012/02/19 20:27:01 $$Author: bbarber $
  */
 
 #include "qhull_a.h"
@@ -40,14 +40,14 @@ qhT qh_qh;              /* all global variables.
 
   notes:
     change date:    Changes.txt, Announce.txt, index.htm, README.txt,
-                    qhull-news.html, Eudora signatures,
+                    qhull-news.html, Eudora signatures, CMakeLists.txt
     change version: README.txt, qh-get.htm, File_id.diz, Makefile.txt
     change year:    Copying.txt
     check download size
-    recompile user_eg.c, rbox.c, libqhull.c, qconvex.c, qdelaun.c qvoronoi.c, qhalf.c
+    recompile user_eg.c, rbox.c, libqhull.c, qconvex.c, qdelaun.c qvoronoi.c, qhalf.c, testqset.c
 */
 
-const char *qh_version = "2010.1 2010/01/14";
+const char *qh_version = "2012.1 2012/02/18";
 
 /*-<a                             href="qh-globa.htm#TOC"
   >-------------------------------</a><a name="appendprint">-</a>
@@ -572,6 +572,9 @@ void qh_init_B(coordT *points, int numpoints, int dim, boolT ismalloc) {
 void qh_init_qhull_command(int argc, char *argv[]) {
 
   if (!qh_argv_to_command(argc, argv, qh qhull_command, (int)sizeof(qh qhull_command))){
+    /* Assumes qh.ferr is defined. */
+    qh_fprintf(qh ferr, 6033, "qhull input error: more than %d characters in command line\n",
+          (int)sizeof(qh qhull_command));
     qh_exit(qh_ERRinput);  /* error reported, can not use qh_errexit */
   }
 } /* init_qhull_command */
@@ -614,7 +617,7 @@ void qh_initflags(char *command) {
   if (command <= &qh qhull_command[0] || command > &qh qhull_command[0] + sizeof(qh qhull_command)) {
     if (command != &qh qhull_command[0]) {
       *qh qhull_command= '\0';
-      strncat( qh qhull_command, command, sizeof( qh qhull_command)-strlen( qh qhull_command)-1);
+      strncat(qh qhull_command, command, sizeof(qh qhull_command)-strlen(qh qhull_command)-1);
     }
     while (*s && !isspace(*s))  /* skip program name */
       s++;
@@ -1639,7 +1642,7 @@ qhull configuration warning (qh_RANDOMmax in user.h):\n\
     qh_errexit(qh_ERRqhull, NULL, NULL);
   }
   if (numpoints+extra < pointsneeded) {
-    qh_fprintf(qh ferr, 6214, "qhull input error: not enough points(%d) to construct initial simplex(need %d)\n",
+    qh_fprintf(qh ferr, 6214, "qhull input error: not enough points(%d) to construct initial simplex (need %d)\n",
             numpoints, pointsneeded);
     qh_errexit(qh_ERRinput, NULL, NULL);
   }

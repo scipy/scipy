@@ -20,9 +20,9 @@
    merges occur in qh_mergefacet and in qh_mergecycle
    vertex->neighbors not set until the first merge occurs
 
-   copyright (c) 1993-2010 C.B. Barber.
-   $Id: //product/qhull/main/rel/src/merge.c#27 $$Change: 1164 $
-   $DateTime: 2010/01/07 21:52:00 $$Author: bbarber $
+   Copyright (c) 1993-2012 C.B. Barber.
+   $Id: //main/2011/qhull/src/libqhull/merge.c#4 $$Change: 1490 $
+   $DateTime: 2012/02/19 20:27:01 $$Author: bbarber $
 */
 
 #include "qhull_a.h"
@@ -2323,7 +2323,7 @@ pair.  The input is too degenerate or the convexity constraints are\n\
 too strong.\n", qh hull_dim+1);
     if (qh hull_dim >= 5 && !qh MERGEexact)
       qh_fprintf(qh ferr, 8079, "Option 'Qx' may avoid this problem.\n");
-    qh_errexit(qh_ERRinput, NULL, NULL);
+    qh_errexit(qh_ERRprec, NULL, NULL);
   }
   if (!qh VERTEXneighbors)
     qh_vertexneighbors();

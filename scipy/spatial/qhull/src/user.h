@@ -49,8 +49,8 @@ Code flags --
 
   If add new messages, assign these values and increment.
 
-  def counters =  [27, 1047, 2059, 3025, 4068, 5003, 
-     6233, 7079, 8143, 9410, 10026]
+  def counters =  [27, 1047, 2059, 3025, 4068, 5003,
+     6241, 7079, 8143, 9410, 10000, 11026]
 
   See: qh_ERR* [libqhull.h]
 */
@@ -65,7 +65,8 @@ Code flags --
 #define MSG_WARNING 7000
 #define MSG_STDERR  8000  /* log messages Written to qh.ferr */
 #define MSG_OUTPUT  9000
-#define MSG_FIXUP  10000
+#define MSG_QHULL_ERROR 10000 /* errors thrown by QhullError [QhullError.h] */
+#define MSG_FIXUP  11000  /* FIXUP QH11... */
 #define MSG_MAXLEN  3000 /* qh_printhelp_degenerate() in user.c */
 
 
@@ -580,6 +581,9 @@ stop after qh_JOGGLEmaxretry attempts
                         only one instance of qhull() can be active at a time
                         default value
 
+  qh_QHpointer_dllimport and qh_dllimport define qh_qh as __declspec(dllimport) [libqhull.h]
+  It is required for msvc-2005.  It is not needed for gcc.
+
   notes:
     all global variables for qhull are in qh, qhmem, and qhstat
     qh is defined in libqhull.h
@@ -589,10 +593,16 @@ stop after qh_JOGGLEmaxretry attempts
 
   see:
     user_eg.c for an example
-  FIXUP need to override for C++ (-Dqh_QHpointer=1)
 */
-#ifndef qh_QHpointer
+#ifdef qh_QHpointer
+#if qh_dllimport
+#error QH6207 Qhull error: Use qh_QHpointer_dllimport instead of qh_dllimport with qh_QHpointer
+#endif
+#else
 #define qh_QHpointer 0
+#if qh_QHpointer_dllimport
+#error QH6234 Qhull error: Use qh_dllimport instead of qh_QHpointer_dllimport when qh_QHpointer is not defined
+#endif
 #endif
 #if 0  /* sample code */
     qhT *oldqhA, *oldqhB;

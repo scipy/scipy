@@ -4,6 +4,8 @@
    random.c -- utilities
      Park & Miller's minimimal standard random number generator
      argc/argv conversion
+
+     Used by rbox.  Do not use 'qh' 
 */
 
 #include "libqhull.h"
@@ -84,8 +86,6 @@ int qh_argv_to_command(int argc, char *argv[], char* command, int max_size) {
   return 1;
 
 error_argv:
-  qh_fprintf(qh ferr, 6033, "qhull input error: more than %d characters in command line\n",
-      max_size);
   return 0;
 } /* argv_to_command */
 
