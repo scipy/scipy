@@ -18,7 +18,7 @@ ctypedef struct DelaunayInfo_t:
     int npoints
     int nsimplex
     double *points
-    int *vertices
+    int *simplices
     int *neighbors
     double *equations
     double *transform

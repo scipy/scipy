@@ -6,9 +6,9 @@
 
    see README, libqhull.h and io.c
 
-   copyright (c) 1993-2010 The Geometry Center.
-   $Id: //product/qhull/main/rel/src/io.h#25 $$Change: 1164 $
-   $DateTime: 2010/01/07 21:52:00 $$Author: bbarber $
+   Copyright (c) 1993-2012 The Geometry Center.
+   $Id: //main/2011/qhull/src/libqhull/io.h#3 $$Change: 1464 $
+   $DateTime: 2012/01/25 22:58:41 $$Author: bbarber $
 */
 
 #ifndef qhDEFio

@@ -6,9 +6,9 @@
 
    see qh-qhull.htm, qhull_a.h
 
-   copyright (c) 1993-2010 The Geometry Center.
-   $Id: //product/qhull/main/rel/src/libqhull.h#9 $$Change: 1172 $
-   $DateTime: 2010/01/09 21:42:16 $$Author: bbarber $
+   Copyright (c) 1993-2012 The Geometry Center.
+   $Id: //main/2011/qhull/src/libqhull/libqhull.h#7 $$Change: 1464 $
+   $DateTime: 2012/01/25 22:58:41 $$Author: bbarber $
 
    NOTE: access to qh_qh is via the 'qh' macro.  This allows
    qh_qh to be either a pointer or a structure.  An example
@@ -97,6 +97,7 @@ extern const char *qh_version; /* defined in global.c */
 
   notes:
     needed for portability
+    Use qh_False/qh_True as synonyms
 */
 #define boolT unsigned int
 #ifdef False
@@ -107,6 +108,8 @@ extern const char *qh_version; /* defined in global.c */
 #endif
 #define False 0
 #define True 1
+#define qh_False 0
+#define qh_True 1
 
 /*-<a                             href="qh-qhull.htm#TOC"
   >--------------------------------</a><a name="CENTERtype">-</a>
@@ -268,7 +271,7 @@ struct facetT {
   setT    *vertices;    /* vertices for this facet, inverse sorted by ID
                            if simplicial, 1st vertex was apex/furthest */
   setT    *ridges;      /* explicit ridges for nonsimplicial facets.
-                           for simplicial facets, neighbors defines ridge */
+                           for simplicial facets, neighbors define the ridges */
   setT    *neighbors;   /* neighbors of the facet.  If simplicial, the kth
                            neighbor is opposite the kth vertex, and the first
                            neighbor is the horizon facet for the first vertex*/
@@ -403,16 +406,21 @@ struct vertexT {
    qhmem may be shared across multiple instances of Qhull.
    Rbox uses global variables rbox_inuse and rbox, but does not persist data across calls.
 
-   notes:
    Qhull is not multithreaded.  Global state could be stored in thread-local storage.
 */
 
 extern int qhull_inuse;
 
 typedef struct qhT qhT;
-#if qh_QHpointer
+#if qh_QHpointer_dllimport
+#define qh qh_qh->
+__declspec(dllimport) extern qhT *qh_qh;     /* allocated in global.c */
+#elif qh_QHpointer
 #define qh qh_qh->
 extern qhT *qh_qh;     /* allocated in global.c */
+#elif qh_dllimport
+#define qh qh_qh.
+__declspec(dllimport) extern qhT qh_qh;      /* allocated in global.c */
 #else
 #define qh qh_qh.
 extern qhT qh_qh;
@@ -1004,7 +1012,7 @@ void    qh_exit(int exitcode);
 void    qh_free(void *mem);
 void   *qh_malloc(size_t size);
 
-/********* -userprintf.c prototypes (alphabetical) **********************/
+/********* -userprintf.c and userprintf_rbox.c prototypes **********************/
 void    qh_fprintf(FILE *fp, int msgcode, const char *fmt, ... );
 void    qh_fprintf_rbox(FILE *fp, int msgcode, const char *fmt, ... );
 

@@ -9,9 +9,9 @@
    infrequent code is in poly2.c
    (all but top 50 and their callers 12/3/95)
 
-   copyright (c) 1993-2010 The Geometry Center.
-   $Id: //product/qhull/main/rel/src/poly.c#26 $$Change: 1171 $
-   $DateTime: 2010/01/09 10:11:25 $$Author: bbarber $
+   Copyright (c) 1993-2012 The Geometry Center.
+   $Id: //main/2011/qhull/src/libqhull/poly.c#5 $$Change: 1464 $
+   $DateTime: 2012/01/25 22:58:41 $$Author: bbarber $
 */
 
 #include "qhull_a.h"
@@ -450,7 +450,7 @@ int qh_gethash(int hashsize, setT *set, int size, int firstindex, void *skipelem
     break;
   }
   if (hashsize<0) {
-    qh_fprintf(qh ferr, 6232, "qhull internal error: negative hashsize %d passed to qh_gethash [poly.c]\n", hashsize);
+    qh_fprintf(qh ferr, 6202, "qhull internal error: negative hashsize %d passed to qh_gethash [poly.c]\n", hashsize);
     qh_errexit2 (qh_ERRqhull, NULL, NULL);
   }
   result= (unsigned)hash;
@@ -852,6 +852,7 @@ void qh_matchnewfacets(void /* qh newfacet_list */) {
       memset((char *)SETelemaddr_(neighbors, 1, void), 0, dim * SETelemsize);
     }
   }
+
   qh_newhashtable(numnew*(qh hull_dim-1)); /* twice what is normally needed,
                                      but every ridge could be DUPLICATEridge */
   hashsize= qh_setsize(qh hash_table);
