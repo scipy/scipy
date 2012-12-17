@@ -182,6 +182,12 @@ class TestGeom(TestCase):
         vals = stats.geom.pmf([1,2,3],0.5)
         assert_array_almost_equal(vals,[0.5,0.25,0.125])
 
+    def test_logpmf(self):
+        # regression test for ticket 1793
+        vals1 = np.log(stats.geom.pmf([1,2,3], 0.5))
+        vals2 = stats.geom.logpmf([1,2,3], 0.5)
+        assert_allclose(vals1, vals2, rtol=1e-15, atol=0)
+
     def test_cdf_sf(self):
         vals = stats.geom.cdf([1,2,3],0.5)
         vals_sf = stats.geom.sf([1,2,3],0.5)
@@ -885,9 +891,7 @@ def test_powerlaw_stats():
 
 
 def test_ksone_fit_freeze():
-    """Regression test for ticket #1638.
-
-    """
+    #Regression test for ticket #1638.
     d = np.array(
         [-0.18879233,  0.15734249,  0.18695107,  0.27908787, -0.248649,
          -0.2171497 ,  0.12233512,  0.15126419,  0.03119282,  0.4365294 ,
@@ -905,6 +909,7 @@ def test_ksone_fit_freeze():
     warn_ctx.__enter__()
     try:
         warnings.simplefilter('ignore', UserWarning)
+        warnings.simplefilter('ignore', RuntimeWarning)
         stats.ksone.fit(d)
     finally:
         warn_ctx.__exit__()
