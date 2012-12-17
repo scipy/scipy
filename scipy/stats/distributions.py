@@ -1965,10 +1965,10 @@ class ksone_gen(rv_continuous):
     %(default)s
 
     """
-    def _cdf(self,x,n):
-        return 1.0-special.smirnov(n,x)
-    def _ppf(self,q,n):
-        return special.smirnovi(n,1.0-q)
+    def _cdf(self, x, n):
+        return 1.0 - special.smirnov(n, x)
+    def _ppf(self, q, n):
+        return special.smirnovi(n, 1.0 - q)
 ksone = ksone_gen(a=0.0, name='ksone', shapes="n")
 
 class kstwobign_gen(rv_continuous):

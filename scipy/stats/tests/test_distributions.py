@@ -891,9 +891,7 @@ def test_powerlaw_stats():
 
 
 def test_ksone_fit_freeze():
-    """Regression test for ticket #1638.
-
-    """
+    #Regression test for ticket #1638.
     d = np.array(
         [-0.18879233,  0.15734249,  0.18695107,  0.27908787, -0.248649,
          -0.2171497 ,  0.12233512,  0.15126419,  0.03119282,  0.4365294 ,
@@ -911,6 +909,7 @@ def test_ksone_fit_freeze():
     warn_ctx.__enter__()
     try:
         warnings.simplefilter('ignore', UserWarning)
+        warnings.simplefilter('ignore', RuntimeWarning)
         stats.ksone.fit(d)
     finally:
         warn_ctx.__exit__()
