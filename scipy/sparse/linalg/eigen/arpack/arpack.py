@@ -1577,14 +1577,16 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         it is recommended that ncv > 2*k
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
-    which : str, ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI'], optional
+    which : str, ['LM' | 'SM'], optional
         Which `k` singular values to find:
 
-            - 'LM' : largest magnitude
-            - 'SM' : smallest magnitude
+            - 'LM' : largest singular values
+            - 'SM' : smallest singular values
 
     v0 : ndarray, optional
-        Starting vector for iteration, of length min(A.shape).
+        Starting vector for iteration, of length min(A.shape). Should be an
+        (approximate) right singular vector if N > M and a right singular vector
+        otherwise.
     maxiter: integer, optional
         Maximum number of iterations.
     return_singular_vectors : bool, optional
