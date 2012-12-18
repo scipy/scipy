@@ -1583,15 +1583,21 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             - 'LM' : largest singular values
             - 'SM' : smallest singular values
 
+        .. versionadded:: 0.12.0
     v0 : ndarray, optional
         Starting vector for iteration, of length min(A.shape). Should be an
         (approximate) right singular vector if N > M and a right singular vector
         otherwise.
+
+        .. versionadded:: 0.12.0
     maxiter: integer, optional
         Maximum number of iterations.
+
+        .. versionadded:: 0.12.0
     return_singular_vectors : bool, optional
         Return singular vectors (True) in addition to singular values
 
+        .. versionadded:: 0.12.0
     Returns
     -------
     u : ndarray, shape=(M, k)
