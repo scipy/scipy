@@ -326,7 +326,8 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
                 else:
                     Pxx *= k/(k+1.0)
                     Pxx[..., (0,-1)] += xft[..., (0,-1)]**2 / (k+1.0)
-                    Pxx[..., 1:-1] += (xft[..., 1:-1:2]**2 + xft[..., 2::2]**2) / (k+1.0)
+                    Pxx[..., 1:-1] += (xft[..., 1:-1:2]**2 + xft[..., 2::2]**2)\
+                                    / (k+1.0)
         else: # odd
             outshape[-1] = (nfft+1)/2
             Pxx = np.empty(outshape, x.dtype)
@@ -339,7 +340,8 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
                 else:
                     Pxx *= k/(k+1.0)
                     Pxx[..., 0] += xft[..., 0]**2 / (k+1)
-                    Pxx[..., 1:] += (xft[..., 1::2]**2 + xft[..., 2::2]**2) / (k+1.0)
+                    Pxx[..., 1:] += (xft[..., 1::2]**2 + xft[..., 2::2]**2) \
+                                  / (k+1.0)
         Pxx[..., 1:-1] *= 2*scale
         Pxx[..., (0,-1)] *= scale
         f = np.arange(Pxx.shape[-1])*(fs/nfft)
