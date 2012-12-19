@@ -313,10 +313,10 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     --------
     >>> from numpy import linspace,exp
     >>> from numpy.random import randn
-    >>> from scipy.interpolate import UnivariateSpline
+    >>> from scipy.interpolate import InterpolatedUnivariateSpline
     >>> x = linspace(-3, 3, 100)
     >>> y = exp(-x**2) + randn(100)/10
-    >>> s = UnivariateSpline(x, y, s=1)
+    >>> s = InterpolatedUnivariateSpline(x, y)
     >>> xs = linspace(-3, 3, 1000)
     >>> ys = s(xs)
 
