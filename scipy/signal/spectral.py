@@ -10,8 +10,8 @@ from _spectral import lombscargle
 __all__ = ['periodogram', 'welch', 'lombscargle']
 
 
-def periodogram(x, fs=1.0, window=None, nfft=None, return_onesided=True,
-        scaling='density', axis=-1):
+def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant', 
+        return_onesided=True, scaling='density', axis=-1):
     """
     Estimate power spectral density using a periodogram.  
 
@@ -31,6 +31,12 @@ def periodogram(x, fs=1.0, window=None, nfft=None, return_onesided=True,
 
     nfft : int, optional 
         Length of the FFT used. If None the length of `x` will be used.
+
+    detrend : str or function, optional
+        Specifies how to detrend `x` prior to computing the spectrum. If
+        `detrend` is a string, it is passed as the `type` argument to
+        `detrend`. If it is a function, it should return a detrended array.
+        Defaults to 'constant'
 
     return_onesided : bool, optional
         If True, return a one-sided spectrum for real data. If False return
@@ -105,65 +111,27 @@ def periodogram(x, fs=1.0, window=None, nfft=None, return_onesided=True,
     >>> np.sqrt(Pxx_spec.max())
     2.0077340678640727 
     """
-    x = np.asarray(x)
-
-    if axis != -1:
-        x = np.rollaxis(x, axis, len(x.shape))
-
+    if window is None:
+        window = 'boxcar'
+    
     if nfft is None:
-        nfft = x.shape[-1]
+        nperseg = x.shape[axis]
+    elif nfft == x.shape[axis]:
+        nperseg = nfft
+    elif nfft > x.shape[axis]:
+        nperseg = x.shape[axis]
+    elif nfft < x.shape[axis]:
+        s = [np.s_[:]]*len(x.shape)
+        s[axis] = np.s_[:nfft]
+        x = x[s]
+        nperseg = nfft
+        nfft = None
 
-    if window is not None:
-        if isinstance(window, basestring) or type(window) is tuple:
-            win = get_window(window, x.shape[-1])
-        else:
-            win = np.asarray(window)
-            if len(win.shape) != 1:
-                raise ValueError('window must be 1-D')
-            elif win.shape[0] != x.shape[-1]:
-                raise ValueError('window length must match data length.')
-        x = win*x
-        s1 = win.sum()**2
-        s2 = (win*win).sum()
-    else:
-        s1 = nfft**2
-        s2 = nfft
-
-    if scaling == 'density':
-        scale = 1.0 / (fs * s2)
-    elif scaling == 'spectrum':
-        scale = 1.0 / s1
-    else:
-        raise ValueError('Unknown scaling: %r' % scaling)
-
-    if np.isrealobj(x) and return_onesided:
-        x = fftpack.rfft(x, nfft)
-        outshape = list(x.shape)
-        if nfft % 2 == 0: # even
-            outshape[-1] = nfft/2+1
-            Pxx = np.empty(outshape, x.dtype)
-            Pxx[..., (0,-1)] = x[..., (0,-1)]**2
-            Pxx[..., 1:-1] = x[..., 1:-1:2]**2 + x[..., 2::2]**2
-        else: # odd
-            outshape[-1] = (nfft+1)/2
-            Pxx = np.empty(outshape, x.dtype)
-            Pxx[..., 0] = x[..., 0]**2
-            Pxx[..., 1:] = x[..., 1::2]**2 + x[..., 2::2]**2
-        Pxx[..., 1:-1] *= 2*scale
-        Pxx[..., (0,-1)] *= scale
-        f = np.arange(Pxx.shape[-1])*(fs/nfft)
-    else:
-        x = fftpack.fft(x, nfft)
-        Pxx = (x * x.conj()).real
-        f = fftpack.fftfreq(nfft, 1.0/fs)
-        Pxx *= scale
-
-    if axis != -1:
-        Pxx = np.rollaxis(Pxx, -1, axis)
-    return f, Pxx
+    return welch(x, fs, window, nperseg, 0, nfft, detrend, return_onesided,
+            scaling, axis)
 
 
-def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
+def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
     Estimate power spectral density using Welch's method.  
@@ -184,18 +152,22 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
    window : str or tuple or array_like, optional
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
-        directly as the window and its length will be used for nfft.
+        directly as the window and its length will be used for nperseg.
         Defaults to 'hanning'.
 
-    nfft : int, optional 
-        Length of the FFT used. Defaults to 256.
+    nperseg : int, optional
+        Length of each segment.  Defaults to 256. 
 
     noverlap: int, optional 
         Number of points to overlap between segments. If None, `noverlap`
-        = nfft / 2.  Defaults to None.
+        = nperseg / 2.  Defaults to None.
+
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired.  If None, 
+        the FFT length is nperseg. Defaults to None.
 
     detrend : str or function, optional
-        Specifies how to detend each segment. If `detrend` is a string,
+        Specifies how to detrend each segment. If `detrend` is a string,
         it is passed as the `type` argument to `detrend`. If it is a
         function, it takes a segment and returns a detrended segment.
         Defaults to 'constant'
@@ -218,7 +190,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
     Returns
     -------
     f : ndarray
-       Array of sample frequencies. 
+        Array of sample frequencies. 
 
     Pxx : ndarray
         Power spectral density or power spectrum of x.
@@ -233,7 +205,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements.  For the default 'hanning' window an
     overlap of 50% is a reasonable trade off between accurately estimating
-    the signal power, while not overcounting any of the data.  Narrower 
+    the signal power, while not over counting any of the data.  Narrower 
     windows may require a larger overlap.
 
     If `noverlap` is 0, this method is equivalent to Bartlett's method [2]_.
@@ -266,7 +238,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
 
     Compute and plot the power spectral density.
 
-    >>> f, Pxx_den = signal.welch(x, fs, nfft=1024)
+    >>> f, Pxx_den = signal.welch(x, fs, 1024)
     >>> plt.semilogy(f, Pxx_den)
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('PSD [V/sqrt(Hz)]')
@@ -280,7 +252,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
 
     Now compute and plot the power spectrum.
 
-    >>> f, Pxx_spec = signal.welch(x, fs, 'flattop', nfft=1024, scaling='spectrum')
+    >>> f, Pxx_spec = signal.welch(x, fs, 'flattop', 1024, scaling='spectrum')
     >>> plt.figure()
     >>> plt.semilogy(f, np.sqrt(Pxx_spec))
     >>> plt.xlabel('frequency [Hz]')
@@ -298,12 +270,12 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
         x = np.rollaxis(x, axis, len(x.shape))
 
     if isinstance(window, basestring) or type(window) is tuple:
-        win = get_window(window, nfft)
+        win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
-        nfft = win.shape[0]
+        nperseg = win.shape[0]
 
     if scaling == 'density':
         scale = 1.0 / (fs * (win*win).sum())
@@ -313,7 +285,12 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
         raise ValueError('Unknown scaling: %r' % scaling)
 
     if noverlap is None:
-        noverlap = nfft // 2
+        noverlap = nperseg // 2
+
+    if nfft is None:
+        nfft = nperseg
+    elif nfft < nperseg:
+        raise ValueError('nfft must be greater than nperseg.')
 
     if not hasattr(detrend, '__call__'):
         detrend_func = lambda seg: signaltools.detrend(seg, type=detrend)
@@ -327,8 +304,8 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
     else:
         detrend_func = detrend
 
-    step = nfft - noverlap
-    indices = np.arange(0, x.shape[-1]-nfft+1, step)
+    step = nperseg - noverlap
+    indices = np.arange(0, x.shape[-1]-nperseg+1, step)
 
     if np.isrealobj(x) and return_onesided:
         outshape = list(x.shape)
@@ -336,8 +313,13 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
             outshape[-1] = nfft/2+1
             Pxx = np.empty(outshape, x.dtype)
             for k, ind in enumerate(indices):
-                x_dt = detrend_func(x[..., ind:ind+nfft])
+                x_dt = detrend_func(x[..., ind:ind+nperseg])
                 xft = fftpack.rfft(x_dt*win, nfft)
+                # fftpack.rfft returns the positive frequency part of the fft
+                # as real values, packed r r i r i r i ...
+                # this indexing is to extract the matching real and imaginary
+                # parts, while also handling the pure real zero and nyquist
+                # frequencies.  
                 if k == 0:
                     Pxx[..., (0,-1)] = xft[..., (0,-1)]**2
                     Pxx[..., 1:-1] = xft[..., 1:-1:2]**2 + xft[..., 2::2]**2
@@ -349,7 +331,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
             outshape[-1] = (nfft+1)/2
             Pxx = np.empty(outshape, x.dtype)
             for k, ind in enumerate(indices):
-                x_dt = detrend_func(x[..., ind:ind+nfft])
+                x_dt = detrend_func(x[..., ind:ind+nperseg])
                 xft = fftpack.rfft(x_dt*win, nfft)
                 if k == 0:
                     Pxx[..., 0] = xft[..., 0]**2
@@ -363,7 +345,7 @@ def welch(x, fs=1.0, window='hanning', nfft=256, noverlap=None,
         f = np.arange(Pxx.shape[-1])*(fs/nfft)
     else:
         for k, ind in enumerate(indices):
-            x_dt = detrend_func(x[..., ind:ind+nfft])
+            x_dt = detrend_func(x[..., ind:ind+nperseg])
             xft = fftpack.fft(x_dt*win, nfft)
             if k == 0:
                 Pxx = (xft * xft.conj()).real

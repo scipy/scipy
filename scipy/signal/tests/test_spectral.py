@@ -14,7 +14,8 @@ class TestPeriodogram(TestCase):
         f, p = periodogram(x)
         assert_allclose(f, np.linspace(0, 0.5, 9))
         q = np.ones(9)
-        q[...,(0,-1)] /= 2.0
+        q[0] = 0
+        q[-1] /= 2.0
         q /= 8
         assert_allclose(p, q)
         
@@ -24,16 +25,19 @@ class TestPeriodogram(TestCase):
         f, p = periodogram(x)
         assert_allclose(f, np.arange(8.0)/15.0)
         q = np.ones(8)
-        q[...,(0,-1)] /= 2.0
+        q[0] = 0
+        q[-1] /= 2.0
         q *= 2.0/15.0
-        assert_allclose(p, q)
+        assert_allclose(p, q, atol=1e-15)
 
     def test_real_twosided(self):
         x = np.zeros(16)
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        assert_allclose(p, np.ones(16)/16.0)
+        q = np.ones(16)/16.0
+        q[0] = 0
+        assert_allclose(p, q)
 
     def test_real_spectrum(self):
         x = np.zeros(16)
@@ -48,7 +52,9 @@ class TestPeriodogram(TestCase):
         x[0] = 1.0 + 2.0j
         f, p = periodogram(x)
         assert_allclose(f, fftpack.fftfreq(16, 1.0))
-        assert_allclose(p, 5.0*np.ones(16)/16.0)
+        q = 5.0*np.ones(16)/16.0
+        q[0] = 0
+        assert_allclose(p, q)
     
     def test_unk_scaling(self):
         assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),
@@ -83,13 +89,22 @@ class TestPeriodogram(TestCase):
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
 
+    def test_padded_fft(self):
+        x = np.zeros(16)
+        x[0] = 1
+        f, p = periodogram(x)
+        fp, pp = periodogram(x, nfft=32)
+        assert_allclose(f, fp[::2])
+        assert_allclose(p, pp[::2])
+        assert_array_equal(pp.shape, (17,))
+
 
 class TestWelch(TestCase):
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, nfft=8)
+        f, p = welch(x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
         assert_allclose(p, np.array([ 0.08333333,  0.15277778,  0.22222222,
             0.22222222,  0.11111111]))
@@ -98,7 +113,7 @@ class TestWelch(TestCase):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, nfft=9)
+        f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
         assert_allclose(p, np.array([ 0.15958226,  0.24193954,  0.24145223,
             0.24100919,  0.12188675]))
@@ -107,7 +122,7 @@ class TestWelch(TestCase):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, nfft=8, return_onesided=False)
+        f, p = welch(x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         assert_allclose(p, np.array([ 0.08333333,  0.07638889,  0.11111111,
             0.11111111,  0.11111111,  0.11111111,  0.11111111,  0.07638889]))
@@ -116,7 +131,7 @@ class TestWelch(TestCase):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, nfft=8, scaling='spectrum')
+        f, p = welch(x, nperseg=8, scaling='spectrum')
         assert_allclose(f, np.linspace(0, 0.5, 5))
         assert_allclose(p, np.array([ 0.015625, 0.028645833333333332,
             0.041666666666666664, 0.041666666666666664, 0.020833333333333332]))
@@ -125,7 +140,7 @@ class TestWelch(TestCase):
         x = np.zeros(16, np.complex128)
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
-        f, p = welch(x, nfft=8)
+        f, p = welch(x, nperseg=8)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         assert_allclose(p, np.array([ 0.41666667,  0.38194444,  0.55555556,
             0.55555556,  0.55555556, 0.55555556,  0.55555556,  0.38194444]))
@@ -136,19 +151,19 @@ class TestWelch(TestCase):
     
     def test_detrend_linear(self):
         x = np.arange(10, dtype=np.float64)+0.04
-        f, p = welch(x, nfft=10, detrend='linear')
+        f, p = welch(x, nperseg=10, detrend='linear')
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
     def test_detrend_external(self):
         x = np.arange(10, dtype=np.float64)+0.04
-        f, p = welch(x, nfft=10, 
+        f, p = welch(x, nperseg=10, 
                 detrend=lambda seg: signal.detrend(seg, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
     def test_detrend_external_nd_m1(self):
         x = np.arange(40, dtype=np.float64)+0.04
         x = x.reshape((2,2,10))
-        f, p = welch(x, nfft=10, 
+        f, p = welch(x, nperseg=10, 
                 detrend=lambda seg: signal.detrend(seg, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
@@ -156,26 +171,26 @@ class TestWelch(TestCase):
         x = np.arange(20, dtype=np.float64)+0.04
         x = x.reshape((2,1,10))
         x = np.rollaxis(x, 2, 0)
-        f, p = welch(x, nfft=10, axis=0,
+        f, p = welch(x, nperseg=10, axis=0,
                 detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
     def test_nd_axis_m1(self):
         x = np.arange(20, dtype=np.float64)+0.04
         x = x.reshape((2,1,10))
-        f, p = welch(x, nfft=10)
+        f, p = welch(x, nperseg=10)
         assert_array_equal(p.shape, (2, 1, 6))
         assert_array_almost_equal_nulp(p[0,0,:], p[1,0,:], 60)
-        f0, p0 = welch(x[0,0,:], nfft=10)
+        f0, p0 = welch(x[0,0,:], nperseg=10)
         assert_array_almost_equal_nulp(p0[np.newaxis,:], p[1,:], 60)
 
     def test_nd_axis_0(self):
         x = np.arange(20, dtype=np.float64)+0.04
         x = x.reshape((10,2,1))
-        f, p = welch(x, nfft=10, axis=0)
+        f, p = welch(x, nperseg=10, axis=0)
         assert_array_equal(p.shape, (6,2,1))
         assert_array_almost_equal_nulp(p[:,0,0], p[:,1,0], 60)
-        f0, p0 = welch(x[:,0,0], nfft=10)
+        f0, p0 = welch(x[:,0,0], nperseg=10)
         assert_array_almost_equal_nulp(p0, p[:,1,0])        
 
     def test_window_external(self):
