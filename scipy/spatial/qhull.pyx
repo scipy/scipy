@@ -1641,7 +1641,7 @@ class Delaunay(_QhullUser):
 
     Notes
     -----
-    The tesselation is computed using the Qhull libary [Qhull]_.
+    The tesselation is computed using the Qhull library [Qhull]_.
 
     .. note::
 
