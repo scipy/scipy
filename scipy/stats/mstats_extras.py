@@ -352,6 +352,7 @@ def idealfourths(data, axis=None):
         if n < 3:
             return [np.nan,np.nan]
         (j,h) = divmod(n/4. + 5/12.,1)
+        j = int(j)
         qlo = (1-h)*x[j-1] + h*x[j]
         k = n - j
         qup = (1-h)*x[k] + h*x[k-1]

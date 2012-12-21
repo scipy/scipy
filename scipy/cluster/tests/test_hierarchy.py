@@ -1373,9 +1373,9 @@ def calculate_maximum_distances(Z):
         left = Z[i, 0]
         right = Z[i, 1]
         if left >= n:
-            q[0] = B[left - n]
+            q[0] = B[int(left) - n]
         if right >= n:
-            q[1] = B[right - n]
+            q[1] = B[int(right) - n]
         q[2] = Z[i, 2]
         B[i] = q.max()
     return B
@@ -1391,9 +1391,9 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
         left = Z[i, 0]
         right = Z[i, 1]
         if left >= n:
-            q[0] = B[left - n]
+            q[0] = B[int(left) - n]
         if right >= n:
-            q[1] = B[right - n]
+            q[1] = B[int(right) - n]
         q[2] = R[i, k]
         B[i] = q.max()
     return B
