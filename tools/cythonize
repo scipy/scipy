@@ -11,16 +11,12 @@ Checks pyx files to see if they have been changed relative to their
 corresponding C files.  If they have, then runs cython on these files to
 recreate the C files.
 
-The script thinks that the pyx files have changed relative to the C files if:
-
-* The pyx file is modified compared to the version checked into git, and the C
-  file is not
-* The pyx file was committed to the repository more recently than the C file.
+The script thinks that the pyx files have changed relative to the C files
+by comparing hashes stored in a database file.
 
 Simple script to invoke Cython (and Tempita) on all .pyx (.pyx.in)
 files; while waiting for a proper build system. Uses file hashes to
-figure out if rebuild is needed (using dates seem to fail with
-frequent change of git branch).
+figure out if rebuild is needed.
 
 For now, this script should be run by developers when changing Cython files
 only, and the resulting C files checked in, so that end-users (and Python-only
@@ -108,40 +104,6 @@ def sha1_of_file(filename):
     return h.hexdigest()
 
 #
-# interface with git
-#
-
-def execproc(cmd):
-    assert isinstance(cmd, (list, tuple))
-    pp = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    result = pp.stdout.read().strip()
-    err = pp.stderr.read()
-    retcode = pp.wait()
-    if retcode != 0:
-        return None
-    else:
-        return result
-
-def git_last_commit_to(filename):
-    out = execproc(['git', 'log', '-1', '--format=format:%H', filename])
-    if out == '':
-        out = None
-    return out
-
-def git_is_dirty(filename):
-    out = execproc(['git', 'status', '--porcelain', filename])
-    assert out is not None
-    return (out != '')
-
-def git_is_child(parent_sha, child_sha):
-    out = execproc(['git', 'rev-list', child_sha, '^%s^' % parent_sha])
-    assert out is not None
-    for line in out.split('\n'):
-        if line == parent_sha:
-            return True
-    return False
-
-#
 # Main program
 #
 
@@ -157,18 +119,6 @@ def process(path, fromfile, tofile, processor_function, hash_db):
     if current_hash == hash_db.get(fullfrompath, None):
         print '%s has not changed' % fullfrompath
         return
-
-    from_sha = git_last_commit_to(fullfrompath)
-    to_sha = git_last_commit_to(fulltopath)
-    if (from_sha is not None and to_sha is not None and
-        not git_is_dirty(fullfrompath)):
-        # Both source and target is under revision control;
-        # check with revision control system whether we need to
-        # update
-        if git_is_child(from_sha, to_sha):
-            hash_db[fullfrompath] = current_hash
-            print '%s is up to date (according to git)' % fullfrompath
-            return
 
     orig_cwd = os.getcwd()
     try:
