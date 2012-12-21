@@ -99,7 +99,7 @@ def load_hashes(filename):
 
 def save_hashes(hash_db, filename):
     with file(filename, 'wb') as f:
-        for key, value in hash_db.items():
+        for key, value in sorted(hash_db.items()):
             f.write("%s %s %s\n" % (key, value[0], value[1]))
 
 def sha1_of_file(filename):
