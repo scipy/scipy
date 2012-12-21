@@ -40,15 +40,19 @@ The power of ARPACK is that it can compute only a specified subset of
 eigenvalue/eigenvector pairs.  This is accomplished through the keyword
 ``which``.  The following values of ``which`` are available:
 
-* ``which = 'LM'`` : Eigenvectors with largest magnitude (``eigs``, ``eigsh``)
-* ``which = 'SM'`` : Eigenvectors with smallest magnitude (``eigs``, ``eigsh``)
-* ``which = 'LR'`` : Eigenvectors with largest real part (``eigs``)
-* ``which = 'SR'`` : Eigenvectors with smallest real part (``eigs``)
-* ``which = 'LI'`` : Eigenvectors with largest imaginary part (``eigs``)
-* ``which = 'SI'`` : Eigenvectors with smallest imaginary part (``eigs``)
-* ``which = 'LA'`` : Eigenvectors with largest amplitude (``eigsh``)
-* ``which = 'SA'`` : Eigenvectors with smallest amplitude (``eigsh``)
-* ``which = 'BE'`` : Eigenvectors from both ends of the spectrum (``eigsh``)
+* ``which = 'LM'`` : Eigenvalues with largest magnitude (``eigs``, ``eigsh``),
+  that is, largest eigenvalues in the euclidean norm of complex numbers.
+* ``which = 'SM'`` : Eigenvalues with smallest magnitude (``eigs``, ``eigsh``),
+  that is, smallest eigenvalues in the euclidean norm of complex numbers.
+* ``which = 'LR'`` : Eigenvalues with largest real part (``eigs``)
+* ``which = 'SR'`` : Eigenvalues with smallest real part (``eigs``)
+* ``which = 'LI'`` : Eigenvalues with largest imaginary part (``eigs``)
+* ``which = 'SI'`` : Eigenvalues with smallest imaginary part (``eigs``)
+* ``which = 'LA'`` : Eigenvalues with largest algebraic value (``eigsh``),
+  that is, largest eigenvalues inclusive of any negative sign.
+* ``which = 'SA'`` : Eigenvalues with smallest algebraic value (``eigsh``),
+  that is, smallest eigenvalues inclusive of any negative sign.
+* ``which = 'BE'`` : Eigenvalues from both ends of the spectrum (``eigsh``)
 
 Note that ARPACK is generally better at finding extremal eigenvalues: that
 is, eigenvalues with large magnitudes.  In particular, using ``which = 'SM'``
