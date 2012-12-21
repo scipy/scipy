@@ -8,6 +8,7 @@ include setupscons.py
 include setupegg.py
 include setup.py
 include scipy/*.py
+include cythonize.dat
 # Add Cython files
 recursive-include scipy *.pyx *.pyx.in *.pxd *.pxi
 # Add swig files
