@@ -1,4 +1,6 @@
 import sys
+import os
+import subprocess
 
 from numpy.distutils.misc_util \
     import \
@@ -122,6 +124,12 @@ def _set_mangling_var(conf, u, du, case, f2pycompat=True):
 
     env.DEFINES.extend(macros)
 
+def _generate_cython():
+    cwd = os.path.dirname(__file__)
+    subprocess.call([sys.executable,
+                     os.path.join(cwd, 'tools', 'cythonize'),
+                     os.path.join(cwd, 'scipy')])
+
 @hooks.post_configure
 def post_configure(context):
     opts = context.waf_options_context
@@ -173,6 +181,8 @@ def post_configure(context):
 @hooks.pre_build
 def pre_build(context):
     bld = context.waf_context
+
+    _generate_cython()
 
     context.register_category("gen_pymodule")
     bld(features="gen_pymodule",
