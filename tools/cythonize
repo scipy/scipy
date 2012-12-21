@@ -31,6 +31,7 @@ operates on the Cython .pyx files.
 """
 
 import os
+import re
 import sys
 import hashlib
 import cPickle
@@ -54,10 +55,14 @@ def process_pyx(fromfile, tofile):
     HAVE_CYTHON_0p14 = LooseVersion(cython_version) >= LooseVersion('0.14')
 
     if HAVE_CYTHON_0p14:
-        opt_str = '--fast-fail'
+        flags = ['--fast-fail']
     else:
-        opt_str = ''
-    r = subprocess.call(['cython'] + opt_str.split() + ["-o", tofile, fromfile])
+        flags = ['']
+
+    if tofile.endswith('.cxx'):
+        flags += ['--cplus']
+
+    r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile])
     if r != 0:
         raise Exception('Cython failed')
 
@@ -74,8 +79,8 @@ def process_tempita_pyx(fromfile, tofile):
 
 rules = {
     # fromext : (toext, function)
-    '.pyx' : ('.c', process_pyx),
-    '.pyx.in' : ('.c', process_tempita_pyx)
+    '.pyx' : process_pyx,
+    '.pyx.in' : process_tempita_pyx
     }
 #
 # Hash db
@@ -143,9 +148,14 @@ def find_process_files(root_dir):
     hash_db = load_hashes(HASH_FILE)
     for cur_dir, dirs, files in os.walk(root_dir):
         for filename in files:
-            for fromext, rule in rules.iteritems():
+            for fromext, function in rules.iteritems():
                 if filename.endswith(fromext):
-                    toext, function = rule
+                    toext = ".c"
+                    with open(os.path.join(cur_dir, filename), 'rb') as f:
+                        data = f.read()
+                        m = re.search(r"^\s*#\s*distutils:\s*language\s*=\s*c\+\+\s*$", data, re.I|re.M)
+                        if m:
+                            toext = ".cxx"
                     fromfile = filename
                     tofile = filename[:-len(fromext)] + toext
                     process(cur_dir, fromfile, tofile, function, hash_db)
