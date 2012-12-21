@@ -38,16 +38,8 @@ import os
 import sys
 import hashlib
 import cPickle
+import subprocess
 from subprocess import Popen, PIPE
-from distutils.version import LooseVersion
-
-try:
-    import Cython
-except ImportError:
-    raise OSError('We need cython for this script')
-from Cython.Compiler.Version import version as cython_version
-
-HAVE_CYTHON_0p14 = LooseVersion(cython_version) >= LooseVersion('0.14')
 
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
@@ -56,11 +48,21 @@ DEFAULT_ROOT = 'scipy'
 # Rules
 #
 def process_pyx(fromfile, tofile):
+    try:
+        import Cython
+    except ImportError:
+        raise OSError('Cython needs to be installed')
+    from Cython.Compiler.Version import version as cython_version
+    from distutils.version import LooseVersion
+
+    HAVE_CYTHON_0p14 = LooseVersion(cython_version) >= LooseVersion('0.14')
+
     if HAVE_CYTHON_0p14:
         opt_str = '--fast-fail'
     else:
         opt_str = ''
-    if os.system('cython %s -o "%s" "%s"' % (opt_str, tofile, fromfile)) != 0:
+    r = subprocess.call(['cython'] + opt_str.split() + ["-o", tofile, fromfile])
+    if r != 0:
         raise Exception('Cython failed')
 
 def process_tempita_pyx(fromfile, tofile):
@@ -85,15 +87,19 @@ rules = {
 def load_hashes(filename):
     # Return { filename : (sha1 of input, sha1 of output) }
     if os.path.isfile(filename):
-        with file(filename) as f:
-            hashes = cPickle.load(f)
+        hashes = {}
+        with open(filename, 'rb') as f:
+            for line in f:
+                filename, inhash, outhash = line.split()
+                hashes[filename] = (inhash, outhash)
     else:
         hashes = {}
     return hashes
 
 def save_hashes(hash_db, filename):
-    with file(filename, 'w') as f:
-        cPickle.dump(hash_db, f)
+    with file(filename, 'wb') as f:
+        for key, value in hash_db.items():
+            f.write("%s %s %s\n" % (key, value[0], value[1]))
 
 def sha1_of_file(filename):
     h = hashlib.sha1()
