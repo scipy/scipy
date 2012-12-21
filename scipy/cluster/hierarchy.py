@@ -2313,8 +2313,8 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     # !!! Otherwise, we don't have a leaf node, so work on plotting a
     # non-leaf node.
     # Actual indices of a and b
-    aa = Z[i - n, 0]
-    ab = Z[i - n, 1]
+    aa = int(Z[i - n, 0])
+    ab = int(Z[i - n, 1])
     if aa > n:
         # The number of singletons below cluster a
         na = Z[aa - n, 3]
