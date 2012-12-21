@@ -128,13 +128,13 @@ if not release:
 def generate_cython():
     cwd = os.path.dirname(__file__)
     p = subprocess.Popen([sys.executable,
-                          os.path.join(cwd, 'tools', 'cythonize'),
+                          os.path.join(cwd, 'tools', 'cythonize.py'),
                           os.path.join(cwd, 'scipy')],
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
     out, err = p.communicate()
     if p.returncode != 0:
-        print(out)
+        print(out.decode('latin1'))
         raise RuntimeError("Running cythonize failed!")
 
 

@@ -30,11 +30,13 @@ Note: this script does not check any of the dependent C libraries; it only
 operates on the Cython .pyx files.
 """
 
+from __future__ import division, print_function, absolute_import
+
 import os
 import re
 import sys
 import hashlib
-import cPickle
+import pickle
 import subprocess
 from subprocess import Popen, PIPE
 
@@ -68,17 +70,17 @@ def process_pyx(fromfile, tofile):
 
 def process_tempita_pyx(fromfile, tofile):
     import tempita
-    with file(fromfile) as f:
+    with open(fromfile, "rb") as f:
         tmpl = f.read()
     pyxcontent = tempita.sub(tmpl)
     assert fromfile.endswith('.pyx.in')
     pyxfile = fromfile[:-len('.pyx.in')] + '.pyx'
-    with file(pyxfile, 'w') as f:
+    with open(pyxfile, "wb") as f:
         f.write(pyxcontent)
     process_pyx(pyxfile, tofile)
 
 rules = {
-    # fromext : (toext, function)
+    # fromext : function
     '.pyx' : process_pyx,
     '.pyx.in' : process_tempita_pyx
     }
@@ -89,7 +91,7 @@ def load_hashes(filename):
     # Return { filename : (sha1 of input, sha1 of output) }
     if os.path.isfile(filename):
         hashes = {}
-        with open(filename, 'rb') as f:
+        with open(filename, 'r') as f:
             for line in f:
                 filename, inhash, outhash = line.split()
                 hashes[filename] = (inhash, outhash)
@@ -98,13 +100,13 @@ def load_hashes(filename):
     return hashes
 
 def save_hashes(hash_db, filename):
-    with file(filename, 'wb') as f:
+    with open(filename, 'w') as f:
         for key, value in sorted(hash_db.items()):
             f.write("%s %s %s\n" % (key, value[0], value[1]))
 
 def sha1_of_file(filename):
     h = hashlib.sha1()
-    with file(filename) as f:
+    with open(filename, "rb") as f:
         h.update(f.read())
     return h.hexdigest()
 
@@ -128,13 +130,13 @@ def process(path, fromfile, tofile, processor_function, hash_db):
     fulltopath = os.path.join(path, tofile)
     current_hash = get_hash(fullfrompath, fulltopath)
     if current_hash == hash_db.get(normpath(fullfrompath), None):
-        print '%s has not changed' % fullfrompath
+        print('%s has not changed' % fullfrompath)
         return
 
     orig_cwd = os.getcwd()
     try:
         os.chdir(path)
-        print 'Processing %s' % fullfrompath
+        print('Processing %s' % fullfrompath)
         processor_function(fromfile, tofile)
     finally:
         os.chdir(orig_cwd)
@@ -148,12 +150,12 @@ def find_process_files(root_dir):
     hash_db = load_hashes(HASH_FILE)
     for cur_dir, dirs, files in os.walk(root_dir):
         for filename in files:
-            for fromext, function in rules.iteritems():
+            for fromext, function in rules.items():
                 if filename.endswith(fromext):
                     toext = ".c"
                     with open(os.path.join(cur_dir, filename), 'rb') as f:
                         data = f.read()
-                        m = re.search(r"^\s*#\s*distutils:\s*language\s*=\s*c\+\+\s*$", data, re.I|re.M)
+                        m = re.search(br"^\s*#\s*distutils:\s*language\s*=\s*c\+\+\s*$", data, re.I|re.M)
                         if m:
                             toext = ".cxx"
                     fromfile = filename
