@@ -214,7 +214,7 @@ def custom_mangling(filename):
                     '_ufuncs', '_ufuncs_cxx',
                     '_minpack', '_zeros', '_lbfgsb', '_cobyla', '_slsqp',
                     '_nnls',
-                    'sigtools', 'spline', 'spectral',
+                    'sigtools', 'spline', '_spectral',
                     '_fitpack', 'dfitpack', '_interpolate',
                     '_odepack', '_quadpack', 'vode', '_dop', 'lsoda',
                     'vonmises_cython', '_rank',
