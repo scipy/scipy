@@ -107,6 +107,12 @@ def sha1_of_file(filename):
 # Main program
 #
 
+def normpath(path):
+    path = path.replace(os.sep, '/')
+    if path.startswith('./'):
+        path = path[2:]
+    return path
+
 def get_hash(frompath, topath):
     from_hash = sha1_of_file(frompath)
     to_hash = sha1_of_file(topath) if os.path.exists(topath) else None
@@ -116,7 +122,7 @@ def process(path, fromfile, tofile, processor_function, hash_db):
     fullfrompath = os.path.join(path, fromfile)
     fulltopath = os.path.join(path, tofile)
     current_hash = get_hash(fullfrompath, fulltopath)
-    if current_hash == hash_db.get(fullfrompath, None):
+    if current_hash == hash_db.get(normpath(fullfrompath), None):
         print '%s has not changed' % fullfrompath
         return
 
@@ -130,7 +136,7 @@ def process(path, fromfile, tofile, processor_function, hash_db):
     # changed target file, recompute hash
     current_hash = get_hash(fullfrompath, fulltopath)
     # store hash in db
-    hash_db[fullfrompath] = current_hash
+    hash_db[normpath(fullfrompath)] = current_hash
 
 
 def find_process_files(root_dir):
