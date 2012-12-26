@@ -1060,7 +1060,6 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         The kurtosis of values along an axis. If all values are equal,
         return -3 for Fisher's definition and 0 for Pearson's definition.
 
-
     References
     ----------
     [CRCProbStat2000]_ Section  2.2.25
@@ -1075,7 +1074,12 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     m2 = moment(a,2,axis)
     m4 = moment(a,4,axis)
     zero = (m2 == 0)
-    vals = np.where(zero, 0, m4/ m2**2.0)
+    olderr = np.seterr(all='ignore')
+    try:
+        vals = np.where(zero, 0, m4 / m2**2.0)
+    finally:
+        np.seterr(**olderr)
+
     if not bias:
         can_correct = (n > 3) & (m2 > 0)
         if can_correct.any():
@@ -3034,7 +3038,7 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         population variance [2]_.
 
         .. versionadded:: 0.11.0
-  
+
     Returns
     -------
     t : float or array
