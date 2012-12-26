@@ -179,6 +179,7 @@ def custom_mangling(filename):
         os.path.join('signal', '__init__.py'),
         os.path.join('signal', 'bsplines.py'),
         os.path.join('signal', 'signaltools.py'),
+        os.path.join('signal', 'spectral.py'),
         os.path.join('signal', 'fir_filter_design.py'),
         os.path.join('special', '__init__.py'),
         os.path.join('special', 'add_newdocs.py'),
