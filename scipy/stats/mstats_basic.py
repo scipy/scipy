@@ -1434,7 +1434,12 @@ def skew(a, axis=0, bias=True):
     n = a.count(axis)
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
-    vals = ma.where(m2 == 0, 0, m3 / m2**1.5)
+    olderr = np.seterr(all='ignore')
+    try:
+        vals = ma.where(m2 == 0, 0, m3 / m2**1.5)
+    finally:
+        np.seterr(**olderr)
+
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
         if can_correct.any():
@@ -1450,7 +1455,12 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     a, axis = _chk_asarray(a, axis)
     m2 = moment(a,2,axis)
     m4 = moment(a,4,axis)
-    vals = ma.where(m2 == 0, 0, m4/ m2**2.0)
+    olderr = np.seterr(all='ignore')
+    try:
+        vals = ma.where(m2 == 0, 0, m4 / m2**2.0)
+    finally:
+        np.seterr(**olderr)
+
     if not bias:
         n = a.count(axis)
         can_correct = (n > 3) & (m2 is not ma.masked and m2 > 0)
@@ -1465,6 +1475,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     else:
         return vals
 kurtosis.__doc__ = stats.kurtosis.__doc__
+
 
 def describe(a, axis=0):
     """

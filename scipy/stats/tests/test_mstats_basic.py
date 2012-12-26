@@ -9,9 +9,10 @@ import numpy.ma as ma
 from numpy.ma import masked, nomask
 
 import scipy.stats.mstats as mstats
+from scipy import stats
 from numpy.testing import TestCase, run_module_suite
 from numpy.ma.testutils import assert_equal, assert_almost_equal, \
-    assert_array_almost_equal, assert_
+    assert_array_almost_equal, assert_array_almost_equal_nulp, assert_
 
 
 class TestMquantiles(TestCase):
@@ -34,7 +35,6 @@ class TestMquantiles(TestCase):
                    [42.8, 40.05, 3.55]]
         quants = mstats.mquantiles(data, axis=0, limit=(0, 50))
         assert_almost_equal(quants, desired)
-
 
 
 class TestGMean(TestCase):
@@ -71,6 +71,7 @@ class TestGMean(TestCase):
                             np.power(2*3,1./2.),
                             np.power(1*4,1./2.)))
         assert_array_almost_equal(actual, desired, decimal=14)
+
 
 class TestHMean(TestCase):
     def test_1D(self):
@@ -277,15 +278,13 @@ class TestTrimming(TestCase):
 
 
 class TestMoments(TestCase):
-    """
-        Comparison numbers are found using R v.1.5.1
-        note that length(testcase) = 4
-        testmathworks comes from documentation for the
-        Statistics Toolbox for Matlab and can be found at both
-        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/kurtosis.shtml
-        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
-        Note that both test cases came from here.
-    """
+    # Comparison numbers are found using R v.1.5.1
+    # note that length(testcase) = 4
+    # testmathworks comes from documentation for the
+    # Statistics Toolbox for Matlab and can be found at both
+    # http://www.mathworks.com/access/helpdesk/help/toolbox/stats/kurtosis.shtml
+    # http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
+    # Note that both test cases came from here.
     testcase = [1,2,3,4]
     testmathworks = ma.fix_invalid([1.165 , 0.6268, 0.0751, 0.3516, -0.6965,
                                     np.nan])
@@ -302,8 +301,7 @@ class TestMoments(TestCase):
            [False, False,  True, False, False]], dtype=np.bool))
 
     def test_moment(self):
-        """
-        mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))"""
+        # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
         y = mstats.moment(self.testcase,1)
         assert_almost_equal(y,0.0,10)
         y = mstats.moment(self.testcase,2)
@@ -312,17 +310,16 @@ class TestMoments(TestCase):
         assert_almost_equal(y,0.0)
         y = mstats.moment(self.testcase,4)
         assert_almost_equal(y,2.5625)
+
     def test_variation(self):
-        """variation = samplestd/mean """
+        #variation = samplestd/mean
 ##        y = stats.variation(self.shoes[0])
 ##        assert_almost_equal(y,21.8770668)
         y = mstats.variation(self.testcase)
         assert_almost_equal(y,0.44721359549996, 10)
 
     def test_skewness(self):
-        """
-            sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0)/((sqrt(var(testmathworks)*4/5))**3)/5
-        """
+        # sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0)/((sqrt(var(testmathworks)*4/5))**3)/5
         y = mstats.skew(self.testmathworks)
         assert_almost_equal(y,-0.29322304336607,10)
         y = mstats.skew(self.testmathworks,bias=0)
@@ -331,45 +328,46 @@ class TestMoments(TestCase):
         assert_almost_equal(y,0.0,10)
 
     def test_kurtosis(self):
-        """
-            sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
-            sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
-            Set flags for axis = 0 and
-            fisher=0 (Pearson's definition of kurtosis for compatibility with Matlab)
-        """
+        #    sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
+        #    sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
+        #    Set flags for axis = 0 and
+        #    fisher=0 (Pearson's definition of kurtosis for compatibility with Matlab)
         y = mstats.kurtosis(self.testmathworks,0,fisher=0,bias=1)
         assert_almost_equal(y, 2.1658856802973,10)
         # Note that MATLAB has confusing docs for the following case
         #  kurtosis(x,0) gives an unbiased estimate of Pearson's skewness
         #  kurtosis(x)  gives a biased estimate of Fisher's skewness (Pearson-3)
         #  The MATLAB docs imply that both should give Fisher's
-        y = mstats.kurtosis(self.testmathworks,fisher=0,bias=0)
+        y = mstats.kurtosis(self.testmathworks,fisher=0, bias=0)
         assert_almost_equal(y, 3.663542721189047,10)
         y = mstats.kurtosis(self.testcase,0,0)
         assert_almost_equal(y,1.64)
 
         # test that kurtosis works on multidimensional masked arrays
-        correct_2d = ma.array(
-          np.array([-1.5, -3., -1.47247052385,  0., -1.26979517952]),
-          mask=np.array([False, False, False,  True, False], dtype=np.bool))
-        assert_array_almost_equal(
-          mstats.kurtosis(self.testcase_2d, 1), correct_2d)
-        for i,row in enumerate(self.testcase_2d):
+        correct_2d = ma.array(np.array([-1.5, -3., -1.47247052385,  0.,
+                                        -1.26979517952]),
+                              mask=np.array([False, False, False,  True,
+                                             False], dtype=np.bool))
+        assert_array_almost_equal(mstats.kurtosis(self.testcase_2d, 1),
+                                  correct_2d)
+        for i, row in enumerate(self.testcase_2d):
             assert_almost_equal(mstats.kurtosis(row), correct_2d[i])
 
         correct_2d_bias_corrected = ma.array(
-          np.array([-1.5, -3., -1.88988209538,  0., -0.5234638463918877]),
-          mask=np.array([False, False, False,  True, False], dtype=np.bool))
-        assert_array_almost_equal(
-          mstats.kurtosis(self.testcase_2d, 1, bias=False),
-          correct_2d_bias_corrected)
-        for i,row in enumerate(self.testcase_2d):
+            np.array([-1.5, -3., -1.88988209538,  0., -0.5234638463918877]),
+            mask=np.array([False, False, False,  True, False], dtype=np.bool))
+        assert_array_almost_equal(mstats.kurtosis(self.testcase_2d, 1,
+                                                  bias=False),
+                                  correct_2d_bias_corrected)
+        for i, row in enumerate(self.testcase_2d):
             assert_almost_equal(mstats.kurtosis(row, bias=False),
-              correct_2d_bias_corrected[i])
+                                correct_2d_bias_corrected[i])
+
+        # Check consistency between stats and mstats implementations
+        assert_array_almost_equal_nulp(mstats.kurtosis(self.testcase_2d[2, :]),
+                                       stats.kurtosis(self.testcase_2d[2, :]))
 
     def test_mode(self):
-        "Tests the mode"
-        #
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
         a2 = np.reshape(a1, (3,5))
         ma1 = ma.masked_where(ma.array(a1)>2,a1)
