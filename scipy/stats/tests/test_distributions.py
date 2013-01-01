@@ -938,6 +938,16 @@ def test_norm_logcdf():
     finally:
         np.seterr(**olderr)
 
+def test_hypergeom_interval_1802():
+    #these two did not return in a reasonable time, if ever
+    assert_equal(stats.hypergeom.interval(.95, 187601, 43192, 757),
+                 (152.0, 197.0))
+    assert_equal(stats.hypergeom.interval(.945, 187601, 43192, 757),
+                 (152.0, 197.0))
+    #this was working also before
+    assert_equal(stats.hypergeom.interval(.94, 187601, 43192, 757),
+                 (153.0, 196.0))
+
 
 if __name__ == "__main__":
     run_module_suite()

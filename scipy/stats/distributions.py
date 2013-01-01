@@ -5354,8 +5354,8 @@ def _drv2_moment(self, n, *args):
     return tot
 
 def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
-    b = self.invcdf_b
-    a = self.invcdf_a
+    b = self.b
+    a = self.a
     if isinf(b):            # Be sure ending point is > q
         b = max(100*q,10)
         while 1:
@@ -6661,7 +6661,7 @@ class hypergeom_gen(rv_discrete):
     def _argcheck(self, M, n, N):
         cond = rv_discrete._argcheck(self,M,n,N)
         cond &= (n <= M) & (N <= M)
-        self.a = N-(M-n)
+        self.a = max(N-(M-n), 0)
         self.b = min(n,N)
         return cond
     def _logpmf(self, k, M, n, N):
