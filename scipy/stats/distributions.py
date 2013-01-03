@@ -5357,7 +5357,7 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     b = self.b
     a = self.a
     if isinf(b):            # Be sure ending point is > q
-        b = max(100*q,10)
+        b = int(max(100*q,10))
         while 1:
             if b >= self.b: qb = 1.0; break
             qb = self._cdf(b,*args)
@@ -5366,7 +5366,7 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     else:
         qb = 1.0
     if isinf(a):    # be sure starting point < q
-        a = min(-100*q,-10)
+        a = int(min(-100*q,-10))
         while 1:
             if a <= self.a: qb = 0.0; break
             qa = self._cdf(a,*args)
@@ -5380,7 +5380,7 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
             return a
         if (qb == q):
             return b
-        if b == a+1:
+        if b <= a+1:
     #testcase: return wrong number at lower index
     #python -c "from scipy.stats import zipf;print zipf.ppf(0.01,2)" wrong
     #python -c "from scipy.stats import zipf;print zipf.ppf([0.01,0.61,0.77,0.83],2)"
