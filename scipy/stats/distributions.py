@@ -5392,10 +5392,16 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
         c = int((a+b)/2.0)
         qc = self._cdf(c, *args)
         if (qc < q):
-            a = c
+            if a != c:
+                a = c
+            else:
+                raise RuntimeError('updating stopped, endless loop')
             qa = qc
         elif (qc > q):
-            b = c
+            if b != c:
+                b = c
+            else:
+                raise RuntimeError('updating stopped, endless loop')
             qb = qc
         else:
             return c
