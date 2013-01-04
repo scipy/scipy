@@ -659,24 +659,25 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         factor = {'f': 1E3, 'd': 1E6}
         cond = factor[t] * np.finfo(t).eps
     
-    above_cutoff = (s > cond * np.max(s))
-    psigma_diag = np.zeros_like(s)
-    psigma_diag[above_cutoff] = 1.0 / s[above_cutoff]
+    rank = np.sum(s > cond * np.max(s))
+    psigma_diag = 1.0 / s[: rank]
  
-    B = np.transpose(np.conjugate(np.dot(u * psigma_diag, vh)))
+    B = np.transpose(np.conjugate(np.dot(u[:, : rank] *
+                                         psigma_diag, vh[: rank])))
 
     if return_rank:
-        return B, np.sum(above_cutoff)
+        return B, rank
     else:
         return B
 
 
 def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
           check_finite=True):
-    """Compute the (Moore-Penrose) pseudo-inverse of a hermetian matrix.
+    """Compute the (Moore-Penrose) pseudo-inverse of a Hermitian matrix.
 
-    Calculate a generalized inverse of a symmetric matrix using its
-    eigenvalue decomposition and including all 'large' eigenvalues.
+    Calculate a generalized inverse of a Hermitian or real symmetric matrix
+    using its eigenvalue decomposition and including all eigenvalues with
+    'large' absolute value.
 
     Parameters
     ----------
@@ -735,14 +736,14 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         factor = {'f': 1E3, 'd': 1E6}
         cond = factor[t] * np.finfo(t).eps
     
-    # For hermitian matrices, singular values equal abs(eigenvalues)
+    # For Hermitian matrices, singular values equal abs(eigenvalues)
     above_cutoff = (abs(s) > cond * np.max(abs(s)))
-    psigma_diag = np.zeros_like(s)
-    psigma_diag[above_cutoff] = 1.0 / s[above_cutoff]
+    psigma_diag = 1.0 / s[above_cutoff]
+    u = u[:, above_cutoff]
 
     B = np.dot(u * psigma_diag, np.conjugate(u).T)
 
     if return_rank:
-        return B, np.sum(above_cutoff)
+        return B, len(psigma_diag)
     else:
         return B
