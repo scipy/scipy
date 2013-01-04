@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from numpy.testing import assert_raises, assert_approx_equal, \
                           assert_, run_module_suite, TestCase,\
@@ -98,6 +99,33 @@ class TestPeriodogram(TestCase):
         assert_allclose(p, pp[::2])
         assert_array_equal(pp.shape, (17,))
 
+    def test_empty_input(self):
+        f, p = periodogram([])
+        assert_array_equal(f.shape, (0,))
+        assert_array_equal(p.shape, (0,))
+
+    def test_short_nfft(self):
+        x = np.zeros(18)
+        x[0] = 1
+        f, p = periodogram(x, nfft=16)
+        assert_allclose(f, np.linspace(0, 0.5, 9))
+        q = np.ones(9)
+        q[0] = 0
+        q[-1] /= 2.0
+        q /= 8
+        assert_allclose(p, q)
+
+    def test_nfft_is_xshape(self):
+        x = np.zeros(16)
+        x[0] = 1
+        f, p = periodogram(x, nfft=16)
+        assert_allclose(f, np.linspace(0, 0.5, 9))
+        q = np.ones(9)
+        q[0] = 0
+        q[-1] /= 2.0
+        q /= 8
+        assert_allclose(p, q)
+
 
 class TestWelch(TestCase):
     def test_real_onesided_even(self):
@@ -147,7 +175,7 @@ class TestWelch(TestCase):
     
     def test_unk_scaling(self):
         assert_raises(ValueError, welch, np.zeros(4, np.complex128),
-                scaling='foo')
+                scaling='foo', nperseg=4)
     
     def test_detrend_linear(self):
         x = np.arange(10, dtype=np.float64)+0.04
@@ -202,6 +230,26 @@ class TestWelch(TestCase):
         fe, pe = welch(x, 10, win, 8)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
+
+    def test_empty_input(self):
+        f, p = welch([])
+        assert_array_equal(f.shape, (0,))
+        assert_array_equal(p.shape, (0,))
+
+    def test_short_data(self):
+        x = np.zeros(8)
+        x[0] = 1
+        warnings.simplefilter('ignore', UserWarning)
+        f, p = welch(x)
+        warnings.filters.pop(0)
+        f1, p1 = welch(x, nperseg=8)
+        assert_allclose(f, f1)
+        assert_allclose(p, p1)
+
+    def test_window_long(self):
+        warnings.simplefilter('ignore', UserWarning)
+        assert_raises(ValueError, welch, np.zeros(4), 1, np.array([1,1,1,1,1]))
+        warnings.filters.pop(0)
 
 
 class TestLombscargle:

@@ -6,6 +6,7 @@ from scipy import fftpack
 import signaltools
 from windows import get_window
 from _spectral import lombscargle
+import warnings
 
 __all__ = ['periodogram', 'welch', 'lombscargle']
 
@@ -104,6 +105,11 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     2.0077340678640727
 
     """
+    x = np.asarray(x)
+
+    if x.shape == (0,):
+        return np.array([]), np.array([])
+
     if window is None:
         window = 'boxcar'
 
@@ -250,8 +256,17 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     """
     x = np.asarray(x)
 
+    if x.shape == (0,):
+        return np.array([]), np.array([])
+
     if axis != -1:
         x = np.rollaxis(x, axis, len(x.shape))
+    
+    if x.shape[-1] < nperseg:
+        warnings.warn('nperseg = %d, is greater than x.shape[%d] = %d, using '
+                      'nperseg = x.shape[%d]'
+                      % (nperseg, axis, x.shape[axis], axis)) 
+        nperseg = x.shape[-1]
 
     if isinstance(window, basestring) or type(window) is tuple:
         win = get_window(window, nperseg)
@@ -259,6 +274,8 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         win = np.asarray(window)
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
+        if  win.shape[0] > x.shape[-1]:
+            raise ValueError('window is longer than x.')
         nperseg = win.shape[0]
 
     if scaling == 'density':
@@ -274,7 +291,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     if nfft is None:
         nfft = nperseg
     elif nfft < nperseg:
-        raise ValueError('nfft must be greater than nperseg.')
+        raise ValueError('nfft must be greater than or equal to nperseg.')
 
     if not hasattr(detrend, '__call__'):
         detrend_func = lambda seg: signaltools.detrend(seg, type=detrend)
