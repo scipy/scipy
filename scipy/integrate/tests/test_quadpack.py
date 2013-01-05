@@ -1,6 +1,7 @@
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import assert_, TestCase, run_module_suite, dec
 from scipy.integrate import quad, dblquad, tplquad
+from scipy.lib.six.moves import xrange
 import sys
 import math
 
@@ -47,11 +48,11 @@ class TestCtypesQuad(TestCase):
     def test_improvement(self):
         import time
         start = time.time()
-        for i in range(100):
+        for i in xrange(100):
             quad(self.lib.sin, 0, 100)
         fast = time.time() - start
         start = time.time()
-        for i in range(100):
+        for i in xrange(100):
             quad(math.sin, 0, 100)
         slow = time.time() - start
         assert_(fast < 0.5*slow, (fast, slow))

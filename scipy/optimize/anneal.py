@@ -6,6 +6,7 @@ import numpy
 from numpy import asarray, tan, exp, ones, squeeze, sign, \
      all, log, sqrt, pi, shape, array, minimum, where, random
 from .optimize import Result, _check_unknown_options
+from scipy.lib.six.moves import xrange
 
 __all__ = ['anneal']
 
@@ -387,7 +388,7 @@ def _minimize_anneal(func, x0, args=(),
     fqueue = [100, 300, 500, 700]
     iters = 0
     while 1:
-        for n in range(dwell):
+        for n in xrange(dwell):
             current_state.x = schedule.update_guess(last_state.x)
             current_state.cost = func(current_state.x,*args)
             schedule.feval += 1

@@ -8,7 +8,7 @@ __all__ = ['dok_matrix', 'isspmatrix_dok']
 
 import numpy as np
 
-from scipy.lib.six.moves import zip as izip
+from scipy.lib.six.moves import zip as izip, xrange
 from scipy.lib.six import iteritems
 
 from .base import spmatrix, isspmatrix
@@ -158,7 +158,7 @@ class dok_matrix(spmatrix, dict):
 
             if isinstance(i, slice):
                 # Is there an easier way to do this?
-                seq = range(i.start or 0, i.stop or self.shape[0], i.step or 1)
+                seq = xrange(i.start or 0, i.stop or self.shape[0], i.step or 1)
             elif _is_sequence(i):
                 seq = i
             else:
@@ -197,7 +197,7 @@ class dok_matrix(spmatrix, dict):
             # Below here, j is a sequence, but i is an integer
             if isinstance(j, slice):
                 # Is there an easier way to do this?
-                seq = range(j.start or 0, j.stop or self.shape[1], j.step or 1)
+                seq = xrange(j.start or 0, j.stop or self.shape[1], j.step or 1)
             elif _is_sequence(j):
                 seq = j
             else:
@@ -254,7 +254,7 @@ class dok_matrix(spmatrix, dict):
             # or sequence, unfold it first and call __setitem__ recursively.
             if isinstance(i, slice):
                 # Is there an easier way to do this?
-                seq = range(i.start or 0, i.stop or self.shape[0], i.step or 1)
+                seq = xrange(i.start or 0, i.stop or self.shape[0], i.step or 1)
             elif _is_sequence(i):
                 seq = i
             else:
@@ -295,7 +295,7 @@ class dok_matrix(spmatrix, dict):
             else:
                 # Process j
                 if isinstance(j, slice):
-                    seq = range(j.start or 0, j.stop or self.shape[1], j.step or 1)
+                    seq = xrange(j.start or 0, j.stop or self.shape[1], j.step or 1)
                 elif _is_sequence(j):
                     seq = j
                 else:
@@ -334,8 +334,8 @@ class dok_matrix(spmatrix, dict):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
-            for i in range(M):
-                for j in range(N):
+            for i in xrange(M):
+                for j in xrange(N):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
@@ -364,8 +364,8 @@ class dok_matrix(spmatrix, dict):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
-            for i in range(M):
-                for j in range(N):
+            for i in xrange(M):
+                for j in xrange(N):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij

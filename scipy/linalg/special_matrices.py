@@ -2,6 +2,7 @@
 import math
 import numpy as np
 from scipy.misc import comb
+from scipy.lib.six.moves import xrange
 
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
@@ -695,8 +696,8 @@ def invhilbert(n, exact=False):
     else:
         dtype = np.float64
     invh = np.empty((n, n), dtype=dtype)
-    for i in range(n):
-        for j in range(0, i + 1):
+    for i in xrange(n):
+        for j in xrange(0, i + 1):
             s = i + j
             invh[i, j] = ((-1) ** s * (s + 1) *
                           comb(n + i, n - j - 1, exact) *

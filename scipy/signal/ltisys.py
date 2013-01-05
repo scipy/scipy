@@ -17,6 +17,7 @@ from numpy import product, zeros, array, dot, transpose, ones, \
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
+from scipy.lib.six.moves import xrange
 from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 
@@ -547,7 +548,7 @@ def lsim(system, U, T, X0=None, interp=1):
     if interp:
         F2T = dot(BT, dot(GTmI, ATm2) / dt - ATm1)
 
-    for k in range(1, len(T)):
+    for k in xrange(1, len(T)):
         dt1 = T[k] - T[k - 1]
         if dt1 != dt:
             dt = dt1

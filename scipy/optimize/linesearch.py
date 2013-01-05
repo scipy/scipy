@@ -14,6 +14,7 @@ Functions
 from scipy.optimize import minpack2
 import numpy as np
 from numpy.compat import asbytes
+from scipy.lib.six.moves import xrange
 
 __all__ = ['line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
@@ -155,7 +156,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     task = asbytes('START')
 
     maxiter=30
-    for i in range(maxiter):
+    for i in xrange(maxiter):
         stp, phi1, derphi1, task = minpack2.dcsrch(alpha1, phi1, derphi1,
                                                    c1, c2, xtol, task,
                                                    amin, amax, isave, dsave)
@@ -347,7 +348,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
 
     i = 1
     maxiter = 10
-    for i in range(maxiter):
+    for i in xrange(maxiter):
         if alpha1 == 0:
             break
         if (phi_a1 > phi0 + c1*alpha1*derphi0) or \

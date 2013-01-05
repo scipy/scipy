@@ -5,6 +5,7 @@ from scipy.interpolate import KroghInterpolator, krogh_interpolate, \
         BarycentricInterpolator, barycentric_interpolate, \
         PiecewisePolynomial, piecewise_polynomial_interpolate, \
         approximate_taylor_polynomial
+from scipy.lib.six.moves import xrange
 import scipy
 import numpy as np
 from scipy.interpolate import splrep, splev
@@ -28,14 +29,14 @@ class CheckKrogh(TestCase):
     def test_derivatives(self):
         P = KroghInterpolator(self.xs,self.ys)
         D = P.derivatives(self.test_xs)
-        for i in range(D.shape[0]):
+        for i in xrange(D.shape[0]):
             assert_almost_equal(self.true_poly.deriv(i)(self.test_xs),
                                 D[i])
 
     def test_low_derivatives(self):
         P = KroghInterpolator(self.xs,self.ys)
         D = P.derivatives(self.test_xs,len(self.xs)+2)
-        for i in range(D.shape[0]):
+        for i in xrange(D.shape[0]):
             assert_almost_equal(self.true_poly.deriv(i)(self.test_xs),
                                 D[i])
 
@@ -43,12 +44,12 @@ class CheckKrogh(TestCase):
         P = KroghInterpolator(self.xs,self.ys)
         m = 10
         r = P.derivatives(self.test_xs,m)
-        for i in range(m):
+        for i in xrange(m):
             assert_almost_equal(P.derivative(self.test_xs,i),r[i])
 
     def test_high_derivative(self):
         P = KroghInterpolator(self.xs,self.ys)
-        for i in range(len(self.xs),2*len(self.xs)):
+        for i in xrange(len(self.xs),2*len(self.xs)):
             assert_almost_equal(P.derivative(self.test_xs,i),
                                 np.zeros(len(self.test_xs)))
 
@@ -68,7 +69,7 @@ class CheckKrogh(TestCase):
         xs = [0, 1, 2]
         ys = np.array([[0,1],[1,0],[2,1]])
         P = KroghInterpolator(xs,ys)
-        Pi = [KroghInterpolator(xs,ys[:,i]) for i in range(ys.shape[1])]
+        Pi = [KroghInterpolator(xs,ys[:,i]) for i in xrange(ys.shape[1])]
         test_xs = np.linspace(-1,3,100)
         assert_almost_equal(P(test_xs),
                 np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
@@ -124,7 +125,7 @@ class CheckTaylor(TestCase):
     def test_exponential(self):
         degree = 5
         p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
-        for i in range(degree+1):
+        for i in xrange(degree+1):
             assert_almost_equal(p(0),1)
             p = p.deriv()
         assert_almost_equal(p(0),0)
@@ -159,7 +160,7 @@ class CheckBarycentric(TestCase):
         xs = [0, 1, 2]
         ys = np.array([[0,1],[1,0],[2,1]])
         P = BarycentricInterpolator(xs,ys)
-        Pi = [BarycentricInterpolator(xs,ys[:,i]) for i in range(ys.shape[1])]
+        Pi = [BarycentricInterpolator(xs,ys[:,i]) for i in xrange(ys.shape[1])]
         test_xs = np.linspace(-1,3,100)
         assert_almost_equal(P(test_xs),
                 np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
@@ -194,7 +195,7 @@ class CheckPiecewise(TestCase):
         self.spline_ys = splev(self.test_xs, self.tck)
         self.spline_yps = splev(self.test_xs, self.tck, der=1)
         self.xi = np.unique(self.tck[0])
-        self.yi = [[splev(x, self.tck, der=j) for j in range(3)] for x in self.xi]
+        self.yi = [[splev(x, self.tck, der=j) for j in xrange(3)] for x in self.xi]
 
     def test_construction(self):
         P = PiecewisePolynomial(self.xi, self.yi, 3)
@@ -217,7 +218,7 @@ class CheckPiecewise(TestCase):
         m = 4
         r = P.derivatives(self.test_xs,m)
         #print r.shape, r
-        for i in range(m):
+        for i in xrange(m):
             assert_almost_equal(P.derivative(self.test_xs,i),r[i])
 
     def test_vector(self):
@@ -225,7 +226,7 @@ class CheckPiecewise(TestCase):
         ys = [[[0,1]],[[1,0],[-1,-1]],[[2,1]]]
         P = PiecewisePolynomial(xs,ys)
         Pi = [PiecewisePolynomial(xs,[[yd[i] for yd in y] for y in ys])
-            for i in range(len(ys[0][0]))]
+            for i in xrange(len(ys[0][0]))]
         test_xs = np.linspace(-1,3,100)
         assert_almost_equal(P(test_xs),
                 np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
@@ -235,7 +236,7 @@ class CheckPiecewise(TestCase):
 
     def test_incremental(self):
         P = PiecewisePolynomial([self.xi[0]], [self.yi[0]], 3)
-        for i in range(1,len(self.xi)):
+        for i in xrange(1,len(self.xi)):
             P.append(self.xi[i],self.yi[i],3)
         assert_almost_equal(P(self.test_xs),self.spline_ys)
 

@@ -4,6 +4,7 @@ Functions for identifying peaks in signals.
 
 import numpy as np
 
+from scipy.lib.six.moves import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
@@ -58,7 +59,7 @@ def _boolrelextrema(data, comparator,
 
     results = np.ones(data.shape, dtype=bool)
     main = data.take(locs, axis=axis, mode=mode)
-    for shift in range(1, order + 1):
+    for shift in xrange(1, order + 1):
         plus = data.take(locs + shift, axis=axis, mode=mode)
         minus = data.take(locs - shift, axis=axis, mode=mode)
         results &= comparator(main, plus)
@@ -288,7 +289,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
         #XXX Modifying a list while iterating over it.
         #Should be safe, since we iterate backwards, but
         #still tacky.
-        for ind in range(len(ridge_lines) - 1, -1, -1):
+        for ind in xrange(len(ridge_lines) - 1, -1, -1):
             line = ridge_lines[ind]
             if line[2] > gap_thresh:
                 final_lines.append(line)

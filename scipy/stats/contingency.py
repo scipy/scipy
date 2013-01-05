@@ -3,6 +3,7 @@
 
 # Author: Warren Weckesser, Enthought, Inc.
 
+from scipy.lib.six.moves import xrange
 import numpy as np
 from scipy import special
 from functools import reduce

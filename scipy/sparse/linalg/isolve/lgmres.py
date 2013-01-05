@@ -2,6 +2,7 @@
 # Distributed under the same license as Scipy.
 
 import numpy as np
+from scipy.lib.six.moves import xrange
 from scipy.linalg import get_blas_funcs
 from .utils import make_system
 
@@ -118,7 +119,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     if b_norm == 0:
         b_norm = 1
 
-    for k_outer in range(maxiter):
+    for k_outer in xrange(maxiter):
         r_outer = matvec(x) - b
 
         # -- callback
@@ -152,7 +153,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         ws = []
         y = None
 
-        for j in range(1, 1 + inner_m + len(outer_v)):
+        for j in xrange(1, 1 + inner_m + len(outer_v)):
             # -- Arnoldi process:
             #
             #    Build an orthonormal basis V and matrices W and H such that
@@ -237,7 +238,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             hess  = np.zeros((j+1, j), x.dtype)
             e1    = np.zeros((j+1,), x.dtype)
             e1[0] = inner_res_0
-            for q in range(j):
+            for q in xrange(j):
                 hess[:(q+2),q] = hs[q]
 
             y, resids, rank, s = lstsq(hess, e1)

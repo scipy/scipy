@@ -1,6 +1,7 @@
 import numpy.testing as npt
 import numpy as np
 import nose
+from scipy.lib.six.moves import xrange
 
 from scipy import stats
 
@@ -233,7 +234,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
     # construct intervals with minimum mass 1/nsupp
     # intervalls are left-half-open as in a cdf difference
-    distsupport = range(max(distfn.a, -1000), min(distfn.b, 1000) + 1)
+    distsupport = xrange(max(distfn.a, -1000), min(distfn.b, 1000) + 1)
     last = 0
     distsupp = [max(distfn.a, -1000)]
     distmass = []

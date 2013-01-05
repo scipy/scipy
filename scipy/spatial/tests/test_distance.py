@@ -35,6 +35,7 @@
 
 
 import os.path
+from scipy.lib.six.moves import xrange
 
 import numpy as np
 from numpy.linalg import norm
@@ -1521,7 +1522,7 @@ class TestSquareForm(TestCase):
 
     def test_squareform_multi_matrix(self):
         "Tests squareform on a square matrices of multiple sizes."
-        for n in range(2, 5):
+        for n in xrange(2, 5):
             yield self.check_squareform_multi_matrix(n)
 
     def check_squareform_multi_matrix(self, n):
@@ -1537,8 +1538,8 @@ class TestSquareForm(TestCase):
         self.assertTrue(len(s) == 2)
         self.assertTrue(len(Yr.shape) == 1)
         self.assertTrue(s[0] == s[1])
-        for i in range(0, s[0]):
-            for j in range(i+1, s[1]):
+        for i in xrange(0, s[0]):
+            for j in xrange(i+1, s[1]):
                 if i != j:
                     #print i, j, k, A[i, j], Y[k]
                     self.assertTrue(A[i, j] == Y[k])
@@ -1551,7 +1552,7 @@ class TestNumObsY(TestCase):
 
     def test_num_obs_y_multi_matrix(self):
         "Tests num_obs_y with observation matrices of multiple sizes."
-        for n in range(2, 10):
+        for n in xrange(2, 10):
             X = np.random.rand(n, 4)
             Y = pdist(X)
             #print A.shape, Y.shape, Yr.shape
@@ -1575,15 +1576,15 @@ class TestNumObsY(TestCase):
 
     def test_num_obs_y_5_10(self):
         "Tests num_obs_y(y) on a condensed distance matrix between 5 and 15 observations."
-        for i in range(5, 16):
+        for i in xrange(5, 16):
             self.minit(i)
 
     def test_num_obs_y_2_100(self):
         "Tests num_obs_y(y) on 100 improper condensed distance matrices. Expecting exception."
         a = set([])
-        for n in range(2, 16):
+        for n in xrange(2, 16):
             a.add(n*(n-1)/2)
-        for i in range(5, 105):
+        for i in xrange(5, 105):
             if i not in a:
                 self.assertRaises(ValueError, self.bad_y, i)
 
@@ -1606,7 +1607,7 @@ class TestNumObsDM(TestCase):
     ############## num_obs_dm
     def test_num_obs_dm_multi_matrix(self):
         "Tests num_obs_dm with observation matrices of multiple sizes."
-        for n in range(1, 10):
+        for n in xrange(1, 10):
             X = np.random.rand(n, 4)
             Y = pdist(X)
             A = squareform(Y)
@@ -1681,7 +1682,7 @@ class TestIsValidDM(TestCase):
         "Tests is_valid_dm(*) on a distance matrix with a nonzero diagonal. Exception expected."
         y = np.random.rand(10)
         D = squareform(y)
-        for i in range(0, 5):
+        for i in xrange(0, 5):
             D[i, i] = 2.0
         self.assertRaises(ValueError, is_valid_dm_throw, (D))
 
@@ -1689,7 +1690,7 @@ class TestIsValidDM(TestCase):
         "Tests is_valid_dm(*) on a distance matrix with a nonzero diagonal. False expected."
         y = np.random.rand(10)
         D = squareform(y)
-        for i in range(0, 5):
+        for i in xrange(0, 5):
             D[i, i] = 2.0
         self.assertTrue(is_valid_dm(D) == False)
 
@@ -1796,9 +1797,9 @@ class TestIsValidY(TestCase):
     def test_is_valid_y_2_100(self):
         "Tests is_valid_y(*) on 100 improper condensed distance matrices. Expecting exception."
         a = set([])
-        for n in range(2, 16):
+        for n in xrange(2, 16):
             a.add(n*(n-1)/2)
-        for i in range(5, 105):
+        for i in xrange(5, 105):
             if i not in a:
                 self.assertRaises(ValueError, self.bad_y, i)
 

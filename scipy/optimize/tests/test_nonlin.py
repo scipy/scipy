@@ -5,6 +5,7 @@ May 2007
 
 from numpy.testing import assert_, dec, TestCase, run_module_suite
 
+from scipy.lib.six.moves import xrange
 from scipy.optimize import nonlin, root
 from numpy import matrix, diag, dot
 from numpy.linalg import inv
@@ -142,7 +143,7 @@ class TestSecant(TestCase):
         for j, (x, f) in enumerate(zip(self.xs[1:], self.fs[1:])):
             jac.update(x, f)
 
-            for k in range(min(npoints, j+1)):
+            for k in xrange(min(npoints, j+1)):
                 dx = self.xs[j-k+1] - self.xs[j-k]
                 df = self.fs[j-k+1] - self.fs[j-k]
                 assert_(np.allclose(dx, jac.solve(df)))
@@ -266,7 +267,7 @@ class TestJacobianDotSolve(object):
         jac.setup(x0, self._func(x0), self._func)
 
         # check consistency
-        for k in range(2*N):
+        for k in xrange(2*N):
             v = rand(N)
 
             if hasattr(jac, '__array__'):

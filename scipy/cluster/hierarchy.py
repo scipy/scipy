@@ -176,6 +176,7 @@ from . import _hierarchy_wrap
 import scipy.spatial.distance as distance
 
 from scipy.lib.six import string_types
+from scipy.lib.six.moves import xrange
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
                            'weighted': 6}
@@ -869,12 +870,12 @@ def to_tree(Z, rd=False):
     d = [None] * (n * 2 - 1)
 
     # Create the nodes corresponding to the n original objects.
-    for i in range(0, n):
+    for i in xrange(0, n):
         d[i] = ClusterNode(i)
 
     nd = None
 
-    for i in range(0, n - 1):
+    for i in xrange(0, n - 1):
         fi = int(Z[i, 0])
         fj = int(Z[i, 1])
         if fi > i + n:
@@ -1357,7 +1358,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
 
 def _check_hierarchy_uses_cluster_before_formed(Z):
     n = Z.shape[0] + 1
-    for i in range(0, n - 1):
+    for i in xrange(0, n - 1):
         if Z[i, 0] >= n + i or Z[i, 1] >= n + i:
             return True
     return False
@@ -1366,7 +1367,7 @@ def _check_hierarchy_uses_cluster_before_formed(Z):
 def _check_hierarchy_uses_cluster_more_than_once(Z):
     n = Z.shape[0] + 1
     chosen = set([])
-    for i in range(0, n - 1):
+    for i in xrange(0, n - 1):
         if (Z[i, 0] in chosen) or (Z[i, 1] in chosen) or Z[i, 0] == Z[i, 1]:
             return True
         chosen.add(Z[i, 0])
@@ -1377,7 +1378,7 @@ def _check_hierarchy_uses_cluster_more_than_once(Z):
 def _check_hierarchy_not_all_clusters_used(Z):
     n = Z.shape[0] + 1
     chosen = set([])
-    for i in range(0, n - 1):
+    for i in xrange(0, n - 1):
         chosen.add(int(Z[i, 0]))
         chosen.add(int(Z[i, 1]))
     must_chosen = set(range(0, 2 * n - 2))
@@ -2501,7 +2502,7 @@ def is_isomorphic(T1, T2):
         raise ValueError('T1 and T2 must have the same number of elements.')
     n = T1S[0]
     d = {}
-    for i in range(0, n):
+    for i in xrange(0, n):
         if T1[i] in list(d.keys()):
             if d[T1[i]] != T2[i]:
                 return False

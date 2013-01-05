@@ -3,6 +3,8 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 (special, linalg)
 """
 
+from scipy.lib.six.moves import xrange
+
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
                   r_, rollaxis, sum, fromstring
@@ -122,7 +124,7 @@ def factorial(n,exact=0):
         if n < 0:
             return 0
         val = 1
-        for k in range(1,n+1):
+        for k in xrange(1,n+1):
             val *= k
         return val
     else:
@@ -174,7 +176,7 @@ def factorial2(n, exact=False):
         if n <= 0:
             return 1
         val = 1
-        for k in range(n,0,-2):
+        for k in xrange(n,0,-2):
             val *= k
         return val
     else:
@@ -230,7 +232,7 @@ def factorialk(n,k,exact=1):
         if n<=0:
             return 1
         val = 1
-        for j in range(n,0,-k):
+        for j in xrange(n,0,-k):
             val = val*j
         return val
     else:
@@ -276,7 +278,7 @@ def comb(N,k,exact=0):
         if (k > N) or (N < 0) or (k < 0):
             return 0
         val = 1
-        for j in range(min(k, N-k)):
+        for j in xrange(min(k, N-k)):
             val = (val*(N-j))//(j+1)
         return val
     else:

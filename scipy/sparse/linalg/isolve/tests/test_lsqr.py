@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.testing import assert_
+from scipy.lib.six.moves import xrange
 
 from scipy.lib.six import print_
 
@@ -12,7 +13,7 @@ G = np.eye(n)
 normal = np.random.normal
 norm = np.linalg.norm
 
-for jj in range(5):
+for jj in xrange(5):
     gg = normal(size=n)
     hh = gg * gg.T
     G += (hh + hh.T) * 0.5

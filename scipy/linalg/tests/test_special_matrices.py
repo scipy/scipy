@@ -5,6 +5,8 @@ from numpy.testing import TestCase, run_module_suite, assert_raises, \
     assert_equal, assert_array_equal, assert_array_almost_equal, \
     assert_allclose
 
+from scipy.lib.six.moves import xrange
+
 from scipy.misc import comb
 from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \
                             companion, tri, triu, tril, kron, block_diag, \
@@ -430,7 +432,7 @@ class TestInvHilbert(TestCase):
         assert_allclose(invhilbert(17), invh17.astype(float), rtol=1e-12)
 
     def test_inverse(self):
-        for n in range(1, 10):
+        for n in xrange(1, 10):
             a = hilbert(n)
             b = invhilbert(n)
             # The Hilbert matrix is increasingly badly conditioned,

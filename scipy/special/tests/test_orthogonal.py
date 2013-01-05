@@ -1,5 +1,6 @@
 from numpy.testing import assert_array_almost_equal, assert_almost_equal, \
         rand, TestCase
+from scipy.lib.six.moves import xrange
 import numpy as np
 from numpy import array, sqrt
 import scipy.special.orthogonal as orth
@@ -231,7 +232,7 @@ class _test_sh_jacobi(TestCase):
 class TestCall(object):
     def test_call(self):
         poly = []
-        for n in range(5):
+        for n in xrange(5):
             poly.extend([x.strip() for x in
                 ("""
                 orth.jacobi(%(n)d,0.3,0.9)

@@ -38,6 +38,8 @@ import os.path
 import numpy as np
 from numpy.testing import TestCase, run_module_suite
 
+from scipy.lib.six.moves import xrange
+
 from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage,\
         num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster, \
         is_isomorphic, single, complete, weighted, centroid, leaders, \
@@ -478,32 +480,32 @@ class TestIsIsomorphic(TestCase):
 
     def test_is_isomorphic_5A(self):
         "Tests is_isomorphic on test case #5A (1000 observations, 2 random clusters, random permutation of the labeling). Run 3 times."
-        for k in range(0, 3):
+        for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 2)
 
     def test_is_isomorphic_5B(self):
         "Tests is_isomorphic on test case #5B (1000 observations, 3 random clusters, random permutation of the labeling). Run 3 times."
-        for k in range(0, 3):
+        for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 3)
 
     def test_is_isomorphic_5C(self):
         "Tests is_isomorphic on test case #5C (1000 observations, 5 random clusters, random permutation of the labeling). Run 3 times."
-        for k in range(0, 3):
+        for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 5)
 
     def test_is_isomorphic_6A(self):
         "Tests is_isomorphic on test case #5A (1000 observations, 2 random clusters, random permutation of the labeling, slightly nonisomorphic.) Run 3 times."
-        for k in range(0, 3):
+        for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 2, True, 5)
 
     def test_is_isomorphic_6B(self):
         "Tests is_isomorphic on test case #5B (1000 observations, 3 random clusters, random permutation of the labeling, slightly nonisomorphic.) Run 3 times."
-        for k in range(0, 3):
+        for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 3, True, 5)
 
     def test_is_isomorphic_6C(self):
         "Tests is_isomorphic on test case #5C (1000 observations, 5 random clusters, random permutation of the labeling, slightly non-isomorphic.) Run 3 times."
-        for k in range(0, 3):
+        for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 5, True, 5)
 
     def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
@@ -511,7 +513,7 @@ class TestIsIsomorphic(TestCase):
         b = np.zeros(a.size, dtype=np.int_)
         q = {}
         P = np.random.permutation(nclusters)
-        for i in range(0, a.shape[0]):
+        for i in xrange(0, a.shape[0]):
             b[i] = P[a[i]]
         if noniso:
             Q = np.random.permutation(nobs)
@@ -562,14 +564,14 @@ class TestIsValidLinkage(TestCase):
 
     def test_is_valid_linkage_4_and_up(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             self.assertTrue(is_valid_linkage(Z) == True)
 
     def test_is_valid_linkage_4_and_up_neg_index_left(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (left)."
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             Z[int(i/2),0] = -2
@@ -578,7 +580,7 @@ class TestIsValidLinkage(TestCase):
 
     def test_is_valid_linkage_4_and_up_neg_index_right(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (right)."
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             Z[int(i/2),1] = -2
@@ -587,7 +589,7 @@ class TestIsValidLinkage(TestCase):
 
     def test_is_valid_linkage_4_and_up_neg_dist(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative distances."
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             Z[int(i/2),2] = -0.5
@@ -596,7 +598,7 @@ class TestIsValidLinkage(TestCase):
 
     def test_is_valid_linkage_4_and_up_neg_counts(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative counts."
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             Z[int(i/2),3] = -2
@@ -645,7 +647,7 @@ class TestIsValidInconsistent(TestCase):
 
     def test_is_valid_im_4_and_up(self):
         "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3)."
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             R = inconsistent(Z)
@@ -653,7 +655,7 @@ class TestIsValidInconsistent(TestCase):
 
     def test_is_valid_im_4_and_up_neg_index_left(self):
         "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link height means."
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             R = inconsistent(Z)
@@ -663,7 +665,7 @@ class TestIsValidInconsistent(TestCase):
 
     def test_is_valid_im_4_and_up_neg_index_right(self):
         "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link height standard deviations."
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             R = inconsistent(Z)
@@ -673,7 +675,7 @@ class TestIsValidInconsistent(TestCase):
 
     def test_is_valid_im_4_and_up_neg_dist(self):
         "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link counts."
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             R = inconsistent(Z)
@@ -701,7 +703,7 @@ class TestNumObsLinkage(TestCase):
 
     def test_num_obs_linkage_4_and_up(self):
         "Tests num_obs_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             self.assertTrue(num_obs_linkage(Z) == i)
@@ -779,11 +781,11 @@ class TestCorrespond(TestCase):
 
     def test_correspond_2_and_up(self):
         "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes."
-        for i in range(2, 4):
+        for i in xrange(2, 4):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             self.assertTrue(correspond(Z, y))
-        for i in range(4, 15, 3):
+        for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)/2)
             Z = linkage(y)
             self.assertTrue(correspond(Z, y))
@@ -810,7 +812,7 @@ class TestCorrespond(TestCase):
 
     def test_num_obs_linkage_multi_matrix(self):
         "Tests num_obs_linkage with observation matrices of multiple sizes."
-        for n in range(2, 10):
+        for n in xrange(2, 10):
             X = np.random.rand(n, 4)
             Y = pdist(X)
             Z = linkage(Y)
@@ -1368,7 +1370,7 @@ def calculate_maximum_distances(Z):
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
-    for i in range(0, n - 1):
+    for i in xrange(0, n - 1):
         q[:] = 0.0
         left = Z[i, 0]
         right = Z[i, 1]
@@ -1386,7 +1388,7 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
-    for i in range(0, n - 1):
+    for i in xrange(0, n - 1):
         q[:] = 0.0
         left = Z[i, 0]
         right = Z[i, 1]

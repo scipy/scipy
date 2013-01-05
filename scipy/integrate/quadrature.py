@@ -11,6 +11,7 @@ import math
 import warnings
 
 from scipy.lib.six import print_
+from scipy.lib.six.moves import xrange
 
 class AccuracyWarning(Warning):
     pass
@@ -100,7 +101,7 @@ def vectorize1(func, args=(), vec_func=False):
             else:
                 output = empty((n,), dtype=type(y0))
             output[0] = y0
-            for i in range(1, n):
+            for i in xrange(1, n):
                 output[i] = func(x[i], *args)
             return output
     return vfunc
@@ -157,7 +158,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     vfunc = vectorize1(func, args, vec_func=vec_func)
     val = np.inf
     err = np.inf
-    for n in range(1, maxiter+1):
+    for n in xrange(1, maxiter+1):
         newval = fixed_quad(vfunc, a, b, (), n)[0]
         err = abs(newval-val)
         val = newval
@@ -628,7 +629,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     result = intrange * ordsum
     resmat = [[result]]
     err = np.inf
-    for i in range(1, divmax+1):
+    for i in xrange(1, divmax+1):
         n = n * 2
         ordsum = ordsum + _difftrap(vfunc, interval, n)
         resmat.append([])

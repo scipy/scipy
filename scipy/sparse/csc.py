@@ -7,6 +7,7 @@ __all__ = ['csc_matrix', 'isspmatrix_csc']
 from warnings import warn
 
 import numpy as np
+from scipy.lib.six.moves import xrange
 
 from .sparsetools import csc_tocsr
 from .sputils import upcast, isintlike
@@ -112,7 +113,7 @@ class csc_matrix(_cs_matrix):
 
     def __iter__(self):
         csr = self.tocsr()
-        for r in range(self.shape[0]):
+        for r in xrange(self.shape[0]):
             yield csr[r,:]
 
     def tocsc(self, copy=False):

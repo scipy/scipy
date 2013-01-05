@@ -184,7 +184,8 @@ References
 # Standard library imports.
 import warnings
 import math
-import collections
+
+from scipy.lib.six.moves import xrange
 
 # friedmanchisquare patch uses python sum
 pysum = sum  # save it before it gets overwritten
@@ -2813,7 +2814,7 @@ def kendalltau(x, y, initial_lexsort=True):
     # compute joint ties
     first = 0
     t = 0
-    for i in range(1, n):
+    for i in xrange(1, n):
         if x[perm[first]] != x[perm[i]] or y[perm[first]] != y[perm[i]]:
             t += ((i - first) * (i - first - 1)) // 2
             first = i
@@ -2822,7 +2823,7 @@ def kendalltau(x, y, initial_lexsort=True):
     # compute ties in x
     first = 0
     u = 0
-    for i in range(1,n):
+    for i in xrange(1,n):
         if x[perm[first]] != x[perm[i]]:
             u += ((i - first) * (i - first - 1)) // 2
             first = i
@@ -2833,7 +2834,7 @@ def kendalltau(x, y, initial_lexsort=True):
     # compute ties in y after mergesort with counting
     first = 0
     v = 0
-    for i in range(1,n):
+    for i in xrange(1,n):
         if y[perm[first]] != y[perm[i]]:
             v += ((i - first) * (i - first - 1)) // 2
             first = i

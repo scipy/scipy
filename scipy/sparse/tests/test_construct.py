@@ -5,7 +5,6 @@ from numpy import array, matrix
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
         assert_array_equal, assert_raises, assert_array_almost_equal_nulp
 
-
 from scipy.sparse import csr_matrix, coo_matrix
 
 from scipy.sparse import construct

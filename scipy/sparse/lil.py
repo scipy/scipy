@@ -8,6 +8,7 @@ __all__ = ['lil_matrix','isspmatrix_lil']
 from bisect import bisect_left
 
 import numpy as np
+from scipy.lib.six.moves import xrange
 
 from .base import spmatrix, isspmatrix
 from .sputils import getdtype, isshape, issequence, isscalarlike
@@ -288,7 +289,7 @@ class lil_matrix(spmatrix):
             j = self._slicetoseq(j, self.shape[1])
         if issequence(j):
             if xcols == len(j):
-                for jj, xi in zip(j, range(xcols)):
+                for jj, xi in zip(j, xrange(xcols)):
                     pos = bisect_left(xrow, xi)
                     if pos != len(xdata) and xrow[pos] == xi:
                         self._insertat2(row, data, jj, xdata[pos])

@@ -10,6 +10,7 @@ from numpy import zeros, transpose, newaxis, shape, float32, float64, \
                   complex64, complex128, arange, array, common_type, conjugate
 from numpy.testing import assert_equal, assert_array_almost_equal, \
         run_module_suite, TestCase
+from scipy.lib.six.moves import xrange
 from scipy.lib.blas import fblas
 
 #decimal accuracy to require between Python and LAPACK/BLAS calculations
@@ -25,10 +26,10 @@ def matrixmultiply(a, b):
         b_is_vector = False
     assert_equal(a.shape[1], b.shape[0])
     c = zeros((a.shape[0], b.shape[1]), common_type(a, b))
-    for i in range(a.shape[0]):
-        for j in range(b.shape[1]):
+    for i in xrange(a.shape[0]):
+        for j in xrange(b.shape[1]):
             s = 0
-            for k in range(a.shape[1]):
+            for k in xrange(a.shape[1]):
                 s += a[i,k] * b[k, j]
             c[i,j] = s
     if b_is_vector:

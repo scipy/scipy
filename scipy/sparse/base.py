@@ -8,6 +8,7 @@ from warnings import warn
 
 import numpy as np
 
+from scipy.lib.six.moves import xrange
 from .sputils import isdense, isscalarlike, isintlike
 
 
@@ -106,7 +107,7 @@ class spmatrix(object):
                              'point format' % self.dtype.name)
 
     def __iter__(self):
-        for r in range(self.shape[0]):
+        for r in xrange(self.shape[0]):
             yield self[r,:]
 
     def getmaxprint(self):

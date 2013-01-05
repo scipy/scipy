@@ -12,6 +12,7 @@ from numpy import asarray, Inf, dot, floor, eye, diag, exp, \
 from numpy import matrix as mat
 import numpy as np
 
+from scipy.lib.six.moves import xrange
 from scipy.lib.six import print_
 
 # Local imports

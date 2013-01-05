@@ -18,7 +18,6 @@ __all__ = ['eig','eigh','eig_banded','eigvals','eigvalsh', 'eigvals_banded',
 import numpy
 from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
         isfinite, inexact, nonzero, iscomplexobj, cast, flatnonzero, conj
-
 # Local imports
 from scipy.linalg import calc_lwork
 from .misc import LinAlgError, _datacopied

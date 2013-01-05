@@ -12,6 +12,8 @@ import numpy as np
 import scipy.special as spec
 import math
 
+from scipy.lib.six.moves import xrange
+
 from . import fitpack
 from . import _fitpack
 from . import dfitpack
@@ -42,9 +44,9 @@ def lagrange(x, w):
     """
     M = len(x)
     p = poly1d(0.0)
-    for j in range(M):
+    for j in xrange(M):
         pt = poly1d(w[j])
-        for k in range(M):
+        for k in xrange(M):
             if k == j: continue
             fac = x[j]-x[k]
             pt *= poly1d([1.0,-x[k]])/fac
@@ -512,7 +514,7 @@ class ppform(object):
         diff = xx - self.breaks.take(indxs)
         V = np.vander(diff,N=self.K)
         # values = np.diag(dot(V,pp[:,indxs]))
-        values = array([dot(V[k,:],pp[:,indxs[k]]) for k in range(len(xx))])
+        values = array([dot(V[k,:],pp[:,indxs[k]]) for k in xrange(len(xx))])
         res[mask] = values
         res.shape = saveshape
         return res
@@ -520,7 +522,7 @@ class ppform(object):
     def fromspline(cls, xk, cvals, order, fill=0.0):
         N = len(xk)-1
         sivals = np.empty((order+1,N), dtype=float)
-        for m in range(order,-1,-1):
+        for m in xrange(order,-1,-1):
             fact = spec.gamma(m+1)
             res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
             res /= fact

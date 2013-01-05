@@ -5,6 +5,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, run_module_suite,\
      assert_, dec, assert_allclose, assert_array_equal, assert_raises
 from numpy.compat import asbytes
+from scipy.lib.six.moves import xrange
 
 import copy
 import scipy.spatial.qhull as qhull
@@ -256,7 +257,7 @@ class TestUtilities(object):
 
         npoints = {2: 70, 3: 11, 4: 5, 5: 3}
 
-        for ndim in range(2, 6):
+        for ndim in xrange(2, 6):
             # Generate an uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
             grid = np.c_[list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))].T
@@ -384,9 +385,9 @@ class TestDelaunay(object):
 
     def test_nd_simplex(self):
         # simple smoke test: triangulate a n-dimensional simplex
-        for nd in range(2, 8):
+        for nd in xrange(2, 8):
             points = np.zeros((nd+1, nd))
-            for j in range(nd):
+            for j in xrange(nd):
                 points[j,j] = 1.0
             points[-1,:] = 1.0
 
@@ -479,7 +480,7 @@ class TestDelaunay(object):
 
             obj = qhull.Delaunay(points[:nmin], incremental=True,
                                  qhull_options=opts)
-            for j in range(nmin, len(points), chunksize):
+            for j in xrange(nmin, len(points), chunksize):
                 obj.add_points(points[j:j+chunksize])
 
             obj2 = qhull.Delaunay(points)
@@ -592,7 +593,7 @@ class TestConvexHull:
                 nmin = ndim +2
 
             obj = qhull.ConvexHull(points[:nmin], incremental=True)
-            for j in range(nmin, len(points), chunksize):
+            for j in xrange(nmin, len(points), chunksize):
                 obj.add_points(points[j:j+chunksize])
 
             obj2 = qhull.ConvexHull(points)
@@ -756,7 +757,7 @@ class TestVoronoi:
 
             obj = qhull.Voronoi(points[:nmin], incremental=True,
                                  qhull_options=opts)
-            for j in range(nmin, len(points), chunksize):
+            for j in xrange(nmin, len(points), chunksize):
                 obj.add_points(points[j:j+chunksize])
 
             obj2 = qhull.Voronoi(points)

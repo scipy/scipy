@@ -17,6 +17,7 @@ import sys
 import warnings
 
 import numpy as np
+from scipy.lib.six.moves import xrange
 from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
                   vstack, ndarray, transpose, diag, kron, inf, conjugate, \
                   int8, ComplexWarning
@@ -518,8 +519,8 @@ class _TestCommon:
         frac = .3
         random.seed(0) # make runs repeatable
         A = zeros((L,2))
-        for i in range(L):
-            for j in range(2):
+        for i in xrange(L):
+            for j in xrange(2):
                 r = random.random()
                 if r < frac:
                     A[i,j] = r/frac
@@ -1362,8 +1363,8 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         A[1:5, 0] = range(1,5)
         B[1:5, 0] = range(1,5)
         assert_array_equal(A.todense(), B)
-        A[0, 1:10:2] = range(1,10,2)
-        B[0, 1:10:2] = range(1,10,2)
+        A[0, 1:10:2] = xrange(1,10,2)
+        B[0, 1:10:2] = xrange(1,10,2)
         assert_array_equal(A.todense(), B)
         caught = 0
         # The next 6 commands should raise exceptions
@@ -1505,8 +1506,8 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         frac = .3
         random.seed(0) # make runs repeatable
         A = zeros((L,2))
-        for i in range(L):
-            for j in range(2):
+        for i in xrange(L):
+            for j in xrange(2):
                 r = random.random()
                 if r < frac:
                     A[i,j] = r/frac

@@ -3,6 +3,7 @@
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, assert_array_almost_equal, assert_array_less, assert_
+from scipy.lib.six.moves import xrange
 
 from scipy.signal import wavelets
 
@@ -12,12 +13,12 @@ class TestWavelets(TestCase):
         assert_array_equal(wavelets.qmf([1, 1]), [1, -1])
 
     def test_daub(self):
-        for i in range(1, 15):
+        for i in xrange(1, 15):
             assert_equal(len(wavelets.daub(i)), i * 2)
 
     def test_cascade(self):
-        for J in range(1, 7):
-            for i in range(1, 5):
+        for J in xrange(1, 7):
+            for i in xrange(1, 5):
                 lpcoef = wavelets.daub(i)
                 k = len(lpcoef)
                 x, phi, psi = wavelets.cascade(lpcoef, J)

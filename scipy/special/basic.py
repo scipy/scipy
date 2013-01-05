@@ -3,6 +3,7 @@
 #
 
 import numpy as np
+from scipy.lib.six.moves import xrange
 from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
         less, vectorize, inexact, nan, zeros, sometrue, atleast_1d
@@ -181,7 +182,7 @@ def bessel_diff_formula(v, z, n, L, phase):
     # For K, you can pull out the exp((v-k)*pi*i) into the caller
     p = 1.0
     s = L(v-n, z)
-    for i in range(1, n+1):
+    for i in xrange(1, n+1):
         p = phase * (p * (n-i+1)) / i   # = choose(k, i)
         s += p*L(v-n + i*2, z)
     return s / (2.**n)

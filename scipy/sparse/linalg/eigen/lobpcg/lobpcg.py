@@ -15,6 +15,7 @@ import numpy as np
 import scipy as sp
 
 from scipy.lib.six import print_
+from scipy.lib.six.moves import xrange
 
 from scipy.sparse.linalg import aslinearoperator, LinearOperator
 
@@ -340,7 +341,7 @@ def lobpcg( A, X,
 
     ##
     # Main iteration loop.
-    for iterationNumber in range( maxIterations ):
+    for iterationNumber in xrange( maxIterations ):
         if verbosityLevel > 0:
             print_('iteration %d' %  iterationNumber)
 
