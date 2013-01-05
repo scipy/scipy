@@ -175,6 +175,7 @@ import numpy as np
 from . import _hierarchy_wrap
 import scipy.spatial.distance as distance
 
+from scipy.lib.six import string_types
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
                            'weighted': 6}
@@ -1876,7 +1877,7 @@ def set_link_color_palette(palette):
 
     if type(palette) not in (list, tuple):
         raise TypeError("palette must be a list or tuple")
-    _ptypes = [type(p) == bytes for p in palette]
+    _ptypes = [isinstance(p, string_types) for p in palette]
 
     if False in _ptypes:
         raise TypeError("all palette list elements must be color strings")
@@ -2117,7 +2118,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     else:
         ivl = []
     if color_threshold is None or \
-       (type(color_threshold) == bytes and
+       (isinstance(color_threshold, string_types) and
                            color_threshold == 'default'):
         color_threshold = max(Z[:, 2]) * 0.7
     R = {'icoord': icoord_list, 'dcoord': dcoord_list, 'ivl': ivl,
@@ -2454,7 +2455,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     dcoord_list.append([uah, h, h, ubh])
     if link_color_func is not None:
         v = link_color_func(int(i))
-        if type(v) != bytes:
+        if not isinstance(v, string_types):
             raise TypeError("link_color_func must return a matplotlib "
                             "color string!")
         color_list.append(v)
