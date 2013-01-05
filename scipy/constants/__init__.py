@@ -289,7 +289,7 @@ from .constants import *
 from .codata import _obsolete_constants
 
 _constant_names = [(_k.lower(), _k, _v)
-                   for _k, _v in list(physical_constants.items())
+                   for _k, _v in physical_constants.items()
                    if _k not in _obsolete_constants]
 _constant_names = "\n".join(["``%s``%s  %s %s" % (_x[1], " "*(66-len(_x[1])),
                                                   _x[2][0], _x[2][1])
