@@ -35,7 +35,7 @@ supported formats are:
 ##
 # 05.12.2005, c
 def read_triplet( fd ):
-    nRow, nCol = list(map( int, fd.readline().split() ))
+    nRow, nCol = map( int, fd.readline().split() )
     nItem = int( fd.readline() )
 
     ij = np.zeros( (nItem,2), np.int32 )
@@ -52,7 +52,7 @@ def read_triplet( fd ):
 ##
 # 06.12.2005, c
 def read_triplet2( fd ):
-    nRow, nCol = list(map( int, fd.readline().split() ))
+    nRow, nCol = map( int, fd.readline().split() )
     nItem = int( fd.readline() )
 
     ij, val = io.read_array( fd,
@@ -76,7 +76,10 @@ def readMatrix( matrixName, options ):
     print_('url:', matrixName)
 
     if matrixName[:7] == 'http://':
-        fileName, status = urllib.request.urlretrieve( matrixName )
+        if sys.version_info[0] >= 3:
+            fileName, status = urllib.request.urlretrieve( matrixName )
+        else:
+            fileName, status = urllib.urlretrieve( matrixName )
 ##        print status
     else:
         fileName = matrixName

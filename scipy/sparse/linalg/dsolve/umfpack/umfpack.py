@@ -8,6 +8,8 @@ Author: Robert Cimrman
 import re
 import warnings
 
+from scipy.lib.six import iteritems
+
 import numpy as np
 import scipy.sparse as sp
 try: # Silence import error.
@@ -42,7 +44,7 @@ def configure( **kwargs ):
 def updateDictWithVars( adict, module, pattern, group = None ):
     match = re.compile( pattern ).match
 
-    for name in [ii for ii in list(vars( module ).keys())
+    for name in [ii for ii in vars( module ).keys()
                  if match( ii )]:
         if group is not None:
             outName = match( name ).group( group )
@@ -245,7 +247,7 @@ class Struct( object ):
     # 08.03.2005
     def __str__( self ):
         ss = "%s\n" % self.__class__
-        for key, val in self.__dict__.items():
+        for key, val in iteritems(self.__dict__):
             if (issubclass( self.__dict__[key].__class__, Struct )):
                 ss += "  %s:\n    %s\n" % (key, self.__dict__[key].__class__)
             else:
@@ -281,7 +283,7 @@ class UmfpackContext( Struct ):
         self.maxCond = 1e12
         Struct.__init__( self, **kwargs )
 
-        if family not in list(umfFamilyTypes.keys()):
+        if family not in umfFamilyTypes.keys():
             raise TypeError('wrong family: %s' % family)
 
         self.family = family
