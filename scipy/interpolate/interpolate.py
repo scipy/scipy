@@ -142,8 +142,8 @@ class interp2d(object):
 
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
                  fill_value=np.nan):
-        self.x, self.y, self.z = list(map(asarray, [x, y, z]))
-        self.x, self.y = list(map(ravel, [self.x, self.y]))
+        self.x, self.y, self.z = map(asarray, [x, y, z])
+        self.x, self.y = map(ravel, [self.x, self.y])
 
         if self.z.size == len(self.x) * len(self.y):
             rectangular_grid = True
@@ -440,12 +440,12 @@ class interp1d(object):
         elif self._kind in ('linear', 'nearest'):
             y_new[..., out_of_bounds] = self.fill_value
             axes = list(range(ny - nx))
-            axes[self.axis:self.axis] = list(range(ny - nx, ny))
+            axes[self.axis:self.axis] = range(ny - nx, ny)
             return y_new.transpose(axes)
         else:
             y_new[out_of_bounds] = self.fill_value
             axes = list(range(nx, ny))
-            axes[self.axis:self.axis] = list(range(nx))
+            axes[self.axis:self.axis] = range(nx)
             return y_new.transpose(axes)
 
     def _check_bounds(self, x_new):
@@ -832,7 +832,7 @@ def splmake(xk,yk,order=3,kind='smoothest',conds=None):
     coefs = func(xk, yk, order, conds, B)
     return xk, coefs, order
 
-def spleval(xxx_todo_changeme,xnew,deriv=0):
+def spleval(xck,xnew,deriv=0):
     """Evaluate a fixed spline represented by the given tuple at the new
     x-values. The xj values are the interior knot points.  The approximation
     region is xj[0] to xj[-1].  If N+1 is the length of xj, then cvals should
@@ -845,7 +845,7 @@ def spleval(xxx_todo_changeme,xnew,deriv=0):
     N-d, then the result is xnew.shape + cvals.shape[1:] providing the
     interpolation of multiple curves.
     """
-    (xj,cvals,k) = xxx_todo_changeme
+    (xj,cvals,k) = xck
     oldshape = np.shape(xnew)
     xx = np.ravel(xnew)
     sh = cvals.shape[1:]

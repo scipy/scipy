@@ -403,7 +403,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     """
     if task<=0:
         _curfit_cache = {}
-    x,y=list(map(myasarray,[x,y]))
+    x,y=map(myasarray,[x,y])
     m=len(x)
     if w is None:
         w=ones(m,float)
@@ -819,8 +819,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
        Numerical Analysis, Oxford University Press, 1993.
 
     """
-    x,y,z=list(map(myasarray,[x,y,z]))
-    x,y,z=list(map(ravel,[x,y,z]))  # ensure 1-d arrays.
+    x,y,z=map(myasarray,[x,y,z])
+    x,y,z=map(ravel,[x,y,z])  # ensure 1-d arrays.
     m=len(x)
     if not (m==len(y)==len(z)):
         raise TypeError('len(x)==len(y)==len(z) must hold.')
@@ -956,7 +956,7 @@ def bisplev(x,y,tck,dx=0,dy=0):
         raise ValueError("0 <= dx = %d < kx = %d must hold" % (dx,kx))
     if not (0<=dy<ky):
         raise ValueError("0 <= dy = %d < ky = %d must hold" % (dy,ky))
-    x,y=list(map(myasarray,[x,y]))
+    x,y=map(myasarray,[x,y])
     if (len(x.shape) != 1) or (len(y.shape) != 1):
         raise ValueError("First two entries should be rank-1 arrays.")
     z,ier=_fitpack._bispev(tx,ty,c,kx,ky,x,y,dx,dy)
