@@ -696,7 +696,7 @@ class TestVoronoi:
             tree = KDTree(points)
             vor = qhull.Voronoi(points)
 
-            for p, v in list(vor.ridge_dict.items()):
+            for p, v in vor.ridge_dict.items():
                 # consider only finite ridges
                 if not np.all(np.asarray(v) >= 0):
                     continue
@@ -710,7 +710,7 @@ class TestVoronoi:
                 dist, k = tree.query(ridge_midpoint - d, k=1)
                 assert_equal(k, p[1])
 
-        for name in list(DATASETS.keys()):
+        for name in DATASETS.keys():
             yield check, name
 
     def test_furthest_site(self):

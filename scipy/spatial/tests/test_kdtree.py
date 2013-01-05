@@ -509,7 +509,7 @@ class test_sparse_distance_matrix:
         for i,l in enumerate(r):
             for j in l:
                 assert_equal(M[i,j],distance(self.T1.data[i],self.T2.data[j]))
-        for ((i,j),d) in list(M.items()):
+        for ((i,j),d) in M.items():
             assert_(j in r[i])
 
     def test_zero_distance(self):
@@ -530,7 +530,7 @@ class test_sparse_distance_matrix_compiled:
         for i,l in enumerate(r):
             for j in l:
                 assert_equal(M[i,j],distance(self.T1.data[i],self.T2.data[j]))
-        for ((i,j),d) in list(M.items()):
+        for ((i,j),d) in M.items():
             assert_(j in r[i])
 
     def test_zero_distance(self):
