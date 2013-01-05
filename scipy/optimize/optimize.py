@@ -104,8 +104,8 @@ class Result(dict):
     __delattr__ = dict.__delitem__
 
     def __repr__(self):
-        if list(self.keys()):
-            m = max(list(map(len, list(self.keys())))) + 1
+        if self.keys():
+            m = max(map(len, list(self.keys()))) + 1
             return '\n'.join([k.rjust(m) + ': ' + repr(v)
                               for k, v in self.items()])
         else:
@@ -116,7 +116,7 @@ class OptimizeWarning(UserWarning):
 
 def _check_unknown_options(unknown_options):
     if unknown_options:
-        msg = ", ".join(map(str, list(unknown_options.keys())))
+        msg = ", ".join(map(str, unknown_options.keys()))
         # Stack level 4: this is called from _minimize_*, which is
         # called from another function in Scipy. Level 4 is the first
         # level in user code.

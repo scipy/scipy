@@ -507,7 +507,7 @@ class Jacobian(object):
     def __init__(self, **kw):
         names = ["solve", "update", "matvec", "rmatvec", "rsolve",
                  "matmat", "todense", "shape", "dtype"]
-        for name, value in list(kw.items()):
+        for name, value in kw.items():
             if name not in names:
                 raise ValueError("Unknown keyword argument %s" % name)
             if value is not None:
@@ -1399,7 +1399,7 @@ class KrylovJacobian(Jacobian):
             #      since it's not an inexact Newton method.
             self.method_kw.setdefault('store_outer_Av', False)
 
-        for key, value in list(kw.items()):
+        for key, value in kw.items():
             if not key.startswith('inner_'):
                 raise ValueError("Unknown parameter %s" % key)
             self.method_kw[key[6:]] = value

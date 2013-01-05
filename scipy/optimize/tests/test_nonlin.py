@@ -102,8 +102,8 @@ class TestNonlin(object):
         """ Tests for nonlin functions """
         for f in [F, F2, F3, F4_powell, F5, F6]:
             for func in SOLVERS.values():
-                if func in list(f.KNOWN_BAD.values()):
-                    if func in list(MUST_WORK.values()):
+                if func in f.KNOWN_BAD.values():
+                    if func in MUST_WORK.values():
                         yield self._check_func_fail, f, func
                     continue
                 yield self._check_nonlin_func, f, func
@@ -112,8 +112,8 @@ class TestNonlin(object):
         """ Tests for root """
         for f in [F, F2, F3, F4_powell, F5, F6]:
             for meth in SOLVERS.keys():
-                if meth in list(f.KNOWN_BAD.keys()):
-                    if meth in list(MUST_WORK.keys()):
+                if meth in f.KNOWN_BAD.keys():
+                    if meth in MUST_WORK.keys():
                         yield self._check_func_fail, f, meth
                     continue
                 yield self._check_root, f, meth
@@ -139,7 +139,7 @@ class TestSecant(TestCase):
         """
         jac = jac_cls(**kw)
         jac.setup(self.xs[0], self.fs[0], None)
-        for j, (x, f) in enumerate(list(zip(self.xs[1:], self.fs[1:]))):
+        for j, (x, f) in enumerate(zip(self.xs[1:], self.fs[1:])):
             jac.update(x, f)
 
             for k in range(min(npoints, j+1)):
@@ -166,7 +166,7 @@ class TestSecant(TestCase):
 
         B = np.identity(5) * (-1/0.1)
 
-        for last_j, (x, f) in enumerate(list(zip(self.xs[1:], self.fs[1:]))):
+        for last_j, (x, f) in enumerate(zip(self.xs[1:], self.fs[1:])):
             df = f - self.fs[last_j]
             dx = x - self.xs[last_j]
             B += (df - dot(B, dx))[:,None] * dx[None,:] / dot(dx, dx)
@@ -180,7 +180,7 @@ class TestSecant(TestCase):
 
         H = np.identity(5) * (-0.1)
 
-        for last_j, (x, f) in enumerate(list(zip(self.xs[1:], self.fs[1:]))):
+        for last_j, (x, f) in enumerate(zip(self.xs[1:], self.fs[1:])):
             df = f - self.fs[last_j]
             dx = x - self.xs[last_j]
             H += (dx - dot(H, df))[:,None] * df[None,:] / dot(df, df)
