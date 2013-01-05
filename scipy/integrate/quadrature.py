@@ -50,7 +50,7 @@ def fixed_quad(func,a,b,args=(),n=5):
     """
     [x,w] = p_roots(n)
     x = real(x)
-    ainf, binf = map(isinf,(a,b))
+    ainf, binf = list(map(isinf,(a,b)))
     if ainf or binf:
         raise ValueError("Gaussian quadrature is only available for "
                 "finite limits.")
@@ -98,7 +98,7 @@ def vectorize1(func, args=(), vec_func=False):
             else:
                 output = empty((n,), dtype=type(y0))
             output[0] = y0
-            for i in xrange(1, n):
+            for i in range(1, n):
                 output[i] = func(x[i], *args)
             return output
     return vfunc
@@ -155,7 +155,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     vfunc = vectorize1(func, args, vec_func=vec_func)
     val = np.inf
     err = np.inf
-    for n in xrange(1, maxiter+1):
+    for n in range(1, maxiter+1):
         newval = fixed_quad(vfunc, a, b, (), n)[0]
         err = abs(newval-val)
         val = newval
@@ -451,8 +451,8 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     if show:
         if not isscalar(R[(1,1)]):
-            print "*** Printing table only supported for integrals" + \
-                  " of a single data set."
+            print("*** Printing table only supported for integrals" + \
+                  " of a single data set.")
         else:
             try:
                 precis = show[0]
@@ -464,13 +464,13 @@ def romb(y, dx=1.0, axis=-1, show=False):
                 width = 8
             formstr = "%" + str(width) + '.' + str(precis)+'f'
 
-            print "\n       Richardson Extrapolation Table for Romberg Integration       "
-            print "===================================================================="
+            print("\n       Richardson Extrapolation Table for Romberg Integration       ")
+            print("====================================================================")
             for i in range(1,k+1):
                 for j in range(1,i+1):
-                    print formstr % R[(i,j)],
-                print
-            print "====================================================================\n"
+                    print(formstr % R[(i,j)], end=' ')
+                print()
+            print("====================================================================\n")
 
     return R[(k,k)]
 
@@ -523,18 +523,18 @@ def _romberg_diff(b, c, k):
 def _printresmat(function, interval, resmat):
     # Print the Romberg result matrix.
     i = j = 0
-    print 'Romberg integration of', `function`,
-    print 'from', interval
-    print ''
-    print '%6s %9s %9s' % ('Steps', 'StepSize', 'Results')
+    print('Romberg integration of', repr(function), end=' ')
+    print('from', interval)
+    print('')
+    print('%6s %9s %9s' % ('Steps', 'StepSize', 'Results'))
     for i in range(len(resmat)):
-        print '%6d %9f' % (2**i, (interval[1]-interval[0])/(2.**i)),
+        print('%6d %9f' % (2**i, (interval[1]-interval[0])/(2.**i)), end=' ')
         for j in range(i+1):
-            print '%9f' % (resmat[i][j]),
-        print ''
-    print ''
-    print 'The final result is', resmat[i][j],
-    print 'after', 2**(len(resmat)-1)+1, 'function evaluations.'
+            print('%9f' % (resmat[i][j]), end=' ')
+        print('')
+    print('')
+    print('The final result is', resmat[i][j], end=' ')
+    print('after', 2**(len(resmat)-1)+1, 'function evaluations.')
 
 def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
             divmax=10, vec_func=False):
@@ -626,7 +626,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     result = intrange * ordsum
     resmat = [[result]]
     err = np.inf
-    for i in xrange(1, divmax+1):
+    for i in range(1, divmax+1):
         n = n * 2
         ordsum = ordsum + _difftrap(vfunc, interval, n)
         resmat.append([])

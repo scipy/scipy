@@ -11,16 +11,16 @@ from warnings import warn
 
 import numpy as np
 
-from sputils import upcast
+from .sputils import upcast
 
-from csr import csr_matrix
-from csc import csc_matrix
-from bsr import bsr_matrix
-from coo import coo_matrix
-from lil import lil_matrix
-from dia import dia_matrix
+from .csr import csr_matrix
+from .csc import csc_matrix
+from .bsr import bsr_matrix
+from .coo import coo_matrix
+from .lil import lil_matrix
+from .dia import dia_matrix
 
-from base import issparse
+from .base import issparse
 
 def spdiags(data, diags, m, n, format=None):
     """
@@ -141,7 +141,7 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
         else:
             raise ValueError("Different number of diagonals and offsets.")
     else:
-        diagonals = map(np.atleast_1d, diagonals)
+        diagonals = list(map(np.atleast_1d, diagonals))
     offsets = np.atleast_1d(offsets)
 
     # Basic check
@@ -640,7 +640,7 @@ greater than %d - this is not supported on this machine
         raise ValueError(msg % np.iinfo(tp).max)
 
     # Number of non zero values
-    k = long(density * m * n)
+    k = int(density * m * n)
 
     # Generate a few more values than k so that we can get unique values
     # afterwards.

@@ -176,23 +176,23 @@ sorted indices are required (e.g. when passing data to other libraries).
 # Modified and extended by Ed Schofield, Robert Cimrman,
 # Nathan Bell, and Jake Vanderplas.
 
-from base import *
-from csr import *
-from csc import *
-from lil import *
-from dok import *
-from coo import *
-from dia import *
-from bsr import *
-from construct import *
-from extract import *
+from .base import *
+from .csr import *
+from .csc import *
+from .lil import *
+from .dok import *
+from .coo import *
+from .dia import *
+from .bsr import *
+from .construct import *
+from .extract import *
 
 # for backward compatibility with v0.10.  This function is marked as deprecated
-from csgraph import cs_graph_components
+from .csgraph import cs_graph_components
 
 #from spfuncs import *
 
-__all__ = filter(lambda s:not s.startswith('_'),dir())
+__all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
 bench = Tester().bench

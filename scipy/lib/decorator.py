@@ -126,7 +126,7 @@ class FunctionMaker(object):
         func.__name__ = self.name
         func.__doc__ = getattr(self, 'doc', None)
         func.__dict__ = getattr(self, 'dict', {})
-        func.func_defaults = getattr(self, 'defaults', ())
+        func.__defaults__ = getattr(self, 'defaults', ())
         func.__kwdefaults__ = getattr(self, 'kwonlydefaults', None)
         callermodule = sys._getframe(3).f_globals.get('__name__', '?')
         func.__module__ = getattr(self, 'module', callermodule)
@@ -150,10 +150,10 @@ class FunctionMaker(object):
         try:
             code = compile(src, '<string>', 'single')
             # print >> sys.stderr, 'Compiling %s' % src
-            exec code in evaldict
+            exec(code, evaldict)
         except:
-            print >> sys.stderr, 'Error in generated code:'
-            print >> sys.stderr, src
+            print('Error in generated code:', file=sys.stderr)
+            print(src, file=sys.stderr)
             raise
         func = evaldict[name]
         if addsource:
@@ -189,7 +189,7 @@ def decorator(caller, func=None):
     decorator(caller, func) decorates a function using a caller.
     """
     if func is not None: # returns a decorated function
-        evaldict = func.func_globals.copy()
+        evaldict = func.__globals__.copy()
         evaldict['_call_'] = caller
         evaldict['_func_'] = func
         return FunctionMaker.create(
@@ -200,7 +200,7 @@ def decorator(caller, func=None):
             return partial(decorator, caller)
         # otherwise assume caller is a function
         first = inspect.getargspec(caller)[0][0] # first arg
-        evaldict = caller.func_globals.copy()
+        evaldict = caller.__globals__.copy()
         evaldict['_call_'] = caller
         evaldict['decorator'] = decorator
         return FunctionMaker.create(

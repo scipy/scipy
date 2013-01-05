@@ -14,22 +14,22 @@ class BenchZeros(TestCase):
         b = sqrt(3)
         repeat = 2000
 
-        print description
+        print(description)
 
-        print 'TESTING SPEED\n'
-        print 'times in seconds for %d iterations \n'%repeat
+        print('TESTING SPEED\n')
+        print('times in seconds for %d iterations \n'%repeat)
         for i in range(len(functions)) :
-            print 'function %s\n'%fstrings[i]
+            print('function %s\n'%fstrings[i])
             func = functions[i]
             for j in range(len(methods)) :
                 meth = methods[j]
                 try:
                     t = measure("meth(func,a,b)",repeat)
                 except:
-                    print '%s : failed'%mstrings[j]
+                    print('%s : failed'%mstrings[j])
                 else:
-                    print '%s : %5.3f'%(mstrings[j],t)
-            print '\n\n'
+                    print('%s : %5.3f'%(mstrings[j],t))
+            print('\n\n')
 
 if __name__ == '__main__' :
     run_module_suite()

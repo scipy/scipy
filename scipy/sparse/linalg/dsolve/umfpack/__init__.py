@@ -168,9 +168,9 @@ umfpack.control[um.UMFPACK_PRL] = 4 # Let's be more verbose.
 """
 
 
-from umfpack import *
+from .umfpack import *
 
 
-__all__ = filter(lambda s:not s.startswith('_'),dir())
+__all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test

@@ -4,4 +4,4 @@
 try:
     from functools import partial
 except ImportError:
-    from myfunctools import partial
+    from .myfunctools import partial

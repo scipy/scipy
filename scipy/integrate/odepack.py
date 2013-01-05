@@ -2,7 +2,7 @@
 
 __all__ = ['odeint']
 
-import _odepack
+from . import _odepack
 from copy import copy
 
 _msgs = {2: "Integration successful.",
@@ -143,11 +143,11 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
                              full_output, rtol, atol, tcrit, h0, hmax, hmin,
                              ixpr, mxstep, mxhnil, mxordn, mxords)
     if output[-1] < 0:
-        print _msgs[output[-1]]
-        print "Run with full_output = 1 to get quantitative information."
+        print(_msgs[output[-1]])
+        print("Run with full_output = 1 to get quantitative information.")
     else:
         if printmessg:
-            print _msgs[output[-1]]
+            print(_msgs[output[-1]])
 
     if full_output:
         output[1]['message'] = _msgs[output[-1]]

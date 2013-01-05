@@ -9,7 +9,7 @@ import sys
 if sys.version_info[0] >= 3:
     from io import BytesIO
 else:
-    from cStringIO import StringIO as BytesIO
+    from io import StringIO as BytesIO
 
 from numpy.testing import \
      assert_array_equal, \

@@ -184,6 +184,7 @@ References
 # Standard library imports.
 import warnings
 import math
+import collections
 
 # friedmanchisquare patch uses python sum
 pysum = sum  # save it before it gets overwritten
@@ -194,13 +195,13 @@ import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
 
-import futil
-import distributions
+from . import futil
+from . import distributions
 
 # Local imports.
-import _support
-from _support import _chk_asarray, _chk2_asarray
-from _rank import rankdata, tiecorrect
+from . import _support
+from ._support import _chk_asarray, _chk2_asarray
+from ._rank import rankdata, tiecorrect
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
            'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
@@ -1562,9 +1563,9 @@ def percentileofscore(a, score, kind='rank'):
     if kind == 'rank':
         if not(np.any(a == score)):
             a = np.append(a, score)
-            a_len = np.array(range(len(a)))
+            a_len = np.array(list(range(len(a))))
         else:
-            a_len = np.array(range(len(a))) + 1.0
+            a_len = np.array(list(range(len(a)))) + 1.0
 
         a = np.sort(a)
         idx = [a == score]
@@ -2004,7 +2005,7 @@ def zmap(scores, compare, axis=0, ddof=0):
     >>> zmap(a, b)
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
     """
-    scores, compare = map(np.asanyarray, [scores, compare])
+    scores, compare = list(map(np.asanyarray, [scores, compare]))
     mns = compare.mean(axis=axis)
     sstd = compare.std(axis=axis, ddof=ddof)
     if axis and mns.ndim < compare.ndim:
@@ -2272,7 +2273,7 @@ def f_oneway(*args):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     """
-    args = map(np.asarray, args) # convert to an numpy array
+    args = list(map(np.asarray, args)) # convert to an numpy array
     na = len(args)              # ANOVA on 'na' groups, each in it's own array
     alldata = np.concatenate(args)
     bign = len(alldata)
@@ -2759,7 +2760,7 @@ def kendalltau(x, y, initial_lexsort=True):
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
     n = np.int64(len(x))
-    temp = range(n) # support structure used by mergesort
+    temp = list(range(n)) # support structure used by mergesort
     # this closure recursively sorts sections of perm[] by comparing
     # elements of y[perm[]] using temp[] as support
     # returns the number of swaps required by an equivalent bubble sort
@@ -2805,13 +2806,13 @@ def kendalltau(x, y, initial_lexsort=True):
         perm = np.lexsort((y, x))
     else:
         # sort implemented as quicksort, 30% faster but with worst case: O(n^2)
-        perm = range(n)
+        perm = list(range(n))
         perm.sort(key=lambda a: (x[a], y[a]))
 
     # compute joint ties
     first = 0
     t = 0
-    for i in xrange(1, n):
+    for i in range(1, n):
         if x[perm[first]] != x[perm[i]] or y[perm[first]] != y[perm[i]]:
             t += ((i - first) * (i - first - 1)) // 2
             first = i
@@ -2820,7 +2821,7 @@ def kendalltau(x, y, initial_lexsort=True):
     # compute ties in x
     first = 0
     u = 0
-    for i in xrange(1,n):
+    for i in range(1,n):
         if x[perm[first]] != x[perm[i]]:
             u += ((i - first) * (i - first - 1)) // 2
             first = i
@@ -2831,7 +2832,7 @@ def kendalltau(x, y, initial_lexsort=True):
     # compute ties in y after mergesort with counting
     first = 0
     v = 0
-    for i in xrange(1,n):
+    for i in range(1,n):
         if y[perm[first]] != y[perm[i]]:
             v += ((i - first) * (i - first - 1)) // 2
             first = i
@@ -3308,7 +3309,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
     (0.131016895759829, 0.058826222555312224)
 
     """
-    if isinstance(rvs, basestring):
+    if isinstance(rvs, str):
         #cdf = getattr(stats, rvs).cdf
         if (not cdf) or (cdf == rvs):
             cdf = getattr(distributions, rvs).cdf
@@ -3316,9 +3317,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
         else:
             raise AttributeError('if rvs is string, cdf has to be the same distribution')
 
-    if isinstance(cdf, basestring):
+    if isinstance(cdf, str):
         cdf = getattr(distributions, cdf).cdf
-    if callable(rvs):
+    if isinstance(rvs, collections.Callable):
         kwds = {'size':N}
         vals = np.sort(rvs(*args,**kwds))
     else:
@@ -3467,7 +3468,7 @@ def ks_2samp(data1, data2):
     (0.07999999999999996, 0.41126949729859719)
 
     """
-    data1, data2 = map(asarray, (data1, data2))
+    data1, data2 = list(map(asarray, (data1, data2)))
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     n1 = len(data1)
@@ -3575,7 +3576,7 @@ def ranksums(x, y):
     .. [1] http://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
 
     """
-    x,y = map(np.asarray, (x, y))
+    x,y = list(map(np.asarray, (x, y)))
     n1 = len(x)
     n2 = len(y)
     alldata = np.concatenate((x,y))
@@ -3625,11 +3626,11 @@ def kruskal(*args):
     .. [1] http://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
 
     """
-    args = map(np.asarray, args) # convert to a numpy array
+    args = list(map(np.asarray, args)) # convert to a numpy array
     na = len(args)               # Kruskal-Wallis on 'na' groups, each in it's own array
     if na < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
-    n = np.asarray(map(len, args))
+    n = np.asarray(list(map(len, args)))
 
     alldata = np.concatenate(args)
 
@@ -3692,11 +3693,11 @@ def friedmanchisquare(*args):
         raise ValueError('\nLess than 3 levels.  Friedman test not appropriate.\n')
     n = len(args[0])
     for i in range(1,k):
-        if len(args[i]) <> n:
+        if len(args[i]) != n:
             raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
 
     # Rank data
-    data = apply(_support.abut,args)
+    data = _support.abut(*args)
     data = data.astype(float)
     for i in range(len(data)):
         data[i] = rankdata(data[i])

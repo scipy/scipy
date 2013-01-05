@@ -16,7 +16,7 @@ else:
 
 from scipy.misc import doccer
 
-import byteordercodes as boc
+from . import byteordercodes as boc
 
 class MatReadError(Exception): pass
 

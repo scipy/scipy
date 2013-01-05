@@ -19,6 +19,6 @@ def function(x):
 # Optimizer call
 rc, nf, x = tnc.minimize(function, [-7, 3], [-10, 1], [10, 10])
 
-print "After", nf, "function evaluations, TNC returned:", tnc.RCSTRINGS[rc]
-print "x =", x
-print "exact value = [0, 1]"
+print("After", nf, "function evaluations, TNC returned:", tnc.RCSTRINGS[rc])
+print("x =", x)
+print("exact value = [0, 1]")

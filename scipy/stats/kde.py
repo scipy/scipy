@@ -28,8 +28,9 @@ import numpy as np
 from numpy.random import randint, multivariate_normal
 
 # Local imports.
-import stats
-import mvn
+from . import stats
+from . import mvn
+import collections
 
 
 __all__ = ['gaussian_kde']
@@ -475,10 +476,10 @@ class gaussian_kde(object):
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
             self.covariance_factor = self.silverman_factor
-        elif np.isscalar(bw_method) and not isinstance(bw_method, basestring):
+        elif np.isscalar(bw_method) and not isinstance(bw_method, str):
             self._bw_method = 'use constant'
             self.covariance_factor = lambda: bw_method
-        elif callable(bw_method):
+        elif isinstance(bw_method, collections.Callable):
             self._bw_method = bw_method
             self.covariance_factor = lambda: self._bw_method(self)
         else:

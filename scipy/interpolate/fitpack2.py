@@ -26,8 +26,8 @@ import warnings
 from numpy import zeros, concatenate, alltrue, ravel, all, diff, array, ones
 import numpy as np
 
-import fitpack
-import dfitpack
+from . import fitpack
+from . import dfitpack
 
 
 ################ Univariate spline ####################

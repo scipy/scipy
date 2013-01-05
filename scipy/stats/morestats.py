@@ -7,10 +7,10 @@ import math
 import types
 import warnings
 
-import statlib
-import stats
-from stats import find_repeats
-import distributions
+from . import statlib
+from . import stats
+from .stats import find_repeats
+from . import distributions
 from numpy import isscalar, r_, log, sum, around, unique, asarray
 from numpy import zeros, arange, sort, amin, amax, any, where, \
      atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
@@ -332,7 +332,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
         sparams = ()
     if isscalar(sparams):
         sparams = (sparams,)
-    if not isinstance(sparams, types.TupleType):
+    if not isinstance(sparams, tuple):
         sparams = tuple(sparams)
     """
     res = inspect.getargspec(ppf_func)
@@ -907,7 +907,7 @@ def levene(*args,**kwds):
     # Handle keyword arguments.
     center = 'median'
     proportiontocut = 0.05
-    for kw, value in kwds.items():
+    for kw, value in list(kwds.items()):
         if kw not in ['center', 'proportiontocut']:
             raise TypeError("levene() got an unexpected keyword argument '%s'" % kw)
         if kw == 'center':
@@ -1079,7 +1079,7 @@ def fligner(*args,**kwds):
     # Handle keyword arguments.
     center = 'median'
     proportiontocut = 0.05
-    for kw, value in kwds.items():
+    for kw, value in list(kwds.items()):
         if kw not in ['center', 'proportiontocut']:
             raise TypeError("fligner() got an unexpected keyword argument '%s'" % kw)
         if kw == 'center':
@@ -1199,7 +1199,7 @@ def oneway(*args,**kwds):
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    if 'equal_var' in kwds.keys():
+    if 'equal_var' in list(kwds.keys()):
         if kwds['equal_var']: evar = 1
         else: evar = 0
     else:
@@ -1264,8 +1264,8 @@ def wilcoxon(x,y=None):
     if y is None:
         d = x
     else:
-        x, y = map(asarray, (x, y))
-        if len(x) <> len(y):
+        x, y = list(map(asarray, (x, y)))
+        if len(x) != len(y):
             raise ValueError('Unequal N in wilcoxon.  Aborting.')
         d = x-y
     d = compress(not_equal(d,0),d,axis=-1) # Keep all non-zero differences

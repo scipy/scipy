@@ -7,8 +7,8 @@ if sys.version_info[0] >= 3:
     from io import BytesIO
     cStringIO = BytesIO
 else:
-    from cStringIO import StringIO as cStringIO
-    from StringIO import StringIO as BytesIO
+    from io import StringIO as cStringIO
+    from io import StringIO as BytesIO
 
 import numpy as np
 
@@ -176,18 +176,18 @@ def test_zero_byte_string():
     _write_stream(str_io, tag.tostring() + asbytes('        '))
     str_io.seek(0)
     val = c_reader.read_char(hdr)
-    assert_equal(val, u' ')
+    assert_equal(val, ' ')
     # Now when string has 0 bytes 1 length
     tag['byte_count'] = 0
     _write_stream(str_io, tag.tostring())
     str_io.seek(0)
     val = c_reader.read_char(hdr)
-    assert_equal(val, u' ')
+    assert_equal(val, ' ')
     # Now when string has 0 bytes 4 length
     str_io.seek(0)
     hdr.set_dims([4,])
     val = c_reader.read_char(hdr)
-    assert_array_equal(val, [u' '] * 4)
+    assert_array_equal(val, [' '] * 4)
 
 
 if __name__ == "__main__":

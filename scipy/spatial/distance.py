@@ -68,7 +68,8 @@ import warnings
 import numpy as np
 from numpy.linalg import norm
 
-import _distance_wrap
+from . import _distance_wrap
+import collections
 
 
 def _copy_array_if_base_present(a):
@@ -1122,7 +1123,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         raise ValueError('weighted minkowski requires a weight '
                             'vector `w` to be given.')
 
-    if callable(metric):
+    if isinstance(metric, collections.Callable):
         if metric == minkowski:
             def dfun(u, v):
                 return minkowski(u, v, p)
@@ -1139,12 +1140,12 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             dfun = metric
 
         k = 0
-        for i in xrange(0, m - 1):
-            for j in xrange(i + 1, m):
+        for i in range(0, m - 1):
+            for j in range(i + 1, m):
                 dm[k] = dfun(X[i], X[j])
                 k = k + 1
 
-    elif isinstance(metric, basestring):
+    elif isinstance(metric, str):
         mstr = metric.lower()
 
         #if X.dtype != np.double and \
@@ -1208,7 +1209,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             # The denom. ||u||*||v||
             de = np.dot(nV, nV.T)
             dm = 1.0 - (nm / de)
-            dm[xrange(0, m), xrange(0, m)] = 0.0
+            dm[range(0, m), range(0, m)] = 0.0
             dm = squareform(dm)
         elif mstr in set(['correlation', 'co']):
             X2 = X - X.mean(1)[:, np.newaxis]
@@ -1497,7 +1498,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
                                      'symmetric.') % name)
                 else:
                     raise ValueError('Distance matrix must be symmetric.')
-            if not (D[xrange(0, s[0]), xrange(0, s[0])] == 0).all():
+            if not (D[range(0, s[0]), range(0, s[0])] == 0).all():
                 if name:
                     raise ValueError(('Distance matrix \'%s\' diagonal must '
                                      'be zero.') % name)
@@ -1512,7 +1513,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
                 else:
                     raise ValueError('Distance matrix must be symmetric within'
                                      ' tolerance %5.5f.' % tol)
-            if not (D[xrange(0, s[0]), xrange(0, s[0])] <= tol).all():
+            if not (D[range(0, s[0]), range(0, s[0])] <= tol).all():
                 if name:
                     raise ValueError(('Distance matrix \'%s\' diagonal must be'
                                       ' close to zero within tolerance %5.5f.')
@@ -1521,7 +1522,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
                     raise ValueError(('Distance matrix \'%s\' diagonal must be'
                                       ' close to zero within tolerance %5.5f.')
                                      % tol)
-    except Exception, e:
+    except Exception as e:
         if throw:
             raise
         if warning:
@@ -1591,7 +1592,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
                 raise ValueError('Length n of condensed distance matrix must '
                                  'be a binomial coefficient, i.e. there must '
                                  'be a k such that (k \choose 2)=n)!')
-    except Exception, e:
+    except Exception as e:
         if throw:
             raise
         if warning:
@@ -1913,28 +1914,28 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     n = s[1]
     dm = np.zeros((mA, mB), dtype=np.double)
 
-    if callable(metric):
+    if isinstance(metric, collections.Callable):
         if metric == minkowski:
-            for i in xrange(0, mA):
-                for j in xrange(0, mB):
+            for i in range(0, mA):
+                for j in range(0, mB):
                     dm[i, j] = minkowski(XA[i, :], XB[j, :], p)
         elif metric == wminkowski:
-            for i in xrange(0, mA):
-                for j in xrange(0, mB):
+            for i in range(0, mA):
+                for j in range(0, mB):
                     dm[i, j] = wminkowski(XA[i, :], XB[j, :], p, w)
         elif metric == seuclidean:
-            for i in xrange(0, mA):
-                for j in xrange(0, mB):
+            for i in range(0, mA):
+                for j in range(0, mB):
                     dm[i, j] = seuclidean(XA[i, :], XB[j, :], V)
         elif metric == mahalanobis:
-            for i in xrange(0, mA):
-                for j in xrange(0, mB):
+            for i in range(0, mA):
+                for j in range(0, mB):
                     dm[i, j] = mahalanobis(XA[i, :], XB[j, :], V)
         else:
-            for i in xrange(0, mA):
-                for j in xrange(0, mB):
+            for i in range(0, mA):
+                for j in range(0, mB):
                     dm[i, j] = metric(XA[i, :], XB[j, :])
-    elif isinstance(metric, basestring):
+    elif isinstance(metric, str):
         mstr = metric.lower()
 
         #if XA.dtype != np.double and \

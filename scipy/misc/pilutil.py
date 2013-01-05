@@ -451,7 +451,7 @@ def imfilter(arr,ftype):
               }
 
     im = toimage(arr)
-    if ftype not in _tdict.keys():
+    if ftype not in list(_tdict.keys()):
         raise ValueError("Unknown filter type.")
     return fromimage(im.filter(_tdict[ftype]))
 

@@ -1015,19 +1015,19 @@ class TestScoreatpercentile(TestCase):
         scoreatperc = stats.scoreatpercentile
 
         # Test defaults
-        assert_equal(scoreatperc(range(10), 50), 4.5)
-        assert_equal(scoreatperc(range(10), 50, (2,7)), 4.5)
-        assert_equal(scoreatperc(range(100), 50, limit=(1, 8)), 4.5)
+        assert_equal(scoreatperc(list(range(10)), 50), 4.5)
+        assert_equal(scoreatperc(list(range(10)), 50, (2,7)), 4.5)
+        assert_equal(scoreatperc(list(range(100)), 50, limit=(1, 8)), 4.5)
         assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (10,100)), 55)
         assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (1,10)), 5.5)
 
         # explicitly specify interpolation_method 'fraction' (the default)
-        assert_equal(scoreatperc(range(10), 50, interpolation_method='fraction'),
+        assert_equal(scoreatperc(list(range(10)), 50, interpolation_method='fraction'),
                      4.5)
-        assert_equal(scoreatperc(range(10), 50, limit=(2, 7),
+        assert_equal(scoreatperc(list(range(10)), 50, limit=(2, 7),
                                  interpolation_method='fraction'),
                      4.5)
-        assert_equal(scoreatperc(range(100), 50, limit=(1, 8),
+        assert_equal(scoreatperc(list(range(100)), 50, limit=(1, 8),
                                  interpolation_method='fraction'),
                      4.5)
         assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (10, 100),
@@ -1041,17 +1041,17 @@ class TestScoreatpercentile(TestCase):
         scoreatperc = stats.scoreatpercentile
 
         # interpolation_method 'lower'/'higher'
-        assert_equal(scoreatperc(range(10), 50,
+        assert_equal(scoreatperc(list(range(10)), 50,
                                  interpolation_method='lower'), 4)
-        assert_equal(scoreatperc(range(10), 50,
+        assert_equal(scoreatperc(list(range(10)), 50,
                                  interpolation_method='higher'), 5)
-        assert_equal(scoreatperc(range(10), 50, (2,7),
+        assert_equal(scoreatperc(list(range(10)), 50, (2,7),
                                  interpolation_method='lower'), 4)
-        assert_equal(scoreatperc(range(10), 50, limit=(2,7),
+        assert_equal(scoreatperc(list(range(10)), 50, limit=(2,7),
                                  interpolation_method='higher'), 5)
-        assert_equal(scoreatperc(range(100), 50, (1,8),
+        assert_equal(scoreatperc(list(range(100)), 50, (1,8),
                                  interpolation_method='lower'), 4)
-        assert_equal(scoreatperc(range(100), 50, (1,8),
+        assert_equal(scoreatperc(list(range(100)), 50, (1,8),
                                  interpolation_method='higher'), 5)
         assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (10,100),
                                  interpolation_method='lower'), 10)

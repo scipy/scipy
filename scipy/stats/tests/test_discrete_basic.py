@@ -134,7 +134,7 @@ def check_ppf_ppf(distfn, arg):
 
 def check_pmf_cdf(distfn, arg, msg):
     startind = np.int(distfn._ppf(0.01,*arg)-1)
-    index = range(startind,startind+10)
+    index = list(range(startind,startind+10))
     cdfs = distfn.cdf(index,*arg)
     npt.assert_almost_equal(cdfs, distfn.pmf(index, *arg).cumsum() + \
                             cdfs[0] - distfn.pmf(index[0],*arg),
@@ -233,7 +233,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
     # construct intervals with minimum mass 1/nsupp
     # intervalls are left-half-open as in a cdf difference
-    distsupport = xrange(max(distfn.a, -1000), min(distfn.b, 1000) + 1)
+    distsupport = range(max(distfn.a, -1000), min(distfn.b, 1000) + 1)
     last = 0
     distsupp = [max(distfn.a, -1000)]
     distmass = []

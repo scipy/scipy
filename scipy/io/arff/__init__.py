@@ -36,8 +36,8 @@ Dataset: foo
 
 """
 
-from arffread import *
-import arffread
+from .arffread import *
+from . import arffread
 
 __all__ = arffread.__all__
 

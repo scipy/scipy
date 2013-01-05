@@ -19,4 +19,4 @@ References
 """
 
 
-from arpack import *
+from .arpack import *

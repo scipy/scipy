@@ -16,39 +16,39 @@ import os
 import subprocess
 
 NAME_MAP = {
-    u'87': u'Han Genuit',
-    u'aarchiba': u'Anne Archibald',
-    u'ArmstrongJ': u'Jeff Armstrong',
-    u'cgholke': u'Christoph Gohlke',
-    u'cgohlke': u'Christoph Gohlke',
-    u'chris.burns': u'Chris Burns',
-    u'Christolph Gohlke': u'Christoph Gohlke',
-    u'ckuster': u'Christopher Kuster',
-    u'Collin Stocks': u'Collin RM Stocks',
-    u'Derek Homeir': u'Derek Homeier',
-    u'Derek Homier': u'Derek Homeier',
-    u'dhuard': u'David Huard',
-    u'dsimcha': u'David Simcha',
-    u'edschofield': u'Ed Schofield',
-    u'Gael varoquaux': u'Gaël Varoquaux',
-    u'gotgenes': u'Chris Lasher',
-    u'Han': u'Han Genuit',
-    u'Jake Vanderplas': u'Jacob Vanderplas',
-    u'josef': u'Josef Perktold',
-    u'josef-pktd': u'Josef Perktold',
-    u'Mark': u'Mark Wiebe',
-    u'mdroe': u'Michael Droettboom',
-    u'pierregm': u'Pierre GM',
-    u'rgommers': u'Ralf Gommers',
-    u'sebhaase': u'Sebastian Haase',
-    u'Travis E. Oliphant': u'Travis Oliphant',
-    u'warren.weckesser': u'Warren Weckesser',
-    u'weathergod': u'Benjamin Root',
-    u'Andreas H': u'Andreas Hilboll',
-    u'honnorat': u'Marc Honnorat',
-    u'lmwang': u'Liming Wang',
-    u'wa03': u'Josh Lawrence',
-    u'loluengo': u'Lorenzo Luengo',
+    '87': 'Han Genuit',
+    'aarchiba': 'Anne Archibald',
+    'ArmstrongJ': 'Jeff Armstrong',
+    'cgholke': 'Christoph Gohlke',
+    'cgohlke': 'Christoph Gohlke',
+    'chris.burns': 'Chris Burns',
+    'Christolph Gohlke': 'Christoph Gohlke',
+    'ckuster': 'Christopher Kuster',
+    'Collin Stocks': 'Collin RM Stocks',
+    'Derek Homeir': 'Derek Homeier',
+    'Derek Homier': 'Derek Homeier',
+    'dhuard': 'David Huard',
+    'dsimcha': 'David Simcha',
+    'edschofield': 'Ed Schofield',
+    'Gael varoquaux': 'Gaël Varoquaux',
+    'gotgenes': 'Chris Lasher',
+    'Han': 'Han Genuit',
+    'Jake Vanderplas': 'Jacob Vanderplas',
+    'josef': 'Josef Perktold',
+    'josef-pktd': 'Josef Perktold',
+    'Mark': 'Mark Wiebe',
+    'mdroe': 'Michael Droettboom',
+    'pierregm': 'Pierre GM',
+    'rgommers': 'Ralf Gommers',
+    'sebhaase': 'Sebastian Haase',
+    'Travis E. Oliphant': 'Travis Oliphant',
+    'warren.weckesser': 'Warren Weckesser',
+    'weathergod': 'Benjamin Root',
+    'Andreas H': 'Andreas Hilboll',
+    'honnorat': 'Marc Honnorat',
+    'lmwang': 'Liming Wang',
+    'wa03': 'Josh Lawrence',
+    'loluengo': 'Lorenzo Luengo',
 }
 
 def main():
@@ -80,21 +80,21 @@ def main():
             name = NAME_MAP.get(name, name)
             if disp:
                 if name not in names:
-                    print "    - Author:", name
+                    print("    - Author:", name)
             names.add(name)
 
         # Look for "thanks to" messages in the commit log
-        m = re.search(ur'([Tt]hanks to|[Cc]ourtesy of) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )', line)
+        m = re.search(r'([Tt]hanks to|[Cc]ourtesy of) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )', line)
         if m:
             name = m.group(2)
             if name not in ('this',):
                 if disp:
-                    print "    - Log   :", line.strip()
+                    print("    - Log   :", line.strip())
                 name = NAME_MAP.get(name, name)
                 names.add(name)
 
             line = line[m.end():].strip()
-            line = re.sub(ur'^(and|, and|, ) ', u'Thanks to ', line)
+            line = re.sub(r'^(and|, and|, ) ', 'Thanks to ', line)
             analyze_line(line, names)
 
     # Find all authors before the named range
@@ -109,12 +109,12 @@ def main():
 
     # Sort
     def name_key(fullname):
-        m = re.search(u' [a-z ]*[A-Za-z-]+$', fullname)
+        m = re.search(' [a-z ]*[A-Za-z-]+$', fullname)
         if m:
             forename = fullname[:m.start()].strip()
             surname = fullname[m.start():].strip()
         else:
-            forename = u""
+            forename = ""
             surname = fullname.strip()
         if surname.startswith('van der '):
             surname = surname[8:]
@@ -128,24 +128,24 @@ def main():
     authors.sort(key=name_key)
 
     # Print
-    print """
+    print("""
 Authors
 =======
 
 This release contains work by the following people (contributed at least
 one patch to this release, names in alphabetical order):
-"""
+""")
 
     for author in authors:
         if author in all_authors:
-            print (u"* %s" % author).encode('utf-8')
+            print(("* %s" % author).encode('utf-8'))
         else:
-            print (u"* %s +" % author).encode('utf-8')
+            print(("* %s +" % author).encode('utf-8'))
 
-    print """
+    print("""
 A total of %(count)d people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
-""" % dict(count=len(authors))
+""" % dict(count=len(authors)))
 
     print ("\nNOTE: Check this list manually! It is automatically generated "
            "and some names\n      may be missing.")

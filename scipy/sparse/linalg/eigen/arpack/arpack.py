@@ -44,7 +44,7 @@ __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 import sys
 import warnings
 
-import _arpack
+from . import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, csc_matrix, csr_matrix, \
@@ -375,7 +375,7 @@ class _ArpackParams(object):
         num_iter = self.iparam[2]
         try:
             ev, vec = self.extract(True)
-        except ArpackError, err:
+        except ArpackError as err:
             msg = "%s [%s]" % (msg, err)
             ev = np.zeros((0,))
             vec = np.zeros((self.n, 0))

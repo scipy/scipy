@@ -3,8 +3,9 @@ import warnings
 import numpy as np
 from numpy import asarray_chkfinite, single
 
-from misc import LinAlgError, _datacopied
-from lapack import get_lapack_funcs
+from .misc import LinAlgError, _datacopied
+from .lapack import get_lapack_funcs
+import collections
 
 __all__ = ['qz']
 
@@ -12,7 +13,7 @@ _double_precision = ['i','l','d']
 
 def _select_function(sort, typ):
     if typ in ['F','D']:
-        if callable(sort):
+        if isinstance(sort, collections.Callable):
             #assume the user knows what they're doing
             sfunction = sort
         elif sort == 'lhp':
@@ -27,7 +28,7 @@ def _select_function(sort, typ):
             raise ValueError("sort parameter must be None, a callable, or "
                 "one of ('lhp','rhp','iuc','ouc')")
     elif typ in ['f','d']:
-        if callable(sort):
+        if isinstance(sort, collections.Callable):
             #assume the user knows what they're doing
             sfunction = sort
         elif sort == 'lhp':

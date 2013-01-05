@@ -430,7 +430,7 @@ class TestInvHilbert(TestCase):
         assert_allclose(invhilbert(17), invh17.astype(float), rtol=1e-12)
 
     def test_inverse(self):
-        for n in xrange(1, 10):
+        for n in range(1, 10):
             a = hilbert(n)
             b = invhilbert(n)
             # The Hilbert matrix is increasingly badly conditioned,

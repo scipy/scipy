@@ -231,7 +231,7 @@ class _test_sh_jacobi(TestCase):
 class TestCall(object):
     def test_call(self):
         poly = []
-        for n in xrange(5):
+        for n in range(5):
             poly.extend([x.strip() for x in
                 ("""
                 orth.jacobi(%(n)d,0.3,0.9)

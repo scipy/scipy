@@ -9,12 +9,12 @@ from warnings import warn
 
 import numpy as np
 
-from sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
+from .sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix, csr_sample_values
-from sputils import upcast, isintlike
+from .sputils import upcast, isintlike
 
 
-from compressed import _cs_matrix
+from .compressed import _cs_matrix
 
 class csr_matrix(_cs_matrix):
     """
@@ -105,12 +105,12 @@ class csr_matrix(_cs_matrix):
     """
 
     def transpose(self, copy=False):
-        from csc import csc_matrix
+        from .csc import csc_matrix
         M,N = self.shape
         return csc_matrix((self.data,self.indices,self.indptr), shape=(N,M), copy=copy)
 
     def tolil(self):
-        from lil import lil_matrix
+        from .lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
 
         self.sort_indices() #lil_matrix needs sorted column indices
@@ -118,7 +118,7 @@ class csr_matrix(_cs_matrix):
         ptr,ind,dat = self.indptr,self.indices,self.data
         rows, data  = lil.rows, lil.data
 
-        for n in xrange(self.shape[0]):
+        for n in range(self.shape[0]):
             start = ptr[n]
             end   = ptr[n+1]
             rows[n] = ind[start:end].tolist()
@@ -141,16 +141,16 @@ class csr_matrix(_cs_matrix):
                   self.indptr, self.indices, self.data, \
                   indptr, indices, data)
 
-        from csc import csc_matrix
+        from .csc import csc_matrix
         A = csc_matrix((data, indices, indptr), shape=self.shape)
         A.has_sorted_indices = True
         return A
 
     def tobsr(self, blocksize=None, copy=True):
-        from bsr import bsr_matrix
+        from .bsr import bsr_matrix
 
         if blocksize is None:
-            from spfuncs import estimate_blocksize
+            from .spfuncs import estimate_blocksize
             return self.tobsr(blocksize=estimate_blocksize(self))
 
         elif blocksize == (1,1):

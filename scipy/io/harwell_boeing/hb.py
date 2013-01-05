@@ -326,7 +326,7 @@ def _read_hb_data(content, header):
     try:
         return csc_matrix((val, ind-1, ptr-1),
                           shape=(header.nrows, header.ncols))
-    except ValueError, e:
+    except ValueError as e:
         raise e
 
 
@@ -378,9 +378,9 @@ class HBMatrixType(object):
         "elemental": "E",
     }
 
-    _f2q_type = dict([(j, i) for i, j in _q2f_type.items()])
-    _f2q_structure = dict([(j, i) for i, j in _q2f_structure.items()])
-    _f2q_storage = dict([(j, i) for i, j in _q2f_storage.items()])
+    _f2q_type = dict([(j, i) for i, j in list(_q2f_type.items())])
+    _f2q_structure = dict([(j, i) for i, j in list(_q2f_structure.items())])
+    _f2q_storage = dict([(j, i) for i, j in list(_q2f_storage.items())])
 
     @classmethod
     def from_fortran(cls, fmt):
@@ -400,11 +400,11 @@ class HBMatrixType(object):
         self.structure = structure
         self.storage = storage
 
-        if not value_type in self._q2f_type.keys():
+        if not value_type in list(self._q2f_type.keys()):
             raise ValueError("Unrecognized type %s" % value_type)
-        if not structure in self._q2f_structure.keys():
+        if not structure in list(self._q2f_structure.keys()):
             raise ValueError("Unrecognized structure %s" % structure)
-        if not storage in self._q2f_storage.keys():
+        if not storage in list(self._q2f_storage.keys()):
             raise ValueError("Unrecognized storage %s" % storage)
 
     @property
@@ -493,7 +493,7 @@ def hb_read(file):
         hb = HBFile(fid)
         return hb.read_matrix()
 
-    if isinstance(file, basestring):
+    if isinstance(file, str):
         fid = open(file)
         try:
             return _get_matrix(fid)
@@ -537,7 +537,7 @@ def hb_write(file, m, hb_info=None):
         hb = HBFile(fid, hb_info)
         return hb.write_matrix(m)
 
-    if isinstance(file, basestring):
+    if isinstance(file, str):
         fid = open(file, "w")
         try:
             return _set_matrix(fid)

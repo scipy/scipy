@@ -7,10 +7,10 @@ from warnings import warn
 
 import numpy as np
 
-from base import spmatrix, isspmatrix, SparseEfficiencyWarning
-from data import _data_matrix
-import sparsetools
-from sputils import upcast, upcast_char, to_native, isdense, isshape, \
+from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
+from .data import _data_matrix
+from . import sparsetools
+from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
      getdtype, isscalarlike, isintlike
 
 
@@ -40,7 +40,7 @@ class _cs_matrix(_data_matrix):
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
-                    from coo import coo_matrix
+                    from .coo import coo_matrix
                     other = self.__class__( coo_matrix(arg1, shape=shape) )
                     self._set_self( other )
                 elif len(arg1) == 3:
@@ -60,7 +60,7 @@ class _cs_matrix(_data_matrix):
             except:
                 raise ValueError("unrecognized %s_matrix constructor usage" %
                         self.format)
-            from coo import coo_matrix
+            from .coo import coo_matrix
             self._set_self( self.__class__(coo_matrix(arg1, dtype=dtype)) )
 
         # Read matrix dimensions given, if any
@@ -399,7 +399,7 @@ class _cs_matrix(_data_matrix):
 
         indices = []
 
-        for ind in xrange(self.indptr[i], self.indptr[i+1]):
+        for ind in range(self.indptr[i], self.indptr[i+1]):
             if self.indices[ind] >= start and self.indices[ind] < stop:
                 indices.append(ind)
 
@@ -551,7 +551,7 @@ class _cs_matrix(_data_matrix):
 
         row,col = self._swap((major_indices,minor_indices))
 
-        from coo import coo_matrix
+        from .coo import coo_matrix
         return coo_matrix((data,(row,col)), self.shape)
 
     def toarray(self, order=None, out=None):

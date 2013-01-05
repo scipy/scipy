@@ -12,9 +12,10 @@ import numpy as np
 
 from warnings import warn
 
-from optimize import MemoizeJac, Result, _check_unknown_options
-from minpack import _root_hybr, leastsq
-import nonlin
+from .optimize import MemoizeJac, Result, _check_unknown_options
+from .minpack import _root_hybr, leastsq
+from . import nonlin
+import collections
 
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
          options=None):
@@ -145,7 +146,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
              RuntimeWarning)
 
     # fun also returns the jacobian
-    if not callable(jac) and meth in ('hybr', 'lm'):
+    if not isinstance(jac, collections.Callable) and meth in ('hybr', 'lm'):
         if bool(jac):
             fun = MemoizeJac(fun)
             jac = fun.derivative

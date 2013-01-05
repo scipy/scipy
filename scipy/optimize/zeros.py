@@ -1,7 +1,7 @@
 
 import warnings
 
-import _zeros
+from . import _zeros
 from numpy import finfo, sign, sqrt
 
 _iter = 100

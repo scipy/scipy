@@ -88,9 +88,9 @@ import warnings
 
 from numpy import asarray, array, zeros, int32, isscalar, real, imag
 
-import vode as _vode
-import _dop
-import lsoda as _lsoda
+from . import vode as _vode
+from . import _dop
+from . import lsoda as _lsoda
 
 
 #------------------------------------------------------------------------------

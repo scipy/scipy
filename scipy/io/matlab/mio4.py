@@ -8,11 +8,12 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-from miobase import MatFileReader, docfiller, matdims, \
+from .miobase import MatFileReader, docfiller, matdims, \
      read_dtype, convert_dtypes, arr_to_chars, arr_dtype_number, \
      MatWriteError
 
-from mio_utils import squeeze_element, chars_to_strings
+from .mio_utils import squeeze_element, chars_to_strings
+from functools import reduce
 
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
@@ -372,7 +373,7 @@ class MatFile4Reader(MatFileReader):
             variable name, or sequence of variable names to get from Mat file /
             file stream.  If None, then get all variables in file
         '''
-        if isinstance(variable_names, basestring):
+        if isinstance(variable_names, str):
             variable_names = [variable_names]
         self.mat_stream.seek(0)
         # set up variable reader
@@ -610,5 +611,5 @@ class MatFile4Writer(object):
         # ``write_header`` input argument.  It's there for compatibility
         # with the matlab 5 version of this method
         self._matrix_writer = VarWriter4(self)
-        for name, var in mdict.items():
+        for name, var in list(mdict.items()):
             self._matrix_writer.write(var, name)

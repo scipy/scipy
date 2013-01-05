@@ -172,7 +172,7 @@ import types
 import warnings
 
 import numpy as np
-import _hierarchy_wrap
+from . import _hierarchy_wrap
 import scipy.spatial.distance as distance
 
 
@@ -615,7 +615,7 @@ def linkage(y, method='single', metric='euclidean'):
     if len(s) == 1:
         distance.is_valid_y(y, throw=True, name='y')
         d = distance.num_obs_y(y)
-        if method not in _cpy_non_euclid_methods.keys():
+        if method not in list(_cpy_non_euclid_methods.keys()):
             raise ValueError("Valid methods when the raw observations are "
                              "omitted are 'single', 'complete', 'weighted', "
                              "and 'average'.")
@@ -631,12 +631,12 @@ def linkage(y, method='single', metric='euclidean'):
         m = s[1]
         if method not in _cpy_linkage_methods:
             raise ValueError('Invalid method: %s' % method)
-        if method in _cpy_non_euclid_methods.keys():
+        if method in list(_cpy_non_euclid_methods.keys()):
             dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_wrap(dm, Z, n, \
                                        int(_cpy_non_euclid_methods[method]))
-        elif method in _cpy_euclid_methods.keys():
+        elif method in list(_cpy_euclid_methods.keys()):
             if metric != 'euclidean':
                 raise ValueError(('Method %s requires the distance metric to '
                                  'be euclidean') % s)
@@ -868,12 +868,12 @@ def to_tree(Z, rd=False):
     d = [None] * (n * 2 - 1)
 
     # Create the nodes corresponding to the n original objects.
-    for i in xrange(0, n):
+    for i in range(0, n):
         d[i] = ClusterNode(i)
 
     nd = None
 
-    for i in xrange(0, n - 1):
+    for i in range(0, n - 1):
         fi = int(Z[i, 0])
         fj = int(Z[i, 1])
         if fi > i + n:
@@ -1231,7 +1231,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
             else:
                 raise ValueError('Inconsistency matrix contains negative '
                                  'link counts.')
-    except Exception, e:
+    except Exception as e:
         if throw:
             raise
         if warning:
@@ -1345,7 +1345,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
 #                                  % name)
 #             else:
 #                 raise ValueError('Linkage does not use all clusters.')
-    except Exception, e:
+    except Exception as e:
         if throw:
             raise
         if warning:
@@ -1356,7 +1356,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
 
 def _check_hierarchy_uses_cluster_before_formed(Z):
     n = Z.shape[0] + 1
-    for i in xrange(0, n - 1):
+    for i in range(0, n - 1):
         if Z[i, 0] >= n + i or Z[i, 1] >= n + i:
             return True
     return False
@@ -1365,7 +1365,7 @@ def _check_hierarchy_uses_cluster_before_formed(Z):
 def _check_hierarchy_uses_cluster_more_than_once(Z):
     n = Z.shape[0] + 1
     chosen = set([])
-    for i in xrange(0, n - 1):
+    for i in range(0, n - 1):
         if (Z[i, 0] in chosen) or (Z[i, 1] in chosen) or Z[i, 0] == Z[i, 1]:
             return True
         chosen.add(Z[i, 0])
@@ -1376,7 +1376,7 @@ def _check_hierarchy_uses_cluster_more_than_once(Z):
 def _check_hierarchy_not_all_clusters_used(Z):
     n = Z.shape[0] + 1
     chosen = set([])
-    for i in xrange(0, n - 1):
+    for i in range(0, n - 1):
         chosen.add(int(Z[i, 0]))
         chosen.add(int(Z[i, 1]))
     must_chosen = set(range(0, 2 * n - 2))
@@ -1811,7 +1811,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     for color in colors_used:
         color_to_lines[color] = []
     for (xline, yline, color) in zip(xlines, ylines, color_list):
-        color_to_lines[color].append(zip(xline, yline))
+        color_to_lines[color].append(list(zip(xline, yline)))
 
     colors_to_collections = {}
     # Construct the collections.
@@ -1874,9 +1874,9 @@ def set_link_color_palette(palette):
 
     """
 
-    if type(palette) not in (types.ListType, types.TupleType):
+    if type(palette) not in (list, tuple):
         raise TypeError("palette must be a list or tuple")
-    _ptypes = [type(p) == types.StringType for p in palette]
+    _ptypes = [type(p) == bytes for p in palette]
 
     if False in _ptypes:
         raise TypeError("all palette list elements must be color strings")
@@ -2088,7 +2088,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     n = Zs[0] + 1
-    if type(p) in (types.IntType, types.FloatType):
+    if type(p) in (int, float):
         p = int(p)
     else:
         raise TypeError('The second argument must be a number')
@@ -2117,7 +2117,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     else:
         ivl = []
     if color_threshold is None or \
-       (type(color_threshold) == types.StringType and
+       (type(color_threshold) == bytes and
                            color_threshold == 'default'):
         color_threshold = max(Z[:, 2]) * 0.7
     R = {'icoord': icoord_list, 'dcoord': dcoord_list, 'ivl': ivl,
@@ -2454,7 +2454,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     dcoord_list.append([uah, h, h, ubh])
     if link_color_func is not None:
         v = link_color_func(int(i))
-        if type(v) != types.StringType:
+        if type(v) != bytes:
             raise TypeError("link_color_func must return a matplotlib "
                             "color string!")
         color_list.append(v)
@@ -2500,8 +2500,8 @@ def is_isomorphic(T1, T2):
         raise ValueError('T1 and T2 must have the same number of elements.')
     n = T1S[0]
     d = {}
-    for i in xrange(0, n):
-        if T1[i] in d.keys():
+    for i in range(0, n):
+        if T1[i] in list(d.keys()):
             if d[T1[i]] != T2[i]:
                 return False
         else:
@@ -2602,7 +2602,7 @@ def maxRstat(Z, R, i):
     R = np.asarray(R, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
-    if type(i) is not types.IntType:
+    if type(i) is not int:
         raise TypeError('The third argument must be an integer.')
     if i < 0 or i > 3:
         raise ValueError('i must be an integer between 0 and 3 inclusive.')
@@ -2711,13 +2711,13 @@ def _leader_identify(tr, T):
         right = tr.get_right()
         lfid = _leader_identify(left, T)
         rfid = _leader_identify(right, T)
-        print 'ndid: %d lid: %d lfid: %d rid: %d rfid: %d' \
-              % (tr.get_id(), left.get_id(), lfid, right.get_id(), rfid)
+        print('ndid: %d lid: %d lfid: %d rid: %d rfid: %d' \
+              % (tr.get_id(), left.get_id(), lfid, right.get_id(), rfid))
         if lfid != rfid:
             if lfid != -1:
-                print 'leader: %d with tag %d' % (left.id, lfid)
+                print('leader: %d with tag %d' % (left.id, lfid))
             if rfid != -1:
-                print 'leader: %d with tag %d' % (right.id, rfid)
+                print('leader: %d with tag %d' % (right.id, rfid))
             return -1
         else:
             return lfid

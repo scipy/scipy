@@ -17,7 +17,7 @@ The ones without any suffix should be the most common one.
 """
 
 import math as _math
-from codata import value as _cd
+from .codata import value as _cd
 import numpy as _np
 
 #mathematical constants

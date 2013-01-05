@@ -3,9 +3,9 @@
 import numpy
 
 # Local imports
-from blas import get_blas_funcs
-from lapack import get_lapack_funcs
-from misc import _datacopied
+from .blas import get_blas_funcs
+from .lapack import get_lapack_funcs
+from .misc import _datacopied
 
 # XXX: what is qr_old, should it be kept?
 __all__ = ['qr', 'qr_multiply', 'rq', 'qr_old']

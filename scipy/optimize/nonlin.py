@@ -119,7 +119,8 @@ import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
 import inspect
-from linesearch import scalar_search_wolfe1, scalar_search_armijo
+from .linesearch import scalar_search_wolfe1, scalar_search_armijo
+import collections
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
@@ -291,7 +292,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     eta_treshold = 0.1
     eta = 1e-3
 
-    for n in xrange(maxiter):
+    for n in range(maxiter):
         status = condition.check(Fx, x, dx)
         if status:
             break
@@ -505,7 +506,7 @@ class Jacobian(object):
     def __init__(self, **kw):
         names = ["solve", "update", "matvec", "rmatvec", "rsolve",
                  "matmat", "todense", "shape", "dtype"]
-        for name, value in kw.items():
+        for name, value in list(kw.items()):
             if name not in names:
                 raise ValueError("Unknown keyword argument %s" % name)
             if value is not None:
@@ -587,7 +588,7 @@ def asjacobian(J):
                         setup=getattr(J, 'setup'),
                         dtype=J.dtype,
                         shape=J.shape)
-    elif callable(J):
+    elif isinstance(J, collections.Callable):
         # Assume it's a function J(x) that returns the Jacobian
         class Jac(Jacobian):
             def update(self, x, F):
@@ -849,7 +850,7 @@ class LowRankMatrix(object):
         C = dot(C, inv(WH))
         D = dot(D, WH.T.conj())
 
-        for k in xrange(q):
+        for k in range(q):
             self.cs[k] = C[:,k].copy()
             self.ds[k] = D[:,k].copy()
 
@@ -1084,7 +1085,7 @@ class Anderson(GenericBroyden):
             return dx
 
         df_f = np.empty(n, dtype=f.dtype)
-        for k in xrange(n):
+        for k in range(n):
             df_f[k] = vdot(self.df[k], f)
 
         try:
@@ -1095,7 +1096,7 @@ class Anderson(GenericBroyden):
             del self.df[:]
             return dx
 
-        for m in xrange(n):
+        for m in range(n):
             dx += gamma[m]*(self.dx[m] + self.alpha*self.df[m])
         return dx
 
@@ -1107,18 +1108,18 @@ class Anderson(GenericBroyden):
             return dx
 
         df_f = np.empty(n, dtype=f.dtype)
-        for k in xrange(n):
+        for k in range(n):
             df_f[k] = vdot(self.df[k], f)
 
         b = np.empty((n, n), dtype=f.dtype)
-        for i in xrange(n):
-            for j in xrange(n):
+        for i in range(n):
+            for j in range(n):
                 b[i,j] = vdot(self.df[i], self.dx[j])
                 if i == j and self.w0 != 0:
                     b[i,j] -= vdot(self.df[i], self.df[i])*self.w0**2*self.alpha
         gamma = solve(b, df_f)
 
-        for m in xrange(n):
+        for m in range(n):
             dx += gamma[m]*(self.df[m] + self.dx[m]/self.alpha)
         return dx
 
@@ -1136,8 +1137,8 @@ class Anderson(GenericBroyden):
         n = len(self.dx)
         a = np.zeros((n, n), dtype=f.dtype)
 
-        for i in xrange(n):
-            for j in xrange(i, n):
+        for i in range(n):
+            for j in range(i, n):
                 if i == j:
                     wd = self.w0**2
                 else:
@@ -1397,7 +1398,7 @@ class KrylovJacobian(Jacobian):
             #      since it's not an inexact Newton method.
             self.method_kw.setdefault('store_outer_Av', False)
 
-        for key, value in kw.items():
+        for key, value in list(kw.items()):
             if not key.startswith('inner_'):
                 raise ValueError("Unknown parameter %s" % key)
             self.method_kw[key[6:]] = value
@@ -1467,7 +1468,7 @@ def _nonlin_wrapper(name, jac):
     """
     import inspect
     args, varargs, varkw, defaults = inspect.getargspec(jac.__init__)
-    kwargs = zip(args[-len(defaults):], defaults)
+    kwargs = list(zip(args[-len(defaults):], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:
         kw_str = ", " + kw_str
@@ -1491,7 +1492,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
                              kwkw=kwkw_str)
     ns = {}
     ns.update(globals())
-    exec wrapper in ns
+    exec(wrapper, ns)
     func = ns[name]
     func.__doc__ = jac.__doc__
     _set_doc(func)

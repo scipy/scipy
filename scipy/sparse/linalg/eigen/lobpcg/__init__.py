@@ -101,7 +101,7 @@ http://www-math.cudenver.edu/~aknyazev/software/BLOPEX/
 """
 
 
-from lobpcg import *
+from .lobpcg import *
 
 from numpy.testing import Tester
 test = Tester().test

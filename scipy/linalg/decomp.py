@@ -21,9 +21,9 @@ from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
 
 # Local imports
 from scipy.linalg import calc_lwork
-from misc import LinAlgError, _datacopied
-from lapack import get_lapack_funcs
-from blas import get_blas_funcs
+from .misc import LinAlgError, _datacopied
+from .lapack import get_lapack_funcs
+from .blas import get_blas_funcs
 
 
 _I = cast['F'](1j)

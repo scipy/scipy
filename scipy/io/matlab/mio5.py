@@ -78,7 +78,7 @@ import zlib
 if sys.version_info[0] >= 3:
     from io import BytesIO
 else:
-    from cStringIO import StringIO as BytesIO
+    from io import StringIO as BytesIO
 import warnings
 
 import numpy as np
@@ -86,17 +86,17 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-import byteordercodes as boc
+from . import byteordercodes as boc
 
-from miobase import MatFileReader, docfiller, matdims, \
+from .miobase import MatFileReader, docfiller, matdims, \
      read_dtype, arr_to_chars, arr_dtype_number, \
      MatWriteError, MatReadError, MatReadWarning
 
 # Reader object for matlab 5 format variables
-from mio5_utils import VarReader5
+from .mio5_utils import VarReader5
 
 # Constants and helper objects
-from mio5_params import MatlabObject, MatlabFunction, \
+from .mio5_params import MatlabObject, MatlabFunction, \
         MDTYPES, NP_TO_MTYPES, NP_TO_MXTYPES, \
         miCOMPRESSED, miMATRIX, miINT8, miUTF8, miUINT32, \
         mxCELL_CLASS, mxSTRUCT_CLASS, mxOBJECT_CLASS, mxCHAR_CLASS, \
@@ -261,7 +261,7 @@ class MatFile5Reader(MatFileReader):
 
         If variable_names is None, then get all variables in file
         '''
-        if isinstance(variable_names, basestring):
+        if isinstance(variable_names, str):
             variable_names = [variable_names]
         self.mat_stream.seek(0)
         # Here we pass all the parameters in self to the reading objects
@@ -290,7 +290,7 @@ class MatFile5Reader(MatFileReader):
                 continue
             try:
                 res = self.read_var_array(hdr, process)
-            except MatReadError, err:
+            except MatReadError as err:
                 warnings.warn(
                     'Unreadable variable "%s", because "%s"' % \
                     (name, err),
@@ -463,14 +463,14 @@ def to_writeable(source):
                   hasattr(source, 'items'))
     # Objects that don't implement mappings, but do have dicts
     if not is_mapping and hasattr(source, '__dict__'):
-        source = dict((key, value) for key, value in source.__dict__.items()
+        source = dict((key, value) for key, value in list(source.__dict__.items())
                       if not key.startswith('_'))
         is_mapping = True
     if is_mapping:
         dtype = []
         values = []
-        for field, value in source.items():
-            if (isinstance(field, basestring) and
+        for field, value in list(source.items()):
+            if (isinstance(field, str) and
                 not field[0] in '_0123456789'):
                 dtype.append((field,object))
                 values.append(value)
@@ -847,7 +847,7 @@ class MatFile5Writer(object):
         if write_header:
             self.write_file_header()
         self._matrix_writer = VarWriter5(self)
-        for name, var in mdict.items():
+        for name, var in list(mdict.items()):
             if name[0] == '_':
                 continue
             is_global = name in self.global_vars

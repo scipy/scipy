@@ -33,5 +33,5 @@ if __name__ == "__main__":
 
     clusters = cluster_data(data,2)
     for i in range(len(clusters)):
-        print 'cluster %d:' % i
-        print clusters[i]
+        print('cluster %d:' % i)
+        print(clusters[i])

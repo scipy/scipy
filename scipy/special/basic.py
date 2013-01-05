@@ -6,13 +6,13 @@ import numpy as np
 from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
         less, vectorize, inexact, nan, zeros, sometrue, atleast_1d
-from _ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
+from ._ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
         hankel1, hankel2, yv, kv, gammaln, ndtri
-import _ufuncs
-import _ufuncs_cxx
+from . import _ufuncs
+from . import _ufuncs_cxx
 import types
-import specfun
-import orthogonal
+from . import specfun
+from . import orthogonal
 import warnings
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
@@ -69,7 +69,7 @@ def diric(x,n):
         ytype = float
     y = zeros(x.shape,ytype)
 
-    mask1 = (n <= 0) | (n <> floor(n))
+    mask1 = (n <= 0) | (n != floor(n))
     place(y,mask1,nan)
 
     z = asarray(x / 2.0 / pi)
@@ -181,7 +181,7 @@ def bessel_diff_formula(v, z, n, L, phase):
     # For K, you can pull out the exp((v-k)*pi*i) into the caller
     p = 1.0
     s = L(v-n, z)
-    for i in xrange(1, n+1):
+    for i in range(1, n+1):
         p = phase * (p * (n-i+1)) / i   # = choose(k, i)
         s += p*L(v-n + i*2, z)
     return s / (2.**n)
@@ -189,7 +189,7 @@ def bessel_diff_formula(v, z, n, L, phase):
 def jvp(v,z,n=1):
     """Return the nth derivative of Jv(z) with respect to z.
     """
-    if not isinstance(n,types.IntType) or (n<0):
+    if not isinstance(n,int) or (n<0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return jv(v,z)
@@ -200,7 +200,7 @@ def jvp(v,z,n=1):
 def yvp(v,z,n=1):
     """Return the nth derivative of Yv(z) with respect to z.
     """
-    if not isinstance(n,types.IntType) or (n<0):
+    if not isinstance(n,int) or (n<0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return yv(v,z)
@@ -211,7 +211,7 @@ def yvp(v,z,n=1):
 def kvp(v,z,n=1):
     """Return the nth derivative of Kv(z) with respect to z.
     """
-    if not isinstance(n,types.IntType) or (n<0):
+    if not isinstance(n,int) or (n<0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return kv(v,z)
@@ -221,7 +221,7 @@ def kvp(v,z,n=1):
 def ivp(v,z,n=1):
     """Return the nth derivative of Iv(z) with respect to z.
     """
-    if not isinstance(n,types.IntType) or (n<0):
+    if not isinstance(n,int) or (n<0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return iv(v,z)
@@ -231,7 +231,7 @@ def ivp(v,z,n=1):
 def h1vp(v,z,n=1):
     """Return the nth derivative of H1v(z) with respect to z.
     """
-    if not isinstance(n,types.IntType) or (n<0):
+    if not isinstance(n,int) or (n<0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return hankel1(v,z)
@@ -242,7 +242,7 @@ def h1vp(v,z,n=1):
 def h2vp(v,z,n=1):
     """Return the nth derivative of H2v(z) with respect to z.
     """
-    if not isinstance(n,types.IntType) or (n<0):
+    if not isinstance(n,int) or (n<0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return hankel2(v,z)
@@ -537,7 +537,7 @@ def mathieu_even_coef(m,q):
         qm=17.0+3.1*sqrt(q)-.126*q+.0037*sqrt(q)*q
     km = int(qm+0.5*m)
     if km > 251:
-        print "Warning, too many predicted coefficients."
+        print("Warning, too many predicted coefficients.")
     kd = 1
     m = int(floor(m))
     if m % 2:
@@ -564,7 +564,7 @@ def mathieu_odd_coef(m,q):
         qm=17.0+3.1*sqrt(q)-.126*q+.0037*sqrt(q)*q
     km = int(qm+0.5*m)
     if km > 251:
-        print "Warning, too many predicted coefficients."
+        print("Warning, too many predicted coefficients.")
     kd = 4
     m = int(floor(m))
     if m % 2:

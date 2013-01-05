@@ -8,7 +8,7 @@ Continuous to discrete transformations for state-space and transfer function.
 import numpy as np
 from scipy import linalg
 
-from ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk
+from .ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk
 
 __all__ = ['cont2discrete']
 

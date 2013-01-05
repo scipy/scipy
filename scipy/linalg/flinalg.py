@@ -8,7 +8,7 @@ __all__ = ['get_flinalg_funcs']
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
 try:
-    import _flinalg
+    from . import _flinalg
 except ImportError:
     _flinalg = None
 #    from numpy.distutils.misc_util import PostponedException

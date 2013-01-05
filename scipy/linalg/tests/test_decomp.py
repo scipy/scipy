@@ -243,7 +243,7 @@ class TestEig(object):
         # machines -- so we need to test several values
         olderr = np.seterr(all='ignore')
         try:
-            for k in xrange(100):
+            for k in range(100):
                 A, B = matrices(omega=k*5./100)
                 self._check_gen_eig(A, B)
         finally:
@@ -333,7 +333,7 @@ class TestEigBanded(TestCase):
         LDAB = self.KU + 1
         self.bandmat_sym  = zeros((LDAB, N), dtype=float)
         self.bandmat_herm = zeros((LDAB, N), dtype=complex)
-        for i in xrange(LDAB):
+        for i in range(LDAB):
             self.bandmat_sym[LDAB-i-1,i:N]  = diag(self.sym_mat, i)
             self.bandmat_herm[LDAB-i-1,i:N] = diag(self.herm_mat, i)
 
@@ -343,7 +343,7 @@ class TestEigBanded(TestCase):
         LDAB = 2*self.KL + self.KU + 1
         self.bandmat_real = zeros((LDAB, N), dtype=float)
         self.bandmat_real[2*self.KL,:] = diag(self.real_mat)     # diagonal
-        for i in xrange(self.KL):
+        for i in range(self.KL):
             # superdiagonals
             self.bandmat_real[2*self.KL-1-i,i+1:N]   = diag(self.real_mat, i+1)
             # subdiagonals
@@ -351,7 +351,7 @@ class TestEigBanded(TestCase):
 
         self.bandmat_comp = zeros((LDAB, N), dtype=complex)
         self.bandmat_comp[2*self.KL,:] = diag(self.comp_mat)     # diagonal
-        for i in xrange(self.KL):
+        for i in range(self.KL):
             # superdiagonals
             self.bandmat_comp[2*self.KL-1-i,i+1:N]   = diag(self.comp_mat, i+1)
             # subdiagonals
@@ -525,7 +525,7 @@ class TestEigBanded(TestCase):
 
         # extract matrix u from lu_symm_band
         u = diag(lu_symm_band[2*self.KL,:])
-        for i in xrange(self.KL + self.KU):
+        for i in range(self.KL + self.KU):
             u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
 
         p_lin, l_lin, u_lin = lu(self.real_mat, permute_l=0)
@@ -540,7 +540,7 @@ class TestEigBanded(TestCase):
 
         # extract matrix u from lu_symm_band
         u = diag(lu_symm_band[2*self.KL,:])
-        for i in xrange(self.KL + self.KU):
+        for i in range(self.KL + self.KU):
             u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
 
         p_lin, l_lin, u_lin =lu(self.comp_mat, permute_l=0)

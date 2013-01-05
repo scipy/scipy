@@ -12,8 +12,9 @@ Functions
 
 import numpy as np
 from scipy.optimize import _cobyla
-from optimize import Result, _check_unknown_options
+from .optimize import Result, _check_unknown_options
 from warnings import warn
+import collections
 
 __all__ = ['fmin_cobyla']
 
@@ -137,14 +138,14 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     try:
         m = len(cons)
     except TypeError:
-        if callable(cons):
+        if isinstance(cons, collections.Callable):
             m = 1
             cons = [cons]
         else:
             raise TypeError(err)
     else:
         for thisfunc in cons:
-            if not callable(thisfunc):
+            if not isinstance(thisfunc, collections.Callable):
                 raise TypeError(err)
 
     if consargs is None:
@@ -259,4 +260,4 @@ if __name__ == '__main__':
 
     x = fmin_cobyla(fun, [1., 1.], cons, iprint = 3, disp = 1)
 
-    print '\nTheoretical solution: %e, %e' % (1. / sqrt(2.), -1. / sqrt(2.))
+    print('\nTheoretical solution: %e, %e' % (1. / sqrt(2.), -1. / sqrt(2.)))

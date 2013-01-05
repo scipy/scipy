@@ -1,5 +1,5 @@
 import os
-from cStringIO import StringIO
+from io import StringIO
 import tempfile
 
 import numpy as np

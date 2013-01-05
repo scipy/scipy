@@ -144,8 +144,8 @@ class TestCloughTocher2DInterpolator(object):
         try:
             assert_allclose(a, b, **kw)
         except AssertionError:
-            print abs(a - b)
-            print ip.grad
+            print(abs(a - b))
+            print(ip.grad)
             raise
 
     def test_linear_smoketest(self):

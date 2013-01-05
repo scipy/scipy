@@ -55,8 +55,8 @@ Example session::
 #__doc__ = '\n\n'.join( (__doc__,  umfpack.__doc__) )
 #del umfpack
 
-from linsolve import *
+from .linsolve import *
 
-__all__ = filter(lambda s:not s.startswith('_'),dir())
+__all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test

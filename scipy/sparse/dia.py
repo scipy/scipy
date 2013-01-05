@@ -6,10 +6,10 @@ __all__ = ['dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
 
-from base import isspmatrix, _formats
-from data import _data_matrix
-from sputils import isshape, upcast, upcast_char, getdtype
-from sparsetools import dia_matvec
+from .base import isspmatrix, _formats
+from .data import _data_matrix
+from .sputils import isshape, upcast, upcast_char, getdtype
+from .sparsetools import dia_matvec
 
 class dia_matrix(_data_matrix):
     """Sparse matrix with DIAgonal storage
@@ -113,7 +113,7 @@ class dia_matrix(_data_matrix):
             except:
                 raise ValueError("unrecognized form for" \
                         " %s_matrix constructor" % self.format)
-            from coo import coo_matrix
+            from .coo import coo_matrix
             A = coo_matrix(arg1, dtype=dtype).todia()
             self.data    = A.data
             self.offsets = A.offsets
@@ -211,7 +211,7 @@ class dia_matrix(_data_matrix):
         mask &= data != 0
         row,col,data = row[mask],col[mask],data[mask]
 
-        from coo import coo_matrix
+        from .coo import coo_matrix
         return coo_matrix((data,(row,col)), shape=self.shape)
 
     # needed by _data_matrix

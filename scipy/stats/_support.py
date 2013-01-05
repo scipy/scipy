@@ -63,7 +63,7 @@ def unique(inarray):
             for item in inarray[1:]:
                 newflag = 1
                 for unq in uniques:  # NOTE: cmp --> 0=same, -1=<, 1=>
-                    test = np.sum(abs(np.array(map(cmp,item,unq))),axis=0)
+                    test = np.sum(abs(np.array(list(map(cmp,item,unq)))),axis=0)
                     if test == 0:   # if item identical to any 1 row in uniques
                         newflag = 0 # then not a novel item to add
                         break
@@ -175,7 +175,7 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
 
     """
     if cfcn is None:
-        cfcn = lambda(x): np.mean(x, axis=0)
+        cfcn = lambda x: np.mean(x, axis=0)
     a = asarray(a)
     if keepcols == []:
         avgcol = colex(a,collapsecols)

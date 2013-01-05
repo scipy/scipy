@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csc, isspmatrix_csr
-from _tools import csgraph_to_dense, csgraph_from_dense,\
+from ._tools import csgraph_to_dense, csgraph_from_dense,\
     csgraph_masked_from_dense, csgraph_from_masked
 
 DTYPE = np.float64

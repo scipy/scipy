@@ -25,14 +25,14 @@ TODO: Make interfaces to the following fitpack functions:
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
     'bisplrep', 'bisplev', 'insert']
 __version__ = "$Revision$"[10:-1]
-import _fitpack
+from . import _fitpack
 from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
      dot, sin, cos, pi, arange, empty, int32, asarray
 myasarray = atleast_1d
 
 # Try to replace _fitpack interface with
 #  f2py-generated version
-import dfitpack
+from . import dfitpack
 
 _iermess = {0:["""\
     The spline has a residual sum of squares fp such that abs(fp-s)/s<=0.001""",None],
@@ -211,7 +211,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     if per:
         for i in range(idim):
             if x[i][0]!=x[i][-1]:
-                if quiet<2:print 'Warning: Setting x[%d][%d]=x[%d][0]'%(i,m,i)
+                if quiet<2:print('Warning: Setting x[%d][%d]=x[%d][0]'%(i,m,i))
                 x[i][-1]=x[i][0]
     if not 0 < idim < 11:
         raise TypeError('0 < idim < 11 must hold')
@@ -268,11 +268,11 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     c.shape=idim,n-k-1
     tcku = [t,list(c),k],u
     if ier<=0 and not quiet:
-        print _iermess[ier][0]
-        print "\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s)
+        print(_iermess[ier][0])
+        print("\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s))
     if ier>0 and not full_output:
         if ier in [1,2,3]:
-            print "Warning: "+_iermess[ier][0]
+            print("Warning: "+_iermess[ier][0])
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
@@ -403,7 +403,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     """
     if task<=0:
         _curfit_cache = {}
-    x,y=map(myasarray,[x,y])
+    x,y=list(map(myasarray,[x,y]))
     m=len(x)
     if w is None:
         w=ones(m,float)
@@ -456,11 +456,11 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         n,c,fp,ier = dfitpack.percur(task, x, y, w, t, wrk, iwrk, k, s)
     tck = (t[:n],c[:n],k)
     if ier<=0 and not quiet:
-        print _iermess[ier][0]
-        print "\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s)
+        print(_iermess[ier][0])
+        print("\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s))
     if ier>0 and not full_output:
         if ier in [1,2,3]:
-            print "Warning: "+_iermess[ier][0]
+            print("Warning: "+_iermess[ier][0])
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
@@ -538,7 +538,7 @@ def splev(x, tck, der=0, ext=0):
     except:
         parametric = False
     if parametric:
-        return map(lambda c, x=x, t=t, k=k, der=der : splev(x, [t,c,k], der, ext), c)
+        return list(map(lambda c, x=x, t=t, k=k, der=der : splev(x, [t,c,k], der, ext), c))
     else:
         if not (0 <= der <= k):
             raise ValueError("0<=der=%d<=k=%d must hold"%(der,k))
@@ -605,7 +605,7 @@ def splint(a,b,tck,full_output=0):
     except:
         parametric = False
     if parametric:
-        return _ntlist(map(lambda c,a=a,b=b,t=t,k=k:splint(a,b,[t,c,k]),c))
+        return _ntlist(list(map(lambda c,a=a,b=b,t=t,k=k:splint(a,b,[t,c,k]),c)))
     else:
         aint,wrk=_fitpack._splint(t,c,k,a,b)
         if full_output: return aint,wrk
@@ -659,7 +659,7 @@ def sproot(tck,mest=10):
     except:
         parametric = False
     if parametric:
-        return _ntlist(map(lambda c,t=t,k=k,mest=mest:sproot([t,c,k],mest),c))
+        return _ntlist(list(map(lambda c,t=t,k=k,mest=mest:sproot([t,c,k],mest),c)))
     else:
         if len(t)<8:
             raise TypeError("The number of knots %d>=8" % len(t))
@@ -668,7 +668,7 @@ def sproot(tck,mest=10):
             raise TypeError("Invalid input data. t1<=..<=t4<t5<..<tn-3<=..<=tn must hold.")
         if ier==0: return z
         if ier==1:
-            print "Warning: the number of zeros exceeds mest"
+            print("Warning: the number of zeros exceeds mest")
             return z
         raise TypeError("Unknown error")
 
@@ -716,11 +716,11 @@ def spalde(x,tck):
     except:
         parametric = False
     if parametric:
-        return _ntlist(map(lambda c,x=x,t=t,k=k:spalde(x,[t,c,k]),c))
+        return _ntlist(list(map(lambda c,x=x,t=t,k=k:spalde(x,[t,c,k]),c)))
     else:
         x = myasarray(x)
         if len(x)>1:
-            return map(lambda x,tck=tck:spalde(x,tck),x)
+            return list(map(lambda x,tck=tck:spalde(x,tck),x))
         d,ier=_fitpack._spalde(t,c,k,x[0])
         if ier==0: return d
         if ier==10:
@@ -819,8 +819,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
        Numerical Analysis, Oxford University Press, 1993.
 
     """
-    x,y,z=map(myasarray,[x,y,z])
-    x,y,z=map(ravel,[x,y,z])  # ensure 1-d arrays.
+    x,y,z=list(map(myasarray,[x,y,z]))
+    x,y,z=list(map(ravel,[x,y,z]))  # ensure 1-d arrays.
     m=len(x)
     if not (m==len(y)==len(z)):
         raise TypeError('len(x)==len(y)==len(z) must hold.')
@@ -882,14 +882,14 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
 
     ierm=min(11,max(-3,ier))
     if ierm<=0 and not quiet:
-        print _iermess2[ierm][0]
-        print "\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f"%(kx,ky,len(tx),
-                                                           len(ty),m,fp,s)
+        print(_iermess2[ierm][0])
+        print("\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f"%(kx,ky,len(tx),
+                                                           len(ty),m,fp,s))
     if ierm>0 and not full_output:
         if ier in [1,2,3,4,5]:
-            print "Warning: "+_iermess2[ierm][0]
-            print "\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f"%(kx,ky,len(tx),
-                                                           len(ty),m,fp,s)
+            print("Warning: "+_iermess2[ierm][0])
+            print("\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f"%(kx,ky,len(tx),
+                                                           len(ty),m,fp,s))
         else:
             try:
                 raise _iermess2[ierm][1](_iermess2[ierm][0])
@@ -956,7 +956,7 @@ def bisplev(x,y,tck,dx=0,dy=0):
         raise ValueError("0 <= dx = %d < kx = %d must hold" % (dx,kx))
     if not (0<=dy<ky):
         raise ValueError("0 <= dy = %d < ky = %d must hold" % (dy,ky))
-    x,y=map(myasarray,[x,y])
+    x,y=list(map(myasarray,[x,y]))
     if (len(x.shape) != 1) or (len(y.shape) != 1):
         raise ValueError("First two entries should be rank-1 arrays.")
     z,ier=_fitpack._bispev(tx,ty,c,kx,ky,x,y,dx,dy)

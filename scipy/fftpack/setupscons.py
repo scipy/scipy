@@ -15,7 +15,7 @@ def configuration(parent_package='',top_path=None):
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    from fftpack_version import fftpack_version
+    from .fftpack_version import fftpack_version
     setup(version=fftpack_version,
           description='fftpack - Discrete Fourier Transform package',
           author='Pearu Peterson',

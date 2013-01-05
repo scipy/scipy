@@ -2,7 +2,7 @@
 # 1999 -- 2002
 
 
-import sigtools
+from . import sigtools
 from scipy import linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, \
         ifftn, fftfreq
@@ -14,8 +14,9 @@ from numpy import polyadd, polymul, polydiv, polysub, roots, \
         transpose, dot, mean, ndarray, atleast_2d
 import numpy as np
 from scipy.misc import factorial
-from windows import get_window
-from _arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
+from .windows import get_window
+from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
+import collections
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
@@ -960,7 +961,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 
     """
 
-    b, a = map(asarray, (b, a))
+    b, a = list(map(asarray, (b, a)))
     rscale = a[0]
     k, b = polydiv(b, a)
     p = roots(a)
@@ -1020,7 +1021,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     invresz, poly, polyval, unique_roots
 
     """
-    b, a = map(asarray, (b, a))
+    b, a = list(map(asarray, (b, a)))
     gain = a[0]
     brev, arev = b[::-1], a[::-1]
     krev, brev = polydiv(brev, arev)
@@ -1181,7 +1182,7 @@ def resample(x, num, t=None, axis=0, window=None):
     X = fft(x, axis=axis)
     Nx = x.shape[axis]
     if window is not None:
-        if callable(window):
+        if isinstance(window, collections.Callable):
             W = window(fftfreq(Nx))
         elif isinstance(window, ndarray) and window.shape == (Nx,):
             W = window
@@ -1288,7 +1289,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
         # Put data back in original shape.
         tdshape = take(dshape, newdims, 0)
         ret = reshape(newdata, tuple(tdshape))
-        vals = range(1, rnk)
+        vals = list(range(1, rnk))
         olddims = vals[:axis] + [0] + vals[axis:]
         ret = transpose(ret, tuple(olddims))
         return ret

@@ -518,8 +518,8 @@ class _TestCommon:
         frac = .3
         random.seed(0) # make runs repeatable
         A = zeros((L,2))
-        for i in xrange(L):
-            for j in xrange(2):
+        for i in range(L):
+            for j in range(2):
                 r = random.random()
                 if r < frac:
                     A[i,j] = r/frac
@@ -1359,16 +1359,16 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         A[1, 3:10:3] = 7
         B[1, 3:10:3] = 7
         assert_array_equal(A.todense(), B)
-        A[1:5, 0] = range(1,5)
-        B[1:5, 0] = range(1,5)
+        A[1:5, 0] = list(range(1,5))
+        B[1:5, 0] = list(range(1,5))
         assert_array_equal(A.todense(), B)
-        A[0, 1:10:2] = xrange(1,10,2)
-        B[0, 1:10:2] = xrange(1,10,2)
+        A[0, 1:10:2] = range(1,10,2)
+        B[0, 1:10:2] = range(1,10,2)
         assert_array_equal(A.todense(), B)
         caught = 0
         # The next 6 commands should raise exceptions
         try:
-            A[0,0] = range(100)
+            A[0,0] = list(range(100))
         except ValueError:
             caught += 1
         try:
@@ -1376,11 +1376,11 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         except ValueError:
             caught += 1
         try:
-            A[0,:] = range(100)
+            A[0,:] = list(range(100))
         except ValueError:
             caught += 1
         try:
-            A[:,1] = range(100)
+            A[:,1] = list(range(100))
         except ValueError:
             caught += 1
         try:
@@ -1394,7 +1394,7 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         # Empty ctor
         try:
             A = dok_matrix()
-        except TypeError, e:
+        except TypeError as e:
             caught+=1
         assert_equal(caught, 1)
 
@@ -1428,12 +1428,12 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         a[0,0] = 0
         # This assert would fail, because the above assignment would
         # incorrectly call __set_item__ even though the value was 0.
-        assert_((0,0) not in a.keys(), "Unexpected entry (0,0) in keys")
+        assert_((0,0) not in list(a.keys()), "Unexpected entry (0,0) in keys")
 
         # Slice assignments were also affected.
         b = dok_matrix((3,3))
         b[:,0] = 0
-        assert_(len(b.keys())==0, "Unexpected entries in keys")
+        assert_(len(list(b.keys()))==0, "Unexpected entries in keys")
 
     # The following five tests are duplicates from _TestCommon, so they can be
     # marked as knownfail for Python 2.4.  Once 2.4 is no longer supported,
@@ -1505,8 +1505,8 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         frac = .3
         random.seed(0) # make runs repeatable
         A = zeros((L,2))
-        for i in xrange(L):
-            for j in xrange(2):
+        for i in range(L):
+            for j in range(2):
                 r = random.random()
                 if r < frac:
                     A[i,j] = r/frac
@@ -1603,7 +1603,7 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
                 'sub': (B,A - B),
                 'mul': (3,A * 3)}
 
-        for op,(other,expected) in data.iteritems():
+        for op,(other,expected) in data.items():
             result = A.copy()
             getattr(result, '__i%s__' % op)(other)
 

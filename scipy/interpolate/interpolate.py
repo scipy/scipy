@@ -12,9 +12,9 @@ import numpy as np
 import scipy.special as spec
 import math
 
-import fitpack
-import _fitpack
-import dfitpack
+from . import fitpack
+from . import _fitpack
+from . import dfitpack
 
 def reduce_sometrue(a):
     all = a
@@ -42,9 +42,9 @@ def lagrange(x, w):
     """
     M = len(x)
     p = poly1d(0.0)
-    for j in xrange(M):
+    for j in range(M):
         pt = poly1d(w[j])
-        for k in xrange(M):
+        for k in range(M):
             if k == j: continue
             fac = x[j]-x[k]
             pt *= poly1d([1.0,-x[k]])/fac
@@ -142,8 +142,8 @@ class interp2d(object):
 
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
                  fill_value=np.nan):
-        self.x, self.y, self.z = map(asarray, [x, y, z])
-        self.x, self.y = map(ravel, [self.x, self.y])
+        self.x, self.y, self.z = list(map(asarray, [x, y, z]))
+        self.x, self.y = list(map(ravel, [self.x, self.y]))
 
         if self.z.size == len(self.x) * len(self.y):
             rectangular_grid = True
@@ -312,7 +312,7 @@ class interp1d(object):
         if kind in ('linear', 'nearest'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
-            axes = range(y.ndim)
+            axes = list(range(y.ndim))
             del axes[self.axis]
             axes.append(self.axis)
             oriented_y = y.transpose(axes)
@@ -324,7 +324,7 @@ class interp1d(object):
                 self.x_bds = (x[1:] + x[:-1]) / 2.0
                 self._call = self._call_nearest
         else:
-            axes = range(y.ndim)
+            axes = list(range(y.ndim))
             del axes[self.axis]
             axes.insert(0, self.axis)
             oriented_y = y.transpose(axes)
@@ -439,13 +439,13 @@ class interp1d(object):
             return asarray(y_new)
         elif self._kind in ('linear', 'nearest'):
             y_new[..., out_of_bounds] = self.fill_value
-            axes = range(ny - nx)
-            axes[self.axis:self.axis] = range(ny - nx, ny)
+            axes = list(range(ny - nx))
+            axes[self.axis:self.axis] = list(range(ny - nx, ny))
             return y_new.transpose(axes)
         else:
             y_new[out_of_bounds] = self.fill_value
-            axes = range(nx, ny)
-            axes[self.axis:self.axis] = range(nx)
+            axes = list(range(nx, ny))
+            axes[self.axis:self.axis] = list(range(nx))
             return y_new.transpose(axes)
 
     def _check_bounds(self, x_new):
@@ -512,7 +512,7 @@ class ppform(object):
         diff = xx - self.breaks.take(indxs)
         V = np.vander(diff,N=self.K)
         # values = np.diag(dot(V,pp[:,indxs]))
-        values = array([dot(V[k,:],pp[:,indxs[k]]) for k in xrange(len(xx))])
+        values = array([dot(V[k,:],pp[:,indxs[k]]) for k in range(len(xx))])
         res[mask] = values
         res.shape = saveshape
         return res
@@ -520,7 +520,7 @@ class ppform(object):
     def fromspline(cls, xk, cvals, order, fill=0.0):
         N = len(xk)-1
         sivals = np.empty((order+1,N), dtype=float)
-        for m in xrange(order,-1,-1):
+        for m in range(order,-1,-1):
             fact = spec.gamma(m+1)
             res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
             res /= fact
@@ -534,7 +534,7 @@ def _dot0(a, b):
     if b.ndim <= 2:
         return dot(a, b)
     else:
-        axes = range(b.ndim)
+        axes = list(range(b.ndim))
         axes.insert(-1, 0)
         axes.pop(0)
         return dot(a, b.transpose(axes))
@@ -832,7 +832,7 @@ def splmake(xk,yk,order=3,kind='smoothest',conds=None):
     coefs = func(xk, yk, order, conds, B)
     return xk, coefs, order
 
-def spleval((xj,cvals,k),xnew,deriv=0):
+def spleval(xxx_todo_changeme,xnew,deriv=0):
     """Evaluate a fixed spline represented by the given tuple at the new
     x-values. The xj values are the interior knot points.  The approximation
     region is xj[0] to xj[-1].  If N+1 is the length of xj, then cvals should
@@ -845,6 +845,7 @@ def spleval((xj,cvals,k),xnew,deriv=0):
     N-d, then the result is xnew.shape + cvals.shape[1:] providing the
     interpolation of multiple curves.
     """
+    (xj,cvals,k) = xxx_todo_changeme
     oldshape = np.shape(xnew)
     xx = np.ravel(xnew)
     sh = cvals.shape[1:]

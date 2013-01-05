@@ -320,7 +320,7 @@ class Data(object):
         """ Dispatch aatribute access to the metadata dictionary.
         """
 
-        if attr in self.meta.keys():
+        if attr in list(self.meta.keys()):
             return self.meta[attr]
         else:
             raise AttributeError("'%s' not in metadata" % attr)
@@ -445,7 +445,7 @@ class RealData(Data):
 
 
         if attr not in ('wd', 'we'):
-            if attr in self.meta.keys():
+            if attr in list(self.meta.keys()):
                 return self.meta[attr]
             else:
                 raise AttributeError("'%s' not in metadata" % attr)
@@ -453,7 +453,7 @@ class RealData(Data):
             func, arg = lookup_tbl[(attr, self._ga_flags[attr])]
 
             if arg is not None:
-                return apply(func, (arg,))
+                return func(*(arg,))
             else:
                 return None
 
@@ -564,7 +564,7 @@ class Model(object):
         """ Dispatch attribute access to the metadata.
         """
 
-        if attr in self.meta.keys():
+        if attr in list(self.meta.keys()):
             return self.meta[attr]
         else:
             raise AttributeError("'%s' not in metadata" % attr)
@@ -636,15 +636,15 @@ class Output(object):
         """ Pretty-print important results.
         """
 
-        print 'Beta:', self.beta
-        print 'Beta Std Error:', self.sd_beta
-        print 'Beta Covariance:', self.cov_beta
+        print('Beta:', self.beta)
+        print('Beta Std Error:', self.sd_beta)
+        print('Beta Covariance:', self.cov_beta)
         if hasattr(self, 'info'):
-            print 'Residual Variance:',self.res_var
-            print 'Inverse Condition #:', self.inv_condnum
-            print 'Reason(s) for Halting:'
+            print('Residual Variance:',self.res_var)
+            print('Inverse Condition #:', self.inv_condnum)
+            print('Reason(s) for Halting:')
             for r in self.stopreason:
-                print '  %s' % r
+                print('  %s' % r)
 
 
 class ODR(object):
@@ -851,8 +851,8 @@ class ODR(object):
         res = self.model.fcn(*arglist)
 
         if res.shape not in fcn_perms:
-            print res.shape
-            print fcn_perms
+            print(res.shape)
+            print(fcn_perms)
             raise odr_error("fcn does not output %s-shaped array" % y_s)
 
         if self.model.fjacd is not None:
@@ -1116,7 +1116,7 @@ class ODR(object):
             if obj is not None:
                 kwds[attr] = obj
 
-        self.output = Output(apply(odr, args, kwds))
+        self.output = Output(odr(*args, **kwds))
 
         return self.output
 

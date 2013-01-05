@@ -416,12 +416,12 @@ def leslie(f, s):
     n = f.size
     a = np.zeros((n, n), dtype=tmp.dtype)
     a[0] = f
-    a[range(1, n), range(0, n - 1)] = s
+    a[list(range(1, n)), list(range(0, n - 1))] = s
     return a
 
 
 def all_mat(*args):
-    return map(np.matrix, args)
+    return list(map(np.matrix, args))
 
 
 def kron(a, b):
@@ -592,7 +592,7 @@ def companion(a):
     n = a.size
     c = np.zeros((n - 1, n - 1), dtype=first_row.dtype)
     c[0] = first_row
-    c[range(1, n - 1), range(0, n - 2)] = 1
+    c[list(range(1, n - 1)), list(range(0, n - 2))] = 1
     return c
 
 
@@ -695,8 +695,8 @@ def invhilbert(n, exact=False):
     else:
         dtype = np.float64
     invh = np.empty((n, n), dtype=dtype)
-    for i in xrange(n):
-        for j in xrange(0, i + 1):
+    for i in range(n):
+        for j in range(0, i + 1):
             s = i + j
             invh[i, j] = ((-1) ** s * (s + 1) *
                           comb(n + i, n - j - 1, exact) *
@@ -767,7 +767,7 @@ def pascal(n, kind='symmetric', exact=True):
     if exact:
         if n > 35:
             L_n = np.empty((n, n), dtype=object)
-            L_n.fill(0L)
+            L_n.fill(0)
         else:
             L_n = np.zeros((n, n), dtype=np.uint64)
         for i in range(n):

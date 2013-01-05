@@ -15,17 +15,18 @@ from warnings import warn
 
 from numpy import any
 # unconstrained minimization
-from optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
+from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                       _minimize_bfgs, _minimize_newtoncg,
                       _minimize_scalar_brent, _minimize_scalar_bounded,
                       _minimize_scalar_golden, MemoizeJac)
-from anneal import _minimize_anneal
+from .anneal import _minimize_anneal
 
 # contrained minimization
-from lbfgsb import _minimize_lbfgsb
-from tnc import _minimize_tnc
-from cobyla import _minimize_cobyla
-from slsqp import _minimize_slsqp
+from .lbfgsb import _minimize_lbfgsb
+from .tnc import _minimize_tnc
+from .cobyla import _minimize_cobyla
+from .slsqp import _minimize_slsqp
+import collections
 
 def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
@@ -314,7 +315,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
              RuntimeWarning)
 
     # fun also returns the jacobian
-    if not callable(jac):
+    if not isinstance(jac, collections.Callable):
         if bool(jac):
             fun = MemoizeJac(fun)
             jac = fun.derivative

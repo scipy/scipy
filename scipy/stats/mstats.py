@@ -77,5 +77,5 @@ is a relatively new package, some API changes are still possible.
 
 """
 
-from mstats_basic import *
-from mstats_extras import *
+from .mstats_basic import *
+from .mstats_extras import *

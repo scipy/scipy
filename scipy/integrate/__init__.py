@@ -47,11 +47,11 @@ Integrators of ODE systems
 
 """
 
-from quadrature import *
-from odepack import *
-from quadpack import *
-from _ode import *
+from .quadrature import *
+from .odepack import *
+from .quadpack import *
+from ._ode import *
 
-__all__ = filter(lambda s:not s.startswith('_'),dir())
+__all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test

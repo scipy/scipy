@@ -102,13 +102,13 @@ class KroghInterpolator(object):
         c = np.zeros((n+1,r))
         c[0] = yi[0]
         Vk = np.zeros((n,r))
-        for k in xrange(1,n):
+        for k in range(1,n):
             s = 0
             while s<=k and xi[k-s]==xi[k]:
                 s += 1
             s -= 1
             Vk[0] = yi[k]/float(factorial(s))
-            for i in xrange(k-s):
+            for i in range(k-s):
                 if xi[i] == xi[k]:
                     raise ValueError("Elements if `xi` can't be equal.")
                 if s==0:
@@ -144,7 +144,7 @@ class KroghInterpolator(object):
         pi = 1
         p = np.zeros((m,self.r))
         p += self.c[0,np.newaxis,:]
-        for k in xrange(1,n):
+        for k in range(1,n):
             w = x - self.xi[k-1]
             pi = w*pi
             p = p + np.multiply.outer(pi,self.c[k])
@@ -214,7 +214,7 @@ class KroghInterpolator(object):
         p = np.zeros((m,self.r))
         p += self.c[0,np.newaxis,:]
 
-        for k in xrange(1,n):
+        for k in range(1,n):
             w[k-1] = x - self.xi[k-1]
             pi[k] = w[k-1]*pi[k-1]
             p += np.multiply.outer(pi[k],self.c[k])
@@ -222,8 +222,8 @@ class KroghInterpolator(object):
         cn = np.zeros((max(der,n+1),m,r))
         cn[:n+1,...] += self.c[:n+1,np.newaxis,:]
         cn[0] = p
-        for k in xrange(1,n):
-            for i in xrange(1,n-k+1):
+        for k in range(1,n):
+            for i in range(1,n-k+1):
                 pi[i] = w[k+i-1]*pi[i-1]+pi[i]
                 cn[k] = cn[k]+pi[i,:,np.newaxis]*cn[k+i]
             cn[k]*=factorial(k)
@@ -434,7 +434,7 @@ class BarycentricInterpolator(object):
         self.set_yi(yi)
         self.wi = np.zeros(self.n)
         self.wi[0] = 1
-        for j in xrange(1,self.n):
+        for j in range(1,self.n):
             self.wi[:j]*=(self.xi[j]-self.xi[:j])
             self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
         self.wi**=-1
@@ -518,7 +518,7 @@ class BarycentricInterpolator(object):
         old_wi = self.wi
         self.wi = np.zeros(self.n)
         self.wi[:old_n] = old_wi
-        for j in xrange(old_n,self.n):
+        for j in range(old_n,self.n):
             self.wi[:j]*=(self.xi[j]-self.xi[:j])
             self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
         self.wi**=-1
@@ -767,7 +767,7 @@ class PiecewisePolynomial(object):
 
         """
 
-        for i in xrange(len(xi)):
+        for i in range(len(xi)):
             if orders is None or _isscalar(orders):
                 self.append(xi[i],yi[i],orders)
             else:
@@ -795,7 +795,7 @@ class PiecewisePolynomial(object):
                 y = np.zeros((m,self.r))
             else:
                 y = np.zeros(m)
-            for i in xrange(self.n-1):
+            for i in range(self.n-1):
                 c = pos==i
                 y[c] = self.polynomials[i](x[c])
         return y
@@ -851,7 +851,7 @@ class PiecewisePolynomial(object):
                 y = np.zeros((der,m,self.r))
             else:
                 y = np.zeros((der,m))
-            for i in xrange(self.n-1):
+            for i in range(self.n-1):
                 c = pos==i
                 y[:,c] = self.polynomials[i].derivatives(x[c],der=der)
         return y
@@ -968,4 +968,4 @@ def pchip(x, y):
 
     """
     derivs = _find_derivatives(x,y)
-    return PiecewisePolynomial(x, zip(y, derivs), orders=3, direction=None)
+    return PiecewisePolynomial(x, list(zip(y, derivs)), orders=3, direction=None)

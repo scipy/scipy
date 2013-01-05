@@ -29,9 +29,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy
-import _ni_support
-import _nd_image
-import filters
+from . import _ni_support
+from . import _nd_image
+from . import filters
 
 __all__ = ['iterate_structure', 'generate_binary_structure', 'binary_erosion',
            'binary_dilation', 'binary_opening', 'binary_closing',

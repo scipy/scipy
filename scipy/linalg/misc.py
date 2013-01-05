@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.linalg import LinAlgError
-import blas
+from . import blas
 
 __all__ = ['LinAlgError', 'norm']
 

@@ -30,9 +30,9 @@
 
 import numpy
 import numpy as np
-import _ni_support
-import _nd_image
-import morphology
+from . import _ni_support
+from . import _nd_image
+from . import morphology
 
 __all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
            'variance', 'standard_deviation', 'minimum', 'maximum', 'median',
@@ -375,7 +375,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
         lo = numpy.searchsorted(labels, sorted_index, side='left')
         hi = numpy.searchsorted(labels, sorted_index, side='right')
 
-        for i, l, h in zip(range(nidx), lo, hi):
+        for i, l, h in zip(list(range(nidx)), lo, hi):
             if l == h:
                 continue
             idx = sorted_index[i]

@@ -4,7 +4,7 @@ from math import ceil, log
 import numpy as np
 from numpy.fft import irfft
 from scipy.special import sinc
-import sigtools
+from . import sigtools
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
            'firwin', 'firwin2', 'remez']
@@ -281,7 +281,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         h -= left * sinc(left * m)
 
     # Get and apply the window function.
-    from signaltools import get_window
+    from .signaltools import get_window
     win = get_window(window, numtaps, fftbins=False)
     h *= win
 
@@ -466,7 +466,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
 
     if window is not None:
         # Create the window to apply to the filter coefficients.
-        from signaltools import get_window
+        from .signaltools import get_window
         wind = get_window(window, numtaps, fftbins=False)
     else:
         wind = 1

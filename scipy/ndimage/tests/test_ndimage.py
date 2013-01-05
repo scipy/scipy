@@ -27,7 +27,7 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from __future__ import division
+
 
 import math
 import numpy
@@ -1317,7 +1317,7 @@ class TestNdimage:
                     'mirror' : [1.5,2.5,3.5,3.5,2.5,1.5,1.5],
                     'nearest' : [1.5,2.5,3.5,4,4,4,4]}
 
-        for mode in expected.keys():
+        for mode in list(expected.keys()):
             assert_array_equal(expected[mode],
                                ndimage.geometric_transform(data,shift,
                                                            cval=-1,mode=mode,
@@ -1335,7 +1335,7 @@ class TestNdimage:
                     'mirror' : [2,1,2,3],
                     'nearest' : [1,1,2,3]}
 
-        for mode in expected.keys():
+        for mode in list(expected.keys()):
             assert_array_equal(expected[mode],
                                ndimage.geometric_transform(data,shift,
                                                            cval=-1,mode=mode,
@@ -2107,7 +2107,7 @@ class TestNdimage:
         "zoom 1"
         for order in range(0,6):
             for z in [2,[2,2]]:
-                arr = numpy.array(range(25)).reshape((5,5)).astype(float)
+                arr = numpy.array(list(range(25))).reshape((5,5)).astype(float)
                 arr = ndimage.zoom(arr, z, order=order)
                 assert_equal(arr.shape,(10,10))
                 assert_(numpy.all(arr[-1,:] != 0))

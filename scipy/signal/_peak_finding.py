@@ -58,7 +58,7 @@ def _boolrelextrema(data, comparator,
 
     results = np.ones(data.shape, dtype=bool)
     main = data.take(locs, axis=axis, mode=mode)
-    for shift in xrange(1, order + 1):
+    for shift in range(1, order + 1):
         plus = data.take(locs + shift, axis=axis, mode=mode)
         minus = data.take(locs - shift, axis=axis, mode=mode)
         results &= comparator(main, plus)
@@ -288,7 +288,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
         #XXX Modifying a list while iterating over it.
         #Should be safe, since we iterate backwards, but
         #still tacky.
-        for ind in xrange(len(ridge_lines) - 1, -1, -1):
+        for ind in range(len(ridge_lines) - 1, -1, -1):
             line = ridge_lines[ind]
             if line[2] > gap_thresh:
                 final_lines.append(line)
@@ -363,7 +363,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
             return False
         return True
 
-    return filter(filt_func, ridge_lines)
+    return list(filter(filt_func, ridge_lines))
 
 
 def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=None,
@@ -450,5 +450,5 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
                                    min_snr=min_snr, noise_perc=noise_perc)
-    max_locs = map(lambda x: x[1][0], filtered)
+    max_locs = [x[1][0] for x in filtered]
     return sorted(max_locs)

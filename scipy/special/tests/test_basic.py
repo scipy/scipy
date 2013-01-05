@@ -86,10 +86,10 @@ class TestCephes(TestCase):
     def test_binom_exact(self):
         @np.vectorize
         def binom_int(n, k):
-            n = long(n)
-            k = long(k)
-            num = long(1)
-            den = long(1)
+            n = int(n)
+            k = int(k)
+            num = int(1)
+            den = int(1)
             for i in range(1, k+1):
                 num *= i + n - k
                 den *= i
@@ -1086,9 +1086,9 @@ class TestEuler(TestCase):
         assert_almost_equal(eu2[2],-1,8)
         eu24 = special.euler(24)
         mathworld = [1,1,5,61,1385,50521,2702765,199360981,
-                     19391512145l,2404879675441l,
-                     370371188237525l,69348874393137901l,
-                     15514534163557086905l]
+                     19391512145,2404879675441,
+                     370371188237525,69348874393137901,
+                     15514534163557086905]
         correct = zeros((25,),'d')
         for k in range(0,13):
             if (k % 2):
@@ -2294,7 +2294,7 @@ class TestRiccati(TestCase):
 
 class TestRound(TestCase):
     def test_round(self):
-        rnd = map(int,(special.round(10.1),special.round(10.4),special.round(10.5),special.round(10.6)))
+        rnd = list(map(int,(special.round(10.1),special.round(10.4),special.round(10.5),special.round(10.6))))
 
         # Note: According to the documentation, scipy.special.round is
         # supposed to round to the nearest even number if the fractional

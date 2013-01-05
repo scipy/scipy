@@ -8,8 +8,8 @@ Drive, Natick, MA 01760-2098, USA.
 
 """
 # Matlab file read and write utilities
-from mio import loadmat, savemat, whosmat
-import byteordercodes
+from .mio import loadmat, savemat, whosmat
+from . import byteordercodes
 
 __all__ = ['loadmat', 'savemat', 'whosmat', 'byteordercodes']
 

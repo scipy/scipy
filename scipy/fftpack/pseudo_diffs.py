@@ -9,7 +9,7 @@ __all__ = ['diff',
            'shift']
 
 from numpy import pi, asarray, sin, cos, sinh, cosh, tanh, iscomplexobj
-import convolve
+from . import convolve
 
 from scipy.fftpack.basic import _datacopied
 

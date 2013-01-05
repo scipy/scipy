@@ -145,18 +145,18 @@ Additional tools
 
 """
 
-from interpolate import *
-from fitpack import *
+from .interpolate import *
+from .fitpack import *
 
 # New interface to fitpack library:
-from fitpack2 import *
+from .fitpack2 import *
 
-from rbf import Rbf
+from .rbf import Rbf
 
-from polyint import *
+from .polyint import *
 
-from ndgriddata import *
+from .ndgriddata import *
 
-__all__ = filter(lambda s:not s.startswith('_'),dir())
+__all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test

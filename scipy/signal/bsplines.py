@@ -6,7 +6,7 @@ from numpy.core.umath import sqrt, exp, greater, less, cos, add, sin, \
      less_equal, greater_equal
 
 # From splinemodule.c
-from spline import cspline2d, sepfir2d
+from .spline import cspline2d, sepfir2d
 
 from scipy.misc import comb
 
@@ -80,7 +80,7 @@ def _bspline_piecefunctions(order):
         startbound = -0.5
     condfuncs = [condfuncgen(0, 0, startbound)]
     bound = startbound
-    for num in xrange(1, last - 1):
+    for num in range(1, last - 1):
         condfuncs.append(condfuncgen(1, bound, bound - 1))
         bound = bound - 1
     condfuncs.append(condfuncgen(2, 0, -(order + 1) / 2.0))
@@ -98,8 +98,8 @@ def _bspline_piecefunctions(order):
         if (Mk < 0):
             return 0  # final function is 0
         coeffs = [(1 - 2 * (k % 2)) * float(comb(order + 1, k, exact=1)) / fval
-                  for k in xrange(Mk + 1)]
-        shifts = [-bound - k for k in xrange(Mk + 1)]
+                  for k in range(Mk + 1)]
+        shifts = [-bound - k for k in range(Mk + 1)]
         #print "Adding piece number %d with coeffs %s and shifts %s" \
         #      % (num, str(coeffs), str(shifts))
 
@@ -110,7 +110,7 @@ def _bspline_piecefunctions(order):
             return res
         return thefunc
 
-    funclist = [piecefuncgen(k) for k in xrange(last)]
+    funclist = [piecefuncgen(k) for k in range(last)]
 
     _splinefunc_cache[order] = (funclist, condfuncs)
 

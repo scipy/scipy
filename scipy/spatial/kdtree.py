@@ -80,7 +80,7 @@ class Rectangle(object):
         self.m, = self.maxes.shape
 
     def __repr__(self):
-        return "<Rectangle %s>" % zip(self.mins, self.maxes)
+        return "<Rectangle %s>" % list(zip(self.mins, self.maxes))
 
     def volume(self):
         """Total volume."""

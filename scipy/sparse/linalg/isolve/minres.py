@@ -1,8 +1,8 @@
 from numpy import sqrt, inner, finfo, zeros
 from numpy.linalg import norm
 
-from utils import make_system
-from iterative import set_docstring
+from .utils import make_system
+from .iterative import set_docstring
 
 __all__ = ['minres']
 
@@ -68,10 +68,10 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
 
     if show:
-        print first + 'Solution of symmetric Ax = b'
-        print first + 'n      =  %3g     shift  =  %23.14e'  % (n,shift)
-        print first + 'itnlim =  %3g     rtol   =  %11.2e'   % (maxiter,tol)
-        print
+        print(first + 'Solution of symmetric Ax = b')
+        print(first + 'n      =  %3g     shift  =  %23.14e'  % (n,shift))
+        print(first + 'itnlim =  %3g     rtol   =  %11.2e'   % (maxiter,tol))
+        print()
 
     istop = 0;   itn   = 0;   Anorm = 0;    Acond = 0;
     rnorm = 0;   ynorm = 0;
@@ -133,9 +133,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
     r2     = r1
 
     if show:
-        print
-        print
-        print '   Itn     x(1)     Compatible    LS       norm(A)  cond(A) gbar/|A|'
+        print()
+        print()
+        print('   Itn     x(1)     Compatible    LS       norm(A)  cond(A) gbar/|A|')
 
     while itn < maxiter:
         itn += 1
@@ -264,9 +264,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
             str2 = ' %10.3e'            % (test2,)
             str3 = ' %8.1e %8.1e %8.1e' % (Anorm, Acond, gbar/Anorm)
 
-            print str1 + str2 + str3
+            print(str1 + str2 + str3)
 
-            if itn % 10 == 0: print
+            if itn % 10 == 0: print()
 
         if callback is not None:
             callback(x)
@@ -275,12 +275,12 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
 
     if show:
-        print
-        print last + ' istop   =  %3g               itn   =%5g' % (istop,itn)
-        print last + ' Anorm   =  %12.4e      Acond =  %12.4e'  % (Anorm,Acond)
-        print last + ' rnorm   =  %12.4e      ynorm =  %12.4e'  % (rnorm,ynorm)
-        print last + ' Arnorm  =  %12.4e'                       %  (Arnorm,)
-        print last + msg[istop+1]
+        print()
+        print(last + ' istop   =  %3g               itn   =%5g' % (istop,itn))
+        print(last + ' Anorm   =  %12.4e      Acond =  %12.4e'  % (Anorm,Acond))
+        print(last + ' rnorm   =  %12.4e      ynorm =  %12.4e'  % (rnorm,ynorm))
+        print(last + ' Arnorm  =  %12.4e'                       %  (Arnorm,))
+        print(last + msg[istop+1])
 
     if istop == 6:
         info = maxiter

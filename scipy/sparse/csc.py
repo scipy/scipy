@@ -8,10 +8,10 @@ from warnings import warn
 
 import numpy as np
 
-from sparsetools import csc_tocsr
-from sputils import upcast, isintlike
+from .sparsetools import csc_tocsr
+from .sputils import upcast, isintlike
 
-from compressed import _cs_matrix
+from .compressed import _cs_matrix
 
 
 class csc_matrix(_cs_matrix):
@@ -106,13 +106,13 @@ class csc_matrix(_cs_matrix):
     """
 
     def transpose(self, copy=False):
-        from csr import csr_matrix
+        from .csr import csr_matrix
         M,N = self.shape
         return csr_matrix((self.data,self.indices,self.indptr),(N,M),copy=copy)
 
     def __iter__(self):
         csr = self.tocsr()
-        for r in xrange(self.shape[0]):
+        for r in range(self.shape[0]):
             yield csr[r,:]
 
     def tocsc(self, copy=False):
@@ -131,7 +131,7 @@ class csc_matrix(_cs_matrix):
                  self.indptr, self.indices, self.data, \
                  indptr, indices, data)
 
-        from csr import csr_matrix
+        from .csr import csr_matrix
         A = csr_matrix((data, indices, indptr), shape=self.shape)
         A.has_sorted_indices = True
         return A

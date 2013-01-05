@@ -1,10 +1,10 @@
 import warnings
-import _minpack
+from . import _minpack
 
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
                   transpose, zeros, product, greater, array, \
                   all, where, isscalar, asarray, inf, abs
-from optimize import Result, _check_unknown_options
+from .optimize import Result, _check_unknown_options
 
 error = _minpack.error
 

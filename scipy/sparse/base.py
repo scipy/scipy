@@ -7,7 +7,7 @@ from warnings import warn
 
 import numpy as np
 
-from sputils import isdense, isscalarlike, isintlike
+from .sputils import isdense, isscalarlike, isintlike
 
 
 class SparseWarning(Warning): pass
@@ -105,7 +105,7 @@ class spmatrix(object):
                              'point format' % self.dtype.name)
 
     def __iter__(self):
-        for r in xrange(self.shape[0]):
+        for r in range(self.shape[0]):
             yield self[r,:]
 
     def getmaxprint(self):
@@ -150,7 +150,7 @@ class spmatrix(object):
 
         # helper function, outputs "(i,j)  v"
         def tostr(row,col,data):
-            triples = zip(zip(row,col),data)
+            triples = list(zip(list(zip(row,col)),data))
             return '\n'.join( [ ('  %s\t%s' % t) for t in triples] )
 
         if nnz > maxprint:
@@ -164,7 +164,7 @@ class spmatrix(object):
 
         return out
 
-    def __nonzero__(self):  # Simple -- other ideas?
+    def __bool__(self):  # Simple -- other ideas?
         return self.getnnz() > 0
 
     # What should len(sparse) return? For consistency with dense matrices,
@@ -361,7 +361,7 @@ class spmatrix(object):
                 raise ValueError('exponent must be >= 0')
 
             if other == 0:
-                from construct import eye
+                from .construct import eye
                 return eye( self.shape[0], dtype=self.dtype )
             elif other == 1:
                 return self.copy()
@@ -440,7 +440,7 @@ class spmatrix(object):
         # Spmatrix subclasses should override this method for efficiency.
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
-        from csc import csc_matrix
+        from .csc import csc_matrix
         n = self.shape[1]
         if j < 0:
             j += n
@@ -456,7 +456,7 @@ class spmatrix(object):
         # Spmatrix subclasses should override this method for efficiency.
         # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
         # except for a_i = 1
-        from csr import csr_matrix
+        from .csr import csr_matrix
         m = self.shape[0]
         if i < 0:
             i += m

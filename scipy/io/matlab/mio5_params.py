@@ -7,7 +7,7 @@ If you make changes in this file, don't forget to change mio5_utils.pyx
 
 import numpy as np
 
-from miobase import convert_dtypes
+from .miobase import convert_dtypes
 
 miINT8 = 1
 miUINT8 = 2
@@ -182,7 +182,7 @@ def _convert_codecs(template, byte_order):
     '''
     codecs = {}
     postfix = byte_order == '<' and '_le' or '_be'
-    for k, v in template.items():
+    for k, v in list(template.items()):
         codec = v['codec']
         try:
             " ".encode(codec)

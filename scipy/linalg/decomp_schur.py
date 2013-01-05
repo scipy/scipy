@@ -4,10 +4,11 @@ import numpy
 from numpy import asarray_chkfinite, single, asarray
 
 # Local imports.
-import misc
-from misc import LinAlgError, _datacopied
-from lapack import get_lapack_funcs
-from decomp import eigvals
+from . import misc
+from .misc import LinAlgError, _datacopied
+from .lapack import get_lapack_funcs
+from .decomp import eigvals
+import collections
 
 
 __all__ = ['schur', 'rsf2csf']
@@ -111,7 +112,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         sfunction = lambda x: None
     else:
         sort_t = 1
-        if callable(sort):
+        if isinstance(sort, collections.Callable):
             sfunction = sort
         elif sort == 'lhp':
             sfunction = lambda x: (numpy.real(x) < 0.0)
@@ -204,9 +205,9 @@ def rsf2csf(T, Z, check_finite=True):
 
     """
     if check_finite:
-        Z, T = map(asarray_chkfinite, (Z, T))
+        Z, T = list(map(asarray_chkfinite, (Z, T)))
     else:
-        Z,T = map(asarray, (Z,T))
+        Z,T = list(map(asarray, (Z,T)))
     if len(Z.shape) != 2 or Z.shape[0] != Z.shape[1]:
         raise ValueError("matrix must be square.")
     if len(T.shape) != 2 or T.shape[0] != T.shape[1]:

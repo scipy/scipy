@@ -11,9 +11,9 @@ import warnings
 
 from numpy.compat import asbytes
 
-from miobase import get_matfile_version, docfiller
-from mio4 import MatFile4Reader, MatFile4Writer
-from mio5 import MatFile5Reader, MatFile5Writer
+from .miobase import get_matfile_version, docfiller
+from .mio4 import MatFile4Reader, MatFile4Writer
+from .mio5 import MatFile5Reader, MatFile5Writer
 
 __all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat',
            'whosmat']
@@ -61,7 +61,7 @@ def find_mat_file(file_name, appendmat=True):
 
 def _open_file(file_like, appendmat):
     ''' Open `file_like` and return as file-like object '''
-    if isinstance(file_like, basestring):
+    if isinstance(file_like, str):
         try:
             return open(file_like, 'rb')
         except IOError:
@@ -178,7 +178,7 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
         mdict.update(matfile_dict)
     else:
         mdict = matfile_dict
-    if isinstance(file_name, basestring):
+    if isinstance(file_name, str):
         MR.mat_stream.close()
     return mdict
 
@@ -242,7 +242,7 @@ def savemat(file_name, mdict,
     place.
 
     """
-    file_is_string = isinstance(file_name, basestring)
+    file_is_string = isinstance(file_name, str)
     if file_is_string:
         if appendmat and file_name[-4:] != ".mat":
             file_name = file_name + ".mat"
@@ -305,7 +305,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
     """
     ML = mat_reader_factory(file_name, **kwargs)
     variables = ML.list_variables()
-    if isinstance(file_name, basestring):
+    if isinstance(file_name, str):
         ML.mat_stream.close()
     return variables
 

@@ -9,11 +9,11 @@ from bisect import bisect_left
 
 import numpy as np
 
-from base import spmatrix, isspmatrix
-from sputils import getdtype, isshape, issequence, isscalarlike
+from .base import spmatrix, isspmatrix
+from .sputils import getdtype, isshape, issequence, isscalarlike
 
 from warnings import warn
-from base import SparseEfficiencyWarning
+from .base import SparseEfficiencyWarning
 
 
 class lil_matrix(spmatrix):
@@ -116,7 +116,7 @@ class lil_matrix(spmatrix):
             except TypeError:
                 raise TypeError('unsupported matrix type')
             else:
-                from csr import csr_matrix
+                from .csr import csr_matrix
                 A = csr_matrix(A, dtype=dtype).tolil()
 
                 self.shape = A.shape
@@ -210,7 +210,7 @@ class lil_matrix(spmatrix):
             stop = shape
         else:
             stop = j.stop
-        j = range(start, stop, j.step or 1)
+        j = list(range(start, stop, j.step or 1))
         return j
 
 
@@ -288,7 +288,7 @@ class lil_matrix(spmatrix):
             j = self._slicetoseq(j, self.shape[1])
         if issequence(j):
             if xcols == len(j):
-                for jj, xi in zip(j, xrange(xcols)):
+                for jj, xi in zip(j, range(xcols)):
                     pos = bisect_left(xrow, xi)
                     if pos != len(xdata) and xrow[pos] == xi:
                         self._insertat2(row, data, jj, xdata[pos])
@@ -467,7 +467,7 @@ class lil_matrix(spmatrix):
             data.extend(x)
         data = np.asarray(data, dtype=self.dtype)
 
-        from csr import csr_matrix
+        from .csr import csr_matrix
         return csr_matrix((data, indices, indptr), shape=self.shape)
 
     def tocsc(self):

@@ -31,13 +31,13 @@ class TestFlapackSimple(TestCase):
             f = getattr(flapack,p+'gebal',None)
             if f is None: continue
             ba,lo,hi,pivscale,info = f(a)
-            assert_(not info,`info`)
+            assert_(not info,repr(info))
             assert_array_almost_equal(ba,a)
             assert_equal((lo,hi),(0,len(a[0])-1))
             assert_array_almost_equal(pivscale, np.ones(len(a)))
 
             ba,lo,hi,pivscale,info = f(a1,permute=1,scale=1)
-            assert_(not info,`info`)
+            assert_(not info,repr(info))
             #print a1
             #print ba,lo,hi,pivscale
 
@@ -49,7 +49,7 @@ class TestFlapackSimple(TestCase):
             f = getattr(flapack,p+'gehrd',None)
             if f is None: continue
             ht,tau,info = f(a)
-            assert_(not info,`info`)
+            assert_(not info,repr(info))
 
     def test_trsyl(self):
         a = np.array([[1, 2], [0, 4]])

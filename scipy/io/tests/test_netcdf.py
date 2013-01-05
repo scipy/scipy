@@ -9,7 +9,7 @@ import sys
 if sys.version_info[0] >= 3:
     from io import BytesIO
 else:
-    from StringIO import StringIO as BytesIO
+    from io import StringIO as BytesIO
 from glob import glob
 
 import numpy as np

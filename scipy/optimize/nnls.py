@@ -1,4 +1,4 @@
-import _nnls
+from . import _nnls
 from numpy import asarray_chkfinite, zeros, double
 
 __all__ = ['nnls']
@@ -35,7 +35,7 @@ def nnls(A,b):
 
     """
 
-    A,b = map(asarray_chkfinite, (A,b))
+    A,b = list(map(asarray_chkfinite, (A,b)))
 
     if len(A.shape)!=2:
         raise ValueError("expected matrix")

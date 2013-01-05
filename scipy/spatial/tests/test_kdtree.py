@@ -509,7 +509,7 @@ class test_sparse_distance_matrix:
         for i,l in enumerate(r):
             for j in l:
                 assert_equal(M[i,j],distance(self.T1.data[i],self.T2.data[j]))
-        for ((i,j),d) in M.items():
+        for ((i,j),d) in list(M.items()):
             assert_(j in r[i])
 
     def test_zero_distance(self):
@@ -530,7 +530,7 @@ class test_sparse_distance_matrix_compiled:
         for i,l in enumerate(r):
             for j in l:
                 assert_equal(M[i,j],distance(self.T1.data[i],self.T2.data[j]))
-        for ((i,j),d) in M.items():
+        for ((i,j),d) in list(M.items()):
             assert_(j in r[i])
 
     def test_zero_distance(self):
@@ -613,7 +613,7 @@ def test_query_pairs_single_node_compiled():
 def test_ball_point_ints():
     """Regression test for #1373."""
     x, y = np.mgrid[0:4, 0:4]
-    points = zip(x.ravel(), y.ravel())
+    points = list(zip(x.ravel(), y.ravel()))
     tree = KDTree(points)
     assert_equal(sorted([4, 8, 9, 12]),
                  sorted(tree.query_ball_point((2, 0), 1)))

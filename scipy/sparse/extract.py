@@ -6,7 +6,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['find', 'tril', 'triu']
 
 
-from coo import coo_matrix
+from .coo import coo_matrix
 
 def find(A):
     """Return the indices and values of the nonzero elements of a matrix

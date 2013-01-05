@@ -54,7 +54,7 @@ def _gen_ridge_line(start_locs, max_locs, length, distances, gaps):
         raise ValueError('Cannot generate ridge line according to constraints')
     dist_int = length / len(distances) - 1
     gap_int = length / len(gaps) - 1
-    for ind in xrange(1, length):
+    for ind in range(1, length):
         nextcol = locs[ind - 1, 1]
         nextrow = locs[ind - 1, 0] + 1
         if (ind % dist_int == 0) and (len(distances) > 0):
@@ -183,7 +183,7 @@ class TestArgrelmax(TestCase):
         #rel_max_rows, rel_max_cols = np.where(rel_max_matr)
         rel_max_rows, rel_max_cols = argrelmax(test_data_2, axis=1, order=1)
 
-        for rw in xrange(0, test_data_2.shape[0]):
+        for rw in range(0, test_data_2.shape[0]):
             inds = (rel_max_rows == rw)
 
             assert_(len(rel_max_cols[inds]) == len(act_locs))

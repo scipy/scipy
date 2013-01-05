@@ -4,12 +4,12 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['dok_matrix', 'isspmatrix_dok']
 
-from itertools import izip
+
 
 import numpy as np
 
-from base import spmatrix, isspmatrix
-from sputils import isdense, getdtype, isshape, isintlike, isscalarlike, upcast
+from .base import spmatrix, isspmatrix
+from .sputils import isdense, getdtype, isshape, isintlike, isscalarlike, upcast
 
 try:
     from operator import isSequenceType as _is_sequence
@@ -97,7 +97,7 @@ class dok_matrix(spmatrix, dict):
             if len(arg1.shape)!=2:
                 raise TypeError('expected rank <=2 dense array or matrix')
 
-            from coo import coo_matrix
+            from .coo import coo_matrix
             self.update( coo_matrix(arg1, dtype=dtype).todok() )
             self.shape = arg1.shape
             self.dtype = arg1.dtype
@@ -155,7 +155,7 @@ class dok_matrix(spmatrix, dict):
 
             if isinstance(i, slice):
                 # Is there an easier way to do this?
-                seq = xrange(i.start or 0, i.stop or self.shape[0], i.step or 1)
+                seq = range(i.start or 0, i.stop or self.shape[0], i.step or 1)
             elif _is_sequence(i):
                 seq = i
             else:
@@ -179,7 +179,7 @@ class dok_matrix(spmatrix, dict):
                     #         [self.get((element, j), 0) for element in seq]
                     # ** Instead just add the non-zero elements.  This uses
                     # ** linear time in the number of non-zeros:
-                    for (ii, jj) in self.keys():
+                    for (ii, jj) in list(self.keys()):
                         if jj == j and ii >= first and ii <= last:
                             dict.__setitem__(new, (ii-first, 0), \
                                              dict.__getitem__(self, (ii,jj)))
@@ -194,7 +194,7 @@ class dok_matrix(spmatrix, dict):
             # Below here, j is a sequence, but i is an integer
             if isinstance(j, slice):
                 # Is there an easier way to do this?
-                seq = xrange(j.start or 0, j.stop or self.shape[1], j.step or 1)
+                seq = range(j.start or 0, j.stop or self.shape[1], j.step or 1)
             elif _is_sequence(j):
                 seq = j
             else:
@@ -214,7 +214,7 @@ class dok_matrix(spmatrix, dict):
             #         [self.get((i, element), 0) for element in seq]
             # ** Instead loop over the non-zero elements.  This is slower
             # ** if there are many non-zeros
-            for (ii, jj) in self.keys():
+            for (ii, jj) in list(self.keys()):
                 if ii == i and jj >= first and jj <= last:
                     dict.__setitem__(new, (0, jj-first), \
                                      dict.__getitem__(self, (ii,jj)))
@@ -239,7 +239,7 @@ class dok_matrix(spmatrix, dict):
 
             if np.isscalar(value):
                 if value == 0:
-                    if self.has_key((i,j)):
+                    if (i,j) in self:
                         del self[(i,j)]
                 else:
                     dict.__setitem__(self, (i,j), self.dtype.type(value))
@@ -251,7 +251,7 @@ class dok_matrix(spmatrix, dict):
             # or sequence, unfold it first and call __setitem__ recursively.
             if isinstance(i, slice):
                 # Is there an easier way to do this?
-                seq = xrange(i.start or 0, i.stop or self.shape[0], i.step or 1)
+                seq = range(i.start or 0, i.stop or self.shape[0], i.step or 1)
             elif _is_sequence(i):
                 seq = i
             else:
@@ -284,7 +284,7 @@ class dok_matrix(spmatrix, dict):
                                          " dok_matrix.__setitem__")
 
                     # Value is a sequence
-                    for element, val in izip(seq, value):
+                    for element, val in zip(seq, value):
                         self[element, j] = val   # don't use dict.__setitem__
                             # here, since we still want to be able to delete
                             # 0-valued keys, do type checking on 'val' (e.g. if
@@ -292,7 +292,7 @@ class dok_matrix(spmatrix, dict):
             else:
                 # Process j
                 if isinstance(j, slice):
-                    seq = xrange(j.start or 0, j.stop or self.shape[1], j.step or 1)
+                    seq = range(j.start or 0, j.stop or self.shape[1], j.step or 1)
                 elif _is_sequence(j):
                     seq = j
                 else:
@@ -321,7 +321,7 @@ class dok_matrix(spmatrix, dict):
                         # Not a sequence
                         raise TypeError("unsupported type for dok_matrix.__setitem__")
                     else:
-                        for element, val in izip(seq, value):
+                        for element, val in zip(seq, value):
                             self[i, element] = val
 
 
@@ -331,8 +331,8 @@ class dok_matrix(spmatrix, dict):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
-            for i in xrange(M):
-                for j in xrange(N):
+            for i in range(M):
+                for j in range(N):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
@@ -344,7 +344,7 @@ class dok_matrix(spmatrix, dict):
             # the two matrices to be summed.  Would this be a good idea?
             new = dok_matrix(self.shape, dtype=self.dtype)
             new.update(self)
-            for key in other.keys():
+            for key in list(other.keys()):
                 new[key] += other[key]
         elif isspmatrix(other):
             csc = self.tocsc()
@@ -361,8 +361,8 @@ class dok_matrix(spmatrix, dict):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
-            for i in xrange(M):
-                for j in xrange(N):
+            for i in range(M):
+                for j in range(N):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
@@ -384,21 +384,21 @@ class dok_matrix(spmatrix, dict):
 
     def __neg__(self):
         new = dok_matrix(self.shape, dtype=self.dtype)
-        for key in self.keys():
+        for key in list(self.keys()):
             new[key] = -self[key]
         return new
 
     def _mul_scalar(self, other):
         # Multiply this scalar by every element.
         new = dok_matrix(self.shape, dtype=self.dtype)
-        for (key, val) in self.iteritems():
+        for (key, val) in self.items():
             new[key] = val * other
         return new
 
     def _mul_vector(self, other):
         #matrix * vector
         result = np.zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
-        for (i,j),v in self.iteritems():
+        for (i,j),v in self.items():
             result[i] += v * other[j]
         return result
 
@@ -407,14 +407,14 @@ class dok_matrix(spmatrix, dict):
         M,N = self.shape
         n_vecs = other.shape[1] #number of column vectors
         result = np.zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
-        for (i,j),v in self.iteritems():
+        for (i,j),v in self.items():
             result[i,:] += v * other[j,:]
         return result
 
     def __imul__(self, other):
         if isscalarlike(other):
             # Multiply this scalar by every element.
-            for (key, val) in self.iteritems():
+            for (key, val) in self.items():
                 self[key] = val * other
             #new.dtype.char = self.dtype.char
             return self
@@ -426,7 +426,7 @@ class dok_matrix(spmatrix, dict):
         if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Multiply this scalar by every element.
-            for (key, val) in self.iteritems():
+            for (key, val) in self.items():
                 new[key] = val / other
             #new.dtype.char = self.dtype.char
             return new
@@ -437,7 +437,7 @@ class dok_matrix(spmatrix, dict):
     def __itruediv__(self, other):
         if isscalarlike(other):
             # Multiply this scalar by every element.
-            for (key, val) in self.iteritems():
+            for (key, val) in self.items():
                 self[key] = val / other
             return self
         else:
@@ -452,7 +452,7 @@ class dok_matrix(spmatrix, dict):
         """
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype)
-        for key, value in self.iteritems():
+        for key, value in self.items():
             new[key[1], key[0]] = value
         return new
 
@@ -461,7 +461,7 @@ class dok_matrix(spmatrix, dict):
         """
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype)
-        for key, value in self.iteritems():
+        for key, value in self.items():
             new[key[1], key[0]] = np.conj(value)
         return new
 
@@ -477,13 +477,13 @@ class dok_matrix(spmatrix, dict):
         indx = int((columns == 1))
         N = len(cols_or_rows)
         if indx: # columns
-            for key in self.keys():
+            for key in list(self.keys()):
                 num = np.searchsorted(cols_or_rows, key[1])
                 if num < N:
                     newkey = (key[0], num)
                     new[newkey] = self[key]
         else:
-            for key in self.keys():
+            for key in list(self.keys()):
                 num = np.searchsorted(cols_or_rows, key[0])
                 if num < N:
                     newkey = (num, key[1])
@@ -497,7 +497,7 @@ class dok_matrix(spmatrix, dict):
         ext = dok_matrix()
         indx = int((columns == 1))
         if indx:
-            for key in self.keys():
+            for key in list(self.keys()):
                 num = np.searchsorted(cols_or_rows, key[1])
                 if cols_or_rows[num] == key[1]:
                     newkey = (key[0], num)
@@ -506,7 +506,7 @@ class dok_matrix(spmatrix, dict):
                     newkey = (key[0], key[1]-num)
                     base[newkey] = self[key]
         else:
-            for key in self.keys():
+            for key in list(self.keys()):
                 num = np.searchsorted(cols_or_rows, key[0])
                 if cols_or_rows[num] == key[0]:
                     newkey = (num, key[1])
@@ -518,12 +518,12 @@ class dok_matrix(spmatrix, dict):
 
     def tocoo(self):
         """ Return a copy of this matrix in COOrdinate format"""
-        from coo import coo_matrix
+        from .coo import coo_matrix
         if self.nnz == 0:
             return coo_matrix(self.shape, dtype=self.dtype)
         else:
-            data    = np.asarray(self.values(), dtype=self.dtype)
-            indices = np.asarray(self.keys(), dtype=np.intc).T
+            data    = np.asarray(list(self.values()), dtype=self.dtype)
+            indices = np.asarray(list(self.keys()), dtype=np.intc).T
             return coo_matrix((data,indices), shape=self.shape, dtype=self.dtype)
 
     def todok(self,copy=False):
@@ -556,7 +556,7 @@ class dok_matrix(spmatrix, dict):
         M, N = self.shape
         if newM < M or newN < N:
             # Remove all elements outside new dimensions
-            for (i, j) in self.keys():
+            for (i, j) in list(self.keys()):
                 if i >= newM or j >= newN:
                     del self[i, j]
         self._shape = shape

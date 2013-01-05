@@ -182,7 +182,7 @@ class Token(object):
 
 class Tokenizer(object):
     def __init__(self):
-        self.tokens = TOKENS.keys()
+        self.tokens = list(TOKENS.keys())
         self.res = [re.compile(TOKENS[i]) for i in self.tokens]
 
     def input(self, s):
@@ -247,7 +247,7 @@ class FortranFormatParser(object):
                 else:
                     tokens.append(t)
             return self._parse_format(tokens)
-        except SyntaxError, e:
+        except SyntaxError as e:
             raise BadFortranFormat(str(e))
 
     def _get_min(self, tokens):

@@ -47,6 +47,7 @@ import sys
 from numpy import (sqrt, log, asarray, newaxis, all, dot, exp, eye,
                    float_)
 from scipy import linalg
+import collections
 
 __all__ = ['Rbf']
 
@@ -144,20 +145,20 @@ class Rbf(object):
                 raise ValueError("function must be a callable or one of " +
                                      ", ".join(functionlist))
             self._function = getattr(self, "_h_"+self.function)
-        elif callable(self.function):
+        elif isinstance(self.function, collections.Callable):
             allow_one = False
             if hasattr(self.function, 'func_code') or \
                    hasattr(self.function, '__code__'):
                 val = self.function
                 allow_one = True
             elif hasattr(self.function, "im_func"):
-                val = self.function.im_func
+                val = self.function.__func__
             elif hasattr(self.function, "__call__"):
-                val = self.function.__call__.im_func
+                val = self.function.__call__.__func__
             else:
                 raise ValueError("Cannot determine number of arguments to function")
 
-            argcount = val.func_code.co_argcount
+            argcount = val.__code__.co_argcount
             if allow_one and argcount == 1:
                 self._function = self.function
             elif argcount == 2:
@@ -196,7 +197,7 @@ class Rbf(object):
         # attach anything left in kwargs to self
         #  for use by any user-callable function or
         #  to save on the object returned.
-        for item, value in kwargs.items():
+        for item, value in list(kwargs.items()):
             setattr(self, item, value)
 
         self.A = self._init_function(r) - eye(self.N)*self.smooth

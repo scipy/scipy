@@ -79,10 +79,10 @@ References
 # author: Robert Kern <robert.kern@gmail.com>
 # date: 2006-09-21
 
-from odrpack import *
-from models import *
+from .odrpack import *
+from .models import *
 
-__all__ = filter(lambda s: not s.startswith('_'), dir())
+__all__ = [s for s in dir() if not s.startswith('_')]
 
 from numpy.testing import Tester
 test = Tester().test

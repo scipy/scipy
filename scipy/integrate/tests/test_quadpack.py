@@ -10,7 +10,8 @@ try:
 except ImportError:
     _ctypes_missing = True
 
-def assert_quad((value, err), tabledValue, errTol=1.5e-8):
+def assert_quad(xxx_todo_changeme, tabledValue, errTol=1.5e-8):
+    (value, err) = xxx_todo_changeme
     assert_(abs(value-tabledValue) < err, (value, tabledValue, err))
     if errTol is not None:
         assert_(err < errTol, (err, errTol))
@@ -46,11 +47,11 @@ class TestCtypesQuad(TestCase):
     def test_improvement(self):
         import time
         start = time.time()
-        for i in xrange(100):
+        for i in range(100):
             quad(self.lib.sin, 0, 100)
         fast = time.time() - start
         start = time.time()
-        for i in xrange(100):
+        for i in range(100):
             quad(math.sin, 0, 100)
         slow = time.time() - start
         assert_(fast < 0.5*slow, (fast, slow))

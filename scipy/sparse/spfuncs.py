@@ -3,9 +3,9 @@
 
 __all__ = ['count_blocks','estimate_blocksize']
 
-from csr import isspmatrix_csr, csr_matrix
-from csc import isspmatrix_csc
-from sparsetools import csr_count_blocks
+from .csr import isspmatrix_csr, csr_matrix
+from .csc import isspmatrix_csc
+from .sparsetools import csr_count_blocks
 
 def extract_diagonal(A):
     raise NotImplementedError('use .diagonal() instead')

@@ -23,7 +23,7 @@ to generate flat clusters, and visualizing clusters with dendrograms.
 
 __all__ = ['vq', 'hierarchy']
 
-import vq, hierarchy
+from . import vq, hierarchy
 
 from numpy.testing import Tester
 test = Tester().test

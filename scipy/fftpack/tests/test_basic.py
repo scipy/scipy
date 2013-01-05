@@ -149,7 +149,7 @@ class _TestFFTBase(TestCase):
     def test_djbfft(self):
         for i in range(2,14):
             n = 2**i
-            x = range(n)
+            x = list(range(n))
             y = fftpack.zfft(x)
             y2 = numpy.fft.fft(x)
             assert_array_almost_equal(y,y2)
@@ -201,7 +201,7 @@ class _TestIFFTBase(TestCase):
     def test_djbfft(self):
         for i in range(2,14):
             n = 2**i
-            x = range(n)
+            x = list(range(n))
             y = fftpack.zfft(x,direction=-1)
             y2 = numpy.fft.ifft(x)
             assert_array_almost_equal(y,y2)
@@ -285,7 +285,7 @@ class _TestRFFTBase(TestCase):
         from numpy.fft import fft as numpy_fft
         for i in range(2,14):
             n = 2**i
-            x = range(n)
+            x = list(range(n))
             y2 = numpy_fft(x)
             y1 = zeros((n,),dtype=double)
             y1[0] = y2[0].real
@@ -331,7 +331,7 @@ class _TestIRFFTBase(TestCase):
         from numpy.fft import ifft as numpy_ifft
         for i in range(2,14):
             n = 2**i
-            x = range(n)
+            x = list(range(n))
             x1 = zeros((n,),dtype=cdouble)
             x1[0] = x[0]
             for k in range(1, int(n/2)):

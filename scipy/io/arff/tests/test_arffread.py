@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 from os.path import join as pjoin
-from cStringIO import StringIO
+from io import StringIO
 
 import numpy as np
 

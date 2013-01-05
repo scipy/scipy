@@ -7,7 +7,7 @@ dltisys - Code related to discrete linear time-invariant systems
 
 import numpy as np
 from scipy.interpolate import interp1d
-from ltisys import tf2ss, zpk2ss
+from .ltisys import tf2ss, zpk2ss
 
 __all__ = ['dlsim', 'dstep', 'dimpulse']
 

@@ -28,7 +28,7 @@ Loading the data saved to a data store in the same directory:
 
 __all__ = ['save_as_module']
 
-import dumb_shelve
+from . import dumb_shelve
 import os
 
 import numpy as np
@@ -51,7 +51,7 @@ def _create_shelf(file_name,data):
     """
     shelf_name = file_name.split('.')[0]
     f = dumb_shelve.open(shelf_name,'w')
-    for i in data.keys():
+    for i in list(data.keys()):
 #       print 'saving...',i
         f[i] = data[i]
 #   print 'done'
@@ -88,7 +88,7 @@ def _load(module):
     fn = os.path.join(dir, filebase)
     f = dumb_shelve.open(fn, "r")
     #exec( 'import ' + module.__name__)
-    for i in f.keys():
+    for i in list(f.keys()):
         exec( 'import ' + module.__name__+ ';' +
               module.__name__+'.'+i + '=' + 'f["' + i + '"]')
 

@@ -4,13 +4,13 @@ from numpy import asarray, empty, where, squeeze, prod
 from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
         SparseEfficiencyWarning, csc_matrix
 
-import _superlu
+from . import _superlu
 
 noScikit = False
 try:
     import scikits.umfpack as umfpack
 except ImportError:
-    import umfpack
+    from . import umfpack
     noScikit = True
 
 isUmfpack = hasattr( umfpack, 'UMFPACK_OK' )

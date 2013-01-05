@@ -35,8 +35,8 @@ Functions
 
 import numpy as np
 from numpy import array, asarray, float64, int32, zeros
-import _lbfgsb
-from optimize import approx_fprime, MemoizeJac, Result, _check_unknown_options
+from . import _lbfgsb
+from .optimize import approx_fprime, MemoizeJac, Result, _check_unknown_options
 from numpy.compat import asbytes
 
 __all__ = ['fmin_l_bfgs_b']
@@ -375,22 +375,22 @@ if __name__ == '__main__':
 
     x, f, d = fmin_l_bfgs_b(func, x0, fprime=grad, m=m,
                             factr=factr, pgtol=pgtol)
-    print x
-    print f
-    print d
+    print(x)
+    print(f)
+    print(d)
     x, f, d = fmin_l_bfgs_b(func, x0, approx_grad=1,
                             m=m, factr=factr, pgtol=pgtol)
-    print x
-    print f
-    print d
+    print(x)
+    print(f)
+    print(d)
     x, f, d = fmin_l_bfgs_b(func_and_grad, x0, approx_grad=0,
                             m=m, factr=factr, pgtol=pgtol)
-    print x
-    print f
-    print d
+    print(x)
+    print(f)
+    print(d)
     p = Problem()
     x, f, d = fmin_l_bfgs_b(p.fun, x0, approx_grad=0,
                             m=m, factr=factr, pgtol=pgtol)
-    print x
-    print f
-    print d
+    print(x)
+    print(f)
+    print(d)

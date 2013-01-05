@@ -140,24 +140,24 @@ Low-level routines
 
 """
 
-from linalg_version import linalg_version as __version__
+from .linalg_version import linalg_version as __version__
 
-from misc import *
-from basic import *
-from decomp import *
-from decomp_lu import *
-from decomp_cholesky import *
-from decomp_qr import *
-from _decomp_qz import *
-from decomp_svd import *
-from decomp_schur import *
-from matfuncs import *
-from blas import *
-from lapack import *
-from special_matrices import *
-from _solvers import *
+from .misc import *
+from .basic import *
+from .decomp import *
+from .decomp_lu import *
+from .decomp_cholesky import *
+from .decomp_qr import *
+from ._decomp_qz import *
+from .decomp_svd import *
+from .decomp_schur import *
+from .matfuncs import *
+from .blas import *
+from .lapack import *
+from .special_matrices import *
+from ._solvers import *
 
-__all__ = filter(lambda s: not s.startswith('_'), dir())
+__all__ = [s for s in dir() if not s.startswith('_')]
 
 from numpy.dual import register_func
 for k in ['norm', 'inv', 'svd', 'solve', 'det', 'eig', 'eigh', 'eigvals',

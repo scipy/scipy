@@ -10,8 +10,8 @@ __all__ = []
 
 import numpy as np
 
-from base import spmatrix
-from sputils import isscalarlike
+from .base import spmatrix
+from .sputils import isscalarlike
 
 
 #TODO implement all relevant operations

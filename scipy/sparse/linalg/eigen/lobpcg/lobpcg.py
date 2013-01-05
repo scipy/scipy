@@ -62,7 +62,7 @@ def symeig( mtxA, mtxB = None, eigenvectors = True, select = None ):
     return out[:-1]
 
 def pause():
-    raw_input()
+    input()
 
 def save( ar, fileName ):
     from numpy import savetxt
@@ -281,7 +281,7 @@ def lobpcg( A, X,
                 aux += "%d constraints\n\n" % sizeY
             else:
                 aux += "%d constraint\n\n" % sizeY
-        print aux
+        print(aux)
 
     ##
     # Apply constraints to X.
@@ -338,9 +338,9 @@ def lobpcg( A, X,
 
     ##
     # Main iteration loop.
-    for iterationNumber in xrange( maxIterations ):
+    for iterationNumber in range( maxIterations ):
         if verbosityLevel > 0:
-            print 'iteration %d' %  iterationNumber
+            print('iteration %d' %  iterationNumber)
 
         aux = blockVectorBX * _lambda[np.newaxis,:]
         blockVectorR = blockVectorAX - aux
@@ -353,7 +353,7 @@ def lobpcg( A, X,
         ii = np.where( residualNorms > residualTolerance, True, False )
         activeMask = activeMask & ii
         if verbosityLevel > 2:
-            print activeMask
+            print(activeMask)
 
         currentBlockSize = activeMask.sum()
         if currentBlockSize != previousBlockSize:
@@ -365,11 +365,11 @@ def lobpcg( A, X,
             break
 
         if verbosityLevel > 0:
-            print 'current block size:', currentBlockSize
-            print 'eigenvalue:', _lambda
-            print 'residual norms:', residualNorms
+            print('current block size:', currentBlockSize)
+            print('eigenvalue:', _lambda)
+            print('residual norms:', residualNorms)
         if verbosityLevel > 10:
-            print eigBlockVector
+            print(eigBlockVector)
 
         activeBlockVectorR = as2d( blockVectorR[:,activeMask] )
 
@@ -433,13 +433,13 @@ def lobpcg( A, X,
         try:
             assert np.allclose( gramA.T, gramA )
         except:
-            print gramA.T - gramA
+            print(gramA.T - gramA)
             raise
 
         try:
             assert np.allclose( gramB.T, gramB )
         except:
-            print gramB.T - gramB
+            print(gramB.T - gramB)
             raise
 
         if verbosityLevel > 10:
@@ -454,7 +454,7 @@ def lobpcg( A, X,
         if largest:
             ii = ii[::-1]
         if verbosityLevel > 10:
-            print ii
+            print(ii)
 
         _lambda = _lambda[ii].astype( np.float64 )
         eigBlockVector = np.asarray( eigBlockVector[:,ii].astype( np.float64 ) )
@@ -462,7 +462,7 @@ def lobpcg( A, X,
         lambdaHistory.append( _lambda )
 
         if verbosityLevel > 10:
-            print 'lambda:', _lambda
+            print('lambda:', _lambda)
 ##         # Normalize eigenvectors!
 ##         aux = np.sum( eigBlockVector.conjugate() * eigBlockVector, 0 )
 ##         eigVecNorms = np.sqrt( aux )
@@ -470,7 +470,7 @@ def lobpcg( A, X,
 #        eigBlockVector, aux = b_orthonormalize( B, eigBlockVector )
 
         if verbosityLevel > 10:
-            print eigBlockVector
+            print(eigBlockVector)
             pause()
 
         ##
@@ -497,9 +497,9 @@ def lobpcg( A, X,
             bpp = sp.dot( activeBlockVectorBR, eigBlockVectorR )
 
         if verbosityLevel > 10:
-            print pp
-            print app
-            print bpp
+            print(pp)
+            print(app)
+            print(bpp)
             pause()
 
         blockVectorX  = sp.dot( blockVectorX, eigBlockVectorX )  + pp
@@ -516,8 +516,8 @@ def lobpcg( A, X,
 
 
     if verbosityLevel > 0:
-        print 'final eigenvalue:', _lambda
-        print 'final residual norms:', residualNorms
+        print('final eigenvalue:', _lambda)
+        print('final residual norms:', residualNorms)
 
     if retLambdaHistory:
         if retResidualNormsHistory:
@@ -569,7 +569,7 @@ if __name__ == '__main__':
                          M = precond,
                          residualTolerance = 1e-4, maxIterations = 40,
                          largest = False, verbosityLevel = 1 )
-    print 'solution time:', time.clock() - tt
+    print('solution time:', time.clock() - tt)
 
-    print vecs
-    print eigs
+    print(vecs)
+    print(eigs)

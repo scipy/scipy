@@ -84,7 +84,7 @@ class TestCholeskyBanded(TestCase):
                      [4.0, 4.0, 4.0, 4.0]])
         c = cholesky_banded(ab, lower=False, check_finite=False)
         ufac = zeros_like(a)
-        ufac[range(4),range(4)] = c[-1]
+        ufac[list(range(4)),list(range(4))] = c[-1]
         ufac[(0,1,2),(1,2,3)] = c[0,1:]
         assert_array_almost_equal(a, dot(ufac.T, ufac))
 
@@ -103,7 +103,7 @@ class TestCholeskyBanded(TestCase):
                      [4.0, 4.0, 4.0, 4.0]])
         c = cholesky_banded(ab, lower=False)
         ufac = zeros_like(a)
-        ufac[range(4),range(4)] = c[-1]
+        ufac[list(range(4)),list(range(4))] = c[-1]
         ufac[(0,1,2),(1,2,3)] = c[0,1:]
         assert_array_almost_equal(a, dot(ufac.T, ufac))
 
@@ -122,7 +122,7 @@ class TestCholeskyBanded(TestCase):
                      [4.0, 4.0, 4.0,  4.0]])
         c = cholesky_banded(ab, lower=False)
         ufac = zeros_like(a)
-        ufac[range(4),range(4)] = c[-1]
+        ufac[list(range(4)),list(range(4))] = c[-1]
         ufac[(0,1,2),(1,2,3)] = c[0,1:]
         assert_array_almost_equal(a, dot(ufac.conj().T, ufac))
 
@@ -141,7 +141,7 @@ class TestCholeskyBanded(TestCase):
                     [1.0, 0.5, 0.2, -1.0]])
         c = cholesky_banded(ab, lower=True)
         lfac = zeros_like(a)
-        lfac[range(4),range(4)] = c[0]
+        lfac[list(range(4)),list(range(4))] = c[0]
         lfac[(1,2,3),(0,1,2)] = c[1,:3]
         assert_array_almost_equal(a, dot(lfac, lfac.T))
 
@@ -160,7 +160,7 @@ class TestCholeskyBanded(TestCase):
                     [1.0, 0.5, 0.2j, -1.0]])
         c = cholesky_banded(ab, lower=True)
         lfac = zeros_like(a)
-        lfac[range(4),range(4)] = c[0]
+        lfac[list(range(4)),list(range(4))] = c[0]
         lfac[(1,2,3),(0,1,2)] = c[1,:3]
         assert_array_almost_equal(a, dot(lfac, lfac.conj().T))
 

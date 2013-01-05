@@ -21,9 +21,9 @@ def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
         a = a.tolist()
     if isinstance(b, np.ndarray):
         b = b.tolist()
-    a = map(tpl, a)
+    a = list(map(tpl, a))
     a.sort()
-    b = map(tpl, b)
+    b = list(map(tpl, b))
     b.sort()
     assert_equal(a, b)
 
@@ -256,10 +256,10 @@ class TestUtilities(object):
 
         npoints = {2: 70, 3: 11, 4: 5, 5: 3}
 
-        for ndim in xrange(2, 6):
+        for ndim in range(2, 6):
             # Generate an uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
-            grid = np.c_[map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim))))].T
+            grid = np.c_[list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))].T
 
             err_msg = "ndim=%d" % ndim
 
@@ -384,9 +384,9 @@ class TestDelaunay(object):
 
     def test_nd_simplex(self):
         # simple smoke test: triangulate a n-dimensional simplex
-        for nd in xrange(2, 8):
+        for nd in range(2, 8):
             points = np.zeros((nd+1, nd))
-            for j in xrange(nd):
+            for j in range(nd):
                 points[j,j] = 1.0
             points[-1,:] = 1.0
 
@@ -479,7 +479,7 @@ class TestDelaunay(object):
 
             obj = qhull.Delaunay(points[:nmin], incremental=True,
                                  qhull_options=opts)
-            for j in xrange(nmin, len(points), chunksize):
+            for j in range(nmin, len(points), chunksize):
                 obj.add_points(points[j:j+chunksize])
 
             obj2 = qhull.Delaunay(points)
@@ -592,7 +592,7 @@ class TestConvexHull:
                 nmin = ndim +2
 
             obj = qhull.ConvexHull(points[:nmin], incremental=True)
-            for j in xrange(nmin, len(points), chunksize):
+            for j in range(nmin, len(points), chunksize):
                 obj.add_points(points[j:j+chunksize])
 
             obj2 = qhull.ConvexHull(points)
@@ -655,10 +655,9 @@ class TestVoronoi:
         """Compare to output from 'qvoronoi o Fv < data' to Voronoi()"""
 
         # Parse output
-        output = map(lambda x: map(float, x.split()),
-                     output.strip().splitlines())
+        output = [list(map(float, x.split())) for x in output.strip().splitlines()]
         nvertex = int(output[1][0])
-        vertices = map(tuple, output[3:2+nvertex]) # exclude inf
+        vertices = list(map(tuple, output[3:2+nvertex])) # exclude inf
         nregion = int(output[1][1])
         regions = [[int(y)-1 for y in x[1:]]
                    for x in output[2+nvertex:2+nvertex+nregion]]
@@ -678,9 +677,9 @@ class TestVoronoi:
         assert_equal(set(map(tuple, vor.regions)),
                      set(map(tuple, regions)))
 
-        p1 = zip(map(sorttuple, ridge_points), map(sorttuple, ridge_vertices))
-        p2 = zip(map(sorttuple, vor.ridge_points.tolist()),
-                 map(sorttuple, vor.ridge_vertices))
+        p1 = list(zip(list(map(sorttuple, ridge_points)), list(map(sorttuple, ridge_vertices))))
+        p2 = list(zip(list(map(sorttuple, vor.ridge_points.tolist())),
+                 list(map(sorttuple, vor.ridge_vertices))))
         p1.sort()
         p2.sort()
 
@@ -697,7 +696,7 @@ class TestVoronoi:
             tree = KDTree(points)
             vor = qhull.Voronoi(points)
 
-            for p, v in vor.ridge_dict.items():
+            for p, v in list(vor.ridge_dict.items()):
                 # consider only finite ridges
                 if not np.all(np.asarray(v) >= 0):
                     continue
@@ -711,7 +710,7 @@ class TestVoronoi:
                 dist, k = tree.query(ridge_midpoint - d, k=1)
                 assert_equal(k, p[1])
 
-        for name in DATASETS.keys():
+        for name in list(DATASETS.keys()):
             yield check, name
 
     def test_furthest_site(self):
@@ -757,7 +756,7 @@ class TestVoronoi:
 
             obj = qhull.Voronoi(points[:nmin], incremental=True,
                                  qhull_options=opts)
-            for j in xrange(nmin, len(points), chunksize):
+            for j in range(nmin, len(points), chunksize):
                 obj.add_points(points[j:j+chunksize])
 
             obj2 = qhull.Voronoi(points)

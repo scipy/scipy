@@ -188,7 +188,7 @@ def vq(obs, code_book):
 
     """
     try:
-        import _vq
+        from . import _vq
         ct = common_type(obs, code_book)
         c_obs = obs.astype(ct)
         c_code_book = code_book.astype(ct)
@@ -289,7 +289,7 @@ def _py_vq_1d(obs, code_book):
     dist = np.zeros((n, nc))
     for i in range(nc):
         dist[:, i] = np.sum(obs - code_book[i])
-    print dist
+    print(dist)
     code = argmin(dist)
     min_dist = dist[code]
 
@@ -645,7 +645,7 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
         i'th observation is closest to.
 
     """
-    if missing not in _valid_miss_meth.keys():
+    if missing not in list(_valid_miss_meth.keys()):
         raise ValueError("Unkown missing method: %s" % str(missing))
     # If data is rank 1, then we have 1 dimension problem.
     nd  = np.ndim(data)
