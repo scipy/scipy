@@ -178,7 +178,7 @@ def dump_datasets(filename):
     datadir = os.path.join(DATA_DIR, base)
     os.makedirs(datadir)
     datasets = parse_ipp_file(filename)
-    for k, d in list(datasets.items()):
+    for k, d in datasets.items():
         dfilename = os.path.join(datadir, k) + '.txt'
         dump_dataset(dfilename, d)
 

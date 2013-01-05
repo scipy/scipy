@@ -518,7 +518,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         body += funcall
 
     # Assign and cast-check output values
-    for j, (outtype, fouttype) in enumerate(list(zip(ufunc_outputs, outtypecodes))):
+    for j, (outtype, fouttype) in enumerate(zip(ufunc_outputs, outtypecodes)):
         if (fouttype, outtype) in DANGEROUS_DOWNCAST:
             body += "        if ov%d == <%s>ov%d:\n" % (j, CY_TYPES[outtype], j)
             body += "            (<%s *>op%d)[0] = <%s>ov%d\n" % (

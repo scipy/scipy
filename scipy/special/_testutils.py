@@ -183,7 +183,7 @@ class FuncData(object):
 
         assert_(len(got) == len(wanted))
 
-        for output_num, (x, y) in enumerate(list(zip(got, wanted))):
+        for output_num, (x, y) in enumerate(zip(got, wanted)):
             pinf_x = np.isinf(x) & (x > 0)
             pinf_y = np.isinf(y) & (x > 0)
             minf_x = np.isinf(x) & (x < 0)

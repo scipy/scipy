@@ -51,7 +51,7 @@ def savez_compress(file, *args, **kwds):
     namedict = kwds
     for i, val in enumerate(args):
         key = 'arr_%d' % i
-        if key in list(namedict.keys()):
+        if key in namedict.keys():
             raise ValueError("Cannot use un-named variables and keyword %s" % key)
         namedict[key] = val
 
