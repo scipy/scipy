@@ -29,7 +29,7 @@
 
 import struct
 import numpy as np
-from numpy.compat import asbytes, asstr
+from numpy.compat import asstr
 import tempfile
 import zlib
 import warnings
@@ -716,17 +716,17 @@ def readsav(file_name, idict=None, python_dict=False,
 
     # Read the signature, which should be 'SR'
     signature = _read_bytes(f, 2)
-    if signature != asbytes('SR'):
+    if signature != b'SR':
         raise Exception("Invalid SIGNATURE: %s" % signature)
 
     # Next, the record format, which is '\x00\x04' for normal .sav
     # files, and '\x00\x06' for compressed .sav files.
     recfmt = _read_bytes(f, 2)
 
-    if recfmt == asbytes('\x00\x04'):
+    if recfmt == b'\x00\x04':
         pass
 
-    elif recfmt == asbytes('\x00\x06'):
+    elif recfmt == b'\x00\x06':
 
         if verbose:
             print("IDL Save file is compressed")
@@ -740,7 +740,7 @@ def readsav(file_name, idict=None, python_dict=False,
             print(" -> expanding to %s" % fout.name)
 
         # Write header
-        fout.write(asbytes('SR\x00\x04'))
+        fout.write(b'SR\x00\x04')
 
         # Cycle through records
         while True:

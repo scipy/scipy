@@ -106,7 +106,7 @@ class VarReader4(object):
     def read_header(self):
         ''' Read and return header for variable '''
         data = read_dtype(self.mat_stream, self.dtypes['header'])
-        name = self.mat_stream.read(int(data['namlen'])).strip(asbytes('\x00'))
+        name = self.mat_stream.read(int(data['namlen'])).strip(b'\x00')
         if data['mopt'] < 0 or data['mopt'] > 5000:
             raise ValueError('Mat 4 mopt wrong format, byteswapping problem?')
         M, rest = divmod(data['mopt'], 1000) # order code

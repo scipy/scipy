@@ -7,7 +7,6 @@ MATLAB is a registered trademark of the Mathworks inc.
 """
 import sys
 import numpy as np
-from numpy.compat import asbytes
 
 if sys.version_info[0] >= 3:
     byteord = int
@@ -211,7 +210,7 @@ def get_matfile_version(fileobj):
     fileobj.seek(124)
     tst_str = fileobj.read(4)
     fileobj.seek(0)
-    maj_ind = int(tst_str[2] == asbytes('I')[0])
+    maj_ind = int(tst_str[2] == b'I'[0])
     maj_val = byteord(tst_str[maj_ind])
     min_val = byteord(tst_str[1-maj_ind])
     ret = (maj_val, min_val)

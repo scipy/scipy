@@ -13,7 +13,6 @@ Functions
 """
 from scipy.optimize import minpack2
 import numpy as np
-from numpy.compat import asbytes
 from scipy.lib.six.moves import xrange
 
 __all__ = ['line_search_wolfe1', 'line_search_wolfe2',
@@ -153,14 +152,14 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     derphi1 = derphi0
     isave = np.zeros((2,), np.intc)
     dsave = np.zeros((13,), float)
-    task = asbytes('START')
+    task = b'START'
 
     maxiter=30
     for i in xrange(maxiter):
         stp, phi1, derphi1, task = minpack2.dcsrch(alpha1, phi1, derphi1,
                                                    c1, c2, xtol, task,
                                                    amin, amax, isave, dsave)
-        if task[:2] == asbytes('FG'):
+        if task[:2] == b'FG':
             alpha1 = stp
             phi1 = phi(stp)
             derphi1 = derphi(stp)
@@ -170,7 +169,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
         # maxiter reached, the line search did not converge
         stp=None
 
-    if task[:5] == asbytes('ERROR') or task[:4] == asbytes('WARN'):
+    if task[:5] == b'ERROR' or task[:4] == b'WARN':
         stp = None  # failed
 
     return stp, phi1, phi0

@@ -42,17 +42,17 @@ from functools import reduce
 from scipy.lib.six import integer_types
 
 
-ABSENT       = asbytes('\x00\x00\x00\x00\x00\x00\x00\x00')
-ZERO         = asbytes('\x00\x00\x00\x00')
-NC_BYTE      = asbytes('\x00\x00\x00\x01')
-NC_CHAR      = asbytes('\x00\x00\x00\x02')
-NC_SHORT     = asbytes('\x00\x00\x00\x03')
-NC_INT       = asbytes('\x00\x00\x00\x04')
-NC_FLOAT     = asbytes('\x00\x00\x00\x05')
-NC_DOUBLE    = asbytes('\x00\x00\x00\x06')
-NC_DIMENSION = asbytes('\x00\x00\x00\n')
-NC_VARIABLE  = asbytes('\x00\x00\x00\x0b')
-NC_ATTRIBUTE = asbytes('\x00\x00\x00\x0c')
+ABSENT       = b'\x00\x00\x00\x00\x00\x00\x00\x00'
+ZERO         = b'\x00\x00\x00\x00'
+NC_BYTE      = b'\x00\x00\x00\x01'
+NC_CHAR      = b'\x00\x00\x00\x02'
+NC_SHORT     = b'\x00\x00\x00\x03'
+NC_INT       = b'\x00\x00\x00\x04'
+NC_FLOAT     = b'\x00\x00\x00\x05'
+NC_DOUBLE    = b'\x00\x00\x00\x06'
+NC_DIMENSION = b'\x00\x00\x00\n'
+NC_VARIABLE  = b'\x00\x00\x00\x0b'
+NC_ATTRIBUTE = b'\x00\x00\x00\x0c'
 
 
 TYPEMAP = { NC_BYTE:   ('b', 1),
@@ -307,7 +307,7 @@ class netcdf_file(object):
 
     def _write(self):
         self.fp.seek(0)
-        self.fp.write(asbytes('CDF'))
+        self.fp.write(b'CDF')
         self.fp.write(array(self.version_byte, '>b').tostring())
 
         # Write headers and data.
@@ -418,7 +418,7 @@ class netcdf_file(object):
         if not var.isrec:
             self.fp.write(var.data.tostring())
             count = var.data.size * var.data.itemsize
-            self.fp.write(asbytes('0') * (var._vsize - count))
+            self.fp.write(b'0' * (var._vsize - count))
         else:  # record variable
             # Handle rec vars with shape[0] < nrecs.
             if self._recs > len(var.data):
@@ -436,7 +436,7 @@ class netcdf_file(object):
                 self.fp.write(rec.tostring())
                 # Padding
                 count = rec.size * rec.itemsize
-                self.fp.write(asbytes('0') * (var._vsize - count))
+                self.fp.write(b'0' * (var._vsize - count))
                 pos += self._recsize
                 self.fp.seek(pos)
             self.fp.seek(pos0 + var._vsize)
@@ -475,12 +475,12 @@ class netcdf_file(object):
             values = values.byteswap()
         self.fp.write(values.tostring())
         count = values.size * values.itemsize
-        self.fp.write(asbytes('0') * (-count % 4))  # pad
+        self.fp.write(b'0' * (-count % 4))  # pad
 
     def _read(self):
         # Check magic bytes and version
         magic = self.fp.read(3)
-        if not magic == asbytes('CDF'):
+        if not magic == b'CDF':
             raise TypeError("Error: %s is not a valid NetCDF 3 file" %
                             self.filename)
         self.__dict__['version_byte'] = fromstring(self.fp.read(1), '>b')[0]
@@ -645,7 +645,7 @@ class netcdf_file(object):
             values = fromstring(values, dtype='>%s' % typecode)
             if values.shape == (1,): values = values[0]
         else:
-            values = values.rstrip(asbytes('\x00'))
+            values = values.rstrip(b'\x00')
         return values
 
     def _pack_begin(self, begin):
@@ -672,11 +672,11 @@ class netcdf_file(object):
         count = len(s)
         self._pack_int(count)
         self.fp.write(asbytes(s))
-        self.fp.write(asbytes('0') * (-count % 4))  # pad
+        self.fp.write(b'0' * (-count % 4))  # pad
 
     def _unpack_string(self):
         count = self._unpack_int()
-        s = self.fp.read(count).rstrip(asbytes('\x00'))
+        s = self.fp.read(count).rstrip(b'\x00')
         self.fp.read(-count % 4)  # read padding
         return s
 

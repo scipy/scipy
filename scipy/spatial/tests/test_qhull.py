@@ -4,7 +4,6 @@ import sys
 import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, run_module_suite,\
      assert_, dec, assert_allclose, assert_array_equal, assert_raises
-from numpy.compat import asbytes
 from scipy.lib.six.moves import xrange
 
 import copy
@@ -78,14 +77,14 @@ class Test_Qhull(object):
     def test_swapping(self):
         # Check that Qhull state swapping works
 
-        x = qhull._Qhull(asbytes('v'),
+        x = qhull._Qhull(b'v',
                          np.array([[0,0],[0,1],[1,0],[1,1.],[0.5,0.5]]),
-                         asbytes('Qz'))
+                         b'Qz')
         xd = copy.deepcopy(x.get_voronoi_diagram())
         
-        y = qhull._Qhull(asbytes('v'),
+        y = qhull._Qhull(b'v',
                          np.array([[0,0],[0,1],[1,0],[1,2.]]),
-                         asbytes('Qz'))
+                         b'Qz')
         yd = copy.deepcopy(y.get_voronoi_diagram())
 
         xd2 = copy.deepcopy(x.get_voronoi_diagram())

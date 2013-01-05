@@ -10,7 +10,6 @@ from io import BytesIO
 from glob import glob
 
 import numpy as np
-from numpy.compat import asbytes
 from numpy.testing import dec, assert_
 
 from scipy.io.netcdf import netcdf_file
@@ -36,9 +35,9 @@ def make_simple(*args, **kwargs):
 
 def gen_for_simple(ncfileobj):
     ''' Generator for example fileobj tests '''
-    yield assert_equal, ncfileobj.history, asbytes('Created for a test')
+    yield assert_equal, ncfileobj.history, b'Created for a test'
     time = ncfileobj.variables['time']
-    yield assert_equal, time.units, asbytes('days since 2008-01-01')
+    yield assert_equal, time.units, b'days since 2008-01-01'
     yield assert_equal, time.shape, (N_EG_ELS,)
     yield assert_equal, time[-1], N_EG_ELS-1
 

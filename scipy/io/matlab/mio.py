@@ -9,8 +9,6 @@ import os
 import sys
 import warnings
 
-from numpy.compat import asbytes
-
 from scipy.lib.six import string_types
 
 from .miobase import get_matfile_version, docfiller
@@ -251,7 +249,7 @@ def savemat(file_name, mdict,
         file_stream = open(file_name, 'wb')
     else:
         try:
-            file_name.write(asbytes(''))
+            file_name.write(b'')
         except AttributeError:
             raise IOError('Writer needs file name or writeable '
                            'file-like object')

@@ -16,7 +16,6 @@ else:
 from tempfile import mkstemp
 
 import numpy as np
-from numpy.compat import asbytes
 
 from nose.tools import assert_true, assert_false, \
      assert_equal, assert_raises
@@ -30,7 +29,7 @@ from scipy.io.matlab.streams import make_stream, \
 
 
 def setup():
-    val = asbytes('a\x00string')
+    val = b'a\x00string'
     global fs, gs, cs, fname
     fd, fname = mkstemp()
     fs = os.fdopen(fd, 'wb')
@@ -81,23 +80,23 @@ def test_read():
         st = make_stream(s)
         st.seek(0)
         res = st.read(-1)
-        yield assert_equal, res, asbytes('a\x00string')
+        yield assert_equal, res, b'a\x00string'
         st.seek(0)
         res = st.read(4)
-        yield assert_equal, res, asbytes('a\x00st')
+        yield assert_equal, res, b'a\x00st'
         # read into
         st.seek(0)
         res = _read_into(st, 4)
-        yield assert_equal, res, asbytes('a\x00st')
+        yield assert_equal, res, b'a\x00st'
         res = _read_into(st, 4)
-        yield assert_equal, res, asbytes('ring')
+        yield assert_equal, res, b'ring'
         yield assert_raises, IOError, _read_into, st, 2
         # read alloc
         st.seek(0)
         res = _read_string(st, 4)
-        yield assert_equal, res, asbytes('a\x00st')
+        yield assert_equal, res, b'a\x00st'
         res = _read_string(st, 4)
-        yield assert_equal, res, asbytes('ring')
+        yield assert_equal, res, b'ring'
         yield assert_raises, IOError, _read_string, st, 2
 
 if __name__ == "__main__":

@@ -167,14 +167,14 @@ class MatFile5Reader(MatFileReader):
         self.mat_stream.seek(126)
         mi = self.mat_stream.read(2)
         self.mat_stream.seek(0)
-        return mi == asbytes('IM') and '<' or '>'
+        return mi == b'IM' and '<' or '>'
 
     def read_file_header(self):
         ''' Read in mat 5 file header '''
         hdict = {}
         hdr_dtype = MDTYPES[self.byte_order]['dtypes']['file_header']
         hdr = read_dtype(self.mat_stream, hdr_dtype)
-        hdict['__header__'] = hdr['description'].item().strip(asbytes(' \t\n\000'))
+        hdict['__header__'] = hdr['description'].item().strip(b' \t\n\000')
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
         hdict['__version__'] = '%d.%d' % (v_major, v_minor)
@@ -224,7 +224,7 @@ class MatFile5Reader(MatFileReader):
             dcor = zlib.decompressobj()
             stream = BytesIO(dcor.decompress(data))
             # Check the stream is not so broken as to leave cruft behind
-            if not dcor.flush() == asbytes(''):
+            if not dcor.flush() == b'':
                 raise ValueError("Something wrong with byte stream.")
             del data
             self._matrix_reader.set_stream(stream)
@@ -543,7 +543,7 @@ class VarWriter5(object):
         # pad to next 64-bit boundary
         bc_mod_8 = byte_count % 8
         if bc_mod_8:
-            self.file_stream.write(asbytes('\x00') * (8-bc_mod_8))
+            self.file_stream.write(b'\x00' * (8-bc_mod_8))
 
     def write_header(self,
                      shape,
