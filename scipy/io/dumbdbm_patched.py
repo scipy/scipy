@@ -65,7 +65,7 @@ class _Database(object):
         try: _os.rename(self._dirfile, self._bakfile)
         except _os.error: pass
         f = _open(self._dirfile, 'w')
-        for key, (pos, siz) in list(self._index.items()):
+        for key, (pos, siz) in self._index.items():
             f.write("%s, (%s, %s)\n" % (repr(key), repr(pos), repr(siz)))
         f.close()
 

@@ -201,12 +201,12 @@ class MMFile (object):
             if format == self.FORMAT_ARRAY:
                 if not len(line) == 2:
                     raise ValueError("Header line not of length 2: " + line)
-                rows,cols = list(map(float, line))
+                rows,cols = map(float, line)
                 entries = rows*cols
             else:
                 if not len(line) == 3:
                     raise ValueError("Header line not of length 3: " + line)
-                rows, cols, entries = list(map(float, line))
+                rows, cols, entries = map(float, line)
 
             return (rows, cols, entries, format, field, symmetry)
 
@@ -365,7 +365,7 @@ class MMFile (object):
                 if not line or line.startswith(asbytes('%')):
                     continue
                 if is_complex:
-                    aij = complex(*list(map(float,line.split())))
+                    aij = complex(*map(float,line.split()))
                 else:
                     aij = float(line)
                 a[i,j] = aij
@@ -397,10 +397,10 @@ class MMFile (object):
                 if not line or line.startswith(asbytes('%')):
                     continue
                 l = line.split()
-                i,j = list(map(int,l[:2]))
+                i,j = map(int,l[:2])
                 i,j = i-1,j-1
                 if is_complex:
-                    aij = complex(*list(map(float,l[2:])))
+                    aij = complex(*map(float,l[2:]))
                 else:
                     aij = float(l[2])
                 a[i,j] = aij

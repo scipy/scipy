@@ -611,5 +611,5 @@ class MatFile4Writer(object):
         # ``write_header`` input argument.  It's there for compatibility
         # with the matlab 5 version of this method
         self._matrix_writer = VarWriter4(self)
-        for name, var in list(mdict.items()):
+        for name, var in mdict.items():
             self._matrix_writer.write(var, name)

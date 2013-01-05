@@ -182,7 +182,7 @@ def _convert_codecs(template, byte_order):
     '''
     codecs = {}
     postfix = byte_order == '<' and '_le' or '_be'
-    for k, v in list(template.items()):
+    for k, v in template.items():
         codec = v['codec']
         try:
             " ".encode(codec)

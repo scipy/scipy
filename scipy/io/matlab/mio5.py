@@ -463,7 +463,7 @@ def to_writeable(source):
                   hasattr(source, 'items'))
     # Objects that don't implement mappings, but do have dicts
     if not is_mapping and hasattr(source, '__dict__'):
-        source = dict((key, value) for key, value in list(source.__dict__.items())
+        source = dict((key, value) for key, value in source.__dict__.items()
                       if not key.startswith('_'))
         is_mapping = True
     if is_mapping:
@@ -847,7 +847,7 @@ class MatFile5Writer(object):
         if write_header:
             self.write_file_header()
         self._matrix_writer = VarWriter5(self)
-        for name, var in list(mdict.items()):
+        for name, var in mdict.items():
             if name[0] == '_':
                 continue
             is_global = name in self.global_vars

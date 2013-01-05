@@ -311,7 +311,7 @@ def _load_check_case(name, files, case):
     for file_name in files:
         matdict = loadmat(file_name, struct_as_record=True)
         label = "test %s; file %s" % (name, file_name)
-        for k, expected in list(case.items()):
+        for k, expected in case.items():
             k_label = "%s, variable %s" % (label, k)
             assert_true(k in matdict, "Missing key at %s" % k_label)
             _check_level(k_label, expected, matdict[k])
@@ -324,7 +324,7 @@ def _whos_check_case(name, files, case, classes):
         whos = whosmat(file_name)
 
         expected_whos = []
-        for k, expected in list(case.items()):
+        for k, expected in case.items():
             expected_whos.append((k, expected.shape, classes[k]))
 
         whos.sort()

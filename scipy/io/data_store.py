@@ -51,7 +51,7 @@ def _create_shelf(file_name,data):
     """
     shelf_name = file_name.split('.')[0]
     f = dumb_shelve.open(shelf_name,'w')
-    for i in list(data.keys()):
+    for i in data.keys():
 #       print 'saving...',i
         f[i] = data[i]
 #   print 'done'
@@ -88,7 +88,7 @@ def _load(module):
     fn = os.path.join(dir, filebase)
     f = dumb_shelve.open(fn, "r")
     #exec( 'import ' + module.__name__)
-    for i in list(f.keys()):
+    for i in f.keys():
         exec( 'import ' + module.__name__+ ';' +
               module.__name__+'.'+i + '=' + 'f["' + i + '"]')
 
