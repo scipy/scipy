@@ -126,8 +126,8 @@ class TestCdist(TestCase):
         # Get the data: the input matrix and the right output.
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
-        Y1 = cdist(X1, X2, 'euclidean')
-        Y2 = cdist(X1, X2, 'test_euclidean')
+        Y1 = cdist(X1, X2, u('euclidean'))
+        Y2 = cdist(X1, X2, u('test_euclidean'))
         if verbose > 2:
             print_((Y1-Y2).max())
         self.assertTrue(within_tol(Y1, Y2, eps))
@@ -487,7 +487,7 @@ class TestPdist(TestCase):
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-euclidean']
 
-        Y_test1 = pdist(X, 'euclidean')
+        Y_test1 = pdist(X, u('euclidean'))
         self.assertTrue(within_tol(Y_test1, Y_right, eps))
 
     def test_pdist_euclidean_random_float32(self):

@@ -68,6 +68,8 @@ import warnings
 import numpy as np
 from numpy.linalg import norm
 
+from scipy.lib.six import callable, string_types
+
 from . import _distance_wrap
 import collections
 
@@ -1123,7 +1125,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         raise ValueError('weighted minkowski requires a weight '
                             'vector `w` to be given.')
 
-    if isinstance(metric, collections.Callable):
+    if callable(metric):
         if metric == minkowski:
             def dfun(u, v):
                 return minkowski(u, v, p)
@@ -1145,7 +1147,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                 dm[k] = dfun(X[i], X[j])
                 k = k + 1
 
-    elif isinstance(metric, str):
+    elif isinstance(metric, string_types):
         mstr = metric.lower()
 
         #if X.dtype != np.double and \
@@ -1914,7 +1916,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     n = s[1]
     dm = np.zeros((mA, mB), dtype=np.double)
 
-    if isinstance(metric, collections.Callable):
+    if callable(metric):
         if metric == minkowski:
             for i in range(0, mA):
                 for j in range(0, mB):
@@ -1935,7 +1937,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             for i in range(0, mA):
                 for j in range(0, mB):
                     dm[i, j] = metric(XA[i, :], XB[j, :])
-    elif isinstance(metric, str):
+    elif isinstance(metric, string_types):
         mstr = metric.lower()
 
         #if XA.dtype != np.double and \
