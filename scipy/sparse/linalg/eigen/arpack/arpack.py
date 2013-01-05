@@ -1209,7 +1209,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     if k <= 0 or k >= n:
-        raise ValueError("k must be between 1 and rank(A)-1")
+        raise ValueError("k=%d must be between 1 and rank(A)-1=%d"
+                         % (k, n - 1))
 
     if sigma is None:
         matvec = _aslinearoperator_with_dtype(A).matvec
