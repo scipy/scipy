@@ -19,7 +19,7 @@ class TestPeriodogram(TestCase):
         q[-1] /= 2.0
         q /= 8
         assert_allclose(p, q)
-        
+
     def test_real_onesided_odd(self):
         x = np.zeros(15)
         x[0] = 1
@@ -46,7 +46,7 @@ class TestPeriodogram(TestCase):
         f, p = periodogram(x, scaling='spectrum')
         g, q = periodogram(x, scaling='density')
         assert_allclose(f, np.linspace(0, 0.5, 9))
-        assert_allclose(p, q/16.0) 
+        assert_allclose(p, q/16.0)
 
     def test_complex(self):
         x = np.zeros(16, np.complex128)
@@ -56,11 +56,11 @@ class TestPeriodogram(TestCase):
         q = 5.0*np.ones(16)/16.0
         q[0] = 0
         assert_allclose(p, q)
-    
+
     def test_unk_scaling(self):
         assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),
                 scaling='foo')
-    
+
     def test_nd_axis_m1(self):
         x = np.zeros(20, dtype=np.float64)
         x = x.reshape((2,1,10))
@@ -79,7 +79,7 @@ class TestPeriodogram(TestCase):
         assert_array_equal(p.shape, (6,2,1))
         assert_array_almost_equal_nulp(p[:,0,0], p[:,1,0], 60)
         f0, p0 = periodogram(x[:,0,0])
-        assert_array_almost_equal_nulp(p0, p[:,1,0])        
+        assert_array_almost_equal_nulp(p0, p[:,1,0])
 
     def test_window_external(self):
         x = np.zeros(16)
@@ -103,6 +103,10 @@ class TestPeriodogram(TestCase):
         f, p = periodogram([])
         assert_array_equal(f.shape, (0,))
         assert_array_equal(p.shape, (0,))
+        for shape in [(0,), (3,0), (0,5,2)]:
+            f, p = periodogram(np.empty(shape))
+            assert_array_equal(f.shape, shape)
+            assert_array_equal(p.shape, shape)
 
     def test_short_nfft(self):
         x = np.zeros(18)
@@ -136,7 +140,7 @@ class TestWelch(TestCase):
         assert_allclose(f, np.linspace(0, 0.5, 5))
         assert_allclose(p, np.array([ 0.08333333,  0.15277778,  0.22222222,
             0.22222222,  0.11111111]))
-        
+
     def test_real_onesided_odd(self):
         x = np.zeros(16)
         x[0] = 1
@@ -172,11 +176,11 @@ class TestWelch(TestCase):
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         assert_allclose(p, np.array([ 0.41666667,  0.38194444,  0.55555556,
             0.55555556,  0.55555556, 0.55555556,  0.55555556,  0.38194444]))
-    
+
     def test_unk_scaling(self):
         assert_raises(ValueError, welch, np.zeros(4, np.complex128),
                 scaling='foo', nperseg=4)
-    
+
     def test_detrend_linear(self):
         x = np.arange(10, dtype=np.float64)+0.04
         f, p = welch(x, nperseg=10, detrend='linear')
@@ -184,14 +188,14 @@ class TestWelch(TestCase):
 
     def test_detrend_external(self):
         x = np.arange(10, dtype=np.float64)+0.04
-        f, p = welch(x, nperseg=10, 
+        f, p = welch(x, nperseg=10,
                 detrend=lambda seg: signal.detrend(seg, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
     def test_detrend_external_nd_m1(self):
         x = np.arange(40, dtype=np.float64)+0.04
         x = x.reshape((2,2,10))
-        f, p = welch(x, nperseg=10, 
+        f, p = welch(x, nperseg=10,
                 detrend=lambda seg: signal.detrend(seg, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
@@ -219,7 +223,7 @@ class TestWelch(TestCase):
         assert_array_equal(p.shape, (6,2,1))
         assert_array_almost_equal_nulp(p[:,0,0], p[:,1,0], 60)
         f0, p0 = welch(x[:,0,0], nperseg=10)
-        assert_array_almost_equal_nulp(p0, p[:,1,0])        
+        assert_array_almost_equal_nulp(p0, p[:,1,0])
 
     def test_window_external(self):
         x = np.zeros(16)
@@ -235,21 +239,28 @@ class TestWelch(TestCase):
         f, p = welch([])
         assert_array_equal(f.shape, (0,))
         assert_array_equal(p.shape, (0,))
+        for shape in [(0,), (3,0), (0,5,2)]:
+            f, p = welch(np.empty(shape))
+            assert_array_equal(f.shape, shape)
+            assert_array_equal(p.shape, shape)
 
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
-        warnings.simplefilter('ignore', UserWarning)
-        f, p = welch(x)
-        warnings.filters.pop(0)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            f, p = welch(x)
+
         f1, p1 = welch(x, nperseg=8)
         assert_allclose(f, f1)
         assert_allclose(p, p1)
 
-    def test_window_long(self):
-        warnings.simplefilter('ignore', UserWarning)
-        assert_raises(ValueError, welch, np.zeros(4), 1, np.array([1,1,1,1,1]))
-        warnings.filters.pop(0)
+    def test_window_long_or_nd(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            assert_raises(ValueError, welch, np.zeros(4), 1, np.array([1,1,1,1,1]))
+            assert_raises(ValueError, welch, np.zeros(4), 1,
+                          np.arange(6).reshape((2,3)))
 
     def test_nondefault_noverlap(self):
         x = np.zeros(64)
@@ -260,6 +271,9 @@ class TestWelch(TestCase):
 
     def test_bad_noverlap(self):
         assert_raises(ValueError, welch, np.zeros(4), 1, 'hanning', 2, 7)
+
+    def test_nfft_too_short(self):
+        assert_raises(ValueError, welch, np.ones(12), nfft=3, nperseg=4)
 
 
 class TestLombscargle:

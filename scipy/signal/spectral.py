@@ -107,8 +107,8 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     """
     x = np.asarray(x)
 
-    if x.shape == (0,):
-        return np.array([]), np.array([])
+    if x.size == 0:
+        return np.empty(x.shape), np.empty(x.shape)
 
     if window is None:
         window = 'boxcar'
@@ -146,7 +146,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     fs : float, optional
         Sampling frequency of the `x` time series in units of Hz. Defaults
         to 1.0.
-   window : str or tuple or array_like, optional
+    window : str or tuple or array_like, optional
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length will be used for nperseg.
@@ -256,16 +256,16 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     """
     x = np.asarray(x)
 
-    if x.shape == (0,):
-        return np.array([]), np.array([])
+    if x.size == 0:
+        return np.empty(x.shape), np.empty(x.shape)
 
     if axis != -1:
         x = np.rollaxis(x, axis, len(x.shape))
-    
+
     if x.shape[-1] < nperseg:
         warnings.warn('nperseg = %d, is greater than x.shape[%d] = %d, using '
                       'nperseg = x.shape[%d]'
-                      % (nperseg, axis, x.shape[axis], axis)) 
+                      % (nperseg, axis, x.shape[axis], axis))
         nperseg = x.shape[-1]
 
     if isinstance(window, basestring) or type(window) is tuple:
