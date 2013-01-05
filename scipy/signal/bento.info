@@ -8,8 +8,8 @@ Library:
             sigtoolsmodule.c,
             firfilter.c,
             medianfilter.c
-    Extension: spectral
-        Sources: spectral.c
+    Extension: _spectral
+        Sources: _spectral.c
     Extension: spline
         Sources:
             splinemodule.c,

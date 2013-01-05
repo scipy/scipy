@@ -215,6 +215,8 @@ Spectral Analysis
 .. autosummary::
    :toctree: generated/
 
+   periodogram    -- Computes a (modified) periodogram
+   welch          -- Compute a periodogram using Welch's method
    lombscargle    -- Computes the Lomb-Scargle periodogram
 
 """
