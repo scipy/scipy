@@ -19,10 +19,10 @@ import inspect
 from numpy import all, where, arange, putmask, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, array, log1p, expm1
+     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1
 from numpy import atleast_1d, polyval, ceil, place, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf, \
-     power, NINF, empty
+     NINF, empty
 import numpy
 import numpy as np
 import numpy.random as mtrand
@@ -5601,8 +5601,6 @@ class rv_discrete(rv_generic):
         self.badvalue = badvalue
         self.a = a
         self.b = b
-        self.invcdf_a = a   # what's the difference to self.a, .b
-        self.invcdf_b = b
         self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
