@@ -10,6 +10,9 @@ import gzip
 
 import numpy as np
 
+import sys
+from scipy.lib.six import print_
+
 import scipy.sparse as sp
 import scipy.sparse.linalg.dsolve.umfpack as um
 import scipy.linalg as nla
@@ -70,7 +73,7 @@ def readMatrix( matrixName, options ):
     if options.default_url:
         matrixName = defaultURL + matrixName
 
-    print('url:', matrixName)
+    print_('url:', matrixName)
 
     if matrixName[:7] == 'http://':
         fileName, status = urllib.request.urlretrieve( matrixName )
@@ -78,16 +81,16 @@ def readMatrix( matrixName, options ):
     else:
         fileName = matrixName
 
-    print('file:', fileName)
+    print_('file:', fileName)
 
     try:
         readMatrix = formatMap[options.format]
     except:
         raise ValueError('unsupported format: %s' % options.format)
 
-    print('format:', options.format)
+    print_('format:', options.format)
 
-    print('reading...')
+    print_('reading...')
     if fileName.endswith('.gz'):
         fd = gzip.open( fileName )
     else:
@@ -97,7 +100,7 @@ def readMatrix( matrixName, options ):
 
     fd.close()
 
-    print('ok')
+    print_('ok')
 
     return mtx
 
@@ -132,7 +135,7 @@ def main():
     legends = ['umfpack', 'sparse.solve']
     for ii, matrixName in enumerate( matrixNames ):
 
-        print('*' * 50)
+        print_('*' * 50)
         mtx = readMatrix( matrixName, options )
 
         sizes.append( mtx.shape )
@@ -142,7 +145,7 @@ def main():
         err = np.zeros( (2,2), dtype = np.double )
         errors.append( err )
 
-        print('size              : %s (%d nnz)' % (mtx.shape, mtx.nnz))
+        print_('size              : %s (%d nnz)' % (mtx.shape, mtx.nnz))
 
         sol0 = np.ones( (mtx.shape[0],), dtype = np.double )
         rhs = mtx * sol0
@@ -152,29 +155,29 @@ def main():
         tt = time.clock()
         sol = umfpack( um.UMFPACK_A, mtx, rhs, autoTranspose = True )
         tts[0] = time.clock() - tt
-        print("umfpack           : %.2f s" % tts[0])
+        print_("umfpack           : %.2f s" % tts[0])
 
         error = mtx * sol - rhs
         err[0,0] = nla.norm( error )
-        print('||Ax-b||          :', err[0,0])
+        print_('||Ax-b||          :', err[0,0])
 
         error = sol0 - sol
         err[0,1] = nla.norm( error )
-        print('||x - x_{exact}|| :', err[0,1])
+        print_('||x - x_{exact}|| :', err[0,1])
 
         if options.compare:
             tt = time.clock()
             sol = sp.solve( mtx, rhs )
             tts[1] = time.clock() - tt
-            print("sparse.solve      : %.2f s" % tts[1])
+            print_("sparse.solve      : %.2f s" % tts[1])
 
             error = mtx * sol - rhs
             err[1,0] = nla.norm( error )
-            print('||Ax-b||          :', err[1,0])
+            print_('||Ax-b||          :', err[1,0])
 
             error = sol0 - sol
             err[1,1] = nla.norm( error )
-            print('||x - x_{exact}|| :', err[1,1])
+            print_('||x - x_{exact}|| :', err[1,1])
 
     if options.plot:
         try:
@@ -182,14 +185,14 @@ def main():
         except ImportError:
             raise ImportError("could not import pylab")
         times = np.array( times )
-        print(times)
+        print_(times)
         pylab.plot( times[:,0], 'b-o' )
         if options.compare:
             pylab.plot( times[:,1], 'r-s' )
         else:
             del legends[1]
 
-        print(legends)
+        print_(legends)
 
         ax = pylab.axis()
         y2 = 0.5 * (ax[3] - ax[2])

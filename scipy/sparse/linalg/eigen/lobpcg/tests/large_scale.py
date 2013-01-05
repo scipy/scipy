@@ -1,3 +1,4 @@
+from scipy.lib.six import print_
 from scipy import array, arange, ones, sort, cos, pi, rand, \
      set_printoptions, r_
 from scipy.sparse.linalg import lobpcg
@@ -35,15 +36,15 @@ data=[]
 tt = time.clock()
 eigs,vecs, resnh = lobpcg(X,A,B, residualTolerance = 1e-6, maxIterations =500, retResidualNormsHistory=1)
 data.append(time.clock()-tt)
-print('Results by LOBPCG for n='+str(n))
-print()
-print(eigs)
-print()
-print('Exact eigenvalues')
-print()
-print(w_ex[:m])
-print()
-print('Elapsed time',data[0])
+print_('Results by LOBPCG for n='+str(n))
+print_()
+print_(eigs)
+print_()
+print_('Exact eigenvalues')
+print_()
+print_(w_ex[:m])
+print_()
+print_('Elapsed time',data[0])
 loglog(arange(1,n+1),w_ex,'b.')
 xlabel(r'Number $i$')
 ylabel(r'$\lambda_i$')

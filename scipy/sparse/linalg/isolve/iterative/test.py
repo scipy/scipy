@@ -1,3 +1,4 @@
+from scipy.lib.six import print_
 from scipy import *
 from iterative import *
 
@@ -108,15 +109,15 @@ zx,ziter,zresid,zinfor = zbicg(zb,zx,ziter,zresid,test_fun,test_fun_t,test_psolv
 
 #zx,ziter,zresid,zinfor = zqmr(zb,zx,ziter,zresid,test_fun,test_fun_t,test_psolveq,test_psolveq_t,(zA,n),(zA,n),(n,),(n,))
 
-print()
-print('**************** double *****************')
-print('iter:',diter, 'resid:', dresid, 'info:',dinfor)
-print('x=',dx)
-print('*****************************************')
-print()
-print()
-print('**************** complex ****************')
-print('iter:',ziter, 'resid:',zresid, 'info:',zinfor)
-print('x=',zx)
-print('*****************************************')
-print()
+print_()
+print_('**************** double *****************')
+print_('iter:',diter, 'resid:', dresid, 'info:',dinfor)
+print_('x=',dx)
+print_('*****************************************')
+print_()
+print_()
+print_('**************** complex ****************')
+print_('iter:',ziter, 'resid:',zresid, 'info:',zinfor)
+print_('x=',zx)
+print_('*****************************************')
+print_()

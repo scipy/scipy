@@ -1,4 +1,5 @@
 from scipy import *
+from scipy.lib.six import print_
 from scipy.sparse.linalg import lobpcg
 from symeig import symeig
 from pylab import plot, show, legend, xlabel, ylabel
@@ -32,7 +33,7 @@ data1=[]
 data2=[]
 
 for n in N:
-    print('******', n)
+    print_('******', n)
     A,B = test(n) # Mikota pair
     X = rand(n,m)
     X = linalg.orth(X)
@@ -43,18 +44,18 @@ for n in N:
                               residualTolerance = 1e-4, maxIterations = 40)
     data1.append(time.clock()-tt)
     eigs = sort(eigs)
-    print()
-    print('Results by LOBPCG')
-    print()
-    print(n,eigs)
+    print_()
+    print_('Results by LOBPCG')
+    print_()
+    print_(n,eigs)
 
     tt = time.clock()
     w,v=symeig(A,B,range=(1,m))
     data2.append(time.clock()-tt)
-    print()
-    print('Results by symeig')
-    print()
-    print(n, w)
+    print_()
+    print_('Results by symeig')
+    print_()
+    print_(n, w)
 
 xlabel(r'Size $n$')
 ylabel(r'Elapsed time $t$')

@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.testing import assert_
 
+from scipy.lib.six import print_
+
 from scipy.sparse.linalg import lsqr
 from time import time
 
@@ -44,17 +46,17 @@ if __name__ == "__main__":
     else:
         sym='Yes'
 
-    print('LSQR')
-    print("Is linear operator symmetric? " + sym)
-    print("n: %3g  iterations:   %3g" % (n, k))
-    print("Norms computed in %.2fs by LSQR" % (time() - tic))
-    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " %( chio, phio, psio))
-    print("Residual norms computed directly:")
-    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" %  (norm(xo),
+    print_('LSQR')
+    print_("Is linear operator symmetric? " + sym)
+    print_("n: %3g  iterations:   %3g" % (n, k))
+    print_("Norms computed in %.2fs by LSQR" % (time() - tic))
+    print_(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " %( chio, phio, psio))
+    print_("Residual norms computed directly:")
+    print_(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" %  (norm(xo),
                                                           norm(G*xo - b),
                                                           norm(G.T*(G*xo-b))))
-    print("Direct solution norms:")
-    print(" ||x||  %9.4e  ||r|| %9.4e " %  (norm(svx), norm(G*svx -b)))
-    print("")
-    print(" || x_{direct} - x_{LSQR}|| %9.4e " % norm(svx-xo))
-    print("")
+    print_("Direct solution norms:")
+    print_(" ||x||  %9.4e  ||r|| %9.4e " %  (norm(svx), norm(G*svx -b)))
+    print_("")
+    print_(" || x_{direct} - x_{LSQR}|| %9.4e " % norm(svx-xo))
+    print_("")
