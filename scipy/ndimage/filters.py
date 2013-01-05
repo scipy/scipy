@@ -186,7 +186,7 @@ def gaussian_filter1d(input, sigma, axis = -1, order = 0, output = None,
     %(mode)s
     %(cval)s
     """
-    if order not in list(range(4)):
+    if order not in range(4):
         raise ValueError('Order outside 0..3 not implemented')
     sd = float(sigma)
     # make the length of the filter equal to 4 times the standard

@@ -375,7 +375,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
         lo = numpy.searchsorted(labels, sorted_index, side='left')
         hi = numpy.searchsorted(labels, sorted_index, side='right')
 
-        for i, l, h in zip(list(range(nidx)), lo, hi):
+        for i, l, h in zip(range(nidx), lo, hi):
             if l == h:
                 continue
             idx = sorted_index[i]
