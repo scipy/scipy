@@ -8,6 +8,8 @@ from warnings import warn
 
 import numpy as np
 
+from scipy.lib.six.moves import zip as izip
+
 from .sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix
 from .data import _data_matrix
@@ -341,12 +343,11 @@ class coo_matrix(_data_matrix):
         return dia_matrix((data,diags), shape=self.shape)
 
     def todok(self):
-        
         from .dok import dok_matrix
 
         dok = dok_matrix((self.shape), dtype=self.dtype)
 
-        dok.update( zip(zip(self.row,self.col),self.data) )
+        dok.update( izip(izip(self.row,self.col),self.data) )
 
         return dok
 

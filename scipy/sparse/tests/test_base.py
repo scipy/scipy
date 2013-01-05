@@ -1359,8 +1359,8 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         A[1, 3:10:3] = 7
         B[1, 3:10:3] = 7
         assert_array_equal(A.todense(), B)
-        A[1:5, 0] = list(range(1,5))
-        B[1:5, 0] = list(range(1,5))
+        A[1:5, 0] = range(1,5)
+        B[1:5, 0] = range(1,5)
         assert_array_equal(A.todense(), B)
         A[0, 1:10:2] = range(1,10,2)
         B[0, 1:10:2] = range(1,10,2)
@@ -1428,12 +1428,12 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         a[0,0] = 0
         # This assert would fail, because the above assignment would
         # incorrectly call __set_item__ even though the value was 0.
-        assert_((0,0) not in list(a.keys()), "Unexpected entry (0,0) in keys")
+        assert_((0,0) not in a.keys(), "Unexpected entry (0,0) in keys")
 
         # Slice assignments were also affected.
         b = dok_matrix((3,3))
         b[:,0] = 0
-        assert_(len(list(b.keys()))==0, "Unexpected entries in keys")
+        assert_(len(b.keys())==0, "Unexpected entries in keys")
 
     # The following five tests are duplicates from _TestCommon, so they can be
     # marked as knownfail for Python 2.4.  Once 2.4 is no longer supported,

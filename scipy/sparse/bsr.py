@@ -245,8 +245,7 @@ class bsr_matrix(_cs_matrix):
             #check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= N//C:
-                    print("max index",self.indices.max())
-                    raise ValueError("column index values must be < %d" % (N//C))
+                    raise ValueError("column index values must be < %d (now max %d)" % (N//C, self.indices.max()))
                 if self.indices.min() < 0:
                     raise ValueError("column index values must be >= 0")
                 if np.diff(self.indptr).min() < 0:

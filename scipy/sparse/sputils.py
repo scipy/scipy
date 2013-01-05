@@ -55,7 +55,7 @@ def upcast_char(*args):
     t = _upcast_memo.get(args)
     if t is not None:
         return t
-    t = upcast(*list(map(np.dtype, args)))
+    t = upcast(*map(np.dtype, args))
     _upcast_memo[args] = t
     return t
 

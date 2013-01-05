@@ -3,6 +3,7 @@
 __all__ = ['spmatrix', 'isspmatrix', 'issparse',
         'SparseWarning','SparseEfficiencyWarning']
 
+import sys
 from warnings import warn
 
 import numpy as np
@@ -150,7 +151,7 @@ class spmatrix(object):
 
         # helper function, outputs "(i,j)  v"
         def tostr(row,col,data):
-            triples = list(zip(list(zip(row,col)),data))
+            triples = zip(list(zip(row,col)),data)
             return '\n'.join( [ ('  %s\t%s' % t) for t in triples] )
 
         if nnz > maxprint:
@@ -164,8 +165,12 @@ class spmatrix(object):
 
         return out
 
-    def __bool__(self):  # Simple -- other ideas?
-        return self.getnnz() > 0
+    if sys.version_info[0] >= 3:
+        def __bool__(self):  # Simple -- other ideas?
+            return self.getnnz() > 0
+    else:
+        def __nonzero__(self):  # Simple -- other ideas?
+            return self.getnnz() > 0
 
     # What should len(sparse) return? For consistency with dense matrices,
     # perhaps it should be the number of rows?  But for some uses the number of
