@@ -6,10 +6,7 @@ of mat file.
 from os.path import join as pjoin, dirname
 import sys
 
-if sys.version_info[0] >= 3:
-    from io import BytesIO
-else:
-    from io import StringIO as BytesIO
+from io import BytesIO
 
 from numpy.testing import \
      assert_array_equal, \

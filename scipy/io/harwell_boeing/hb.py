@@ -26,6 +26,7 @@ from scipy.sparse import csc_matrix
 from scipy.io.harwell_boeing._fortran_format_parser import \
         FortranFormatParser, IntFormat, ExpFormat
 
+from scipy.lib.six import string_types
 
 __all__ = ["MalformedHeader", "read_hb", "write", "HBInfo", "HBFile",
            "HBMatrixType"]
@@ -493,7 +494,7 @@ def hb_read(file):
         hb = HBFile(fid)
         return hb.read_matrix()
 
-    if isinstance(file, str):
+    if isinstance(file, string_types):
         fid = open(file)
         try:
             return _get_matrix(fid)
@@ -537,7 +538,7 @@ def hb_write(file, m, hb_info=None):
         hb = HBFile(fid, hb_info)
         return hb.write_matrix(m)
 
-    if isinstance(file, str):
+    if isinstance(file, string_types):
         fid = open(file, "w")
         try:
             return _set_matrix(fid)

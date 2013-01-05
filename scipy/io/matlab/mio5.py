@@ -75,16 +75,17 @@ import os
 import time
 import sys
 import zlib
-if sys.version_info[0] >= 3:
-    from io import BytesIO
-else:
-    from io import StringIO as BytesIO
+
+from io import BytesIO
+
 import warnings
 
 import numpy as np
 from numpy.compat import asbytes, asstr
 
 import scipy.sparse
+
+from scipy.lib.six import string_types
 
 from . import byteordercodes as boc
 
@@ -261,7 +262,7 @@ class MatFile5Reader(MatFileReader):
 
         If variable_names is None, then get all variables in file
         '''
-        if isinstance(variable_names, str):
+        if isinstance(variable_names, string_types):
             variable_names = [variable_names]
         self.mat_stream.seek(0)
         # Here we pass all the parameters in self to the reading objects
@@ -469,8 +470,8 @@ def to_writeable(source):
     if is_mapping:
         dtype = []
         values = []
-        for field, value in list(source.items()):
-            if (isinstance(field, str) and
+        for field, value in source.items():
+            if (isinstance(field, string_types) and
                 not field[0] in '_0123456789'):
                 dtype.append((field,object))
                 values.append(value)

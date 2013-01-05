@@ -22,7 +22,9 @@ is read when the database is opened, and some updates rewrite the whole index)
 """
 
 _os = __import__('os')
-import builtins
+
+from scipy.lib.six.moves import builtins
+from scipy.lib.six import string_types
 
 _open = builtins.open
 
@@ -102,15 +104,15 @@ class _Database(object):
         f.close()
         return (pos, len(val))
 
-    def _addkey(self, key, xxx_todo_changeme):
-        (pos, siz) = xxx_todo_changeme
+    def _addkey(self, key, pos_and_siz):
+        (pos, siz) = pos_and_siz
         self._index[key] = (pos, siz)
         f = _open(self._dirfile, 'a')
         f.write("%s, (%s, %s)\n" % (repr(key), repr(pos), repr(siz)))
         f.close()
 
     def __setitem__(self, key, val):
-        if not isinstance(key, str) or not isinstance(val, str):
+        if not isinstance(key, string_types) or not isinstance(val, string_types):
             raise TypeError("keys and values must be strings")
         if key not in self._index:
             (pos, siz) = self._addval(val)

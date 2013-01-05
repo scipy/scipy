@@ -6,12 +6,12 @@ import os
 
 import sys
 
+from io import BytesIO
+
 if sys.version_info[0] >= 3:
-    from io import BytesIO
     cStringIO = BytesIO
 else:
-    from io import StringIO as cStringIO
-    from io import StringIO as BytesIO
+    from cStringIO import StringIO as cStringIO
 
 from tempfile import mkstemp
 

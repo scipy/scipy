@@ -609,9 +609,10 @@ class MMFile (object):
 if __name__ == '__main__':
     import sys
     import time
+    from scipy.lib.six import print_
     for filename in sys.argv[1:]:
-        print('Reading',filename,'...', end=' ')
+        print_('Reading',filename,'...', end=' ')
         sys.stdout.flush()
         t = time.time()
         mmread(filename)
-        print('took %s seconds' % (time.time() - t))
+        print_('took %s seconds' % (time.time() - t))

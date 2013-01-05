@@ -39,6 +39,8 @@ from numpy import fromstring, ndarray, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
+from scipy.lib.six import integer_types
+
 
 ABSENT       = asbytes('\x00\x00\x00\x00\x00\x00\x00\x00')
 ZERO         = asbytes('\x00\x00\x00\x00')
@@ -443,9 +445,8 @@ class netcdf_file(object):
         if hasattr(values, 'dtype'):
             nc_type = REVERSE[values.dtype.char, values.dtype.itemsize]
         else:
-            types = [
-                    (int, NC_INT),
-                    (int, NC_INT),
+            types = [(t, NC_INT) for t in integer_types]
+            types += [
                     (float, NC_FLOAT),
                     (str, NC_CHAR),
                     ]
