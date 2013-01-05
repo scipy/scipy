@@ -645,7 +645,7 @@ def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
         i'th observation is closest to.
 
     """
-    if missing not in list(_valid_miss_meth.keys()):
+    if missing not in _valid_miss_meth.keys():
         raise ValueError("Unkown missing method: %s" % str(missing))
     # If data is rank 1, then we have 1 dimension problem.
     nd  = np.ndim(data)
