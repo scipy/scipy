@@ -88,8 +88,8 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     """Check state-space matrices and ensure they are rank-2.
 
     """
-    A, B, C, D = list(map(_none_to_empty, (A, B, C, D)))
-    A, B, C, D = list(map(atleast_2d, (A, B, C, D)))
+    A, B, C, D = map(_none_to_empty, (A, B, C, D))
+    A, B, C, D = map(atleast_2d, (A, B, C, D))
 
     if ((len(A.shape) > 2) or (len(B.shape) > 2) or \
         (len(C.shape) > 2) or (len(D.shape) > 2)):
@@ -145,7 +145,7 @@ def ss2tf(A, B, C, D, input=0):
 
     """
     # transfer function is C (sI - A)**(-1) B + D
-    A, B, C, D = list(map(asarray, (A, B, C, D)))
+    A, B, C, D = map(asarray, (A, B, C, D))
     # Check consistency and
     #     make them all rank-2 arrays
     A, B, C, D = abcd_normalize(A, B, C, D)

@@ -190,7 +190,7 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     >>> plt.show()
 
     """
-    b, a = list(map(atleast_1d, (b, a)))
+    b, a = map(atleast_1d, (b, a))
     if whole:
         lastpoint = 2 * pi
     else:
@@ -288,7 +288,7 @@ def normalize(b, a):
     If values of `b` are too close to 0, they are removed. In that case, a
     BadCoefficients warning is emitted.
     """
-    b, a = list(map(atleast_1d, (b, a)))
+    b, a = map(atleast_1d, (b, a))
     if len(a.shape) != 1:
         raise ValueError("Denominator polynomial must be rank-1 array.")
     if len(b.shape) > 2:
@@ -314,7 +314,7 @@ def lp2lp(b, a, wo=1.0):
     """Return a low-pass filter with cutoff frequency `wo`
     from a low-pass filter prototype with unity cutoff frequency.
     """
-    a, b = list(map(atleast_1d, (a, b)))
+    a, b = map(atleast_1d, (a, b))
     try:
         wo = float(wo)
     except TypeError:
@@ -334,7 +334,7 @@ def lp2hp(b, a, wo=1.0):
     """Return a high-pass filter with cutoff frequency `wo`
     from a low-pass filter prototype with unity cutoff frequency.
     """
-    a, b = list(map(atleast_1d, (a, b)))
+    a, b = map(atleast_1d, (a, b))
     try:
         wo = float(wo)
     except TypeError:
@@ -363,7 +363,7 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     """Return a band-pass filter with center frequency `wo` and bandwidth `bw`
     from a low-pass filter prototype with unity cutoff frequency.
     """
-    a, b = list(map(atleast_1d, (a, b)))
+    a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
     N = len(b) - 1
     artype = mintypecode((a, b))
@@ -395,7 +395,7 @@ def lp2bs(b, a, wo=1, bw=1):
     """Return a band-stop filter with center frequency `wo` and bandwidth `bw`
     from a low-pass filter prototype with unity cutoff frequency.
     """
-    a, b = list(map(atleast_1d, (a, b)))
+    a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
     N = len(b) - 1
     artype = mintypecode((a, b))
@@ -431,7 +431,7 @@ def bilinear(b, a, fs=1.0):
     The bilinear transform substitutes ``(z-1) / (z+1)`` for ``s``.
     """
     fs = float(fs)
-    a, b = list(map(atleast_1d, (a, b)))
+    a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
     N = len(b) - 1
     artype = float
