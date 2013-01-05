@@ -251,6 +251,16 @@ class TestWelch(TestCase):
         assert_raises(ValueError, welch, np.zeros(4), 1, np.array([1,1,1,1,1]))
         warnings.filters.pop(0)
 
+    def test_nondefault_noverlap(self):
+        x = np.zeros(64)
+        x[::8] = 1
+        f, p = welch(x, nperseg=16, noverlap=4)
+        q = np.array([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5., 1./6.])
+        assert_allclose(p, q, atol=1e-12)
+
+    def test_bad_noverlap(self):
+        assert_raises(ValueError, welch, np.zeros(4), 1, 'hanning', 2, 7)
+
 
 class TestLombscargle:
     def test_frequency(self):

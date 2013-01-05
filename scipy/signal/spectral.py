@@ -287,6 +287,8 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
 
     if noverlap is None:
         noverlap = nperseg // 2
+    elif noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
 
     if nfft is None:
         nfft = nperseg
