@@ -10,8 +10,8 @@ try:
 except ImportError:
     _ctypes_missing = True
 
-def assert_quad(xxx_todo_changeme, tabledValue, errTol=1.5e-8):
-    (value, err) = xxx_todo_changeme
+def assert_quad(value_and_err, tabledValue, errTol=1.5e-8):
+    value, err = value_and_err
     assert_(abs(value-tabledValue) < err, (value, tabledValue, err))
     if errTol is not None:
         assert_(err < errTol, (err, errTol))

@@ -10,6 +10,8 @@ import numpy as np
 import math
 import warnings
 
+from scipy.lib.six import print_
+
 class AccuracyWarning(Warning):
     pass
 
@@ -50,7 +52,7 @@ def fixed_quad(func,a,b,args=(),n=5):
     """
     [x,w] = p_roots(n)
     x = real(x)
-    ainf, binf = list(map(isinf,(a,b)))
+    ainf, binf = map(isinf,(a,b))
     if ainf or binf:
         raise ValueError("Gaussian quadrature is only available for "
                 "finite limits.")
@@ -451,7 +453,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     if show:
         if not isscalar(R[(1,1)]):
-            print("*** Printing table only supported for integrals" + \
+            print_("*** Printing table only supported for integrals" + \
                   " of a single data set.")
         else:
             try:
@@ -464,13 +466,13 @@ def romb(y, dx=1.0, axis=-1, show=False):
                 width = 8
             formstr = "%" + str(width) + '.' + str(precis)+'f'
 
-            print("\n       Richardson Extrapolation Table for Romberg Integration       ")
-            print("====================================================================")
+            print_("\n       Richardson Extrapolation Table for Romberg Integration       ")
+            print_("====================================================================")
             for i in range(1,k+1):
                 for j in range(1,i+1):
-                    print(formstr % R[(i,j)], end=' ')
-                print()
-            print("====================================================================\n")
+                    print_(formstr % R[(i,j)], end=' ')
+                print_()
+            print_("====================================================================\n")
 
     return R[(k,k)]
 
@@ -523,18 +525,18 @@ def _romberg_diff(b, c, k):
 def _printresmat(function, interval, resmat):
     # Print the Romberg result matrix.
     i = j = 0
-    print('Romberg integration of', repr(function), end=' ')
-    print('from', interval)
-    print('')
-    print('%6s %9s %9s' % ('Steps', 'StepSize', 'Results'))
+    print_('Romberg integration of', repr(function), end=' ')
+    print_('from', interval)
+    print_('')
+    print_('%6s %9s %9s' % ('Steps', 'StepSize', 'Results'))
     for i in range(len(resmat)):
-        print('%6d %9f' % (2**i, (interval[1]-interval[0])/(2.**i)), end=' ')
+        print_('%6d %9f' % (2**i, (interval[1]-interval[0])/(2.**i)), end=' ')
         for j in range(i+1):
-            print('%9f' % (resmat[i][j]), end=' ')
-        print('')
-    print('')
-    print('The final result is', resmat[i][j], end=' ')
-    print('after', 2**(len(resmat)-1)+1, 'function evaluations.')
+            print_('%9f' % (resmat[i][j]), end=' ')
+        print_('')
+    print_('')
+    print_('The final result is', resmat[i][j], end=' ')
+    print_('after', 2**(len(resmat)-1)+1, 'function evaluations.')
 
 def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
             divmax=10, vec_func=False):
