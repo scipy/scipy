@@ -10,7 +10,7 @@ scipy/interpolate/interpnd.c binary
 scipy/io/matlab/mio_utils.c binary
 scipy/io/matlab/mio5_utils.c binary
 scipy/io/matlab/streams.c binary
-scipy/signal/spectral.c binary
+scipy/signal/_spectral.c binary
 scipy/sparse/csgraph/_min_spanning_tree.c binary
 scipy/sparse/csgraph/_shortest_path.c binary
 scipy/sparse/csgraph/_tools.c binary
