@@ -144,64 +144,21 @@ def configuration(parent_package='',top_path=None):
 def setup_package():
     from numpy.distutils.core import setup
 
-    old_path = os.getcwd()
-    local_path = os.path.dirname(os.path.abspath(sys.argv[0]))
-    src_path = local_path
-    if sys.version_info[0] == 3:
-        src_path = os.path.join(local_path, 'build', 'py3k')
-        sys.path.insert(0, os.path.join(local_path, 'tools'))
-        import py3tool
-        print("Converting to Python3 via 2to3...")
-        py3tool.sync_2to3('scipy', os.path.join(src_path, 'scipy'))
-
-        site_cfg = os.path.join(local_path, 'site.cfg')
-        if os.path.isfile(site_cfg):
-            shutil.copy(site_cfg, src_path)
-
-        # Ugly hack to make pip work with Python 3
-        # Explanation: pip messes with __file__ which interacts badly with the
-        # change in directory due to the 2to3 conversion.  Therefore we restore
-        # __file__ to what it would have been otherwise.
-
-        global __file__
-        __file__ = os.path.join(os.curdir, os.path.basename(__file__))
-        if '--egg-base' in sys.argv:
-            # Change pip-egg-info entry to absolute path, so pip can find it
-            # after changing directory.
-            idx = sys.argv.index('--egg-base')
-            if sys.argv[idx + 1] == 'pip-egg-info':
-                sys.argv[idx + 1] = os.path.join(local_path, 'pip-egg-info')
-
-    os.chdir(local_path)
-    sys.path.insert(0, local_path)
-    sys.path.insert(0, os.path.join(local_path, 'scipy'))  # to retrieve version
-
-    # Run build
-    old_path = os.getcwd()
-    os.chdir(src_path)
-    sys.path.insert(0, src_path)
-
     # Rewrite the version file everytime
     write_version_py()
 
-    try:
-        setup(
-            name = 'scipy',
-            maintainer = "SciPy Developers",
-            maintainer_email = "scipy-dev@scipy.org",
-            description = DOCLINES[0],
-            long_description = "\n".join(DOCLINES[2:]),
-            url = "http://www.scipy.org",
-            download_url = "http://sourceforge.net/project/showfiles.php?group_id=27747&package_id=19531",
-            license = 'BSD',
-            classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
-            platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
-            configuration=configuration )
-    finally:
-        del sys.path[0]
-        os.chdir(old_path)
-
-    return
+    setup(
+        name = 'scipy',
+        maintainer = "SciPy Developers",
+        maintainer_email = "scipy-dev@scipy.org",
+        description = DOCLINES[0],
+        long_description = "\n".join(DOCLINES[2:]),
+        url = "http://www.scipy.org",
+        download_url = "http://sourceforge.net/project/showfiles.php?group_id=27747&package_id=19531",
+        license = 'BSD',
+        classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
+        platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
+        configuration=configuration)
 
 
 if __name__ == '__main__':
