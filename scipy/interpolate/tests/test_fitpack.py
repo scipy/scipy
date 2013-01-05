@@ -163,7 +163,7 @@ class TestSmokeTests(TestCase):
             assert_(err1 < 1e-2)
             assert_(err2 < 1e-2)
             put("  %d  :  %s    %.1e           %.1e"%\
-                  (k,repr([round(x,3) for x in uv]),
+                  (k,repr([round(z,3) for z in uv]),
                    err1,
                    err2))
         put("Derivatives of parametric cubic spline at u (first function):")
