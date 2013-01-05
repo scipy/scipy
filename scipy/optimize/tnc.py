@@ -401,10 +401,12 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   message=RCSTRINGS[rc], success=(-1 < rc < 3))
 
 if __name__ == '__main__':
+    from scipy.lib.six import print_
+
     # Examples for TNC
 
     def example():
-        print("Example")
+        print_("Example")
         # A function to minimize
         def function(x):
             f = pow(x[0],2.0)+pow(abs(x[1]),3.0)
@@ -418,9 +420,9 @@ if __name__ == '__main__':
         # Optimizer call
         x, nf, rc = fmin_tnc(function, [-7, 3], bounds=([-10, 1], [10, 10]))
 
-        print("After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc])
-        print("x =", x)
-        print("exact value = [0, 1]")
-        print()
+        print_("After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc])
+        print_("x =", x)
+        print_("exact value = [0, 1]")
+        print_()
 
     example()
