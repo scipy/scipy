@@ -113,6 +113,7 @@ The solution can be found using the `newton_krylov` solver:
 
 import sys
 import numpy as np
+from scipy.lib.six import callable, exec_
 from scipy.linalg import norm, solve, inv, qr, svd, lstsq, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg
@@ -588,7 +589,7 @@ def asjacobian(J):
                         setup=getattr(J, 'setup'),
                         dtype=J.dtype,
                         shape=J.shape)
-    elif isinstance(J, collections.Callable):
+    elif callable(J):
         # Assume it's a function J(x) that returns the Jacobian
         class Jac(Jacobian):
             def update(self, x, F):
@@ -1492,7 +1493,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
                              kwkw=kwkw_str)
     ns = {}
     ns.update(globals())
-    exec(wrapper, ns)
+    exec_(wrapper, ns)
     func = ns[name]
     func.__doc__ = jac.__doc__
     _set_doc(func)

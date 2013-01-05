@@ -11,10 +11,10 @@ Functions
 """
 
 import numpy as np
+from scipy.lib.six import callable
 from scipy.optimize import _cobyla
 from .optimize import Result, _check_unknown_options
 from warnings import warn
-import collections
 
 __all__ = ['fmin_cobyla']
 
@@ -138,14 +138,14 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     try:
         m = len(cons)
     except TypeError:
-        if isinstance(cons, collections.Callable):
+        if callable(cons):
             m = 1
             cons = [cons]
         else:
             raise TypeError(err)
     else:
         for thisfunc in cons:
-            if not isinstance(thisfunc, collections.Callable):
+            if not callable(thisfunc):
                 raise TypeError(err)
 
     if consargs is None:

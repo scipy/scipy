@@ -25,12 +25,12 @@ __docformat__ = "restructuredtext en"
 
 import warnings
 import numpy
+from scipy.lib.six import callable
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
 from .linesearch import \
      line_search_BFGS, line_search_wolfe1, line_search_wolfe2, \
      line_search_wolfe2 as line_search
-import collections
 
 
 # standard status messages of optimizers
@@ -143,7 +143,8 @@ def is_array_scalar(x):
     return len(atleast_1d(x) == 1)
 
 abs = absolute
-import builtins
+
+from scipy.lib.six.moves import builtins
 pymin = builtins.min
 pymax = builtins.max
 __version__ = "0.7"
@@ -2253,7 +2254,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
     if (N == 1):
         grid = grid[0]
         xmin = xmin[0]
-    if isinstance(finish, collections.Callable):
+    if callable(finish):
         vals = finish(func, xmin, args=args, full_output=1, disp=0)
         xmin = vals[0]
         Jmin = vals[1]

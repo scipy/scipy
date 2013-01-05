@@ -14,6 +14,9 @@ __all__ = ['minimize', 'minimize_scalar']
 from warnings import warn
 
 from numpy import any
+
+from scipy.lib.six import callable
+
 # unconstrained minimization
 from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                       _minimize_bfgs, _minimize_newtoncg,
@@ -26,7 +29,6 @@ from .lbfgsb import _minimize_lbfgsb
 from .tnc import _minimize_tnc
 from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
-import collections
 
 def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
@@ -315,7 +317,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
              RuntimeWarning)
 
     # fun also returns the jacobian
-    if not isinstance(jac, collections.Callable):
+    if not callable(jac):
         if bool(jac):
             fun = MemoizeJac(fun)
             jac = fun.derivative
