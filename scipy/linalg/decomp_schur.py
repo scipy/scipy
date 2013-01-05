@@ -205,9 +205,9 @@ def rsf2csf(T, Z, check_finite=True):
 
     """
     if check_finite:
-        Z, T = list(map(asarray_chkfinite, (Z, T)))
+        Z, T = map(asarray_chkfinite, (Z, T))
     else:
-        Z,T = list(map(asarray, (Z,T)))
+        Z,T = map(asarray, (Z,T))
     if len(Z.shape) != 2 or Z.shape[0] != Z.shape[1]:
         raise ValueError("matrix must be square.")
     if len(T.shape) != 2 or T.shape[0] != T.shape[1]:

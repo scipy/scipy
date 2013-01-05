@@ -71,9 +71,9 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
 
     """
     if check_finite:
-        a1, b1 = list(map(np.asarray_chkfinite,(a,b)))
+        a1, b1 = map(np.asarray_chkfinite,(a,b))
     else:
-        a1, b1 = list(map(np.asarray, (a,b)))
+        a1, b1 = map(np.asarray, (a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -150,9 +150,9 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     """
 
     if check_finite:
-        a1, b1 = list(map(np.asarray_chkfinite,(a,b)))
+        a1, b1 = map(np.asarray_chkfinite,(a,b))
     else:
-        a1, b1 = list(map(np.asarray, (a,b)))
+        a1, b1 = map(np.asarray, (a,b))
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -171,7 +171,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         raise LinAlgError("singular matrix: resolution failed at diagonal %s" % (info-1))
     raise ValueError('illegal value in %d-th argument of internal trtrs')
 
-def solve_banded(xxx_todo_changeme, ab, b, overwrite_ab=False, overwrite_b=False,
+def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                 debug=False, check_finite=True):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
@@ -209,11 +209,11 @@ def solve_banded(xxx_todo_changeme, ab, b, overwrite_ab=False, overwrite_b=False
         The solution to the system a x = b
 
     """
-    (l, u) = xxx_todo_changeme
+    (l, u) = l_and_u
     if check_finite:
-        a1, b1 = list(map(np.asarray_chkfinite, (ab, b)))
+        a1, b1 = map(np.asarray_chkfinite, (ab, b))
     else:
-        a1, b1 = list(map(np.asarray, (ab,b)))
+        a1, b1 = map(np.asarray, (ab,b))
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
@@ -283,9 +283,9 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     """
 
     if check_finite:
-        ab, b = list(map(np.asarray_chkfinite, (ab, b)))
+        ab, b = map(np.asarray_chkfinite, (ab, b))
     else:
-        ab, b = list(map(np.asarray, (ab,b)))
+        ab, b = map(np.asarray, (ab,b))
     # Validate shapes.
     if ab.shape[-1] != b.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
@@ -494,9 +494,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     """
 
     if check_finite:
-        a1,b1 = list(map(np.asarray_chkfinite, (a,b)))
+        a1,b1 = map(np.asarray_chkfinite, (a,b))
     else:
-        a1,b1 = list(map(np.asarray, (a,b)))
+        a1,b1 = map(np.asarray, (a,b))
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m, n = a1.shape
