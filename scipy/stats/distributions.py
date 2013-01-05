@@ -576,8 +576,8 @@ class rv_generic(object):
 
         """
         kwd_names = ['loc', 'scale', 'size', 'discrete']
-        loc, scale, size, discrete = list(map(kwds.get, kwd_names,
-                                         [None]*len(kwd_names)))
+        loc, scale, size, discrete = map(kwds.get, kwd_names,
+                                         [None]*len(kwd_names))
 
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
         cond = logical_and(self._argcheck(*args),(scale >= 0))
@@ -1167,9 +1167,9 @@ class rv_continuous(rv_generic):
             Probability density function evaluated at x
 
         """
-        loc,scale=list(map(kwds.get,['loc','scale']))
+        loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = list(map(asarray,(x,loc,scale)))
+        x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = asarray((x-loc)*1.0/scale)
         cond0 = self._argcheck(*args) & (scale > 0)
@@ -1209,9 +1209,9 @@ class rv_continuous(rv_generic):
             Log of the probability density function evaluated at x
 
         """
-        loc,scale=list(map(kwds.get,['loc','scale']))
+        loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = list(map(asarray,(x,loc,scale)))
+        x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = asarray((x-loc)*1.0/scale)
         cond0 = self._argcheck(*args) & (scale > 0)
@@ -1251,9 +1251,9 @@ class rv_continuous(rv_generic):
             Cumulative distribution function evaluated at x
 
         """
-        loc,scale=list(map(kwds.get,['loc','scale']))
+        loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = list(map(asarray,(x,loc,scale)))
+        x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
         cond0 = self._argcheck(*args) & (scale > 0)
@@ -1292,9 +1292,9 @@ class rv_continuous(rv_generic):
             Log of the cumulative distribution function evaluated at x
 
         """
-        loc,scale=list(map(kwds.get,['loc','scale']))
+        loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = list(map(asarray,(x,loc,scale)))
+        x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
         cond0 = self._argcheck(*args) & (scale > 0)
@@ -1334,9 +1334,9 @@ class rv_continuous(rv_generic):
             Survival function evaluated at x
 
         """
-        loc,scale=list(map(kwds.get,['loc','scale']))
+        loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = list(map(asarray,(x,loc,scale)))
+        x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
         cond0 = self._argcheck(*args) & (scale > 0)
@@ -1378,9 +1378,9 @@ class rv_continuous(rv_generic):
             Log of the survival function evaluated at `x`.
 
         """
-        loc,scale=list(map(kwds.get,['loc','scale']))
+        loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        x,loc,scale = list(map(asarray,(x,loc,scale)))
+        x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
         cond0 = self._argcheck(*args) & (scale > 0)
@@ -1420,9 +1420,9 @@ class rv_continuous(rv_generic):
             quantile corresponding to the lower tail probability q.
 
         """
-        loc,scale=list(map(kwds.get,['loc','scale']))
+        loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        q,loc,scale = list(map(asarray,(q,loc,scale)))
+        q,loc,scale = map(asarray,(q,loc,scale))
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
         cond1 = (q > 0) & (q < 1)
@@ -1461,9 +1461,9 @@ class rv_continuous(rv_generic):
             quantile corresponding to the upper tail probability q.
 
         """
-        loc,scale=list(map(kwds.get,['loc','scale']))
+        loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        q,loc,scale = list(map(asarray,(q,loc,scale)))
+        q,loc,scale = map(asarray,(q,loc,scale))
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
         cond1 = (q > 0) & (q < 1)
@@ -1508,7 +1508,7 @@ class rv_continuous(rv_generic):
             of requested moments.
 
         """
-        loc,scale,moments=list(map(kwds.get,['loc','scale','moments']))
+        loc,scale,moments=map(kwds.get,['loc','scale','moments'])
 
         N = len(args)
         if N > self.numargs:
@@ -1526,7 +1526,7 @@ class rv_continuous(rv_generic):
         if loc is None: loc = 0.0
         if moments is None: moments = 'mv'
 
-        loc,scale = list(map(asarray,(loc,scale)))
+        loc,scale = map(asarray,(loc,scale))
         args = tuple(map(asarray,args))
         cond = self._argcheck(*args) & (scale > 0) & (loc==loc)
 
@@ -1887,7 +1887,7 @@ class rv_continuous(rv_generic):
             Scale parameter (default=1).
 
         """
-        loc,scale=list(map(kwds.get,['loc','scale']))
+        loc,scale=map(kwds.get,['loc','scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
@@ -5409,7 +5409,7 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
 
 def reverse_dict(dict):
     newdict = {}
-    sorted_keys = copy(list(dict.keys()))
+    sorted_keys = list(dict.keys())
     sorted_keys.sort()
     for key in sorted_keys[::-1]:
         newdict[dict[key]] = key
@@ -5795,7 +5795,7 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = list(map(asarray,(k,loc)))
+        k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
@@ -5832,7 +5832,7 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = list(map(asarray,(k,loc)))
+        k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
@@ -5870,7 +5870,7 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = list(map(asarray,(k,loc)))
+        k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
@@ -5910,7 +5910,7 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = list(map(asarray,(k,loc)))
+        k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
@@ -5951,7 +5951,7 @@ class rv_discrete(rv_generic):
         """
         loc= kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = list(map(asarray,(k,loc)))
+        k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
@@ -5990,7 +5990,7 @@ class rv_discrete(rv_generic):
         """
         loc= kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        k,loc = list(map(asarray,(k,loc)))
+        k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
@@ -6032,7 +6032,7 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        q,loc  = list(map(asarray,(q,loc)))
+        q,loc  = map(asarray,(q,loc))
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
@@ -6074,7 +6074,7 @@ class rv_discrete(rv_generic):
 
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        q,loc  = list(map(asarray,(q,loc)))
+        q,loc  = map(asarray,(q,loc))
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
@@ -6130,7 +6130,7 @@ class rv_discrete(rv_generic):
             of requested moments.
 
         """
-        loc,moments=list(map(kwds.get,['loc','moments']))
+        loc,moments=map(kwds.get,['loc','moments'])
         N = len(args)
         if N > self.numargs:
             if N == self.numargs + 1 and loc is None:  # loc is given without keyword

@@ -907,7 +907,7 @@ def levene(*args,**kwds):
     # Handle keyword arguments.
     center = 'median'
     proportiontocut = 0.05
-    for kw, value in list(kwds.items()):
+    for kw, value in kwds.items():
         if kw not in ['center', 'proportiontocut']:
             raise TypeError("levene() got an unexpected keyword argument '%s'" % kw)
         if kw == 'center':
@@ -1079,7 +1079,7 @@ def fligner(*args,**kwds):
     # Handle keyword arguments.
     center = 'median'
     proportiontocut = 0.05
-    for kw, value in list(kwds.items()):
+    for kw, value in kwds.items():
         if kw not in ['center', 'proportiontocut']:
             raise TypeError("fligner() got an unexpected keyword argument '%s'" % kw)
         if kw == 'center':
@@ -1199,7 +1199,7 @@ def oneway(*args,**kwds):
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    if 'equal_var' in list(kwds.keys()):
+    if 'equal_var' in kwds.keys():
         if kwds['equal_var']: evar = 1
         else: evar = 0
     else:
@@ -1264,7 +1264,7 @@ def wilcoxon(x,y=None):
     if y is None:
         d = x
     else:
-        x, y = list(map(asarray, (x, y)))
+        x, y = map(asarray, (x, y))
         if len(x) != len(y):
             raise ValueError('Unequal N in wilcoxon.  Aborting.')
         d = x-y

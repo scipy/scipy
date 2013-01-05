@@ -2005,7 +2005,7 @@ def zmap(scores, compare, axis=0, ddof=0):
     >>> zmap(a, b)
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
     """
-    scores, compare = list(map(np.asanyarray, [scores, compare]))
+    scores, compare = map(np.asanyarray, [scores, compare])
     mns = compare.mean(axis=axis)
     sstd = compare.std(axis=axis, ddof=ddof)
     if axis and mns.ndim < compare.ndim:
@@ -3468,7 +3468,7 @@ def ks_2samp(data1, data2):
     (0.07999999999999996, 0.41126949729859719)
 
     """
-    data1, data2 = list(map(asarray, (data1, data2)))
+    data1, data2 = map(asarray, (data1, data2))
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     n1 = len(data1)
@@ -3576,7 +3576,7 @@ def ranksums(x, y):
     .. [1] http://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
 
     """
-    x,y = list(map(np.asarray, (x, y)))
+    x,y = map(np.asarray, (x, y))
     n1 = len(x)
     n2 = len(y)
     alldata = np.concatenate((x,y))

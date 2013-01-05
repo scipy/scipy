@@ -176,8 +176,8 @@ def count_tied_groups(x, use_missing=False):
     (ties, counts) = find_repeats(data)
     nties = {}
     if len(ties):
-        nties = dict(list(zip(np.unique(counts), itertools.repeat(1))))
-        nties.update(dict(list(zip(*find_repeats(counts)))))
+        nties = dict(zip(np.unique(counts), itertools.repeat(1)))
+        nties.update(dict(zip(*find_repeats(counts))))
     if nmasked and use_missing:
         try:
             nties[nmasked] += 1
