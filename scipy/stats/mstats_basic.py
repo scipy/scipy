@@ -42,6 +42,8 @@ from numpy import ndarray
 import numpy.ma as ma
 from numpy.ma import MaskedArray, masked, nomask
 
+from scipy.lib.six import iteritems
+
 import itertools
 import warnings
 
@@ -419,8 +421,8 @@ Returns
     if use_ties:
         xties = count_tied_groups(x)
         yties = count_tied_groups(y)
-        corr_x = np.sum(v*k*(k**2-1) for (k,v) in xties.items())/12.
-        corr_y = np.sum(v*k*(k**2-1) for (k,v) in yties.items())/12.
+        corr_x = np.sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
+        corr_y = np.sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
     else:
         corr_x = corr_y = 0
     denom = n*(n**2 - 1)/6.
@@ -482,8 +484,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     if use_ties:
         xties = count_tied_groups(x)
         yties = count_tied_groups(y)
-        corr_x = np.sum([v*k*(k-1) for (k,v) in xties.items()], dtype=float)
-        corr_y = np.sum([v*k*(k-1) for (k,v) in yties.items()], dtype=float)
+        corr_x = np.sum([v*k*(k-1) for (k,v) in iteritems(xties)], dtype=float)
+        corr_y = np.sum([v*k*(k-1) for (k,v) in iteritems(yties)], dtype=float)
         denom = ma.sqrt((n*(n-1)-corr_x)/2. * (n*(n-1)-corr_y)/2.)
     else:
         denom = n*(n-1)/2.
@@ -491,15 +493,15 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     #
     var_s = n*(n-1)*(2*n+5)
     if use_ties:
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in xties.items())
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in yties.items())
-        v1 = np.sum([v*k*(k-1) for (k, v) in xties.items()], dtype=float) *\
-             np.sum([v*k*(k-1) for (k, v) in yties.items()], dtype=float)
+        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
+        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties))
+        v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
+             np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
         v1 /= 2.*n*(n-1)
         if n > 2:
-            v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in xties.items()],
+            v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(xties)],
                         dtype=float) * \
-                 np.sum([v*k*(k-1)*(k-2) for (k,v) in yties.items()],
+                 np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(yties)],
                         dtype=float)
             v2 /= 9.*n*(n-1)*(n-2)
         else:
@@ -531,7 +533,7 @@ Parameters
     #
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
-    corr_ties =  np.sum(v*k*(k-1) for (k,v) in ties.items())
+    corr_ties =  np.sum(v*k*(k-1) for (k,v) in iteritems(ties))
     denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
     #
     R = rankdata(x, axis=0, use_missing=True)
@@ -541,7 +543,7 @@ Parameters
     denom_szn = ma.empty(m, dtype=float)
     for j in range(m):
         ties_j = count_tied_groups(x[:,j].compressed())
-        corr_j = np.sum(v*k*(k-1) for (k,v) in ties_j.items())
+        corr_j = np.sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
             K[j,k] = np.sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
@@ -698,8 +700,8 @@ def theilslopes(y, x=None, alpha=0.05):
     (xties, yties) = (count_tied_groups(x), count_tied_groups(y))
     nt = ny*(ny-1)/2.
     sigsq = (ny*(ny-1)*(2*ny+5)/18.)
-    sigsq -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in xties.items())
-    sigsq -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in yties.items())
+    sigsq -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in iteritems(xties))
+    sigsq -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in iteritems(yties))
     sigma = np.sqrt(sigsq)
 
     Ru = min(np.round((nt - z*sigma)/2. + 1), len(slopes)-1)
@@ -811,7 +813,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     mu = (nx*ny)/2.
     sigsq = (nt**3 - nt)/12.
     ties = count_tied_groups(ranks)
-    sigsq -= np.sum(v*(k**3-k) for (k,v) in ties.items())/12.
+    sigsq -= np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
     sigsq *= nx*ny/float(nt*(nt-1))
     #
     if use_continuity:
@@ -833,7 +835,7 @@ def kruskalwallis(*args):
     H = 12./(ntot*(ntot+1)) * (sumrk**2/ngrp).sum() - 3*(ntot+1)
     # Tie correction
     ties = count_tied_groups(ranks)
-    T = 1. - np.sum(v*(k**3-k) for (k,v) in ties.items())/float(ntot**3-ntot)
+    T = 1. - np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
     H /= T
