@@ -54,6 +54,10 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     Pxx : ndarray
         Power spectral density or power spectrum of `x`.
 
+    Notes
+    -----
+    .. versionadded:: 0.12.0
+
     See Also
     --------
     welch: Estimate power spectral density using Welch's method
@@ -198,6 +202,8 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     windows may require a larger overlap.
 
     If `noverlap` is 0, this method is equivalent to Bartlett's method [2]_.
+
+    .. versionadded:: 0.12.0
 
     References
     ----------

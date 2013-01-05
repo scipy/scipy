@@ -31,7 +31,7 @@ New features
   a sparse matrix using a similar algorithm to the existing dense array
   implementation in ``scipy.linalg.expm``.
 
-cKDTRee improvements
+cKDTree improvements
 --------------------
 scipy.spatial: Cython version of KDTree, cKDTree, is now feature-complete.
 Most operations (construction, query, query_ball_point, query_pairs,
@@ -51,6 +51,11 @@ It's now possible to pass in custom Qhull options in Delaunay
 triangulation. Coplanar points are now also recorded, if present.
 Incremental construction of Delaunay triangulations is now also
 possible.
+
+Spectral estimators (``scipy.signal``)
+--------------------------------------
+The functions ``scipy.signal.periodogram`` and ``scipy.signal.welch`` were
+added, providing DFT-based spectral estimators.
 
 ``scipy.optimize`` improvements
 -------------------------------
