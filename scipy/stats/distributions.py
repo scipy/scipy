@@ -19,10 +19,10 @@ import inspect
 from numpy import all, where, arange, putmask, \
      ravel, take, ones, sum, shape, product, repeat, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, array, log1p, expm1
+     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1
 from numpy import atleast_1d, polyval, ceil, place, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf, \
-     power, NINF, empty
+     NINF, empty
 import numpy
 import numpy as np
 import numpy.random as mtrand
@@ -5354,10 +5354,10 @@ def _drv2_moment(self, n, *args):
     return tot
 
 def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
-    b = self.invcdf_b
-    a = self.invcdf_a
+    b = self.b
+    a = self.a
     if isinf(b):            # Be sure ending point is > q
-        b = max(100*q,10)
+        b = int(max(100*q,10))
         while 1:
             if b >= self.b: qb = 1.0; break
             qb = self._cdf(b,*args)
@@ -5366,7 +5366,7 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     else:
         qb = 1.0
     if isinf(a):    # be sure starting point < q
-        a = min(-100*q,-10)
+        a = int(min(-100*q,-10))
         while 1:
             if a <= self.a: qb = 0.0; break
             qa = self._cdf(a,*args)
@@ -5380,7 +5380,7 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
             return a
         if (qb == q):
             return b
-        if b == a+1:
+        if b <= a+1:
     #testcase: return wrong number at lower index
     #python -c "from scipy.stats import zipf;print zipf.ppf(0.01,2)" wrong
     #python -c "from scipy.stats import zipf;print zipf.ppf([0.01,0.61,0.77,0.83],2)"
@@ -5392,10 +5392,16 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
         c = int((a+b)/2.0)
         qc = self._cdf(c, *args)
         if (qc < q):
-            a = c
+            if a != c:
+                a = c
+            else:
+                raise RuntimeError('updating stopped, endless loop')
             qa = qc
         elif (qc > q):
-            b = c
+            if b != c:
+                b = c
+            else:
+                raise RuntimeError('updating stopped, endless loop')
             qb = qc
         else:
             return c
@@ -5595,8 +5601,6 @@ class rv_discrete(rv_generic):
         self.badvalue = badvalue
         self.a = a
         self.b = b
-        self.invcdf_a = a   # what's the difference to self.a, .b
-        self.invcdf_b = b
         self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
@@ -6661,7 +6665,7 @@ class hypergeom_gen(rv_discrete):
     def _argcheck(self, M, n, N):
         cond = rv_discrete._argcheck(self,M,n,N)
         cond &= (n <= M) & (N <= M)
-        self.a = N-(M-n)
+        self.a = max(N-(M-n), 0)
         self.b = min(n,N)
         return cond
     def _logpmf(self, k, M, n, N):
