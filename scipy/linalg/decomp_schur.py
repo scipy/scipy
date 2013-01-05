@@ -3,13 +3,13 @@
 import numpy
 from numpy import asarray_chkfinite, single, asarray
 
+from scipy.lib.six import callable
+
 # Local imports.
 from . import misc
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 from .decomp import eigvals
-import collections
-
 
 __all__ = ['schur', 'rsf2csf']
 
@@ -112,7 +112,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         sfunction = lambda x: None
     else:
         sort_t = 1
-        if isinstance(sort, collections.Callable):
+        if callable(sort):
             sfunction = sort
         elif sort == 'lhp':
             sfunction = lambda x: (numpy.real(x) < 0.0)
