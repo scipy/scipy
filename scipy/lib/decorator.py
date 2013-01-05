@@ -34,6 +34,8 @@ __all__ = ["decorator", "FunctionMaker", "partial"]
 
 import sys, re, inspect
 
+from scipy.lib.six import exec_, print_
+
 try:
     from functools import partial
 except ImportError: # for Python version < 2.5
@@ -126,7 +128,10 @@ class FunctionMaker(object):
         func.__name__ = self.name
         func.__doc__ = getattr(self, 'doc', None)
         func.__dict__ = getattr(self, 'dict', {})
-        func.__defaults__ = getattr(self, 'defaults', ())
+        if sys.version_info[0] >= 3:
+            func.__defaults__ = getattr(self, 'defaults', ())
+        else:
+            func.func_defaults = getattr(self, 'defaults', ())
         func.__kwdefaults__ = getattr(self, 'kwonlydefaults', None)
         callermodule = sys._getframe(3).f_globals.get('__name__', '?')
         func.__module__ = getattr(self, 'module', callermodule)
@@ -150,10 +155,10 @@ class FunctionMaker(object):
         try:
             code = compile(src, '<string>', 'single')
             # print >> sys.stderr, 'Compiling %s' % src
-            exec(code, evaldict)
+            exec_(code, evaldict)
         except:
-            print('Error in generated code:', file=sys.stderr)
-            print(src, file=sys.stderr)
+            print_('Error in generated code:', file=sys.stderr)
+            print_(src, file=sys.stderr)
             raise
         func = evaldict[name]
         if addsource:
@@ -189,7 +194,10 @@ def decorator(caller, func=None):
     decorator(caller, func) decorates a function using a caller.
     """
     if func is not None: # returns a decorated function
-        evaldict = func.__globals__.copy()
+        if sys.version_info[0] >= 3:
+            evaldict = func.__globals__.copy()
+        else:
+            evaldict = func.func_globals.copy()
         evaldict['_call_'] = caller
         evaldict['_func_'] = func
         return FunctionMaker.create(
@@ -200,7 +208,10 @@ def decorator(caller, func=None):
             return partial(decorator, caller)
         # otherwise assume caller is a function
         first = inspect.getargspec(caller)[0][0] # first arg
-        evaldict = caller.__globals__.copy()
+        if sys.version_info[0] >= 3:
+            evaldict = caller.__globals__.copy()
+        else:
+            evaldict = caller.func_globals.copy()
         evaldict['_call_'] = caller
         evaldict['decorator'] = decorator
         return FunctionMaker.create(
