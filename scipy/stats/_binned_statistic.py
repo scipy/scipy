@@ -1,6 +1,5 @@
 import numpy as np
-import collections
-
+from scipy.lib.six import callable
 
 def binned_statistic(x, values, statistic='mean',
                      bins=10, range=None):
@@ -252,7 +251,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if type(statistic) == str:
         if statistic not in ['mean', 'median', 'count', 'sum', 'std']:
             raise ValueError('unrecognized statistic "%s"' % statistic)
-    elif isinstance(statistic, collections.Callable):
+    elif callable(statistic):
         pass
     else:
         raise ValueError("statistic not understood")
@@ -361,7 +360,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result.fill(np.nan)
         for i in np.unique(xy):
             result[i] = np.median(values[xy == i])
-    elif isinstance(statistic, collections.Callable):
+    elif callable(statistic):
         old = np.seterr(invalid='ignore')
         try:
             null = statistic([])

@@ -190,6 +190,7 @@ import collections
 pysum = sum  # save it before it gets overwritten
 
 # Scipy imports.
+from scipy.lib.six import callable, string_types
 from numpy import array, asarray, dot, ma, zeros, sum
 import scipy.special as special
 import scipy.linalg as linalg
@@ -3309,7 +3310,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
     (0.131016895759829, 0.058826222555312224)
 
     """
-    if isinstance(rvs, str):
+    if isinstance(rvs, string_types):
         #cdf = getattr(stats, rvs).cdf
         if (not cdf) or (cdf == rvs):
             cdf = getattr(distributions, rvs).cdf
@@ -3317,9 +3318,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
         else:
             raise AttributeError('if rvs is string, cdf has to be the same distribution')
 
-    if isinstance(cdf, str):
+    if isinstance(cdf, string_types):
         cdf = getattr(distributions, cdf).cdf
-    if isinstance(rvs, collections.Callable):
+    if callable(rvs):
         kwds = {'size':N}
         vals = np.sort(rvs(*args,**kwds))
     else:

@@ -7,7 +7,8 @@
 
 import math
 import warnings
-from copy import copy
+
+from scipy.lib.six import callable, string_types, text_type, get_method_function
 
 from scipy.misc import comb, derivative
 from scipy import special
@@ -30,7 +31,6 @@ from numpy import flatnonzero as nonzero
 from . import vonmises_cython
 from ._tukeylambda_stats import tukeylambda_variance as _tlvar, \
                                 tukeylambda_kurtosis as _tlkurt
-import collections
 
 __all__ = [
            'rv_continuous',
@@ -984,9 +984,9 @@ class rv_continuous(rv_generic):
 
         if not hasattr(self,'numargs'):
             #allows more general subclassing with *args
-            cdf_signature = inspect.getargspec(self._cdf.__func__)
+            cdf_signature = inspect.getargspec(get_method_function(self._cdf))
             numargs1 = len(cdf_signature[0]) - 2
-            pdf_signature = inspect.getargspec(self._pdf.__func__)
+            pdf_signature = inspect.getargspec(get_method_function(self._pdf))
             numargs2 = len(pdf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
         #nin correction
@@ -1530,7 +1530,7 @@ class rv_continuous(rv_generic):
         args = tuple(map(asarray,args))
         cond = self._argcheck(*args) & (scale > 0) & (loc==loc)
 
-        signature = inspect.getargspec(self._stats.__func__)
+        signature = inspect.getargspec(get_method_function(self._stats))
         if (signature[2] is not None) or ('moments' in signature[0]):
             mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
         else:
@@ -1632,7 +1632,7 @@ class rv_continuous(rv_generic):
         if (n < 0): raise ValueError("Moment must be positive.")
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
-            signature = inspect.getargspec(self._stats.__func__)
+            signature = inspect.getargspec(get_method_function(self._stats))
             if (signature[2] is not None) or ('moments' in signature[0]):
                 mdict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
             else:
@@ -1783,7 +1783,7 @@ class rv_continuous(rv_generic):
 
         optimizer = kwds.get('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
-        if not isinstance(optimizer, collections.Callable) and isinstance(optimizer, str):
+        if not callable(optimizer) and isinstance(optimizer, (text_type,) + string_types):
             if not optimizer.startswith('fmin_'):
                 optimizer = "fmin_"+optimizer
             if optimizer == 'fmin_':
@@ -5636,9 +5636,9 @@ class rv_discrete(rv_generic):
                                              self, rv_discrete)
             self.numargs=0
         else:
-            cdf_signature = inspect.getargspec(self._cdf.__func__)
+            cdf_signature = inspect.getargspec(get_method_function(self._cdf))
             numargs1 = len(cdf_signature[0]) - 2
-            pmf_signature = inspect.getargspec(self._pmf.__func__)
+            pmf_signature = inspect.getargspec(get_method_function(self._pmf))
             numargs2 = len(pmf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
 
@@ -6145,7 +6145,7 @@ class rv_discrete(rv_generic):
         args = tuple(map(asarray,args))
         cond = self._argcheck(*args) & (loc==loc)
 
-        signature = inspect.getargspec(self._stats.__func__)
+        signature = inspect.getargspec(get_method_function(self._stats))
         if (signature[2] is not None) or ('moments' in signature[0]):
             mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
         else:
@@ -6240,7 +6240,7 @@ class rv_discrete(rv_generic):
         if (n < 0): raise ValueError("Moment must be positive.")
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
-            signature = inspect.getargspec(self._stats.__func__)
+            signature = inspect.getargspec(get_method_function(self._stats))
             if (signature[2] is not None) or ('moments' in signature[0]):
                 dict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
             else:

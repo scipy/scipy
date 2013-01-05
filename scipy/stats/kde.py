@@ -21,6 +21,7 @@
 import warnings
 
 # Scipy imports.
+from scipy.lib.six import callable, string_types
 from scipy import linalg, special
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, power, atleast_1d, squeeze, sum, transpose
@@ -476,10 +477,10 @@ class gaussian_kde(object):
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
             self.covariance_factor = self.silverman_factor
-        elif np.isscalar(bw_method) and not isinstance(bw_method, str):
+        elif np.isscalar(bw_method) and not isinstance(bw_method, string_types):
             self._bw_method = 'use constant'
             self.covariance_factor = lambda: bw_method
-        elif isinstance(bw_method, collections.Callable):
+        elif callable(bw_method):
             self._bw_method = bw_method
             self.covariance_factor = lambda: self._bw_method(self)
         else:
