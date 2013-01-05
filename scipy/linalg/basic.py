@@ -9,6 +9,8 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 
 import numpy as np
 
+from scipy.lib.six import print_
+
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs
 from .misc import LinAlgError, _datacopied
@@ -79,8 +81,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
     overwrite_a = overwrite_a or _datacopied(a1, a)
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if debug:
-        print('solve:overwrite_a=',overwrite_a)
-        print('solve:overwrite_b=',overwrite_b)
+        print_('solve:overwrite_a=',overwrite_a)
+        print_('solve:overwrite_b=',overwrite_b)
     if sym_pos:
         posv, = get_lapack_funcs(('posv',), (a1,b1))
         c, x, info = posv(a1, b1, lower=lower,
@@ -157,7 +159,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         raise ValueError('incompatible dimensions')
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if debug:
-        print('solve:overwrite_b=',overwrite_b)
+        print_('solve:overwrite_b=',overwrite_b)
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
     trtrs, = get_lapack_funcs(('trtrs',), (a1,b1))
     x, info = trtrs(a1, b1, overwrite_b=overwrite_b, lower=lower,
