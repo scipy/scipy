@@ -3,10 +3,12 @@
 
 import numpy as np
 from scipy import fftpack
-import signaltools
-from windows import get_window
-from _spectral import lombscargle
+from . import signaltools
+from .windows import get_window
+from ._spectral import lombscargle
 import warnings
+
+from scipy.lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle']
 
@@ -274,7 +276,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
                       % (nperseg, axis, x.shape[axis], axis))
         nperseg = x.shape[-1]
 
-    if isinstance(window, basestring) or type(window) is tuple:
+    if isinstance(window, string_types) or type(window) is tuple:
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
