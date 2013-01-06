@@ -1,13 +1,14 @@
 """ Benchmark functions for fftpack.pseudo_diffs module
 """
+
+from __future__ import division, print_function, absolute_import
+
 import sys
 
 from numpy import arange, sin, cos, pi, exp, tanh, sign
 
 from numpy.testing import *
 from scipy.fftpack import diff, fft, ifft, tilbert, hilbert, shift, fftfreq
-
-from scipy.lib.six import print_
 
 def random(size):
     return rand(*size)
@@ -57,11 +58,11 @@ def direct_shift(x,a,period=None):
 class TestDiff(TestCase):
 
     def bench_random(self):
-        print_()
-        print_('Differentiation of periodic functions')
-        print_('=====================================')
-        print_(' size  |  convolve |    naive')
-        print_('-------------------------------------')
+        print()
+        print('Differentiation of periodic functions')
+        print('=====================================')
+        print(' size  |  convolve |    naive')
+        print('-------------------------------------')
         for size,repeat in [(100,1500),(1000,300),
                             (256,1500),
                             (512,1000),
@@ -70,7 +71,7 @@ class TestDiff(TestCase):
                             (2048*2,100),
                             (2048*4,50),
                             ]:
-            print_('%6s' % size, end=' ')
+            print('%6s' % size, end=' ')
             sys.stdout.flush()
             x = arange (size)*2*pi/size
             if size<2000:
@@ -79,21 +80,21 @@ class TestDiff(TestCase):
                 f = sin(x)*cos(4*x)
             assert_array_almost_equal(diff(f,1),direct_diff(f,1))
             assert_array_almost_equal(diff(f,2),direct_diff(f,2))
-            print_('| %9.2f' % measure('diff(f,3)',repeat), end=' ')
+            print('| %9.2f' % measure('diff(f,3)',repeat), end=' ')
             sys.stdout.flush()
-            print_('| %9.2f' % measure('direct_diff(f,3)',repeat), end=' ')
+            print('| %9.2f' % measure('direct_diff(f,3)',repeat), end=' ')
             sys.stdout.flush()
-            print_(' (secs for %s calls)' % (repeat))
+            print(' (secs for %s calls)' % (repeat))
 
 
 class TestTilbert(TestCase):
 
     def bench_random(self):
-        print_()
-        print_(' Tilbert transform of periodic functions')
-        print_('=========================================')
-        print_(' size  | optimized |    naive')
-        print_('-----------------------------------------')
+        print()
+        print(' Tilbert transform of periodic functions')
+        print('=========================================')
+        print(' size  | optimized |    naive')
+        print('-----------------------------------------')
         for size,repeat in [(100,1500),(1000,300),
                             (256,1500),
                             (512,1000),
@@ -102,7 +103,7 @@ class TestTilbert(TestCase):
                             (2048*2,100),
                             (2048*4,50),
                             ]:
-            print_('%6s' % size, end=' ')
+            print('%6s' % size, end=' ')
             sys.stdout.flush()
             x = arange (size)*2*pi/size
             if size<2000:
@@ -110,21 +111,21 @@ class TestTilbert(TestCase):
             else:
                 f = sin(x)*cos(4*x)
             assert_array_almost_equal(tilbert(f,1),direct_tilbert(f,1))
-            print_('| %9.2f' % measure('tilbert(f,1)',repeat), end=' ')
+            print('| %9.2f' % measure('tilbert(f,1)',repeat), end=' ')
             sys.stdout.flush()
-            print_('| %9.2f' % measure('direct_tilbert(f,1)',repeat), end=' ')
+            print('| %9.2f' % measure('direct_tilbert(f,1)',repeat), end=' ')
             sys.stdout.flush()
-            print_(' (secs for %s calls)' % (repeat))
+            print(' (secs for %s calls)' % (repeat))
 
 
 class TestHilbert(TestCase):
 
     def bench_random(self):
-        print_()
-        print_(' Hilbert transform of periodic functions')
-        print_('=========================================')
-        print_(' size  | optimized |    naive')
-        print_('-----------------------------------------')
+        print()
+        print(' Hilbert transform of periodic functions')
+        print('=========================================')
+        print(' size  | optimized |    naive')
+        print('-----------------------------------------')
         for size,repeat in [(100,1500),(1000,300),
                             (256,1500),
                             (512,1000),
@@ -133,7 +134,7 @@ class TestHilbert(TestCase):
                             (2048*2,100),
                             (2048*4,50),
                             ]:
-            print_('%6s' % size, end=' ')
+            print('%6s' % size, end=' ')
             sys.stdout.flush()
             x = arange (size)*2*pi/size
             if size<2000:
@@ -141,21 +142,21 @@ class TestHilbert(TestCase):
             else:
                 f = sin(x)*cos(4*x)
             assert_array_almost_equal(hilbert(f),direct_hilbert(f))
-            print_('| %9.2f' % measure('hilbert(f)',repeat), end=' ')
+            print('| %9.2f' % measure('hilbert(f)',repeat), end=' ')
             sys.stdout.flush()
-            print_('| %9.2f' % measure('direct_hilbert(f)',repeat), end=' ')
+            print('| %9.2f' % measure('direct_hilbert(f)',repeat), end=' ')
             sys.stdout.flush()
-            print_(' (secs for %s calls)' % (repeat))
+            print(' (secs for %s calls)' % (repeat))
 
 
 class TestShift(TestCase):
 
     def bench_random(self):
-        print_()
-        print_(' Shifting periodic functions')
-        print_('==============================')
-        print_(' size  | optimized |    naive')
-        print_('------------------------------')
+        print()
+        print(' Shifting periodic functions')
+        print('==============================')
+        print(' size  | optimized |    naive')
+        print('------------------------------')
         for size,repeat in [(100,1500),(1000,300),
                             (256,1500),
                             (512,1000),
@@ -164,7 +165,7 @@ class TestShift(TestCase):
                             (2048*2,100),
                             (2048*4,50),
                             ]:
-            print_('%6s' % size, end=' ')
+            print('%6s' % size, end=' ')
             sys.stdout.flush()
             x = arange (size)*2*pi/size
             a = 1
@@ -176,11 +177,11 @@ class TestShift(TestCase):
                 sf = sin(x+a)*cos(4*(x+a))
             assert_array_almost_equal(direct_shift(f,1),sf)
             assert_array_almost_equal(shift(f,1),sf)
-            print_('| %9.2f' % measure('shift(f,a)',repeat), end=' ')
+            print('| %9.2f' % measure('shift(f,a)',repeat), end=' ')
             sys.stdout.flush()
-            print_('| %9.2f' % measure('direct_shift(f,a)',repeat), end=' ')
+            print('| %9.2f' % measure('direct_shift(f,a)',repeat), end=' ')
             sys.stdout.flush()
-            print_(' (secs for %s calls)' % (repeat))
+            print(' (secs for %s calls)' % (repeat))
 
 if __name__ == "__main__":
     run_module_suite()

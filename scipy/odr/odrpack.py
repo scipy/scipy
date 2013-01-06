@@ -109,10 +109,10 @@ robert.kern@gmail.com
 
 """
 
+from __future__ import division, print_function, absolute_import
+
 import numpy
 from scipy.odr import __odrpack
-
-from scipy.lib.six import print_
 
 __all__ = ['odr', 'odr_error', 'odr_stop', 'Data', 'RealData', 'Model',
            'Output', 'ODR']
@@ -638,15 +638,15 @@ class Output(object):
         """ Pretty-print important results.
         """
 
-        print_('Beta:', self.beta)
-        print_('Beta Std Error:', self.sd_beta)
-        print_('Beta Covariance:', self.cov_beta)
+        print('Beta:', self.beta)
+        print('Beta Std Error:', self.sd_beta)
+        print('Beta Covariance:', self.cov_beta)
         if hasattr(self, 'info'):
-            print_('Residual Variance:',self.res_var)
-            print_('Inverse Condition #:', self.inv_condnum)
-            print_('Reason(s) for Halting:')
+            print('Residual Variance:',self.res_var)
+            print('Inverse Condition #:', self.inv_condnum)
+            print('Reason(s) for Halting:')
             for r in self.stopreason:
-                print_('  %s' % r)
+                print('  %s' % r)
 
 
 class ODR(object):
@@ -853,8 +853,8 @@ class ODR(object):
         res = self.model.fcn(*arglist)
 
         if res.shape not in fcn_perms:
-            print_(res.shape)
-            print_(fcn_perms)
+            print(res.shape)
+            print(fcn_perms)
             raise odr_error("fcn does not output %s-shaped array" % y_s)
 
         if self.model.fjacd is not None:

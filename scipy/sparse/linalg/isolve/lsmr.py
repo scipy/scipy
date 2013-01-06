@@ -16,12 +16,13 @@ Dept of MS&E, Stanford University.
 
 """
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['lsmr']
 
 from numpy import zeros, infty
 from numpy.linalg import norm
 from math import sqrt
-from scipy.lib.six import print_
 from scipy.sparse.linalg.interface import aslinearoperator
 
 from .lsqr import _sym_ortho
@@ -156,12 +157,12 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         maxiter = minDim
 
     if show:
-        print_(' ')
-        print_('LSMR            Least-squares solution of  Ax = b\n')
-        print_('The matrix A has %8g rows  and %8g cols' % (m, n))
-        print_('damp = %20.14e\n' % (damp))
-        print_('atol = %8.2e                 conlim = %8.2e\n' % (atol, conlim))
-        print_('btol = %8.2e             maxiter = %8g\n' % (btol, maxiter))
+        print(' ')
+        print('LSMR            Least-squares solution of  Ax = b\n')
+        print('The matrix A has %8g rows  and %8g cols' % (m, n))
+        print('damp = %20.14e\n' % (damp))
+        print('atol = %8.2e                 conlim = %8.2e\n' % (atol, conlim))
+        print('btol = %8.2e             maxiter = %8g\n' % (btol, maxiter))
 
     u = b
     beta = norm(u)
@@ -224,18 +225,18 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     normar = alpha * beta
     if normar == 0:
         if show:
-            print_(msg[0])
+            print(msg[0])
         return x, istop, itn, normr, normar, normA, condA, normx
 
     if show:
-        print_(' ')
-        print_(hdg1, hdg2)
+        print(' ')
+        print(hdg1, hdg2)
         test1 = 1
         test2  = alpha / beta
         str1 = '%6g %12.5e' % (itn, x[0])
         str2 = ' %10.3e %10.3e' % (normr, normar)
         str3 = '  %8.1e %8.1e' % (test1,  test2)
-        print_(''.join([str1, str2, str3]))
+        print(''.join([str1, str2, str3]))
 
     # Main iteration loop.
     while itn < maxiter:
@@ -375,14 +376,14 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
                 if pcount >= pfreq:
                     pcount = 0
-                    print_(' ')
-                    print_(hdg1, hdg2)
+                    print(' ')
+                    print(hdg1, hdg2)
                 pcount = pcount + 1
                 str1 = '%6g %12.5e' % (itn, x[0])
                 str2 = ' %10.3e %10.3e' % (normr, normar)
                 str3 = '  %8.1e %8.1e' % (test1, test2)
                 str4 = ' %8.1e %8.1e' % (normA, condA)
-                print_(''.join([str1, str2, str3, str4]))
+                print(''.join([str1, str2, str3, str4]))
 
         if istop > 0:
             break
@@ -390,14 +391,14 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     # Print the stopping condition.
 
     if show:
-        print_(' ')
-        print_('LSMR finished')
-        print_(msg[istop])
-        print_('istop =%8g    normr =%8.1e' % (istop, normr))
-        print_('    normA =%8.1e    normAr =%8.1e' % (normA, normar))
-        print_('itn   =%8g    condA =%8.1e' % (itn, condA))
-        print_('    normx =%8.1e' % (normx))
-        print_(str1, str2)
-        print_(str3, str4)
+        print(' ')
+        print('LSMR finished')
+        print(msg[istop])
+        print('istop =%8g    normr =%8.1e' % (istop, normr))
+        print('    normA =%8.1e    normAr =%8.1e' % (normA, normar))
+        print('itn   =%8g    condA =%8.1e' % (itn, condA))
+        print('    normx =%8.1e' % (normx))
+        print(str1, str2)
+        print(str3, str4)
 
     return x, istop, itn, normr, normar, normA, condA, normx

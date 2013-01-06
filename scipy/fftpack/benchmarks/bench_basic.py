@@ -1,5 +1,8 @@
 """ Test functions for fftpack.basic module
 """
+
+from __future__ import division, print_function, absolute_import
+
 import sys
 from numpy.testing import *
 from scipy.fftpack import ifft, fft, fftn, irfft, rfft
@@ -8,8 +11,6 @@ from numpy import arange, asarray, zeros, dot, exp, pi, double, cdouble
 import numpy.fft
 
 from numpy.random import rand
-
-from scipy.lib.six import print_
 
 def random(size):
     return rand(*size)
@@ -37,13 +38,13 @@ class TestFft(TestCase):
 
     def bench_random(self):
         from numpy.fft import fft as numpy_fft
-        print_()
-        print_('                 Fast Fourier Transform')
-        print_('=================================================')
-        print_('      |    real input     |   complex input    ')
-        print_('-------------------------------------------------')
-        print_(' size |  scipy  |  numpy  |  scipy  |  numpy ')
-        print_('-------------------------------------------------')
+        print()
+        print('                 Fast Fourier Transform')
+        print('=================================================')
+        print('      |    real input     |   complex input    ')
+        print('-------------------------------------------------')
+        print(' size |  scipy  |  numpy  |  scipy  |  numpy ')
+        print('-------------------------------------------------')
         for size,repeat in [(100,7000),(1000,2000),
                             (256,10000),
                             (512,10000),
@@ -52,7 +53,7 @@ class TestFft(TestCase):
                             (2048*2,500),
                             (2048*4,500),
                             ]:
-            print_('%5s' % size, end=' ')
+            print('%5s' % size, end=' ')
             sys.stdout.flush()
 
             for x in [random([size]).astype(double),
@@ -61,27 +62,27 @@ class TestFft(TestCase):
                 if size > 500: y = fft(x)
                 else: y = direct_dft(x)
                 assert_array_almost_equal(fft(x),y)
-                print_('|%8.2f' % measure('fft(x)',repeat), end=' ')
+                print('|%8.2f' % measure('fft(x)',repeat), end=' ')
                 sys.stdout.flush()
 
                 assert_array_almost_equal(numpy_fft(x),y)
-                print_('|%8.2f' % measure('numpy_fft(x)',repeat), end=' ')
+                print('|%8.2f' % measure('numpy_fft(x)',repeat), end=' ')
                 sys.stdout.flush()
 
-            print_(' (secs for %s calls)' % (repeat))
+            print(' (secs for %s calls)' % (repeat))
         sys.stdout.flush()
 
 class TestIfft(TestCase):
 
     def bench_random(self):
         from numpy.fft import ifft as numpy_ifft
-        print_()
-        print_('       Inverse Fast Fourier Transform')
-        print_('===============================================')
-        print_('      |     real input    |    complex input   ')
-        print_('-----------------------------------------------')
-        print_(' size |  scipy  |  numpy  |  scipy  |  numpy  ')
-        print_('-----------------------------------------------')
+        print()
+        print('       Inverse Fast Fourier Transform')
+        print('===============================================')
+        print('      |     real input    |    complex input   ')
+        print('-----------------------------------------------')
+        print(' size |  scipy  |  numpy  |  scipy  |  numpy  ')
+        print('-----------------------------------------------')
         for size,repeat in [(100,7000),(1000,2000),
                             (256,10000),
                             (512,10000),
@@ -90,7 +91,7 @@ class TestIfft(TestCase):
                             (2048*2,500),
                             (2048*4,500),
                             ]:
-            print_('%5s' % size, end=' ')
+            print('%5s' % size, end=' ')
             sys.stdout.flush()
 
             for x in [random([size]).astype(double),
@@ -99,25 +100,25 @@ class TestIfft(TestCase):
                 if size > 500: y = ifft(x)
                 else: y = direct_idft(x)
                 assert_array_almost_equal(ifft(x),y)
-                print_('|%8.2f' % measure('ifft(x)',repeat), end=' ')
+                print('|%8.2f' % measure('ifft(x)',repeat), end=' ')
                 sys.stdout.flush()
 
                 assert_array_almost_equal(numpy_ifft(x),y)
-                print_('|%8.2f' % measure('numpy_ifft(x)',repeat), end=' ')
+                print('|%8.2f' % measure('numpy_ifft(x)',repeat), end=' ')
                 sys.stdout.flush()
 
-            print_(' (secs for %s calls)' % (repeat))
+            print(' (secs for %s calls)' % (repeat))
         sys.stdout.flush()
 
 class TestRfft(TestCase):
 
     def bench_random(self):
         from numpy.fft import rfft as numpy_rfft
-        print_()
-        print_('Fast Fourier Transform (real data)')
-        print_('==================================')
-        print_(' size |  scipy  |  numpy  ')
-        print_('----------------------------------')
+        print()
+        print('Fast Fourier Transform (real data)')
+        print('==================================')
+        print(' size |  scipy  |  numpy  ')
+        print('----------------------------------')
         for size,repeat in [(100,7000),(1000,2000),
                             (256,10000),
                             (512,10000),
@@ -126,17 +127,17 @@ class TestRfft(TestCase):
                             (2048*2,500),
                             (2048*4,500),
                             ]:
-            print_('%5s' % size, end=' ')
+            print('%5s' % size, end=' ')
             sys.stdout.flush()
 
             x = random([size]).astype(double)
-            print_('|%8.2f' % measure('rfft(x)',repeat), end=' ')
+            print('|%8.2f' % measure('rfft(x)',repeat), end=' ')
             sys.stdout.flush()
 
-            print_('|%8.2f' % measure('numpy_rfft(x)',repeat), end=' ')
+            print('|%8.2f' % measure('numpy_rfft(x)',repeat), end=' ')
             sys.stdout.flush()
 
-            print_(' (secs for %s calls)' % (repeat))
+            print(' (secs for %s calls)' % (repeat))
         sys.stdout.flush()
 
 class TestIrfft(TestCase):
@@ -144,11 +145,11 @@ class TestIrfft(TestCase):
     def bench_random(self):
         from numpy.fft import irfft as numpy_irfft
 
-        print_()
-        print_('Inverse Fast Fourier Transform (real data)')
-        print_('==================================')
-        print_(' size |  scipy  |  numpy  ')
-        print_('----------------------------------')
+        print()
+        print('Inverse Fast Fourier Transform (real data)')
+        print('==================================')
+        print(' size |  scipy  |  numpy  ')
+        print('----------------------------------')
         for size,repeat in [(100,7000),(1000,2000),
                             (256,10000),
                             (512,10000),
@@ -157,7 +158,7 @@ class TestIrfft(TestCase):
                             (2048*2,500),
                             (2048*4,500),
                             ]:
-            print_('%5s' % size, end=' ')
+            print('%5s' % size, end=' ')
             sys.stdout.flush()
 
             x = random([size]).astype(double)
@@ -169,14 +170,14 @@ class TestIrfft(TestCase):
                 x1[-1] = x[-1]
             y = irfft(x)
 
-            print_('|%8.2f' % measure('irfft(x)',repeat), end=' ')
+            print('|%8.2f' % measure('irfft(x)',repeat), end=' ')
             sys.stdout.flush()
 
             assert_array_almost_equal(numpy_irfft(x1,size),y)
-            print_('|%8.2f' % measure('numpy_irfft(x1,size)',repeat), end=' ')
+            print('|%8.2f' % measure('numpy_irfft(x1,size)',repeat), end=' ')
             sys.stdout.flush()
 
-            print_(' (secs for %s calls)' % (repeat))
+            print(' (secs for %s calls)' % (repeat))
 
         sys.stdout.flush()
 
@@ -184,18 +185,18 @@ class TestFftn(TestCase):
 
     def bench_random(self):
         from numpy.fft import fftn as numpy_fftn
-        print_()
-        print_('    Multi-dimensional Fast Fourier Transform')
-        print_('===================================================')
-        print_('          |    real input     |   complex input    ')
-        print_('---------------------------------------------------')
-        print_('   size   |  scipy  |  numpy  |  scipy  |  numpy ')
-        print_('---------------------------------------------------')
+        print()
+        print('    Multi-dimensional Fast Fourier Transform')
+        print('===================================================')
+        print('          |    real input     |   complex input    ')
+        print('---------------------------------------------------')
+        print('   size   |  scipy  |  numpy  |  scipy  |  numpy ')
+        print('---------------------------------------------------')
         for size,repeat in [((100,100),100),((1000,100),7),
                             ((256,256),10),
                             ((512,512),3),
                             ]:
-            print_('%9s' % ('%sx%s'%size), end=' ')
+            print('%9s' % ('%sx%s'%size), end=' ')
             sys.stdout.flush()
 
             for x in [random(size).astype(double),
@@ -205,14 +206,14 @@ class TestFftn(TestCase):
                 #if size > 500: y = fftn(x)
                 #else: y = direct_dft(x)
                 assert_array_almost_equal(fftn(x),y)
-                print_('|%8.2f' % measure('fftn(x)',repeat), end=' ')
+                print('|%8.2f' % measure('fftn(x)',repeat), end=' ')
                 sys.stdout.flush()
 
                 assert_array_almost_equal(numpy_fftn(x),y)
-                print_('|%8.2f' % measure('numpy_fftn(x)',repeat), end=' ')
+                print('|%8.2f' % measure('numpy_fftn(x)',repeat), end=' ')
                 sys.stdout.flush()
 
-            print_(' (secs for %s calls)' % (repeat))
+            print(' (secs for %s calls)' % (repeat))
 
         sys.stdout.flush()
 

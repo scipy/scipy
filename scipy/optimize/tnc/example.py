@@ -2,7 +2,8 @@
 # Python TNC example
 # @(#) $Jeannot: example.py,v 1.4 2004/04/02 18:51:04 js Exp $
 
-from scipy.lib.six import print_
+from __future__ import division, print_function, absolute_import
+
 import tnc
 
 # A function to minimize
@@ -20,6 +21,6 @@ def function(x):
 # Optimizer call
 rc, nf, x = tnc.minimize(function, [-7, 3], [-10, 1], [10, 10])
 
-print_("After", nf, "function evaluations, TNC returned:", tnc.RCSTRINGS[rc])
-print_("x =", x)
-print_("exact value = [0, 1]")
+print("After", nf, "function evaluations, TNC returned:", tnc.RCSTRINGS[rc])
+print("x =", x)
+print("exact value = [0, 1]")

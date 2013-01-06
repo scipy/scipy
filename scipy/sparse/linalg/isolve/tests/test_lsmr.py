@@ -15,12 +15,13 @@ Systems Optimization Laboratory
 Dept of MS&E, Stanford University.
 
 """
+
+from __future__ import division, print_function, absolute_import
+
 from numpy import arange, concatenate, eye, zeros, ones, sqrt, \
                   transpose, hstack
 from numpy.linalg import norm
 from numpy.testing import run_module_suite, assert_almost_equal
-
-from scipy.lib.six import print_
 
 from scipy.sparse import coo_matrix
 from scipy.sparse.linalg.interface import aslinearoperator
@@ -127,23 +128,23 @@ def lsmrtest(m, n, damp):
       = lsmr(A, b, damp, atol, btol, conlim, itnlim, show )
 
     j1 = min(n,5);   j2 = max(n-4,1);
-    print_(' ')
-    print_('First elements of x:')
+    print(' ')
+    print('First elements of x:')
     str = [ '%10.4f' %(xi) for xi in x[0:j1] ]
-    print_(''.join(str))
-    print_(' ')
-    print_('Last  elements of x:')
+    print(''.join(str))
+    print(' ')
+    print('Last  elements of x:')
     str = [ '%10.4f' %(xi) for xi in x[j2-1:] ]
-    print_(''.join(str))
+    print(''.join(str))
 
     r    = b - Afun.matvec(x);
     r2   = sqrt(norm(r)**2 + (damp*norm(x))**2)
-    print_(' ')
+    print(' ')
     str =  'normr (est.)  %17.10e' %(normr )
     str2 =  'normr (true)  %17.10e' %(r2 )
-    print_(str)
-    print_(str2)
-    print_(' ')
+    print(str)
+    print(str2)
+    print(' ')
 
 if __name__ == "__main__":
     # Comment out the next line to run unit tests only

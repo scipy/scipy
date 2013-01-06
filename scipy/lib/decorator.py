@@ -28,13 +28,15 @@ Decorator module, see http://pypi.python.org/pypi/decorator
 for the documentation.
 """
 
+from __future__ import division, print_function, absolute_import
+
 __version__ = '3.3.2'
 
 __all__ = ["decorator", "FunctionMaker", "partial"]
 
 import sys, re, inspect
 
-from scipy.lib.six import exec_, print_
+from scipy.lib.six import exec_
 
 try:
     from functools import partial
@@ -157,8 +159,8 @@ class FunctionMaker(object):
             # print >> sys.stderr, 'Compiling %s' % src
             exec_(code, evaldict)
         except:
-            print_('Error in generated code:', file=sys.stderr)
-            print_(src, file=sys.stderr)
+            print('Error in generated code:', file=sys.stderr)
+            print(src, file=sys.stderr)
             raise
         func = evaldict[name]
         if addsource:

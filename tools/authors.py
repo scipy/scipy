@@ -8,6 +8,8 @@ List the authors who contributed within a given revision interval.
 """
 # Author: Pauli Virtanen <pav@iki.fi>. This script is in the public domain.
 
+from __future__ import division, print_function, absolute_import
+
 from subprocess import Popen, PIPE, call
 import tempfile
 import optparse

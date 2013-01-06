@@ -15,7 +15,8 @@ Functions
 
 __all__ = ['approx_jacobian','fmin_slsqp']
 
-from scipy.lib.six import print_
+from __future__ import division, print_function, absolute_import
+
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isinf, atleast_1d
@@ -343,7 +344,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Print the header if iprint >= 2
     if iprint >= 2:
-        print_("%5s %5s %16s %16s" % ("NIT","FC","OBJFUN","GNORM"))
+        print("%5s %5s %16s %16s" % ("NIT","FC","OBJFUN","GNORM"))
 
     while 1:
 
@@ -398,7 +399,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # Print the status of the current iterate if iprint > 2 and the
         # major iteration has incremented
         if iprint >= 2 and majiter > majiter_prev:
-            print_("%5i %5i % 16.6E % 16.6E" % (majiter,feval[0],
+            print("%5i %5i % 16.6E % 16.6E" % (majiter,feval[0],
                                                fx,linalg.norm(g)))
 
         # If exit mode is not -1 or 1, slsqp has completed
@@ -409,11 +410,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Optimization loop complete.  Print status if requested
     if iprint >= 1:
-        print_(exit_modes[int(mode)] + "    (Exit mode " + str(mode) + ')')
-        print_("            Current function value:", fx)
-        print_("            Iterations:", majiter)
-        print_("            Function evaluations:", feval[0])
-        print_("            Gradient evaluations:", geval[0])
+        print(exit_modes[int(mode)] + "    (Exit mode " + str(mode) + ')')
+        print("            Current function value:", fx)
+        print("            Iterations:", majiter)
+        print("            Function evaluations:", feval[0])
+        print("            Gradient evaluations:", geval[0])
 
     return Result(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
                   njev=geval[0], status=int(mode),
@@ -454,21 +455,21 @@ if __name__ == '__main__':
           {'type': 'ineq', 'fun' : fieqcon, 'jac' : jieqcon, 'args': (10,)})
 
     # Bounds constraint problem
-    print_(' Bounds constraints '.center(72, '-'))
-    print_(' * fmin_slsqp')
+    print(' Bounds constraints '.center(72, '-'))
+    print(' * fmin_slsqp')
     x, f = fmin_slsqp(fun, array([-1, 1]), bounds=bnds, disp=1,
                       full_output=True)[:2]
-    print_(' * _minimize_slsqp')
+    print(' * _minimize_slsqp')
     res = _minimize_slsqp(fun, array([-1, 1]), bounds=bnds,
                           **{'disp': True})
 
     # Equality and inequality constraints problem
-    print_(' Equality and inequality constraints '.center(72, '-'))
-    print_(' * fmin_slsqp')
+    print(' Equality and inequality constraints '.center(72, '-'))
+    print(' * fmin_slsqp')
     x, f = fmin_slsqp(fun, array([-1, 1]),
                       f_eqcons=feqcon, fprime_eqcons=jeqcon,
                       f_ieqcons=fieqcon, fprime_ieqcons=jieqcon,
                       disp=1, full_output=True)[:2]
-    print_(' * _minimize_slsqp')
+    print(' * _minimize_slsqp')
     res = _minimize_slsqp(fun, array([-1, 1]), constraints=cons,
                           **{'disp': True})

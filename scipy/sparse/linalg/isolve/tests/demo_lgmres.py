@@ -1,4 +1,5 @@
-from scipy.lib.six import print_
+from __future__ import division, print_function, absolute_import
+
 import scipy.sparse.linalg as la
 import scipy.sparse as sp
 import scipy.io as io
@@ -28,31 +29,31 @@ A = la.LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 
 M = 100
 
-print_("MatrixMarket problem %s" % problem)
-print_("Invert %d x %d matrix; nnz = %d" % (Am.shape[0], Am.shape[1], Am.nnz))
+print("MatrixMarket problem %s" % problem)
+print("Invert %d x %d matrix; nnz = %d" % (Am.shape[0], Am.shape[1], Am.nnz))
 
 count[0] = 0
 x0, info = la.gmres(A, b, restrt=M, tol=1e-14)
 count_0 = count[0]
 err0 = np.linalg.norm(Am*x0 - b) / np.linalg.norm(b)
-print_("GMRES(%d):" % M, count_0, "matvecs, residual", err0)
+print("GMRES(%d):" % M, count_0, "matvecs, residual", err0)
 if info != 0:
-    print_("Didn't converge")
+    print("Didn't converge")
 
 count[0] = 0
 x1, info = la.lgmres(A, b, inner_m=M-6*2, outer_k=6, tol=1e-14)
 count_1 = count[0]
 err1 = np.linalg.norm(Am*x1 - b) / np.linalg.norm(b)
-print_("LGMRES(%d,6) [same memory req.]:" % (M-2*6), count_1, \
+print("LGMRES(%d,6) [same memory req.]:" % (M-2*6), count_1, \
       "matvecs, residual:", err1)
 if info != 0:
-    print_("Didn't converge")
+    print("Didn't converge")
 
 count[0] = 0
 x2, info = la.lgmres(A, b, inner_m=M-6, outer_k=6, tol=1e-14)
 count_2 = count[0]
 err2 = np.linalg.norm(Am*x2 - b) / np.linalg.norm(b)
-print_("LGMRES(%d,6) [same subspace size]:" % (M-6), count_2, \
+print("LGMRES(%d,6) [same subspace size]:" % (M-6), count_2, \
       "matvecs, residual:", err2)
 if info != 0:
-    print_("Didn't converge")
+    print("Didn't converge")

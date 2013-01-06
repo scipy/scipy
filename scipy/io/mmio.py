@@ -9,6 +9,8 @@
 #  http://math.nist.gov/MatrixMarket/
 #
 
+from __future__ import division, print_function, absolute_import
+
 import os
 from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
                   ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
@@ -609,10 +611,9 @@ class MMFile (object):
 if __name__ == '__main__':
     import sys
     import time
-    from scipy.lib.six import print_
     for filename in sys.argv[1:]:
-        print_('Reading',filename,'...', end=' ')
+        print('Reading',filename,'...', end=' ')
         sys.stdout.flush()
         t = time.time()
         mmread(filename)
-        print_('took %s seconds' % (time.time() - t))
+        print('took %s seconds' % (time.time() - t))
