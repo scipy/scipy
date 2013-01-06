@@ -2,6 +2,8 @@
 # Created by Pearu Peterson, September 2002
 """ Test functions for fftpack.pseudo_diffs module
 """
+from __future__ import division, print_function, absolute_import
+
 __usage__ = """
 Build fftpack:
   python setup_fftpack.py build

@@ -6,6 +6,7 @@ The *Format classes handle conversion between fortran and python format, and
 FortranFormatParser can create *Format instances from raw fortran format
 strings (e.g. '(3I4)', '(10I3)', etc...)
 """
+from __future__ import division, print_function, absolute_import
 
 import re
 import warnings

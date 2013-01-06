@@ -1,5 +1,7 @@
 """unit tests for sparse utility functions"""
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal
 from scipy.sparse import sputils

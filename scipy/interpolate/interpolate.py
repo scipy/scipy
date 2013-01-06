@@ -1,6 +1,6 @@
-
 """ Classes for interpolating values.
 """
+from __future__ import division, print_function, absolute_import
 
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
            'ppform', 'lagrange']

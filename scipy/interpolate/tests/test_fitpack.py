@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, assert_, TestCase
 from numpy import array, diff, shape, asarray, pi, sin, cos, arange, dot, \

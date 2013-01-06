@@ -80,6 +80,8 @@ Netcdf (:mod:`scipy.io.netcdf`)
    netcdf_variable - A data object for the netcdf module
 
 """
+from __future__ import division, print_function, absolute_import
+
 # matfile read and write
 from .matlab import loadmat, savemat, whosmat, byteordercodes
 

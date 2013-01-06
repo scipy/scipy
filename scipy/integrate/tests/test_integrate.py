@@ -2,6 +2,7 @@
 """
 Tests for numerical integration.
 """
+from __future__ import division, print_function, absolute_import
 
 import numpy
 from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, \

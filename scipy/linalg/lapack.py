@@ -204,6 +204,8 @@ All functions
 # Author: Pearu Peterson, March 2002
 #
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['get_lapack_funcs']
 
 from .blas import _get_funcs

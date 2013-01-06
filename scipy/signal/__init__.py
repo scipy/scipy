@@ -220,6 +220,7 @@ Spectral Analysis
    lombscargle    -- Computes the Lomb-Scargle periodogram
 
 """
+from __future__ import division, print_function, absolute_import
 
 from . import sigtools
 from .waveforms import *

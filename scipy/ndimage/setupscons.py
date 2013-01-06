@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from numpy.distutils.core import setup
 from numpy.distutils.misc_util import Configuration
 from numpy import get_include

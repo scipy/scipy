@@ -5,6 +5,9 @@ makenpz.py DIRECTORY
 Build a npz containing all data files in the directory.
 
 """
+
+from __future__ import division, print_function, absolute_import
+
 import os
 import numpy as np
 from optparse import OptionParser

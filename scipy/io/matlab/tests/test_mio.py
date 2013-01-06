@@ -4,6 +4,8 @@
 Need function load / save / roundtrip tests
 
 '''
+from __future__ import division, print_function, absolute_import
+
 import sys
 import os
 from os.path import join as pjoin, dirname

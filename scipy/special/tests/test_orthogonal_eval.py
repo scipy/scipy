@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.testing import assert_
 import scipy.special.orthogonal as orth

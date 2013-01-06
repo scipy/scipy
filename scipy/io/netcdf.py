@@ -12,6 +12,8 @@ modules, allowing these modules to be used interchangeably when working
 with NetCDF files. 
 """
 
+from __future__ import division, print_function, absolute_import
+
 #TODO:
 # * properly implement ``_FillValue``.
 # * implement Jeff Whitaker's patch for masked variables.

@@ -2,6 +2,8 @@
 # Author: Pearu Peterson, March 2002
 #
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['get_flinalg_funcs']
 
 # The following ensures that possibly missing flavor (C or Fortran) is

@@ -3,6 +3,8 @@
 
 # Author: Warren Weckesser, Enthought, Inc.
 
+from __future__ import division, print_function, absolute_import
+
 from scipy.lib.six.moves import xrange
 import numpy as np
 from scipy import special

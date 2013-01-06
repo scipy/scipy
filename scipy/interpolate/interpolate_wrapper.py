@@ -1,6 +1,7 @@
 """ helper_funcs.py.
     scavenged from enthought,interpolate
 """
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from . import _interpolate # C extension.  Does all the real work.

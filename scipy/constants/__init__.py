@@ -282,6 +282,7 @@ References
    http://physics.nist.gov/cuu/Constants/index.html
 
 """
+from __future__ import division, print_function, absolute_import
 
 # Modules contributed by BasSw (wegwerp@gmail.com)
 from .codata import *

@@ -104,6 +104,8 @@ All functions
 #         refactoring by Fabian Pedregosa, March 2010
 #
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['get_blas_funcs', 'find_best_blas_type']
 
 import numpy as _np

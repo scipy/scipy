@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from ._ufuncs import _lambertw
 
 def lambertw(z, k=0, tol=1e-8):

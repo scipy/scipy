@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from shelve import Shelf
 try:
     import zlib

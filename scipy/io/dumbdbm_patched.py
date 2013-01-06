@@ -20,6 +20,7 @@ is read when the database is opened, and some updates rewrite the whole index)
 - support opening for read-only (flag = 'm')
 
 """
+from __future__ import division, print_function, absolute_import
 
 _os = __import__('os')
 

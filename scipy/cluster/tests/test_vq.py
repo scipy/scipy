@@ -2,6 +2,7 @@
 
 # David Cournapeau
 # Last Change: Wed Nov 05 07:00 PM 2008 J
+from __future__ import division, print_function, absolute_import
 
 import os.path
 import warnings

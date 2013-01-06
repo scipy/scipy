@@ -80,6 +80,8 @@ Other (:mod:`scipy.fftpack._fftpack`)
    destroy_zfftnd_cache
 
 """
+from __future__ import division, print_function, absolute_import
+
 
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2',

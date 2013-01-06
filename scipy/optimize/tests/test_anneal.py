@@ -1,6 +1,7 @@
 """
 Unit tests for the simulated annealing minimization algorithm.
 """
+from __future__ import division, print_function, absolute_import
 
 from numpy.testing import TestCase, run_module_suite, \
     assert_almost_equal, assert_, dec

@@ -1,6 +1,7 @@
 """
 Continuous to discrete transformations for state-space and transfer function.
 """
+from __future__ import division, print_function, absolute_import
 
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # March 29, 2011

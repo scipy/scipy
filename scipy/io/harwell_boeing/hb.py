@@ -9,6 +9,7 @@ features are:
     - exponential format for float values, and int format
 
 """
+from __future__ import division, print_function, absolute_import
 
 # TODO:
 #   - Add more support (symmetric/complex matrices, non-assembled matrices ?)

@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import assert_, TestCase, run_module_suite, dec
 from scipy.integrate import quad, dblquad, tplquad

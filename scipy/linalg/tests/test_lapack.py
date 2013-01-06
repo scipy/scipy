@@ -3,6 +3,8 @@
 # Created by: Pearu Peterson, September 2002
 #
 
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_almost_equal, assert_, assert_raises
 

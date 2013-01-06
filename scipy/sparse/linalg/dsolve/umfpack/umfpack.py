@@ -5,6 +5,8 @@ Interface to the UMFPACK library.
 Author: Robert Cimrman
 """
 
+from __future__ import division, print_function, absolute_import
+
 import re
 import warnings
 

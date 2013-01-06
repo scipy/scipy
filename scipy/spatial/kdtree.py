@@ -1,5 +1,7 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
+from __future__ import division, print_function, absolute_import
+
 import sys
 import numpy as np
 from heapq import heappush, heappop

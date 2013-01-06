@@ -3,6 +3,8 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 (special, linalg)
 """
 
+from __future__ import division, print_function, absolute_import
+
 from scipy.lib.six.moves import xrange
 
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \

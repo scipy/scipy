@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy import cos, sin, pi
 from numpy.testing import TestCase, run_module_suite, assert_equal, \

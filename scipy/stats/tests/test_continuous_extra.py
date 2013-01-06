@@ -4,6 +4,7 @@
 #       run it,
 #       6 distributions return nan for entropy
 #       truncnorm fails by design for private method _ppf test
+from __future__ import division, print_function, absolute_import
 
 
 import numpy.testing as npt

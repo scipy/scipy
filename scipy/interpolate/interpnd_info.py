@@ -3,6 +3,8 @@ Here we perform some symbolic computations required for the N-D
 interpolation routines in `interpnd.pyx`.
 
 """
+from __future__ import division, print_function, absolute_import
+
 from sympy import *
 
 def _estimate_gradients_2d_global():

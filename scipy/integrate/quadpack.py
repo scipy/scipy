@@ -1,4 +1,5 @@
 # Author: Travis Oliphant 2001
+from __future__ import division, print_function, absolute_import
 
 from . import _quadpack
 import sys

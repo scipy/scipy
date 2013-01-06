@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 __usage__ = """
 To run tests locally:
   python tests/test_arpack.py [-l<int>] [-v<int>]

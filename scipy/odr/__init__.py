@@ -79,6 +79,8 @@ References
 # author: Robert Kern <robert.kern@gmail.com>
 # date: 2006-09-21
 
+from __future__ import division, print_function, absolute_import
+
 from .odrpack import *
 from .models import *
 

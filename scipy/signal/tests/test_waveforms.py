@@ -1,3 +1,4 @@
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import TestCase, assert_almost_equal, assert_equal, assert_, \

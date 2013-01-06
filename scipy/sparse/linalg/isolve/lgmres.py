@@ -1,6 +1,8 @@
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as Scipy.
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from scipy.lib.six.moves import xrange
 from scipy.linalg import get_blas_funcs

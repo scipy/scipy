@@ -9,6 +9,7 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
+from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_raises, assert_allclose, \
         assert_equal, assert_, TestCase, run_module_suite

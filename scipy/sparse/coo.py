@@ -1,4 +1,5 @@
 """ A sparse matrix in COOrdinate or 'triplet' format"""
+from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 

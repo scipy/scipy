@@ -1,4 +1,5 @@
 """general tests and simple benchmarks for the sparse module"""
+from __future__ import division, print_function, absolute_import
 
 import time
 

@@ -1,9 +1,9 @@
-"""Module for reading and writing MATLAB .mat files"""
-# Authors: Travis Oliphant, Matthew Brett
-
 """
 Module for reading and writing matlab (TM) .mat files
 """
+# Authors: Travis Oliphant, Matthew Brett
+
+from __future__ import division, print_function, absolute_import
 
 import os
 import sys

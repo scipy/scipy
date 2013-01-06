@@ -1,5 +1,7 @@
 """Sparse DIAgonal format"""
 
+from __future__ import division, print_function, absolute_import
+
 __docformat__ = "restructuredtext en"
 
 __all__ = ['dia_matrix', 'isspmatrix_dia']

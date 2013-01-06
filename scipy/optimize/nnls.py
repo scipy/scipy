@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from . import _nnls
 from numpy import asarray_chkfinite, zeros, double
 

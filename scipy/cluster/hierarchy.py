@@ -130,6 +130,7 @@ References
 * Mathematica is a registered trademark of The Wolfram Research, Inc.
 
 """
+from __future__ import division, print_function, absolute_import
 
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 

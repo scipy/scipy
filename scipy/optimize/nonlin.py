@@ -111,6 +111,8 @@ The solution can be found using the `newton_krylov` solver:
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as Scipy.
 
+from __future__ import division, print_function, absolute_import
+
 import sys
 import numpy as np
 from scipy.lib.six import callable, exec_

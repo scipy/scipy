@@ -2,6 +2,7 @@
 Author: Ondrej Certik
 May 2007
 """
+from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_, dec, TestCase, run_module_suite
 

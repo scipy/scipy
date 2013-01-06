@@ -13,6 +13,9 @@
 #  Finished line search satisfying strong Wolfe conditions (Mar. 2004)
 #  Updated strong Wolfe conditions line search to use cubic-interpolation (Mar. 2004)
 
+from __future__ import division, print_function, absolute_import
+
+
 # Minimization routines
 
 __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',

@@ -6,6 +6,7 @@ print '10 mile per minute is', 10*mile/minute, 'm/s or', 10*mile/(minute*knot), 
 
 The list is not meant to be comprehensive, but just a convenient list for everyday use.
 """
+from __future__ import division, print_function, absolute_import
 
 """
 BasSw 2006

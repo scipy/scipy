@@ -35,6 +35,7 @@ Dataset: foo
 \tcolor's type is nominal, range is ('red', 'green', 'blue', 'yellow', 'black')
 
 """
+from __future__ import division, print_function, absolute_import
 
 from .arffread import *
 from . import arffread

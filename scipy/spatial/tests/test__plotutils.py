@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import dec, assert_, assert_array_equal
 
 try:

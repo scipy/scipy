@@ -181,6 +181,8 @@ References
 ##              changed name of skewness and askewness to skew and askew
 ##              fixed (a)histogram (which sometimes counted points <lowerlimit)
 
+from __future__ import division, print_function, absolute_import
+
 # Standard library imports.
 import warnings
 import math

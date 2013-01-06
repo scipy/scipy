@@ -6,6 +6,8 @@ Additional statistics functions, with support to MA.
 :date: $Date: 2007-10-29 17:18:13 +0200 (Mon, 29 Oct 2007) $
 :version: $Id: morestats.py 3473 2007-10-29 15:18:13Z jarrod.millman $
 """
+from __future__ import division, print_function, absolute_import
+
 __author__ = "Pierre GF Gerard-Marchant"
 __docformat__ = "restructuredtext en"
 

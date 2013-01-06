@@ -1,6 +1,7 @@
 """
 Unit tests for optimization routines from minpack.py.
 """
+from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, TestCase, run_module_suite, assert_raises

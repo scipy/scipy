@@ -1,4 +1,5 @@
 """Base class for sparse matrices"""
+from __future__ import division, print_function, absolute_import
 
 __all__ = ['spmatrix', 'isspmatrix', 'issparse',
         'SparseWarning','SparseEfficiencyWarning']

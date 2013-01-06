@@ -8,6 +8,8 @@ An extension of scipy.stats.stats to support masked arrays
 #TODO : ttest_reel looks botched:  what are x1,x2,v1,v2 for ?
 #TODO : reimplement ksonesamp
 
+from __future__ import division, print_function, absolute_import
+
 __author__ = "Pierre GF Gerard-Marchant"
 __docformat__ = "restructuredtext en"
 

@@ -1,3 +1,4 @@
+from __future__ import division, print_function, absolute_import
 
 from numpy import vectorize
 from numpy.random import random_sample

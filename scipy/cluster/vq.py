@@ -67,6 +67,8 @@ human face, more flesh tone colors would be represented in the
 code book.
 
 """
+from __future__ import division, print_function, absolute_import
+
 __docformat__ = 'restructuredtext'
 
 __all__ = ['whiten', 'vq', 'kmeans', 'kmeans2']

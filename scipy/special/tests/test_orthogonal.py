@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import assert_array_almost_equal, assert_almost_equal, \
         rand, TestCase
 from scipy.lib.six.moves import xrange

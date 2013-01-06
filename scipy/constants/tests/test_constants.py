@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import run_module_suite, assert_equal
 import scipy.constants as sc
 

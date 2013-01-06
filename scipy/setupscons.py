@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from os.path import join as pjoin
 
 def configuration(parent_package='', top_path=None, setup_name='setupscons.py'):

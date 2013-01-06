@@ -1,6 +1,8 @@
 """Test functions for the sparse.linalg.interface module
 """
 
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import TestCase, assert_, assert_equal, \
         assert_raises
 

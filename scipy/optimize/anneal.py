@@ -1,6 +1,7 @@
 # Original Author: Travis Oliphant 2002
 # Bug-fixes in 2006 by Tim Leslie
 
+from __future__ import division, print_function, absolute_import
 
 import numpy
 from numpy import asarray, tan, exp, ones, squeeze, sign, \

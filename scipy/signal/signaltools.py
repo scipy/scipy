@@ -1,6 +1,7 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
+from __future__ import division, print_function, absolute_import
 
 from . import sigtools
 from scipy.lib.six import callable

@@ -2,6 +2,8 @@
 # Author:  Travis Oliphant, 2002
 #
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from scipy.lib.six.moves import xrange
 from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \

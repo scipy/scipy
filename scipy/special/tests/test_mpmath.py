@@ -2,6 +2,8 @@
 Test Scipy functions versus mpmath, if available.
 
 """
+from __future__ import division, print_function, absolute_import
+
 import re
 import numpy as np
 from numpy.testing import dec

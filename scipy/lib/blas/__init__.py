@@ -80,6 +80,7 @@ Level 1 routines
   Prefixes:
     axpy: s,d,c,z
 """
+from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 

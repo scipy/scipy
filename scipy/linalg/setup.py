@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import division, print_function, absolute_import
 
 import os
 from distutils.dep_util import newer_group, newer

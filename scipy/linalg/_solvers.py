@@ -3,6 +3,8 @@
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # February 24, 2012
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.linalg import inv, LinAlgError
 

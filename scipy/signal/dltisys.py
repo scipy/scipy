@@ -4,6 +4,7 @@ dltisys - Code related to discrete linear time-invariant systems
 
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # April 4, 2011
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.interpolate import interp1d

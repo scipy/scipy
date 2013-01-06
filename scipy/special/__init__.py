@@ -524,6 +524,8 @@ Convenience Functions
 
 """
 
+from __future__ import division, print_function, absolute_import
+
 from ._ufuncs import *
 from ._ufuncs_cxx import *
 

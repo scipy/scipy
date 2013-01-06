@@ -6,6 +6,7 @@ Functions
 - minimize : minimization of a function of several variables.
 - minimize_scalar : minimization of a function of one variable.
 """
+from __future__ import division, print_function, absolute_import
 
 
 __all__ = ['minimize', 'minimize_scalar']

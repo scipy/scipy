@@ -136,6 +136,7 @@ Optimal lwork is maxwrk. Default is minwrk.
 
 """
 
+from __future__ import division, print_function, absolute_import
 
 __all__ = ['get_lapack_funcs','calc_lwork','flapack','clapack']
 

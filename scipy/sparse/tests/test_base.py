@@ -4,6 +4,9 @@
 """ Test functions for sparse matrices
 
 """
+
+from __future__ import division, print_function, absolute_import
+
 __usage__ = """
 Build sparse:
   python setup.py build

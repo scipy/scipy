@@ -1,6 +1,7 @@
 # Last Change: Mon Aug 20 01:00 PM 2007 J
 # Implement partial application (should only be used if functools is not
 # available (eg python < 2.5)
+from __future__ import division, print_function, absolute_import
 
 class partial:
     def __init__(self, fun, *args, **kwargs):

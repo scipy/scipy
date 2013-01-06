@@ -144,6 +144,7 @@ Additional tools
    `scipy.signal.cspline2d`.
 
 """
+from __future__ import division, print_function, absolute_import
 
 from .interpolate import *
 from .fitpack import *

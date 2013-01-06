@@ -5,6 +5,8 @@
 """ Test functions for linalg.basic module
 
 """
+from __future__ import division, print_function, absolute_import
+
 """
 Bugs:
 1) solve.check_random_sym_complex fails if a is complex

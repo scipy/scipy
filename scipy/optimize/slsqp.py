@@ -13,9 +13,9 @@ Functions
 
 """
 
-__all__ = ['approx_jacobian','fmin_slsqp']
-
 from __future__ import division, print_function, absolute_import
+
+__all__ = ['approx_jacobian','fmin_slsqp']
 
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \

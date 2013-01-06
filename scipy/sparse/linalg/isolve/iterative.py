@@ -1,5 +1,7 @@
 """Iterative methods for solving linear systems"""
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 
 from . import _iterative

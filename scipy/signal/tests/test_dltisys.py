@@ -1,6 +1,7 @@
-
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # April 4, 2011
+
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \

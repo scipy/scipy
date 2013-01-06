@@ -37,6 +37,8 @@ systems that don't have PIL installed.
    who - Print the Numpy arrays in the given dictionary
 """
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['who', 'source', 'info', 'doccer']
 
 from . import doccer

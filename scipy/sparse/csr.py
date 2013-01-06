@@ -1,5 +1,7 @@
 """Compressed Sparse Row matrix format"""
 
+from __future__ import division, print_function, absolute_import
+
 __docformat__ = "restructuredtext en"
 
 __all__ = ['csr_matrix', 'isspmatrix_csr']
