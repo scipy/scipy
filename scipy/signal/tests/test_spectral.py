@@ -214,18 +214,18 @@ class TestWelch(TestCase):
         x = x.reshape((2,1,10))
         f, p = welch(x, nperseg=10)
         assert_array_equal(p.shape, (2, 1, 6))
-        assert_array_almost_equal_nulp(p[0,0,:], p[1,0,:], 60)
+        assert_allclose(p[0,0,:], p[1,0,:], atol=1e-13, rtol=1e-13)
         f0, p0 = welch(x[0,0,:], nperseg=10)
-        assert_array_almost_equal_nulp(p0[np.newaxis,:], p[1,:], 60)
+        assert_allclose(p0[np.newaxis,:], p[1,:], atol=1e-13, rtol=1e-13)
 
     def test_nd_axis_0(self):
         x = np.arange(20, dtype=np.float64)+0.04
         x = x.reshape((10,2,1))
         f, p = welch(x, nperseg=10, axis=0)
         assert_array_equal(p.shape, (6,2,1))
-        assert_array_almost_equal_nulp(p[:,0,0], p[:,1,0], 60)
+        assert_allclose(p[:,0,0], p[:,1,0], atol=1e-13, rtol=1e-13)
         f0, p0 = welch(x[:,0,0], nperseg=10)
-        assert_array_almost_equal_nulp(p0, p[:,1,0])
+        assert_allclose(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
 
     def test_window_external(self):
         x = np.zeros(16)
