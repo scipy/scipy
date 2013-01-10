@@ -216,6 +216,13 @@ class TestMedFilt(TestCase):
             signal.medfilt(None)
         except:
             pass
+        # Expand on this test to avoid a regression with possible contiguous
+        # numpy arrays that have odd strides. The stride value below gets
+        # us into wrong memory if used (but it does not need to be used)
+        a = np.lib.stride_tricks.as_strided(np.ones(1), shape=(1,), strides=(2**31,))
+        # a may be contiguous (and is certainly for numpy <1.8) because it
+        # has only one element
+        signal.medfilt(a)
 
 class TestWiener(TestCase):
     def test_basic(self):
