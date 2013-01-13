@@ -21,6 +21,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('stats')
     config.add_subpackage('ndimage')
     config.add_subpackage('weave')
+    config.add_subpackage('_build_utils')
     config.make_config_py()
     return config
 

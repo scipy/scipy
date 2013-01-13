@@ -5,22 +5,7 @@ import os
 from distutils.dep_util import newer_group, newer
 from os.path import join
 
-def needs_cblas_wrapper(info):
-    """Returns true if needs c wrapper around cblas for calling from
-    fortran."""
-    import re
-    r_accel = re.compile("Accelerate")
-    r_vec = re.compile("vecLib")
-    res = False
-    try:
-        tmpstr = info['extra_link_args']
-        for i in tmpstr:
-            if r_accel.search(i) or r_vec.search(i):
-                res = True
-    except KeyError:
-        pass
-
-    return res
+from scipy._build_utils import needs_g77_abi_wrapper
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
@@ -42,7 +27,7 @@ def configuration(parent_package='',top_path=None):
     target_dir = ''
 
     # fblas:
-    if needs_cblas_wrapper(lapack_opt):
+    if needs_g77_abi_wrapper(lapack_opt):
         sources = ['fblas.pyf.src', join('src', 'fblaswrap_veclib_c.c')],
     else:
         sources = ['fblas.pyf.src', join('src', 'fblaswrap.f')]

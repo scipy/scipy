@@ -1,24 +1,9 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
-import re
 from os.path import join
 
-def needs_veclib_wrapper(info):
-    """Returns true if needs special veclib wrapper."""
-    import re
-    r_accel = re.compile("Accelerate")
-    r_vec = re.compile("vecLib")
-    res = False
-    try:
-        tmpstr = info['extra_link_args']
-        for i in tmpstr:
-            if r_accel.search(i) or r_vec.search(i):
-                res = True
-    except KeyError:
-        pass
-
-    return res
+from scipy._build_utils import needs_g77_abi_wrapper
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
@@ -37,7 +22,7 @@ def configuration(parent_package='',top_path=None):
     arpack_sources.extend([join('ARPACK','UTIL', '*.f')])
     arpack_sources.extend([join('ARPACK','LAPACK', '*.f')])
 
-    if needs_veclib_wrapper(lapack_opt):
+    if needs_g77_abi_wrapper(lapack_opt):
         arpack_sources += [join('ARPACK', 'FWRAPPERS', 'veclib_cabi_f.f'),
                            join('ARPACK', 'FWRAPPERS', 'veclib_cabi_c.c')]
     else:

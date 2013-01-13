@@ -9,7 +9,7 @@ import numpy as np
 from numpy.testing import TestCase, assert_equal, assert_array_equal, \
      assert_, assert_allclose, assert_raises
 
-from numpy import zeros, ones, arange, array, abs, max
+from numpy import zeros, ones, arange, array, abs, max, ones, eye, iscomplexobj
 from numpy.linalg import cond
 from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix
@@ -289,6 +289,18 @@ class TestGMRES(TestCase):
         diff = max(abs((rvec - array([1.0,   0.81649658092772603]))))
         assert_(diff < 1e-5)
 
+    def test_abi(self):
+        # Check we don't segfault on gmres with complex argument
+        A = eye(2)
+        b = ones(2)
+        r_x, r_info = gmres(A, b)
+        r_x = r_x.astype(complex)
+
+        x, info = gmres(A.astype(complex), b.astype(complex))
+
+        assert_(iscomplexobj(x))
+        assert_allclose(r_x, x)
+        assert_(r_info == info)
 
 if __name__ == "__main__":
     import nose
