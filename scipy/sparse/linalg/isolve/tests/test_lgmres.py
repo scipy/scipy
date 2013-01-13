@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 """Tests for the linalg.isolve.lgmres module
 """
-
 from numpy.testing import TestCase, assert_
 
-from numpy import zeros, array, allclose
+from numpy import zeros, array, allclose, ones, eye, iscomplexobj
 from scipy.linalg import norm
 from scipy.sparse import csr_matrix
 
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import splu
-from scipy.sparse.linalg.isolve import lgmres
+from scipy.sparse.linalg.isolve import lgmres, gmres
 
 Am = csr_matrix(array([[-2,1,0,0,0,9],
                        [1,-2,1,0,5,0],
@@ -70,6 +69,19 @@ class TestLGMRES(TestCase):
         assert_(count_1 == 3, count_1)
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
+
+    def test_abi(self):
+        # Check we don't segfault on gmres with complex argument
+        A = eye(2)
+        b = ones(2)
+        r_x, r_info = gmres(A, b)
+        r_x = r_x.astype(complex)
+
+        x, info = gmres(A.astype(complex), b.astype(complex))
+
+        assert_(iscomplexobj(x))
+        assert_(allclose(r_x, x))
+        assert_(r_info == info)
 
 if __name__ == "__main__":
     import nose
