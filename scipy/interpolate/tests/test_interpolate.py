@@ -109,6 +109,8 @@ class TestInterp1D(object):
         assert_raises(ValueError, interp1d, self.x10, self.y1)
         assert_raises(ValueError, interp1d, self.x1, self.y1)
 
+        # Check that x has monotonically increasing values
+        assert_raises(ValueError, interp1d, np.array([2., 1.]), np.array([1., 2.]))
 
     def test_init(self):
         """ Check that the attributes are initialized appropriately by the

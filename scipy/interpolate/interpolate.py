@@ -340,6 +340,10 @@ class interp1d(object):
         if len_x < minval:
             raise ValueError("x and y arrays must have at "
                              "least %d entries" % minval)
+
+        if not np.array_equal(x, np.sort(x)):
+            raise ValueError("x must have monotonically increasing values")
+
         self.x = x
         self.y = oriented_y
 
