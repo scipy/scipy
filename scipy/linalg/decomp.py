@@ -12,18 +12,19 @@
 # moved to their own files.  Still in this file are functions for eigenstuff
 # and for the Hessenberg form.
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['eig','eigh','eig_banded','eigvals','eigvalsh', 'eigvals_banded',
            'hessenberg']
 
 import numpy
 from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
         isfinite, inexact, nonzero, iscomplexobj, cast, flatnonzero, conj
-
 # Local imports
 from scipy.linalg import calc_lwork
-from misc import LinAlgError, _datacopied
-from lapack import get_lapack_funcs
-from blas import get_blas_funcs
+from .misc import LinAlgError, _datacopied
+from .lapack import get_lapack_funcs
+from .blas import get_blas_funcs
 
 
 _I = cast['F'](1j)

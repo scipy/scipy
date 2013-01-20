@@ -1,6 +1,6 @@
-
 """ Classes for interpolating values.
 """
+from __future__ import division, print_function, absolute_import
 
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
            'ppform', 'lagrange']
@@ -12,9 +12,11 @@ import numpy as np
 import scipy.special as spec
 import math
 
-import fitpack
-import _fitpack
-import dfitpack
+from scipy.lib.six.moves import xrange
+
+from . import fitpack
+from . import _fitpack
+from . import dfitpack
 
 def reduce_sometrue(a):
     all = a
@@ -312,7 +314,7 @@ class interp1d(object):
         if kind in ('linear', 'nearest'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
-            axes = range(y.ndim)
+            axes = list(range(y.ndim))
             del axes[self.axis]
             axes.append(self.axis)
             oriented_y = y.transpose(axes)
@@ -324,7 +326,7 @@ class interp1d(object):
                 self.x_bds = (x[1:] + x[:-1]) / 2.0
                 self._call = self._call_nearest
         else:
-            axes = range(y.ndim)
+            axes = list(range(y.ndim))
             del axes[self.axis]
             axes.insert(0, self.axis)
             oriented_y = y.transpose(axes)
@@ -439,12 +441,12 @@ class interp1d(object):
             return asarray(y_new)
         elif self._kind in ('linear', 'nearest'):
             y_new[..., out_of_bounds] = self.fill_value
-            axes = range(ny - nx)
+            axes = list(range(ny - nx))
             axes[self.axis:self.axis] = range(ny - nx, ny)
             return y_new.transpose(axes)
         else:
             y_new[out_of_bounds] = self.fill_value
-            axes = range(nx, ny)
+            axes = list(range(nx, ny))
             axes[self.axis:self.axis] = range(nx)
             return y_new.transpose(axes)
 
@@ -534,7 +536,7 @@ def _dot0(a, b):
     if b.ndim <= 2:
         return dot(a, b)
     else:
-        axes = range(b.ndim)
+        axes = list(range(b.ndim))
         axes.insert(-1, 0)
         axes.pop(0)
         return dot(a, b.transpose(axes))
@@ -832,7 +834,7 @@ def splmake(xk,yk,order=3,kind='smoothest',conds=None):
     coefs = func(xk, yk, order, conds, B)
     return xk, coefs, order
 
-def spleval((xj,cvals,k),xnew,deriv=0):
+def spleval(xck,xnew,deriv=0):
     """Evaluate a fixed spline represented by the given tuple at the new
     x-values. The xj values are the interior knot points.  The approximation
     region is xj[0] to xj[-1].  If N+1 is the length of xj, then cvals should
@@ -845,6 +847,7 @@ def spleval((xj,cvals,k),xnew,deriv=0):
     N-d, then the result is xnew.shape + cvals.shape[1:] providing the
     interpolation of multiple curves.
     """
+    (xj,cvals,k) = xck
     oldshape = np.shape(xnew)
     xx = np.ravel(xnew)
     sh = cvals.shape[1:]

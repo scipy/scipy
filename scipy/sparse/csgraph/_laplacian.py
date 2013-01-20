@@ -7,6 +7,8 @@ Laplacian of a compressed-sparse graph
 #          Jake Vanderplas <vanderplas@astro.washington.edu>
 # License: BSD
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from scipy.sparse import isspmatrix, coo_matrix
 

@@ -1,4 +1,5 @@
 """Compressed Sparse Column matrix format"""
+from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 
@@ -7,11 +8,12 @@ __all__ = ['csc_matrix', 'isspmatrix_csc']
 from warnings import warn
 
 import numpy as np
+from scipy.lib.six.moves import xrange
 
-from sparsetools import csc_tocsr
-from sputils import upcast, isintlike
+from .sparsetools import csc_tocsr
+from .sputils import upcast, isintlike
 
-from compressed import _cs_matrix
+from .compressed import _cs_matrix
 
 
 class csc_matrix(_cs_matrix):
@@ -106,7 +108,7 @@ class csc_matrix(_cs_matrix):
     """
 
     def transpose(self, copy=False):
-        from csr import csr_matrix
+        from .csr import csr_matrix
         M,N = self.shape
         return csr_matrix((self.data,self.indices,self.indptr),(N,M),copy=copy)
 
@@ -131,7 +133,7 @@ class csc_matrix(_cs_matrix):
                  self.indptr, self.indices, self.data, \
                  indptr, indices, data)
 
-        from csr import csr_matrix
+        from .csr import csr_matrix
         A = csr_matrix((data, indices, indptr), shape=self.shape)
         A.has_sorted_indices = True
         return A

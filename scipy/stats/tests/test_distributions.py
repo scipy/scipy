@@ -1,6 +1,7 @@
 """ Test functions for stats module
 
 """
+from __future__ import division, print_function, absolute_import
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, assert_almost_equal, assert_array_almost_equal, \
@@ -106,7 +107,7 @@ class TestRandInt(TestCase):
         assert_(vals.dtype.char in typecodes['AllInteger'])
         val = stats.randint.rvs(15,46)
         assert_((val >= 15) & (val < 46))
-        assert_(isinstance(val, numpy.ScalarType), msg=`type(val)`)
+        assert_(isinstance(val, numpy.ScalarType), msg=repr(type(val)))
         val = stats.randint(15,46).rvs(3)
         assert_(val.dtype.char in typecodes['AllInteger'])
 
@@ -921,7 +922,7 @@ def test_norm_logcdf():
 
     This precision was enhanced in ticket 1614.
     """
-    x = -np.asarray(range(0, 120, 4))
+    x = -np.asarray(list(range(0, 120, 4)))
     # Values from R
     expected = [-0.69314718, -10.36010149, -35.01343716, -75.41067300,
                 -131.69539607, -203.91715537, -292.09872100, -396.25241451,

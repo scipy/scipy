@@ -1,13 +1,15 @@
 """LU decomposition functions."""
 
+from __future__ import division, print_function, absolute_import
+
 from warnings import warn
 
 from numpy import asarray, asarray_chkfinite
 
 # Local imports
-from misc import _datacopied
-from lapack import get_lapack_funcs
-from flinalg import get_flinalg_funcs
+from .misc import _datacopied
+from .lapack import get_lapack_funcs
+from .flinalg import get_flinalg_funcs
 
 __all__ = ['lu', 'lu_solve', 'lu_factor']
 
@@ -69,7 +71,7 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     return lu, piv
 
 
-def lu_solve((lu, piv), b, trans=0, overwrite_b=False, check_finite=True):
+def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
     """Solve an equation system, a x = b, given the LU factorization of a
 
     Parameters
@@ -103,6 +105,7 @@ def lu_solve((lu, piv), b, trans=0, overwrite_b=False, check_finite=True):
     lu_factor : LU factorize a matrix
 
     """
+    (lu, piv) = lu_and_piv
     if check_finite:
         b1 = asarray_chkfinite(b)
     else:

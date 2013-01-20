@@ -4,6 +4,9 @@
 """ Test functions for sparse matrices
 
 """
+
+from __future__ import division, print_function, absolute_import
+
 __usage__ = """
 Build sparse:
   python setup.py build
@@ -17,6 +20,7 @@ import sys
 import warnings
 
 import numpy as np
+from scipy.lib.six.moves import xrange
 from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
                   vstack, ndarray, transpose, diag, kron, inf, conjugate, \
                   int8, ComplexWarning
@@ -1368,7 +1372,7 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         caught = 0
         # The next 6 commands should raise exceptions
         try:
-            A[0,0] = range(100)
+            A[0,0] = list(range(100))
         except ValueError:
             caught += 1
         try:
@@ -1376,11 +1380,11 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         except ValueError:
             caught += 1
         try:
-            A[0,:] = range(100)
+            A[0,:] = list(range(100))
         except ValueError:
             caught += 1
         try:
-            A[:,1] = range(100)
+            A[:,1] = list(range(100))
         except ValueError:
             caught += 1
         try:
@@ -1394,7 +1398,7 @@ class TestDOK(_TestCommon, _TestGetSet, _TestSolve, TestCase):
         # Empty ctor
         try:
             A = dok_matrix()
-        except TypeError, e:
+        except TypeError as e:
             caught+=1
         assert_equal(caught, 1)
 
@@ -1603,7 +1607,7 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
                 'sub': (B,A - B),
                 'mul': (3,A * 3)}
 
-        for op,(other,expected) in data.iteritems():
+        for op,(other,expected) in data.items():
             result = A.copy()
             getattr(result, '__i%s__' % op)(other)
 

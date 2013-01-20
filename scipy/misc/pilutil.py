@@ -5,6 +5,8 @@ Note that PIL is not a dependency of SciPy and this module is not
 available on systems that don't have PIL installed.
 
 """
+from __future__ import division, print_function, absolute_import
+
 # Functions which need the PIL
 
 import numpy

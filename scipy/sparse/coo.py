@@ -1,4 +1,5 @@
 """ A sparse matrix in COOrdinate or 'triplet' format"""
+from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 
@@ -8,10 +9,12 @@ from warnings import warn
 
 import numpy as np
 
-from sparsetools import coo_tocsr, coo_todense, coo_matvec
-from base import isspmatrix
-from data import _data_matrix
-from sputils import upcast, upcast_char, to_native, isshape, getdtype, isintlike
+from scipy.lib.six.moves import zip as izip
+
+from .sparsetools import coo_tocsr, coo_todense, coo_matvec
+from .base import isspmatrix
+from .data import _data_matrix
+from .sputils import upcast, upcast_char, to_native, isshape, getdtype, isintlike
 
 class coo_matrix(_data_matrix):
     """
@@ -261,7 +264,7 @@ class coo_matrix(_data_matrix):
                 [0, 0, 0, 1]])
 
         """
-        from csc import csc_matrix
+        from .csc import csc_matrix
         if self.nnz == 0:
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
@@ -299,7 +302,7 @@ class coo_matrix(_data_matrix):
                 [0, 0, 0, 1]])
 
         """
-        from csr import csr_matrix
+        from .csr import csr_matrix
         if self.nnz == 0:
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
@@ -324,7 +327,7 @@ class coo_matrix(_data_matrix):
             return self
 
     def todia(self):
-        from dia import dia_matrix
+        from .dia import dia_matrix
 
         ks = self.col - self.row  #the diagonal for each nonzero
         diags = np.unique(ks)
@@ -341,8 +344,7 @@ class coo_matrix(_data_matrix):
         return dia_matrix((data,diags), shape=self.shape)
 
     def todok(self):
-        from itertools import izip
-        from dok import dok_matrix
+        from .dok import dok_matrix
 
         dok = dok_matrix((self.shape), dtype=self.dtype)
 

@@ -6,6 +6,8 @@ Additional statistics functions, with support to MA.
 :date: $Date: 2007-10-29 17:18:13 +0200 (Mon, 29 Oct 2007) $
 :version: $Id: morestats.py 3473 2007-10-29 15:18:13Z jarrod.millman $
 """
+from __future__ import division, print_function, absolute_import
+
 __author__ = "Pierre GF Gerard-Marchant"
 __docformat__ = "restructuredtext en"
 
@@ -23,7 +25,7 @@ from numpy import float_, int_, ndarray
 import numpy.ma as ma
 from numpy.ma import MaskedArray
 
-import mstats_basic as mstats
+from . import mstats_basic as mstats
 
 from scipy.stats.distributions import norm, beta, t, binom
 
@@ -150,8 +152,8 @@ Notes
         for (i,p) in enumerate(prob):
             _w = betacdf(vv, (n+1)*p, (n+1)*(1-p))
             w = _w[1:] - _w[:-1]
-            mx_ = np.fromiter([np.dot(w,xsorted[np.r_[range(0,k),
-                                                      range(k+1,n)].astype(int_)])
+            mx_ = np.fromiter([np.dot(w,xsorted[np.r_[list(range(0,k)),
+                                                      list(range(k+1,n))].astype(int_)])
                                   for k in range(n)], dtype=float_)
             mx_var = np.array(mx_.var(), copy=False, ndmin=1) * n / float(n-1)
             hdsd[i] = float(n-1) * np.sqrt(np.diag(mx_var).diagonal() / float(n))

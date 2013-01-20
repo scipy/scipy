@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import os.path
 import numpy as np
 
@@ -67,7 +69,7 @@ def test_fromimage():
     data = {'icon.png':(0,255),
             'icon_mono.png':(0,2),
             'icon_mono_flat.png':(0,1)}
-    for fn, irange in data.iteritems():
+    for fn, irange in data.items():
         yield tst_fromimage, os.path.join(datapath,'data',fn), irange
 
 decorate_methods(TestPILUtil, _pilskip)

@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, assert_, TestCase
 from numpy import array, diff, shape, asarray, pi, sin, cos, arange, dot, \
@@ -71,13 +73,13 @@ class TestSmokeTests(TestCase):
                 nd.append((err, tol))
             nk.append(nd)
         put("\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]"%(f(None),
-                                                        `round(xb,3)`,`round(xe,3)`,
-                                                          `round(a,3)`,`round(b,3)`))
+                                                        repr(round(xb,3)),repr(round(xe,3)),
+                                                          repr(round(a,3)),repr(round(b,3))))
         if at:
             str="at knots"
         else:
             str="at the middle of nodes"
-        put(" per=%d s=%s Evaluation %s"%(per,`s`,str))
+        put(" per=%d s=%s Evaluation %s"%(per,repr(s),str))
         put(" k :  |f-s|^2  |f'-s'| |f''-.. |f'''-. |f''''- |f'''''")
         k=1
         for l in nk:
@@ -107,9 +109,9 @@ class TestSmokeTests(TestCase):
             tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
             nk.append([splint(ia,ib,tck),spalde(dx,tck)])
         put("\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]"%(f(None),
-                                                   `round(xb,3)`,`round(xe,3)`,
-                                                    `round(a,3)`,`round(b,3)`))
-        put(" per=%d s=%s N=%d [a, b] = [%s, %s]  dx=%s"%(per,`s`,N,`round(ia,3)`,`round(ib,3)`,`round(dx,3)`))
+                                                   repr(round(xb,3)),repr(round(xe,3)),
+                                                    repr(round(a,3)),repr(round(b,3))))
+        put(" per=%d s=%s N=%d [a, b] = [%s, %s]  dx=%s"%(per,repr(s),N,repr(round(ia,3)),repr(round(ib,3)),repr(round(dx,3))))
         put(" k :  int(s,[a,b]) Int.Error   Rel. error of s^(d)(dx) d = 0, .., k")
         k=1
         for r in nk:
@@ -135,14 +137,14 @@ class TestSmokeTests(TestCase):
         v=f(x)
         nk=[]
         put("  k  :     Roots of s(x) approx %s  x in [%s,%s]:"%\
-              (f(None),`round(a,3)`,`round(b,3)`))
+              (f(None),repr(round(a,3)),repr(round(b,3))))
         for k in range(1,6):
             tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
             roots = sproot(tck)
             if k == 3:
                 assert_allclose(roots, pi*array([1, 2, 3, 4]),
                                 rtol=1e-3)
-            put('  %d  : %s'%(k,`roots.tolist()`))
+            put('  %d  : %s'%(k,repr(roots.tolist())))
 
     def check_4(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
               ia=0,ib=2*pi,dx=0.2*pi):
@@ -152,7 +154,7 @@ class TestSmokeTests(TestCase):
         x1=a+(b-a)*arange(1,N,dtype=float)/float(N-1) # middle points of the nodes
         v,v1=f(x),f(x1)
         nk=[]
-        put(" u = %s   N = %d"%(`round(dx,3)`,N))
+        put(" u = %s   N = %d"%(repr(round(dx,3)),N))
         put("  k  :  [x(u), %s(x(u))]  Error of splprep  Error of splrep "%(f(0,None)))
         for k in range(1,6):
             tckp,u=splprep([x,v],s=s,per=per,k=k,nest=-1)
@@ -163,7 +165,7 @@ class TestSmokeTests(TestCase):
             assert_(err1 < 1e-2)
             assert_(err2 < 1e-2)
             put("  %d  :  %s    %.1e           %.1e"%\
-                  (k,`map(lambda x:round(x,3),uv)`,
+                  (k,repr([round(z,3) for z in uv]),
                    err1,
                    err2))
         put("Derivatives of parametric cubic spline at u (first function):")
@@ -171,7 +173,7 @@ class TestSmokeTests(TestCase):
         tckp,u=splprep([x,v],s=s,per=per,k=k,nest=-1)
         for d in range(1,k+1):
             uv=splev(dx,tckp,d)
-            put(" %s "%(`uv[0]`))
+            put(" %s "%(repr(uv[0])))
 
     def check_5(self,f=f2,kx=3,ky=3,xb=0,xe=2*pi,yb=0,ye=2*pi,Nx=20,Ny=20,s=0):
         x=xb+(xe-xb)*arange(Nx+1,dtype=float)/float(Nx)

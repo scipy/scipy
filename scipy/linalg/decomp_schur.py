@@ -1,14 +1,16 @@
 """Schur decomposition functions."""
+from __future__ import division, print_function, absolute_import
 
 import numpy
 from numpy import asarray_chkfinite, single, asarray
 
-# Local imports.
-import misc
-from misc import LinAlgError, _datacopied
-from lapack import get_lapack_funcs
-from decomp import eigvals
+from scipy.lib.six import callable
 
+# Local imports.
+from . import misc
+from .misc import LinAlgError, _datacopied
+from .lapack import get_lapack_funcs
+from .decomp import eigvals
 
 __all__ = ['schur', 'rsf2csf']
 

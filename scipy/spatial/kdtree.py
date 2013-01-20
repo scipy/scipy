@@ -1,5 +1,7 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
+from __future__ import division, print_function, absolute_import
+
 import sys
 import numpy as np
 from heapq import heappush, heappop
@@ -80,7 +82,7 @@ class Rectangle(object):
         self.m, = self.maxes.shape
 
     def __repr__(self):
-        return "<Rectangle %s>" % zip(self.mins, self.maxes)
+        return "<Rectangle %s>" % list(zip(self.mins, self.maxes))
 
     def volume(self):
         """Total volume."""

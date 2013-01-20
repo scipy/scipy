@@ -1,5 +1,6 @@
 """ module to test interpolate_wrapper.py
 """
+from __future__ import division, print_function, absolute_import
 
 # Unit Test
 import unittest

@@ -1,5 +1,6 @@
 """ Collection of Model instances for use with the odrpack fitting package.
 """
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.odr.odrpack import Model

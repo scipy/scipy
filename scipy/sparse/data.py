@@ -6,12 +6,14 @@
 
 """
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = []
 
 import numpy as np
 
-from base import spmatrix
-from sputils import isscalarlike
+from .base import spmatrix
+from .sputils import isscalarlike
 
 
 #TODO implement all relevant operations

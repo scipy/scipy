@@ -2,6 +2,8 @@
 Differential and pseudo-differential operators.
 """
 # Created by Pearu Peterson, September 2002
+from __future__ import division, print_function, absolute_import
+
 
 __all__ = ['diff',
            'tilbert','itilbert','hilbert','ihilbert',
@@ -9,7 +11,7 @@ __all__ = ['diff',
            'shift']
 
 from numpy import pi, asarray, sin, cos, sinh, cosh, tanh, iscomplexobj
-import convolve
+from . import convolve
 
 from scipy.fftpack.basic import _datacopied
 

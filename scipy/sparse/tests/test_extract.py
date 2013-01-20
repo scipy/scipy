@@ -1,5 +1,7 @@
 """test sparse matrix construction functions"""
 
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import TestCase, assert_equal
 from scipy.sparse import csr_matrix
 

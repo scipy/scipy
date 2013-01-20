@@ -97,7 +97,7 @@ def setup_package():
             url = "http://www.scipy.org",
             download_url = "http://sourceforge.net/project/showfiles.php?group_id=27747&package_id=19531",
             license = 'BSD',
-            classifiers=filter(None, CLASSIFIERS.split('\n')),
+            classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
             platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
             configuration=configuration )
     finally:

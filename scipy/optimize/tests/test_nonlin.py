@@ -2,9 +2,11 @@
 Author: Ondrej Certik
 May 2007
 """
+from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_, dec, TestCase, run_module_suite
 
+from scipy.lib.six.moves import xrange
 from scipy.optimize import nonlin, root
 from numpy import matrix, diag, dot
 from numpy.linalg import inv
@@ -101,7 +103,7 @@ class TestNonlin(object):
     def test_problem_nonlin(self):
         """ Tests for nonlin functions """
         for f in [F, F2, F3, F4_powell, F5, F6]:
-            for func in SOLVERS.itervalues():
+            for func in SOLVERS.values():
                 if func in f.KNOWN_BAD.values():
                     if func in MUST_WORK.values():
                         yield self._check_func_fail, f, func
@@ -111,7 +113,7 @@ class TestNonlin(object):
     def test_problem_root(self):
         """ Tests for root """
         for f in [F, F2, F3, F4_powell, F5, F6]:
-            for meth in SOLVERS.iterkeys():
+            for meth in SOLVERS.keys():
                 if meth in f.KNOWN_BAD.keys():
                     if meth in MUST_WORK.keys():
                         yield self._check_func_fail, f, meth

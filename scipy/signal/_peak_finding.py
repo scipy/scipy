@@ -1,9 +1,11 @@
 """
 Functions for identifying peaks in signals.
 """
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
+from scipy.lib.six.moves import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
@@ -363,7 +365,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
             return False
         return True
 
-    return filter(filt_func, ridge_lines)
+    return list(filter(filt_func, ridge_lines))
 
 
 def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=None,
@@ -450,5 +452,5 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
                                    min_snr=min_snr, noise_perc=noise_perc)
-    max_locs = map(lambda x: x[1][0], filtered)
+    max_locs = [x[1][0] for x in filtered]
     return sorted(max_locs)

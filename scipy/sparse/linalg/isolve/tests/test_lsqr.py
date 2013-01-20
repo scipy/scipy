@@ -1,5 +1,8 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.testing import assert_
+from scipy.lib.six.moves import xrange
 
 from scipy.sparse.linalg import lsqr
 from time import time
@@ -10,7 +13,7 @@ G = np.eye(n)
 normal = np.random.normal
 norm = np.linalg.norm
 
-for jj in range(5):
+for jj in xrange(5):
     gg = normal(size=n)
     hh = gg * gg.T
     G += (hh + hh.T) * 0.5
@@ -44,17 +47,17 @@ if __name__ == "__main__":
     else:
         sym='Yes'
 
-    print 'LSQR'
-    print "Is linear operator symmetric? " + sym
-    print "n: %3g  iterations:   %3g" % (n, k)
-    print "Norms computed in %.2fs by LSQR" % (time() - tic)
-    print " ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " %( chio, phio, psio)
-    print "Residual norms computed directly:"
-    print " ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" %  (norm(xo),
+    print('LSQR')
+    print("Is linear operator symmetric? " + sym)
+    print("n: %3g  iterations:   %3g" % (n, k))
+    print("Norms computed in %.2fs by LSQR" % (time() - tic))
+    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " %( chio, phio, psio))
+    print("Residual norms computed directly:")
+    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" %  (norm(xo),
                                                           norm(G*xo - b),
-                                                          norm(G.T*(G*xo-b)))
-    print "Direct solution norms:"
-    print " ||x||  %9.4e  ||r|| %9.4e " %  (norm(svx), norm(G*svx -b))
-    print ""
-    print " || x_{direct} - x_{LSQR}|| %9.4e " % norm(svx-xo)
-    print ""
+                                                          norm(G.T*(G*xo-b))))
+    print("Direct solution norms:")
+    print(" ||x||  %9.4e  ||r|| %9.4e " %  (norm(svx), norm(G*svx -b)))
+    print("")
+    print(" || x_{direct} - x_{LSQR}|| %9.4e " % norm(svx-xo))
+    print("")

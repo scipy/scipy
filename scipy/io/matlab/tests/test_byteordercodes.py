@@ -1,5 +1,7 @@
 ''' Tests for byteorder module '''
 
+from __future__ import division, print_function, absolute_import
+
 import sys
 
 from numpy.testing import assert_raises, assert_, run_module_suite

@@ -6,6 +6,7 @@ http://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
 '''
+from __future__ import division, print_function, absolute_import
 
 '''
 =================================
@@ -75,10 +76,9 @@ import os
 import time
 import sys
 import zlib
-if sys.version_info[0] >= 3:
-    from io import BytesIO
-else:
-    from cStringIO import StringIO as BytesIO
+
+from io import BytesIO
+
 import warnings
 
 import numpy as np
@@ -86,17 +86,19 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-import byteordercodes as boc
+from scipy.lib.six import string_types
 
-from miobase import MatFileReader, docfiller, matdims, \
+from . import byteordercodes as boc
+
+from .miobase import MatFileReader, docfiller, matdims, \
      read_dtype, arr_to_chars, arr_dtype_number, \
      MatWriteError, MatReadError, MatReadWarning
 
 # Reader object for matlab 5 format variables
-from mio5_utils import VarReader5
+from .mio5_utils import VarReader5
 
 # Constants and helper objects
-from mio5_params import MatlabObject, MatlabFunction, \
+from .mio5_params import MatlabObject, MatlabFunction, \
         MDTYPES, NP_TO_MTYPES, NP_TO_MXTYPES, \
         miCOMPRESSED, miMATRIX, miINT8, miUTF8, miUINT32, \
         mxCELL_CLASS, mxSTRUCT_CLASS, mxOBJECT_CLASS, mxCHAR_CLASS, \
@@ -166,14 +168,14 @@ class MatFile5Reader(MatFileReader):
         self.mat_stream.seek(126)
         mi = self.mat_stream.read(2)
         self.mat_stream.seek(0)
-        return mi == asbytes('IM') and '<' or '>'
+        return mi == b'IM' and '<' or '>'
 
     def read_file_header(self):
         ''' Read in mat 5 file header '''
         hdict = {}
         hdr_dtype = MDTYPES[self.byte_order]['dtypes']['file_header']
         hdr = read_dtype(self.mat_stream, hdr_dtype)
-        hdict['__header__'] = hdr['description'].item().strip(asbytes(' \t\n\000'))
+        hdict['__header__'] = hdr['description'].item().strip(b' \t\n\000')
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
         hdict['__version__'] = '%d.%d' % (v_major, v_minor)
@@ -223,7 +225,7 @@ class MatFile5Reader(MatFileReader):
             dcor = zlib.decompressobj()
             stream = BytesIO(dcor.decompress(data))
             # Check the stream is not so broken as to leave cruft behind
-            if not dcor.flush() == asbytes(''):
+            if not dcor.flush() == b'':
                 raise ValueError("Something wrong with byte stream.")
             del data
             self._matrix_reader.set_stream(stream)
@@ -261,7 +263,7 @@ class MatFile5Reader(MatFileReader):
 
         If variable_names is None, then get all variables in file
         '''
-        if isinstance(variable_names, basestring):
+        if isinstance(variable_names, string_types):
             variable_names = [variable_names]
         self.mat_stream.seek(0)
         # Here we pass all the parameters in self to the reading objects
@@ -290,7 +292,7 @@ class MatFile5Reader(MatFileReader):
                 continue
             try:
                 res = self.read_var_array(hdr, process)
-            except MatReadError, err:
+            except MatReadError as err:
                 warnings.warn(
                     'Unreadable variable "%s", because "%s"' % \
                     (name, err),
@@ -470,7 +472,7 @@ def to_writeable(source):
         dtype = []
         values = []
         for field, value in source.items():
-            if (isinstance(field, basestring) and
+            if (isinstance(field, string_types) and
                 not field[0] in '_0123456789'):
                 dtype.append((field,object))
                 values.append(value)
@@ -542,7 +544,7 @@ class VarWriter5(object):
         # pad to next 64-bit boundary
         bc_mod_8 = byte_count % 8
         if bc_mod_8:
-            self.file_stream.write(asbytes('\x00') * (8-bc_mod_8))
+            self.file_stream.write(b'\x00' * (8-bc_mod_8))
 
     def write_header(self,
                      shape,

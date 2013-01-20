@@ -1,3 +1,4 @@
+from __future__ import division, print_function, absolute_import
 
 from numpy import vectorize
 from numpy.random import random_sample
@@ -22,7 +23,7 @@ def randwppf(ppf, args=(), size=None):
 
     """
     U = random_sample(size=size)
-    return apply(ppf, (U,)+args)
+    return ppf(*(U,)+args)
 
 def randwcdf(cdf, mean=1.0, args=(), size=None):
     """returns an array of randomly distributed integers of a distribution
@@ -43,4 +44,4 @@ def randwcdf(cdf, mean=1.0, args=(), size=None):
 
     _vppf = vectorize(_ppf)
     U = random_sample(size=size)
-    return apply(_vppf,(U,)+args)
+    return _vppf(*(U,)+args)

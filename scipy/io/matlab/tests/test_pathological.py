@@ -2,6 +2,8 @@
 
 We try and read any file that matlab reads, these files included
 """
+from __future__ import division, print_function, absolute_import
+
 from os.path import dirname, join as pjoin
 import sys
 
@@ -9,8 +11,8 @@ if sys.version_info[0] >= 3:
     from io import BytesIO
     cStringIO = BytesIO
 else:
-    from cStringIO import StringIO as cStringIO
-    from StringIO import StringIO as BytesIO
+    from io import StringIO as cStringIO
+    from io import StringIO as BytesIO
 
 import numpy as np
 

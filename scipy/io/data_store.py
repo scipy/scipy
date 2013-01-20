@@ -25,10 +25,11 @@ Loading the data saved to a data store in the same directory:
 1
 
 """
+from __future__ import division, print_function, absolute_import
 
 __all__ = ['save_as_module']
 
-import dumb_shelve
+from . import dumb_shelve
 import os
 
 import numpy as np

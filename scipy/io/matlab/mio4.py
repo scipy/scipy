@@ -1,5 +1,7 @@
 ''' Classes for read / write of matlab (TM) 4 files
 '''
+from __future__ import division, print_function, absolute_import
+
 import sys
 import warnings
 
@@ -8,11 +10,14 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-from miobase import MatFileReader, docfiller, matdims, \
+from scipy.lib.six import string_types
+
+from .miobase import MatFileReader, docfiller, matdims, \
      read_dtype, convert_dtypes, arr_to_chars, arr_dtype_number, \
      MatWriteError
 
-from mio_utils import squeeze_element, chars_to_strings
+from .mio_utils import squeeze_element, chars_to_strings
+from functools import reduce
 
 
 SYS_LITTLE_ENDIAN = sys.byteorder == 'little'
@@ -103,7 +108,7 @@ class VarReader4(object):
     def read_header(self):
         ''' Read and return header for variable '''
         data = read_dtype(self.mat_stream, self.dtypes['header'])
-        name = self.mat_stream.read(int(data['namlen'])).strip(asbytes('\x00'))
+        name = self.mat_stream.read(int(data['namlen'])).strip(b'\x00')
         if data['mopt'] < 0 or data['mopt'] > 5000:
             raise ValueError('Mat 4 mopt wrong format, byteswapping problem?')
         M, rest = divmod(data['mopt'], 1000) # order code
@@ -372,7 +377,7 @@ class MatFile4Reader(MatFileReader):
             variable name, or sequence of variable names to get from Mat file /
             file stream.  If None, then get all variables in file
         '''
-        if isinstance(variable_names, basestring):
+        if isinstance(variable_names, string_types):
             variable_names = [variable_names]
         self.mat_stream.seek(0)
         # set up variable reader

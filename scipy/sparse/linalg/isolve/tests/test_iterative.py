@@ -2,6 +2,8 @@
 """ Test functions for the sparse.linalg.isolve module
 """
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 
 from numpy.testing import TestCase, assert_equal, assert_array_equal, \

@@ -1,5 +1,9 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from scipy.misc import factorial
+
+from scipy.lib.six.moves import xrange
 
 __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial", "pchip"]
 
@@ -968,4 +972,4 @@ def pchip(x, y):
 
     """
     derivs = _find_derivatives(x,y)
-    return PiecewisePolynomial(x, zip(y, derivs), orders=3, direction=None)
+    return PiecewisePolynomial(x, list(zip(y, derivs)), orders=3, direction=None)

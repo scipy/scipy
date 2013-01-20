@@ -5,6 +5,8 @@
 """ Test functions for scipy.linalg.matfuncs module
 
 """
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy import array, eye, dot, sqrt, double, exp, random
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \

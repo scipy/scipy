@@ -80,13 +80,14 @@ Level 1 routines
   Prefixes:
     axpy: s,d,c,z
 """
+from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
 __all__ = ['fblas','cblas','get_blas_funcs']
 
-import fblas
-import cblas
+from . import fblas
+from . import cblas
 
 from numpy import deprecate
 
@@ -95,7 +96,7 @@ def _deprecated():
     pass
 try:
     _deprecated()
-except DeprecationWarning, e:
+except DeprecationWarning as e:
     # don't fail import if DeprecationWarnings raise error -- works around
     # the situation with Numpy's test framework
     pass

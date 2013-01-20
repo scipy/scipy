@@ -6,6 +6,7 @@ print '10 mile per minute is', 10*mile/minute, 'm/s or', 10*mile/(minute*knot), 
 
 The list is not meant to be comprehensive, but just a convenient list for everyday use.
 """
+from __future__ import division, print_function, absolute_import
 
 """
 BasSw 2006
@@ -17,7 +18,7 @@ The ones without any suffix should be the most common one.
 """
 
 import math as _math
-from codata import value as _cd
+from .codata import value as _cd
 import numpy as _np
 
 #mathematical constants

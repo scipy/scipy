@@ -1,10 +1,14 @@
+from __future__ import division, print_function, absolute_import
+
 import warnings
 
 import numpy as np
 from numpy import asarray_chkfinite, single
 
-from misc import LinAlgError, _datacopied
-from lapack import get_lapack_funcs
+from .misc import LinAlgError, _datacopied
+from .lapack import get_lapack_funcs
+
+from scipy.lib.six import callable
 
 __all__ = ['qz']
 

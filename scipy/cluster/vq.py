@@ -67,6 +67,8 @@ human face, more flesh tone colors would be represented in the
 code book.
 
 """
+from __future__ import division, print_function, absolute_import
+
 __docformat__ = 'restructuredtext'
 
 __all__ = ['whiten', 'vq', 'kmeans', 'kmeans2']
@@ -188,7 +190,7 @@ def vq(obs, code_book):
 
     """
     try:
-        import _vq
+        from . import _vq
         ct = common_type(obs, code_book)
         c_obs = obs.astype(ct)
         c_code_book = code_book.astype(ct)
@@ -289,7 +291,7 @@ def _py_vq_1d(obs, code_book):
     dist = np.zeros((n, nc))
     for i in range(nc):
         dist[:, i] = np.sum(obs - code_book[i])
-    print dist
+    print(dist)
     code = argmin(dist)
     min_dist = dist[code]
 

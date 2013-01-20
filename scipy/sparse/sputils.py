@@ -1,6 +1,8 @@
 """ Utility functions for sparse matrix module
 """
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['upcast','getdtype','isscalarlike','isintlike',
             'isshape','issequence','isdense']
 

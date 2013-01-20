@@ -8,47 +8,61 @@ List the authors who contributed within a given revision interval.
 """
 # Author: Pauli Virtanen <pav@iki.fi>. This script is in the public domain.
 
+from __future__ import division, print_function, absolute_import
+
 from subprocess import Popen, PIPE, call
 import tempfile
 import optparse
 import re
+import sys
 import os
 import subprocess
 
+try:
+    from scipy.lib.six import u, PY3
+except ImportError:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__),
+                                    os.pardir, 'scipy', 'lib'))
+    from six import u, PY3
+if PY3:
+    stdout_b = sys.stdout.buffer
+else:
+    stdout_b = sys.stdout
+
 NAME_MAP = {
-    u'87': u'Han Genuit',
-    u'aarchiba': u'Anne Archibald',
-    u'ArmstrongJ': u'Jeff Armstrong',
-    u'cgholke': u'Christoph Gohlke',
-    u'cgohlke': u'Christoph Gohlke',
-    u'chris.burns': u'Chris Burns',
-    u'Christolph Gohlke': u'Christoph Gohlke',
-    u'ckuster': u'Christopher Kuster',
-    u'Collin Stocks': u'Collin RM Stocks',
-    u'Derek Homeir': u'Derek Homeier',
-    u'Derek Homier': u'Derek Homeier',
-    u'dhuard': u'David Huard',
-    u'dsimcha': u'David Simcha',
-    u'edschofield': u'Ed Schofield',
-    u'Gael varoquaux': u'Gaël Varoquaux',
-    u'gotgenes': u'Chris Lasher',
-    u'Han': u'Han Genuit',
-    u'Jake Vanderplas': u'Jacob Vanderplas',
-    u'josef': u'Josef Perktold',
-    u'josef-pktd': u'Josef Perktold',
-    u'Mark': u'Mark Wiebe',
-    u'mdroe': u'Michael Droettboom',
-    u'pierregm': u'Pierre GM',
-    u'rgommers': u'Ralf Gommers',
-    u'sebhaase': u'Sebastian Haase',
-    u'Travis E. Oliphant': u'Travis Oliphant',
-    u'warren.weckesser': u'Warren Weckesser',
-    u'weathergod': u'Benjamin Root',
-    u'Andreas H': u'Andreas Hilboll',
-    u'honnorat': u'Marc Honnorat',
-    u'lmwang': u'Liming Wang',
-    u'wa03': u'Josh Lawrence',
-    u'loluengo': u'Lorenzo Luengo',
+    u('87'): u('Han Genuit'),
+    u('aarchiba'): u('Anne Archibald'),
+    u('ArmstrongJ'): u('Jeff Armstrong'),
+    u('cgholke'): u('Christoph Gohlke'),
+    u('cgohlke'): u('Christoph Gohlke'),
+    u('chris.burns'): u('Chris Burns'),
+    u('Christolph Gohlke'): u('Christoph Gohlke'),
+    u('ckuster'): u('Christopher Kuster'),
+    u('Collin Stocks'): u('Collin RM Stocks'),
+    u('Derek Homeir'): u('Derek Homeier'),
+    u('Derek Homier'): u('Derek Homeier'),
+    u('dhuard'): u('David Huard'),
+    u('dsimcha'): u('David Simcha'),
+    u('edschofield'): u('Ed Schofield'),
+    u('Gael varoquaux'): u('Gaël Varoquaux'),
+    u('gotgenes'): u('Chris Lasher'),
+    u('Han'): u('Han Genuit'),
+    u('Jake Vanderplas'): u('Jacob Vanderplas'),
+    u('josef'): u('Josef Perktold'),
+    u('josef-pktd'): u('Josef Perktold'),
+    u('Mark'): u('Mark Wiebe'),
+    u('mdroe'): u('Michael Droettboom'),
+    u('pierregm'): u('Pierre GM'),
+    u('rgommers'): u('Ralf Gommers'),
+    u('sebhaase'): u('Sebastian Haase'),
+    u('Travis E. Oliphant'): u('Travis Oliphant'),
+    u('warren.weckesser'): u('Warren Weckesser'),
+    u('weathergod'): u('Benjamin Root'),
+    u('Andreas H'): u('Andreas Hilboll'),
+    u('honnorat'): u('Marc Honnorat'),
+    u('lmwang'): u('Liming Wang'),
+    u('wa03'): u('Josh Lawrence'),
+    u('loluengo'): u('Lorenzo Luengo'),
 }
 
 def main():
@@ -73,29 +87,29 @@ def main():
         line = line.strip().decode('utf-8')
 
         # Check the commit author name
-        m = re.match('^@@@([^@]*)@@@', line)
+        m = re.match(u('^@@@([^@]*)@@@'), line)
         if m:
             name = m.group(1)
             line = line[m.end():]
             name = NAME_MAP.get(name, name)
             if disp:
                 if name not in names:
-                    print "    - Author:", name
+                    stdout_b.write(("    - Author: %s\n" % name).encode('utf-8'))
             names.add(name)
 
         # Look for "thanks to" messages in the commit log
-        m = re.search(ur'([Tt]hanks to|[Cc]ourtesy of) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )', line)
+        m = re.search(u(r'([Tt]hanks to|[Cc]ourtesy of) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )'), line)
         if m:
             name = m.group(2)
-            if name not in ('this',):
+            if name not in (u('this'),):
                 if disp:
-                    print "    - Log   :", line.strip()
+                    stdout_b.write("    - Log   : %s\n" % line.strip().encode('utf-8'))
                 name = NAME_MAP.get(name, name)
                 names.add(name)
 
             line = line[m.end():].strip()
-            line = re.sub(ur'^(and|, and|, ) ', u'Thanks to ', line)
-            analyze_line(line, names)
+            line = re.sub(u(r'^(and|, and|, ) '), u('Thanks to '), line)
+            analyze_line(line.encode('utf-8'), names)
 
     # Find all authors before the named range
     for line in git.pipe('log', '--pretty=@@@%an@@@%n@@@%cn@@@%n%b',
@@ -109,18 +123,18 @@ def main():
 
     # Sort
     def name_key(fullname):
-        m = re.search(u' [a-z ]*[A-Za-z-]+$', fullname)
+        m = re.search(u(' [a-z ]*[A-Za-z-]+$'), fullname)
         if m:
             forename = fullname[:m.start()].strip()
             surname = fullname[m.start():].strip()
         else:
-            forename = u""
+            forename = ""
             surname = fullname.strip()
-        if surname.startswith('van der '):
+        if surname.startswith(u('van der ')):
             surname = surname[8:]
-        if surname.startswith('de '):
+        if surname.startswith(u('de ')):
             surname = surname[3:]
-        if surname.startswith('von '):
+        if surname.startswith(u('von ')):
             surname = surname[4:]
         return (surname.lower(), forename.lower())
 
@@ -128,27 +142,29 @@ def main():
     authors.sort(key=name_key)
 
     # Print
-    print """
+    stdout_b.write(b"""
 Authors
 =======
 
 This release contains work by the following people (contributed at least
 one patch to this release, names in alphabetical order):
-"""
+
+""")
 
     for author in authors:
         if author in all_authors:
-            print (u"* %s" % author).encode('utf-8')
+            stdout_b.write(("* %s\n" % author).encode('utf-8'))
         else:
-            print (u"* %s +" % author).encode('utf-8')
+            stdout_b.write(("* %s +\n" % author).encode('utf-8'))
 
-    print """
+    stdout_b.write(("""
 A total of %(count)d people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
-""" % dict(count=len(authors))
 
-    print ("\nNOTE: Check this list manually! It is automatically generated "
-           "and some names\n      may be missing.")
+""" % dict(count=len(authors))).encode('utf-8'))
+
+    stdout_b.write(("\nNOTE: Check this list manually! It is automatically generated "
+                    "and some names\n      may be missing.\n").encode('utf-8'))
 
 #------------------------------------------------------------------------------
 # Communicating with Git

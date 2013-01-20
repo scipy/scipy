@@ -1,9 +1,10 @@
 """ helper_funcs.py.
     scavenged from enthought,interpolate
 """
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
-import _interpolate # C extension.  Does all the real work.
+from . import _interpolate # C extension.  Does all the real work.
 
 def atleast_1d_and_contiguous(ary, dtype = np.float64):
     return np.atleast_1d( np.ascontiguousarray(ary, dtype) )

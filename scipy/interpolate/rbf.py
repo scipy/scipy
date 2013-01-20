@@ -42,11 +42,15 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+from __future__ import division, print_function, absolute_import
+
 import sys
 
 from numpy import (sqrt, log, asarray, newaxis, all, dot, exp, eye,
                    float_)
 from scipy import linalg
+from scipy.lib.six import callable, get_method_function, \
+     get_function_code
 
 __all__ = ['Rbf']
 
@@ -151,13 +155,13 @@ class Rbf(object):
                 val = self.function
                 allow_one = True
             elif hasattr(self.function, "im_func"):
-                val = self.function.im_func
+                val = get_method_function(self.function)
             elif hasattr(self.function, "__call__"):
-                val = self.function.__call__.im_func
+                val = get_method_function(self.function.__call__)
             else:
                 raise ValueError("Cannot determine number of arguments to function")
 
-            argcount = val.func_code.co_argcount
+            argcount = get_function_code(val).co_argcount
             if allow_one and argcount == 1:
                 self._function = self.function
             elif argcount == 2:

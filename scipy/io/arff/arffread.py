@@ -1,11 +1,14 @@
 #! /usr/bin/env python
 # Last Change: Mon Aug 20 08:00 PM 2007 J
+from __future__ import division, print_function, absolute_import
+
 import re
 import itertools
 
 import numpy as np
 
 from scipy.io.arff.utils import partial
+from scipy.lib.six import next
 
 """A module to read arff files."""
 
@@ -86,7 +89,7 @@ def get_nominal(attribute):
 
 def read_data_list(ofile):
     """Read each line of the iterable and put it in a list."""
-    data = [ofile.next()]
+    data = [next(ofile)]
     if data[0].strip()[0] == '{':
         raise ValueError("This looks like a sparse ARFF: not supported yet")
     data.extend([i for i in ofile])
@@ -95,7 +98,7 @@ def read_data_list(ofile):
 
 def get_ndata(ofile):
     """Read the whole file to get number of data attributes."""
-    data = [ofile.next()]
+    data = [next(ofile)]
     loc = 1
     if data[0].strip()[0] == '{':
         raise ValueError("This looks like a sparse ARFF: not supported yet")
@@ -219,10 +222,10 @@ def tokenize_attribute(iterable, attribute):
         atrv = mattr.group(1)
         if r_comattrval.match(atrv):
             name, type = tokenize_single_comma(atrv)
-            next_item = iterable.next()
+            next_item = next(iterable)
         elif r_wcomattrval.match(atrv):
             name, type = tokenize_single_wcomma(atrv)
-            next_item = iterable.next()
+            next_item = next(iterable)
         else:
             # Not sure we should support this, as it does not seem supported by
             # weka.
@@ -242,13 +245,13 @@ def tokenize_multilines(iterable, val):
     # line with meta character, and try to parse everything up to there.
     if not r_mcomattrval.match(val):
         all = [val]
-        i = iterable.next()
+        i = next(iterable)
         while not r_meta.match(i):
             all.append(i)
-            i = iterable.next()
+            i = next(iterable)
         if r_mend.search(i):
             raise ValueError("relational attribute not supported yet")
-        print "".join(all[:-1])
+        print("".join(all[:-1]))
         m = r_comattrval.match("".join(all[:-1]))
         return m.group(1), m.group(2), i
     else:
@@ -288,11 +291,11 @@ def tokenize_single_wcomma(val):
 
 def read_header(ofile):
     """Read the header of the iterable ofile."""
-    i = ofile.next()
+    i = next(ofile)
 
     # Pass first comments
     while r_comment.match(i):
-        i = ofile.next()
+        i = next(ofile)
 
     # Header is everything up to DATA attribute ?
     relation = None
@@ -310,9 +313,9 @@ def read_header(ofile):
                     relation = isrel.group(1)
                 else:
                     raise ValueError("Error parsing line %s" % i)
-                i = ofile.next()
+                i = next(ofile)
         else:
-            i = ofile.next()
+            i = next(ofile)
 
     return relation, attributes
 
@@ -513,7 +516,7 @@ def _loadarff(ofile):
     # Parse the header file
     try:
         rel, attr = read_header(ofile)
-    except ValueError, e:
+    except ValueError as e:
         msg = "Error while parsing header, error was: " + str(e)
         raise ParseArffError(msg)
 
@@ -562,24 +565,24 @@ def _loadarff(ofile):
     # Get the delimiter from the first line of data:
     def next_data_line(row_iter):
         """Assumes we are already in the data part (eg after @data)."""
-        raw = row_iter.next()
+        raw = next(row_iter)
         while r_empty.match(raw):
-            raw = row_iter.next()
+            raw = next(row_iter)
         while r_comment.match(raw):
-            raw = row_iter.next()
+            raw = next(row_iter)
         return raw
 
     try:
         try:
             dtline = next_data_line(ofile)
             delim = get_delim(dtline)
-        except ValueError, e:
+        except ValueError as e:
             raise ParseArffError("Error while parsing delimiter: " + str(e))
     finally:
         ofile.seek(0, 0)
         ofile = go_data(ofile)
         # skip the @data line
-        ofile.next()
+        next(ofile)
 
     def generator(row_iter, delim = ','):
         # TODO: this is where we are spending times (~80%). I think things
@@ -595,24 +598,24 @@ def _loadarff(ofile):
 
         # We do not abstract skipping comments and empty lines for performances
         # reason.
-        raw = row_iter.next()
+        raw = next(row_iter)
         while r_empty.match(raw):
-            raw = row_iter.next()
+            raw = next(row_iter)
         while r_comment.match(raw):
-            raw = row_iter.next()
+            raw = next(row_iter)
 
         # 'compiling' the range since it does not change
         # Note, I have already tried zipping the converters and
         # row elements and got slightly worse performance.
-        elems = range(ni)
+        elems = list(range(ni))
 
         row = raw.split(delim)
         yield tuple([convertors[i](row[i]) for i in elems])
         for raw in row_iter:
             while r_comment.match(raw):
-                raw = row_iter.next()
+                raw = next(row_iter)
             while r_empty.match(raw):
-                raw = row_iter.next()
+                raw = next(row_iter)
             row = raw.split(delim)
             yield tuple([convertors[i](row[i]) for i in elems])
 
@@ -634,20 +637,20 @@ def print_attribute(name, tp, data):
     type = tp[0]
     if type == 'numeric' or type == 'real' or type == 'integer':
         min, max, mean, std = basic_stats(data)
-        print "%s,%s,%f,%f,%f,%f" % (name, type, min, max, mean, std)
+        print("%s,%s,%f,%f,%f,%f" % (name, type, min, max, mean, std))
     else:
         msg = name + ",{"
         for i in range(len(tp[1])-1):
             msg += tp[1][i] + ","
         msg += tp[1][-1]
         msg += "}"
-        print msg
+        print(msg)
 
 
 def test_weka(filename):
     data, meta = loadarff(filename)
-    print len(data.dtype)
-    print data.size
+    print(len(data.dtype))
+    print(data.size)
     for i in meta:
         print_attribute(i,meta[i],data[i])
 
@@ -659,10 +662,10 @@ def floupi(filename):
     data, meta = loadarff(filename)
     from attrselect import print_dataset_info
     print_dataset_info(data)
-    print "relation %s, has %d instances" % (meta.name, data.size)
+    print("relation %s, has %d instances" % (meta.name, data.size))
     itp = iter(types)
     for i in data.dtype.names:
-        print_attribute(i,itp.next(),data[i])
+        print_attribute(i,next(itp),data[i])
         #tp = itp.next()
         #if tp == 'numeric' or tp == 'real' or tp == 'integer':
         #    min, max, mean, std = basic_stats(data[i])

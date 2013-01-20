@@ -70,15 +70,17 @@ computations.
 
 """
 
-from kdtree import *
-from ckdtree import *
-from qhull import *
-from _plotutils import *
+from __future__ import division, print_function, absolute_import
 
-__all__ = filter(lambda s:not s.startswith('_'),dir())
+from .kdtree import *
+from .ckdtree import *
+from .qhull import *
+from ._plotutils import *
+
+__all__ = [s for s in dir() if not s.startswith('_')]
 __all__ += ['distance']
 
-import distance
+from . import distance
 from numpy.testing import Tester
 test = Tester().test
 bench = Tester().bench

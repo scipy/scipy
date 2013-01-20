@@ -4,17 +4,19 @@
 # w/ additions by Travis Oliphant, March 2002
 #              and Jake Vanderplas, August 2012
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
             'inv', 'det', 'lstsq', 'pinv', 'pinv2', 'pinvh']
 
 import numpy as np
 
-from flinalg import get_flinalg_funcs
-from lapack import get_lapack_funcs
-from misc import LinAlgError, _datacopied
+from .flinalg import get_flinalg_funcs
+from .lapack import get_lapack_funcs
+from .misc import LinAlgError, _datacopied
 from scipy.linalg import calc_lwork
-from decomp_schur import schur
-import decomp, decomp_svd
+from .decomp_schur import schur
+from . import decomp, decomp_svd
 
 
 # Linear equations
@@ -79,8 +81,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
     overwrite_a = overwrite_a or _datacopied(a1, a)
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if debug:
-        print 'solve:overwrite_a=',overwrite_a
-        print 'solve:overwrite_b=',overwrite_b
+        print('solve:overwrite_a=',overwrite_a)
+        print('solve:overwrite_b=',overwrite_b)
     if sym_pos:
         posv, = get_lapack_funcs(('posv',), (a1,b1))
         c, x, info = posv(a1, b1, lower=lower,
@@ -157,7 +159,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         raise ValueError('incompatible dimensions')
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if debug:
-        print 'solve:overwrite_b=',overwrite_b
+        print('solve:overwrite_b=',overwrite_b)
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
     trtrs, = get_lapack_funcs(('trtrs',), (a1,b1))
     x, info = trtrs(a1, b1, overwrite_b=overwrite_b, lower=lower,
@@ -169,7 +171,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         raise LinAlgError("singular matrix: resolution failed at diagonal %s" % (info-1))
     raise ValueError('illegal value in %d-th argument of internal trtrs')
 
-def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
+def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                 debug=False, check_finite=True):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
@@ -207,7 +209,7 @@ def solve_banded((l, u), ab, b, overwrite_ab=False, overwrite_b=False,
         The solution to the system a x = b
 
     """
-
+    (l, u) = l_and_u
     if check_finite:
         a1, b1 = map(np.asarray_chkfinite, (ab, b))
     else:

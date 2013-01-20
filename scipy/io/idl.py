@@ -26,10 +26,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+from __future__ import division, print_function, absolute_import
 
 import struct
 import numpy as np
-from numpy.compat import asbytes, asstr
+from numpy.compat import asstr
 import tempfile
 import zlib
 import warnings
@@ -716,20 +717,20 @@ def readsav(file_name, idict=None, python_dict=False,
 
     # Read the signature, which should be 'SR'
     signature = _read_bytes(f, 2)
-    if signature != asbytes('SR'):
+    if signature != b'SR':
         raise Exception("Invalid SIGNATURE: %s" % signature)
 
     # Next, the record format, which is '\x00\x04' for normal .sav
     # files, and '\x00\x06' for compressed .sav files.
     recfmt = _read_bytes(f, 2)
 
-    if recfmt == asbytes('\x00\x04'):
+    if recfmt == b'\x00\x04':
         pass
 
-    elif recfmt == asbytes('\x00\x06'):
+    elif recfmt == b'\x00\x06':
 
         if verbose:
-            print "IDL Save file is compressed"
+            print("IDL Save file is compressed")
 
         if uncompressed_file_name:
             fout = open(uncompressed_file_name, 'w+b')
@@ -737,10 +738,10 @@ def readsav(file_name, idict=None, python_dict=False,
             fout = tempfile.NamedTemporaryFile(suffix='.sav')
 
         if verbose:
-            print " -> expanding to %s" % fout.name
+            print(" -> expanding to %s" % fout.name)
 
         # Write header
-        fout.write(asbytes('SR\x00\x04'))
+        fout.write(b'SR\x00\x04')
 
         # Cycle through records
         while True:
@@ -818,48 +819,48 @@ def readsav(file_name, idict=None, python_dict=False,
         # Print out timestamp info about the file
         for record in records:
             if record['rectype'] == "TIMESTAMP":
-                print "-"*50
-                print "Date: %s" % record['date']
-                print "User: %s" % record['user']
-                print "Host: %s" % record['host']
+                print("-"*50)
+                print("Date: %s" % record['date'])
+                print("User: %s" % record['user'])
+                print("Host: %s" % record['host'])
                 break
 
         # Print out version info about the file
         for record in records:
             if record['rectype'] == "VERSION":
-                print "-"*50
-                print "Format: %s" % record['format']
-                print "Architecture: %s" % record['arch']
-                print "Operating System: %s" % record['os']
-                print "IDL Version: %s" % record['release']
+                print("-"*50)
+                print("Format: %s" % record['format'])
+                print("Architecture: %s" % record['arch'])
+                print("Operating System: %s" % record['os'])
+                print("IDL Version: %s" % record['release'])
                 break
 
         # Print out identification info about the file
         for record in records:
             if record['rectype'] == "IDENTIFICATON":
-                print "-"*50
-                print "Author: %s" % record['author']
-                print "Title: %s" % record['title']
-                print "ID Code: %s" % record['idcode']
+                print("-"*50)
+                print("Author: %s" % record['author'])
+                print("Title: %s" % record['title'])
+                print("ID Code: %s" % record['idcode'])
                 break
 
-        print "-"*50
-        print "Successfully read %i records of which:" % \
-                                            (len(records))
+        print("-"*50)
+        print("Successfully read %i records of which:" % \
+                                            (len(records)))
 
         # Create convenience list of record types
         rectypes = [r['rectype'] for r in records]
 
         for rt in set(rectypes):
             if rt != 'END_MARKER':
-                print " - %i are of type %s" % (rectypes.count(rt), rt)
-        print "-"*50
+                print(" - %i are of type %s" % (rectypes.count(rt), rt))
+        print("-"*50)
 
         if 'VARIABLE' in rectypes:
-            print "Available variables:"
+            print("Available variables:")
             for var in variables:
-                print " - %s [%s]" % (var, type(variables[var]))
-            print "-"*50
+                print(" - %s [%s]" % (var, type(variables[var])))
+            print("-"*50)
 
     if idict:
         for var in variables:

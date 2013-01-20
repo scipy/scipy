@@ -1,6 +1,8 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import assert_equal, assert_array_equal, assert_almost_equal, \
         assert_, run_module_suite
 
@@ -613,7 +615,7 @@ def test_query_pairs_single_node_compiled():
 def test_ball_point_ints():
     """Regression test for #1373."""
     x, y = np.mgrid[0:4, 0:4]
-    points = zip(x.ravel(), y.ravel())
+    points = list(zip(x.ravel(), y.ravel()))
     tree = KDTree(points)
     assert_equal(sorted([4, 8, 9, 12]),
                  sorted(tree.query_ball_point((2, 0), 1)))

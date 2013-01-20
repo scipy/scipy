@@ -1,4 +1,6 @@
+from __future__ import division, print_function, absolute_import
 
+from scipy.lib.six.moves import xrange
 import scipy.special
 from numpy import logical_and, asarray, pi, zeros_like, \
      piecewise, array, arctan2, tan, zeros, arange, floor
@@ -6,7 +8,7 @@ from numpy.core.umath import sqrt, exp, greater, less, cos, add, sin, \
      less_equal, greater_equal
 
 # From splinemodule.c
-from spline import cspline2d, sepfir2d
+from .spline import cspline2d, sepfir2d
 
 from scipy.misc import comb
 

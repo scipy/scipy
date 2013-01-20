@@ -118,6 +118,8 @@ The routines in this module accept as input either scipy.sparse representations
 with non-edges indicated by zeros, infinities, and NaN entries.
 """
 
+from __future__ import division, print_function, absolute_import
+
 __docformat__ = "restructuredtext en"
 
 __all__ = ['cs_graph_components',
@@ -141,14 +143,14 @@ __all__ = ['cs_graph_components',
            'csgraph_to_masked',
            'NegativeCycleError']
 
-from _components import cs_graph_components
-from _laplacian import laplacian
-from _shortest_path import shortest_path, floyd_warshall, dijkstra,\
+from ._components import cs_graph_components
+from ._laplacian import laplacian
+from ._shortest_path import shortest_path, floyd_warshall, dijkstra,\
     bellman_ford, johnson, NegativeCycleError
-from _traversal import breadth_first_order, depth_first_order, \
+from ._traversal import breadth_first_order, depth_first_order, \
     breadth_first_tree, depth_first_tree, connected_components
-from _min_spanning_tree import minimum_spanning_tree
-from _tools import construct_dist_matrix, reconstruct_path,\
+from ._min_spanning_tree import minimum_spanning_tree
+from ._tools import construct_dist_matrix, reconstruct_path,\
     csgraph_from_dense, csgraph_to_dense, csgraph_masked_from_dense,\
     csgraph_from_masked
 

@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from numpy import array, kron, matrix, diag
 from numpy.testing import TestCase, run_module_suite, assert_, assert_equal
 

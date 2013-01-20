@@ -2,6 +2,7 @@
 ltisys -- a collection of classes and functions for modeling linear
 time invariant systems.
 """
+from __future__ import division, print_function, absolute_import
 
 #
 # Author: Travis Oliphant 2001
@@ -10,13 +11,14 @@ time invariant systems.
 #   Rewrote lsim2 and added impulse2.
 #
 
-from filter_design import tf2zpk, zpk2tf, normalize
+from .filter_design import tf2zpk, zpk2tf, normalize
 import numpy
 from numpy import product, zeros, array, dot, transpose, ones, \
     nan_to_num, zeros_like, linspace
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
+from scipy.lib.six.moves import xrange
 from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 

@@ -8,8 +8,9 @@ Functions
 `write`: Write a numpy array as a WAV file.
 
 """
+from __future__ import division, print_function, absolute_import
+
 import numpy
-from numpy.compat import asbytes
 import struct
 import warnings
 
@@ -76,9 +77,9 @@ def _skip_unknown_chunk(fid):
 def _read_riff_chunk(fid):
     global _big_endian
     str1 = fid.read(4)
-    if str1 == asbytes('RIFX'):
+    if str1 == b'RIFX':
         _big_endian = True
-    elif str1 != asbytes('RIFF'):
+    elif str1 != b'RIFF':
         raise ValueError("Not a WAV file.")
     if _big_endian:
         fmt = '>I'
@@ -86,9 +87,9 @@ def _read_riff_chunk(fid):
         fmt = '<I'
     fsize = struct.unpack(fmt, fid.read(4))[0] + 8
     str2 = fid.read(4)
-    if (str2 != asbytes('WAVE')):
+    if (str2 != b'WAVE'):
         raise ValueError("Not a WAV file.")
-    if str1 == asbytes('RIFX'):
+    if str1 == b'RIFX':
         _big_endian = True
     return fsize
 
@@ -134,11 +135,11 @@ def read(file, mmap=False):
     while (fid.tell() < fsize):
         # read the next chunk
         chunk_id = fid.read(4)
-        if chunk_id == asbytes('fmt '):
+        if chunk_id == b'fmt ':
             size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid)
-        elif chunk_id == asbytes('data'):
+        elif chunk_id == b'data':
             data = _read_data_chunk(fid, noc, bits, mmap=mmap)
-        elif chunk_id == asbytes('LIST'):
+        elif chunk_id == b'LIST':
             # Someday this could be handled properly but for now skip it
             _skip_unknown_chunk(fid)
         else:
@@ -172,11 +173,11 @@ def write(filename, rate, data):
 
     """
     fid = open(filename, 'wb')
-    fid.write(asbytes('RIFF'))
-    fid.write(asbytes('\x00\x00\x00\x00'))
-    fid.write(asbytes('WAVE'))
+    fid.write(b'RIFF')
+    fid.write(b'\x00\x00\x00\x00')
+    fid.write(b'WAVE')
     # fmt chunk
-    fid.write(asbytes('fmt '))
+    fid.write(b'fmt ')
     if data.ndim == 1:
         noc = 1
     else:
@@ -186,7 +187,7 @@ def write(filename, rate, data):
     ba = noc * (bits // 8)
     fid.write(struct.pack('<ihHIIHH', 16, 1, noc, rate, sbytes, ba, bits))
     # data chunk
-    fid.write(asbytes('data'))
+    fid.write(b'data')
     fid.write(struct.pack('<i', data.nbytes))
     import sys
     if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):

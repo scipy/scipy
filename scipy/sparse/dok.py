@@ -1,15 +1,20 @@
 """Dictionary Of Keys based matrix"""
 
+from __future__ import division, print_function, absolute_import
+
 __docformat__ = "restructuredtext en"
 
 __all__ = ['dok_matrix', 'isspmatrix_dok']
 
-from itertools import izip
+
 
 import numpy as np
 
-from base import spmatrix, isspmatrix
-from sputils import isdense, getdtype, isshape, isintlike, isscalarlike, upcast
+from scipy.lib.six.moves import zip as izip, xrange
+from scipy.lib.six import iteritems
+
+from .base import spmatrix, isspmatrix
+from .sputils import isdense, getdtype, isshape, isintlike, isscalarlike, upcast
 
 try:
     from operator import isSequenceType as _is_sequence
@@ -97,7 +102,7 @@ class dok_matrix(spmatrix, dict):
             if len(arg1.shape)!=2:
                 raise TypeError('expected rank <=2 dense array or matrix')
 
-            from coo import coo_matrix
+            from .coo import coo_matrix
             self.update( coo_matrix(arg1, dtype=dtype).todok() )
             self.shape = arg1.shape
             self.dtype = arg1.dtype
@@ -239,7 +244,7 @@ class dok_matrix(spmatrix, dict):
 
             if np.isscalar(value):
                 if value == 0:
-                    if self.has_key((i,j)):
+                    if (i,j) in self:
                         del self[(i,j)]
                 else:
                     dict.__setitem__(self, (i,j), self.dtype.type(value))
@@ -391,14 +396,14 @@ class dok_matrix(spmatrix, dict):
     def _mul_scalar(self, other):
         # Multiply this scalar by every element.
         new = dok_matrix(self.shape, dtype=self.dtype)
-        for (key, val) in self.iteritems():
+        for (key, val) in iteritems(self):
             new[key] = val * other
         return new
 
     def _mul_vector(self, other):
         #matrix * vector
         result = np.zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
-        for (i,j),v in self.iteritems():
+        for (i,j),v in iteritems(self):
             result[i] += v * other[j]
         return result
 
@@ -407,14 +412,14 @@ class dok_matrix(spmatrix, dict):
         M,N = self.shape
         n_vecs = other.shape[1] #number of column vectors
         result = np.zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
-        for (i,j),v in self.iteritems():
+        for (i,j),v in iteritems(self):
             result[i,:] += v * other[j,:]
         return result
 
     def __imul__(self, other):
         if isscalarlike(other):
             # Multiply this scalar by every element.
-            for (key, val) in self.iteritems():
+            for (key, val) in iteritems(self):
                 self[key] = val * other
             #new.dtype.char = self.dtype.char
             return self
@@ -426,7 +431,7 @@ class dok_matrix(spmatrix, dict):
         if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Multiply this scalar by every element.
-            for (key, val) in self.iteritems():
+            for (key, val) in iteritems(self):
                 new[key] = val / other
             #new.dtype.char = self.dtype.char
             return new
@@ -437,7 +442,7 @@ class dok_matrix(spmatrix, dict):
     def __itruediv__(self, other):
         if isscalarlike(other):
             # Multiply this scalar by every element.
-            for (key, val) in self.iteritems():
+            for (key, val) in iteritems(self):
                 self[key] = val / other
             return self
         else:
@@ -452,7 +457,7 @@ class dok_matrix(spmatrix, dict):
         """
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype)
-        for key, value in self.iteritems():
+        for key, value in iteritems(self):
             new[key[1], key[0]] = value
         return new
 
@@ -461,7 +466,7 @@ class dok_matrix(spmatrix, dict):
         """
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype)
-        for key, value in self.iteritems():
+        for key, value in iteritems(self):
             new[key[1], key[0]] = np.conj(value)
         return new
 
@@ -518,12 +523,12 @@ class dok_matrix(spmatrix, dict):
 
     def tocoo(self):
         """ Return a copy of this matrix in COOrdinate format"""
-        from coo import coo_matrix
+        from .coo import coo_matrix
         if self.nnz == 0:
             return coo_matrix(self.shape, dtype=self.dtype)
         else:
-            data    = np.asarray(self.values(), dtype=self.dtype)
-            indices = np.asarray(self.keys(), dtype=np.intc).T
+            data    = np.asarray(list(self.values()), dtype=self.dtype)
+            indices = np.asarray(list(self.keys()), dtype=np.intc).T
             return coo_matrix((data,indices), shape=self.shape, dtype=self.dtype)
 
     def todok(self,copy=False):
@@ -556,7 +561,7 @@ class dok_matrix(spmatrix, dict):
         M, N = self.shape
         if newM < M or newN < N:
             # Remove all elements outside new dimensions
-            for (i, j) in self.keys():
+            for (i, j) in list(self.keys()):
                 if i >= newM or j >= newN:
                     del self[i, j]
         self._shape = shape

@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.testing import TestCase, assert_equal, assert_almost_equal
 from scipy.special import logit, expit

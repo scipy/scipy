@@ -4,9 +4,10 @@ Convenience interface to N-D interpolation
 .. versionadded:: 0.9
 
 """
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from interpnd import LinearNDInterpolator, NDInterpolatorBase, \
+from .interpnd import LinearNDInterpolator, NDInterpolatorBase, \
      CloughTocher2DInterpolator, _ndim_coords_from_arrays
 from scipy.spatial import cKDTree
 
@@ -163,7 +164,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
         ndim = points.shape[-1]
 
     if ndim == 1 and method in ('nearest', 'linear', 'cubic'):
-        from interpolate import interp1d
+        from .interpolate import interp1d
         points = points.ravel()
         if isinstance(xi, tuple):
             if len(xi) != 1:

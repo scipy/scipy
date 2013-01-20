@@ -81,13 +81,15 @@ Functions::
 # Author:  Travis Oliphant 2000
 # Updated Sep. 2003 (fixed bugs --- tested to be accurate)
 
+from __future__ import division, print_function, absolute_import
+
 # Scipy imports.
 import numpy as np
 from numpy import all, any, exp, inf, pi, sqrt
 from numpy.dual import eig
 
 # Local imports.
-import _ufuncs as cephes
+from . import _ufuncs as cephes
 _gam = cephes.gamma
 
 __all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
@@ -110,7 +112,7 @@ class orthopoly1d(np.poly1d):
     def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None, limits=None, monic=0,eval_func=None):
         np.poly1d.__init__(self, roots, r=1)
         equiv_weights = [weights[k] / wfunc(roots[k]) for k in range(len(roots))]
-        self.__dict__['weights'] = np.array(zip(roots,weights,equiv_weights))
+        self.__dict__['weights'] = np.array(list(zip(roots,weights,equiv_weights)))
         self.__dict__['weight_func'] = wfunc
         self.__dict__['limits'] = limits
         mu = sqrt(hn)
@@ -695,7 +697,7 @@ def sh_legendre(n, monic=0):
 #------------------------------------------------------------------------------
 # Vectorized functions for evaluation
 #------------------------------------------------------------------------------
-from _ufuncs import \
+from ._ufuncs import \
      binom, eval_jacobi, eval_sh_jacobi, eval_gegenbauer, eval_chebyt, \
      eval_chebyu, eval_chebys, eval_chebyc, eval_sh_chebyt, eval_sh_chebyu, \
      eval_legendre, eval_sh_legendre, eval_genlaguerre, eval_laguerre, \

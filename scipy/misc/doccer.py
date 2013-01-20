@@ -1,6 +1,8 @@
 ''' Utilities to allow inserting docstring fragments for common
 parameters into function and method docstrings'''
 
+from __future__ import division, print_function, absolute_import
+
 import sys
 
 __all__ = ['docformat', 'indentcount_lines', 'filldoc',
@@ -81,12 +83,12 @@ def indentcount_lines(lines):
     >>> indentcount_lines(['    '])
     0
     '''
-    indentno = sys.maxint
+    indentno = sys.maxsize
     for line in lines:
         stripped = line.lstrip()
         if stripped:
             indentno = min(indentno, len(line) - len(stripped))
-    if indentno == sys.maxint:
+    if indentno == sys.maxsize:
         return 0
     return indentno
 

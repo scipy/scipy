@@ -1,4 +1,6 @@
 """Test the minimum spanning tree function"""
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.testing import assert_
 import numpy.testing as npt

@@ -6,6 +6,7 @@ Functions
 - minimize : minimization of a function of several variables.
 - minimize_scalar : minimization of a function of one variable.
 """
+from __future__ import division, print_function, absolute_import
 
 
 __all__ = ['minimize', 'minimize_scalar']
@@ -14,18 +15,21 @@ __all__ = ['minimize', 'minimize_scalar']
 from warnings import warn
 
 from numpy import any
+
+from scipy.lib.six import callable
+
 # unconstrained minimization
-from optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
+from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                       _minimize_bfgs, _minimize_newtoncg,
                       _minimize_scalar_brent, _minimize_scalar_bounded,
                       _minimize_scalar_golden, MemoizeJac)
-from anneal import _minimize_anneal
+from .anneal import _minimize_anneal
 
 # contrained minimization
-from lbfgsb import _minimize_lbfgsb
-from tnc import _minimize_tnc
-from cobyla import _minimize_cobyla
-from slsqp import _minimize_slsqp
+from .lbfgsb import _minimize_lbfgsb
+from .tnc import _minimize_tnc
+from .cobyla import _minimize_cobyla
+from .slsqp import _minimize_slsqp
 
 def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,

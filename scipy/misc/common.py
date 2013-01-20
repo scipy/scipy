@@ -3,6 +3,10 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 (special, linalg)
 """
 
+from __future__ import division, print_function, absolute_import
+
+from scipy.lib.six.moves import xrange
+
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
                   r_, rollaxis, sum, fromstring
@@ -120,8 +124,8 @@ def factorial(n,exact=0):
     """
     if exact:
         if n < 0:
-            return 0L
-        val = 1L
+            return 0
+        val = 1
         for k in xrange(1,n+1):
             val *= k
         return val
@@ -170,10 +174,10 @@ def factorial2(n, exact=False):
     """
     if exact:
         if n < -1:
-            return 0L
+            return 0
         if n <= 0:
-            return 1L
-        val = 1L
+            return 1
+        val = 1
         for k in xrange(n,0,-2):
             val *= k
         return val
@@ -226,10 +230,10 @@ def factorialk(n,k,exact=1):
     """
     if exact:
         if n < 1-k:
-            return 0L
+            return 0
         if n<=0:
-            return 1L
-        val = 1L
+            return 1
+        val = 1
         for j in xrange(n,0,-k):
             val = val*j
         return val
@@ -274,8 +278,8 @@ def comb(N,k,exact=0):
     """
     if exact:
         if (k > N) or (N < 0) or (k < 0):
-            return 0L
-        val = 1L
+            return 0
+        val = 1
         for j in xrange(min(k, N-k)):
             val = (val*(N-j))//(j+1)
         return val
@@ -441,10 +445,10 @@ def lena():
     >>> plt.show()
 
     """
-    import cPickle, os
+    import pickle, os
     fname = os.path.join(os.path.dirname(__file__),'lena.dat')
     f = open(fname,'rb')
-    lena = array(cPickle.load(f))
+    lena = array(pickle.load(f))
     f.close()
     return lena
 
@@ -479,10 +483,10 @@ def ascent():
     >>> plt.show()
 
     """
-    import cPickle, os
+    import pickle, os
     fname = os.path.join(os.path.dirname(__file__),'ascent.dat')
     f = open(fname,'rb')
-    ascent = array(cPickle.load(f))
+    ascent = array(pickle.load(f))
     f.close()
     return ascent
 

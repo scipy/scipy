@@ -1,6 +1,9 @@
+from __future__ import division, print_function, absolute_import
+
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import assert_, TestCase, run_module_suite, dec
 from scipy.integrate import quad, dblquad, tplquad
+from scipy.lib.six.moves import xrange
 import sys
 import math
 
@@ -10,7 +13,8 @@ try:
 except ImportError:
     _ctypes_missing = True
 
-def assert_quad((value, err), tabledValue, errTol=1.5e-8):
+def assert_quad(value_and_err, tabledValue, errTol=1.5e-8):
+    value, err = value_and_err
     assert_(abs(value-tabledValue) < err, (value, tabledValue, err))
     if errTol is not None:
         assert_(err < errTol, (err, errTol))

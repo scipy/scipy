@@ -141,20 +141,22 @@ Utility Functions
 
 """
 
-from optimize import *
-from _minimize import *
-from _root import *
-from minpack import *
-from zeros import *
-from anneal import *
-from lbfgsb import fmin_l_bfgs_b
-from tnc import fmin_tnc
-from cobyla import fmin_cobyla
-from nonlin import *
-from slsqp import fmin_slsqp
-from nnls import nnls
+from __future__ import division, print_function, absolute_import
 
-__all__ = filter(lambda s:not s.startswith('_'),dir())
+from .optimize import *
+from ._minimize import *
+from ._root import *
+from .minpack import *
+from .zeros import *
+from .anneal import *
+from .lbfgsb import fmin_l_bfgs_b
+from .tnc import fmin_tnc
+from .cobyla import fmin_cobyla
+from .nonlin import *
+from .slsqp import fmin_slsqp
+from .nnls import nnls
+
+__all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
 bench = Tester().bench

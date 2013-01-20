@@ -2,13 +2,15 @@
 # Author: Pearu Peterson, March 2002
 #
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['get_flinalg_funcs']
 
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
 try:
-    import _flinalg
+    from . import _flinalg
 except ImportError:
     _flinalg = None
 #    from numpy.distutils.misc_util import PostponedException

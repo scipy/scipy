@@ -1,13 +1,15 @@
 """Iterative methods for solving linear systems"""
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 
-import _iterative
+from . import _iterative
 import numpy as np
 
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.lib.decorator import decorator
-from utils import make_system
+from .utils import make_system
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 

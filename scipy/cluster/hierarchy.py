@@ -130,6 +130,7 @@ References
 * Mathematica is a registered trademark of The Wolfram Research, Inc.
 
 """
+from __future__ import division, print_function, absolute_import
 
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
@@ -172,9 +173,11 @@ import types
 import warnings
 
 import numpy as np
-import _hierarchy_wrap
+from . import _hierarchy_wrap
 import scipy.spatial.distance as distance
 
+from scipy.lib.six import string_types
+from scipy.lib.six.moves import xrange
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
                            'weighted': 6}
@@ -1231,7 +1234,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
             else:
                 raise ValueError('Inconsistency matrix contains negative '
                                  'link counts.')
-    except Exception, e:
+    except Exception as e:
         if throw:
             raise
         if warning:
@@ -1345,7 +1348,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
 #                                  % name)
 #             else:
 #                 raise ValueError('Linkage does not use all clusters.')
-    except Exception, e:
+    except Exception as e:
         if throw:
             raise
         if warning:
@@ -1811,7 +1814,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     for color in colors_used:
         color_to_lines[color] = []
     for (xline, yline, color) in zip(xlines, ylines, color_list):
-        color_to_lines[color].append(zip(xline, yline))
+        color_to_lines[color].append(list(zip(xline, yline)))
 
     colors_to_collections = {}
     # Construct the collections.
@@ -1874,9 +1877,9 @@ def set_link_color_palette(palette):
 
     """
 
-    if type(palette) not in (types.ListType, types.TupleType):
+    if type(palette) not in (list, tuple):
         raise TypeError("palette must be a list or tuple")
-    _ptypes = [type(p) == types.StringType for p in palette]
+    _ptypes = [isinstance(p, string_types) for p in palette]
 
     if False in _ptypes:
         raise TypeError("all palette list elements must be color strings")
@@ -2088,7 +2091,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     n = Zs[0] + 1
-    if type(p) in (types.IntType, types.FloatType):
+    if type(p) in (int, float):
         p = int(p)
     else:
         raise TypeError('The second argument must be a number')
@@ -2117,7 +2120,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     else:
         ivl = []
     if color_threshold is None or \
-       (type(color_threshold) == types.StringType and
+       (isinstance(color_threshold, string_types) and
                            color_threshold == 'default'):
         color_threshold = max(Z[:, 2]) * 0.7
     R = {'icoord': icoord_list, 'dcoord': dcoord_list, 'ivl': ivl,
@@ -2454,7 +2457,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode, \
     dcoord_list.append([uah, h, h, ubh])
     if link_color_func is not None:
         v = link_color_func(int(i))
-        if type(v) != types.StringType:
+        if not isinstance(v, string_types):
             raise TypeError("link_color_func must return a matplotlib "
                             "color string!")
         color_list.append(v)
@@ -2501,7 +2504,7 @@ def is_isomorphic(T1, T2):
     n = T1S[0]
     d = {}
     for i in xrange(0, n):
-        if T1[i] in d.keys():
+        if T1[i] in list(d.keys()):
             if d[T1[i]] != T2[i]:
                 return False
         else:
@@ -2602,7 +2605,7 @@ def maxRstat(Z, R, i):
     R = np.asarray(R, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
-    if type(i) is not types.IntType:
+    if type(i) is not int:
         raise TypeError('The third argument must be an integer.')
     if i < 0 or i > 3:
         raise ValueError('i must be an integer between 0 and 3 inclusive.')
@@ -2711,13 +2714,13 @@ def _leader_identify(tr, T):
         right = tr.get_right()
         lfid = _leader_identify(left, T)
         rfid = _leader_identify(right, T)
-        print 'ndid: %d lid: %d lfid: %d rid: %d rfid: %d' \
-              % (tr.get_id(), left.get_id(), lfid, right.get_id(), rfid)
+        print('ndid: %d lid: %d lfid: %d rid: %d rfid: %d' \
+              % (tr.get_id(), left.get_id(), lfid, right.get_id(), rfid))
         if lfid != rfid:
             if lfid != -1:
-                print 'leader: %d with tag %d' % (left.id, lfid)
+                print('leader: %d with tag %d' % (left.id, lfid))
             if rfid != -1:
-                print 'leader: %d with tag %d' % (right.id, rfid)
+                print('leader: %d with tag %d' % (right.id, rfid))
             return -1
         else:
             return lfid

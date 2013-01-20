@@ -166,15 +166,17 @@ Utility
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from filters import *
-from fourier import *
-from interpolation import *
-from measurements import *
-from morphology import *
-from io import *
+from __future__ import division, print_function, absolute_import
+
+from .filters import *
+from .fourier import *
+from .interpolation import *
+from .measurements import *
+from .morphology import *
+from .io import *
 
 __version__ = '2.0'
 
-__all__ = filter(lambda s: not s.startswith('_'), dir())
+__all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test

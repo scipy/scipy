@@ -1,19 +1,19 @@
-"""Module for reading and writing MATLAB .mat files"""
-# Authors: Travis Oliphant, Matthew Brett
-
 """
 Module for reading and writing matlab (TM) .mat files
 """
+# Authors: Travis Oliphant, Matthew Brett
+
+from __future__ import division, print_function, absolute_import
 
 import os
 import sys
 import warnings
 
-from numpy.compat import asbytes
+from scipy.lib.six import string_types
 
-from miobase import get_matfile_version, docfiller
-from mio4 import MatFile4Reader, MatFile4Writer
-from mio5 import MatFile5Reader, MatFile5Writer
+from .miobase import get_matfile_version, docfiller
+from .mio4 import MatFile4Reader, MatFile4Writer
+from .mio5 import MatFile5Reader, MatFile5Writer
 
 __all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat',
            'whosmat']
@@ -61,7 +61,7 @@ def find_mat_file(file_name, appendmat=True):
 
 def _open_file(file_like, appendmat):
     ''' Open `file_like` and return as file-like object '''
-    if isinstance(file_like, basestring):
+    if isinstance(file_like, string_types):
         try:
             return open(file_like, 'rb')
         except IOError:
@@ -178,7 +178,7 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
         mdict.update(matfile_dict)
     else:
         mdict = matfile_dict
-    if isinstance(file_name, basestring):
+    if isinstance(file_name, string_types):
         MR.mat_stream.close()
     return mdict
 
@@ -242,14 +242,14 @@ def savemat(file_name, mdict,
     place.
 
     """
-    file_is_string = isinstance(file_name, basestring)
+    file_is_string = isinstance(file_name, string_types)
     if file_is_string:
         if appendmat and file_name[-4:] != ".mat":
             file_name = file_name + ".mat"
         file_stream = open(file_name, 'wb')
     else:
         try:
-            file_name.write(asbytes(''))
+            file_name.write(b'')
         except AttributeError:
             raise IOError('Writer needs file name or writeable '
                            'file-like object')
@@ -305,7 +305,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
     """
     ML = mat_reader_factory(file_name, **kwargs)
     variables = ML.list_variables()
-    if isinstance(file_name, basestring):
+    if isinstance(file_name, string_types):
         ML.mat_stream.close()
     return variables
 

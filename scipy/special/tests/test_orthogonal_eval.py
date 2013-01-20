@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.testing import assert_
 import scipy.special.orthogonal as orth
@@ -61,7 +63,7 @@ class TestPolys(object):
 
         olderr = np.seterr(all='raise')
         try:
-            ds = FuncData(polyfunc, dataset, range(len(param_ranges)+2), -1,
+            ds = FuncData(polyfunc, dataset, list(range(len(param_ranges)+2)), -1,
                           rtol=rtol)
             ds.check()
         finally:
@@ -175,7 +177,7 @@ class TestRecurrence(object):
 
         olderr = np.seterr(all='raise')
         try:
-            ds = FuncData(polyfunc, dataset, range(len(param_ranges)+2), -1,
+            ds = FuncData(polyfunc, dataset, list(range(len(param_ranges)+2)), -1,
                           rtol=rtol)
             ds.check()
         finally:

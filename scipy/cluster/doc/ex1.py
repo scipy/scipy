@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from scipy import *
 from scipy.cluster import vq
 
@@ -33,5 +35,5 @@ if __name__ == "__main__":
 
     clusters = cluster_data(data,2)
     for i in range(len(clusters)):
-        print 'cluster %d:' % i
-        print clusters[i]
+        print('cluster %d:' % i)
+        print(clusters[i])

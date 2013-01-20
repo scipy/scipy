@@ -5,7 +5,7 @@
 # with current parameters: relatively small sample size, default starting values
 #       Ran 84 tests in 401.797s
 #       FAILED (failures=15)
-
+from __future__ import division, print_function, absolute_import
 
 import numpy.testing as npt
 import numpy as np

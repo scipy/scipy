@@ -17,10 +17,13 @@
 #
 #-------------------------------------------------------------------------------
 
+from __future__ import division, print_function, absolute_import
+
 # Standard library imports.
 import warnings
 
 # Scipy imports.
+from scipy.lib.six import callable, string_types
 from scipy import linalg, special
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, power, atleast_1d, squeeze, sum, transpose
@@ -28,8 +31,9 @@ import numpy as np
 from numpy.random import randint, multivariate_normal
 
 # Local imports.
-import stats
-import mvn
+from . import stats
+from . import mvn
+import collections
 
 
 __all__ = ['gaussian_kde']
@@ -475,7 +479,7 @@ class gaussian_kde(object):
             self.covariance_factor = self.scotts_factor
         elif bw_method == 'silverman':
             self.covariance_factor = self.silverman_factor
-        elif np.isscalar(bw_method) and not isinstance(bw_method, basestring):
+        elif np.isscalar(bw_method) and not isinstance(bw_method, string_types):
             self._bw_method = 'use constant'
             self.covariance_factor = lambda: bw_method
         elif callable(bw_method):
