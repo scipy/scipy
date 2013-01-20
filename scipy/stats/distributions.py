@@ -4,10 +4,12 @@
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
+from __future__ import division, print_function, absolute_import
 
 import math
 import warnings
-from copy import copy
+
+from scipy.lib.six import callable, string_types, text_type, get_method_function
 
 from scipy.misc import comb, derivative
 from scipy import special
@@ -27,8 +29,8 @@ import numpy
 import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
-import vonmises_cython
-from _tukeylambda_stats import tukeylambda_variance as _tlvar, \
+from . import vonmises_cython
+from ._tukeylambda_stats import tukeylambda_variance as _tlvar, \
                                 tukeylambda_kurtosis as _tlkurt
 
 __all__ = [
@@ -983,9 +985,9 @@ class rv_continuous(rv_generic):
 
         if not hasattr(self,'numargs'):
             #allows more general subclassing with *args
-            cdf_signature = inspect.getargspec(self._cdf.im_func)
+            cdf_signature = inspect.getargspec(get_method_function(self._cdf))
             numargs1 = len(cdf_signature[0]) - 2
-            pdf_signature = inspect.getargspec(self._pdf.im_func)
+            pdf_signature = inspect.getargspec(get_method_function(self._pdf))
             numargs2 = len(pdf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
         #nin correction
@@ -1051,7 +1053,7 @@ class rv_continuous(rv_generic):
             self.__doc__ = doccer.docformat(self.__doc__, tempdict)
 
     def _ppf_to_solve(self, x, q,*args):
-        return apply(self.cdf, (x, )+args)-q
+        return self.cdf(*(x, )+args)-q
 
     def _ppf_single_call(self, q, *args):
         left = right = None
@@ -1529,7 +1531,7 @@ class rv_continuous(rv_generic):
         args = tuple(map(asarray,args))
         cond = self._argcheck(*args) & (scale > 0) & (loc==loc)
 
-        signature = inspect.getargspec(self._stats.im_func)
+        signature = inspect.getargspec(get_method_function(self._stats))
         if (signature[2] is not None) or ('moments' in signature[0]):
             mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
         else:
@@ -1631,7 +1633,7 @@ class rv_continuous(rv_generic):
         if (n < 0): raise ValueError("Moment must be positive.")
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
-            signature = inspect.getargspec(self._stats.im_func)
+            signature = inspect.getargspec(get_method_function(self._stats))
             if (signature[2] is not None) or ('moments' in signature[0]):
                 mdict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
             else:
@@ -1687,11 +1689,11 @@ class rv_continuous(rv_generic):
         args = list(args)
         Nargs = len(args)
         fixedn = []
-        index = range(Nargs)
+        index = list(range(Nargs))
         names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
         x0 = []
         for n, key in zip(index, names):
-            if kwds.has_key(key):
+            if key in kwds:
                 fixedn.append(n)
                 args[n] = kwds[key]
             else:
@@ -1771,8 +1773,8 @@ class rv_continuous(rv_generic):
         if Narg > self.numargs:
             raise ValueError("Too many input arguments.")
         start = [None]*2
-        if (Narg < self.numargs) or not (kwds.has_key('loc') and
-                                         kwds.has_key('scale')):
+        if (Narg < self.numargs) or not ('loc' in kwds and
+                                         'scale' in kwds):
             start = self._fitstart(data)  # get distribution specific starting locations
             args += start[Narg:-2]
         loc = kwds.get('loc', start[-2])
@@ -1782,7 +1784,7 @@ class rv_continuous(rv_generic):
 
         optimizer = kwds.get('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
-        if not callable(optimizer) and isinstance(optimizer, (str, unicode)):
+        if not callable(optimizer) and isinstance(optimizer, (text_type,) + string_types):
             if not optimizer.startswith('fmin_'):
                 optimizer = "fmin_"+optimizer
             if optimizer == 'fmin_':
@@ -5408,7 +5410,7 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
 
 def reverse_dict(dict):
     newdict = {}
-    sorted_keys = copy(dict.keys())
+    sorted_keys = list(dict.keys())
     sorted_keys.sort()
     for key in sorted_keys[::-1]:
         newdict[dict[key]] = key
@@ -5635,9 +5637,9 @@ class rv_discrete(rv_generic):
                                              self, rv_discrete)
             self.numargs=0
         else:
-            cdf_signature = inspect.getargspec(self._cdf.im_func)
+            cdf_signature = inspect.getargspec(get_method_function(self._cdf))
             numargs1 = len(cdf_signature[0]) - 2
-            pmf_signature = inspect.getargspec(self._pmf.im_func)
+            pmf_signature = inspect.getargspec(get_method_function(self._pmf))
             numargs2 = len(pmf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
 
@@ -6144,7 +6146,7 @@ class rv_discrete(rv_generic):
         args = tuple(map(asarray,args))
         cond = self._argcheck(*args) & (loc==loc)
 
-        signature = inspect.getargspec(self._stats.im_func)
+        signature = inspect.getargspec(get_method_function(self._stats))
         if (signature[2] is not None) or ('moments' in signature[0]):
             mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
         else:
@@ -6239,7 +6241,7 @@ class rv_discrete(rv_generic):
         if (n < 0): raise ValueError("Moment must be positive.")
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
-            signature = inspect.getargspec(self._stats.im_func)
+            signature = inspect.getargspec(get_method_function(self._stats))
             if (signature[2] is not None) or ('moments' in signature[0]):
                 dict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
             else:
@@ -6288,7 +6290,7 @@ class rv_discrete(rv_generic):
         loc= kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
         loc = asarray(loc)
-        args = map(asarray,args)
+        args = list(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc==loc)
         output = zeros(shape(cond0),'d')
         place(output,(1-cond0),self.badvalue)
@@ -6406,7 +6408,7 @@ class rv_discrete(rv_generic):
                 count += 1
         if count > maxcount:
             # fixme: replace with proper warning
-            print 'sum did not converge'
+            print('sum did not converge')
         return tot/invfac
 
 

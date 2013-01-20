@@ -1,9 +1,13 @@
 """Tests for functions in special_matrices.py."""
 
+from __future__ import division, print_function, absolute_import
+
 from numpy import arange, add, array, eye, copy
 from numpy.testing import TestCase, run_module_suite, assert_raises, \
     assert_equal, assert_array_equal, assert_array_almost_equal, \
     assert_allclose
+
+from scipy.lib.six.moves import xrange
 
 from scipy.misc import comb
 from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \

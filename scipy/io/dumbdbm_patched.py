@@ -20,11 +20,14 @@ is read when the database is opened, and some updates rewrite the whole index)
 - support opening for read-only (flag = 'm')
 
 """
+from __future__ import division, print_function, absolute_import
 
 _os = __import__('os')
-import __builtin__
 
-_open = __builtin__.open
+from scipy.lib.six.moves import builtins
+from scipy.lib.six import string_types
+
+_open = builtins.open
 
 _BLOCKSIZE = 512
 
@@ -66,7 +69,7 @@ class _Database(object):
         except _os.error: pass
         f = _open(self._dirfile, 'w')
         for key, (pos, siz) in self._index.items():
-            f.write("%s, (%s, %s)\n" % (`key`, `pos`, `siz`))
+            f.write("%s, (%s, %s)\n" % (repr(key), repr(pos), repr(siz)))
         f.close()
 
     def __getitem__(self, key):
@@ -102,16 +105,17 @@ class _Database(object):
         f.close()
         return (pos, len(val))
 
-    def _addkey(self, key, (pos, siz)):
+    def _addkey(self, key, pos_and_siz):
+        (pos, siz) = pos_and_siz
         self._index[key] = (pos, siz)
         f = _open(self._dirfile, 'a')
-        f.write("%s, (%s, %s)\n" % (`key`, `pos`, `siz`))
+        f.write("%s, (%s, %s)\n" % (repr(key), repr(pos), repr(siz)))
         f.close()
 
     def __setitem__(self, key, val):
-        if not isinstance(key, str) or not isinstance(val, str):
+        if not isinstance(key, string_types) or not isinstance(val, string_types):
             raise TypeError("keys and values must be strings")
-        if not self._index.has_key(key):
+        if key not in self._index:
             (pos, siz) = self._addval(val)
             self._addkey(key, (pos, siz))
         else:
@@ -131,10 +135,10 @@ class _Database(object):
         self._commit()
 
     def keys(self):
-        return self._index.keys()
+        return list(self._index.keys())
 
     def has_key(self, key):
-        return self._index.has_key(key)
+        return key in self._index
 
     def __len__(self):
         return len(self._index)

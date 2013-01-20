@@ -10,9 +10,12 @@ Functions
 
 """
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
+from scipy.lib.six import callable
 from scipy.optimize import _cobyla
-from optimize import Result, _check_unknown_options
+from .optimize import Result, _check_unknown_options
 from warnings import warn
 
 __all__ = ['fmin_cobyla']
@@ -259,4 +262,4 @@ if __name__ == '__main__':
 
     x = fmin_cobyla(fun, [1., 1.], cons, iprint = 3, disp = 1)
 
-    print '\nTheoretical solution: %e, %e' % (1. / sqrt(2.), -1. / sqrt(2.))
+    print('\nTheoretical solution: %e, %e' % (1. / sqrt(2.), -1. / sqrt(2.)))

@@ -80,6 +80,8 @@ Other (:mod:`scipy.fftpack._fftpack`)
    destroy_zfftnd_cache
 
 """
+from __future__ import division, print_function, absolute_import
+
 
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2',
@@ -90,18 +92,18 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'rfftfreq'
            ]
 
-from fftpack_version import fftpack_version as __version__
+from .fftpack_version import fftpack_version as __version__
 
-from basic import *
-from pseudo_diffs import *
-from helper import *
+from .basic import *
+from .pseudo_diffs import *
+from .helper import *
 
 from numpy.dual import register_func
 for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
     register_func(k, eval(k))
 del k, register_func
 
-from realtransforms import *
+from .realtransforms import *
 __all__.extend(['dct', 'idct', 'dst', 'idst'])
 
 from numpy.testing import Tester

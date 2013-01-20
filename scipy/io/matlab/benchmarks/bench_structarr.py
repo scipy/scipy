@@ -1,7 +1,8 @@
-from __future__ import division
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import *
 
-from cStringIO import StringIO
+from io import StringIO
 
 import numpy as np
 import scipy.io as sio
@@ -19,24 +20,24 @@ def make_structarr(n_vars, n_fields, n_structs):
 
 def bench_run():
     str_io = StringIO()
-    print
-    print 'Read / writing matlab structs'
-    print '='*60
-    print ' write |  read |   vars | fields | structs '
-    print '-'*60
-    print
+    print()
+    print('Read / writing matlab structs')
+    print('='*60)
+    print(' write |  read |   vars | fields | structs ')
+    print('-'*60)
+    print()
     for n_vars, n_fields, n_structs in (
         (10, 10, 20),):
         var_dict = make_structarr(n_vars, n_fields, n_structs)
         str_io = StringIO()
         write_time = measure('sio.savemat(str_io, var_dict)')
         read_time = measure('sio.loadmat(str_io)')
-        print '%.5f | %.5f | %5d | %5d | %5d ' % (
+        print('%.5f | %.5f | %5d | %5d | %5d ' % (
             write_time,
             read_time,
             n_vars,
             n_fields,
-            n_structs)
+            n_structs))
 
 
 if __name__ == '__main__' :

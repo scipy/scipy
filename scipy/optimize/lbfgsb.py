@@ -33,11 +33,12 @@ Functions
 
 ## Modifications by Travis Oliphant and Enthought, Inc.  for inclusion in SciPy
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy import array, asarray, float64, int32, zeros
-import _lbfgsb
-from optimize import approx_fprime, MemoizeJac, Result, _check_unknown_options
-from numpy.compat import asbytes
+from . import _lbfgsb
+from .optimize import approx_fprime, MemoizeJac, Result, _check_unknown_options
 
 __all__ = ['fmin_l_bfgs_b']
 
@@ -300,7 +301,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                        pgtol, wa, iwa, task, iprint, csave, lsave,
                        isave, dsave)
         task_str = task.tostring()
-        if task_str.startswith(asbytes('FG')):
+        if task_str.startswith(b'FG'):
             if n_function_evals > maxfun:
                 task[:] = 'STOP: TOTAL NO. of f AND g EVALUATIONS EXCEEDS LIMIT'
             else:
@@ -308,7 +309,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                 n_function_evals += 1
                 # Overwrite f and g:
                 f, g = func_and_grad(x)
-        elif task_str.startswith(asbytes('NEW_X')):
+        elif task_str.startswith(b'NEW_X'):
             # new iteration
             if n_iterations > maxiter:
                 task[:] = 'STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT'
@@ -319,8 +320,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             break
 
-    task_str = task.tostring().strip(asbytes('\x00')).strip()
-    if task_str.startswith(asbytes('CONV')):
+    task_str = task.tostring().strip(b'\x00').strip()
+    if task_str.startswith(b'CONV'):
         warnflag = 0
     elif n_function_evals > maxfun:
         warnflag = 1
@@ -375,22 +376,22 @@ if __name__ == '__main__':
 
     x, f, d = fmin_l_bfgs_b(func, x0, fprime=grad, m=m,
                             factr=factr, pgtol=pgtol)
-    print x
-    print f
-    print d
+    print(x)
+    print(f)
+    print(d)
     x, f, d = fmin_l_bfgs_b(func, x0, approx_grad=1,
                             m=m, factr=factr, pgtol=pgtol)
-    print x
-    print f
-    print d
+    print(x)
+    print(f)
+    print(d)
     x, f, d = fmin_l_bfgs_b(func_and_grad, x0, approx_grad=0,
                             m=m, factr=factr, pgtol=pgtol)
-    print x
-    print f
-    print d
+    print(x)
+    print(f)
+    print(d)
     p = Problem()
     x, f, d = fmin_l_bfgs_b(p.fun, x0, approx_grad=0,
                             m=m, factr=factr, pgtol=pgtol)
-    print x
-    print f
-    print d
+    print(x)
+    print(f)
+    print(d)

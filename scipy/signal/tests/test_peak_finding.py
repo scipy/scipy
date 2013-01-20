@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import copy
 
 import numpy as np
@@ -5,6 +7,7 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_equal, assert_array_almost_equal, \
     assert_raises, assert_
 from scipy.signal._peak_finding import argrelmax, find_peaks_cwt, _identify_ridge_lines
+from scipy.lib.six.moves import xrange
 
 
 def _gen_gaussians(center_locs, sigmas, total_length):

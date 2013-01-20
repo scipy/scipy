@@ -1,7 +1,14 @@
 #!/usr/bin/env python
+from __future__ import division, print_function, absolute_import
+
 import os
+import sys
 from os.path import join as pjoin
-from cStringIO import StringIO
+
+if sys.version_info[0] >= 3:
+    from io import StringIO
+else:
+    from cStringIO import StringIO
 
 import numpy as np
 

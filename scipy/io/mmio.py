@@ -9,6 +9,8 @@
 #  http://math.nist.gov/MatrixMarket/
 #
 
+from __future__ import division, print_function, absolute_import
+
 import os
 from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
                   ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
@@ -195,7 +197,7 @@ class MMFile (object):
                 format = self.FORMAT_COORDINATE
 
             # skip comments
-            while line.startswith(asbytes('%')): line = source.readline()
+            while line.startswith(b'%'): line = source.readline()
 
             line = line.split()
             if format == self.FORMAT_ARRAY:
@@ -362,7 +364,7 @@ class MMFile (object):
             i,j = 0,0
             while line:
                 line = stream.readline()
-                if not line or line.startswith(asbytes('%')):
+                if not line or line.startswith(b'%'):
                     continue
                 if is_complex:
                     aij = complex(*map(float,line.split()))
@@ -394,7 +396,7 @@ class MMFile (object):
             k = 0
             while line:
                 line = stream.readline()
-                if not line or line.startswith(asbytes('%')):
+                if not line or line.startswith(b'%'):
                     continue
                 l = line.split()
                 i,j = map(int,l[:2])
@@ -610,8 +612,8 @@ if __name__ == '__main__':
     import sys
     import time
     for filename in sys.argv[1:]:
-        print 'Reading',filename,'...',
+        print('Reading',filename,'...', end=' ')
         sys.stdout.flush()
         t = time.time()
         mmread(filename)
-        print 'took %s seconds' % (time.time() - t)
+        print('took %s seconds' % (time.time() - t))

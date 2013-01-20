@@ -1,6 +1,7 @@
 """
 Unit tests for optimization routines from _root.py.
 """
+from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_
 import numpy as np

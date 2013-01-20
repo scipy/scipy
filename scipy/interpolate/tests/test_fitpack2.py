@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # Created by Pearu Peterson, June 2003
+from __future__ import division, print_function, absolute_import
+
 import warnings
 
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \

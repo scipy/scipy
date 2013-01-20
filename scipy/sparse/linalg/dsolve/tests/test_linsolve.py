@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import warnings
 
 from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix

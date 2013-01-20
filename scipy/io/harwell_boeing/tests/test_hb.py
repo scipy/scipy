@@ -1,5 +1,11 @@
+from __future__ import division, print_function, absolute_import
+
 import os
-from cStringIO import StringIO
+import sys
+if sys.version_info[0] >= 3:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 import tempfile
 
 import numpy as np

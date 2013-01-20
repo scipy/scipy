@@ -1,5 +1,6 @@
 """Filter design.
 """
+from __future__ import division, print_function, absolute_import
 
 import types
 import warnings
@@ -109,7 +110,7 @@ def freqs(b, a, worN=None, plot=None):
     """
     if worN is None:
         w = findfreqs(b, a, 200)
-    elif isinstance(worN, types.IntType):
+    elif isinstance(worN, int):
         N = worN
         w = findfreqs(b, a, N)
     else:
@@ -198,7 +199,7 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     if worN is None:
         N = 512
         w = numpy.linspace(0, lastpoint, N, endpoint=False)
-    elif isinstance(worN, types.IntType):
+    elif isinstance(worN, int):
         N = worN
         w = numpy.linspace(0, lastpoint, N, endpoint=False)
     else:
@@ -1023,7 +1024,7 @@ def buttord(wp, ws, gpass, gstop, analog=False):
         W0 = nat / ((10 ** (0.1 * abs(gstop)) - 1) ** (1.0 / (2.0 * ord)))
     except ZeroDivisionError:
         W0 = nat
-        print "Warning, order is zero...check input parametegstop."
+        print("Warning, order is zero...check input parametegstop.")
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter

@@ -2,15 +2,16 @@
 #
 # Further updates and enhancements by many SciPy developers.
 #
+from __future__ import division, print_function, absolute_import
 
 import math
 import types
 import warnings
 
-import statlib
-import stats
-from stats import find_repeats
-import distributions
+from . import statlib
+from . import stats
+from .stats import find_repeats
+from . import distributions
 from numpy import isscalar, r_, log, sum, around, unique, asarray
 from numpy import zeros, arange, sort, amin, amax, any, where, \
      atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
@@ -332,7 +333,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
         sparams = ()
     if isscalar(sparams):
         sparams = (sparams,)
-    if not isinstance(sparams, types.TupleType):
+    if not isinstance(sparams, tuple):
         sparams = tuple(sparams)
     """
     res = inspect.getargspec(ppf_func)
@@ -1265,7 +1266,7 @@ def wilcoxon(x,y=None):
         d = x
     else:
         x, y = map(asarray, (x, y))
-        if len(x) <> len(y):
+        if len(x) != len(y):
             raise ValueError('Unequal N in wilcoxon.  Aborting.')
         d = x-y
     d = compress(not_equal(d,0),d,axis=-1) # Keep all non-zero differences

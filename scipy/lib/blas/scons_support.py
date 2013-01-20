@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 from os.path import join as pjoin, splitext, basename as pbasename
 
 def generate_interface_emitter(target, source, env):

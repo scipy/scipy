@@ -2,6 +2,7 @@
 Author: Uwe Schmitt
 Sep 2008
 """
+from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_, TestCase, run_module_suite
 

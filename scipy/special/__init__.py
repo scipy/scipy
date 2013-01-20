@@ -524,17 +524,19 @@ Convenience Functions
 
 """
 
-from _ufuncs import *
-from _ufuncs_cxx import *
+from __future__ import division, print_function, absolute_import
 
-from basic import *
-import specfun
-import orthogonal
-from orthogonal import *
-from spfun_stats import multigammaln
-from lambertw import lambertw
+from ._ufuncs import *
+from ._ufuncs_cxx import *
 
-__all__ = filter(lambda s:not s.startswith('_'),dir())
+from .basic import *
+from . import specfun
+from . import orthogonal
+from .orthogonal import *
+from .spfun_stats import multigammaln
+from .lambertw import lambertw
+
+__all__ = [s for s in dir() if not s.startswith('_')]
 
 from numpy.dual import register_func
 register_func('i0',i0)

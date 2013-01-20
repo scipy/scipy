@@ -2,6 +2,7 @@
 
 # David Cournapeau
 # Last Change: Wed Nov 05 07:00 PM 2008 J
+from __future__ import division, print_function, absolute_import
 
 import os.path
 import warnings
@@ -16,7 +17,7 @@ try:
     from scipy.cluster import _vq
     TESTC=True
 except ImportError:
-    print "== Error while importing _vq, not testing C imp of vq =="
+    print("== Error while importing _vq, not testing C imp of vq ==")
     TESTC=False
 
 #Optional:
@@ -59,7 +60,7 @@ class TestVq(TestCase):
             assert_array_equal(label1, LABEL1)
             tlabel1, tdist = vq(X, initc)
         else:
-            print "== not testing C imp of vq =="
+            print("== not testing C imp of vq ==")
 
     #def test_py_vq_1d(self):
     #    """Test special rank 1 vq algo, python implementation."""
@@ -82,7 +83,7 @@ class TestVq(TestCase):
             assert_array_equal(a, ta)
             assert_array_equal(b, tb)
         else:
-            print "== not testing C imp of vq (rank 1) =="
+            print("== not testing C imp of vq (rank 1) ==")
 
     def test__vq_sametype(self):
         if TESTC:

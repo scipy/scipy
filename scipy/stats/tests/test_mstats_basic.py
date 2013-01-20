@@ -1,6 +1,7 @@
 """
 Tests for the stats.mstats module (support for maskd arrays)
 """
+from __future__ import division, print_function, absolute_import
 
 
 import numpy as np

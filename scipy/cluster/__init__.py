@@ -20,10 +20,11 @@ observation vectors, calculating statistics on clusters, cutting linkages
 to generate flat clusters, and visualizing clusters with dendrograms.
 
 """
+from __future__ import division, print_function, absolute_import
 
 __all__ = ['vq', 'hierarchy']
 
-import vq, hierarchy
+from . import vq, hierarchy
 
 from numpy.testing import Tester
 test = Tester().test

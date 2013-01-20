@@ -111,15 +111,20 @@ The solution can be found using the `newton_krylov` solver:
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as Scipy.
 
+from __future__ import division, print_function, absolute_import
+
 import sys
 import numpy as np
+from scipy.lib.six import callable, exec_
+from scipy.lib.six.moves import xrange
 from scipy.linalg import norm, solve, inv, qr, svd, lstsq, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
 import inspect
-from linesearch import scalar_search_wolfe1, scalar_search_armijo
+from .linesearch import scalar_search_wolfe1, scalar_search_armijo
+import collections
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
@@ -1467,7 +1472,7 @@ def _nonlin_wrapper(name, jac):
     """
     import inspect
     args, varargs, varkw, defaults = inspect.getargspec(jac.__init__)
-    kwargs = zip(args[-len(defaults):], defaults)
+    kwargs = list(zip(args[-len(defaults):], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:
         kw_str = ", " + kw_str
@@ -1491,7 +1496,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
                              kwkw=kwkw_str)
     ns = {}
     ns.update(globals())
-    exec wrapper in ns
+    exec_(wrapper, ns)
     func = ns[name]
     func.__doc__ = jac.__doc__
     _set_doc(func)

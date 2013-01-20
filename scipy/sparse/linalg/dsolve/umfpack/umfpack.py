@@ -5,13 +5,17 @@ Interface to the UMFPACK library.
 Author: Robert Cimrman
 """
 
+from __future__ import division, print_function, absolute_import
+
 import re
 import warnings
+
+from scipy.lib.six import iteritems
 
 import numpy as np
 import scipy.sparse as sp
 try: # Silence import error.
-    import _umfpack as _um
+    from . import _umfpack as _um
 except:
     _um = None
 
@@ -229,7 +233,7 @@ if _um:
          UMFPACK_Aat : UMFPACK_A}
     ]
 
-umfFamilyTypes = {'di' : int, 'dl' : long, 'zi' : int, 'zl' : long}
+umfFamilyTypes = {'di' : int, 'dl' : int, 'zi' : int, 'zl' : int}
 umfRealTypes = ('di', 'dl')
 umfComplexTypes = ('zi', 'zl')
 
@@ -245,7 +249,7 @@ class Struct( object ):
     # 08.03.2005
     def __str__( self ):
         ss = "%s\n" % self.__class__
-        for key, val in self.__dict__.iteritems():
+        for key, val in iteritems(self.__dict__):
             if (issubclass( self.__dict__[key].__class__, Struct )):
                 ss += "  %s:\n    %s\n" % (key, self.__dict__[key].__class__)
             else:

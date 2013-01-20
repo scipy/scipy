@@ -6,6 +6,7 @@ by P. Dierckx (see http://www.netlib.org/dierckx/) transformed
 to double routines by Pearu Peterson.
 """
 # Created by Pearu Peterson, June,August 2003
+from __future__ import division, print_function, absolute_import
 
 __all__ = [
     'UnivariateSpline',
@@ -26,8 +27,8 @@ import warnings
 from numpy import zeros, concatenate, alltrue, ravel, all, diff, array, ones
 import numpy as np
 
-import fitpack
-import dfitpack
+from . import fitpack
+from . import dfitpack
 
 
 ################ Univariate spline ####################

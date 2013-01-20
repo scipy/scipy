@@ -1,4 +1,6 @@
 """Compressed Block Sparse Row matrix format"""
+from __future__ import division, print_function, absolute_import
+
 
 __docformat__ = "restructuredtext en"
 
@@ -8,12 +10,12 @@ from warnings import warn
 
 import numpy as np
 
-from data import _data_matrix
-from compressed import _cs_matrix
-from base import isspmatrix, _formats
-from sputils import isshape, getdtype, to_native, upcast
-import sparsetools
-from sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, \
+from .data import _data_matrix
+from .compressed import _cs_matrix
+from .base import isspmatrix, _formats
+from .sputils import isshape, getdtype, to_native, upcast
+from . import sparsetools
+from .sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, \
                         bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
 
 class bsr_matrix(_cs_matrix):
@@ -146,7 +148,7 @@ class bsr_matrix(_cs_matrix):
 
             elif len(arg1) == 2:
                 # (data,(row,col)) format
-                from coo import coo_matrix
+                from .coo import coo_matrix
                 self._set_self( coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize) )
 
             elif len(arg1) == 3:
@@ -164,7 +166,7 @@ class bsr_matrix(_cs_matrix):
             except:
                 raise ValueError("unrecognized form for" \
                         " %s_matrix constructor" % self.format)
-            from coo import coo_matrix
+            from .coo import coo_matrix
             arg1 = coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize)
             self._set_self( arg1 )
 
@@ -245,8 +247,7 @@ class bsr_matrix(_cs_matrix):
             #check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= N//C:
-                    print "max index",self.indices.max()
-                    raise ValueError("column index values must be < %d" % (N//C))
+                    raise ValueError("column index values must be < %d (now max %d)" % (N//C, self.indices.max()))
                 if self.indices.min() < 0:
                     raise ValueError("column index values must be >= 0")
                 if np.diff(self.indptr).min() < 0:
@@ -347,7 +348,7 @@ class bsr_matrix(_cs_matrix):
         else:
             C = 1
 
-        from csr import isspmatrix_csr
+        from .csr import isspmatrix_csr
 
         if isspmatrix_csr(other) and n == 1:
             other = other.tobsr(blocksize=(n,C), copy=False) #lightweight conversion
@@ -420,7 +421,7 @@ class bsr_matrix(_cs_matrix):
         if copy:
             data = data.copy()
 
-        from coo import coo_matrix
+        from .coo import coo_matrix
         return coo_matrix((data,(row,col)), shape=self.shape)
 
 
@@ -461,7 +462,7 @@ class bsr_matrix(_cs_matrix):
 
         self.data[:len(nonzero_blocks)] = self.data[nonzero_blocks]
 
-        from csr import csr_matrix
+        from .csr import csr_matrix
 
         # modifies self.indptr and self.indices *in place*
         proxy = csr_matrix((mask,self.indices,self.indptr),shape=(M//R,N//C))

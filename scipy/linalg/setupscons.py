@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import division, print_function, absolute_import
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -12,7 +13,7 @@ def configuration(parent_package='',top_path=None):
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    from linalg_version import linalg_version
+    from .linalg_version import linalg_version
 
     setup(version=linalg_version,
           **configuration(top_path='').todict())

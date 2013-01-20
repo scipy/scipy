@@ -1,8 +1,10 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
+from __future__ import division, print_function, absolute_import
 
-import sigtools
+from . import sigtools
+from scipy.lib.six import callable
 from scipy import linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, \
         ifftn, fftfreq
@@ -14,8 +16,8 @@ from numpy import polyadd, polymul, polydiv, polysub, roots, \
         transpose, dot, mean, ndarray, atleast_2d
 import numpy as np
 from scipy.misc import factorial
-from windows import get_window
-from _arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
+from .windows import get_window
+from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
@@ -1288,7 +1290,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
         # Put data back in original shape.
         tdshape = take(dshape, newdims, 0)
         ret = reshape(newdata, tuple(tdshape))
-        vals = range(1, rnk)
+        vals = list(range(1, rnk))
         olddims = vals[:axis] + [0] + vals[axis:]
         ret = transpose(ret, tuple(olddims))
         return ret

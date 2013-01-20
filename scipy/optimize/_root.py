@@ -5,16 +5,19 @@ Functions
 ---------
 - root : find a root of a vector function.
 """
+from __future__ import division, print_function, absolute_import
 
 __all__ = ['root']
 
 import numpy as np
 
+from scipy.lib.six import callable
+
 from warnings import warn
 
-from optimize import MemoizeJac, Result, _check_unknown_options
-from minpack import _root_hybr, leastsq
-import nonlin
+from .optimize import MemoizeJac, Result, _check_unknown_options
+from .minpack import _root_hybr, leastsq
+from . import nonlin
 
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
          options=None):

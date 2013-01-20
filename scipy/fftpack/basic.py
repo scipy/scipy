@@ -2,13 +2,14 @@
 Discrete Fourier Transforms - basic.py
 """
 # Created by Pearu Peterson, August,September 2002
+from __future__ import division, print_function, absolute_import
 
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
 from numpy import zeros, swapaxes
 import numpy
-import _fftpack
+from . import _fftpack
 
 import atexit
 atexit.register(_fftpack.destroy_zfft_cache)
@@ -75,7 +76,7 @@ def _fake_rfft(x, n, *a, **kw):
         return _fftpack.drfft(x, n, *a, **kw).astype(numpy.float32)
 
 def _fake_cfftnd(x, shape, *a, **kw):
-    if numpy.all(map(_is_safe_size, shape)):
+    if numpy.all(list(map(_is_safe_size, shape))):
         return _fftpack.cfftnd(x, shape, *a, **kw)
     else:
         return _fftpack.zfftnd(x, shape, *a, **kw).astype(numpy.complex64)
@@ -421,7 +422,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     s = tuple(s)
     if axes is None:
         noaxes = True
-        axes = range(-x.ndim, 0)
+        axes = list(range(-x.ndim, 0))
     else:
         noaxes = False
     if len(axes) != len(s):
@@ -450,7 +451,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     # We can now operate on the axes waxes, the p last axes (p = len(axes)), by
     # fixing the shape of the input array to 1 for any axis the fft is not
     # carried upon.
-    waxes = range(x.ndim - len(axes), x.ndim)
+    waxes = list(range(x.ndim - len(axes), x.ndim))
     shape = numpy.ones(x.ndim)
     shape[waxes] = s
 

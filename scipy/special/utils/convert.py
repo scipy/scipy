@@ -1,5 +1,7 @@
 # This script is used to parse BOOST special function test data into something
 # we can easily import in numpy. It is ugly as hell, but it works.
+from __future__ import division, print_function, absolute_import
+
 import re
 import os
 
@@ -185,5 +187,5 @@ def dump_datasets(filename):
 if __name__ == '__main__':
     for filename in DATA_FILES:
         filename = os.path.join(BOOST_SRC, filename)
-        print "================= %s ===============" % filename
+        print("================= %s ===============" % filename)
         dump_datasets(filename)

@@ -1,6 +1,8 @@
 """
 Unit test for SLSQP optimization.
 """
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import assert_, assert_array_almost_equal, TestCase, \
                           assert_allclose, run_module_suite
 import numpy as np

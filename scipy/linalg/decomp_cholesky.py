@@ -1,10 +1,12 @@
 """Cholesky decomposition functions."""
 
+from __future__ import division, print_function, absolute_import
+
 from numpy import asarray_chkfinite, asarray
 
 # Local imports
-from misc import LinAlgError, _datacopied
-from lapack import get_lapack_funcs
+from .misc import LinAlgError, _datacopied
+from .lapack import get_lapack_funcs
 
 __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
             'cho_solve_banded']
@@ -128,7 +130,7 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     return c, lower
 
 
-def cho_solve((c, lower), b, overwrite_b=False, check_finite=True):
+def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     """Solve the linear equations A x = b, given the Cholesky factorization of A.
 
     Parameters
@@ -152,7 +154,7 @@ def cho_solve((c, lower), b, overwrite_b=False, check_finite=True):
     cho_factor : Cholesky factorization of a matrix
 
     """
-
+    (c, lower) = c_and_lower
     if check_finite:
         b1 = asarray_chkfinite(b)
         c = asarray_chkfinite(c)
@@ -228,7 +230,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     return c
 
 
-def cho_solve_banded((cb, lower), b, overwrite_b=False, check_finite=True):
+def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     """Solve the linear equations A x = b, given the Cholesky factorization of A.
 
     Parameters
@@ -260,7 +262,7 @@ def cho_solve_banded((cb, lower), b, overwrite_b=False, check_finite=True):
     .. versionadded:: 0.8.0
 
     """
-
+    (cb, lower) = cb_and_lower
     if check_finite:
         cb = asarray_chkfinite(cb)
         b = asarray_chkfinite(b)

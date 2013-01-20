@@ -32,11 +32,14 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from __future__ import division, print_function, absolute_import
 
 import os.path
 
 import numpy as np
 from numpy.testing import TestCase, run_module_suite
+
+from scipy.lib.six.moves import xrange
 
 from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage,\
         num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster, \
@@ -790,7 +793,7 @@ class TestCorrespond(TestCase):
 
     def test_correspond_4_and_up(self):
         "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes. Correspondance should be false."
-        for (i, j) in zip(range(2, 4), range(3, 5)) + zip(range(3, 5), range(2, 4)):
+        for (i, j) in list(zip(list(range(2, 4)), list(range(3, 5)))) + list(zip(list(range(3, 5)), list(range(2, 4)))):
             y = np.random.rand(i*(i-1)/2)
             y2 = np.random.rand(j*(j-1)/2)
             Z = linkage(y)
@@ -800,7 +803,7 @@ class TestCorrespond(TestCase):
 
     def test_correspond_4_and_up_2(self):
         "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes. Correspondance should be false."
-        for (i, j) in zip(range(2, 7), range(16, 21)) + zip(range(2, 7), range(16, 21)):
+        for (i, j) in list(zip(list(range(2, 7)), list(range(16, 21)))) + list(zip(list(range(2, 7)), list(range(16, 21)))):
             y = np.random.rand(i*(i-1)/2)
             y2 = np.random.rand(j*(j-1)/2)
             Z = linkage(y)

@@ -2,6 +2,8 @@
 # Author: Travis Oliphant, March 2002
 #
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm']
 
@@ -12,13 +14,15 @@ from numpy import asarray, Inf, dot, floor, eye, diag, exp, \
 from numpy import matrix as mat
 import numpy as np
 
+from scipy.lib.six.moves import xrange
+
 # Local imports
-from misc import norm
-from basic import solve, inv
-from special_matrices import triu, all_mat
-from decomp import eig
-from decomp_svd import orth, svd
-from decomp_schur import schur, rsf2csf
+from .misc import norm
+from .basic import solve, inv
+from .special_matrices import triu, all_mat
+from .decomp import eig
+from .decomp_svd import orth, svd
+from .decomp_schur import schur, rsf2csf
 import warnings
 
 eps = np.finfo(float).eps
@@ -325,7 +329,7 @@ def funm(A, func, disp=True):
         err = Inf
     if disp:
         if err > 1000*tol:
-            print "Result may be inaccurate, approximate err =", err
+            print("Result may be inaccurate, approximate err =", err)
         return F
     else:
         return F, err
@@ -376,7 +380,7 @@ def logm(A, disp=True):
             errest = norm(expm(F)-A,1) / norm(A,1)
     if disp:
         if not isfinite(errest) or errest >= errtol:
-            print "Result may be inaccurate, approximate err =", errest
+            print("Result may be inaccurate, approximate err =", errest)
         return F
     else:
         return F, errest
@@ -453,7 +457,7 @@ def signm(a, disp=True):
         prev_errest = errest
     if disp:
         if not isfinite(errest) or errest >= errtol:
-            print "Result may be inaccurate, approximate err =", errest
+            print("Result may be inaccurate, approximate err =", errest)
         return S0
     else:
         return S0, errest
@@ -505,7 +509,7 @@ def sqrtm(A, disp=True):
     if disp:
         nzeig = np.any(diag(T)==0)
         if nzeig:
-            print "Matrix is singular and may not have a square root."
+            print("Matrix is singular and may not have a square root.")
         return X.A
     else:
         arg2 = norm(X*X - A,'fro')**2 / norm(A,'fro')

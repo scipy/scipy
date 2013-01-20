@@ -37,6 +37,8 @@ f, y and Jacobians by transparently translating them into the equivalent
 real valued system. It supports the real valued solvers (i.e not zvode) and is
 an alternative to ode with the zvode solver, sometimes performing better.
 """
+from __future__ import division, print_function, absolute_import
+
 
 # XXX: Integrators must have:
 # ===========================
@@ -88,9 +90,9 @@ import warnings
 
 from numpy import asarray, array, zeros, int32, isscalar, real, imag
 
-import vode as _vode
-import _dop
-import lsoda as _lsoda
+from . import vode as _vode
+from . import _dop
+from . import lsoda as _lsoda
 
 
 #------------------------------------------------------------------------------

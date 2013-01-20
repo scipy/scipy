@@ -99,9 +99,9 @@ A. V. Knyazev's C and MATLAB implementations:
 http://www-math.cudenver.edu/~aknyazev/software/BLOPEX/
 
 """
+from __future__ import division, print_function, absolute_import
 
-
-from lobpcg import *
+from .lobpcg import *
 
 from numpy.testing import Tester
 test = Tester().test

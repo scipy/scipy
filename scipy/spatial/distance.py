@@ -63,12 +63,17 @@ functions. Use ``pdist`` for this purpose.
 
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
 
+from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
 from numpy.linalg import norm
 
-import _distance_wrap
+from scipy.lib.six import callable, string_types
+from scipy.lib.six.moves import xrange
+
+from . import _distance_wrap
+import collections
 
 
 def _copy_array_if_base_present(a):
@@ -1144,7 +1149,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                 dm[k] = dfun(X[i], X[j])
                 k = k + 1
 
-    elif isinstance(metric, basestring):
+    elif isinstance(metric, string_types):
         mstr = metric.lower()
 
         #if X.dtype != np.double and \
@@ -1521,7 +1526,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
                     raise ValueError(('Distance matrix \'%s\' diagonal must be'
                                       ' close to zero within tolerance %5.5f.')
                                      % tol)
-    except Exception, e:
+    except Exception as e:
         if throw:
             raise
         if warning:
@@ -1591,7 +1596,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
                 raise ValueError('Length n of condensed distance matrix must '
                                  'be a binomial coefficient, i.e. there must '
                                  'be a k such that (k \choose 2)=n)!')
-    except Exception, e:
+    except Exception as e:
         if throw:
             raise
         if warning:
@@ -1934,7 +1939,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             for i in xrange(0, mA):
                 for j in xrange(0, mB):
                     dm[i, j] = metric(XA[i, :], XB[j, :])
-    elif isinstance(metric, basestring):
+    elif isinstance(metric, string_types):
         mstr = metric.lower()
 
         #if XA.dtype != np.double and \

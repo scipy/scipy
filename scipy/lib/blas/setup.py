@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import division, print_function, absolute_import
 
 import os
 import sys
@@ -45,7 +46,7 @@ def configuration(parent_package='',top_path=None):
     atlas_version = ([v[3:-3] for k,v in blas_opt.get('define_macros',[]) \
                       if k=='ATLAS_INFO']+[None])[0]
     if atlas_version:
-        print ('ATLAS version: %s' % atlas_version)
+        print(('ATLAS version: %s' % atlas_version))
 
     target_dir = ''
 

@@ -21,6 +21,8 @@ is an Introduction to the constants for nonexperts.
 http://physics.nist.gov/cuu/Constants/
 
 """
+from __future__ import division, print_function, absolute_import
+
 
 import warnings
 from math import pi, sqrt
@@ -801,16 +803,16 @@ _current_codata = "CODATA 2010"
 
 # check obsolete values
 _obsolete_constants = {}
-for k in physical_constants.iterkeys():
+for k in physical_constants.keys():
     if k not in _current_constants:
         _obsolete_constants[k] = True
 
 # generate some additional aliases
 _aliases = {}
-for k in _physical_constants_2002.iterkeys():
+for k in _physical_constants_2002.keys():
     if 'magn.' in k:
         _aliases[k] = k.replace('magn.', 'mag.')
-for k in _physical_constants_2006.iterkeys():
+for k in _physical_constants_2006.keys():
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
 
@@ -935,7 +937,7 @@ def find(sub=None, disp=False):
 
     """
     if sub is None:
-        result = _current_constants.keys()
+        result = list(_current_constants.keys())
     else:
         result = [key for key in _current_constants \
                  if sub.lower() in key.lower()]
@@ -943,7 +945,7 @@ def find(sub=None, disp=False):
     result.sort()
     if disp:
         for key in result:
-            print key
+            print(key)
         return
     else:
         return result

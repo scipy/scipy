@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import os
 import warnings
 
@@ -78,7 +80,7 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
     npoints = points.shape[1]
 
     data = np.c_[points, results]
-    fdata = FuncData(func, data, range(npoints), range(npoints, data.shape[1]),
+    fdata = FuncData(func, data, list(range(npoints)), list(range(npoints, data.shape[1])),
                      rtol=rtol, atol=atol, param_filter=param_filter,
                      knownfailure=knownfailure)
     fdata.check()
@@ -161,7 +163,7 @@ class FuncData(object):
             param_mask = np.ones((data.shape[0],), np.bool_)
             for j, filter in zip(self.param_columns, self.param_filter):
                 if filter:
-                    param_mask &= filter(data[:,j])
+                    param_mask &= list(filter(data[:,j]))
             data = data[param_mask]
 
         # Pick parameters and results from the correct columns
@@ -229,7 +231,7 @@ class FuncData(object):
 
     def __repr__(self):
         """Pretty-printing, esp. for Nose output"""
-        if np.any(map(np.iscomplexobj, self.param_columns)):
+        if np.any(list(map(np.iscomplexobj, self.param_columns))):
             is_complex = " (complex)"
         else:
             is_complex = ""

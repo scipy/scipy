@@ -3,8 +3,12 @@
 
 # Author: Warren Weckesser, Enthought, Inc.
 
+from __future__ import division, print_function, absolute_import
+
+from scipy.lib.six.moves import xrange
 import numpy as np
 from scipy import special
+from functools import reduce
 
 
 __all__ = ['margins', 'expected_freq', 'chi2_contingency']
@@ -52,7 +56,7 @@ def margins(a):
     array([[[60, 66, 72, 78]]])
     """
     margsums = []
-    ranged = range(a.ndim)
+    ranged = list(range(a.ndim))
     for k in ranged:
         marg = np.apply_over_axes(np.sum, a, [j for j in ranged if j != k])
         margsums.append(marg)

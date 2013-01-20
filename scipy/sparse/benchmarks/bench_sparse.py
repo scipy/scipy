@@ -1,4 +1,5 @@
 """general tests and simple benchmarks for the sparse module"""
+from __future__ import division, print_function, absolute_import
 
 import time
 
@@ -8,6 +9,7 @@ from numpy import ones, array, asarray, empty
 from numpy.testing import *
 
 from scipy import sparse
+from scipy.lib.six.moves import xrange
 from scipy.sparse import csr_matrix, coo_matrix, dia_matrix, lil_matrix, \
         dok_matrix
 
@@ -51,25 +53,25 @@ class BenchmarkSparse(TestCase):
         matrices.append( ('A','Poisson5pt', poisson2d(250,format='csr'))  )
         matrices.append( ('B','Poisson5pt^2', poisson2d(250,format='csr')**2)  )
 
-        print
-        print '                 Sparse Matrix Arithmetic'
-        print '===================================================================='
-        print ' var |     name       |         shape        |   dtype   |    nnz   '
-        print '--------------------------------------------------------------------'
+        print()
+        print('                 Sparse Matrix Arithmetic')
+        print('====================================================================')
+        print(' var |     name       |         shape        |   dtype   |    nnz   ')
+        print('--------------------------------------------------------------------')
         fmt = '  %1s  | %14s | %20s | %9s | %8d '
 
         for var,name,mat in matrices:
             name  = name.center(14)
             shape = ("%s" % (mat.shape,)).center(20)
             dtype = mat.dtype.name.center(9)
-            print fmt % (var,name,shape,dtype,mat.nnz)
+            print(fmt % (var,name,shape,dtype,mat.nnz))
 
         space = ' ' * 10
-        print
-        print space+'              Timings'
-        print space+'=========================================='
-        print space+' format |     operation     | time (msec) '
-        print space+'------------------------------------------'
+        print()
+        print(space+'              Timings')
+        print(space+'==========================================')
+        print(space+' format |     operation     | time (msec) ')
+        print(space+'------------------------------------------')
         fmt = space+'   %3s  | %17s |  %7.1f  '
 
         for format in ['csr']:
@@ -89,7 +91,7 @@ class BenchmarkSparse(TestCase):
 
                     msec_per_it = 1000*(end - start)/float(iter)
                     operation = (X + '.' + op + '(' + Y + ')').center(17)
-                    print fmt % (format,operation,msec_per_it)
+                    print(fmt % (format,operation,msec_per_it))
 
 
     def bench_sort(self):
@@ -101,11 +103,11 @@ class BenchmarkSparse(TestCase):
         matrices.append( ('Rand100', 1e4, 100) )
         matrices.append( ('Rand200', 1e4, 200) )
 
-        print
-        print '                    Sparse Matrix Index Sorting'
-        print '====================================================================='
-        print ' type |    name      |         shape        |    nnz   | time (msec) '
-        print '---------------------------------------------------------------------'
+        print()
+        print('                    Sparse Matrix Index Sorting')
+        print('=====================================================================')
+        print(' type |    name      |         shape        |    nnz   | time (msec) ')
+        print('---------------------------------------------------------------------')
         fmt = '  %3s | %12s | %20s | %8d |   %6.2f  '
 
         for name,N,K in matrices:
@@ -124,7 +126,7 @@ class BenchmarkSparse(TestCase):
             name = name.center(12)
             shape = ("%s" % (A.shape,)).center(20)
 
-            print fmt % (A.format,name,shape,A.nnz,1e3*(end-start)/float(iter) )
+            print(fmt % (A.format,name,shape,A.nnz,1e3*(end-start)/float(iter) ))
 
     def bench_matvec(self):
         matrices = []
@@ -146,11 +148,11 @@ class BenchmarkSparse(TestCase):
         matrices.append( ('Block3x3', A.tocsr()) )
         matrices.append( ('Block3x3', A) )
 
-        print
-        print '                 Sparse Matrix Vector Product'
-        print '=================================================================='
-        print ' type |    name      |         shape        |    nnz   |  MFLOPs  '
-        print '------------------------------------------------------------------'
+        print()
+        print('                 Sparse Matrix Vector Product')
+        print('==================================================================')
+        print(' type |    name      |         shape        |    nnz   |  MFLOPs  ')
+        print('------------------------------------------------------------------')
         fmt = '  %3s | %12s | %20s | %8d |  %6.1f '
 
         for name,A in matrices:
@@ -171,7 +173,7 @@ class BenchmarkSparse(TestCase):
             shape = ("%s" % (A.shape,)).center(20)
             MFLOPs = (2*A.nnz*iter/(end-start))/float(1e6)
 
-            print fmt % (A.format,name,shape,A.nnz,MFLOPs)
+            print(fmt % (A.format,name,shape,A.nnz,MFLOPs))
 
     def bench_matvecs(self):
         matrices = []
@@ -184,12 +186,12 @@ class BenchmarkSparse(TestCase):
 
         n_vecs = 10
 
-        print
-        print '             Sparse Matrix (Block) Vector Product'
-        print '                       Blocksize = %d' % (n_vecs,)
-        print '=================================================================='
-        print ' type |    name      |         shape        |    nnz   |  MFLOPs  '
-        print '------------------------------------------------------------------'
+        print()
+        print('             Sparse Matrix (Block) Vector Product')
+        print('                       Blocksize = %d' % (n_vecs,))
+        print('==================================================================')
+        print(' type |    name      |         shape        |    nnz   |  MFLOPs  ')
+        print('------------------------------------------------------------------')
         fmt = '  %3s | %12s | %20s | %8d |  %6.1f '
 
         for name,A in matrices:
@@ -210,7 +212,7 @@ class BenchmarkSparse(TestCase):
             shape = ("%s" % (A.shape,)).center(20)
             MFLOPs = (2*n_vecs*A.nnz*iter/(end-start))/float(1e6)
 
-            print fmt % (A.format,name,shape,A.nnz,MFLOPs)
+            print(fmt % (A.format,name,shape,A.nnz,MFLOPs))
 
 
     def bench_construction(self):
@@ -220,11 +222,11 @@ class BenchmarkSparse(TestCase):
         matrices.append( ('Identity',sparse.eye(10000)) )
         matrices.append( ('Poisson5pt', poisson2d(100)) )
 
-        print
-        print '                    Sparse Matrix Construction'
-        print '===================================================================='
-        print ' type |    name      |         shape        |    nnz   | time (sec) '
-        print '--------------------------------------------------------------------'
+        print()
+        print('                    Sparse Matrix Construction')
+        print('====================================================================')
+        print(' type |    name      |         shape        |    nnz   | time (sec) ')
+        print('--------------------------------------------------------------------')
         fmt = '  %3s | %12s | %20s | %8d |   %6.4f '
 
         for name,A in matrices:
@@ -246,18 +248,18 @@ class BenchmarkSparse(TestCase):
                 name = name.center(12)
                 shape = ("%s" % (A.shape,)).center(20)
 
-                print fmt % (format,name,shape,A.nnz,(end-start)/float(iter))
+                print(fmt % (format,name,shape,A.nnz,(end-start)/float(iter)))
 
     def bench_conversion(self):
         A = poisson2d(100)
 
         formats = ['csr','csc','coo','dia','lil','dok']
 
-        print
-        print '                     Sparse Matrix Conversion'
-        print '===================================================================='
-        print ' format | tocsr() | tocsc() | tocoo() | todia() | tolil() | todok() '
-        print '--------------------------------------------------------------------'
+        print()
+        print('                     Sparse Matrix Conversion')
+        print('====================================================================')
+        print(' format | tocsr() | tocsc() | tocoo() | todia() | tolil() | todok() ')
+        print('--------------------------------------------------------------------')
 
         for fromfmt in formats:
             base = getattr(A,'to' + fromfmt)()
@@ -286,7 +288,7 @@ class BenchmarkSparse(TestCase):
                     output += '|    n/a    '
                 else:
                     output += '| %5.1fms ' % (1000*t)
-            print output
+            print(output)
 
 
 #class TestLarge(TestCase):
@@ -296,7 +298,7 @@ class BenchmarkSparse(TestCase):
 #        #TODO move this out of Common since it doesn't use spmatrix
 #        random.seed(0)
 #        A = dok_matrix((100,100))
-#        for k in range(100):
+#        for k in xrange(100):
 #            i = random.randrange(100)
 #            j = random.randrange(100)
 #            A[i,j] = 1.

@@ -1,6 +1,7 @@
 # Author: Travis Oliphant 2001
+from __future__ import division, print_function, absolute_import
 
-import _quadpack
+from . import _quadpack
 import sys
 import numpy
 from numpy import inf, Inf
@@ -347,13 +348,13 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
                     y = -x
                     func = myargs[0]
                     myargs = (y,) + myargs[1:]
-                    return apply(func,myargs)
+                    return func(*myargs)
             else:
                 def thefunc(x,*myargs):
                     y = -x
                     func = myargs[0]
                     myargs = (y,) + myargs[1:]
-                    return -apply(func,myargs)
+                    return -func(*myargs)
             args = (func,) + args
             return _quadpack._qawfe(thefunc,-b,wvar,integr,args,full_output,epsabs,limlst,limit,maxp1)
         else:

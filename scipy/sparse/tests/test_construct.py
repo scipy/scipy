@@ -1,10 +1,11 @@
 """test sparse matrix construction functions"""
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy import array, matrix
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
         assert_array_equal, assert_raises, assert_array_almost_equal_nulp
-
 
 from scipy.sparse import csr_matrix, coo_matrix
 
@@ -115,7 +116,7 @@ class TestConstructUtils(TestCase):
                     # should be able to find the shape automatically
                     assert_equal(construct.diags(d, o).todense(), result)
             except:
-                print "%r %r %r" % (d, o, shape)
+                print("%r %r %r" % (d, o, shape))
                 raise
 
     def test_diags_bad(self):
@@ -139,7 +140,7 @@ class TestConstructUtils(TestCase):
             try:
                 assert_raises(ValueError, construct.diags, d, o, shape)
             except:
-                print "%r %r %r" % (d, o, shape)
+                print("%r %r %r" % (d, o, shape))
                 raise
 
         assert_raises(TypeError, construct.diags, [[None]], [0])
@@ -177,7 +178,7 @@ class TestConstructUtils(TestCase):
         assert_equal(x.todense(), [[2, 0], [0, 2]])
 
     def test_diags_one_diagonal(self):
-        d = range(5)
+        d = list(range(5))
         for k in range(-5, 6):
             assert_equal(construct.diags(d, k).toarray(),
                          construct.diags([d], [k]).toarray())

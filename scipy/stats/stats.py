@@ -181,26 +181,31 @@ References
 ##              changed name of skewness and askewness to skew and askew
 ##              fixed (a)histogram (which sometimes counted points <lowerlimit)
 
+from __future__ import division, print_function, absolute_import
+
 # Standard library imports.
 import warnings
 import math
+
+from scipy.lib.six.moves import xrange
 
 # friedmanchisquare patch uses python sum
 pysum = sum  # save it before it gets overwritten
 
 # Scipy imports.
+from scipy.lib.six import callable, string_types
 from numpy import array, asarray, dot, ma, zeros, sum
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
 
-import futil
-import distributions
+from . import futil
+from . import distributions
 
 # Local imports.
-import _support
-from _support import _chk_asarray, _chk2_asarray
-from _rank import rankdata, tiecorrect
+from . import _support
+from ._support import _chk_asarray, _chk2_asarray
+from ._rank import rankdata, tiecorrect
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
            'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
@@ -1562,9 +1567,9 @@ def percentileofscore(a, score, kind='rank'):
     if kind == 'rank':
         if not(np.any(a == score)):
             a = np.append(a, score)
-            a_len = np.array(range(len(a)))
+            a_len = np.array(list(range(len(a))))
         else:
-            a_len = np.array(range(len(a))) + 1.0
+            a_len = np.array(list(range(len(a)))) + 1.0
 
         a = np.sort(a)
         idx = [a == score]
@@ -2272,7 +2277,7 @@ def f_oneway(*args):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     """
-    args = map(np.asarray, args) # convert to an numpy array
+    args = list(map(np.asarray, args)) # convert to an numpy array
     na = len(args)              # ANOVA on 'na' groups, each in it's own array
     alldata = np.concatenate(args)
     bign = len(alldata)
@@ -2759,7 +2764,7 @@ def kendalltau(x, y, initial_lexsort=True):
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
     n = np.int64(len(x))
-    temp = range(n) # support structure used by mergesort
+    temp = list(range(n)) # support structure used by mergesort
     # this closure recursively sorts sections of perm[] by comparing
     # elements of y[perm[]] using temp[] as support
     # returns the number of swaps required by an equivalent bubble sort
@@ -2805,7 +2810,7 @@ def kendalltau(x, y, initial_lexsort=True):
         perm = np.lexsort((y, x))
     else:
         # sort implemented as quicksort, 30% faster but with worst case: O(n^2)
-        perm = range(n)
+        perm = list(range(n))
         perm.sort(key=lambda a: (x[a], y[a]))
 
     # compute joint ties
@@ -3308,7 +3313,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
     (0.131016895759829, 0.058826222555312224)
 
     """
-    if isinstance(rvs, basestring):
+    if isinstance(rvs, string_types):
         #cdf = getattr(stats, rvs).cdf
         if (not cdf) or (cdf == rvs):
             cdf = getattr(distributions, rvs).cdf
@@ -3316,7 +3321,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
         else:
             raise AttributeError('if rvs is string, cdf has to be the same distribution')
 
-    if isinstance(cdf, basestring):
+    if isinstance(cdf, string_types):
         cdf = getattr(distributions, cdf).cdf
     if callable(rvs):
         kwds = {'size':N}
@@ -3625,11 +3630,11 @@ def kruskal(*args):
     .. [1] http://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
 
     """
-    args = map(np.asarray, args) # convert to a numpy array
+    args = list(map(np.asarray, args)) # convert to a numpy array
     na = len(args)               # Kruskal-Wallis on 'na' groups, each in it's own array
     if na < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
-    n = np.asarray(map(len, args))
+    n = np.asarray(list(map(len, args)))
 
     alldata = np.concatenate(args)
 
@@ -3692,11 +3697,11 @@ def friedmanchisquare(*args):
         raise ValueError('\nLess than 3 levels.  Friedman test not appropriate.\n')
     n = len(args[0])
     for i in range(1,k):
-        if len(args[i]) <> n:
+        if len(args[i]) != n:
             raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
 
     # Rank data
-    data = apply(_support.abut,args)
+    data = _support.abut(*args)
     data = data.astype(float)
     for i in range(len(data)):
         data[i] = rankdata(data[i])

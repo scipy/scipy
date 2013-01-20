@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import csv
 
 import numpy as np
@@ -8,7 +10,7 @@ def parse_txt_data(filename):
         reader = csv.reader(f, delimiter=',')
         data = []
         for row in reader:
-            data.append(map(float, row))
+            data.append(list(map(float, row)))
         nc = len(data[0])
         for i in data:
             if not nc == len(i):
@@ -60,5 +62,5 @@ if __name__ == '__main__':
     for root, dirs, files in os.walk(DATA_DIR):
         for f in files:
             name = os.path.join(root, f)
-            print name
+            print(name)
             data.append(parse_txt_data(name))

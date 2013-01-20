@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 __usage__ = """
 To run tests locally:
   python tests/test_arpack.py [-l<int>] [-v<int>]
@@ -362,7 +364,7 @@ def test_symmetric_modes():
         for typ in 'fd':
             for which in params.which:
                 for mattype in params.mattypes:
-                    for (sigma, modes) in params.sigmas_modes.iteritems():
+                    for (sigma, modes) in params.sigmas_modes.items():
                         for mode in modes:
                             yield  (eval_evec, symmetric, D, typ, k, which,
                                     None, sigma, mattype, None, mode)
@@ -399,7 +401,7 @@ def test_symmetric_no_convergence():
     try:
         w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol)
         raise AssertionError("Spurious no-error exit")
-    except ArpackNoConvergence, err:
+    except ArpackNoConvergence as err:
         k = len(err.eigenvalues)
         if k <= 0:
             raise AssertionError("Spurious no-eigenvalues-found case")
@@ -415,7 +417,7 @@ def test_real_nonsymmetric_modes():
         for typ in 'fd':
             for which in params.which:
                 for mattype in params.mattypes:
-                    for sigma, OPparts in params.sigmas_OPparts.iteritems():
+                    for sigma, OPparts in params.sigmas_OPparts.items():
                         for OPpart in OPparts:
                             yield (eval_evec, symmetric, D, typ, k, which,
                                    None, sigma, mattype, OPpart)
@@ -467,7 +469,7 @@ def test_standard_nonsymmetric_no_convergence():
     try:
         w, v = eigs(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol)
         raise AssertionError("Spurious no-error exit")
-    except ArpackNoConvergence, err:
+    except ArpackNoConvergence as err:
         k = len(err.eigenvalues)
         if k <= 0:
             raise AssertionError("Spurious no-eigenvalues-found case")

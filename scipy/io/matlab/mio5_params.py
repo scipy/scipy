@@ -4,10 +4,11 @@ See also mio5_utils.pyx where these same constants arise as c enums.
 
 If you make changes in this file, don't forget to change mio5_utils.pyx
 '''
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from miobase import convert_dtypes
+from .miobase import convert_dtypes
 
 miINT8 = 1
 miUINT8 = 2

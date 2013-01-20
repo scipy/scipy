@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq']
 
 from numpy import arange

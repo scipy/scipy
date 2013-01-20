@@ -1,6 +1,8 @@
 """
 This module is deprecated -- use scipy.linalg.blas instead
 """
+from __future__ import division, print_function, absolute_import
+
 try:
     from _cblas import *
 except ImportError:

@@ -55,6 +55,8 @@ for the user.
 
 """
 
+from __future__ import division, print_function, absolute_import
+
 #---------------------------------------------------------------------------------
 # Ufunc listing
 #---------------------------------------------------------------------------------
@@ -342,7 +344,7 @@ import subprocess
 import optparse
 import re
 import textwrap
-import add_newdocs
+from . import add_newdocs
 
 CY_TYPES = {
     'f': 'float',
@@ -380,7 +382,7 @@ TYPE_NAMES = {
 }
 
 def cast_order(c):
-    return map(lambda x: 'ilfdgFDG'.index(x), c)
+    return ['ilfdgFDG'.index(x) for x in c]
 
 # These downcasts will cause the function to return NaNs, unless the
 # values happen to coincide exactly.
@@ -608,13 +610,13 @@ class Ufunc(object):
     def _parse_signature(self, sig):
         m = re.match("\s*(.*):\s*([fdgFDGil]*)\s*\\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
         if m:
-            func, inarg, outarg, ret = map(lambda x: x.strip(), m.groups())
+            func, inarg, outarg, ret = [x.strip() for x in m.groups()]
             if ret.count('*') > 1:
                 raise ValueError("%s: Invalid signature: %r" % (self.name, sig))
             return (func, inarg, outarg, ret)
         m = re.match("\s*(.*):\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
         if m:
-            func, inarg, ret = map(lambda x: x.strip(), m.groups())
+            func, inarg, ret = [x.strip() for x in m.groups()]
             return (func, inarg, "", ret)
         raise ValueError("%s: Invalid signature: %r" % (self.name, sig))
 
@@ -800,7 +802,7 @@ def generate(filename, ufunc_str, extra_code):
                 defs_h.append("#include \"%s\"" % header)
                 defs_h.append("%s;" % (c_proto.replace('(*)', c_name)))
 
-    toplevel = "\n".join(all_loops.values() + [defs, toplevel])
+    toplevel = "\n".join(list(all_loops.values()) + [defs, toplevel])
 
     f = open(filename, 'wb')
     f.write("""\

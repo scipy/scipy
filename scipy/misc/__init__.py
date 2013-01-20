@@ -37,10 +37,12 @@ systems that don't have PIL installed.
    who - Print the Numpy arrays in the given dictionary
 """
 
+from __future__ import division, print_function, absolute_import
+
 __all__ = ['who', 'source', 'info', 'doccer']
 
-import doccer
-from common import *
+from . import doccer
+from .common import *
 from numpy import who, source, info as _info
 
 import sys
@@ -50,14 +52,14 @@ info.__doc__ = _info.__doc__
 del sys
 
 try:
-    from pilutil import *
-    import pilutil
+    from .pilutil import *
+    from . import pilutil
     __all__ += pilutil.__all__
     del pilutil
 except ImportError:
     pass
 
-import common
+from . import common
 __all__ += common.__all__
 del common
 

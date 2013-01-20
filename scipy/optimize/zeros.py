@@ -1,7 +1,8 @@
+from __future__ import division, print_function, absolute_import
 
 import warnings
 
-import _zeros
+from . import _zeros
 from numpy import finfo, sign, sqrt
 
 _iter = 100

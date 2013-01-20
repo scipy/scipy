@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 
 from numpy import array, ones_like
 from numpy.testing import assert_array_almost_equal, assert_array_equal

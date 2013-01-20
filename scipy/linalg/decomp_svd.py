@@ -1,12 +1,13 @@
 """SVD decomposition functions."""
+from __future__ import division, print_function, absolute_import
 
 import numpy
 from numpy import asarray_chkfinite, asarray, zeros, r_, diag
 from scipy.linalg import calc_lwork
 
 # Local imports.
-from misc import LinAlgError, _datacopied
-from lapack import get_lapack_funcs
+from .misc import LinAlgError, _datacopied
+from .lapack import get_lapack_funcs
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth']
 

@@ -1,3 +1,4 @@
+from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_almost_equal, assert_array_equal, \
         TestCase, run_module_suite
@@ -5,6 +6,7 @@ from scipy.interpolate import KroghInterpolator, krogh_interpolate, \
         BarycentricInterpolator, barycentric_interpolate, \
         PiecewisePolynomial, piecewise_polynomial_interpolate, \
         approximate_taylor_polynomial
+from scipy.lib.six.moves import xrange
 import scipy
 import numpy as np
 from scipy.interpolate import splrep, splev

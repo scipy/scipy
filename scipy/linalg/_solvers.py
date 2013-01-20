@@ -3,13 +3,15 @@
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # February 24, 2012
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.linalg import inv, LinAlgError
 
-from basic import solve
-from lapack import get_lapack_funcs
-from decomp_schur import schur
-from special_matrices import kron
+from .basic import solve
+from .lapack import get_lapack_funcs
+from .decomp_schur import schur
+from .special_matrices import kron
 
 __all__ = ['solve_sylvester', 'solve_lyapunov', 'solve_discrete_lyapunov',
            'solve_continuous_are', 'solve_discrete_are']

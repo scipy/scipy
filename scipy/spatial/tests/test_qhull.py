@@ -1,10 +1,12 @@
+from __future__ import division, print_function, absolute_import
+
 import os
 import sys
 
 import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, run_module_suite,\
      assert_, dec, assert_allclose, assert_array_equal, assert_raises
-from numpy.compat import asbytes
+from scipy.lib.six.moves import xrange
 
 import copy
 import scipy.spatial.qhull as qhull
@@ -21,9 +23,9 @@ def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
         a = a.tolist()
     if isinstance(b, np.ndarray):
         b = b.tolist()
-    a = map(tpl, a)
+    a = list(map(tpl, a))
     a.sort()
-    b = map(tpl, b)
+    b = list(map(tpl, b))
     b.sort()
     assert_equal(a, b)
 
@@ -77,14 +79,14 @@ class Test_Qhull(object):
     def test_swapping(self):
         # Check that Qhull state swapping works
 
-        x = qhull._Qhull(asbytes('v'),
+        x = qhull._Qhull(b'v',
                          np.array([[0,0],[0,1],[1,0],[1,1.],[0.5,0.5]]),
-                         asbytes('Qz'))
+                         b'Qz')
         xd = copy.deepcopy(x.get_voronoi_diagram())
         
-        y = qhull._Qhull(asbytes('v'),
+        y = qhull._Qhull(b'v',
                          np.array([[0,0],[0,1],[1,0],[1,2.]]),
-                         asbytes('Qz'))
+                         b'Qz')
         yd = copy.deepcopy(y.get_voronoi_diagram())
 
         xd2 = copy.deepcopy(x.get_voronoi_diagram())
@@ -259,7 +261,7 @@ class TestUtilities(object):
         for ndim in xrange(2, 6):
             # Generate an uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
-            grid = np.c_[map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim))))].T
+            grid = np.c_[list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))].T
 
             err_msg = "ndim=%d" % ndim
 
@@ -655,10 +657,9 @@ class TestVoronoi:
         """Compare to output from 'qvoronoi o Fv < data' to Voronoi()"""
 
         # Parse output
-        output = map(lambda x: map(float, x.split()),
-                     output.strip().splitlines())
+        output = [list(map(float, x.split())) for x in output.strip().splitlines()]
         nvertex = int(output[1][0])
-        vertices = map(tuple, output[3:2+nvertex]) # exclude inf
+        vertices = list(map(tuple, output[3:2+nvertex])) # exclude inf
         nregion = int(output[1][1])
         regions = [[int(y)-1 for y in x[1:]]
                    for x in output[2+nvertex:2+nvertex+nregion]]
@@ -678,9 +679,9 @@ class TestVoronoi:
         assert_equal(set(map(tuple, vor.regions)),
                      set(map(tuple, regions)))
 
-        p1 = zip(map(sorttuple, ridge_points), map(sorttuple, ridge_vertices))
-        p2 = zip(map(sorttuple, vor.ridge_points.tolist()),
-                 map(sorttuple, vor.ridge_vertices))
+        p1 = list(zip(list(map(sorttuple, ridge_points)), list(map(sorttuple, ridge_vertices))))
+        p2 = list(zip(list(map(sorttuple, vor.ridge_points.tolist())),
+                 list(map(sorttuple, vor.ridge_vertices))))
         p1.sort()
         p2.sort()
 

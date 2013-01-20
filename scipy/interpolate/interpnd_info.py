@@ -3,6 +3,8 @@ Here we perform some symbolic computations required for the N-D
 interpolation routines in `interpnd.pyx`.
 
 """
+from __future__ import division, print_function, absolute_import
+
 from sympy import *
 
 def _estimate_gradients_2d_global():
@@ -28,9 +30,9 @@ def _estimate_gradients_2d_global():
     B = Matrix([[intwpp2.coeff(df1).subs(df2, 0)],
                 [intwpp2.coeff(df2).subs(df1, 0)]]) / 2
 
-    print "A"
-    print A
-    print "B"
-    print B
-    print "solution"
-    print A.inv() * B
+    print("A")
+    print(A)
+    print("B")
+    print(B)
+    print("solution")
+    print(A.inv() * B)

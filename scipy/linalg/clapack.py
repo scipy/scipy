@@ -1,6 +1,8 @@
 """
 This module is deprecated -- use scipy.linalg.lapack instead
 """
+from __future__ import division, print_function, absolute_import
+
 try:
     from _clapack import *
 except ImportError:

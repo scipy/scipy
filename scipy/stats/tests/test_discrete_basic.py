@@ -1,6 +1,9 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy.testing as npt
 import numpy as np
 import nose
+from scipy.lib.six.moves import xrange
 
 from scipy import stats
 
@@ -134,7 +137,7 @@ def check_ppf_ppf(distfn, arg):
 
 def check_pmf_cdf(distfn, arg, msg):
     startind = np.int(distfn._ppf(0.01,*arg)-1)
-    index = range(startind,startind+10)
+    index = list(range(startind,startind+10))
     cdfs = distfn.cdf(index,*arg)
     npt.assert_almost_equal(cdfs, distfn.pmf(index, *arg).cumsum() + \
                             cdfs[0] - distfn.pmf(index[0],*arg),

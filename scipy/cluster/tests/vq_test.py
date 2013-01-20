@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from scipy.cluster import vq
 
@@ -28,7 +30,7 @@ def read_data(name):
     f = open(name,'r')
     data = []
     for line in f.readlines():
-        data.append(map(float,string.split(line)))
+        data.append(list(map(float,string.split(line))))
     f.close()
     return array(data)
 

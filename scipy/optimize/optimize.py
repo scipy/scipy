@@ -13,6 +13,9 @@
 #  Finished line search satisfying strong Wolfe conditions (Mar. 2004)
 #  Updated strong Wolfe conditions line search to use cubic-interpolation (Mar. 2004)
 
+from __future__ import division, print_function, absolute_import
+
+
 # Minimization routines
 
 __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',
@@ -25,9 +28,10 @@ __docformat__ = "restructuredtext en"
 
 import warnings
 import numpy
+from scipy.lib.six import callable
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
      squeeze, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
-from linesearch import \
+from .linesearch import \
      line_search_BFGS, line_search_wolfe1, line_search_wolfe2, \
      line_search_wolfe2 as line_search
 
@@ -104,9 +108,9 @@ class Result(dict):
 
     def __repr__(self):
         if self.keys():
-            m = max(map(len, self.keys())) + 1
+            m = max(map(len, list(self.keys()))) + 1
             return '\n'.join([k.rjust(m) + ': ' + repr(v)
-                              for k, v in self.iteritems()])
+                              for k, v in self.items()])
         else:
             return self.__class__.__name__ + "()"
 
@@ -142,9 +146,10 @@ def is_array_scalar(x):
     return len(atleast_1d(x) == 1)
 
 abs = absolute
-import __builtin__
-pymin = __builtin__.min
-pymax = __builtin__.max
+
+from scipy.lib.six.moves import builtins
+pymin = builtins.min
+pymax = builtins.max
 __version__ = "0.7"
 _epsilon = sqrt(numpy.finfo(float).eps)
 
@@ -411,7 +416,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     chi = 2
     psi = 0.5
     sigma = 0.5
-    one2np1 = range(1, N + 1)
+    one2np1 = list(range(1, N + 1))
 
     if rank == 0:
         sim = numpy.zeros((N + 1,), dtype=x0.dtype)
@@ -510,19 +515,19 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         warnflag = 1
         msg = _status_message['maxfev']
         if disp:
-            print 'Warning: ' + msg
+            print('Warning: ' + msg)
     elif iterations >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
         if disp:
-            print 'Warning: ' + msg
+            print('Warning: ' + msg)
     else:
         msg = _status_message['success']
         if disp:
-            print msg
-            print "         Current function value: %f" % fval
-            print "         Iterations: %d" % iterations
-            print "         Function evaluations: %d" % fcalls[0]
+            print(msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % iterations)
+            print("         Function evaluations: %d" % fcalls[0])
 
 
     result = Result(fun=fval, nit=iterations, nfev=fcalls[0],
@@ -828,10 +833,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             rhok = 1.0 / (numpy.dot(yk, sk))
         except ZeroDivisionError:
             rhok = 1000.0
-            print "Divide-by-zero encountered: rhok assumed large"
+            print("Divide-by-zero encountered: rhok assumed large")
         if isinf(rhok):  #this is patch for numpy
             rhok = 1000.0
-            print "Divide-by-zero encountered: rhok assumed large"
+            print("Divide-by-zero encountered: rhok assumed large")
         A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :] * rhok
         A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :] * rhok
         Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + rhok * sk[:, numpy.newaxis] \
@@ -841,29 +846,29 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if warnflag == 2:
         msg = _status_message['pr_loss']
         if disp:
-            print "Warning: " + msg
-            print "         Current function value: %f" % fval
-            print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls[0]
-            print "         Gradient evaluations: %d" % grad_calls[0]
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % func_calls[0])
+            print("         Gradient evaluations: %d" % grad_calls[0])
 
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
         if disp:
-            print "Warning: " + msg
-            print "         Current function value: %f" % fval
-            print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls[0]
-            print "         Gradient evaluations: %d" % grad_calls[0]
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % func_calls[0])
+            print("         Gradient evaluations: %d" % grad_calls[0])
     else:
         msg = _status_message['success']
         if disp:
-            print msg
-            print "         Current function value: %f" % fval
-            print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls[0]
-            print "         Gradient evaluations: %d" % grad_calls[0]
+            print(msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % func_calls[0])
+            print("         Gradient evaluations: %d" % grad_calls[0])
 
     result = Result(fun=fval, jac=gfk, hess=Hk, nfev=func_calls[0],
                     njev=grad_calls[0], status=warnflag,
@@ -1050,29 +1055,29 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     if warnflag == 2:
         msg = _status_message['pr_loss']
         if disp:
-            print "Warning: " + msg
-            print "         Current function value: %f" % fval
-            print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls[0]
-            print "         Gradient evaluations: %d" % grad_calls[0]
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % func_calls[0])
+            print("         Gradient evaluations: %d" % grad_calls[0])
 
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
         if disp:
-            print "Warning: " + msg
-            print "         Current function value: %f" % fval
-            print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls[0]
-            print "         Gradient evaluations: %d" % grad_calls[0]
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % func_calls[0])
+            print("         Gradient evaluations: %d" % grad_calls[0])
     else:
         msg = _status_message['success']
         if disp:
-            print msg
-            print "         Current function value: %f" % fval
-            print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % func_calls[0]
-            print "         Gradient evaluations: %d" % grad_calls[0]
+            print(msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % func_calls[0])
+            print("         Gradient evaluations: %d" % grad_calls[0])
 
 
     result = Result(fun=fval, jac=gfk, nfev=func_calls[0],
@@ -1308,22 +1313,22 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         warnflag = 1
         msg = _status_message['maxiter']
         if disp:
-            print "Warning: " + msg
-            print "         Current function value: %f" % fval
-            print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % fcalls[0]
-            print "         Gradient evaluations: %d" % gcalls[0]
-            print "         Hessian evaluations: %d" % hcalls
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % fcalls[0])
+            print("         Gradient evaluations: %d" % gcalls[0])
+            print("         Hessian evaluations: %d" % hcalls)
     else:
         warnflag = 0
         msg = _status_message['success']
         if disp:
-            print msg
-            print "         Current function value: %f" % fval
-            print "         Iterations: %d" % k
-            print "         Function evaluations: %d" % fcalls[0]
-            print "         Gradient evaluations: %d" % gcalls[0]
-            print "         Hessian evaluations: %d" % hcalls
+            print(msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % fcalls[0])
+            print("         Gradient evaluations: %d" % gcalls[0])
+            print("         Hessian evaluations: %d" % hcalls)
 
     result = Result(fun=fval, jac=gfk, nfev=fcalls[0], njev=gcalls[0],
                     nhev=hcalls, status=warnflag, success=(warnflag == 0),
@@ -1433,7 +1438,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     if disp > 2:
         print (" ")
         print (header)
-        print "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
+        print("%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,)))
 
 
     while (abs(xf - xm) > (tol2 - 0.5*(b - a))):
@@ -1477,7 +1482,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
         num += 1
         fmin_data = (num, x, fu)
         if disp > 2:
-            print "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
+            print("%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,)))
 
         if fu <= fx:
             if x >= xf:
@@ -2093,7 +2098,7 @@ def _minimize_powell(func, x0, args=(), callback=None,
     fval = squeeze(func(x))
     x1 = x.copy()
     iter = 0;
-    ilist = range(N)
+    ilist = list(range(N))
     while True:
         fx = fval
         bigind = 0
@@ -2137,19 +2142,19 @@ def _minimize_powell(func, x0, args=(), callback=None,
         warnflag = 1
         msg = _status_message['maxfev']
         if disp:
-            print "Warning: " + msg
+            print("Warning: " + msg)
     elif iter >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
         if disp:
-            print "Warning: " + msg
+            print("Warning: " + msg)
     else:
         msg = _status_message['success']
         if disp:
-            print msg
-            print "         Current function value: %f" % fval
-            print "         Iterations: %d" % iter
-            print "         Function evaluations: %d" % fcalls[0]
+            print(msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % iter)
+            print("         Function evaluations: %d" % fcalls[0])
 
     x = squeeze(x)
 
@@ -2164,12 +2169,12 @@ def _minimize_powell(func, x0, args=(), callback=None,
 def _endprint(x, flag, fval, maxfun, xtol, disp):
     if flag == 0:
         if disp > 1:
-            print "\nOptimization terminated successfully;\n" \
+            print("\nOptimization terminated successfully;\n" \
                   "The returned value satisfies the termination criteria\n" \
-                  "(using xtol = ", xtol, ")"
+                  "(using xtol = ", xtol, ")")
     if flag == 1:
-        print "\nMaximum number of function evaluations exceeded --- " \
-              "increase maxfun argument.\n"
+        print("\nMaximum number of function evaluations exceeded --- " \
+              "increase maxfun argument.\n")
     return
 
 
@@ -2257,7 +2262,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
         xmin = vals[0]
         Jmin = vals[1]
         if vals[-1] > 0:
-            print "Warning: Final optimization did not succeed"
+            print("Warning: Final optimization did not succeed")
     if full_output:
         return xmin, Jmin, grid, Jout
     else:
@@ -2788,7 +2793,7 @@ def show_options(solver, method=None):
         doc = [s.strip() for s in doc]
         doc = [s for s in doc if s.lower().startswith(method.lower())]
 
-    print '\n'.join(doc)
+    print('\n'.join(doc))
 
     return
 
@@ -2798,76 +2803,76 @@ def main():
     times = []
     algor = []
     x0 = [0.8, 1.2, 0.7]
-    print "Nelder-Mead Simplex"
-    print "==================="
+    print("Nelder-Mead Simplex")
+    print("===================")
     start = time.time()
     x = fmin(rosen, x0)
-    print x
+    print(x)
     times.append(time.time() - start)
     algor.append('Nelder-Mead Simplex\t')
 
-    print
-    print "Powell Direction Set Method"
-    print "==========================="
+    print()
+    print("Powell Direction Set Method")
+    print("===========================")
     start = time.time()
     x = fmin_powell(rosen, x0)
-    print x
+    print(x)
     times.append(time.time() - start)
     algor.append('Powell Direction Set Method.')
 
-    print
-    print "Nonlinear CG"
-    print "============"
+    print()
+    print("Nonlinear CG")
+    print("============")
     start = time.time()
     x = fmin_cg(rosen, x0, fprime=rosen_der, maxiter=200)
-    print x
+    print(x)
     times.append(time.time() - start)
     algor.append('Nonlinear CG     \t')
 
-    print
-    print "BFGS Quasi-Newton"
-    print "================="
+    print()
+    print("BFGS Quasi-Newton")
+    print("=================")
     start = time.time()
     x = fmin_bfgs(rosen, x0, fprime=rosen_der, maxiter=80)
-    print x
+    print(x)
     times.append(time.time() - start)
     algor.append('BFGS Quasi-Newton\t')
 
-    print
-    print "BFGS approximate gradient"
-    print "========================="
+    print()
+    print("BFGS approximate gradient")
+    print("=========================")
     start = time.time()
     x = fmin_bfgs(rosen, x0, gtol=1e-4, maxiter=100)
-    print x
+    print(x)
     times.append(time.time() - start)
     algor.append('BFGS without gradient\t')
 
 
-    print
-    print "Newton-CG with Hessian product"
-    print "=============================="
+    print()
+    print("Newton-CG with Hessian product")
+    print("==============================")
     start = time.time()
     x = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_prod, maxiter=80)
-    print x
+    print(x)
     times.append(time.time() - start)
     algor.append('Newton-CG with hessian product')
 
 
-    print
-    print "Newton-CG with full Hessian"
-    print "==========================="
+    print()
+    print("Newton-CG with full Hessian")
+    print("===========================")
     start = time.time()
     x = fmin_ncg(rosen, x0, rosen_der, fhess=rosen_hess, maxiter=80)
-    print x
+    print(x)
     times.append(time.time() - start)
     algor.append('Newton-CG with full hessian')
 
-    print
-    print "\nMinimizing the Rosenbrock function of order 3\n"
-    print " Algorithm \t\t\t       Seconds"
-    print "===========\t\t\t      ========="
+    print()
+    print("\nMinimizing the Rosenbrock function of order 3\n")
+    print(" Algorithm \t\t\t       Seconds")
+    print("===========\t\t\t      =========")
     for k in range(len(algor)):
-        print algor[k], "\t -- ", times[k]
+        print(algor[k], "\t -- ", times[k])
 
 if __name__ == "__main__":
     main()

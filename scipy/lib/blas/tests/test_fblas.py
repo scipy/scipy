@@ -6,10 +6,13 @@
 # !! Complex calculations really aren't checked that carefully.
 # !! Only real valued complex numbers are used in tests.
 
+from __future__ import division, print_function, absolute_import
+
 from numpy import zeros, transpose, newaxis, shape, float32, float64, \
                   complex64, complex128, arange, array, common_type, conjugate
 from numpy.testing import assert_equal, assert_array_almost_equal, \
         run_module_suite, TestCase
+from scipy.lib.six.moves import xrange
 from scipy.lib.blas import fblas
 
 #decimal accuracy to require between Python and LAPACK/BLAS calculations

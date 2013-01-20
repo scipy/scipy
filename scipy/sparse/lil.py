@@ -1,6 +1,8 @@
 """LInked List sparse matrix class
 """
 
+from __future__ import division, print_function, absolute_import
+
 __docformat__ = "restructuredtext en"
 
 __all__ = ['lil_matrix','isspmatrix_lil']
@@ -8,12 +10,13 @@ __all__ = ['lil_matrix','isspmatrix_lil']
 from bisect import bisect_left
 
 import numpy as np
+from scipy.lib.six.moves import xrange
 
-from base import spmatrix, isspmatrix
-from sputils import getdtype, isshape, issequence, isscalarlike
+from .base import spmatrix, isspmatrix
+from .sputils import getdtype, isshape, issequence, isscalarlike
 
 from warnings import warn
-from base import SparseEfficiencyWarning
+from .base import SparseEfficiencyWarning
 
 
 class lil_matrix(spmatrix):
@@ -116,7 +119,7 @@ class lil_matrix(spmatrix):
             except TypeError:
                 raise TypeError('unsupported matrix type')
             else:
-                from csr import csr_matrix
+                from .csr import csr_matrix
                 A = csr_matrix(A, dtype=dtype).tolil()
 
                 self.shape = A.shape
@@ -210,7 +213,7 @@ class lil_matrix(spmatrix):
             stop = shape
         else:
             stop = j.stop
-        j = range(start, stop, j.step or 1)
+        j = list(range(start, stop, j.step or 1))
         return j
 
 
@@ -467,7 +470,7 @@ class lil_matrix(spmatrix):
             data.extend(x)
         data = np.asarray(data, dtype=self.dtype)
 
-        from csr import csr_matrix
+        from .csr import csr_matrix
         return csr_matrix((data, indices, indptr), shape=self.shape)
 
     def tocsc(self):

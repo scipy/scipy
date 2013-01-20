@@ -2,6 +2,8 @@
 """Tests for the linalg.isolve.lgmres module
 """
 
+from __future__ import division, print_function, absolute_import
+
 from numpy.testing import TestCase, assert_
 
 from numpy import zeros, array, allclose

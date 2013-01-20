@@ -28,10 +28,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import division, print_function, absolute_import
+
 import math
 import numpy
-import _ni_support
-import _nd_image
+from . import _ni_support
+from . import _nd_image
 
 __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
            'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
@@ -651,7 +653,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
                 coordinates.append(0)
             else:
                 coordinates.append(slice(None, None, None))
-        iter_axes = range(input.ndim)
+        iter_axes = list(range(input.ndim))
         iter_axes.reverse()
         iter_axes.remove(axes[0])
         iter_axes.remove(axes[1])

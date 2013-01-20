@@ -4,20 +4,21 @@
 Need function load / save / roundtrip tests
 
 '''
+from __future__ import division, print_function, absolute_import
+
 import sys
 import os
 from os.path import join as pjoin, dirname
 from glob import glob
-if sys.version_info[0] >= 3:
-    from io import BytesIO
-else:
-    from StringIO import StringIO as BytesIO
+from io import BytesIO
 from tempfile import mkdtemp
 # functools is only available in Python >=2.5
 try:
     from functools import partial
 except ImportError:
     from scipy.io.arff.myfunctools import partial
+
+from scipy.lib.six import u, text_type, string_types
 
 import warnings
 import shutil
@@ -74,7 +75,7 @@ case_table4.append(
     {'name': 'string',
      'classes': {'teststring': 'char'},
      'expected': {'teststring':
-                  array([u'"Do nine men interpret?" "Nine men," I nod.'])},
+                  array([u('"Do nine men interpret?" "Nine men," I nod.')])},
      })
 case_table4.append(
     {'name': 'complex',
@@ -82,8 +83,8 @@ case_table4.append(
      'expected': {'testcomplex': np.cos(theta) + 1j*np.sin(theta)}
      })
 A = np.zeros((3,5))
-A[0] = range(1,6)
-A[:,0] = range(1,4)
+A[0] = list(range(1,6))
+A[:,0] = list(range(1,4))
 case_table4.append(
     {'name': 'matrix',
      'classes': {'testmatrix': 'double'},
@@ -115,7 +116,7 @@ case_table4.append(
 case_table4.append(
     {'name': 'onechar',
      'classes': {'testonechar': 'char'},
-     'expected': {'testonechar': array([u'r'])},
+     'expected': {'testonechar': array([u('r')])},
      })
 # Cell arrays stored as object arrays
 CA = mlarr(( # tuple for object array creation
@@ -124,7 +125,7 @@ CA = mlarr(( # tuple for object array creation
         mlarr([[1,2]]),
         mlarr([[1,2,3]])), dtype=object).reshape(1,-1)
 CA[0,0] = array(
-    [u'This cell contains this string and 3 arrays of increasing length'])
+    [u('This cell contains this string and 3 arrays of increasing length')])
 case_table5 = [
     {'name': 'cell',
      'classes': {'testcell': 'cell'},
@@ -150,18 +151,18 @@ case_table5.append(
     {'name': 'stringarray',
      'classes': {'teststringarray': 'char'},
      'expected': {'teststringarray': array(
-    [u'one  ', u'two  ', u'three'])},
+    [u('one  '), u('two  '), u('three')])},
      })
 case_table5.append(
     {'name': '3dmatrix',
      'classes': {'test3dmatrix': 'double'},
      'expected': {
-    'test3dmatrix': np.transpose(np.reshape(range(1,25), (4,3,2)))}
+    'test3dmatrix': np.transpose(np.reshape(list(range(1,25)), (4,3,2)))}
      })
 st_sub_arr = array([np.sqrt(2),np.exp(1),np.pi]).reshape(1,3)
 dtype = [(n, object) for n in ['stringfield', 'doublefield', 'complexfield']]
 st1 = np.zeros((1,1), dtype)
-st1['stringfield'][0,0] = array([u'Rats live on no evil star.'])
+st1['stringfield'][0,0] = array([u('Rats live on no evil star.')])
 st1['doublefield'][0,0] = st_sub_arr
 st1['complexfield'][0,0] = st_sub_arr * (1 + 1j)
 case_table5.append(
@@ -185,7 +186,7 @@ case_table5.append(
 st2 = np.empty((1,1), dtype=[(n, object) for n in ['one', 'two']])
 st2[0,0]['one'] = mlarr(1)
 st2[0,0]['two'] = np.empty((1,1), dtype=[('three', object)])
-st2[0,0]['two'][0,0]['three'] = array([u'number 3'])
+st2[0,0]['two'][0,0]['three'] = array([u('number 3')])
 case_table5.append(
     {'name': 'structnest',
      'classes': {'teststructnest': 'struct'},
@@ -194,8 +195,8 @@ case_table5.append(
 a = np.empty((1,2), dtype=[(n, object) for n in ['one', 'two']])
 a[0,0]['one'] = mlarr(1)
 a[0,0]['two'] = mlarr(2)
-a[0,1]['one'] = array([u'number 1'])
-a[0,1]['two'] = array([u'number 2'])
+a[0,1]['one'] = array([u('number 1')])
+a[0,1]['two'] = array([u('number 2')])
 case_table5.append(
     {'name': 'structarr',
      'classes': {'teststructarr': 'struct'},
@@ -206,9 +207,9 @@ ODT = np.dtype([(n, object) for n in
                   'isEmpty', 'numArgs', 'version']])
 MO = MatlabObject(np.zeros((1,1), dtype=ODT), 'inline')
 m0 = MO[0,0]
-m0['expr'] = array([u'x'])
-m0['inputExpr'] = array([u' x = INLINE_INPUTS_{1};'])
-m0['args'] = array([u'x'])
+m0['expr'] = array([u('x')])
+m0['inputExpr'] = array([u(' x = INLINE_INPUTS_{1};')])
+m0['args'] = array([u('x')])
 m0['isEmpty'] = mlarr(0)
 m0['numArgs'] = mlarr(1)
 m0['version'] = mlarr(1)
@@ -299,7 +300,7 @@ def _check_level(label, expected, actual):
             _check_level(level_label,
                          expected[fn], actual[fn])
         return
-    if ex_dtype.type in (np.unicode, # string
+    if ex_dtype.type in (text_type, # string
                          np.unicode_):
         assert_equal(actual, expected, err_msg=label)
         return
@@ -678,8 +679,8 @@ def test_skip_variable():
     # Prove that it loads with loadmat
     #
     d = loadmat(filename, struct_as_record=True)
-    yield assert_true, d.has_key('first')
-    yield assert_true, d.has_key('second')
+    yield assert_true, 'first' in d
+    yield assert_true, 'second' in d
     #
     # Make the factory
     #
@@ -688,7 +689,7 @@ def test_skip_variable():
     # This is where the factory breaks with an error in MatMatrixGetter.to_next
     #
     d = factory.get_variables('second')
-    yield assert_true, d.has_key('second')
+    yield assert_true, 'second' in d
     factory.mat_stream.close()
 
 
@@ -894,7 +895,7 @@ def test_scalar_squeeze():
     savemat_future(stream, in_d)
     out_d = loadmat(stream, squeeze_me=True)
     assert_true(isinstance(out_d['scalar'], float))
-    assert_true(isinstance(out_d['string'], basestring))
+    assert_true(isinstance(out_d['string'], string_types))
     assert_true(isinstance(out_d['st'], np.ndarray))
 
 

@@ -5,6 +5,7 @@ native byte order and swapped byte order to explicit numpy endian
 codes - one of '<' (little endian) or '>' (big endian)
 
 '''
+from __future__ import division, print_function, absolute_import
 
 import sys
 

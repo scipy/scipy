@@ -4,10 +4,11 @@ dltisys - Code related to discrete linear time-invariant systems
 
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # April 4, 2011
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.interpolate import interp1d
-from ltisys import tf2ss, zpk2ss
+from .ltisys import tf2ss, zpk2ss
 
 __all__ = ['dlsim', 'dstep', 'dimpulse']
 

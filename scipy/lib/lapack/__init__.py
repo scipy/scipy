@@ -136,12 +136,13 @@ Optimal lwork is maxwrk. Default is minwrk.
 
 """
 
+from __future__ import division, print_function, absolute_import
 
 __all__ = ['get_lapack_funcs','calc_lwork','flapack','clapack']
 
 from numpy import deprecate
 
-import calc_lwork
+from . import calc_lwork
 
 # The following ensures that possibly missing flavor (C or Fortran) is
 # replaced with the available one. If none is available, exception
@@ -152,13 +153,13 @@ def _deprecated():
     pass
 try:
     _deprecated()
-except DeprecationWarning, e:
+except DeprecationWarning as e:
     # don't fail import if DeprecationWarnings raise error -- works around
     # the situation with Numpy's test framework
     pass
 
-import flapack
-import clapack
+from . import flapack
+from . import clapack
 
 _use_force_clapack = 1
 if hasattr(clapack,'empty_module'):
@@ -220,7 +221,7 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
                 func2 = getattr(m2,func_name,None)
                 if func2 is not None:
                     import new
-                    exec _colmajor_func_template % {'func_name':func_name}
+                    exec(_colmajor_func_template % {'func_name':func_name})
                     func = new.function(func_code,{'clapack_func':func2},func_name)
                     func.module_name = m2_name
                     func.__doc__ = func2.__doc__

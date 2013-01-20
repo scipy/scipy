@@ -28,10 +28,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import division, print_function, absolute_import
+
 import math
 import numpy
-import _ni_support
-import _nd_image
+from . import _ni_support
+from . import _nd_image
 from scipy.misc import doccer
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
@@ -269,7 +271,7 @@ def gaussian_filter(input, sigma, order = 0, output = None,
     if not set(orders).issubset(set(range(4))):
         raise ValueError('Order outside 0..4 not implemented')
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
-    axes = range(input.ndim)
+    axes = list(range(input.ndim))
     axes = [(axes[ii], sigmas[ii], orders[ii])
                         for ii in range(len(axes)) if sigmas[ii] > 1e-15]
     if len(axes) > 0:
@@ -354,7 +356,7 @@ def generic_laplace(input, derivative2, output = None, mode = "reflect",
         extra_keywords = {}
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
-    axes = range(input.ndim)
+    axes = list(range(input.ndim))
     if len(axes) > 0:
         derivative2(input, axes[0], output, mode, cval,
                     *extra_arguments, **extra_keywords)
@@ -440,7 +442,7 @@ def generic_gradient_magnitude(input, derivative, output = None,
         extra_keywords = {}
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
-    axes = range(input.ndim)
+    axes = list(range(input.ndim))
     if len(axes) > 0:
         derivative(input, axes[0], output, mode, cval,
                    *extra_arguments, **extra_keywords)
@@ -727,7 +729,7 @@ def uniform_filter(input, size = 3, output = None, mode = "reflect",
     output, return_value = _ni_support._get_output(output, input)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
-    axes = range(input.ndim)
+    axes = list(range(input.ndim))
     axes = [(axes[ii], sizes[ii], origins[ii])
                            for ii in range(len(axes)) if sizes[ii] > 1]
     if len(axes) > 0:
@@ -839,7 +841,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     if separable:
         sizes = _ni_support._normalize_sequence(size, input.ndim)
-        axes = range(input.ndim)
+        axes = list(range(input.ndim))
         axes = [(axes[ii], sizes[ii], origins[ii])
                                for ii in range(len(axes)) if sizes[ii] > 1]
         if minimum:
