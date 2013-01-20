@@ -538,14 +538,19 @@ class rv_generic(object):
             if N == self.numargs + 1 and loc is None:
                 # loc is given without keyword
                 loc = args[-1]
-            if N == self.numargs + 2 and scale is None:
+            elif N == self.numargs + 2 and scale is None:
                 # loc and scale given without keyword
                 loc, scale = args[-2:]
+            else:
+                raise TypeError("Too many input arguments.")
+
             args = args[:self.numargs]
+
         if scale is None:
             scale = 1.0
         if loc is None:
             loc = 0.0
+
         return args, loc, scale
 
     def _fix_loc(self, args, loc):
@@ -1516,19 +1521,26 @@ class rv_continuous(rv_generic):
             if N == self.numargs + 1 and loc is None:
                 # loc is given without keyword
                 loc = args[-1]
-            if N == self.numargs + 2 and scale is None:
+            elif N == self.numargs + 2 and scale is None:
                 # loc and scale given without keyword
                 loc, scale = args[-2:]
-            if N == self.numargs + 3 and moments is None:
+            elif N == self.numargs + 3 and moments is None:
                 # loc, scale, and moments
                 loc, scale, moments = args[-3:]
-            args = args[:self.numargs]
-        if scale is None: scale = 1.0
-        if loc is None: loc = 0.0
-        if moments is None: moments = 'mv'
+            else:
+                raise TypeError("Too many input arguments.")
 
-        loc,scale = map(asarray,(loc,scale))
-        args = tuple(map(asarray,args))
+            args = args[:self.numargs]
+
+        if scale is None:
+            scale = 1.0
+        if loc is None:
+            loc = 0.0
+        if moments is None:
+            moments = 'mv'
+
+        loc, scale = map(asarray, (loc, scale))
+        args = tuple(map(asarray, args))
         cond = self._argcheck(*args) & (scale > 0) & (loc==loc)
 
         signature = inspect.getargspec(get_method_function(self._stats))
@@ -1771,7 +1783,8 @@ class rv_continuous(rv_generic):
         """
         Narg = len(args)
         if Narg > self.numargs:
-            raise ValueError("Too many input arguments.")
+            raise TypeError("Too many input arguments.")
+
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and
                                          'scale' in kwds):
@@ -6136,11 +6149,17 @@ class rv_discrete(rv_generic):
         if N > self.numargs:
             if N == self.numargs + 1 and loc is None:  # loc is given without keyword
                 loc = args[-1]
-            if N == self.numargs + 2 and moments is None: # loc, scale, and moments
+            elif N == self.numargs + 2 and moments is None: # loc, scale, and moments
                 loc, moments = args[-2:]
+            else:
+                raise TypeError("Too many input arguments.")
+
             args = args[:self.numargs]
-        if loc is None: loc = 0.0
-        if moments is None: moments = 'mv'
+
+        if loc is None:
+            loc = 0.0
+        if moments is None:
+            moments = 'mv'
 
         loc = asarray(loc)
         args = tuple(map(asarray,args))
