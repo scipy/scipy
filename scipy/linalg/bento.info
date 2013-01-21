@@ -7,13 +7,13 @@ Library:
             src/fblaswrap.f
     Extension: _cblas
         Sources:
-            generic_cblas.pyf
+            cblas.pyf.src
     Extension: _flapack
         Sources:
             flapack.pyf.src
     Extension: _clapack
         Sources:
-            generic_clapack.pyf
+            clapack.pyf.src
     Extension: _flinalg
         Sources:
             src/det.f, src/lu.f

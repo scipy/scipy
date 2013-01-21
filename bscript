@@ -1,5 +1,4 @@
 import sys
-import os.path as op
 
 from numpy.distutils.misc_util \
     import \
@@ -17,9 +16,6 @@ from bento.backends.waf_backend \
 from bento.backends.waf_tools \
     import \
         blas_lapack
-from bento.installed_package_description \
-    import \
-        InstalledSection
 from bento.commands import hooks
 
 import waflib
@@ -166,8 +162,10 @@ def post_configure(context):
     conf.env.INCLUDES = get_numpy_include_dirs()
 
     blas_lapack.check_blas_lapack(context)
-    if not (conf.env.HAS_FBLAS and conf.env.HAS_FLAPACK):
+    if not (conf.env.HAS_BLAS and conf.env.HAS_LAPACK):
         raise waflib.Errors.ConfigurationError("You need blas and lapack")
+
+    blas_lapack.check_cblas(context)
 
     npymath_info = get_pkg_info("npymath")
     conf.parse_flags(npymath_info.cflags() + " " + npymath_info.libs(), "NPYMATH")

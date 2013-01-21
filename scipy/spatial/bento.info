@@ -23,4 +23,5 @@ Library:
             qhull/src/stat.c,
             qhull/src/user.c,
             qhull/src/usermem.c,
-            qhull/src/userprintf.c
+            qhull/src/userprintf.c,
+            qhull/src/userprintf_rbox.c
