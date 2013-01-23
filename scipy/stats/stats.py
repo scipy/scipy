@@ -2658,7 +2658,7 @@ def pointbiserialr(x, y):
 
     References
     ----------
-    http://www.childrens-mercy.org/stats/definitions/biserial.htm
+    http://en.wikipedia.org/wiki/Point-biserial_correlation_coefficient
 
     Examples
     --------
