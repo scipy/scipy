@@ -176,7 +176,8 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     return x
 
 def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
-    """Cholesky decompose a banded Hermitian positive-definite matrix
+    """
+    Cholesky decompose a banded Hermitian positive-definite matrix
 
     The matrix a is stored in ab either in lower diagonal or upper
     diagonal ordered form:
@@ -198,7 +199,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
 
     Parameters
     ----------
-    ab : array, shape (u + 1, M)
+    ab : (u + 1, M) array_like
         Banded matrix
     overwrite_ab : boolean
         Discard data in ab (may enhance performance)
@@ -211,7 +212,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
 
     Returns
     -------
-    c : array, shape (u+1, M)
+    c : (u + 1, M) ndarray
         Cholesky factorization of a, in the same banded format as ab
 
     """

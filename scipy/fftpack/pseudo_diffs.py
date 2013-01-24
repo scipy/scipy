@@ -34,7 +34,7 @@ def diff(x,order=1,period=None, _cache=_cache):
     Parameters
     ----------
     x : array_like
-
+        Input array.
     order : int, optional
         The order of differentiation. Default order is 1. If order is
         negative, then integration is carried out under the assumption
@@ -249,7 +249,7 @@ def ihilbert(x):
 _cache = {}
 def cs_diff(x, a, b, period=None, _cache=_cache):
     """
-    Return (a,b)-cosh/sinh pseudo-derivative of a periodic sequence x.
+    Return (a,b)-cosh/sinh pseudo-derivative of a periodic sequence.
 
     If ``x_j`` and ``y_j`` are Fourier coefficients of periodic functions x
     and y, respectively, then::
@@ -267,8 +267,15 @@ def cs_diff(x, a, b, period=None, _cache=_cache):
     period : float, optional
         The period of the sequence. Default period is ``2*pi``.
 
-    Notes:
-      For even len(x), the Nyquist mode of x is taken zero.
+    Returns
+    -------
+    cs_diff : ndarray
+        Pseudo-derivative of periodic sequence `x`.
+
+    Notes
+    -----
+    For even len(`x`), the Nyquist mode of `x` is taken as zero.
+
     """
     tmp = asarray(x)
     if iscomplexobj(tmp):
@@ -392,7 +399,7 @@ del _cache
 _cache = {}
 def cc_diff(x, a, b, period=None, _cache=_cache):
     """
-    Return (a,b)-cosh/cosh pseudo-derivative of a periodic sequence x.
+    Return (a,b)-cosh/cosh pseudo-derivative of a periodic sequence.
 
     If x_j and y_j are Fourier coefficients of periodic functions x
     and y, respectively, then::
@@ -403,11 +410,16 @@ def cc_diff(x, a, b, period=None, _cache=_cache):
     ----------
     x : array_like
         The array to take the pseudo-derivative from.
-    a,b
+    a,b : float
         Defines the parameters of the sinh/sinh pseudo-differential
         operator.
     period : float, optional
         The period of the sequence x. Default is ``2*pi``.
+
+    Returns
+    -------
+    cc_diff : ndarray
+        Pseudo-derivative of periodic sequence `x`.
 
     Notes
     -----
