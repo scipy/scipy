@@ -569,7 +569,7 @@ def correlate(input, weights, output = None, mode = 'reflect', cval = 0.0,
 def convolve(input, weights, output = None, mode = 'reflect', cval = 0.0,
              origin = 0):
     """
-    Multi-dimensional convolution.
+    Multidimensional convolution.
 
     The array is convolved with the given kernel.
 
