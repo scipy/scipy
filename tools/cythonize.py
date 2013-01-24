@@ -36,9 +36,7 @@ import os
 import re
 import sys
 import hashlib
-import pickle
 import subprocess
-from subprocess import Popen, PIPE
 
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
@@ -48,25 +46,24 @@ DEFAULT_ROOT = 'scipy'
 #
 def process_pyx(fromfile, tofile):
     try:
-        import Cython
+        from Cython.Compiler.Version import version as cython_version
+        from distutils.version import LooseVersion
+        if LooseVersion(cython_version) < LooseVersion('0.17'):
+            raise Exception('Building SciPy requires Cython >= 0.17')
+
     except ImportError:
-        raise OSError('Cython needs to be installed')
-    from Cython.Compiler.Version import version as cython_version
-    from distutils.version import LooseVersion
+        pass
 
-    HAVE_CYTHON_0p14 = LooseVersion(cython_version) >= LooseVersion('0.14')
-
-    if HAVE_CYTHON_0p14:
-        flags = ['--fast-fail']
-    else:
-        flags = ['']
-
+    flags = ['--fast-fail']
     if tofile.endswith('.cxx'):
         flags += ['--cplus']
 
-    r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile])
-    if r != 0:
-        raise Exception('Cython failed')
+    try:
+        r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile])
+        if r != 0:
+            raise Exception('Cython failed')
+    except OSError:
+        raise OSError('Cython needs to be installed')
 
 def process_tempita_pyx(fromfile, tofile):
     import tempita
