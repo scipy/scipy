@@ -95,21 +95,24 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     Parameters
     ----------
     func : callable ``func(x, *args)``
-        Function to minimize.  Must do one of
-        1. Return f and g, where f is
-        the value of the function and g its gradient (a list of
-        floats).
+        Function to minimize.  Must do one of:
+
+        1. Return f and g, where f is the value of the function and g its
+           gradient (a list of floats).
+
         2. Return the function value but supply gradient function
-        seperately as fprime
-        3. Return the function value and set approx_grad=True.
+           seperately as `fprime`.
+
+        3. Return the function value and set ``approx_grad=True``.
+
         If the function returns None, the minimization
         is aborted.
     x0 : list of floats
         Initial estimate of minimum.
     fprime : callable ``fprime(x, *args)``
-        Gradient of func. If None, then either func must return the
+        Gradient of `func`. If None, then either `func` must return the
         function value and the gradient (``f,g = func(x, *args)``)
-        or approx_grad must be True.
+        or `approx_grad` must be True.
     args : tuple
         Arguments to pass to function.
     approx_grad : bool
@@ -185,7 +188,6 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     rc : int
         Return code as defined in the RCSTRINGS dict.
 
-
     See also
     --------
     minimize: Interface to minimization algorithms for multivariate
@@ -199,7 +201,6 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
     1. It wraps a C implementation of the algorithm
     2. It allows each variable to be given an upper and lower bound.
-
 
     The algorithm incoporates the bound constraints by determining
     the descent direction as in an unconstrained truncated Newton,
@@ -217,14 +218,12 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     associated with the variable of largest index whose
     constraint is no longer active.
 
-
     References
     ----------
     Wright S., Nocedal J. (2006), 'Numerical Optimization'
 
     Nash S.G. (1984), "Newton-Type Minimization Via the Lanczos Method",
     SIAM Journal of Numerical Analysis 21, pp. 770-778
-
 
     """
     # handle fprime/approx_grad

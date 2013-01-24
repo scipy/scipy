@@ -157,7 +157,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
            T0=None, Tf=1e-12, maxeval=None, maxaccept=None, maxiter=400,
            boltzmann=1.0, learn_rate=0.5, feps=1e-6, quench=1.0, m=1.0, n=1.0,
            lower=-100, upper=100, dwell=50, disp=True):
-    """Minimize a function using simulated annealing.
+    """
+    Minimize a function using simulated annealing.
 
     Schedule is a schedule class implementing the annealing schedule.
     Available ones are 'fast', 'cauchy', 'boltzmann'
@@ -217,14 +218,19 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     accept : int
         Number of tests accepted.
     retval : int
-        Flag indicating stopping condition::
+        Flag indicating stopping condition:
 
-                0 : Points no longer changing
-                1 : Cooled to final temperature
-                2 : Maximum function evaluations
-                3 : Maximum cooling iterations reached
-                4 : Maximum accepted query locations reached
-                5 : Final point not the minimum amongst encountered points
+            0 : Points no longer changing
+
+            1 : Cooled to final temperature
+
+            2 : Maximum function evaluations
+
+            3 : Maximum cooling iterations reached
+
+            4 : Maximum accepted query locations reached
+
+            5 : Final point not the minimum amongst encountered points
 
     See also
     --------
