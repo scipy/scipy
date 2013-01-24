@@ -200,12 +200,11 @@ def factorialk(n,k,exact=1):
     n(!!...!)  = multifactorial of order k
     k times
 
-
     Parameters
     ----------
     n : int, array_like
         Calculate multifactorial. Arrays are only supported with exact
-        set to False. If n < 0, the return value is 0.
+        set to False. If `n` < 0, the return value is 0.
     exact : bool, optional
         If exact is set to True, calculate the answer exactly using
         integer arithmetic.
@@ -213,7 +212,7 @@ def factorialk(n,k,exact=1):
     Returns
     -------
     val : int
-        Multi factorial of n.
+        Multi factorial of `n`.
 
     Raises
     ------
@@ -244,21 +243,22 @@ def factorialk(n,k,exact=1):
 def comb(N,k,exact=0):
     """
     The number of combinations of N things taken k at a time.
+
     This is often expressed as "N choose k".
 
     Parameters
     ----------
-    N : int, array
+    N : int, ndarray
         Number of things.
-    k : int, array
+    k : int, ndarray
         Number of elements taken.
     exact : int, optional
-        If exact is 0, then floating point precision is used, otherwise
+        If `exact` is 0, then floating point precision is used, otherwise
         exact long integer is computed.
 
     Returns
     -------
-    val : int, array
+    val : int, ndarray
         The total number of combinations.
 
     Notes
@@ -295,11 +295,19 @@ def comb(N,k,exact=0):
 
 def central_diff_weights(Np, ndiv=1):
     """
-    Return weights for an Np-point central derivative of order ndiv
-    assuming equally-spaced function points.
+    Return weights for an Np-point central derivative.
+
+    Assumes equally-spaced function points.
 
     If weights are in the vector w, then
     derivative is w[0] * f(x-ho*dx) + ... + w[-1] * f(x+h0*dx)
+
+    Parameters
+    ----------
+    Np : int
+        Number of points for the central derivative.
+    ndiv : int, optional
+        Number of divisions.  Default is 1.
 
     Notes
     -----
@@ -322,17 +330,17 @@ def central_diff_weights(Np, ndiv=1):
 
 def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     """
-    Find the n-th derivative of a function at point x0.
+    Find the n-th derivative of a function at a point.
 
     Given a function, use a central difference formula with spacing `dx` to
-    compute the n-th derivative at `x0`.
+    compute the `n`-th derivative at `x0`.
 
     Parameters
     ----------
     func : function
         Input function.
     x0 : float
-        The point at which nth derivative is found.
+        The point at which `n`-th derivative is found.
     dx : int, optional
         Spacing.
     n : int, optional
@@ -393,8 +401,39 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     return val / product((dx,)*n,axis=0)
 
 def pade(an, m):
-    """Given Taylor series coefficients in an, return a Pade approximation to
-    the function as the ratio of two polynomials p / q  where the order of q is m.
+    """
+    Return Pade approximation to a polynomial as the ratio of two polynomials.
+
+    Parameters
+    ----------
+    an : (N,) array_like
+        Taylor series coefficients.
+    m : int
+        The order of the returned approximating polynomials.
+
+    Returns
+    -------
+    p, q : Polynomial class
+        The pade approximation of the polynomial defined by `an` is
+        `p(x)/q(x)`.
+
+    Examples
+    --------
+    >>> from scipy import misc
+    >>> e_exp = [1.0, 1.0, 1.0/2.0, 1.0/6.0, 1.0/24.0, 1.0/120.0]
+    >>> p, q = misc.pade(e_exp, 2)
+
+    >>> e_exp.reverse()
+    >>> e_poly = np.poly1d(e_exp)
+
+    Compare ``e_poly(x)`` and the pade approximation ``p(x)/q(x)``
+
+    >>> e_poly(1)
+    2.7166666666666668
+
+    >>> p(1)/q(1)
+    2.7179487179487181
+
     """
     from scipy import linalg
     an = asarray(an)
