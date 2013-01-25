@@ -1398,8 +1398,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
 
 def buttap(N):
     """Return (z,p,k) zero, pole, gain for analog prototype of an Nth
-    order Butterworth filter."""
-    z = []
+    order Butterworth filter.
+    
+    """
+    z = array([])
     n = numpy.arange(1, N + 1)
     p = numpy.exp(1j * (2 * n - 1) / (2.0 * N) * pi) * 1j
     k = 1
@@ -1409,8 +1411,9 @@ def buttap(N):
 def cheb1ap(N, rp):
     """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type I lowpass
     analog filter prototype with `rp` decibels of ripple in the passband.
+
     """
-    z = []
+    z = array([])
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
     n = numpy.arange(1, N + 1)
     mu = 1.0 / N * numpy.log((1.0 + numpy.sqrt(1 + eps * eps)) / eps)
@@ -1426,6 +1429,7 @@ def cheb1ap(N, rp):
 def cheb2ap(N, rs):
     """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type II lowpass
     analog filter prototype with `rs` decibels of ripple in the stopband.
+
     """
     de = 1.0 / sqrt(10 ** (0.1 * rs) - 1)
     mu = arcsinh(1.0 / de) / N
@@ -1486,7 +1490,7 @@ def ellipap(N, rp, rs):
         p = -sqrt(1.0 / (10 ** (0.1 * rp) - 1.0))
         k = -p
         z = []
-        return z, p, k
+        return asarray(z), asarray(p), k
 
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1)
     ck1 = eps / numpy.sqrt(10 ** (0.1 * rs) - 1)
@@ -1546,7 +1550,9 @@ def ellipap(N, rp, rs):
 
 def besselap(N):
     """Return (z,p,k) zero, pole, gain for analog prototype of an Nth order
-    Bessel filter."""
+    Bessel filter.
+    
+    """
     z = []
     k = 1
     if N == 0:
@@ -1904,7 +1910,7 @@ def besselap(N):
     else:
         raise ValueError("Bessel Filter not supported for order %d" % N)
 
-    return z, p, k
+    return asarray(z), asarray(p), k
 
 filter_dict = {'butter': [buttap, buttord],
                'butterworth': [buttap, buttord],
