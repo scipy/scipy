@@ -20,7 +20,8 @@ include 'parameters.pxi'
 def connected_components(csgraph, directed=True, connection='weak',
                          return_labels=True):
     """
-    connected_components(csgraph, directed=True, connection='weak', return_labels=True)
+    connected_components(csgraph, directed=True, connection='weak',
+                         return_labels=True)
 
     Analyze the connected components of a sparse graph
 
@@ -28,28 +29,28 @@ def connected_components(csgraph, directed=True, connection='weak',
 
     Parameters
     ----------
-    csgraph: array_like or sparse matrix
+    csgraph : array_like or sparse matrix
         The N x N matrix representing the compressed sparse graph.  The input
         csgraph will be converted to csr format for the calculation.
-    directed: bool, optional
-        if True (default), then operate on a directed graph: only
+    directed : bool, optional
+        If True (default), then operate on a directed graph: only
         move from point i to point j along paths csgraph[i, j].
-        if False, then find the shortest path on an undirected graph: the
+        If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i].
-    connection: string, optional
+    connection : str, optional
         ['weak'|'strong'].  For directed graphs, the type of connection to
         use.  Nodes i and j are strongly connected if a path exists both
         from i to j and from j to i.  Nodes i and j are weakly connected if
         only one of these paths exists.  If directed == False, this keyword
         is not referenced.
-    return_labels: string, optional
-        if True (default), then return the labels for each of the connected
+    return_labels : str, optional
+        If True (default), then return the labels for each of the connected
         components.
 
     Returns
     -------
-    n_components: integer
+    n_components: int
         The number of connected components.
     labels: ndarray
         The length-N array of labels of the connected components.
@@ -97,15 +98,15 @@ def breadth_first_tree(csgraph, i_start, directed=True):
 
     Parameters
     ----------
-    csgraph: array_like or sparse matrix
+    csgraph : array_like or sparse matrix
         The N x N matrix representing the compressed sparse graph.  The input
         csgraph will be converted to csr format for the calculation.
-    i_start: int
+    i_start : int
         The index of starting node.
-    directed: bool, optional
-        if True (default), then operate on a directed graph: only
+    directed : bool, optional
+        If True (default), then operate on a directed graph: only
         move from point i to point j along paths csgraph[i, j].
-        if False, then find the shortest path on an undirected graph: the
+        If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i].
 
@@ -168,15 +169,15 @@ def depth_first_tree(csgraph, i_start, directed=True):
 
     Parameters
     ----------
-    csgraph: array_like or sparse matrix
+    csgraph : array_like or sparse matrix
         The N x N matrix representing the compressed sparse graph.  The input
         csgraph will be converted to csr format for the calculation.
-    i_start: int
+    i_start : int
         The index of starting node.
-    directed: bool, optional
-        if True (default), then operate on a directed graph: only
+    directed : bool, optional
+        If True (default), then operate on a directed graph: only
         move from point i to point j along paths csgraph[i, j].
-        if False, then find the shortest path on an undirected graph: the
+        If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i].
 
@@ -243,27 +244,27 @@ def breadth_first_order(csgraph, i_start,
 
     Parameters
     ----------
-    csgraph: array_like or sparse matrix
+    csgraph : array_like or sparse matrix
         The N x N compressed sparse graph.  The input csgraph will be
         converted to csr format for the calculation.
-    i_start: int
+    i_start : int
         The index of starting node.
-    directed: bool, optional
+    directed : bool, optional
         If True (default), then operate on a directed graph: only
         move from point i to point j along paths csgraph[i, j].
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i].
-    return_predecessors: bool, optional
+    return_predecessors : bool, optional
         If True (default), then return the predecesor array (see below).
 
     Returns
     -------
-    node_array: ndarray, one dimension
+    node_array : ndarray, one dimension
         The breadth-first list of nodes, starting with specified node.  The
         length of node_array is the number of nodes reachable from the
         specified node.
-    predecessors: ndarray, one dimension
+    predecessors : ndarray, one dimension
         Returned only if return_predecessors is True.
         The length-N list of predecessors of each node in a breadth-first
         tree.  If node i is in the tree, then its parent is given by
@@ -408,27 +409,27 @@ def depth_first_order(csgraph, i_start,
 
     Parameters
     ----------
-    csgraph: array_like or sparse matrix
+    csgraph : array_like or sparse matrix
         The N x N compressed sparse graph.  The input csgraph will be
         converted to csr format for the calculation.
-    i_start: int
+    i_start : int
         The index of starting node.
-    directed: bool, optional
+    directed : bool, optional
         If True (default), then operate on a directed graph: only
         move from point i to point j along paths csgraph[i, j].
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i].
-    return_predecessors: bool, optional
+    return_predecessors : bool, optional
         If True (default), then return the predecesor array (see below).
 
     Returns
     -------
-    node_array: ndarray, one dimension
+    node_array : ndarray, one dimension
         The breadth-first list of nodes, starting with specified node.  The
         length of node_array is the number of nodes reachable from the
         specified node.
-    predecessors: ndarray, one dimension
+    predecessors : ndarray, one dimension
         Returned only if return_predecessors is True.
         The length-N list of predecessors of each node in a breadth-first
         tree.  If node i is in the tree, then its parent is given by
