@@ -14,18 +14,18 @@ __all__ = ['minkowski_distance_p', 'minkowski_distance',
 
 def minkowski_distance_p(x, y, p=2):
     """
-    Compute the p-th power of the L**p distance between x and y.
+    Compute the p-th power of the L**p distance between two arrays.
 
     For efficiency, this function computes the L**p distance but does
-    not extract the pth root. If p is 1 or infinity, this is equal to
+    not extract the pth root. If `p` is 1 or infinity, this is equal to
     the actual L**p distance.
 
     Parameters
     ----------
-    x : array_like, M by K
-
-    y : array_like, N by K
-
+    x : (M, K) array_like
+        Input array.
+    y : (N, K) array_like
+        Input array.
     p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
 
@@ -46,14 +46,14 @@ def minkowski_distance_p(x, y, p=2):
 
 def minkowski_distance(x, y, p=2):
     """
-    Compute the L**p distance between x and y.
+    Compute the L**p distance between two arrays.
 
     Parameters
     ----------
-    x : array_like, M by K
-
-    y : array_like, N by K
-
+    x : (M, K) array_like
+        Input array.
+    y : (N, K) array_like
+        Input array.
     p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
 
@@ -89,12 +89,21 @@ class Rectangle(object):
         return np.prod(self.maxes-self.mins)
 
     def split(self, d, split):
-        """Produce two hyperrectangles by splitting along axis d.
+        """
+        Produce two hyperrectangles by splitting.
 
         In general, if you need to compute maximum and minimum
         distances to the children, it can be done more efficiently
         by updating the maximum and minimum distances to the parent.
-        """ # FIXME: do this
+
+        Parameters
+        ----------
+        d : int
+            Axis to split hyperrectangle along.
+        split :
+            Input.
+
+        """
         mid = np.copy(self.maxes)
         mid[d] = split
         less = Rectangle(self.mins, mid)
@@ -104,19 +113,59 @@ class Rectangle(object):
         return less, greater
 
     def min_distance_point(self, x, p=2.):
-        """Compute the minimum distance between x and a point in the hyperrectangle."""
+        """
+        Return the minimum distance between input and points in the hyperrectangle.
+
+        Parameters
+        ----------
+        x : array_like
+            Input.
+        p : float, optional
+            Input.
+
+        """
         return minkowski_distance(0, np.maximum(0,np.maximum(self.mins-x,x-self.maxes)),p)
 
     def max_distance_point(self, x, p=2.):
-        """Compute the maximum distance between x and a point in the hyperrectangle."""
+        """
+        Return the maximum distance between input and points in the hyperrectangle.
+
+        Parameters
+        ----------
+        x : array_like
+            Input array.
+        p : float, optional
+            Input.
+
+        """
         return minkowski_distance(0, np.maximum(self.maxes-x,x-self.mins),p)
 
     def min_distance_rectangle(self, other, p=2.):
-        """Compute the minimum distance between points in the two hyperrectangles."""
+        """
+        Compute the minimum distance between points in the two hyperrectangles.
+
+        Parameters
+        ----------
+        other : hyperrectangle
+            Input.
+        p : float
+            Input.
+
+        """
         return minkowski_distance(0, np.maximum(0,np.maximum(self.mins-other.maxes,other.mins-self.maxes)),p)
 
     def max_distance_rectangle(self, other, p=2.):
-        """Compute the maximum distance between points in the two hyperrectangles."""
+        """
+        Compute the maximum distance between points in the two hyperrectangles.
+
+        Parameters
+        ----------
+        other : hyperrectangle
+            Input.
+        p : float, optional
+            Input.
+
+        """
         return minkowski_distance(0, np.maximum(self.maxes-other.mins,other.maxes-self.mins),p)
 
 
@@ -129,7 +178,7 @@ class KDTree(object):
 
     Parameters
     ----------
-    data : array_like, shape (n,k)
+    data : (N,K) array_like
         The data points to be indexed. This array is not copied, and
         so modifying this data will result in bogus results.
     leafsize : int, optional
@@ -139,12 +188,12 @@ class KDTree(object):
     Raises
     ------
     RuntimeError
-        If the maximum recursion limit is exceeded, can happen for large data
+        The maximum recursion limit can be exceeded for large data
         sets.  If this happens, either increase the value for the `leafsize`
         parameter or increase the recursion limit by::
 
-            import sys
-            sys.setrecursionlimit(10000)
+            >>> import sys
+            >>> sys.setrecursionlimit(10000)
 
     Notes
     -----
@@ -616,7 +665,8 @@ class KDTree(object):
         return results
 
     def query_pairs(self, r, p=2., eps=0):
-        """Find all pairs of points whose distance is at most r.
+        """
+        Find all pairs of points within a distance.
 
         Parameters
         ----------
@@ -634,7 +684,7 @@ class KDTree(object):
         Returns
         -------
         results : set
-            Set of pairs ``(i,j)``, with ``i < j`, for which the corresponding
+            Set of pairs ``(i,j)``, with ``i < j``, for which the corresponding
             positions are close.
 
         """
@@ -681,7 +731,7 @@ class KDTree(object):
                 # original KDTree.query_pairs)
                 if id(node1) != id(node2):
                     traverse_checking(node1.greater,greater1,node2.less,less2)
-                    
+
                 traverse_checking(node1.greater,greater1,node2.greater,greater2)
 
         def traverse_no_checking(node1, node2):
@@ -722,7 +772,8 @@ class KDTree(object):
 
 
     def count_neighbors(self, other, r, p=2.):
-        """Count how many nearby pairs can be formed.
+        """
+        Count how many nearby pairs can be formed.
 
         Count the number of pairs (x1,x2) can be formed, with x1 drawn
         from self and x2 drawn from `other`, and where
@@ -744,8 +795,8 @@ class KDTree(object):
         Returns
         -------
         result : int or 1-D array of ints
-            The number of pairs. Note that this is internally stored in a numpy int,
-            and so may overflow if very large (2e9).
+            The number of pairs. Note that this is internally stored in a numpy
+            int, and so may overflow if very large (2e9).
 
         """
         def traverse(node1, rect1, node2, rect2, idx):
@@ -798,7 +849,8 @@ class KDTree(object):
             raise ValueError("r must be either a single value or a one-dimensional array of values")
 
     def sparse_distance_matrix(self, other, max_distance, p=2.):
-        """Compute a sparse distance matrix
+        """
+        Compute a sparse distance matrix
 
         Computes a distance matrix between two KDTrees, leaving as zero
         any distance greater than max_distance.
@@ -808,6 +860,8 @@ class KDTree(object):
         other : KDTree
 
         max_distance : positive float
+
+        p : float, optional
 
         Returns
         -------
@@ -856,19 +910,20 @@ def distance_matrix(x,y,p=2,threshold=1000000):
 
     Parameters
     ----------
-    x : array_like, `M` by `K`
+    x : (M, K) array_like
         TODO: description needed
-    y : array_like, `N` by `K`
+    y : (N, K) array_like
         TODO: description needed
     p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
-    threshold : positive integer
-        If `M * N * K` > threshold, use a Python loop instead of creating
-        a very large temporary [what?  array?].
+    threshold : positive int
+        If ``M * N * K`` > `threshold`, algorithm uses a Python loop instead
+        of large temporary arrays.
 
     Returns
     -------
-    result : array_like, `M` by `N`
+    result : (M, N) ndarray
+        Distance matrix.
 
     Examples
     --------

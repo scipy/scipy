@@ -11,12 +11,12 @@ Integrating functions, given function object
 .. autosummary::
    :toctree: generated/
 
-   quad          -- General purpose integration.
-   dblquad       -- General purpose double integration.
-   tplquad       -- General purpose triple integration.
-   fixed_quad    -- Integrate func(x) using Gaussian quadrature of order n.
-   quadrature    -- Integrate with given tolerance using Gaussian quadrature.
-   romberg       -- Integrate func using Romberg integration.
+   quad          -- General purpose integration
+   dblquad       -- General purpose double integration
+   tplquad       -- General purpose triple integration
+   fixed_quad    -- Integrate func(x) using Gaussian quadrature of order n
+   quadrature    -- Integrate with given tolerance using Gaussian quadrature
+   romberg       -- Integrate func using Romberg integration
 
 Integrating functions, given fixed samples
 ==========================================
@@ -24,7 +24,6 @@ Integrating functions, given fixed samples
 .. autosummary::
    :toctree: generated/
 
-   trapz         -- Use trapezoidal rule to compute integral from samples.
    cumtrapz      -- Use trapezoidal rule to cumulatively compute integral.
    simps         -- Use Simpson's rule to compute integral from samples.
    romb          -- Use Romberg Integration to compute integral from

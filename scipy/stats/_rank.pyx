@@ -66,7 +66,7 @@ def rankdata(a):
     """
     rankdata(a)
 
-    Assign ranks to the data in `a`, dealing with ties appropriately.
+    Assign ranks to data, dealing with ties appropriately.
 
     Equal values are assigned a rank that is the average of the ranks that
     would have been otherwise assigned to all of the values within that set.
@@ -80,7 +80,8 @@ def rankdata(a):
     Returns
     -------
     ranks : ndarray
-         An array of length equal to the size of `a`, containing rank scores.
+         An array of length equal to the size of `a`, containing rank
+         scores.
 
     Notes
     -----
@@ -132,9 +133,9 @@ def tiecorrect(rankvals):
 
     Parameters
     ----------
-    rankvals : 1-d array_like
-        A 1-d sequence of ranks.  Typically this will be the array
-        returned by stats.rankdata.
+    rankvals : array_like
+        A 1-D sequence of ranks.  Typically this will be the array
+        returned by `stats.rankdata`.
 
     Returns
     -------
@@ -144,8 +145,13 @@ def tiecorrect(rankvals):
     See Also
     --------
     rankdata : Assign ranks to the data
-    mannwhitney : Mann-Whitney rank test
+    mannwhitneyu : Mann-Whitney rank test
     kruskal : Kruskal-Wallis H test
+
+    References
+    ----------
+    .. [1] Siegel, S. (1956) Nonparametric Statistics for the Behavioral
+           Sciences.  New York: McGraw-Hill.
 
     Examples
     --------
@@ -156,11 +162,6 @@ def tiecorrect(rankvals):
     array([ 1. ,  4. ,  2.5,  5.5,  7. ,  8. ,  2.5,  9. ,  5.5])
     >>> tiecorrect(ranks)
     0.9833333333333333
-
-    References
-    ----------
-    .. [1] Siegel, S. (1956) Nonparametric Statistics for the Behavioral
-           Sciences.  New York: McGraw-Hill.
 
     """
     cdef np.ndarray[np.float64_t, ndim=1] ranks

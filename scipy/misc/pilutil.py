@@ -128,9 +128,9 @@ def imsave(name, arr):
 
     Parameters
     ----------
-    filename : str
+    name : str
         Output filename.
-    image : ndarray, MxN or MxNx3 or MxNx4
+    arr : ndarray, MxN or MxNx3 or MxNx4
         Array containing image values.  If the shape is ``MxN``, the array
         represents a grey-level image.  Shape ``MxNx3`` stores the red, green
         and blue bands along the last dimension.  An alpha layer may be
@@ -305,27 +305,22 @@ def imrotate(arr,angle,interp='bilinear'):
 
     Parameters
     ----------
-    arr : nd_array
+    arr : ndarray
         Input array of image to be rotated.
     angle : float
         The angle of rotation.
     interp : str, optional
         Interpolation
 
+        - 'nearest' :  for nearest neighbor
+        - 'bilinear' : for bilinear
+        - 'cubic' : cubic
+        - 'bicubic' : for bicubic
 
     Returns
     -------
-    imrotate : nd_array
+    imrotate : ndarray
         The rotated array of image.
-
-    Notes
-    -----
-
-    Interpolation methods can be:
-     * 'nearest' :  for nearest neighbor
-     * 'bilinear' : for bilinear
-     * 'cubic' : cubic
-     * 'bicubic' : for bicubic
 
     """
     arr = asarray(arr)
@@ -381,7 +376,7 @@ def imresize(arr, size, interp='bilinear', mode=None):
 
     Parameters
     ----------
-    arr : nd_array
+    arr : ndarray
         The array of image to be resized.
 
     size : int, float or tuple
@@ -436,7 +431,7 @@ def imfilter(arr,ftype):
     Raises
     ------
     ValueError
-        *Unknown filter type.* . If the filter you are trying
+        *Unknown filter type.*  If the filter you are trying
         to apply is unsupported.
 
     """

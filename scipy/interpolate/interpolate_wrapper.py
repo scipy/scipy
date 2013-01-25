@@ -10,8 +10,23 @@ def atleast_1d_and_contiguous(ary, dtype = np.float64):
     return np.atleast_1d( np.ascontiguousarray(ary, dtype) )
 
 def nearest(x, y, new_x):
-    """ Rounds each new_x[i] to the closest value in x
-        and returns corresponding y.
+    """
+    Rounds each new x to nearest input x and returns corresponding input y.
+
+    Parameters
+    ----------
+    x : array_like
+        Independent values.
+    y : array_like
+        Dependent values.
+    new_x : array_like
+        The x values to return the interpolate y values.
+
+    Returns
+    -------
+    nearest : ndarray
+        Rounds each `new_x` to nearest `x` and returns the corresponding `y`.
+
     """
     shifted_x = np.concatenate(( np.array([x[0]-1]) , x[0:-1] ))
 
@@ -28,16 +43,18 @@ def nearest(x, y, new_x):
 
 
 def linear(x, y, new_x):
-    """ Linearly interpolates values in new_x based on the values in x and y
+    """
+    Linearly interpolates values in new_x based on the values in x and y
 
-        Parameters
-        ----------
-        x
-            1-D array
-        y
-            1-D or 2-D array
-        new_x
-            1-D array
+    Parameters
+    ----------
+    x : array_like
+        Independent values
+    y : array_like
+        Dependent values
+    new_x : array_like
+        The x values to return the interpolated y values.
+
     """
     x = atleast_1d_and_contiguous(x, np.float64)
     y = atleast_1d_and_contiguous(y, np.float64)
@@ -56,16 +73,18 @@ def linear(x, y, new_x):
     return new_y
 
 def logarithmic(x, y, new_x):
-    """ Linearly interpolates values in new_x based in the log space of y.
+    """
+    Linearly interpolates values in new_x based in the log space of y.
 
-        Parameters
-        ----------
-        x
-            1-D array
-        y
-            1-D or 2-D array
-        new_x
-            1-D array
+    Parameters
+    ----------
+    x : array_like
+        Independent values.
+    y : array_like
+        Dependent values.
+    new_x : array_like
+        The x values to return interpolated y values at.
+
     """
     x = atleast_1d_and_contiguous(x, np.float64)
     y = atleast_1d_and_contiguous(y, np.float64)
@@ -84,16 +103,18 @@ def logarithmic(x, y, new_x):
     return new_y
 
 def block_average_above(x, y, new_x):
-    """ Linearly interpolates values in new_x based on the values in x and y
+    """
+    Linearly interpolates values in new_x based on the values in x and y.
 
-        Parameters
-        ----------
-        x
-            1-D array
-        y
-            1-D or 2-D array
-        new_x
-            1-D array
+    Parameters
+    ----------
+    x : array_like
+        Independent values.
+    y : array_like
+        Dependent values.
+    new_x : array_like
+        The x values to interpolate y values.
+
     """
     bad_index = None
     x = atleast_1d_and_contiguous(x, np.float64)
@@ -122,10 +143,26 @@ def block_average_above(x, y, new_x):
     return new_y
 
 def block(x, y, new_x):
-    """ Essentially a step function.
+    """
+    Essentially a step function.
 
-        For each new_x[i], finds largest j such that
-        x[j] < new_x[j], and returns y[j].
+    For each `new_x`, finds largest j such that``x[j] < new_x[j]`` and
+    returns ``y[j]``.
+
+    Parameters
+    ----------
+    x : array_like
+        Independent values.
+    y : array_like
+        Dependent values.
+    x_new : array_like
+        The x values used to calculate the interpolated y.
+
+    Returns
+    -------
+    block : ndarray
+        Return array, of same length as `x_new`.
+
     """
     # find index of values in x that preceed values in x
     # This code is a little strange -- we really want a routine that

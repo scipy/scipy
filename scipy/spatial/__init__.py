@@ -3,16 +3,17 @@
 Spatial algorithms and data structures (:mod:`scipy.spatial`)
 =============================================================
 
-Nearest-neighbor queries:
-
+Nearest-neighbor Queries
+========================
 .. autosummary::
    :toctree: generated/
 
-   KDTree      -- class for efficient nearest-neighbor queries
+   KDTree - *Class* for efficient nearest-neighbor queries
    cKDTree     -- class for efficient nearest-neighbor queries (faster impl.)
-   distance    -- module containing many different distance measures
+   distance - *Module* containing many different distance measures
 
-Delaunay triangulation, convex hulls and Voronoi diagrams:
+Delaunay Triangulation, Convex Hulls and Voronoi Diagrams
+=========================================================
 
 .. autosummary::
    :toctree: generated/
@@ -21,7 +22,8 @@ Delaunay triangulation, convex hulls and Voronoi diagrams:
    ConvexHull  -- compute a convex hull for input points
    Voronoi     -- compute a Voronoi diagram hull from input points
 
-Plotting helpers:
+Plotting Helpers
+================
 
 .. autosummary::
    :toctree: generated/
@@ -35,7 +37,6 @@ Plotting helpers:
 
 Simplex representation
 ======================
-
 The simplices (triangles, tetrahedra, ...) appearing in the Delaunay
 tesselation (N-dim simplices), convex hull facets, and Voronoi ridges
 (N-1 dim simplices) are represented in the following scheme::
@@ -44,7 +45,7 @@ tesselation (N-dim simplices), convex hull facets, and Voronoi ridges
     hull = ConvexHull(points)
     voro = Voronoi(points)
 
-    # coordinates of the j-th vertex of the i-th simplex 
+    # coordinates of the j-th vertex of the i-th simplex
     tess.points[tess.simplices[i, j], :]        # tesselation element
     hull.points[hull.simplices[i, j], :]        # convex hull facet
     voro.vertices[voro.ridge_vertices[i, j], :] # ridge between Voronoi cells
@@ -67,6 +68,17 @@ paraboloid.
 The Delaunay triangulation objects offer a method for locating the
 simplex containing a given point, and barycentric coordinate
 computations.
+
+Functions
+---------
+
+.. autosummary::
+   :toctree: generated/
+
+   tsearch
+   distance_matrix
+   minkowski_distance
+   minkowski_distance_p
 
 """
 

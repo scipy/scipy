@@ -23,7 +23,8 @@ def daub(p):
 
     Returns
     -------
-    q : ndarray
+    daub : ndarray
+        Return
 
     """
     sqrt = np.sqrt
@@ -78,7 +79,13 @@ def daub(p):
 
 
 def qmf(hk):
-    """Return high-pass qmf filter from low-pass
+    """
+    Return high-pass qmf filter from low-pass
+
+    Parameters
+    ----------
+    hk : array_like
+        Coefficients of high-pass filter.
 
     """
     N = len(hk) - 1
@@ -108,19 +115,11 @@ def cascade(hk, J=7):
         The dyadic points ``K/2**J`` for ``K=0...N * (2**J)-1`` where
         ``len(hk) = len(gk) = N+1``.
     phi : ndarray
-        The scaling function ``phi(x)`` at `x`::
-
-                     N
-          phi(x) = sum   hk * phi(2x-k)
-                     k=0
-
+        The scaling function ``phi(x)`` at `x`:
+        ``phi(x) = sum(hk * phi(2x-k))``, where k is from 0 to N.
     psi : ndarray, optional
-        The wavelet function ``psi(x)`` at `x`::
-
-                     N
-          phi(x) = sum   gk * phi(2x-k)
-                     k=0
-
+        The wavelet function ``psi(x)`` at `x`:
+        ``phi(x) = sum(gk * phi(2x-k))``, where k is from 0 to N.
         `psi` is only returned if `gk` is not None.
 
     Notes
@@ -223,7 +222,11 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     Returns
     -------
-    out : 1-D ndarray
+    morlet : (M,) ndarray
+
+    See Also
+    --------
+    scipy.signal.gausspulse
 
     Notes
     -----
@@ -248,10 +251,6 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     The fundamental frequency of this wavelet in Hz is given
     by ``f = 2*s*w*r / M`` where r is the sampling rate.
-
-    See Also
-    --------
-    scipy.signal.gausspulse
 
     """
     x = linspace(-s * 2 * pi, s * 2 * pi, M)
@@ -285,8 +284,8 @@ def ricker(points, a):
 
     Returns
     -------
-    vector : 1-D ndarray
-        Array of length `points` in shape of Ricker curve.
+    vector : (N,) ndarray
+        Array of length `points` in shape of ricker curve.
 
     Examples
     --------
@@ -314,6 +313,8 @@ def ricker(points, a):
 
 def cwt(data, wavelet, widths):
     """
+    Continuous wavelet transform.
+
     Performs a continuous wavelet transform on `data`,
     using the `wavelet` function. A CWT performs a convolution
     with `data` using the `wavelet` function, which is characterized
@@ -321,27 +322,28 @@ def cwt(data, wavelet, widths):
 
     Parameters
     ----------
-    data : 1-D ndarray
+    data : (N,) ndarray
         data on which to perform the transform.
     wavelet : function
         Wavelet function, which should take 2 arguments.
         The first argument is the number of points that the returned vector
         will have (len(wavelet(width,length)) == length).
         The second is a width parameter, defining the size of the wavelet
-        (e.g. standard deviation of a gaussian). See `ricker`, which 
+        (e.g. standard deviation of a gaussian). See `ricker`, which
         satisfies these requirements.
-    widths : sequence
+    widths : (M,) sequence
         Widths to use for transform.
 
     Returns
     -------
-    cwt : 2-D ndarray
-        Will be ``len(widths) * len(data)``.
+    cwt: (M, N) ndarray
+        Will have shape of (len(data), len(widths)).
 
     Notes
-    ------
-    ``cwt[ii,:] = scipy.signal.convolve(data,wavelet(width[ii], length), mode='same')``,
-    where length = ``min(10 * width[ii], len(data))``.
+    -----
+    >>> length = min(10 * width[ii], len(data))
+    >>> cwt[ii,:] = scipy.signal.convolve(data, wavelet(width[ii],
+    ...                                       length), mode='same')
 
     Examples
     --------

@@ -104,25 +104,27 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     """
     Find the B-spline representation of an N-dimensional curve.
 
-    Given a list of N rank-1 arrays, x, which represent a curve in
-    N-dimensional space parametrized by u, find a smooth approximating
-    spline curve g(u). Uses the FORTRAN routine parcur from FITPACK.
+    Given a list of N rank-1 arrays, `x`, which represent a curve in
+    N-dimensional space parametrized by `u`, find a smooth approximating
+    spline curve g(`u`). Uses the FORTRAN routine parcur from FITPACK.
 
     Parameters
     ----------
     x : array_like
         A list of sample vector arrays representing the curve.
     w : array_like
-        Strictly positive rank-1 array of weights the same length as x[0].
+        Strictly positive rank-1 array of weights the same length as `x[0]`.
         The weights are used in computing the weighted least-squares spline
-        fit. If the errors in the x values have standard-deviation given by the
-        vector d, then w should be 1/d. Default is ones(len(x[0])).
+        fit. If the errors in the `x` values have standard-deviation given by
+        the vector d, then `w` should be 1/d. Default is ``ones(len(x[0]))``.
     u : array_like, optional
         An array of parameter values. If not given, these values are
-        calculated automatically as ``M = len(x[0])``::
+        calculated automatically as ``M = len(x[0])``, where
 
             v[0] = 0
-            v[i] = v[i-1] + distance(x[i],x[i-1])
+
+            v[i] = v[i-1] + distance(`x[i]`, `x[i-1]`)
+
             u[i] = v[i] / v[M-1]
 
     ub, ue : int, optional
@@ -140,8 +142,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         If task=-1 find the weighted least square spline for a given set of
         knots, t.
     s : float, optional
-        A smoothing condition.
-        The amount of smoothness is determined by
+        A smoothing condition.  The amount of smoothness is determined by
         satisfying the conditions: ``sum((w * (y - g))**2,axis=0) <= s``,
         where g(x) is the smoothed interpolation of (x,y).  The user can
         use `s` to control the trade-off between closeness and smoothness
@@ -295,10 +296,8 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     """
     Find the B-spline representation of 1-D curve.
 
-    Given the set of data points (x[i], y[i]) determine a smooth spline
-    approximation of degree k on the interval xb <= x <= xe.  The coefficients,
-    c, and the knot points, t, are returned.  Uses the FORTRAN routine
-    curfit from FITPACK.
+    Given the set of data points ``(x[i], y[i])`` determine a smooth spline
+    approximation of degree k on the interval ``xb <= x <= xe``.
 
     Parameters
     ----------
@@ -364,21 +363,19 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     msg : str, optional
         A message corresponding to the integer flag, ier.
 
-    Notes
-    -----
-
-    See splev for evaluation of the spline and its derivatives.
-
     See Also
     --------
-
     UnivariateSpline, BivariateSpline
     splprep, splev, sproot, spalde, splint
     bisplrep, bisplev
 
+    Notes
+    -----
+    See splev for evaluation of the spline and its derivatives. Uses the
+    FORTRAN routine curfit from FITPACK.
+
     References
     ----------
-
     Based on algorithms described in [1], [2], [3], and [4]:
 
     .. [1] P. Dierckx, "An algorithm for smoothing, differentiation and
@@ -683,18 +680,18 @@ def spalde(x,tck):
 
     Parameters
     ----------
-    tck : tuple
-        A tuple (t,c,k) containing the vector of knots,
-        the B-spline coefficients, and the degree of the spline.
     x : array_like
         A point or a set of points at which to evaluate the derivatives.
         Note that ``t(k) <= x <= t(n-k+1)`` must hold for each `x`.
+    tck : tuple
+        A tuple (t,c,k) containing the vector of knots,
+        the B-spline coefficients, and the degree of the spline.
 
     Returns
     -------
-    results : array_like
+    results : {ndarray, list of ndarrays}
         An array (or a list of arrays) containing all derivatives
-        up to order k inclusive for each point x.
+        up to order k inclusive for each point `x`.
 
     See Also
     --------
@@ -910,9 +907,9 @@ def bisplev(x,y,tck,dx=0,dy=0):
     Evaluate a bivariate B-spline and its derivatives.
 
     Return a rank-2 array of spline function values (or spline derivative
-    values) at points given by the cross-product of the rank-1 arrays x and
-    y.  In special cases, return an array or just a float if either x or y or
-    both are floats.  Based on BISPEV from FITPACK.
+    values) at points given by the cross-product of the rank-1 arrays `x` and
+    `y`.  In special cases, return an array or just a float if either `x` or
+    `y` or both are floats.  Based on BISPEV from FITPACK.
 
     Parameters
     ----------
@@ -998,23 +995,23 @@ def insert(x,tck,m=1,per=0):
     Insert knots into a B-spline.
 
     Given the knots and coefficients of a B-spline representation, create a
-    new B-spline with a knot inserted m times at point x.
+    new B-spline with a knot inserted `m` times at point `x`.
     This is a wrapper around the FORTRAN routine insert of FITPACK.
 
     Parameters
     ----------
     x (u) : array_like
         A 1-D point at which to insert a new knot(s).  If `tck` was returned
-        from `splprep`, then the parameter values, u should be given.
+        from ``splprep``, then the parameter values, u should be given.
     tck : tuple
-        A tuple (t,c,k) returned by `splrep` or `splprep` containing
+        A tuple (t,c,k) returned by ``splrep`` or ``splprep`` containing
         the vector of knots, the B-spline coefficients,
         and the degree of the spline.
     m : int, optional
         The number of times to insert the given knot (its multiplicity).
         Default is 1.
     per : int, optional
-        If non-zero, input spline is considered periodic.
+        If non-zero, the input spline is considered periodic.
 
     Returns
     -------
@@ -1022,7 +1019,7 @@ def insert(x,tck,m=1,per=0):
         A tuple (t,c,k) containing the vector of knots, the B-spline
         coefficients, and the degree of the new spline.
         ``t(k+1) <= x <= t(n-k)``, where k is the degree of the spline.
-        In case of a periodic spline (`per` != 0) there must be
+        In case of a periodic spline (``per != 0``) there must be
         either at least k interior knots t(j) satisfying ``t(k+1)<t(j)<=x``
         or at least k interior knots t(j) satisfying ``x<=t(j)<t(n-k)``.
 

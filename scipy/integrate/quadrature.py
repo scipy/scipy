@@ -111,7 +111,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     """
     Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
-    Integrate func from a to b using Gaussian quadrature
+    Integrate `func` from `a` to `b` using Gaussian quadrature
     with absolute tolerance `tol`.
 
     Parameters
@@ -149,7 +149,6 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     tplquad: triple integrals
     romb: integrator for sampled data
     simps: integrator for sampled data
-    trapz: integrator for sampled data
     cumtrapz: cumulative integration for sampled data
     ode: ODE integrator
     odeint: ODE integrator
@@ -321,7 +320,6 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     dblquad: double integrals
     tplquad: triple integrals
     romb: integrators for sampled data
-    trapz: integrators for sampled data
     cumtrapz: cumulative integration for sampled data
     ode: ODE integrators
     odeint: ODE integrators

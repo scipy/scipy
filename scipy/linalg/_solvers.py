@@ -17,22 +17,23 @@ __all__ = ['solve_sylvester', 'solve_lyapunov', 'solve_discrete_lyapunov',
            'solve_continuous_are', 'solve_discrete_are']
 
 def solve_sylvester(a,b,q):
-    """Computes a solution (X) to the Sylvester equation (AX + XB = Q).
+    """
+    Computes a solution (X) to the Sylvester equation (AX + XB = Q).
 
     .. versionadded:: 0.11.0
 
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : (M, M) array_like
         Leading matrix of the Sylvester equation
-    b : array, shape (N, N)
+    b : (N, N) array_like
         Trailing matrix of the Sylvester equation
-    q : array, shape (M, N)
+    q : (M, N) array_like
         Right-hand side
 
     Returns
     -------
-    x : array, shape (M, N)
+    x : (M, N) ndarray
         The solution to the Sylvester equation.
 
     Raises
@@ -75,7 +76,8 @@ def solve_sylvester(a,b,q):
     return np.dot(np.dot(u, y), v.conj().transpose())
 
 def solve_lyapunov(a, q):
-    """Solves the continuous Lyapunov equation (AX + XA^H = Q) given the values
+    """
+    Solves the continuous Lyapunov equation (AX + XA^H = Q) given the values
     of A and Q using the Bartels-Stewart algorithm.
 
     .. versionadded:: 0.11.0
@@ -93,35 +95,37 @@ def solve_lyapunov(a, q):
     x : array_like
         Solution to the continuous Lyapunov equation
 
+    See Also
+    --------
+    solve_sylvester : computes the solution to the Sylvester equation
+
     Notes
     -----
     Because the continuous Lyapunov equation is just a special form of the
     Sylvester equation, this solver relies entirely on solve_sylvester for a
     solution.
 
-    See Also
-    --------
-    solve_sylvester : computes the solution to the Sylvester equation
     """
 
     return solve_sylvester(a, a.conj().transpose(), q)
 
 def solve_discrete_lyapunov(a, q):
-    """Solves the Discrete Lyapunov Equation (A'XA-X=-Q) directly.
+    """
+    Solves the Discrete Lyapunov Equation (A'XA-X=-Q) directly.
 
     .. versionadded:: 0.11.0
 
     Parameters
     ----------
-    a : array_like
+    a : (M, M) array_like
         A square matrix
 
-    q : array_like
+    q : (M, M) array_like
         Right-hand side square matrix
 
     Returns
     -------
-    x : array_like
+    x : ndarray
         Solution to the continuous Lyapunov equation
 
     Notes
@@ -130,6 +134,7 @@ def solve_discrete_lyapunov(a, q):
     Hamilton, James D. Time Series Analysis, Princeton: Princeton University
     Press, 1994.  265.  Print.
     http://www.scribd.com/doc/20577138/Hamilton-1994-Time-Series-Analysis
+
     """
 
     lhs = kron(a, a.conj())
@@ -139,7 +144,8 @@ def solve_discrete_lyapunov(a, q):
     return np.reshape(x, q.shape)
 
 def solve_continuous_are(a, b, q, r):
-    """Solves the continuous algebraic Riccati equation, or CARE, defined
+    """
+    Solves the continuous algebraic Riccati equation, or CARE, defined
     as (A'X + XA - XBR^-1B'X+Q=0) directly using a Schur decomposition
     method.
 
@@ -147,22 +153,23 @@ def solve_continuous_are(a, b, q, r):
 
     Parameters
     ----------
-    a : array_like
-        m x m square matrix
-
-    b : array_like
-        m x n matrix
-
-    q : array_like
-        m x m square matrix
-
-    r : array_like
-        Non-singular n x n square matrix
+    a : (M, M) array_like
+        Input
+    b : (M, N) array_like
+        Input
+    q : (M, M) array_like
+        Input
+    r : (N, N) array_like
+        Non-singular, square matrix
 
     Returns
     -------
-    x : array_like
-        Solution (m x m) to the continuous algebraic Riccati equation
+    x : (M, M) ndarray
+        Solution to the continuous algebraic Riccati equation
+
+    See Also
+    --------
+    solve_discrete_are : Solves the discrete algebraic Riccati equation
 
     Notes
     -----
@@ -172,9 +179,6 @@ def solve_continuous_are(a, b, q, r):
     ERDA-E(49-18)-2087.
     http://dspace.mit.edu/bitstream/handle/1721.1/1301/R-0859-05666488.pdf
 
-    See Also
-    --------
-    solve_discrete_are : Solves the discrete algebraic Riccati equation
     """
 
     try:
@@ -206,7 +210,8 @@ def solve_continuous_are(a, b, q, r):
     return np.dot(u21, u11i)
 
 def solve_discrete_are(a, b, q, r):
-    """Solves the disctrete algebraic Riccati equation, or DARE, defined as
+    """
+    Solves the disctrete algebraic Riccati equation, or DARE, defined as
     (X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q), directly using a Schur decomposition
     method.
 
@@ -214,22 +219,23 @@ def solve_discrete_are(a, b, q, r):
 
     Parameters
     ----------
-    a : array_like
-        Non-singular m x m square matrix
-
-    b : array_like
-        m x n matrix
-
-    q : array_like
-        m x m square matrix
-
-    r : array_like
-        Non-singular n x n square matrix
+    a : (M, M) array_like
+        Non-singular, square matrix
+    b : (M, N) array_like
+        Input
+    q : (M, M) array_like
+        Input
+    r : (N, N) array_like
+        Non-singular, square matrix
 
     Returns
     -------
-    x : array_like
+    x : ndarray
         Solution to the continuous Lyapunov equation
+
+    See Also
+    --------
+    solve_continuous_are : Solves the continuous algebraic Riccati equation
 
     Notes
     -----
@@ -239,9 +245,6 @@ def solve_discrete_are(a, b, q, r):
     ERDA-E(49-18)-2087.
     http://dspace.mit.edu/bitstream/handle/1721.1/1301/R-0859-05666488.pdf
 
-    See Also
-    --------
-    solve_continuous_are : Solves the continuous algebraic Riccati equation
     """
 
     try:

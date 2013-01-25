@@ -47,42 +47,43 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
 
 
 _input_doc = \
-"""input : array-like
-    input array to filter"""
+"""input : array_like
+    Input array to filter."""
 _axis_doc = \
-"""axis : integer, optional
-    axis of ``input`` along which to calculate. Default is -1"""
+"""axis : int, optional
+    The axis of `input` along which to calculate. Default is -1."""
 _output_doc = \
 """output : array, optional
-    The ``output`` parameter passes an array in which to store the
+    The `output` parameter passes an array in which to store the
     filter output."""
 _size_foot_doc = \
 """size : scalar or tuple, optional
     See footprint, below
 footprint : array, optional
-    Either ``size`` or ``footprint`` must be defined.  ``size`` gives
+    Either `size` or `footprint` must be defined.  `size` gives
     the shape that is taken from the input array, at every element
     position, to define the input to the filter function.
-    ``footprint`` is a boolean array that specifies (implicitly) a
+    `footprint` is a boolean array that specifies (implicitly) a
     shape, but also which of the elements within this shape will get
     passed to the filter function.  Thus ``size=(n,m)`` is equivalent
-    to ``footprint=np.ones((n,m))``.  We adjust ``size`` to the number
+    to ``footprint=np.ones((n,m))``.  We adjust `size` to the number
     of dimensions of the input array, so that, if the input array is
-    shape (10,10,10), and ``size`` is 2, then the actual size used is
+    shape (10,10,10), and `size` is 2, then the actual size used is
     (2,2,2).
 """
 _mode_doc = \
-"""mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
-    The ``mode`` parameter determines how the array borders are
-    handled, where ``cval`` is the value when mode is equal to
+"""mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
+    The `mode` parameter determines how the array borders are
+    handled, where `cval` is the value when mode is equal to
     'constant'. Default is 'reflect'"""
 _cval_doc = \
 """cval : scalar, optional
-    Value to fill past edges of input if ``mode`` is 'constant'. Default
+    Value to fill past edges of input if `mode` is 'constant'. Default
     is 0.0"""
 _origin_doc = \
 """origin : scalar, optional
-The ``origin`` parameter controls the placement of the filter. Default 0"""
+    The `origin` parameter controls the placement of the filter.
+    Default 0.0."""
 _extra_arguments_doc = \
 """extra_arguments : sequence, optional
     Sequence of extra positional arguments to pass to passed function"""
@@ -116,7 +117,7 @@ def correlate1d(input, weights, axis = -1, output = None, mode = "reflect",
     ----------
     %(input)s
     weights : array
-        one-dimensional sequence of numbers
+        One-dimensional sequence of numbers.
     %(axis)s
     %(output)s
     %(mode)s
@@ -154,12 +155,18 @@ def convolve1d(input, weights, axis = -1, output = None, mode = "reflect",
     ----------
     %(input)s
     weights : ndarray
-        one-dimensional sequence of numbers
+        One-dimensional sequence of numbers.
     %(axis)s
     %(output)s
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    convolve1d : ndarray
+        Convolved array with same shape as input
+
     """
     weights = weights[::-1]
     origin = -origin
@@ -187,6 +194,11 @@ def gaussian_filter1d(input, sigma, axis = -1, order = 0, output = None,
     %(output)s
     %(mode)s
     %(cval)s
+
+    Returns
+    -------
+    gaussian_filter1d : ndarray
+
     """
     if order not in range(4):
         raise ValueError('Order outside 0..3 not implemented')
@@ -235,13 +247,13 @@ def gaussian_filter1d(input, sigma, axis = -1, order = 0, output = None,
 @docfiller
 def gaussian_filter(input, sigma, order = 0, output = None,
                   mode = "reflect", cval = 0.0):
-    """Multi-dimensional Gaussian filter.
+    """Multidimensional Gaussian filter.
 
     Parameters
     ----------
     %(input)s
     sigma : scalar or sequence of scalars
-        standard deviation for Gaussian kernel. The standard
+        Standard deviation for Gaussian kernel. The standard
         deviations of the Gaussian filter are given for each axis as a
         sequence, or as a single number, in which case it is equal for
         all axes.
@@ -256,14 +268,20 @@ def gaussian_filter(input, sigma, order = 0, output = None,
     %(mode)s
     %(cval)s
 
+    Returns
+    -------
+    gaussian_filter : ndarray
+        Returned array of same shape as `input`.
+
     Notes
     -----
-    The multi-dimensional filter is implemented as a sequence of
+    The multidimensional filter is implemented as a sequence of
     one-dimensional convolution filters. The intermediate arrays are
     stored in the same data type as the output. Therefore, for output
     types with a limited precision, the results may be imprecise
     because intermediate results may be stored with insufficient
     precision.
+
     """
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
@@ -333,8 +351,7 @@ def generic_laplace(input, derivative2, output = None, mode = "reflect",
                     cval = 0.0,
                     extra_arguments = (),
                     extra_keywords = None):
-    """Calculate a multidimensional laplace filter using the provided
-    second derivative function.
+    """N-dimensional Laplace filter using a provided second derivative function
 
     Parameters
     ----------
@@ -371,8 +388,7 @@ def generic_laplace(input, derivative2, output = None, mode = "reflect",
 
 @docfiller
 def laplace(input, output = None, mode = "reflect", cval = 0.0):
-    """Calculate a multidimensional laplace filter using an estimation
-    for the second derivative based on differences.
+    """N-dimensional Laplace filter based on approximate second derivatives.
 
     Parameters
     ----------
@@ -389,8 +405,7 @@ def laplace(input, output = None, mode = "reflect", cval = 0.0):
 @docfiller
 def gaussian_laplace(input, sigma, output = None, mode = "reflect",
                      cval = 0.0):
-    """Calculate a multidimensional laplace filter using gaussian
-    second derivatives.
+    """Multidimensional Laplace filter using gaussian second derivatives.
 
     Parameters
     ----------
@@ -398,7 +413,7 @@ def gaussian_laplace(input, sigma, output = None, mode = "reflect",
     sigma : scalar or sequence of scalars
         The standard deviations of the Gaussian filter are given for
         each axis as a sequence, or as a single number, in which case
-        it is equal for all axes..
+        it is equal for all axes.
     %(output)s
     %(mode)s
     %(cval)s
@@ -416,8 +431,7 @@ def gaussian_laplace(input, sigma, output = None, mode = "reflect",
 def generic_gradient_magnitude(input, derivative, output = None,
                 mode = "reflect", cval = 0.0,
                 extra_arguments = (), extra_keywords = None):
-    """Calculate a gradient magnitude using the provided function for
-    the gradient.
+    """Gradient magnitude using a provided gradient function.
 
     Parameters
     ----------
@@ -426,7 +440,7 @@ def generic_gradient_magnitude(input, derivative, output = None,
         Callable with the following signature::
 
             derivative(input, axis, output, mode, cval,
-                        *extra_arguments, **extra_keywords)
+                       *extra_arguments, **extra_keywords)
 
         See `extra_arguments`, `extra_keywords` below.
         `derivative` can assume that `input` and `output` are ndarrays.
@@ -465,8 +479,7 @@ def generic_gradient_magnitude(input, derivative, output = None,
 @docfiller
 def gaussian_gradient_magnitude(input, sigma, output = None,
                 mode = "reflect", cval = 0.0):
-    """Calculate a multidimensional gradient magnitude using gaussian
-    derivatives.
+    """Multidimensional gradient magnitude using Gaussian derivatives.
 
     Parameters
     ----------
@@ -556,7 +569,7 @@ def correlate(input, weights, output = None, mode = 'reflect', cval = 0.0,
 def convolve(input, weights, output = None, mode = 'reflect', cval = 0.0,
              origin = 0):
     """
-    Multi-dimensional convolution.
+    Multidimensional convolution.
 
     The array is convolved with the given kernel.
 
@@ -784,11 +797,11 @@ def maximum_filter1d(input, size, axis = -1, output = None,
     The lines of the array along the given axis are filtered with a
     maximum filter of given size.
 
-        Parameters
+    Parameters
     ----------
     %(input)s
     size : int
-        length along which to calculate 1D maximum
+        Length along which to calculate the 1-D maximum.
     %(axis)s
     %(output)s
     %(mode)s
@@ -986,40 +999,23 @@ def rank_filter(input, rank, size = None, footprint = None, output = None,
 
 @docfiller
 def median_filter(input, size = None, footprint = None, output = None,
-      mode = "reflect", cval = 0.0, origin = 0):
+                  mode = "reflect", cval = 0.0, origin = 0):
     """
-    Calculates a multi-dimensional median filter.
+    Calculates a multidimensional median filter.
 
     Parameters
     ----------
-    input : array-like
-        input array to filter
-    size : scalar or tuple, optional
-        See footprint, below
-    footprint : array, optional
-        Either ``size`` or ``footprint`` must be defined.  ``size`` gives
-        the shape that is taken from the input array, at every element
-        position, to define the input to the filter function.
-        ``footprint`` is a boolean array that specifies (implicitly) a
-        shape, but also which of the elements within this shape will get
-        passed to the filter function.  Thus ``size=(n,m)`` is equivalent
-        to ``footprint=np.ones((n,m))``.  We adjust ``size`` to the number
-        of dimensions of the input array, so that, if the input array is
-        shape (10,10,10), and ``size`` is 2, then the actual size used is
-        (2,2,2).
-    output : array, optional
-        The ``output`` parameter passes an array in which to store the
-        filter output.
-    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
-        The ``mode`` parameter determines how the array borders are
-        handled, where ``cval`` is the value when mode is equal to
-        'constant'. Default is 'reflect'
-    cval : scalar, optional
-        Value to fill past edges of input if ``mode`` is 'constant'. Default
-        is 0.0
-    origin : scalar, optional
-        The ``origin`` parameter controls the placement of the filter.
-        Default 0
+    %(input)s
+    %(size_foot)s
+    %(output)s
+    %(mode)s
+    %(cval)s
+    %(origin)s
+
+    Returns
+    -------
+    median_filter : ndarray
+        Return of same shape as `input`.
 
     """
     return _rank_filter(input, 0, size, footprint, output, mode, cval,
@@ -1053,7 +1049,7 @@ def generic_filter1d(input, function, filter_size, axis = -1,
                  extra_arguments = (), extra_keywords = None):
     """Calculate a one-dimensional filter along the given axis.
 
-    generic_filter1d iterates over the lines of the array, calling the
+    `generic_filter1d` iterates over the lines of the array, calling the
     given function at each line. The arguments of the line are the
     input line, and the output line. The input and output lines are 1D
     double arrays.  The input line is extended appropriately according
@@ -1064,9 +1060,9 @@ def generic_filter1d(input, function, filter_size, axis = -1,
     ----------
     %(input)s
     function : callable
-        function to apply along given axis
+        Function to apply along given axis.
     filter_size : scalar
-        length of the filter
+        Length of the filter.
     %(axis)s
     %(output)s
     %(mode)s
@@ -1107,7 +1103,7 @@ def generic_filter(input, function, size = None, footprint = None,
     ----------
     %(input)s
     function : callable
-        function to apply at each element
+        Function to apply at each element.
     %(size_foot)s
     %(output)s
     %(mode)s

@@ -669,7 +669,7 @@ class AttrDict(dict):
 
 def readsav(file_name, idict=None, python_dict=False,
             uncompressed_file_name=None, verbose=False):
-    '''
+    """
     Read an IDL .sav file
 
     Parameters
@@ -695,7 +695,7 @@ def readsav(file_name, idict=None, python_dict=False,
         the records read, and available variables.
 
     Returns
-    ----------
+    -------
     idl_dict : AttrDict or dict
         If `python_dict` is set to False (default), this function returns a
         case-insensitive dictionary with item, attribute, and call access
@@ -703,7 +703,8 @@ def readsav(file_name, idict=None, python_dict=False,
         returns a Python dictionary with all variable names in lowercase.
         If `idict` was specified, then variables are written to the
         dictionary specified, and the updated dictionary is returned.
-    '''
+
+    """
 
     # Initialize record and variable holders
     records = []

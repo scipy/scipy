@@ -142,7 +142,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 
     Returns
     -------
-    y : ndarray of real
+    idct : ndarray of real
         The transformed input array.
 
     See Also
@@ -266,7 +266,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 
     Returns
     -------
-    y : ndarray of real
+    dst : ndarray of reals
         The transformed input array.
 
     See Also
@@ -278,13 +278,13 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     For a single dimension array ``x``.
 
     There are theoretically 8 types of the DST for different combinations of
-    even/odd boundary conditions and boundary off sets [WPS]_, only the first
+    even/odd boundary conditions and boundary off sets [1]_, only the first
     3 types are implemented in scipy.
 
     **type I**
 
     There are several definitions of the DST-I; we use the following
-    for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N.
+    for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N. ::
 
                  N-1
       y[k] = 2 * sum x[n]*sin(pi*(k+1)*(n+1)/(N+1))
@@ -297,13 +297,13 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     **type II**
 
     There are several definitions of the DST-I; we use the following
-    for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N.
+    for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N. ::
 
                 N-1
       y[k] = 2* sum x[n]*sin(pi*(k+1)*(n+0.5)/N), 0 <= k < N.
                 n=0
 
-    if ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor `f`::
+    if ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor `f` ::
 
         f = sqrt(1/(4*N)) if k == 0
         f = sqrt(1/(2*N)) otherwise.
@@ -312,7 +312,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 
     There are several definitions of the DST-III, we use the following
     (for ``norm=None``).  DST-III assumes the input is odd around n=-1
-    and even around n=N-1
+    and even around n=N-1 ::
 
                                  N-2
       y[k] = x[N-1]*(-1)**k + 2* sum x[n]*sin(pi*(k+0.5)*(n+1)/N), 0 <= k < N.
@@ -324,7 +324,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 
     References
     ----------
-    http://en.wikipedia.org/wiki/Discrete_sine_transform
+    .. [1] http://en.wikipedia.org/wiki/Discrete_sine_transform
 
     """
     if type == 1 and norm is not None:
@@ -355,7 +355,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 
     Returns
     -------
-    y : ndarray of real
+    idst : ndarray of real
         The transformed input array.
 
     See Also

@@ -17,7 +17,7 @@ systems that don't have PIL installed.
    bytescale - Byte scales an array (image)
    central_diff_weights - Weights for an n-point central m-th derivative
    comb - Combinations of N things taken k at a time, "N choose k"
-   derivative -\tFind the n-th derivative of a function at a point
+   derivative - Find the n-th derivative of a function at a point
    factorial  - The factorial function, n! = special.gamma(n+1)
    factorial2 - Double factorial, (n!)!
    factorialk - (...((n!)!)!...)! where there are k '!'
@@ -32,9 +32,9 @@ systems that don't have PIL installed.
    lena - Get classic image processing example image Lena
    logsumexp - Compute the log of the sum of exponentials of input elements
    pade - Pade approximation to function as the ratio of two polynomials
-   radon -
    toimage - Takes a numpy array and returns a PIL image
    who - Print the Numpy arrays in the given dictionary
+
 """
 
 from __future__ import division, print_function, absolute_import

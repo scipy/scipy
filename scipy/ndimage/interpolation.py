@@ -65,7 +65,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
 
     Returns
     -------
-    return_value : ndarray or None
+    spline_filter1d : ndarray or None
         The filtered input. If `output` is given as a parameter, None is
         returned.
 
@@ -248,7 +248,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
 
     Returns
     -------
-    return_value : ndarray
+    map_coordinates : ndarray
         The result of transforming the input. The shape of the output is
         derived from that of `coordinates` by dropping the first axis.
 
@@ -354,7 +354,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
     Returns
     -------
-    return_value : ndarray or None
+    affine_transform : ndarray or None
         The transformed input. If `output` is given as a parameter, None is
         returned.
 
@@ -436,7 +436,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
 
     Returns
     -------
-    return_value : ndarray or None
+    shift : ndarray or None
         The shifted input. If `output` is given as a parameter, None is
         returned.
 
@@ -498,7 +498,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
 
     Returns
     -------
-    return_value : ndarray or None
+    zoom : ndarray or None
         The zoomed input. If `output` is given as a parameter, None is
         returned.
 
@@ -585,7 +585,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
 
     Returns
     -------
-    return_value : ndarray or None
+    rotate : ndarray or None
         The rotated input. If `output` is given as a parameter, None is
         returned.
 
