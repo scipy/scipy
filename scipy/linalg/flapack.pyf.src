@@ -1537,7 +1537,7 @@ subroutine <prefix2>sbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,a
   !*          If JOBZ = 'V', the N-by-N orthogonal matrix used in the
   !*                         reduction to tridiagonal form.
   !*          If JOBZ = 'N', the array Q is not referenced.
-  integer intent(hide),depend(n) :: ldq=(compute_v?n:1)
+  integer intent(hide),depend(n,compute_v) :: ldq=(compute_v?n:1)
   <ftype2> dimension(ldq,ldq),intent(hide),depend(ldq) :: q
 
 
@@ -1562,8 +1562,8 @@ subroutine <prefix2>sbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,a
 
   <ftype2> dimension(n),intent(out),depend(n) :: w
 
-  <ftype2> dimension(ldz,mmax),intent(out) :: z
-  integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
+  <ftype2> dimension(ldz,mmax),depend(ldz,mmax),intent(out) :: z
+  integer intent(hide),depend(n,compute_v) :: ldz=(compute_v?n:1)
 
   ! We use the mmax parameter to fix the size of z
   ! (only if eigenvalues are requested)
@@ -1574,12 +1574,12 @@ subroutine <prefix2>sbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,a
   ! number of eigenvalues in the interval in advance.
   ! As default we use the maximum value
   ! but the user should use an appropriate mmax.
-  integer intent(in),depend(n) :: mmax=(compute_v?(range==2?(iu-il+1):n):1)
+  integer intent(in),depend(n,iu,il,compute_v,range) :: mmax=(compute_v?(range==2?(iu-il+1):n):1)
   integer intent(out) :: m
 
-  <ftype2> dimension(7*n),intent(hide) :: work
-  integer dimension(5*n),intent(hide) :: iwork
-  integer dimension((compute_v?n:1)),intent(out) :: ifail
+  <ftype2> dimension(7*n),depend(n),intent(hide) :: work
+  integer dimension(5*n),depend(n),intent(hide) :: iwork
+  integer dimension((compute_v?n:1)),depend(n,compute_v),intent(out) :: ifail
   integer intent(out):: info
 end subroutine <prefix2>sbevx
 
@@ -1657,7 +1657,7 @@ subroutine <prefix2c>hbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,
   !*          If JOBZ = 'V', the N-by-N orthogonal matrix used in the
   !*                         reduction to tridiagonal form.
   !*          If JOBZ = 'N', the array Q is not referenced.
-  integer intent(hide),depend(n) :: ldq=(compute_v?n:1)
+  integer intent(hide),depend(n,compute_v) :: ldq=(compute_v?n:1)
   <ftype2c> dimension(ldq,ldq),intent(hide),depend(ldq) :: q
 
 
@@ -1682,8 +1682,8 @@ subroutine <prefix2c>hbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,
 
   <ftype2> dimension(n),intent(out),depend(n) :: w
 
-  <ftype2c> dimension(ldz,mmax),intent(out) :: z
-  integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
+  <ftype2c> dimension(ldz,mmax),depend(ldz,mmax),intent(out) :: z
+  integer intent(hide),depend(n,compute_v) :: ldz=(compute_v?n:1)
 
   ! We use the mmax parameter to fix the size of z
   ! (only if eigenvalues are requested)
@@ -1694,13 +1694,13 @@ subroutine <prefix2c>hbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,
   ! number of eigenvalues in the interval in advance.
   ! As default we use the maximum value
   ! but the user should use an appropriate mmax.
-  integer intent(in),depend(n) :: mmax=(compute_v?(range==2?(iu-il+1):n):1)
+  integer intent(in),depend(n,iu,il,compute_v,range) :: mmax=(compute_v?(range==2?(iu-il+1):n):1)
   integer intent(out) :: m
 
-  <ftype2c> dimension(n),intent(hide) :: work
-  <ftype2> dimension(7*n),intent(hide) :: rwork
-  integer dimension(5*n),intent(hide) :: iwork
-  integer dimension((compute_v?n:1)),intent(out) :: ifail
+  <ftype2c> dimension(n),depend(n),intent(hide) :: work
+  <ftype2> dimension(7*n),depend(n),intent(hide) :: rwork
+  integer dimension(5*n),depend(n),intent(hide) :: iwork
+  integer dimension((compute_v?n:1)),depend(n,compute_v),intent(out) :: ifail
   integer intent(out):: info
 end subroutine <prefix2c>hbevx
 
