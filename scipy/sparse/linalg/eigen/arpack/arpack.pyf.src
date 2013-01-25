@@ -29,7 +29,7 @@ python module _arpack ! in
             character :: howmny
             logical dimension(ncv) :: select
             <_rd> dimension(nev),intent(out),depend(nev) :: d
-            <_rd> dimension(n,nev),intent(out),depend(nev) :: z
+            <_rd> dimension(n,nev),intent(out),depend(n,nev) :: z
             integer optional,check(shape(z,0)==ldz),depend(z) :: ldz=shape(z,0)
             <_rd> :: sigma
             character :: bmat
@@ -121,7 +121,7 @@ python module _arpack ! in
             character :: howmny
             logical dimension(ncv) :: select
             <_cd> dimension(nev),depend(nev),intent(out) :: d
-            <_cd> dimension(n,nev), depend(nev),intent(out) :: z
+            <_cd> dimension(n,nev), depend(n,nev),intent(out) :: z
             integer optional,check(shape(z,0)==ldz),depend(z) :: ldz=shape(z,0)
             <_cd> :: sigma
             <_cd> dimension(3 * ncv),depend(ncv) :: workev
