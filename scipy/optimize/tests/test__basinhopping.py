@@ -8,8 +8,10 @@ from numpy.testing import TestCase, run_module_suite, \
 import numpy as np
 from numpy import cos, sin
 
-from scipy.optimize import basinhopping, basinhopping_advanced, minimize
+from scipy.optimize import basinhopping, minimize
 from scipy.optimize._basinhopping import _AdaptiveStepsize, _RandomDisplacement
+from scipy.optimize._basinhopping import _Storage, _AdaptiveStepsize, \
+    _RandomDisplacement, _MinimizerWrapper, _Metropolis
 
 
 def func1d(x):
@@ -121,7 +123,7 @@ class TestBasinHopping(TestCase):
     def test_bh_advanced(self):
         """test 2d minimizations with gradient"""
         i = 1
-        res = basinhopping_advanced(self.x0[i], func2d,
+        res = basinhopping(self.x0[i], func2d,
                                     minimizer_kwargs=self.kwargs,
                                     maxiter=self.maxiter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
@@ -141,7 +143,7 @@ class TestBasinHopping(TestCase):
         takestep = MyTakeStep()
         initial_step_size = takestep.stepsize
         i = 1
-        res = basinhopping_advanced(self.x0[i], func2d,
+        res = basinhopping(self.x0[i], func2d,
                                     minimizer_kwargs=self.kwargs,
                                     maxiter=self.maxiter, disp=self.disp,
                                     take_step=takestep)
@@ -172,7 +174,7 @@ class TestBasinHopping(TestCase):
         takestep = MyTakeStep()
         initial_step_size = takestep.stepsize
         i = 1
-        res = basinhopping_advanced(self.x0[i], func2d,
+        res = basinhopping(self.x0[i], func2d,
                                     minimizer_kwargs=self.kwargs,
                                     maxiter=self.maxiter, disp=self.disp,
                                     take_step=takestep)
@@ -205,7 +207,7 @@ class TestBasinHopping(TestCase):
         accept_test = AcceptTest()
         i = 1
         #there's no point in running it more than a few steps.
-        res = basinhopping_advanced(self.x0[i], func2d,
+        res = basinhopping(self.x0[i], func2d,
                                     minimizer_kwargs=self.kwargs, maxiter=10,
                                     disp=self.disp, accept_test=accept_test)
         assert_(accept_test.been_called)
@@ -231,13 +233,85 @@ class TestBasinHopping(TestCase):
         callback = CallBack()
         i = 1
         #there's no point in running it more than a few steps.
-        res = basinhopping_advanced(self.x0[i], func2d,
+        res = basinhopping(self.x0[i], func2d,
                                     minimizer_kwargs=self.kwargs, maxiter=30,
                                     disp=self.disp, callback=callback)
         assert_(callback.been_called)
         assert_("callback" in res.message[0])
         assert_(res.nit == 10)
 
+
+class Test_Storage(TestCase):
+    def setUp(self):
+        self.x0 = np.array(1)
+        self.f0 = 0
+        self.storage = _Storage(self.x0, self.f0)
+
+    def test_higher_f_rejected(self):
+        ret = self.storage.insert(self.x0 + 1, self.f0 + 1)
+        x, f = self.storage.get_lowest()
+        self.assertEqual(self.x0, x)
+        self.assertEqual(self.f0, f)
+        self.assertFalse(ret)
+
+    def test_lower_f_accepted(self):
+        ret = self.storage.insert(self.x0 + 1, self.f0 - 1)
+        x, f = self.storage.get_lowest()
+        self.assertNotEqual(self.x0, x)
+        self.assertNotEqual(self.f0, f)
+        self.assertTrue(ret)
+
+
+class Test_RandomDisplacement(TestCase):
+    def setUp(self):
+        self.stepsize = 1.0
+        self.displace = _RandomDisplacement(stepsize=self.stepsize)
+        self.N = 300000
+        self.x0 = np.zeros([self.N])
+
+    def test_random(self):
+        #the mean should be 0
+        #the variance should be (2*stepsize)**2 / 12
+        #note these tests are random, they will fail from time to time
+        x = self.displace(self.x0)
+        v = (2. * self.stepsize) ** 2 / 12
+        self.assertAlmostEqual(np.mean(x), 0., 1)
+        self.assertAlmostEqual(np.var(x), v, 1)
+
+
+class Test_Metropolis(TestCase):
+    def setUp(self):
+        self.T = 2.
+        self.met = _Metropolis(self.T)
+
+    def test_boolean_return(self):
+        #the return must be a bool.  else an error will be raised in
+        #basinhopping
+        ret = self.met(f_new=0., f_old=1.)
+        assert isinstance(ret, bool)
+
+    def test_lower_f_accepted(self):
+        self.assertTrue(self.met(f_new=0., f_old=1.))
+
+    def test_KeyError(self):
+        #shoudl raise KeyError if kwargs f_old or f_new is not passed
+        self.assertRaises(KeyError, self.met, f_old=1.)
+        self.assertRaises(KeyError, self.met, f_new=1.)
+
+    def test_accept(self):
+        #test that steps are randomly accepted for f_new > f_old
+        one_accept = False
+        one_reject = False
+        for i in range(1000):
+            if one_accept and one_reject:
+                break
+            ret = self.met(f_new=1., f_old=0.5)
+            if ret:
+                one_accept = True
+            else:
+                one_reject = True
+        self.assertTrue(one_accept)
+        self.assertTrue(one_reject)
 
 if __name__ == "__main__":
     run_module_suite()

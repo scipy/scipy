@@ -4,46 +4,12 @@ Original Author: Jacob Stevenson 2012
 basinhopping: The basinhopping global optimization algorithm
 """
 
-__all__ = ['basinhopping', 'basinhopping_advanced']
+__all__ = ['basinhopping']
 
 import numpy as np
 from numpy import cos, sin
 import scipy.optimize
 
-
-#
-#notes for the basin hopping algorithm
-#
-#The important components of basin hopping are:
-#
-#    step taking algorithm:
-#        The default for this should be random displacement with adaptive step
-#        size.
-#
-#        The user should be able to specify their own step taking algorithm.
-#        question:  how do we combine adaptive step size with user defined step
-#        taking?
-#
-#    optimizer:
-#        This is the routine which does local minimization.  The default should
-#        be scipy lbfgs algorithm
-#
-#        The user should be able to specify their own minimizer.
-#
-#    accept test:
-#        The default will be metropolis criterion with temperature T=1.
-#
-#        This is where we can implement bounds on the problem.
-#
-#        Should be able to add their own accept or reject test?
-#
-#    Storage:
-#        A class for storing the best structure found
-#
-#        possibly also the best N structures found?
-
-# todo:
-#   make the step taking algorithm passable?
 
 class _Storage(object):
     def __init__(self, x, f):
@@ -244,6 +210,7 @@ class _AdaptiveStepsize(object):
         return self.takestep(x)
 
     def report(self, accept, **kwargs):
+        "called by basinhopping to report the result of the step"
         if accept:
             self.naccept += 1
 
@@ -298,11 +265,10 @@ class _Metropolis(object):
                     kwargs["f_old"]))
 
 
-def basinhopping_advanced(x0, func=None, minimizer=None,
-                          minimizer_kwargs=dict(), take_step=None,
-                          accept_test=None, callback=None, maxiter=10000,
-                          T=1.0, stepsize=0.5, interval=50, disp=False,
-                          niter_success=None):
+def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
+                 take_step=None, accept_test=None, callback=None,
+                 maxiter=10000, T=1.0, stepsize=0.5, interval=50, disp=False,
+                 niter_success=None):
     """
     Find the global minimum of a function using the basin-hopping algorithm
 
@@ -315,59 +281,6 @@ def basinhopping_advanced(x0, func=None, minimizer=None,
     func : callable ``f(x, *args)``, optional
         Function to be optimized.  Either func or minimizer must be passed.
         Use minimizer_kwargs to specify args.
-    minimizer : callable ``minimizer(x0, **minimizer_kwargs)``, optional
-        Use this minizer rather than the default.  If the minimizer is given
-        then func is not used.  basinhopping() will get the function values
-        from the output of minimizer.  The output must be an object with
-        attributes x and fun reporting the minimized coordinates and function
-        value
-    minimizer_kwargs : tuple, optional
-        Extra arguments to be passed to the minimizer.  If argument minimizer
-        is specified, then it is passed to that, else it is passed to the
-        default scipy.optimize.minimize().  See scipy.optimize.minimize() for
-        details.  If the default minimzer is used, some important options could
-        be
-
-            method - the minimization method
-            args - tuple, optional
-                Extra arguments passed to the objective function (func) and its
-                derivatives (Jacobian, Hessian). See description for func
-                above.
-            jac - specify the Jacobian for gradient minimizations
-            hess - specify the Hessian for Hessian based minimizations
-            tol - tolerance
-
-    take_step : callable ``take_step(x)``, optional
-        Replace the default step taking routine with this routine.
-        The default step taking routine is a random displacement of the
-        coordinates, but other step taking algorithms may be better for some
-        systems.  take_step can optionally have two attributes
-
-            take_step.stepsize - float
-            take_step.report - callable, ``report(accept, f_new=f_new,
-                                                  x_new=x_new, f_old=f_old,
-                                                  x_old=x_old)``
-
-        The function take_step.report() is called after each cycle and can be
-        used to adaptively improve the routine.  In the above, f_new, x_new,
-        f_old, and x_old are the new and old function value and coordinates,
-        and accept is bool holding whether or not the new coordinates were
-        accepted.  If take_step.report is not present and take_step.stepsize
-        is, basinhopping will adjust take_step.stepsize in order to optimize
-        the global minimum search.
-    accept_test : callable, ``accept_test(f_new=f_new, x_new=x_new, f_old=fold,
-                                          x_old=x_old)``, optional
-        Define a test which will be used to judge whether or not to accept
-        the step.  This will be used in addition to the Metropolis test based
-        on ``temperature`` T.  The acceptable return values are True, False, or
-        "force accept".  If the latter, then this will overide any other tests
-        in order to accept the step.  This can be used, for example, to
-        forcefully escape from a local minimum that basinhopping is trapped in.
-    callback : callable, ``callback(x, f, accept)``, optional
-        Add a callback function which will be called for each trial minima.
-        This can be used, for example, to save the lowest N minima found.
-        Also, callback can be used to specify a user defined stop criterion by
-        optionally returning True to stop the basinhopping routine.
     maxiter : integer, optional
         The maximum number of basin hopping iterations
     T : float, optional
@@ -381,6 +294,54 @@ def basinhopping_advanced(x0, func=None, minimizer=None,
         interval for how often to update the stepsize
     disp : bool, optional
         Set to True to print status messages
+    minimizer_kwargs : tuple, optional
+        Extra arguments to be passed to the minimizer.  If argument minimizer
+        is specified, then it is passed to that, else it is passed to the
+        default scipy.optimize.minimize().  See scipy.optimize.minimize() for
+        details.  If the default minimzer is used, some important options could
+        be
+
+            method - the minimization method (e.g. "L-BFGS-B")
+            args - tuple, optional
+                Extra arguments passed to the objective function (func) and its
+                derivatives (Jacobian, Hessian).
+
+    minimizer : callable ``minimizer(x0, **minimizer_kwargs)``, optional
+        Use this minizer rather than the default.  If this is passed, then func
+        is not used.  basinhopping() will get the function values from the
+        output of minimizer.  The return must be an object with attributes `x`
+        and `fun` reporting the minimized coordinates and function value
+    take_step : callable ``take_step(x)``, optional
+        Replace the default step taking routine with this routine.  The default
+        step taking routine is a random displacement of the coordinates, but
+        other step taking algorithms may be better for some systems.  take_step
+        can optionally have two attributes
+
+            take_step.stepsize - float
+            take_step.report - callable, ``report(accept, f_new=f_new,
+                                                  x_new=x_new, f_old=f_old,
+                                                  x_old=x_old)``
+
+        The function take_step.report() is called after each cycle and can be
+        used to adaptively improve the routine.  In the above, f_new, x_new,
+        f_old, and x_old are the new and old function value and coordinates,
+        and accept is a bool reporting whether or not the new coordinates were
+        accepted.  If take_step.report is not present and take_step.stepsize
+        is, basinhopping will adjust take_step.stepsize in order to optimize
+        the global minimum search.
+    accept_test : callable, ``accept_test(f_new=f_new, x_new=x_new, f_old=fold,
+                                          x_old=x_old)``, optional
+        Define a test which will be used to judge whether or not to accept the
+        step.  This will be used in addition to the Metropolis test based on
+        ``temperature`` T.  The acceptable return values are True, False, or
+        "force accept".  If the latter, then this will overide any other tests
+        in order to accept the step.  This can be used, for example, to
+        forcefully escape from a local minimum that basinhopping is trapped in.
+    callback : callable, ``callback(x, f, accept)``, optional
+        Add a callback function which will be called for each trial minima.
+        This can be used, for example, to save the lowest N minima found.
+        Also, callback can be used to specify a user defined stop criterion by
+        optionally returning True to stop the basinhopping routine.
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
@@ -564,7 +525,7 @@ def basinhopping_advanced(x0, func=None, minimizer=None,
 
 
     """
-    x0 = np.array(x0)
+    x0 = np.array(x0).copy()
 
     #turn printing on or off
     if disp:
@@ -648,174 +609,6 @@ def basinhopping_advanced(x0, func=None, minimizer=None,
     res.message = message
     res.nit = i + 1
     return res
-
-
-def basinhopping(x0, func=None, minimizer=None,
-                 minimizer_kwargs=dict(), maxiter=10000, T=1.0, stepsize=0.5,
-                 interval=50, disp=False, niter_success=None):
-    """
-    Find the global minimum of a function using the basin-hopping algorithm
-
-    .. versionadded:: 0.12.0
-
-    Parameters
-    ----------
-    x0 : ndarray
-        Initial guess.
-    func : callable ``f(x, *args)``, optional
-        Function to be optimized.  Either func or minimizer must be passed.
-        Use minimizer_kwargs to specify args.
-    minimizer : callable ``minimizer(x0, **minimizer_kwargs)``, optional
-        Use this minizer rather than the default.  If the minimizer is given
-        then func is not used.  basinhopping() will get the function values
-        from the output of minimizer.  The output must be an object with
-        attributes x and fun reporting the minimized coordinates and function
-        value
-    minimizer_kwargs : tuple, optional
-        Extra arguments to be passed to the minimizer.  If argument minimizer
-        is specified, then it is passed to that, else it is passed to the
-        default scipy.optimize.minimize().  See scipy.optimize.minimize() for
-        details.  If the default minimzer is used, some important options could
-        be
-
-            method - the minimization method
-            args - tuple, optional
-                Extra arguments passed to the objective function and its
-                derivatives (Jacobian, Hessian). See description for func
-                above.
-            jac - specify the Jacobian for gradient minimizations
-            hess - specify the Hessian for Hessian based minimizations
-            tol - tolerance
-
-    maxiter : integer, optional
-        The maximum number of basin hopping iterations
-    T : float, optional
-        The ``temperature`` parameter for the accept or reject criterion.
-        Higher ``temperatures`` mean that larger jumps in function value will
-        be accepted.  For best results T should be comparable to the separation
-        (in function value) between local minima.
-    stepsize : float, optional
-        initial stepsize for use in the random displacement.
-    interval : integer, optional
-        interval for how often to update the stepsize
-    disp : bool, optional
-        Set to True to print status messages
-    niter_success : integer, optional
-        Stop the run if the global minimum candidate remains the same for this
-        number of iterations.
-
-
-    Returns
-    -------
-    res : Result
-        The optimization result represented as a ``Result`` object.
-        Important attributes are: ``x`` the solution array, ``fun`` the value
-        of the function at the solution, and ``message`` which describes the
-        cause of the termination. See `Result` for a description of other
-        attributes.
-
-
-    Notes
-    -----
-    Basin-hopping is a stochastic algorithm which attempts to find the global
-    minimum of a smooth scalar function of one or more variables [1-4].  The
-    algorithm in its current form was described by David Wales and Jonathan
-    Doye [2] http://www-wales.ch.cam.ac.uk/.
-
-    The algorithm is iterative with each cycle composed of the following
-    features
-
-    1) random perturbation of the coordinates
-
-    2) local minimization
-
-    3) accept or reject the new coordinates based on the minimized function
-       value
-
-    The acceptance test used here is the Metropolis criterion of standard Monte
-    Carlo algorithms, although there are many other possibilities [3].
-
-    This global minimization method has been shown to be extremely efficient
-    for a wide variety of problems in physics and chemistry.  It is
-    particularly useful when the function has many minima separated by large
-    barriers. See the Cambridge Cluster Database
-    http://www-wales.ch.cam.ac.uk/CCD.html for databases of molecular systems
-    that have been optimized primarily using basin-hopping.  This database
-    includes minimization problems exceeding 300 degrees of freedom.
-
-    For stochastic global optimization there is no way to determine if the true
-    global minimum has actually been found. Instead, as a consistency check,
-    the algorithm can be run from a number of different random starting points
-    to ensure the lowest minimum found in each example has converged to the
-    global minimum.
-
-    See the free software program GMIN (http://www-wales.ch.cam.ac.uk/) for a
-    Fortran implementation of basin-hopping.  This implementation has many
-    different variations of the procedure described above, including more
-    advanced step taking algorithms and alternate acceptance criterion.
-
-    References
-    ----------
-    .. [1] Wales, David J. 2003, Energy Landscapes, Cambridge University Press,
-        Cambridge, UK.
-    .. [2] Wales, D J, and Doye J P K, Global Optimization by Basin-Hopping and
-        the Lowest Energy Structures of Lennard-Jones Clusters Containing up to
-        110 Atoms.  Journal of Physical Chemistry A, 1997, 101, 5111.
-    .. [3] Li, Z. and Scheraga, H. A., Monte Carlo-minimization approach to the
-        multiple-minima problem in protein folding, Proc. Natl. Acad. Sci. USA,
-        1987, 84, 6611.
-    .. [4] Wales, D. J. and Scheraga, H. A., Global optimization of clusters,
-        crystals, and biomolecules, Science, 1999, 285, 1368.
-
-    Examples
-    --------
-    The following example is a one dimensional minimization problem,  with many
-    local minima superimposed on a parabola.
-
-    >>> func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
-    >>> x0=[1.]
-
-    Basinhoppin, internally, uses a local minimization algorithm.  We will use
-    the parameter minimizer_kwargs to tell basinhopping which algorithm to use
-    and how to set up that minimizer.  This parameter will be passed to
-    scipy.optimze.minimize()
-
-    >>> minimizer_kwargs = {"method": "BFGS"}
-    >>> ret = basinhopping(x0, func, minimizer_kwargs=minimizer_kwargs,
-    ...                    maxiter=200)
-    >>> print "global minimum: x = %.4f, f(x0) = %.4f" % (ret.x, ret.fun)
-    global minimum: x = -0.1951, f(x0) = -1.0009
-
-    Next consider a two dimensional minimization problem. Also, this time we
-    will use gradient information to significantly speed up the search.
-
-    >>> def func2d(x):
-    ...     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] +
-    ...                                                         0.2) * x[0]
-    ...     df = np.zeros(2)
-    ...     df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2
-    ...     df[1] = 2. * x[1] + 0.2
-    ...     return f, df
-
-    We'll also use a different minimizer, just for fun.  Also we must tell the
-    minimzer that our function returns both energy and gradient (jacobian)
-    >>> minimizer_kwargs = {"method":"L-BFGS-B", "jac":True}
-    >>> x0 = [1.0, 1.0]
-    >>> ret = basinhopping(x0, func2d, minimizer_kwargs=minimizer_kwargs,
-    ...                    maxiter=200)
-    >>> print "global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
-    ...                                                           ret.x[1],
-    ...                                                           ret.fun)
-    global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
-
-    """
-
-    return basinhopping_advanced(x0, func=func,
-                                 minimizer=minimizer,
-                                 minimizer_kwargs=minimizer_kwargs,
-                                 maxiter=maxiter, T=T, stepsize=stepsize,
-                                 interval=interval, disp=disp,
-                                 niter_success=niter_success)
 
 
 if __name__ == "__main__":
