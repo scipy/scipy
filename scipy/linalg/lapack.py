@@ -18,7 +18,6 @@ Finding functions
 .. autosummary::
 
    get_lapack_funcs
-   find_best_blas_type
 
 All functions
 =============
@@ -218,6 +217,11 @@ try:
     from scipy.linalg import _clapack
 except ImportError:
     _clapack = None
+
+# Backward compatibility
+from scipy.lib._util import DeprecatedImport as _DeprecatedImport
+clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
+flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
