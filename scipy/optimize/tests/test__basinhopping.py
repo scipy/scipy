@@ -5,14 +5,13 @@ from __future__ import division, print_function, absolute_import
 import copy
 
 from numpy.testing import TestCase, run_module_suite, \
-    assert_almost_equal, assert_, dec
+    assert_almost_equal, assert_
 import numpy as np
 from numpy import cos, sin
 
 from scipy.optimize import basinhopping, minimize
-from scipy.optimize._basinhopping import _AdaptiveStepsize, _RandomDisplacement
-from scipy.optimize._basinhopping import _Storage, _AdaptiveStepsize, \
-    _RandomDisplacement, _MinimizerWrapper, _Metropolis
+from scipy.optimize._basinhopping import _Storage, _RandomDisplacement, \
+    _Metropolis
 
 
 def func1d(x):
