@@ -76,7 +76,7 @@ class _BasinHopping(object):
         x_after_quench = minres.x
         energy_after_quench = minres.fun
         if hasattr(minres, "success"):
-            if not minres.success:
+            if not minres.success and self.iprint > 0:
                 print("warning: basinhoppping: minimize failure")
         if hasattr(minres, "nfev"):
             self.res.nfev += minres.nfev
@@ -85,9 +85,9 @@ class _BasinHopping(object):
         if hasattr(minres, "nhev"):
             self.res.nhev += minres.nhev
 
-        #accept the move based on self.accept_tests f any test is false, than
-        #reject the step, except if ny test returns the special value, the
-        #string 'force accept'.  In this ccase we accept the step regardless.
+        #accept the move based on self.accept_tests. If any test is false, than
+        #reject the step.  If any test returns the special value, the
+        #string 'force accept', accept the step regardless.
         #This can be used to forcefully escape from a local minima if normal
         #basin hopping steps are not sufficient.
         accept = True
@@ -269,7 +269,7 @@ class _Metropolis(object):
 
 def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
                  take_step=None, accept_test=None, callback=None,
-                 maxiter=10000, T=1.0, stepsize=0.5, interval=50, disp=False,
+                 maxiter=100, T=1.0, stepsize=0.5, interval=50, disp=False,
                  niter_success=None):
     """
     Find the global minimum of a function using the basin-hopping algorithm
@@ -284,7 +284,7 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
         Function to be optimized.  Either func or minimizer must be passed.
         Use minimizer_kwargs to specify args.
     maxiter : integer, optional
-        The maximum number of basin hopping iterations
+        The number of basin hopping iterations
     T : float, optional
         The ``temperature`` parameter for the accept or reject criterion.
         Higher ``temperatures`` mean that larger jumps in function value will

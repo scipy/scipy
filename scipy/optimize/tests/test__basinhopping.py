@@ -11,7 +11,7 @@ from numpy import cos, sin
 
 from scipy.optimize import basinhopping, minimize
 from scipy.optimize._basinhopping import _Storage, _RandomDisplacement, \
-    _Metropolis
+    _Metropolis, _AdaptiveStepsize
 
 
 def func1d(x):
@@ -74,6 +74,30 @@ class TestBasinHopping(TestCase):
 
         self.kwargs = {"method": "L-BFGS-B", "jac": True}
         self.kwargs_nograd = {"method": "L-BFGS-B"}
+    
+    def test_ValueError(self):
+        """test the ValueErrors are raised on bad input"""
+        i = 1
+        #func or minimizer must be passed
+        self.assertRaises(ValueError, basinhopping, self.x0[i])
+        #if take_step is passed, it must be callable
+        self.assertRaises(ValueError, basinhopping, self.x0[i], func=func2d,
+                          take_step=1)
+        #if accept_test is passed, it must be callable
+        self.assertRaises(ValueError, basinhopping, self.x0[i], func=func2d,
+                          accept_test=1)
+        #accept_test must return bool or string "force_accept"
+        def bad_accept_test1(*args, **kwargs):
+            return 1
+        def bad_accept_test2(*args, **kwargs):
+            return "not force_accept"
+        self.assertRaises(ValueError, basinhopping, self.x0[i], func=func2d,
+                          minimizer_kwargs=self.kwargs, accept_test=bad_accept_test1)
+        self.assertRaises(ValueError, basinhopping, self.x0[i], func=func2d,
+                          minimizer_kwargs=self.kwargs, accept_test=bad_accept_test2)
+        
+        
+
 
     def test_1d_grad(self):
         """test 1d minimizations with gradient"""
@@ -88,6 +112,18 @@ class TestBasinHopping(TestCase):
         res = basinhopping(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
                            maxiter=self.maxiter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
+        self.assertGreater(res.nfev, 0)
+
+    def test_njev(self):
+        """njev is returned correctly"""
+        i = 1
+        minimizer_kwargs=self.kwargs.copy()
+        #L-BFGS-B doesn't use njev, but BFGS does
+        minimizer_kwargs["method"] = "BFGS"
+        res = basinhopping(self.x0[i], func2d, minimizer_kwargs=minimizer_kwargs,
+                           maxiter=self.maxiter, disp=True)
+        self.assertGreater(res.nfev, 0)
+        self.assertEqual(res.nfev, res.njev)
 
     def test_2d_nograd(self):
         """test 2d minimizations without gradient"""
@@ -312,6 +348,39 @@ class Test_Metropolis(TestCase):
                 one_reject = True
         self.assertTrue(one_accept)
         self.assertTrue(one_reject)
+
+
+class Test_AdaptiveStepsize(TestCase):
+    def setUp(self):
+        self.stepsize = 1.
+        self.ts = _RandomDisplacement(stepsize=self.stepsize)
+        self.target_accept_rate = 0.5
+        self.takestep = _AdaptiveStepsize(takestep=self.ts,
+                                          accept_rate=self.target_accept_rate)
+    
+    def test_adaptive_increase(self):
+        #if few steps are rejected, the stepsize should increase
+        x = 0.
+        self.takestep(x)
+        self.takestep.report(False)
+        for i in range(self.takestep.interval):
+            self.takestep(x)
+            self.takestep.report(True)
+        self.assertGreater(self.ts.stepsize, self.stepsize)
+    
+    def test_adaptive_decrease(self):
+        #if few steps are rejected, the stepsize should increase
+        x = 0.
+        self.takestep(x)
+        self.takestep.report(True)
+        for i in range(self.takestep.interval):
+            self.takestep(x)
+            self.takestep.report(False)
+        self.assertLess(self.ts.stepsize, self.stepsize)
+        
+        
+        
+
 
 if __name__ == "__main__":
     run_module_suite()
