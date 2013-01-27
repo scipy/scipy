@@ -833,10 +833,12 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             rhok = 1.0 / (numpy.dot(yk, sk))
         except ZeroDivisionError:
             rhok = 1000.0
-            print("Divide-by-zero encountered: rhok assumed large")
+            if disp:
+                print("Divide-by-zero encountered: rhok assumed large")
         if isinf(rhok):  #this is patch for numpy
             rhok = 1000.0
-            print("Divide-by-zero encountered: rhok assumed large")
+            if disp:
+                print("Divide-by-zero encountered: rhok assumed large")
         A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :] * rhok
         A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :] * rhok
         Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + rhok * sk[:, numpy.newaxis] \
@@ -2173,12 +2175,13 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
                   "The returned value satisfies the termination criteria\n" \
                   "(using xtol = ", xtol, ")")
     if flag == 1:
-        print("\nMaximum number of function evaluations exceeded --- " \
-              "increase maxfun argument.\n")
+        if disp:
+            print("\nMaximum number of function evaluations exceeded --- " \
+                  "increase maxfun argument.\n")
     return
 
 
-def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
+def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin, disp=False):
     """Minimize a function over a given range by brute force.
 
     Parameters
@@ -2199,6 +2202,8 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
         minimization as initial guess.  `finish` should take the initial guess
         as positional argument, and take take `args`, `full_output` and `disp`
         as keyword arguments.  See Notes for more details.
+    disp : bool, optional
+        Set to True to print convergence messages.
 
     Returns
     -------
@@ -2258,11 +2263,12 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin):
         grid = grid[0]
         xmin = xmin[0]
     if callable(finish):
-        vals = finish(func, xmin, args=args, full_output=1, disp=0)
+        vals = finish(func, xmin, args=args, full_output=1, disp=disp)
         xmin = vals[0]
         Jmin = vals[1]
         if vals[-1] > 0:
-            print("Warning: Final optimization did not succeed")
+            if disp:
+                print("Warning: Final optimization did not succeed")
     if full_output:
         return xmin, Jmin, grid, Jout
     else:
