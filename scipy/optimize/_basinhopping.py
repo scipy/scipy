@@ -77,7 +77,7 @@ class _BasinHopping(object):
         energy_after_quench = minres.fun
         if hasattr(minres, "success"):
             if not minres.success and self.disp:
-                print("warning: basinhoppping: minimize failure")
+                print("warning: basinhoppping: local minimization failure")
         if hasattr(minres, "nfev"):
             self.res.nfev += minres.nfev
         if hasattr(minres, "njev"):
@@ -534,14 +534,14 @@ def basinhopping(func, x0, minimizer_kwargs=dict(),
         # if take_step.stepsize exists, but take_step.report() doesn't, then
         # then use _AdaptiveStepsize to control take_step.stepsize
         if hasattr(take_step, "stepsize") and not hasattr(take_step, "report"):
-            mytake_step = _AdaptiveStepsize(take_step, interval=interval,
+            take_step_wrapped = _AdaptiveStepsize(take_step, interval=interval,
                                             verbose=disp)
         else:
-            mytake_step = take_step
+            take_step_wrapped = take_step
     else:
         #use default
         displace = _RandomDisplacement(stepsize=stepsize)
-        mytake_step = _AdaptiveStepsize(displace, interval=interval,
+        take_step_wrapped = _AdaptiveStepsize(displace, interval=interval,
                                         verbose=disp)
 
     #set up accept tests
@@ -558,7 +558,7 @@ def basinhopping(func, x0, minimizer_kwargs=dict(),
     if niter_success is None:
         niter_success = niter + 2
 
-    bh = _BasinHopping(x0, wrapped_minimizer, mytake_step, accept_tests,
+    bh = _BasinHopping(x0, wrapped_minimizer, take_step_wrapped, accept_tests,
                        disp=disp)
 
     #start main iteration loop
