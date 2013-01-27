@@ -1464,8 +1464,8 @@ class rv_continuous(rv_generic):
 
         Returns
         -------
-        x : ndarray
-            quantile corresponding to the upper tail probability q.
+        x : ndarray or scalar
+            Quantile corresponding to the upper tail probability q.
 
         """
         loc,scale=map(kwds.get,['loc','scale'])
@@ -6077,11 +6077,10 @@ class rv_discrete(rv_generic):
 
         Returns
         -------
-        k : array_like
+        k : ndarray or scalar
             Quantile corresponding to the upper tail probability, q.
 
         """
-
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
         q,loc  = map(asarray,(q,loc))

@@ -56,7 +56,7 @@ def binned_statistic(x, values, statistic='mean',
         The values of the selected statistic in each bin.
     bin_edges : array of dtype float
         Return the bin edges ``(length(statistic)+1)``.
-    binnumber : ndarray, 1d, int
+    binnumber : 1-D ndarray of ints
         This assigns to each observation an integer that represents the bin
         in which this observation falls. Array has the same length as values.
 
@@ -141,10 +141,10 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     bins : int or [int, int] or array-like or [array, array], optional
         The bin specification:
 
-          * the number of bins for the two dimensions (N=M=bins),
-          * the number of bins in each dimension (N,M = bins),
-          * the bin edges for the two dimensions (N+1 = M+1 = bins),
-          * the bin edges in each dimension (N+1, M+1 = bins).
+          * the number of bins for the two dimensions (nx=ny=bins),
+          * the number of bins in each dimension (nx, ny = bins),
+          * the bin edges for the two dimensions (x_edges = y_edges = bins),
+          * the bin edges in each dimension (x_edges, y_edges = bins).
 
     range : (2,2) array_like, optional
         The leftmost and rightmost edges of the bins along each dimension
@@ -154,13 +154,13 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
     Returns
     -------
-    statistic : (N,M) ndarray
+    statistic : (nx, ny) ndarray
         The values of the selected statistic in each two-dimensional bin
-    xedges : (N + 1,) ndarray
+    xedges : (nx + 1) ndarray
         The bin edges along the first dimension.
-    yedges : (M + 1,) ndarray
+    yedges : (ny + 1) ndarray
         The bin edges along the second dimension.
-    binnumber : ndarray, 1d, int
+    binnumber : 1-D ndarray of ints
         This assigns to each observation an integer that represents the bin
         in which this observation falls. Array has the same length as `values`.
 
@@ -243,7 +243,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     edges : list of ndarrays
         A list of D arrays describing the (nxi + 1) bin edges for each
         dimension
-    binnumber : ndarray, 1d, int
+    binnumber : 1-D ndarray of ints
         This assigns to each observation an integer that represents the bin
         in which this observation falls. Array has the same length as values.
 
