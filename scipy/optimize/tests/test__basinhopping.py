@@ -1,6 +1,7 @@
 """
 Unit tests for the basin hopping global minimization algorithm.
 """
+from __future__ import division, print_function, absolute_import
 import copy
 
 from numpy.testing import TestCase, run_module_suite, \
@@ -46,7 +47,7 @@ class Minimizer(object):
 
     def __call__(self, x0, **newkwargs):
         #combine the two kwargs
-        kwargs = dict(newkwargs.items() + self.kwargs.items())
+        kwargs = dict(list(newkwargs.items()) + list(self.kwargs.items()))
         res = minimize(self.func, x0, **kwargs)
         return res
 

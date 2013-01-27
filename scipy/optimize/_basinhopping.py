@@ -3,12 +3,14 @@ Original Author: Jacob Stevenson 2012
 
 basinhopping: The basinhopping global optimization algorithm
 """
+from __future__ import division, print_function, absolute_import
 
 __all__ = ['basinhopping']
 
 import numpy as np
 from numpy import cos, sin
 import scipy.optimize
+import collections
 
 
 class _Storage(object):
@@ -49,7 +51,7 @@ class _BasinHopping(object):
         self.x = np.copy(minres.x)
         self.energy = minres.fun
         if self.iprint > 0:
-            print "basinhopping step %d: energy %g" % (self.nstep, self.energy)
+            print("basinhopping step %d: energy %g" % (self.nstep, self.energy))
 
         #initialize storage class
         self.storage = _Storage(self.x, self.energy)
@@ -75,7 +77,7 @@ class _BasinHopping(object):
         energy_after_quench = minres.fun
         if hasattr(minres, "success"):
             if not minres.success:
-                print "warning: basinhoppping: minimize failure"
+                print("warning: basinhoppping: minimize failure")
         if hasattr(minres, "nfev"):
             self.res.nfev += minres.nfev
         if hasattr(minres, "njev"):
@@ -134,8 +136,8 @@ class _BasinHopping(object):
             if self.nstep % self.iprint == 0:
                 self.print_report(energy_trial, accept)
             if new_global_min:
-                print "found new global minimum on step %d with function value %g" \
-                      % (self.nstep, self.energy)
+                print("found new global minimum on step %d with function value %g" \
+                      % (self.nstep, self.energy))
 
         #save some varialbes as _BasinHopping attributes
         self.xtrial = xtrial
@@ -146,8 +148,8 @@ class _BasinHopping(object):
 
     def print_report(self, energy_trial, accept):
         xlowest, energy_lowest = self.storage.get_lowest()
-        print "basinhopping step %d: energy %g trial_f %g accepted %d lowest_f %g" \
-              % (self.nstep, self.energy, energy_trial, accept, energy_lowest)
+        print("basinhopping step %d: energy %g trial_f %g accepted %d lowest_f %g" \
+              % (self.nstep, self.energy, energy_trial, accept, energy_lowest))
 
 
 class _AdaptiveStepsize(object):
@@ -198,9 +200,9 @@ class _AdaptiveStepsize(object):
             #We're not accepting enough steps.  Take smaller steps
             self.takestep.stepsize *= self.factor
         if self.verbose:
-            print "adaptive stepsize: acceptance rate %f target %f new stepsize %g old stepsize %g" \
+            print("adaptive stepsize: acceptance rate %f target %f new stepsize %g old stepsize %g" \
                   % (accept_rate, self.target_accept_rate,
-                     self.takestep.stepsize, old_stepsize)
+                     self.takestep.stepsize, old_stepsize))
 
     def take_step(self, x):
         self.nstep += 1
@@ -536,7 +538,7 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
     #set up minimizer
     if minimizer is None and func is None:
         raise ValueError("minimizer and func cannot both be None")
-    if callable(minimizer):
+    if isinstance(minimizer, collections.Callable):
         wrapped_minimizer = _MinimizerWrapper(minimizer, **minimizer_kwargs)
     else:
         #use default
@@ -546,7 +548,7 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
     #set up step taking algorithm
     verbose = iprint > 0
     if take_step is not None:
-        if not callable(take_step):
+        if not isinstance(take_step, collections.Callable):
             raise ValueError("take_step must be callable")
         # if take_step.stepsize exists, but take_step.report() doesn't, then
         # then use _AdaptiveStepsize to control take_step.stepsize
@@ -563,7 +565,7 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
 
     #set up accept tests
     if accept_test is not None:
-        if not callable(accept_test):
+        if not isinstance(accept_test, collections.Callable):
             raise ValueError("accept_test must be callable")
         accept_tests = [accept_test]
     else:
@@ -584,7 +586,7 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
     for i in range(maxiter):
         new_global_min = bh.one_cycle()
 
-        if callable(callback):
+        if isinstance(callback, collections.Callable):
             #should we pass acopy of x?
             val = callback(bh.xtrial, bh.energy_trial, bh.accept)
             if val is not None:
@@ -613,9 +615,9 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
 
 if __name__ == "__main__":
     if True:
-        print ""
-        print ""
-        print "minimize a 1d function with gradient"
+        print("")
+        print("")
+        print("minimize a 1d function with gradient")
 
         def func(x):
             f = cos(14.5 * x - 0.3) + (x + 0.2) * x
@@ -627,13 +629,13 @@ if __name__ == "__main__":
         x0 = np.array(1.0)
         ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
                            disp=False)
-        print "minimum expected at ~", -0.195
-        print ret
+        print("minimum expected at ~", -0.195)
+        print(ret)
 
     if True:
-        print ""
-        print ""
-        print "minimize a 2d function without gradient"
+        print("")
+        print("")
+        print("minimize a 2d function without gradient")
         # minimum expected at ~[-0.195, -0.1]
 
         def func(x):
@@ -646,13 +648,13 @@ if __name__ == "__main__":
         scipy.optimize.minimize(func, x0, **kwargs)
         ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
                            disp=False)
-        print "minimum expected at ~", [-0.195, -0.1]
-        print ret
+        print("minimum expected at ~", [-0.195, -0.1])
+        print(ret)
 
     if True:
-        print ""
-        print ""
-        print "minimize a 1d function with large barriers"
+        print("")
+        print("")
+        print("minimize a 1d function with large barriers")
         #try a function with much higher barriers between the local minima.
 
         def func(x):
@@ -666,20 +668,20 @@ if __name__ == "__main__":
         x0 = np.array(1.0)
         ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
                            disp=False)
-        print "minimum expected at ~", -0.1956
-        print ret
+        print("minimum expected at ~", -0.1956)
+        print(ret)
 
     if False:
         func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
         x0 = [1.]
         ret = basinhopping(x0, func, maxiter=200, disp=False)
-        print "minimum expected at ~", -0.195
-        print ret
+        print("minimum expected at ~", -0.195)
+        print(ret)
 
     if True:
-        print ""
-        print ""
-        print "try a harder 2d problem"
+        print("")
+        print("")
+        print("try a harder 2d problem")
 
         def func2d(x):
             f = (cos(14.5 * x[0] - 0.3) + (x[0] + 0.2) * x[0] +
@@ -693,5 +695,5 @@ if __name__ == "__main__":
         x0 = np.array([1.0, 1.0])
         ret = basinhopping(x0, func2d, minimizer_kwargs=kwargs, maxiter=200,
                            disp=False)
-        print "minimum expected at ~", [-0.19415263, -0.19415263]
-        print ret
+        print("minimum expected at ~", [-0.19415263, -0.19415263])
+        print(ret)
