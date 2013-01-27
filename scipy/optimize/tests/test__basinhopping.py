@@ -66,7 +66,7 @@ class TestBasinHopping(TestCase):
         self.lower = (-3., [-3., -3.])
         self.tol = 3  # number of decimal places
 
-        self.maxiter = 100
+        self.niter = 100
         self.disp = False
 
         # fix random seed
@@ -78,22 +78,20 @@ class TestBasinHopping(TestCase):
     def test_ValueError(self):
         """test the ValueErrors are raised on bad input"""
         i = 1
-        #func or minimizer must be passed
-        self.assertRaises(ValueError, basinhopping, self.x0[i])
         #if take_step is passed, it must be callable
-        self.assertRaises(ValueError, basinhopping, self.x0[i], func=func2d,
+        self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
                           take_step=1)
         #if accept_test is passed, it must be callable
-        self.assertRaises(ValueError, basinhopping, self.x0[i], func=func2d,
+        self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
                           accept_test=1)
         #accept_test must return bool or string "force_accept"
         def bad_accept_test1(*args, **kwargs):
             return 1
         def bad_accept_test2(*args, **kwargs):
             return "not force_accept"
-        self.assertRaises(ValueError, basinhopping, self.x0[i], func=func2d,
+        self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
                           minimizer_kwargs=self.kwargs, accept_test=bad_accept_test1)
-        self.assertRaises(ValueError, basinhopping, self.x0[i], func=func2d,
+        self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
                           minimizer_kwargs=self.kwargs, accept_test=bad_accept_test2)
         
         
@@ -102,15 +100,15 @@ class TestBasinHopping(TestCase):
     def test_1d_grad(self):
         """test 1d minimizations with gradient"""
         i = 0
-        res = basinhopping(self.x0[i], func1d, minimizer_kwargs=self.kwargs,
-                           maxiter=self.maxiter, disp=self.disp)
+        res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_2d(self):
         """test 2d minimizations with gradient"""
         i = 1
-        res = basinhopping(self.x0[i], func2d, minimizer_kwargs=self.kwargs,
-                           maxiter=self.maxiter, disp=self.disp)
+        res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
         self.assertGreater(res.nfev, 0)
 
@@ -120,25 +118,17 @@ class TestBasinHopping(TestCase):
         minimizer_kwargs=self.kwargs.copy()
         #L-BFGS-B doesn't use njev, but BFGS does
         minimizer_kwargs["method"] = "BFGS"
-        res = basinhopping(self.x0[i], func2d, minimizer_kwargs=minimizer_kwargs,
-                           maxiter=self.maxiter, disp=True)
+        res = basinhopping(func2d, self.x0[i], minimizer_kwargs=minimizer_kwargs,
+                           niter=self.niter, disp=True)
         self.assertGreater(res.nfev, 0)
         self.assertEqual(res.nfev, res.njev)
 
     def test_2d_nograd(self):
         """test 2d minimizations without gradient"""
         i = 1
-        res = basinhopping(self.x0[i], func2d_nograd,
+        res = basinhopping(func2d_nograd, self.x0[i],
                            minimizer_kwargs=self.kwargs_nograd,
-                           maxiter=self.maxiter, disp=self.disp)
-        assert_almost_equal(res.x, self.sol[i], self.tol)
-
-    def test_pass_minimizer(self):
-        """test 2d minimizations with user defined minimizer"""
-        i = 1
-        minimizer = Minimizer(func2d, **self.kwargs)
-        res = basinhopping(self.x0[i], minimizer=minimizer,
-                           maxiter=self.maxiter, disp=self.disp)
+                           niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_all_minimizers(self):
@@ -149,9 +139,9 @@ class TestBasinHopping(TestCase):
         minimizer_kwargs = copy.copy(self.kwargs)
         for method in methods:
             minimizer_kwargs["method"] = method
-            res = basinhopping(self.x0[i], func2d,
+            res = basinhopping(func2d, self.x0[i],
                                minimizer_kwargs=self.kwargs,
-                               maxiter=self.maxiter, disp=self.disp)
+                               niter=self.niter, disp=self.disp)
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
     #below here we are testing basinhopping_advanced
@@ -159,9 +149,9 @@ class TestBasinHopping(TestCase):
     def test_bh_advanced(self):
         """test 2d minimizations with gradient"""
         i = 1
-        res = basinhopping(self.x0[i], func2d,
+        res = basinhopping(func2d, self.x0[i],
                                     minimizer_kwargs=self.kwargs,
-                                    maxiter=self.maxiter, disp=self.disp)
+                                    niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_pass_takestep(self):
@@ -179,9 +169,9 @@ class TestBasinHopping(TestCase):
         takestep = MyTakeStep()
         initial_step_size = takestep.stepsize
         i = 1
-        res = basinhopping(self.x0[i], func2d,
+        res = basinhopping(func2d, self.x0[i],
                                     minimizer_kwargs=self.kwargs,
-                                    maxiter=self.maxiter, disp=self.disp,
+                                    niter=self.niter, disp=self.disp,
                                     take_step=takestep)
         assert_almost_equal(res.x, self.sol[i], self.tol)
         assert_(takestep.been_called)
@@ -210,9 +200,9 @@ class TestBasinHopping(TestCase):
         takestep = MyTakeStep()
         initial_step_size = takestep.stepsize
         i = 1
-        res = basinhopping(self.x0[i], func2d,
+        res = basinhopping(func2d, self.x0[i],
                                     minimizer_kwargs=self.kwargs,
-                                    maxiter=self.maxiter, disp=self.disp,
+                                    niter=self.niter, disp=self.disp,
                                     take_step=takestep)
         assert_almost_equal(res.x, self.sol[i], self.tol)
         assert_(takestep.been_called)
@@ -243,8 +233,8 @@ class TestBasinHopping(TestCase):
         accept_test = AcceptTest()
         i = 1
         #there's no point in running it more than a few steps.
-        res = basinhopping(self.x0[i], func2d,
-                                    minimizer_kwargs=self.kwargs, maxiter=10,
+        res = basinhopping(func2d, self.x0[i],
+                                    minimizer_kwargs=self.kwargs, niter=10,
                                     disp=self.disp, accept_test=accept_test)
         assert_(accept_test.been_called)
 
@@ -269,8 +259,8 @@ class TestBasinHopping(TestCase):
         callback = CallBack()
         i = 1
         #there's no point in running it more than a few steps.
-        res = basinhopping(self.x0[i], func2d,
-                                    minimizer_kwargs=self.kwargs, maxiter=30,
+        res = basinhopping(func2d, self.x0[i],
+                                    minimizer_kwargs=self.kwargs, niter=30,
                                     disp=self.disp, callback=callback)
         assert_(callback.been_called)
         assert_("callback" in res.message[0])

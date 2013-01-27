@@ -36,12 +36,12 @@ class _Storage(object):
 
 
 class _BasinHopping(object):
-    def __init__(self, x0, minimizer, step_taking, accept_tests, iprint=1):
+    def __init__(self, x0, minimizer, step_taking, accept_tests, disp=False):
         self.x = np.copy(x0)
         self.minimizer = minimizer
         self.step_taking = step_taking
         self.accept_tests = accept_tests
-        self.iprint = iprint
+        self.disp = disp
 
         self.nstep = 0
         self.takestep_report = True
@@ -50,7 +50,7 @@ class _BasinHopping(object):
         minres = minimizer(self.x)
         self.x = np.copy(minres.x)
         self.energy = minres.fun
-        if self.iprint > 0:
+        if self.disp:
             print("basinhopping step %d: energy %g" % (self.nstep, self.energy))
 
         #initialize storage class
@@ -76,7 +76,7 @@ class _BasinHopping(object):
         x_after_quench = minres.x
         energy_after_quench = minres.fun
         if hasattr(minres, "success"):
-            if not minres.success and self.iprint > 0:
+            if not minres.success and self.disp:
                 print("warning: basinhoppping: minimize failure")
         if hasattr(minres, "nfev"):
             self.res.nfev += minres.nfev
@@ -132,14 +132,13 @@ class _BasinHopping(object):
             new_global_min = self.storage.insert(self.x, self.energy)
 
         #print some information
-        if self.iprint > 0:
-            if self.nstep % self.iprint == 0:
-                self.print_report(energy_trial, accept)
+        if self.disp:
+            self.print_report(energy_trial, accept)
             if new_global_min:
                 print("found new global minimum on step %d with function value %g" \
                       % (self.nstep, self.energy))
 
-        #save some varialbes as _BasinHopping attributes
+        #save some variables as _BasinHopping attributes
         self.xtrial = xtrial
         self.energy_trial = energy_trial
         self.accept = accept
@@ -148,7 +147,7 @@ class _BasinHopping(object):
 
     def print_report(self, energy_trial, accept):
         xlowest, energy_lowest = self.storage.get_lowest()
-        print("basinhopping step %d: energy %g trial_f %g accepted %d lowest_f %g" \
+        print("basinhopping step %d: f %g trial_f %g accepted %d lowest_f %g" \
               % (self.nstep, self.energy, energy_trial, accept, energy_lowest))
 
 
@@ -267,9 +266,9 @@ class _Metropolis(object):
                     kwargs["f_old"]))
 
 
-def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
+def basinhopping(func, x0, minimizer_kwargs=dict(),
                  take_step=None, accept_test=None, callback=None,
-                 maxiter=100, T=1.0, stepsize=0.5, interval=50, disp=False,
+                 niter=100, T=1.0, stepsize=0.5, interval=50, disp=False,
                  niter_success=None):
     """
     Find the global minimum of a function using the basin-hopping algorithm
@@ -278,12 +277,12 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
 
     Parameters
     ----------
+    func : callable ``f(x, *args)``
+        Function to be optimized.  args can be passed as an optional item in the
+        dict minimizer_kwargs
     x0 : ndarray
         Initial guess.
-    func : callable ``f(x, *args)``, optional
-        Function to be optimized.  Either func or minimizer must be passed.
-        Use minimizer_kwargs to specify args.
-    maxiter : integer, optional
+    niter : integer, optional
         The number of basin hopping iterations
     T : float, optional
         The ``temperature`` parameter for the accept or reject criterion.
@@ -308,11 +307,6 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
                 Extra arguments passed to the objective function (func) and its
                 derivatives (Jacobian, Hessian).
 
-    minimizer : callable ``minimizer(x0, **minimizer_kwargs)``, optional
-        Use this minizer rather than the default.  If this is passed, then func
-        is not used.  basinhopping() will get the function values from the
-        output of minimizer.  The return must be an object with attributes `x`
-        and `fun` reporting the minimized coordinates and function value
     take_step : callable ``take_step(x)``, optional
         Replace the default step taking routine with this routine.  The default
         step taking routine is a random displacement of the coordinates, but
@@ -425,7 +419,7 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
 
     >>> minimizer_kwargs = {"method": "BFGS"}
     >>> ret = basinhopping(x0, func, minimizer_kwargs=minimizer_kwargs,
-    ...                    maxiter=200)
+    ...                    niter=200)
     >>> print "global minimum: x = %.4f, f(x0) = %.4f" % (ret.x, ret.fun)
     global minimum: x = -0.1951, f(x0) = -1.0009
 
@@ -446,7 +440,7 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
     >>> x0 = [1.0, 1.0]
     >>> ret = basinhopping_advanced(x0, func2d,
     ...                             minimizer_kwargs=minimizer_kwargs,
-    ...                             maxiter=200)
+    ...                             niter=200)
     >>> print "global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
     ...                                                           ret.fun)
@@ -473,7 +467,7 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
     >>> mytakestep = MyTakeStep()
     >>> ret = basinhopping_advanced(x0, func2d,
     ...                             minimizer_kwargs=minimizer_kwargs,
-    ...                             maxiter=200, take_step=mytakestep)
+    ...                             niter=200, take_step=mytakestep)
     >>> print "global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
     ...                                                           ret.fun)
@@ -491,7 +485,7 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
     >>> np.random.seed(1)
     >>> ret = basinhopping_advanced(x0, func2d,
     ...                             minimizer_kwargs=minimizer_kwargs,
-    ...                             maxiter=10, callback=print_fun)
+    ...                             niter=10, callback=print_fun)
     at minima 0.4159 accepted 1
     at minima -0.9073 accepted 1
     at minima -0.1021 accepted 1
@@ -523,30 +517,17 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
     >>> mybounds = MyBounds()
     >>> ret = basinhopping_advanced(x0, func2d,
     ...                             minimizer_kwargs=minimizer_kwargs,
-    ...                             maxiter=10, accept_test=mybounds)
+    ...                             niter=10, accept_test=mybounds)
 
 
     """
     x0 = np.array(x0).copy()
 
-    #turn printing on or off
-    if disp:
-        iprint = 1
-    else:
-        iprint = -1
-
     #set up minimizer
-    if minimizer is None and func is None:
-        raise ValueError("minimizer and func cannot both be None")
-    if isinstance(minimizer, collections.Callable):
-        wrapped_minimizer = _MinimizerWrapper(minimizer, **minimizer_kwargs)
-    else:
-        #use default
-        wrapped_minimizer = _MinimizerWrapper(scipy.optimize.minimize, func,
+    wrapped_minimizer = _MinimizerWrapper(scipy.optimize.minimize, func,
                                               **minimizer_kwargs)
 
     #set up step taking algorithm
-    verbose = iprint > 0
     if take_step is not None:
         if not isinstance(take_step, collections.Callable):
             raise ValueError("take_step must be callable")
@@ -554,14 +535,14 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
         # then use _AdaptiveStepsize to control take_step.stepsize
         if hasattr(take_step, "stepsize") and not hasattr(take_step, "report"):
             mytake_step = _AdaptiveStepsize(take_step, interval=interval,
-                                            verbose=verbose)
+                                            verbose=disp)
         else:
             mytake_step = take_step
     else:
         #use default
         displace = _RandomDisplacement(stepsize=stepsize)
         mytake_step = _AdaptiveStepsize(displace, interval=interval,
-                                        verbose=verbose)
+                                        verbose=disp)
 
     #set up accept tests
     if accept_test is not None:
@@ -575,15 +556,15 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
     accept_tests.append(metropolis)
 
     if niter_success is None:
-        niter_success = maxiter + 2
+        niter_success = niter + 2
 
     bh = _BasinHopping(x0, wrapped_minimizer, mytake_step, accept_tests,
-                       iprint=iprint)
+                       disp=disp)
 
     #start main iteration loop
     count = 0
-    message = ["maximum iterations reached"]
-    for i in range(maxiter):
+    message = ["requested number of basinhopping iterations completed successfully"]
+    for i in range(niter):
         new_global_min = bh.one_cycle()
 
         if isinstance(callback, collections.Callable):
@@ -591,7 +572,7 @@ def basinhopping(x0, func=None, minimizer=None, minimizer_kwargs=dict(),
             val = callback(bh.xtrial, bh.energy_trial, bh.accept)
             if val is not None:
                 if val:
-                    message = ["callback returned True"]
+                    message = ["callback function requested stop early by returning True"]
                     break
 
         count += 1
@@ -627,7 +608,7 @@ if __name__ == "__main__":
         # minimum expected at ~-0.195
         kwargs = {"method": "L-BFGS-B", "jac": True}
         x0 = np.array(1.0)
-        ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
+        ret = basinhopping(func, x0, minimizer_kwargs=kwargs, niter=200,
                            disp=False)
         print("minimum expected at ~", -0.195)
         print(ret)
@@ -646,7 +627,7 @@ if __name__ == "__main__":
         kwargs = {"method": "L-BFGS-B"}
         x0 = np.array([1.0, 1.])
         scipy.optimize.minimize(func, x0, **kwargs)
-        ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
+        ret = basinhopping(func, x0, minimizer_kwargs=kwargs, niter=200,
                            disp=False)
         print("minimum expected at ~", [-0.195, -0.1])
         print(ret)
@@ -666,7 +647,7 @@ if __name__ == "__main__":
         # minimum expected at ~-0.195
         kwargs = {"method": "L-BFGS-B", "jac": True}
         x0 = np.array(1.0)
-        ret = basinhopping(x0, func, minimizer_kwargs=kwargs, maxiter=200,
+        ret = basinhopping(func, x0, minimizer_kwargs=kwargs, niter=200,
                            disp=False)
         print("minimum expected at ~", -0.1956)
         print(ret)
@@ -674,7 +655,7 @@ if __name__ == "__main__":
     if False:
         func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
         x0 = [1.]
-        ret = basinhopping(x0, func, maxiter=200, disp=False)
+        ret = basinhopping(func, x0, niter=200, disp=False)
         print("minimum expected at ~", -0.195)
         print(ret)
 
@@ -693,7 +674,7 @@ if __name__ == "__main__":
 
         kwargs = {"method": "L-BFGS-B", "jac": True}
         x0 = np.array([1.0, 1.0])
-        ret = basinhopping(x0, func2d, minimizer_kwargs=kwargs, maxiter=200,
+        ret = basinhopping(func2d, x0, minimizer_kwargs=kwargs, niter=200,
                            disp=False)
         print("minimum expected at ~", [-0.19415263, -0.19415263])
         print(ret)
