@@ -567,18 +567,19 @@ class rv_generic(object):
         ----------
         arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
+            instance object for more information).
         loc : array_like, optional
-            location parameter (default=0)
+            Location parameter (default=0).
         scale : array_like, optional
-            scale parameter (default=1)
+            Scale parameter (default=1).
         size : int or tuple of ints, optional
-            defining number of random variates (default=1)
+            Defining number of random variates (default=1).  Note that `size`
+            has to be given as keyword, not as positional argument.
 
         Returns
         -------
-        rvs : array_like
-            random variates of given `size`
+        rvs : ndarray or scalar
+            Random variates of given `size`.
 
         """
         kwd_names = ['loc', 'scale', 'size', 'discrete']
@@ -5776,11 +5777,12 @@ class rv_discrete(rv_generic):
         loc : array_like, optional
             Location parameter (default=0).
         size : int or tuple of ints, optional
-            Defining number of random variates (default=1).
+            Defining number of random variates (default=1).  Note that `size`
+            has to be given as keyword, not as positional argument.
 
         Returns
         -------
-        rvs : array_like
+        rvs : ndarray or scalar
             Random variates of given `size`.
 
         """
