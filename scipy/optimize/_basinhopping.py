@@ -1,16 +1,14 @@
 """
-Original Author: Jacob Stevenson 2012
-
 basinhopping: The basinhopping global optimization algorithm
 """
 from __future__ import division, print_function, absolute_import
-
-__all__ = ['basinhopping']
 
 import numpy as np
 from numpy import cos, sin
 import scipy.optimize
 import collections
+
+__all__ = ['basinhopping']
 
 
 class _Storage(object):
@@ -102,14 +100,11 @@ class _BasinHopping(object):
                     accept = True
                     break
                 else:
-                    raise ValueError(
-                        "accept test must return bool or string 'force accept'. Type is",
-                        type(testres)
-                    )
+                    raise ValueError("accept test must return bool or string "
+                                     "'force accept'. Type is", type(testres))
             else:
-                raise ValueError(
-                    "accept test must return bool or string 'force accept'. Type is",
-                    type(testres))
+                raise ValueError("accept test must return bool or string "
+                                 "'force accept'. Type is", type(testres))
 
         #Report the result of the acceptance test to the take step class.  This
         #is for adaptive step taking
@@ -135,8 +130,8 @@ class _BasinHopping(object):
         if self.disp:
             self.print_report(energy_trial, accept)
             if new_global_min:
-                print("found new global minimum on step %d with function value %g" \
-                      % (self.nstep, self.energy))
+                print("found new global minimum on step %d with function value "
+                      " %g" % (self.nstep, self.energy))
 
         #save some variables as _BasinHopping attributes
         self.xtrial = xtrial
@@ -147,17 +142,19 @@ class _BasinHopping(object):
 
     def print_report(self, energy_trial, accept):
         xlowest, energy_lowest = self.storage.get_lowest()
-        print("basinhopping step %d: f %g trial_f %g accepted %d lowest_f %g" \
-              % (self.nstep, self.energy, energy_trial, accept, energy_lowest))
+        print("basinhopping step %d: f %g trial_f %g accepted %d "
+              " lowest_f%g" % (self.nstep, self.energy, energy_trial,
+                               accept, energy_lowest))
 
 
 class _AdaptiveStepsize(object):
     def __init__(self, takestep, accept_rate=0.5, interval=50, factor=0.9,
                  verbose=True):
         """
-        Class to implement adaptive stepsize.  This class wraps the step taking
-        class and modifies the stepsize to ensure the true acceptance rate is
-        as close as possible to the target.
+        Class to implement adaptive stepsize.
+
+        This class wraps the step taking class and modifies the stepsize to
+        ensure the true acceptance rate is as close as possible to the target.
 
         Parameters
         ----------
@@ -166,7 +163,7 @@ class _AdaptiveStepsize(object):
             takestep.stepsize
         accept_rate : float, optional
             The target step acceptance rate
-        interval : integer, optional
+        interval : int, optional
             Interval for how often to update the stepsize
         factor : float, optional
             The step size is multiplied or divided by this factor upon each
@@ -199,9 +196,10 @@ class _AdaptiveStepsize(object):
             #We're not accepting enough steps.  Take smaller steps
             self.takestep.stepsize *= self.factor
         if self.verbose:
-            print("adaptive stepsize: acceptance rate %f target %f new stepsize %g old stepsize %g" \
-                  % (accept_rate, self.target_accept_rate,
-                     self.takestep.stepsize, old_stepsize))
+            print("adaptive stepsize: acceptance rate %f target %f new "
+                  "stepsize %g old stepsize %g" % (accept_rate,
+                  self.target_accept_rate, self.takestep.stepsize,
+                  old_stepsize))
 
     def take_step(self, x):
         self.nstep += 1
@@ -260,7 +258,7 @@ class _Metropolis(object):
 
     def __call__(self, **kwargs):
         """
-        f_new and f_old are manditory in kwargs
+        f_new and f_old are mandatory in kwargs
         """
         return bool(self.accept_reject(kwargs["f_new"],
                     kwargs["f_old"]))
@@ -277,8 +275,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     Parameters
     ----------
     func : callable ``f(x, *args)``
-        Function to be optimized.  args can be passed as an optional item in the
-        minimizer_kwargs
+        Function to be optimized.  args can be passed as an optional item in
+        the minimizer_kwargs
     x0 : ndarray
         Initial guess.
     niter : integer, optional
@@ -292,8 +290,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         initial stepsize for use in the random displacement.
     minimizer_kwargs : dict, optional
         Extra arguments to be passed to the minimizer scipy.optimize.minimize()
-        If the default minimzer is used, some important options could
-        be
+        If the default minimzer is used, some important options could be
 
             method - the minimization method (e.g. "L-BFGS-B")
             args - tuple, optional
@@ -403,16 +400,16 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     Examples
     --------
-    The following example is a one dimensional minimization problem,  with many
+    The following example is a one-dimensional minimization problem,  with many
     local minima superimposed on a parabola.
 
     >>> func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
     >>> x0=[1.]
 
     Basinhopping, internally, uses a local minimization algorithm.  We will use
-    the parameter minimizer_kwargs to tell basinhopping which algorithm to use
-    and how to set up that minimizer.  This parameter will be passed to
-    scipy.optimze.minimize()
+    the parameter ``minimizer_kwargs`` to tell basinhopping which algorithm to
+    use and how to set up that minimizer.  This parameter will be passed to
+    `scipy.optimze.minimize`.
 
     >>> minimizer_kwargs = {"method": "BFGS"}
     >>> ret = basinhopping(x0, func, minimizer_kwargs=minimizer_kwargs,
@@ -420,7 +417,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> print "global minimum: x = %.4f, f(x0) = %.4f" % (ret.x, ret.fun)
     global minimum: x = -0.1951, f(x0) = -1.0009
 
-    Next consider a two dimensional minimization problem. Also, this time we
+    Next consider a two-dimensional minimization problem. Also, this time we
     will use gradient information to significantly speed up the search.
 
     >>> def func2d(x):
@@ -432,12 +429,12 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     ...     return f, df
 
     We'll also use a different minimizer, just for fun.  Also we must tell the
-    minimzer that our function returns both energy and gradient (jacobian)
+    minimizer that our function returns both energy and gradient (jacobian)
+
     >>> minimizer_kwargs = {"method":"L-BFGS-B", "jac":True}
     >>> x0 = [1.0, 1.0]
-    >>> ret = basinhopping_advanced(x0, func2d,
-    ...                             minimizer_kwargs=minimizer_kwargs,
-    ...                             niter=200)
+    >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
+    ...                    niter=200)
     >>> print "global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
     ...                                                           ret.fun)
@@ -446,7 +443,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     Here is an example using a custom step taking routine.  Imagine you want
     the first coordinate to take larger steps then the rest of the coordinates.
-    This can be implemented like so
+    This can be implemented like so:
 
     >>> class MyTakeStep(object):
     ...    def __init__(self, stepsize=0.5):
@@ -458,13 +455,12 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     ...        return x
 
     Since MyTakeStep.stepsize exists, but MyTakeStep.report() doesn't,
-    basinhopping_advanced will adjust the magnitude of stepsize to optimize the
-    search.  We'll use the same 2d function as before
+    basinhopping will adjust the magnitude of stepsize to optimize the
+    search.  We'll use the same 2-D function as before
 
     >>> mytakestep = MyTakeStep()
-    >>> ret = basinhopping_advanced(x0, func2d,
-    ...                             minimizer_kwargs=minimizer_kwargs,
-    ...                             niter=200, take_step=mytakestep)
+    >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
+    ...                    niter=200, take_step=mytakestep)
     >>> print "global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
     ...                                                           ret.fun)
@@ -480,9 +476,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     We'll run it for only 10 basinhopping steps this time.
 
     >>> np.random.seed(1)
-    >>> ret = basinhopping_advanced(x0, func2d,
-    ...                             minimizer_kwargs=minimizer_kwargs,
-    ...                             niter=10, callback=print_fun)
+    >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
+    ...                    niter=10, callback=print_fun)
     at minima 0.4159 accepted 1
     at minima -0.9073 accepted 1
     at minima -0.1021 accepted 1
@@ -496,10 +491,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
 
     The minima at -1.0109 is actually the global minimum, found already
-    on the 4th iteration
+    on the 4th iteration.
 
-
-    Now let's implement bounds on the problem using a custom accept_test
+    Now let's implement bounds on the problem using a custom ``accept_test``:
 
     >>> class MyBounds(object):
     ...     def __init__(self, xmax=[1.1,1.1], xmin=[-1.1,-1.1] ):
@@ -512,10 +506,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     ...         return tmax and tmin
 
     >>> mybounds = MyBounds()
-    >>> ret = basinhopping_advanced(x0, func2d,
-    ...                             minimizer_kwargs=minimizer_kwargs,
-    ...                             niter=10, accept_test=mybounds)
-
+    >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
+    ...                    niter=10, accept_test=mybounds)
 
     """
     x0 = np.array(x0).copy()
@@ -578,8 +570,6 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         elif count > niter_success:
             message = ["success condition satisfied"]
             break
-
-    #finished.
 
     #prepare return object
     lowest = bh.storage.get_lowest()
