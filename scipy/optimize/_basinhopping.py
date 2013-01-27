@@ -24,7 +24,7 @@ class _Storage(object):
         self.x = np.copy(x)
         self.f = f
 
-    def insert(self, x, f):
+    def update(self, x, f):
         if f < self.f:
             self._add(x, f)
             return True
@@ -129,7 +129,7 @@ class _BasinHopping(object):
         if accept:
             self.energy = energy_trial
             self.x = np.copy(xtrial)
-            new_global_min = self.storage.insert(self.x, self.energy)
+            new_global_min = self.storage.update(self.x, self.energy)
 
         #print some information
         if self.disp:
@@ -266,10 +266,9 @@ class _Metropolis(object):
                     kwargs["f_old"]))
 
 
-def basinhopping(func, x0, minimizer_kwargs=dict(),
-                 take_step=None, accept_test=None, callback=None,
-                 niter=100, T=1.0, stepsize=0.5, interval=50, disp=False,
-                 niter_success=None):
+def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
+                 minimizer_kwargs=dict(), take_step=None, accept_test=None,
+                 callback=None, interval=50, disp=False, niter_success=None):
     """
     Find the global minimum of a function using the basin-hopping algorithm
 
@@ -279,7 +278,7 @@ def basinhopping(func, x0, minimizer_kwargs=dict(),
     ----------
     func : callable ``f(x, *args)``
         Function to be optimized.  args can be passed as an optional item in the
-        dict minimizer_kwargs
+        minimizer_kwargs
     x0 : ndarray
         Initial guess.
     niter : integer, optional
@@ -291,15 +290,9 @@ def basinhopping(func, x0, minimizer_kwargs=dict(),
         (in function value) between local minima.
     stepsize : float, optional
         initial stepsize for use in the random displacement.
-    interval : integer, optional
-        interval for how often to update the stepsize
-    disp : bool, optional
-        Set to True to print status messages
-    minimizer_kwargs : tuple, optional
-        Extra arguments to be passed to the minimizer.  If argument minimizer
-        is specified, then it is passed to that, else it is passed to the
-        default scipy.optimize.minimize().  See scipy.optimize.minimize() for
-        details.  If the default minimzer is used, some important options could
+    minimizer_kwargs : dict, optional
+        Extra arguments to be passed to the minimizer scipy.optimize.minimize()
+        If the default minimzer is used, some important options could
         be
 
             method - the minimization method (e.g. "L-BFGS-B")
@@ -338,6 +331,10 @@ def basinhopping(func, x0, minimizer_kwargs=dict(),
         This can be used, for example, to save the lowest N minima found.
         Also, callback can be used to specify a user defined stop criterion by
         optionally returning True to stop the basinhopping routine.
+    interval : integer, optional
+        interval for how often to update the stepsize
+    disp : bool, optional
+        Set to True to print status messages
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.

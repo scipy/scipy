@@ -274,14 +274,14 @@ class Test_Storage(TestCase):
         self.storage = _Storage(self.x0, self.f0)
 
     def test_higher_f_rejected(self):
-        ret = self.storage.insert(self.x0 + 1, self.f0 + 1)
+        ret = self.storage.update(self.x0 + 1, self.f0 + 1)
         x, f = self.storage.get_lowest()
         self.assertEqual(self.x0, x)
         self.assertEqual(self.f0, f)
         self.assertFalse(ret)
 
     def test_lower_f_accepted(self):
-        ret = self.storage.insert(self.x0 + 1, self.f0 - 1)
+        ret = self.storage.update(self.x0 + 1, self.f0 - 1)
         x, f = self.storage.get_lowest()
         self.assertNotEqual(self.x0, x)
         self.assertNotEqual(self.f0, f)
