@@ -74,7 +74,7 @@ class TestBasinHopping(TestCase):
 
         self.kwargs = {"method": "L-BFGS-B", "jac": True}
         self.kwargs_nograd = {"method": "L-BFGS-B"}
-    
+
     def test_ValueError(self):
         """test the ValueErrors are raised on bad input"""
         i = 1
@@ -85,17 +85,18 @@ class TestBasinHopping(TestCase):
         self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
                           accept_test=1)
         #accept_test must return bool or string "force_accept"
+
         def bad_accept_test1(*args, **kwargs):
             return 1
+
         def bad_accept_test2(*args, **kwargs):
             return "not force_accept"
         self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
-                          minimizer_kwargs=self.kwargs, accept_test=bad_accept_test1)
+                          minimizer_kwargs=self.kwargs,
+                          accept_test=bad_accept_test1)
         self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
-                          minimizer_kwargs=self.kwargs, accept_test=bad_accept_test2)
-        
-        
-
+                          minimizer_kwargs=self.kwargs,
+                          accept_test=bad_accept_test2)
 
     def test_1d_grad(self):
         """test 1d minimizations with gradient"""
@@ -115,11 +116,12 @@ class TestBasinHopping(TestCase):
     def test_njev(self):
         """njev is returned correctly"""
         i = 1
-        minimizer_kwargs=self.kwargs.copy()
+        minimizer_kwargs = self.kwargs.copy()
         #L-BFGS-B doesn't use njev, but BFGS does
         minimizer_kwargs["method"] = "BFGS"
-        res = basinhopping(func2d, self.x0[i], minimizer_kwargs=minimizer_kwargs,
-                           niter=self.niter, disp=True)
+        res = basinhopping(func2d, self.x0[i],
+                           minimizer_kwargs=minimizer_kwargs, niter=self.niter,
+                           disp=True)
         self.assertGreater(res.nfev, 0)
         self.assertEqual(res.nfev, res.njev)
 
@@ -144,15 +146,7 @@ class TestBasinHopping(TestCase):
                                niter=self.niter, disp=self.disp)
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
-    #below here we are testing basinhopping_advanced
-
-    def test_bh_advanced(self):
-        """test 2d minimizations with gradient"""
-        i = 1
-        res = basinhopping(func2d, self.x0[i],
-                                    minimizer_kwargs=self.kwargs,
-                                    niter=self.niter, disp=self.disp)
-        assert_almost_equal(res.x, self.sol[i], self.tol)
+    #below here we are testing basinhopping
 
     def test_pass_takestep(self):
         class MyTakeStep(_RandomDisplacement):
@@ -169,10 +163,9 @@ class TestBasinHopping(TestCase):
         takestep = MyTakeStep()
         initial_step_size = takestep.stepsize
         i = 1
-        res = basinhopping(func2d, self.x0[i],
-                                    minimizer_kwargs=self.kwargs,
-                                    niter=self.niter, disp=self.disp,
-                                    take_step=takestep)
+        res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=self.niter, disp=self.disp,
+                           take_step=takestep)
         assert_almost_equal(res.x, self.sol[i], self.tol)
         assert_(takestep.been_called)
         #make sure that the built in adaptive step size has been used
@@ -200,10 +193,9 @@ class TestBasinHopping(TestCase):
         takestep = MyTakeStep()
         initial_step_size = takestep.stepsize
         i = 1
-        res = basinhopping(func2d, self.x0[i],
-                                    minimizer_kwargs=self.kwargs,
-                                    niter=self.niter, disp=self.disp,
-                                    take_step=takestep)
+        res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=self.niter, disp=self.disp,
+                           take_step=takestep)
         assert_almost_equal(res.x, self.sol[i], self.tol)
         assert_(takestep.been_called)
         #make sure that the built in adaptive step size has **not** been used
@@ -233,9 +225,8 @@ class TestBasinHopping(TestCase):
         accept_test = AcceptTest()
         i = 1
         #there's no point in running it more than a few steps.
-        res = basinhopping(func2d, self.x0[i],
-                                    minimizer_kwargs=self.kwargs, niter=10,
-                                    disp=self.disp, accept_test=accept_test)
+        res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=10, disp=self.disp, accept_test=accept_test)
         assert_(accept_test.been_called)
 
     def test_pass_callback(self):
@@ -259,9 +250,8 @@ class TestBasinHopping(TestCase):
         callback = CallBack()
         i = 1
         #there's no point in running it more than a few steps.
-        res = basinhopping(func2d, self.x0[i],
-                                    minimizer_kwargs=self.kwargs, niter=30,
-                                    disp=self.disp, callback=callback)
+        res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=30, disp=self.disp, callback=callback)
         assert_(callback.been_called)
         assert_("callback" in res.message[0])
         assert_(res.nit == 10)
@@ -347,7 +337,7 @@ class Test_AdaptiveStepsize(TestCase):
         self.target_accept_rate = 0.5
         self.takestep = _AdaptiveStepsize(takestep=self.ts,
                                           accept_rate=self.target_accept_rate)
-    
+
     def test_adaptive_increase(self):
         #if few steps are rejected, the stepsize should increase
         x = 0.
@@ -357,7 +347,7 @@ class Test_AdaptiveStepsize(TestCase):
             self.takestep(x)
             self.takestep.report(True)
         self.assertGreater(self.ts.stepsize, self.stepsize)
-    
+
     def test_adaptive_decrease(self):
         #if few steps are rejected, the stepsize should increase
         x = 0.
@@ -367,9 +357,6 @@ class Test_AdaptiveStepsize(TestCase):
             self.takestep(x)
             self.takestep.report(False)
         self.assertLess(self.ts.stepsize, self.stepsize)
-        
-        
-        
 
 
 if __name__ == "__main__":

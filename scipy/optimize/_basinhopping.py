@@ -49,7 +49,7 @@ class _BasinHopping(object):
         self.x = np.copy(minres.x)
         self.energy = minres.fun
         if self.disp:
-            print("basinhopping step %d: energy %g" % (self.nstep, self.energy))
+            print("basinhopping step %d: f %g" % (self.nstep, self.energy))
 
         #initialize storage class
         self.storage = _Storage(self.x, self.energy)
@@ -130,8 +130,8 @@ class _BasinHopping(object):
         if self.disp:
             self.print_report(energy_trial, accept)
             if new_global_min:
-                print("found new global minimum on step %d with function value "
-                      " %g" % (self.nstep, self.energy))
+                print("found new global minimum on step %d with function"
+                      " value %g" % (self.nstep, self.energy))
 
         #save some variables as _BasinHopping attributes
         self.xtrial = xtrial
@@ -276,7 +276,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     ----------
     func : callable ``f(x, *args)``
         Function to be optimized.  args can be passed as an optional item in
-        the minimizer_kwargs
+        the dict minimizer_kwargs
     x0 : ndarray
         Initial guess.
     niter : integer, optional
@@ -289,8 +289,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     stepsize : float, optional
         initial stepsize for use in the random displacement.
     minimizer_kwargs : dict, optional
-        Extra arguments to be passed to the minimizer scipy.optimize.minimize()
-        If the default minimzer is used, some important options could be
+        Extra keyword arguments to be passed to the minimizer
+        scipy.optimize.minimize() Some important options could be
 
             method - the minimization method (e.g. "L-BFGS-B")
             args - tuple, optional
@@ -412,9 +412,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     `scipy.optimze.minimize`.
 
     >>> minimizer_kwargs = {"method": "BFGS"}
-    >>> ret = basinhopping(x0, func, minimizer_kwargs=minimizer_kwargs,
+    >>> ret = basinhopping(func, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)
-    >>> print "global minimum: x = %.4f, f(x0) = %.4f" % (ret.x, ret.fun)
+    >>> print("global minimum: x = %.4f, f(x0) = %.4f" % (ret.x, ret.fun))
     global minimum: x = -0.1951, f(x0) = -1.0009
 
     Next consider a two-dimensional minimization problem. Also, this time we
@@ -435,9 +435,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> x0 = [1.0, 1.0]
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)
-    >>> print "global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
+    >>> print("global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
-    ...                                                           ret.fun)
+    ...                                                           ret.fun))
     global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
 
 
@@ -461,9 +461,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> mytakestep = MyTakeStep()
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200, take_step=mytakestep)
-    >>> print "global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
+    >>> print("global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
-    ...                                                           ret.fun)
+    ...                                                           ret.fun))
     global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
 
 
@@ -471,7 +471,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     value of every minimum found
 
     >>> def print_fun(x, f, accepted):
-    ...         print "at minima %.4f accepted %d" % (f, int(accepted))
+    ...         print("at minima %.4f accepted %d" % (f, int(accepted)))
 
     We'll run it for only 10 basinhopping steps this time.
 
@@ -552,7 +552,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     #start main iteration loop
     count = 0
-    message = ["requested number of basinhopping iterations completed successfully"]
+    message = ["requested number of basinhopping iterations completed"
+               " successfully"]
     for i in range(niter):
         new_global_min = bh.one_cycle()
 
@@ -561,7 +562,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
             val = callback(bh.xtrial, bh.energy_trial, bh.accept)
             if val is not None:
                 if val:
-                    message = ["callback function requested stop early by returning True"]
+                    message = ["callback function requested stop early by"
+                               "returning True"]
                     break
 
         count += 1
