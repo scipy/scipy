@@ -20,9 +20,9 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
  */
 
-/* Available at: http://ab-initio.mit.edu/Faddeeva_w
+/* Available at: http://ab-initio.mit.edu/Faddeeva
 
-   Header file for Faddeeva_w.cc; see that file for more information. */
+   Header file for Faddeeva.cc; see that file for more information. */
 
 #ifndef FADDEEVA_HH
 #define FADDEEVA_HH 1
@@ -37,7 +37,7 @@ extern double w_im(double x); // special-case code for Im[w(x)] of real x
 
 // Various functions that we can compute with the help of w(z)
 
-// compute erfcx(z) = exp(z^2) erfz(z)
+// compute erfcx(z) = exp(z^2) erfc(z)
 extern std::complex<double> erfcx(std::complex<double> z, double relerr=0);
 extern double erfcx(double x); // special case for real x
 
@@ -57,6 +57,6 @@ extern double erfc(double x); // special case for real x
 extern std::complex<double> Dawson(std::complex<double> z, double relerr=0);
 extern double Dawson(double x); // special case for real x
 
-}; // namespace Faddeeva
+} // namespace Faddeeva
 
 #endif // FADDEEVA_HH
