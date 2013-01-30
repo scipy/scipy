@@ -225,7 +225,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         only for generalized eigenvalue problem and if eigvals=None)
     eigvals : tuple (lo, hi)
         Indexes of the smallest and largest (in ascending order) eigenvalues
-        and corresponding eigenvectors to be returned: 0 <= lo < hi <= M-1.
+        and corresponding eigenvectors to be returned: 0 <= lo <= hi <= M-1.
         If omitted, all eigenvalues and eigenvectors are returned.
     type : integer
         Specifies the problem type to be solved:
