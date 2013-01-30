@@ -64,6 +64,14 @@ class NDInterpolatorBase(object):
         (npoints, nvalues).  Ensure the `points` and values arrays are
         C-contiguous, and of correct type.
         """
+
+        if isinstance(points, qhull.Delaunay):
+            # Precomputed triangulation was passed in
+            self.tri = points
+            points = self.tri.points
+        else:
+            self.tri = None
+
         points = _ndim_coords_from_arrays(points)
         values = np.asarray(values)
 
@@ -173,8 +181,8 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     Parameters
     ----------
-    points : ndarray of floats, shape (npoints, ndims)
-        Data point coordinates.
+    points : ndarray of floats, shape (npoints, ndims); or Delaunay
+        Data point coordinates, or a precomputed Delaunay triangulation.
     values : ndarray of float or complex, shape (npoints, ...)
         Data values.
     fill_value : float, optional
@@ -196,7 +204,8 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     def __init__(self, points, values, fill_value=np.nan):
         NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value)
-        self.tri = qhull.Delaunay(self.points)
+        if self.tri is None:
+            self.tri = qhull.Delaunay(self.points)
 
     def _evaluate_double(self, xi):
         return self._do_evaluate(xi, 1.0)
@@ -740,8 +749,8 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     Parameters
     ----------
-    points : ndarray of floats, shape (npoints, ndims)
-        Data point coordinates.
+    points : ndarray of floats, shape (npoints, ndims); or Delaunay
+        Data point coordinates, or a precomputed Delaunay triangulation.
     values : ndarray of float or complex, shape (npoints, ...)
         Data values.
     fill_value : float, optional
@@ -793,7 +802,8 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                  tol=1e-6, maxiter=400):
         NDInterpolatorBase.__init__(self, points, values, ndim=2,
                                     fill_value=fill_value)
-        self.tri = qhull.Delaunay(self.points)
+        if self.tri is None:
+            self.tri = qhull.Delaunay(self.points)
         self.grad = estimate_gradients_2d_global(self.tri, self.values,
                                                  tol=tol, maxiter=maxiter)
 

@@ -38,6 +38,17 @@ class TestLinearNDInterpolation(object):
         yi = interpnd.LinearNDInterpolator(x, y)(x)
         assert_almost_equal(y, yi)
 
+    def test_tri_input(self):
+        # Test at single points
+        x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
+                     dtype=np.double)
+        y = np.arange(x.shape[0], dtype=np.double)
+        y = y - 3j*y
+
+        tri = qhull.Delaunay(x)
+        yi = interpnd.LinearNDInterpolator(tri, y)(x)
+        assert_almost_equal(y, yi)
+
     def test_square(self):
         # Test barycentric interpolation on a square against a manual
         # implementation
@@ -178,6 +189,17 @@ class TestCloughTocher2DInterpolator(object):
         for j, func in enumerate(funcs):
             self._check_accuracy(func, tol=1e-9, atol=0.22, rtol=0,
                                  err_msg="Function %d" % j)
+
+    def test_tri_input(self):
+        # Test at single points
+        x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
+                     dtype=np.double)
+        y = np.arange(x.shape[0], dtype=np.double)
+        y = y - 3j*y
+
+        tri = qhull.Delaunay(x)
+        yi = interpnd.CloughTocher2DInterpolator(tri, y)(x)
+        assert_almost_equal(y, yi)
 
     def test_dense(self):
         # Should be more accurate for dense meshes
