@@ -374,16 +374,34 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     that have been optimized primarily using basin-hopping.  This database
     includes minimization problems exceeding 300 degrees of freedom.
 
-    For stochastic global optimization there is no way to determine if the true
-    global minimum has actually been found. Instead, as a consistency check,
-    the algorithm can be run from a number of different random starting points
-    to ensure the lowest minimum found in each example has converged to the
-    global minimum.
-
     See the free software program GMIN (http://www-wales.ch.cam.ac.uk/) for a
     Fortran implementation of basin-hopping.  This implementation has many
     different variations of the procedure described above, including more
     advanced step taking algorithms and alternate acceptance criterion.
+
+    For stochastic global optimization there is no way to determine if the true
+    global minimum has actually been found. Instead, as a consistency check,
+    the algorithm can be run from a number of different random starting points
+    to ensure the lowest minimum found in each example has converged to the
+    global minimum.  For this reason basinhopping will by default simply run
+    for the number of iterations ``niter`` and return the lowest minimum found.
+    It is left to the user to ensure that this is in fact the global minimum.
+
+    Choosing ``stepsize``:  The stepsize is a crucial parameter in basinhopping
+    and depends on the problem being solved.  Ideally it should be comparable
+    to the typical separation between local minima of the function being
+    optimized.  basinhopping will, by default, adjust ``stepsize`` to find an
+    optimal value, but this may take many iterations.  You will get quicker
+    results if you set a sensible value for ``stepsize``.
+
+    Choosing ``T``: The parameter ``T`` is the temperature used in the
+    metropolis criterion.  Basinhopping steps are accepted with probability 1
+    if func(xnew) - func(xold) < 0, or otherwise with probability::
+
+        exp( -(func(xnew) - func(xold)) / T )
+
+    So, for best results, ``T`` should to be comparable to the typical
+    difference in function value between between local minima
 
     References
     ----------
