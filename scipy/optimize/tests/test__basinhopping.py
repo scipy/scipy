@@ -76,7 +76,7 @@ class TestBasinHopping(TestCase):
         self.kwargs_nograd = {"method": "L-BFGS-B"}
 
     def test_ValueError(self):
-        """test the ValueErrors are raised on bad input"""
+        #test the ValueErrors are raised on bad input
         i = 1
         #if take_step is passed, it must be callable
         self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
@@ -99,14 +99,14 @@ class TestBasinHopping(TestCase):
                           accept_test=bad_accept_test2)
 
     def test_1d_grad(self):
-        """test 1d minimizations with gradient"""
+        #test 1d minimizations with gradient
         i = 0
         res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_2d(self):
-        """test 2d minimizations with gradient"""
+        #test 2d minimizations with gradient
         i = 1
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp)
@@ -114,7 +114,7 @@ class TestBasinHopping(TestCase):
         self.assertGreater(res.nfev, 0)
 
     def test_njev(self):
-        """njev is returned correctly"""
+        #njev is returned correctly
         i = 1
         minimizer_kwargs = self.kwargs.copy()
         #L-BFGS-B doesn't use njev, but BFGS does
@@ -126,7 +126,7 @@ class TestBasinHopping(TestCase):
         self.assertEqual(res.nfev, res.njev)
 
     def test_2d_nograd(self):
-        """test 2d minimizations without gradient"""
+        #test 2d minimizations without gradient
         i = 1
         res = basinhopping(func2d_nograd, self.x0[i],
                            minimizer_kwargs=self.kwargs_nograd,
@@ -134,7 +134,7 @@ class TestBasinHopping(TestCase):
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_all_minimizers(self):
-        """test 2d minimizations with gradient"""
+        #test 2d minimizations with gradient
         i = 1
         methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
                    'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP']
