@@ -154,11 +154,11 @@ class TestBasinHopping(TestCase):
             make sure it's actually being used."""
             def __init__(self):
                 self.been_called = False
-                return super(MyTakeStep, self).__init__()
+                super(MyTakeStep, self).__init__()
 
             def __call__(self, x):
                 self.been_called = True
-                return super(MyTakeStep, self).__call__(x)
+                super(MyTakeStep, self).__call__(x)
 
         takestep = MyTakeStep()
         initial_step_size = takestep.stepsize
