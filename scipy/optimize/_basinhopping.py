@@ -143,7 +143,7 @@ class _BasinHopping(object):
     def print_report(self, energy_trial, accept):
         xlowest, energy_lowest = self.storage.get_lowest()
         print("basinhopping step %d: f %g trial_f %g accepted %d "
-              " lowest_f%g" % (self.nstep, self.energy, energy_trial,
+              " lowest_f %g" % (self.nstep, self.energy, energy_trial,
                                accept, energy_lowest))
 
 
@@ -265,7 +265,7 @@ class _Metropolis(object):
 
 
 def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
-                 minimizer_kwargs=dict(), take_step=None, accept_test=None,
+                 minimizer_kwargs=None, take_step=None, accept_test=None,
                  callback=None, interval=50, disp=False, niter_success=None):
     """
     Find the global minimum of a function using the basin-hopping algorithm
@@ -320,7 +320,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         Define a test which will be used to judge whether or not to accept the
         step.  This will be used in addition to the Metropolis test based on
         ``temperature`` T.  The acceptable return values are True, False, or
-        "force accept".  If the latter, then this will overide any other tests
+        "force accept".  If the latter, then this will override any other tests
         in order to accept the step.  This can be used, for example, to
         forcefully escape from a local minimum that basinhopping is trapped in.
     callback : callable, ``callback(x, f, accept)``, optional
@@ -349,9 +349,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     Notes
     -----
     Basin-hopping is a stochastic algorithm which attempts to find the global
-    minimum of a smooth scalar function of one or more variables [1-4].  The
+    minimum of a smooth scalar function of one or more variables [1-4]_.  The
     algorithm in its current form was described by David Wales and Jonathan
-    Doye [2] http://www-wales.ch.cam.ac.uk/.
+    Doye [2]_ http://www-wales.ch.cam.ac.uk/.
 
     The algorithm is iterative with each cycle composed of the following
     features
@@ -364,7 +364,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
        value
 
     The acceptance test used here is the Metropolis criterion of standard Monte
-    Carlo algorithms, although there are many other possibilities [3].
+    Carlo algorithms, although there are many other possibilities [3]_.
 
     This global minimization method has been shown to be extremely efficient
     for a wide variety of problems in physics and chemistry.  It is
@@ -374,8 +374,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     that have been optimized primarily using basin-hopping.  This database
     includes minimization problems exceeding 300 degrees of freedom.
 
-    See the free software program GMIN (http://www-wales.ch.cam.ac.uk/) for a
-    Fortran implementation of basin-hopping.  This implementation has many
+    See the free software program GMIN (http://www-wales.ch.cam.ac.uk/GMIN) for
+    a Fortran implementation of basin-hopping.  This implementation has many
     different variations of the procedure described above, including more
     advanced step taking algorithms and alternate acceptance criterion.
 
@@ -427,7 +427,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     Basinhopping, internally, uses a local minimization algorithm.  We will use
     the parameter ``minimizer_kwargs`` to tell basinhopping which algorithm to
     use and how to set up that minimizer.  This parameter will be passed to
-    `scipy.optimze.minimize`.
+    ``scipy.optimize.minimize``.
 
     >>> minimizer_kwargs = {"method": "BFGS"}
     >>> ret = basinhopping(func, x0, minimizer_kwargs=minimizer_kwargs,
@@ -531,30 +531,32 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     x0 = np.array(x0).copy()
 
     #set up minimizer
+    if minimizer_kwargs is None:
+        minimizer_kwargs = dict()
     wrapped_minimizer = _MinimizerWrapper(scipy.optimize.minimize, func,
-                                              **minimizer_kwargs)
+                                          **minimizer_kwargs)
 
     #set up step taking algorithm
     if take_step is not None:
         if not isinstance(take_step, collections.Callable):
-            raise ValueError("take_step must be callable")
+            raise TypeError("take_step must be callable")
         # if take_step.stepsize exists, but take_step.report() doesn't, then
         # then use _AdaptiveStepsize to control take_step.stepsize
         if hasattr(take_step, "stepsize") and not hasattr(take_step, "report"):
             take_step_wrapped = _AdaptiveStepsize(take_step, interval=interval,
-                                            verbose=disp)
+                                                  verbose=disp)
         else:
             take_step_wrapped = take_step
     else:
         #use default
         displace = _RandomDisplacement(stepsize=stepsize)
         take_step_wrapped = _AdaptiveStepsize(displace, interval=interval,
-                                        verbose=disp)
+                                              verbose=disp)
 
     #set up accept tests
     if accept_test is not None:
         if not isinstance(accept_test, collections.Callable):
-            raise ValueError("accept_test must be callable")
+            raise TypeError("accept_test must be callable")
         accept_tests = [accept_test]
     else:
         accept_tests = []

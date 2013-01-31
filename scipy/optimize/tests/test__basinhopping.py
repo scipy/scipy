@@ -75,14 +75,14 @@ class TestBasinHopping(TestCase):
         self.kwargs = {"method": "L-BFGS-B", "jac": True}
         self.kwargs_nograd = {"method": "L-BFGS-B"}
 
-    def test_ValueError(self):
-        #test the ValueErrors are raised on bad input
+    def test_TypeError(self):
+        #test the TypeErrors are raised on bad input
         i = 1
         #if take_step is passed, it must be callable
-        self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
+        self.assertRaises(TypeError, basinhopping, func2d, self.x0[i],
                           take_step=1)
         #if accept_test is passed, it must be callable
-        self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
+        self.assertRaises(TypeError, basinhopping, func2d, self.x0[i],
                           accept_test=1)
         #accept_test must return bool or string "force_accept"
 
