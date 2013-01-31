@@ -158,7 +158,7 @@ class TestBasinHopping(TestCase):
 
             def __call__(self, x):
                 self.been_called = True
-                super(MyTakeStep, self).__call__(x)
+                return super(MyTakeStep, self).__call__(x)
 
         takestep = MyTakeStep()
         initial_step_size = takestep.stepsize
@@ -181,7 +181,7 @@ class TestBasinHopping(TestCase):
             """
             def __init__(self):
                 self.been_called = False
-                return super(MyTakeStep, self).__init__()
+                super(MyTakeStep, self).__init__()
 
             def __call__(self, x):
                 self.been_called = True
