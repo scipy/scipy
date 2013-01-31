@@ -62,7 +62,7 @@ added, providing DFT-based spectral estimators.
 A callback mechanism was added to L-BFGS-B and TNC minimization solvers.
 
 Basin hopping global optimization (``scipy.optimize.basinhopping``)
--------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 A new global optimization algorithm.  Basinhopping is designed to efficiently
 find the global minimum of a smooth function.
 
