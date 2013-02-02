@@ -566,8 +566,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     if niter_success is None:
         niter_success = niter + 2
 
-    bh = BasinHoppingRunner(x0, wrapped_minimizer, take_step_wrapped, accept_tests,
-                       disp=disp)
+    bh = BasinHoppingRunner(x0, wrapped_minimizer, take_step_wrapped,
+                            accept_tests, disp=disp)
 
     #start main iteration loop
     count = 0

@@ -50,6 +50,7 @@ class Minimizer(object):
         res = minimize(self.func, x0, **kwargs)
         return res
 
+
 class MyTakeStep1(RandomDisplacement):
     """use a copy of displace, but have it set a special parameter to
     make sure it's actually being used."""
@@ -61,6 +62,7 @@ class MyTakeStep1(RandomDisplacement):
         self.been_called = True
         return super(MyTakeStep1, self).__call__(x)
 
+
 class MyTakeStep2(MyTakeStep1):
     """use a copy of displace, but have it set a special parameter to
     make sure it's actually being used.
@@ -70,6 +72,7 @@ class MyTakeStep2(MyTakeStep1):
     """
     def report(self, accept, **kwargs):
         return
+
 
 class MyAcceptTest(object):
     """pass a custom accept test
@@ -91,6 +94,7 @@ class MyAcceptTest(object):
         else:
             return True
 
+
 class MyCallBack(object):
     """pass a custom callback function
 
@@ -107,6 +111,7 @@ class MyCallBack(object):
         self.ncalls += 1
         if self.ncalls == 10:
             return True
+
 
 class TestBasinHopping(TestCase):
     """ Tests for basinhopping """
