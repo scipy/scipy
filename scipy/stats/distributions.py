@@ -533,6 +533,7 @@ class rv_generic(object):
 
     """
     def _fix_loc_scale(self, args, loc, scale=1):
+        """Parse args/kwargs input to other methods."""
         N = len(args)
         if N > self.numargs:
             if N == self.numargs + 1 and loc is None:
@@ -552,6 +553,37 @@ class rv_generic(object):
             loc = 0.0
 
         return args, loc, scale
+
+    def _fix_loc_scale_kwarg3(self, args, loc, scale=1,
+                              kwarg3=1, kwarg3_default=None):
+        """Parse args/kwargs input to methods with a third kwarg.
+
+        At the moment these methods are ``stats`` and ``rvs``.
+        """
+        N = len(args)
+        if N > self.numargs:
+            if N == self.numargs + 1 and loc is None:
+                # loc is given without keyword
+                loc = args[-1]
+            elif N == self.numargs + 2 and scale is None:
+                # loc and scale given without keyword
+                loc, scale = args[-2:]
+            elif N == self.numargs + 3 and kwarg3 is None:
+                # loc, scale and a third argument
+                loc, scale, kwarg3 = args[-3:]
+            else:
+                raise TypeError("Too many input arguments.")
+
+            args = args[:self.numargs]
+
+        if scale is None:
+            scale = 1.0
+        if loc is None:
+            loc = 0.0
+        if kwarg3 is None:
+            kwarg3 = kwarg3_default
+
+        return args, loc, scale, kwarg3
 
     def _fix_loc(self, args, loc):
         args, loc, scale = self._fix_loc_scale(args, loc)
@@ -573,8 +605,7 @@ class rv_generic(object):
         scale : array_like, optional
             Scale parameter (default=1).
         size : int or tuple of ints, optional
-            Defining number of random variates (default=1).  Note that `size`
-            has to be given as keyword, not as positional argument.
+            Defining number of random variates (default=1).
 
         Returns
         -------
@@ -586,7 +617,8 @@ class rv_generic(object):
         loc, scale, size, discrete = map(kwds.get, kwd_names,
                                          [None]*len(kwd_names))
 
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale, size = self._fix_loc_scale_kwarg3(args, loc, scale,
+                                                            size)
         cond = logical_and(self._argcheck(*args),(scale >= 0))
         if not all(cond):
             raise ValueError("Domain error in arguments.")
@@ -1501,7 +1533,7 @@ class rv_continuous(rv_generic):
             location parameter (default=0)
         scale : array_like, optional
             scale parameter (default=1)
-        moments : string, optional
+        moments : str, optional
             composed of letters ['mvsk'] defining which moments to compute:
             'm' = mean,
             'v' = variance,
@@ -1516,29 +1548,8 @@ class rv_continuous(rv_generic):
 
         """
         loc,scale,moments=map(kwds.get,['loc','scale','moments'])
-
-        N = len(args)
-        if N > self.numargs:
-            if N == self.numargs + 1 and loc is None:
-                # loc is given without keyword
-                loc = args[-1]
-            elif N == self.numargs + 2 and scale is None:
-                # loc and scale given without keyword
-                loc, scale = args[-2:]
-            elif N == self.numargs + 3 and moments is None:
-                # loc, scale, and moments
-                loc, scale, moments = args[-3:]
-            else:
-                raise TypeError("Too many input arguments.")
-
-            args = args[:self.numargs]
-
-        if scale is None:
-            scale = 1.0
-        if loc is None:
-            loc = 0.0
-        if moments is None:
-            moments = 'mv'
+        args, loc, scale, moments = self._fix_loc_scale_kwarg3(args, loc,
+                                                    scale, moments, 'mv')
 
         loc, scale = map(asarray, (loc, scale))
         args = tuple(map(asarray, args))

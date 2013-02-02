@@ -975,6 +975,7 @@ def test_distribution_too_many_args():
     stats.gamma.stats(2., 3)
     stats.gamma.stats(2., 3, 4)
     stats.gamma.stats(2., 3, 4, 'mv')
+    stats.gamma.rvs(2., 3, 4, 5)
     stats.gamma.fit(stats.gamma.rvs(2., size=7), 2.)
 
     # Also for a discrete distribution
