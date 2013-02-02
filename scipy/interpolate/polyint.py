@@ -18,6 +18,11 @@ class KroghInterpolator(object):
     the coefficients of the polynomial, although they can be obtained
     by evaluating all the derivatives.
 
+    The polynomial passes through all the pairs (xi,yi). One may additionally
+    specify a number of derivatives at each point xi; this is done by
+    repeating the value xi and specifying the derivatives as successive
+    yi values.
+
     Be aware that the algorithms implemented here are not necessarily
     the most numerically stable known. Moreover, even in a world of
     exact computation, unless the x coordinates are chosen very
@@ -43,48 +48,34 @@ class KroghInterpolator(object):
     .. [1] Krogh, "Efficient Algorithms for Polynomial Interpolation
         and Numerical Differentiation", 1970.
 
+
+    Examples
+    --------
+    To produce a polynomial that is zero at 0 and 1 and has
+    derivative 2 at 0, call
+
+    >>> KroghInterpolator([0,0,1],[0,2,0])
+
+    This constructs the quadratic 2*X**2-2*X. The derivative condition
+    is indicated by the repeated zero in the xi array; the corresponding
+    yi values are 0, the function value, and 2, the derivative value.
+
+    For another example, given xi, yi, and a derivative ypi for each
+    point, appropriate arrays can be constructed as:
+
+    >>> xi_k, yi_k = np.repeat(xi, 2), np.ravel(np.dstack((yi,ypi)))
+    >>> KroghInterpolator(xi_k, yi_k)
+
+    To produce a vector-valued polynomial, supply a higher-dimensional
+    array for yi:
+
+    >>> KroghInterpolator([0,1],[[2,3],[4,5]])
+
+    This constructs a linear polynomial giving (2,3) at 0 and (4,5) at 1.
+
     """
     def __init__(self, xi, yi):
         """Construct an interpolator passing through the specified points
-
-        The polynomial passes through all the pairs (xi,yi). One may additionally
-        specify a number of derivatives at each point xi; this is done by
-        repeating the value xi and specifying the derivatives as successive
-        yi values.
-
-        Parameters
-        ----------
-        xi : array-like, length N
-            known x-coordinates
-        yi : array-like, N by R
-            known y-coordinates, interpreted as vectors of length R,
-            or scalars if R=1. When an xi occurs two or more times in
-            a row, the corresponding yi's represent derivative values.
-
-        Examples
-        --------
-        To produce a polynomial that is zero at 0 and 1 and has
-        derivative 2 at 0, call
-
-        >>> KroghInterpolator([0,0,1],[0,2,0])
-
-        This constructs the quadratic 2*X**2-2*X. The derivative condition
-        is indicated by the repeated zero in the xi array; the corresponding
-        yi values are 0, the function value, and 2, the derivative value.
-
-        For another example, given xi, yi, and a derivative ypi for each
-        point, appropriate arrays can be constructed as:
-
-        >>> xi_k, yi_k = np.repeat(xi, 2), np.ravel(np.dstack((yi,ypi)))
-        >>> KroghInterpolator(xi_k, yi_k)
-
-        To produce a vector-valued polynomial, supply a higher-dimensional
-        array for yi:
-
-        >>> KroghInterpolator([0,1],[[2,3],[4,5]])
-
-        This constructs a linear polynomial giving (2,3) at 0 and (4,5) at 1.
-
         """
         self.xi = np.asarray(xi)
         self.yi = np.asarray(yi)
@@ -414,22 +405,25 @@ class BarycentricInterpolator(object):
     due to the Runge phenomenon.
 
     Based on Berrut and Trefethen 2004, "Barycentric Lagrange Interpolation".
+
+    Parameters
+    ----------
+    xi : array-like of length N
+        The x coordinates of the points the polynomial should pass through
+    yi : array-like N by R or None
+        The y coordinates of the points the polynomial should pass through;
+        if R>1 the polynomial is vector-valued. If None the y values
+        will be supplied later.
+
+    Notes
+    -----
+
+    The values yi need to be provided before the function is evaluated,
+    but none of the preprocessing depends on them, so rapid updates
+    are possible.
     """
     def __init__(self, xi, yi=None):
         """Construct an object capable of interpolating functions sampled at xi
-
-        The values yi need to be provided before the function is evaluated,
-        but none of the preprocessing depends on them, so rapid updates
-        are possible.
-
-        Parameters
-        ----------
-        xi : array-like of length N
-            The x coordinates of the points the polynomial should pass through
-        yi : array-like N by R or None
-            The y coordinates of the points the polynomial should pass through;
-            if R>1 the polynomial is vector-valued. If None the y values
-            will be supplied later.
         """
         self.n = len(xi)
         self.xi = np.asarray(xi)
@@ -618,38 +612,38 @@ class PiecewisePolynomial(object):
 
     This class represents a curve that is a piecewise polynomial. It
     passes through a list of points and has specified derivatives at
-    each point. The degree of the polynomial may very from segment to
+    each point. The degree of the polynomial may vary from segment to
     segment, as may the number of derivatives available. The degree
     should not exceed about thirty.
 
     Appending points to the end of the curve is efficient.
+
+    Parameters
+    ----------
+    xi : array-like of length N
+        a sorted list of x-coordinates
+    yi : list of lists of length N
+        yi[i] is the list of derivatives known at xi[i]
+    orders : list of integers, or integer
+        a list of polynomial orders, or a single universal order
+    direction : {None, 1, -1}
+        indicates whether the xi are increasing or decreasing
+        +1 indicates increasing
+        -1 indicates decreasing
+        None indicates that it should be deduced from the first two xi
+
+    Notes
+    -----
+    If orders is None, or orders[i] is None, then the degree of the
+    polynomial segment is exactly the degree required to match all i
+    available derivatives at both endpoints. If orders[i] is not None,
+    then some derivatives will be ignored. The code will try to use an
+    equal number of derivatives from each end; if the total number of
+    derivatives needed is odd, it will prefer the rightmost endpoint. If
+    not enough derivatives are available, an exception is raised.
     """
     def __init__(self, xi, yi, orders=None, direction=None):
         """Construct a piecewise polynomial
-
-        Parameters
-        ----------
-        xi : array-like of length N
-            a sorted list of x-coordinates
-        yi : list of lists of length N
-            yi[i] is the list of derivatives known at xi[i]
-        orders : list of integers, or integer
-            a list of polynomial orders, or a single universal order
-        direction : {None, 1, -1}
-            indicates whether the xi are increasing or decreasing
-            +1 indicates increasing
-            -1 indicates decreasing
-            None indicates that it should be deduced from the first two xi
-
-        Notes
-        -----
-        If orders is None, or orders[i] is None, then the degree of the
-        polynomial segment is exactly the degree required to match all i
-        available derivatives at both endpoints. If orders[i] is not None,
-        then some derivatives will be ignored. The code will try to use an
-        equal number of derivatives from each end; if the total number of
-        derivatives needed is odd, it will prefer the rightmost endpoint. If
-        not enough derivatives are available, an exception is raised.
         """
         yi0 = np.asarray(yi[0])
         if len(yi0.shape)==2:
