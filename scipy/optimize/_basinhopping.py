@@ -147,30 +147,30 @@ class BasinHoppingRunner(object):
 
 
 class AdaptiveStepsize(object):
+    """
+    Class to implement adaptive stepsize.
+
+    This class wraps the step taking class and modifies the stepsize to
+    ensure the true acceptance rate is as close as possible to the target.
+
+    Parameters
+    ----------
+    takestep : callable
+        The step taking routine.  Must contain modifiable attribute
+        takestep.stepsize
+    accept_rate : float, optional
+        The target step acceptance rate
+    interval : int, optional
+        Interval for how often to update the stepsize
+    factor : float, optional
+        The step size is multiplied or divided by this factor upon each
+        update.
+    verbose : bool, optional
+        Print information about each update
+
+    """
     def __init__(self, takestep, accept_rate=0.5, interval=50, factor=0.9,
                  verbose=True):
-        """
-        Class to implement adaptive stepsize.
-
-        This class wraps the step taking class and modifies the stepsize to
-        ensure the true acceptance rate is as close as possible to the target.
-
-        Parameters
-        ----------
-        takestep : callable
-            The step taking routine.  Must contain modifiable attribute
-            takestep.stepsize
-        accept_rate : float, optional
-            The target step acceptance rate
-        interval : int, optional
-            Interval for how often to update the stepsize
-        factor : float, optional
-            The step size is multiplied or divided by this factor upon each
-            update.
-        verbose : bool, optional
-            Print information about each update
-
-        """
         self.takestep = takestep
         self.target_accept_rate = accept_rate
         self.interval = interval
@@ -244,10 +244,10 @@ class MinimizerWrapper(object):
 
 
 class Metropolis(object):
+    """
+    Metropolis acceptance criterion
+    """
     def __init__(self, T):
-        """
-        Metropolis acceptance criterion
-        """
         self.beta = 1.0 / T
 
     def accept_reject(self, energy_new, energy_old):
@@ -602,87 +602,37 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     return res
 
 
+def _test_func2d_nograd(x):
+    f = (cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
+         + 1.010876184442655)
+    return f
+
+def _test_func2d(x):
+    f = (cos(14.5 * x[0] - 0.3) + (x[0] + 0.2) * x[0] + cos(14.5 * x[1] -
+         0.3) + (x[1] + 0.2) * x[1] + x[0] * x[1] + 1.963879482144252)
+    df = np.zeros(2)
+    df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2 + x[1]
+    df[1] = -14.5 * sin(14.5 * x[1] - 0.3) + 2. * x[1] + 0.2 + x[0]
+    return f, df
+
 if __name__ == "__main__":
-    if True:
-        print("")
-        print("")
-        print("minimize a 1d function with gradient")
 
-        def func(x):
-            f = cos(14.5 * x - 0.3) + (x + 0.2) * x
-            df = np.array(-14.5 * sin(14.5 * x - 0.3) + 2. * x + 0.2)
-            return f, df
 
-        # minimum expected at ~-0.195
-        kwargs = {"method": "L-BFGS-B", "jac": True}
-        x0 = np.array(1.0)
-        ret = basinhopping(func, x0, minimizer_kwargs=kwargs, niter=200,
-                           disp=False)
-        print("minimum expected at ~", -0.195)
-        print(ret)
+    print("\n\nminimize a 2d function without gradient")
+    # minimum expected at ~[-0.195, -0.1]
+    kwargs = {"method": "L-BFGS-B"}
+    x0 = np.array([1.0, 1.])
+    scipy.optimize.minimize(_test_func2d_nograd, x0, **kwargs)
+    ret = basinhopping(_test_func2d_nograd, x0, minimizer_kwargs=kwargs, niter=200,
+                       disp=False)
+    print("minimum expected at  func([-0.195, -0.1]) = 0.0")
+    print(ret)
 
-    if True:
-        print("")
-        print("")
-        print("minimize a 2d function without gradient")
-        # minimum expected at ~[-0.195, -0.1]
 
-        def func(x):
-            f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] +
-                                                                0.2) * x[0]
-            return f
-
-        kwargs = {"method": "L-BFGS-B"}
-        x0 = np.array([1.0, 1.])
-        scipy.optimize.minimize(func, x0, **kwargs)
-        ret = basinhopping(func, x0, minimizer_kwargs=kwargs, niter=200,
-                           disp=False)
-        print("minimum expected at ~", [-0.195, -0.1])
-        print(ret)
-
-    if True:
-        print("")
-        print("")
-        print("minimize a 1d function with large barriers")
-        #try a function with much higher barriers between the local minima.
-
-        def func(x):
-            f = 5. * cos(14.5 * x - 0.3) + 2. * (x + 0.2) * x
-            df = np.array(-5. * 14.5 * sin(14.5 * x - 0.3) + 2. * (2. * x +
-                                                                   0.2))
-            return f, df
-
-        # minimum expected at ~-0.195
-        kwargs = {"method": "L-BFGS-B", "jac": True}
-        x0 = np.array(1.0)
-        ret = basinhopping(func, x0, minimizer_kwargs=kwargs, niter=200,
-                           disp=False)
-        print("minimum expected at ~", -0.1956)
-        print(ret)
-
-    if False:
-        func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
-        x0 = [1.]
-        ret = basinhopping(func, x0, niter=200, disp=False)
-        print("minimum expected at ~", -0.195)
-        print(ret)
-
-    if True:
-        print("")
-        print("")
-        print("try a harder 2d problem")
-
-        def func2d(x):
-            f = (cos(14.5 * x[0] - 0.3) + (x[0] + 0.2) * x[0] +
-                 cos(14.5 * x[1] - 0.3) + (x[1] + 0.2) * x[1] + x[0] * x[1])
-            df = np.zeros(2)
-            df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2 + x[1]
-            df[1] = -14.5 * sin(14.5 * x[1] - 0.3) + 2. * x[1] + 0.2 + x[0]
-            return f, df
-
-        kwargs = {"method": "L-BFGS-B", "jac": True}
-        x0 = np.array([1.0, 1.0])
-        ret = basinhopping(func2d, x0, minimizer_kwargs=kwargs, niter=200,
-                           disp=False)
-        print("minimum expected at ~", [-0.19415263, -0.19415263])
-        print(ret)
+    print("\n\ntry a harder 2d problem")
+    kwargs = {"method": "L-BFGS-B", "jac": True}
+    x0 = np.array([1.0, 1.0])
+    ret = basinhopping(_test_func2d, x0, minimizer_kwargs=kwargs, niter=200,
+                       disp=False)
+    print("minimum expected at ~, func([-0.19415263, -0.19415263]) = 0")
+    print(ret)
