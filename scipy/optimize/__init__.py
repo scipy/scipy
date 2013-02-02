@@ -41,6 +41,7 @@ Global
    :toctree: generated/
 
    anneal - Simulated annealing
+   basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
 
 Scalar function minimizers

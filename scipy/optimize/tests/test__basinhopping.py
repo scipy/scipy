@@ -50,6 +50,63 @@ class Minimizer(object):
         res = minimize(self.func, x0, **kwargs)
         return res
 
+class MyTakeStep1(_RandomDisplacement):
+    """use a copy of displace, but have it set a special parameter to
+    make sure it's actually being used."""
+    def __init__(self):
+        self.been_called = False
+        super(MyTakeStep1, self).__init__()
+
+    def __call__(self, x):
+        self.been_called = True
+        return super(MyTakeStep1, self).__call__(x)
+
+class MyTakeStep2(MyTakeStep1):
+    """use a copy of displace, but have it set a special parameter to
+    make sure it's actually being used.
+
+    this time add a function report which overrides the default
+    adaptive step size routine.
+    """
+    def report(self, accept, **kwargs):
+        return
+
+class MyAcceptTest(object):
+    """pass a custom accept test
+
+    This does nothing but make sure it's being used and ensure all the
+    possible return values are accepted
+    """
+    def __init__(self):
+        self.been_called = False
+        self.ncalls = 0
+
+    def __call__(self, **kwargs):
+        self.been_called = True
+        self.ncalls += 1
+        if self.ncalls == 1:
+            return False
+        elif self.ncalls == 2:
+            return 'force accept'
+        else:
+            return True
+
+class MyCallBack(object):
+    """pass a custom callback function
+
+    This makes sure it's being used.  It also returns True after 10
+    steps to ensure that it's stopping early.
+
+    """
+    def __init__(self):
+        self.been_called = False
+        self.ncalls = 0
+
+    def __call__(self, x, f, accepted):
+        self.been_called = True
+        self.ncalls += 1
+        if self.ncalls == 10:
+            return True
 
 class TestBasinHopping(TestCase):
     """ Tests for basinhopping """
@@ -146,21 +203,9 @@ class TestBasinHopping(TestCase):
                                niter=self.niter, disp=self.disp)
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
-    #below here we are testing basinhopping
-
     def test_pass_takestep(self):
-        class MyTakeStep(_RandomDisplacement):
-            """use a copy of displace, but have it set a special parameter to
-            make sure it's actually being used."""
-            def __init__(self):
-                self.been_called = False
-                super(MyTakeStep, self).__init__()
-
-            def __call__(self, x):
-                self.been_called = True
-                return super(MyTakeStep, self).__call__(x)
-
-        takestep = MyTakeStep()
+        #test that passing a custom takestep works
+        takestep = MyTakeStep1()
         initial_step_size = takestep.stepsize
         i = 1
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
@@ -172,25 +217,8 @@ class TestBasinHopping(TestCase):
         assert_(initial_step_size != takestep.stepsize)
 
     def test_pass_takestep2(self):
-        class MyTakeStep(_RandomDisplacement):
-            """use a copy of displace, but have it set a special parameter to
-            make sure it's actually being used.
-
-            this time add a function report which overrides the default
-            adaptive step size routine.
-            """
-            def __init__(self):
-                self.been_called = False
-                super(MyTakeStep, self).__init__()
-
-            def __call__(self, x):
-                self.been_called = True
-                return super(MyTakeStep, self).__call__(x)
-
-            def report(self, accept, **kwargs):
-                return
-
-        takestep = MyTakeStep()
+        #test that the report() function of custom takestep works
+        takestep = MyTakeStep2()
         initial_step_size = takestep.stepsize
         i = 1
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
@@ -202,27 +230,10 @@ class TestBasinHopping(TestCase):
         assert_(initial_step_size == takestep.stepsize)
 
     def test_pass_accept_test(self):
-        class AcceptTest(_RandomDisplacement):
-            """pass a custom accept test
-
-            This does nothing but make sure it's being used and ensure all the
-            possible return values are accepted
-            """
-            def __init__(self):
-                self.been_called = False
-                self.ncalls = 0
-
-            def __call__(self, **kwargs):
-                self.been_called = True
-                self.ncalls += 1
-                if self.ncalls == 1:
-                    return False
-                elif self.ncalls == 2:
-                    return 'force accept'
-                else:
-                    return True
-
-        accept_test = AcceptTest()
+        #test passing a custom accept test
+        #This does nothing but make sure it's being used and ensure all the
+        #possible return values are accepted
+        accept_test = MyAcceptTest()
         i = 1
         #there's no point in running it more than a few steps.
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
@@ -230,24 +241,11 @@ class TestBasinHopping(TestCase):
         assert_(accept_test.been_called)
 
     def test_pass_callback(self):
-        class CallBack(_RandomDisplacement):
-            """pass a custom callback function
+        #test passing a custom callback function
+        #This makes sure it's being used.  It also returns True after 10
+        #steps to ensure that it's stopping early.
 
-            This makes sure it's being used.  It also returns True after 10
-            steps to ensure that it's stopping early.
-
-            """
-            def __init__(self):
-                self.been_called = False
-                self.ncalls = 0
-
-            def __call__(self, x, f, accepted):
-                self.been_called = True
-                self.ncalls += 1
-                if self.ncalls == 10:
-                    return True
-
-        callback = CallBack()
+        callback = MyCallBack()
         i = 1
         #there's no point in running it more than a few steps.
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,

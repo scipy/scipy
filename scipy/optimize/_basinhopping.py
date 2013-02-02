@@ -42,7 +42,6 @@ class _BasinHopping(object):
         self.disp = disp
 
         self.nstep = 0
-        self.takestep_report = True
 
         #do initial minimization
         minres = minimizer(self.x)
@@ -528,7 +527,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     ...                    niter=10, accept_test=mybounds)
 
     """
-    x0 = np.array(x0).copy()
+    x0 = np.array(x0)
 
     #set up minimizer
     if minimizer_kwargs is None:
