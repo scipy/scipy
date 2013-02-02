@@ -313,7 +313,7 @@ class Test_Metropolis(TestCase):
         self.assertTrue(self.met(f_new=0., f_old=1.))
 
     def test_KeyError(self):
-        #shoudl raise KeyError if kwargs f_old or f_new is not passed
+        #should raise KeyError if kwargs f_old or f_new is not passed
         self.assertRaises(KeyError, self.met, f_old=1.)
         self.assertRaises(KeyError, self.met, f_new=1.)
 
@@ -360,6 +360,23 @@ class Test_AdaptiveStepsize(TestCase):
             self.takestep(x)
             self.takestep.report(False)
         self.assertLess(self.ts.stepsize, self.stepsize)
+
+    def test_all_accepted(self):
+        #test that everything works OK if all steps were accepted
+        x = 0.
+        for i in range(self.takestep.interval+1):
+            self.takestep(x)
+            self.takestep.report(True)
+        self.assertGreater(self.ts.stepsize, self.stepsize)
+
+    def test_all_rejected(self):
+        #test that everything works OK if all steps were rejected
+        x = 0.
+        for i in range(self.takestep.interval+1):
+            self.takestep(x)
+            self.takestep.report(False)
+        self.assertLess(self.ts.stepsize, self.stepsize)
+
 
 
 if __name__ == "__main__":
