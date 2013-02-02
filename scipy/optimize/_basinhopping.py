@@ -607,6 +607,7 @@ def _test_func2d_nograd(x):
          + 1.010876184442655)
     return f
 
+
 def _test_func2d(x):
     f = (cos(14.5 * x[0] - 0.3) + (x[0] + 0.2) * x[0] + cos(14.5 * x[1] -
          0.3) + (x[1] + 0.2) * x[1] + x[0] * x[1] + 1.963879482144252)
@@ -616,18 +617,15 @@ def _test_func2d(x):
     return f, df
 
 if __name__ == "__main__":
-
-
     print("\n\nminimize a 2d function without gradient")
     # minimum expected at ~[-0.195, -0.1]
     kwargs = {"method": "L-BFGS-B"}
     x0 = np.array([1.0, 1.])
     scipy.optimize.minimize(_test_func2d_nograd, x0, **kwargs)
-    ret = basinhopping(_test_func2d_nograd, x0, minimizer_kwargs=kwargs, niter=200,
-                       disp=False)
+    ret = basinhopping(_test_func2d_nograd, x0, minimizer_kwargs=kwargs,
+                       niter=200, disp=False)
     print("minimum expected at  func([-0.195, -0.1]) = 0.0")
     print(ret)
-
 
     print("\n\ntry a harder 2d problem")
     kwargs = {"method": "L-BFGS-B", "jac": True}

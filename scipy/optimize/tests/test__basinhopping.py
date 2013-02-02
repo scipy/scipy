@@ -364,7 +364,7 @@ class Test_AdaptiveStepsize(TestCase):
     def test_all_accepted(self):
         #test that everything works OK if all steps were accepted
         x = 0.
-        for i in range(self.takestep.interval+1):
+        for i in range(self.takestep.interval + 1):
             self.takestep(x)
             self.takestep.report(True)
         self.assertGreater(self.ts.stepsize, self.stepsize)
@@ -372,11 +372,10 @@ class Test_AdaptiveStepsize(TestCase):
     def test_all_rejected(self):
         #test that everything works OK if all steps were rejected
         x = 0.
-        for i in range(self.takestep.interval+1):
+        for i in range(self.takestep.interval + 1):
             self.takestep(x)
             self.takestep.report(False)
         self.assertLess(self.ts.stepsize, self.stepsize)
-
 
 
 if __name__ == "__main__":
