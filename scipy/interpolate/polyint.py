@@ -43,6 +43,12 @@ class KroghInterpolator(object):
         or scalars if R=1. When an xi occurs two or more times in
         a row, the corresponding yi's represent derivative values.
 
+    References
+    ----------
+    .. [1] Krogh, "Efficient Algorithms for Polynomial Interpolation
+        and Numerical Differentiation", 1970.
+
+
     Examples
     --------
     To produce a polynomial that is zero at 0 and 1 and has
@@ -66,11 +72,6 @@ class KroghInterpolator(object):
     >>> KroghInterpolator([0,1],[[2,3],[4,5]])
 
     This constructs a linear polynomial giving (2,3) at 0 and (4,5) at 1.
-
-    References
-    ----------
-    .. [1] Krogh, "Efficient Algorithms for Polynomial Interpolation
-        and Numerical Differentiation", 1970.
 
     """
     def __init__(self, xi, yi):
