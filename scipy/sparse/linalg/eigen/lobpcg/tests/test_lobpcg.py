@@ -54,7 +54,7 @@ def compare_solutions(A,B,m):
     w,v = eig(A,b=B)
     w.sort()
 
-    assert_almost_equal(w[:m/2],eigs[:m/2],decimal=2)
+    assert_almost_equal(w[:int(m/2)],eigs[:int(m/2)],decimal=2)
 
     #from pylab import plot, show, legend, xlabel, ylabel
     #plot(arange(0,len(w[:m])),w[:m],'bx',label='Results by symeig')
