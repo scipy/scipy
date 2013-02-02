@@ -10,8 +10,8 @@ import numpy as np
 from numpy import cos, sin
 
 from scipy.optimize import basinhopping, minimize
-from scipy.optimize._basinhopping import _Storage, _RandomDisplacement, \
-    _Metropolis, _AdaptiveStepsize
+from scipy.optimize._basinhopping import Storage, RandomDisplacement, \
+    Metropolis, AdaptiveStepsize
 
 
 def func1d(x):
@@ -50,7 +50,7 @@ class Minimizer(object):
         res = minimize(self.func, x0, **kwargs)
         return res
 
-class MyTakeStep1(_RandomDisplacement):
+class MyTakeStep1(RandomDisplacement):
     """use a copy of displace, but have it set a special parameter to
     make sure it's actually being used."""
     def __init__(self):
@@ -259,7 +259,7 @@ class Test_Storage(TestCase):
     def setUp(self):
         self.x0 = np.array(1)
         self.f0 = 0
-        self.storage = _Storage(self.x0, self.f0)
+        self.storage = Storage(self.x0, self.f0)
 
     def test_higher_f_rejected(self):
         ret = self.storage.update(self.x0 + 1, self.f0 + 1)
@@ -279,7 +279,7 @@ class Test_Storage(TestCase):
 class Test_RandomDisplacement(TestCase):
     def setUp(self):
         self.stepsize = 1.0
-        self.displace = _RandomDisplacement(stepsize=self.stepsize)
+        self.displace = RandomDisplacement(stepsize=self.stepsize)
         self.N = 300000
         self.x0 = np.zeros([self.N])
 
@@ -296,7 +296,7 @@ class Test_RandomDisplacement(TestCase):
 class Test_Metropolis(TestCase):
     def setUp(self):
         self.T = 2.
-        self.met = _Metropolis(self.T)
+        self.met = Metropolis(self.T)
 
     def test_boolean_return(self):
         #the return must be a bool.  else an error will be raised in
@@ -331,9 +331,9 @@ class Test_Metropolis(TestCase):
 class Test_AdaptiveStepsize(TestCase):
     def setUp(self):
         self.stepsize = 1.
-        self.ts = _RandomDisplacement(stepsize=self.stepsize)
+        self.ts = RandomDisplacement(stepsize=self.stepsize)
         self.target_accept_rate = 0.5
-        self.takestep = _AdaptiveStepsize(takestep=self.ts,
+        self.takestep = AdaptiveStepsize(takestep=self.ts,
                                           accept_rate=self.target_accept_rate)
 
     def test_adaptive_increase(self):

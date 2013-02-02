@@ -11,7 +11,7 @@ import collections
 __all__ = ['basinhopping']
 
 
-class _Storage(object):
+class Storage(object):
     def __init__(self, x, f):
         """
         Class used to store the lowest energy structure
@@ -33,7 +33,7 @@ class _Storage(object):
         return self.x, self.f
 
 
-class _BasinHopping(object):
+class BasinHoppingRunner(object):
     def __init__(self, x0, minimizer, step_taking, accept_tests, disp=False):
         self.x = np.copy(x0)
         self.minimizer = minimizer
@@ -51,7 +51,7 @@ class _BasinHopping(object):
             print("basinhopping step %d: f %g" % (self.nstep, self.energy))
 
         #initialize storage class
-        self.storage = _Storage(self.x, self.energy)
+        self.storage = Storage(self.x, self.energy)
 
         #initialize return object
         self.res = scipy.optimize.Result()
@@ -132,7 +132,7 @@ class _BasinHopping(object):
                 print("found new global minimum on step %d with function"
                       " value %g" % (self.nstep, self.energy))
 
-        #save some variables as _BasinHopping attributes
+        #save some variables as BasinHoppingRunner attributes
         self.xtrial = xtrial
         self.energy_trial = energy_trial
         self.accept = accept
@@ -146,7 +146,7 @@ class _BasinHopping(object):
                                accept, energy_lowest))
 
 
-class _AdaptiveStepsize(object):
+class AdaptiveStepsize(object):
     def __init__(self, takestep, accept_rate=0.5, interval=50, factor=0.9,
                  verbose=True):
         """
@@ -213,7 +213,7 @@ class _AdaptiveStepsize(object):
             self.naccept += 1
 
 
-class _RandomDisplacement(object):
+class RandomDisplacement(object):
     """
     Add a random displacement of maximum size, stepsize, to the coordinates
 
@@ -227,7 +227,7 @@ class _RandomDisplacement(object):
         return x
 
 
-class _MinimizerWrapper(object):
+class MinimizerWrapper(object):
     """
     wrap a minimizer function as a minimizer class
     """
@@ -243,7 +243,7 @@ class _MinimizerWrapper(object):
             return self.minimizer(self.func, x0, **self.kwargs)
 
 
-class _Metropolis(object):
+class Metropolis(object):
     def __init__(self, T):
         """
         Metropolis acceptance criterion
@@ -532,7 +532,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     #set up minimizer
     if minimizer_kwargs is None:
         minimizer_kwargs = dict()
-    wrapped_minimizer = _MinimizerWrapper(scipy.optimize.minimize, func,
+    wrapped_minimizer = MinimizerWrapper(scipy.optimize.minimize, func,
                                           **minimizer_kwargs)
 
     #set up step taking algorithm
@@ -540,16 +540,16 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         if not isinstance(take_step, collections.Callable):
             raise TypeError("take_step must be callable")
         # if take_step.stepsize exists, but take_step.report() doesn't, then
-        # then use _AdaptiveStepsize to control take_step.stepsize
+        # then use AdaptiveStepsize to control take_step.stepsize
         if hasattr(take_step, "stepsize") and not hasattr(take_step, "report"):
-            take_step_wrapped = _AdaptiveStepsize(take_step, interval=interval,
+            take_step_wrapped = AdaptiveStepsize(take_step, interval=interval,
                                                   verbose=disp)
         else:
             take_step_wrapped = take_step
     else:
         #use default
-        displace = _RandomDisplacement(stepsize=stepsize)
-        take_step_wrapped = _AdaptiveStepsize(displace, interval=interval,
+        displace = RandomDisplacement(stepsize=stepsize)
+        take_step_wrapped = AdaptiveStepsize(displace, interval=interval,
                                               verbose=disp)
 
     #set up accept tests
@@ -560,13 +560,13 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     else:
         accept_tests = []
     ##use default
-    metropolis = _Metropolis(T)
+    metropolis = Metropolis(T)
     accept_tests.append(metropolis)
 
     if niter_success is None:
         niter_success = niter + 2
 
-    bh = _BasinHopping(x0, wrapped_minimizer, take_step_wrapped, accept_tests,
+    bh = BasinHoppingRunner(x0, wrapped_minimizer, take_step_wrapped, accept_tests,
                        disp=disp)
 
     #start main iteration loop
