@@ -183,7 +183,7 @@ class TestBasinHopping(TestCase):
         minimizer_kwargs["method"] = "BFGS"
         res = basinhopping(func2d, self.x0[i],
                            minimizer_kwargs=minimizer_kwargs, niter=self.niter,
-                           disp=True)
+                           disp=self.disp)
         self.assertGreater(res.nfev, 0)
         self.assertEqual(res.nfev, res.njev)
 
