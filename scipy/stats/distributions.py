@@ -534,23 +534,11 @@ class rv_generic(object):
     """
     def _fix_loc_scale(self, args, loc, scale=1):
         """Parse args/kwargs input to other methods."""
-        N = len(args)
-        if N > self.numargs:
-            if N == self.numargs + 1 and loc is None:
-                # loc is given without keyword
-                loc = args[-1]
-            elif N == self.numargs + 2 and scale is None:
-                # loc and scale given without keyword
-                loc, scale = args[-2:]
-            else:
-                raise TypeError("Too many input arguments.")
-
-            args = args[:self.numargs]
-
-        if scale is None:
-            scale = 1.0
-        if loc is None:
-            loc = 0.0
+        args, loc, scale, kwarg3 = self._fix_loc_scale_kwarg3(args, loc, scale,
+                                                              None, None)
+        if kwarg3 is not None:
+            # 3 positional args
+            raise TypeError("Too many input arguments.")
 
         return args, loc, scale
 
@@ -565,10 +553,11 @@ class rv_generic(object):
             if N == self.numargs + 1 and loc is None:
                 # loc is given without keyword
                 loc = args[-1]
-            elif N == self.numargs + 2 and scale is None:
+            elif N == self.numargs + 2 and loc is None and scale is None:
                 # loc and scale given without keyword
                 loc, scale = args[-2:]
-            elif N == self.numargs + 3 and kwarg3 is None:
+            elif N == self.numargs + 3 and loc is None and scale is None \
+                                       and kwarg3 is None:
                 # loc, scale and a third argument
                 loc, scale, kwarg3 = args[-3:]
             else:

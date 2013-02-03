@@ -960,6 +960,7 @@ def test_distribution_too_many_args():
     # Regression test for ticket 1815.
     x = np.linspace(0.1, 0.7, num=5)
     assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, loc=1.0)
+    assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, 4, loc=1.0)
     assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, 4, 5)
     assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, loc=1.0, scale=0.5)
     assert_raises(TypeError, stats.gamma.rvs, 2., 3, loc=1.0, scale=0.5)
