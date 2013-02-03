@@ -32,8 +32,9 @@ Optimization Tools
 
   Global Optimizers
 
-   anneal      --  Simulated Annealing
-   brute       --  Brute force searching optimizer
+   anneal       --  Simulated Annealing
+   basinhopping --  Basin-hopping stochastic optimizer
+   brute        --  Brute force searching optimizer
 
 
   Scalar function minimizers
