@@ -334,7 +334,7 @@ class Test_AdaptiveStepsize(TestCase):
         self.stepsize = 1.
         self.ts = RandomDisplacement(stepsize=self.stepsize)
         self.target_accept_rate = 0.5
-        self.takestep = AdaptiveStepsize(takestep=self.ts,
+        self.takestep = AdaptiveStepsize(takestep=self.ts, verbose=False,
                                           accept_rate=self.target_accept_rate)
 
     def test_adaptive_increase(self):
