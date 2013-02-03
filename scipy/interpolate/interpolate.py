@@ -99,7 +99,7 @@ class interp2d(object):
         If False, references may be used. The default is to copy.
     bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
-        domain of the input data (x,y), an error is raised.
+        domain of the input data (x,y), a ValueError is raised.
         If False, then `fill_value` is used.
     fill_value : number, optional
         If provided, the value to use for points outside of the
@@ -278,7 +278,7 @@ class interp1d(object):
         If True, the class makes internal copies of x and y.
         If False, references to `x` and `y` are used. The default is to copy.
     bounds_error : bool, optional
-        If True, an error is thrown any time interpolation is attempted on
+        If True, a ValueError is raised any time interpolation is attempted on
         a value outside of the range of x (where extrapolation is
         necessary). If False, out of bounds values are assigned `fill_value`.
         By default, an error is raised.
