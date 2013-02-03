@@ -62,6 +62,12 @@ added, providing DFT-based spectral estimators.
 -------------------------------
 A callback mechanism was added to L-BFGS-B and TNC minimization solvers.
 
+Basin hopping global optimization (``scipy.optimize.basinhopping``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A new global optimization algorithm.  Basinhopping is designed to efficiently
+find the global minimum of a smooth function.
+
+
 Complex error functions in ``scipy.special``
 --------------------------------------------
 The computation of special functions related to the error function now uses a
@@ -85,7 +91,6 @@ Documented BLAS and LAPACK low-level interfaces
 -----------------------------------------------
 The modules `scipy.linalg.blas` and `scipy.linalg.lapack` can be used
 to access low-level BLAS and LAPACK functions.
-
 
 Deprecated features
 ===================
