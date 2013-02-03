@@ -21,7 +21,7 @@ from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence
 
-from scipy.linalg import svd
+from scipy.linalg import svd, hilbert
 
 
 # eigs() and eigsh() are called many times, so apply a filter for the warnings
@@ -511,13 +511,18 @@ def test_ticket_1459_arpack_crash():
 #----------------------------------------------------------------------
 # sparse SVD tests
 
-def sorted_svd(m, k):
+def sorted_svd(m, k, which='LM'):
     #Compute svd of a dense matrix m, and return singular vectors/values
     #sorted.
     if isspmatrix(m):
         m = m.todense()
     u, s, vh = svd(m)
-    ii = np.argsort(s)[-k:]
+    if which == 'LM':
+        ii = np.argsort(s)[-k:]
+    elif which == 'SM':
+        ii = np.argsort(s)[:k]
+    else:
+        raise ValueError("unknown which=%r" % (which,))
 
     return u[:, ii], s[ii], vh[ii]
 
@@ -568,6 +573,45 @@ def test_svd_simple_complex():
             sm_hat = svd_estimate(su, ss, svh)
 
             assert_array_almost_equal_nulp(m_hat, sm_hat, nulp=1000)
+
+
+def test_svd_maxiter():
+    # check that maxiter works as expected
+    x = hilbert(6)
+    # ARPACK shouldn't converge on such an ill-conditioned matrix with just
+    # one iteration
+    assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1)
+    # but 100 iterations should be more than enough
+    u, s, vt = svds(x, 1, maxiter=100)
+    assert_allclose(s, [1.7], atol=0.5)
+
+
+def test_svd_return():
+    # check that the return_singular_vectors parameter works as expected
+    x = hilbert(6)
+    _, s, _ = sorted_svd(x, 2)
+    ss = svds(x, 2, return_singular_vectors=False)
+    assert_allclose(s, ss)
+
+
+def test_svd_which():
+    # check that the which parameter works as expected
+    x = hilbert(6)
+    for which in ['LM', 'SM']:
+        _, s, _ = sorted_svd(x, 2, which=which)
+        ss = svds(x, 2, which=which, return_singular_vectors=False)
+        ss.sort()
+        assert_allclose(s, ss, atol=np.sqrt(1e-15))
+
+
+def test_svd_v0():
+    # check that the v0 parameter works as expected
+    x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]], float)
+
+    u, s, vh = svds(x, 1)
+    u2, s2, vh2 = svds(x, 1, v0=u[:,0])
+
+    assert_allclose(s, s2, atol=np.sqrt(1e-15))
 
 
 if __name__ == "__main__":

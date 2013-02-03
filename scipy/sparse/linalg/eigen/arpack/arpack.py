@@ -1561,27 +1561,56 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     return params.extract(return_eigenvectors)
 
 
-def svds(A, k=6, ncv=None, tol=0):
+def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
+         maxiter=None, return_singular_vectors=True):
     """Compute the largest k singular values/vectors for a sparse matrix.
 
     Parameters
     ----------
     A : sparse matrix
-        Array to compute the SVD on
+        Array to compute the SVD on, of shape (M, N)
     k : int, optional
         Number of singular values and vectors to compute.
-    ncv : integer
+    ncv : integer, optional
         The number of Lanczos vectors generated
         ncv must be greater than k+1 and smaller than n;
         it is recommended that ncv > 2*k
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
+    which : str, ['LM' | 'SM'], optional
+        Which `k` singular values to find:
+
+            - 'LM' : largest singular values
+            - 'SM' : smallest singular values
+
+        .. versionadded:: 0.12.0
+    v0 : ndarray, optional
+        Starting vector for iteration, of length min(A.shape). Should be an
+        (approximate) right singular vector if N > M and a right singular vector
+        otherwise.
+
+        .. versionadded:: 0.12.0
+    maxiter: integer, optional
+        Maximum number of iterations.
+
+        .. versionadded:: 0.12.0
+    return_singular_vectors : bool, optional
+        Return singular vectors (True) in addition to singular values
+
+        .. versionadded:: 0.12.0
+    Returns
+    -------
+    u : ndarray, shape=(M, k)
+        Unitary matrix having left singular vectors as columns.
+    s : ndarray, shape=(k,)
+        The singular values.
+    vt : ndarray, shape=(k, N)
+        Unitary matrix having right singular vectors as rows.
 
     Notes
     -----
-    This is a naive implementation using an ARPACK as eigensolver on A.H * A
-    or A * A.H, depending on which one is more efficient.
-
+    This is a naive implementation using ARPACK as an eigensolver
+    on A.H * A or A * A.H, depending on which one is more efficient.
     """
     if not (isinstance(A, np.ndarray) or isspmatrix(A)):
         A = np.asarray(A)
@@ -1608,8 +1637,16 @@ def svds(A, k=6, ncv=None, tol=0):
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=X.dtype,
                           shape=(X.shape[1], X.shape[1]))
 
-    eigvals, eigvec = eigensolver(XH_X, k=k, tol=tol ** 2)
-    s = np.sqrt(eigvals)
+    if return_singular_vectors:
+        eigvals, eigvec = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+                                      ncv=ncv, which=which, v0=v0)
+        s = np.sqrt(eigvals)
+    else:
+        eigvals = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+                              ncv=ncv, which=which, v0=v0,
+                              return_eigenvectors=False)
+        s = np.sqrt(eigvals)
+        return s
 
     if n > m:
         v = eigvec
