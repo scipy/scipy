@@ -21,7 +21,7 @@ class KroghInterpolator(object):
     The polynomial passes through all the pairs (xi,yi). One may additionally
     specify a number of derivatives at each point xi; this is done by
     repeating the value xi and specifying the derivatives as successive
-    yi values.
+    yi values. For vector-valued functions, each yi may be a vector.
 
     Be aware that the algorithms implemented here are not necessarily
     the most numerically stable known. Moreover, even in a world of
@@ -243,9 +243,9 @@ class KroghInterpolator(object):
         x : scalar or array_like of length N
             Point or points at which to evaluate the derivatives
 
-        der : None or integer
-            Which derivative to extract. This number includes the
-            function value as 0th derivative.
+        der : integer
+            Which derivative to extract. The function's value is given as the
+            0th derivative.
 
         Returns
         -------
