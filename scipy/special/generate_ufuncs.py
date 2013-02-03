@@ -344,7 +344,8 @@ import subprocess
 import optparse
 import re
 import textwrap
-from . import add_newdocs
+
+add_newdocs = __import__('add_newdocs')
 
 CY_TYPES = {
     'f': 'float',
