@@ -258,11 +258,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
                 for j in xrange(ndim+1):
                     for k in xrange(nvalues):
                         m = simplices[isimplex,j]
-                        if double_or_complex is double:
-                            out[i,k] += c[j] * values[m,k]
-                        else:
-                            out[i,k].real += c[j] * values[m, k].real
-                            out[i,k].imag += c[j] * values[m, k].imag
+                        out[i,k] = out[i,k] + c[j] * values[m,k]
 
         return out
 
