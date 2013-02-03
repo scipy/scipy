@@ -301,18 +301,10 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         Replace the default step taking routine with this routine.  The default
         step taking routine is a random displacement of the coordinates, but
         other step taking algorithms may be better for some systems.
-        ``take_step`` can optionally have two attributes:
-            take_step.stepsize : float
-
-            take_step.report : callable, ``report(accept, f_new=f_new, x_new=x_new, f_old=f_old, x_old=x_old)``
-
-        The function take_step.report() is called after each cycle and can be
-        used to adaptively improve the routine.  In the above, f_new, x_new,
-        f_old, and x_old are the new and old function value and coordinates,
-        and accept is a bool reporting whether or not the new coordinates were
-        accepted.  If take_step.report is not present and take_step.stepsize
-        is, ``basinhopping`` will adjust ``take_step.stepsize`` in order to
-        optimize the global minimum search.
+        ``take_step`` can optionally have the attribute ``take_step.stepsize``.
+        If this attribute exists, then ``basinhopping`` will adjust
+        ``take_step.stepsize`` in order to try to optimize the global minimum
+        search.
     accept_test : callable, ``accept_test(f_new=f_new, x_new=x_new, f_old=fold, x_old=x_old)``, optional
         Define a test which will be used to judge whether or not to accept the
         step.  This will be used in addition to the Metropolis test based on
@@ -478,9 +470,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     ...        x[1:] += np.random.uniform(-s, s, x[1:].shape)
     ...        return x
 
-    Since ``MyTakeStep.stepsize`` exists, but ``MyTakeStep.report()`` doesn't,
-    basinhopping will adjust the magnitude of stepsize to optimize the search.
-    We'll use the same 2-D function as before
+    Since ``MyTakeStep.stepsize`` exists basinhopping will adjust the magnitude
+    of ``stepsize`` to optimize the search.  We'll use the same 2-D function as
+    before
 
     >>> mytakestep = MyTakeStep()
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
@@ -546,18 +538,18 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     if take_step is not None:
         if not isinstance(take_step, collections.Callable):
             raise TypeError("take_step must be callable")
-        # if take_step.stepsize exists, but take_step.report() doesn't, then
-        # then use AdaptiveStepsize to control take_step.stepsize
-        if hasattr(take_step, "stepsize") and not hasattr(take_step, "report"):
+        # if take_step.stepsize exists then use AdaptiveStepsize to control
+        # take_step.stepsize
+        if hasattr(take_step, "stepsize"):
             take_step_wrapped = AdaptiveStepsize(take_step, interval=interval,
-                                                  verbose=disp)
+                                                 verbose=disp)
         else:
             take_step_wrapped = take_step
     else:
         #use default
         displace = RandomDisplacement(stepsize=stepsize)
         take_step_wrapped = AdaptiveStepsize(displace, interval=interval,
-                                              verbose=disp)
+                                             verbose=disp)
 
     #set up accept tests
     if accept_test is not None:

@@ -63,17 +63,6 @@ class MyTakeStep1(RandomDisplacement):
         return super(MyTakeStep1, self).__call__(x)
 
 
-class MyTakeStep2(MyTakeStep1):
-    """use a copy of displace, but have it set a special parameter to
-    make sure it's actually being used.
-
-    this time add a function report which overrides the default
-    adaptive step size routine.
-    """
-    def report(self, accept, **kwargs):
-        return
-
-
 class MyAcceptTest(object):
     """pass a custom accept test
 
@@ -220,19 +209,6 @@ class TestBasinHopping(TestCase):
         assert_(takestep.been_called)
         #make sure that the built in adaptive step size has been used
         assert_(initial_step_size != takestep.stepsize)
-
-    def test_pass_takestep2(self):
-        #test that the report() function of custom takestep works
-        takestep = MyTakeStep2()
-        initial_step_size = takestep.stepsize
-        i = 1
-        res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
-                           niter=self.niter, disp=self.disp,
-                           take_step=takestep)
-        assert_almost_equal(res.x, self.sol[i], self.tol)
-        assert_(takestep.been_called)
-        #make sure that the built in adaptive step size has **not** been used
-        assert_(initial_step_size == takestep.stepsize)
 
     def test_pass_accept_test(self):
         #test passing a custom accept test
