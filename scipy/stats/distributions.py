@@ -533,20 +533,46 @@ class rv_generic(object):
 
     """
     def _fix_loc_scale(self, args, loc, scale=1):
+        """Parse args/kwargs input to other methods."""
+        args, loc, scale, kwarg3 = self._fix_loc_scale_kwarg3(args, loc, scale,
+                                                              None, None)
+        if kwarg3 is not None:
+            # 3 positional args
+            raise TypeError("Too many input arguments.")
+
+        return args, loc, scale
+
+    def _fix_loc_scale_kwarg3(self, args, loc, scale=1,
+                              kwarg3=1, kwarg3_default=None):
+        """Parse args/kwargs input to methods with a third kwarg.
+
+        At the moment these methods are ``stats`` and ``rvs``.
+        """
         N = len(args)
         if N > self.numargs:
             if N == self.numargs + 1 and loc is None:
                 # loc is given without keyword
                 loc = args[-1]
-            if N == self.numargs + 2 and scale is None:
+            elif N == self.numargs + 2 and loc is None and scale is None:
                 # loc and scale given without keyword
                 loc, scale = args[-2:]
+            elif N == self.numargs + 3 and loc is None and scale is None \
+                                       and kwarg3 is None:
+                # loc, scale and a third argument
+                loc, scale, kwarg3 = args[-3:]
+            else:
+                raise TypeError("Too many input arguments.")
+
             args = args[:self.numargs]
+
         if scale is None:
             scale = 1.0
         if loc is None:
             loc = 0.0
-        return args, loc, scale
+        if kwarg3 is None:
+            kwarg3 = kwarg3_default
+
+        return args, loc, scale, kwarg3
 
     def _fix_loc(self, args, loc):
         args, loc, scale = self._fix_loc_scale(args, loc)
@@ -562,25 +588,26 @@ class rv_generic(object):
         ----------
         arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
+            instance object for more information).
         loc : array_like, optional
-            location parameter (default=0)
+            Location parameter (default=0).
         scale : array_like, optional
-            scale parameter (default=1)
+            Scale parameter (default=1).
         size : int or tuple of ints, optional
-            defining number of random variates (default=1)
+            Defining number of random variates (default=1).
 
         Returns
         -------
-        rvs : array_like
-            random variates of given `size`
+        rvs : ndarray or scalar
+            Random variates of given `size`.
 
         """
         kwd_names = ['loc', 'scale', 'size', 'discrete']
         loc, scale, size, discrete = map(kwds.get, kwd_names,
                                          [None]*len(kwd_names))
 
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale, size = self._fix_loc_scale_kwarg3(args, loc, scale,
+                                                            size)
         cond = logical_and(self._argcheck(*args),(scale >= 0))
         if not all(cond):
             raise ValueError("Domain error in arguments.")
@@ -1495,7 +1522,7 @@ class rv_continuous(rv_generic):
             location parameter (default=0)
         scale : array_like, optional
             scale parameter (default=1)
-        moments : string, optional
+        moments : str, optional
             composed of letters ['mvsk'] defining which moments to compute:
             'm' = mean,
             'v' = variance,
@@ -1510,25 +1537,11 @@ class rv_continuous(rv_generic):
 
         """
         loc,scale,moments=map(kwds.get,['loc','scale','moments'])
+        args, loc, scale, moments = self._fix_loc_scale_kwarg3(args, loc,
+                                                    scale, moments, 'mv')
 
-        N = len(args)
-        if N > self.numargs:
-            if N == self.numargs + 1 and loc is None:
-                # loc is given without keyword
-                loc = args[-1]
-            if N == self.numargs + 2 and scale is None:
-                # loc and scale given without keyword
-                loc, scale = args[-2:]
-            if N == self.numargs + 3 and moments is None:
-                # loc, scale, and moments
-                loc, scale, moments = args[-3:]
-            args = args[:self.numargs]
-        if scale is None: scale = 1.0
-        if loc is None: loc = 0.0
-        if moments is None: moments = 'mv'
-
-        loc,scale = map(asarray,(loc,scale))
-        args = tuple(map(asarray,args))
+        loc, scale = map(asarray, (loc, scale))
+        args = tuple(map(asarray, args))
         cond = self._argcheck(*args) & (scale > 0) & (loc==loc)
 
         signature = inspect.getargspec(get_method_function(self._stats))
@@ -1771,7 +1784,8 @@ class rv_continuous(rv_generic):
         """
         Narg = len(args)
         if Narg > self.numargs:
-            raise ValueError("Too many input arguments.")
+            raise TypeError("Too many input arguments.")
+
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and
                                          'scale' in kwds):
@@ -5763,11 +5777,12 @@ class rv_discrete(rv_generic):
         loc : array_like, optional
             Location parameter (default=0).
         size : int or tuple of ints, optional
-            Defining number of random variates (default=1).
+            Defining number of random variates (default=1).  Note that `size`
+            has to be given as keyword, not as positional argument.
 
         Returns
         -------
-        rvs : array_like
+        rvs : ndarray or scalar
             Random variates of given `size`.
 
         """
@@ -6136,11 +6151,17 @@ class rv_discrete(rv_generic):
         if N > self.numargs:
             if N == self.numargs + 1 and loc is None:  # loc is given without keyword
                 loc = args[-1]
-            if N == self.numargs + 2 and moments is None: # loc, scale, and moments
+            elif N == self.numargs + 2 and moments is None: # loc, scale, and moments
                 loc, moments = args[-2:]
+            else:
+                raise TypeError("Too many input arguments.")
+
             args = args[:self.numargs]
-        if loc is None: loc = 0.0
-        if moments is None: moments = 'mv'
+
+        if loc is None:
+            loc = 0.0
+        if moments is None:
+            moments = 'mv'
 
         loc = asarray(loc)
         args = tuple(map(asarray,args))

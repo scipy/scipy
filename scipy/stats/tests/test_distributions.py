@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, assert_almost_equal, assert_array_almost_equal, \
-    assert_allclose, assert_, rand, dec
+    assert_allclose, assert_, assert_raises, rand, dec
 from numpy.testing.utils import WarningManager
 
 
@@ -15,6 +15,7 @@ from numpy import typecodes, array
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
 import warnings
+
 
 def kolmogorov_check(diststr, args=(), N=20, significance=0.01):
     qtest = stats.ksoneisf(significance, N)
@@ -952,6 +953,44 @@ def test_hypergeom_interval_1802():
     #degenerate case .a == .b
     assert_equal(stats.hypergeom.ppf(0.02, 100, 100, 8), 8)
     assert_equal(stats.hypergeom.ppf(1, 100, 100, 8), 8)
+
+
+def test_distribution_too_many_args():
+    # Check that a TypeError is raised when too many args are given to a method
+    # Regression test for ticket 1815.
+    x = np.linspace(0.1, 0.7, num=5)
+    assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, loc=1.0)
+    assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, 4, loc=1.0)
+    assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, 4, 5)
+    assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, loc=1.0, scale=0.5)
+    assert_raises(TypeError, stats.gamma.rvs, 2., 3, loc=1.0, scale=0.5)
+    assert_raises(TypeError, stats.gamma.cdf, x, 2., 3, loc=1.0, scale=0.5)
+    assert_raises(TypeError, stats.gamma.ppf, x, 2., 3, loc=1.0, scale=0.5)
+    assert_raises(TypeError, stats.gamma.stats, 2., 3, loc=1.0, scale=0.5)
+    assert_raises(TypeError, stats.gamma.entropy, 2., 3, loc=1.0, scale=0.5)
+    assert_raises(TypeError, stats.gamma.fit, x, 2., 3, loc=1.0, scale=0.5)
+
+    # These should not give errors
+    stats.gamma.pdf(x, 2, 3)  # loc=3
+    stats.gamma.pdf(x, 2, 3, 4)  # loc=3, scale=4
+    stats.gamma.stats(2., 3)
+    stats.gamma.stats(2., 3, 4)
+    stats.gamma.stats(2., 3, 4, 'mv')
+    stats.gamma.rvs(2., 3, 4, 5)
+    stats.gamma.fit(stats.gamma.rvs(2., size=7), 2.)
+
+    # Also for a discrete distribution
+    stats.geom.pmf(x, 2, loc=3)  # no error, loc=3
+    assert_raises(TypeError, stats.geom.pmf, x, 2, 3, 4)
+    assert_raises(TypeError, stats.geom.pmf, x, 2, 3, loc=4)
+
+    # And for distributions with 0, 2 and 3 args respectively
+    assert_raises(TypeError, stats.expon.pdf, x, 3, loc=1.0)
+    assert_raises(TypeError, stats.exponweib.pdf, x, 3, 4, 5, loc=1.0)
+    assert_raises(TypeError, stats.exponweib.pdf, x, 3, 4, 5, 0.1, 0.1)
+    assert_raises(TypeError, stats.ncf.pdf, x, 3, 4, 5, 6, loc=1.0)
+    assert_raises(TypeError, stats.ncf.pdf, x, 3, 4, 5, 6, 1.0, scale=0.5)
+    stats.ncf.pdf(x, 3, 4, 5, 6, 1.0)  # 3 args, plus loc/scale
 
 
 if __name__ == "__main__":
