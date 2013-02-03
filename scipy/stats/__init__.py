@@ -256,6 +256,7 @@ which work for masked arrays.
    ks_2samp
    mannwhitneyu
    tiecorrect
+   rankdata
    ranksums
    wilcoxon
    kruskal
