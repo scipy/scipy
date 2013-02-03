@@ -63,6 +63,15 @@ class MyTakeStep1(RandomDisplacement):
         return super(MyTakeStep1, self).__call__(x)
 
 
+def myTakeStep2(x):
+    """redo RandomDisplacement in function form without the attribute stepsize
+    to make sure still everything works ok
+    """
+    s = 0.5
+    x += np.random.uniform(-s, s, np.shape(x))
+    return x
+
+
 class MyAcceptTest(object):
     """pass a custom accept test
 
@@ -127,15 +136,15 @@ class TestBasinHopping(TestCase):
         self.kwargs_nograd = {"method": "L-BFGS-B"}
 
     def test_TypeError(self):
-        #test the TypeErrors are raised on bad input
+        # test the TypeErrors are raised on bad input
         i = 1
-        #if take_step is passed, it must be callable
+        # if take_step is passed, it must be callable
         self.assertRaises(TypeError, basinhopping, func2d, self.x0[i],
                           take_step=1)
-        #if accept_test is passed, it must be callable
+        # if accept_test is passed, it must be callable
         self.assertRaises(TypeError, basinhopping, func2d, self.x0[i],
                           accept_test=1)
-        #accept_test must return bool or string "force_accept"
+        # accept_test must return bool or string "force_accept"
 
         def bad_accept_test1(*args, **kwargs):
             return 1
@@ -150,14 +159,14 @@ class TestBasinHopping(TestCase):
                           accept_test=bad_accept_test2)
 
     def test_1d_grad(self):
-        #test 1d minimizations with gradient
+        # test 1d minimizations with gradient
         i = 0
         res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_2d(self):
-        #test 2d minimizations with gradient
+        # test 2d minimizations with gradient
         i = 1
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp)
@@ -165,10 +174,10 @@ class TestBasinHopping(TestCase):
         self.assertGreater(res.nfev, 0)
 
     def test_njev(self):
-        #njev is returned correctly
+        # test njev is returned correctly
         i = 1
         minimizer_kwargs = self.kwargs.copy()
-        #L-BFGS-B doesn't use njev, but BFGS does
+        # L-BFGS-B doesn't use njev, but BFGS does
         minimizer_kwargs["method"] = "BFGS"
         res = basinhopping(func2d, self.x0[i],
                            minimizer_kwargs=minimizer_kwargs, niter=self.niter,
@@ -177,7 +186,7 @@ class TestBasinHopping(TestCase):
         self.assertEqual(res.nfev, res.njev)
 
     def test_2d_nograd(self):
-        #test 2d minimizations without gradient
+        # test 2d minimizations without gradient
         i = 1
         res = basinhopping(func2d_nograd, self.x0[i],
                            minimizer_kwargs=self.kwargs_nograd,
@@ -185,7 +194,7 @@ class TestBasinHopping(TestCase):
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_all_minimizers(self):
-        #test 2d minimizations with gradient
+        # test 2d minimizations with gradient
         i = 1
         methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
                    'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP']
@@ -198,7 +207,8 @@ class TestBasinHopping(TestCase):
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_pass_takestep(self):
-        #test that passing a custom takestep works
+        # test that passing a custom takestep works
+        # also test that the stepsize is being adjusted
         takestep = MyTakeStep1()
         initial_step_size = takestep.stepsize
         i = 1
@@ -207,13 +217,23 @@ class TestBasinHopping(TestCase):
                            take_step=takestep)
         assert_almost_equal(res.x, self.sol[i], self.tol)
         assert_(takestep.been_called)
-        #make sure that the built in adaptive step size has been used
+        # make sure that the built in adaptive step size has been used
         assert_(initial_step_size != takestep.stepsize)
 
+    def test_pass_simple_takestep(self):
+        # test that passing a custom takestep without attribute stepsize
+        takestep = myTakeStep2
+        i = 1
+        res = basinhopping(func2d_nograd, self.x0[i],
+                           minimizer_kwargs=self.kwargs_nograd,
+                           niter=self.niter, disp=self.disp,
+                           take_step=takestep)
+        assert_almost_equal(res.x, self.sol[i], self.tol)
+
     def test_pass_accept_test(self):
-        #test passing a custom accept test
-        #This does nothing but make sure it's being used and ensure all the
-        #possible return values are accepted
+        # test passing a custom accept test
+        # makes sure it's being used and ensures all the possible return values
+        # are accepted.
         accept_test = MyAcceptTest()
         i = 1
         #there's no point in running it more than a few steps.
@@ -222,9 +242,9 @@ class TestBasinHopping(TestCase):
         assert_(accept_test.been_called)
 
     def test_pass_callback(self):
-        #test passing a custom callback function
-        #This makes sure it's being used.  It also returns True after 10
-        #steps to ensure that it's stopping early.
+        # test passing a custom callback function
+        # This makes sure it's being used.  It also returns True after 10 steps
+        # to ensure that it's stopping early.
 
         callback = MyCallBack()
         i = 1
