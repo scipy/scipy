@@ -125,20 +125,6 @@ def _check_unknown_options(unknown_options):
         # level in user code.
         warnings.warn("Unknown solver options: %s" % msg, OptimizeWarning, 4)
 
-# These have been copied from Numeric's MLab.py
-# I don't think they made the transition to scipy_core
-def max(m, axis=0):
-    """max(m,axis=0) returns the maximum of m along dimension axis.
-    """
-    m = asarray(m)
-    return numpy.maximum.reduce(m, axis)
-
-def min(m, axis=0):
-    """min(m,axis=0) returns the minimum of m along dimension axis.
-    """
-    m = asarray(m)
-    return numpy.minimum.reduce(m, axis)
-
 def is_array_scalar(x):
     """Test whether `x` is either a scalar or an array scalar.
 
@@ -147,10 +133,6 @@ def is_array_scalar(x):
 
 abs = absolute
 
-from scipy.lib.six.moves import builtins
-pymin = builtins.min
-pymax = builtins.max
-__version__ = "0.7"
 _epsilon = sqrt(numpy.finfo(float).eps)
 
 def vecnorm(x, ord=2):
@@ -448,8 +430,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     iterations = 1
 
     while (fcalls[0] < maxfun and iterations < maxiter):
-        if (max(numpy.ravel(abs(sim[1:] - sim[0]))) <= xtol \
-            and max(abs(fsim[0] - fsim[1:])) <= ftol):
+        if (numpy.max(numpy.ravel(abs(sim[1:] - sim[0]))) <= xtol
+            and numpy.max(abs(fsim[0] - fsim[1:])) <= ftol):
             break
 
         xbar = numpy.add.reduce(sim[:-1], 0) / N
@@ -508,7 +490,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             allvecs.append(sim[0])
 
     x = sim[0]
-    fval = min(fsim)
+    fval = numpy.min(fsim)
     warnflag = 0
 
     if fcalls[0] >= maxfun:
@@ -1044,7 +1026,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         if gfkp1 is None:
             gfkp1 = myfprime(xk)
         yk = gfkp1 - gfk
-        beta_k = pymax(0, numpy.dot(yk, gfkp1) / deltak)
+        beta_k = max(0, numpy.dot(yk, gfkp1) / deltak)
         pk = -gfkp1 + beta_k * pk
         gfk = gfkp1
         gnorm = vecnorm(gfk, ord=norm)
@@ -1257,7 +1239,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         #  del2 f(xk) p = - grad f(xk) starting from 0.
         b = -fprime(xk)
         maggrad = numpy.add.reduce(abs(b))
-        eta = min([0.5, numpy.sqrt(maggrad)])
+        eta = numpy.min([0.5, numpy.sqrt(maggrad)])
         termcond = eta * maggrad
         xsupi = zeros(len(x0), dtype=x0.dtype)
         ri = -b
@@ -1479,7 +1461,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
             step = '       golden'
 
         si = numpy.sign(rat) + (rat == 0)
-        x = xf + si*max([abs(rat), tol1])
+        x = xf + si * numpy.max([abs(rat), tol1])
         fu = func(x, *args)
         num += 1
         fmin_data = (num, x, fu)
