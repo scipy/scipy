@@ -30,10 +30,6 @@ import warnings
 # Numpy etc.
 #------------------------------------------------------------------------------
 
-cdef extern from "complex.h":
-    # Need to be included so that complex types work
-    pass
-
 cdef extern from "math.h":
     double sqrt(double x) nogil
     double fabs(double a) nogil
@@ -262,7 +258,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
                 for j in xrange(ndim+1):
                     for k in xrange(nvalues):
                         m = simplices[isimplex,j]
-                        out[i,k] += c[j] * values[m,k]
+                        out[i,k] = out[i,k] + c[j] * values[m,k]
 
         return out
 
