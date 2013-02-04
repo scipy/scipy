@@ -1,15 +1,83 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_almost_equal, assert_array_equal, \
-        TestCase, run_module_suite
+        TestCase, run_module_suite, assert_allclose, assert_equal
 from scipy.interpolate import KroghInterpolator, krogh_interpolate, \
         BarycentricInterpolator, barycentric_interpolate, \
         PiecewisePolynomial, piecewise_polynomial_interpolate, \
-        approximate_taylor_polynomial
+        approximate_taylor_polynomial, pchip
 from scipy.lib.six.moves import xrange
 import scipy
 import numpy as np
 from scipy.interpolate import splrep, splev
+
+def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
+    np.random.seed(1234)
+
+    x = [-1, 0, 1]
+    s = range(1, len(y_shape)+1)
+    s.insert(axis % (len(y_shape)+1), 0)
+    y = np.random.rand(*((3,) + y_shape)).transpose(s)
+
+    xi = np.zeros(x_shape)
+    yi = interpolator_cls(x, y, axis=axis)(xi)
+
+    target_shape = ((deriv_shape or ()) + y.shape[:axis]
+                    + x_shape + y.shape[axis:][1:])
+    assert_equal(yi.shape, target_shape)
+
+    # check it works also with lists
+    if x_shape and y.size > 0:
+        interpolator_cls(list(x), list(y), axis=axis)(list(xi))
+
+    # check also values
+    if xi.size > 0 and deriv_shape is None:
+        bs_shape = (y.shape[:axis] + ((1,)*len(x_shape)) + y.shape[axis:][1:])
+        yv = y[((slice(None,None,None),)*(axis%y.ndim))+(1,)].reshape(bs_shape)
+
+        yi, y = np.broadcast_arrays(yi, yv)
+        assert_allclose(yi, y)
+
+SHAPES = [(), (0,), (1,), (3,2,5)]
+
+def test_shapes():
+    for ip in [KroghInterpolator, BarycentricInterpolator, pchip]:
+        for s1 in SHAPES:
+            for s2 in SHAPES:
+                for axis in range(-len(s2), len(s2)):
+                    yield check_shape, ip, s1, s2, None, axis
+
+def test_derivs_shapes():
+    def krogh_derivs(x, y, axis=0):
+        return KroghInterpolator(x, y, axis).derivatives
+    def pchip_derivs(x, y, axis=0):
+        return pchip(x, y, axis).derivatives
+    for s1 in SHAPES:
+        for s2 in SHAPES:
+            for axis in range(-len(s2), len(s2)):
+                yield check_shape, krogh_derivs, s1, s2, (3,), axis
+                yield check_shape, pchip_derivs, s1, s2, (4,), axis
+
+def test_deriv_shapes():
+    def krogh_deriv(x, y, axis=0):
+        return KroghInterpolator(x, y, axis).derivative
+    def pchip_deriv(x, y, axis=0):
+        return pchip(x, y, axis).derivative
+    for ip in [krogh_deriv, pchip_deriv]:
+        for s1 in SHAPES:
+            for s2 in SHAPES:
+                for axis in range(-len(s2), len(s2)):
+                    yield check_shape, ip, s1, s2, (), axis
+
+def _check_complex(ip):
+    x = [1, 2, 3, 4]
+    y = [1, 2, 1j, 3]
+    p = ip(x, y)
+    assert_allclose(y, p(x))
+
+def test_complex():
+    for ip in [KroghInterpolator, BarycentricInterpolator, pchip]:
+        yield _check_complex, ip
 
 class CheckKrogh(TestCase):
     def setUp(self):
