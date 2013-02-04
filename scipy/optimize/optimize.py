@@ -30,7 +30,7 @@ import warnings
 import numpy
 from scipy.lib.six import callable
 from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
-     squeeze, vectorize, asarray, absolute, sqrt, Inf, asfarray, isinf
+     squeeze, vectorize, asarray, sqrt, Inf, asfarray, isinf
 from .linesearch import \
      line_search_BFGS, line_search_wolfe1, line_search_wolfe2, \
      line_search_wolfe2 as line_search
@@ -131,17 +131,15 @@ def is_array_scalar(x):
     """
     return len(atleast_1d(x) == 1)
 
-abs = absolute
-
 _epsilon = sqrt(numpy.finfo(float).eps)
 
 def vecnorm(x, ord=2):
     if ord == Inf:
-        return numpy.amax(abs(x))
+        return numpy.amax(numpy.abs(x))
     elif ord == -Inf:
-        return numpy.amin(abs(x))
+        return numpy.amin(numpy.abs(x))
     else:
-        return numpy.sum(abs(x)**ord, axis=0)**(1.0 / ord)
+        return numpy.sum(numpy.abs(x)**ord, axis=0)**(1.0 / ord)
 
 def rosen(x):
     """The Rosenbrock function.
@@ -430,8 +428,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     iterations = 1
 
     while (fcalls[0] < maxfun and iterations < maxiter):
-        if (numpy.max(numpy.ravel(abs(sim[1:] - sim[0]))) <= xtol
-            and numpy.max(abs(fsim[0] - fsim[1:])) <= ftol):
+        if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xtol
+            and numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= ftol):
             break
 
         xbar = numpy.add.reduce(sim[:-1], 0) / N
@@ -1234,11 +1232,11 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         allvecs = [xk]
     k = 0
     old_fval = f(x0)
-    while (numpy.add.reduce(abs(update)) > xtol) and (k < maxiter):
+    while (numpy.add.reduce(numpy.abs(update)) > xtol) and (k < maxiter):
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
         b = -fprime(xk)
-        maggrad = numpy.add.reduce(abs(b))
+        maggrad = numpy.add.reduce(numpy.abs(b))
         eta = numpy.min([0.5, numpy.sqrt(maggrad)])
         termcond = eta * maggrad
         xsupi = zeros(len(x0), dtype=x0.dtype)
@@ -1251,7 +1249,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             A = fhess(*(xk,) + args)
             hcalls = hcalls + 1
 
-        while numpy.add.reduce(abs(ri)) > termcond:
+        while numpy.add.reduce(numpy.abs(ri)) > termcond:
             if fhess is None:
                 if fhess_p is None:
                     Ap = approx_fhess_p(xk, psupi, fprime, epsilon)
@@ -1416,7 +1414,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
 
     ffulc = fnfc = fx
     xm = 0.5*(a + b)
-    tol1 = sqrt_eps*abs(xf) + xtol / 3.0
+    tol1 = sqrt_eps*numpy.abs(xf) + xtol / 3.0
     tol2 = 2.0*tol1
 
     if disp > 2:
@@ -1425,22 +1423,22 @@ def _minimize_scalar_bounded(func, bounds, args=(),
         print("%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,)))
 
 
-    while (abs(xf - xm) > (tol2 - 0.5*(b - a))):
+    while (numpy.abs(xf - xm) > (tol2 - 0.5*(b - a))):
         golden = 1
         # Check for parabolic fit
-        if abs(e) > tol1:
+        if numpy.abs(e) > tol1:
             golden = 0
             r = (xf - nfc)*(fx - ffulc)
             q = (xf - fulc)*(fx - fnfc)
             p = (xf - fulc)*q - (xf - nfc)*r
             q = 2.0*(q - r)
             if q > 0.0: p = -p
-            q = abs(q)
+            q = numpy.abs(q)
             r = e
             e = rat
 
             # Check for acceptability of parabola
-            if ((abs(p) < abs(0.5*q*r)) and (p > q*(a - xf)) and \
+            if ((numpy.abs(p) < numpy.abs(0.5*q*r)) and (p > q*(a - xf)) and \
                  (p < q*(b - xf))):
                 rat = (p + 0.0) / q
                 x = xf + rat
@@ -1461,7 +1459,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
             step = '       golden'
 
         si = numpy.sign(rat) + (rat == 0)
-        x = xf + si * numpy.max([abs(rat), tol1])
+        x = xf + si * numpy.max([numpy.abs(rat), tol1])
         fu = func(x, *args)
         num += 1
         fmin_data = (num, x, fu)
@@ -1488,7 +1486,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
                 fulc, ffulc = x, fu
 
         xm = 0.5*(a + b)
-        tol1 = sqrt_eps*abs(xf) + xtol / 3.0
+        tol1 = sqrt_eps*numpy.abs(xf) + xtol / 3.0
         tol2 = 2.0*tol1
 
         if num >= maxfun:
@@ -1578,14 +1576,14 @@ class Brent:
         funcalls = 1
         iter = 0
         while (iter < self.maxiter):
-            tol1 = self.tol*abs(x) + _mintol
+            tol1 = self.tol*numpy.abs(x) + _mintol
             tol2 = 2.0*tol1
             xmid = 0.5*(a + b)
-            if abs(x - xmid) < (tol2 - 0.5*(b - a)):  # check for convergence
+            if numpy.abs(x - xmid) < (tol2 - 0.5*(b - a)):  # check for convergence
                 xmin = x
                 fval = fx
                 break
-            if (abs(deltax) <= tol1):
+            if (numpy.abs(deltax) <= tol1):
                 if (x >= xmid): deltax = a - x       # do a golden section step
                 else: deltax = b - x
                 rat = _cg*deltax
@@ -1596,11 +1594,12 @@ class Brent:
                 tmp2 = 2.0*(tmp2 - tmp1)
                 if (tmp2 > 0.0):
                     p = -p
-                tmp2 = abs(tmp2)
+                tmp2 = numpy.abs(tmp2)
                 dx_temp = deltax
                 deltax = rat
                 # check parabolic fit
-                if ((p > tmp2*(a - x)) and (p < tmp2*(b - x)) and (abs(p) < abs(0.5*tmp2*dx_temp))):
+                if ((p > tmp2*(a - x)) and (p < tmp2*(b - x)) and
+                    (numpy.abs(p) < numpy.abs(0.5*tmp2*dx_temp))):
                     rat = p*1.0 / tmp2        # if parabolic step is useful.
                     u = x + rat
                     if ((u - a) < tol2 or (b - u) < tol2):
@@ -1611,7 +1610,7 @@ class Brent:
                     else: deltax = b - x
                     rat = _cg*deltax
 
-            if (abs(rat) < tol1):            # update by at least tol1
+            if (numpy.abs(rat) < tol1):            # update by at least tol1
                 if rat >= 0: u = x + tol1
                 else: u = x - tol1
             else:
@@ -1780,7 +1779,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     _gC = 1.0 - _gR
     x3 = xc
     x0 = xa
-    if (abs(xc - xb) > abs(xb - xa)):
+    if (numpy.abs(xc - xb) > numpy.abs(xb - xa)):
         x1 = xb
         x2 = xb + _gC*(xc - xb)
     else:
@@ -1789,7 +1788,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     f1 = func(*((x1,) + args))
     f2 = func(*((x2,) + args))
     funcalls += 2
-    while (abs(x3 - x0) > tol*(abs(x1) + abs(x2))):
+    while (numpy.abs(x3 - x0) > tol*(numpy.abs(x1) + numpy.abs(x2))):
         if (f2 < f1):
             x0 = x1; x1 = x2; x2 = _gR*x1 + _gC*x3
             f1 = f2; f2 = func(*((x2,) + args))
@@ -1855,7 +1854,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         tmp1 = (xb - xa)*(fb - fc)
         tmp2 = (xb - xc)*(fb - fa)
         val = tmp2 - tmp1
-        if abs(val) < _verysmall_num:
+        if numpy.abs(val) < _verysmall_num:
             denom = 2.0*_verysmall_num
         else:
             denom = 2.0*val
@@ -2099,7 +2098,7 @@ def _minimize_powell(func, x0, args=(), callback=None,
             callback(x)
         if retall:
             allvecs.append(x)
-        if (2.0*(fx - fval) <= ftol*(abs(fx) + abs(fval)) + 1e-20): break
+        if (2.0*(fx - fval) <= ftol*(numpy.abs(fx) + numpy.abs(fval)) + 1e-20): break
         if fcalls[0] >= maxfun: break
         if iter >= maxiter: break
 
