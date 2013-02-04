@@ -53,3 +53,11 @@ def test_valid_origins():
         # Just check this raises an error instead of silently accepting or
         # segfaulting.
         assert_raises(ValueError, filter, data, 3, origin=2)
+
+def test_gaussian_truncate():
+    """Test that Gaussian filters can be truncated at different widths."""
+    arr = np.zeros((100, 100), np.float)
+    arr[50, 50] = 1
+    num_zeros_2 = (sndi.gaussian_filter(arr, 5, truncate=2) > 0).sum()
+    num_zeros_5 = (sndi.gaussian_filter(arr, 5, truncate=5) > 0).sum()
+    assert (num_zeros_5 > num_zeros_2 * 2)
