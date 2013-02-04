@@ -141,6 +141,8 @@ def is_writable(dir):
     res : bool
         True or False.
     """
+    if not os.path.isdir(dir):
+        return False
 
     # Do NOT use a hardcoded name here due to the danger from race conditions
     # on NFS when multiple processes are accessing the same base directory in
@@ -203,8 +205,11 @@ def default_dir():
     writable = False
     for path in path_candidates:
         if not os.path.exists(path):
-            create_dir(path)
-            os.chmod(path, 0700) # make it only accessible by this user.
+            try:
+                create_dir(path)
+                os.chmod(path, 0700) # make it only accessible by this user.
+            except OSError:
+                continue
         if is_writable(path):
             writable = True
             break
