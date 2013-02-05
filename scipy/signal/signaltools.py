@@ -127,7 +127,7 @@ def _centered(arr, newsize):
     # Return the center newsize portion of the array.
     newsize = asarray(newsize)
     currsize = array(arr.shape)
-    startind = (currsize - newsize) / 2
+    startind = (currsize - newsize) // 2
     endind = startind + newsize
     myslice = [slice(startind[k], endind[k]) for k in range(len(endind))]
     return arr[tuple(myslice)]
@@ -319,7 +319,7 @@ def medfilt(volume, kernel_size=None):
     domain = ones(kernel_size)
 
     numels = product(kernel_size, axis=0)
-    order = int(numels / 2)
+    order = int(numels // 2)
     return sigtools._order_filterND(volume, domain, order)
 
 
@@ -714,11 +714,11 @@ def hilbert(x, N=None, axis=-1):
     Xf = fft(x, N, axis=axis)
     h = zeros(N)
     if N % 2 == 0:
-        h[0] = h[N / 2] = 1
-        h[1:N / 2] = 2
+        h[0] = h[N // 2] = 1
+        h[1:N // 2] = 2
     else:
         h[0] = 1
-        h[1:(N + 1) / 2] = 2
+        h[1:(N + 1) // 2] = 2
 
     if len(x.shape) > 1:
         ind = [newaxis] * x.ndim
@@ -772,11 +772,11 @@ def hilbert2(x, N=None):
         h = eval("h%d" % (p + 1))
         N1 = N[p]
         if N1 % 2 == 0:
-            h[0] = h[N1 / 2] = 1
-            h[1:N1 / 2] = 2
+            h[0] = h[N1 // 2] = 1
+            h[1:N1 // 2] = 2
         else:
             h[0] = 1
-            h[1:(N1 + 1) / 2] = 2
+            h[1:(N1 + 1) // 2] = 2
         exec("h%d = h" % (p + 1), globals(), locals())
 
     h = h1[:, newaxis] * h2[newaxis, :]
@@ -1198,9 +1198,9 @@ def resample(x, num, t=None, axis=0, window=None):
     newshape[axis] = num
     N = int(np.minimum(num, Nx))
     Y = zeros(newshape, 'D')
-    sl[axis] = slice(0, (N + 1) / 2)
+    sl[axis] = slice(0, (N + 1) // 2)
     Y[sl] = X[sl]
-    sl[axis] = slice(-(N - 1) / 2, None)
+    sl[axis] = slice(-(N - 1) // 2, None)
     Y[sl] = X[sl]
     y = ifft(Y, axis=axis) * (float(num) / float(Nx))
 
@@ -1275,7 +1275,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
             axis = axis + rnk
         newdims = r_[axis, 0:axis, axis + 1:rnk]
         newdata = reshape(transpose(data, tuple(newdims)),
-                          (N, prod(dshape, axis=0) / N))
+                          (N, prod(dshape, axis=0) // N))
         newdata = newdata.copy()  # make sure we have a copy
         if newdata.dtype.char not in 'dfDF':
             newdata = newdata.astype(dtype)
