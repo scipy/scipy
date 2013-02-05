@@ -17,8 +17,8 @@ class DbfilenameShelf(Shelf):
     """
 
     def __init__(self, filename, flag='c'):
-        from . import dumbdbm_patched
-        Shelf.__init__(self, dumbdbm_patched.open(filename, flag))
+        from . import _dumbdbm_patched
+        Shelf.__init__(self, _dumbdbm_patched.open(filename, flag))
 
     def __getitem__(self, key):
         compressed = self.dict[key]
