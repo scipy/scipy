@@ -22,32 +22,25 @@ Support for Python 2.4 and 2.5 has been dropped as of this release.
 New features
 ============
 
-``scipy.sparse.linalg`` features
---------------------------------
-- In ``scipy.sparse.linalg.spsolve``, the ``b`` argument can now be either
-  a vector or a matrix.
-- ``scipy.sparse.linalg.inv`` was added.  This uses ``spsolve`` to compute
-  a sparse matrix inverse.
-- ``scipy.sparse.linalg.expm`` was added.  This computes the exponential of
-  a sparse matrix using a similar algorithm to the existing dense array
-  implementation in ``scipy.linalg.expm``.
+``scipy.spatial`` improvements
+------------------------------
 
-cKDTree improvements
---------------------
-scipy.spatial: Cython version of KDTree, cKDTree, is now feature-complete.
-Most operations (construction, query, query_ball_point, query_pairs,
-count_neighbors and sparse_distance_matrix) are between 200 and 1000 times
-faster in cKDTree than in KDTree.  With very minor caveats, cKDTree has
-exactly the same interface as KDTree, and can be used as a drop-in replacement.
+cKDTree feature-complete
+^^^^^^^^^^^^^^^^^^^^^^^^
+Cython version of KDTree, cKDTree, is now feature-complete.  Most operations
+(construction, query, query_ball_point, query_pairs, count_neighbors and
+sparse_distance_matrix) are between 200 and 1000 times faster in cKDTree than
+in KDTree.  With very minor caveats, cKDTree has exactly the same interface as
+KDTree, and can be used as a drop-in replacement.
 
 Voronoi diagrams and convex hulls
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 `scipy.spatial` now contains functionality for computing Voronoi
 diagrams and convex hulls using the Qhull library. (Delaunay
 triangulation was available since Scipy 0.9.0.)
 
 Delaunay improvements
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 It's now possible to pass in custom Qhull options in Delaunay
 triangulation. Coplanar points are now also recorded, if present.
 Incremental construction of Delaunay triangulations is now also
@@ -60,6 +53,9 @@ added, providing DFT-based spectral estimators.
 
 ``scipy.optimize`` improvements
 -------------------------------
+
+Callback functions in L-BFGS-B and TNC
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 A callback mechanism was added to L-BFGS-B and TNC minimization solvers.
 
 Basin hopping global optimization (``scipy.optimize.basinhopping``)
@@ -67,45 +63,62 @@ Basin hopping global optimization (``scipy.optimize.basinhopping``)
 A new global optimization algorithm.  Basinhopping is designed to efficiently
 find the global minimum of a smooth function.
 
+``scipy.special`` improvements
+------------------------------
 
-Complex error functions in ``scipy.special``
---------------------------------------------
+Revised complex error functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The computation of special functions related to the error function now uses a
 new `Faddeeva library from MIT <http://ab-initio.mit.edu/Faddeeva>`__ which
 increases their numerical precision. The scaled and imaginary error functions ``erfcx`` and
 ``erfi`` were also added, and the Dawson integral ``dawsn`` can now be
 evaluated for a complex argument.
 
-Listing Matlab(R) file contents
--------------------------------
-A new function ``whosmat`` is available in ``scipy.io`` for inspecting contents
-of MAT files without reading them to memory.
-
 Faster orthogonal polynomials
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Evaluation of orthogonal polynomials (the ``eval_*`` routines) in now
 faster in ``scipy.special``, and their ``out=`` argument functions
 properly.
 
-Documented BLAS and LAPACK low-level interfaces
+``scipy.sparse.linalg`` features
+--------------------------------
+- In ``scipy.sparse.linalg.spsolve``, the ``b`` argument can now be either
+  a vector or a matrix.
+- ``scipy.sparse.linalg.inv`` was added.  This uses ``spsolve`` to compute
+  a sparse matrix inverse.
+- ``scipy.sparse.linalg.expm`` was added.  This computes the exponential of
+  a sparse matrix using a similar algorithm to the existing dense array
+  implementation in ``scipy.linalg.expm``.
+
+Listing Matlab(R) file contents in ``scipy.io``
 -----------------------------------------------
+A new function ``whosmat`` is available in ``scipy.io`` for inspecting contents
+of MAT files without reading them to memory.
+
+Documented BLAS and LAPACK low-level interfaces (``scipy.linalg``)
+------------------------------------------------------------------
 The modules `scipy.linalg.blas` and `scipy.linalg.lapack` can be used
 to access low-level BLAS and LAPACK functions.
+
+Polynomial interpolation improvements (``scipy.interpolate``)
+-------------------------------------------------------------
+The barycentric, Krogh, piecewise and pchip polynomial interpolators in
+``scipy.interpolate`` accept now an ``axis`` argument.
+
 
 Deprecated features
 ===================
 
 `scipy.lib.lapack`
 ------------------
-The module `scipy.lib.lapack` is deprecated. You can use
-`scipy.linalg.lapack` instead. The module `scipy.lib.blas` was
-deprecated earlier in Scipy 0.10.0.
+The module `scipy.lib.lapack` is deprecated. You can use `scipy.linalg.lapack`
+instead. The module `scipy.lib.blas` was deprecated earlier in Scipy 0.10.0.
 
 `fblas` and `cblas`
 -------------------
-Accessing the modules `scipy.linalg.fblas`, `cblas`, `flapack`,
-`clapack` is deprecated. Instead, use the modules
-`scipy.linalg.lapack` and `scipy.linalg.blas`.
+Accessing the modules `scipy.linalg.fblas`, `cblas`, `flapack`, `clapack` is
+deprecated. Instead, use the modules `scipy.linalg.lapack` and
+`scipy.linalg.blas`.
 
 
 Backwards incompatible changes
