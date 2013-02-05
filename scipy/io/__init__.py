@@ -39,14 +39,6 @@ Matrix Market files
    mmread - Read matrix from Matrix Market formatted file
    mmwrite - Write matrix to Matrix Market formatted file
 
-Other
-=====
-
-.. autosummary::
-   :toctree: generated/
-
-   save_as_module - Data saved as module, accessed on load as attirbutes
-
 Wav sound files (:mod:`scipy.io.wavfile`)
 =========================================
 
@@ -88,7 +80,6 @@ from .matlab import loadmat, savemat, whosmat, byteordercodes
 # netCDF file support
 from .netcdf import netcdf_file, netcdf_variable
 
-from .data_store import save_as_module
 from .mmio import mminfo, mmread, mmwrite
 from .idl import readsav
 from .harwell_boeing import hb_read, hb_write

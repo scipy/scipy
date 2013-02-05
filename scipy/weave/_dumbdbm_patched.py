@@ -88,7 +88,7 @@ class _Database(object):
         f.seek(0, 2)
         pos = f.tell()
 ## Does not work under MW compiler
-##      pos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
+##      pos = ((pos + _BLOCKSIZE - 1) // _BLOCKSIZE) * _BLOCKSIZE
 ##      f.seek(pos)
         npos = ((pos + _BLOCKSIZE - 1) // _BLOCKSIZE) * _BLOCKSIZE
         f.write('\0'*(npos-pos))
