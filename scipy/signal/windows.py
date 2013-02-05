@@ -107,7 +107,7 @@ def triang(M, sym=True):
     odd = M % 2
     if not sym and not odd:
         M = M + 1
-    n = np.arange(1, int((M + 1) / 2) + 1)
+    n = np.arange(1, (M + 1) // 2 + 1)
     if M % 2 == 0:
         w = (2 * n - 1.0) / M
         w = np.r_[w, w[::-1]]

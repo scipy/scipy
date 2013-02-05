@@ -87,7 +87,7 @@ def direct_rdft(x):
     n = len(x)
     w = -arange(n)*(2j*pi/n)
     r = zeros(n,dtype=double)
-    for i in range(int(n/2+1)):
+    for i in range(n//2+1):
         y = dot(exp(i*w),x)
         if i:
             r[2*i-1] = y.real
@@ -101,7 +101,7 @@ def direct_irdft(x):
     x = asarray(x)
     n = len(x)
     x1 = zeros(n,dtype=cdouble)
-    for i in range(int(n/2+1)):
+    for i in range(n//2+1):
         if i:
             if 2*i<n:
                 x1[i] = x[2*i-1] + 1j* x[2*i]
@@ -291,8 +291,8 @@ class _TestRFFTBase(TestCase):
             y2 = numpy_fft(x)
             y1 = zeros((n,),dtype=double)
             y1[0] = y2[0].real
-            y1[-1] = y2[n/2].real
-            for k in range(1, int(n/2)):
+            y1[-1] = y2[n//2].real
+            for k in range(1, n//2):
                 y1[2*k-1] = y2[k].real
                 y1[2*k] = y2[k].imag
             y = fftpack.drfft(x)
@@ -336,10 +336,10 @@ class _TestIRFFTBase(TestCase):
             x = list(range(n))
             x1 = zeros((n,),dtype=cdouble)
             x1[0] = x[0]
-            for k in range(1, int(n/2)):
+            for k in range(1, n//2):
                 x1[k] = x[2*k-1]+1j*x[2*k]
                 x1[n-k] = x[2*k-1]-1j*x[2*k]
-            x1[n/2] = x[-1]
+            x1[n//2] = x[-1]
             y1 = numpy_ifft(x1)
             y = fftpack.drfft(x,direction=-1)
             assert_array_almost_equal(y,y1)
