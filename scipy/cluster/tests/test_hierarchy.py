@@ -566,43 +566,43 @@ class TestIsValidLinkage(TestCase):
     def test_is_valid_linkage_4_and_up(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             self.assertTrue(is_valid_linkage(Z) == True)
 
     def test_is_valid_linkage_4_and_up_neg_index_left(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (left)."
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
-            Z[int(i/2),0] = -2
+            Z[int(i//2),0] = -2
             self.assertTrue(is_valid_linkage(Z) == False)
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_index_right(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (right)."
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
-            Z[int(i/2),1] = -2
+            Z[int(i//2),1] = -2
             self.assertTrue(is_valid_linkage(Z) == False)
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_dist(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative distances."
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
-            Z[int(i/2),2] = -0.5
+            Z[int(i//2),2] = -0.5
             self.assertTrue(is_valid_linkage(Z) == False)
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_counts(self):
         "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative counts."
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
-            Z[int(i/2),3] = -2
+            Z[int(i//2),3] = -2
             self.assertTrue(is_valid_linkage(Z) == False)
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -649,7 +649,7 @@ class TestIsValidInconsistent(TestCase):
     def test_is_valid_im_4_and_up(self):
         "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3)."
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
             self.assertTrue(is_valid_im(R) == True)
@@ -657,30 +657,30 @@ class TestIsValidInconsistent(TestCase):
     def test_is_valid_im_4_and_up_neg_index_left(self):
         "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link height means."
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[int(i/2),0] = -2.0
+            R[int(i//2),0] = -2.0
             self.assertTrue(is_valid_im(R) == False)
             self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_4_and_up_neg_index_right(self):
         "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link height standard deviations."
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[int(i/2),1] = -2.0
+            R[int(i//2),1] = -2.0
             self.assertTrue(is_valid_im(R) == False)
             self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_4_and_up_neg_dist(self):
         "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link counts."
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[int(i/2),2] = -0.5
+            R[int(i//2),2] = -0.5
             self.assertTrue(is_valid_im(R) == False)
             self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
@@ -705,7 +705,7 @@ class TestNumObsLinkage(TestCase):
     def test_num_obs_linkage_4_and_up(self):
         "Tests num_obs_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             self.assertTrue(num_obs_linkage(Z) == i)
 
@@ -783,19 +783,19 @@ class TestCorrespond(TestCase):
     def test_correspond_2_and_up(self):
         "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes."
         for i in xrange(2, 4):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             self.assertTrue(correspond(Z, y))
         for i in xrange(4, 15, 3):
-            y = np.random.rand(i*(i-1)/2)
+            y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             self.assertTrue(correspond(Z, y))
 
     def test_correspond_4_and_up(self):
         "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes. Correspondance should be false."
         for (i, j) in list(zip(list(range(2, 4)), list(range(3, 5)))) + list(zip(list(range(3, 5)), list(range(2, 4)))):
-            y = np.random.rand(i*(i-1)/2)
-            y2 = np.random.rand(j*(j-1)/2)
+            y = np.random.rand(i*(i-1)//2)
+            y2 = np.random.rand(j*(j-1)//2)
             Z = linkage(y)
             Z2 = linkage(y2)
             self.assertTrue(correspond(Z, y2) == False)
@@ -804,8 +804,8 @@ class TestCorrespond(TestCase):
     def test_correspond_4_and_up_2(self):
         "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes. Correspondance should be false."
         for (i, j) in list(zip(list(range(2, 7)), list(range(16, 21)))) + list(zip(list(range(2, 7)), list(range(16, 21)))):
-            y = np.random.rand(i*(i-1)/2)
-            y2 = np.random.rand(j*(j-1)/2)
+            y = np.random.rand(i*(i-1)//2)
+            y2 = np.random.rand(j*(j-1)//2)
             Z = linkage(y)
             Z2 = linkage(y2)
             self.assertTrue(correspond(Z, y2) == False)
