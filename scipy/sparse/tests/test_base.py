@@ -189,7 +189,9 @@ class _TestCommon:
                    [       0, 2.0 + 5,      0],
                    [       0,       0,      0]])
         assert_array_equal(self.spmatrix(A).toarray(), A)
-        assert_array_equal(self.spmatrix(A, dtype='int16').toarray(), A.astype('int16'))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=np.ComplexWarning)
+            assert_array_equal(self.spmatrix(A, dtype='int16').toarray(), A.astype('int16'))
 
     def test_from_matrix(self):
         A = matrix([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
@@ -199,7 +201,9 @@ class _TestCommon:
                     [       0, 2.0 + 5,      0],
                     [       0,       0,      0]])
         assert_array_equal(self.spmatrix(A).toarray(), A)
-        assert_array_equal(self.spmatrix(A, dtype='int16').toarray(), A.astype('int16'))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=np.ComplexWarning)
+            assert_array_equal(self.spmatrix(A, dtype='int16').toarray(), A.astype('int16'))
 
     def test_from_list(self):
         A = [[1,0,0],[2,3,4],[0,5,0],[0,0,0]]
@@ -209,7 +213,9 @@ class _TestCommon:
              [       0, 2.0 + 5,      0],
              [       0,       0,      0]]
         assert_array_equal(self.spmatrix(A).toarray(), array(A))
-        assert_array_equal(self.spmatrix(A, dtype='int16').todense(), array(A).astype('int16'))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=np.ComplexWarning)
+            assert_array_equal(self.spmatrix(A, dtype='int16').todense(), array(A).astype('int16'))
 
     def test_from_sparse(self):
         D = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
@@ -219,15 +225,17 @@ class _TestCommon:
         assert_array_equal(self.spmatrix(S).toarray(), D)
 
 
-        D = array([[1.0 + 3j,       0,      0],
-                   [       0, 2.0 + 5,      0],
-                   [       0,       0,      0]])
-        S = csr_matrix(D)
-        assert_array_equal(self.spmatrix(S).toarray(), D)
-        assert_array_equal(self.spmatrix(S, dtype='int16').toarray(), D.astype('int16'))
-        S = self.spmatrix(D)
-        assert_array_equal(self.spmatrix(S).toarray(), D)
-        assert_array_equal(self.spmatrix(S, dtype='int16').toarray(), D.astype('int16'))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=np.ComplexWarning)
+            D = array([[1.0 + 3j,       0,      0],
+                       [       0, 2.0 + 5,      0],
+                       [       0,       0,      0]])
+            S = csr_matrix(D)
+            assert_array_equal(self.spmatrix(S).toarray(), D)
+            assert_array_equal(self.spmatrix(S, dtype='int16').toarray(), D.astype('int16'))
+            S = self.spmatrix(D)
+            assert_array_equal(self.spmatrix(S).toarray(), D)
+            assert_array_equal(self.spmatrix(S, dtype='int16').toarray(), D.astype('int16'))
 
     #def test_array(self):
     #    """test array(A) where A is in sparse format"""
@@ -310,10 +318,13 @@ class _TestCommon:
                    [       0,       0,      0]])
         S = self.spmatrix(D)
 
-        for x in supported_dtypes:
-            assert_equal(S.astype(x).dtype,     D.astype(x).dtype)  # correct type
-            assert_equal(S.astype(x).toarray(), D.astype(x))        # correct values
-            assert_equal(S.astype(x).format,    S.format)           # format preserved
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=np.ComplexWarning)
+
+            for x in supported_dtypes:
+                assert_equal(S.astype(x).dtype,     D.astype(x).dtype)  # correct type
+                assert_equal(S.astype(x).toarray(), D.astype(x))        # correct values
+                assert_equal(S.astype(x).format,    S.format)           # format preserved
 
     def test_asfptype(self):
         A = self.spmatrix( arange(6,dtype='int32').reshape(2,3) )
@@ -1012,7 +1023,10 @@ class _TestArithmetic:
             A   = self.A.astype(x)
             Asp = self.spmatrix(A)
             for y in supported_dtypes:
-                B   = self.B.astype(y)
+                if not np.issubdtype(y, np.complexfloating):
+                    B   = self.B.real.astype(y)
+                else:
+                    B   = self.B.astype(y)
                 Bsp = self.spmatrix(B)
 
                 #addition
@@ -1044,7 +1058,10 @@ class _TestArithmetic:
             A   = self.A.astype(x)
             Asp = self.spmatrix(A)
             for y in supported_dtypes:
-                B   = self.B.astype(y)
+                if np.issubdtype(y, np.complexfloating):
+                    B   = self.B.astype(y)
+                else:
+                    B   = self.B.real.astype(y)
                 Bsp = self.spmatrix(B)
 
                 D1 = A * B.T
