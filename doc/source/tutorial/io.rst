@@ -341,14 +341,6 @@ Matrix Market files
    mmread
    mmwrite
 
-Other
------
-
-.. autosummary::
-   :toctree: generated/
-
-   save_as_module
-
 Wav sound files (:mod:`scipy.io.wavfile`)
 -----------------------------------------
 
