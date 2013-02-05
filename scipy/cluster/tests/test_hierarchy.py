@@ -575,7 +575,7 @@ class TestIsValidLinkage(TestCase):
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
-            Z[int(i//2),0] = -2
+            Z[i//2,0] = -2
             self.assertTrue(is_valid_linkage(Z) == False)
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -584,7 +584,7 @@ class TestIsValidLinkage(TestCase):
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
-            Z[int(i//2),1] = -2
+            Z[i//2,1] = -2
             self.assertTrue(is_valid_linkage(Z) == False)
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -593,7 +593,7 @@ class TestIsValidLinkage(TestCase):
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
-            Z[int(i//2),2] = -0.5
+            Z[i//2,2] = -0.5
             self.assertTrue(is_valid_linkage(Z) == False)
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -602,7 +602,7 @@ class TestIsValidLinkage(TestCase):
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
-            Z[int(i//2),3] = -2
+            Z[i//2,3] = -2
             self.assertTrue(is_valid_linkage(Z) == False)
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -660,7 +660,7 @@ class TestIsValidInconsistent(TestCase):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[int(i//2),0] = -2.0
+            R[i//2,0] = -2.0
             self.assertTrue(is_valid_im(R) == False)
             self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
@@ -670,7 +670,7 @@ class TestIsValidInconsistent(TestCase):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[int(i//2),1] = -2.0
+            R[i//2,1] = -2.0
             self.assertTrue(is_valid_im(R) == False)
             self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
@@ -680,7 +680,7 @@ class TestIsValidInconsistent(TestCase):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[int(i//2),2] = -0.5
+            R[i//2,2] = -0.5
             self.assertTrue(is_valid_im(R) == False)
             self.assertRaises(ValueError, is_valid_im, R, throw=True)
 

@@ -319,7 +319,7 @@ def medfilt(volume, kernel_size=None):
     domain = ones(kernel_size)
 
     numels = product(kernel_size, axis=0)
-    order = int(numels // 2)
+    order = numels // 2
     return sigtools._order_filterND(volume, domain, order)
 
 
