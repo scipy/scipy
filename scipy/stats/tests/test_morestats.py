@@ -398,9 +398,9 @@ def test_accuracy_wilcoxon():
 
     T, p = stats.wilcoxon(x, y, "pratt")
     assert_allclose(T, 423)
-    assert_allclose(p, 0.001968119953739742)
+    assert_allclose(p, 0.00197547303533107)
 
-    T, p = stats.wilcoxon(x, y, "zsplitt")
+    T, p = stats.wilcoxon(x, y, "zsplit")
     assert_allclose(T, 441)
     assert_allclose(p, 0.0032145343172473055)
 
