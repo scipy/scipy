@@ -90,7 +90,7 @@ class _Database(object):
 ## Does not work under MW compiler
 ##      pos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
 ##      f.seek(pos)
-        npos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
+        npos = ((pos + _BLOCKSIZE - 1) // _BLOCKSIZE) * _BLOCKSIZE
         f.write('\0'*(npos-pos))
         pos = npos
 
@@ -120,8 +120,8 @@ class _Database(object):
             self._addkey(key, (pos, siz))
         else:
             pos, siz = self._index[key]
-            oldblocks = (siz + _BLOCKSIZE - 1) / _BLOCKSIZE
-            newblocks = (len(val) + _BLOCKSIZE - 1) / _BLOCKSIZE
+            oldblocks = (siz + _BLOCKSIZE - 1) // _BLOCKSIZE
+            newblocks = (len(val) + _BLOCKSIZE - 1) // _BLOCKSIZE
             if newblocks <= oldblocks:
                 pos, siz = self._setval(pos, val)
                 self._index[key] = pos, siz
