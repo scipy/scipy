@@ -23,7 +23,7 @@ from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
-           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode']
+           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode', 'nyquist']
 
 
 def tf2ss(num, den):
@@ -361,6 +361,9 @@ class lti(object):
         >>> plt.show()
         """
         return bode(self, w=w, n=n)
+
+    def nyquist(self, w=None, n=10000):
+        return nyquist(self, w=w, n=n)
 
 
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
@@ -930,3 +933,61 @@ def bode(system, w=None, n=100):
     mag = 20.0 * numpy.log10(abs(y))
     phase = numpy.arctan2(y.imag, y.real) * 180.0 / numpy.pi
     return w, mag, phase
+
+
+def nyquist(system, w=None, n=10000):
+    """Calculate nyquist plot of a continuous-time system.
+
+    Parameters
+    ----------
+    system : an instance of the LTI class or a tuple describing the system.
+        The following gives the number of elements in the tuple and
+        the interpretation:
+
+            * 2 (num, den)
+            * 3 (zeros, poles, gain)
+            * 4 (A, B, C, D)
+
+    w : array_like, optional
+        Array of frequencies (in rad/s). Magnitude and phase data is calculated
+        for every value in this array. If not given a reasonable set will be
+        calculated.
+    n : int, optional
+        Number of frequency points to compute if `w` is not given. The `n`
+        frequencies are logarithmically spaced in the range from two orders of
+        magnitude before the minimum (slowest) pole to two orders of magnitude
+        after the maximum (fastest) pole.
+
+    Returns
+    -------
+    re : 1D ndarray
+        Magnitude array real
+    im : 1D ndarray
+        Magnitude array imagninary
+
+    Example
+    -------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> s1 = signal.lti([], [1, 1, 1], [5])     #transfer function: G(s) = 5 / (s+1)^3
+    >>> re, im = signal.nyquist(s1)
+
+    >>> plt.figure()
+    >>> plt.plot(re, im, "b")
+    >>> plt.plot(re, -im, "r")
+    >>> plt.show()
+    """
+    if isinstance(system, lti):
+        sys = system
+    else:
+        sys = lti(*system)
+
+    if w is None:
+        w = _default_response_frequencies(sys.A, n)
+    else:
+        w = numpy.asarray(w)
+
+    jw = w * 1j
+    y = numpy.polyval(sys.num, jw) / numpy.polyval(sys.den, jw)
+    return y.real, y.imag
