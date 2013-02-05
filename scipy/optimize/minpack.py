@@ -410,7 +410,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             R = dot(r, perm)
             try:
                 cov_x = inv(dot(transpose(R),R))
-            except LinAlgError:
+            except (LinAlgError, ValueError):
                 pass
         return (retval[0], cov_x) + retval[1:-1] + (mesg, info)
     else:
