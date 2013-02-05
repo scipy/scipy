@@ -197,10 +197,10 @@ def solve_continuous_are(a, b, q, r):
 
     (m, n) = u.shape
 
-    u11 = u[0:m/2, 0:n/2]
-    u12 = u[0:m/2, n/2:n]
-    u21 = u[m/2:m, 0:n/2]
-    u22 = u[m/2:m, n/2:n]
+    u11 = u[0:m//2, 0:n//2]
+    u12 = u[0:m//2, n//2:n]
+    u21 = u[m//2:m, 0:n//2]
+    u22 = u[m//2:m, n//2:n]
     u11i = inv(u11)
 
     return np.dot(u21, u11i)
@@ -269,10 +269,10 @@ def solve_discrete_are(a, b, q, r):
 
     (m,n) = u.shape
 
-    u11 = u[0:m/2, 0:n/2]
-    u12 = u[0:m/2, n/2:n]
-    u21 = u[m/2:m, 0:n/2]
-    u22 = u[m/2:m, n/2:n]
+    u11 = u[0:m//2, 0:n//2]
+    u12 = u[0:m//2, n//2:n]
+    u21 = u[m//2:m, 0:n//2]
+    u22 = u[m//2:m, n//2:n]
     u11i = inv(u11)
 
     return np.dot(u21, u11i)
