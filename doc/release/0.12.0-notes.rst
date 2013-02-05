@@ -124,8 +124,13 @@ deprecated. Instead, use the modules `scipy.linalg.lapack` and
 Backwards incompatible changes
 ==============================
 
-Minor change in behavior of T-tests
------------------------------------
+Removal of ``scipy.io.save_as_module``
+--------------------------------------
+The function ``scipy.io.save_as_module`` was deprecated in Scipy 0.11.0, and is
+now removed.
+
+Its private support modules ``scipy.io.dumbdbm_patched`` and
+``scipy.io.dumb_shelve`` are also removed.
 
 
 Other changes

@@ -42,7 +42,7 @@ try:
     import shelve
     dumb = 0
 except ImportError:
-    import scipy.io.dumb_shelve as shelve
+    from . import _dumb_shelve as shelve
     dumb = 1
 
 #For testing...
