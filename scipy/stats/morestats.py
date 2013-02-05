@@ -1225,7 +1225,7 @@ def oneway(*args,**kwds):
     return F, pval
 
 
-def wilcoxon(x,y=None,zero_method="wilcox"):
+def wilcoxon(x, y=None, zero_method="wilcox"):
     """
     Calculate the Wilcoxon signed-rank test.
 
@@ -1242,12 +1242,12 @@ def wilcoxon(x,y=None,zero_method="wilcox"):
         The second set of measurements.  If y is not given, then the x array
         is considered to be the differences between the two sets of
         measurements.
-    zero_method : string, {"pratt", "wilcox", "zsplitt"}, optional
+    zero_method : string, {"pratt", "wilcox", "zsplit"}, optional
         Pratt treatment: Includes zero-differences in the ranking process
                          (More conservative)
         Wilcox treatment: Discards all zero-differences
-        Zero rank splitt: Just like Pratt, but splitting the zero rank
-                          between positive and negative ones
+        Zero rank split: Just like Pratt, but spliting the zero rank
+                         between positive and negative ones
 
     Returns
     -------
@@ -1268,9 +1268,10 @@ def wilcoxon(x,y=None,zero_method="wilcox"):
     .. [1] http://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
 
     """
-    if not zero_method in ["wilcox", "pratt", "zsplitt"]:
-        raise ValueError('Zero method should be either \'wilcox\' \
-                          or \'pratt \' or \'zsplitt\'')
+
+    if not zero_method in ["wilcox", "pratt", "zsplit"]:
+        raise ValueError("Zero method should be either \'wilcox\' \
+                          or \'pratt \' or \'zsplit\'")
 
     if y is None:
         d = x
@@ -1279,33 +1280,40 @@ def wilcoxon(x,y=None,zero_method="wilcox"):
         if len(x) <> len(y):
             raise ValueError('Unequal N in wilcoxon.  Aborting.')
         d = x-y
+
     if zero_method == "wilcox":
-        d = compress(not_equal(d,0),d,axis=-1) # Keep all non-zero differences
+        d = compress(not_equal(d, 0), d, axis=-1) # Keep all non-zero differences
+
     count = len(d)
     if (count < 10):
         warnings.warn("Warning: sample size too small for normal approximation.")
     r = stats.rankdata(abs(d))
-    r_plus = sum((d > 0)*r,axis=0)
-    r_minus = sum((d < 0)*r,axis=0)
-    if zero_method == "zsplitt":
-        r_zero = sum((d == 0)*r,axis=0)
-        r_plus += r_zero / 2
-        r_minus += r_zero / 2
+    r_plus = sum((d > 0) * r, axis=0)
+    r_minus = sum((d < 0) * r, axis=0)
+
+    if zero_method == "zsplit":
+        r_zero = sum((d == 0) * r, axis=0)
+        r_plus += r_zero / 2.
+        r_minus += r_zero / 2.
 
     T = min(r_plus, r_minus)
-    mn = count*(count+1.0)*0.25
-    se = count*(count+1)*(2*count+1.0)
+    mn = count*(count + 1.) * 0.25
+    se = count*(count + 1.) * (2. * count + 1.)
+
+    if zero_method == "pratt":
+        r = r[d != 0]
+
     if (len(r) != len(unique(r))):  # handle ties in data
         replist, repnum = find_repeats(r)
         corr = 0.0
         for i in range(len(replist)):
             si = repnum[i]
-            corr += 0.5*si*(si*si-1.0)
+            corr += 0.5 * si * (si * si - 1.0)
         se -= corr
 
-    se = sqrt(se/24)
-    z = (T - mn)/se
-    prob = 2 * distributions.norm.sf(abs(z))
+    se = sqrt(se / 24)
+    z = (T - mn) / se
+    prob = 2. * distributions.norm.sf(abs(z))
     return T, prob
 
 def _hermnorm(N):
