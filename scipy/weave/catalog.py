@@ -114,20 +114,6 @@ def unique_file(d,expr):
             break
     return os.path.join(d,fname)
 
-def create_dir(p):
-    """ Create a directory and any necessary intermediate directories."""
-    if not os.path.exists(p):
-        try:
-            os.mkdir(p)
-        except OSError:
-            # perhaps one or more intermediate path components don't exist
-            # try to create them
-            base,dir = os.path.split(p)
-            create_dir(base)
-            # don't enclose this one in try/except - we want the user to
-            # get failure info
-            os.mkdir(p)
-
 def is_writable(dir):
     """Determine whether a given directory is writable in a portable manner.
 
@@ -206,8 +192,7 @@ def default_dir():
     for path in path_candidates:
         if not os.path.exists(path):
             try:
-                create_dir(path)
-                os.chmod(path, 0700) # make it only accessible by this user.
+                os.makedirs(path, mode=0o700)
             except OSError:
                 continue
         if is_writable(path):
@@ -231,14 +216,13 @@ def intermediate_dir():
     python_name = "python%d%d_intermediate" % tuple(sys.version_info[:2])
     path = os.path.join(tempfile.gettempdir(),"%s"%whoami(),python_name)
     if not os.path.exists(path):
-        create_dir(path)
+        os.makedirs(path, mode=0o700)
     return path
 
 def default_temp_dir():
     path = os.path.join(default_dir(),'temp')
     if not os.path.exists(path):
-        create_dir(path)
-        os.chmod(path,0700) # make it only accessible by this user.
+        os.makedirs(path, mode=0o700)
     if not is_writable(path):
         print 'warning: default directory is not write accessible.'
         print 'default:', path
