@@ -96,16 +96,16 @@ def generate_matrix(N, complex=False, hermitian=False,
         else:
             M = np.dot(M.conj(), M.T)
             if sparse:
-                i = np.random.randint(N, size=N * N / 4)
-                j = np.random.randint(N, size=N * N / 4)
+                i = np.random.randint(N, size=N * N // 4)
+                j = np.random.randint(N, size=N * N // 4)
                 ind = np.where(i == j)
                 j[ind] = (j[ind] + 1) % N
                 M[i,j] = 0
                 M[j,i] = 0
     else:
         if sparse:
-            i = np.random.randint(N, size=N * N / 2)
-            j = np.random.randint(N, size=N * N / 2)
+            i = np.random.randint(N, size=N * N // 2)
+            j = np.random.randint(N, size=N * N // 2)
             M[i,j] = 0
     return M
 
@@ -169,7 +169,7 @@ def argsort_which(eval, typ, k, which,
     elif which in ['SM', 'SA', 'SR', 'SI']:
         return ind[:k]
     elif which == 'BE':
-        return np.concatenate((ind[:k/2], ind[k/2-k:]))
+        return np.concatenate((ind[:k//2], ind[k//2-k:]))
 
 
 def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
