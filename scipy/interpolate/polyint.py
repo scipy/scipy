@@ -3,7 +3,13 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.misc import factorial
 
-__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator", "barycentric_interpolate", "PiecewisePolynomial", "piecewise_polynomial_interpolate","approximate_taylor_polynomial", "PchipInterpolator", "pchip_interpolate", "pchip"]
+from scipy.lib.six.moves import xrange
+
+
+__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator",
+           "barycentric_interpolate", "PiecewisePolynomial",
+           "piecewise_polynomial_interpolate", "approximate_taylor_polynomial",
+           "PchipInterpolator", "pchip_interpolate", "pchip"]
 
 def _isscalar(x):
     """Check whether x is if a scalar type, or 0-dim"""
@@ -58,8 +64,8 @@ class _Interpolator1D(object):
         if self._y_axis != 0 and x_shape != ():
             nx = len(x_shape)
             ny = len(self._y_extra_shape)
-            s = (range(nx, nx + self._y_axis)
-                 + range(nx) + range(nx+self._y_axis, nx+ny))
+            s = (list(range(nx, nx + self._y_axis))
+                 + list(range(nx)) + list(range(nx+self._y_axis, nx+ny)))
             y = y.transpose(s)
         return y
 
@@ -141,8 +147,9 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         if self._y_axis != 0 and x_shape != ():
             nx = len(x_shape)
             ny = len(self._y_extra_shape)
-            s = ([0] + range(nx+1, nx + self._y_axis+1)
-                 + range(1,nx+1) + range(nx+1+self._y_axis, nx+ny+1))
+            s = ([0] + list(range(nx+1, nx + self._y_axis+1))
+                 + list(range(1,nx+1)) +
+                 list(range(nx+1+self._y_axis, nx+ny+1)))
             y = y.transpose(s)
         return y
 
@@ -591,7 +598,7 @@ def barycentric_interpolate(xi, yi, x, axis=0):
 
     See Also
     --------
-    BarycentricInterpolator    
+    BarycentricInterpolator
 
     Notes
     -----
@@ -898,7 +905,7 @@ class PchipInterpolator(PiecewisePolynomial):
         data[:,0] = yp
         data[:,1] = PchipInterpolator._find_derivatives(xp, yp)
 
-        s = range(2, y.ndim + 1)
+        s = list(range(2, y.ndim + 1))
         s.insert(axis, 1)
         s.insert(axis, 0)
         data = data.transpose(s)

@@ -6,7 +6,7 @@ __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
            'ppform', 'lagrange']
 
 from numpy import shape, sometrue, array, transpose, searchsorted, \
-                  ones, logical_or, atleast_1d, atleast_2d, meshgrid, ravel, \
+                  ones, logical_or, atleast_1d, atleast_2d, ravel, \
                   dot, poly1d, asarray, intp
 import numpy as np
 import scipy.special as spec
@@ -473,12 +473,12 @@ class interp1d(object):
         elif self._kind in ('linear', 'nearest'):
             y_new[..., out_of_bounds] = self.fill_value
             axes = list(range(ny - nx))
-            axes[self.axis:self.axis] = range(ny - nx, ny)
+            axes[self.axis:self.axis] = list(range(ny - nx, ny))
             return y_new.transpose(axes)
         else:
             y_new[out_of_bounds] = self.fill_value
             axes = list(range(nx, ny))
-            axes[self.axis:self.axis] = range(nx)
+            axes[self.axis:self.axis] = list(range(nx))
             return y_new.transpose(axes)
 
     def _check_bounds(self, x_new):

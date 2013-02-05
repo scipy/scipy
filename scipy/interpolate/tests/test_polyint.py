@@ -15,7 +15,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
     np.random.seed(1234)
 
     x = [-1, 0, 1]
-    s = range(1, len(y_shape)+1)
+    s = list(range(1, len(y_shape)+1))
     s.insert(axis % (len(y_shape)+1), 0)
     y = np.random.rand(*((3,) + y_shape)).transpose(s)
 
