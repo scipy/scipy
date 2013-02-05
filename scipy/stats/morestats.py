@@ -1270,8 +1270,8 @@ def wilcoxon(x, y=None, zero_method="wilcox"):
     """
 
     if not zero_method in ["wilcox", "pratt", "zsplit"]:
-        raise ValueError("Zero method should be either \'wilcox\' \
-                          or \'pratt \' or \'zsplit\'")
+        raise ValueError("Zero method should be either 'wilcox' \
+                          or 'pratt' or 'zsplit'")
 
     if y is None:
         d = x
