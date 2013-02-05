@@ -111,6 +111,7 @@ class ode(object):
     f : callable ``f(t, y, *f_args)``
         Rhs of the equation. t is a scalar, ``y.shape == (n,)``.
         ``f_args`` is set by calling ``set_f_params(*args)``.
+        `f` should return a scalar, array or list (not a tuple).
     jac : callable ``jac(t, y, *jac_args)``
         Jacobian of the rhs, ``jac[i,j] = d f[i] / d y[j]``.
         ``jac_args`` is set by calling ``set_f_params(*args)``.
@@ -378,9 +379,15 @@ class ode(object):
             mth = self._integrator.run_relax
         else:
             mth = self._integrator.run
-        self._y, self.t = mth(self.f, self.jac or (lambda: None),
-                            self._y, self.t, t,
-                            self.f_params, self.jac_params)
+
+        try:
+            self._y, self.t = mth(self.f, self.jac or (lambda: None),
+                                self._y, self.t, t,
+                                self.f_params, self.jac_params)
+        except SystemError:
+            # f2py issue with tuple returns, see ticket 1187.
+            raise ValueError('Function to integrate must not return a tuple.')
+
         return self._y
 
     def successful(self):
