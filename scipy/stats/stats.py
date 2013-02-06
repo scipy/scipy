@@ -1413,13 +1413,8 @@ def itemfreq(a):
     return array(_support.abut(scores, freq))
 
 
-def _interpolate(a, b, fraction):
-    """Returns the point at the given fraction between a and b, where
-    'fraction' must be between 0 and 1.
-    """
-    return a + (b - a)*fraction;
-
-def scoreatpercentile(a, per, limit=(), interpolation_method='fraction'):
+def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
+        axis=None):
     """
     Calculate the score at the given `per` percentile of the sequence `a`.
 
@@ -1437,9 +1432,9 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction'):
 
     Parameters
     ----------
-    a : ndarray
+    a : array_like
         Values from which to extract score.
-    per : scalar
+    per : scalar in range [0,100] (or sequence of floats)
         Percentile at which to extract score.
     limit : tuple, optional
         Tuple of two scalars, the lower and upper limits within which to
@@ -1452,10 +1447,13 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction'):
                     fractional part of the index surrounded by `i` and `j`.
         -lower: `i`.
         - higher: `j`.
+    axis : int, optional
+        Axis along which the percentiles are computed. The default (None)
+        is to compute the median along a flattened version of the array.
 
     Returns
     -------
-    score : float
+    score : float (or sequence of floats)
         Score at percentile.
 
     See Also
@@ -1470,29 +1468,64 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction'):
     49.5
 
     """
-    # TODO: this should be a simple wrapper around a well-written quantile
-    # function.  GNU R provides 9 quantile algorithms (!), with differing
-    # behaviour at, for example, discontinuities.
-    values = np.sort(a, axis=0)
-    if limit:
-        values = values[(limit[0] <= values) & (values <= limit[1])]
+    # adapted from NumPy's percentile function
+    a = np.asarray(a)
 
-    idx = per /100. * (values.shape[0] - 1)
-    if (idx % 1 == 0):
-        score = values[int(idx)]
-    else:
-        if interpolation_method == 'fraction':
-            score = _interpolate(values[int(idx)], values[int(idx) + 1],
-                                 idx % 1)
-        elif interpolation_method == 'lower':
-            score = values[int(np.floor(idx))]
+    if limit:
+        a = a[(limit[0] <= a) & (a <= limit[1])]
+
+    if per == 0:
+        return a.min(axis=axis)
+    elif per == 100:
+        return a.max(axis=axis)
+
+    sorted = np.sort(a, axis=axis)
+    if axis is None:
+        axis = 0
+
+    return _compute_qth_percentile(sorted, per, interpolation_method, axis)
+
+
+# handle sequence of per's without calling sort multiple times
+def _compute_qth_percentile(sorted, per, interpolation_method, axis):
+    if not np.isscalar(per):
+        return [_compute_qth_percentile(sorted, i, interpolation_method, axis)
+             for i in per]
+
+    if (per < 0) or (per > 100):
+        raise ValueError("percentile must be in the range [0, 100]")
+
+    indexer = [slice(None)] * sorted.ndim
+    idx = per / 100. * (sorted.shape[axis] - 1)
+
+    if int(idx) != idx:
+        # round fractional indices according to interpolation method
+        if interpolation_method == 'lower':
+            idx = int(np.floor(idx))
         elif interpolation_method == 'higher':
-            score = values[int(np.ceil(idx))]
+            idx = int(np.ceil(idx))
+        elif interpolation_method == 'fraction':
+            pass  # keep idx as fraction and interpolate
         else:
             raise ValueError("interpolation_method can only be 'fraction', " \
                              "'lower' or 'higher'")
 
-    return score
+    i = int(idx)
+    if i == idx:
+        indexer[axis] = slice(i, i + 1)
+        weights = array(1)
+        sumval = 1.0
+    else:
+        indexer[axis] = slice(i, i + 2)
+        j = i + 1
+        weights = array([(j - idx), (idx - i)], float)
+        wshape = [1] * sorted.ndim
+        wshape[axis] = 2
+        weights.shape = wshape
+        sumval = weights.sum()
+
+    # Use np.add.reduce to coerce data type
+    return np.add.reduce(sorted[indexer] * weights, axis=axis) / sumval
 
 
 def percentileofscore(a, score, kind='rank'):
