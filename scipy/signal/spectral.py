@@ -89,7 +89,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     >>> f, Pxx_den = signal.periodogram(x, fs)
     >>> plt.semilogy(f, Pxx_den)
     >>> plt.xlabel('frequency [Hz]')
-    >>> plt.ylabel('PSD [V/sqrt(Hz)]')
+    >>> plt.ylabel('PSD [V**2/Hz]')
     >>> plt.show()
 
     If we average the last half of the spectral density, to exclude the
@@ -240,7 +240,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     >>> f, Pxx_den = signal.welch(x, fs, 1024)
     >>> plt.semilogy(f, Pxx_den)
     >>> plt.xlabel('frequency [Hz]')
-    >>> plt.ylabel('PSD [V/sqrt(Hz)]')
+    >>> plt.ylabel('PSD [V**2/Hz]')
     >>> plt.show()
 
     If we average the last half of the spectral density, to exclude the
