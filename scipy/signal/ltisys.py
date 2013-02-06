@@ -960,10 +960,10 @@ def nyquist(system, w=None, n=10000):
 
     Returns
     -------
-    re : 1D ndarray
-        Magnitude array real
-    im : 1D ndarray
-        Magnitude array imagninary
+    nyq : 1D ndarray
+        Array of complex magnitude values
+    w : 1D ndarray
+        Frequency array [rad/s]
 
     Example
     -------
@@ -971,11 +971,11 @@ def nyquist(system, w=None, n=10000):
     >>> import matplotlib.pyplot as plt
 
     >>> s1 = signal.lti([], [1, 1, 1], [5])     #transfer function: G(s) = 5 / (s+1)^3
-    >>> re, im = signal.nyquist(s1)
+    >>> nyq, w = signal.nyquist(s1)
 
     >>> plt.figure()
-    >>> plt.plot(re, im, "b")
-    >>> plt.plot(re, -im, "r")
+    >>> plt.plot(nyq.real, nyq.imag, "b")
+    >>> plt.plot(nyq.real, -nyq.imag, "r")
     >>> plt.show()
     """
     if isinstance(system, lti):
@@ -990,4 +990,4 @@ def nyquist(system, w=None, n=10000):
 
     jw = w * 1j
     y = numpy.polyval(sys.num, jw) / numpy.polyval(sys.den, jw)
-    return y.real, y.imag
+    return y, w
