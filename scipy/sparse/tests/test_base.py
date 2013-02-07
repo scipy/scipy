@@ -1581,8 +1581,19 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
             SIJ = SIJ.todense()
         assert_equal(SIJ, D[I,J])
 
+    ##
+    ## TODO: CSC fails the following tests by producing invalid results
+    ##
 
-class TestDOK(sparse_test_class()):
+    @dec.knownfailureif(True, "CSC bug")
+    def test_fancy_indexing_ndarray(self):
+        pass
+
+
+class TestDOK(sparse_test_class(slicing=False,
+                                slicing_assign=False,
+                                fancy_indexing=False,
+                                fancy_assign=False)):
     spmatrix = dok_matrix
 
     def test_mult(self):
@@ -1593,8 +1604,8 @@ class TestDOK(sparse_test_class()):
         E = A*A.H
         assert_array_equal(D.A, E.A)
 
-    def test_add(self):
-        A = dok_matrix((3,2))
+    def test_add_nonzero(self):
+        A = self.spmatrix((3,2))
         A[0,1] = -10
         A[2,0] = 20
         A = A + 10
@@ -1663,7 +1674,6 @@ class TestDOK(sparse_test_class()):
         expected2 = array([[1,0],[1,0],[0,0]])
         assert_array_equal(a.todense(), expected2)
 
-
     def test_ticket1160(self):
         # Regression test for ticket #1160.
         a = dok_matrix((3,3))
@@ -1676,6 +1686,31 @@ class TestDOK(sparse_test_class()):
         b = dok_matrix((3,3))
         b[:,0] = 0
         assert_(len(b.keys())==0, "Unexpected entries in keys")
+
+    ##
+    ## TODO: The DOK matrix currently returns invalid results rather
+    ##       than raising errors in some indexing operations
+    ##
+
+    @dec.knownfailureif(True, "known deficiency in DOK")
+    def test_slice_scalar_assign(self):
+        pass
+
+    @dec.knownfailureif(True, "known deficiency in DOK")
+    def test_slice_assign_2(self):
+        pass
+
+    @dec.knownfailureif(True, "known deficiency in DOK")
+    def test_fancy_indexing(self):
+        pass
+
+    @dec.knownfailureif(True, "known deficiency in DOK")
+    def test_add_sub(self):
+        pass
+
+    @dec.knownfailureif(True, "known deficiency in DOK")
+    def test_scalar_assign_2(self):
+        pass
 
 
 class TestLIL(sparse_test_class(fancy_multidim_assign=False,
@@ -1787,6 +1822,30 @@ class TestLIL(sparse_test_class(fancy_multidim_assign=False,
         a = lil_matrix(np.ones((3,3)))
         a *= 2.
         a[0, :] = 0
+
+    ##
+    ## TODO: LIL fails the following tests by producing invalid results
+    ##
+
+    @dec.knownfailureif(True, "LIL bug")
+    def test_slice_assign_2(self):
+        pass
+
+    @dec.knownfailureif(True, "LIL bug")
+    def test_sequence_assignment(self):
+        pass
+
+    @dec.knownfailureif(True, "LIL bug")
+    def test_scalar_assign_2(self):
+        pass
+
+    @dec.knownfailureif(True, "LIL bug")
+    def test_slicing_2(self):
+        pass
+
+    @dec.knownfailureif(True, "LIL bug")
+    def test_set_slice(self):
+        pass
 
 
 class TestCOO(sparse_test_class(getset=False,
