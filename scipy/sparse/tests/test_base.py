@@ -727,7 +727,6 @@ class _TestGetSet:
         for v in [3j]:
             assert_raises(TypeError, A.__setitem__, (0,0), v)
 
-
     def test_scalar_assign_2(self):
         n, m = (5, 10)
         def _test_set(i, j, nitems):
@@ -741,6 +740,7 @@ class _TestGetSet:
         for i, j in [(2, 3), (-1, 8), (-1, -2), (array(-1), -2), (-1, array(-2)),
                      (array(-1), array(-2))]:
             _test_set(i, j, 1)
+
 
 class _TestSolve:
     def test_solve(self):
@@ -1326,6 +1326,19 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
              _possibly_unimplemented(_TestFancyMultidimAssign,
                                      fancy_multidim_assign and fancy_assign),
              TestCase)
+
+    # check that test names do not clash
+    names = {}
+    for cls in bases:
+        for name in cls.__dict__.keys():
+            if not name.startswith('test_'):
+                continue
+            old_cls = names.get(name)
+            if old_cls is not None:
+                raise ValueError("Test class %s overloads test %s defined in %s" % (
+                    cls.__name__, name, old_cls.__name__))
+            names[name] = cls
+
     return type("TestBase", bases, {})
 
 
