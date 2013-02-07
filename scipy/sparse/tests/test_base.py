@@ -956,6 +956,60 @@ class _TestSlicingAssign:
         B[:2,:2] = csc_matrix(array(block))
         assert_array_equal(B.todense()[:2,:2],block)
 
+    def test_set_slice(self):
+        A = self.spmatrix((5,10))
+        B = zeros((5,10), float)
+        A[:,0] = 1
+        B[:,0] = 1
+        assert_array_equal(A.todense(), B)
+        A[1,:] = 2
+        B[1,:] = 2
+        assert_array_equal(A.todense(), B)
+        A[:,:] = 3
+        B[:,:] = 3
+        assert_array_equal(A.todense(), B)
+        A[1:5, 3] = 4
+        B[1:5, 3] = 4
+        assert_array_equal(A.todense(), B)
+        A[1, 3:6] = 5
+        B[1, 3:6] = 5
+        assert_array_equal(A.todense(), B)
+        A[1:4, 3:6] = 6
+        B[1:4, 3:6] = 6
+        assert_array_equal(A.todense(), B)
+        A[1, 3:10:3] = 7
+        B[1, 3:10:3] = 7
+        assert_array_equal(A.todense(), B)
+        A[1:5, 0] = range(1,5)
+        B[1:5, 0] = range(1,5)
+        assert_array_equal(A.todense(), B)
+        A[0, 1:10:2] = xrange(1,10,2)
+        B[0, 1:10:2] = xrange(1,10,2)
+        assert_array_equal(A.todense(), B)
+        caught = 0
+        # The next 6 commands should raise exceptions
+        try:
+            A[0,0] = list(range(100))
+        except ValueError:
+            caught += 1
+        try:
+            A[0,0] = arange(100)
+        except ValueError:
+            caught += 1
+        try:
+            A[0,:] = list(range(100))
+        except ValueError:
+            caught += 1
+        try:
+            A[:,1] = list(range(100))
+        except ValueError:
+            caught += 1
+        try:
+            A[:,1] = A.copy()
+        except:
+            caught += 1
+        assert_equal(caught,5)
+
 
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -1565,60 +1619,6 @@ class TestDOK(sparse_test_class()):
         csr=b.tocsr()
         assert_array_equal( csr.toarray()[m-1,:], zeros(n,))
 
-    def test_set_slice(self):
-        A = dok_matrix((5,10))
-        B = zeros((5,10), float)
-        A[:,0] = 1
-        B[:,0] = 1
-        assert_array_equal(A.todense(), B)
-        A[1,:] = 2
-        B[1,:] = 2
-        assert_array_equal(A.todense(), B)
-        A[:,:] = 3
-        B[:,:] = 3
-        assert_array_equal(A.todense(), B)
-        A[1:5, 3] = 4
-        B[1:5, 3] = 4
-        assert_array_equal(A.todense(), B)
-        A[1, 3:6] = 5
-        B[1, 3:6] = 5
-        assert_array_equal(A.todense(), B)
-        A[1:4, 3:6] = 6
-        B[1:4, 3:6] = 6
-        assert_array_equal(A.todense(), B)
-        A[1, 3:10:3] = 7
-        B[1, 3:10:3] = 7
-        assert_array_equal(A.todense(), B)
-        A[1:5, 0] = range(1,5)
-        B[1:5, 0] = range(1,5)
-        assert_array_equal(A.todense(), B)
-        A[0, 1:10:2] = xrange(1,10,2)
-        B[0, 1:10:2] = xrange(1,10,2)
-        assert_array_equal(A.todense(), B)
-        caught = 0
-        # The next 6 commands should raise exceptions
-        try:
-            A[0,0] = list(range(100))
-        except ValueError:
-            caught += 1
-        try:
-            A[0,0] = arange(100)
-        except ValueError:
-            caught += 1
-        try:
-            A[0,:] = list(range(100))
-        except ValueError:
-            caught += 1
-        try:
-            A[:,1] = list(range(100))
-        except ValueError:
-            caught += 1
-        try:
-            A[:,1] = A.copy()
-        except:
-            caught += 1
-        assert_equal(caught,5)
-
     def test_ctor(self):
         caught = 0
         # Empty ctor
@@ -1913,7 +1913,6 @@ class TestBSR(sparse_test_class(getset=False,
         A = bsr_matrix( arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5) )
         x = arange(A.shape[1]*6).reshape(-1,6)
         assert_equal(A*x, A.todense()*x)
-
 
 if __name__ == "__main__":
     run_module_suite()
