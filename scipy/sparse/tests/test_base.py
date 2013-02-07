@@ -1682,6 +1682,13 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
         A[2,i2] = B[i2,2]
         assert_array_equal(A.todense(),B.T.todense())
 
+        A = lil_matrix((4, 3))
+        A[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
+        assert_almost_equal(A.sum(), 6)
+        B = np.zeros((4, 3))
+        B[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
+        assert_array_equal(A.todense(), B)
+
         # column slice
         A = lil_matrix((2,3))
         A[1,1:3] = [10,20]

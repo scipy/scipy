@@ -398,13 +398,14 @@ class lil_matrix(spmatrix):
         else:
             if len(i)==len(j):
                 if xrows==1:
-                    for (row, col) in zip(i, j):
-                        self._insertat2(self.rows[row], self.data[row], col, 
-                                        xcols)
-                elif xrows==len(i):
-                    for (row, col, val) in zip(i, j, xcols):
-                        self._insertat2(self.rows[row], self.data[row], col, 
-                                        val)
+                    if xcols==1:
+                        for (row, col) in zip(i, j):
+                            self._insertat2(self.rows[row], self.data[row], 
+                                            col, xcols)
+                    elif xcols==len(i):
+                        for (row, col, val) in zip(i, j, x.data[0]):
+                            self._insertat2(self.rows[row], self.data[row], 
+                                            col, val)
             else:
                 raise ValueError('shape mismatch')
     def _mul_scalar(self, other):
