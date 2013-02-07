@@ -1170,7 +1170,7 @@ class _TestFancyMultidimAssign:
 
         D = np.asmatrix(np.random.rand(5, 7))
         S = self.spmatrix(D)
-        X = np.random.rand(2, 2)
+        X = np.random.rand(2, 3)
 
         I = np.array([[1, 2, 3], [3, 4, 2]])
         J = np.array([[5, 6, 3], [2, 3, 1]])
@@ -1709,6 +1709,10 @@ class TestDOK(sparse_test_class(slicing=False,
 
     @dec.knownfailureif(True, "known deficiency in DOK")
     def test_scalar_assign_2(self):
+        pass
+
+    @dec.knownfailureif(True, "known deficiency in DOK")
+    def test_fancy_assign_ndarray(self):
         pass
 
 
