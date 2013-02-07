@@ -741,6 +741,15 @@ class _TestGetSet:
                      (array(-1), array(-2))]:
             _test_set(i, j, 1)
 
+    def test_index_scalar_assign(self):
+        A = self.spmatrix((5, 5))
+        B = np.zeros((5, 5))
+        for C in [A, B]:
+            C[0,1] = 1
+            C[3,0] = 4
+            C[3,0] = 9
+        assert_array_equal(A.A, B)
+
 
 class _TestSolve:
     def test_solve(self):
@@ -892,15 +901,6 @@ class _TestSlicing:
 
 
 class _TestSlicingAssign:
-    def test_index_scalar_assign(self):
-        A = self.spmatrix((5, 5))
-        B = np.zeros((5, 5))
-        for C in [A, B]:
-            C[0,1] = 1
-            C[3,0] = 4
-            C[3,0] = 9
-        assert_array_equal(A.A, B)
-
     def test_slice_scalar_assign(self):
         A = self.spmatrix((5, 5))
         B = np.zeros((5, 5))
@@ -1305,8 +1305,7 @@ def _possibly_unimplemented(cls, require=True):
 
 def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                       fancy_indexing=True, fancy_assign=True,
-                      fancy_multidim_indexing=True,
-                      fancy_multidim_assign=True):
+                      fancy_multidim_indexing=True, fancy_multidim_assign=True):
     """
     Construct a base class, optionally converting some of the tests in
     the suite to check that the feature is not implemented.
@@ -1898,8 +1897,7 @@ class TestCOO(sparse_test_class(getset=False,
         assert_array_equal(coo.todense(),mat.reshape(1,-1))
 
 
-class TestDIA(sparse_test_class(getset=False,
-                                slicing=False, slicing_assign=False,
+class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spmatrix = dia_matrix
 
