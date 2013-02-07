@@ -401,16 +401,16 @@ class lil_matrix(spmatrix):
             if xrows == len(rows):    # normal rectangular copy
                 for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
                     self._setitem_setrow(row, data, j, xrow, xdata, xcols)
-            elif xrows == 1:          # OK, broadcast down column
-                for row, data in zip(rows, datas):
-                    self._setitem_setrow(row, data, j, x.rows[0], x.data[0], 
-                                         xcols)
             # needed to pass 'test_lil_sequence_assignement' unit test:
             # -- set row from column of entries --
             elif xcols == len(rows):
                 x = x.T
                 for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
                     self._setitem_setrow(row, data, j, xrow, xdata, xrows)
+            elif xrows == 1:          # OK, broadcast down column
+                for row, data in zip(rows, datas):
+                    self._setitem_setrow(row, data, j, x.rows[0], x.data[0], 
+                                         xcols)
             else:
                 raise IndexError('invalid index')
         # else: only copy (i[0], j[0]), (i[1], j[1]) ...
