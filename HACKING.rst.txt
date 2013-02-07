@@ -203,6 +203,13 @@ Therefore if you copied existing code with such a license or made a direct
 translation to Python of it, your code can't be included.  See also `license
 compatibility`_.
 
+*Why is SciPy under the BSD license and not, say, the GPL?*
+
+Like Python, SciPy uses a "permissive" open source license, which allows 
+proprietary re-use. While this allows companies to use and modify the software 
+without giving anything back, it is felt that the larger user base results in 
+more contributions overall, and companies often publish their modifications 
+anyway, without being required to.  See John Hunter's `BSD pitch`_.
 
 *How do I set up SciPy so I can edit files, run the tests and make commits?*
 
@@ -327,3 +334,4 @@ for bug reports, Github for patches.
 
 .. _virtualenvwrapper: http://www.doughellmann.com/projects/virtualenvwrapper/
 
+.. _bsd pitch: http://nipy.sourceforge.net/nipy/stable/faq/johns_bsd_pitch.html
