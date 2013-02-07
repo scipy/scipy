@@ -237,6 +237,8 @@ class lil_matrix(spmatrix):
                 i = int(i)
             elif i.ndim==1:
                 i = list(i)
+            elif i.ndim==2:
+                i = [list(k) for k in i]
             else:
                 raise IndexError('invalid index')
         if isinstance(j, np.ndarray):
@@ -244,6 +246,8 @@ class lil_matrix(spmatrix):
                 j = int(j)
             elif j.ndim==1:
                 j = list(j)
+            elif j.ndim==2:
+                j = [list(k) for k in j]
             else:
                 raise IndexError('invalid index')
         if np.isscalar(i):
@@ -253,6 +257,17 @@ class lil_matrix(spmatrix):
                 j = self._slicetoseq(j, self.shape[1])
             if issequence(j):
                 return self.__class__([[self._get1(i, jj) for jj in j]])
+        elif ((isinstance(i, list) and issequence(i[0])) or 
+              (isinstance(j, list) and issequence(j[0]))):
+            if len(i)==1:
+                return self.__class__([[self._get1(iii, jjj) for (iii, jjj)
+                                        in zip(jj, i)] for jj in j])
+            elif len(j)==1:
+                return self.__class__([[self._get1(iii, jjj) for (iii, jjj)
+                                        in zip(ii, j)] for ii in i])
+            elif len(j)==len(i):
+                return self.__class__([[self._get1(iii, jjj) for (iii, jjj) in
+                                        zip(ii, jj)] for (ii, jj) in zip(i, j)])
         elif issequence(i) and issequence(j):
             return self.__class__([[self._get1(ii, jj) for (ii, jj) in zip(i, j)]])
         elif issequence(i) or isinstance(i, slice):
@@ -358,6 +373,8 @@ class lil_matrix(spmatrix):
                 i = int(i)
             elif i.ndim==1:
                 i = list(i)
+            elif i.ndim==2:
+                i = [list(k) for k in i]
             else:
                 raise IndexError('invalid index')
         if isinstance(j, np.ndarray):
@@ -365,6 +382,8 @@ class lil_matrix(spmatrix):
                 j = int(j)
             elif j.ndim==1:
                 j = list(j)
+            elif j.ndim==1:
+                j = [list(k) for k in j]
             else:
                 raise IndexError('invalid index')
         if np.isscalar(i):
