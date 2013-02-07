@@ -851,16 +851,31 @@ class _TestFancyIndexing:
             A[i, j] = 1
             assert_almost_equal(A.sum(), nitems)
             assert_almost_equal(A[i, j], 1)
-
+        def _test_set_slice(i, j, nitems):
+            A = self.spmatrix((n, m))
+            A[i, j] = 1
+            B = np.zeros((n, m))
+            B[i, j] = 1
+            assert_almost_equal(A.sum(), nitems)
+            error = abs(A-B).sum()
+            assert_almost_equal(error, 0)
         # [i,j]
-        for i, j in [(2, 3), (-1, 8), (-1, -2), (array(-1), -2), (-1, array(-2)),
-                     (array(-1), array(-2))]:
+        for i, j in [(2, 3), (-1, 8), (-1, -2), (array(-1), -2), 
+                     (-1, array(-2)), (array(-1), array(-2))]:
             _test_set(i, j, 1)
 
         # [i,1:2]
-        for i, j in [(2, slice(m)), (2, slice(5, -2)), (array(2), slice(5, -2))]:
-            _test_set(i, j, 3)
-
+        for i, j in [(2, slice(None, 10, 4)), (2, slice(5, -2)), 
+                     (array(2), slice(5, -2))]:
+            _test_set_slice(i, j, 3)
+        # [1:2,1:2]
+        for i, j in [((2, 3, 4), slice(None, 10, 4)), 
+                     (np.arange(3), slice(5, -2)), 
+                     (slice(2, 5), slice(5, -2))]:
+            _test_set_slice(i, j, 9)
+        for i, j in [(np.arange(3), np.arange(3)), ((0, 3, 4), (1, 2, 4))]:
+            _test_set_slice(i, j, 3)
+            
     def test_fancy_indexing(self):
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix( B )
@@ -976,7 +991,7 @@ class _TestFancyIndexing:
 
         S = self.spmatrix(D)
 
-        assert_equal(S[I,J], D[I,J])
+        assert_equal(S[I,J].todense(), D[I,J])
 
         I_bad = I + M
         J_bad = J - N
@@ -1564,13 +1579,13 @@ class TestLIL( _TestCommon, _TestHorizSlicing, _TestVertSlicing,
     B[3,0] = 10
 
 
-    @dec.knownfailureif(True, "Fancy indexing is known to be broken for LIL" \
-                              " matrices")
+    #@dec.knownfailureif(True, "Fancy indexing is known to be broken for LIL" \
+    #                          " matrices")
     def test_fancy_indexing_set(self):
         _TestFancyIndexing.test_fancy_indexing_set(self)
 
-    @dec.knownfailureif(True, "Fancy indexing is known to be broken for LIL" \
-                              " matrices")
+    #@dec.knownfailureif(True, "Fancy indexing is known to be broken for LIL" \
+    #                          " matrices")
     def test_fancy_indexing_randomized(self):
         _TestFancyIndexing.test_fancy_indexing_randomized(self)
 

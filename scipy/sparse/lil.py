@@ -232,6 +232,20 @@ class lil_matrix(spmatrix):
                  'Pre-converting to CSC or CSR beforehand is more efficient.',
                  SparseEfficiencyWarning)
 
+        if isinstance(i, np.ndarray):
+            if i.ndim==0:
+                i = int(i)
+            elif i.ndim==1:
+                i = list(i)
+            else:
+                raise IndexError('invalid index')
+        if isinstance(j, np.ndarray):
+            if j.ndim==0:
+                j = int(j)
+            elif j.ndim==1:
+                j = list(j)
+            else:
+                raise IndexError('invalid index')
         if np.isscalar(i):
             if np.isscalar(j):
                 return self._get1(i, j)
@@ -336,9 +350,23 @@ class lil_matrix(spmatrix):
                 self.data = x.data
                 return
 
-        if isinstance(i, tuple):       # can't index lists with tuple
+        # can't index lists with tuple
+        if isinstance(i, tuple):       
             i = list(i)
-
+        if isinstance(i, np.ndarray): 
+            if i.ndim==0:
+                i = int(i)
+            elif i.ndim==1:
+                i = list(i)
+            else:
+                raise IndexError('invalid index')
+        if isinstance(j, np.ndarray):
+            if j.ndim==0:
+                j = int(j)
+            elif j.ndim==1:
+                j = list(j)
+            else:
+                raise IndexError('invalid index')
         if np.isscalar(i):
             rows = [self.rows[i]]
             datas = [self.data[i]]
@@ -348,22 +376,37 @@ class lil_matrix(spmatrix):
 
         x = lil_matrix(x, copy=False)
         xrows, xcols = x.shape
-        if xrows == len(rows):    # normal rectangular copy
-            for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
-                self._setitem_setrow(row, data, j, xrow, xdata, xcols)
-        elif xrows == 1:          # OK, broadcast down column
-            for row, data in zip(rows, datas):
-                self._setitem_setrow(row, data, j, x.rows[0], x.data[0], xcols)
-
-        # needed to pass 'test_lil_sequence_assignement' unit test:
-        # -- set row from column of entries --
-        elif xcols == len(rows):
-            x = x.T
-            for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
-                self._setitem_setrow(row, data, j, xrow, xdata, xrows)
+        # if one of the indexes is a slice, copy all entries in i X j
+        if (isinstance(i, slice) or isinstance(j, slice) or np.isscalar(i)
+            or np.isscalar(j)):
+            if xrows == len(rows):    # normal rectangular copy
+                for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
+                    self._setitem_setrow(row, data, j, xrow, xdata, xcols)
+            elif xrows == 1:          # OK, broadcast down column
+                for row, data in zip(rows, datas):
+                    self._setitem_setrow(row, data, j, x.rows[0], x.data[0], 
+                                         xcols)
+            # needed to pass 'test_lil_sequence_assignement' unit test:
+            # -- set row from column of entries --
+            elif xcols == len(rows):
+                x = x.T
+                for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
+                    self._setitem_setrow(row, data, j, xrow, xdata, xrows)
+            else:
+                raise IndexError('invalid index')
+        # else: only copy (i[0], j[0]), (i[1], j[1]) ...
         else:
-            raise IndexError('invalid index')
-
+            if len(i)==len(j):
+                if xrows==1:
+                    for (row, col) in zip(i, j):
+                        self._insertat2(self.rows[row], self.data[row], col, 
+                                        xcols)
+                elif xrows==len(i):
+                    for (row, col, val) in zip(i, j, xcols):
+                        self._insertat2(self.rows[row], self.data[row], col, 
+                                        val)
+            else:
+                raise ValueError('shape mismatch')
     def _mul_scalar(self, other):
         if other == 0:
             # Multiply by zero: return the zero matrix
