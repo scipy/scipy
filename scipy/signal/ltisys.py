@@ -23,7 +23,7 @@ from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
-           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode', 'nyquist']
+           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode', 'freqresp']
 
 
 def tf2ss(num, den):
@@ -362,8 +362,8 @@ class lti(object):
         """
         return bode(self, w=w, n=n)
 
-    def nyquist(self, w=None, n=10000):
-        return nyquist(self, w=w, n=n)
+    def freqresp(self, w=None, n=10000):
+        return freqresp(self, w=w, n=n)
 
 
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
@@ -614,7 +614,7 @@ def _default_response_frequencies(A, n):
     A : ndarray
         The system matrix, which is square.
     n : int
-        The number of time samples to generate.
+        The number of frequency samples to generate.
 
     Returns
     -------
@@ -935,8 +935,8 @@ def bode(system, w=None, n=100):
     return w, mag, phase
 
 
-def nyquist(system, w=None, n=10000):
-    """Calculate nyquist plot of a continuous-time system.
+def freqresp(system, w=None, n=10000):
+    """Calculate the frequency response of a continuous-time system.
 
     Parameters
     ----------
@@ -960,22 +960,24 @@ def nyquist(system, w=None, n=10000):
 
     Returns
     -------
-    nyq : 1D ndarray
+    G : 1D ndarray
         Array of complex magnitude values
     w : 1D ndarray
         Frequency array [rad/s]
 
     Example
     -------
+    # Generating the Nyquist plot of a transfer function
+
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
     >>> s1 = signal.lti([], [1, 1, 1], [5])     #transfer function: G(s) = 5 / (s+1)^3
-    >>> nyq, w = signal.nyquist(s1)
+    >>> G, w = signal.freqresp(s1)
 
     >>> plt.figure()
-    >>> plt.plot(nyq.real, nyq.imag, "b")
-    >>> plt.plot(nyq.real, -nyq.imag, "r")
+    >>> plt.plot(G.real, G.imag, "b")
+    >>> plt.plot(G.real, -G.imag, "r")
     >>> plt.show()
     """
     if isinstance(system, lti):
@@ -989,5 +991,5 @@ def nyquist(system, w=None, n=10000):
         w = numpy.asarray(w)
 
     jw = w * 1j
-    y = numpy.polyval(sys.num, jw) / numpy.polyval(sys.den, jw)
-    return y, w
+    G = numpy.polyval(sys.num, jw) / numpy.polyval(sys.den, jw)
+    return G, w
