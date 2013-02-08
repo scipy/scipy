@@ -13,7 +13,7 @@ import numpy as np
 from scipy.lib.six.moves import xrange
 
 from .base import spmatrix, isspmatrix
-from .sputils import getdtype, isshape, issequence, isscalarlike
+from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix
 
 from warnings import warn
 from .base import SparseEfficiencyWarning
@@ -225,31 +225,21 @@ class lil_matrix(spmatrix):
         try:
             i, j = index
         except (AssertionError, TypeError):
-            raise IndexError('invalid index')
+            if isinstance(index, (list, np.ndarray, slice)):
+                i = index
+                j = slice(None)
+            else:
+                raise IndexError('invalid index')
 
         if not np.isscalar(i) and np.isscalar(j):
             warn('Indexing into a lil_matrix with multiple indices is slow. '
                  'Pre-converting to CSC or CSR beforehand is more efficient.',
                  SparseEfficiencyWarning)
 
-        if isinstance(i, np.ndarray):
-            if i.ndim==0:
-                i = int(i)
-            elif i.ndim==1:
-                i = list(i)
-            elif i.ndim==2:
-                i = [list(k) for k in i]
-            else:
-                raise IndexError('invalid index')
-        if isinstance(j, np.ndarray):
-            if j.ndim==0:
-                j = int(j)
-            elif j.ndim==1:
-                j = list(j)
-            elif j.ndim==2:
-                j = [list(k) for k in j]
-            else:
-                raise IndexError('invalid index')
+        if isinstance(i, np.ndarray) and i.ndim==0:
+            i = int(i)
+        if isinstance(j, np.ndarray) and j.ndim==0:
+            j = int(j)
         if np.isscalar(i):
             if np.isscalar(j):
                 return self._get1(i, j)
@@ -257,17 +247,26 @@ class lil_matrix(spmatrix):
                 j = self._slicetoseq(j, self.shape[1])
             if issequence(j):
                 return self.__class__([[self._get1(i, jj) for jj in j]])
-        elif ((isinstance(i, list) and issequence(i[0])) or 
-              (isinstance(j, list) and issequence(j[0]))):
-            if len(i)==1:
-                return self.__class__([[self._get1(iii, jjj) for (iii, jjj)
-                                        in zip(jj, i)] for jj in j])
-            elif len(j)==1:
-                return self.__class__([[self._get1(iii, jjj) for (iii, jjj)
-                                        in zip(ii, j)] for ii in i])
-            elif len(j)==len(i):
+        elif ismatrix(i) or ismatrix(j):
+            if isinstance(i, slice) or isinstance(j, slice):
+                raise IndexError('invalid index')
+            i = np.atleast_2d(i)
+            j = np.atleast_2d(j)
+            if i.shape[1] != j.shape[1]:
+                raise ValueError('shape mismatch: objects cannot be broadcast'+
+                                 ' to a single shape')
+            elif i.shape[0]==j.shape[0]:
                 return self.__class__([[self._get1(iii, jjj) for (iii, jjj) in
                                         zip(ii, jj)] for (ii, jj) in zip(i, j)])
+            if i.shape[0]==1:
+                return self.__class__([[self._get1(iii, jjj) for (iii, jjj)
+                                        in zip(i[0], jj)] for jj in j])
+            elif j.shape[0]==1:
+                return self.__class__([[self._get1(iii, jjj) for (iii, jjj)
+                                        in zip(ii, j[0])] for ii in i])
+            else:
+                raise ValueError('shape mismatch: objects cannot be broadcast'+
+                                 ' to a single shape')
         elif issequence(i) and issequence(j):
             return self.__class__([[self._get1(ii, jj) for (ii, jj) in zip(i, j)]])
         elif issequence(i) or isinstance(i, slice):
@@ -349,7 +348,11 @@ class lil_matrix(spmatrix):
         try:
             i, j = index
         except (ValueError, TypeError):
-            raise IndexError('invalid index')
+            if isinstance(index, (list, np.ndarray, slice)):
+                i = index
+                j = slice(None)
+            else:
+                raise IndexError('invalid index')
 
         # shortcut for common case of single entry assign:
         if np.isscalar(x) and np.isscalar(i) and np.isscalar(j):
@@ -368,35 +371,56 @@ class lil_matrix(spmatrix):
         # can't index lists with tuple
         if isinstance(i, tuple):       
             i = list(i)
-        if isinstance(i, np.ndarray): 
-            if i.ndim==0:
-                i = int(i)
-            elif i.ndim==1:
-                i = list(i)
-            elif i.ndim==2:
-                i = [list(k) for k in i]
-            else:
-                raise IndexError('invalid index')
-        if isinstance(j, np.ndarray):
-            if j.ndim==0:
-                j = int(j)
-            elif j.ndim==1:
-                j = list(j)
-            elif j.ndim==1:
-                j = [list(k) for k in j]
-            else:
-                raise IndexError('invalid index')
+        if isinstance(i, np.ndarray) and i.ndim==0:
+            i = int(i)
+        if isinstance(j, np.ndarray) and j.ndim==0:
+             j = int(j)
         if np.isscalar(i):
             rows = [self.rows[i]]
             datas = [self.data[i]]
+        elif ismatrix(i):
+            pass
         else:
             rows = self.rows[i]
             datas = self.data[i]
 
         x = lil_matrix(x, copy=False)
         xrows, xcols = x.shape
+        if ismatrix(i) or ismatrix(j):
+            if xrows!=1 or xcols!=1:
+                raise NotImplementedError
+            if isinstance(i, slice) or isinstance(j, slice):
+                raise IndexError('invalid index')
+            i = np.atleast_2d(i)
+            j = np.atleast_2d(j)
+            if i.shape[1] != j.shape[1]:
+                if i.ndim==0:
+                    i = int(i)*np.ones(j.shape, dtype=int)
+                elif j.ndim==0:
+                    j = int(j)*np.ones(i.shape, dtype=int)
+                else:
+                    raise ValueError('shape mismatch: objects cannot be ' +
+                                     'broadcast to a single shape')
+            if i.shape[0]==j.shape[0]:
+                for ii, jj in zip(i, j):
+                    for row, data, col in zip(self.rows[ii], self.data[ii], 
+                                              jj):
+                        self._setitem_setrow(row, data, col, x.rows[0], 
+                                             x.data[0], xcols)
+            elif i.shape[0]==1:
+                for jj in j:
+                    for row, data, col in zip(self.rows[i[0]], self.data[i[0]],
+                                              jj):
+                        self._setitem_setrow(row, data, col, x.rows[0], 
+                                             x.data[0], xcols)
+            elif j.shape[0]==1:
+                for ii in i:
+                    for row, data, col in zip(self.rows[ii], self.data[ii], 
+                                              j[0]):
+                        self._setitem_setrow(row, data, col, x.rows[0], 
+                                             x.data[0], xcols)
         # if one of the indexes is a slice, copy all entries in i X j
-        if (isinstance(i, slice) or isinstance(j, slice) or np.isscalar(i)
+        elif (isinstance(i, slice) or isinstance(j, slice) or np.isscalar(i)
             or np.isscalar(j)):
             if xrows == len(rows):    # normal rectangular copy
                 for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
@@ -414,19 +438,20 @@ class lil_matrix(spmatrix):
             else:
                 raise IndexError('invalid index')
         # else: only copy (i[0], j[0]), (i[1], j[1]) ...
-        else:
+        elif issequence(i) and issequence(j):
             if len(i)==len(j):
                 if xrows==1:
                     if xcols==1:
-                        for (row, col) in zip(i, j):
-                            self._insertat2(self.rows[row], self.data[row], 
-                                            col, xcols)
+                        for (row, data, col) in zip(rows, datas, j):
+                            self._insertat2(row, data, col, x.data[0][0])
                     elif xcols==len(i):
-                        for (row, col, val) in zip(i, j, x.data[0]):
-                            self._insertat2(self.rows[row], self.data[row], 
-                                            col, val)
+                        for (row, data, col, val) in zip(rows, datas, j, 
+                                                         x.data[0]):
+                            self._insertat2(row, data, col, val)
             else:
                 raise ValueError('shape mismatch')
+        else:
+            return IndexError('invalid index')
     def _mul_scalar(self, other):
         if other == 0:
             # Multiply by zero: return the zero matrix
