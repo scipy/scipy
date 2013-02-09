@@ -1307,40 +1307,81 @@ class TestNdimage:
                                        mode=mode, cval=0)
             assert_array_equal(output, expected_value)
 
-    def test_boundaries(self):
-        "boundary modes"
-        def shift(x):
-            return (x[0] + 0.5,)
+    def test_boundaries_constant(self):
+        "boundary constant" 
+        input = numpy.array([0, 1, 2, 3.])
+        expected = {0.1 : [9., 0.9, 1.9, 2.9],
+                    0.4 : [9., 0.6, 1.6, 2.6],
+                    0.6 : [9., 0.4, 1.4, 2.4],
+                    1.0 : [9., 0, 1, 2],
+                    -0.1 : [0.1, 1.1, 2.1, 9.],
+                    -0.4 : [0.4, 1.4, 2.4, 9.],
+                    -0.6 : [0.6, 1.6, 2.6, 9.],
+                    -1.0 : [1., 2., 3., 9.] }
+        for shift in expected.keys():
+            assert_almost_equal(expected[shift], ndimage.shift(input, shift,
+                mode='constant', order=1, cval=9))
 
-        data = numpy.array([1,2,3,4.])
-        expected = {'constant': [1.5,2.5,3.5,-1,-1,-1,-1],
-                    'wrap': [1.5,2.5,3.5,1.5,2.5,3.5,1.5],
-                    'mirror' : [1.5,2.5,3.5,3.5,2.5,1.5,1.5],
-                    'nearest' : [1.5,2.5,3.5,4,4,4,4]}
+    def test_boundaries_nearest(self):
+        "boundary nearest" 
+        input = numpy.array([0, 1, 2, 3.])
+        expected = {0.1 : [0., 0.9, 1.9, 2.9],
+                    0.4 : [0., 0.6, 1.6, 2.6],
+                    0.6 : [0., 0.4, 1.4, 2.4],
+                    1.0 : [0., 0, 1, 2],
+                    -0.1 : [0.1, 1.1, 2.1, 3.],
+                    -0.4 : [0.4, 1.4, 2.4, 3.],
+                    -0.6 : [0.6, 1.6, 2.6, 3.],
+                    -1.0 : [1., 2., 3., 3.] }
+        for shift in expected.keys():
+            assert_almost_equal(expected[shift], ndimage.shift(input, shift,
+                mode='nearest', order=1))
 
-        for mode in expected.keys():
-            assert_array_equal(expected[mode],
-                               ndimage.geometric_transform(data,shift,
-                                                           cval=-1,mode=mode,
-                                                           output_shape=(7,),
-                                                           order=1))
 
-    def test_boundaries2(self):
-        "boundary modes 2"
-        def shift(x):
-            return (x[0] - 0.9,)
+    def test_boundaries_reflect(self):
+        "boundary reflect" 
+        input = numpy.array([0, 1, 2, 3.])
+        expected = {0.1 : [0., 0.9, 1.9, 2.9],
+                    0.4 : [0., 0.6, 1.6, 2.6],
+                    0.6 : [0., 0.4, 1.4, 2.4],
+                    1.0 : [0., 0, 1, 2],
+                    -0.1 : [0.1, 1.1, 2.1, 3.],
+                    -0.4 : [0.4, 1.4, 2.4, 3.],
+                    -0.6 : [0.6, 1.6, 2.6, 3.],
+                    -1.0 : [1., 2., 3., 3.] }
+        for shift in expected.keys():
+            assert_almost_equal(expected[shift], ndimage.shift(input, shift,
+                mode='reflect', order=1))
 
-        data = numpy.array([1,2,3,4])
-        expected = {'constant': [-1,1,2,3],
-                    'wrap': [3,1,2,3],
-                    'mirror' : [2,1,2,3],
-                    'nearest' : [1,1,2,3]}
+    def test_boundaries_mirror(self):
+        "boundary mirror" 
+        input = numpy.array([0, 1, 2, 3.])
+        expected = {0.1 : [0.1, 0.9, 1.9, 2.9],
+                    0.4 : [0.4, 0.6, 1.6, 2.6],
+                    0.6 : [0.6, 0.4, 1.4, 2.4],
+                    1.0 : [1., 0, 1, 2],
+                    -0.1 : [0.1, 1.1, 2.1, 2.9],
+                    -0.4 : [0.4, 1.4, 2.4, 2.6],
+                    -0.6 : [0.6, 1.6, 2.6, 2.4],
+                    -1.0 : [1., 2., 3., 2.] }
+        for shift in expected.keys():
+            assert_almost_equal(expected[shift], ndimage.shift(input, shift,
+                mode='mirror', order=1))
 
-        for mode in expected.keys():
-            assert_array_equal(expected[mode],
-                               ndimage.geometric_transform(data,shift,
-                                                           cval=-1,mode=mode,
-                                                           output_shape=(4,)))
+    def test_boundaries_wrap(self):
+        "boundary wrap" 
+        input = numpy.array([0, 1, 2, 3.])
+        expected = {#0.1 : [.3, 0.9, 1.9, 2.9],
+                    #0.4 : [1.2, 0.6, 1.6, 2.6],
+                    #0.6 : [1.8, 0.4, 1.4, 2.4],
+                    1.0 : [3., 0, 1, 2],
+                    #-0.1 : [0.1, 1.1, 2.1, 2.7],
+                    #-0.4 : [0.4, 1.4, 2.4, 1.8],
+                    #-0.6 : [0.6, 1.6, 2.6, 1.2],
+                    -1.0 : [1., 2., 3., 0.] }
+        for shift in expected.keys():
+            assert_almost_equal(expected[shift], ndimage.shift(input, shift,
+                mode='wrap', order=1))
 
     def test_fourier_gaussian_real01(self):
         "gaussian fourier filter for real transforms 1"
@@ -2104,6 +2145,16 @@ class TestNdimage:
                                        [0, 4, 1, 3],
                                        [0, 7, 6, 8]])
 
+    def test_shift10(self):
+        "Ticket #796"
+        data = numpy.arange(16).reshape(4, 4)
+        ref = np.array([[3, 0, 1, 2],
+                        [7, 4, 5, 6],
+                        [11, 8, 9, 10],
+                        [15, 12, 13, 14]])
+        out = ndimage.shift(data, (0, 1), mode='wrap')
+        assert_array_almost_equal(out, ref)
+
     def test_zoom1(self):
         "zoom 1"
         for order in range(0,6):
@@ -2287,6 +2338,22 @@ class TestNdimage:
             out = ndimage.rotate(data, 90, axes=(0, 1),
                                            reshape=False)
             assert_array_almost_equal(out, expected)
+    
+    def test_rotate09(self):
+        "Ticket #1378"
+        data = numpy.array([[[-1, -1, -1],
+                             [-1, -1, -1],
+                             [-1, -1, -1]],
+                            [[ 0,  0,  0],
+                             [ 0,  1,  0],
+                             [ 0,  0,  0]],
+                            [[ 0,  0,  0],
+                            [ 0,  1,  0],
+                            [ 0,  0,  0]]])
+        out = ndimage.rotate(data, 180, axes=(0, 1))
+        expected = ndimage.rotate(ndimage.rotate(data, 90, axes=(0, 1)), 
+                                    90, axes=(0, 1))
+        assert_array_almost_equal(out, expected)
 
     def test_watershed_ift01(self):
         "watershed_ift 1"

@@ -110,12 +110,101 @@ spline_coefficients(double x, int order, double *result)
     }
 }
 
+#define EPSILON 1e-15
 /* map a coordinate outside the borders, according to the requested
      boundary condition: */
 static double
 map_coordinate(double in, npy_intp len, int mode)
 {
-    if (in < 0) {
+    switch (mode) {
+    case NI_EXTEND_CONSTANT:        // constant mode
+        if (in < 0 - EPSILON) {         
+           in = -1;
+           break;
+        }
+        if (in > len - 1 + EPSILON) {
+            in = -1;
+            break;
+        } 
+    case NI_EXTEND_NEAREST:         // nearest mode 
+        if (in < 0 - EPSILON) {
+            in = 0;
+            break;
+        }
+        if (in > len - 1 + EPSILON) {
+            in = len - 1;
+            break;
+        } 
+    case NI_EXTEND_REFLECT:         // reflect mode
+        if (in < 0 - EPSILON) {
+            if (len <= 1) {
+                in = 0;
+            } else {
+                npy_intp sz2 = 2 * len;
+                if (in < - sz2)
+                    in = sz2 * (npy_intp)(-in / sz2) + in;
+                in = in < -len ? in + sz2 : -in - 1;
+            }
+            break;
+        }
+        if (in > len - 1 + EPSILON) {
+            if (len <= 1) {
+                in = 0;
+            } else {
+                npy_intp sz2 = 2 * len;
+                in -= sz2 * (npy_intp)(in / sz2);
+                if (in >= len)
+                    in = sz2 - in - 1;
+            }
+            break;
+        } 
+    
+    case NI_EXTEND_MIRROR:          // mirror mode
+        if (in < 0 - EPSILON) {
+            if (len <= 1) {
+                in = 0;
+            } else {
+                npy_intp sz2 = 2 * len - 2;
+                in = sz2 * (npy_intp)(-in / sz2) + in;
+                in = in <= 1 - len ? in + sz2 : -in;
+            } 
+            break;
+        }
+        if (in > len - 1 + EPSILON) {
+            if (len <= 1) {
+                in = 0;
+            } else {
+                npy_intp sz2 = 2 * len - 2;
+                in -= sz2 * (npy_intp)(in / sz2);
+                if (in >= len)
+                    in = sz2 - in;
+            }
+            break;
+        } 
+    case NI_EXTEND_WRAP:            // wrap mode
+        if (in < 0 - EPSILON) {
+            if (len <= 1) {
+                in = 0;
+            } else {
+                npy_intp sz = len;
+                in += sz * ((npy_intp)(-in / sz) + 1);
+            }
+            break;
+        }
+        if (in > len -1 + EPSILON) {
+            if (len <= 1) {
+                in = 0;
+            } else {
+                npy_intp sz = len;
+                in -= sz * (npy_intp)(in / sz);
+            }
+            break;
+        } 
+
+    }
+/*  
+    // OLD CODE
+    if (in < -0.4999) {
         switch (mode) {
         case NI_EXTEND_MIRROR:
             if (len <= 1) {
@@ -140,7 +229,7 @@ map_coordinate(double in, npy_intp len, int mode)
             if (len <= 1) {
                 in = 0;
             } else {
-                npy_intp sz = len - 1;
+                npy_intp sz = len;
                 // Integer division of -in/sz gives (-in mod sz)
                 // Note that 'in' is negative
                 in += sz * ((npy_intp)(-in / sz) + 1);
@@ -153,7 +242,7 @@ map_coordinate(double in, npy_intp len, int mode)
             in = -1;
             break;
         }
-    } else if (in > len-1) {
+    } else if (in > len-0.5001) {
         switch (mode) {
         case NI_EXTEND_MIRROR:
             if (len <= 1) {
@@ -179,7 +268,7 @@ map_coordinate(double in, npy_intp len, int mode)
             if (len <= 1) {
                 in = 0;
             } else {
-                npy_intp sz = len - 1;
+                npy_intp sz = len;
                 in -= sz * (npy_intp)(in / sz);
             }
             break;
@@ -191,7 +280,7 @@ map_coordinate(double in, npy_intp len, int mode)
             break;
         }
     }
-
+*/
     return in;
 }
 
