@@ -8641,7 +8641,49 @@ C
         DIMENSION FC(251)
         DO 5 I=1,251
 5          FC(I)=0.0D0
-        IF (Q.LE.1.0D0) THEN
+        IF (DABS(Q).LE.1.0D-7) THEN
+C          Expansion up to order Q^1 (Abramowitz & Stegun 20.2.27-28)
+           IF (KD.EQ.1) THEN
+              JM=M/2 + 1
+           ELSE IF (KD.EQ.2.OR.KD.EQ.3) THEN
+              JM=(M-1)/2+1
+           ELSE IF (KD.EQ.4) THEN
+              JM=M/2
+           END IF
+C          Check for overflow
+           IF (JM+1.GT.251) GOTO 6
+C          Proceed using the simplest expansion
+           IF (KD.EQ.1.OR.KD.EQ.2) THEN
+              IF (M.EQ.0) THEN
+                 FC(1) = 1/SQRT(2.0D0)
+                 FC(2) = -Q/2.0D0/SQRT(2.0D0)
+              ELSE IF (M.EQ.1) THEN
+                 FC(1) = 1.0D0
+                 FC(2) = -Q/8.0D0
+              ELSE IF (M.EQ.2) THEN
+                 FC(1) = Q/4.0D0
+                 FC(2) = 1.0D0
+                 FC(3) = -Q/12.0D0
+              ELSE
+                 FC(JM) = 1.0D0
+                 FC(JM+1) = -Q/(4.0D0 * (M + 1))
+                 FC(JM-1) =  Q/(4.0D0 * (M - 1))
+              END IF
+           ELSE IF (KD.EQ.3.OR.KD.EQ.4) THEN
+              IF (M.EQ.1) THEN
+                 FC(1) = 1.0D0
+                 FC(2) = -Q/8.0D0
+              ELSE IF (M.EQ.2) THEN
+                 FC(1) = 1.0D0
+                 FC(2) = -Q/12.0D0
+              ELSE
+                 FC(JM) = 1.0D0
+                 FC(JM+1) = -Q/(4.0D0 * (M + 1))
+                 FC(JM-1) =  Q/(4.0D0 * (M - 1))
+              END IF
+           ENDIF
+           RETURN
+        ELSE IF (Q.LE.1.0D0) THEN
            QM=7.5+56.1*SQRT(Q)-134.7*Q+90.7*SQRT(Q)*Q
         ELSE
            QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
@@ -8652,19 +8694,6 @@ C          Overflow, generate NaNs
            FNAN=DNAN()
  6         DO 7 I=1,251
  7            FC(I)=FNAN
-           RETURN
-        ENDIF
-        IF (Q.EQ.0.0D0) THEN
-           DO 10 K=1,KM
-10            FC(K)=0.0D0
-           IF (KD.EQ.1) THEN
-              FC((M+2)/2)=1.0D0
-              IF (M.EQ.0) FC(1)=1.0D0/DSQRT(2.0D0)
-           ELSE IF (KD.EQ.4) THEN
-              FC(M/2)=1.0D0
-           ELSE
-              FC((M+1)/2)=1.0D0
-           ENDIF
            RETURN
         ENDIF
         KB=0
