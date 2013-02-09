@@ -13,6 +13,12 @@ C
 C      Changed GAMMA to GAMMA2 and PSI to PSI_SPEC to avoid potential conflicts.
 C
 
+        FUNCTION DNAN()
+        DOUBLE PRECISION DNAN
+        DNAN = 0.0D0
+        DNAN = 0.0D0/DNAN
+        END
+
         SUBROUTINE CPDSA(N,Z,CDN)
 C
 C       ===========================================================
@@ -7025,6 +7031,11 @@ C
            QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
         ENDIF
         KM=INT(QM+0.5*M)
+        IF(KM.GT.251) THEN
+           CSF=DNAN()
+           CSD=DNAN()
+           RETURN
+        END IF
         CALL FCOEF(KD,M,Q,A,FG)
         IC=INT(M/2)+1
         RD=1.74532925199433D-2
@@ -8636,6 +8647,13 @@ C
            QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
         ENDIF
         KM=INT(QM+0.5*M)
+        IF (KM.GT.251) THEN
+C          Overflow, generate NaNs
+           FNAN=DNAN()
+ 6         DO 7 I=1,251
+ 7            FC(I)=FNAN
+           RETURN
+        ENDIF
         IF (Q.EQ.0.0D0) THEN
            DO 10 K=1,KM
 10            FC(K)=0.0D0
@@ -12444,6 +12462,13 @@ C
            QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
         ENDIF
         KM=INT(QM+0.5*M)
+        IF(KM.GT.251) THEN
+           F1R=DNAN()
+           D1R=DNAN()
+           F2R=DNAN()
+           D2R=DNAN()
+           RETURN
+        END IF
         CALL FCOEF(KD,M,Q,A,FG)
         IC=INT(M/2)+1
         IF (KD.EQ.4) IC=M/2
