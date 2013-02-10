@@ -8,7 +8,8 @@ from scipy.special import (
     erf, erfc, log1p, expm1,
     jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
     ellipe, ellipeinc, ellipk, ellipkm1, ellipj, erfinv, erfcinv, exp1, expi,
-    expn, zeta, gammaincinv, lpmv, mathieu_a, mathieu_b, mathieu_cem, mathieu_sem
+    expn, zeta, gammaincinv, lpmv, mathieu_a, mathieu_b, mathieu_cem, mathieu_sem,
+    mathieu_modcem1, mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
 )
 
 from scipy.special._testutils import FuncData
@@ -46,6 +47,16 @@ def mathieu_ce_rad(m, q, x):
     return mathieu_cem(m, q, x*180/np.pi)[0]
 def mathieu_se_rad(m, q, x):
     return mathieu_sem(m, q, x*180/np.pi)[0]
+def mathieu_mc1_scaled(m, q, x):
+    # GSL follows a different normalization.
+    # We follow Abramowitz & Stegun, they apparently something else.
+    return mathieu_modcem1(m, q, x)[0] * np.sqrt(np.pi/2)
+def mathieu_ms1_scaled(m, q, x):
+    return mathieu_modsem1(m, q, x)[0] * np.sqrt(np.pi/2)
+def mathieu_mc2_scaled(m, q, x):
+    return mathieu_modcem2(m, q, x)[0] * np.sqrt(np.pi/2)
+def mathieu_ms2_scaled(m, q, x):
+    return mathieu_modsem2(m, q, x)[0] * np.sqrt(np.pi/2)
 
 def test_boost():
     TESTS = [
@@ -232,6 +243,12 @@ def test_gsl():
         # Also the GSL output has limited accuracy...
         data_gsl(mathieu_ce_rad, 'mathieu_ce_se', (0, 1, 2), 3, rtol=1e-7, atol=1e-13),
         data_gsl(mathieu_se_rad, 'mathieu_ce_se', (0, 1, 2), 4, rtol=1e-7, atol=1e-13),
+
+        data_gsl(mathieu_mc1_scaled, 'mathieu_mc_ms', (0, 1, 2), 3, rtol=1e-7, atol=1e-13),
+        data_gsl(mathieu_ms1_scaled, 'mathieu_mc_ms', (0, 1, 2), 4, rtol=1e-7, atol=1e-13),
+
+        data_gsl(mathieu_mc2_scaled, 'mathieu_mc_ms', (0, 1, 2), 5, rtol=1e-7, atol=1e-13),
+        data_gsl(mathieu_ms2_scaled, 'mathieu_mc_ms', (0, 1, 2), 6, rtol=1e-7, atol=1e-13),
     ]
 
     for test in TESTS:

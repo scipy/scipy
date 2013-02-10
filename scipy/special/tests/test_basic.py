@@ -362,11 +362,14 @@ class TestCephes(TestCase):
 
     def test_mathieu_a(self):
         assert_equal(cephes.mathieu_a(1,0),1.0)
+
     def test_mathieu_b(self):
         assert_equal(cephes.mathieu_b(1,0),1.0)
+
     def test_mathieu_cem(self):
         assert_equal(cephes.mathieu_cem(1,0,0),(1.0,0.0))
-        # AMS 20.2.27
+
+        # Test AMS 20.2.27
         @np.vectorize
         def ce_smallq(m, q, z):
             z *= np.pi/180
@@ -383,13 +386,11 @@ class TestCephes(TestCase):
         assert_allclose(cephes.mathieu_cem(m[:,None], q[None,:], 0.123)[0],
                         ce_smallq(m[:,None], q[None,:], 0.123),
                         rtol=1e-14, atol=0)
-    def test_mathieu_modcem1(self):
-        assert_equal(cephes.mathieu_modcem1(1,0,0),(0.0,0.0))
-    def test_mathieu_modcem2(self):
-        cephes.mathieu_modcem2(1,1,1)
+
     def test_mathieu_sem(self):
         assert_equal(cephes.mathieu_sem(1,0,0),(0.0,1.0))
-        # AMS 20.2.27
+
+        # Test AMS 20.2.27
         @np.vectorize
         def se_smallq(m, q, z):
             z *= np.pi/180
@@ -404,10 +405,41 @@ class TestCephes(TestCase):
         assert_allclose(cephes.mathieu_sem(m[:,None], q[None,:], 0.123)[0],
                         se_smallq(m[:,None], q[None,:], 0.123),
                         rtol=1e-14, atol=0)
+
+    def test_mathieu_modcem1(self):
+        assert_equal(cephes.mathieu_modcem1(1,0,0),(0.0,0.0))
+
+    def test_mathieu_modcem2(self):
+        cephes.mathieu_modcem2(1,1,1)
+
+        # Test reflection relation AMS 20.6.19
+        m = np.arange(0, 4)[:,None,None]
+        q = np.r_[np.logspace(-2, 2, 10)][None,:,None]
+        z = np.linspace(0, 1, 7)[None,None,:]
+
+        y1 = cephes.mathieu_modcem2(m, q, -z)[0]
+
+        fr = -cephes.mathieu_modcem2(m, q, 0)[0] / cephes.mathieu_modcem1(m, q, 0)[0]
+        y2 = -cephes.mathieu_modcem2(m, q, z)[0] - 2*fr*cephes.mathieu_modcem1(m, q, z)[0]
+
+        assert_allclose(y1, y2, rtol=1e-10)
+        
     def test_mathieu_modsem1(self):
         assert_equal(cephes.mathieu_modsem1(1,0,0),(0.0,0.0))
+
     def test_mathieu_modsem2(self):
         cephes.mathieu_modsem2(1,1,1)
+
+        # Test reflection relation AMS 20.6.20
+        m = np.arange(1, 4)[:,None,None]
+        q = np.r_[np.logspace(-2, 2, 10)][None,:,None]
+        z = np.linspace(0, 1, 7)[None,None,:]
+
+        y1 = cephes.mathieu_modsem2(m, q, -z)[0]
+        fr = cephes.mathieu_modsem2(m, q, 0)[1] / cephes.mathieu_modsem1(m, q, 0)[1]
+        y2 = cephes.mathieu_modsem2(m, q, z)[0] - 2*fr*cephes.mathieu_modsem1(m, q, z)[0]
+        assert_allclose(y1, y2, rtol=1e-10)
+
     def test_mathieu_overflow(self):
         # Check that these return NaNs instead of causing a SEGV
         assert_equal(cephes.mathieu_cem(10000, 0, 1.3), (np.nan, np.nan))
