@@ -664,12 +664,12 @@ def deconvolve(signal, divisor):
     r : array
         Remainder
 
-    Example
+    Examples
     -------
     >>> from scipy import signal
-    >>> signal = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1,])
+    >>> sig = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1,])
     >>> filter = np.array([1,1,0])
-    >>> res = signal.convolve(signal, filter)
+    >>> res = signal.convolve(sig, filter)
     >>> signal.deconvolve(res, filter)
     (array([ 0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.]),
      array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]))
