@@ -21,6 +21,11 @@ scipy.linalg vs numpy.linalg
 ``scipy.linalg`` contains all the functions in ``numpy.linalg``.
 plus some other more advanced ones not contained in ``numpy.linalg``
 
+Another advantage of using ``scipy.linalg`` over ``numpy.linalg`` is that
+it is always compiled with BLAS/LAPACK support, while for numpy this is
+optional. Therefore, the scipy version might be faster depending on how
+numpy was installed.
+
 Therefore, unless you don't want to add ``scipy`` as a dependency to
 your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``
 
@@ -57,8 +62,8 @@ that serve as shortcuts for inverse and transpose:
     matrix([[17],
             [39]])
 
-Dispite its convenience, the use of the ``numpy.matrix`` class is
-discouraged, since it adds nothing to what cannot be accomplished
+Despite its convenience, the use of the ``numpy.matrix`` class is
+discouraged, since it adds nothing that cannot be accomplished
 with 2D ``numpy.ndarray`` objects, and may lead to a confusion of which class
 is being used. For example, the above code can be rewritten as:
 
@@ -268,13 +273,13 @@ Examples:
           [3, 4]])
     >>> linalg.norm(A)
     5.4772255750516612
-    >>> linalg.norm(A,'fro') #frobenius norm is the default
+    >>> linalg.norm(A,'fro') # frobenius norm is the default
     5.4772255750516612
-    >>> linalg.norm(A,1) #L1-norm
+    >>> linalg.norm(A,1) # L1 norm (max column sum)
     6
     >>> linalg.norm(A,-1)
     4
-    >>> linalg.norm(A,inf)
+    >>> linalg.norm(A,inf) # L inf norm (max row sum)
     7
 
 
@@ -587,8 +592,8 @@ singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use
           [4, 5, 6]])
     >>> M,N = A.shape
     >>> U,s,Vh = linalg.svd(A)
-    >>> Sig = np.array(linalg.diagsvd(s,M,N))
-    >>> U, Vh = np.array(U), np.array(Vh)
+    >>> Sig = linalg.diagsvd(s,M,N)
+    >>> U, Vh = U, Vh
     >>> U
     array([[-0.3863177 , -0.92236578],
           [-0.92236578,  0.3863177 ]])
