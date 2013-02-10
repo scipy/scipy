@@ -624,7 +624,7 @@ int mcm1_wrap(double m, double q, double x, double *f1r, double *d1r)
   int int_m, kf=1, kc=1;
   double f2r, d2r;
 
-  if ((m < 1) || (m != floor(m)) || (q<0)) {
+  if ((m < 0) || (m != floor(m)) || (q<0)) {
     *f1r = NPY_NAN;
     *d1r = NPY_NAN;
     sf_error("mcm1", SF_ERROR_DOMAIN, NULL);
@@ -656,7 +656,7 @@ int mcm2_wrap(double m, double q, double x, double *f2r, double *d2r)
   int int_m, kf=1, kc=2;
   double f1r, d1r;
 
-  if ((m < 1) || (m != floor(m)) || (q<0)) {
+  if ((m < 0) || (m != floor(m)) || (q<0)) {
     *f2r = NPY_NAN;
     *d2r = NPY_NAN;
     sf_error("mcm2", SF_ERROR_DOMAIN, NULL);
