@@ -408,6 +408,16 @@ class TestCephes(TestCase):
         assert_equal(cephes.mathieu_modsem1(1,0,0),(0.0,0.0))
     def test_mathieu_modsem2(self):
         cephes.mathieu_modsem2(1,1,1)
+    def test_mathieu_overflow(self):
+        # Check that these return NaNs instead of causing a SEGV
+        assert_equal(cephes.mathieu_cem(10000, 0, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_sem(10000, 0, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_cem(10000, 1.5, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_sem(10000, 1.5, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_modcem1(10000, 1.5, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_modsem1(10000, 1.5, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_modcem2(10000, 1.5, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_modsem2(10000, 1.5, 1.3), (np.nan, np.nan))
 
     def test_modfresnelm(self):
         cephes.modfresnelm(0)

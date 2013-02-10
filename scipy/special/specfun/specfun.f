@@ -8691,8 +8691,8 @@ C          Proceed using the simplest expansion
         KM=INT(QM+0.5*M)
         IF (KM.GT.251) THEN
 C          Overflow, generate NaNs
-           FNAN=DNAN()
- 6         DO 7 I=1,251
+ 6         FNAN=DNAN()
+           DO 7 I=1,251
  7            FC(I)=FNAN
            RETURN
         ENDIF
