@@ -13,28 +13,95 @@ interfaces to these routines are described.
 
 All of these linear algebra routines expect an object that can be
 converted into a 2-dimensional array. The output of these routines is
-also a two-dimensional array. There is a matrix class defined in
-Numpy, which you can initialize with an appropriate Numpy array in
-order to get objects for which multiplication is matrix-multiplication
-instead of the default, element-by-element multiplication.
+also a two-dimensional array.
+
+scipy.linalg vs numpy.linalg
+----------------------------
+
+``scipy.linalg`` contains all the functions in ``numpy.linalg``.
+plus some other more advanced ones not contained in ``numpy.linalg``
+
+Another advantage of using ``scipy.linalg`` over ``numpy.linalg`` is that
+it is always compiled with BLAS/LAPACK support, while for numpy this is
+optional. Therefore, the scipy version might be faster depending on how
+numpy was installed.
+
+Therefore, unless you don't want to add ``scipy`` as a dependency to
+your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``
 
 
-Matrix Class
-------------
+numpy.matrix vs 2D numpy.ndarray
+--------------------------------
 
-The matrix class is initialized with the SciPy command :obj:`mat`
-which is just convenient short-hand for :class:`matrix
-<numpy.matrix>`. If you are going to be doing a lot of matrix-math, it
-is convenient to convert arrays into matrices using this command. One
-advantage of using the :func:`mat` command is that you can enter
-two-dimensional matrices using MATLAB-like syntax with commas or
-spaces separating columns and semicolons separting rows as long as the
-matrix is placed in a string passed to :obj:`mat` .
+The classes that represent matrices, and basic operations such as
+matrix multiplications and transpose are a part of ``numpy``.
+For convenience, we summarize the differences between ``numpy.matrix``
+and ``numpy.ndarray`` here.
+
+``numpy.matrix`` is matrix class that has a more convenient interface
+than ``numpy.ndarray`` for matrix operations. This class supports for
+example MATLAB-like creation syntax via the, has matrix multiplication
+as default for the ``*`` operator, and contains ``I`` and ``T`` members
+that serve as shortcuts for inverse and transpose:
+
+    >>> import numpy as np
+    >>> A = np.mat('[1 2;3 4]')
+    >>> A
+    matrix([[1, 2],
+            [3, 4]])
+    >>> A.I
+    matrix([[-2. ,  1. ],
+            [ 1.5, -0.5]])
+    >>> b = np.mat('[5 6]')
+    >>> b
+    matrix([[5, 6]])
+    >>> b.T
+    matrix([[5],
+            [6]])
+    >>> A*b.T
+    matrix([[17],
+            [39]])
+
+Despite its convenience, the use of the ``numpy.matrix`` class is
+discouraged, since it adds nothing that cannot be accomplished
+with 2D ``numpy.ndarray`` objects, and may lead to a confusion of which class
+is being used. For example, the above code can be rewritten as:
+
+    >>> import numpy as np
+    >>> from scipy import linalg
+    >>> A = np.array([[1,2],[3,4]])
+    >>> A
+    array([[1, 2],
+          [3, 4]])
+    >>> linalg.inv(A)
+    array([[-2. ,  1. ],
+          [ 1.5, -0.5]])
+    >>> b = np.array([[5,6]]) #2D array
+    >>> b
+    array([[5, 6]])
+    >>> b.T
+    array([[5],
+          [6]])
+    >>> A*b #not matrix multiplication!
+    array([[ 5, 12],
+          [15, 24]])
+    >>> A.dot(b.T) #matrix multiplication
+    array([[17],
+          [39]])
+    >>> b = np.array([5,6]) #1D array
+    >>> b
+    array([5, 6])
+    >>> b.T  #not matrix transpose!
+    array([5, 6])
+    >>> A.dot(b)  #does not matter for multiplication
+    array([17, 39])
+
+``scipy.linalg`` operations can be applied equally to
+``numpy.matrix`` or to 2D ``numpy.ndarray`` objects.
 
 
 Basic routines
 --------------
-
 
 Finding Inverse
 ^^^^^^^^^^^^^^^
@@ -61,20 +128,17 @@ then
 
 The following example demonstrates this computation in SciPy
 
-    >>> A = mat('[1 3 5; 2 5 1; 2 3 8]')
-    >>> A
-    matrix([[1, 3, 5],
-            [2, 5, 1],
-            [2, 3, 8]])
-    >>> A.I
-    matrix([[-1.48,  0.36,  0.88],
-            [ 0.56,  0.08, -0.36],
-            [ 0.16, -0.12,  0.04]])
+    >>> import numpy as np
     >>> from scipy import linalg
+    >>> A = np.array([[1,2],[3,4]])
+    array([[1, 2],
+          [3, 4]])
     >>> linalg.inv(A)
-    array([[-1.48,  0.36,  0.88],
-           [ 0.56,  0.08, -0.36],
-           [ 0.16, -0.12,  0.04]])
+    array([[-2. ,  1. ],
+          [ 1.5, -0.5]])
+    >>> A.dot(linalg.inv(A)) #double check
+    array([[  1.00000000e+00,   0.00000000e+00],
+          [  4.44089210e-16,   1.00000000e+00]])
     
 Solving linear system
 ^^^^^^^^^^^^^^^^^^^^^
@@ -102,16 +166,28 @@ However, it is better to use the linalg.solve command which can be
 faster and more numerically stable. In this case it however gives the
 same answer as shown in the following example:
 
-    >>> A = mat('[1 3 5; 2 5 1; 2 3 8]')
-    >>> b = mat('[10;8;3]')
-    >>> A.I*b
-    matrix([[-9.28],
-            [ 5.16],
-            [ 0.76]])
-    >>> linalg.solve(A,b)
-    array([[-9.28],
-           [ 5.16],
-           [ 0.76]])
+    >>> import numpy as np
+    >>> from scipy import linalg
+    >>> A = np.array([[1,2],[3,4]])
+    >>> A
+    array([[1, 2],
+          [3, 4]])
+    >>> b = np.array([[5],[6]])
+    >>> b
+    array([[5],
+          [6]])
+    >>> linalg.inv(A).dot(b) #slow
+    array([[-4. ],
+          [ 4.5]]
+    >>> A.dot(linalg.inv(A).dot(b))-b #check
+    array([[  8.88178420e-16],
+          [  2.66453526e-15]])
+    >>> np.linalg.solve(A,b) #fast
+    array([[-4. ],
+          [ 4.5]])
+    >>> A.dot(np.linalg.solve(A,b))-b #check
+    array([[ 0.],
+          [ 0.]])
 
 
 Finding Determinant
@@ -148,9 +224,14 @@ is
 
 In SciPy this is computed as shown in this example:
 
-    >>> A = mat('[1 3 5; 2 5 1; 2 3 8]')
+    >>> import numpy as np
+    >>> from scipy import linalg
+    >>> A = np.array([[1,2],[3,4]])
+    >>> A
+    array([[1, 2],
+          [3, 4]])
     >>> linalg.det(A)
-    -25.000000000000004
+    -2.0
 
 
 Computing norms
@@ -181,6 +262,25 @@ For matrix :math:`\mathbf{A}` the only valid values for norm are :math:`\pm2,\pm
     \[ \left\Vert \mathbf{A}\right\Vert =\left\{ \begin{array}{cc} \max_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=\textrm{inf}\\ \min_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=-\textrm{inf}\\ \max_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=1\\ \min_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=-1\\ \max\sigma_{i} & \textrm{ord}=2\\ \min\sigma_{i} & \textrm{ord}=-2\\ \sqrt{\textrm{trace}\left(\mathbf{A}^{H}\mathbf{A}\right)} & \textrm{ord}=\textrm{'fro'}\end{array}\right.\]
 
 where :math:`\sigma_{i}` are the singular values of :math:`\mathbf{A}` .
+
+Examples:
+
+    >>> import numpy as np
+    >>> from scipy import linalg
+    >>> A=np.array([[1,2],[3,4]])
+    >>> A
+    array([[1, 2],
+          [3, 4]])
+    >>> linalg.norm(A)
+    5.4772255750516612
+    >>> linalg.norm(A,'fro') # frobenius norm is the default
+    5.4772255750516612
+    >>> linalg.norm(A,1) # L1 norm (max column sum)
+    6
+    >>> linalg.norm(A,-1)
+    4
+    >>> linalg.norm(A,inf) # L inf norm (max row sum)
+    7
 
 
 Solving linear least-squares problems and pseudo-inverses
@@ -428,25 +528,22 @@ The eigenvectors corresponding to each eigenvalue can be found using
 the original equation. The eigenvectors associated with these
 eigenvalues can then be found.
 
+    >>> import numpy as np
     >>> from scipy import linalg
-    >>> A = mat('[1 5 2; 2 4 1; 3 6 2]')
+    >>> A = np.array([[1,2],[3,4]])
     >>> la,v = linalg.eig(A)
-    >>> l1,l2,l3 = la
-    >>> print l1, l2, l3
-    (7.95791620491+0j) (-1.25766470568+0j) (0.299748500767+0j)
-    
-    >>> print v[:,0]
-    [-0.5297175  -0.44941741 -0.71932146]
-    >>> print v[:,1]
-    [-0.90730751  0.28662547  0.30763439]
-    >>> print v[:,2]
-    [ 0.28380519 -0.39012063  0.87593408]
-    >>> print sum(abs(v**2),axis=0)
-    [ 1.  1.  1.]
-    
-    >>> v1 = mat(v[:,0]).T
-    >>> print max(ravel(abs(A*v1-l1*v1)))
-    8.881784197e-16
+    >>> l1,l2 = la
+    >>> print l1, l2  #eigenvalues
+    (-0.372281323269+0j) (5.37228132327+0j)
+    >>> print v[:,0]  #first eigenvector
+    [-0.82456484  0.56576746]
+    >>> print v[:,1]  #second eigenvector
+    [-0.41597356 -0.90937671]
+    >>> print np.sum(abs(v**2),axis=0) #eigenvectors are unitary
+    [ 1.  1. ]
+    >>> v1 = np.array(v[:,0]).T
+    >>> print linalg.norm(A.dot(v1)-l1*v1) #check the computation
+    3.23682852457e-16
 
 
 Singular value decomposition
@@ -487,28 +584,29 @@ singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use
 :obj:`linalg.diagsvd`. The following example illustrates the use of
 :obj:`linalg.svd` .
 
-    >>> A = mat('[1 3 2; 1 2 3]')
+    >>> import numpy as np
+    >>> from scipy import linalg
+    >>> A = np.array([[1,2,3],[4,5,6]])
+    >>> A
+    array([[1, 2, 3],
+          [4, 5, 6]])
     >>> M,N = A.shape
     >>> U,s,Vh = linalg.svd(A)
-    >>> Sig = mat(linalg.diagsvd(s,M,N))
-    >>> U, Vh = mat(U), mat(Vh)
-    >>> print U
-    [[-0.70710678 -0.70710678]
-     [-0.70710678  0.70710678]]
-    >>> print Sig
-    [[ 5.19615242  0.          0.        ]
-     [ 0.          1.          0.        ]]
-    >>> print Vh
-    [[ -2.72165527e-01  -6.80413817e-01  -6.80413817e-01]
-     [ -6.18652536e-16  -7.07106781e-01   7.07106781e-01]
-     [ -9.62250449e-01   1.92450090e-01   1.92450090e-01]]
-    
-    >>> print A
-    [[1 3 2]
-     [1 2 3]]
-    >>> print U*Sig*Vh
-    [[ 1.  3.  2.]
-     [ 1.  2.  3.]]
+    >>> Sig = linalg.diagsvd(s,M,N)
+    >>> U, Vh = U, Vh
+    >>> U
+    array([[-0.3863177 , -0.92236578],
+          [-0.92236578,  0.3863177 ]])
+    >>> Sig
+    array([[ 9.508032  ,  0.        ,  0.        ],
+          [ 0.        ,  0.77286964,  0.        ]])
+    >>> Vh
+    array([[-0.42866713, -0.56630692, -0.7039467 ],
+          [ 0.80596391,  0.11238241, -0.58119908],
+          [ 0.40824829, -0.81649658,  0.40824829]])
+    >>> U.dot(Sig.dot(Vh)) #check computation
+    array([[ 1.,  2.,  3.],
+          [ 4.,  5.,  6.]])
 
 .. [#] A hermitian matrix :math:`\mathbf{D}` satisfies :math:`\mathbf{D}^{H}=\mathbf{D}.`
 
