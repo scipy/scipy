@@ -1208,7 +1208,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     Also note that the `jac` parameter (Jacobian) is required.
     """
     _check_unknown_options(unknown_options)
-    if jac == None:
+    if jac is None:
         raise ValueError('Jacobian is required for Newton-CG method')
     f = fun
     fprime = jac

@@ -58,7 +58,7 @@ def correlate(in1, in2, mode='full'):
     """
     Cross-correlate two N-dimensional arrays.
 
-    Cross-correlate `in1` and `in2` with the output size determined by the 
+    Cross-correlate `in1` and `in2` with the output size determined by the
     `mode` argument.
 
     Parameters
@@ -361,7 +361,7 @@ def wiener(im, mysize=None, noise=None):
             - lMean ** 2)
 
     # Estimate the noise power if needed.
-    if noise == None:
+    if noise is None:
         noise = mean(ravel(lVar), axis=0)
 
     res = (im - lMean)
