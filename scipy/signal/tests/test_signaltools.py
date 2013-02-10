@@ -212,7 +212,7 @@ class TestMedFilt(TestCase):
         assert_array_equal(d, e)
 
     def test_none(self):
-        """Ticket #1124. Ensure this does not segfault."""
+        # Ticket #1124. Ensure this does not segfault.
         try:
             signal.medfilt(None)
         except:
@@ -220,10 +220,11 @@ class TestMedFilt(TestCase):
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)
-        a = np.lib.stride_tricks.as_strided(np.ones(1), shape=(1,), strides=(2**31,))
-        # a may be contiguous (and is certainly for numpy <1.8) because it
-        # has only one element
-        signal.medfilt(a)
+        dummy = np.arange(10, dtype=np.float64)
+        a = dummy[5:6]
+        a.strides = 16
+        assert_(signal.medfilt(a, 1) == 5.)
+
 
 class TestWiener(TestCase):
     def test_basic(self):
@@ -393,7 +394,7 @@ class TestLinearFilterObject(_TestLinearFilter):
 
 def test_lfilter_bad_object():
     """lfilter: object arrays with non-numeric objects raise TypeError.
-    
+
     Regression test for ticket #1452.
     """
     assert_raises(TypeError, lfilter, [1.0], [1.0], [1.0, None, 2.0])
