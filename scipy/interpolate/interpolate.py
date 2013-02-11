@@ -393,10 +393,10 @@ class interp1d(_Interpolator1D):
 
         # Note that the following two expressions rely on the specifics of the
         # broadcasting semantics.
-        slope = (y_hi-y_lo) / (x_hi-x_lo)[:, None]
+        slope = (y_hi - y_lo) / (x_hi - x_lo)[:, None]
 
         # 5. Calculate the actual value for each entry in x_new.
-        y_new = slope*(x_new-x_lo)[:, None] + y_lo
+        y_new = slope*(x_new - x_lo)[:, None] + y_lo
 
         return y_new
 
@@ -556,9 +556,9 @@ def _setdiag(a, k, v):
     M,N = a.shape
     if k > 0:
         start = k
-        num = N-k
+        num = N - k
     else:
-        num = M+k
+        num = M + k
         start = abs(k)*N
     end = start + num*(N+1)-1
     a.flat[start:end:(N+1)] = v
@@ -567,22 +567,22 @@ def _setdiag(a, k, v):
 # "order-th" derivative; for order >= 2.
 
 def _find_smoothest2(xk, yk):
-    N = len(xk)-1
-    Np1 = N+1
+    N = len(xk) - 1
+    Np1 = N + 1
     # find pseudo-inverse of B directly.
-    Bd = np.empty((Np1,N))
+    Bd = np.empty((Np1, N))
     for k in range(-N,N):
         if (k<0):
-            l = np.arange(-k,Np1)
+            l = np.arange(-k, Np1)
             v = (l+k+1)
             if ((k+1) % 2):
                 v = -v
         else:
             l = np.arange(k,N)
-            v = N-l
+            v = N - l
             if ((k % 2)):
                 v = -v
-        _setdiag(Bd,k,v)
+        _setdiag(Bd, k, v)
     Bd /= (Np1)
     V2 = np.ones((Np1,))
     V2[1::2] = -1
@@ -733,12 +733,12 @@ def _get_spline3_Bb(xk, yk, kind, conds):
 def _find_user(xk, yk, order, conds, B):
     lh = conds[0]
     rh = conds[1]
-    B = np.concatenate((B,lh),axis=0)
-    w = np.concatenate((yk,rh),axis=0)
-    M,N = B.shape
-    if (M>N):
+    B = np.concatenate((B, lh), axis=0)
+    w = np.concatenate((yk, rh), axis=0)
+    M, N = B.shape
+    if (M > N):
         raise ValueError("over-specification of conditions")
-    elif (M<N):
+    elif (M < N):
         return _find_smoothest(xk, yk, order, None, B)
     else:
         return np.dual.solve(B, w)
@@ -817,6 +817,7 @@ def splmake(xk, yk, order=3, kind='smoothest', conds=None):
     coefs = func(xk, yk, order, conds, B)
     return xk, coefs, order
 
+
 def spleval(xck, xnew, deriv=0):
     """Evaluate a fixed spline represented by the given tuple at the new
     x-values. The xj values are the interior knot points.  The approximation
@@ -845,10 +846,12 @@ def spleval(xck, xnew, deriv=0):
     res.shape = oldshape + sh
     return res
 
+
 def spltopp(xk, cvals, k):
     """Return a piece-wise polynomial object from a fixed-spline tuple.
     """
     return ppform.fromspline(xk, cvals, k)
+
 
 def spline(xk, yk, xnew, order=3, kind='smoothest', conds=None):
     """Interpolate a curve (xk,yk) at points xnew using a spline fit.
