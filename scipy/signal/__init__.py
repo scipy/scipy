@@ -123,6 +123,7 @@ Continuous-Time Linear Systems
    impulse2 -- like impulse, but `scipy.integrate.odeint` is used.
    step     -- step response of continous-time LTI system.
    step2    -- like step, but `scipy.integrate.odeint` is used.
+   bode     -- Calculate Bode magnitude and phase data.
 
 Discrete-Time Linear Systems
 ============================
