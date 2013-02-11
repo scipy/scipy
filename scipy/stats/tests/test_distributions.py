@@ -42,7 +42,7 @@ dists = ['uniform','norm','lognorm','expon','beta',
          'weibull_min','weibull_max','dweibull','maxwell','rayleigh',
          'genlogistic', 'logistic','gumbel_l','gumbel_r','gompertz',
          'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda',
-         'vonmises']
+         'vonmises', 'pearson3']
 
 # check function for test generator
 def check_distribution(dist, args, alpha):
@@ -253,6 +253,38 @@ class TestLogser(TestCase):
         val = stats.logser(0.75).rvs(3)
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
+
+class TestPearson3(TestCase):
+    def test_rvs(self):
+        vals = stats.pearson3.rvs(0.1, size=(2, 50))
+        assert_(numpy.shape(vals) == (2, 50))
+        assert_(vals.dtype.char in typecodes['AllFloat'])
+        val = stats.pearson3.rvs(0.5)
+        assert_(isinstance(val, float))
+        val = stats.pearson3(0.5).rvs(3)
+        assert_(isinstance(val, numpy.ndarray))
+        assert_(val.dtype.char in typecodes['AllFloat'])
+        assert_(len(val) == 3)
+
+    def test_pdf(self):
+        vals = stats.pearson3.pdf(2, [0.0, 0.1, 0.2])
+        assert_allclose(vals, np.array([0.05399097, 0.05555481, 0.05670246]),
+                        atol=1e-6)
+        vals = stats.pearson3.pdf(-3, 0.1)
+        assert_allclose(vals, np.array([0.00313791]), atol=1e-6)
+        vals = stats.pearson3.pdf([-3,-2,-1,0,1], 0.1)
+        assert_allclose(vals, np.array([0.00313791, 0.05192304, 0.25028092,
+                                        0.39885918, 0.23413173]), atol=1e-6)
+
+    def test_cdf(self):
+        vals = stats.pearson3.cdf(2, [0.0, 0.1, 0.2])
+        assert_allclose(vals, np.array([0.97724987, 0.97462004, 0.97213626]),
+                        atol=1e-6)
+        vals = stats.pearson3.cdf(-3, 0.1)
+        assert_allclose(vals, [0.00082256], atol=1e-6)
+        vals = stats.pearson3.cdf([-3,-2,-1,0,1], 0.1)
+        assert_allclose(vals, [8.22563821e-04, 1.99860448e-02, 1.58550710e-01,
+                               5.06649130e-01, 8.41442111e-01], atol=1e-6)
 
 class TestPoisson(TestCase):
     def test_rvs(self):
