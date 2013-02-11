@@ -19,11 +19,13 @@ from . import dfitpack
 from . import _fitpack
 from .polyint import _Interpolator1D
 
+
 def reduce_sometrue(a):
     all = a
     while len(shape(all)) > 1:
-        all = sometrue(all,axis=0)
+        all = sometrue(all, axis=0)
     return all
+
 
 def lagrange(x, w):
     """
@@ -50,7 +52,7 @@ def lagrange(x, w):
         for k in xrange(M):
             if k == j: continue
             fac = x[j]-x[k]
-            pt *= poly1d([1.0,-x[k]])/fac
+            pt *= poly1d([1.0, -x[k]])/fac
         p += pt
     return p
 
@@ -156,11 +158,11 @@ class interp2d(object):
             if not np.all(x[1:] >= x[:-1]):
                 j = np.argsort(x)
                 x = x[j]
-                z = z[:,j]
+                z = z[:, j]
             if not np.all(y[1:] >= y[:-1]):
                 j = np.argsort(y)
                 y = y[j]
-                z = z[j,:]
+                z = z[j, :]
             z = ravel(z.T)
         else:
             z = ravel(z)
@@ -172,9 +174,9 @@ class interp2d(object):
                     "Invalid length for input z for non rectangular grid")
 
         try:
-            kx = ky = {'linear' : 1,
-                       'cubic' : 3,
-                       'quintic' : 5}[kind]
+            kx = ky = {'linear': 1,
+                       'cubic': 3,
+                       'quintic': 5}[kind]
         except KeyError:
             raise ValueError("Unsupported interpolation type.")
 
@@ -195,7 +197,7 @@ class interp2d(object):
         self.x_min, self.x_max = np.amin(x), np.amax(x)
         self.y_min, self.y_max = np.amin(y), np.amax(y)
 
-    def __call__(self,x,y,dx=0,dy=0):
+    def __call__(self, x, y, dx=0, dy=0):
         """Interpolate the function.
 
         Parameters
@@ -240,9 +242,9 @@ class interp2d(object):
 
         if self.fill_value is not None:
             if any_out_of_bounds_x:
-                z[:,out_of_bounds_x] = self.fill_value
+                z[:, out_of_bounds_x] = self.fill_value
             if any_out_of_bounds_y:
-                z[out_of_bounds_y,:] = self.fill_value
+                z[out_of_bounds_y, :] = self.fill_value
 
         if len(z) == 1:
             z = z[0]
@@ -319,8 +321,8 @@ class interp1d(_Interpolator1D):
         self.fill_value = fill_value
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
-            order = {'nearest':0, 'zero':0,'slinear':1,
-                     'quadratic':2, 'cubic':3}[kind]
+            order = {'nearest': 0, 'zero': 0,'slinear': 1,
+                     'quadratic': 2, 'cubic': 3}[kind]
             kind = 'spline'
         elif isinstance(kind, int):
             order = kind
@@ -391,10 +393,10 @@ class interp1d(_Interpolator1D):
 
         # Note that the following two expressions rely on the specifics of the
         # broadcasting semantics.
-        slope = (y_hi-y_lo) / (x_hi-x_lo)[:,None]
+        slope = (y_hi-y_lo) / (x_hi-x_lo)[:, None]
 
         # 5. Calculate the actual value for each entry in x_new.
-        y_new = slope*(x_new-x_lo)[:,None] + y_lo
+        y_new = slope*(x_new-x_lo)[:, None] + y_lo
 
         return y_new
 
@@ -488,24 +490,24 @@ class ppform(object):
         res[~mask] = self.fill
         xx = xnew.compress(mask)
         indxs = np.searchsorted(self.breaks, xx)-1
-        indxs = indxs.clip(0,len(self.breaks))
+        indxs = indxs.clip(0, len(self.breaks))
         pp = self.coeffs
         diff = xx - self.breaks.take(indxs)
-        V = np.vander(diff,N=self.K)
+        V = np.vander(diff, N=self.K)
         # values = np.diag(dot(V,pp[:,indxs]))
-        values = array([dot(V[k,:],pp[:,indxs[k]]) for k in xrange(len(xx))])
+        values = array([dot(V[k, :], pp[:, indxs[k]]) for k in xrange(len(xx))])
         res[mask] = values
         res.shape = saveshape
         return res
 
     def fromspline(cls, xk, cvals, order, fill=0.0):
         N = len(xk)-1
-        sivals = np.empty((order+1,N), dtype=float)
-        for m in xrange(order,-1,-1):
+        sivals = np.empty((order+1, N), dtype=float)
+        for m in xrange(order, -1, -1):
             fact = spec.gamma(m+1)
             res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
             res /= fact
-            sivals[order-m,:] = res
+            sivals[order-m, :] = res
         return cls(sivals, xk, fill=fill)
     fromspline = classmethod(fromspline)
 
@@ -520,6 +522,7 @@ def _dot0(a, b):
         axes.pop(0)
         return dot(a, b.transpose(axes))
 
+
 def _find_smoothest(xk, yk, order, conds=None, B=None):
     # construct Bmatrix, and Jmatrix
     # e = J*c
@@ -531,7 +534,7 @@ def _find_smoothest(xk, yk, order, conds=None, B=None):
     if B is None:
         B = _fitpack._bsplmat(order, xk)
     J = _fitpack._bspldismat(order, xk)
-    u,s,vh = np.dual.svd(B)
+    u, s, vh = np.dual.svd(B)
     ind = K-1
     V2 = vh[-ind:,:].T
     V1 = vh[:-ind,:].T
@@ -545,6 +548,7 @@ def _find_smoothest(xk, yk, order, conds=None, B=None):
     tmp = dot(tmp,np.diag(1.0/s))
     tmp = dot(tmp,u.T)
     return _dot0(tmp, yk)
+
 
 def _setdiag(a, k, v):
     if not a.ndim == 2:
@@ -778,7 +782,7 @@ def _find_mixed(xk, yk, order, conds, B):
     return _find_user(xk, yk, order, conds, B)
 
 
-def splmake(xk,yk,order=3,kind='smoothest',conds=None):
+def splmake(xk, yk, order=3, kind='smoothest', conds=None):
     """Return a (xk, cvals, k) representation of a spline given
     data-points where the (internal) knots are at the data-points.
 
@@ -813,7 +817,7 @@ def splmake(xk,yk,order=3,kind='smoothest',conds=None):
     coefs = func(xk, yk, order, conds, B)
     return xk, coefs, order
 
-def spleval(xck,xnew,deriv=0):
+def spleval(xck, xnew, deriv=0):
     """Evaluate a fixed spline represented by the given tuple at the new
     x-values. The xj values are the interior knot points.  The approximation
     region is xj[0] to xj[-1].  If N+1 is the length of xj, then cvals should
@@ -841,12 +845,12 @@ def spleval(xck,xnew,deriv=0):
     res.shape = oldshape + sh
     return res
 
-def spltopp(xk,cvals,k):
+def spltopp(xk, cvals, k):
     """Return a piece-wise polynomial object from a fixed-spline tuple.
     """
     return ppform.fromspline(xk, cvals, k)
 
-def spline(xk,yk,xnew,order=3,kind='smoothest',conds=None):
+def spline(xk, yk, xnew, order=3, kind='smoothest', conds=None):
     """Interpolate a curve (xk,yk) at points xnew using a spline fit.
     """
     return spleval(splmake(xk,yk,order=order,kind=kind,conds=conds),xnew)
