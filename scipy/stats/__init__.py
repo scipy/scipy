@@ -131,6 +131,7 @@ Continuous distributions
    ncf               -- Non-central F
    nct               -- Non-central Student's T
    pareto            -- Pareto
+   pearson3          -- Pearson type III
    powerlaw          -- Power-function
    powerlognorm      -- Power log normal
    powernorm         -- Power normal
