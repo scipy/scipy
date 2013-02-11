@@ -5,7 +5,8 @@ from . import _minpack
 
 from numpy import atleast_1d, dot, take, triu, shape, eye, \
                   transpose, zeros, product, greater, array, \
-                  all, where, isscalar, asarray, inf, abs
+                  all, where, isscalar, asarray, inf, abs, \
+                  finfo, inexact, issubdtype, dtype, sqrt
 from .optimize import Result, _check_unknown_options
 
 error = _minpack.error
@@ -27,12 +28,16 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs, output_shape=Non
             else:
                 msg += "."
             raise TypeError(msg)
-    return shape(res)
+    if issubdtype(res.dtype, inexact):
+        dt = res.dtype
+    else:
+        dt = dtype(float)
+    return shape(res), dt
 
 
 def fsolve(func, x0, args=(), fprime=None, full_output=0,
            col_deriv=0, xtol=1.49012e-8, maxfev=0, band=None,
-           epsfcn=0.0, factor=100, diag=None):
+           epsfcn=None, factor=100, diag=None):
     """
     Find the roots of a function.
 
@@ -137,7 +142,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         return res['x']
 
 def _root_hybr(func, x0, args=(), jac=None,
-               col_deriv=0, xtol=1.49012e-08, maxfev=0, band=None, eps=0.0,
+               col_deriv=0, xtol=1.49012e-08, maxfev=0, band=None, eps=None,
                factor=100, diag=None, full_output=0, **unknown_options):
     """
     Find the roots of a multivariate function using MINPACK's hybrd and
@@ -182,7 +187,9 @@ def _root_hybr(func, x0, args=(), jac=None,
     n = len(x0)
     if type(args) != type(()):
         args = (args,)
-    _check_func('fsolve', 'func', func, x0, args, n, (n,))
+    shape, dtype = _check_func('fsolve', 'func', func, x0, args, n, (n,))
+    if epsfcn is None:
+        epsfcn = sqrt(finfo(dtype).eps)
     Dfun = jac
     if Dfun is None:
         if band is None:
@@ -241,7 +248,7 @@ def _root_hybr(func, x0, args=(), jac=None,
 
 def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
-            gtol=0.0, maxfev=0, epsfcn=0.0, factor=100, diag=None):
+            gtol=0.0, maxfev=0, epsfcn=None, factor=100, diag=None):
     """
     Minimize the sum of squares of a set of equations.
 
@@ -347,11 +354,14 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     n = len(x0)
     if type(args) != type(()):
         args = (args,)
-    m = _check_func('leastsq', 'func', func, x0, args, n)[0]
+    shape, dtype = _check_func('leastsq', 'func', func, x0, args, n)
+    m = shape[0]
     if n > m:
         raise TypeError('Improper input: N=%s must not exceed M=%s' % (n,m))
+    if epsfcn is None:
+        epsfcn = sqrt(finfo(dtype).eps)
     if Dfun is None:
-        if (maxfev == 0):
+        if maxfev == 0:
             maxfev = 200*(n + 1)
         retval = _minpack._lmdif(func, x0, args, full_output, ftol, xtol,
                 gtol, maxfev, epsfcn, factor, diag)
