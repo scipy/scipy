@@ -268,23 +268,23 @@ class TestPearson3(TestCase):
 
     def test_pdf(self):
         vals = stats.pearson3.pdf(2, [0.0, 0.1, 0.2])
-        assert_allclose(vals, np.array([ 0.05399097,  0.05555481,
-            0.05670246]), atol=1e-6)
+        assert_allclose(vals, np.array([0.05399097, 0.05555481, 0.05670246]),
+                        atol=1e-6)
         vals = stats.pearson3.pdf(-3, 0.1)
-        assert_allclose(vals, np.array([ 0.00313791]), atol=1e-6)
+        assert_allclose(vals, np.array([0.00313791]), atol=1e-6)
         vals = stats.pearson3.pdf([-3,-2,-1,0,1], 0.1)
-        assert_allclose(vals, np.array([ 0.00313791,  0.05192304,  0.25028092,
-            0.39885918,  0.23413173]), atol=1e-6)
+        assert_allclose(vals, np.array([0.00313791, 0.05192304, 0.25028092,
+                                        0.39885918, 0.23413173]), atol=1e-6)
 
     def test_cdf(self):
         vals = stats.pearson3.cdf(2, [0.0, 0.1, 0.2])
-        assert_allclose(vals, np.array([ 0.97724987,  0.97462004,
-            0.97213626]), atol=1e-6)
+        assert_allclose(vals, np.array([0.97724987, 0.97462004, 0.97213626]),
+                        atol=1e-6)
         vals = stats.pearson3.cdf(-3, 0.1)
-        assert_allclose(vals, np.array([ 0.00082256]), atol=1e-6)
+        assert_allclose(vals, [0.00082256], atol=1e-6)
         vals = stats.pearson3.cdf([-3,-2,-1,0,1], 0.1)
-        assert_allclose(vals, np.array([  8.22563821e-04,   1.99860448e-02,
-            1.58550710e-01, 5.06649130e-01,   8.41442111e-01]), atol=1e-6)
+        assert_allclose(vals, [8.22563821e-04, 1.99860448e-02, 1.58550710e-01,
+                               5.06649130e-01, 8.41442111e-01], atol=1e-6)
 
 class TestPoisson(TestCase):
     def test_rvs(self):

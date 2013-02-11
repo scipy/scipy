@@ -4627,9 +4627,8 @@ lomax = lomax_gen(a=0.0, name="lomax", shapes="c")
 
 
 ## Pearson Type III
-
 class pearson3_gen(rv_continuous):
-    """A pearson type III distribution
+    """A pearson type III continuous random variable.
 
     %(before_notes)s
 
@@ -4637,27 +4636,31 @@ class pearson3_gen(rv_continuous):
     -----
     The probability density function for `pearson3` is::
 
-        pearson3.pdf(x, skew) =
-            abs(beta)/gamma(alpha)*
-            (beta*(x - zeta))**(alpha - 1)*
-            exp(-beta*(x - zeta))
+        pearson3.pdf(x, skew) = abs(beta) / gamma(alpha) *
+            (beta * (x - zeta))**(alpha - 1) * exp(-beta*(x - zeta))
 
-        where:
-            beta = 2/(skew*stddev)
-            alpha = (stddev*beta)**2
-            zeta = loc - alpha/beta
+    where::
+
+            beta = 2 / (skew * stddev)
+            alpha = (stddev * beta)**2
+            zeta = loc - alpha / beta
 
     %(example)s
 
     References
     ----------
-    http://engineering.tufts.edu/cee/people/vogel/publications/probability-plot.pdf
+    R.W. Vogel and D.E. McMartin, "Probability Plot Goodness-of-Fit and
+    Skewness Estimation Procedures for the Pearson Type 3 Distribution", Water
+    Resources Research, Vol.27, 3149-3158 (1991).
 
-    http://projecteuclid.org/DPubS/Repository/1.0/Disseminate?view=body&id=pdf_1&handle=euclid.aoms/1177733130
+    L.R. Salvosa, "Tables of Pearson's Type III Function", Ann. Math. Statist.,
+    Vol.1, 191-198 (1930).
 
-    http://www.tc.faa.gov/its/worldpac/techrpt/ar03-62.pdf
+    "Using Modern Computing Tools to Fit the Pearson Type III Distribution to
+    Aviation Loads Data", Office of Aviation Research (2003).
+
     """
-    def _pearson3_preprocess(self, x, skew):
+    def _preprocess(self, x, skew):
         # The real 'loc' and 'scale' are handled in the calling pdf(...). The
         # local variables 'loc' and 'scale' within pearson3._pdf are set to
         # the defaults just to keep them as part of the equations for
@@ -4677,25 +4680,28 @@ class pearson3_gen(rv_continuous):
         mask = np.absolute(skew) < norm2pearson_transition
         invmask = ~mask
 
-        beta = 2.0/(skew[invmask]*scale)
-        alpha = (scale*beta)**2
-        zeta = loc - alpha/beta
+        beta = 2.0 / (skew[invmask] * scale)
+        alpha = (scale * beta)**2
+        zeta = loc - alpha / beta
 
-        transx = beta*(x[invmask] - zeta)
+        transx = beta * (x[invmask] - zeta)
         return ans, x, transx, skew, mask, invmask, beta, alpha, zeta
+
     def _argcheck(self, skew):
         # The _argcheck function in rv_continuous only allows positive
         # arguments.  The skew argument for pearson3 can be zero (which I want
         # to handle inside pearson3._pdf) or negative.  So just return True
         # for all skew args.
         return np.ones(np.shape(skew), dtype=bool)
+
     def _stats(self, skew):
-        ans, x, transx, skew, mask, invmask, beta, alpha, zeta = self._pearson3_preprocess([1], skew)
-        m = zeta + alpha/beta
-        v = alpha/(beta**2)
-        s = 2.0/(alpha**0.5)*np.sign(beta)
-        k = 6.0/alpha
-        return m,v,s,k
+        ans, x, transx, skew, mask, invmask, beta, alpha, zeta = self._preprocess([1], skew)
+        m = zeta + alpha / beta
+        v = alpha / (beta**2)
+        s = 2.0 / (alpha**0.5) * np.sign(beta)
+        k = 6.0 / alpha
+        return m, v, s, k
+
     def _pdf(self, x, skew):
         # Do the calculation in _logpdf since helps to limit
         # overflow/underflow problems
@@ -4704,8 +4710,9 @@ class pearson3_gen(rv_continuous):
             if np.isnan(ans):
                 return 0.0
             return ans
-        ans[np.isnan(ans) == True] = 0.0
+        ans[np.isnan(ans)] = 0.0
         return ans
+
     def _logpdf(self, x, skew):
         # Use log form of the equation to handle the large and small terms
         # without overflow or underflow.
@@ -4715,31 +4722,34 @@ class pearson3_gen(rv_continuous):
         # + (alpha - 1)*log(beta*(x - zeta))          + (a - 1)*log(x)
         # - beta*(x - zeta)                           - x
         # - gamln(alpha)                              - gamln(a)
-
-        ans, x, transx, skew, mask, invmask, beta, alpha, zeta = self._pearson3_preprocess(x, skew)
+        ans, x, transx, skew, mask, invmask, beta, alpha, zeta = self._preprocess(x, skew)
 
         ans[mask] = np.log(_norm_pdf(x[mask]))
         ans[invmask] = log(abs(beta)) + gamma._logpdf(transx, alpha)
         return ans
+
     def _cdf(self, x, skew):
-        ans, x, transx, skew, mask, invmask, beta, alpha, zeta = self._pearson3_preprocess(x, skew)
+        ans, x, transx, skew, mask, invmask, beta, alpha, zeta = self._preprocess(x, skew)
 
         ans[mask] = _norm_cdf(x[mask])
         ans[invmask] = gamma._cdf(transx, alpha)
         return ans
+
     def _rvs(self, skew):
-        ans, x, transx, skew, mask, invmask, beta, alpha, zeta = self._pearson3_preprocess([0], skew)
-        if mask[0] == True:
+        ans, x, transx, skew, mask, invmask, beta, alpha, zeta = self._preprocess([0], skew)
+        if mask[0]:
             return mtrand.standard_normal(self._size)
         ans = mtrand.standard_gamma(alpha, self._size)/beta + zeta
-        if len(ans) == 1:
+        if ans.size == 1:
             return ans[0]
         return ans
+
     def _ppf(self, q, skew):
-        ans, q, transq, skew, mask, invmask, beta, alpha, zeta = self._pearson3_preprocess(q, skew)
+        ans, q, transq, skew, mask, invmask, beta, alpha, zeta = self._preprocess(q, skew)
         ans[mask] = _norm_ppf(q[mask])
         ans[invmask] = special.gammaincinv(alpha,q[invmask])/beta + zeta
         return ans
+
 pearson3 = pearson3_gen(name="pearson3", shapes="skew")
 
 
