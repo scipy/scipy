@@ -753,9 +753,9 @@ class TestRegression(TestCase):
         y = np.linspace(2 * a, a, n)
         stats.linregress(x, y)
         res = stats.linregress(x, y)
-        assert_(res[2] >= -1, "R factor is in [-1..1]")
-        assert_almost_equal(res[2], -1, "In this cas R=-1 => R**2=+1 ")
-        assert_(not np.isnan(res[4]), "Check stderr is not NaN")
+        assert_(res[2] >= -1, "propagated numerical errors were not corrected")
+        assert_almost_equal(res[2], -1, "perfect negative correlation case")
+        assert_(not np.isnan(res[4]), "stderr should stay finite")
 
 
 class TestHistogram(TestCase):
