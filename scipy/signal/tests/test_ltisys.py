@@ -324,8 +324,9 @@ class Test_freqresp(object):
         assert_almost_equal(H.real, expected_re, decimal=1)
 
     def test_02(self):
-        """Test freqresp() imaginary part calculation (manual sanity
-        check)."""
+        """
+        Test freqresp() imaginary part calculation (manual sanity check).
+        """
         # 1st order low-pass filter: H(s) = 1 / (s + 1),
         #   im(H(s=0.1)) ~= -0.099
         #   im(H(s=1)) ~= -0.5
