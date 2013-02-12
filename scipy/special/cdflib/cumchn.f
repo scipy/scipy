@@ -57,7 +57,8 @@ C     .. Scalar Arguments ..
 C     ..
 C     .. Local Scalars ..
       DOUBLE PRECISION adj,centaj,centwt,chid2,dfd2,eps,lcntaj,lcntwt,
-     +                 lfact,pcent,pterm,sum,sumadj,term,wt,xnonc,xx
+     +                 lfact,pcent,pterm,sum,sumadj,term,wt,xnonc,xx,
+     +                 abstol
       INTEGER i,icent
 C     ..
 C     .. External Functions ..
@@ -76,9 +77,10 @@ C     .. Statement Functions ..
 C     ..
 C     .. Data statements ..
       DATA eps/1.0D-5/
+      DATA abstol/1.0D-300/
 C     ..
 C     .. Statement Function definitions ..
-      qsmall(xx) = sum .LT. 1.0D-20 .OR. xx .LT. eps*sum
+      qsmall(xx) = sum .LT. abstol .OR. xx .LT. eps*sum
       dg(i) = df + 2.0D0*dble(i)
 C     ..
 C
