@@ -19,6 +19,7 @@ import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
 from scipy.lib.six.moves import xrange
+from scipy.signal.filter_design import freqs
 from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 
@@ -363,6 +364,12 @@ class lti(object):
         return bode(self, w=w, n=n)
 
     def freqresp(self, w=None, n=10000):
+        """Calculate the frequency response of a continuous-time system.
+
+        Returns a 2-tuple containing arrays of frequencies [rad/s] and complex magnitude. 
+        See scipy.signal.freqresp for details.
+
+        """
         return freqresp(self, w=w, n=n)
 
 
@@ -960,10 +967,10 @@ def freqresp(system, w=None, n=10000):
 
     Returns
     -------
-    G : 1D ndarray
-        Array of complex magnitude values
     w : 1D ndarray
         Frequency array [rad/s]
+    G : 1D ndarray
+        Array of complex magnitude values
 
     Example
     -------
@@ -985,11 +992,9 @@ def freqresp(system, w=None, n=10000):
     else:
         sys = lti(*system)
 
-    if w is None:
-        w = _default_response_frequencies(sys.A, n)
+    if w is not None:
+        worN = w
     else:
-        w = numpy.asarray(w)
+        worN = n
 
-    jw = w * 1j
-    G = numpy.polyval(sys.num, jw) / numpy.polyval(sys.den, jw)
-    return G, w
+    return freqs(sys.num, sys.den, worN=worN)

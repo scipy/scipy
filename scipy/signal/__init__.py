@@ -116,6 +116,8 @@ Continuous-Time Linear Systems
 .. autosummary::
    :toctree: generated/
 
+   bode     -- bode magnitude and phase data of a continuous-time system.
+   freqresp -- frequency response of a continuous-time LTI system.
    lti      -- linear time invariant system object.
    lsim     -- continuous-time simulation of output to linear system.
    lsim2    -- like lsim, but `scipy.integrate.odeint` is used.
