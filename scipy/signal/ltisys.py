@@ -980,7 +980,7 @@ def freqresp(system, w=None, n=10000):
     >>> import matplotlib.pyplot as plt
 
     >>> s1 = signal.lti([], [1, 1, 1], [5])     #transfer function: G(s) = 5 / (s+1)^3
-    >>> G, w = signal.freqresp(s1)
+    >>> w, G = signal.freqresp(s1)
 
     >>> plt.figure()
     >>> plt.plot(G.real, G.imag, "b")
