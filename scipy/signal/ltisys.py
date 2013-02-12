@@ -11,7 +11,7 @@ from __future__ import division, print_function, absolute_import
 #   Rewrote lsim2 and added impulse2.
 #
 
-from .filter_design import tf2zpk, zpk2tf, normalize
+from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 import numpy
 from numpy import product, zeros, array, dot, transpose, ones, \
     nan_to_num, zeros_like, linspace
@@ -600,43 +600,6 @@ def _default_response_times(A, n):
     return t
 
 
-def _default_response_frequencies(A, n):
-    """Compute a reasonable set of frequency points for bode plot.
-
-    This function is used by `bode` to compute the frequency points (in rad/s)
-    when the `w` argument to the function is None.
-
-    Parameters
-    ----------
-    A : ndarray
-        The system matrix, which is square.
-    n : int
-        The number of time samples to generate.
-
-    Returns
-    -------
-    w : ndarray
-        The 1-D array of length `n` of frequency samples (in rad/s) at which
-        the response is to be computed.
-    """
-    vals = linalg.eigvals(A)
-    # Remove poles at 0 because they don't help us determine an interesting
-    # frequency range. (And if we pass a 0 to log10() below we will crash.)
-    poles = [pole for pole in vals if pole != 0]
-    # If there are no non-zero poles, just hardcode something.
-    if len(poles) == 0:
-        minpole = 1
-        maxpole = 1
-    else:
-        minpole = min(abs(real(poles)))
-        maxpole = max(abs(real(poles)))
-    # A reasonable frequency range is two orders of magnitude before the
-    # minimum pole (slowest) and two orders of magnitude after the maximum pole
-    # (fastest).
-    w = numpy.logspace(numpy.log10(minpole) - 2, numpy.log10(maxpole) + 2, n)
-    return w
-
-
 def impulse(system, X0=None, T=None, N=None):
     """Impulse response of continuous-time system.
 
@@ -921,12 +884,12 @@ def bode(system, w=None, n=100):
         sys = lti(*system)
 
     if w is None:
-        w = _default_response_frequencies(sys.A, n)
+        worN = n
     else:
-        w = numpy.asarray(w)
+        worN = w
+    w, y = freqs(sys.num, sys.den, worN=worN)
 
-    jw = w * 1j
-    y = numpy.polyval(sys.num, jw) / numpy.polyval(sys.den, jw)
     mag = 20.0 * numpy.log10(abs(y))
     phase = numpy.arctan2(y.imag, y.real) * 180.0 / numpy.pi
+
     return w, mag, phase
