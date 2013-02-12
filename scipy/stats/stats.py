@@ -2961,8 +2961,11 @@ def linregress(x, y=None):
         r = 0.0
     else:
         r = r_num / r_den
-        if (r > 1.0): r = 1.0 # from numerical error
-        elif (r < -1.0): r = -1.0  # from numerical error
+        # test for numerical error propagation
+        if (r > 1.0):
+            r = 1.0
+        elif (r < -1.0):
+            r = -1.0
     #z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
     t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))

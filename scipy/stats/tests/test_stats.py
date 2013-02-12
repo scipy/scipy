@@ -746,7 +746,7 @@ class TestRegression(TestCase):
     def test_regress_simple_negative_cor(self):
         """
         If the slope of the regression is negative the factor R tend to -1 not 1.
-        Sometimes rounding errors make it < -1 leading to   
+        Sometimes rounding errors makes it < -1 leading to stderr being NaN
         """
         a, n = 1e-71, 100000
         x = np.linspace(a, 2 * a, n)
@@ -754,7 +754,8 @@ class TestRegression(TestCase):
         stats.linregress(x, y)
         res = stats.linregress(x, y)
         assert_(res[2] >= -1, "R factor is in [-1..1]")
-        assert_(not np.isNan(res[4]), "stderr is finite")
+        assert_almost_equal(res[2], -1, "In this cas R=-1 => R**2=+1 ")
+        assert_(not np.isnan(res[4]), "Check stderr is not NaN")
 
 
 class TestHistogram(TestCase):
