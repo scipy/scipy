@@ -543,7 +543,7 @@ def hmean(a, axis=0, dtype=None):
         if isinstance(a, np.ma.MaskedArray):
             size = a.count(axis)
         else:
-            if axis == None:
+            if axis is None:
                 a=a.ravel()
                 size = a.shape[0]
             else:
