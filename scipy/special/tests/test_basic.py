@@ -165,6 +165,10 @@ class TestCephes(TestCase):
 
     def test_chndtr(self):
         assert_equal(cephes.chndtr(0,1,0),0.0)
+        p = cephes.chndtr(np.linspace(20, 25, 5), 2, 1.07458615e+02)
+        assert_allclose(p, [1.21805009e-09, 2.81979982e-09, 6.25652736e-09,
+                            1.33520017e-08,   2.74909967e-08],
+                        rtol=1e-6, atol=0)
     def test_chndtridf(self):
         assert_equal(cephes.chndtridf(0,0,1),5.0)
     def test_chndtrinc(self):
