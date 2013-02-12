@@ -743,6 +743,19 @@ class TestRegression(TestCase):
         res = (1.0, 5.0, 0.98229948625750, 7.45259691e-008, 0.063564172616372733)
         assert_array_almost_equal(stats.linregress(x,y),res,decimal=14)
 
+    def test_regress_simple_negative_cor(self):
+        """
+        If the slope of the regression is negative the factor R tend to -1 not 1 
+        """
+        a, n = 1e-71, 100000
+        x = np.linspace(a, 2 * a, n)
+        y = np.linspace(2 * a, a, n)
+        stats.linregress(x, y)
+        res = stats.linregress(x, y)
+        assert_equal(res[2] >= -1, True, "R factor is in [-1..1]")
+        assert_equal(np.isNan(res[4]), False, "stderr is finite")
+
+
 class TestHistogram(TestCase):
     """ Tests that histogram works as it should, and keeps old behaviour
     """
