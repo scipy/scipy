@@ -309,76 +309,71 @@ class Test_bode(object):
 
 
 class Test_freqresp(object):
-    # Since the code of the freqresp function is basically equal to that of 
-    # the bode function, we use similar testing
+    
     def test_01(self):
         """Test freqresp() real part calculation (manual sanity check)."""
-        # 1st order low-pass filter: G(s) = 1 / (s + 1),
-        #   re(G(s=0.1)) ~= 0.99
-        #   re(G(s=1)) ~= 0.5
-        #   re(G(s=10)) ~= 0.0099
+        # 1st order low-pass filter: H(s) = 1 / (s + 1),
+        #   re(H(s=0.1)) ~= 0.99
+        #   re(H(s=1)) ~= 0.5
+        #   re(H(s=10)) ~= 0.0099
         system = lti([1], [1, 1])
         w = [0.1, 1, 10]
-        G, w = freqresp(system, w=w)
+        w, H = freqresp(system, w=w)
         expected_re = [0.99, 0.5, 0.0099]
-        assert_almost_equal(G.real, expected_re, decimal=1)
+        assert_almost_equal(H.real, expected_re, decimal=1)
 
     def test_02(self):
         """Test freqresp() imaginary part calculation (manual sanity check)."""
-        # 1st order low-pass filter: G(s) = 1 / (s + 1),
-        #   im(G(s=0.1)) ~= -0.099
-        #   im(G(s=1)) ~= -0.5
-        #   im(G(s=10)) ~= -0.099
+        # 1st order low-pass filter: H(s) = 1 / (s + 1),
+        #   im(H(s=0.1)) ~= -0.099
+        #   im(H(s=1)) ~= -0.5
+        #   im(H(s=10)) ~= -0.099
         system = lti([1], [1, 1])
         w = [0.1, 1, 10]
-        G, w = freqresp(system, w=w)
+        w, H = freqresp(system, w=w)
         expected_im = [-0.099, -0.5, -0.099]
-        assert_almost_equal(G.imag, expected_im, decimal=1)
+        assert_almost_equal(H.imag, expected_im, decimal=1)
 
     def test_03(self):
         """Test freqresp() real part calculation."""
-        # 1st order low-pass filter: G(s) = 1 / (s + 1)
+        # 1st order low-pass filter: H(s) = 1 / (s + 1)
         system = lti([1], [1, 1])
         w = [0.1, 1, 10, 100]
-        G, w = freqresp(system, w=w)
+        w, H = freqresp(system, w=w)
         jw = w * 1j
         y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
         expected_re = y.real
-        assert_almost_equal(G.real, expected_re)
+        assert_almost_equal(H.real, expected_re)
 
     def test_04(self):
         """Test freqresp() imaginary part calculation."""
-        # 1st order low-pass filter: G(s) = 1 / (s + 1)
+        # 1st order low-pass filter: H(s) = 1 / (s + 1)
         system = lti([1], [1, 1])
         w = [0.1, 1, 10, 100]
-        G, w = freqresp(system, w=w)
+        w, H = freqresp(system, w=w)
         jw = w * 1j
         y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
         expected_im = y.imag
-        assert_almost_equal(G.imag, expected_im)
+        assert_almost_equal(H.imag, expected_im)
 
     def test_05(self):
-        """Test that freqresp() finds a reasonable frequency range.
-
-        A reasonable frequency range is two orders of magnitude before the
-        minimum (slowest) pole and two orders of magnitude after the maximum
-        (fastest) pole.
-        """
-        # 1st order low-pass filter: G(s) = 1 / (s + 1)
+        """Test that freqresp() finds a reasonable frequency range."""
+        # 1st order low-pass filter: H(s) = 1 / (s + 1)
+        # Expected range is from 0.01 to 10.
         system = lti([1], [1, 1])
         vals = linalg.eigvals(system.A)
         minpole = min(abs(np.real(vals)))
         maxpole = max(abs(np.real(vals)))
         n = 10;
-        expected_w = np.logspace(np.log10(minpole) - 2, np.log10(maxpole) + 2, n)
-        G, w = freqresp(system, n=n)
+        expected_w = np.logspace(-2, 1, n)
+        w, H = freqresp(system, n=n)
         assert_almost_equal(w, expected_w)
 
     def test_06(self):
         """Test that freqresp() doesn't fail on a system with a pole at 0."""
-        # integrator, pole at zero: G(s) = 1 / s
+        # integrator, pole at zero: H(s) = 1 / s
         system = lti([1], [1, 0])
-        G, w = freqresp(system, n=2)
+        w, H = freqresp(system, n=2)
         assert_equal(w[0], 0.01)  # a fail would give not-a-number
 
 if __name__ == "__main__":
