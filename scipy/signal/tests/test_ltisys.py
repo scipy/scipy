@@ -311,8 +311,8 @@ class Test_bode(object):
 
 class Test_freqresp(object):
     
-    def test_01(self):
-        """Test freqresp() real part calculation (manual sanity check)."""
+    def test_real_part_manual(self):
+        # Test freqresp() real part calculation (manual sanity check).
         # 1st order low-pass filter: H(s) = 1 / (s + 1),
         #   re(H(s=0.1)) ~= 0.99
         #   re(H(s=1)) ~= 0.5
@@ -323,10 +323,8 @@ class Test_freqresp(object):
         expected_re = [0.99, 0.5, 0.0099]
         assert_almost_equal(H.real, expected_re, decimal=1)
 
-    def test_02(self):
-        """
-        Test freqresp() imaginary part calculation (manual sanity check).
-        """
+    def test_imag_part_manual(self):
+        # Test freqresp() imaginary part calculation (manual sanity check).
         # 1st order low-pass filter: H(s) = 1 / (s + 1),
         #   im(H(s=0.1)) ~= -0.099
         #   im(H(s=1)) ~= -0.5
@@ -337,8 +335,8 @@ class Test_freqresp(object):
         expected_im = [-0.099, -0.5, -0.099]
         assert_almost_equal(H.imag, expected_im, decimal=1)
 
-    def test_03(self):
-        """Test freqresp() real part calculation."""
+    def test_real_part(self):
+        # Test freqresp() real part calculation.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         system = lti([1], [1, 1])
         w = [0.1, 1, 10, 100]
@@ -348,8 +346,8 @@ class Test_freqresp(object):
         expected_re = y.real
         assert_almost_equal(H.real, expected_re)
 
-    def test_04(self):
-        """Test freqresp() imaginary part calculation."""
+    def test_imag_part(self):
+        # Test freqresp() imaginary part calculation.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         system = lti([1], [1, 1])
         w = [0.1, 1, 10, 100]
@@ -359,8 +357,8 @@ class Test_freqresp(object):
         expected_im = y.imag
         assert_almost_equal(H.imag, expected_im)
 
-    def test_05(self):
-        """Test that freqresp() finds a reasonable frequency range."""
+    def test_freq_range(self):
+        # Test that freqresp() finds a reasonable frequency range.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         # Expected range is from 0.01 to 10.
         system = lti([1], [1, 1])
@@ -372,8 +370,8 @@ class Test_freqresp(object):
         w, H = freqresp(system, n=n)
         assert_almost_equal(w, expected_w)
 
-    def test_06(self):
-        """Test that freqresp() doesn't fail on a system with a pole at 0."""
+    def test_pole_zero(self):
+        # Test that freqresp() doesn't fail on a system with a pole at 0.
         # integrator, pole at zero: H(s) = 1 / s
         system = lti([1], [1, 0])
         w, H = freqresp(system, n=2)
