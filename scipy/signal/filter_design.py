@@ -606,7 +606,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     else:
         warped = Wn
 
-    # convert to low-pass prototype
+    # convert bandpass and bandstop to low-pass prototype
     if btype in ['lowpass', 'highpass']:
         wo = warped
     else:
@@ -620,16 +620,24 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         if rp is None:
             raise ValueError("passband ripple (rp) must be provided to "
                              "design a Chebyshev I filter.")
+        elif rp < 0:
+            raise ValueError("passband ripple (rp) must be positive")
         z, p, k = typefunc(N, rp)
     elif typefunc == cheb2ap:
         if rs is None:
-            raise ValueError("stopband atteunatuion (rs) must be provided to "
+            raise ValueError("stopband attenuation (rs) must be provided to "
                              "design an Chebyshev II filter.")
+        elif rs < 0:
+            raise ValueError("stopband attenuation (rs) must be positive")
         z, p, k = typefunc(N, rs)
     else:  # Elliptic filters
         if rs is None or rp is None:
             raise ValueError("Both rp and rs must be provided to design an "
                              "elliptic filter.")
+        elif rp < 0:
+            raise ValueError("passband ripple (rp) must be positive")
+        elif rs < 0:
+            raise ValueError("stopband attenuation (rs) must be positive")
         z, p, k = typefunc(N, rp, rs)
 
     b, a = zpk2tf(z, p, k)
