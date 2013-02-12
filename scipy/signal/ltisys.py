@@ -11,7 +11,7 @@ from __future__ import division, print_function, absolute_import
 #   Rewrote lsim2 and added impulse2.
 #
 
-from .filter_design import tf2zpk, zpk2tf, normalize
+from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 import numpy
 from numpy import product, zeros, array, dot, transpose, ones, \
     nan_to_num, zeros_like, linspace
@@ -19,12 +19,12 @@ import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
 from scipy.lib.six.moves import xrange
-from scipy.signal.filter_design import freqs
 from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
-           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode', 'freqresp']
+           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
+           'freqresp']
 
 
 def tf2ss(num, den):
@@ -366,7 +366,8 @@ class lti(object):
     def freqresp(self, w=None, n=10000):
         """Calculate the frequency response of a continuous-time system.
 
-        Returns a 2-tuple containing arrays of frequencies [rad/s] and complex magnitude. 
+        Returns a 2-tuple containing arrays of frequencies [rad/s] and
+        complex magnitude.
         See scipy.signal.freqresp for details.
 
         """
@@ -956,9 +957,9 @@ def freqresp(system, w=None, n=10000):
             * 4 (A, B, C, D)
 
     w : array_like, optional
-        Array of frequencies (in rad/s). Magnitude and phase data is calculated
-        for every value in this array. If not given a reasonable set will be
-        calculated.
+        Array of frequencies (in rad/s). Magnitude and phase data is 
+        calculated for every value in this array. If not given a reasonable 
+        set will be calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`
         frequencies are logarithmically spaced in the range from two orders of
@@ -979,7 +980,9 @@ def freqresp(system, w=None, n=10000):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    >>> s1 = signal.lti([], [1, 1, 1], [5])     #transfer function: H(s) = 5 / (s-1)^3
+    >>> s1 = signal.lti([], [1, 1, 1], [5])
+    # transfer function: H(s) = 5 / (s-1)^3
+    
     >>> w, H = signal.freqresp(s1)
 
     >>> plt.figure()

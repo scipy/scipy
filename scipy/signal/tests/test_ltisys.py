@@ -5,7 +5,8 @@ import warnings
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
 
-from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti, bode, freqresp
+from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti, bode, \
+    freqresp
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
@@ -323,7 +324,8 @@ class Test_freqresp(object):
         assert_almost_equal(H.real, expected_re, decimal=1)
 
     def test_02(self):
-        """Test freqresp() imaginary part calculation (manual sanity check)."""
+        """Test freqresp() imaginary part calculation (manual sanity
+        check)."""
         # 1st order low-pass filter: H(s) = 1 / (s + 1),
         #   im(H(s=0.1)) ~= -0.099
         #   im(H(s=1)) ~= -0.5
@@ -364,7 +366,7 @@ class Test_freqresp(object):
         vals = linalg.eigvals(system.A)
         minpole = min(abs(np.real(vals)))
         maxpole = max(abs(np.real(vals)))
-        n = 10;
+        n = 10
         expected_w = np.logspace(-2, 1, n)
         w, H = freqresp(system, n=n)
         assert_almost_equal(w, expected_w)
