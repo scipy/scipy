@@ -68,7 +68,7 @@ def freqs(b, a, worN=None, plot=None):
         If None, then compute at 200 frequencies around the interesting parts
         of the response curve (determined by pole-zero locations).  If a single
         integer, then compute at that many frequencies.  Otherwise, compute the
-        response at frequencies given in `worN`.
+        response at frequencies given in `worN`, in radians per second.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
@@ -77,7 +77,7 @@ def freqs(b, a, worN=None, plot=None):
     Returns
     -------
     w : ndarray
-        The frequencies at which h was computed.
+        The frequencies at which h was computed, in radians per second.
     h : ndarray
         The frequency response.
 
@@ -231,10 +231,12 @@ def tf2zpk(b, a):
     k : float
         System gain.
 
-    Notes
-    -----
-    If some values of `b` are too close to 0, they are removed. In that case, 
-    a BadCoefficients warning is emitted.
+    Raises
+    ------
+    BadCoefficients
+        If some values of `b` are too close to 0, they are removed and this
+        warning is emitted.
+
     """
     b, a = normalize(b, a)
     b = (b + 0.0) / a[0]
@@ -287,6 +289,7 @@ def normalize(b, a):
 
     If values of `b` are too close to 0, they are removed. In that case, a
     BadCoefficients warning is emitted.
+
     """
     b, a = map(atleast_1d, (b, a))
     if len(a.shape) != 1:
@@ -311,8 +314,13 @@ def normalize(b, a):
 
 
 def lp2lp(b, a, wo=1.0):
-    """Return a low-pass filter with cutoff frequency `wo`
-    from a low-pass filter prototype with unity cutoff frequency.
+    """
+    Transform a lowpass filter prototype to a different frequency.
+    
+    Return an analog low-pass filter with cutoff frequency `wo`
+    from an analog low-pass filter prototype with unity cutoff frequency, in 
+    transfer function ('ba') representation.
+    
     """
     a, b = map(atleast_1d, (a, b))
     try:
@@ -331,8 +339,13 @@ def lp2lp(b, a, wo=1.0):
 
 
 def lp2hp(b, a, wo=1.0):
-    """Return a high-pass filter with cutoff frequency `wo`
-    from a low-pass filter prototype with unity cutoff frequency.
+    """
+    Transform a lowpass filter prototype to a highpass filter.
+    
+    Return an analog high-pass filter with cutoff frequency `wo`
+    from an analog low-pass filter prototype with unity cutoff frequency, in
+    transfer function ('ba') representation.
+
     """
     a, b = map(atleast_1d, (a, b))
     try:
@@ -360,8 +373,13 @@ def lp2hp(b, a, wo=1.0):
 
 
 def lp2bp(b, a, wo=1.0, bw=1.0):
-    """Return a band-pass filter with center frequency `wo` and bandwidth `bw`
-    from a low-pass filter prototype with unity cutoff frequency.
+    """
+    Transform a lowpass filter prototype to a bandpass filter.
+    
+    Return an analog band-pass filter with center frequency `wo` and 
+    bandwidth `bw` from an analog low-pass filter prototype with unity 
+    cutoff frequency, in transfer function ('ba') representation.
+
     """
     a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
@@ -391,9 +409,14 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     return normalize(bprime, aprime)
 
 
-def lp2bs(b, a, wo=1, bw=1):
-    """Return a band-stop filter with center frequency `wo` and bandwidth `bw`
-    from a low-pass filter prototype with unity cutoff frequency.
+def lp2bs(b, a, wo=1.0, bw=1.0):
+    """
+    Transform a lowpass filter prototype to a highpass filter.
+    
+    Return an analog band-stop filter with center frequency `wo` and 
+    bandwidth `bw` from an analog low-pass filter prototype with unity 
+    cutoff frequency, in transfer function ('ba') representation.
+    
     """
     a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
@@ -514,7 +537,6 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
         function.  Only returned if ``output='zpk'``.
 
     """
-
     try:
         ordfunc = filter_dict[ftype][1]
     except KeyError:
@@ -582,8 +604,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     See Also
     --------
     butterord, cheb1ord, cheb2ord, ellipord
-    """
 
+    """
     ftype, btype, output = [x.lower() for x in (ftype, btype, output)]
     Wn = asarray(Wn)
     try:
@@ -668,6 +690,9 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
 
     Design an Nth order digital or analog Butterworth filter and return
     the filter coefficients in (B,A) or (Z,P,K) form.
+    
+    The Butterworth filter has maximally flat frequency response in the 
+    passband.
 
     Parameters
     ----------
@@ -675,6 +700,8 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
         The order of the filter.
     Wn : array_like
         A scalar or length-2 sequence giving the critical frequencies.
+        For a Butterworth filter, this is the point at which the gain 
+        drops to 1/sqrt(1/2) that of the passband (the "-3 dB point").
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the 
         Nyquist frequency, pi radians / sample.  (`Wn` is thus in 
         half-cycles / sample.)
@@ -700,6 +727,25 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     See also
     --------
     buttord.
+
+    Examples
+    --------
+    Plot the filter's frequency response, showing the critical points:
+    
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    
+    >>> b, a = signal.butter(4, 100, 'low', analog=True)
+    >>> w, h = signal.freqs(b, a)
+    >>> plt.plot(w, 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Butterworth filter frequency response')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.margins(0, 0.1)
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.axvline(100, color='green') # cutoff frequency
+
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
                      output=output, ftype='butter')
@@ -716,9 +762,12 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     N : int
         The order of the filter.
     rp : float
-        Provides the maximum ripple in the passband. (dB)
+        The maximum ripple allowed below unity gain in the passband.  
+        Specified in decibels, as a positive number.
     Wn : array_like
         A scalar or length-2 sequence giving the critical frequencies.
+        For Type I filters, this is the point in the transition band at which 
+        the gain first drops below -`rp`.
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the 
         Nyquist frequency, pi radians / sample.  (`Wn` is thus in 
         half-cycles / sample.)
@@ -744,6 +793,35 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     See also
     --------
     cheb1ord.
+
+    Notes
+    -----
+    The Chebyshev type I filter maximizes the rate of cutoff between the 
+    frequency response's passband and stopband, at the expense of ripple in 
+    the passband and increased ringing in the step response.
+    
+    Type I filters roll off faster than Type II (`cheby2`), but Type II 
+    filters do not have any ripple in the passband.
+
+    Examples
+    --------
+    Plot the filter's frequency response, showing the critical points:
+    
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    
+    >>> b, a = signal.cheby1(4, 5, 100, 'low', analog=True)
+    >>> w, h = signal.freqs(b, a)
+    >>> plt.plot(w, 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Chebyshev Type I frequency response (rp=5)')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.margins(0, 0.1)
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.axvline(100, color='green') # cutoff frequency
+    >>> plt.axhline(-5, color='green') # rp
+
     """
     return iirfilter(N, Wn, rp=rp, btype=btype, analog=analog,
                      output=output, ftype='cheby1')
@@ -761,9 +839,12 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     N : int
         The order of the filter.
     rs : float
-        Provides the minimum attenuation in the stop band. (dB)
+        The minimum attenuation required in the stop band.
+        Specified in decibels, as a positive number.
     Wn : array_like
         A scalar or length-2 sequence giving the critical frequencies.
+        For Type II filters, this is the point in the transition band at which 
+        the gain first reaches -`rs`.
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the 
         Nyquist frequency, pi radians / sample.  (`Wn` is thus in 
         half-cycles / sample.)
@@ -790,6 +871,33 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     --------
     cheb2ord.
 
+    Notes
+    -----
+    The Chebyshev type II filter maximizes the rate of cutoff between the 
+    frequency response's passband and stopband, at the expense of ripple in 
+    the stopband and increased ringing in the step response.
+    
+    Type II filters do not roll off as fast as Type I (`cheby1`).
+
+    Examples
+    --------
+    Plot the filter's frequency response, showing the critical points:
+    
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    
+    >>> b, a = signal.cheby2(4, 40, 100, 'low', analog=True)
+    >>> w, h = signal.freqs(b, a)
+    >>> plt.plot(w, 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Chebyshev Type II frequency response (rs=40)')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.margins(0, 0.1)
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.axvline(100, color='green') # cutoff frequency
+    >>> plt.axhline(-40, color='green') # rs
+    
     """
     return iirfilter(N, Wn, rs=rs, btype=btype, analog=analog,
                      output=output, ftype='cheby2')
@@ -806,11 +914,15 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     N : int
         The order of the filter.
     rp : float
-        Provides the maximum ripple in the passband. (dB)
+        The maximum ripple allowed below unity gain in the passband.  
+        Specified in decibels, as a positive number.
     rs : float
-        Provides the minimum attenuation in the stop band. (dB)
+        The minimum attenuation required in the stop band.
+        Specified in decibels, as a positive number.
     Wn : array_like
         A scalar or length-2 sequence giving the critical frequencies.
+        For elliptic filters, this is the point in the transition band at 
+        which the gain first drops below -`rp`.
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the 
         Nyquist frequency, pi radians / sample.  (`Wn` is thus in 
         half-cycles / sample.)
@@ -836,6 +948,38 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     See also
     --------
     ellipord.
+
+    Notes
+    -----
+    The elliptical filter maximizes the rate of transition between the 
+    frequency response's passband and stopband, at the expense of ripple in 
+    both, and increased ringing in the step response.
+    
+    As `rp` approaches 0, the elliptical filter becomes a Chebyshev 
+    type II filter (`cheby2`).  As `rs` approaches 0, it becomes a Chebyshev 
+    type I filter (`cheby1`).  As both approach 0, it becomes a Butterworth 
+    filter (`butter`).
+
+    Examples
+    --------
+    Plot the filter's frequency response, showing the critical points:
+    
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    
+    >>> b, a = signal.ellip(4, 5, 40, 100, 'low', analog=True)
+    >>> w, h = signal.freqs(b, a)
+    >>> plt.plot(w, 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Elliptic filter frequency response (rp=5, rs=40)')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.margins(0, 0.1)
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.axvline(100, color='green') # cutoff frequency
+    >>> plt.axhline(-40, color='green') # rs
+    >>> plt.axhline(-5, color='green') # rp
+    
     """
     return iirfilter(N, Wn, rs=rs, rp=rp, btype=btype, analog=analog,
                      output=output, ftype='elliptic')
@@ -853,6 +997,9 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
         The order of the filter.
     Wn : array_like
         A scalar or length-2 sequence giving the critical frequencies.
+        For a Bessel filter, this is defined as the point at which the 
+        asymptotes of the response are the same as a Butterworth filter of 
+        the same order.
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the 
         Nyquist frequency, pi radians / sample.  (`Wn` is thus in 
         half-cycles / sample.)
@@ -874,6 +1021,52 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     z, p, k : ndarray, ndarray, float
         Zeros, poles, and system gain of the IIR filter transfer 
         function.  Only returned if ``output='zpk'``.
+
+    Notes
+    -----
+    The analog Bessel filter has maximally flat group delay and maximally 
+    linear phase response, with very little ringing in the step response.
+    
+    As order increases, the Bessel filter approaches a Gaussian filter.
+    
+    The digital Bessel filter is generated using the bilinear 
+    transform, which does not preserve the phase response of the analog 
+    filter. As such, it is only approximately correct at frequencies 
+    below about fs/4.
+    
+    To get maximally flat group delay at higher frequencies, the analog
+    Bessel filter must be transformed using phase-preserving techniques.
+
+    Examples
+    --------
+    Plot the filter's frequency response, showing the flat group delay and 
+    the relationship to the Butterworth's cutoff frequency:
+    
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> b, a = signal.butter(4, 100, 'low', analog=True)
+    >>> w, h = signal.freqs(b, a)
+    >>> plt.plot(w, 20 * np.log10(np.abs(h)), color='silver', ls='dashed')
+    >>> b, a = signal.bessel(4, 100, 'low', analog=True)
+    >>> w, h = signal.freqs(b, a)
+    >>> plt.plot(w, 20 * np.log10(np.abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Bessel filter frequency response (with Butterworth)')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.margins(0, 0.1)
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.axvline(100, color='green') # cutoff frequency
+    
+    >>> plt.figure()
+    >>> plt.plot(w[1:], -np.diff(np.unwrap(np.angle(h)))/np.diff(w))
+    >>> plt.xscale('log')
+    >>> plt.title('Bessel filter group delay')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Group delay [seconds]')
+    >>> plt.margins(0, 0.1)
+    >>> plt.grid(which='both', axis='both')
     
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
@@ -895,7 +1088,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
 
     Parameters
     ----------
-    wp :
+    wp
         Edge of passband `passb`.
     ind : int
         Index specifying which `passb` edge to vary (0 or 1).
@@ -914,8 +1107,8 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     -------
     n : scalar
         Filter order (possibly non-integer).
-    """
 
+    """
     passbC = passb.copy()
     passbC[ind] = wp
     nat = (stopb * (passbC[0] - passbC[1]) /
@@ -982,7 +1175,6 @@ def buttord(wp, ws, gpass, gstop, analog=False):
         be used with `butter` to give filter results.
 
     """
-
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
     filter_type = 2 * (len(wp) - 1)
@@ -1367,7 +1559,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
 
 def buttap(N):
     """Return (z,p,k) zero, pole, gain for analog prototype of an Nth
-    order Butterworth filter.
+    order Butterworth filter with a cutoff frequency of 1 radian per second.
     
     """
     z = array([])
@@ -1380,7 +1572,10 @@ def buttap(N):
 def cheb1ap(N, rp):
     """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type I lowpass
     analog filter prototype with `rp` decibels of ripple in the passband.
-
+    
+    The filter's cutoff frequency is normalized to 1 radian per second, 
+    defined as the point at which the gain first drops below -`rp`.
+    
     """
     z = array([])
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
@@ -1398,7 +1593,10 @@ def cheb1ap(N, rp):
 def cheb2ap(N, rs):
     """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type II lowpass
     analog filter prototype with `rs` decibels of ripple in the stopband.
-
+    
+    The filter's cutoff frequency is normalized to 1 radian per second, 
+    defined as the point at which the gain first reaches -`rs`.
+    
     """
     de = 1.0 / sqrt(10 ** (0.1 * rs) - 1)
     mu = arcsinh(1.0 / de) / N
@@ -1448,7 +1646,10 @@ def ellipap(N, rp, rs):
     """Return (z,p,k) zeros, poles, and gain of an Nth order normalized
     prototype elliptic analog lowpass filter with `rp` decibels of ripple in
     the passband and a stopband `rs` decibels down.
-
+    
+    The filter's cutoff frequency is normalized to 1 radian per second, 
+    defined as the point at which the gain first drops below -`rp`.
+    
     References
     ----------
     Lutova, Tosic, and Evans, "Filter Design for Signal Processing", Chapters 5
@@ -1520,6 +1721,10 @@ def ellipap(N, rp, rs):
 def besselap(N):
     """Return (z,p,k) zero, pole, gain for analog prototype of an Nth order
     Bessel filter.
+    
+    The filter is normalized such that the filter asymptotes are the same as 
+    a Butterworth filter of the same order with a cutoff frequency of 
+    1 radian/second.
     
     """
     z = []
