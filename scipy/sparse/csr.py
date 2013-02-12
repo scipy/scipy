@@ -353,7 +353,7 @@ class csr_matrix(_cs_matrix):
             if abs(stride) > 1:
                 ind = ind & ((row_indices - start) % stride == 0)
 
-            row_indices = (row_indices[ind] - start) / stride
+            row_indices = (row_indices[ind] - start) // stride
             row_data = row_data[ind]
             row_indptr = np.array([0, len(row_indices)])
 
