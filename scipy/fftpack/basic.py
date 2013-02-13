@@ -308,7 +308,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     Parameters
     ----------
     x : array_like, real-valued
-        The data to tranform.
+        The data to transform.
     n : int, optional
         Defines the length of the Fourier transform.  If `n` is not specified
         (the default) then ``n = x.shape[axis]``.  If ``n < x.shape[axis]``,
@@ -428,6 +428,10 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     if len(axes) != len(s):
         raise ValueError("when given, axes and shape arguments "\
                          "have to be of the same length")
+
+    for dim in s:
+        if dim < 1:
+            raise ValueError("Invalid number of FFT data points (%d) specified." % s)
 
     # No need to swap axes, array is in C order
     if noaxes:

@@ -3,11 +3,14 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 from . import sigtools
 from scipy.lib.six import callable
 from scipy import linalg
 from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, \
         ifftn, fftfreq
+from numpy.fft import rfftn, irfftn
 from numpy import polyadd, polymul, polydiv, polysub, roots, \
         poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
         ones, real_if_close, zeros, array, arange, where, rank, \
@@ -54,33 +57,44 @@ def _bvalfromboundary(boundary):
     return val
 
 
+def _check_valid_mode_shapes(shape1, shape2):
+    for d1, d2 in zip(shape1, shape2):
+        if not d1 >= d2:
+            raise ValueError(
+                "in1 should have at least as many items as in2 in "
+                "every dimension for 'valid' mode.")
+
+
 def correlate(in1, in2, mode='full'):
     """
     Cross-correlate two N-dimensional arrays.
 
-    Cross-correlate `in1` and `in2` with the output size determined by the
+    Cross-correlate `in1` and `in2`, with the output size determined by the
     `mode` argument.
 
     Parameters
     ----------
-    in1 : array
-        first input.
-    in2 : array
-        second input. Should have the same number of dimensions as `in1`.
-    mode : str {'valid', 'same', 'full'}, optional
+    in1 : array_like
+        First input.
+    in2 : array_like
+        Second input. Should have the same number of dimensions as `in1`.
+    mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
-            - 'valid': the output consists only of those elements that do not
-              rely on the zero-padding.
-            - 'same': the output is the same size as `in1` centered
-              with respect to the 'full' output.
-            - 'full': the output is the full discrete linear cross-correlation
-              of the inputs (default).
+        ``full``
+           The output is the full discrete linear cross-correlation
+           of the inputs. (Default)
+        ``valid``
+           The output consists only of those elements that do not
+           rely on the zero-padding.
+        ``same``
+           The output is the same size as `in1`, centered
+           with respect to the 'full' output.
 
     Returns
     -------
     out : array
-        an N-dimensional array containing a subset of the discrete linear
+        An N-dimensional array containing a subset of the discrete linear
         cross-correlation of `in1` with `in2`.
 
     Notes
@@ -91,16 +105,20 @@ def correlate(in1, in2, mode='full'):
             x[..., i_l,...] * conj(y[..., i_l + k,...])
 
     """
+    in1 = asarray(in1)
+    in2 = asarray(in2)
+
     val = _valfrommode(mode)
 
+    if rank(in1) == rank(in2) == 0:
+        return in1 * in2
+    elif not in1.ndim == in2.ndim:
+        raise ValueError("in1 and in2 should have the same rank")
+
     if mode == 'valid':
+        _check_valid_mode_shapes(in1.shape, in2.shape)
         ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
         out = np.empty(ps, in1.dtype)
-        for i in range(len(ps)):
-            if ps[i] <= 0:
-                raise ValueError("Dimension of x(%d) < y(%d) " \
-                                 "not compatible with valid mode" % \
-                                 (in1.shape[i], in2.shape[i]))
 
         z = sigtools._correlateND(in1, in2, out, val)
     else:
@@ -112,13 +130,10 @@ def correlate(in1, in2, mode='full'):
 
         if mode == 'full':
             out = np.empty(ps, in1.dtype)
-            z = sigtools._correlateND(in1zpadded, in2, out, val)
         elif mode == 'same':
             out = np.empty(in1.shape, in1.dtype)
 
-            z = sigtools._correlateND(in1zpadded, in2, out, val)
-        else:
-            raise ValueError("Uknown mode %s" % mode)
+        z = sigtools._correlateND(in1zpadded, in2, out, val)
 
     return z
 
@@ -134,66 +149,109 @@ def _centered(arr, newsize):
 
 
 def fftconvolve(in1, in2, mode="full"):
-    """Convolve two N-dimensional arrays using FFT. See `convolve`.
+    """Convolve two N-dimensional arrays using FFT.
+
+    Convolve `in1` and `in2` using the fast Fourier transform method, with
+    the output size determined by the `mode` argument.
+
+    This is generally much faster than `convolve` for large arrays (n > ~500),
+    but can be slower when only a few output values are needed, and can only
+    output float arrays (int or object array inputs will be cast to float).
+
+    Parameters
+    ----------
+    in1 : array_like
+        First input.
+    in2 : array_like
+        Second input. Should have the same number of dimensions as `in1`.
+    mode : str {'full', 'valid', 'same'}, optional
+        A string indicating the size of the output:
+
+        ``full``
+           The output is the full discrete linear convolution
+           of the inputs. (Default)
+        ``valid``
+           The output consists only of those elements that do not
+           rely on the zero-padding.
+        ``same``
+           The output is the same size as `in1`, centered
+           with respect to the 'full' output.
+
+    Returns
+    -------
+    out : array
+        An N-dimensional array containing a subset of the discrete linear
+        convolution of `in1` with `in2`.
 
     """
+    in1 = asarray(in1)
+    in2 = asarray(in2)
+
+    if rank(in1) == rank(in2) == 0:  # scalar inputs
+        return in1 * in2
+    elif not in1.ndim == in2.ndim:
+        raise ValueError("in1 and in2 should have the same rank")
+    elif in1.size == 0 or in2.size == 0:  # empty arrays
+        return array([])
+
     s1 = array(in1.shape)
     s2 = array(in2.shape)
     complex_result = (np.issubdtype(in1.dtype, np.complex) or
                       np.issubdtype(in2.dtype, np.complex))
     size = s1 + s2 - 1
 
+    if mode == "valid":
+        _check_valid_mode_shapes(s1, s2)
+
     # Always use 2**n-sized FFT
-    fsize = 2 ** np.ceil(np.log2(size))
-    IN1 = fftn(in1, fsize)
-    IN1 *= fftn(in2, fsize)
+    fsize = 2 ** np.ceil(np.log2(size)).astype(int)
     fslice = tuple([slice(0, int(sz)) for sz in size])
-    ret = ifftn(IN1)[fslice].copy()
-    del IN1
     if not complex_result:
+        ret = irfftn(rfftn(in1, fsize) *
+                     rfftn(in2, fsize), fsize)[fslice].copy()
         ret = ret.real
+    else:
+        ret = ifftn(fftn(in1, fsize) * fftn(in2, fsize))[fslice].copy()
+
     if mode == "full":
         return ret
     elif mode == "same":
-        if product(s1, axis=0) > product(s2, axis=0):
-            osize = s1
-        else:
-            osize = s2
-        return _centered(ret, osize)
+        return _centered(ret, s1)
     elif mode == "valid":
-        return _centered(ret, abs(s2 - s1) + 1)
+        return _centered(ret, s1 - s2 + 1)
 
 
 def convolve(in1, in2, mode='full'):
     """
     Convolve two N-dimensional arrays.
 
-    Convolve `in1` and `in2` with output size determined by `mode`.
+    Convolve `in1` and `in2`, with the output size determined by the
+    `mode` argument.
 
     Parameters
     ----------
-    in1 : array
-        first input.
-    in2 : array
-        second input. Should have the same number of dimensions as `in1`.
-    mode : str {'valid', 'same', 'full'}
-        a string indicating the size of the output:
+    in1 : array_like
+        First input.
+    in2 : array_like
+        Second input. Should have the same number of dimensions as `in1`.
+    mode : str {'full', 'valid', 'same'}, optional
+        A string indicating the size of the output:
 
-        ``valid`` : the output consists only of those elements that do not
-           rely on the zero-padding.
-
-        ``same`` : the output is the same size as `in1` centered
-           with respect to the 'full' output.
-
-        ``full`` : the output is the full discrete linear cross-correlation
+        ``full``
+           The output is the full discrete linear convolution
            of the inputs. (Default)
-
+        ``valid``
+           The output consists only of those elements that do not
+           rely on the zero-padding.
+        ``same``
+           The output is the same size as `in1`, centered
+           with respect to the 'full' output.
 
     Returns
     -------
     out : array
-        an N-dimensional array containing a subset of the discrete linear
-        cross-correlation of `in1` with `in2`.
+        An N-dimensional array containing a subset of the discrete linear
+        convolution of `in1` with `in2`.
 
     """
     volume = asarray(in1)
@@ -201,17 +259,9 @@ def convolve(in1, in2, mode='full'):
 
     if rank(volume) == rank(kernel) == 0:
         return volume * kernel
-    elif not volume.ndim == kernel.ndim:
-        raise ValueError("in1 and in2 should have the same rank")
 
     slice_obj = [slice(None, None, -1)] * len(kernel.shape)
 
-    if mode == 'valid':
-        for d1, d2 in zip(volume.shape, kernel.shape):
-            if not d1 >= d2:
-                raise ValueError(
-                    "in1 should have at least as many items as in2 in " \
-                    "every dimension for valid mode.")
     if np.iscomplexobj(kernel):
         return correlate(volume, kernel[slice_obj].conj(), mode)
     else:
@@ -375,31 +425,35 @@ def wiener(im, mysize=None, noise=None):
 def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """Convolve two 2-dimensional arrays.
 
-    Convolve `in1` and `in2` with output size determined by `mode` and boundary
-    conditions determined by `boundary` and `fillvalue`.
+    Convolve `in1` and `in2` with output size determined by `mode`, and
+    boundary conditions determined by `boundary` and `fillvalue`.
 
     Parameters
     ----------
-    in1, in2 : ndarray
+    in1, in2 : array_like
         Two-dimensional input arrays to be convolved.
-    mode : str, optional
+    mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
-        ``valid`` : the output consists only of those elements that do not
+        ``full``
+           The output is the full discrete linear convolution
+           of the inputs. (Default)
+        ``valid``
+           The output consists only of those elements that do not
            rely on the zero-padding.
-
-        ``same`` : the output is the same size as `in1` centered
+        ``same``
+           The output is the same size as `in1`, centered
            with respect to the 'full' output.
 
-        ``full`` : the output is the full discrete linear cross-correlation
-           of the inputs. (Default)
-
-    boundary : str, optional
+    boundary : str {'fill', 'wrap', 'symm'}, optional
         A flag indicating how to handle boundaries:
 
-          - 'fill' : pad input arrays with fillvalue. (default)
-          - 'wrap' : circular boundary conditions.
-          - 'symm' : symmetrical boundary conditions.
+        ``fill``
+           pad input arrays with fillvalue. (default)
+        ``wrap``
+           circular boundary conditions.
+        ``symm``
+           symmetrical boundary conditions.
 
     fillvalue : scalar, optional
         Value to fill pad input arrays with. Default is 0.
@@ -411,47 +465,55 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         convolution of `in1` with `in2`.
 
     """
+    in1 = asarray(in1)
+    in2 = asarray(in2)
+
     if mode == 'valid':
-        for d1, d2 in zip(np.shape(in1), np.shape(in2)):
-            if not d1 >= d2:
-                raise ValueError(
-                    "in1 should have at least as many items as in2 in " \
-                    "every dimension for valid mode.")
+        _check_valid_mode_shapes(in1.shape, in2.shape)
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
 
-    return sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', np.ComplexWarning)
+        # FIXME: some cast generates a warning here
+        out = sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
+
+    return out
 
 
 def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """Cross-correlate two 2-dimensional arrays.
 
-    Cross correlate `in1` and `in2` with output size determined by `mode` and
+    Cross correlate `in1` and `in2` with output size determined by `mode`, and
     boundary conditions determined by `boundary` and `fillvalue`.
 
     Parameters
     ----------
-    in1, in2 : ndarray
+    in1, in2 : array_like
         Two-dimensional input arrays to be convolved.
-    mode : str, optional
+    mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
-        ``valid`` : the output consists only of those elements that do not
+        ``full``
+           The output is the full discrete linear cross-correlation
+           of the inputs. (Default)
+        ``valid``
+           The output consists only of those elements that do not
            rely on the zero-padding.
-
-        ``same`` : the output is the same size as `in1` centered
+        ``same``
+           The output is the same size as `in1`, centered
            with respect to the 'full' output.
 
-        ``full`` : the output is the full discrete linear cross-correlation
-           of the inputs. (Default)
-
-    boundary : str, optional
+    boundary : str {'fill', 'wrap', 'symm'}, optional
         A flag indicating how to handle boundaries:
 
-          - 'fill' : pad input arrays with fillvalue. (default)
-          - 'wrap' : circular boundary conditions.
-          - 'symm' : symmetrical boundary conditions.
+        ``fill``
+           pad input arrays with fillvalue. (default)
+        ``wrap``
+           circular boundary conditions.
+        ``symm``
+           symmetrical boundary conditions.
 
     fillvalue : scalar, optional
         Value to fill pad input arrays with. Default is 0.
@@ -463,10 +525,21 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         cross-correlation of `in1` with `in2`.
 
     """
+    in1 = asarray(in1)
+    in2 = asarray(in2)
+
+    if mode == 'valid':
+        _check_valid_mode_shapes(in1.shape, in2.shape)
+
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
 
-    return sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', np.ComplexWarning)
+        # FIXME: some cast generates a warning here
+        out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
+
+    return out
 
 
 def medfilt2d(input, kernel_size=3):
@@ -1571,7 +1644,7 @@ from scipy.signal.fir_filter_design import firwin
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1):
-    """Downsample the signal `x` by an integer factor `q`, using an order `n` 
+    """Downsample the signal `x` by an integer factor `q`, using an order `n`
     filter.
 
     By default, an order 8 Chebyshev type I filter is used.  A 30 point FIR
