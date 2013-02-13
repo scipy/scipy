@@ -28,6 +28,34 @@ abs = absolute
 
 
 def findfreqs(num, den, N):
+    """
+    Find an array of frequencies for computing the response of a filter.
+
+    Parameters
+    ----------
+    num, den : array_like, 1-D
+        The polynomial coefficients of the numerator and denominator of the
+        transfer function of the filter or LTI system.  The coefficients are
+        ordered from highest to lowest degree.
+    N : int
+        The length of the array to be computed.
+
+    Returns
+    -------
+    w : (N,) ndarray
+        A 1-D array of frequencies, logarithmically spaced.
+
+    Examples
+    --------
+    Find a set of nine frequencies that span the "interesting part" of the
+    frequency response for the filter with the transfer function
+        H(s) = s / (s^2 + 8s + 25)
+
+    >>> findfreqs([1, 0], [1, 8, 25], N=9)
+    array([  1.00000000e-02,   3.16227766e-02,   1.00000000e-01,
+             3.16227766e-01,   1.00000000e+00,   3.16227766e+00,
+             1.00000000e+01,   3.16227766e+01,   1.00000000e+02])
+    """
     ep = atleast_1d(roots(den)) + 0j
     tz = atleast_1d(roots(num)) + 0j
 
