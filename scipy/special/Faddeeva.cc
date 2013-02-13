@@ -1,3 +1,5 @@
+//  -*- mode:c++; tab-width:2; indent-tabs-mode:nil;  -*-
+
 /* Copyright (c) 2012 Massachusetts Institute of Technology
  * 
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -20,7 +22,9 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
  */
 
-#include "Faddeeva.hh"
+/* (Note that this file can be compiled with either C++, in which
+    case it uses C++ std::complex<double>, or C, in which case it
+    uses C99 double complex.) */
 
 /* Available at: http://ab-initio.mit.edu/Faddeeva
 
@@ -84,104 +88,255 @@
    the test function, compile with -DTEST_FADDEEVA (that is,
    #define TEST_FADDEEVA).
 
+   If HAVE_CONFIG_H is #defined (e.g. by compiling with -DHAVE_CONFIG_H),
+   then we #include "config.h", which is assumed to be a GNU autoconf-style
+   header defining HAVE_* macros to indicate the presence of features. In
+   particular, if HAVE_ISNAN and HAVE_ISINF are #defined, we use those
+   functions in math.h instead of defining our own, and if HAVE_ERF and/or
+   HAVE_ERFC are defined we use those functions from <cmath> for erf and
+   erfc of real arguments, respectively, instead of defining our own.
+
    REVISION HISTORY:
        4 October 2012: Initial public release (SGJ)
        5 October 2012: Revised (SGJ) to fix spelling error,
                        start summation for large x at round(x/a) (> 1)
-		       rather than ceil(x/a) as in the original
-		       paper, which should slightly improve performance
-     		       (and, apparently, slightly improves accuracy)
+                       rather than ceil(x/a) as in the original
+                       paper, which should slightly improve performance
+                       (and, apparently, slightly improves accuracy)
       19 October 2012: Revised (SGJ) to fix bugs for large x, large -y,
                        and 15<x<26. Performance improvements. Prototype
-		       now supplies default value for relerr.
+                       now supplies default value for relerr.
       24 October 2012: Switch to continued-fraction expansion for
                        sufficiently large z, for performance reasons.
-		       Also, avoid spurious overflow for |z| > 1e154.
-		       Set relerr argument to min(relerr,0.1).
+                       Also, avoid spurious overflow for |z| > 1e154.
+                       Set relerr argument to min(relerr,0.1).
       27 October 2012: Enhance accuracy in Re[w(z)] taken by itself,
                        by switching to Alg. 916 in a region near
-		       the real-z axis where continued fractions
-		       have poor relative accuracy in Re[w(z)].  Thanks
-		       to M. Zaghloul for the tip.
+                       the real-z axis where continued fractions
+                       have poor relative accuracy in Re[w(z)].  Thanks
+                       to M. Zaghloul for the tip.
       29 October 2012: Replace SLATEC-derived erfcx routine with
                        completely rewritten code by me, using a very
-		       different algorithm which is much faster.
+                       different algorithm which is much faster.
       30 October 2012: Implemented special-case code for real z
                        (where real part is exp(-x^2) and imag part is
-		        Dawson integral), using algorithm similar to erfx.
-		       Export ImFaddeeva_w function to make Dawson's
-		       integral directly accessible.
+                        Dawson integral), using algorithm similar to erfx.
+                       Export ImFaddeeva_w function to make Dawson's
+                       integral directly accessible.
       3 November 2012: Provide implementations of erf, erfc, erfcx,
                        and Dawson functions in Faddeeva:: namespace,
-		       in addition to Faddeeva::w.  Provide header
-		       file Faddeeva.hh.
+                       in addition to Faddeeva::w.  Provide header
+                       file Faddeeva.hh.
+      4 November 2012: Slightly faster erf for real arguments.
+                       Updated MATLAB and Octave plugins.
+     27 November 2012: Support compilation with either C++ or
+                       plain C (using C99 complex numbers).
+                       For real x, use standard-library erf(x)
+                       and erfc(x) if available (for C99 or C++11).
+                       #include "config.h" if HAVE_CONFIG_H is #defined.
+     15 December 2012: Portability fixes (copysign, Inf/NaN creation),
+                       use CMPLX/__builtin_complex if available in C,
+                       slight accuracy improvements to erf and dawson
+                       functions near the origin.  Use gnulib functions
+                       if GNULIB_NAMESPACE is defined.
+     18 December 2012: Slight tweaks (remove recomputation of x*x in Dawson)
 */
 
+/////////////////////////////////////////////////////////////////////////
+/* If this file is compiled as a part of a larger project,
+   support using an autoconf-style config.h header file
+   (with various "HAVE_*" #defines to indicate features)
+   if HAVE_CONFIG_H is #defined (in GNU autotools style). */
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+/* THIS BLOCK ADDED FOR PYTHON */
 #include <Python.h>
 extern "C" {
 #include <numpy/npy_math.h>
 }
 
-#include <cfloat>
-#include <cmath>
+/////////////////////////////////////////////////////////////////////////
+// macros to allow us to use either C++ or C (with C99 features)
 
+#ifdef __cplusplus
+
+#  include "Faddeeva.hh"
+
+#  include <cfloat>
+#  include <cmath>
+#  include <limits>
 using namespace std;
 
-/////////////////////////////////////////////////////////////////////////
+// use std::numeric_limits, since 1./0. and 0./0. fail with some compilers (MS)
+#  define Inf numeric_limits<double>::infinity()
+#  define NaN numeric_limits<double>::quiet_NaN()
 
+typedef complex<double> cmplx;
+
+// Use C-like complex syntax, since the C syntax is more restrictive
+#  define cexp(z) exp(z)
+#  define creal(z) real(z)
+#  define cimag(z) imag(z)
+#  define cpolar(r,t) polar(r,t)
+
+#  define C(a,b) cmplx(a,b)
+
+#  define FADDEEVA(name) Faddeeva::name
+#  define FADDEEVA_RE(name) Faddeeva::name
+
+// isnan/isinf were introduced in C++11
+#  if (__cplusplus < 201103L) && (!defined(HAVE_ISNAN) || !defined(HAVE_ISINF))
+static inline bool my_isnan(double x) { return x != x; }
+#    define isnan my_isnan
+static inline bool my_isinf(double x) { return 1/x == 0.; }
+#    define isinf my_isinf
+#  elif (__cplusplus >= 201103L)
+// g++ gets confused between the C and C++ isnan/isinf functions
+#    define isnan std::isnan
+#    define isinf std::isinf
+#  endif
+
+// copysign was introduced in C++11 (and is also in POSIX and C99)
+#  if defined(_WIN32) || defined(__WIN32__)
+#    define copysign _copysign // of course MS had to be different
+#  elif defined(GNULIB_NAMESPACE) // we are using using gnulib <cmath>
+#    define copysign GNULIB_NAMESPACE::copysign
+#  elif (__cplusplus < 201103L) && !defined(HAVE_COPYSIGN) && !defined(__linux__) && !(defined(__APPLE__) && defined(__MACH__)) && !defined(_AIX)
+static inline double my_copysign(double x, double y) { return y<0 ? -x : x; }
+#    define copysign my_copysign
+#  endif
+
+// If we are using the gnulib <cmath> (e.g. in the GNU Octave sources),
+// gnulib generates a link warning if we use ::floor instead of gnulib::floor.
+// This warning is completely innocuous because the only difference between
+// gnulib::floor and the system ::floor (and only on ancient OSF systems)
+// has to do with floor(-0), which doesn't occur in the usage below, but
+// the Octave developers prefer that we silence the warning.
+#  ifdef GNULIB_NAMESPACE
+#    define floor GNULIB_NAMESPACE::floor
+#  endif
+
+#else // !__cplusplus, i.e. pure C (requires C99 features)
+
+#  include "Faddeeva.h"
+
+#  define _GNU_SOURCE // enable GNU libc NAN extension if possible
+
+#  include <float.h>
+#  include <math.h>
+
+typedef double complex cmplx;
+
+#  define FADDEEVA(name) Faddeeva_ ## name
+#  define FADDEEVA_RE(name) Faddeeva_ ## name ## _re
+
+/* Constructing complex numbers like 0+i*NaN is problematic in C99
+   without the C11 CMPLX macro, because 0.+I*NAN may give NaN+i*NAN if
+   I is a complex (rather than imaginary) constant.  For some reason,
+   however, it works fine in (pre-4.7) gcc if I define Inf and NaN as
+   1/0 and 0/0 (and only if I compile with optimization -O1 or more),
+   but not if I use the INFINITY or NAN macros. */
+
+/* __builtin_complex was introduced in gcc 4.7, but the C11 CMPLX macro
+   may not be defined unless we are using a recent (2012) version of
+   glibc and compile with -std=c11... note that icc lies about being
+   gcc and probably doesn't have this builtin(?), so exclude icc explicitly */
+#  if !defined(CMPLX) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7)) && !(defined(__ICC) || defined(__INTEL_COMPILER))
+#    define CMPLX(a,b) __builtin_complex((double) (a), (double) (b))
+#  endif
+
+#  ifdef CMPLX // C11
+#    define C(a,b) CMPLX(a,b)
+#    define Inf INFINITY // C99 infinity
+#    ifdef NAN // GNU libc extension
+#      define NaN NAN
+#    else
+#      define NaN (0./0.) // NaN
+#    endif
+#  else
+#    define C(a,b) ((a) + I*(b))
+#    define Inf (1./0.) 
+#    define NaN (0./0.) 
+#  endif
+
+/* THIS BLOCK ADDED FOR PYTHON */
 // use numpy's versions, since std:: versions only available in C++11
-#define my_isinf npy_isinf
-#define my_isnan npy_isnan
-#define my_copysign npy_copysign
+#define isinf npy_isinf
+#define isnan npy_isnan
+#define copysign npy_copysign
 #define Inf NPY_INFINITY
 #define NaN NPY_NAN
+
+static inline cmplx cpolar(double r, double t)
+{
+  if (r == 0.0 && !isnan(t))
+    return 0.0;
+  else
+    return C(r * cos(t), r * sin(t));
+}
+
+#endif // !__cplusplus, i.e. pure C (requires C99 features)
 
 /////////////////////////////////////////////////////////////////////////
 // Auxiliary routines to compute other special functions based on w(z)
 
 // compute erfcx(z) = exp(z^2) erfz(z)
-complex<double> Faddeeva::erfcx(complex<double> z, double relerr)
+cmplx FADDEEVA(erfcx)(cmplx z, double relerr)
 {
-  return Faddeeva::w(complex<double>(-imag(z), real(z)));
+  return FADDEEVA(w)(C(-cimag(z), creal(z)), relerr);
 }
 
 // compute the error function erf(x)
-double Faddeeva::erf(double x)
+double FADDEEVA_RE(erf)(double x)
 {
+#if !defined(__cplusplus)
+  return erf(x); // C99 supplies erf in math.h
+#elif (__cplusplus >= 201103L) || defined(HAVE_ERF)
+  return ::erf(x); // C++11 supplies std::erf in cmath
+#else
   double mx2 = -x*x;
   if (mx2 < -750) // underflow
     return (x >= 0 ? 1.0 : -1.0);
 
   if (x >= 0) {
-    if (x < 5e-3) goto taylor;
-    return 1.0 - exp(mx2) * Faddeeva::erfcx(x);
+    if (x < 8e-2) goto taylor;
+    return 1.0 - exp(mx2) * FADDEEVA_RE(erfcx)(x);
   }
   else { // x < 0
-    if (x > -5e-3) goto taylor;
-    return exp(mx2) * Faddeeva::erfcx(-x) - 1.0;
+    if (x > -8e-2) goto taylor;
+    return exp(mx2) * FADDEEVA_RE(erfcx)(-x) - 1.0;
   }
 
   // Use Taylor series for small |x|, to avoid cancellation inaccuracy
-  //     erf(x) = 2/sqrt(pi) * x * (1 - x^2/3 + x^4/10 - ...)
+  //   erf(x) = 2/sqrt(pi) * x * (1 - x^2/3 + x^4/10 - x^6/42 + x^8/216 + ...)
  taylor:
   return x * (1.1283791670955125739
-	      + mx2 * (0.37612638903183752464
-		       + mx2 * 0.11283791670955125739));
+              + mx2 * (0.37612638903183752464
+                       + mx2 * (0.11283791670955125739
+                                + mx2 * (0.026866170645131251760
+                                         + mx2 * 0.0052239776254421878422))));
+#endif
 }
 
 // compute the error function erf(z)
-complex<double> Faddeeva::erf(complex<double> z, double relerr)
+cmplx FADDEEVA(erf)(cmplx z, double relerr)
 {
-  double x = real(z), y = imag(z);
+  double x = creal(z), y = cimag(z);
 
+  if (y == 0)
+    return C(FADDEEVA_RE(erf)(x),
+             y); // preserve sign of 0
   if (x == 0) // handle separately for speed & handling of y = Inf or NaN
-    return complex<double>(x, // preserve sign of 0
-			   /* handle y -> Inf limit manually, since
-			      exp(y^2) -> Inf but Im[w(y)] -> 0, so
-			      IEEE will give us a NaN when it should be Inf */
-			   y*y > 720 ? (y > 0 ? Inf : -Inf)
-			   : exp(y*y) * Faddeeva::w_im(y));
-
+    return C(x, // preserve sign of 0
+             /* handle y -> Inf limit manually, since
+                exp(y^2) -> Inf but Im[w(y)] -> 0, so
+                IEEE will give us a NaN when it should be Inf */
+             y*y > 720 ? (y > 0 ? Inf : -Inf)
+             : exp(y*y) * FADDEEVA(w_im)(y));
+  
   double mRe_z2 = (y - x) * (x + y); // Re(-z^2), being careful of overflow
   double mIm_z2 = -2*x*y; // Im(-z^2)
   if (mRe_z2 < -750) // underflow
@@ -191,49 +346,51 @@ complex<double> Faddeeva::erf(complex<double> z, double relerr)
      using the mirror symmetries of w, to avoid overflow/underflow
      problems from multiplying exponentially large and small quantities. */
   if (x >= 0) {
-    if (x < 5e-3) {
-      if (fabs(y) < 5e-3)
-	goto taylor;
-      else if (fabs(mIm_z2) < 5e-3)
-	goto taylor_erfi;
+    if (x < 8e-2) {
+      if (fabs(y) < 1e-2)
+        goto taylor;
+      else if (fabs(mIm_z2) < 5e-3 && x < 5e-3)
+        goto taylor_erfi;
     }
     /* don't use complex exp function, since that will produce spurious NaN
        values when multiplying w in an overflow situation. */
     return 1.0 - exp(mRe_z2) *
-      (complex<double>(cos(mIm_z2), sin(mIm_z2))
-       * Faddeeva::w(complex<double>(-y,x)));
+      (C(cos(mIm_z2), sin(mIm_z2))
+       * FADDEEVA(w)(C(-y,x), relerr));
   }
   else { // x < 0
-    if (x > -5e-3) { // duplicate from above to avoid fabs(x) call
-      if (fabs(y) < 5e-3)
-	goto taylor;
-      else if (fabs(mIm_z2) < 5e-3)
-	goto taylor_erfi;
+    if (x > -8e-2) { // duplicate from above to avoid fabs(x) call
+      if (fabs(y) < 1e-2)
+        goto taylor;
+      else if (fabs(mIm_z2) < 5e-3 && x > -5e-3)
+        goto taylor_erfi;
     }
-    else if (my_isnan(x))
-      return complex<double>(NaN, y == 0 ? 0 : NaN);
+    else if (isnan(x))
+      return C(NaN, y == 0 ? 0 : NaN);
     /* don't use complex exp function, since that will produce spurious NaN
        values when multiplying w in an overflow situation. */
     return exp(mRe_z2) *
-      (complex<double>(cos(mIm_z2), sin(mIm_z2))
-       * Faddeeva::w(complex<double>(y,-x))) - 1.0;
+      (C(cos(mIm_z2), sin(mIm_z2))
+       * FADDEEVA(w)(C(y,-x), relerr)) - 1.0;
   }
 
   // Use Taylor series for small |z|, to avoid cancellation inaccuracy
-  //     erf(z) = 2/sqrt(pi) * z * (1 - z^2/3 + z^4/10 - ...)
+  //   erf(z) = 2/sqrt(pi) * z * (1 - z^2/3 + z^4/10 - z^6/42 + z^8/216 + ...)
  taylor:
   {
-    complex<double> mz2(mRe_z2, mIm_z2); // -z^2
+    cmplx mz2 = C(mRe_z2, mIm_z2); // -z^2
     return z * (1.1283791670955125739
-		+ mz2 * (0.37612638903183752464
-			 + mz2 * 0.11283791670955125739));
+                + mz2 * (0.37612638903183752464
+                         + mz2 * (0.11283791670955125739
+                                  + mz2 * (0.026866170645131251760
+                                          + mz2 * 0.0052239776254421878422))));
   }
 
   /* for small |x| and small |xy|, 
      use Taylor series to avoid cancellation inaccuracy:
        erf(x+iy) = erf(iy)
           + 2*exp(y^2)/sqrt(pi) *
-	    [ x * (1 - x^2 * (1+2y^2)/3 + x^4 * (3+12y^2+4y^4)/30 + ... 
+            [ x * (1 - x^2 * (1+2y^2)/3 + x^4 * (3+12y^2+4y^4)/30 + ... 
               - i * x^2 * y * (1 - x^2 * (3+2y^2)/6 + ...) ]
      where:
         erf(iy) = exp(y^2) * Im[w(y)]
@@ -242,60 +399,68 @@ complex<double> Faddeeva::erf(complex<double> z, double relerr)
   {
     double x2 = x*x, y2 = y*y;
     double expy2 = exp(y2);
-    return complex<double>
+    return C
       (expy2 * x * (1.1283791670955125739
-		    - x2 * (0.37612638903183752464
-			    + 0.75225277806367504925*y2)
-		    + x2*x2 * (0.11283791670955125739
-			       + y2 * (0.45135166683820502956
-				       + 0.15045055561273500986*y2))),
-       expy2 * (Faddeeva::w_im(y)
-		- x2*y * (1.1283791670955125739 
-			  - x2 * (0.56418958354775628695 
-				  + 0.37612638903183752464*y2))));
+                    - x2 * (0.37612638903183752464
+                            + 0.75225277806367504925*y2)
+                    + x2*x2 * (0.11283791670955125739
+                               + y2 * (0.45135166683820502956
+                                       + 0.15045055561273500986*y2))),
+       expy2 * (FADDEEVA(w_im)(y)
+                - x2*y * (1.1283791670955125739 
+                          - x2 * (0.56418958354775628695 
+                                  + 0.37612638903183752464*y2))));
   }
 }
 
 // erfi(z) = -i erf(iz)
-complex<double> Faddeeva::erfi(complex<double> z, double relerr)
+cmplx FADDEEVA(erfi)(cmplx z, double relerr)
 {
-  complex<double> e = Faddeeva::erf(complex<double>(-imag(z),real(z)), relerr);
-  return complex<double>(imag(e), -real(e));
+  cmplx e = FADDEEVA(erf)(C(-cimag(z),creal(z)), relerr);
+  return C(cimag(e), -creal(e));
 }
 
 // erfi(x) = -i erf(ix)
-double Faddeeva::erfi(double x)
+double FADDEEVA_RE(erfi)(double x)
 {
   return x*x > 720 ? (x > 0 ? Inf : -Inf)
-    : exp(x*x) * Faddeeva::w_im(x);
+    : exp(x*x) * FADDEEVA(w_im)(x);
 }
 
 // erfc(x) = 1 - erf(x)
-double Faddeeva::erfc(double x)
+double FADDEEVA_RE(erfc)(double x)
 {
+#if !defined(__cplusplus)
+  return erfc(x); // C99 supplies erfc in math.h
+#elif (__cplusplus >= 201103L) || defined(HAVE_ERFC)
+  return ::erfc(x); // C++11 supplies std::erfc in cmath
+#else
   if (x*x > 750) // underflow
     return (x >= 0 ? 0.0 : 2.0);
-  return x >= 0 ? exp(-x*x) * Faddeeva::erfcx(x) 
-    : 2. - exp(-x*x) * Faddeeva::erfcx(-x);
+  return x >= 0 ? exp(-x*x) * FADDEEVA_RE(erfcx)(x) 
+    : 2. - exp(-x*x) * FADDEEVA_RE(erfcx)(-x);
+#endif
 }
 
 // erfc(z) = 1 - erf(z)
-complex<double> Faddeeva::erfc(complex<double> z, double relerr)
+cmplx FADDEEVA(erfc)(cmplx z, double relerr)
 {
-  double x = real(z), y = imag(z);
+  double x = creal(z), y = cimag(z);
 
   if (x == 0.)
-    return complex<double>(1,
-			   /* handle y -> Inf limit manually, since
-			      exp(y^2) -> Inf but Im[w(y)] -> 0, so
-			      IEEE will give us a NaN when it should be Inf */
-			   y*y > 720 ? (y > 0 ? -Inf : Inf)
-			   : -exp(y*y) * Faddeeva::w_im(y));
+    return C(1,
+             /* handle y -> Inf limit manually, since
+                exp(y^2) -> Inf but Im[w(y)] -> 0, so
+                IEEE will give us a NaN when it should be Inf */
+             y*y > 720 ? (y > 0 ? -Inf : Inf)
+             : -exp(y*y) * FADDEEVA(w_im)(y));
   if (y == 0.) {
     if (x*x > 750) // underflow
-      return (x >= 0 ? 0.0 : 2.0);
-    return x >= 0 ? exp(-x*x) * Faddeeva::erfcx(x) 
-      : 2. - exp(-x*x) * Faddeeva::erfcx(-x);
+      return C(x >= 0 ? 0.0 : 2.0,
+               -y); // preserve sign of 0
+    return C(x >= 0 ? exp(-x*x) * FADDEEVA_RE(erfcx)(x) 
+             : 2. - exp(-x*x) * FADDEEVA_RE(erfcx)(-x),
+             -y); // preserve sign of zero
   }
 
   double mRe_z2 = (y - x) * (x + y); // Re(-z^2), being careful of overflow
@@ -304,47 +469,47 @@ complex<double> Faddeeva::erfc(complex<double> z, double relerr)
     return (x >= 0 ? 0.0 : 2.0);
 
   if (x >= 0)
-    return exp(complex<double>(mRe_z2, mIm_z2))
-      * Faddeeva::w(complex<double>(-y,x), relerr);
+    return cexp(C(mRe_z2, mIm_z2))
+      * FADDEEVA(w)(C(-y,x), relerr);
   else
-    return 2.0 - exp(complex<double>(mRe_z2, mIm_z2))
-      * Faddeeva::w(complex<double>(y,-x), relerr);
+    return 2.0 - cexp(C(mRe_z2, mIm_z2))
+      * FADDEEVA(w)(C(y,-x), relerr);
 }
 
 // compute Dawson(x) = sqrt(pi)/2  *  exp(-x^2) * erfi(x)
-double Faddeeva::Dawson(double x)
+double FADDEEVA_RE(Dawson)(double x)
 {
   const double spi2 = 0.8862269254527580136490837416705725913990; // sqrt(pi)/2
-  return spi2 * Faddeeva::w_im(x);
+  return spi2 * FADDEEVA(w_im)(x);
 }
 
 // compute Dawson(z) = sqrt(pi)/2  *  exp(-z^2) * erfi(z)
-complex<double> Faddeeva::Dawson(complex<double> z, double relerr)
+cmplx FADDEEVA(Dawson)(cmplx z, double relerr)
 {
   const double spi2 = 0.8862269254527580136490837416705725913990; // sqrt(pi)/2
-  double x = real(z), y = imag(z);
+  double x = creal(z), y = cimag(z);
 
   // handle axes separately for speed & proper handling of x or y = Inf or NaN
   if (y == 0)
-    return complex<double>(spi2 * Faddeeva::w_im(x),
-			   -y); // preserve sign of 0
+    return C(spi2 * FADDEEVA(w_im)(x),
+             -y); // preserve sign of 0
   if (x == 0) {
     double y2 = y*y;
     if (y2 < 2.5e-5) { // Taylor expansion
-      return complex<double>(x, // preserve sign of 0
-	 y * (1.
-	      + y2 * (0.6666666666666666666666666666666666666667
-		      + y2 * 0.2666666666666666666666666666666666666667)));
+      return C(x, // preserve sign of 0
+               y * (1.
+                    + y2 * (0.6666666666666666666666666666666666666667
+                            + y2 * 0.26666666666666666666666666666666666667)));
     }
-    return complex<double>(x, // preserve sign of 0
-			   spi2 * (y >= 0 
-				   ? exp(y2) - Faddeeva::erfcx(y)
-				   : Faddeeva::erfcx(-y) - exp(y2)));
+    return C(x, // preserve sign of 0
+             spi2 * (y >= 0 
+                     ? exp(y2) - FADDEEVA_RE(erfcx)(y)
+                     : FADDEEVA_RE(erfcx)(-y) - exp(y2)));
   }
 
   double mRe_z2 = (y - x) * (x + y); // Re(-z^2), being careful of overflow
   double mIm_z2 = -2*x*y; // Im(-z^2)
-  complex<double> mz2(mRe_z2, mIm_z2); // -z^2
+  cmplx mz2 = C(mRe_z2, mIm_z2); // -z^2
 
   /* Handle positive and negative x via different formulas,
      using the mirror symmetries of w, to avoid overflow/underflow
@@ -352,32 +517,32 @@ complex<double> Faddeeva::Dawson(complex<double> z, double relerr)
   if (y >= 0) {
     if (y < 5e-3) {
       if (fabs(x) < 5e-3)
-	goto taylor;
+        goto taylor;
       else if (fabs(mIm_z2) < 5e-3)
-	goto taylor_realaxis;
+        goto taylor_realaxis;
     }
-    complex<double> res = exp(mz2) - Faddeeva::w(z);
-    return spi2 * complex<double>(-imag(res), real(res));
+    cmplx res = cexp(mz2) - FADDEEVA(w)(z, relerr);
+    return spi2 * C(-cimag(res), creal(res));
   }
   else { // y < 0
     if (y > -5e-3) { // duplicate from above to avoid fabs(x) call
       if (fabs(x) < 5e-3)
-	goto taylor;
+        goto taylor;
       else if (fabs(mIm_z2) < 5e-3)
-	goto taylor_realaxis;
+        goto taylor_realaxis;
     }
-    else if (my_isnan(y))
-      return complex<double>(x == 0 ? 0 : NaN, NaN);
-    complex<double> res = Faddeeva::w(-z) - exp(mz2);
-    return spi2 * complex<double>(-imag(res), real(res));
+    else if (isnan(y))
+      return C(x == 0 ? 0 : NaN, NaN);
+    cmplx res = FADDEEVA(w)(-z, relerr) - cexp(mz2);
+    return spi2 * C(-cimag(res), creal(res));
   }
 
   // Use Taylor series for small |z|, to avoid cancellation inaccuracy
   //     dawson(z) = z - 2/3 z^3 + 4/15 z^5 + ...
  taylor:
   return z * (1.
-	      + mz2 * (0.6666666666666666666666666666666666666667
-		       + mz2 * 0.2666666666666666666666666666666666666667));
+              + mz2 * (0.6666666666666666666666666666666666666667
+                       + mz2 * 0.2666666666666666666666666666666666666667));
 
   /* for small |y| and small |xy|, 
      use Taylor series to avoid cancellation inaccuracy:
@@ -418,34 +583,34 @@ complex<double> Faddeeva::Dawson(complex<double> z, double relerr)
     if (x2 > 1600) { // |x| > 40
       double y2 = y*y;
       if (x2 > 25e14) {// |x| > 5e7
-	double xy2 = (x*y)*(x*y);
-	return complex<double>((0.5 + y2 * (0.5 + 0.25*y2
-					    - 0.16666666666666666667*xy2)) / x,
-			       y * (-1 + y2 * (-0.66666666666666666667
-					       + 0.13333333333333333333*xy2
-					       - 0.26666666666666666667*y2))
-			       / (2*x2 - 1));
+        double xy2 = (x*y)*(x*y);
+        return C((0.5 + y2 * (0.5 + 0.25*y2
+                              - 0.16666666666666666667*xy2)) / x,
+                 y * (-1 + y2 * (-0.66666666666666666667
+                                 + 0.13333333333333333333*xy2
+                                 - 0.26666666666666666667*y2))
+                 / (2*x2 - 1));
       }
       return (1. / (-15 + x2*(90 + x2*(-60 + 8*x2)))) *
-	complex<double>(x * (33 + x2 * (-28 + 4*x2)
-			     + y2 * (18 - 4*x2 + 4*y2)),
-			y * (-15 + x2 * (24 - 4*x2)
-			     + y2 * (4*x2 - 10 - 4*y2)));
+        C(x * (33 + x2 * (-28 + 4*x2)
+               + y2 * (18 - 4*x2 + 4*y2)),
+          y * (-15 + x2 * (24 - 4*x2)
+               + y2 * (4*x2 - 10 - 4*y2)));
     }
     else {
-      double D = spi2 * Faddeeva::w_im(x);
-      double x2 = x*x, y2 = y*y;
-      return complex<double>
-	(D + y2 * (D + x - 2*D*x2)
-	 + y2*y2 * (D * (0.5 - x2 * (2 - 0.66666666666666666667*x2))
-		    + x * (0.83333333333333333333
-			   - 0.33333333333333333333 * x2)),
-	 y * (1 - 2*D*x
-	      + y2 * 0.66666666666666666667 * (1 - x2 - D*x * (3 - 2*x2))
-	      + y2*y2 * (0.26666666666666666667 -
-			 x2 * (0.6 - 0.13333333333333333333 * x2)
-			 - D*x * (1 - x2 * (1.3333333333333333333
-					    - 0.26666666666666666667 * x2)))));
+      double D = spi2 * FADDEEVA(w_im)(x);
+      double y2 = y*y;
+      return C
+        (D + y2 * (D + x - 2*D*x2)
+         + y2*y2 * (D * (0.5 - x2 * (2 - 0.66666666666666666667*x2))
+                    + x * (0.83333333333333333333
+                           - 0.33333333333333333333 * x2)),
+         y * (1 - 2*D*x
+              + y2 * 0.66666666666666666667 * (1 - x2 - D*x * (3 - 2*x2))
+              + y2*y2 * (0.26666666666666666667 -
+                         x2 * (0.6 - 0.13333333333333333333 * x2)
+                         - D*x * (1 - x2 * (1.3333333333333333333
+                                            - 0.26666666666666666667 * x2)))));
     }
   }
 }
@@ -461,13 +626,13 @@ static inline double sinc(double x, double sinx) {
 // sinh(x) via Taylor series, accurate to machine precision for |x| < 1e-2
 static inline double sinh_taylor(double x) {
   return x * (1 + (x*x) * (0.1666666666666666666667
-			   + 0.00833333333333333333333 * (x*x)));
+                           + 0.00833333333333333333333 * (x*x)));
 }
 
 static inline double sqr(double x) { return x*x; }
 
 // precomputed table of expa2n2[n-1] = exp(-a2*n*n)
-// for double-precision a2 = 0.26865... in Faddeeva::w, below.
+// for double-precision a2 = 0.26865... in FADDEEVA(w), below.
 static const double expa2n2[] = {
   7.64405281671221563e-01,
   3.41424527166548425e-01,
@@ -525,14 +690,14 @@ static const double expa2n2[] = {
 
 /////////////////////////////////////////////////////////////////////////
 
-complex<double> Faddeeva::w(complex<double> z, double relerr)
+cmplx FADDEEVA(w)(cmplx z, double relerr)
 {
-  if (real(z) == 0.0)
-    return complex<double>(Faddeeva::erfcx(imag(z)), 
-			   real(z)); // give correct sign of 0 in imag(w)
-  else if (imag(z) == 0)
-    return complex<double>(exp(-sqr(real(z))),
-			   Faddeeva::w_im(real(z)));
+  if (creal(z) == 0.0)
+    return C(FADDEEVA_RE(erfcx)(cimag(z)), 
+             creal(z)); // give correct sign of 0 in cimag(w)
+  else if (cimag(z) == 0)
+    return C(exp(-sqr(creal(z))),
+             FADDEEVA(w_im)(creal(z)));
 
   double a, a2, c;
   if (relerr <= DBL_EPSILON) {
@@ -548,10 +713,10 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
     c = (2/pi)*a;
     a2 = a*a;
   }
-  const double x = fabs(real(z));
-  const double y = imag(z), ya = fabs(y);
+  const double x = fabs(creal(z));
+  const double y = cimag(z), ya = fabs(y);
 
-  complex<double> ret(0.,0.); // return value
+  cmplx ret = 0.; // return value
 
   double sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0, sum5 = 0;
 
@@ -559,11 +724,11 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
 
 #if USE_CONTINUED_FRACTION
   if (ya > 7 || (x > 6  // continued fraction is faster
-		 /* As pointed out by M. Zaghloul, the continued
-		    fraction seems to give a large relative error in
-		    Re w(z) for |x| ~ 6 and small |y|, so use
-		    algorithm 816 in this region: */
-		 && (ya > 0.1 || (x > 8 && ya > 1e-10) || x > 28))) {
+                 /* As pointed out by M. Zaghloul, the continued
+                    fraction seems to give a large relative error in
+                    Re w(z) for |x| ~ 6 and small |y|, so use
+                    algorithm 816 in this region: */
+                 && (ya > 0.1 || (x > 8 && ya > 1e-10) || x > 28))) {
     
     /* Poppe & Wijers suggest using a number of terms
            nu = 3 + 1442 / (26*rho + 77)
@@ -576,28 +741,28 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
        that the estimated nu be >= minimum nu to attain machine precision.
        I also separate the regions where nu == 2 and nu == 1. */
     const double ispi = 0.56418958354775628694807945156; // 1 / sqrt(pi)
-    double xs = y < 0 ? -real(z) : real(z); // compute for -z if y < 0
+    double xs = y < 0 ? -creal(z) : creal(z); // compute for -z if y < 0
     if (x + ya > 4000) { // nu <= 2
       if (x + ya > 1e7) { // nu == 1, w(z) = i/sqrt(pi) / z
-	// scale to avoid overflow
-	if (x > ya) {
-	  double yax = ya / xs; 
-	  double denom = ispi / (xs + yax*ya);
-	  ret = complex<double>(denom*yax, denom);
-	}
-	else if (my_isinf(ya))
-	  return ((my_isnan(x) || y < 0) 
-		  ? complex<double>(NaN,NaN) : complex<double>(0,0));
-	else {
-	  double xya = xs / ya;
-	  double denom = ispi / (xya*xs + ya);
-	  ret = complex<double>(denom, denom*xya);
-	}
+        // scale to avoid overflow
+        if (x > ya) {
+          double yax = ya / xs; 
+          double denom = ispi / (xs + yax*ya);
+          ret = C(denom*yax, denom);
+        }
+        else if (isinf(ya))
+          return ((isnan(x) || y < 0) 
+                  ? C(NaN,NaN) : C(0,0));
+        else {
+          double xya = xs / ya;
+          double denom = ispi / (xya*xs + ya);
+          ret = C(denom, denom*xya);
+        }
       }
       else { // nu == 2, w(z) = i/sqrt(pi) * z / (z*z - 0.5)
-	double dr = xs*xs - ya*ya - 0.5, di = 2*xs*ya;
-	double denom = ispi / (dr*dr + di*di);
-	ret = complex<double>(denom * (xs*di-ya*dr), denom * (xs*dr+ya*di));
+        double dr = xs*xs - ya*ya - 0.5, di = 2*xs*ya;
+        double denom = ispi / (dr*dr + di*di);
+        ret = C(denom * (xs*di-ya*dr), denom * (xs*dr+ya*di));
       }
     }
     else { // compute nu(z) estimate and do general continued fraction
@@ -605,21 +770,21 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
       double nu = floor(c0 + c1 / (c2*x + c3*ya + c4));
       double wr = xs, wi = ya;
       for (nu = 0.5 * (nu - 1); nu > 0.4; nu -= 0.5) {
-	// w <- z - nu/w:
-	double denom = nu / (wr*wr + wi*wi);
-	wr = xs - wr * denom;
-	wi = ya + wi * denom;
+        // w <- z - nu/w:
+        double denom = nu / (wr*wr + wi*wi);
+        wr = xs - wr * denom;
+        wi = ya + wi * denom;
       }
       { // w(z) = i/sqrt(pi) / w:
-	double denom = ispi / (wr*wr + wi*wi);
-	ret = complex<double>(denom*wi, denom*wr);
+        double denom = ispi / (wr*wr + wi*wi);
+        ret = C(denom*wi, denom*wr);
       }
     }
     if (y < 0) {
       // use w(z) = 2.0*exp(-z*z) - w(-z), 
       // but be careful of overflow in exp(-z*z) 
       //                                = exp(-(xs*xs-ya*ya) -2*i*xs*ya) 
-      return 2.0*exp(complex<double>((ya-xs)*(xs+ya), 2*xs*y)) - ret;
+      return 2.0*cexp(C((ya-xs)*(xs+ya), 2*xs*y)) - ret;
     }
     else
       return ret;
@@ -627,23 +792,23 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
 #else // !USE_CONTINUED_FRACTION
   if (x + ya > 1e7) { // w(z) = i/sqrt(pi) / z, to machine precision
     const double ispi = 0.56418958354775628694807945156; // 1 / sqrt(pi)
-    double xs = y < 0 ? -real(z) : real(z); // compute for -z if y < 0
+    double xs = y < 0 ? -creal(z) : creal(z); // compute for -z if y < 0
     // scale to avoid overflow
     if (x > ya) {
       double yax = ya / xs; 
       double denom = ispi / (xs + yax*ya);
-      ret = complex<double>(denom*yax, denom);
+      ret = C(denom*yax, denom);
     }
     else {
       double xya = xs / ya;
       double denom = ispi / (xya*xs + ya);
-      ret = complex<double>(denom, denom*xya);
+      ret = C(denom, denom*xya);
     }
     if (y < 0) {
       // use w(z) = 2.0*exp(-z*z) - w(-z), 
       // but be careful of overflow in exp(-z*z) 
       //                                = exp(-(xs*xs-ya*ya) -2*i*xs*ya) 
-      return 2.0*exp(complex<double>((ya-xs)*(xs+ya), 2*xs*y)) - ret;
+      return 2.0*cexp(C((ya-xs)*(xs+ya), 2*xs*y)) - ret;
     }
     else
       return ret;
@@ -666,8 +831,8 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
     double prod2ax = 1, prodm2ax = 1;
     double expx2;
 
-    if (my_isnan(y))
-      return complex<double>(y,y);
+    if (isnan(y))
+      return C(y,y);
     
     /* Somewhat ugly copy-and-paste duplication here, but I see significant
        speedups from using the special-case code with the precomputed
@@ -675,116 +840,116 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
 
     if (relerr == DBL_EPSILON) { // use precomputed exp(-a2*(n*n)) table
       if (x < 5e-4) { // compute sum4 and sum5 together as sum5-sum4
-	const double x2 = x*x;
-	expx2 = 1 - x2 * (1 - 0.5*x2); // exp(-x*x) via Taylor
+        const double x2 = x*x;
+        expx2 = 1 - x2 * (1 - 0.5*x2); // exp(-x*x) via Taylor
         // compute exp(2*a*x) and exp(-2*a*x) via Taylor, to double precision
-	const double ax2 = 1.036642960860171859744*x; // 2*a*x
-	const double exp2ax =
-	  1 + ax2 * (1 + ax2 * (0.5 + 0.166666666666666666667*ax2));
-	const double expm2ax =
-	  1 - ax2 * (1 - ax2 * (0.5 - 0.166666666666666666667*ax2));
-	for (int n = 1; 1; ++n) {
-	  const double coef = expa2n2[n-1] * expx2 / (a2*(n*n) + y*y);
-	  prod2ax *= exp2ax;
-	  prodm2ax *= expm2ax;
-	  sum1 += coef;
-	  sum2 += coef * prodm2ax;
-	  sum3 += coef * prod2ax;
-	  
-	  // really = sum5 - sum4
-	  sum5 += coef * (2*a) * n * sinh_taylor((2*a)*n*x);
-	  
-	  // test convergence via sum3
-	  if (coef * prod2ax < relerr * sum3) break;
-	}
+        const double ax2 = 1.036642960860171859744*x; // 2*a*x
+        const double exp2ax =
+          1 + ax2 * (1 + ax2 * (0.5 + 0.166666666666666666667*ax2));
+        const double expm2ax =
+          1 - ax2 * (1 - ax2 * (0.5 - 0.166666666666666666667*ax2));
+        for (int n = 1; 1; ++n) {
+          const double coef = expa2n2[n-1] * expx2 / (a2*(n*n) + y*y);
+          prod2ax *= exp2ax;
+          prodm2ax *= expm2ax;
+          sum1 += coef;
+          sum2 += coef * prodm2ax;
+          sum3 += coef * prod2ax;
+          
+          // really = sum5 - sum4
+          sum5 += coef * (2*a) * n * sinh_taylor((2*a)*n*x);
+          
+          // test convergence via sum3
+          if (coef * prod2ax < relerr * sum3) break;
+        }
       }
       else { // x > 5e-4, compute sum4 and sum5 separately
-	expx2 = exp(-x*x);
-	const double exp2ax = exp((2*a)*x), expm2ax = 1 / exp2ax;
-	for (int n = 1; 1; ++n) {
-	  const double coef = expa2n2[n-1] * expx2 / (a2*(n*n) + y*y);
-	  prod2ax *= exp2ax;
-	  prodm2ax *= expm2ax;
-	  sum1 += coef;
-	  sum2 += coef * prodm2ax;
-	  sum4 += (coef * prodm2ax) * (a*n);
-	  sum3 += coef * prod2ax;
-	  sum5 += (coef * prod2ax) * (a*n);
-	  // test convergence via sum5, since this sum has the slowest decay
-	  if ((coef * prod2ax) * (a*n) < relerr * sum5) break;
-	}
+        expx2 = exp(-x*x);
+        const double exp2ax = exp((2*a)*x), expm2ax = 1 / exp2ax;
+        for (int n = 1; 1; ++n) {
+          const double coef = expa2n2[n-1] * expx2 / (a2*(n*n) + y*y);
+          prod2ax *= exp2ax;
+          prodm2ax *= expm2ax;
+          sum1 += coef;
+          sum2 += coef * prodm2ax;
+          sum4 += (coef * prodm2ax) * (a*n);
+          sum3 += coef * prod2ax;
+          sum5 += (coef * prod2ax) * (a*n);
+          // test convergence via sum5, since this sum has the slowest decay
+          if ((coef * prod2ax) * (a*n) < relerr * sum5) break;
+        }
       }
     }
     else { // relerr != DBL_EPSILON, compute exp(-a2*(n*n)) on the fly
       const double exp2ax = exp((2*a)*x), expm2ax = 1 / exp2ax;
       if (x < 5e-4) { // compute sum4 and sum5 together as sum5-sum4
-	const double x2 = x*x;
-	expx2 = 1 - x2 * (1 - 0.5*x2); // exp(-x*x) via Taylor
-	for (int n = 1; 1; ++n) {
-	  const double coef = exp(-a2*(n*n)) * expx2 / (a2*(n*n) + y*y);
-	  prod2ax *= exp2ax;
-	  prodm2ax *= expm2ax;
-	  sum1 += coef;
-	  sum2 += coef * prodm2ax;
-	  sum3 += coef * prod2ax;
-	  
-	  // really = sum5 - sum4
-	  sum5 += coef * (2*a) * n * sinh_taylor((2*a)*n*x);
-	  
-	  // test convergence via sum3
-	  if (coef * prod2ax < relerr * sum3) break;
-	}
+        const double x2 = x*x;
+        expx2 = 1 - x2 * (1 - 0.5*x2); // exp(-x*x) via Taylor
+        for (int n = 1; 1; ++n) {
+          const double coef = exp(-a2*(n*n)) * expx2 / (a2*(n*n) + y*y);
+          prod2ax *= exp2ax;
+          prodm2ax *= expm2ax;
+          sum1 += coef;
+          sum2 += coef * prodm2ax;
+          sum3 += coef * prod2ax;
+          
+          // really = sum5 - sum4
+          sum5 += coef * (2*a) * n * sinh_taylor((2*a)*n*x);
+          
+          // test convergence via sum3
+          if (coef * prod2ax < relerr * sum3) break;
+        }
       }
       else { // x > 5e-4, compute sum4 and sum5 separately
-	expx2 = exp(-x*x);
-	for (int n = 1; 1; ++n) {
-	  const double coef = exp(-a2*(n*n)) * expx2 / (a2*(n*n) + y*y);
-	  prod2ax *= exp2ax;
-	  prodm2ax *= expm2ax;
-	  sum1 += coef;
-	  sum2 += coef * prodm2ax;
-	  sum4 += (coef * prodm2ax) * (a*n);
-	  sum3 += coef * prod2ax;
-	  sum5 += (coef * prod2ax) * (a*n);
-	  // test convergence via sum5, since this sum has the slowest decay
-	  if ((coef * prod2ax) * (a*n) < relerr * sum5) break;
-	}
+        expx2 = exp(-x*x);
+        for (int n = 1; 1; ++n) {
+          const double coef = exp(-a2*(n*n)) * expx2 / (a2*(n*n) + y*y);
+          prod2ax *= exp2ax;
+          prodm2ax *= expm2ax;
+          sum1 += coef;
+          sum2 += coef * prodm2ax;
+          sum4 += (coef * prodm2ax) * (a*n);
+          sum3 += coef * prod2ax;
+          sum5 += (coef * prod2ax) * (a*n);
+          // test convergence via sum5, since this sum has the slowest decay
+          if ((coef * prod2ax) * (a*n) < relerr * sum5) break;
+        }
       }
     }
     const double expx2erfcxy = // avoid spurious overflow for large negative y
       y > -6 // for y < -6, erfcx(y) = 2*exp(y*y) to double precision
-      ? expx2*Faddeeva::erfcx(y) : 2*exp(y*y-x*x);
+      ? expx2*FADDEEVA_RE(erfcx)(y) : 2*exp(y*y-x*x);
     if (y > 5) { // imaginary terms cancel
       const double sinxy = sin(x*y);
       ret = (expx2erfcxy - c*y*sum1) * cos(2*x*y)
-	+ (c*x*expx2) * sinxy * sinc(x*y, sinxy);
+        + (c*x*expx2) * sinxy * sinc(x*y, sinxy);
     }
     else {
-      double xs = real(z);
+      double xs = creal(z);
       const double sinxy = sin(xs*y);
       const double sin2xy = sin(2*xs*y), cos2xy = cos(2*xs*y);
       const double coef1 = expx2erfcxy - c*y*sum1;
       const double coef2 = c*xs*expx2;
-      ret = complex<double>(coef1 * cos2xy + coef2 * sinxy * sinc(xs*y, sinxy),
-			    coef2 * sinc(2*xs*y, sin2xy) - coef1 * sin2xy);
+      ret = C(coef1 * cos2xy + coef2 * sinxy * sinc(xs*y, sinxy),
+              coef2 * sinc(2*xs*y, sin2xy) - coef1 * sin2xy);
     }
   }
   else { // x large: only sum3 & sum5 contribute (see above note)    
-    if (my_isnan(x))
-      return complex<double>(x,x);
-    if (my_isnan(y))
-      return complex<double>(y,y);
+    if (isnan(x))
+      return C(x,x);
+    if (isnan(y))
+      return C(y,y);
 
 #if USE_CONTINUED_FRACTION
     ret = exp(-x*x); // |y| < 1e-10, so we only need exp(-x*x) term
 #else
     if (y < 0) {
       /* erfcx(y) ~ 2*exp(y*y) + (< 1) if y < 0, so
-	 erfcx(y)*exp(-x*x) ~ 2*exp(y*y-x*x) term may not be negligible
-	 if y*y - x*x > -36 or so.  So, compute this term just in case.
-	 We also need the -exp(-x*x) term to compute Re[w] accurately
-	 in the case where y is very small. */
-      ret = polar(2*exp(y*y-x*x) - exp(-x*x), -2*real(z)*y);
+         erfcx(y)*exp(-x*x) ~ 2*exp(y*y-x*x) term may not be negligible
+         if y*y - x*x > -36 or so.  So, compute this term just in case.
+         We also need the -exp(-x*x) term to compute Re[w] accurately
+         in the case where y is very small. */
+      ret = cpolar(2*exp(y*y-x*x) - exp(-x*x), -2*creal(z)*y);
     }
     else
       ret = exp(-x*x); // not negligible in real part if y very small
@@ -815,8 +980,8 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
     }
   }
  finish:
-  return ret + complex<double>((0.5*c)*y*(sum2+sum3), 
-			       (0.5*c)*my_copysign(sum5-sum4, real(z)));
+  return ret + C((0.5*c)*y*(sum2+sum3), 
+                 (0.5*c)*copysign(sum5-sum4, creal(z)));
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -834,14 +999,14 @@ complex<double> Faddeeva::w(complex<double> z, double relerr)
 
       a) It maps x to y = 4 / (4+x) in [0,1].  This simple transformation,
          inspired by a similar transformation in the octave-forge/specfun
-	 erfcx by Soren Hauberg, results in much faster Chebyshev convergence
-	 than other simple transformations I have examined.
+         erfcx by Soren Hauberg, results in much faster Chebyshev convergence
+         than other simple transformations I have examined.
 
       b) Instead of using a single Chebyshev polynomial for the entire
          [0,1] y interval, we break the interval up into 100 equal
-	 subintervals, with a switch/lookup table, and use much lower
-	 degree Chebyshev polynomials in each subinterval. This greatly
-	 improves performance in my tests.
+         subintervals, with a switch/lookup table, and use much lower
+         degree Chebyshev polynomials in each subinterval. This greatly
+         improves performance in my tests.
 
    For x < 0, we use the relationship erfcx(-x) = 2 exp(x^2) - erfc(x),
    with the usual checks for overflow etcetera.
@@ -1267,27 +1432,27 @@ return 0.97771701335885035464e0 + (0.22000938572830479551e-1 + (0.27951610702682
   return 1.0;
 }
 
-double Faddeeva::erfcx(double x)
+double FADDEEVA_RE(erfcx)(double x)
 {
   if (x >= 0) {
     if (x > 50) { // continued-fraction expansion is faster
       const double ispi = 0.56418958354775628694807945156; // 1 / sqrt(pi)
       if (x > 5e7) // 1-term expansion, important to avoid overflow
-	return ispi / x;
+        return ispi / x;
       /* 5-term expansion (rely on compiler for CSE), simplified from:
-	        ispi / (x+0.5/(x+1/(x+1.5/(x+2/x))))  */
+                ispi / (x+0.5/(x+1/(x+1.5/(x+2/x))))  */
       return ispi*((x*x) * (x*x+4.5) + 2) / (x * ((x*x) * (x*x+5) + 3.75));
     }
     return erfcx_y100(400/(4+x));
   }
   else
     return x < -26.7 ? HUGE_VAL : (x < -6.1 ? 2*exp(x*x) 
-				   : 2*exp(x*x) - erfcx_y100(400/(4-x)));
+                                   : 2*exp(x*x) - erfcx_y100(400/(4-x)));
 }
 
 /////////////////////////////////////////////////////////////////////////
 /* Compute a scaled Dawson integral 
-            Faddeeva::w_im(x) = 2*Dawson(x)/sqrt(pi)
+            FADDEEVA(w_im)(x) = 2*Dawson(x)/sqrt(pi)
    equivalent to the imaginary part w(x) for real x.
 
    Uses methods similar to the erfcx calculation above: continued fractions
@@ -1693,21 +1858,15 @@ static double w_im_y100(double y100, double x) {
       double t = 2*y100 - 193;
       return 0.40889797115352738582e-1 + (-0.60426484889413678200e-2 + (0.28953496450191694606e-4 + (-0.21982952021823718400e-7 + (-0.11044169117553026211e-8 + (0.13344562332430552171e-10 - 0.10091231402844444444e-12 * t) * t) * t) * t) * t) * t;
     }
-    case 97: {
-      double t = 2*y100 - 195;
-      return 0.28920121009594899986e-1 + (-0.59271325915413781788e-2 + (0.28796136372768177423e-4 + (-0.30300382596279568642e-7 + (-0.97688275022802329749e-9 + (0.12179215701512592356e-10 - 0.93380988481777777779e-13 * t) * t) * t) * t) * t) * t;
-    }
-    case 98: {
-      double t = 2*y100 - 197;
-      return 0.17180782722617876655e-1 + (-0.58123419543161127769e-2 + (0.28591841095380959666e-4 + (-0.37642963496443667043e-7 + (-0.86055809047367300024e-9 + (0.11101709356762665578e-10 - 0.86272947493333333334e-13 * t) * t) * t) * t) * t) * t;
-    }
-  case 99: case 100: { // use Taylor expansion for small x (|x| <= 0.010101...)
-      //  (2/sqrt(pi)) * (x - 2/3 x^3  + 4/15 x^5  - 8/105 x^7) 
+  case 97: case 98:
+  case 99: case 100: { // use Taylor expansion for small x (|x| <= 0.0309...)
+      //  (2/sqrt(pi)) * (x - 2/3 x^3  + 4/15 x^5  - 8/105 x^7 + 16/945 x^9) 
       double x2 = x*x;
       return x * (1.1283791670955125739
-		  - x2 * (0.75225277806367504925
-			  - x2 * (0.30090111122547001970
-				  - x2 * 0.085971746064420005629)));
+                  - x2 * (0.75225277806367504925
+                          - x2 * (0.30090111122547001970
+                                  - x2 * (0.085971746064420005629
+                                          - x2 * 0.016931216931216931217))));
     }
   }
   /* Since 0 <= y100 < 101, this is only reached if x is NaN,
@@ -1715,26 +1874,26 @@ static double w_im_y100(double y100, double x) {
   return NaN;
 }
 
-double Faddeeva::w_im(double x)
+double FADDEEVA(w_im)(double x)
 {
   if (x >= 0) {
     if (x > 45) { // continued-fraction expansion is faster
       const double ispi = 0.56418958354775628694807945156; // 1 / sqrt(pi)
       if (x > 5e7) // 1-term expansion, important to avoid overflow
-	return ispi / x;
+        return ispi / x;
       /* 5-term expansion (rely on compiler for CSE), simplified from:
-	        ispi / (x-0.5/(x-1/(x-1.5/(x-2/x))))  */
+                ispi / (x-0.5/(x-1/(x-1.5/(x-2/x))))  */
       return ispi*((x*x) * (x*x-4.5) + 2) / (x * ((x*x) * (x*x-5) + 3.75));
     }
     return w_im_y100(100/(1+x), x);
   }
-  else { // = -Faddeeva::w_im(-x)
+  else { // = -FADDEEVA(w_im)(-x)
     if (x < -45) { // continued-fraction expansion is faster
       const double ispi = 0.56418958354775628694807945156; // 1 / sqrt(pi)
       if (x < -5e7) // 1-term expansion, important to avoid overflow
-	return ispi / x;
+        return ispi / x;
       /* 5-term expansion (rely on compiler for CSE), simplified from:
-	        ispi / (x+0.5/(x+1/(x+1.5/(x+2/x))))  */
+                ispi / (x-0.5/(x-1/(x-1.5/(x-2/x))))  */
       return ispi*((x*x) * (x*x-4.5) + 2) / (x * ((x*x) * (x*x-5) + 3.75));
     }
     return -w_im_y100(100/(1-x), -x);
@@ -1746,14 +1905,18 @@ double Faddeeva::w_im(double x)
 // Compile with -DTEST_FADDEEVA to compile a little test program
 #ifdef TEST_FADDEEVA
 
-#include <cstdio>
+#ifdef __cplusplus
+#  include <cstdio>
+#else
+#  include <stdio.h>
+#endif
 
 // compute relative error |b-a|/|a|, handling case of NaN and Inf,
 static double relerr(double a, double b) {
-  if (my_isnan(a) || my_isnan(b) || my_isinf(a) || my_isinf(b)) {
-    if ((my_isnan(a) && !my_isnan(b)) || (!my_isnan(a) && my_isnan(b)) ||
-	(my_isinf(a) && !my_isinf(b)) || (!my_isinf(a) && my_isinf(b)) ||
-	(my_isinf(a) && my_isinf(b) && a*b < 0))
+  if (isnan(a) || isnan(b) || isinf(a) || isinf(b)) {
+    if ((isnan(a) && !isnan(b)) || (!isnan(a) && isnan(b)) ||
+        (isinf(a) && !isinf(b)) || (!isinf(a) && isinf(b)) ||
+        (isinf(a) && isinf(b) && a*b < 0))
       return Inf; // "infinite" error
     return 0; // matching infinity/nan results counted as zero error
   }
@@ -1767,184 +1930,184 @@ int main(void) {
   double errmax_all = 0;
   {
     printf("############# w(z) tests #############\n");
-    const int NTST = 57;
-    complex<double> z[NTST] = {
-      complex<double>(624.2,-0.26123),
-      complex<double>(-0.4,3.),
-      complex<double>(0.6,2.),
-      complex<double>(-1.,1.),
-      complex<double>(-1.,-9.),
-      complex<double>(-1.,9.),
-      complex<double>(-0.0000000234545,1.1234),
-      complex<double>(-3.,5.1),
-      complex<double>(-53,30.1),
-      complex<double>(0.0,0.12345),
-      complex<double>(11,1),
-      complex<double>(-22,-2),
-      complex<double>(9,-28),
-      complex<double>(21,-33),
-      complex<double>(1e5,1e5),
-      complex<double>(1e14,1e14),
-      complex<double>(-3001,-1000),
-      complex<double>(1e160,-1e159),
-      complex<double>(-6.01,0.01),
-      complex<double>(-0.7,-0.7),
-      complex<double>(2.611780000000000e+01, 4.540909610972489e+03),
-      complex<double>(0.8e7,0.3e7),
-      complex<double>(-20,-19.8081),
-      complex<double>(1e-16,-1.1e-16),
-      complex<double>(2.3e-8,1.3e-8),
-      complex<double>(6.3,-1e-13),
-      complex<double>(6.3,1e-20),
-      complex<double>(1e-20,6.3),
-      complex<double>(1e-20,16.3),
-      complex<double>(9,1e-300),
-      complex<double>(6.01,0.11),
-      complex<double>(8.01,1.01e-10),
-      complex<double>(28.01,1e-300),
-      complex<double>(10.01,1e-200),
-      complex<double>(10.01,-1e-200),
-      complex<double>(10.01,0.99e-10),
-      complex<double>(10.01,-0.99e-10),
-      complex<double>(1e-20,7.01),
-      complex<double>(-1,7.01),
-      complex<double>(5.99,7.01),
-      complex<double>(1,0),
-      complex<double>(55,0),
-      complex<double>(-0.1,0),
-      complex<double>(1e-20,0),
-      complex<double>(0,5e-14),
-      complex<double>(0,51),
-      complex<double>(Inf,0),
-      complex<double>(-Inf,0),
-      complex<double>(0,Inf),
-      complex<double>(0,-Inf),
-      complex<double>(Inf,Inf),
-      complex<double>(Inf,-Inf),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,0),
-      complex<double>(0,NaN),
-      complex<double>(NaN,Inf),
-      complex<double>(Inf,NaN)
+#define NTST 57 // define instead of const for C compatibility
+    cmplx z[NTST] = {
+      C(624.2,-0.26123),
+      C(-0.4,3.),
+      C(0.6,2.),
+      C(-1.,1.),
+      C(-1.,-9.),
+      C(-1.,9.),
+      C(-0.0000000234545,1.1234),
+      C(-3.,5.1),
+      C(-53,30.1),
+      C(0.0,0.12345),
+      C(11,1),
+      C(-22,-2),
+      C(9,-28),
+      C(21,-33),
+      C(1e5,1e5),
+      C(1e14,1e14),
+      C(-3001,-1000),
+      C(1e160,-1e159),
+      C(-6.01,0.01),
+      C(-0.7,-0.7),
+      C(2.611780000000000e+01, 4.540909610972489e+03),
+      C(0.8e7,0.3e7),
+      C(-20,-19.8081),
+      C(1e-16,-1.1e-16),
+      C(2.3e-8,1.3e-8),
+      C(6.3,-1e-13),
+      C(6.3,1e-20),
+      C(1e-20,6.3),
+      C(1e-20,16.3),
+      C(9,1e-300),
+      C(6.01,0.11),
+      C(8.01,1.01e-10),
+      C(28.01,1e-300),
+      C(10.01,1e-200),
+      C(10.01,-1e-200),
+      C(10.01,0.99e-10),
+      C(10.01,-0.99e-10),
+      C(1e-20,7.01),
+      C(-1,7.01),
+      C(5.99,7.01),
+      C(1,0),
+      C(55,0),
+      C(-0.1,0),
+      C(1e-20,0),
+      C(0,5e-14),
+      C(0,51),
+      C(Inf,0),
+      C(-Inf,0),
+      C(0,Inf),
+      C(0,-Inf),
+      C(Inf,Inf),
+      C(Inf,-Inf),
+      C(NaN,NaN),
+      C(NaN,0),
+      C(0,NaN),
+      C(NaN,Inf),
+      C(Inf,NaN)
     };
-    complex<double> w[NTST] = { /* w(z), computed with WolframAlpha
-				   ... note that WolframAlpha is problematic
-				   some of the above inputs, so I had to
-				   use the continued-fraction expansion
-				   in WolframAlpha in some cases, or switch
-				   to Maple */
-      complex<double>(-3.78270245518980507452677445620103199303131110e-7,
-		      0.000903861276433172057331093754199933411710053155),
-      complex<double>(0.1764906227004816847297495349730234591778719532788,
-		      -0.02146550539468457616788719893991501311573031095617),
-      complex<double>(0.2410250715772692146133539023007113781272362309451,
-		      0.06087579663428089745895459735240964093522265589350),
-      complex<double>(0.30474420525691259245713884106959496013413834051768,
-		      -0.20821893820283162728743734725471561394145872072738),
-      complex<double>(7.317131068972378096865595229600561710140617977e34,
-		      8.321873499714402777186848353320412813066170427e34),
-      complex<double>(0.0615698507236323685519612934241429530190806818395,
-		      -0.00676005783716575013073036218018565206070072304635),
-      complex<double>(0.3960793007699874918961319170187598400134746631,
-		      -5.593152259116644920546186222529802777409274656e-9),
-      complex<double>(0.08217199226739447943295069917990417630675021771804,
-		      -0.04701291087643609891018366143118110965272615832184),
-      complex<double>(0.00457246000350281640952328010227885008541748668738,
-		      -0.00804900791411691821818731763401840373998654987934),
-      complex<double>(0.8746342859608052666092782112565360755791467973338452,
-		      0.),
-      complex<double>(0.00468190164965444174367477874864366058339647648741,
-		      0.0510735563901306197993676329845149741675029197050),
-      complex<double>(-0.0023193175200187620902125853834909543869428763219,
-		      -0.025460054739731556004902057663500272721780776336),
-      complex<double>(9.11463368405637174660562096516414499772662584e304,
-		      3.97101807145263333769664875189354358563218932e305),
-      complex<double>(-4.4927207857715598976165541011143706155432296e281,
-		      -2.8019591213423077494444700357168707775769028e281),
-      complex<double>(2.820947917809305132678577516325951485807107151e-6,
-		      2.820947917668257736791638444590253942253354058e-6),
-      complex<double>(2.82094791773878143474039725787438662716372268e-15,
-		      2.82094791773878143474039725773333923127678361e-15),
-      complex<double>(-0.0000563851289696244350147899376081488003110150498,
-		      -0.000169211755126812174631861529808288295454992688),
-      complex<double>(-5.586035480670854326218608431294778077663867e-162,
-		      5.586035480670854326218608431294778077663867e-161),
-      complex<double>(0.00016318325137140451888255634399123461580248456,
-		      -0.095232456573009287370728788146686162555021209999),
-      complex<double>(0.69504753678406939989115375989939096800793577783885,
-		      -1.8916411171103639136680830887017670616339912024317),
-      complex<double>(0.0001242418269653279656612334210746733213167234822,
-		      7.145975826320186888508563111992099992116786763e-7),
-      complex<double>(2.318587329648353318615800865959225429377529825e-8,
-		      6.182899545728857485721417893323317843200933380e-8),
-      complex<double>(-0.0133426877243506022053521927604277115767311800303,
-		      -0.0148087097143220769493341484176979826888871576145),
-      complex<double>(1.00000000000000012412170838050638522857747934,
-		      1.12837916709551279389615890312156495593616433e-16),
-      complex<double>(0.9999999853310704677583504063775310832036830015,
-		      2.595272024519678881897196435157270184030360773e-8),
-      complex<double>(-1.4731421795638279504242963027196663601154624e-15,
-		      0.090727659684127365236479098488823462473074709),
-      complex<double>(5.79246077884410284575834156425396800754409308e-18,
-		      0.0907276596841273652364790985059772809093822374),
-      complex<double>(0.0884658993528521953466533278764830881245144368,
-		      1.37088352495749125283269718778582613192166760e-22),
-      complex<double>(0.0345480845419190424370085249304184266813447878,
-		      2.11161102895179044968099038990446187626075258e-23),
-      complex<double>(6.63967719958073440070225527042829242391918213e-36,
-		      0.0630820900592582863713653132559743161572639353),
-      complex<double>(0.00179435233208702644891092397579091030658500743634,
-		      0.0951983814805270647939647438459699953990788064762),
-      complex<double>(9.09760377102097999924241322094863528771095448e-13,
-		      0.0709979210725138550986782242355007611074966717),
-      complex<double>(7.2049510279742166460047102593255688682910274423e-304,
-		      0.0201552956479526953866611812593266285000876784321),
-      complex<double>(3.04543604652250734193622967873276113872279682e-44,
-		    0.0566481651760675042930042117726713294607499165),
-      complex<double>(3.04543604652250734193622967873276113872279682e-44,
-		      0.0566481651760675042930042117726713294607499165),
-      complex<double>(0.5659928732065273429286988428080855057102069081e-12,
-		      0.056648165176067504292998527162143030538756683302),
-      complex<double>(-0.56599287320652734292869884280802459698927645e-12,
-		      0.0566481651760675042929985271621430305387566833029),
-      complex<double>(0.0796884251721652215687859778119964009569455462,
-		      1.11474461817561675017794941973556302717225126e-22),
-      complex<double>(0.07817195821247357458545539935996687005781943386550,
-		      -0.01093913670103576690766705513142246633056714279654),
-      complex<double>(0.04670032980990449912809326141164730850466208439937,
-		      0.03944038961933534137558064191650437353429669886545),
-      complex<double>(0.36787944117144232159552377016146086744581113103176,
-		      0.60715770584139372911503823580074492116122092866515),
-      complex<double>(0,
-		      0.010259688805536830986089913987516716056946786526145),
-      complex<double>(0.99004983374916805357390597718003655777207908125383,
-		      -0.11208866436449538036721343053869621153527769495574),
-      complex<double>(0.99999999999999999999999999999999999999990000,
-		      1.12837916709551257389615890312154517168802603e-20),
-      complex<double>(0.999999999999943581041645226871305192054749891144158,
-		      0),
-      complex<double>(0.0110604154853277201542582159216317923453996211744250,
-		      0),
-      complex<double>(0,0),
-      complex<double>(0,0),
-      complex<double>(0,0),
-      complex<double>(Inf,0),
-      complex<double>(0,0),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,0),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,NaN)
+    cmplx w[NTST] = { /* w(z), computed with WolframAlpha
+                                   ... note that WolframAlpha is problematic
+                                   some of the above inputs, so I had to
+                                   use the continued-fraction expansion
+                                   in WolframAlpha in some cases, or switch
+                                   to Maple */
+      C(-3.78270245518980507452677445620103199303131110e-7,
+        0.000903861276433172057331093754199933411710053155),
+      C(0.1764906227004816847297495349730234591778719532788,
+        -0.02146550539468457616788719893991501311573031095617),
+      C(0.2410250715772692146133539023007113781272362309451,
+        0.06087579663428089745895459735240964093522265589350),
+      C(0.30474420525691259245713884106959496013413834051768,
+        -0.20821893820283162728743734725471561394145872072738),
+      C(7.317131068972378096865595229600561710140617977e34,
+        8.321873499714402777186848353320412813066170427e34),
+      C(0.0615698507236323685519612934241429530190806818395,
+        -0.00676005783716575013073036218018565206070072304635),
+      C(0.3960793007699874918961319170187598400134746631,
+        -5.593152259116644920546186222529802777409274656e-9),
+      C(0.08217199226739447943295069917990417630675021771804,
+        -0.04701291087643609891018366143118110965272615832184),
+      C(0.00457246000350281640952328010227885008541748668738,
+        -0.00804900791411691821818731763401840373998654987934),
+      C(0.8746342859608052666092782112565360755791467973338452,
+        0.),
+      C(0.00468190164965444174367477874864366058339647648741,
+        0.0510735563901306197993676329845149741675029197050),
+      C(-0.0023193175200187620902125853834909543869428763219,
+        -0.025460054739731556004902057663500272721780776336),
+      C(9.11463368405637174660562096516414499772662584e304,
+        3.97101807145263333769664875189354358563218932e305),
+      C(-4.4927207857715598976165541011143706155432296e281,
+        -2.8019591213423077494444700357168707775769028e281),
+      C(2.820947917809305132678577516325951485807107151e-6,
+        2.820947917668257736791638444590253942253354058e-6),
+      C(2.82094791773878143474039725787438662716372268e-15,
+        2.82094791773878143474039725773333923127678361e-15),
+      C(-0.0000563851289696244350147899376081488003110150498,
+        -0.000169211755126812174631861529808288295454992688),
+      C(-5.586035480670854326218608431294778077663867e-162,
+        5.586035480670854326218608431294778077663867e-161),
+      C(0.00016318325137140451888255634399123461580248456,
+        -0.095232456573009287370728788146686162555021209999),
+      C(0.69504753678406939989115375989939096800793577783885,
+        -1.8916411171103639136680830887017670616339912024317),
+      C(0.0001242418269653279656612334210746733213167234822,
+        7.145975826320186888508563111992099992116786763e-7),
+      C(2.318587329648353318615800865959225429377529825e-8,
+        6.182899545728857485721417893323317843200933380e-8),
+      C(-0.0133426877243506022053521927604277115767311800303,
+        -0.0148087097143220769493341484176979826888871576145),
+      C(1.00000000000000012412170838050638522857747934,
+        1.12837916709551279389615890312156495593616433e-16),
+      C(0.9999999853310704677583504063775310832036830015,
+        2.595272024519678881897196435157270184030360773e-8),
+      C(-1.4731421795638279504242963027196663601154624e-15,
+        0.090727659684127365236479098488823462473074709),
+      C(5.79246077884410284575834156425396800754409308e-18,
+        0.0907276596841273652364790985059772809093822374),
+      C(0.0884658993528521953466533278764830881245144368,
+        1.37088352495749125283269718778582613192166760e-22),
+      C(0.0345480845419190424370085249304184266813447878,
+        2.11161102895179044968099038990446187626075258e-23),
+      C(6.63967719958073440070225527042829242391918213e-36,
+        0.0630820900592582863713653132559743161572639353),
+      C(0.00179435233208702644891092397579091030658500743634,
+        0.0951983814805270647939647438459699953990788064762),
+      C(9.09760377102097999924241322094863528771095448e-13,
+        0.0709979210725138550986782242355007611074966717),
+      C(7.2049510279742166460047102593255688682910274423e-304,
+        0.0201552956479526953866611812593266285000876784321),
+      C(3.04543604652250734193622967873276113872279682e-44,
+        0.0566481651760675042930042117726713294607499165),
+      C(3.04543604652250734193622967873276113872279682e-44,
+        0.0566481651760675042930042117726713294607499165),
+      C(0.5659928732065273429286988428080855057102069081e-12,
+        0.056648165176067504292998527162143030538756683302),
+      C(-0.56599287320652734292869884280802459698927645e-12,
+        0.0566481651760675042929985271621430305387566833029),
+      C(0.0796884251721652215687859778119964009569455462,
+        1.11474461817561675017794941973556302717225126e-22),
+      C(0.07817195821247357458545539935996687005781943386550,
+        -0.01093913670103576690766705513142246633056714279654),
+      C(0.04670032980990449912809326141164730850466208439937,
+        0.03944038961933534137558064191650437353429669886545),
+      C(0.36787944117144232159552377016146086744581113103176,
+        0.60715770584139372911503823580074492116122092866515),
+      C(0,
+        0.010259688805536830986089913987516716056946786526145),
+      C(0.99004983374916805357390597718003655777207908125383,
+        -0.11208866436449538036721343053869621153527769495574),
+      C(0.99999999999999999999999999999999999999990000,
+        1.12837916709551257389615890312154517168802603e-20),
+      C(0.999999999999943581041645226871305192054749891144158,
+        0),
+      C(0.0110604154853277201542582159216317923453996211744250,
+        0),
+      C(0,0),
+      C(0,0),
+      C(0,0),
+      C(Inf,0),
+      C(0,0),
+      C(NaN,NaN),
+      C(NaN,NaN),
+      C(NaN,NaN),
+      C(NaN,0),
+      C(NaN,NaN),
+      C(NaN,NaN)
     };
     double errmax = 0;
     for (int i = 0; i < NTST; ++i) {
-      complex<double> fw = Faddeeva::w(z[i],0.);
-      double re_err = relerr(real(w[i]), real(fw));
-      double im_err = relerr(imag(w[i]), imag(fw));
+      cmplx fw = FADDEEVA(w)(z[i],0.);
+      double re_err = relerr(creal(w[i]), creal(fw));
+      double im_err = relerr(cimag(w[i]), cimag(fw));
       printf("w(%g%+gi) = %g%+gi (vs. %g%+gi), re/im rel. err. = %0.2g/%0.2g)\n",
-	     real(z[i]),imag(z[i]), real(fw),imag(fw), real(w[i]),imag(w[i]),
-	     re_err, im_err);
+             creal(z[i]),cimag(z[i]), creal(fw),cimag(fw), creal(w[i]),cimag(w[i]),
+             re_err, im_err);
       if (re_err > errmax) errmax = re_err;
       if (im_err > errmax) errmax = im_err;
     }
@@ -1956,378 +2119,409 @@ int main(void) {
     if (errmax > errmax_all) errmax_all = errmax;
   }
   {
-    const int NTST = 33;
-    complex<double> z[NTST] = {
-      complex<double>(1,2),
-      complex<double>(-1,2),
-      complex<double>(1,-2),
-      complex<double>(-1,-2),
-      complex<double>(9,-28),
-      complex<double>(21,-33),
-      complex<double>(1e3,1e3),
-      complex<double>(-3001,-1000),
-      complex<double>(1e160,-1e159),
-      complex<double>(5.1e-3, 1e-8),
-      complex<double>(-4.9e-3, 4.95e-3),
-      complex<double>(4.9e-3, 0.5),
-      complex<double>(4.9e-4, -0.5e1),
-      complex<double>(-4.9e-5, -0.5e2),
-      complex<double>(5.1e-3, 0.5),
-      complex<double>(5.1e-4, -0.5e1),
-      complex<double>(-5.1e-5, -0.5e2),
-      complex<double>(1e-6,2e-6),
-      complex<double>(0,2e-6),
-      complex<double>(0,2),
-      complex<double>(0,20),
-      complex<double>(0,200),
-      complex<double>(Inf,0),
-      complex<double>(-Inf,0),
-      complex<double>(0,Inf),
-      complex<double>(0,-Inf),
-      complex<double>(Inf,Inf),
-      complex<double>(Inf,-Inf),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,0),
-      complex<double>(0,NaN),
-      complex<double>(NaN,Inf),
-      complex<double>(Inf,NaN)
+#undef NTST
+#define NTST 41 // define instead of const for C compatibility
+    cmplx z[NTST] = {
+      C(1,2),
+      C(-1,2),
+      C(1,-2),
+      C(-1,-2),
+      C(9,-28),
+      C(21,-33),
+      C(1e3,1e3),
+      C(-3001,-1000),
+      C(1e160,-1e159),
+      C(5.1e-3, 1e-8),
+      C(-4.9e-3, 4.95e-3),
+      C(4.9e-3, 0.5),
+      C(4.9e-4, -0.5e1),
+      C(-4.9e-5, -0.5e2),
+      C(5.1e-3, 0.5),
+      C(5.1e-4, -0.5e1),
+      C(-5.1e-5, -0.5e2),
+      C(1e-6,2e-6),
+      C(0,2e-6),
+      C(0,2),
+      C(0,20),
+      C(0,200),
+      C(Inf,0),
+      C(-Inf,0),
+      C(0,Inf),
+      C(0,-Inf),
+      C(Inf,Inf),
+      C(Inf,-Inf),
+      C(NaN,NaN),
+      C(NaN,0),
+      C(0,NaN),
+      C(NaN,Inf),
+      C(Inf,NaN),
+      C(1e-3,NaN),
+      C(7e-2,7e-2),
+      C(7e-2,-7e-4),
+      C(-9e-2,7e-4),
+      C(-9e-2,9e-2),
+      C(-7e-4,9e-2),
+      C(7e-2,0.9e-2),
+      C(7e-2,1.1e-2)
     };
-    complex<double> w[NTST] = { // erf(z[i]), evaluated with Maple
-      complex<double>(-0.5366435657785650339917955593141927494421,
-		      -5.049143703447034669543036958614140565553),
-      complex<double>(0.5366435657785650339917955593141927494421,
-		      -5.049143703447034669543036958614140565553),
-      complex<double>(-0.5366435657785650339917955593141927494421,
-		      5.049143703447034669543036958614140565553),
-      complex<double>(0.5366435657785650339917955593141927494421,
-		      5.049143703447034669543036958614140565553),
-      complex<double>(0.3359473673830576996788000505817956637777e304,
-		      -0.1999896139679880888755589794455069208455e304),
-      complex<double>(0.3584459971462946066523939204836760283645e278,
-		      0.3818954885257184373734213077678011282505e280),
-      complex<double>(0.9996020422657148639102150147542224526887,
-		      0.00002801044116908227889681753993542916894856),
-      complex<double>(-1, 0),
-      complex<double>(1, 0),
-      complex<double>(0.005754683859034800134412990541076554934877,
-		      0.1128349818335058741511924929801267822634e-7),
-      complex<double>(-0.005529149142341821193633460286828381876955,
-		      0.005585388387864706679609092447916333443570),
-      complex<double>(0.007099365669981359632319829148438283865814,
-		      0.6149347012854211635026981277569074001219),
-      complex<double>(0.3981176338702323417718189922039863062440e8,
-		      -0.8298176341665249121085423917575122140650e10),
-      complex<double>(-Inf,
-		      -Inf),
-      complex<double>(0.007389128308257135427153919483147229573895,
-		      0.6149332524601658796226417164791221815139),
-      complex<double>(0.4143671923267934479245651547534414976991e8,
-		      -0.8298168216818314211557046346850921446950e10),
-      complex<double>(-Inf,
-		      -Inf),
-      complex<double>(0.1128379167099649964175513742247082845155e-5,
-		      0.2256758334191777400570377193451519478895e-5),
-      complex<double>(0,
-		      0.2256758334194034158904576117253481476197e-5),
-      complex<double>(0,
-		      18.56480241457555259870429191324101719886),
-      complex<double>(0,
-		      0.1474797539628786202447733153131835124599e173),
-      complex<double>(0,
-		      Inf),
-      complex<double>(1,0),
-      complex<double>(-1,0),
-      complex<double>(0,Inf),
-      complex<double>(0,-Inf),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,0),
-      complex<double>(0,NaN),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,NaN)
+    cmplx w[NTST] = { // erf(z[i]), evaluated with Maple
+      C(-0.5366435657785650339917955593141927494421,
+        -5.049143703447034669543036958614140565553),
+      C(0.5366435657785650339917955593141927494421,
+        -5.049143703447034669543036958614140565553),
+      C(-0.5366435657785650339917955593141927494421,
+        5.049143703447034669543036958614140565553),
+      C(0.5366435657785650339917955593141927494421,
+        5.049143703447034669543036958614140565553),
+      C(0.3359473673830576996788000505817956637777e304,
+        -0.1999896139679880888755589794455069208455e304),
+      C(0.3584459971462946066523939204836760283645e278,
+        0.3818954885257184373734213077678011282505e280),
+      C(0.9996020422657148639102150147542224526887,
+        0.00002801044116908227889681753993542916894856),
+      C(-1, 0),
+      C(1, 0),
+      C(0.005754683859034800134412990541076554934877,
+        0.1128349818335058741511924929801267822634e-7),
+      C(-0.005529149142341821193633460286828381876955,
+        0.005585388387864706679609092447916333443570),
+      C(0.007099365669981359632319829148438283865814,
+        0.6149347012854211635026981277569074001219),
+      C(0.3981176338702323417718189922039863062440e8,
+        -0.8298176341665249121085423917575122140650e10),
+      C(-Inf,
+        -Inf),
+      C(0.007389128308257135427153919483147229573895,
+        0.6149332524601658796226417164791221815139),
+      C(0.4143671923267934479245651547534414976991e8,
+        -0.8298168216818314211557046346850921446950e10),
+      C(-Inf,
+        -Inf),
+      C(0.1128379167099649964175513742247082845155e-5,
+        0.2256758334191777400570377193451519478895e-5),
+      C(0,
+        0.2256758334194034158904576117253481476197e-5),
+      C(0,
+        18.56480241457555259870429191324101719886),
+      C(0,
+        0.1474797539628786202447733153131835124599e173),
+      C(0,
+        Inf),
+      C(1,0),
+      C(-1,0),
+      C(0,Inf),
+      C(0,-Inf),
+      C(NaN,NaN),
+      C(NaN,NaN),
+      C(NaN,NaN),
+      C(NaN,0),
+      C(0,NaN),
+      C(NaN,NaN),
+      C(NaN,NaN),
+      C(NaN,NaN),
+      C(0.07924380404615782687930591956705225541145,
+        0.07872776218046681145537914954027729115247),
+      C(0.07885775828512276968931773651224684454495,
+        -0.0007860046704118224342390725280161272277506),
+      C(-0.1012806432747198859687963080684978759881,
+        0.0007834934747022035607566216654982820299469),
+      C(-0.1020998418798097910247132140051062512527,
+        0.1010030778892310851309082083238896270340),
+      C(-0.0007962891763147907785684591823889484764272,
+        0.1018289385936278171741809237435404896152),
+      C(0.07886408666470478681566329888615410479530,
+        0.01010604288780868961492224347707949372245),
+      C(0.07886723099940260286824654364807981336591,
+        0.01235199327873258197931147306290916629654)
     };
-#define TST(f)								\
-    printf("############# " #f "(z) tests #############\n");		\
-    double errmax = 0;							\
-    for (int i = 0; i < NTST; ++i) {					\
-      complex<double> fw = Faddeeva::f(z[i],0.);			\
-      double re_err = relerr(real(w[i]), real(fw));			\
-      double im_err = relerr(imag(w[i]), imag(fw));			\
+#define TST(f,isc)                                                      \
+    printf("############# " #f "(z) tests #############\n");            \
+    double errmax = 0;                                                  \
+    for (int i = 0; i < NTST; ++i) {                                    \
+      cmplx fw = FADDEEVA(f)(z[i],0.);                  \
+      double re_err = relerr(creal(w[i]), creal(fw));                   \
+      double im_err = relerr(cimag(w[i]), cimag(fw));                   \
       printf(#f "(%g%+gi) = %g%+gi (vs. %g%+gi), re/im rel. err. = %0.2g/%0.2g)\n", \
-	     real(z[i]),imag(z[i]), real(fw),imag(fw), real(w[i]),imag(w[i]), \
-	     re_err, im_err);						\
-      if (re_err > errmax) errmax = re_err;				\
-      if (im_err > errmax) errmax = im_err;				\
-    }									\
-    if (errmax > 1e-13) {						\
-      printf("FAILURE -- relative error %g too large!\n", errmax);	\
-      return 1;								\
-    }									\
-    printf("Checking " #f "(x) special case...\n");			\
-    for (int i = 0; i < 10000; ++i) {					\
-      double x = pow(10., -300. + i * 600. / (10000 - 1));		\
-      double re_err = relerr(Faddeeva::f(x),				\
-			     real(Faddeeva::f(complex<double>(x,0.))));	\
-      if (re_err > errmax) errmax = re_err;				\
-      re_err = relerr(Faddeeva::f(-x),					\
-		      real(Faddeeva::f(complex<double>(-x,0.))));	\
-      if (re_err > errmax) errmax = re_err;				\
-    }									\
-    {									\
-      double re_err = relerr(Faddeeva::f(Inf),				\
-			     real(Faddeeva::f(complex<double>(Inf,0.)))); \
-      if (re_err > errmax) errmax = re_err;				\
-      re_err = relerr(Faddeeva::f(-Inf),				\
-		      real(Faddeeva::f(complex<double>(-Inf,0.))));	\
-      if (re_err > errmax) errmax = re_err;				\
-      re_err = relerr(Faddeeva::f(NaN),					\
-		      real(Faddeeva::f(complex<double>(NaN,0.))));	\
-      if (re_err > errmax) errmax = re_err;				\
-    }									\
-    if (errmax > 1e-13) {						\
-      printf("FAILURE -- relative error %g too large!\n", errmax);	\
-      return 1;								\
-    }									\
-    printf("SUCCESS (max relative error = %g)\n", errmax);		\
+             creal(z[i]),cimag(z[i]), creal(fw),cimag(fw), creal(w[i]),cimag(w[i]), \
+             re_err, im_err);                                           \
+      if (re_err > errmax) errmax = re_err;                             \
+      if (im_err > errmax) errmax = im_err;                             \
+    }                                                                   \
+    if (errmax > 1e-13) {                                               \
+      printf("FAILURE -- relative error %g too large!\n", errmax);      \
+      return 1;                                                         \
+    }                                                                   \
+    printf("Checking " #f "(x) special case...\n");                     \
+    for (int i = 0; i < 10000; ++i) {                                   \
+      double x = pow(10., -300. + i * 600. / (10000 - 1));              \
+      double re_err = relerr(FADDEEVA_RE(f)(x),                         \
+                             creal(FADDEEVA(f)(C(x,x*isc),0.)));        \
+      if (re_err > errmax) errmax = re_err;                             \
+      re_err = relerr(FADDEEVA_RE(f)(-x),                               \
+                      creal(FADDEEVA(f)(C(-x,x*isc),0.)));              \
+      if (re_err > errmax) errmax = re_err;                             \
+    }                                                                   \
+    {                                                                   \
+      double re_err = relerr(FADDEEVA_RE(f)(Inf),                       \
+                             creal(FADDEEVA(f)(C(Inf,0.),0.))); \
+      if (re_err > errmax) errmax = re_err;                             \
+      re_err = relerr(FADDEEVA_RE(f)(-Inf),                             \
+                      creal(FADDEEVA(f)(C(-Inf,0.),0.)));               \
+      if (re_err > errmax) errmax = re_err;                             \
+      re_err = relerr(FADDEEVA_RE(f)(NaN),                              \
+                      creal(FADDEEVA(f)(C(NaN,0.),0.)));                \
+      if (re_err > errmax) errmax = re_err;                             \
+    }                                                                   \
+    if (errmax > 1e-13) {                                               \
+      printf("FAILURE -- relative error %g too large!\n", errmax);      \
+      return 1;                                                         \
+    }                                                                   \
+    printf("SUCCESS (max relative error = %g)\n", errmax);              \
     if (errmax > errmax_all) errmax_all = errmax
 
-    TST(erf);
+    TST(erf, 1e-20);
   }
   {
     // since erfi just calls through to erf, just one test should
     // be sufficient to make sure I didn't screw up the signs or something
-    const int NTST = 1;
-    complex<double> z[NTST] = { complex<double>(1.234,0.5678) };
-    complex<double> w[NTST] = { // erfi(z[i]), computed with Maple
-      complex<double>(1.081032284405373149432716643834106923212,
-		      1.926775520840916645838949402886591180834)
+#undef NTST
+#define NTST 1 // define instead of const for C compatibility
+    cmplx z[NTST] = { C(1.234,0.5678) };
+    cmplx w[NTST] = { // erfi(z[i]), computed with Maple
+      C(1.081032284405373149432716643834106923212,
+        1.926775520840916645838949402886591180834)
     };
-    TST(erfi);
+    TST(erfi, 0);
   }
   {
     // since erfcx just calls through to w, just one test should
     // be sufficient to make sure I didn't screw up the signs or something
-    const int NTST = 1;
-    complex<double> z[NTST] = { complex<double>(1.234,0.5678) };
-    complex<double> w[NTST] = { // erfcx(z[i]), computed with Maple
-      complex<double>(0.3382187479799972294747793561190487832579,
-		      -0.1116077470811648467464927471872945833154)
+#undef NTST
+#define NTST 1 // define instead of const for C compatibility
+    cmplx z[NTST] = { C(1.234,0.5678) };
+    cmplx w[NTST] = { // erfcx(z[i]), computed with Maple
+      C(0.3382187479799972294747793561190487832579,
+        -0.1116077470811648467464927471872945833154)
     };
-    TST(erfcx);
+    TST(erfcx, 0);
   }
   {
-    const int NTST = 30;
-    complex<double> z[NTST] = {
-      complex<double>(1,2),
-      complex<double>(-1,2),
-      complex<double>(1,-2),
-      complex<double>(-1,-2),
-      complex<double>(9,-28),
-      complex<double>(21,-33),
-      complex<double>(1e3,1e3),
-      complex<double>(-3001,-1000),
-      complex<double>(1e160,-1e159),
-      complex<double>(5.1e-3, 1e-8),
-      complex<double>(0,2e-6),
-      complex<double>(0,2),
-      complex<double>(0,20),
-      complex<double>(0,200),
-      complex<double>(2e-6,0),
-      complex<double>(2,0),
-      complex<double>(20,0),
-      complex<double>(200,0),
-      complex<double>(Inf,0),
-      complex<double>(-Inf,0),
-      complex<double>(0,Inf),
-      complex<double>(0,-Inf),
-      complex<double>(Inf,Inf),
-      complex<double>(Inf,-Inf),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,0),
-      complex<double>(0,NaN),
-      complex<double>(NaN,Inf),
-      complex<double>(Inf,NaN),
-      complex<double>(88,0)
+#undef NTST
+#define NTST 30 // define instead of const for C compatibility
+    cmplx z[NTST] = {
+      C(1,2),
+      C(-1,2),
+      C(1,-2),
+      C(-1,-2),
+      C(9,-28),
+      C(21,-33),
+      C(1e3,1e3),
+      C(-3001,-1000),
+      C(1e160,-1e159),
+      C(5.1e-3, 1e-8),
+      C(0,2e-6),
+      C(0,2),
+      C(0,20),
+      C(0,200),
+      C(2e-6,0),
+      C(2,0),
+      C(20,0),
+      C(200,0),
+      C(Inf,0),
+      C(-Inf,0),
+      C(0,Inf),
+      C(0,-Inf),
+      C(Inf,Inf),
+      C(Inf,-Inf),
+      C(NaN,NaN),
+      C(NaN,0),
+      C(0,NaN),
+      C(NaN,Inf),
+      C(Inf,NaN),
+      C(88,0)
     };
-    complex<double> w[NTST] = { // erfc(z[i]), evaluated with Maple
-      complex<double>(1.536643565778565033991795559314192749442,
-		      5.049143703447034669543036958614140565553),
-      complex<double>(0.4633564342214349660082044406858072505579,
-		      5.049143703447034669543036958614140565553),
-      complex<double>(1.536643565778565033991795559314192749442,
-		      -5.049143703447034669543036958614140565553),
-      complex<double>(0.4633564342214349660082044406858072505579,
-		      -5.049143703447034669543036958614140565553),
-      complex<double>(-0.3359473673830576996788000505817956637777e304,
-		      0.1999896139679880888755589794455069208455e304),
-      complex<double>(-0.3584459971462946066523939204836760283645e278,
-		      -0.3818954885257184373734213077678011282505e280),
-      complex<double>(0.0003979577342851360897849852457775473112748,
-		      -0.00002801044116908227889681753993542916894856),
-      complex<double>(2, 0),
-      complex<double>(0, 0),
-      complex<double>(0.9942453161409651998655870094589234450651,
-		      -0.1128349818335058741511924929801267822634e-7),
-      complex<double>(1,
-		      -0.2256758334194034158904576117253481476197e-5),
-      complex<double>(1,
-		      -18.56480241457555259870429191324101719886),
-      complex<double>(1,
-		      -0.1474797539628786202447733153131835124599e173),
-      complex<double>(1, -Inf),
-      complex<double>(0.9999977432416658119838633199332831406314,
-		      0),
-      complex<double>(0.004677734981047265837930743632747071389108,
-		      0),
-      complex<double>(0.5395865611607900928934999167905345604088e-175,
-		      0),
-      complex<double>(0, 0),
-      complex<double>(0, 0),
-      complex<double>(2, 0),
-      complex<double>(1, -Inf),
-      complex<double>(1, Inf),
-      complex<double>(NaN, NaN),
-      complex<double>(NaN, NaN),
-      complex<double>(NaN, NaN),
-      complex<double>(NaN, 0),
-      complex<double>(1, NaN),
-      complex<double>(NaN, NaN),
-      complex<double>(NaN, NaN),
-      complex<double>(0,0)
+    cmplx w[NTST] = { // erfc(z[i]), evaluated with Maple
+      C(1.536643565778565033991795559314192749442,
+        5.049143703447034669543036958614140565553),
+      C(0.4633564342214349660082044406858072505579,
+        5.049143703447034669543036958614140565553),
+      C(1.536643565778565033991795559314192749442,
+        -5.049143703447034669543036958614140565553),
+      C(0.4633564342214349660082044406858072505579,
+        -5.049143703447034669543036958614140565553),
+      C(-0.3359473673830576996788000505817956637777e304,
+        0.1999896139679880888755589794455069208455e304),
+      C(-0.3584459971462946066523939204836760283645e278,
+        -0.3818954885257184373734213077678011282505e280),
+      C(0.0003979577342851360897849852457775473112748,
+        -0.00002801044116908227889681753993542916894856),
+      C(2, 0),
+      C(0, 0),
+      C(0.9942453161409651998655870094589234450651,
+        -0.1128349818335058741511924929801267822634e-7),
+      C(1,
+        -0.2256758334194034158904576117253481476197e-5),
+      C(1,
+        -18.56480241457555259870429191324101719886),
+      C(1,
+        -0.1474797539628786202447733153131835124599e173),
+      C(1, -Inf),
+      C(0.9999977432416658119838633199332831406314,
+        0),
+      C(0.004677734981047265837930743632747071389108,
+        0),
+      C(0.5395865611607900928934999167905345604088e-175,
+        0),
+      C(0, 0),
+      C(0, 0),
+      C(2, 0),
+      C(1, -Inf),
+      C(1, Inf),
+      C(NaN, NaN),
+      C(NaN, NaN),
+      C(NaN, NaN),
+      C(NaN, 0),
+      C(1, NaN),
+      C(NaN, NaN),
+      C(NaN, NaN),
+      C(0,0)
     };
-    TST(erfc);
+    TST(erfc, 1e-20);
   }
   {
-    const int NTST = 47;
-    complex<double> z[NTST] = {
-      complex<double>(2,1),
-      complex<double>(-2,1),
-      complex<double>(2,-1),
-      complex<double>(-2,-1),
-      complex<double>(-28,9),
-      complex<double>(33,-21),
-      complex<double>(1e3,1e3),
-      complex<double>(-1000,-3001),
-      complex<double>(1e-8, 5.1e-3),
-      complex<double>(4.95e-3, -4.9e-3),
-      complex<double>(0.5, 4.9e-3),
-      complex<double>(-0.5e1, 4.9e-4),
-      complex<double>(-0.5e2, -4.9e-5),
-      complex<double>(0.5e3, 4.9e-6),
-      complex<double>(0.5, 5.1e-3),
-      complex<double>(-0.5e1, 5.1e-4),
-      complex<double>(-0.5e2, -5.1e-5),
-      complex<double>(1e-6,2e-6),
-      complex<double>(2e-6,0),
-      complex<double>(2,0),
-      complex<double>(20,0),
-      complex<double>(200,0),
-      complex<double>(0,4.9e-3),
-      complex<double>(0,-5.1e-3),
-      complex<double>(0,2e-6),
-      complex<double>(0,-2),
-      complex<double>(0,20),
-      complex<double>(0,-200),
-      complex<double>(Inf,0),
-      complex<double>(-Inf,0),
-      complex<double>(0,Inf),
-      complex<double>(0,-Inf),
-      complex<double>(Inf,Inf),
-      complex<double>(Inf,-Inf),
-      complex<double>(NaN,NaN),
-      complex<double>(NaN,0),
-      complex<double>(0,NaN),
-      complex<double>(NaN,Inf),
-      complex<double>(Inf,NaN),
-      complex<double>(39, 6.4e-5),
-      complex<double>(41, 6.09e-5),
-      complex<double>(4.9e7, 5e-11),
-      complex<double>(5.1e7, 4.8e-11),
-      complex<double>(1e9, 2.4e-12),
-      complex<double>(1e11, 2.4e-14),
-      complex<double>(1e13, 2.4e-16),
-      complex<double>(1e300, 2.4e-303)
+#undef NTST
+#define NTST 48 // define instead of const for C compatibility
+    cmplx z[NTST] = {
+      C(2,1),
+      C(-2,1),
+      C(2,-1),
+      C(-2,-1),
+      C(-28,9),
+      C(33,-21),
+      C(1e3,1e3),
+      C(-1000,-3001),
+      C(1e-8, 5.1e-3),
+      C(4.95e-3, -4.9e-3),
+      C(5.1e-3, 5.1e-3),
+      C(0.5, 4.9e-3),
+      C(-0.5e1, 4.9e-4),
+      C(-0.5e2, -4.9e-5),
+      C(0.5e3, 4.9e-6),
+      C(0.5, 5.1e-3),
+      C(-0.5e1, 5.1e-4),
+      C(-0.5e2, -5.1e-5),
+      C(1e-6,2e-6),
+      C(2e-6,0),
+      C(2,0),
+      C(20,0),
+      C(200,0),
+      C(0,4.9e-3),
+      C(0,-5.1e-3),
+      C(0,2e-6),
+      C(0,-2),
+      C(0,20),
+      C(0,-200),
+      C(Inf,0),
+      C(-Inf,0),
+      C(0,Inf),
+      C(0,-Inf),
+      C(Inf,Inf),
+      C(Inf,-Inf),
+      C(NaN,NaN),
+      C(NaN,0),
+      C(0,NaN),
+      C(NaN,Inf),
+      C(Inf,NaN),
+      C(39, 6.4e-5),
+      C(41, 6.09e-5),
+      C(4.9e7, 5e-11),
+      C(5.1e7, 4.8e-11),
+      C(1e9, 2.4e-12),
+      C(1e11, 2.4e-14),
+      C(1e13, 2.4e-16),
+      C(1e300, 2.4e-303)
     };
-    complex<double> w[NTST] = { // dawson(z[i]), evaluated with Maple
-      complex<double>(0.1635394094345355614904345232875688576839,
-		      -0.1531245755371229803585918112683241066853),
-      complex<double>(-0.1635394094345355614904345232875688576839,
-		      -0.1531245755371229803585918112683241066853),
-      complex<double>(0.1635394094345355614904345232875688576839,
-		      0.1531245755371229803585918112683241066853),
-      complex<double>(-0.1635394094345355614904345232875688576839,
-		      0.1531245755371229803585918112683241066853),
-      complex<double>(-0.01619082256681596362895875232699626384420,
-		      -0.005210224203359059109181555401330902819419),
-      complex<double>(0.01078377080978103125464543240346760257008,
-		      0.006866888783433775382193630944275682670599),
-      complex<double>(-0.5808616819196736225612296471081337245459,
-		      0.6688593905505562263387760667171706325749),
-      complex<double>(Inf,
-		      -Inf),
-      complex<double>(0.1000052020902036118082966385855563526705e-7,
-		      0.005100088434920073153418834680320146441685),
-      complex<double>(0.004950156837581592745389973960217444687524,
-		      -0.004899838305155226382584756154100963570500),
-      complex<double>(0.4244534840871830045021143490355372016428,
-		      0.002820278933186814021399602648373095266538),
-      complex<double>(-0.1021340733271046543881236523269967674156,
-		      -0.00001045696456072005761498961861088944159916),
-      complex<double>(-0.01000200120119206748855061636187197886859,
-		      0.9805885888237419500266621041508714123763e-8),
-      complex<double>(0.001000002000012000023960527532953151819595,
-		      -0.9800058800588007290937355024646722133204e-11),
-      complex<double>(0.4244549085628511778373438768121222815752,
-		      0.002935393851311701428647152230552122898291),
-      complex<double>(-0.1021340732357117208743299813648493928105,
-		      -0.00001088377943049851799938998805451564893540),
-      complex<double>(-0.01000200120119126652710792390331206563616,
-		      0.1020612612857282306892368985525393707486e-7),
-      complex<double>(0.1000000000007333333333344266666666664457e-5,
-		      0.2000000000001333333333323199999999978819e-5),
-      complex<double>(0.1999999999994666666666675199999999990248e-5,
-		      0),
-      complex<double>(0.3013403889237919660346644392864226952119,
-		      0),
-      complex<double>(0.02503136792640367194699495234782353186858,
-		      0),
-      complex<double>(0.002500031251171948248596912483183760683918,
-		      0),
-      complex<double>(0,0.004900078433419939164774792850907128053308),
-      complex<double>(0,-0.005100088434920074173454208832365950009419),
-      complex<double>(0,0.2000000000005333333333341866666666676419e-5),
-      complex<double>(0,-48.16001211429122974789822893525016528191),
-      complex<double>(0,0.4627407029504443513654142715903005954668e174),
-      complex<double>(0,-Inf),
-      complex<double>(0,0),
-      complex<double>(-0,0),
-      complex<double>(0, Inf),
-      complex<double>(0, -Inf),
-      complex<double>(NaN, NaN),
-      complex<double>(NaN, NaN),
-      complex<double>(NaN, NaN),
-      complex<double>(NaN, 0),
-      complex<double>(0, NaN),
-      complex<double>(NaN, NaN),
-      complex<double>(NaN, NaN),
-      complex<double>(0.01282473148489433743567240624939698290584,
-		      -0.2105957276516618621447832572909153498104e-7),
-      complex<double>(0.01219875253423634378984109995893708152885,
-		      -0.1813040560401824664088425926165834355953e-7),
-      complex<double>(0.1020408163265306334945473399689037886997e-7,
-		      -0.1041232819658476285651490827866174985330e-25),
-      complex<double>(0.9803921568627452865036825956835185367356e-8,
-		      -0.9227220299884665067601095648451913375754e-26),
-      complex<double>(0.5000000000000000002500000000000000003750e-9,
-		      -0.1200000000000000001800000188712838420241e-29),
-      complex<double>(5.00000000000000000000025000000000000000000003e-12,
-		      -1.20000000000000000000018000000000000000000004e-36),
-      complex<double>(5.00000000000000000000000002500000000000000000e-14,
-		      -1.20000000000000000000000001800000000000000000e-42),
-      complex<double>(5e-301, 0)
+    cmplx w[NTST] = { // dawson(z[i]), evaluated with Maple
+      C(0.1635394094345355614904345232875688576839,
+        -0.1531245755371229803585918112683241066853),
+      C(-0.1635394094345355614904345232875688576839,
+        -0.1531245755371229803585918112683241066853),
+      C(0.1635394094345355614904345232875688576839,
+        0.1531245755371229803585918112683241066853),
+      C(-0.1635394094345355614904345232875688576839,
+        0.1531245755371229803585918112683241066853),
+      C(-0.01619082256681596362895875232699626384420,
+        -0.005210224203359059109181555401330902819419),
+      C(0.01078377080978103125464543240346760257008,
+        0.006866888783433775382193630944275682670599),
+      C(-0.5808616819196736225612296471081337245459,
+        0.6688593905505562263387760667171706325749),
+      C(Inf,
+        -Inf),
+      C(0.1000052020902036118082966385855563526705e-7,
+        0.005100088434920073153418834680320146441685),
+      C(0.004950156837581592745389973960217444687524,
+        -0.004899838305155226382584756154100963570500),
+      C(0.005100176864319675957314822982399286703798,
+        0.005099823128319785355949825238269336481254),
+      C(0.4244534840871830045021143490355372016428,
+        0.002820278933186814021399602648373095266538),
+      C(-0.1021340733271046543881236523269967674156,
+        -0.00001045696456072005761498961861088944159916),
+      C(-0.01000200120119206748855061636187197886859,
+        0.9805885888237419500266621041508714123763e-8),
+      C(0.001000002000012000023960527532953151819595,
+        -0.9800058800588007290937355024646722133204e-11),
+      C(0.4244549085628511778373438768121222815752,
+        0.002935393851311701428647152230552122898291),
+      C(-0.1021340732357117208743299813648493928105,
+        -0.00001088377943049851799938998805451564893540),
+      C(-0.01000200120119126652710792390331206563616,
+        0.1020612612857282306892368985525393707486e-7),
+      C(0.1000000000007333333333344266666666664457e-5,
+        0.2000000000001333333333323199999999978819e-5),
+      C(0.1999999999994666666666675199999999990248e-5,
+        0),
+      C(0.3013403889237919660346644392864226952119,
+        0),
+      C(0.02503136792640367194699495234782353186858,
+        0),
+      C(0.002500031251171948248596912483183760683918,
+        0),
+      C(0,0.004900078433419939164774792850907128053308),
+      C(0,-0.005100088434920074173454208832365950009419),
+      C(0,0.2000000000005333333333341866666666676419e-5),
+      C(0,-48.16001211429122974789822893525016528191),
+      C(0,0.4627407029504443513654142715903005954668e174),
+      C(0,-Inf),
+      C(0,0),
+      C(-0,0),
+      C(0, Inf),
+      C(0, -Inf),
+      C(NaN, NaN),
+      C(NaN, NaN),
+      C(NaN, NaN),
+      C(NaN, 0),
+      C(0, NaN),
+      C(NaN, NaN),
+      C(NaN, NaN),
+      C(0.01282473148489433743567240624939698290584,
+        -0.2105957276516618621447832572909153498104e-7),
+      C(0.01219875253423634378984109995893708152885,
+        -0.1813040560401824664088425926165834355953e-7),
+      C(0.1020408163265306334945473399689037886997e-7,
+        -0.1041232819658476285651490827866174985330e-25),
+      C(0.9803921568627452865036825956835185367356e-8,
+        -0.9227220299884665067601095648451913375754e-26),
+      C(0.5000000000000000002500000000000000003750e-9,
+        -0.1200000000000000001800000188712838420241e-29),
+      C(5.00000000000000000000025000000000000000000003e-12,
+        -1.20000000000000000000018000000000000000000004e-36),
+      C(5.00000000000000000000000002500000000000000000e-14,
+        -1.20000000000000000000000001800000000000000000e-42),
+      C(5e-301, 0)
     };
-    TST(Dawson);
+    TST(Dawson, 1e-20);
   }
   printf("#####################################\n");
   printf("SUCCESS (max relative error = %g)\n", errmax_all);
