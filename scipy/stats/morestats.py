@@ -36,27 +36,23 @@ def bayes_mvs(data, alpha=0.90):
     Parameters
     ----------
     data : array_like
-       Input data, if multi-dimensional it is flattened to 1-D by `bayes_mvs`.
-       Requires 2 or more data points.
+        Input data, if multi-dimensional it is flattened to 1-D by `bayes_mvs`.
+        Requires 2 or more data points.
     alpha : float, optional
-       Probability that the returned confidence interval contains
-       the true parameter.
+        Probability that the returned confidence interval contains
+        the true parameter.
 
     Returns
     -------
-    Returns a 3 output arguments for each of mean, variance, and standard deviation.
-       Each of the outputs is a pair:
-          (center, (lower, upper))
-       with center the mean of the conditional pdf of the value given the data
-       and (lower, upper) is a confidence interval centered on the median,
-       containing the estimate to a probability alpha.
+    mean_cntr, var_cntr, std_cntr : tuple
+        The three results are for the mean, variance and standard deviation,
+        respectively.  Each result is a tuple of the form::
 
-    mctr, (ma, mb) :
-       Estimates for mean
-    vctr, (va, vb) :
-       Estimates for variance
-    sctr, (sa, sb) :
-       Estimates for standard deviation
+            (center, (lower, upper))
+
+        with `center` the mean of the conditional pdf of the value given the
+        data, and `(lower, upper)` a confidence interval, centered on the
+        median, containing the estimate to a probability `alpha`.
 
     Notes
     -----
