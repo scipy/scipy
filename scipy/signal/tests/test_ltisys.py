@@ -5,7 +5,8 @@ import warnings
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
 
-from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti, bode
+from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti, bode, \
+    freqresp
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
@@ -305,6 +306,75 @@ class Test_bode(object):
         # integrator, pole at zero: H(s) = 1 / s
         system = lti([1], [1, 0])
         w, mag, phase = bode(system, n=2)
+        assert_equal(w[0], 0.01)  # a fail would give not-a-number
+
+
+class Test_freqresp(object):
+    
+    def test_real_part_manual(self):
+        # Test freqresp() real part calculation (manual sanity check).
+        # 1st order low-pass filter: H(s) = 1 / (s + 1),
+        #   re(H(s=0.1)) ~= 0.99
+        #   re(H(s=1)) ~= 0.5
+        #   re(H(s=10)) ~= 0.0099
+        system = lti([1], [1, 1])
+        w = [0.1, 1, 10]
+        w, H = freqresp(system, w=w)
+        expected_re = [0.99, 0.5, 0.0099]
+        assert_almost_equal(H.real, expected_re, decimal=1)
+
+    def test_imag_part_manual(self):
+        # Test freqresp() imaginary part calculation (manual sanity check).
+        # 1st order low-pass filter: H(s) = 1 / (s + 1),
+        #   im(H(s=0.1)) ~= -0.099
+        #   im(H(s=1)) ~= -0.5
+        #   im(H(s=10)) ~= -0.099
+        system = lti([1], [1, 1])
+        w = [0.1, 1, 10]
+        w, H = freqresp(system, w=w)
+        expected_im = [-0.099, -0.5, -0.099]
+        assert_almost_equal(H.imag, expected_im, decimal=1)
+
+    def test_real_part(self):
+        # Test freqresp() real part calculation.
+        # 1st order low-pass filter: H(s) = 1 / (s + 1)
+        system = lti([1], [1, 1])
+        w = [0.1, 1, 10, 100]
+        w, H = freqresp(system, w=w)
+        jw = w * 1j
+        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
+        expected_re = y.real
+        assert_almost_equal(H.real, expected_re)
+
+    def test_imag_part(self):
+        # Test freqresp() imaginary part calculation.
+        # 1st order low-pass filter: H(s) = 1 / (s + 1)
+        system = lti([1], [1, 1])
+        w = [0.1, 1, 10, 100]
+        w, H = freqresp(system, w=w)
+        jw = w * 1j
+        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
+        expected_im = y.imag
+        assert_almost_equal(H.imag, expected_im)
+
+    def test_freq_range(self):
+        # Test that freqresp() finds a reasonable frequency range.
+        # 1st order low-pass filter: H(s) = 1 / (s + 1)
+        # Expected range is from 0.01 to 10.
+        system = lti([1], [1, 1])
+        vals = linalg.eigvals(system.A)
+        minpole = min(abs(np.real(vals)))
+        maxpole = max(abs(np.real(vals)))
+        n = 10
+        expected_w = np.logspace(-2, 1, n)
+        w, H = freqresp(system, n=n)
+        assert_almost_equal(w, expected_w)
+
+    def test_pole_zero(self):
+        # Test that freqresp() doesn't fail on a system with a pole at 0.
+        # integrator, pole at zero: H(s) = 1 / s
+        system = lti([1], [1, 0])
+        w, H = freqresp(system, n=2)
         assert_equal(w[0], 0.01)  # a fail would give not-a-number
 
 if __name__ == "__main__":

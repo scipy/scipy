@@ -11,7 +11,7 @@ from __future__ import division, print_function, absolute_import
 #   Rewrote lsim2 and added impulse2.
 #
 
-from .filter_design import tf2zpk, zpk2tf, normalize
+from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 import numpy
 from numpy import product, zeros, array, dot, transpose, ones, \
     nan_to_num, zeros_like, linspace
@@ -23,7 +23,8 @@ from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
      squeeze, diag, asarray
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
-           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode']
+           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
+           'freqresp']
 
 
 def tf2ss(num, den):
@@ -362,6 +363,16 @@ class lti(object):
         """
         return bode(self, w=w, n=n)
 
+    def freqresp(self, w=None, n=10000):
+        """Calculate the frequency response of a continuous-time system.
+
+        Returns a 2-tuple containing arrays of frequencies [rad/s] and
+        complex magnitude.
+        See scipy.signal.freqresp for details.
+
+        """
+        return freqresp(self, w=w, n=n)
+
 
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
     """
@@ -611,7 +622,7 @@ def _default_response_frequencies(A, n):
     A : ndarray
         The system matrix, which is square.
     n : int
-        The number of time samples to generate.
+        The number of frequency samples to generate.
 
     Returns
     -------
@@ -930,3 +941,63 @@ def bode(system, w=None, n=100):
     mag = 20.0 * numpy.log10(abs(y))
     phase = numpy.arctan2(y.imag, y.real) * 180.0 / numpy.pi
     return w, mag, phase
+
+
+def freqresp(system, w=None, n=10000):
+    """Calculate the frequency response of a continuous-time system.
+
+    Parameters
+    ----------
+    system : an instance of the LTI class or a tuple describing the system.
+        The following gives the number of elements in the tuple and
+        the interpretation:
+
+            * 2 (num, den)
+            * 3 (zeros, poles, gain)
+            * 4 (A, B, C, D)
+
+    w : array_like, optional
+        Array of frequencies (in rad/s). Magnitude and phase data is 
+        calculated for every value in this array. If not given a reasonable 
+        set will be calculated.
+    n : int, optional
+        Number of frequency points to compute if `w` is not given. The `n`
+        frequencies are logarithmically spaced in the range from two orders of
+        magnitude before the minimum (slowest) pole to two orders of magnitude
+        after the maximum (fastest) pole.
+
+    Returns
+    -------
+    w : 1D ndarray
+        Frequency array [rad/s]
+    H : 1D ndarray
+        Array of complex magnitude values
+
+    Example
+    -------
+    # Generating the Nyquist plot of a transfer function
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> s1 = signal.lti([], [1, 1, 1], [5])
+    # transfer function: H(s) = 5 / (s-1)^3
+    
+    >>> w, H = signal.freqresp(s1)
+
+    >>> plt.figure()
+    >>> plt.plot(H.real, H.imag, "b")
+    >>> plt.plot(H.real, -H.imag, "r")
+    >>> plt.show()
+    """
+    if isinstance(system, lti):
+        sys = system
+    else:
+        sys = lti(*system)
+
+    if w is not None:
+        worN = w
+    else:
+        worN = n
+
+    return freqs(sys.num, sys.den, worN=worN)
