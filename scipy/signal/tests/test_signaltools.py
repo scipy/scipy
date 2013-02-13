@@ -136,6 +136,17 @@ class TestConvolve2d(_TestConvolve2d):
             convolve2d(e,f,'valid')
         self.assertRaises(ValueError, _test)
 
+    def test_consistency_convolve_funcs(self):
+        # Compare np.convolve, signal.convolve, signal.convolve2d
+        a = np.arange(5)
+        b = np.array([3.2, 1.4, 3])
+        for mode in ['full', 'valid', 'same']:
+            assert_almost_equal(np.convolve(a, b, mode=mode),
+                                signal.convolve(a, b, mode=mode))
+            assert_almost_equal(np.squeeze(signal.convolve2d([a], [b],
+                                           mode=mode)),
+                                signal.convolve(a, b, mode=mode))
+
 
 class TestFFTConvolve(TestCase):
     def test_real(self):
@@ -576,6 +587,19 @@ class _TestCorrelateComplex(TestCase):
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal-1)
         self.assertTrue(y.dtype == self.dt)
+
+
+class TestCorrelate2d(TestCase):
+    def test_consistency_correlate_funcs(self):
+        # Compare np.correlate, signal.correlate, signal.correlate2d
+        a = np.arange(5)
+        b = np.array([3.2, 1.4, 3])
+        for mode in ['full', 'valid', 'same']:
+            assert_almost_equal(np.correlate(a, b, mode=mode),
+                                signal.correlate(a, b, mode=mode))
+            assert_almost_equal(np.squeeze(signal.correlate2d([a], [b],
+                                                              mode=mode)),
+                                signal.correlate(a, b, mode=mode))
 
 
 # Create three classes, one for each complex data type. The actual class
