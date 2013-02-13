@@ -1239,11 +1239,14 @@ def wilcoxon(x, y=None, zero_method="wilcox"):
         is considered to be the differences between the two sets of
         measurements.
     zero_method : string, {"pratt", "wilcox", "zsplit"}, optional
-        Pratt treatment: Includes zero-differences in the ranking process
-                         (More conservative)
-        Wilcox treatment: Discards all zero-differences
-        Zero rank split: Just like Pratt, but spliting the zero rank
-                         between positive and negative ones
+        "pratt":
+            Pratt treatment: includes zero-differences in the ranking process
+            (more conservative)
+        "wilcox":
+            Wilcox treatment: discards all zero-differences
+        "zsplit":
+            Zero rank split: just like Pratt, but spliting the zero rank
+            between positive and negative ones
 
     Returns
     -------
