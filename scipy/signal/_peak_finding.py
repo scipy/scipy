@@ -99,8 +99,8 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
     --------
     argrelextrema, argrelmax
 
-    Notes:
-    ------
+    Notes
+    -----
     This function uses `argrelextrema` with np.less as comparator.
 
     """
@@ -136,8 +136,8 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
     --------
     argrelextrema, argrelmin
 
-    Notes:
-    ------
+    Notes
+    -----
     This function uses `argrelextrema` with np.greater as comparator.
 
     """
@@ -226,8 +226,8 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     >>> data = np.random.rand(5,5)
     >>> ridge_lines = identify_ridge_lines(data, 1, 1)
 
-    Notes:
-    ------
+    Notes
+    -----
     This function is intended to be used in conjuction with `cwt`
     as part of `find_peaks_cwt`.
 
