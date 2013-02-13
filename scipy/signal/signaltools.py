@@ -149,11 +149,11 @@ def _centered(arr, newsize):
 def fftconvolve(in1, in2, mode="full"):
     """Convolve two N-dimensional arrays using FFT.
 
-    Convolve `in1` and `in2` using the fast Fourier transform method, with 
+    Convolve `in1` and `in2` using the fast Fourier transform method, with
     the output size determined by the `mode` argument.
 
-    This is generally much faster than `convolve` for large arrays (n > ~500), 
-    but can be slower when only a few output values are needed, and can only 
+    This is generally much faster than `convolve` for large arrays (n > ~500),
+    but can be slower when only a few output values are needed, and can only
     output float arrays (int or object array inputs will be cast to float).
 
     Parameters
@@ -185,11 +185,13 @@ def fftconvolve(in1, in2, mode="full"):
     in1 = asarray(in1)
     in2 = asarray(in2)
 
-    if rank(in1) == rank(in2) == 0:
+    if rank(in1) == rank(in2) == 0:  # scalar inputs
         return in1 * in2
     elif not in1.ndim == in2.ndim:
         raise ValueError("in1 and in2 should have the same rank")
-    
+    elif in1.size == 0 or in2.size == 0:  # empty arrays
+        return array([])
+
     s1 = array(in1.shape)
     s2 = array(in2.shape)
     complex_result = (np.issubdtype(in1.dtype, np.complex) or
@@ -203,7 +205,7 @@ def fftconvolve(in1, in2, mode="full"):
     fsize = 2 ** np.ceil(np.log2(size)).astype(int)
     fslice = tuple([slice(0, int(sz)) for sz in size])
     if not complex_result:
-        ret = irfftn(rfftn(in1, fsize) * 
+        ret = irfftn(rfftn(in1, fsize) *
                      rfftn(in2, fsize), fsize)[fslice].copy()
         ret = ret.real
     else:
