@@ -13,6 +13,12 @@ C
 C      Changed GAMMA to GAMMA2 and PSI to PSI_SPEC to avoid potential conflicts.
 C
 
+        FUNCTION DNAN()
+        DOUBLE PRECISION DNAN
+        DNAN = 0.0D0
+        DNAN = 0.0D0/DNAN
+        END
+
         SUBROUTINE CPDSA(N,Z,CDN)
 C
 C       ===========================================================
@@ -1611,7 +1617,8 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         IF (M.LE.12.OR.Q.LE.3.0*M.OR.Q.GT.M*M) THEN
             CALL CV0(KD,M,Q,A)
-            IF (Q.NE.0.0D0) CALL REFINE(KD,M,Q,A)
+            IF (Q.NE.0.0D0.AND.M.NE.2) CALL REFINE(KD,M,Q,A)
+            IF (Q.GT.2.0D-3.AND.M.EQ.2) CALL REFINE(KD,M,Q,A)
         ELSE
            NDIV=10
            DELTA=(M-3.0)*M/NDIV
@@ -5183,7 +5190,7 @@ C
         IF (M.LE.2) THEN
            T2=0.0D0
            IF (KD.EQ.1.AND.M.EQ.0) T1=T1+T1
-           IF (KD.EQ.1.AND.M.EQ.2) T1=-2.0*Q*Q/(4.0-B+T1)-4.0
+           IF (KD.EQ.1.AND.M.EQ.2) T1=-2.0D0*Q*Q/(4.0D0-B+T1)-4.0D0
            IF (KD.EQ.2.AND.M.EQ.1) T1=T1+Q
            IF (KD.EQ.3.AND.M.EQ.1) T1=T1-Q
         ELSE
@@ -7024,6 +7031,11 @@ C
            QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
         ENDIF
         KM=INT(QM+0.5*M)
+        IF(KM.GT.251) THEN
+           CSF=DNAN()
+           CSD=DNAN()
+           RETURN
+        END IF
         CALL FCOEF(KD,M,Q,A,FG)
         IC=INT(M/2)+1
         RD=1.74532925199433D-2
@@ -8629,23 +8641,59 @@ C
         DIMENSION FC(251)
         DO 5 I=1,251
 5          FC(I)=0.0D0
-        IF (Q.LE.1.0D0) THEN
+        IF (DABS(Q).LE.1.0D-7) THEN
+C          Expansion up to order Q^1 (Abramowitz & Stegun 20.2.27-28)
+           IF (KD.EQ.1) THEN
+              JM=M/2 + 1
+           ELSE IF (KD.EQ.2.OR.KD.EQ.3) THEN
+              JM=(M-1)/2+1
+           ELSE IF (KD.EQ.4) THEN
+              JM=M/2
+           END IF
+C          Check for overflow
+           IF (JM+1.GT.251) GOTO 6
+C          Proceed using the simplest expansion
+           IF (KD.EQ.1.OR.KD.EQ.2) THEN
+              IF (M.EQ.0) THEN
+                 FC(1) = 1/SQRT(2.0D0)
+                 FC(2) = -Q/2.0D0/SQRT(2.0D0)
+              ELSE IF (M.EQ.1) THEN
+                 FC(1) = 1.0D0
+                 FC(2) = -Q/8.0D0
+              ELSE IF (M.EQ.2) THEN
+                 FC(1) = Q/4.0D0
+                 FC(2) = 1.0D0
+                 FC(3) = -Q/12.0D0
+              ELSE
+                 FC(JM) = 1.0D0
+                 FC(JM+1) = -Q/(4.0D0 * (M + 1))
+                 FC(JM-1) =  Q/(4.0D0 * (M - 1))
+              END IF
+           ELSE IF (KD.EQ.3.OR.KD.EQ.4) THEN
+              IF (M.EQ.1) THEN
+                 FC(1) = 1.0D0
+                 FC(2) = -Q/8.0D0
+              ELSE IF (M.EQ.2) THEN
+                 FC(1) = 1.0D0
+                 FC(2) = -Q/12.0D0
+              ELSE
+                 FC(JM) = 1.0D0
+                 FC(JM+1) = -Q/(4.0D0 * (M + 1))
+                 FC(JM-1) =  Q/(4.0D0 * (M - 1))
+              END IF
+           ENDIF
+           RETURN
+        ELSE IF (Q.LE.1.0D0) THEN
            QM=7.5+56.1*SQRT(Q)-134.7*Q+90.7*SQRT(Q)*Q
         ELSE
            QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
         ENDIF
         KM=INT(QM+0.5*M)
-        IF (Q.EQ.0.0D0) THEN
-           DO 10 K=1,KM
-10            FC(K)=0.0D0
-           IF (KD.EQ.1) THEN
-              FC((M+2)/2)=1.0D0
-              IF (M.EQ.0) FC(1)=1.0D0/DSQRT(2.0D0)
-           ELSE IF (KD.EQ.4) THEN
-              FC(M/2)=1.0D0
-           ELSE
-              FC((M+1)/2)=1.0D0
-           ENDIF
+        IF (KM.GT.251) THEN
+C          Overflow, generate NaNs
+ 6         FNAN=DNAN()
+           DO 7 I=1,251
+ 7            FC(I)=FNAN
            RETURN
         ENDIF
         KB=0
@@ -12443,6 +12491,13 @@ C
            QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
         ENDIF
         KM=INT(QM+0.5*M)
+        IF(KM.GT.251) THEN
+           F1R=DNAN()
+           D1R=DNAN()
+           F2R=DNAN()
+           D2R=DNAN()
+           RETURN
+        END IF
         CALL FCOEF(KD,M,Q,A,FG)
         IC=INT(M/2)+1
         IF (KD.EQ.4) IC=M/2

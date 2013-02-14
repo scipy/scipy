@@ -505,47 +505,115 @@ double cem_cva_wrap(double m, double q) {
   int int_m, kd=1;
   double out;
 
-  if ((m < 0) || (m != floor(m))) 
+  if ((m < 0) || (m != floor(m))) {
+    sf_error("cem_cva", SF_ERROR_DOMAIN, NULL);
     return NPY_NAN;
+  }
   int_m = (int )m;
+  if (q < 0) {
+    /* http://dlmf.nist.gov/28.2#E26 */
+    if (int_m % 2 == 0) {
+      return cem_cva_wrap(m, -q);
+    }
+    else {
+      return sem_cva_wrap(m, -q);
+    }
+  }
+
   if (int_m % 2) kd=2;
   F_FUNC(cva2,CVA2)(&kd, &int_m, &q, &out);
-  return out;               
+  return out;
 }
 
 double sem_cva_wrap(double m, double q) {
   int int_m, kd=4;
   double out;
 
-  if ((m < 1) || (m != floor(m))) 
+  if ((m <= 0) || (m != floor(m))) {
+    sf_error("cem_cva", SF_ERROR_DOMAIN, NULL);
     return NPY_NAN;
-  int_m = (int )m;
+  }
+  int_m = (int)m;
+  if (q < 0) {
+    /* http://dlmf.nist.gov/28.2#E26 */
+    if (int_m % 2 == 0) {
+      return sem_cva_wrap(m, -q);
+    }
+    else {
+      return cem_cva_wrap(m, -q);
+    }
+  }
   if (int_m % 2) kd=3;
   F_FUNC(cva2,CVA2)(&kd, &int_m, &q, &out);
-  return out;               
+  return out;
 }
 
 /* Mathieu functions */
 int cem_wrap(double m, double q, double x, double *csf, double *csd)
 {
-  int int_m, kf=1;
-  if ((m < 1) || (m != floor(m)) || (q<0)) {
+  int int_m, kf=1, sgn;
+  double f, d;
+  if ((m < 0) || (m != floor(m))) {
     *csf = NPY_NAN;
     *csd = NPY_NAN;
+    sf_error("cem", SF_ERROR_DOMAIN, NULL);
+    return -1;
   }
-  int_m = (int )m;
+  int_m = (int)m;
+  if (q < 0) {
+      /* http://dlmf.nist.gov/28.2#E34 */
+      if (int_m % 2 == 0) {
+        sgn = ((int_m/2) % 2 == 0) ? 1 : -1;
+        cem_wrap(m, -q, 90 - x, &f, &d);
+        *csf =  sgn * f;
+        *csd = -sgn * d;
+        return 0;
+      }
+      else {
+        sgn = ((int_m/2) % 2 == 0) ? 1 : -1;
+        sem_wrap(m, -q, 90 - x, &f, &d);
+        *csf =  sgn * f;
+        *csd = -sgn * d;
+        return 0;
+      }
+  }
   F_FUNC(mtu0,MTU0)(&kf,&int_m, &q, &x, csf, csd);
   return 0;  
 }
 
 int sem_wrap(double m, double q, double x, double *csf, double *csd)
 {
-  int int_m, kf=2;
-  if ((m < 1) || (m != floor(m)) || (q<0)) {
+  int int_m, kf=2, sgn;
+  double f, d;
+  if ((m < 0) || (m != floor(m))) {
     *csf = NPY_NAN;
     *csd = NPY_NAN;
+    sf_error("sem", SF_ERROR_DOMAIN, NULL);
+    return -1;
   }
-  int_m = (int )m;
+  int_m = (int)m;
+  if (int_m == 0) {
+    *csf = 0;
+    *csd = 0;
+    return 0;
+  }
+  if (q < 0) {
+      /* http://dlmf.nist.gov/28.2#E34 */
+      if (int_m % 2 == 0) {
+        sgn = ((int_m/2) % 2 == 0) ? -1 : 1;
+        sem_wrap(m, -q, 90 - x, &f, &d);
+        *csf =  sgn * f;
+        *csd = -sgn * d;
+        return 0;
+      }
+      else {
+        sgn = ((int_m/2) % 2 == 0) ? 1 : -1;
+        cem_wrap(m, -q, 90 - x, &f, &d);
+        *csf =  sgn * f;
+        *csd = -sgn * d;
+        return 0;
+      }
+  }
   F_FUNC(mtu0,MTU0)(&kf,&int_m, &q, &x, csf, csd);
   return 0;  
 }
@@ -556,9 +624,11 @@ int mcm1_wrap(double m, double q, double x, double *f1r, double *d1r)
   int int_m, kf=1, kc=1;
   double f2r, d2r;
 
-  if ((m < 1) || (m != floor(m)) || (q<0)) {
+  if ((m < 0) || (m != floor(m)) || (q<0)) {
     *f1r = NPY_NAN;
     *d1r = NPY_NAN;
+    sf_error("mcm1", SF_ERROR_DOMAIN, NULL);
+    return -1;
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, f1r, d1r, &f2r, &d2r);
@@ -573,6 +643,8 @@ int msm1_wrap(double m, double q, double x, double *f1r, double *d1r)
   if ((m < 1) || (m != floor(m)) || (q<0)) {
     *f1r = NPY_NAN;
     *d1r = NPY_NAN;
+    sf_error("msm1", SF_ERROR_DOMAIN, NULL);
+    return -1;
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, f1r, d1r, &f2r, &d2r);
@@ -584,9 +656,11 @@ int mcm2_wrap(double m, double q, double x, double *f2r, double *d2r)
   int int_m, kf=1, kc=2;
   double f1r, d1r;
 
-  if ((m < 1) || (m != floor(m)) || (q<0)) {
+  if ((m < 0) || (m != floor(m)) || (q<0)) {
     *f2r = NPY_NAN;
     *d2r = NPY_NAN;
+    sf_error("mcm2", SF_ERROR_DOMAIN, NULL);
+    return -1;
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, &f1r, &d1r, f2r, d2r);
@@ -601,6 +675,8 @@ int msm2_wrap(double m, double q, double x, double *f2r, double *d2r)
   if ((m < 1) || (m != floor(m)) || (q<0)) {
     *f2r = NPY_NAN;
     *d2r = NPY_NAN;
+    sf_error("msm2", SF_ERROR_DOMAIN, NULL);
+    return -1;
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, &f1r, &d1r, f2r, d2r);
