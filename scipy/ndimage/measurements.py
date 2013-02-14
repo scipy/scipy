@@ -102,9 +102,9 @@ def label(input, structure=None, output=None):
 
     Each of the 4 features are labeled with a different integer:
 
-    >>> print num_features
+    >>> print(num_features)
     4
-    >>> print labeled_array
+    >>> print(labeled_array)
     array([[0, 0, 1, 1, 0, 0],
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 3, 0],
@@ -128,9 +128,9 @@ def label(input, structure=None, output=None):
     Show the 2 labeled features (note that features 1, 3, and 4 from above are
     now considered a single feature):
 
-    >>> print num_features
+    >>> print(num_features)
     2
-    >>> print labeled_array
+    >>> print(labeled_array)
     array([[0, 0, 1, 1, 0, 0],
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 1, 0],
@@ -301,7 +301,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     Passing positions:
 
     >>> def fn(val, pos):
-    ...     print "fn says:", val, ":", pos
+    ...     print("fn says: %s : %s" % (val, pos))
     ...     return (val.sum()) if (pos.sum() % 2 == 0) else (-val.sum())
     ...
     >>> ndimage.labeled_comprehension(a, lbl, lbls, fn, float, 0, True)

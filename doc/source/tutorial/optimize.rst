@@ -77,7 +77,7 @@ parameter):
              Iterations: 339
              Function evaluations: 571
 
-    >>> print res.x
+    >>> print(res.x)
     [ 1.  1.  1.  1.  1.]
 
 The simplex algorithm is probably the simplest way to minimize a fairly
@@ -140,7 +140,7 @@ through the ``jac`` parameter as illustrated below.
              Iterations: 51
              Function evaluations: 63
              Gradient evaluations: 63
-    >>> print res.x
+    >>> print(res.x)
     [ 1.  1.  1.  1.  1.]
 
 
@@ -226,7 +226,7 @@ the function using Newton-CG method is shown in the following example:
              Function evaluations: 22
              Gradient evaluations: 19
              Hessian evaluations: 19
-    >>> print res.x
+    >>> print(res.x)
     [ 1.  1.  1.  1.  1.]
 
 
@@ -274,7 +274,7 @@ Rosenbrock function using :func:`minimize` follows:
              Function evaluations: 23
              Gradient evaluations: 20
              Hessian evaluations: 44
-    >>> print res.x
+    >>> print(res.x)
     [ 1.  1.  1.  1.  1.]
 
 
@@ -350,7 +350,7 @@ Now an unconstrained optimization can be performed as:
                 Iterations: 4
                 Function evaluations: 5
                 Gradient evaluations: 4
-    >>> print res.x
+    >>> print(res.x)
     [ 2.  1.]
 
 and a constrained optimization as:
@@ -362,7 +362,7 @@ and a constrained optimization as:
                 Iterations: 9
                 Function evaluations: 14
                 Gradient evaluations: 9
-    >>> print res.x
+    >>> print(res.x)
     [ 1.00000009  1.        ]
 
 
@@ -442,15 +442,15 @@ This is shown in the following example:
    ...     return p[0]*sin(2*pi*p[1]*x+p[2])
 
    >>> p0 = [8, 1/2.3e-2, pi/3]
-   >>> print array(p0)
+   >>> print(array(p0))
    [  8.      43.4783   1.0472]
 
    >>> from scipy.optimize import leastsq
    >>> plsq = leastsq(residuals, p0, args=(y_meas, x))
-   >>> print plsq[0]
+   >>> print(plsq[0])
    [ 10.9437  33.3605   0.5834]
 
-   >>> print array([A, k, theta])
+   >>> print(array([A, k, theta]))
    [ 10.      33.3333   0.5236]
 
    >>> import matplotlib.pyplot as plt
@@ -495,7 +495,7 @@ Here is an example:
     >>> from scipy.optimize import minimize_scalar
     >>> f = lambda x: (x - 2) * (x + 1)**2
     >>> res = minimize_scalar(f, method='brent')
-    >>> print res.x
+    >>> print(res.x)
     1.0
 
 
@@ -516,7 +516,7 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
 
     >>> from scipy.special import j1
     >>> res = minimize_scalar(j1, bs=(4, 7), method='bounded')
-    >>> print res.x
+    >>> print(res.x)
     5.33144184241
 
 
@@ -669,7 +669,7 @@ The problem we have can now be solved as follows:
     sol = root(residual, guess, method='krylov', options={'disp': True})
     #sol = root(residual, guess, method='broyden2', options={'disp': True, 'max_rank': 50})
     #sol = root(residual, guess, method='anderson', options={'disp': True, 'M': 10})
-    print 'Residual', abs(residual(sol.x)).max()
+    print('Residual: %g' % abs(residual(sol.x)).max())
 
     # visualize
     import matplotlib.pyplot as plt

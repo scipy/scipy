@@ -3,7 +3,7 @@
 Constants (:mod:`scipy.constants`)
 ==================================
 
-.. module:: scipy.constants
+.. currentmodule:: scipy.constants
 
 Physical and mathematical constants and units.
 

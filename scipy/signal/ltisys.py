@@ -973,8 +973,8 @@ def freqresp(system, w=None, n=10000):
     H : 1D ndarray
         Array of complex magnitude values
 
-    Example
-    -------
+    Examples
+    --------
     # Generating the Nyquist plot of a transfer function
 
     >>> from scipy import signal

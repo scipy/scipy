@@ -98,7 +98,7 @@ The solution can be found using the `newton_krylov` solver:
    # solve
    guess = zeros((nx, ny), float)
    sol = newton_krylov(residual, guess, method='lgmres', verbose=1)
-   print 'Residual', abs(residual(sol)).max()
+   print('Residual: %g' % abs(residual(sol)).max())
 
    # visualize
    import matplotlib.pyplot as plt

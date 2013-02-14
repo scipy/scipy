@@ -214,7 +214,7 @@ example that follows.
 
    Roots of spline
 
-   >>> print interpolate.sproot(tck)
+   >>> print(interpolate.sproot(tck))
    [ 0.      3.1416]
 
    Parametric spline

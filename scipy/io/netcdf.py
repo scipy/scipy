@@ -166,14 +166,14 @@ class netcdf_file(object):
     
         >>> from scipy.io import netcdf
         >>> f = netcdf.netcdf_file('simple.nc', 'r')
-        >>> print f.history
+        >>> print(f.history)
         Created for a test
         >>> time = f.variables['time']
-        >>> print time.units
+        >>> print(time.units)
         days since 2008-01-01
-        >>> print time.shape
+        >>> print(time.shape)
         (10,)
-        >>> print time[-1]
+        >>> print(time[-1])
         9
         >>> f.close()
     """

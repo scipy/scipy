@@ -312,7 +312,7 @@ class ode(object):
     >>> dt = 1
     >>> while r.successful() and r.t < t1:
     >>>     r.integrate(r.t+dt)
-    >>>     print r.t, r.y
+    >>>     print("%g %g" % (r.t, r.y))
 
     References
     ----------

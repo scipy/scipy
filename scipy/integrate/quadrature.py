@@ -613,7 +613,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     The final result is 0.421350396475 after 33 function evaluations.
 
-    >>> print 2*result,erf(1)
+    >>> print("%g %g" % (2*result, erf(1)))
     0.84270079295 0.84270079295
 
     """

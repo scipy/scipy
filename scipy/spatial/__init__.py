@@ -3,14 +3,16 @@
 Spatial algorithms and data structures (:mod:`scipy.spatial`)
 =============================================================
 
+.. currentmodule:: scipy.spatial
+
 Nearest-neighbor Queries
 ========================
 .. autosummary::
    :toctree: generated/
 
-   KDTree - *Class* for efficient nearest-neighbor queries
+   KDTree      -- class for efficient nearest-neighbor queries
    cKDTree     -- class for efficient nearest-neighbor queries (faster impl.)
-   distance - *Module* containing many different distance measures
+   distance    -- module containing many different distance measures
 
 Delaunay Triangulation, Convex Hulls and Voronoi Diagrams
 =========================================================

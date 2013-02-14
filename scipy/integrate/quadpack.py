@@ -225,7 +225,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     >>> x2 = lambda x: x**2
     >>> integrate.quad(x2,0.,4.)
     (21.333333333333332, 2.3684757858670003e-13)
-    >> print 4.**3/3
+    >> print(4.**3/3)
     21.3333333333
 
     Calculate :math:`\\int^\\infty_0 e^{-x} dx`

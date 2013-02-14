@@ -79,7 +79,7 @@ Continuous distributions
    f                 -- F (Snecdor F)
    fatiguelife       -- Fatigue Life (Birnbaum-Sanders)
    fisk              -- Fisk
-  foldcauchy        -- Folded Cauchy
+   foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
    frechet_r         -- Frechet Right Sided, Extreme Value Type II (Extreme LB) or weibull_min
    frechet_l         -- Frechet Left Sided, Weibull_max

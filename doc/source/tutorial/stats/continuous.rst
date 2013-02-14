@@ -45,16 +45,14 @@ Moments
 Non-central moments are defined using the PDF
 
 .. math::
-   :nowrap:
 
-     \mu_{n}^{\prime}=\int_{-\infty}^{\infty}x^{n}f\left(x\right)dx.
+   \mu_{n}^{\prime}=\int_{-\infty}^{\infty}x^{n}f\left(x\right)dx.
 
 Note, that these can always be computed using the PPF. Substitute :math:`x=G\left(q\right)` in the above equation and get
 
 .. math::
-   :nowrap:
 
-     \mu_{n}^{\prime}=\int_{0}^{1}G^{n}\left(q\right)dq
+   \mu_{n}^{\prime}=\int_{0}^{1}G^{n}\left(q\right)dq
 
 which may be easier to compute numerically. Note that :math:`q=F\left(x\right)` so that :math:`dq=f\left(x\right)dx.` Central moments are computed similarly :math:`\mu=\mu_{1}^{\prime}`
 
@@ -73,14 +71,12 @@ In particular
 Skewness is defined as
 
 .. math::
-   :nowrap:
 
      \gamma_{1}=\sqrt{\beta_{1}}=\frac{\mu_{3}}{\mu_{2}^{3/2}}
 
 while (Fisher) kurtosis is
 
 .. math::
-   :nowrap:
 
      \gamma_{2}=\frac{\mu_{4}}{\mu_{2}^{2}}-3,
 
@@ -94,7 +90,6 @@ The median, :math:`m_{n}` is defined as the point at which half of the density i
 and half on the other. In other words, :math:`F\left(m_{n}\right)=\frac{1}{2}` so that
 
 .. math::
-   :nowrap:
 
      m_{n}=G\left(\frac{1}{2}\right).
 
@@ -102,7 +97,6 @@ In addition, the mode, :math:`m_{d}` , is defined as the value for which the pro
 reaches it's peak
 
 .. math::
-   :nowrap:
 
      m_{d}=\arg\max_{x}f\left(x\right).
 
@@ -121,7 +115,6 @@ If :math:`f\left(x;\boldsymbol{\theta}\right)` is the PDF of a random-variable w
 random vector :math:`\mathbf{x}` is
 
 .. math::
-   :nowrap:
 
      f\left(\mathbf{x};\boldsymbol{\theta}\right)=\prod_{i=1}^{N}f\left(x_{i};\boldsymbol{\theta}\right).
 
@@ -171,7 +164,6 @@ Standard notation for mean
 We will use
 
 .. math::
-   :nowrap:
 
     \overline{y\left(\mathbf{x}\right)}=\frac{1}{N}\sum_{i=1}^{N}y\left(x_{i}\right)
 
@@ -214,7 +206,6 @@ One shape parameters :math:`\alpha>0` (paramter :math:`\beta` in DATAPLOT is a s
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\frac{1}{\Phi\left(a\right)\sqrt{2\pi}}\int_{0}^{\infty}\frac{e^{xt}}{x^{2}}\exp\left(-\frac{1}{2}\left(\alpha-\frac{1}{x}\right)^{2}\right)dx
 
@@ -223,7 +214,6 @@ One shape parameters :math:`\alpha>0` (paramter :math:`\beta` in DATAPLOT is a s
 No moments?
 
 .. math::
-   :nowrap:
 
      l_{\mathbf{x}}\left(\alpha\right)=N\log\left[\Phi\left(\alpha\right)\sqrt{2\pi}\right]+2N\overline{\log\mathbf{x}}+\frac{N}{2}\alpha^{2}-\alpha\overline{\mathbf{x}^{-1}}+\frac{1}{2}\overline{\mathbf{x}^{-2}}
 
@@ -272,7 +262,6 @@ Defined over :math:`x\in\left[-\frac{\pi}{4},\frac{\pi}{4}\right]`
 
 
 .. math::
-   :nowrap:
 
      l_{\mathbf{x}}\left(\cdot\right)=-N\overline{\log\left[\cos\left(2\mathbf{x}\right)\right]}
 
@@ -292,7 +281,6 @@ Defined over :math:`x\in\left(0,1\right)` . To get the JKB definition put :math:
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=E^{t/2}I_{0}\left(\frac{t}{2}\right)
 
@@ -315,7 +303,6 @@ Defined over :math:`x\in\left(0,1\right)` . To get the JKB definition put :math:
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]\approx-0.24156447527049044468
 
@@ -324,7 +311,6 @@ Defined over :math:`x\in\left(0,1\right)` . To get the JKB definition put :math:
 
 
 .. math::
-   :nowrap:
 
      l_{\mathbf{x}}\left(\cdot\right)=N\log\pi+\frac{N}{2}\overline{\log\mathbf{x}}+\frac{N}{2}\overline{\log\left(1-\mathbf{x}\right)}
 
@@ -339,7 +325,6 @@ Two shape parameters
 
 
 .. math::
-   :nowrap:
 
      a,b>0
 
@@ -359,7 +344,6 @@ Two shape parameters
 
 
 .. math::
-   :nowrap:
 
      l_{\mathbf{x}}\left(a,b\right)=-N\log\Gamma\left(a+b\right)+N\log\Gamma\left(a\right)+N\log\Gamma\left(b\right)-N\left(a-1\right)\overline{\log\mathbf{x}}-N\left(b-1\right)\overline{\log\left(1-\mathbf{x}\right)}
 
@@ -384,9 +368,8 @@ Ryzhik (sixth edition).
 
 
 .. math::
-   :nowrap:
 
-     \mu_{n}^{\prime}=\left\{ \begin{array}{ccc} \frac{\Gamma\left(n+\alpha\right)\Gamma\left(\beta-n\right)}{\Gamma\left(\alpha\right)\Gamma\left(\beta\right)}=\frac{\left(\alpha\right)_{n}}{\left(\beta-n\right)_{n}} &  & \beta>n\\ \infty &  & \textrm{otherwise}\end{array}\right.
+     \mu_{n}^{\prime}=\left\{ \begin{array}{ccc} \frac{\Gamma\left(n+\alpha\right)\Gamma\left(\beta-n\right)}{\Gamma\left(\alpha\right)\Gamma\left(\beta\right)}=\frac{\left(\alpha\right)_{n}}{\left(\beta-n\right)_{n}} &  & \beta>n\\ \infty &  & \mathrm{otherwise}\end{array}\right.
 
 Therefore,
 
@@ -413,12 +396,11 @@ Bradford
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x;c\right) & = & \frac{c}{k\left(1+cx\right)}I_{\left(0,1\right)}\left(x\right)\\ F\left(x;c\right) & = & \frac{\log\left(1+cx\right)}{k}\\ G\left(\alpha\; c\right) & = & \frac{\left(1+c\right)^{\alpha}-1}{c}\\ M\left(t\right) & = & \frac{1}{k}e^{-t/c}\left[\textrm{Ei}\left(t+\frac{t}{c}\right)-\textrm{Ei}\left(\frac{t}{c}\right)\right]\\ \mu & = & \frac{c-k}{ck}\\ \mu_{2} & = & \frac{\left(c+2\right)k-2c}{2ck^{2}}\\ \gamma_{1} & = & \frac{\sqrt{2}\left(12c^{2}-9kc\left(c+2\right)+2k^{2}\left(c\left(c+3\right)+3\right)\right)}{\sqrt{c\left(c\left(k-2\right)+2k\right)}\left(3c\left(k-2\right)+6k\right)}\\ \gamma_{2} & = & \frac{c^{3}\left(k-3\right)\left(k\left(3k-16\right)+24\right)+12kc^{2}\left(k-4\right)\left(k-3\right)+6ck^{2}\left(3k-14\right)+12k^{3}}{3c\left(c\left(k-2\right)+2k\right)^{2}}\\ m_{d} & = & 0\\ m_{n} & = & \sqrt{1+c}-1\end{eqnarray*}
+    \begin{eqnarray*} f\left(x;c\right) & = & \frac{c}{k\left(1+cx\right)}I_{\left(0,1\right)}\left(x\right)\\ F\left(x;c\right) & = & \frac{\log\left(1+cx\right)}{k}\\ G\left(\alpha\; c\right) & = & \frac{\left(1+c\right)^{\alpha}-1}{c}\\ M\left(t\right) & = & \frac{1}{k}e^{-t/c}\left[\mathrm{Ei}\left(t+\frac{t}{c}\right)-\mathrm{Ei}\left(\frac{t}{c}\right)\right]\\ \mu & = & \frac{c-k}{ck}\\ \mu_{2} & = & \frac{\left(c+2\right)k-2c}{2ck^{2}}\\ \gamma_{1} & = & \frac{\sqrt{2}\left(12c^{2}-9kc\left(c+2\right)+2k^{2}\left(c\left(c+3\right)+3\right)\right)}{\sqrt{c\left(c\left(k-2\right)+2k\right)}\left(3c\left(k-2\right)+6k\right)}\\ \gamma_{2} & = & \frac{c^{3}\left(k-3\right)\left(k\left(3k-16\right)+24\right)+12kc^{2}\left(k-4\right)\left(k-3\right)+6ck^{2}\left(3k-14\right)+12k^{3}}{3c\left(c\left(k-2\right)+2k\right)^{2}}\\ m_{d} & = & 0\\ m_{n} & = & \sqrt{1+c}-1\end{eqnarray*}
 
-where :math:`\textrm{Ei}\left(\textrm{z}\right)` is the exponential integral function. Also
+where :math:`\mathrm{Ei}\left(\mathrm{z}\right)` is the exponential integral function. Also
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\frac{1}{2}\log\left(1+c\right)-\log\left(\frac{c}{\log\left(1+c\right)}\right)
 
@@ -442,7 +424,7 @@ Burr
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x;c,d\right) & = & \frac{cd}{x^{c+1}\left(1+x^{-c}\right)^{d+1}}I_{\left(0,\infty\right)}\left(x\right)\\ F\left(x;c,d\right) & = & \left(1+x^{-c}\right)^{-d}\\ G\left(\alpha;c,d\right) & = & \left(\alpha^{-1/d}-1\right)^{-1/c}\\ \mu & = & \frac{\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+d\right)}{\Gamma\left(d\right)}\\ \mu_{2} & = & \frac{k}{\Gamma^{2}\left(d\right)}\\ \gamma_{1} & = & \frac{1}{\sqrt{k^{3}}}\left[2\Gamma^{3}\left(1-\frac{1}{c}\right)\Gamma^{3}\left(\frac{1}{c}+d\right)+\Gamma^{2}\left(d\right)\Gamma\left(1-\frac{3}{c}\right)\Gamma\left(\frac{3}{c}+d\right)\right.\\  &  & \left.-3\Gamma\left(d\right)\Gamma\left(1-\frac{2}{c}\right)\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+d\right)\Gamma\left(\frac{2}{c}+d\right)\right]\\ \gamma_{2} & = & -3+\frac{1}{k^{2}}\left[6\Gamma\left(d\right)\Gamma\left(1-\frac{2}{c}\right)\Gamma^{2}\left(1-\frac{1}{c}\right)\Gamma^{2}\left(\frac{1}{c}+d\right)\Gamma\left(\frac{2}{c}+d\right)\right.\\  &  & -3\Gamma^{4}\left(1-\frac{1}{c}\right)\Gamma^{4}\left(\frac{1}{c}+d\right)+\Gamma^{3}\left(d\right)\Gamma\left(1-\frac{4}{c}\right)\Gamma\left(\frac{4}{c}+d\right)\\  &  & \left.-4\Gamma^{2}\left(d\right)\Gamma\left(1-\frac{3}{c}\right)\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+d\right)\Gamma\left(\frac{3}{c}+d\right)\right]\\ m_{d} & = & \left(\frac{cd-1}{c+1}\right)^{1/c}\,\textrm{if }cd>1\,\textrm{otherwise }0\\ m_{n} & = & \left(2^{1/d}-1\right)^{-1/c}\end{eqnarray*}
+    \begin{eqnarray*} f\left(x;c,d\right) & = & \frac{cd}{x^{c+1}\left(1+x^{-c}\right)^{d+1}}I_{\left(0,\infty\right)}\left(x\right)\\ F\left(x;c,d\right) & = & \left(1+x^{-c}\right)^{-d}\\ G\left(\alpha;c,d\right) & = & \left(\alpha^{-1/d}-1\right)^{-1/c}\\ \mu & = & \frac{\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+d\right)}{\Gamma\left(d\right)}\\ \mu_{2} & = & \frac{k}{\Gamma^{2}\left(d\right)}\\ \gamma_{1} & = & \frac{1}{\sqrt{k^{3}}}\left[2\Gamma^{3}\left(1-\frac{1}{c}\right)\Gamma^{3}\left(\frac{1}{c}+d\right)+\Gamma^{2}\left(d\right)\Gamma\left(1-\frac{3}{c}\right)\Gamma\left(\frac{3}{c}+d\right)\right.\\  &  & \left.-3\Gamma\left(d\right)\Gamma\left(1-\frac{2}{c}\right)\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+d\right)\Gamma\left(\frac{2}{c}+d\right)\right]\\ \gamma_{2} & = & -3+\frac{1}{k^{2}}\left[6\Gamma\left(d\right)\Gamma\left(1-\frac{2}{c}\right)\Gamma^{2}\left(1-\frac{1}{c}\right)\Gamma^{2}\left(\frac{1}{c}+d\right)\Gamma\left(\frac{2}{c}+d\right)\right.\\  &  & -3\Gamma^{4}\left(1-\frac{1}{c}\right)\Gamma^{4}\left(\frac{1}{c}+d\right)+\Gamma^{3}\left(d\right)\Gamma\left(1-\frac{4}{c}\right)\Gamma\left(\frac{4}{c}+d\right)\\  &  & \left.-4\Gamma^{2}\left(d\right)\Gamma\left(1-\frac{3}{c}\right)\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+d\right)\Gamma\left(\frac{3}{c}+d\right)\right]\\ m_{d} & = & \left(\frac{cd-1}{c+1}\right)^{1/c}\,\mathrm{if }cd>1\,\mathrm{otherwise }0\\ m_{n} & = & \left(2^{1/d}-1\right)^{-1/c}\end{eqnarray*}
 
 
 
@@ -484,7 +466,6 @@ variates.
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\Gamma\left(\frac{v}{2}\right)\,_{1}F_{1}\left(\frac{v}{2};\frac{1}{2};\frac{t^{2}}{2}\right)+\frac{t}{\sqrt{2}}\Gamma\left(\frac{1+\nu}{2}\right)\,_{1}F_{1}\left(\frac{1+\nu}{2};\frac{3}{2};\frac{t^{2}}{2}\right)
 
@@ -515,7 +496,6 @@ The standard form (most often used in standard form only) is :math:`x>0`
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\frac{\Gamma\left(\frac{\nu}{2}\right)}{\left(\frac{1}{2}-t\right)^{\nu/2}}
 
@@ -570,7 +550,6 @@ The double gamma is the signed version of the Gamma distribution. For :math:`\al
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\frac{1}{2\left(1-t\right)^{a}}+\frac{1}{2\left(1+t\right)^{a}}
 
@@ -581,7 +560,7 @@ The double gamma is the signed version of the Gamma distribution. For :math:`\al
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} \mu=m_{n} & = & 0\\ \mu_{2} & = & \alpha\left(\alpha+1\right)\\ \gamma_{1} & = & 0\\ \gamma_{2} & = & \frac{\left(\alpha+2\right)\left(\alpha+3\right)}{\alpha\left(\alpha+1\right)}-3\\ m_{d} & = & \textrm{NA}\end{eqnarray*}
+    \begin{eqnarray*} \mu=m_{n} & = & 0\\ \mu_{2} & = & \alpha\left(\alpha+1\right)\\ \gamma_{1} & = & 0\\ \gamma_{2} & = & \frac{\left(\alpha+2\right)\left(\alpha+3\right)}{\alpha\left(\alpha+1\right)}-3\\ m_{d} & = & \mathrm{NA}\end{eqnarray*}
 
 
 
@@ -609,16 +588,15 @@ This is a signed form of the Weibull distribution.
 
 
 .. math::
-   :nowrap:
 
-     \mu_{n}^{\prime}=\mu_{n}=\begin{cases} \Gamma\left(1+\frac{n}{c}\right) & n\textrm{ even}\\ 0 & n\textrm{ odd}\end{cases}
+     \mu_{n}^{\prime}=\mu_{n}=\begin{cases} \Gamma\left(1+\frac{n}{c}\right) & n\mathrm{ even}\\ 0 & n\mathrm{ odd}\end{cases}
 
 
 
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} m_{d}=\mu & = & 0\\ \mu_{2} & = & \Gamma\left(\frac{c+2}{c}\right)\\ \gamma_{1} & = & 0\\ \gamma_{2} & = & \frac{\Gamma\left(1+\frac{4}{c}\right)}{\Gamma^{2}\left(1+\frac{2}{c}\right)}\\ m_{d} & = & \textrm{NA bimodal}\end{eqnarray*}
+    \begin{eqnarray*} m_{d}=\mu & = & 0\\ \mu_{2} & = & \Gamma\left(\frac{c+2}{c}\right)\\ \gamma_{1} & = & 0\\ \gamma_{2} & = & \frac{\Gamma\left(1+\frac{4}{c}\right)}{\Gamma^{2}\left(1+\frac{2}{c}\right)}\\ m_{d} & = & \mathrm{NA bimodal}\end{eqnarray*}
 
 
 
@@ -646,7 +624,6 @@ therefore ( :math:`x\geq0` )
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=n!
 
@@ -655,7 +632,6 @@ therefore ( :math:`x\geq0` )
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\frac{1}{1-t}
 
@@ -669,7 +645,6 @@ therefore ( :math:`x\geq0` )
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=1.
 
@@ -717,7 +692,6 @@ This distribution's pdf is the average of the inverse-Gaussian :math:`\left(\mu=
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=c\sqrt{2\pi}\exp\left[\frac{1}{c^{2}}\left(1-\sqrt{1-2c^{2}t}\right)\right]\left(1+\frac{1}{\sqrt{1-2c^{2}t}}\right)
 
@@ -752,14 +726,13 @@ Special case of the Burr distribution with :math:`d=1`
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x;c,d\right) & = & \frac{cx^{c-1}}{\left(1+x^{c}\right)^{2}}I_{\left(0,\infty\right)}\left(x\right)\\ F\left(x;c,d\right) & = & \left(1+x^{-c}\right)^{-1}\\ G\left(\alpha;c,d\right) & = & \left(\alpha^{-1}-1\right)^{-1/c}\\ \mu & = & \Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+1\right)\\ \mu_{2} & = & k\\ \gamma_{1} & = & \frac{1}{\sqrt{k^{3}}}\left[2\Gamma^{3}\left(1-\frac{1}{c}\right)\Gamma^{3}\left(\frac{1}{c}+1\right)+\Gamma\left(1-\frac{3}{c}\right)\Gamma\left(\frac{3}{c}+1\right)\right.\\  &  & \left.-3\Gamma\left(1-\frac{2}{c}\right)\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+1\right)\Gamma\left(\frac{2}{c}+1\right)\right]\\ \gamma_{2} & = & -3+\frac{1}{k^{2}}\left[6\Gamma\left(1-\frac{2}{c}\right)\Gamma^{2}\left(1-\frac{1}{c}\right)\Gamma^{2}\left(\frac{1}{c}+1\right)\Gamma\left(\frac{2}{c}+1\right)\right.\\  &  & -3\Gamma^{4}\left(1-\frac{1}{c}\right)\Gamma^{4}\left(\frac{1}{c}+1\right)+\Gamma\left(1-\frac{4}{c}\right)\Gamma\left(\frac{4}{c}+1\right)\\  &  & \left.-4\Gamma\left(1-\frac{3}{c}\right)\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+1\right)\Gamma\left(\frac{3}{c}+1\right)\right]\\ m_{d} & = & \left(\frac{c-1}{c+1}\right)^{1/c}\,\textrm{if }c>1\,\textrm{otherwise }0\\ m_{n} & = & 1\end{eqnarray*}
+    \begin{eqnarray*} f\left(x;c,d\right) & = & \frac{cx^{c-1}}{\left(1+x^{c}\right)^{2}}I_{\left(0,\infty\right)}\left(x\right)\\ F\left(x;c,d\right) & = & \left(1+x^{-c}\right)^{-1}\\ G\left(\alpha;c,d\right) & = & \left(\alpha^{-1}-1\right)^{-1/c}\\ \mu & = & \Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+1\right)\\ \mu_{2} & = & k\\ \gamma_{1} & = & \frac{1}{\sqrt{k^{3}}}\left[2\Gamma^{3}\left(1-\frac{1}{c}\right)\Gamma^{3}\left(\frac{1}{c}+1\right)+\Gamma\left(1-\frac{3}{c}\right)\Gamma\left(\frac{3}{c}+1\right)\right.\\  &  & \left.-3\Gamma\left(1-\frac{2}{c}\right)\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+1\right)\Gamma\left(\frac{2}{c}+1\right)\right]\\ \gamma_{2} & = & -3+\frac{1}{k^{2}}\left[6\Gamma\left(1-\frac{2}{c}\right)\Gamma^{2}\left(1-\frac{1}{c}\right)\Gamma^{2}\left(\frac{1}{c}+1\right)\Gamma\left(\frac{2}{c}+1\right)\right.\\  &  & -3\Gamma^{4}\left(1-\frac{1}{c}\right)\Gamma^{4}\left(\frac{1}{c}+1\right)+\Gamma\left(1-\frac{4}{c}\right)\Gamma\left(\frac{4}{c}+1\right)\\  &  & \left.-4\Gamma\left(1-\frac{3}{c}\right)\Gamma\left(1-\frac{1}{c}\right)\Gamma\left(\frac{1}{c}+1\right)\Gamma\left(\frac{3}{c}+1\right)\right]\\ m_{d} & = & \left(\frac{c-1}{c+1}\right)^{1/c}\,\mathrm{if }c>1\,\mathrm{otherwise }0\\ m_{n} & = & 1\end{eqnarray*}
 
 
 
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=2-\log c.
 
@@ -796,7 +769,6 @@ degree of freedom and non-centrality parameter :math:`c^{2}.` Note that :math:`c
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\exp\left[\frac{t}{2}\left(t-2c\right)\right]\left(1+e^{2ct}\right)
 
@@ -805,7 +777,7 @@ degree of freedom and non-centrality parameter :math:`c^{2}.` Note that :math:`c
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} k & = & \textrm{erf}\left(\frac{c}{\sqrt{2}}\right)\\ p & = & \exp\left(-\frac{c^{2}}{2}\right)\\ \mu & = & \sqrt{\frac{2}{\pi}}p+ck\\ \mu_{2} & = & c^{2}+1-\mu^{2}\\ \gamma_{1} & = & \frac{\sqrt{\frac{2}{\pi}}p^{3}\left(4-\frac{\pi}{p^{2}}\left(2c^{2}+1\right)\right)+2ck\left(6p^{2}+3cpk\sqrt{2\pi}+\pi c\left(k^{2}-1\right)\right)}{\pi\mu_{2}^{3/2}}\\ \gamma_{2} & = & \frac{c^{4}+6c^{2}+3+6\left(c^{2}+1\right)\mu^{2}-3\mu^{4}-4p\mu\left(\sqrt{\frac{2}{\pi}}\left(c^{2}+2\right)+\frac{ck}{p}\left(c^{2}+3\right)\right)}{\mu_{2}^{2}}\end{eqnarray*}
+    \begin{eqnarray*} k & = & \mathrm{erf}\left(\frac{c}{\sqrt{2}}\right)\\ p & = & \exp\left(-\frac{c^{2}}{2}\right)\\ \mu & = & \sqrt{\frac{2}{\pi}}p+ck\\ \mu_{2} & = & c^{2}+1-\mu^{2}\\ \gamma_{1} & = & \frac{\sqrt{\frac{2}{\pi}}p^{3}\left(4-\frac{\pi}{p^{2}}\left(2c^{2}+1\right)\right)+2ck\left(6p^{2}+3cpk\sqrt{2\pi}+\pi c\left(k^{2}-1\right)\right)}{\pi\mu_{2}^{3/2}}\\ \gamma_{2} & = & \frac{c^{4}+6c^{2}+3+6\left(c^{2}+1\right)\mu^{2}-3\mu^{4}-4p\mu\left(\sqrt{\frac{2}{\pi}}\left(c^{2}+2\right)+\frac{ck}{p}\left(c^{2}+3\right)\right)}{\mu_{2}^{2}}\end{eqnarray*}
 
 
 
@@ -843,7 +815,6 @@ A type of extreme-value distribution with a lower bound. Defined for :math:`x>0`
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\Gamma\left(1+\frac{n}{c}\right)
 
@@ -857,14 +828,12 @@ A type of extreme-value distribution with a lower bound. Defined for :math:`x>0`
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=-\frac{\gamma}{c}-\log\left(c\right)+\gamma+1
 
 where :math:`\gamma` is Euler's constant and equal to
 
 .. math::
-   :nowrap:
 
      \gamma\approx0.57721566490153286061.
 
@@ -889,7 +858,6 @@ given above, and the other statistical parameters can be computed from
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\left(-1\right)^{n}\Gamma\left(1+\frac{n}{c}\right).
 
@@ -898,14 +866,12 @@ given above, and the other statistical parameters can be computed from
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=-\frac{\gamma}{c}-\log\left(c\right)+\gamma+1
 
 where :math:`\gamma` is Euler's constant and equal to
 
 .. math::
-   :nowrap:
 
      \gamma\approx0.57721566490153286061.
 
@@ -925,7 +891,6 @@ The standard form for the gamma distribution is :math:`\left(\alpha>0\right)` va
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\frac{1}{\left(1-t\right)^{\alpha}}
 
@@ -941,14 +906,12 @@ The standard form for the gamma distribution is :math:`\left(\alpha>0\right)` va
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\Psi\left(a\right)\left[1-a\right]+a+\log\Gamma\left(a\right)
 
 where
 
 .. math::
-   :nowrap:
 
      \Psi\left(a\right)=\frac{\Gamma^{\prime}\left(a\right)}{\Gamma\left(a\right)}.
 
@@ -973,7 +936,6 @@ parameter :math:`c>0.` And :math:`x>0`
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\frac{c}{1-t}\,_{2}F_{1}\left(1+c,\,1-t\,;\,2-t\,;-1\right)
 
@@ -1012,7 +974,6 @@ Shape parameter :math:`c\neq0` and defined for :math:`x\geq0` for all :math:`c` 
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\left\{ \begin{array}{cc} \left(-\frac{t}{c}\right)^{\frac{1}{c}}e^{-\frac{t}{c}}\left[\Gamma\left(1-\frac{1}{c}\right)+\Gamma\left(-\frac{1}{c},-\frac{t}{c}\right)-\pi\csc\left(\frac{\pi}{c}\right)/\Gamma\left(\frac{1}{c}\right)\right] & c>0\\ \left(\frac{\left|c\right|}{t}\right)^{1/\left|c\right|}\Gamma\left[\frac{1}{\left|c\right|},\frac{t}{\left|c\right|}\right] & c<0\end{array}\right.
 
@@ -1021,7 +982,6 @@ Shape parameter :math:`c\neq0` and defined for :math:`x\geq0` for all :math:`c` 
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\frac{\left(-1\right)^{n}}{c^{n}}\sum_{k=0}^{n}\left(\begin{array}{c} n\\ k\end{array}\right)\frac{\left(-1\right)^{k}}{1-ck}\quad cn<1
 
@@ -1044,7 +1004,6 @@ Thus,
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=1+c\quad c>0
 
@@ -1079,7 +1038,6 @@ For :math:`c>0` defined on :math:`-\infty<x\leq1/c.`
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\frac{1}{c^{n}}\sum_{k=0}^{n}\left(\begin{array}{c} n\\ k\end{array}\right)\left(-1\right)^{k}\Gamma\left(ck+1\right)\quad cn>-1
 
@@ -1122,7 +1080,6 @@ A general probability form that reduces to many common distributions: :math:`x>0
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\frac{\Gamma\left(a+\frac{n}{c}\right)}{\Gamma\left(a\right)}
 
@@ -1138,7 +1095,6 @@ Special cases are Weibull :math:`\left(a=1\right)` , half-normal :math:`\left(a=
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=a-a\Psi\left(a\right)+\frac{1}{c}\Psi\left(a\right)+\log\Gamma\left(a\right)-\log\left|c\right|.
 
@@ -1175,7 +1131,7 @@ Special case of the log-normal with :math:`\sigma=1` and :math:`S=1.0` (typicall
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x;\sigma\right) & = & \frac{1}{x\sqrt{2\pi}}\exp\left[-\frac{1}{2}\left(\log x\right)^{2}\right]\\ F\left(x;\sigma\right) & = & \Phi\left(\log x\right)=\frac{1}{2}\left[1+\textrm{erf}\left(\frac{\log x}{\sqrt{2}}\right)\right]\\ G\left(q;\sigma\right) & = & \exp\left\{ \Phi^{-1}\left(q\right)\right\} \end{eqnarray*}
+    \begin{eqnarray*} f\left(x;\sigma\right) & = & \frac{1}{x\sqrt{2\pi}}\exp\left[-\frac{1}{2}\left(\log x\right)^{2}\right]\\ F\left(x;\sigma\right) & = & \Phi\left(\log x\right)=\frac{1}{2}\left[1+\mathrm{erf}\left(\frac{\log x}{\sqrt{2}}\right)\right]\\ G\left(q;\sigma\right) & = & \exp\left\{ \Phi^{-1}\left(q\right)\right\} \end{eqnarray*}
 
 
 
@@ -1211,16 +1167,14 @@ For :math:`x\geq0` and :math:`c>0` . In JKB the two shape parameters :math:`b,a`
 
 
 .. math::
-   :nowrap:
 
-     h\left[X\right]=1-\log\left(c\right)-e^{c}\textrm{Ei}\left(1,c\right),
+     h\left[X\right]=1-\log\left(c\right)-e^{c}\mathrm{Ei}\left(1,c\right),
 
 where
 
 .. math::
-   :nowrap:
 
-     \textrm{Ei}\left(n,x\right)=\int_{1}^{\infty}t^{-n}\exp\left(-xt\right)dt
+     \mathrm{Ei}\left(n,x\right)=\int_{1}^{\infty}t^{-n}\exp\left(-xt\right)dt
 
 
 
@@ -1240,7 +1194,6 @@ One of a clase of extreme value distributions (right-skewed).
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\Gamma\left(1-t\right)
 
@@ -1256,7 +1209,6 @@ One of a clase of extreme value distributions (right-skewed).
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]\approx1.0608407169541684911
 
@@ -1276,7 +1228,6 @@ Gumbel Left-skewed (for minimum order statistic)
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\Gamma\left(1+t\right)
 
@@ -1286,7 +1237,6 @@ median and mode. All other moments are the same.
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]\approx1.0608407169541684911.
 
@@ -1307,9 +1257,8 @@ distribution with :math:`c=0.` The standard form is
 
 
 .. math::
-   :nowrap:
 
-     M\left(t\right)=\cos t+\frac{2}{\pi}\left[\textrm{Si}\left(t\right)\cos t-\textrm{Ci}\left(\textrm{-}t\right)\sin t\right]
+     M\left(t\right)=\cos t+\frac{2}{\pi}\left[\mathrm{Si}\left(t\right)\cos t-\mathrm{Ci}\left(\mathrm{-}t\right)\sin t\right]
 
 
 
@@ -1345,7 +1294,6 @@ This is a special case of the chi distribution with :math:`L=a` and :math:`S=b` 
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\sqrt{2\pi}e^{t^{2}/2}\Phi\left(t\right)
 
@@ -1379,21 +1327,19 @@ over :math:`x\geq0.` Also, the distribution of :math:`\left|X\right|` where :mat
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x\right) & = & \frac{2e^{-x}}{\left(1+e^{-x}\right)^{2}}=\frac{1}{2}\textrm{sech}^{2}\left(\frac{x}{2}\right)\\ F\left(x\right) & = & \frac{1-e^{-x}}{1+e^{-x}}=\tanh\left(\frac{x}{2}\right)\\ G\left(q\right) & = & \log\left(\frac{1+q}{1-q}\right)=2\textrm{arctanh}\left(q\right)\end{eqnarray*}
+    \begin{eqnarray*} f\left(x\right) & = & \frac{2e^{-x}}{\left(1+e^{-x}\right)^{2}}=\frac{1}{2}\mathrm{sech}^{2}\left(\frac{x}{2}\right)\\ F\left(x\right) & = & \frac{1-e^{-x}}{1+e^{-x}}=\tanh\left(\frac{x}{2}\right)\\ G\left(q\right) & = & \log\left(\frac{1+q}{1-q}\right)=2\mathrm{arctanh}\left(q\right)\end{eqnarray*}
 
 
 
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=1-t\psi_{0}\left(\frac{1}{2}-\frac{t}{2}\right)+t\psi_{0}\left(1-\frac{t}{2}\right)
 
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=2\left(1-2^{1-n}\right)n!\zeta\left(n\right)\quad n\neq1
 
@@ -1425,12 +1371,11 @@ Standard form is (defined over all :math:`x` )
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x\right) & = & \frac{1}{\pi}\textrm{sech}\left(x\right)\\ F\left(x\right) & = & \frac{2}{\pi}\arctan\left(e^{x}\right)\\ G\left(q\right) & = & \log\left(\tan\left(\frac{\pi}{2}q\right)\right)\end{eqnarray*}
+    \begin{eqnarray*} f\left(x\right) & = & \frac{1}{\pi}\mathrm{sech}\left(x\right)\\ F\left(x\right) & = & \frac{2}{\pi}\arctan\left(e^{x}\right)\\ G\left(q\right) & = & \log\left(\tan\left(\frac{\pi}{2}q\right)\right)\end{eqnarray*}
 
 
 
 .. math::
-   :nowrap:
 
      M\left(t\right)=\sec\left(\frac{\pi}{2}t\right)
 
@@ -1439,7 +1384,7 @@ Standard form is (defined over all :math:`x` )
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} \mu_{n}^{\prime} & = & \frac{1+\left(-1\right)^{n}}{2\pi2^{2n}}n!\left[\zeta\left(n+1,\frac{1}{4}\right)-\zeta\left(n+1,\frac{3}{4}\right)\right]\\  & = & \left\{ \begin{array}{cc} 0 & n\textrm{ odd}\\ C_{n/2}\frac{\pi^{n}}{2^{n}} & n\textrm{ even}\end{array}\right.\end{eqnarray*}
+    \begin{eqnarray*} \mu_{n}^{\prime} & = & \frac{1+\left(-1\right)^{n}}{2\pi2^{2n}}n!\left[\zeta\left(n+1,\frac{1}{4}\right)-\zeta\left(n+1,\frac{3}{4}\right)\right]\\  & = & \left\{ \begin{array}{cc} 0 & n\mathrm{ odd}\\ C_{n/2}\frac{\pi^{n}}{2^{n}} & n\mathrm{ even}\end{array}\right.\end{eqnarray*}
 
 where :math:`C_{m}` is an integer given by
 
@@ -1451,9 +1396,8 @@ where :math:`C_{m}` is an integer given by
 where :math:`B_{2m+1}\left(\frac{1}{4}\right)` is the Bernoulli polynomial of order :math:`2m+1` evaluated at :math:`1/4.` Thus
 
 .. math::
-   :nowrap:
 
-     \mu_{n}^{\prime}=\left\{ \begin{array}{cc} 0 & n\textrm{ odd}\\ 4\left(-1\right)^{n/2-1}\frac{\left(2\pi\right)^{n}}{n+1}B_{n+1}\left(\frac{1}{4}\right) & n\textrm{ even}\end{array}\right.
+     \mu_{n}^{\prime}=\left\{ \begin{array}{cc} 0 & n\mathrm{ odd}\\ 4\left(-1\right)^{n/2-1}\frac{\left(2\pi\right)^{n}}{n+1}B_{n+1}\left(\frac{1}{4}\right) & n\mathrm{ even}\end{array}\right.
 
 
 
@@ -1469,7 +1413,6 @@ where :math:`B_{2m+1}\left(\frac{1}{4}\right)` is the Bernoulli polynomial of or
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\log\left(2\pi\right).
 
@@ -1482,7 +1425,6 @@ Gauss Hypergeometric
 :math:`x\in\left[0,1\right]` , :math:`\alpha>0,\,\beta>0`
 
 .. math::
-   :nowrap:
 
      C^{-1}=B\left(\alpha,\beta\right)\,_{2}F_{1}\left(\gamma,\alpha;\alpha+\beta;-z\right)
 
@@ -1511,7 +1453,6 @@ Special case of the generalized Gamma distribution with :math:`c=-1` and :math:`
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\frac{\Gamma\left(a-n\right)}{\Gamma\left(a\right)}\quad a>n
 
@@ -1525,7 +1466,6 @@ Special case of the generalized Gamma distribution with :math:`c=-1` and :math:`
 
 
 .. math::
-   :nowrap:
 
      m_{d}=\frac{1}{a+1}
 
@@ -1534,7 +1474,6 @@ Special case of the generalized Gamma distribution with :math:`c=-1` and :math:`
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=a-\left(a+1\right)\Psi\left(a\right)+\log\Gamma\left(a\right).
 
@@ -1580,7 +1519,6 @@ Shape parameter :math:`c>0` and :math:`x>0` . Then
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=1+\gamma+\frac{\gamma}{c}-\log\left(c\right)
 
@@ -1643,15 +1581,13 @@ Laplace (Double Exponential, Bilateral Expoooonential)
 The ML estimator of the location parameter is
 
 .. math::
-   :nowrap:
 
-     \hat{L}=\textrm{median}\left(X_{i}\right)
+     \hat{L}=\mathrm{median}\left(X_{i}\right)
 
 where :math:`X_{i}` is a sequence of :math:`N` mutually independent Laplace RV's and the median is some number
-between the :math:`\frac{1}{2}N\textrm{th}` and the :math:`(N/2+1)\textrm{th}` order statistic ( *e.g.* take the average of these two) when :math:`N` is even. Also,
+between the :math:`\frac{1}{2}N\mathrm{th}` and the :math:`(N/2+1)\mathrm{th}` order statistic ( *e.g.* take the average of these two) when :math:`N` is even. Also,
 
 .. math::
-   :nowrap:
 
      \hat{S}=\frac{1}{N}\sum_{j=1}^{N}\left|X_{j}-\hat{L}\right|.
 
@@ -1719,7 +1655,6 @@ A special case of the Generalized Logistic distribution with :math:`c=1.` Define
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=1.
 
@@ -1741,7 +1676,6 @@ Defined over :math:`x>0` with :math:`c>0`
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\log\left(\frac{2e}{c}\right)
 
@@ -1761,7 +1695,6 @@ A single shape parameter :math:`c>0` (Defined for all :math:`x` )
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\int_{0}^{\infty}\left[\log y\right]^{n}y^{c-1}\exp\left(-y\right)dy.
 
@@ -1802,7 +1735,6 @@ parameter description of general probability distributions.
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\frac{1}{2}\left[1+\log\left(2\pi\right)+2\log\left(\sigma\right)\right].
 
@@ -1839,7 +1771,6 @@ Defined over :math:`x\in\left[0,1\right]` with :math:`a>0` and :math:`b>0` and :
 
 
 .. math::
-   :nowrap:
 
      F\left(x;a,b,c\right)=\sum_{j=0}^{\infty}\frac{e^{-c/2}\left(\frac{c}{2}\right)^{j}}{j!}I_{B}\left(a+j,b;0\right)
 
@@ -1859,7 +1790,7 @@ of as a Generalized Rayleigh-Rice distribution. For :math:`x>0`
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x;\nu,\lambda\right) & = & e^{-\left(\lambda+x\right)/2}\frac{1}{2}\left(\frac{x}{\lambda}\right)^{\left(\nu-2\right)/4}I_{\left(\nu-2\right)/2}\left(\sqrt{\lambda x}\right)\\ F\left(x;\nu,\lambda\right) & = & \sum_{j=0}^{\infty}\left\{ \frac{\left(\lambda/2\right)^{j}}{j!}e^{-\lambda/2}\right\} \textrm{Pr}\left[\chi_{\nu+2j}^{2}\leq x\right]\\ G\left(q;\nu,\lambda\right) & = & F^{-1}\left(x;\nu,\lambda\right)\end{eqnarray*}
+    \begin{eqnarray*} f\left(x;\nu,\lambda\right) & = & e^{-\left(\lambda+x\right)/2}\frac{1}{2}\left(\frac{x}{\lambda}\right)^{\left(\nu-2\right)/4}I_{\left(\nu-2\right)/2}\left(\sqrt{\lambda x}\right)\\ F\left(x;\nu,\lambda\right) & = & \sum_{j=0}^{\infty}\left\{ \frac{\left(\lambda/2\right)^{j}}{j!}e^{-\lambda/2}\right\} \mathrm{Pr}\left[\chi_{\nu+2j}^{2}\leq x\right]\\ G\left(q;\nu,\lambda\right) & = & F^{-1}\left(x;\nu,\lambda\right)\end{eqnarray*}
 
 
 
@@ -1892,7 +1823,6 @@ Noncentral t
 The distribution of the ratio
 
 .. math::
-   :nowrap:
 
      \frac{U+\lambda}{\chi_{\nu}/\sqrt{\nu}}
 
@@ -1914,7 +1844,7 @@ Normal
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x\right) & = & \frac{e^{-x^{2}/2}}{\sqrt{2\pi}}\\ F\left(x\right) & = & \Phi\left(x\right)=\frac{1}{2}+\frac{1}{2}\textrm{erf}\left(\frac{\textrm{x}}{\sqrt{2}}\right)\\ G\left(q\right) & = & \Phi^{-1}\left(q\right)\end{eqnarray*}
+    \begin{eqnarray*} f\left(x\right) & = & \frac{e^{-x^{2}/2}}{\sqrt{2\pi}}\\ F\left(x\right) & = & \Phi\left(x\right)=\frac{1}{2}+\frac{1}{2}\mathrm{erf}\left(\frac{\mathrm{x}}{\sqrt{2}}\right)\\ G\left(q\right) & = & \Phi^{-1}\left(q\right)\end{eqnarray*}
 
 
 
@@ -1961,7 +1891,6 @@ This is a special case of the Chi distribution with :math:`L=0` and :math:`S=S=\
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\log\left(\sqrt{\frac{2\pi}{e}}\right)+\gamma.
 
@@ -2007,7 +1936,6 @@ For :math:`x\geq1` and :math:`b>0` . Standard form is
 
 
 .. math::
-   :nowrap:
 
      h\left(X\right)=\frac{1}{c}+1-\log\left(c\right)
 
@@ -2029,7 +1957,6 @@ Pareto Second Kind (Lomax)
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\frac{1}{c}+1-\log\left(c\right).
 
@@ -2049,7 +1976,6 @@ A generalization of the log-normal distribution :math:`\sigma>0` and :math:`c>0`
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\int_{0}^{1}\exp\left[-n\sigma\Phi^{-1}\left(y^{1/c}\right)\right]dy
 
@@ -2076,7 +2002,6 @@ A generalization of the normal distribution, :math:`c>0` for
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\left(-1\right)^{n}\int_{0}^{1}\left[\Phi^{-1}\left(y^{1/c}\right)\right]^{n}dy
 
@@ -2098,7 +2023,6 @@ A special case of the beta distribution with :math:`b=1` : defined for :math:`x\
 
 
 .. math::
-   :nowrap:
 
      a>0
 
@@ -2114,7 +2038,6 @@ A special case of the beta distribution with :math:`b=1` : defined for :math:`x\
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=1-\frac{1}{a}-\log\left(a\right)
 
@@ -2134,7 +2057,6 @@ A general-purpose distribution with a variety of shapes controlled by :math:`c>0
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\frac{\left(1+\left(-1\right)^{n}\right)}{2}B\left(\frac{n+1}{2},\frac{c}{2}\right)
 
@@ -2165,7 +2087,6 @@ distribution is :math:`S.`
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\frac{\gamma}{2}+\log\left(\frac{e}{\sqrt{2}}\right).
 
@@ -2174,7 +2095,6 @@ distribution is :math:`S.`
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\sqrt{2^{n}}\Gamma\left(\frac{n}{2}+1\right)
 
@@ -2198,7 +2118,6 @@ Defined for :math:`x>0` and :math:`b>0`
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\sqrt{2^{n}}\Gamma\left(1+\frac{n}{2}\right)\,_{1}F_{1}\left(-\frac{n}{2};1;-\frac{b^{2}}{2}\right)
 
@@ -2225,7 +2144,6 @@ Shape parameters :math:`a,b>0` :math:`x\in\left[a,b\right]`
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\frac{1}{2}\log\left(ab\right)+\log\left[\log\left(\frac{b}{a}\right)\right].
 
@@ -2276,7 +2194,6 @@ Defined on :math:`x\in\left[-1,1\right]`
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=0.64472988584940017414.
 
@@ -2313,14 +2230,12 @@ As :math:`\nu\rightarrow\infty,` this distribution approaches the standard norma
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\frac{1}{4}\log\left(\frac{\pi c\Gamma^{2}\left(\frac{c}{2}\right)}{\Gamma^{2}\left(\frac{c+1}{2}\right)}\right)-\frac{\left(c+1\right)}{4}\left[\Psi\left(\frac{c}{2}\right)-cZ\left(c\right)+\pi\tan\left(\frac{\pi c}{2}\right)+\gamma+2\log2\right]
 
 where
 
 .. math::
-   :nowrap:
 
      Z\left(c\right)=\,_{3}F_{2}\left(1,1,1+\frac{c}{2};\frac{3}{2},2;1\right)=\sum_{k=0}^{\infty}\frac{k!}{k+1}\frac{\Gamma\left(\frac{c}{2}+1+k\right)}{\Gamma\left(\frac{c}{2}+1\right)}\frac{\Gamma\left(\frac{3}{2}\right)}{\Gamma\left(\frac{3}{2}+k\right)}
 
@@ -2348,7 +2263,6 @@ Interesting moments are
 The moment generating function is
 
 .. math::
-   :nowrap:
 
      \theta\left(t\right)=2\sqrt{\left|\frac{t}{2}\right|^{\nu-1}}\frac{K_{\left(n-1\right)/2}\left(\left|t\right|\right)}{\Gamma\left(\frac{\nu-1}{2}\right)}.
 
@@ -2402,7 +2316,6 @@ This is an exponential distribution defined only over a certain region :math:`0<
 
 
 .. math::
-   :nowrap:
 
      \mu_{n}^{\prime}=\Gamma\left(1+n\right)-\Gamma\left(1+n,B\right)
 
@@ -2411,7 +2324,6 @@ This is an exponential distribution defined only over a certain region :math:`0<
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=\log\left(e^{B}-1\right)+\frac{1+e^{B}\left(B-1\right)}{1-e^{B}}.
 
@@ -2497,7 +2409,6 @@ Standard form :math:`x\in\left(0,1\right).` In general form, the lower limit is 
 
 
 .. math::
-   :nowrap:
 
      h\left[X\right]=0
 
@@ -2571,13 +2482,5 @@ For :math:`x\in\left[0,2\pi\right]` :math:`c\in\left(0,1\right)`
 
 
 .. math::
-   :nowrap:
-
-     
-
-
-
-.. math::
-   :nowrap:
 
      h\left[X\right]=\log\left(2\pi\left(1-c^{2}\right)\right).

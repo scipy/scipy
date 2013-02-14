@@ -295,7 +295,7 @@ def ricker(points, a):
     >>> points = 100
     >>> a = 4.0
     >>> vec2 = signal.ricker(points, a)
-    >>> print len(vec2)
+    >>> print(len(vec2))
     100
     >>> plt.plot(vec2)
     >>> plt.show()
