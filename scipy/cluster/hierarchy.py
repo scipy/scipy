@@ -1019,7 +1019,7 @@ def inconsistent(Z, d=2):
         the number of links included in the calculation; and
         ``R[i,3]`` is the inconsistency coefficient,
 
-        .. math:: rac{\\mathtt{Z[i,2]}-\\mathtt{R[i,0]}} {R[i,1]}
+        .. math:: \\frac{\\mathtt{Z[i,2]}-\\mathtt{R[i,0]}} {R[i,1]}
 
     """
     Z = np.asarray(Z, order='c')
