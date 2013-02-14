@@ -57,6 +57,7 @@ functions. Use ``pdist`` for this purpose.
    sokalmichener    -- the Sokal-Michener dissimilarity (boolean).
    sokalsneath      -- the Sokal-Sneath dissimilarity (boolean).
    sqeuclidean      -- the squared Euclidean distance.
+   wminkowski       -- the weighted Minkowski distance.
    yule             -- the Yule dissimilarity (boolean).
 
 """
@@ -126,27 +127,30 @@ def _validate_vector(u, dtype=None):
 
 
 def minkowski(u, v, p):
-    r"""
-    Computes the Minkowski distance between two vectors ``u`` and ``v``,
-    defined as
+    """
+    Computes the Minkowski distance between two 1-D arrays.
+
+    The Minkowski distance between 1-D arrays `u` and `v`,
+    is defined as
 
     .. math::
 
-       {||u-v||}_p = (\sum{|u_i - v_i|^p})^{1/p}.
+       {||u-v||}_p = (\\sum{|u_i - v_i|^p})^{1/p}.
 
     Parameters
     ----------
-    u : ndarray
-        An n-dimensional vector.
-    v : ndarray
-        An n-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
     p : int
         The order of the norm of the difference :math:`{||u-v||}_p`.
 
     Returns
     -------
     d : double
-        The Minkowski distance between vectors ``u`` and ``v``.
+        The Minkowski distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -157,29 +161,31 @@ def minkowski(u, v, p):
 
 
 def wminkowski(u, v, p, w):
-    r"""
-    Computes the weighted Minkowski distance between two vectors ``u``
-    and ``v``, defined as
+    """
+    Computes the weighted Minkowski distance between two 1-D arrays.
+
+    The weighted Minkowski distance between `u` and `v`, defined as
 
     .. math::
 
-       \left(\sum{(w_i |u_i - v_i|^p)}\right)^{1/p}.
+       \\left(\\sum{(w_i |u_i - v_i|^p)}\\right)^{1/p}.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
     p : int
         The order of the norm of the difference :math:`{||u-v||}_p`.
-    w : ndarray
+    w : (N,) array_like
         The weight vector.
 
     Returns
     -------
-    d : double
-        The Minkowski distance between vectors ``u`` and ``v``.
+    wminkowski : double
+        The weighted Minkowski distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -192,8 +198,9 @@ def wminkowski(u, v, p, w):
 
 def euclidean(u, v):
     """
-    Computes the Euclidean distance between two n-vectors ``u`` and ``v``,
-    which is defined as
+    Computes the Euclidean distance between two 1-D arrays.
+
+    The Euclidean distance between 1-D arrays `u` and `v`, is defined as
 
     .. math::
 
@@ -201,15 +208,16 @@ def euclidean(u, v):
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
 
     Returns
     -------
-    d : double
-        The Euclidean distance between vectors ``u`` and ``v``.
+    euclidean : double
+        The Euclidean distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -219,8 +227,9 @@ def euclidean(u, v):
 
 def sqeuclidean(u, v):
     """
-    Computes the squared Euclidean distance between two n-vectors u and v,
-    which is defined as
+    Computes the squared Euclidean distance between two 1-D arrays.
+
+    The squared Euclidean distance between `u` and `v` is defined as
 
     .. math::
 
@@ -229,15 +238,16 @@ def sqeuclidean(u, v):
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
 
     Returns
     -------
-    d : double
-        The squared Euclidean distance between vectors ``u`` and ``v``.
+    sqeuclidean : double
+        The squared Euclidean distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -246,29 +256,31 @@ def sqeuclidean(u, v):
 
 
 def cosine(u, v):
-    r"""
-    Computes the Cosine distance between two n-vectors u and v, which
-    is defined as
+    """
+    Computes the Cosine distance between 1-D arrays.
+
+    The Cosine distance between `u` and `v`, is defined as
 
     .. math::
 
-       1 - \frac{u \cdot v}
+       1 - \\frac{u \\cdot v}
                 {||u||_2 ||v||_2}.
 
-    where :math:`u \cdot v` is the dot product of :math:`u` and
+    where :math:`u \\cdot v` is the dot product of :math:`u` and
     :math:`v`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
 
     Returns
     -------
-    d : double
-        The Cosine distance between vectors ``u`` and ``v``.
+    cosine : double
+        The Cosine distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -277,29 +289,32 @@ def cosine(u, v):
 
 
 def correlation(u, v):
-    r"""
-    Computes the correlation distance between two n-vectors ``u`` and
-    ``v``, which is defined as
+    """
+    Computes the correlation distance between two 1-D arrays.
+
+    The correlation distance between `u` and `v`, is
+    defined as
 
     .. math::
 
-       1 - \frac{(u - \bar{u}) \cdot (v - \bar{v})}
-               {{||(u - \bar{u})||}_2 {||(v - \bar{v})||}_2}
+       1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
+               {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
 
-    where :math:`\bar{u}` is the mean of the elements of ``u``
-    and :math:`x \cdot y` is the dot product of :math:`x` and :math:`y`.
+    where :math:`\\bar{u}` is the mean of the elements of `u`
+    and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
 
     Returns
     -------
-    d : double
-        The correlation distance between vectors ``u`` and ``v``.
+    correlation : double
+        The correlation distance between 1-D array `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -312,31 +327,33 @@ def correlation(u, v):
 
 
 def hamming(u, v):
-    r"""
-    Computes the Hamming distance between two n-vectors ``u`` and
-    ``v``, which is simply the proportion of disagreeing components in
-    ``u`` and ``v``. If ``u`` and ``v`` are boolean vectors, the Hamming
-    distance is
+    """
+    Computes the Hamming distance between two 1-D arrays.
+
+    The Hamming distance between 1-D arrays `u` and `v`, is simply the
+    proportion of disagreeing components in `u` and `v`. If `u` and `v` are
+    boolean vectors, the Hamming distance is
 
     .. math::
 
-       \frac{c_{01} + c_{10}}{n}
+       \\frac{c_{01} + c_{10}}{n}
 
     where :math:`c_{ij}` is the number of occurrences of
-    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
 
     Returns
     -------
-    d : double
-        The Hamming distance between vectors ``u`` and ``v``.
+    hamming : double
+        The Hamming distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -344,30 +361,33 @@ def hamming(u, v):
 
 
 def jaccard(u, v):
-    r"""
-    Computes the Jaccard-Needham dissimilarity between two boolean
-    n-vectors u and v, which is
+    """
+    Computes the Jaccard-Needham dissimilarity between two boolean 1-D arrays.
+
+    The Jaccard-Needham dissimilarity between 1-D boolean arrays `u` and `v`,
+    is defined as
 
     .. math::
 
-       \frac{c_{TF} + c_{FT}}
+       \\frac{c_{TF} + c_{FT}}
             {c_{TT} + c_{FT} + c_{TF}}
 
     where :math:`c_{ij}` is the number of occurrences of
-    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like, bool
+        Input array.
+    v : (N,) array_like, bool
+        Input array.
 
     Returns
     -------
-    d : double
-        The Jaccard distance between vectors ``u`` and ``v``.
+    jaccard : double
+        The Jaccard distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -378,30 +398,33 @@ def jaccard(u, v):
 
 
 def kulsinski(u, v):
-    r"""
-    Computes the Kulsinski dissimilarity between two boolean n-vectors
-    u and v, which is defined as
+    """
+    Computes the Kulsinski dissimilarity between two boolean 1-D arrays.
+
+    The Kulsinski dissimilarity between two boolean 1-D arrays `u` and `v`,
+    is defined as
 
     .. math::
 
-         \frac{c_{TF} + c_{FT} - c_{TT} + n}
+         \\frac{c_{TF} + c_{FT} - c_{TT} + n}
               {c_{FT} + c_{TF} + n}
 
     where :math:`c_{ij}` is the number of occurrences of
-    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like, bool
+        Input array.
+    v : (N,) array_like, bool
+        Input array.
 
     Returns
     -------
-    d : double
-        The Kulsinski distance between vectors ``u`` and ``v``.
+    kulsinski : double
+        The Kulsinski distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -413,24 +436,25 @@ def kulsinski(u, v):
 
 def seuclidean(u, v, V):
     """
-    Returns the standardized Euclidean distance between two n-vectors
-    ``u`` and ``v``. ``V`` is an n-dimensional vector of component
-    variances. It is usually computed among a larger collection
-    vectors.
+    Returns the standardized Euclidean distance between two 1-D arrays.
+
+    The standardized Euclidean distance between `u` and `v`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
-    V : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
+    V : (N,) array_like
+        `V` is an 1-D array of component variances. It is usually computed
+        among a larger collection vectors.
 
     Returns
     -------
-    d : double
-        The standardized Euclidean distance between vectors ``u`` and ``v``.
+    seuclidean : double
+        The standardized Euclidean distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -443,7 +467,9 @@ def seuclidean(u, v, V):
 
 def cityblock(u, v):
     """
-    Computes the Manhattan distance between two n-vectors u and v,
+    Computes the City Block (Manhattan) distance.
+
+    Computes the Manhattan distance between two 1-D arrays `u` and `v`,
     which is defined as
 
     .. math::
@@ -452,15 +478,15 @@ def cityblock(u, v):
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
 
     Returns
     -------
-    d : double
-        The City Block distance between vectors ``u`` and ``v``.
+    cityblock : double
+        The City Block (Manhattan) distance between vectors `u` and `v`.
 
     """
     u = _validate_vector(u)
@@ -469,30 +495,32 @@ def cityblock(u, v):
 
 
 def mahalanobis(u, v, VI):
-    r"""
-    Computes the Mahalanobis distance between two n-vectors ``u`` and ``v``,
-    which is defined as
+    """
+    Computes the Mahalanobis distance between two 1-D arrays.
+
+    The Mahalanobis distance between 1-D arrays `u` and `v`, is defined as
 
     .. math::
 
-       \sqrt{ (u-v) V^{-1} (u-v)^T }
+       \\sqrt{ (u-v) V^{-1} (u-v)^T }
 
-    where ``V`` is the covariance matrix.  Note that the argument ``VI``
+    where ``V`` is the covariance matrix.  Note that the argument `VI`
     is the inverse of ``V``.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
     VI : ndarray
         The inverse of the covariance matrix.
 
     Returns
     -------
-    d : double
-        The Mahalanobis distance between vectors ``u`` and ``v``.
+    mahalanobis : double
+        The Mahalanobis distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -503,25 +531,28 @@ def mahalanobis(u, v, VI):
 
 
 def chebyshev(u, v):
-    r"""
-    Computes the Chebyshev distance between two n-vectors u and v,
+    """
+    Computes the Chebyshev distance.
+
+    Computes the Chebyshev distance between two 1-D arrays `u` and `v`,
     which is defined as
 
     .. math::
 
-       \max_i {|u_i-v_i|}.
+       \\max_i {|u_i-v_i|}.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input vector.
+    v : (N,) array_like
+        Input vector.
 
     Returns
     -------
-    d : double
-        The Chebyshev distance between vectors ``u`` and ``v``.
+    chebyshev : double
+        The Chebyshev distance between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -529,28 +560,30 @@ def chebyshev(u, v):
 
 
 def braycurtis(u, v):
-    r"""
-    Computes the Bray-Curtis distance between two n-vectors ``u`` and
-    ``v``, which is defined as
+    """
+    Computes the Bray-Curtis distance between two 1-D arrays.
+
+    Bray-Curtis distance is defined as
 
     .. math::
 
-       \sum{|u_i-v_i|} / \sum{|u_i+v_i|}.
+       \\sum{|u_i-v_i|} / \\sum{|u_i+v_i|}
 
     The Bray-Curtis distance is in the range [0, 1] if all coordinates are
     positive, and is undefined if the inputs are of length zero.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
 
     Returns
     -------
-    d : double
-        The Bray-Curtis distance between vectors ``u`` and ``v``.
+    braycurtis : double
+        The Bray-Curtis distance between 1-D arrays `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v, dtype=np.float64)
@@ -558,31 +591,32 @@ def braycurtis(u, v):
 
 
 def canberra(u, v):
-    r"""
-    Computes the Canberra distance between two n-vectors u and v,
-    which is defined as
+    """
+    Computes the Canberra distance between two 1-D arrays.
+
+    The Canberra distance is defined as
 
     .. math::
 
-         d(u,v) = \sum_i \frac{|u_i-v_i|}
+         d(u,v) = \\sum_i \\frac{|u_i-v_i|}
                               {|u_i|+|v_i|}.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
 
     Returns
     -------
-    d : double
-        The Canberra distance between vectors ``u`` and ``v``.
+    canberra : double
+        The Canberra distance between vectors `u` and `v`.
 
     Notes
     -----
-    When u[i] and v[i] are 0 for given i, then the fraction 0/0 = 0 is used in
-    the calculation.
+    When `u[i]` and `v[i]` are 0 for given i, then the fraction 0/0 = 0 is
+    used in the calculation.
 
     """
     u = _validate_vector(u)
@@ -634,30 +668,31 @@ def _nbool_correspond_ft_tf(u, v):
 
 
 def yule(u, v):
-    r"""
-    Computes the Yule dissimilarity between two boolean n-vectors u and v,
-    which is defined as
+    """
+    Computes the Yule dissimilarity between two boolean 1-D arrays.
 
+    The Yule dissimilarity is defined as
 
     .. math::
 
-         \frac{R}{c_{TT} + c_{FF} + \frac{R}{2}}
+         \\frac{R}{c_{TT} + c_{FF} + \\frac{R}{2}}
 
     where :math:`c_{ij}` is the number of occurrences of
-    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n` and :math:`R = 2.0 * (c_{TF} + c_{FT})`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like, bool
+        Input array.
+    v : (N,) array_like, bool
+        Input array.
 
     Returns
     -------
-    d : double
-        The Yule dissimilarity between vectors ``u`` and ``v``.
+    yule : double
+        The Yule dissimilarity between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -666,29 +701,32 @@ def yule(u, v):
 
 
 def matching(u, v):
-    r"""
-    Computes the Matching dissimilarity between two boolean n-vectors
-    u and v, which is defined as
+    """
+    Computes the Matching dissimilarity between two boolean 1-D arrays.
+
+    The Matching dissimilarity between two boolean 1-D arrays
+    `u` and `v`, is defined as
 
     .. math::
 
-       \frac{c_{TF} + c_{FT}}{n}
+       \\frac{c_{TF} + c_{FT}}{n}
 
     where :math:`c_{ij}` is the number of occurrences of
-    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like, bool
+        Input array.
+    v : (N,) array_like, bool
+        Input array.
 
     Returns
     -------
-    d : double
-        The Matching dissimilarity between vectors ``u`` and ``v``.
+    matching : double
+        The Matching dissimilarity between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -697,30 +735,32 @@ def matching(u, v):
 
 
 def dice(u, v):
-    r"""
-    Computes the Dice dissimilarity between two boolean n-vectors
-    ``u`` and ``v``, which is
+    """
+    Computes the Dice dissimilarity between two boolean 1-D arrays.
+
+    The Dice dissimilarity between `u` and `v`, is
 
     .. math::
 
-         \frac{c_{TF} + c_{FT}}
+         \\frac{c_{TF} + c_{FT}}
               {2c_{TT} + c_{FT} + c_{TF}}
 
     where :math:`c_{ij}` is the number of occurrences of
-    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) ndarray, bool
+        Input 1-D array.
+    v : (N,) ndarray, bool
+        Input 1-D array.
 
     Returns
     -------
-    d : double
-        The Dice dissimilarity between vectors ``u`` and ``v``.
+    dice : double
+        The Dice dissimilarity between 1-D arrays `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -733,30 +773,33 @@ def dice(u, v):
 
 
 def rogerstanimoto(u, v):
-    r"""
-    Computes the Rogers-Tanimoto dissimilarity between two boolean
-    n-vectors ``u`` and ``v``, which is defined as
+    """
+    Computes the Rogers-Tanimoto dissimilarity between two boolean 1-D arrays.
+
+    The Rogers-Tanimoto dissimilarity between two boolean 1-D arrays
+    `u` and `v`, is defined as
 
     .. math::
-       \frac{R}
+       \\frac{R}
             {c_{TT} + c_{FF} + R}
 
     where :math:`c_{ij}` is the number of occurrences of
-    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n` and :math:`R = 2(c_{TF} + c_{FT})`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like, bool
+        Input array.
+    v : (N,) array_like, bool
+        Input array.
 
     Returns
     -------
-    d : double
+    rogerstanimoto : double
         The Rogers-Tanimoto dissimilarity between vectors
         `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -765,30 +808,33 @@ def rogerstanimoto(u, v):
 
 
 def russellrao(u, v):
-    r"""
-    Computes the Russell-Rao dissimilarity between two boolean n-vectors
-    ``u`` and ``v``, which is defined as
+    """
+    Computes the Russell-Rao dissimilarity between two boolean 1-D arrays.
+
+    The Russell-Rao dissimilarity between two boolean 1-D arrays, `u` and
+    `v`, is defined as
 
     .. math::
 
-      \frac{n - c_{TT}}
+      \\frac{n - c_{TT}}
            {n}
 
     where :math:`c_{ij}` is the number of occurrences of
-    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like, bool
+        Input array.
+    v : (N,) array_like, bool
+        Input array.
 
     Returns
     -------
-    d : double
-        The Russell-Rao dissimilarity between vectors ``u`` and ``v``.
+    russellrao : double
+        The Russell-Rao dissimilarity between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -800,31 +846,34 @@ def russellrao(u, v):
 
 
 def sokalmichener(u, v):
-    r"""
-    Computes the Sokal-Michener dissimilarity between two boolean vectors
-    ``u`` and ``v``, which is defined as
+    """
+    Computes the Sokal-Michener dissimilarity between two boolean 1-D arrays.
+
+    The Sokal-Michener dissimilarity between boolean 1-D arrays `u` and `v`,
+    is defined as
 
     .. math::
 
-       \frac{R}
+       \\frac{R}
             {S + R}
 
     where :math:`c_{ij}` is the number of occurrences of
-    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`, :math:`R = 2 * (c_{TF} + c_{FT})` and
     :math:`S = c_{FF} + c_{TT}`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like, bool
+        Input array.
+    v : (N,) array_like, bool
+        Input array.
 
     Returns
     -------
-    d : double
-        The Sokal-Michener dissimilarity between vectors ``u`` and ``v``.
+    sokalmichener : double
+        The Sokal-Michener dissimilarity between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -839,30 +888,32 @@ def sokalmichener(u, v):
 
 
 def sokalsneath(u, v):
-    r"""
-    Computes the Sokal-Sneath dissimilarity between two boolean vectors
-    ``u`` and ``v``,
+    """
+    Computes the Sokal-Sneath dissimilarity between two boolean 1-D arrays.
+
+    The Sokal-Sneath dissimilarity between `u` and `v`,
 
     .. math::
 
-       \frac{R}
+       \\frac{R}
             {c_{TT} + R}
 
     where :math:`c_{ij}` is the number of occurrences of
-    :math:`\mathtt{u[k]} = i` and :math:`\mathtt{v[k]} = j` for
+    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n` and :math:`R = 2(c_{TF} + c_{FT})`.
 
     Parameters
     ----------
-    u : ndarray
-        An :math:`n`-dimensional vector.
-    v : ndarray
-        An :math:`n`-dimensional vector.
+    u : (N,) array_like, bool
+        Input array.
+    v : (N,) array_like, bool
+        Input array.
 
     Returns
     -------
-    d : double
-        The Sokal-Sneath dissimilarity between vectors ``u`` and ``v``.
+    sokalsneath : double
+        The Sokal-Sneath dissimilarity between vectors `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -879,15 +930,8 @@ def sokalsneath(u, v):
 
 
 def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
-    r"""
-    Computes the pairwise distances between m original observations in
-    n-dimensional space. Returns a condensed distance matrix Y.  For
-    each :math:`i` and :math:`j` (where :math:`i<j<n`), the
-    metric ``dist(u=X[i], v=X[j])`` is computed and stored in entry ``ij``.
-
-    See ``squareform`` for information on how to calculate the index of
-    this entry or to convert the condensed distance matrix to a
-    redundant square matrix.
+    """
+    Pairwise distances between observations in n-dimensional space.
 
     The following are common calling conventions.
 
@@ -900,7 +944,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     2. ``Y = pdist(X, 'minkowski', p)``
 
        Computes the distances using the Minkowski distance
-       :math:`||u-v||_p` (p-norm) where :math:`p \geq 1`.
+       :math:`||u-v||_p` (p-norm) where :math:`p \\geq 1`.
 
     3. ``Y = pdist(X, 'cityblock')``
 
@@ -914,7 +958,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-          \sqrt{\sum {(u_i-v_i)^2 / V[x_i]}}.
+          \\sqrt{\\sum {(u_i-v_i)^2 / V[x_i]}}
 
 
        V is the variance vector; V[i] is the variance computed over all
@@ -932,11 +976,11 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-          1 - \frac{u \cdot v}
+          1 - \\frac{u \\cdot v}
                    {{||u||}_2 {||v||}_2}
 
        where :math:`||*||_2` is the 2-norm of its argument ``*``, and
-       :math:`u \cdot v` is the dot product of ``u`` and ``v``.
+       :math:`u \\cdot v` is the dot product of ``u`` and ``v``.
 
     7. ``Y = pdist(X, 'correlation')``
 
@@ -944,11 +988,11 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-          1 - \frac{(u - \bar{u}) \cdot (v - \bar{v})}
-                   {{||(u - \bar{u})||}_2 {||(v - \bar{v})||}_2}
+          1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
+                   {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
 
-       where :math:`\bar{v}` is the mean of the elements of vector v,
-       and :math:`x \cdot y` is the dot product of :math:`x` and :math:`y`.
+       where :math:`\\bar{v}` is the mean of the elements of vector v,
+       and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
 
     8. ``Y = pdist(X, 'hamming')``
 
@@ -973,7 +1017,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-          d(u,v) = \max_i {|u_i-v_i|}.
+          d(u,v) = \\max_i {|u_i-v_i|}
 
     11. ``Y = pdist(X, 'canberra')``
 
@@ -982,8 +1026,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-         d(u,v) = \sum_i \frac{|u_i-v_i|}
-                              {|u_i|+|v_i|}.
+         d(u,v) = \\sum_i \\frac{|u_i-v_i|}
+                              {|u_i|+|v_i|}
 
 
     12. ``Y = pdist(X, 'braycurtis')``
@@ -994,8 +1038,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-            d(u,v) = \frac{\sum_i {u_i-v_i}}
-                          {\sum_i {u_i+v_i}}
+            d(u,v) = \\frac{\\sum_i {u_i-v_i}}
+                          {\\sum_i {u_i+v_i}}
 
     13. ``Y = pdist(X, 'mahalanobis', VI=None)``
 
@@ -1066,7 +1110,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        would calculate the pair-wise distances between the vectors in
        X using the Python function sokalsneath. This would result in
-       sokalsneath being called :math:`{n \choose 2}` times, which
+       sokalsneath being called :math:`{n \\choose 2}` times, which
        is inefficient. Instead, the optimized C version is more
        efficient, and we call it using the following syntax.::
 
@@ -1096,12 +1140,21 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     Returns
     -------
     Y : ndarray
-        A condensed distance matrix.
+        Returns a condensed distance matrix Y.  For
+        each :math:`i` and :math:`j` (where :math:`i<j<n`), the
+        metric ``dist(u=X[i], v=X[j])`` is computed and stored in entry ``ij``.
 
     See Also
     --------
     squareform : converts between condensed distance matrices and
                  square distance matrices.
+
+    Notes
+    -----
+    See ``squareform`` for information on how to calculate the index of
+    this entry or to convert the condensed distance matrix to a
+    redundant square matrix.
+
     """
 
 #         21. Y = pdist(X, 'test_Y')
@@ -1353,18 +1406,18 @@ def squareform(X, force="no", checks=True):
 
        Given a square d-by-d symmetric distance matrix X,
        ``v=squareform(X)`` returns a ``d * (d-1) / 2`` (or
-       `${n \choose 2}$`) sized vector v.
+       `${n \\choose 2}$`) sized vector v.
 
-      v[{n \choose 2}-{n-i \choose 2} + (j-i-1)] is the distance
+      v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)] is the distance
       between points i and j. If X is non-square or asymmetric, an error
       is returned.
 
-    X = squareform(v)
+    2. X = squareform(v)
 
       Given a d*d(-1)/2 sized v for some integer d>=2 encoding distances
       as described, X=squareform(v) returns a d by d distance matrix X. The
       X[i, j] and X[j, i] values are set to
-      v[{n \choose 2}-{n-i \choose 2} + (j-u-1)] and all
+      v[{n \\choose 2}-{n-i \\choose 2} + (j-u-1)] and all
       diagonal elements are zero.
 
     """
@@ -1443,7 +1496,8 @@ def squareform(X, force="no", checks=True):
 
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     """
-    Returns True if the variable D passed is a valid distance matrix.
+    Returns True if input array is a valid distance matrix.
+
     Distance matrices must be 2-dimensional numpy arrays containing
     doubles. They must have a zero-diagonal, and they must be symmetric.
 
@@ -1468,13 +1522,13 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     Returns
     -------
     valid : bool
-        True if the variable ``D`` passed is a valid distance matrix.
+        True if the variable `D` passed is a valid distance matrix.
 
     Notes
     -----
-    Small numerical differences in ``D`` and ``D.T`` and non-zeroness of
+    Small numerical differences in `D` and `D.T` and non-zeroness of
     the diagonal are ignored if they are within the tolerance specified
-    by ``tol``.
+    by `tol`.
 
     """
     D = np.asarray(D, order='c')
@@ -1536,12 +1590,12 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
 
 
 def is_valid_y(y, warning=False, throw=False, name=None):
-    r"""
-    Returns ``True`` if the variable ``y`` passed is a valid condensed
-    distance matrix. Condensed distance matrices must be 1-dimensional
-    numpy arrays containing doubles. Their length must be a binomial
-    coefficient :math:`{n \choose 2}` for some positive integer n.
+    """
+    Returns True if the input array is a valid condensed distance matrix.
 
+    Condensed distance matrices must be 1-dimensional
+    numpy arrays containing doubles. Their length must be a binomial
+    coefficient :math:`{n \\choose 2}` for some positive integer n.
 
     Parameters
     ----------
@@ -1550,7 +1604,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     warning : bool, optional
         Invokes a warning if the variable passed is not a valid
         condensed distance matrix. The warning message explains why
-        the distance matrix is not valid.  'name' is used when
+        the distance matrix is not valid.  `name` is used when
         referencing the offending variable.
     throws : throw, optional
         Throws an exception if the variable passed is not a valid
@@ -1608,7 +1662,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
 def num_obs_dm(d):
     """
     Returns the number of original observations that correspond to a
-    square, redundant distance matrix ``D``.
+    square, redundant distance matrix.
 
     Parameters
     ----------
@@ -1617,8 +1671,9 @@ def num_obs_dm(d):
 
     Returns
     -------
-    numobs : int
+    num_obs_dm : int
         The number of observations in the redundant distance matrix.
+
     """
     d = np.asarray(d, order='c')
     is_valid_dm(d, tol=np.inf, throw=True, name='d')
@@ -1628,19 +1683,18 @@ def num_obs_dm(d):
 def num_obs_y(Y):
     """
     Returns the number of original observations that correspond to a
-    condensed distance matrix ``Y``.
+    condensed distance matrix.
 
     Parameters
     ----------
     Y : ndarray
-        The number of original observations in the condensed
-        observation ``Y``.
+        Condensed distance matrix.
 
     Returns
     -------
     n : int
-        The number of observations in the condensed distance matrix
-        passed.
+        The number of observations in the condensed distance matrix `Y`.
+
     """
     Y = np.asarray(Y, order='c')
     is_valid_y(Y, throw=True, name='Y')
@@ -1658,15 +1712,6 @@ def num_obs_y(Y):
 def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     """
     Computes distance between each pair of the two collections of inputs.
-
-    ``XA`` is a :math:`m_A` by :math:`n` array while ``XB`` is a :math:`m_B` by
-    :math:`n` array. A :math:`m_A` by :math:`m_B` array is
-    returned. An exception is thrown if ``XA`` and ``XB`` do not have
-    the same number of columns.
-
-    A rectangular distance matrix ``Y`` is returned. For each :math:`i`
-    and :math:`j`, the metric ``dist(u=XA[i], v=XB[j])`` is computed
-    and stored in the :math:`ij` th entry.
 
     The following are common calling conventions:
 
@@ -1697,8 +1742,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
           \\sqrt{\\sum {(u_i-v_i)^2 / V[x_i]}}.
 
        V is the variance vector; V[i] is the variance computed over all
-          the i'th components of the points. If not passed, it is
-          automatically computed.
+       the i'th components of the points. If not passed, it is
+       automatically computed.
 
     5. ``Y = cdist(XA, XB, 'sqeuclidean')``
 
@@ -1877,11 +1922,18 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     VI : ndarray
         The inverse of the covariance matrix (for Mahalanobis).
 
-
     Returns
     -------
     Y : ndarray
-        A :math:`m_A` by :math:`m_B` distance matrix.
+        A :math:`m_A` by :math:`m_B` distance matrix is returned.
+        For each :math:`i` and :math:`j`, the metric
+        ``dist(u=XA[i], v=XB[j])`` is computed and stored in the
+        :math:`ij` th entry.
+
+    Raises
+    ------
+    An exception is thrown if ``XA`` and ``XB`` do not have
+    the same number of columns.
 
     """
 

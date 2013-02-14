@@ -453,9 +453,9 @@ def bmat(blocks, format=None, dtype=None):
     Parameters
     ----------
     blocks : array_like
-        grid of sparse matrices with compatible shapes
-        an entry of None implies an all-zero matrix
-    format : str, optional
+        Grid of sparse matrices with compatible shapes.
+        An entry of None implies an all-zero matrix.
+    format : {'bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil'}, optional
         The sparse format of the result (e.g. "csr").  If not given, the matrix
         is returned in "coo" format.
     dtype : dtype specifier, optional

@@ -15,7 +15,6 @@ For each given name the following methods are available:
    :toctree: generated/
 
    rv_continuous
-   rv_continuous.rvs
    rv_continuous.pdf
    rv_continuous.logpdf
    rv_continuous.cdf
@@ -29,11 +28,6 @@ For each given name the following methods are available:
    rv_continuous.entropy
    rv_continuous.fit
    rv_continuous.expect
-   rv_continuous.median
-   rv_continuous.mean
-   rv_continuous.var
-   rv_continuous.std
-   rv_continuous.interval
 
 Calling the instance as a function returns a frozen pdf whose shape,
 location, and scale parameters are fixed.
@@ -58,11 +52,6 @@ rv_discrete:
    rv_discrete.moment
    rv_discrete.entropy
    rv_discrete.expect
-   rv_discrete.median
-   rv_discrete.mean
-   rv_discrete.var
-   rv_discrete.std
-   rv_discrete.interval
 
 Continuous distributions
 ========================
@@ -70,7 +59,6 @@ Continuous distributions
 .. autosummary::
    :toctree: generated/
 
-   norm              -- Normal (Gaussian)
    alpha             -- Alpha
    anglit            -- Anglit
    arcsine           -- Arcsine
@@ -91,7 +79,7 @@ Continuous distributions
    f                 -- F (Snecdor F)
    fatiguelife       -- Fatigue Life (Birnbaum-Sanders)
    fisk              -- Fisk
-   foldcauchy        -- Folded Cauchy
+  foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
    frechet_r         -- Frechet Right Sided, Extreme Value Type II (Extreme LB) or weibull_min
    frechet_l         -- Frechet Left Sided, Weibull_max
@@ -130,6 +118,7 @@ Continuous distributions
    ncx2              -- Non-central chi-squared
    ncf               -- Non-central F
    nct               -- Non-central Student's T
+   norm              -- Normal (Gaussian)
    pareto            -- Pareto
    pearson3          -- Pearson type III
    powerlaw          -- Power-function
@@ -159,19 +148,19 @@ Discrete distributions
 .. autosummary::
    :toctree: generated/
 
-    bernoulli         -- Bernoulli
-    binom             -- Binomial
-    boltzmann         -- Boltzmann (Truncated Discrete Exponential)
-    dlaplace          -- Discrete Laplacian
-    geom              -- Geometric
-    hypergeom         -- Hypergeometric
-    logser            -- Logarithmic (Log-Series, Series)
-    nbinom            -- Negative Binomial
-    planck            -- Planck (Discrete Exponential)
-    poisson           -- Poisson
-    randint           -- Discrete Uniform
-    skellam           -- Skellam
-    zipf              -- Zipf
+   bernoulli         -- Bernoulli
+   binom             -- Binomial
+   boltzmann         -- Boltzmann (Truncated Discrete Exponential)
+   dlaplace          -- Discrete Laplacian
+   geom              -- Geometric
+   hypergeom         -- Hypergeometric
+   logser            -- Logarithmic (Log-Series, Series)
+   nbinom            -- Negative Binomial
+   planck            -- Planck (Discrete Exponential)
+   poisson           -- Poisson
+   randint           -- Discrete Uniform
+   skellam           -- Skellam
+   zipf              -- Zipf
 
 Statistical functions
 =====================
@@ -182,35 +171,35 @@ which work for masked arrays.
 .. autosummary::
    :toctree: generated/
 
-    gmean             -- Geometric mean
-    hmean             -- Harmonic mean
-    cmedian           -- Computed median
-    mode              -- Modal value
-    tmean             -- Truncated arithmetic mean
-    tvar              -- Truncated variance
-    tmin              _
-    tmax              _
-    tstd              _
-    tsem              _
-    moment            -- Central moment
-    variation         -- Coefficient of variation
-    skew              -- Skewness
-    kurtosis          -- Fisher or Pearson kurtosis
-    describe          -- Descriptive statistics
-    skewtest          _
-    kurtosistest      _
-    normaltest        _
+   cmedian           -- Computed median
+   describe          -- Descriptive statistics
+   gmean             -- Geometric mean
+   hmean             -- Harmonic mean
+   kurtosis          -- Fisher or Pearson kurtosis
+   kurtosistest      --
+   mode              -- Modal value
+   moment            -- Central moment
+   normaltest        --
+   skew              -- Skewness
+   skewtest          --
+   tmean             -- Truncated arithmetic mean
+   tvar              -- Truncated variance
+   tmin              --
+   tmax              --
+   tstd              --
+   tsem              --
+   variation         -- Coefficient of variation
 
 .. autosummary::
    :toctree: generated/
 
-    itemfreq          _
-    scoreatpercentile _
-    percentileofscore _
-    histogram2        _
-    histogram         _
-    cumfreq           _
-    relfreq           _
+   cumfreq           _
+   histogram2        _
+   histogram         _
+   itemfreq          _
+   percentileofscore _
+   scoreatpercentile _
+   relfreq           _
 
 .. autosummary::
    :toctree: generated/
@@ -282,10 +271,10 @@ Contingency table functions
 .. autosummary::
    :toctree: generated/
 
-   fisher_exact
    chi2_contingency
    contingency.expected_freq
    contingency.margins
+   fisher_exact
 
 General linear model
 ====================
@@ -301,9 +290,9 @@ Plot-tests
 .. autosummary::
    :toctree: generated/
 
-   probplot
    ppcc_max
    ppcc_plot
+   probplot
 
 
 Masked statistics functions

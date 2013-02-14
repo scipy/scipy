@@ -26,13 +26,35 @@ def randwppf(ppf, args=(), size=None):
     return ppf(*(U,)+args)
 
 def randwcdf(cdf, mean=1.0, args=(), size=None):
-    """returns an array of randomly distributed integers of a distribution
-    whose cumulative distribution function (CDF) is given.
+    """
+    Returns an array of randomly distributed integers given a CDF.
 
-    mean is the mean of the distribution (helps the solver).
-    args is a tuple of extra arguments to the cdf function (i.e. shape,
-    location, scale), and size is the size of the output.  Note the
-    cdf function needs to accept a single value to compute over.
+    Given a cumulative distribution function (CDF) returns an array of
+    randomly distributed integers that would satisfy the CDF.
+
+    Parameters
+    ----------
+    cdf : function
+        CDF function that accepts a single value and `args`, and returns
+        an single value.
+    mean : float, optional
+        The mean of the distribution which helps the solver.  Defaults
+        to 1.0.
+    args : tuple, optional
+        Extra arguments to the cdf function (i.e. shape, location, scale)
+    size : {int, None}, optional
+        Is the size of the output.  If None, only 1 value will be returned.
+
+    Returns
+    -------
+    randwcdf : ndarray
+        Array of random numbers.
+
+    Notes
+    -----
+    Can use the ``scipy.stats.distributions.*.cdf`` functions for the
+    `cdf` parameter.
+
     """
     import scipy.optimize as optimize
     def _ppfopt(x, q, *nargs):

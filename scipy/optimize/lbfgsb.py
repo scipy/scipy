@@ -132,11 +132,12 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     Notes
     -----
-    License of L-BFGS-B (Fortran code):
+    License of L-BFGS-B (FORTRAN code):
 
-    The version included here (in fortran code) is 3.0 (released April 25, 2011).
-    It was written by Ciyou Zhu, Richard Byrd, and Jorge Nocedal
-    <nocedal@ece.nwu.edu>. It carries the following condition for use:
+    The version included here (in fortran code) is 3.0
+    (released April 25, 2011).  It was written by Ciyou Zhu, Richard Byrd,
+    and Jorge Nocedal <nocedal@ece.nwu.edu>. It carries the following
+    condition for use:
 
     This software is freely available, but we expect that all publications
     describing work using this software, or all commercial products using it,

@@ -320,7 +320,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
         If set to true, the contents of `x` can be overwritten. Default is
         False.
 
-    See also
+    See Also
     --------
     fft, irfft, scipy.fftpack.basic
 
@@ -475,7 +475,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
 
 def fftn(x, shape=None, axes=None, overwrite_x=0):
     """
-    Return multi-dimensional discrete Fourier transform of x.
+    Return multidimensional discrete Fourier transform.
 
     The returned array contains::
 

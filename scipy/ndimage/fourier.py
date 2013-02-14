@@ -105,7 +105,7 @@ def fourier_gaussian(input, sigma, n = -1, axis = -1, output = None):
 
     Returns
     -------
-    return_value : ndarray or None
+    fourier_gaussian : ndarray or None
         The filtered input. If `output` is given as a parameter, None is
         returned.
 
@@ -150,7 +150,7 @@ def fourier_uniform(input, size, n = -1, axis = -1, output = None):
 
     Returns
     -------
-    return_value : ndarray or None
+    fourier_uniform : ndarray or None
         The filtered input. If `output` is given as a parameter, None is
         returned.
 
@@ -194,7 +194,7 @@ def fourier_ellipsoid(input, size, n = -1, axis = -1, output = None):
 
     Returns
     -------
-    return_value : ndarray or None
+    fourier_ellipsoid : ndarray or None
         The filtered input. If `output` is given as a parameter, None is
         returned.
 
@@ -241,7 +241,7 @@ def fourier_shift(input, shift, n = -1, axis = -1, output = None):
 
     Returns
     -------
-    return_value : ndarray or None
+    fourier_shift : ndarray or None
         The shifted input. If `output` is given as a parameter, None is
         returned.
 

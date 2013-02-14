@@ -91,10 +91,10 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     Parameters
     ----------
-    a : array_like, shape (M, M)
+    a : (M, M) array_like
         A complex or real matrix whose eigenvalues and eigenvectors
         will be computed.
-    b : array_like, shape (M, M), optional
+    b : (M, M) array_like, optional
         Right-hand side matrix in a generalized eigenvalue problem.
         Default is None, identity matrix is assumed.
     left : bool, optional
@@ -112,17 +112,14 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     Returns
     -------
-    w : double or complex ndarray
+    w : (M,) double or complex ndarray
         The eigenvalues, each repeated according to its multiplicity.
-        Of shape (M,).
-    vl : double or complex ndarray
+    vl : (M, M) double or complex ndarray
         The normalized left eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column v[:,i]. Only returned if ``left=True``.
-        Of shape ``(M, M)``.
-    vr : double or complex array
+    vr : (M, M) double or complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
-        Of shape ``(M, M)``.
 
     Raises
     ------
@@ -195,47 +192,50 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
          overwrite_b=False, turbo=True, eigvals=None, type=1,
          check_finite=True):
-    """Solve an ordinary or generalized eigenvalue problem for a complex
+    """
+    Solve an ordinary or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
 
-    Find eigenvalues w and optionally eigenvectors v of matrix a, where
-    b is positive definite::
+    Find eigenvalues w and optionally eigenvectors v of matrix `a`, where
+    `b` is positive definite::
 
                       a v[:,i] = w[i] b v[:,i]
         v[i,:].conj() a v[:,i] = w[i]
         v[i,:].conj() b v[:,i] = 1
 
-
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : (M, M) array_like
         A complex Hermitian or real symmetric matrix whose eigenvalues and
         eigenvectors will be computed.
-    b : array, shape (M, M)
+    b : (M, M) array_like, optional
         A complex Hermitian or real symmetric definite positive matrix in.
         If omitted, identity matrix is assumed.
-    lower : boolean
+    lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of a. (Default: lower)
-    eigvals_only : boolean
+        triangle of `a`. (Default: lower)
+    eigvals_only : bool, optional
         Whether to calculate only eigenvalues and no eigenvectors.
         (Default: both are calculated)
-    turbo : boolean
+    turbo : bool, optional
         Use divide and conquer algorithm (faster but expensive in memory,
         only for generalized eigenvalue problem and if eigvals=None)
-    eigvals : tuple (lo, hi)
+    eigvals : tuple (lo, hi), optional
         Indexes of the smallest and largest (in ascending order) eigenvalues
         and corresponding eigenvectors to be returned: 0 <= lo <= hi <= M-1.
         If omitted, all eigenvalues and eigenvectors are returned.
-    type : integer
+    type : int, optional
         Specifies the problem type to be solved:
+
            type = 1: a   v[:,i] = w[i] b v[:,i]
+
            type = 2: a b v[:,i] = w[i]   v[:,i]
+
            type = 3: b a v[:,i] = w[i]   v[:,i]
-    overwrite_a : boolean
-        Whether to overwrite data in a (may improve performance)
-    overwrite_b : boolean
-        Whether to overwrite data in b (may improve performance)
+    overwrite_a : bool, optional
+        Whether to overwrite data in `a` (may improve performance)
+    overwrite_b : bool, optional
+        Whether to overwrite data in `b` (may improve performance)
     check_finite : boolean, optional
         Whether to check the input matrixes contain only finite numbers.
         Disabling may give a performance gain, but may result to problems
@@ -243,23 +243,32 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     Returns
     -------
-    w : real array, shape (N,)
+    w : (N,) float ndarray
         The N (1<=N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
+    v : (M, N) complex ndarray
+        (if eigvals_only == False)
 
-    (if eigvals_only == False)
-    v : complex array, shape (M, N)
         The normalized selected eigenvector corresponding to the
-        eigenvalue w[i] is the column v[:,i]. Normalization:
-        type 1 and 3:       v.conj() a      v  = w
-        type 2:        inv(v).conj() a  inv(v) = w
-        type = 1 or 2:      v.conj() b      v  = I
-        type = 3     :      v.conj() inv(b) v  = I
+        eigenvalue w[i] is the column v[:,i].
 
-    Raises LinAlgError if eigenvalue computation does not converge,
-    an error occurred, or b matrix is not definite positive. Note that
-    if input matrices are not symmetric or hermitian, no error is reported
-    but results will be wrong.
+        Normalization:
+
+            type 1 and 3: v.conj() a      v  = w
+
+            type 2: inv(v).conj() a  inv(v) = w
+
+            type = 1 or 2: v.conj() b      v  = I
+
+            type = 3: v.conj() inv(b) v  = I
+
+    Raises
+    ------
+    LinAlgError :
+        If eigenvalue computation does not converge,
+        an error occurred, or b matrix is not definite positive. Note that
+        if input matrices are not symmetric or hermitian, no error is reported
+        but results will be wrong.
 
     See Also
     --------
@@ -394,7 +403,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
 def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
                select='a', select_range=None, max_ev = 0, check_finite=True):
-    """Solve real symmetric or complex hermitian band matrix eigenvalue problem.
+    """
+    Solve real symmetric or complex hermitian band matrix eigenvalue problem.
 
     Find eigenvalues w and optionally right eigenvectors v of a::
 
@@ -425,16 +435,16 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     Parameters
     ----------
-    a_band : array, shape (u+1, M)
+    a_band : (u+1, M) array_like
         The bands of the M by M matrix a.
-    lower : boolean
+    lower : bool, optional
         Is the matrix in the lower form. (Default is upper form)
-    eigvals_only : boolean
+    eigvals_only : bool, optional
         Compute only the eigenvalues and no eigenvectors.
         (Default: calculate also eigenvectors)
-    overwrite_a_band:
+    overwrite_a_band : bool, optional
         Discard data in a_band (may enhance performance)
-    select : {'a', 'v', 'i'}
+    select : {'a', 'v', 'i'}, optional
         Which eigenvalues to calculate
 
         ======  ========================================
@@ -444,9 +454,9 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         'v'     Eigenvalues in the interval (min, max]
         'i'     Eigenvalues with indices min <= i <= max
         ======  ========================================
-    select_range : (min, max)
+    select_range : (min, max), optional
         Range of selected eigenvalues
-    max_ev : integer
+    max_ev : int, optional
         For select=='v', maximum number of eigenvalues expected.
         For other values of select, has no meaning.
 
@@ -459,11 +469,10 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     Returns
     -------
-    w : array, shape (M,)
+    w : (M,) ndarray
         The eigenvalues, in ascending order, each repeated according to its
         multiplicity.
-
-    v : double or complex double array, shape (M, M)
+    v : (M, M) float or complex ndarray
         The normalized eigenvector corresponding to the eigenvalue w[i] is
         the column v[:,i].
 
@@ -562,10 +571,10 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True):
 
     Parameters
     ----------
-    a : array_like, shape (M, M)
+    a : (M, M) array_like
         A complex or real matrix whose eigenvalues and eigenvectors
         will be computed.
-    b : array_like, shape (M, M), optional
+    b : (M, M) array_like, optional
         Right-hand side matrix in a generalized eigenvalue problem.
         If omitted, identity matrix is assumed.
     overwrite_a : boolean, optional
@@ -577,9 +586,9 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    w : double or complex ndarray, shape (M,)
+    w : (M,) double or complex ndarray
         The eigenvalues, each repeated according to its multiplicity,
-        but not in any specific order.  Of shape (M,).
+        but not in any specific order.
 
     Raises
     ------
@@ -599,7 +608,8 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True):
 def eigvalsh(a, b=None, lower=True, overwrite_a=False,
              overwrite_b=False, turbo=True, eigvals=None, type=1,
              check_finite=True):
-    """Solve an ordinary or generalized eigenvalue problem for a complex
+    """
+    Solve an ordinary or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
 
     Find eigenvalues w of matrix a, where b is positive definite::
@@ -611,31 +621,34 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : (M, M) array_like
         A complex Hermitian or real symmetric matrix whose eigenvalues and
         eigenvectors will be computed.
-    b : array, shape (M, M)
+    b : (M, M) array_like, optional
         A complex Hermitian or real symmetric definite positive matrix in.
         If omitted, identity matrix is assumed.
-    lower : boolean
+    lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
-        triangle of a. (Default: lower)
-    turbo : boolean
+        triangle of `a`. (Default: lower)
+    turbo : bool, optional
         Use divide and conquer algorithm (faster but expensive in memory,
         only for generalized eigenvalue problem and if eigvals=None)
-    eigvals : tuple (lo, hi)
+    eigvals : tuple (lo, hi), optional
         Indexes of the smallest and largest (in ascending order) eigenvalues
         and corresponding eigenvectors to be returned: 0 <= lo < hi <= M-1.
         If omitted, all eigenvalues and eigenvectors are returned.
-    type : integer
+    type : integer, optional
         Specifies the problem type to be solved:
+
            type = 1: a   v[:,i] = w[i] b v[:,i]
+
            type = 2: a b v[:,i] = w[i]   v[:,i]
+
            type = 3: b a v[:,i] = w[i]   v[:,i]
-    overwrite_a : boolean
-        Whether to overwrite data in a (may improve performance)
-    overwrite_b : boolean
-        Whether to overwrite data in b (may improve performance)
+    overwrite_a : bool, optional
+        Whether to overwrite data in `a` (may improve performance)
+    overwrite_b : bool, optional
+        Whether to overwrite data in `b` (may improve performance)
     check_finite : boolean, optional
         Whether to check the input matrixes contain only finite numbers.
         Disabling may give a performance gain, but may result to problems
@@ -643,14 +656,17 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 
     Returns
     -------
-    w : real array, shape (N,)
+    w : (N,) float ndarray
         The N (1<=N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
 
-    Raises LinAlgError if eigenvalue computation does not converge,
-    an error occurred, or b matrix is not definite positive. Note that
-    if input matrices are not symmetric or hermitian, no error is reported
-    but results will be wrong.
+    Raises
+    ------
+    LinAlgError :
+        If eigenvalue computation does not converge,
+        an error occurred, or b matrix is not definite positive. Note that
+        if input matrices are not symmetric or hermitian, no error is reported
+        but results will be wrong.
 
     See Also
     --------
@@ -666,7 +682,8 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                    select='a', select_range=None, check_finite=True):
-    """Solve real symmetric or complex hermitian band matrix eigenvalue problem.
+    """
+    Solve real symmetric or complex hermitian band matrix eigenvalue problem.
 
     Find eigenvalues w of a::
 
@@ -697,7 +714,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
 
     Parameters
     ----------
-    a_band : array, shape (u+1, M)
+    a_band : (u+1, M) array_like
         The bands of the M by M matrix a.
     lower : boolean
         Is the matrix in the lower form. (Default is upper form)
@@ -722,7 +739,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
 
     Returns
     -------
-    w : array, shape (M,)
+    w : (M,) ndarray
         The eigenvalues, in ascending order, each repeated according to its
         multiplicity.
 
@@ -730,7 +747,8 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
 
     See Also
     --------
-    eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian band matrices
+    eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
+        band matrices
     eigvals : eigenvalues of general arrays
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
@@ -756,8 +774,8 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
     Parameters
     ----------
-    a : ndarray
-        Matrix to bring into Hessenberg form, of shape ``(M,M)``.
+    a : (M, M) array_like
+        Matrix to bring into Hessenberg form.
     calc_q : bool, optional
         Whether to compute the transformation matrix.  Default is False.
     overwrite_a : bool, optional
@@ -770,11 +788,11 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    H : ndarray
-        Hessenberg form of `a`, of shape (M,M).
-    Q : ndarray
+    H : (M, M) ndarray
+        Hessenberg form of `a`.
+    Q : (M, M) ndarray
         Unitary/orthogonal similarity transformation matrix ``A = Q H Q^H``.
-        Only returned if ``calc_q=True``.  Of shape (M,M).
+        Only returned if ``calc_q=True``.
 
     """
     if check_finite:

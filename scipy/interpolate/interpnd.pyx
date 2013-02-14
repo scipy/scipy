@@ -169,7 +169,7 @@ def _ndim_coords_from_arrays(points):
 
 class LinearNDInterpolator(NDInterpolatorBase):
     """
-    LinearNDInterpolator(points, values)
+    LinearNDInterpolator(points, values, fill_value=np.nan)
 
     Piecewise linear interpolant in N dimensions.
 

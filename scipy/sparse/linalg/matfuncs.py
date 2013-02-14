@@ -25,43 +25,47 @@ from scipy.sparse.linalg import spsolve
 
 
 def inv(A):
-    """Compute the inverse of a sparse matrix
+    """
+    Compute the inverse of a sparse matrix
 
     .. versionadded:: 0.12.0
 
     Parameters
     ----------
-    A : ndarray or sparse matrix
+    A : (M,M) ndarray or sparse matrix
         square matrix to be inverted
-    
+
     Returns
     -------
-    Ainv : inverse of A
+    Ainv : (M,M) ndarray or sparse matrix
+        inverse of `A`
 
     Notes
     -----
-    This computes the sparse inverse of A.  If the inverse of A is expected
-    to be non-sparse, it will likely be faster to convert A to dense and use
+    This computes the sparse inverse of `A`.  If the inverse of `A` is expected
+    to be non-sparse, it will likely be faster to convert `A` to dense and use
     scipy.linalg.inv.
+
     """
     I = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
     Ainv = spsolve(A, I)
     return Ainv
 
 def expm(A):
-    """Compute the matrix exponential using Pade approximation.
+    """
+    Compute the matrix exponential using Pade approximation.
 
     .. versionadded:: 0.12.0
 
     Parameters
     ----------
-    A : array or sparse matrix, shape(M,M)
+    A : (M,M) array or sparse matrix
         2D Array or Matrix (sparse or dense) to be exponentiated
 
     Returns
     -------
-    expA : array, shape(M,M)
-        Matrix exponential of A
+    expA : (M,M) ndarray
+        Matrix exponential of `A`
 
     References
     ----------

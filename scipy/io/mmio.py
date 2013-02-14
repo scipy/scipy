@@ -39,12 +39,12 @@ def mminfo(source):
     entries : int
         Number of non-zero entries of a sparse matrix
         or rows*cols for a dense matrix
-
-    format : {'coordinate', 'array'}
-
-    field : {'real', 'complex', 'pattern', 'integer'}
-
-    symm : {'general', 'symmetric', 'skew-symmetric', 'hermitian'}
+    format : str
+        Either 'coordinate' or 'array'.
+    field : str
+        Either 'real', 'complex', 'pattern', or 'integer'.
+    symm : str
+        Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
 
     """
     return MMFile.info(source)
@@ -76,17 +76,15 @@ def mmwrite(target, a, comment='', field=None, precision=None):
 
     Parameters
     ----------
-
     target : file
         Matrix Market filename (extension .mtx) or open file object
     a : array like
         Sparse or full matrix
-    comment : str
+    comment : str, optional
         comments to be prepended to the Matrix Market file
-
-    field : {'real', 'complex', 'pattern', 'integer'}, optional
-
-    precision :
+    field : str, optional
+        Either 'real', 'complex', 'pattern', or 'integer'.
+    precision : int, optional
         Number of digits to display for real or complex values.
 
     """

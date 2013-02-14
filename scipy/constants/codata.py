@@ -9,14 +9,41 @@ Fundamental Physical Constants
 These constants are taken from CODATA Recommended Values of the Fundamental
 Physical Constants 2010.
 
+Object
+------
+physical_constants : dict
+    A dictionary containing physical constants. Keys are the names of
+    physical constants, values are tuples (value, units, precision).
+
+Functions
+---------
+value(key):
+    Returns the value of the physical constant(key).
+unit(key):
+    Returns the units of the physical constant(key).
+precision(key):
+    Returns the relative precision of the physical constant(key).
+find(sub):
+    Prints or returns list of keys containing the string sub, default is
+    all.
+
+Source
+------
 The values of the constants provided at this site are recommended for
 international use by CODATA and are the latest available. Termed the "2010
 CODATA recommended values," they are generally recognized worldwide for use in
 all fields of science and technology. The values became available on 2 June
 2011 and replaced the 2006 CODATA set. They are based on all of the data
 available through 31 December 2010. The 2010 adjustment was carried out under
-the auspices of the CODATA Task Group on Fundamental Constants. Also available
-is an Introduction to the constants for nonexperts.
+the auspices of the CODATA Task Group on Fundamental Constants. See References
+for an introduction to the constants for nonexperts.
+
+References
+----------
+Theoretical and experimental publications relevant to the fundamental
+constants and closely related precision measurements published since the mid
+1980s, but also including many older papers of particular interest, some of
+which date back to the 1800s. To search bibliography visit
 
 http://physics.nist.gov/cuu/Constants/
 

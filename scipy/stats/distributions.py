@@ -645,18 +645,20 @@ class rv_generic(object):
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
         loc : array_like, optional
-            location parameter (default=0)
+            Location parameter, Default is 0.
         scale : array_like, optional
-            scale parameter (default=1)
+            Scale parameter, Default is 1.
 
         Returns
         -------
         median : float
-            the median of the distribution.
+            The median of the distribution.
 
         See Also
         --------
-        self.ppf --- inverse of the CDF
+        stats.distributions.rv_discrete.ppf
+            Inverse of the CDF
+
         """
         return self.ppf(0.5, *args, **kwds)
 
@@ -736,24 +738,28 @@ class rv_generic(object):
         return res
 
     def interval(self, alpha, *args, **kwds):
-        """Confidence interval with equal areas around the median
+        """
+        Confidence interval with equal areas around the median.
 
         Parameters
         ----------
-        alpha : array_like float in [0,1]
-            Probability that an rv will be drawn from the returned range
+        alpha : array_like of float
+            Probability that an rv will be drawn from the returned range.
+            Each value should be in the range [0, 1].
         arg1, arg2, ... : array_like
-            The shape parameter(s) for the distribution (see docstring of the instance
-            object for more information)
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
         loc : array_like, optional
-            location parameter (default = 0)
+            location parameter, Default is 0.
         scale : array_like, optional
-            scale paramter (default = 1)
+            scale parameter, Default is 1.
 
         Returns
         -------
-        a, b : array_like (float)
-            end-points of range that contain alpha % of the rvs
+        a, b : ndarray of float
+            end-points of range that contain ``100 * alpha %`` of the rv's possible
+            values.
+
         """
         alpha = asarray(alpha)
         if any((alpha > 1) | (alpha < 0)):
@@ -1259,7 +1265,7 @@ class rv_continuous(rv_generic):
 
     def cdf(self,x,*args,**kwds):
         """
-        Cumulative distribution function at x of the given RV.
+        Cumulative distribution function of the given RV.
 
         Parameters
         ----------
@@ -1275,8 +1281,8 @@ class rv_continuous(rv_generic):
 
         Returns
         -------
-        cdf : array_like
-            Cumulative distribution function evaluated at x
+        cdf : ndarray
+            Cumulative distribution function evaluated at `x`
 
         """
         loc,scale=map(kwds.get,['loc','scale'])
@@ -1485,8 +1491,8 @@ class rv_continuous(rv_generic):
 
         Returns
         -------
-        x : array_like
-            quantile corresponding to the upper tail probability q.
+        x : ndarray or scalar
+            Quantile corresponding to the upper tail probability q.
 
         """
         loc,scale=map(kwds.get,['loc','scale'])
@@ -5993,7 +5999,7 @@ class rv_discrete(rv_generic):
 
     def cdf(self, k, *args, **kwds):
         """
-        Cumulative distribution function at k of the given RV.
+        Cumulative distribution function of the given RV.
 
         Parameters
         ----------
@@ -6007,8 +6013,8 @@ class rv_discrete(rv_generic):
 
         Returns
         -------
-        cdf : array_like
-            Cumulative distribution function evaluated at k.
+        cdf : ndarray
+            Cumulative distribution function evaluated at `k`.
 
         """
         loc = kwds.get('loc')
@@ -6113,7 +6119,10 @@ class rv_discrete(rv_generic):
 
     def logsf(self,k,*args,**kwds):
         """
-        Log of the survival function (1-cdf) at k of the given RV
+        Log of the survival function of the given RV.
+
+        Returns the log of the "survival function," defined as ``1 - cdf``,
+        evaluated at `k`.
 
         Parameters
         ----------
@@ -6127,8 +6136,8 @@ class rv_discrete(rv_generic):
 
         Returns
         -------
-        sf : array_like
-            Survival function evaluated at k.
+        sf : ndarray
+            Survival function evaluated at `k`.
 
         """
         loc= kwds.get('loc')
@@ -6210,11 +6219,10 @@ class rv_discrete(rv_generic):
 
         Returns
         -------
-        k : array_like
+        k : ndarray or scalar
             Quantile corresponding to the upper tail probability, q.
 
         """
-
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
         q,loc  = map(asarray,(q,loc))
@@ -6371,7 +6379,7 @@ class rv_discrete(rv_generic):
         ----------
         n : int, n>=1
             order of moment
-        arg1, arg2, arg3,...: float
+        arg1, arg2, arg3,... : float
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
         loc : float, optional
@@ -6450,43 +6458,45 @@ class rv_discrete(rv_generic):
         return self.freeze(*args,**kwds)
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None, conditional=False):
-        """calculate expected value of a function with respect to the distribution
+        """
+        Calculate expected value of a function with respect to the distribution
         for discrete distribution
 
         Parameters
         ----------
         fn : function (default: identity mapping)
-               Function for which sum is calculated. Takes only one argument.
+            Function for which sum is calculated. Takes only one argument.
         args : tuple
-               argument (parameters) of the distribution
-        optional keyword parameters
-        lb, ub : numbers
-               lower and upper bound for integration, default is set to the support
-               of the distribution, lb and ub are inclusive (ul<=k<=ub)
-        conditional : boolean (False)
-               If true then the expectation is corrected by the conditional
-               probability of the integration interval. The return value is the
-               expectation of the function, conditional on being in the given
-               interval (k such that ul<=k<=ub).
+            argument (parameters) of the distribution
+        lb, ub : numbers, optional
+            lower and upper bound for integration, default is set to the support
+            of the distribution, lb and ub are inclusive (ul<=k<=ub)
+        conditional : bool, optional
+            Default is False.
+            If true then the expectation is corrected by the conditional
+            probability of the integration interval. The return value is the
+            expectation of the function, conditional on being in the given
+            interval (k such that ul<=k<=ub).
 
         Returns
         -------
-        expected value : float
+        expect : float
+            Expected value.
 
         Notes
         -----
         * function is not vectorized
         * accuracy: uses self.moment_tol as stopping criterium
-            for heavy tailed distribution e.g. zipf(4), accuracy for
-            mean, variance in example is only 1e-5,
-            increasing precision (moment_tol) makes zipf very slow
+          for heavy tailed distribution e.g. zipf(4), accuracy for
+          mean, variance in example is only 1e-5,
+          increasing precision (moment_tol) makes zipf very slow
         * suppnmin=100 internal parameter for minimum number of points to evaluate
-            could be added as keyword parameter, to evaluate functions with
-            non-monotonic shapes, points include integers in (-suppnmin, suppnmin)
+          could be added as keyword parameter, to evaluate functions with
+          non-monotonic shapes, points include integers in (-suppnmin, suppnmin)
         * uses maxcount=1000 limits the number of points that are evaluated
-            to break loop for infinite sums
-            (a maximum of suppnmin+1000 positive plus suppnmin+1000 negative integers
-            are evaluated)
+          to break loop for infinite sums
+          (a maximum of suppnmin+1000 positive plus suppnmin+1000 negative
+          integers are evaluated)
 
         """
 

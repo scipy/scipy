@@ -15,7 +15,8 @@ __all__ = ['lu', 'lu_solve', 'lu_factor']
 
 
 def lu_factor(a, overwrite_a=False, check_finite=True):
-    """Compute pivoted LU decomposition of a matrix.
+    """
+    Compute pivoted LU decomposition of a matrix.
 
     The decomposition is::
 
@@ -26,7 +27,7 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
 
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : (M, M) array_like
         Matrix to decompose
     overwrite_a : boolean
         Whether to overwrite data in A (may increase performance)
@@ -37,10 +38,10 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    lu : array, shape (N, N)
+    lu : (N, N) ndarray
         Matrix containing U in its upper triangle, and L in its lower triangle.
         The unit diagonal elements of L are not stored.
-    piv : array, shape (N,)
+    piv : (N,) ndarray
         Pivot indices representing the permutation matrix P:
         row i of matrix was interchanged with row piv[i].
 
@@ -123,7 +124,8 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
 
 
 def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
-    """Compute pivoted LU decompostion of a matrix.
+    """
+    Compute pivoted LU decompostion of a matrix.
 
     The decomposition is::
 
@@ -134,11 +136,11 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
 
     Parameters
     ----------
-    a : array, shape (M, N)
+    a : (M, N) array_like
         Array to decompose
-    permute_l : boolean
+    permute_l : bool
         Perform the multiplication P*L  (Default: do not permute)
-    overwrite_a : boolean
+    overwrite_a : bool
         Whether to overwrite data in a (may improve performance)
     check_finite : boolean, optional
         Whether to check the input matrixes contain only finite numbers.
@@ -147,20 +149,22 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    (If permute_l == False)
-    p : array, shape (M, M)
+    **(If permute_l == False)**
+
+    p : (M, M) ndarray
         Permutation matrix
-    l : array, shape (M, K)
+    l : (M, K) ndarray
         Lower triangular or trapezoidal matrix with unit diagonal.
         K = min(M, N)
-    u : array, shape (K, N)
+    u : (K, N) ndarray
         Upper triangular or trapezoidal matrix
 
-    (If permute_l == True)
-    pl : array, shape (M, K)
+    **(If permute_l == True)**
+
+    pl : (M, K) ndarray
         Permuted L matrix.
         K = min(M, N)
-    u : array, shape (K, N)
+    u : (K, N) ndarray
         Upper triangular or trapezoidal matrix
 
     Notes

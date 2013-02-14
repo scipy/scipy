@@ -80,7 +80,6 @@ Root finding
 
 Scalar functions
 ----------------
-
 .. autosummary::
    :toctree: generated/
 

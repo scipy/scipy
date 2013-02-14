@@ -94,14 +94,28 @@ def _chk_size(a,b):
     return (a,b,na)
 
 def argstoarray(*args):
-    """Constructs a 2D array from a sequence of sequences. Sequences are filled
-    with missing values to match the length of the longest sequence.
+    """
+    Constructs a 2D array from a group of sequences.
+
+    Sequences are filled with missing values to match the length of the longest
+    sequence.
+
+    Parameters
+    ----------
+    args : sequences
+        Group of sequences.
 
     Returns
     -------
-        output : MaskedArray
-            a (mxn) masked array, where m is the number of arguments and n the
-            length of the longest argument.
+    argstoarray : MaskedArray
+        A ( `m` x `n` ) masked array, where `m` is the number of arguments and
+        `n` the length of the longest argument.
+
+    Notes
+    -----
+    numpy.ma.row_stack has identical behavior, but is called with a sequence of
+    sequences.
+
     """
     if len(args) == 1 and not isinstance(args[0], ndarray):
         output = ma.asarray(args[0])
@@ -148,8 +162,7 @@ Returns
 
 def count_tied_groups(x, use_missing=False):
     """
-    Counts the number of tied values in x, and returns a dictionary
-        (nb of ties: nb of groups).
+    Counts the number of tied values.
 
     Parameters
     ----------
@@ -157,6 +170,11 @@ def count_tied_groups(x, use_missing=False):
         Sequence of data on which to counts the ties
     use_missing : boolean
         Whether to consider missing values as tied.
+
+    Returns
+    -------
+    count_tied_groups : dict
+        Returns a dictionary (nb of ties: nb of groups).
 
     Examples
     --------
@@ -443,7 +461,8 @@ Returns
 
 
 def kendalltau(x, y, use_ties=True, use_missing=False):
-    """Computes Kendall's rank correlation tau on two variables *x* and *y*.
+    """
+    Computes Kendall's rank correlation tau on two variables *x* and *y*.
 
     Parameters
     ----------
@@ -459,10 +478,11 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
 
     Returns
     -------
-        tau : float
-            Kendall tau
-        prob : float
-            Approximate 2-side p-value.
+    tau : float
+        Kendall tau
+    prob : float
+        Approximate 2-side p-value.
+
     """
     (x, y, n) = _chk_size(x, y)
     (x, y) = (x.flatten(), y.flatten())
@@ -785,22 +805,26 @@ chisquare.__doc__ = stats.chisquare.__doc__
 
 
 def mannwhitneyu(x,y, use_continuity=True):
-    """Computes the Mann-Whitney on samples x and y.
-    Missing values in x and/or y are discarded.
+    """
+    Computes the Mann-Whitney statistic
+
+    Missing values in `x` and/or `y` are discarded.
 
     Parameters
     ----------
-        x : sequence
-        y : sequence
-        use_continuity : {True, False}, optional
-            Whether a continuity correction (1/2.) should be taken into account.
+    x : sequence
+        Input
+    y : sequence
+        Input
+    use_continuity : {True, False}, optional
+        Whether a continuity correction (1/2.) should be taken into account.
 
     Returns
     -------
-        u : float
-            The Mann-Whitney statistics
-        prob : float
-            Approximate p-value assuming a normal distribution.
+    u : float
+        The Mann-Whitney statistics
+    prob : float
+        Approximate p-value assuming a normal distribution.
 
     """
     x = ma.asarray(x).compressed().view(ndarray)
@@ -862,24 +886,26 @@ def _kolmog1(x,n):
 
 
 def ks_twosamp(data1, data2, alternative="two-sided"):
-    """Computes the Kolmogorov-Smirnov test on two samples.
+    """
+    Computes the Kolmogorov-Smirnov test on two samples.
+
     Missing values are discarded.
 
     Parameters
     ----------
-        data1 : sequence
-            First data set
-        data2 : sequence
-            Second data set
-        alternative : {'two-sided', 'less', 'greater'}, optional
-            Indicates the alternative hypothesis.
+    data1 : array_like
+        First data set
+    data2 : array_like
+        Second data set
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Indicates the alternative hypothesis.  Default is 'two-sided'.
 
     Returns
     -------
-        d : float
-            Value of the Kolmogorov Smirnov test
-        p : float
-            Corresponding p-value.
+    d : float
+        Value of the Kolmogorov Smirnov test
+    p : float
+        Corresponding p-value.
 
     """
     (data1, data2) = (ma.asarray(data1), ma.asarray(data2))
@@ -997,7 +1023,8 @@ def trima(a, limits=None, inclusive=(True,True)):
 
 
 def trimr(a, limits=None, inclusive=(True, True), axis=None):
-    """Trims an array by masking some proportion of the data on each end.
+    """
+    Trims an array by masking some proportion of the data on each end.
     Returns a masked version of the input array.
 
     Parameters
@@ -1007,13 +1034,15 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
     limits : {None, tuple}, optional
         Tuple of the percentages to cut on each side of the array, with respect
         to the number of unmasked data, as floats between 0. and 1.
-        Noting n the number of unmasked data before trimming, the (n*limits[0])th
-        smallest data and the (n*limits[1])th largest data are masked, and the
-        total number of unmasked data after trimming is n*(1.-sum(limits))
-        The value of one limit can be set to None to indicate an open interval.
+        Noting n the number of unmasked data before trimming, the
+        (n*limits[0])th smallest data and the (n*limits[1])th largest data are
+        masked, and the total number of unmasked data after trimming is
+        n*(1.-sum(limits)).  The value of one limit can be set to None to
+        indicate an open interval.
     inclusive : {(True,True) tuple}, optional
-        Tuple of flags indicating whether the number of data being masked on the
-        left (right) end should be truncated (True) or rounded (False) to integers.
+        Tuple of flags indicating whether the number of data being masked on
+        the left (right) end should be truncated (True) or rounded (False) to
+        integers.
     axis : {None,int}, optional
         Axis along which to trim. If None, the whole array is trimmed, but its
         shape is maintained.
@@ -1064,73 +1093,79 @@ trimdoc = """
     a : sequence
         Input array
     limits : {None, tuple}, optional
-        If relative == False, tuple (lower limit, upper limit) in absolute values.
+        If `relative` is False, tuple (lower limit, upper limit) in absolute values.
         Values of the input array lower (greater) than the lower (upper) limit are
         masked.
-        If relative == True, tuple (lower percentage, upper percentage) to cut
+
+        If `relative` is True, tuple (lower percentage, upper percentage) to cut
         on each side of the  array, with respect to the number of unmasked data.
+
         Noting n the number of unmasked data before trimming, the (n*limits[0])th
         smallest data and the (n*limits[1])th largest data are masked, and the
         total number of unmasked data after trimming is n*(1.-sum(limits))
         In each case, the value of one limit can be set to None to indicate an
         open interval.
+
         If limits is None, no trimming is performed
-    inclusive : {(True, True) tuple}, optional
-        If relative==False, tuple indicating whether values exactly equal to the
-        absolute limits are allowed.
-        If relative==True, tuple indicating whether the number of data being masked
-        on each side should be rounded (True) or truncated (False).
-    relative : {False, True}, optional
+    inclusive : {(bool, bool) tuple}, optional
+        If `relative` is False, tuple indicating whether values exactly equal
+        to the absolute limits are allowed.
+        If `relative` is True, tuple indicating whether the number of data
+        being masked on each side should be rounded (True) or truncated
+        (False).
+    relative : bool, optional
         Whether to consider the limits as absolute values (False) or proportions
         to cut (True).
-    axis : {None, integer}, optional
+    axis : int, optional
         Axis along which to trim.
 """
 
 
 def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
-    """Trims an array by masking the data outside some given limits.
+    """
+    Trims an array by masking the data outside some given limits.
 
     Returns a masked version of the input array.
-   %s
+
+    %s
 
     Examples
     --------
-        >>>z = [ 1, 2, 3, 4, 5, 6, 7, 8, 9,10]
-        >>>trim(z,(3,8))
-        [--,--, 3, 4, 5, 6, 7, 8,--,--]
-        >>>trim(z,(0.1,0.2),relative=True)
-        [--, 2, 3, 4, 5, 6, 7, 8,--,--]
-
+    >>> z = [ 1, 2, 3, 4, 5, 6, 7, 8, 9,10]
+    >>> trim(z,(3,8))
+    [--,--, 3, 4, 5, 6, 7, 8,--,--]
+    >>> trim(z,(0.1,0.2),relative=True)
+    [--, 2, 3, 4, 5, 6, 7, 8,--,--]
 
     """
     if relative:
         return trimr(a, limits=limits, inclusive=inclusive, axis=axis)
     else:
         return trima(a, limits=limits, inclusive=inclusive)
-
-if trim.__doc__:
-    trim.__doc__ = trim.__doc__ % trimdoc
+trim.__doc__ = trim.__doc__ % trimdoc
 
 
 def trimboth(data, proportiontocut=0.2, inclusive=(True,True), axis=None):
-    """Trims the data by masking the int(proportiontocut*n) smallest and
-    int(proportiontocut*n) largest values of data along the given axis, where n
-    is the number of unmasked values before trimming.
+    """
+    Trims the smallest and largest data values.
 
-Parameters
-----------
+    Trims the `data` by masking the ``int(proportiontocut * n)`` smallest and
+    ``int(proportiontocut * n)`` largest values of data along the given axis,
+    where n is the number of unmasked values before trimming.
+
+    Parameters
+    ----------
     data : ndarray
         Data to trim.
-    proportiontocut : {0.2, float}, optional
+    proportiontocut : float, optional
         Percentage of trimming (as a float between 0 and 1).
         If n is the number of unmasked values before trimming, the number of
-        values after trimming is:
-            (1-2*proportiontocut)*n.
-    inclusive : {(True, True) tuple}, optional
+        values after trimming is ``(1 - 2*proportiontocut) * n``.
+        Default is 0.2.
+    inclusive : {(bool, bool) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
-    axis : {None, integer}, optional
+    axis : int, optional
         Axis along which to perform the trimming.
         If None, the input array is first flattened.
 
@@ -1141,26 +1176,33 @@ Parameters
 #..............................................................................
 def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
              axis=None):
-    """Trims the data by masking int(trim*n) values from ONE tail of the
-    data along the given axis, where n is the number of unmasked values.
+    """
+    Trims the data by masking values from one tail.
 
-Parameters
-----------
-    data : {ndarray}
+    Parameters
+    ----------
+    data : array_like
         Data to trim.
-    proportiontocut : {0.2, float}, optional
+    proportiontocut : float, optional
         Percentage of trimming. If n is the number of unmasked values
         before trimming, the number of values after trimming is
-        (1-proportiontocut)*n.
+        ``(1 - proportiontocut) * n``.  Default is 0.2.
     tail : {'left','right'}, optional
-        If left (right), the ``proportiontocut`` lowest (greatest) values will
-        be masked.
-    inclusive : {(True, True) tuple}, optional
+        If 'left' the `proportiontocut` lowest values will be masked.
+        If 'right' the `proportiontocut` highest values will be masked.
+        Default is 'left'.
+    inclusive : {(bool, bool) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
-        should be rounded (True) or truncated (False).
-    axis : {None, integer}, optional
+        should be rounded (True) or truncated (False).  Default is
+        (True, True).
+    axis : int, optional
         Axis along which to perform the trimming.
-        If None, the input array is first flattened.
+        If None, the input array is first flattened.  Default is None.
+
+    Returns
+    -------
+    trimtail : ndarray
+        Returned array of same shape as `data` with masked tail values.
 
     """
     tail = str(tail).lower()[0]
@@ -1230,8 +1272,9 @@ def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
 
 
 def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
-    """Returns the standard error of the trimmed mean of the data along the given
-    axis.
+    """
+    Returns the standard error of the trimmed mean along the given axis.
+
     Parameters
     ----------
     a : sequence
@@ -1239,17 +1282,23 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     limits : {(0.1,0.1), tuple of float}, optional
         tuple (lower percentage, upper percentage) to cut  on each side of the
         array, with respect to the number of unmasked data.
-        Noting n the number of unmasked data before trimming, the (n*limits[0])th
-        smallest data and the (n*limits[1])th largest data are masked, and the
-        total number of unmasked data after trimming is n*(1.-sum(limits))
-        In each case, the value of one limit can be set to None to indicate an
-        open interval.
-        If limits is None, no trimming is performed
-    inclusive : {(True, True) tuple}, optional
+
+        If n is the number of unmasked data before trimming, the values
+        smaller than ``n * limits[0]`` and the values larger than
+        ``n * `limits[1]`` are masked, and the total number of unmasked
+        data after trimming is ``n * (1.-sum(limits))``.  In each case,
+        the value of one limit can be set to None to indicate an open interval.
+        If `limits` is None, no trimming is performed.
+    inclusive : {(bool, bool) tuple} optional
         Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
-    axis : {None, integer}, optional
+    axis : int, optional
         Axis along which to trim.
+
+    Returns
+    -------
+    trimmed_stde : scalar or ndarray
+
     """
     #........................
     def _trimmed_stde_1D(a, low_limit, up_limit, low_inclusive, up_inclusive):
@@ -1333,7 +1382,8 @@ tsem.__doc__ = stats.tsem.__doc__
 
 
 def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
-    """Returns a Winsorized version of the input array.
+    """
+    Returns a Winsorized version of the input array.
 
     The (limits[0])th lowest values are set to the (limits[0])th percentile,
     and the (limits[1])th highest values are set to the (limits[1])th
@@ -1348,10 +1398,11 @@ def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
     limits : {None, tuple of float}, optional
         Tuple of the percentages to cut on each side of the array, with respect
         to the number of unmasked data, as floats between 0. and 1.
-        Noting n the number of unmasked data before trimming, the (n*limits[0])th
-        smallest data and the (n*limits[1])th largest data are masked, and the
-        total number of unmasked data after trimming is n*(1.-sum(limits))
-        The value of one limit can be set to None to indicate an open interval.
+        Noting n the number of unmasked data before trimming, the
+        (n*limits[0])th smallest data and the (n*limits[1])th largest data are
+        masked, and the total number of unmasked data after trimming
+        is n*(1.-sum(limits)) The value of one limit can be set to None to
+        indicate an open interval.
     inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
         should be rounded (True) or truncated (False).
@@ -1565,33 +1616,6 @@ median along the given axis. masked values are discarded.
 #####--------------------------------------------------------------------------
 
 def skewtest(a, axis=0):
-    """
-    Tests whether the skew is different from the normal distribution.
-
-    This function tests the null hypothesis that the skewness of
-    the population that the sample was drawn from is the same
-    as that of a corresponding normal distribution.
-
-    Parameters
-    ----------
-    a : array_like
-        The input array.
-    axis : int or None, optional
-        The axis along which to perform the skew test. Default is 0.
-        If `axis` is None, the array is first flattened.
-
-    Returns
-    -------
-    z-score : float
-        The computed z-score for this test.
-    p-value : float
-        a 2-sided p-value for the hypothesis test
-
-    Notes
-    -----
-    The sample size must be at least 8.
-
-    """
     a, axis = _chk_asarray(a, axis)
     if axis is None:
         a = a.ravel()
@@ -1613,33 +1637,6 @@ def skewtest(a, axis=0):
 skewtest.__doc__ = stats.skewtest.__doc__
 
 def kurtosistest(a, axis=0):
-    """
-    Tests whether a dataset has normal kurtosis.
-
-    This function tests the null hypothesis that the kurtosis
-    of the population from which the sample was drawn is that
-    of the normal distribution: ``kurtosis = 3(n-1)/(n+1)``.
-
-    Parameters
-    ----------
-    a : array_like
-        Array of the sample data.
-    axis : int or None, optional
-        The axis to operate along, or None to work on the whole array.
-        The default is 0 (the first axis).
-
-    Returns
-    -------
-    z-score : float
-        The computed z-score for this test.
-    p-value : float
-        The 2-sided p-value for the hypothesis test
-
-    Notes
-    -----
-    Valid only for n>20.  The Z-score is set to 0 for bad entries.
-
-    """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis).astype(float)
     if np.min(n) < 20:
@@ -1684,23 +1681,31 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
     """
     Computes empirical quantiles for a data array.
 
-    Samples quantile are defined by ``Q(p) = (1-g).x[i] +g.x[i+1]``,
-    where ``x[j]`` is the j-th order statistic, ``i = (floor(n*p+m))``,
-    ``m=alpha+p*(1-alpha-beta)`` and ``g = n*p + m - i``.
+    Samples quantile are defined by ``Q(p) = (1-gamma)*x[j] + gamma*x[j+1]``,
+    where ``x[j]`` is the j-th order statistic, and gamma is a function of
+    ``j = floor(n*p + m)``, ``m = alphap + p*(1 - alphap - betap)`` and
+    ``g = n*p + m - j``.
 
-    Typical values of (alpha,beta) are:
-        - (0,1)    : *p(k) = k/n* : linear interpolation of cdf (R, type 4)
-        - (.5,.5)  : *p(k) = (k+1/2.)/n* : piecewise linear
-          function (R, type 5)
-        - (0,0)    : *p(k) = k/(n+1)* : (R type 6)
-        - (1,1)    : *p(k) = (k-1)/(n-1)*. In this case, p(k) = mode[F(x[k])].
-          That's R default (R type 7)
-        - (1/3,1/3): *p(k) = (k-1/3)/(n+1/3)*. Then p(k) ~ median[F(x[k])].
+    Reinterpreting the above equations to compare to **R** lead to the
+    equation: ``p(k) = (k - alphap)/(n + 1 - alphap - betap)``
+
+    Typical values of (alphap,betap) are:
+        - (0,1)    : ``p(k) = k/n`` : linear interpolation of cdf
+          (**R** type 4)
+        - (.5,.5)  : ``p(k) = (k - 1/2.)/n`` : piecewise linear function
+          (**R** type 5)
+        - (0,0)    : ``p(k) = k/(n+1)`` :
+          (**R** type 6)
+        - (1,1)    : ``p(k) = (k-1)/(n-1)``: p(k) = mode[F(x[k])].
+          (**R** type 7, **R** default)
+        - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``: Then p(k) ~ median[F(x[k])].
           The resulting quantile estimates are approximately median-unbiased
-          regardless of the distribution of x. (R type 8)
-        - (3/8,3/8): *p(k) = (k-3/8)/(n+1/4)*. Blom.
+          regardless of the distribution of x.
+          (**R** type 8)
+        - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``: Blom.
           The resulting quantile estimates are approximately unbiased
-          if x is normally distributed (R type 9)
+          if x is normally distributed
+          (**R** type 9)
         - (.4,.4)  : approximately quantile unbiased (Cunnane)
         - (.35,.35): APL, used with PWM
 
@@ -1710,9 +1715,9 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
         Input data, as a sequence or array of dimension at most 2.
     prob : array_like, optional
         List of quantiles to compute.
-    alpha : float, optional
+    alphap : float, optional
         Plotting positions parameter, default is 0.4.
-    beta : float, optional
+    betap : float, optional
         Plotting positions parameter, default is 0.4.
     axis : int, optional
         Axis along which to perform the trimming.
@@ -1725,6 +1730,16 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
     -------
     mquantiles : MaskedArray
         An array containing the calculated quantiles.
+
+    Notes
+    -----
+    This formulation is very similar to **R** except the calculation of
+    ``m`` from ``alphap`` and ``betap``, where in **R** ``m`` is defined
+    with each type.
+
+    References
+    ----------
+    .. [1] *R* statistical software at http://www.r-project.org/
 
     Examples
     --------
@@ -1819,12 +1834,12 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
     Typical values for alpha and beta are:
         - (0,1)    : ``p(k) = k/n``, linear interpolation of cdf (R, type 4)
         - (.5,.5)  : ``p(k) = (k-1/2.)/n``, piecewise linear function
-                                           (R, type 5)
+          (R, type 5)
         - (0,0)    : ``p(k) = k/(n+1)``, Weibull (R type 6)
         - (1,1)    : ``p(k) = (k-1)/(n-1)``, in this case,
-                     ``p(k) = mode[F(x[k])]``. That's R default (R type 7)
+          ``p(k) = mode[F(x[k])]``. That's R default (R type 7)
         - (1/3,1/3): ``p(k) = (k-1/3)/(n+1/3)``, then
-                     ``p(k) ~ median[F(x[k])]``.
+          ``p(k) ~ median[F(x[k])]``.
           The resulting quantile estimates are approximately median-unbiased
           regardless of the distribution of x. (R type 8)
         - (3/8,3/8): ``p(k) = (k-3/8)/(n+1/4)``, Blom.

@@ -93,16 +93,16 @@ def correlate(in1, in2, mode='full'):
 
     Returns
     -------
-    out : array
+    correlate : array
         An N-dimensional array containing a subset of the discrete linear
         cross-correlation of `in1` with `in2`.
 
     Notes
     -----
-    The correlation z of two arrays x and y of rank d is defined as::
+    The correlation z of two arrays x and y of rank d is defined as:
 
       z[...,k,...] = sum[..., i_l, ...]
-            x[..., i_l,...] * conj(y[..., i_l + k,...])
+                         x[..., i_l,...] * conj(y[..., i_l + k,...])
 
     """
     in1 = asarray(in1)
@@ -249,7 +249,7 @@ def convolve(in1, in2, mode='full'):
 
     Returns
     -------
-    out : array
+    convolve : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
 
@@ -423,7 +423,8 @@ def wiener(im, mysize=None, noise=None):
 
 
 def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
-    """Convolve two 2-dimensional arrays.
+    """
+    Convolve two 2-dimensional arrays.
 
     Convolve `in1` and `in2` with output size determined by `mode`, and
     boundary conditions determined by `boundary` and `fillvalue`.
@@ -483,7 +484,8 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
 
 def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
-    """Cross-correlate two 2-dimensional arrays.
+    """
+    Cross-correlate two 2-dimensional arrays.
 
     Cross correlate `in1` and `in2` with output size determined by `mode`, and
     boundary conditions determined by `boundary` and `fillvalue`.
@@ -520,7 +522,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Returns
     -------
-    out : ndarray
+    correlate2d : ndarray
         A 2-dimensional array containing a subset of the discrete linear
         cross-correlation of `in1` with `in2`.
 
@@ -945,7 +947,8 @@ def unique_roots(p, tol=1e-3, rtype='min'):
 
 
 def invres(r, p, k, tol=1e-3, rtype='avg'):
-    """Compute b(s) and a(s) from partial fraction expansion: r,p,k
+    """
+    Compute b(s) and a(s) from partial fraction expansion: r,p,k
 
     If ``M = len(b)`` and ``N = len(a)``::
 
@@ -964,9 +967,29 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
         -------- + ----------- + ... + -----------
         (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
+    Parameters
+    ----------
+    r : ndarray
+        Residues.
+    p : ndarray
+        Poles.
+    k : ndarray
+        Coefficients of the direct polynomial term.
+    tol : float, optional
+        The tolerance for two roots to be considered equal. Default is 1e-3.
+    rtype : {'max', 'min, 'avg'}, optional
+        How to determine the returned root if multiple roots are within
+        `tol` of each other.
+
+          'max': pick the maximum of those roots.
+
+          'min': pick the minimum of those roots.
+
+          'avg': take the average of those roots.
+
     See Also
     --------
-    residue, poly, polyval, unique_roots
+    residue, unique_roots
 
     """
     extra = k
@@ -1071,7 +1094,8 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 
 
 def residuez(b, a, tol=1e-3, rtype='avg'):
-    """Compute partial-fraction expansion of b(z) / a(z).
+    """
+    Compute partial-fraction expansion of b(z) / a(z).
 
     If ``M = len(b)`` and ``N = len(a)``::
 
@@ -1092,7 +1116,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
     See also
     --------
-    invresz, poly, polyval, unique_roots
+    invresz, unique_roots
 
     """
     b, a = map(asarray, (b, a))
@@ -1141,7 +1165,8 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
 
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
-    """Compute b(z) and a(z) from partial fraction expansion: r,p,k
+    """
+    Compute b(z) and a(z) from partial fraction expansion: r,p,k
 
     If ``M = len(b)`` and ``N = len(a)``::
 
@@ -1160,9 +1185,9 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
         -------------- + ------------------ + ... + ------------------
         (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
-    See also
+    See Also
     --------
-    residuez, poly, polyval, unique_roots
+    residuez, unique_roots
 
     """
     extra = asarray(k)
@@ -1500,7 +1525,8 @@ def lfilter_zi(b, a):
 
 
 def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
-    """A forward-backward filter.
+    """
+    A forward-backward filter.
 
     This function applies a linear filter twice, once forward
     and once backwards.  The combined filter has linear phase.
@@ -1515,9 +1541,9 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
 
     Parameters
     ----------
-    b : array_like, 1-D
+    b : (N,) array_like
         The numerator coefficient vector of the filter.
-    a : array_like, 1-D
+    a : (N,) array_like
         The denominator coefficient vector of the filter.  If a[0]
         is not 1, then both a and b are normalized by a[0].
     x : array_like
@@ -1571,6 +1597,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     the filter's transients have dissipated by the time the actual data
     is reached.  In general, transient effects at the edges are
     unavoidable.
+
     """
 
     if padtype not in ['even', 'odd', 'constant', None]:
@@ -1644,33 +1671,34 @@ from scipy.signal.fir_filter_design import firwin
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1):
-    """Downsample the signal `x` by an integer factor `q`, using an order `n`
-    filter.
+    """
+    Downsample the signal by using a filter.
 
     By default, an order 8 Chebyshev type I filter is used.  A 30 point FIR
     filter with hamming window is used if `ftype` is 'fir'.
 
     Parameters
     ----------
-    x : N-d array
-      the signal to be downsampled
+    x : ndarray
+        The signal to be downsampled, as an N-dimensional array.
     q : int
-      the downsampling factor
-    n : int or None
-      the order of the filter (1 less than the length for 'fir')
-    ftype : {'iir' or 'fir'}
-      the type of the lowpass filter
-    axis : int
-      the axis along which to decimate
+        The downsampling factor.
+    n : int, optional
+        The order of the filter (1 less than the length for 'fir').
+    ftype : str {'iir', 'fir'}, optional
+        The type of the lowpass filter.
+    axis : int, optional
+        The axis along which to decimate.
 
     Returns
     -------
-    y : N-d array
-      the down-sampled signal
+    y : ndarray
+        The down-sampled signal.
 
     See also
     --------
     resample
+
     """
 
     if not isinstance(q, int):

@@ -153,16 +153,17 @@ def read_dtype(mat_stream, a_dtype):
 
     Parameters
     ----------
-    mat_stream : file-like object
-        MATLAB mat file stream
+    mat_stream : file_like object
+        MATLAB (tm) mat file stream
     a_dtype : dtype
-       dtype of array to read.  `a_dtype` is assumed to be correct
-       endianness
+        dtype of array to read.  `a_dtype` is assumed to be correct
+        endianness.
 
     Returns
     -------
     arr : ndarray
         Array of dtype `a_dtype` read from stream.
+
     """
     num_bytes = a_dtype.itemsize
     arr = np.ndarray(shape=(),
@@ -173,7 +174,8 @@ def read_dtype(mat_stream, a_dtype):
 
 
 def get_matfile_version(fileobj):
-    ''' Return major, minor tuple depending on apparent mat file type
+    """
+    Return major, minor tuple depending on apparent mat file type
 
     Where:
 
@@ -183,7 +185,7 @@ def get_matfile_version(fileobj):
 
     Parameters
     ----------
-    fileobj : file-like
+    fileobj : file_like
         object implementing seek() and read()
 
     Returns
@@ -196,7 +198,8 @@ def get_matfile_version(fileobj):
     Notes
     -----
     Has the side effect of setting the file read pointer to 0
-    '''
+
+    """
     # Mat4 files have a zero somewhere in first 4 bytes
     fileobj.seek(0)
     mopt_bytes = np.ndarray(shape=(4,),

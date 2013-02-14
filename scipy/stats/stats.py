@@ -17,12 +17,6 @@
 #
 # Heavily adapted for use by SciPy 2002 by Travis Oliphant
 """
-stats.py module
-
-#################################################
-#######  Written by:  Gary Strangman  ###########
-#################################################
-
 A collection of basic statistical functions for python.  The function
 names appear below.
 
@@ -35,86 +29,135 @@ so than others), but they are far from bulletproof.  Thus, as with any
 free software, no warranty or guarantee is expressed or implied. :-)  A
 few extra functions that don't appear in the list below can be found by
 interested treasure-hunters.  These functions don't necessarily have
-both list and array versions but were deemed useful
+both list and array versions but were deemed useful.
 
-CENTRAL TENDENCY:  gmean    (geometric mean)
-                   hmean    (harmonic mean)
-                   medianscore
-                   mode
+Central Tendency
+----------------
+.. autosummary::
+   :toctree: generated/
 
-MOMENTS:  moment
-          variation
-          skew
-          kurtosis
-          normaltest (for arrays only)
+    gmean
+    hmean
+    mode
 
-MOMENTS HANDLING NAN: nanmean
-                      nanmedian
-                      nanstd
+Moments
+-------
+.. autosummary::
+   :toctree: generated/
 
-ALTERED VERSIONS:  tmean
-                   tvar
-                   tstd
-                   tsem
-                   describe
+    moment
+    variation
+    skew
+    kurtosis
+    normaltest
 
-FREQUENCY STATS:  freqtable
-                  itemfreq
-                  scoreatpercentile
-                  percentileofscore
-                  histogram
-                  cumfreq
-                  relfreq
+Moments Handling NaN:
 
-VARIABILITY:  obrientransform
-              signaltonoise (for arrays only)
-              sem
+.. autosummary::
+   :toctree: generated/
 
-TRIMMING FCNS:  threshold (for arrays only)
-                trimboth
-                trim1
-                around (round all vals to 'n' decimals)
+    nanmean
+    nanmedian
+    nanstd
 
-CORRELATION FCNS:  paired
-                   pearsonr
-                   fisher_exact
-                   spearmanr
-                   pointbiserialr
-                   kendalltau
-                   linregress
+Altered Versions
+----------------
+.. autosummary::
+   :toctree: generated/
 
-INFERENTIAL STATS:  ttest_1samp
-                    ttest_ind
-                    ttest_rel
-                    chisquare
-                    ks_2samp
-                    mannwhitneyu
-                    ranksums
-                    wilcoxon
-                    kruskal
-                    friedmanchisquare
+    tmean
+    tvar
+    tstd
+    tsem
+    describe
 
-PROBABILITY CALCS:  chisqprob
-                    zprob
-                    fprob
-                    betai
+Frequency Stats
+---------------
+.. autosummary::
+   :toctree: generated/
 
-## Note that scipy.stats.distributions has many more statistical probability
-## functions defined.
+    itemfreq
+    scoreatpercentile
+    percentileofscore
+    histogram
+    cumfreq
+    relfreq
 
+Variability
+-----------
+.. autosummary::
+   :toctree: generated/
 
-ANOVA FUNCTIONS:  f_oneway
-                  f_value
+    obrientransform
+    signaltonoise
+    sem
 
-SUPPORT FUNCTIONS:  ss
-                    square_of_sums
-                    shellsort
-                    rankdata
+Trimming Functions
+------------------
+.. autosummary::
+   :toctree: generated/
+
+   threshold
+   trimboth
+   trim1
+
+Correlation Functions
+---------------------
+.. autosummary::
+   :toctree: generated/
+
+   pearsonr
+   fisher_exact
+   spearmanr
+   pointbiserialr
+   kendalltau
+   linregress
+
+Inferential Stats
+-----------------
+.. autosummary::
+   :toctree: generated/
+
+   ttest_1samp
+   ttest_ind
+   ttest_rel
+   chisquare
+   ks_2samp
+   mannwhitneyu
+   ranksums
+   wilcoxon
+   kruskal
+   friedmanchisquare
+
+Probability Calculations
+------------------------
+.. autosummary::
+   :toctree: generated/
+
+   chisqprob
+   zprob
+   fprob
+   betai
+
+ANOVA Functions
+---------------
+.. autosummary::
+   :toctree: generated/
+
+   f_oneway
+   f_value
+
+Support Functions
+-----------------
+.. autosummary::
+   :toctree: generated/
+
+   ss
+   square_of_sums
+   rankdata
 
 References
 ----------
-[CRCProbStat2000]_
-
 .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
    Probability and Statistics Tables and Formulae. Chapman & Hall: New
    York. 2000.
@@ -775,6 +818,7 @@ def tvar(a, limits=None, inclusive=(True, True)):
     Returns
     -------
     tvar : float
+        Trimmed variance.
 
     """
     a = asarray(a)
@@ -972,9 +1016,7 @@ def variation(a, axis=0):
 
     References
     ----------
-    [CRCProbStat2000]_ Section 2.2.20
-
-    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
 
@@ -1067,9 +1109,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     References
     ----------
-    [CRCProbStat2000]_ Section  2.2.25
-
-    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
 
@@ -1365,15 +1405,15 @@ def itemfreq(a):
 
     Parameters
     ----------
-    a : array_like of rank 1
+    a : (N,) array_like
         Input array.
 
     Returns
     -------
-    itemfreq : ndarray of rank 2
+    itemfreq : (2,K) ndarray
         A 2D frequency table (col [0:n-1]=scores, col n=frequencies).
-        Column 1 contains item values, column 2 contains their respective
-        counts.
+        Column 1 contains sorted, unique values from `a`, column 2 contains
+        their respective counts.
 
     Notes
     -----
@@ -1416,37 +1456,33 @@ def itemfreq(a):
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
         axis=None):
     """
-    Calculate the score at the given `per` percentile of the sequence `a`.
+    Calculate the score at a given percentile of the input sequence.
 
     For example, the score at `per=50` is the median. If the desired quantile
     lies between two data points, we interpolate between them, according to
     the value of `interpolation`. If the parameter `limit` is provided, it
-    should be a tuple (lower, upper) of two values. Values of `a` outside
-    this (closed) interval will be ignored.
-
-    The `interpolation_method` parameter supports three values, namely
-    `fraction` (default), `lower` and `higher`. Interpolation is done only,
-    if the desired quantile lies between two data points `i` and `j`. For
-    `fraction`, the result is an interpolated value between `i` and `j`;
-    for `lower`, the result is `i`, for `higher` the result is `j`.
+    should be a tuple (lower, upper) of two values.
 
     Parameters
     ----------
     a : array_like
-        Values from which to extract score.
-    per : scalar in range [0,100] (or sequence of floats)
-        Percentile at which to extract score.
+        A 1-D array of values from which to extract score.
+    per : array_like
+        Percentile(s) at which to extract score.  Values should be in range
+        [0,100].
     limit : tuple, optional
         Tuple of two scalars, the lower and upper limits within which to
-        compute the percentile.
+        compute the percentile. Values of `a` outside
+        this (closed) interval will be ignored.
     interpolation : {'fraction', 'lower', 'higher'}, optional
         This optional parameter specifies the interpolation method to use,
-        when the desired quantile lies between two data points `i` and `j`:
+        when the desired quantile lies between two data points `i` and `j`
 
-        - fraction: `i + (j - i)*fraction`, where `fraction` is the
-                    fractional part of the index surrounded by `i` and `j`.
-        -lower: `i`.
-        - higher: `j`.
+          - fraction: ``i + (j - i) * fraction`` where ``fraction`` is the
+            fractional part of the index surrounded by ``i`` and ``j``.
+          - lower: ``i``.
+          - higher: ``j``.
+
     axis : int, optional
         Axis along which the percentiles are computed. The default (None)
         is to compute the median along a flattened version of the array.
@@ -1529,7 +1565,7 @@ def _compute_qth_percentile(sorted, per, interpolation_method, axis):
 
 
 def percentileofscore(a, score, kind='rank'):
-    '''
+    """
     The percentile rank of a score relative to a list of scores.
 
     A `percentileofscore` of, for example, 80% means that 80% of the
@@ -1538,7 +1574,7 @@ def percentileofscore(a, score, kind='rank'):
 
     Parameters
     ----------
-    a : array like
+    a : array_like
         Array of scores to which `score` is compared.
     score : int or float
         Score that is compared to the elements in `a`.
@@ -1593,7 +1629,7 @@ def percentileofscore(a, score, kind='rank'):
     >>> percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
     60.0
 
-    '''
+    """
     a = np.array(a)
     n = len(a)
 
@@ -1653,8 +1689,7 @@ def histogram2(a, bins):
 def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """
     Separates the range into several bins and returns the number of instances
-    of a in each bin. This histogram is based on numpy's histogram but has a
-    larger range by default if default limits is not set.
+    in each bin.
 
     Parameters
     ----------
@@ -1688,6 +1723,11 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     See Also
     --------
     numpy.histogram
+
+    Notes
+    -----
+    This histogram is based on numpy's histogram but has a larger range by
+    default if default limits is not set.
 
     """
     a = np.ravel(a)               # flatten any >1D arrays
@@ -2305,7 +2345,8 @@ def f_oneway(*args):
     References
     ----------
     .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
-           Statistics". Chapter 14. http://faculty.vassar.edu/lowry/ch14pt1.html
+           Statistics". Chapter 14.
+           http://faculty.vassar.edu/lowry/ch14pt1.html
 
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
@@ -2330,7 +2371,8 @@ def f_oneway(*args):
 
 
 def pearsonr(x, y):
-    """Calculates a Pearson correlation coefficient and the p-value for testing
+    """
+    Calculates a Pearson correlation coefficient and the p-value for testing
     non-correlation.
 
     The Pearson correlation coefficient measures the linear relationship
@@ -2348,8 +2390,10 @@ def pearsonr(x, y):
 
     Parameters
     ----------
-    x : 1D array
-    y : 1D array the same length as x
+    x : (N,) array_like
+        Input
+    y : (N,) array_like
+        Input
 
     Returns
     -------
@@ -2359,6 +2403,7 @@ def pearsonr(x, y):
     References
     ----------
     http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
+
     """
     # x and y should have same length.
     x = np.asarray(x)
@@ -2982,10 +3027,10 @@ def linregress(x, y=None):
 
 def ttest_1samp(a, popmean, axis=0):
     """
-    Calculates the T-test for the mean of ONE group of scores `a`.
+    Calculates the T-test for the mean of ONE group of scores.
 
     This is a two-sided test for the null hypothesis that the expected value
-    (mean) of a sample of independent observations is equal to the given
+    (mean) of a sample of independent observations `a` is equal to the given
     population mean, `popmean`.
 
     Parameters
@@ -3821,16 +3866,19 @@ def betai(a, b, x):
 #####################################
 
 def glm(data, para):
-    """Calculates a linear model fit ...
+    """
+    Calculates a linear model fit ...
     anova/ancova/lin-regress/t-test/etc. Taken from:
-
-    Peterson et al. Statistical limitations in functional neuroimaging
-    I. Non-inferential methods and statistical models.  Phil Trans Royal Soc
-    Lond B 354: 1239-1260.
 
     Returns
     -------
     statistic, p-value ???
+
+    References
+    ----------
+    Peterson et al. Statistical limitations in functional neuroimaging
+    I. Non-inferential methods and statistical models.  Phil Trans Royal Soc
+    Lond B 354: 1239-1260.
 
     """
     if len(para) != len(data):
@@ -3992,7 +4040,7 @@ def square_of_sums(a, axis=0):
 
     Returns
     -------
-    ss : float or ndarray
+    square_of_sums : float or ndarray
         The square of the sum over `axis`.
 
     See also

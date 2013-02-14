@@ -235,15 +235,14 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
           diag_pivot_thresh=None, relax=None, panel_size=None, options=None):
     """
-    Compute an incomplete LU decomposition for a sparse, square matrix A.
+    Compute an incomplete LU decomposition for a sparse, square matrix.
 
-    The resulting object is an approximation to the inverse of A.
+    The resulting object is an approximation to the inverse of `A`.
 
     Parameters
     ----------
-    A
+    A : (N, N) array_like
         Sparse matrix to factorize
-
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
@@ -274,7 +273,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Notes
     -----
     To improve the better approximation to the inverse, you may need to
-    increase ``fill_factor`` AND decrease ``drop_tol``.
+    increase `fill_factor` AND decrease `drop_tol`.
 
     This function uses the SuperLU library.
 
@@ -303,11 +302,29 @@ def factorized( A ):
     """
     Return a fuction for solving a sparse linear system, with A pre-factorized.
 
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Input.
+
+    Returns
+    -------
+    solve : callable
+        To solve the linear system of equations given in `A`, the `solve`
+        callable should be passed an ndarray of shape (N,).
+
     Examples
     --------
-    solve = factorized( A ) # Makes LU decomposition.
-    x1 = solve( rhs1 ) # Uses the LU factors.
-    x2 = solve( rhs2 ) # Uses again the LU factors.
+    >>> A = np.array([[ 3. ,  2. , -1. ],
+                      [ 2. , -2. ,  4. ],
+                      [-1. ,  0.5, -1. ]])
+
+    >>> solve = factorized( A ) # Makes LU decomposition.
+
+    >>> rhs1 = np.array([1,-2,0])
+    >>> x1 = solve( rhs1 ) # Uses the LU factors.
+    array([ 1., -2., -2.])
+
     """
     if isUmfpack and useUmfpack:
         if noScikit:

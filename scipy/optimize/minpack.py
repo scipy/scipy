@@ -50,16 +50,40 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         A function that takes at least one (possibly vector) argument.
     x0 : ndarray
         The starting estimate for the roots of ``func(x) = 0``.
-    args : tuple
+    args : tuple, optional
         Any extra arguments to `func`.
-    fprime : callable(x)
+    fprime : callable(x), optional
         A function to compute the Jacobian of `func` with derivatives
         across the rows. By default, the Jacobian will be estimated.
-    full_output : bool
+    full_output : bool, optional
         If True, return optional outputs.
-    col_deriv : bool
+    col_deriv : bool, optional
         Specify whether the Jacobian function computes derivatives down
         the columns (faster, because there is no transpose operation).
+    xtol : float
+        The calculation will terminate if the relative error between two
+        consecutive iterates is at most `xtol`.
+    maxfev : int, optional
+        The maximum number of calls to the function. If zero, then
+        ``100*(N+1)`` is the maximum where N is the number of elements
+        in `x0`.
+    band : tuple, optional
+        If set to a two-sequence containing the number of sub- and
+        super-diagonals within the band of the Jacobi matrix, the
+        Jacobi matrix is considered banded (only for ``fprime=None``).
+    epsfcn : float, optional
+        A suitable step length for the forward-difference
+        approximation of the Jacobian (for ``fprime=None``). If
+        `epsfcn` is less than the machine precision, it is assumed
+        that the relative errors in the functions are of the order of
+        the machine precision.
+    factor : float, optional
+        A parameter determining the initial step bound
+        (``factor * || diag * x||``).  Should be in the interval
+        ``(0.1, 100)``.
+    diag : sequence, optional
+        N positive entries that serve as a scale factors for the
+        variables.
 
     Returns
     -------
@@ -67,16 +91,16 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         The solution (or the result of the last iteration for
         an unsuccessful call).
     infodict : dict
-        A dictionary of optional outputs with the keys::
+        A dictionary of optional outputs with the keys:
 
-          * 'nfev': number of function calls
-          * 'njev': number of Jacobian calls
-          * 'fvec': function evaluated at the output
-          * 'fjac': the orthogonal matrix, q, produced by the QR
+          * 'nfev' : number of function calls
+          * 'njev' : number of Jacobian calls
+          * 'fvec' : function evaluated at the output
+          * 'fjac' : the orthogonal matrix, q, produced by the QR
                     factorization of the final approximate Jacobian
                     matrix, stored column wise
-          * 'r': upper triangular matrix produced by QR factorization of same
-                 matrix
+          * 'r' : upper triangular matrix produced by QR factorization
+                  of the same matrix
           * 'qtf': the vector ``(transpose(q) * fvec)``
 
     ier : int
@@ -85,37 +109,10 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     mesg : str
         If no solution is found, `mesg` details the cause of failure.
 
-    Other Parameters
-    ----------------
-    xtol : float
-        The calculation will terminate if the relative error between two
-        consecutive iterates is at most `xtol`.
-    maxfev : int
-        The maximum number of calls to the function. If zero, then
-        ``100*(N+1)`` is the maximum where N is the number of elements
-        in `x0`.
-    band : tuple
-        If set to a two-sequence containing the number of sub- and
-        super-diagonals within the band of the Jacobi matrix, the
-        Jacobi matrix is considered banded (only for ``fprime=None``).
-    epsfcn : float
-        A suitable step length for the forward-difference
-        approximation of the Jacobian (for ``fprime=None``). If
-        `epsfcn` is less than the machine precision, it is assumed
-        that the relative errors in the functions are of the order of
-        the machine precision.
-    factor : float
-        A parameter determining the initial step bound
-        (``factor * || diag * x||``).  Should be in the interval
-        ``(0.1, 100)``.
-    diag : sequence
-        N positive entries that serve as a scale factors for the
-        variables.
-
     See also
     --------
-    root: Interface to root finding algorithms for multivariate
-        functions. See the 'hybr' `method` in particular.
+    root : Interface to root finding algorithms for multivariate
+           functions. See the 'hybr' `method` in particular.
 
     Notes
     -----
@@ -566,23 +563,38 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
 
 # Steffensen's Method using Aitken's Del^2 convergence acceleration.
 def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
-    """Find the point where func(x) == x
+    """
+    Find a fixed point of the function.
 
     Given a function of one or more variables and a starting point, find a
-    fixed-point of the function: i.e. where func(x)=x.
+    fixed-point of the function: i.e. where ``func(x0) == x0``.
 
-    Uses Steffensen's Method using Aitken's Del^2 convergence acceleration.
+    Parameters
+    ----------
+    func : function
+        Function to evaluate.
+    x0 : array_like
+        Fixed point of function.
+    args : tuple, optional
+        Extra arguments to `func`.
+    xtol : float, optional
+        Convergence tolerance, defaults to 1e-08.
+    maxiter : int, optional
+        Maximum number of iterations, defaults to 500.
+
+    Notes
+    -----
+    Uses Steffensen's Method using Aitken's ``Del^2`` convergence acceleration.
     See Burden, Faires, "Numerical Analysis", 5th edition, pg. 80
 
     Examples
     --------
-    >>> from numpy import sqrt, array
-    >>> from scipy.optimize import fixed_point
+    >>> from scipy import optimize
     >>> def func(x, c1, c2):
-            return sqrt(c1/(x+c2))
-    >>> c1 = array([10,12.])
-    >>> c2 = array([3, 5.])
-    >>> fixed_point(func, [1.2, 1.3], args=(c1,c2))
+    ....    return np.sqrt(c1/(x+c2))
+    >>> c1 = np.array([10,12.])
+    >>> c2 = np.array([3, 5.])
+    >>> optimize.fixed_point(func, [1.2, 1.3], args=(c1,c2))
     array([ 1.4920333 ,  1.37228132])
 
     """

@@ -23,16 +23,16 @@ def minimum_spanning_tree(csgraph, overwrite=False):
 
     Parameters
     ----------
-    csgraph: array_like or sparse matrix, 2 dimensions
+    csgraph : array_like or sparse matrix, 2 dimensions
         The N x N matrix representing an undirected graph over N nodes
         (see notes below).
-    overwrite: bool, optional
+    overwrite : bool, optional
         if true, then parts of the input graph will be overwritten for
         efficiency.
 
     Returns
     -------
-    span_tree: csr matrix
+    span_tree : csr matrix
         The N x N compressed-sparse representation of the undirected minimum
         spanning tree over the input (see notes below).
 

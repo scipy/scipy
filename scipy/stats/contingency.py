@@ -64,7 +64,8 @@ def margins(a):
 
 
 def expected_freq(observed):
-    """Compute the expected frequencies from a contingency table.
+    """
+    Compute the expected frequencies from a contingency table.
 
     Given an n-dimensional contingency table of observed frequencies,
     compute the expected frequencies for the table based on the marginal
@@ -80,8 +81,9 @@ def expected_freq(observed):
 
     Returns
     -------
-    expected : ndarray of type numpy.float64, same shape as `observed`.
+    expected : ndarray of float64
         The expected frequencies, based on the marginal sums of the table.
+        Same shape as `observed`.
 
     Examples
     --------
@@ -89,6 +91,7 @@ def expected_freq(observed):
     >>> expected_freq(observed)
     array([[ 12.,  12.,  16.],
            [ 18.,  18.,  24.]])
+
     """
     # Typically `observed` is an integer array. If `observed` has a large
     # number of dimensions or holds large values, some of the following

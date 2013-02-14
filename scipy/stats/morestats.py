@@ -31,7 +31,8 @@ __all__ = ['mvsdist',
 
 
 def bayes_mvs(data, alpha=0.90):
-    """Bayesian confidence intervals for the mean, var, and std.
+    """
+    Bayesian confidence intervals for the mean, var, and std.
 
     Parameters
     ----------
@@ -56,6 +57,12 @@ def bayes_mvs(data, alpha=0.90):
 
     Notes
     -----
+    Each tuple of mean, variance, and standard deviation estimates represent
+    the (center, (lower, upper)) with center the mean of the conditional pdf
+    of the value given the data and (lower, upper) is a confidence interval
+    centered on the median, containing the estimate to a probability
+    `alpha`.
+
     Converts data to 1-D and assumes all data has the same mean and variance.
     Uses Jeffrey's prior for variance and std.
 
@@ -263,15 +270,9 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     plot : object, optional
         If given, plots the quantiles and least squares fit.
         `plot` is an object with methods "plot", "title", "xlabel", "ylabel"
-        and "text". The matplotlib.pyplot module or a Matplotlib axes object can
-        be used, or a custom object with the same methods.
+        and "text". The matplotlib.pyplot module or a Matplotlib axes object
+        can be used, or a custom object with the same methods.
         By default, no plot is created.
-
-    Notes
-    -----
-    Even if `plot` is given, the figure is not shown or saved by `probplot`;
-    ``plot.show()`` or ``plot.savefig('figname.png')`` should be used after
-    calling `probplot`.
 
     Returns
     -------
@@ -283,6 +284,12 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
         performed by `probplot`. `r` is the square root of the coefficient of
         determination.  If ``fit=False`` and ``plot=None``, this tuple is not
         returned.
+
+    Notes
+    -----
+    Even if `plot` is given, the figure is not shown or saved by `probplot`;
+    ``plot.show()`` or ``plot.savefig('figname.png')`` should be used after
+    calling `probplot`.
 
     Examples
     --------
@@ -305,7 +312,8 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     A mixture of 2 normal distributions with broadcasting:
 
     >>> ax3 = plt.subplot(223)
-    >>> x = stats.norm.rvs(loc=[0,5], scale=[1,1.5], size=(nsample/2.,2)).ravel()
+    >>> x = stats.norm.rvs(loc=[0,5], scale=[1,1.5],
+    ...                    size=(nsample/2.,2)).ravel()
     >>> res = stats.probplot(x, plot=plt)
 
     A standard normal distribution:
@@ -462,15 +470,36 @@ def _boxcox_conf_interval(x, lmax, alpha):
     return lmminus, lmplus
 
 def boxcox(x,lmbda=None,alpha=None):
-    """Return a positive dataset tranformed by a Box-Cox power transformation.
+    """
+    Return a positive dataset transformed by a Box-Cox power transformation.
 
-    If lmbda is not None, do the transformation for that value.
+    Parameters
+    ----------
+    x : ndarray
+        Input array.
+    lmbda : {None, scalar}, optional
+        If `lmbda` is not None, do the transformation for that value.
 
-    If lmbda is None, find the lambda that maximizes the log-likelihood
-    function and return it as the second output argument.
+        If `lmbda` is None, find the lambda that maximizes the log-likelihood
+        function and return it as the second output argument.
+    alpha : {None, float}, optional
+        If `alpha` is not None, return the ``100 * (1-alpha)%`` confidence
+        interval for `lmbda` as the third output argument.
 
-    If alpha is not None, return the 100(1-alpha)% confidence interval for
-    lambda as the third output argument.
+        If `alpha` is not None it must be between 0.0 and 1.0.
+
+    Returns
+    -------
+    boxcox : ndarray
+        Box-Cox power transformed array.
+    maxlog : float, optional
+        If the `lmbda` parameter is None, the second returned argument is
+        the lambda that maximizes the log-likelihood function.
+    (min_ci, max_ci) : tuple of float, optional
+        If `lmbda` parameter is None and `alpha` is not None, this returned
+        tuple of floats represents the minimum and maximum confidence limits
+        given `alpha`.
+
     """
     if any(x < 0):
         raise ValueError("Data must be positive.")
@@ -1235,8 +1264,8 @@ def wilcoxon(x, y=None, zero_method="wilcox"):
     x : array_like
         The first set of measurements.
     y : array_like, optional
-        The second set of measurements.  If y is not given, then the x array
-        is considered to be the differences between the two sets of
+        The second set of measurements.  If `y` is not given, then the `x`
+        array is considered to be the differences between the two sets of
         measurements.
     zero_method : string, {"pratt", "wilcox", "zsplit"}, optional
         "pratt":

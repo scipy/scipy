@@ -86,9 +86,10 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
         How many points on each side to use for the comparison
         to consider ``comparator(n, n+x)`` to be True.
     mode : str, optional
-        How the edges of the vector are treated.  'wrap' (wrap around) or
-        'clip' (treat overflow as the same as the last (or first) element).
-        Default is 'clip'.  See `numpy.take`.
+        How the edges of the vector are treated.
+        Available options are 'wrap' (wrap around) or 'clip' (treat overflow
+        as the same as the last (or first) element).
+        Default 'clip'. See numpy.take
 
     Returns
     -------
@@ -123,9 +124,10 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
         How many points on each side to use for the comparison
         to consider ``comparator(n, n+x)`` to be True.
     mode : str, optional
-        How the edges of the vector are treated.  'wrap' (wrap around) or
-        'clip' (treat overflow as the same as the last (or first) element).
-        Default is 'clip'.  See `numpy.take`.
+        How the edges of the vector are treated.
+        Available options are 'wrap' (wrap around) or 'clip' (treat overflow
+        as the same as the last (or first) element).
+        Default 'clip'.  See `numpy.take`.
 
     Returns
     -------
@@ -371,30 +373,31 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=None,
                    min_length=None, min_snr=1, noise_perc=10):
     """
-    Attempt to find the peaks in the given 1-D array `vector`.
+    Attempt to find the peaks in a 1-D array.
 
-    The general approach is to smooth `vector` by convolving it with `wavelet(width)`
-    for each width in `widths`. Relative maxima which appear at enough length scales,
-    and with sufficiently high SNR, are accepted.
+    The general approach is to smooth `vector` by convolving it with
+    `wavelet(width)` for each width in `widths`. Relative maxima which
+    appear at enough length scales, and with sufficiently high SNR, are
+    accepted.
 
     .. versionadded:: 0.11.0
 
     Parameters
     ----------
-    vector : 1-D ndarray
-        Array in which to find the peaks.
-    widths : 1-D sequence
-        Widths to use for calculating the CWT matrix. In general,
+    vector : ndarray
+        1-D array in which to find the peaks.
+    widths : sequence
+        1-D array of widths to use for calculating the CWT matrix. In general,
         this range should cover the expected width of peaks of interest.
     wavelet : callable, optional
         Should take a single variable and return a 1-D array to convolve
         with `vector`.  Should be normalized to unit area.
         Default is the ricker wavelet.
-    max_distances : 1-D sequence
+    max_distances : ndarray, optional
         At each row, a ridge line is only connected if the relative max at
-        row[n] is within `max_distances`[n] from the relative max at row[n+1].
-        Default value is ``widths/4``.
-    gap_thresh : int, optional
+        row[n] is within ``max_distances[n]`` from the relative max at
+        ``row[n+1]``.  Default value is ``widths/4``.
+    gap_thresh : float, optional
         If a relative maximum is not found within `max_distances`,
         there will be a gap. A ridge line is discontinued if there are more
         than `gap_thresh` points without connecting a new relative maximum.
@@ -410,33 +413,38 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=
     noise_perc : float, optional
         When calculating the noise floor, percentile of data points
         examined below which to consider noise. Calculated using
-        scipy.stats.scoreatpercentile.  Default is 10.
+        `stats.scoreatpercentile`.  Default is 10.
+
+    See Also
+    --------
+    cwt
 
     Notes
-    ---------
-    This approach was designed for finding sharp peaks among noisy data, however
-    with proper parameter selection it should function well for different
-    peak shapes.
+    -----
+    This approach was designed for finding sharp peaks among noisy data,
+    however with proper parameter selection it should function well for
+    different peak shapes.
 
     The algorithm is as follows:
-
-        1. Perform a continuous wavelet transform on `vector`, for the supplied
-           `widths`. This is a convolution of `vector` with `wavelet(width)` for
-           each width in `widths`. See `cwt`
-        2. Identify "ridge lines" in the cwt matrix. These are relative maxima
-           at each row, connected across adjacent rows. See identify_ridge_lines
-        3. Filter the ridge_lines using filter_ridge_lines.
+     1. Perform a continuous wavelet transform on `vector`, for the supplied
+        `widths`. This is a convolution of `vector` with `wavelet(width)` for
+        each width in `widths`. See `cwt`
+     2. Identify "ridge lines" in the cwt matrix. These are relative maxima
+        at each row, connected across adjacent rows. See identify_ridge_lines
+     3. Filter the ridge_lines using filter_ridge_lines.
 
     References
     ----------
-    Bioinformatics (2006) 22 (17): 2059-2065. doi: 10.1093/bioinformatics/btl355
-    http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
+    .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
+        doi: 10.1093/bioinformatics/btl355
+        http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
 
     Examples
     --------
+    >>> from scipy import signal
     >>> xs = np.arange(0, np.pi, 0.05)
     >>> data = np.sin(xs)
-    >>> peakind = find_peaks_cwt(data, np.arange(1,10))
+    >>> peakind = signal.find_peaks_cwt(data, np.arange(1,10))
     >>> peakind, xs[peakind], data[peakind]
     ([32], array([ 1.6]), array([ 0.9995736]))
 

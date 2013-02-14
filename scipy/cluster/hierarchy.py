@@ -84,44 +84,44 @@ Utility routines for plotting:
 References
 ----------
 
-.. [Sta07] "Statistics toolbox." API Reference Documentation. The MathWorks.
+.. [1] "Statistics toolbox." API Reference Documentation. The MathWorks.
    http://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
    Accessed October 1, 2007.
 
-.. [Mti07] "Hierarchical clustering." API Reference Documentation.
+.. [2] "Hierarchical clustering." API Reference Documentation.
    The Wolfram Research, Inc.
    http://reference.wolfram.com/mathematica/HierarchicalClustering/tutorial/
    HierarchicalClustering.html.
    Accessed October 1, 2007.
 
-.. [Gow69] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
+.. [3] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
    Cluster Analysis." Applied Statistics. 18(1): pp. 54--64. 1969.
 
-.. [War63] Ward Jr, JH. "Hierarchical grouping to optimize an objective
+.. [4] Ward Jr, JH. "Hierarchical grouping to optimize an objective
    function." Journal of the American Statistical Association. 58(301):
    pp. 236--44. 1963.
 
-.. [Joh66] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
+.. [5] Johnson, SC. "Hierarchical clustering schemes." Psychometrika.
    32(2): pp. 241--54. 1966.
 
-.. [Sne62] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
+.. [6] Sneath, PH and Sokal, RR. "Numerical taxonomy." Nature. 193: pp.
    855--60. 1962.
 
-.. [Bat95] Batagelj, V. "Comparing resemblance measures." Journal of
+.. [7] Batagelj, V. "Comparing resemblance measures." Journal of
    Classification. 12: pp. 73--90. 1995.
 
-.. [Sok58] Sokal, RR and Michener, CD. "A statistical method for evaluating
+.. [8] Sokal, RR and Michener, CD. "A statistical method for evaluating
    systematic relationships." Scientific Bulletins. 38(22):
    pp. 1409--38. 1958.
 
-.. [Ede79] Edelbrock, C. "Mixture model tests of hierarchical clustering
+.. [9] Edelbrock, C. "Mixture model tests of hierarchical clustering
    algorithms: the problem of classifying everybody." Multivariate
    Behavioral Research. 14: pp. 367--84. 1979.
 
-.. [Jai88] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
+.. [10] Jain, A., and Dubes, R., "Algorithms for Clustering Data."
    Prentice-Hall. Englewood Cliffs, NJ. 1988.
 
-.. [Fis36] Fisher, RA "The use of multiple measurements in taxonomic
+.. [11] Fisher, RA "The use of multiple measurements in taxonomic
    problems." Annals of Eugenics, 7(2): 179-188. 1936
 
 
@@ -308,8 +308,9 @@ def average(y):
 
 def weighted(y):
     """
-    Performs weighted/WPGMA linkage on the condensed distance matrix
-    ``y``.  See ``linkage`` for more information on the return
+    Performs weighted/WPGMA linkage on the condensed distance matrix.
+
+    See ``linkage`` for more information on the return
     structure and algorithm.
 
     Parameters
@@ -327,7 +328,7 @@ def weighted(y):
 
     See Also
     --------
-    linkage: for advanced creation of hierarchical clusterings.
+    linkage : for advanced creation of hierarchical clusterings.
 
     """
     return linkage(y, method='weighted', metric='euclidean')
@@ -335,8 +336,10 @@ def weighted(y):
 
 def centroid(y):
     """
-    Performs centroid/UPGMC linkage. See ``linkage`` for more
-    information on the return structure and algorithm.
+    Performs centroid/UPGMC linkage.
+
+    See ``linkage`` for more information on the return structure
+    and algorithm.
 
     The following are common calling conventions:
 
@@ -379,22 +382,24 @@ def centroid(y):
 
 def median(y):
     """
-    Performs median/WPGMC linkage. See ``linkage`` for more
-    information on the return structure and algorithm.
+    Performs median/WPGMC linkage.
 
-    The following are common calling conventions:
+    See ``linkage`` for more information on the return structure
+    and algorithm.
 
-    1. ``Z = median(y)``
+     The following are common calling conventions:
 
-       Performs median/WPGMC linkage on the condensed distance matrix
-       ``y``.  See ``linkage`` for more information on the return
-       structure and algorithm.
+     1. ``Z = median(y)``
 
-    2. ``Z = median(X)``
+        Performs median/WPGMC linkage on the condensed distance matrix
+        ``y``.  See ``linkage`` for more information on the return
+        structure and algorithm.
 
-       Performs median/WPGMC linkage on the observation matrix ``X``
-       using Euclidean distance as the distance metric. See linkage
-       for more information on the return structure and algorithm.
+     2. ``Z = median(X)``
+
+        Performs median/WPGMC linkage on the observation matrix ``X``
+        using Euclidean distance as the distance metric. See linkage
+        for more information on the return structure and algorithm.
 
     Parameters
     ----------
@@ -408,11 +413,11 @@ def median(y):
 
     Returns
     -------
-   Z : ndarray
-       The hierarchical clustering encoded as a linkage matrix.
+    Z : ndarray
+        The hierarchical clustering encoded as a linkage matrix.
 
-   See Also
-   --------
+    See Also
+    --------
     linkage: for advanced creation of hierarchical clusterings.
 
     """
@@ -421,8 +426,9 @@ def median(y):
 
 def ward(y):
     """
-    Performs Ward's linkage on a condensed or redundant distance
-    matrix. See linkage for more information on the return structure
+    Performs Ward's linkage on a condensed or redundant distance matrix.
+
+    See linkage for more information on the return structure
     and algorithm.
 
     The following are common calling conventions:
@@ -662,7 +668,7 @@ class ClusterNode:
 
     See Also
     --------
-    to_tree: for converting a linkage matrix ``Z`` into a tree object.
+    to_tree : for converting a linkage matrix ``Z`` into a tree object.
 
     """
 
@@ -711,7 +717,7 @@ class ClusterNode:
 
         Returns
         -------
-        c : int
+        get_count : int
             The number of leaf nodes below the target node.
 
         """
@@ -824,8 +830,9 @@ _cnode_type = type(ClusterNode)
 def to_tree(Z, rd=False):
     """
     Converts a hierarchical clustering encoded in the matrix ``Z`` (by
-    linkage) into an easy-to-use tree object. The reference r to the
-    root ClusterNode object is returned.
+    linkage) into an easy-to-use tree object.
+
+    The reference r to the root ClusterNode object is returned.
 
     Each ClusterNode object has a left, right, dist, id, and count
     attribute. The left and right attributes point to ClusterNode objects
@@ -936,23 +943,19 @@ def cophenet(Z, Y=None):
 
     Y : ndarray (optional)
         Calculates the cophenetic correlation coefficient ``c`` of a
-        hierarchical clustering defined by the linkage matrix ``Z``
+        hierarchical clustering defined by the linkage matrix `Z`
         of a set of :math:`n` observations in :math:`m`
-        dimensions. ``Y`` is the condensed distance matrix from which
-        ``Z`` was generated.
+        dimensions. `Y` is the condensed distance matrix from which
+        `Z` was generated.
 
     Returns
     -------
-    res : tuple
-        A tuple (c, {d}):
-
-            - c : ndarray
-                  The cophentic correlation distance (if ``y`` is passed).
-
-             - d : ndarray
-                  The cophenetic distance matrix in condensed form. The
-                  :math:`ij` th entry is the cophenetic distance between
-                  original observations :math:`i` and :math:`j`.
+    c : ndarray
+        The cophentic correlation distance (if ``y`` is passed).
+    d : ndarray
+        The cophenetic distance matrix in condensed form. The
+        :math:`ij` th entry is the cophenetic distance between
+        original observations :math:`i` and :math:`j`.
 
     """
 
@@ -996,13 +999,13 @@ def inconsistent(Z, d=2):
 
     Parameters
     ----------
-    d : int
-        The number of links up to ``d`` levels below each
-        non-singleton cluster.
     Z : ndarray
         The :math:`(n-1)` by 4 matrix encoding the linkage
         (hierarchical clustering).  See ``linkage`` documentation
         for more information on its form.
+    d : int, optional
+        The number of links up to `d` levels below each
+        non-singleton cluster.
 
     Returns
     -------
@@ -1016,9 +1019,7 @@ def inconsistent(Z, d=2):
         the number of links included in the calculation; and
         ``R[i,3]`` is the inconsistency coefficient,
 
-        .. math::
-
-            \frac{\mathtt{Z[i,2]}-\mathtt{R[i,0]}} {R[i,1]}.
+        .. math:: rac{\\mathtt{Z[i,2]}-\\mathtt{R[i,0]}} {R[i,1]}
 
     """
     Z = np.asarray(Z, order='c')
@@ -1045,8 +1046,9 @@ def inconsistent(Z, d=2):
 def from_mlab_linkage(Z):
     """
     Converts a linkage matrix generated by MATLAB(TM) to a new
-    linkage matrix compatible with this module. The conversion does
-    two things:
+    linkage matrix compatible with this module.
+
+    The conversion does two things:
 
      * the indices are converted from ``1..N`` to ``0..(N-1)`` form,
        and
@@ -1094,6 +1096,8 @@ def from_mlab_linkage(Z):
 
 def to_mlab_linkage(Z):
     """
+    Converts a linkage matrix to a MATLAB(TM) compatible one.
+
     Converts a linkage matrix ``Z`` generated by the linkage function
     of this module to a MATLAB(TM) compatible one. The return linkage
     matrix has the last column removed and the cluster indices are
@@ -1106,9 +1110,12 @@ def to_mlab_linkage(Z):
 
     Returns
     -------
-    ZM : ndarray
+    to_mlab_linkage : ndarray
         A linkage matrix compatible with MATLAB(TM)'s hierarchical
         clustering functions.
+
+        The return linkage matrix has the last column removed
+        and the cluster indices are converted to ``1..N`` indexing.
 
     """
     Z = np.asarray(Z, order='c', dtype=np.double)
@@ -1125,8 +1132,9 @@ def to_mlab_linkage(Z):
 
 def is_monotonic(Z):
     """
-    Returns ``True`` if the linkage passed is monotonic. The linkage
-    is monotonic if for every cluster :math:`s` and :math:`t`
+    Returns ``True`` if the linkage passed is monotonic.
+
+    The linkage is monotonic if for every cluster :math:`s` and :math:`t`
     joined, the distance between them is no less than the distance
     between any previously joined clusters.
 
@@ -1455,39 +1463,34 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         The criterion to use in forming flat clusters. This can
         be any of the following values:
 
-          'inconsistent':
-              If a cluster node and all its
+          ``inconsistent`` : If a cluster node and all its
               descendants have an inconsistent value less than or equal
-              to ``t`` then all its leaf descendants belong to the
+              to `t` then all its leaf descendants belong to the
               same flat cluster. When no non-singleton cluster meets
               this criterion, every node is assigned to its own
               cluster. (Default)
 
-          'distance':
-              Forms flat clusters so that the original
+          ``distance`` : Forms flat clusters so that the original
               observations in each flat cluster have no greater a
-              cophenetic distance than ``t``.
+              cophenetic distance than `t`.
 
-          'maxclust':
-              Finds a minimum threshold ``r`` so that
+          ``maxclust`` : Finds a minimum threshold ``r`` so that
               the cophenetic distance between any two original
               observations in the same flat cluster is no more than
-              ``r`` and no more than ``t`` flat clusters are formed.
+              ``r`` and no more than `t` flat clusters are formed.
 
-          'monocrit':
-              Forms a flat cluster from a cluster node c
+          ``monocrit`` : Forms a flat cluster from a cluster node c
               with index i when ``monocrit[j] <= t``.
 
               For example, to threshold on the maximum mean distance
               as computed in the inconsistency matrix R with a
               threshold of 0.8 do:
 
-                ``MR = maxRstat(Z, R, 3)``
+                MR = maxRstat(Z, R, 3)
 
-                ``cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)``
+                cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
 
-          'maxclust_monocrit':
-              Forms a flat cluster from a
+          ``maxclust_monocrit`` : Forms a flat cluster from a
               non-singleton cluster node ``c`` when ``monocrit[i] <=
               r`` for all cluster indices ``i`` below and including
               ``c``. ``r`` is minimized such that no more than ``t``
@@ -1496,9 +1499,9 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
               maximum inconsistency values so that no more than 3 flat
               clusters are formed, do:
 
-                ``MI = maxinconsts(Z, R)``
+                MI = maxinconsts(Z, R)
 
-                ``cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)``
+                cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
 
     depth : int, optional
         The maximum depth to perform the inconsistency calculation.
@@ -1507,11 +1510,11 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         The inconsistency matrix to use for the 'inconsistent'
         criterion. This matrix is computed if not provided.
     monocrit : ndarray, optional
-        An array of length n-1. ``monocrit[i]`` is the
+        An array of length n-1. `monocrit[i]` is the
         statistics upon which non-singleton i is thresholded. The
         monocrit vector must be monotonic, i.e. given a node c with
         index i, for all node indices j corresponding to nodes
-        below c, ``monocrit[i] >= monocrit[j]``.
+        below c, `monocrit[i] >= monocrit[j]`.
 
     Returns
     -------
@@ -1574,35 +1577,32 @@ def fclusterdata(X, t, criterion='inconsistent', \
 
     Parameters
     ----------
-    X : ndarray
-        n by m data matrix with n observations in m dimensions.
+    X : (N, M) ndarray
+        N by M data matrix with N observations in M dimensions.
     t : float
         The threshold to apply when forming flat clusters.
     criterion : str, optional
         Specifies the criterion for forming flat clusters.  Valid
         values are 'inconsistent' (default), 'distance', or 'maxclust'
         cluster formation algorithms. See `fcluster` for descriptions.
-    method : str, optional
-        The linkage method to use (single, complete, average,
-        weighted, median centroid, ward). See `linkage` for more
-        information. Default is "single".
     metric : str, optional
         The distance metric for calculating pairwise distances. See
         `distance.pdist` for descriptions and linkage to verify
         compatibility with the linkage method.
-    t : double, optional
-        The cut-off threshold for the cluster function or the
-        maximum number of clusters (criterion='maxclust').
     depth : int, optional
         The maximum depth for the inconsistency calculation. See
         `inconsistent` for more information.
+    method : str, optional
+        The linkage method to use (single, complete, average,
+        weighted, median centroid, ward). See `linkage` for more
+        information. Default is "single".
     R : ndarray, optional
         The inconsistency matrix. It will be computed if necessary
         if it is not passed.
 
     Returns
     -------
-    T : ndarray
+    fclusterdata : ndarray
         A vector of length n. T[i] is the flat cluster number to
         which original observation i belongs.
 
@@ -1629,19 +1629,20 @@ def fclusterdata(X, t, criterion='inconsistent', \
 
 def leaves_list(Z):
     """
-    Returns a list of leaf node ids (corresponding to observation
-    vector index) as they appear in the tree from left to right. Z is
-    a linkage matrix.
+    Returns a list of leaf node ids
+
+    The return corresponds to the observation vector index as it appears
+    in the tree from left to right. Z is a linkage matrix.
 
     Parameters
     ----------
     Z : ndarray
-        The hierarchical clustering encoded as a matrix. See
-        ``linkage`` for more information.
+        The hierarchical clustering encoded as a matrix.  `Z` is
+        a linkage matrix.  See ``linkage`` for more information.
 
     Returns
     -------
-    L : ndarray
+    leaves_list : ndarray
         The list of leaf node ids.
 
     """
@@ -1866,12 +1867,12 @@ _link_line_colors = ['g', 'r', 'c', 'm', 'y', 'k']
 
 def set_link_color_palette(palette):
     """
-    Changes the list of matplotlib color codes to use when coloring
-    links with the dendrogram color_threshold feature.
+    Set list of matplotlib color codes for dendrogram color_threshold.
 
     Parameters
     ----------
-    palette : A list of matplotlib color codes. The order of
+    palette : list
+        A list of matplotlib color codes. The order of
         the color codes is the order in which the colors are cycled
         through when color thresholding in the dendrogram.
 
@@ -1921,14 +1922,17 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         large. Truncation is used to condense the dendrogram. There
         are several modes:
 
-        * None/'none': no truncation is performed (Default)
-        * 'lastp': the last ``p`` non-singleton formed in the linkage
+        None/'none': no truncation is performed (Default)
+
+        'lastp': the last ``p`` non-singleton formed in the linkage
           are the only non-leaf nodes in the linkage; they correspond
           to to rows ``Z[n-p-2:end]`` in ``Z``. All other
           non-singleton clusters are contracted into leaf nodes.
-        * 'mlab': This corresponds to MATLAB(TM) behavior. (not
+
+        'mlab': This corresponds to MATLAB(TM) behavior. (not
           implemented yet)
-        * 'level'/'mtica': no more than ``p`` levels of the
+
+        'level'/'mtica': no more than ``p`` levels of the
           dendrogram tree are displayed. This corresponds to
           Mathematica(TM) behavior.
 
@@ -1951,13 +1955,16 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         The direction to plot the dendrogram, which can be any
         of the following strings:
 
-        * 'top' plots the root at the top, and plot descendent
+        'top' plots the root at the top, and plot descendent
           links going downwards. (default).
-        * 'bottom'- plots the root at the bottom, and plot descendent
+
+        'bottom'- plots the root at the bottom, and plot descendent
           links going upwards.
-        * 'left'- plots the root at the left, and plot descendent
+
+        'left'- plots the root at the left, and plot descendent
           links going right.
-        * 'right'- plots the root at the right, and plot descendent
+
+        'right'- plots the root at the right, and plot descendent
           links going left.
 
     labels : ndarray, optional
@@ -1972,10 +1979,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         two descendent links are plotted is determined by this
         parameter, which can be any of the following values:
 
-        * False: nothing is done.
-        * 'ascending'/True: the child with the minimum number of
+        False: nothing is done.
+
+        'ascending'/True: the child with the minimum number of
           original objects in its cluster is plotted first.
-        * 'descendent': the child with the maximum number of
+
+        'descendent': the child with the maximum number of
           original objects in its cluster is plotted first.
 
         Note ``distance_sort`` and ``count_sort`` cannot both be
@@ -1985,10 +1994,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         two descendent links are plotted is determined by this
         parameter, which can be any of the following values:
 
-        * False: nothing is done.
-        * 'ascending'/True: the child with the minimum distance
+        False: nothing is done.
+
+        'ascending'/True: the child with the minimum distance
           between its direct descendents is plotted first.
-        * 'descending': the child with the maximum distance
+
+        'descending': the child with the maximum distance
           between its direct descendents is plotted first.
 
         Note ``distance_sort`` and ``count_sort`` cannot both be
@@ -2024,18 +2035,19 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
         For example, to label singletons with their node id and
         non-singletons with their id, count, and inconsistency
-        coefficient, simply do::
+        coefficient, simply do:
 
-          # First define the leaf label function.
-          def llf(id):
-              if id < n:
-                  return str(id)
-              else:
-                  return '[%d %d %1.2f]' % (id, count, R[n-id,3])
+        >>> # First define the leaf label function.
+        >>> def llf(id):
+        ...       if id < n:
+        ...           return str(id)
+        ...       else:
+        >>>           return '[%d %d %1.2f]' % (id, count, R[n-id,3])
+        >>>
+        >>>  # The text for the leaf nodes is going to be big so force
+        >>>  # a rotation of 90 degrees.
+        >>>  dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
 
-          # The text for the leaf nodes is going to be big so force
-          # a rotation of 90 degrees.
-          dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
     show_contracted : bool
         When ``True`` the heights of non-singleton nodes contracted
         into a leaf node are plotted as crosses along the link
@@ -2059,16 +2071,19 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         A dictionary of data structures computed to render the
         dendrogram. Its has the following keys:
 
-           * 'icoords': a list of lists ``[I1, I2, ..., Ip]`` where
+           'icoords': a list of lists ``[I1, I2, ..., Ip]`` where
              ``Ik`` is a list of 4 independent variable coordinates
              corresponding to the line that represents the k'th link
              painted.
-           * 'dcoords': a list of lists ``[I2, I2, ..., Ip]`` where
+
+           'dcoords': a list of lists ``[I2, I2, ..., Ip]`` where
              ``Ik`` is a list of 4 independent variable coordinates
              corresponding to the line that represents the k'th link
              painted.
-           * 'ivl': a list of labels corresponding to the leaf nodes.
-           * 'leaves': for each i, ``H[i] == j``, cluster node
+
+           'ivl': a list of labels corresponding to the leaf nodes.
+
+           'leaves': for each i, ``H[i] == j``, cluster node
              ``j`` appears in position ``i`` in the left-to-right
              traversal of the leaves, where :math:`j < 2n-1`
              and :math:`i < n`. If ``j`` is less than ``n``, the
@@ -2623,7 +2638,7 @@ def maxRstat(Z, R, i):
 
 def leaders(Z, T):
     """
-    (L, M) = leaders(Z, T):
+    Returns the root nodes in a hierarchical clustering.
 
     Returns the root nodes in a hierarchical clustering corresponding
     to a cut defined by a flat cluster assignment vector ``T``. See
@@ -2655,12 +2670,9 @@ def leaders(Z, T):
 
     Returns
     -------
-    A tuple (L, M) with
-
     L : ndarray
-        The leader linkage node id's stored as a k-element 1D
-        array where :math:`k` is the number of flat clusters found
-        in ``T``.
+        The leader linkage node id's stored as a k-element 1-D array
+        where ``k`` is the number of flat clusters found in ``T``.
 
         ``L[j]=i`` is the linkage cluster node id that is the
         leader of flat cluster with id M[j].  If ``i < n``, ``i``
@@ -2669,12 +2681,10 @@ def leaders(Z, T):
 
         For example: if ``L[3]=2`` and ``M[3]=8``, the flat cluster with
         id 8's leader is linkage node 2.
-
     M : ndarray
-        The leader linkage node id's stored as a k-element 1D
-        array where :math:`k` is the number of flat clusters found
-        in ``T``. This allows the set of flat cluster ids to be
-        any arbitrary set of :math:`k` integers.
+        The leader linkage node id's stored as a k-element 1-D array where
+        ``k`` is the number of flat clusters found in ``T``. This allows the
+        set of flat cluster ids to be any arbitrary set of ``k`` integers.
 
     """
     Z = np.asarray(Z, order='c')

@@ -18,7 +18,8 @@ _double_precision = ['i','l','d']
 
 def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
           check_finite=True):
-    """Compute Schur decomposition of a matrix.
+    """
+    Compute Schur decomposition of a matrix.
 
     The Schur decomposition is::
 
@@ -31,7 +32,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 
     Parameters
     ----------
-    a : ndarray, shape (M, M)
+    a : (M, M) array_like
         Matrix to decompose
     output : {'real', 'complex'}, optional
         Construct the real or complex Schur decomposition (for real matrices).
@@ -58,9 +59,9 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 
     Returns
     -------
-    T : ndarray, shape (M, M)
+    T : (M, M) ndarray
         Schur form of A. It is real-valued for the real Schur decomposition.
-    Z : ndarray, shape (M, M)
+    Z : (M, M) ndarray
         An unitary Schur transformation matrix for A.
         It is real-valued for the real Schur decomposition.
     sdim : int
@@ -177,16 +178,17 @@ def _castCopy(type, *arrays):
 
 
 def rsf2csf(T, Z, check_finite=True):
-    """Convert real Schur form to complex Schur form.
+    """
+    Convert real Schur form to complex Schur form.
 
     Convert a quasi-diagonal real-valued Schur form to the upper triangular
     complex-valued Schur form.
 
     Parameters
     ----------
-    T : array, shape (M, M)
+    T : (M, M) array_like
         Real Schur form of the original matrix
-    Z : array, shape (M, M)
+    Z : (M, M) array_like
         Schur transformation matrix
     check_finite : boolean, optional
         Whether to check the input matrixes contain only finite numbers.
@@ -195,9 +197,9 @@ def rsf2csf(T, Z, check_finite=True):
 
     Returns
     -------
-    T : array, shape (M, M)
+    T : (M, M) ndarray
         Complex Schur form of the original matrix
-    Z : array, shape (M, M)
+    Z : (M, M) ndarray
         Schur transformation matrix corresponding to the complex form
 
     See also

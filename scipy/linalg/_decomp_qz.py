@@ -79,11 +79,11 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     Parameters
     ----------
-    A : array_like, shape (N,N)
-        2-D array to decompose.
-    B : array_like, shape (N,N)
-        2-D array to decompose.
-    output : {'real','complex'}, optional
+    A : (N, N) array_like
+        2d array to decompose
+    B : (N, N) array_like
+        2d array to decompose
+    output : str {'real','complex'}
         Construct the real or complex QZ decomposition for real matrices.
         Default is 'real'.
     lwork : int, optional
@@ -114,13 +114,13 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     Returns
     -------
-    AA : ndarray, shape (N,N)
+    AA : (N, N) ndarray
         Generalized Schur form of A.
-    BB : ndarray, shape (N,N)
+    BB : (N, N) ndarray
         Generalized Schur form of B.
-    Q : ndarray, shape (N,N)
+    Q : (N, N) ndarray
         The left Schur vectors.
-    Z : ndarray, shape (N,N)
+    Z : (N, N) ndarray
         The right Schur vectors.
     sdim : int, optional
         If sorting was requested, a fifth return value will contain the

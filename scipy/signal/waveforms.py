@@ -390,8 +390,8 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
 
 
 def sweep_poly(t, poly, phi=0):
-    """Frequency-swept cosine generator, with a time-dependent frequency
-    specified as a polynomial.
+    """
+    Frequency-swept cosine generator, with a time-dependent frequency.
 
     This function generates a sinusoidal function whose instantaneous
     frequency varies with time.  The frequency at time `t` is given by
@@ -415,11 +415,11 @@ def sweep_poly(t, poly, phi=0):
           ``f(t) = poly(t)``
 
     phi : float, optional
-        Phase offset, in degrees. Default is 0.
+        Phase offset, in degrees, Default: 0.
 
     Returns
     -------
-    y : ndarray
+    sweep_poly : ndarray
         A numpy array containing the signal evaluated at `t` with the
         requested time-varying frequency.  More precisely, the function
         returns ``cos(phase + (pi/180)*phi)``, where `phase` is the integral
@@ -432,6 +432,24 @@ def sweep_poly(t, poly, phi=0):
     Notes
     -----
     .. versionadded:: 0.8.0
+
+    If `poly` is a list or ndarray of length `n`, then the elements of
+    `poly` are the coefficients of the polynomial, and the instantaneous
+    frequency is:
+
+        ``f(t) = poly[0]*t**(n-1) + poly[1]*t**(n-2) + ... + poly[n-1]``
+
+    If `poly` is an instance of `numpy.poly1d`, then the instantaneous
+    frequency is:
+
+          ``f(t) = poly(t)``
+
+    Finally, the output `s` is:
+
+        ``cos(phase + (pi/180)*phi)``
+
+    where `phase` is the integral from 0 to `t` of ``2 * pi * f(t)``,
+    ``f(t)`` as defined above.
 
     """
     # 'phase' is computed in _sweep_poly_phase, to make testing easier.

@@ -245,7 +245,8 @@ class gaussian_kde(object):
     __call__ = evaluate
 
     def integrate_gaussian(self, mean, cov):
-        """Multiply estimated density by a multivariate Gaussian and integrate
+        """
+        Multiply estimated density by a multivariate Gaussian and integrate
         over the whole space.
 
         Parameters
@@ -262,8 +263,9 @@ class gaussian_kde(object):
 
         Raises
         ------
-        ValueError : if the mean or covariance of the input Gaussian differs from
-                     the KDE's dimensionality.
+        ValueError :
+            If the mean or covariance of the input Gaussian differs from
+            the KDE's dimensionality.
 
         """
         mean = atleast_1d(squeeze(mean))
@@ -289,7 +291,8 @@ class gaussian_kde(object):
         return result
 
     def integrate_box_1d(self, low, high):
-        """Computes the integral of a 1D pdf between two bounds.
+        """
+        Computes the integral of a 1D pdf between two bounds.
 
         Parameters
         ----------
@@ -305,7 +308,8 @@ class gaussian_kde(object):
 
         Raises
         ------
-        ValueError : if the KDE is over more than one dimension.
+        ValueError
+            If the KDE is over more than one dimension.
 
         """
         if self.d != 1:
@@ -354,7 +358,8 @@ class gaussian_kde(object):
         return value
 
     def integrate_kde(self, other):
-        """Computes the integral of the product of this  kernel density estimate
+        """
+        Computes the integral of the product of this  kernel density estimate
         with another.
 
         Parameters
@@ -369,7 +374,8 @@ class gaussian_kde(object):
 
         Raises
         ------
-        ValueError : if the KDEs have different dimensionality.
+        ValueError
+            If the KDEs have different dimensionality.
 
         """
         if other.d != self.d:
@@ -398,7 +404,8 @@ class gaussian_kde(object):
         return result
 
     def resample(self, size=None):
-        """Randomly sample a dataset from the estimated pdf.
+        """
+        Randomly sample a dataset from the estimated pdf.
 
         Parameters
         ----------
@@ -408,7 +415,7 @@ class gaussian_kde(object):
 
         Returns
         -------
-        dataset : (self.d, size)-array
+        resample : (self.d, `size`) ndarray
             The sampled dataset.
 
         """

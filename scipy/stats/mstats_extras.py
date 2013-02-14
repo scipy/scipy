@@ -34,28 +34,30 @@ from scipy.stats.distributions import norm, beta, t, binom
 #---- --- Quantiles ---
 #####--------------------------------------------------------------------------
 def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
-    """Computes quantile estimates with the Harrell-Davis method, where the estimates
-are calculated as a weighted linear combination of order statistics.
+    """
+    Computes quantile estimates with the Harrell-Davis method.
 
-Parameters
-----------
-    data : ndarray
+    The quantile estimates are calculated as a weighted linear combination
+    of order statistics.
+
+    Parameters
+    ----------
+    data : array_like
         Data array.
     prob : sequence
         Sequence of quantiles to compute.
     axis : int
-        Axis along which to compute the quantiles. If None, use a flattened array.
+        Axis along which to compute the quantiles. If None, use a flattened
+        array.
     var : boolean
         Whether to return the variance of the estimate.
 
-Returns
--------
-    A (p,) array of quantiles (if ``var`` is False), or a (2,p) array of quantiles
-    and variances (if ``var`` is True), where ``p`` is the number of quantiles.
-
-Notes
------
-    The function is restricted to 2D arrays.
+    Returns
+    -------
+    hdquantiles : MaskedArray
+        A (p,) array of quantiles (if `var` is False), or a (2,p) array of
+        quantiles and variances (if `var` is True), where ``p`` is the
+        number of quantiles.
 
     """
     def _hd_1D(data,prob,var):
@@ -102,14 +104,16 @@ Notes
 
 #..............................................................................
 def hdmedian(data, axis=-1, var=False):
-    """Returns the Harrell-Davis estimate of the median along the given axis.
+    """
+    Returns the Harrell-Davis estimate of the median along the given axis.
 
-Parameters
-----------
+    Parameters
+    ----------
     data : ndarray
         Data array.
     axis : int
-        Axis along which to compute the quantiles. If None, use a flattened array.
+        Axis along which to compute the quantiles. If None, use a flattened
+        array.
     var : boolean
         Whether to return the variance of the estimate.
 
@@ -120,21 +124,23 @@ Parameters
 
 #..............................................................................
 def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
-    """Computes the standard error of the Harrell-Davis quantile estimates by jackknife.
+    """
+    The standard error of the Harrell-Davis quantile estimates by jackknife.
 
-
-Parameters
-----------
-    data : ndarray
+    Parameters
+    ----------
+    data : array_like
         Data array.
     prob : sequence
         Sequence of quantiles to compute.
     axis : int
-        Axis along which to compute the quantiles. If None, use a flattened array.
+        Axis along which to compute the quantiles. If None, use a flattened
+        array.
 
-Notes
------
-    The function is restricted to 2D arrays.
+    Returns
+    -------
+    hdquantiles_sd : MaskedArray
+        Standard error of the Harrell-Davis quantile estimates.
 
     """
     def _hdsd_1D(data,prob):
@@ -178,25 +184,44 @@ Notes
 
 def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True),
                     alpha=0.05, axis=None):
-    """Returns the selected confidence interval of the trimmed mean along the
-given axis.
+    """
+    Selected confidence interval of the trimmed mean along the given axis.
 
-Parameters
-----------
-    data : sequence
-        Input data. The data is transformed to a masked array
-    proportiontocut : float
-        Proportion of the data to cut from each side of the data .
-        As a result, (2*proportiontocut*n) values are actually trimmed.
-    alpha : float
+    Parameters
+    ----------
+    data : array_like
+        Input data.
+    limits : {None, tuple}, optional
+        ``None`` or a two item tuple.
+        Tuple of the percentages to cut on each side of the array, with respect
+        to the number of unmasked data, as floats between 0. and 1. If ``n``
+        is the number of unmasked data before trimming, then
+        (``n`` * `limits[0]`)th smallest data and (``n`` * `limits[1]`)th
+        largest data are masked.  The total number of unmasked data after
+        trimming is ``n`` * (1. - sum(`limits`)).
+        The value of one limit can be set to None to indicate an open interval.
+
+        Defaults to (0.2, 0.2).
+    inclusive : (2,) tuple of boolean, optional
+        If relative==False, tuple indicating whether values exactly equal to
+        the absolute limits are allowed.
+        If relative==True, tuple indicating whether the number of data being
+        masked on each side should be rounded (True) or truncated (False).
+
+        Defaults to (True, True).
+    alpha : float, optional
         Confidence level of the intervals.
-    inclusive : tuple of boolean
-        If relative==False, tuple indicating whether values exactly equal to the
-        absolute limits are allowed.
-        If relative==True, tuple indicating whether the number of data being masked
-        on each side should be rounded (True) or truncated (False).
-    axis : int
-        Axis along which to cut. If None, uses a flattened version of the input.
+
+        Defaults to 0.05.
+    axis : int, optional
+        Axis along which to cut. If None, uses a flattened version of `data`.
+
+        Defaults to None.
+
+    Returns
+    -------
+    trimmed_mean_ci : (2,) ndarray
+        The lower and upper confidence intervals of the trimmed data.
 
     """
     data = ma.array(data, copy=False)
@@ -209,17 +234,19 @@ Parameters
 
 #..............................................................................
 def mjci(data, prob=[0.25,0.5,0.75], axis=None):
-    """Returns the Maritz-Jarrett estimators of the standard error of selected
-experimental quantiles of the data.
+    """
+    Returns the Maritz-Jarrett estimators of the standard error of selected
+    experimental quantiles of the data.
 
-Parameters
------------
-    data : ndarray
+    Parameters
+    ----------
+    data: ndarray
         Data array.
-    prob : sequence
+    prob: sequence
         Sequence of quantiles to compute.
     axis : int
-        Axis along which to compute the quantiles. If None, use a flattened array.
+        Axis along which to compute the quantiles. If None, use a flattened
+        array.
 
     """
     def _mjci_1D(data, p):
@@ -277,18 +304,27 @@ def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
 
 #.............................................................................
 def median_cihs(data, alpha=0.05, axis=None):
-    """Computes the alpha-level confidence interval for the median of the data,
-following the Hettmasperger-Sheather method.
+    """
+    Computes the alpha-level confidence interval for the median of the data.
 
-Parameters
-----------
-    data : sequence
-        Input data. Masked values are discarded. The input should be 1D only, or
-        axis should be set to None.
+    Uses the Hettmasperger-Sheather method.
+
+    Parameters
+    ----------
+    data : array_like
+        Input data. Masked values are discarded. The input should be 1D only,
+        or `axis` should be set to None.
     alpha : float
         Confidence level of the intervals.
     axis : integer
-        Axis along which to compute the quantiles. If None, use a flattened array.
+        Axis along which to compute the quantiles. If None, use a flattened
+        array.
+
+    Returns
+    -------
+    median_cihs :
+        Alpha level confidence interval.
+
     """
     def _cihs_1D(data, alpha):
         data = np.sort(data.compressed())
@@ -318,23 +354,29 @@ Parameters
 
 #..............................................................................
 def compare_medians_ms(group_1, group_2, axis=None):
-    """Compares the medians from two independent groups along the given axis.
+    """
+    Compares the medians from two independent groups along the given axis.
 
-The comparison is performed using the McKean-Schrader estimate of the standard
-error of the medians.
+    The comparison is performed using the McKean-Schrader estimate of the
+    standard error of the medians.
 
-Parameters
-----------
-    group_1 : {sequence}
+    Parameters
+    ----------
+    group_1 : array_like
         First dataset.
-    group_2 : {sequence}
+    group_2 : array_like
         Second dataset.
-    axis : {integer}
-        Axis along which the medians are estimated. If None, the arrays are flattened.
+    axis : int, optional
+        Axis along which the medians are estimated. If None, the arrays are
+        flattened.  If `axis` is not None, then `group_1` and `group_2`
+        should have the same shape.
 
-Returns
--------
-    A (p,) array of comparison values.
+    Returns
+    -------
+    compare_medians_ms : {float, ndarray}
+        If `axis` is None, then returns a float, otherwise returns a 1-D
+        ndarray of floats with a length equal to the length of `group_1`
+        along `axis`.
 
     """
     (med_1, med_2) = (ma.median(group_1,axis=axis), ma.median(group_2,axis=axis))
@@ -345,8 +387,26 @@ Returns
 
 
 def idealfourths(data, axis=None):
-    """Returns an estimate of the lower and upper quartiles of the data along
-    the given axis, as computed with the ideal fourths.
+    """
+    Returns an estimate of the lower and upper quartiles.
+
+    Uses the ideal fourths algorithm.
+
+    Parameters
+    ----------
+    data : array_like
+        Input array.
+    axis : int, optional
+        Axis along which the quartiles are estimated. If None, the arrays are
+        flattened.
+
+    Returns
+    -------
+    idealfourths : {list of floats, masked array}
+        Returns the two internal values that divide `data` into four parts
+        using the ideal fourths algorithm either along the flattened array
+        (if `axis` is None) or along `axis` of `data`.
+
     """
     def _idf(data):
         x = data.compressed()
@@ -367,15 +427,18 @@ def idealfourths(data, axis=None):
 
 
 def rsh(data, points=None):
-    """Evaluates Rosenblatt's shifted histogram estimators for each point
-on the dataset 'data'.
+    """
+    Evaluates Rosenblatt's shifted histogram estimators for each point
+    on the dataset 'data'.
 
-Parameters
+    Parameters
+    ----------
     data : sequence
         Input data. Masked values are ignored.
     points : sequence
         Sequence of points where to evaluate Rosenblatt shifted histogram.
         If None, use the data.
+
     """
     data = ma.array(data, copy=False)
     if points is None:

@@ -12,15 +12,30 @@ addition provides:
 
 Subpackages
 -----------
+Using any of these subpackages requires an explicit import.  For example,
+``import scipy.cluster``.
+
 ::
 
- odr                          --- Orthogonal Distance Regression [*]
+ cluster                      --- Vector Quantization / Kmeans
+ fftpack                      --- Discrete Fourier Transform algorithms
+ integrate                    --- Integration routines
+ interpolate                  --- Interpolation Tools
+ io                           --- Data input and output
+ lib                          --- Python wrappers to external libraries
+ lib.lapack                   --- Wrappers to LAPACK library
+ linalg                       --- Linear algebra routines
  misc                         --- Various utilities that don't have
                                   another home.
- cluster                      --- Vector Quantization / Kmeans [*]
- fftpack                      --- Discrete Fourier Transform algorithms
-                                  [*]
- io                           --- Data input and output [*]
+ ndimage                      --- n-dimensional image package
+ odr                          --- Orthogonal Distance Regression
+ optimize                     --- Optimization Tools
+ signal                       --- Signal Processing Tools
+ sparse                       --- Sparse Matrices
+ sparse.linalg                --- Sparse Linear Algebra
+ sparse.linalg.dsolve         --- Linear Solvers
+ sparse.linalg.dsolve.umfpack --- :Interface to the UMFPACK library:
+                                  Conjugate Gradient Method (LOBPCG)
  sparse.linalg.eigen.lobpcg   --- Locally Optimal Block Preconditioned
                                   Conjugate Gradient Method (LOBPCG) [*]
  special                      --- Airy Functions [*]
@@ -34,18 +49,8 @@ Subpackages
  ndimage                      --- n-dimensional image package [*]
  linalg                       --- Linear algebra routines [*]
  spatial                      --- Spatial data structures and algorithms
-                                  [*]
- interpolate                  --- Interpolation Tools [*]
- sparse.linalg                --- Sparse Linear Algebra [*]
- sparse.linalg.dsolve.umfpack --- :Interface to the UMFPACK library: [*]
- sparse.linalg.dsolve         --- Linear Solvers [*]
- optimize                     --- Optimization Tools [*]
- sparse.linalg.eigen.arpack   --- Eigenvalue solver using iterative
-                                  methods. [*]
- signal                       --- Signal Processing Tools [*]
- sparse                       --- Sparse Matrices [*]
-
- [*] - using a package requires explicit import
+ special                      --- Airy Functions
+ stats                        --- Statistical Functions
 
 Utility tools
 -------------

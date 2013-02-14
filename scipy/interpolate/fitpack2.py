@@ -70,14 +70,14 @@ class UnivariateSpline(object):
 
     Parameters
     ----------
-    x : array_like
+    x : (N,) array_like
         1-D array of independent input data. Must be increasing.
-    y : array_like
+    y : (N,) array_like
         1-D array of dependent input data, of the same length as `x`.
-    w : array_like, optional
+    w : (N,) array_like, optional
         Weights for spline fitting.  Must be positive.  If None (default),
         weights are all equal.
-    bbox : array_like, optional
+    bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         None (default), ``bbox=[x[0], x[-1]]``.
     k : int, optional
@@ -284,18 +284,18 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     Parameters
     ----------
-    x : array_like
-        input dimension of data points -- must be increasing
-    y : array_like
+    x : (N,) array_like
+        Input dimension of data points -- must be increasing
+    y : (N,) array_like
         input dimension of data points
-    w : array_like, optional
+    w : (N,) array_like, optional
         Weights for spline fitting.  Must be positive.  If None (default),
         weights are all equal.
-    bbox : array_like, optional
+    bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         None (default), bbox=[x[0],x[-1]].
     k : int, optional
-        Degree of the smoothing spline.  Must be <= 5.
+        Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
 
     See Also
     --------
@@ -353,21 +353,21 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Parameters
     ----------
-    x : array_like
-        input dimension of data points -- must be increasing
-    y : array_like
-        input dimension of data points
-    t: array_like
+    x : (N,) array_like
+        Input dimension of data points -- must be increasing
+    y : (N,) array_like
+        Input dimension of data points
+    t: (M,) array_like
         interior knots of the spline.  Must be in ascending order
         and bbox[0]<t[0]<...<t[-1]<bbox[-1]
-    w : array_like, optional
+    w : (N,) array_like, optional
         weights for spline fitting.  Must be positive.  If None (default),
         weights are all equal.
-    bbox : array_like, optional
+    bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         None (default), bbox=[x[0],x[-1]].
     k : int, optional
-        Degree of the smoothing spline.  Must be <= 5.
+        Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
 
     Raises
     ------
@@ -513,13 +513,17 @@ inaccurate. Deficiency may strongly depend on the value of eps."""
 
 class BivariateSpline(_BivariateSplineBase):
     """
-    Bivariate spline s(x,y) of degrees kx and ky on the rectangle
-    [xb,xe] x [yb, ye] calculated from a given set of data points
-    (x,y,z).
+    Base class for bivariate splines.
+
+    This describes a spline ``s(x, y)`` of degrees ``kx`` and ``ky`` on
+    the rectangle ``[xb, xe] * [yb, ye]`` calculated from a given set
+    of data points ``(x, y, z)``.
+
+    To construct these splines, call either `SmoothBivariateSpline` or
+    `LSQBivariateSpline`.
 
     See Also
     --------
-    bisplrep, bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
     SmoothBivariateSpline :
         to create a BivariateSpline through the given points
@@ -527,6 +531,8 @@ class BivariateSpline(_BivariateSplineBase):
         to create a BivariateSpline using weighted least-squares fitting
     SphereBivariateSpline :
         bivariate spline interpolation in spherical cooridinates
+    bisplrep : older wrapping of FITPACK
+    bisplev : older wrapping of FITPACK
 
     """
     def __call__(self, x, y, mth='array'):
@@ -588,8 +594,8 @@ class SmoothBivariateSpline(BivariateSpline):
     ----------
     x, y, z : array_like
         1-D sequences of data points (order is not important).
-    w : array_lie, optional
-        Positive 1-D sequence of weights.
+    w : array_like, optional
+        Positive 1-D sequence of weights, of same length as `x`, `y` and `z`.
     bbox : array_like, optional
         Sequence of length 4 specifying the boundary of the rectangular
         approximation domain.  By default,
@@ -598,9 +604,9 @@ class SmoothBivariateSpline(BivariateSpline):
         Degrees of the bivariate spline. Default is 3.
     s : float, optional
         Positive smoothing factor defined for estimation condition:
-        ``sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s``
-        Default ``s=len(w)`` which should be a good value if 1/w[i] is an
-        estimate of the standard deviation of z[i].
+        ``sum((w[i]*(z[i]-s(x[i], y[i])))**2, axis=0) <= s``
+        Default ``s=len(w)`` which should be a good value if ``1/w[i]`` is an
+        estimate of the standard deviation of ``z[i]``.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value between 0 and 1,
@@ -648,8 +654,8 @@ class LSQBivariateSpline(BivariateSpline):
     tx, ty : array_like
         Strictly ordered 1-D sequences of knots coordinates.
     w : array_like, optional
-        Positive 1-D sequence of weights.
-    bbox : array_like, optional
+        Positive 1-D array of weights, of the same length as `x`, `y` and `z`.
+    bbox : (4,) array_like, optional
         Sequence of length 4 specifying the boundary of the rectangular
         approximation domain.  By default,
         ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
@@ -657,9 +663,9 @@ class LSQBivariateSpline(BivariateSpline):
         Degrees of the bivariate spline. Default is 3.
     s : float, optional
         Positive smoothing factor defined for estimation condition:
-        ``sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s``
-        Default ``s=len(w)`` which should be a good value if 1/w[i] is an
-        estimate of the standard deviation of z[i].
+        ``sum((w[i]*(z[i]-s(x[i], y[i])))**2, axis=0) <= s``
+        Default ``s=len(w)`` which should be a good value if ``1/w[i]`` is an
+        estimate of the standard deviation of ``z[i]``.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value between 0 and 1,
@@ -710,7 +716,8 @@ class LSQBivariateSpline(BivariateSpline):
 
 
 class RectBivariateSpline(BivariateSpline):
-    """ Bivariate spline approximation over a rectangular mesh.
+    """
+    Bivariate spline approximation over a rectangular mesh.
 
     Can be used for both smoothing and interpolating data.
 
@@ -728,13 +735,14 @@ class RectBivariateSpline(BivariateSpline):
         Degrees of the bivariate spline. Default is 3.
     s : float, optional
         Positive smoothing factor defined for estimation condition:
-        ``sum((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0) <= s``
-        Default is s=0, which is for interpolation.
+        ``sum((w[i]*(z[i]-s(x[i], y[i])))**2, axis=0) <= s``
+        Default is ``s=0``, which is for interpolation.
 
     See Also
     --------
     SmoothBivariateSpline : a smoothing bivariate spline for scattered data
-    bisplrep, bisplev : an older wrapping of FITPACK
+    bisplrep : an older wrapping of FITPACK
+    bisplev : an older wrapping of FITPACK
     UnivariateSpline : a similar class for univariate spline interpolation
 
     """
@@ -866,7 +874,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         Positive 1-D sequence of weights.
     s : float, optional
         Positive smoothing factor defined for estimation condition:
-        ``sum((w(i)*(r(i)-s(theta(i),phi(i))))**2,axis=0) <= s``
+        ``sum((w(i)*(r(i) - s(theta(i), phi(i))))**2, axis=0) <= s``
         Default ``s=len(w)`` which should be a good value if 1/w[i] is an
         estimate of the standard deviation of r[i].
     eps : float, optional
@@ -955,9 +963,10 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         and phi must lie within the interval (0, 2pi).
     tt, tp : array_like
         Strictly ordered 1-D sequences of knots coordinates.
-        Coordinates must satisfy ``0<tt[i]<pi``, ``0<tp[i]<2*pi``.
+        Coordinates must satisfy ``0 < tt[i] < pi``, ``0 < tp[i] < 2*pi``.
     w : array_like, optional
-        Positive 1-D sequence of weights.
+        Positive 1-D sequence of weights, of the same length as `theta`, `phi`
+        and `r`.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value between 0 and 1,
@@ -1018,6 +1027,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     >>> ax3 = fig.add_subplot(133)
     >>> ax3.imshow(data_lsq, interpolation='nearest')
     >>> plt.show()
+
     """
 
     def __init__(self, theta, phi, r, tt, tp, w=None, eps=1E-16):
@@ -1088,7 +1098,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         1-D array of longitude coordinates in strictly ascending order.
         Coordinates must be given in radians, and must lie within (0, 2pi).
     r : array_like
-        2-D array of data with shape (u.size, v.size).
+        2-D array of data with shape ``(u.size, v.size)``.
     s : float, optional
         Positive smoothing factor defined for estimation condition
         (``s=0`` is for interpolation).

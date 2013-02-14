@@ -23,12 +23,12 @@ def csgraph_from_masked(graph):
 
     Parameters
     ----------
-    graph: MaskedArray
+    graph : MaskedArray
         Input graph.  Shape should be (n_nodes, n_nodes).
 
     Returns
     -------
-    csgraph: csr_matrix
+    csgraph : csr_matrix
         Compressed sparse representation of graph, 
     """
     # check that graph is a square matrix
@@ -66,7 +66,8 @@ def csgraph_masked_from_dense(graph,
                               infinity_null=True,
                               copy=True):
     """
-    csgraph_masked_from_dense(graph, null_value=0, nan_null=True, infinity_null=True, copy=True)
+    csgraph_masked_from_dense(graph, null_value=0, nan_null=True,
+                              infinity_null=True, copy=True)
 
     Construct a masked array graph representation from a dense matrix.
 
@@ -74,19 +75,19 @@ def csgraph_masked_from_dense(graph,
 
     Parameters
     ----------
-    graph: array_like
+    graph : array_like
         Input graph.  Shape should be (n_nodes, n_nodes).
-    null_value: float or None (optional)
+    null_value : float or None (optional)
         Value that denotes non-edges in the graph.  Default is zero.
-    infinity_null: bool
+    infinity_null : bool
         If True (default), then infinite entries (both positive and negative)
         are treated as null edges.
-    nan_null: bool
+    nan_null : bool
         If True (default), then NaN entries are treated as non-edges
 
     Returns
     -------
-    csgraph: MaskedArray
+    csgraph : MaskedArray
         masked array representation of graph
     """
     graph = np.array(graph, copy=copy)
@@ -137,19 +138,19 @@ def csgraph_from_dense(graph,
 
     Parameters
     ----------
-    graph: array_like
+    graph : array_like
         Input graph.  Shape should be (n_nodes, n_nodes).
-    null_value: float or None (optional)
+    null_value : float or None (optional)
         Value that denotes non-edges in the graph.  Default is zero.
-    infinity_null: bool
+    infinity_null : bool
         If True (default), then infinite entries (both positive and negative)
         are treated as null edges.
-    nan_null: bool
+    nan_null : bool
         If True (default), then NaN entries are treated as non-edges
 
     Returns
     -------
-    csgraph: csr_matrix
+    csgraph : csr_matrix
         Compressed sparse representation of graph, 
     """
     return csgraph_from_masked(csgraph_masked_from_dense(graph,
@@ -168,15 +169,15 @@ def csgraph_to_dense(csgraph, null_value=0):
 
     Parameters
     ----------
-    csgraph: csr_matrix, csc_matrix, or lil_matrix
+    csgraph : csr_matrix, csc_matrix, or lil_matrix
         Sparse representation of a graph.
-    null_value: float, optional
+    null_value : float, optional
         The value used to indicate null edges in the dense representation.
         Default is 0.
 
     Returns
     -------
-    graph: ndarray
+    graph : ndarray
         The dense representation of the sparse graph.
 
     Notes
@@ -262,12 +263,12 @@ def csgraph_to_masked(csgraph):
 
     Parameters
     ----------
-    csgraph: csr_matrix, csc_matrix, or lil_matrix
+    csgraph : csr_matrix, csc_matrix, or lil_matrix
         Sparse representation of a graph.
 
     Returns
     -------
-    graph: MakedArray
+    graph : MaskedArray
         The masked dense representation of the sparse graph.
     """
     return np.ma.masked_invalid(csgraph_to_dense(csgraph, np.nan))
@@ -364,23 +365,23 @@ def construct_dist_matrix(graph,
 
     Parameters
     ----------
-    graph: array_like or sparse
+    graph : array_like or sparse
         The N x N matrix representation of a directed or undirected graph.
         If dense, then non-edges are indicated by zeros or infinities.
-    predecessors: array_like
+    predecessors : array_like
         The N x N matrix of predecessors of each node (see Notes below).
-    directed: bool, optional
+    directed : bool, optional
         If True (default), then operate on a directed graph: only move from
         point i to point j along paths csgraph[i, j].
         If False, then operate on an undirected graph: the algorithm can
         progress from point i to j along csgraph[i, j] or csgraph[j, i].
-    null_value: bool, optional
+    null_value : bool, optional
         value to use for distances between unconnected nodes.  Default is
         np.inf
 
     Returns
     -------
-    dist_matrix: ndarray
+    dist_matrix : ndarray
         The N x N matrix of distances between nodes along the path specified
         by the predecessor matrix.  If no path exists, the distance is zero.
 

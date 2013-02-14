@@ -34,14 +34,15 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     return c, lower
 
 def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
-    """Compute the Cholesky decomposition of a matrix.
+    """
+    Compute the Cholesky decomposition of a matrix.
 
     Returns the Cholesky decomposition, :math:`A = L L^*` or
     :math:`A = U^* U` of a Hermitian positive-definite matrix A.
 
     Parameters
     ----------
-    a : ndarray, shape (M, M)
+    a : (M, M) array_like
         Matrix to be decomposed
     lower : bool
         Whether to compute the upper or lower triangular Cholesky
@@ -55,7 +56,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    c : ndarray, shape (M, M)
+    c : (M, M) ndarray
         Upper- or lower-triangular Cholesky factor of `a`.
 
     Raises
@@ -81,7 +82,8 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
 
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
-    """Compute the Cholesky decomposition of a matrix, to use in cho_solve
+    """
+    Compute the Cholesky decomposition of a matrix, to use in cho_solve
 
     Returns a matrix containing the Cholesky decomposition,
     ``A = L L*`` or ``A = U* U`` of a Hermitian positive-definite matrix `a`.
@@ -94,7 +96,7 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
 
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : (M, M) array_like
         Matrix to be decomposed
     lower : boolean
         Whether to compute the upper or lower triangular Cholesky factorization
@@ -108,7 +110,7 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    c : array, shape (M, M)
+    c : (M, M) ndarray
         Matrix whose upper or lower triangle contains the Cholesky factor
         of `a`. Other parts of the matrix contain random data.
     lower : boolean
@@ -176,7 +178,8 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     return x
 
 def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
-    """Cholesky decompose a banded Hermitian positive-definite matrix
+    """
+    Cholesky decompose a banded Hermitian positive-definite matrix
 
     The matrix a is stored in ab either in lower diagonal or upper
     diagonal ordered form:
@@ -198,7 +201,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
 
     Parameters
     ----------
-    ab : array, shape (u + 1, M)
+    ab : (u + 1, M) array_like
         Banded matrix
     overwrite_ab : boolean
         Discard data in ab (may enhance performance)
@@ -211,7 +214,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
 
     Returns
     -------
-    c : array, shape (u+1, M)
+    c : (u + 1, M) ndarray
         Cholesky factorization of a, in the same banded format as ab
 
     """

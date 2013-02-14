@@ -24,8 +24,8 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     Parameters
     ----------
-    a : ndarray
-        Matrix to decompose, of shape ``(M,N)``.
+    a : (M, N) array_like
+        Matrix to decompose.
     full_matrices : bool, optional
         If True, `U` and `Vh` are of shape ``(M,M)``, ``(N,N)``.
         If False, the shapes are ``(M,K)`` and ``(K,N)``, where
@@ -115,8 +115,8 @@ def svdvals(a, overwrite_a=False, check_finite=True):
 
     Parameters
     ----------
-    a : ndarray
-        Matrix to decompose, of shape ``(M, N)``.
+    a : (M, N) array_like
+        Matrix to decompose.
     overwrite_a : bool, optional
         Whether to overwrite `a`; may improve performance.
         Default is False.
@@ -127,9 +127,8 @@ def svdvals(a, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    s : ndarray
+    s : (min(M, N),) ndarray
         The singular values, sorted in decreasing order.
-        Of shape ``(K,)``, with``K = min(M, N)``.
 
     Raises
     ------
@@ -151,7 +150,7 @@ def diagsvd(s, M, N):
 
     Parameters
     ----------
-    s : array_like, shape (M,) or (N,)
+    s : (M,) or (N,) array_like
         Singular values
     M : int
         Size of the matrix whose singular values are `s`.
@@ -160,7 +159,7 @@ def diagsvd(s, M, N):
 
     Returns
     -------
-    S : array, shape (M, N)
+    S : (M, N) ndarray
         The S-matrix in the singular value decomposition
 
     """
@@ -178,15 +177,17 @@ def diagsvd(s, M, N):
 # Orthonormal decomposition
 
 def orth(A):
-    """Construct an orthonormal basis for the range of A using SVD
+    """
+    Construct an orthonormal basis for the range of A using SVD
 
     Parameters
     ----------
-    A : array, shape (M, N)
+    A : (M, N) ndarray
+        Input array
 
     Returns
     -------
-    Q : array, shape (M, K)
+    Q : (M, K) ndarray
         Orthonormal basis for the range of A.
         K = effective rank of A, as determined by automatic cutoff
 

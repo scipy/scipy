@@ -35,14 +35,14 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
 
     Parameters
     ----------
-    a : array, shape (M, N)
+    a : (M, N) array_like
         Matrix to be decomposed
     overwrite_a : bool, optional
         Whether data in a is overwritten (may improve performance)
     lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    mode : {'full', 'r', 'economic', 'raw'}
+    mode : {'full', 'r', 'economic', 'raw'}, optional
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r') or both Q and R but computed in
         economy-size ('economic', see Notes). The final option 'raw'
@@ -65,7 +65,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         if ``mode='r'``.
     R : float or complex ndarray
         Of shape (M, N), or (K, N) for ``mode='economic'``.  ``K = min(M, N)``.
-    P : integer ndarray
+    P : int ndarray
         Of shape (N,) for ``pivoting=True``. Not returned if
         ``pivoting=False``.
 
@@ -174,7 +174,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
 
 def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     overwrite_a=False, overwrite_c=False):
-    """Calculate the QR decomposition and multiply Q with a matrix.
+    """
+    Calculate the QR decomposition and multiply Q with a matrix.
 
     Calculate the decomposition ``A = Q R`` where Q is unitary/orthogonal
     and R upper triangular. Multiply Q with a vector or a matrix c.
@@ -187,7 +188,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         Matrix to be decomposed
     c : ndarray, one- or two-dimensional
         calculate the product of c and q, depending on the mode:
-    mode : {'left', 'right'}
+    mode : {'left', 'right'}, optional
         ``dot(Q, c)`` is returned if mode is 'left',
         ``dot(c, Q)`` is returned if mode is 'right'.
         The shape of c must be appropriate for the matrix multiplications,
@@ -214,7 +215,8 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     R : float or complex ndarray
         Of shape (K, N), ``K = min(M, N)``.
     P : ndarray of ints
-        Of shape (N,) for ``pivoting=True``. Not returned if ``pivoting=False``.
+        Of shape (N,) for ``pivoting=True``.
+        Not returned if ``pivoting=False``.
 
     Raises
     ------
@@ -354,25 +356,26 @@ def qr_old(a, overwrite_a=False, lwork=None, check_finite=True):
 
 
 def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
-    """Compute RQ decomposition of a square real matrix.
+    """
+    Compute RQ decomposition of a square real matrix.
 
-    Calculate the decomposition :lm:`A = R Q` where Q is unitary/orthogonal
-    and R upper triangular.
+    Calculate the decomposition ``A = R Q`` where ``Q`` is
+    unitary/orthogonal and ``R`` upper triangular.
 
     Parameters
     ----------
     a : array, shape (M, M)
         Matrix to be decomposed
-    overwrite_a : boolean
+    overwrite_a : bool, optional
         Whether data in a is overwritten (may improve performance)
-    lwork : integer
+    lwork : int, optional
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
-    mode : {'full', 'r', 'economic'}
+    mode : {'full', 'r', 'economic'}, optional
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r') or both Q and R but computed in
         economy-size ('economic', see Notes).
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check the input matrixes contain only finite numbers.
         Disabling may give a performance gain, but may result to problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -380,9 +383,14 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     Returns
     -------
     R : float array, shape (M, N)
+        Upper triangular
     Q : float or complex array, shape (M, M)
+        Unitary/orthogonal
 
-    Raises LinAlgError if decomposition fails
+    Raises
+    ------
+    LinAlgError
+        If decomposition fails.
 
     Examples
     --------

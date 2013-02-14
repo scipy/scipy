@@ -15,29 +15,29 @@ __all__ = ['cont2discrete']
 
 
 def cont2discrete(sys, dt, method="zoh", alpha=None):
-    """Transform a continuous to a discrete state-space system.
+    """
+    Transform a continuous to a discrete state-space system.
 
     Parameters
-    -----------
+    ----------
     sys : a tuple describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
 
-            * 2: (num, den)
-            * 3: (zeros, poles, gain)
-            * 4: (A, B, C, D)
+           * 2: (num, den)
+           * 3: (zeros, poles, gain)
+           * 4: (A, B, C, D)
 
     dt : float
         The discretization time step.
     method : {"gbt", "bilinear", "euler", "backward_diff", "zoh"}
         Which method to use:
 
-            * gbt: generalized bilinear transformation
-            * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
-            * euler: Euler (or forward differencing) method ("gbt" with
-                     alpha=0)
-            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
-            * zoh: zero-order hold (default).
+           * gbt: generalized bilinear transformation
+           * bilinear: Tustin's approximation ("gbt" with alpha=0.5)
+           * euler: Euler (or forward differencing) method ("gbt" with alpha=0)
+           * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
+           * zoh: zero-order hold (default)
 
     alpha : float within [0, 1]
         The generalized bilinear transformation weighting parameter, which
@@ -70,7 +70,8 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
 
     .. [3] G. Zhang, X. Chen, and T. Chen, Digital redesign via the generalized
         bilinear transformation, Int. J. Control, vol. 82, no. 4, pp. 741-754,
-        2009.  (http://www.ece.ualberta.ca/~gfzhang/research/ZCC07_preprint.pdf)
+        2009.
+        (http://www.ece.ualberta.ca/~gfzhang/research/ZCC07_preprint.pdf)
 
     """
     if len(sys) == 2:

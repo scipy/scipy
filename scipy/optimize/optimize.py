@@ -142,45 +142,49 @@ def vecnorm(x, ord=2):
         return numpy.sum(numpy.abs(x)**ord, axis=0)**(1.0 / ord)
 
 def rosen(x):
-    """The Rosenbrock function.
+    """
+    The Rosenbrock function.
 
-    The function computed is
+    The function computed is::
 
         sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0
 
     Parameters
     ----------
-    x : array_like, 1D
-        The point at which the Rosenbrock function is to be computed.
+    x : array_like
+        1-D array of points at which the Rosenbrock function is to be computed.
 
     Returns
     -------
     f : float
-        The value of the Rosenbrock function
+        The value of the Rosenbrock function.
 
     See Also
     --------
     rosen_der, rosen_hess, rosen_hess_prod
+
     """
     x = asarray(x)
     return numpy.sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0, axis=0)
 
 def rosen_der(x):
-    """The derivative (i.e. gradient) of the Rosenbrock function.
+    """
+    The derivative (i.e. gradient) of the Rosenbrock function.
 
     Parameters
     ----------
-    x : array_like, 1D
-        The point at which the derivative is to be computed.
+    x : array_like
+        1-D array of points at which the derivative is to be computed.
 
     Returns
     -------
-    der : 1D numpy array
+    rosen_der : (N,) ndarray
         The gradient of the Rosenbrock function at `x`.
 
     See Also
     --------
     rosen, rosen_hess, rosen_hess_prod
+
     """
     x = asarray(x)
     xm = x[1:-1]
@@ -193,21 +197,23 @@ def rosen_der(x):
     return der
 
 def rosen_hess(x):
-    """The Hessian matrix of the Rosenbrock function.
+    """
+    The Hessian matrix of the Rosenbrock function.
 
     Parameters
     ----------
-    x : array_like, 1D
-        The point at which the Hessian matrix is to be computed.
+    x : array_like
+        1-D array of points at which the Hessian matrix is to be computed.
 
     Returns
     -------
-    hess : 2D numpy array
+    rosen_hess : ndarray
         The Hessian matrix of the Rosenbrock function at `x`.
 
     See Also
     --------
     rosen, rosen_der, rosen_hess_prod
+
     """
     x = atleast_1d(x)
     H = numpy.diag(-400*x[:-1], 1) - numpy.diag(400*x[:-1], -1)
@@ -219,24 +225,26 @@ def rosen_hess(x):
     return H
 
 def rosen_hess_prod(x, p):
-    """Product of the Hessian matrix of the Rosenbrock function with a vector.
+    """
+    Product of the Hessian matrix of the Rosenbrock function with a vector.
 
     Parameters
     ----------
-    x : array_like, 1D
-        The point at which the Hessian matrix is to be computed.
-    p : array_like, 1D, same size as `x`.
-        The vector to be multiplied by the Hessian matrix.
+    x : array_like
+        1-D array of points at which the Hessian matrix is to be computed.
+    p : array_like
+        1-D array, the vector to be multiplied by the Hessian matrix.
 
     Returns
     -------
-    v : 1D numpy array
+    rosen_hess_prod : ndarray
         The Hessian matrix of the Rosenbrock function at `x` multiplied
         by the vector `p`.
 
     See Also
     --------
     rosen, rosen_der, rosen_hess
+
     """
     x = atleast_1d(x)
     Hp = numpy.zeros(len(x), dtype=x.dtype)
@@ -267,11 +275,25 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         The objective function to be minimized.
     x0 : ndarray
         Initial guess.
-    args : tuple
+    args : tuple, optional
         Extra arguments passed to func, i.e. ``f(x,*args)``.
-    callback : callable
+    callback : callable, optional
         Called after each iteration, as callback(xk), where xk is the
         current parameter vector.
+    xtol : float, optional
+        Relative error in xopt acceptable for convergence.
+    ftol : number, optional
+        Relative error in func(xopt) acceptable for convergence.
+    maxiter : int, optional
+        Maximum number of iterations to perform.
+    maxfun : number, optional
+        Maximum number of function evaluations to make.
+    full_output : bool, optional
+        Set to True if fopt and warnflag outputs are desired.
+    disp : bool, optional
+        Set to True to print convergence messages.
+    retall : bool, optional
+        Set to True to return list of solutions at each iteration.
 
     Returns
     -------
@@ -288,23 +310,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         2 : Maximum number of iterations reached.
     allvecs : list
         Solution at each iteration.
-
-    Other parameters
-    ----------------
-    xtol : float
-        Relative error in xopt acceptable for convergence.
-    ftol : number
-        Relative error in func(xopt) acceptable for convergence.
-    maxiter : int
-        Maximum number of iterations to perform.
-    maxfun : number
-        Maximum number of function evaluations to make.
-    full_output : bool
-        Set to True if fopt and warnflag outputs are desired.
-    disp : bool
-        Set to True to print convergence messages.
-    retall : bool
-        Set to True to return list of solutions at each iteration.
 
     See also
     --------
@@ -326,13 +331,14 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
     References
     ----------
-    Nelder, J.A. and Mead, R. (1965), "A simplex method for function
-    minimization", The Computer Journal, 7, pp. 308-313
-    Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
-    Respectable", in Numerical Analysis 1995, Proceedings of the
-    1995 Dundee Biennial Conference in Numerical Analysis, D.F.
-    Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
-    Harlow, UK, pp. 191-208.
+    .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
+           minimization", The Computer Journal, 7, pp. 308-313
+
+    .. [2] Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
+           Respectable", in Numerical Analysis 1995, Proceedings of the
+           1995 Dundee Biennial Conference in Numerical Analysis, D.F.
+           Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
+           Harlow, UK, pp. 191-208.
 
     """
     opts = {'xtol': xtol,
@@ -646,6 +652,15 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         An optional user-supplied function to call after each
         iteration.  Called as callback(xk), where xk is the
         current parameter vector.
+    maxiter : int, optional
+        Maximum number of iterations to perform.
+    full_output : bool, optional
+        If True,return fopt, func_calls, grad_calls, and warnflag
+        in addition to xopt.
+    disp : bool, optional
+        Print convergence message if True.
+    retall : bool, optional
+        Return a list of results at each iteration if True.
 
     Returns
     -------
@@ -666,18 +681,6 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         2 : Gradient and/or function calls not changing.
     allvecs  :  list
         Results at each iteration.  Only returned if retall is True.
-
-    Other Parameters
-    ----------------
-    maxiter : int
-        Maximum number of iterations to perform.
-    full_output : bool
-        If True,return fopt, func_calls, grad_calls, and warnflag
-        in addition to xopt.
-    disp : bool
-        Print convergence message if True.
-    retall : bool
-        Return a list of results at each iteration if True.
 
     See also
     --------
@@ -867,66 +870,147 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
     Parameters
     ----------
-    f : callable f(x,*args)
-        Objective function to be minimized.
+    f : callable, ``f(x, *args)``
+        Objective function to be minimized.  Here `x` must be a 1-D array of
+        the variables that are to be changed in the search for a minimum, and
+        `args` are the other (fixed) parameters of `f`.
     x0 : ndarray
-        Initial guess.
-    fprime : callable f'(x,*args), optional
-        Function which computes the gradient of f.
+        A user-supplied initial estimate of `xopt`, the optimal value of `x`.
+        It must be a 1-D array of values.
+    fprime : callable, ``fprime(x, *args)``, optional
+        A function that returns the gradient of `f` at `x`. Here `x` and `args`
+        are as described above for `f`. The returned value must be a 1-D array.
+        Defaults to None, in which case the gradient is approximated
+        numerically (see `epsilon`, below).
     args : tuple, optional
-        Extra arguments passed to f and fprime.
+        Parameter values passed to `f` and `fprime`. Must be supplied whenever
+        additional fixed parameters are needed to completely specify the
+        functions `f` and `fprime`.
     gtol : float, optional
-        Stop when norm of gradient is less than gtol.
+        Stop when the norm of the gradient is less than `gtol`.
     norm : float, optional
-        Order of vector norm to use.  -Inf is min, Inf is max.
+        Order to use for the norm of the gradient
+        (``-np.Inf`` is min, ``np.Inf`` is max).
     epsilon : float or ndarray, optional
-        If fprime is approximated, use this value for the step
-        size (can be scalar or vector).
+        Step size(s) to use when `fprime` is approximated numerically. Can be a
+        scalar or a 1-D array.  Defaults to ``sqrt(eps)``, with eps the
+        floating point machine precision.  Usually ``sqrt(eps)`` is about
+        1.5e-8.
+    maxiter : int, optional
+        Maximum number of iterations to perform. Default is ``200 * len(x0)``.
+    full_output : bool, optional
+        If True, return `fopt`, `func_calls`, `grad_calls`, and `warnflag` in
+        addition to `xopt`.  See the Returns section below for additional
+        information on optional return values.
+    disp : bool, optional
+        If True, return a convergence message, followed by `xopt`.
+    retall : bool, optional
+        If True, add to the returned values the results of each iteration.
     callback : callable, optional
-        An optional user-supplied function, called after each
-        iteration.  Called as callback(xk), where xk is the
-        current parameter vector.
+        An optional user-supplied function, called after each iteration.
+        Called as ``callback(xk)``, where ``xk`` is the current value of `x0`.
 
     Returns
     -------
     xopt : ndarray
-        Parameters which minimize f, i.e. f(xopt) == fopt.
-    fopt : float
-        Minimum value found, f(xopt).
-    func_calls : int
-        The number of function_calls made.
-    grad_calls : int
-        The number of gradient calls made.
-    warnflag : int
-        1 : Maximum number of iterations exceeded.
-        2 : Gradient and/or function calls not changing.
-    allvecs : ndarray
-        If retall is True (see other parameters below), then this
-        vector containing the result at each iteration is returned.
+        Parameters which minimize f, i.e. ``f(xopt) == fopt``.
+    fopt : float, optional
+        Minimum value found, f(xopt).  Only returned if `full_output` is True.
+    func_calls : int, optional
+        The number of function_calls made.  Only returned if `full_output`
+        is True.
+    grad_calls : int, optional
+        The number of gradient calls made. Only returned if `full_output` is
+        True.
+    warnflag : int, optional
+        Integer value with warning status, only returned if `full_output` is
+        True.
 
-    Other Parameters
-    ----------------
-    maxiter : int
-        Maximum number of iterations to perform.
-    full_output : bool
-        If True then return fopt, func_calls, grad_calls, and
-        warnflag in addition to xopt.
-    disp : bool
-        Print convergence message if True.
-    retall : bool
-        Return a list of results at each iteration if True.
+        0 : Success.
 
-    See also
+        1 : The maximum number of iterations was exceeded.
+
+        2 : Gradient and/or function calls were not changing.  May indicate
+            that precision was lost, i.e., the routine did not converge.
+
+    allvecs : list of ndarray, optional
+        List of arrays, containing the results at each iteration.
+        Only returned if `retall` is True.
+
+    See Also
     --------
-    minimize: Interface to minimization algorithms for multivariate
-        functions. See the 'CG' `method` in particular.
+    minimize : common interface to all `scipy.optimize` algorithms for
+               unconstrained and constrained minimization of multivariate
+               functions.  It provides an alternative way to call
+               ``fmin_cg``, by specifying ``method='CG'``.
 
     Notes
     -----
-    Optimize the function, f, whose gradient is given by fprime
-    using the nonlinear conjugate gradient algorithm of Polak and
-    Ribiere. See Wright & Nocedal, 'Numerical Optimization',
-    1999, pg. 120-122.
+    This conjugate gradient algorithm is based on that of Polak and Ribiere
+    [1]_.
+
+    Conjugate gradient methods tend to work better when:
+
+    1. `f` has a unique global minimizing point, and no local minima or
+       other stationary points,
+    2. `f` is, at least locally, reasonably well approximated by a
+       quadratic function of the variables,
+    3. `f` is continuous and has a continuous gradient,
+    4. `fprime` is not too large, e.g., has a norm less than 1000,
+    5. The initial guess, `x0`, is reasonably close to `f` 's global
+       minimizing point, `xopt`.
+
+    References
+    ----------
+    .. [1] Wright & Nocedal, "Numerical Optimization", 1999, pp. 120-122.
+
+    Examples
+    --------
+    Example 1: seek the minimum value of the expression
+    ``a*u**2 + b*u*v + c*v**2 + d*u + e*v + f`` for given values
+    of the parameters and an initial guess ``(u, v) = (0, 0)``.
+
+    >>> args = (2, 3, 7, 8, 9, 10)  # parameter values
+    >>> def f(x, *args):
+    ...     u, v = x
+    ...     a, b, c, d, e, f = args
+    ...     return a*u**2 + b*u*v + c*v**2 + d*u + e*v + f
+    >>> def gradf(x, *args):
+    ...     u, v = x
+    ...     a, b, c, d, e, f = args
+    ...     gu = 2*a*u + b*v + d     # u-component of the gradient
+    ...     gv = b*u + 2*c*v + e     # v-component of the gradient
+    ...     return np.asarray((gu, gv))
+    >>> x0 = np.asarray((0, 0))  # Initial guess.
+    >>> from scipy import optimize
+    >>> res1 = optimize.fmin_cg(f, x0, fprime=gradf, args=args)
+    >>> print 'res1 = ', res1
+    Optimization terminated successfully.
+             Current function value: 1.617021
+             Iterations: 2
+             Function evaluations: 5
+             Gradient evaluations: 5
+    res1 =  [-1.80851064 -0.25531915]
+
+    Example 2: solve the same problem using the `minimize` function.
+    (This `myopts` dictionary shows all of the available options,
+    although in practice only non-default values would be needed.
+    The returned value will be a dictionary.)
+
+    >>> opts = {'maxiter' : None,    # default value.
+    ...         'disp' : True,    # non-default value.
+    ...         'gtol' : 1e-5,    # default value.
+    ...         'norm' : np.inf,  # default value.
+    ...         'eps' : 1.4901161193847656e-08}  # default value.
+    >>> res2 = optimize.minimize(f, x0, jac=gradf, args=args,
+    ...                          method='CG', options=opts)
+    Optimization terminated successfully.
+            Current function value: 1.617021
+            Iterations: 2
+            Function evaluations: 5
+            Gradient evaluations: 5
+    >>> res2.x  # minimum found
+    array([-1.80851064 -0.25531915])
 
     """
     opts = {'gtol': gtol,
@@ -1075,19 +1159,18 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     """
     Unconstrained minimization of a function using the Newton-CG method.
 
-
     Parameters
     ----------
-    f : callable f(x,*args)
+    f : callable ``f(x, *args)``
         Objective function to be minimized.
     x0 : ndarray
         Initial guess.
-    fprime : callable f'(x,*args)
+    fprime : callable ``f'(x, *args)``
         Gradient of f.
-    fhess_p : callable fhess_p(x,p,*args), optional
+    fhess_p : callable ``fhess_p(x, p, *args)``, optional
         Function which computes the Hessian of f times an
         arbitrary vector, p.
-    fhess : callable fhess(x,*args), optional
+    fhess : callable ``fhess(x, *args)``, optional
         Function to compute the Hessian matrix of f.
     args : tuple, optional
         Extra arguments passed to f, fprime, fhess_p, and fhess
@@ -1099,6 +1182,17 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         An optional user-supplied function which is called after
         each iteration.  Called as callback(xk), where xk is the
         current parameter vector.
+    avextol : float, optional
+        Convergence is assumed when the average relative error in
+        the minimizer falls below this amount.
+    maxiter : int, optional
+        Maximum number of iterations to perform.
+    full_output : bool, optional
+        If True, return the optional outputs.
+    disp : bool, optional
+        If True, print convergence message.
+    retall : bool, optional
+        If True, return a list of results at each iteration.
 
     Returns
     -------
@@ -1117,20 +1211,6 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         1 : Maximum number of iterations exceeded.
     allvecs : list
         The result at each iteration, if retall is True (see below).
-
-    Other Parameters
-    ----------------
-    avextol : float
-        Convergence is assumed when the average relative error in
-        the minimizer falls below this amount.
-    maxiter : int
-        Maximum number of iterations to perform.
-    full_output : bool
-        If True, return the optional outputs.
-    disp : bool
-        If True, print convergence message.
-    retall : bool
-        If True, return a list of results at each iteration.
 
     See also
     --------
@@ -1649,7 +1729,8 @@ class Brent:
 
 
 def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
-    """Given a function of one-variable and a possible bracketing interval,
+    """
+    Given a function of one-variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
     tol.
 
@@ -1665,9 +1746,13 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         then they are assumed to be a starting interval for a
         downhill bracket search (see `bracket`); it doesn't always
         mean that the obtained solution will satisfy a<=x<=c.
+    tol : float
+        Stop if between iteration change is less than `tol`.
     full_output : bool
         If True, return all output args (xmin, fval, iter,
         funcalls).
+    maxiter : int
+        Maximum number of iterations in solution.
 
     Returns
     -------
@@ -1713,7 +1798,10 @@ def _minimize_scalar_brent(func, brack=None, args=(),
     return Result(fun=fval, x=x, nit=nit, nfev=nfev)
 
 def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
-    """ Given a function of one-variable and a possible bracketing interval,
+    """
+    Return the minimum of a function of one variable.
+
+    Given a function of one variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
     tol.
 
@@ -1922,14 +2010,29 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         Objective function to be minimized.
     x0 : ndarray
         Initial guess.
-    args : tuple
+    args : tuple, optional
         Extra arguments passed to func.
-    callback : callable
+    callback : callable, optional
         An optional user-supplied function, called after each
         iteration.  Called as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
-    direc : ndarray
+    direc : ndarray, optional
         Initial direction set.
+    xtol : float, optional
+        Line-search error tolerance.
+    ftol : float, optional
+        Relative error in ``func(xopt)`` acceptable for convergence.
+    maxiter : int, optional
+        Maximum number of iterations to perform.
+    maxfun : int, optional
+        Maximum number of function evaluations to make.
+    full_output : bool, optional
+        If True, fopt, xi, direc, iter, funcalls, and
+        warnflag are returned.
+    disp : bool, optional
+        If True, print convergence messages.
+    retall : bool, optional
+        If True, return a list of the solution at each iteration.
 
     Returns
     -------
@@ -1949,24 +2052,6 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             2 : Maximum number of iterations.
     allvecs : list
         List of solutions at each iteration.
-
-    Other Parameters
-    ----------------
-    xtol : float
-        Line-search error tolerance.
-    ftol : float
-        Relative error in ``func(xopt)`` acceptable for convergence.
-    maxiter : int
-        Maximum number of iterations to perform.
-    maxfun : int
-        Maximum number of function evaluations to make.
-    full_output : bool
-        If True, fopt, xi, direc, iter, funcalls, and
-        warnflag are returned.
-    disp : bool
-        If True, print convergence messages.
-    retall : bool
-        If True, return a list of the solution at each iteration.
 
     See also
     --------
@@ -1995,7 +2080,6 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     2. The direction of greatest increase accounted for a large sufficient
        fraction of the decrease in the function value from that iteration of
        the inner loop.
-
 
     References
     ----------
@@ -2256,7 +2340,8 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin, disp=False):
         return xmin
 
 def show_options(solver, method=None):
-    """Show documentation for additional options of optimization solvers.
+    """
+    Show documentation for additional options of optimization solvers.
 
     These are method-specific options that can be supplied through the
     ``options`` dict.
@@ -2464,16 +2549,16 @@ def show_options(solver, method=None):
         xtol : float
             Relative error desired in the approximate solution.
         gtol : float
-            Orthogonality desired between the function vector and the columns of
-            the Jacobian.
+            Orthogonality desired between the function vector and the columns
+            of the Jacobian.
         maxfev : int
-            The maximum number of calls to the function. If zero, then 100*(N+1) is
-            the maximum where N is the number of elements in x0.
+            The maximum number of calls to the function. If zero, then
+            100*(N+1) is the maximum where N is the number of elements in x0.
         epsfcn : float
-            A suitable step length for the forward-difference approximation of the
-            Jacobian (for Dfun=None). If epsfcn is less than the machine precision,
-            it is assumed that the relative errors in the functions are of the
-            order of the machine precision.
+            A suitable step length for the forward-difference approximation of
+            the Jacobian (for Dfun=None). If epsfcn is less than the machine
+            precision, it is assumed that the relative errors in the functions
+            are of the order of the machine precision.
         factor : float
             A parameter determining the initial step bound
             (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
@@ -2503,8 +2588,9 @@ def show_options(solver, method=None):
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
-            Which type of a line search to use to determine the step size in the
-            direction given by the Jacobian approximation. Defaults to 'armijo'.
+            Which type of a line search to use to determine the step size in
+            the direction given by the Jacobian approximation. Defaults to
+            'armijo'.
         jac_options : dict, optional
             Options for the respective Jacobian approximation.
                 alpha : float, optional
@@ -2521,7 +2607,8 @@ def show_options(solver, method=None):
                             extra parameters.
                         - ``simple``: drop oldest matrix column. Has no
                             extra parameters.
-                        - ``svd``: keep only the most significant SVD components.
+                        - ``svd``: keep only the most significant SVD
+                            components.
                           Extra parameters:
                               - ``to_retain`: number of SVD components to
                                   retain when rank reduction is done.
@@ -2553,8 +2640,9 @@ def show_options(solver, method=None):
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
-            Which type of a line search to use to determine the step size in the
-            direction given by the Jacobian approximation. Defaults to 'armijo'.
+            Which type of a line search to use to determine the step size in
+            the direction given by the Jacobian approximation. Defaults to
+            'armijo'.
         jac_options : dict, optional
             Options for the respective Jacobian approximation.
                 alpha : float, optional
@@ -2571,7 +2659,8 @@ def show_options(solver, method=None):
                             extra parameters.
                         - ``simple``: drop oldest matrix column. Has no
                             extra parameters.
-                        - ``svd``: keep only the most significant SVD components.
+                        - ``svd``: keep only the most significant SVD
+                            components.
                           Extra parameters:
                               - ``to_retain`: number of SVD components to
                                   retain when rank reduction is done.
@@ -2603,8 +2692,9 @@ def show_options(solver, method=None):
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
-            Which type of a line search to use to determine the step size in the
-            direction given by the Jacobian approximation. Defaults to 'armijo'.
+            Which type of a line search to use to determine the step size in
+            the direction given by the Jacobian approximation. Defaults to
+            'armijo'.
         jac_options : dict, optional
             Options for the respective Jacobian approximation.
                 alpha : float, optional
@@ -2638,8 +2728,9 @@ def show_options(solver, method=None):
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
-            Which type of a line search to use to determine the step size in the
-            direction given by the Jacobian approximation. Defaults to 'armijo'.
+            Which type of a line search to use to determine the step size in
+            the direction given by the Jacobian approximation. Defaults to
+            'armijo'.
         jac_options : dict, optional
             Options for the respective Jacobian approximation.
                 alpha : float, optional
@@ -2668,8 +2759,9 @@ def show_options(solver, method=None):
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
-            Which type of a line search to use to determine the step size in the
-            direction given by the Jacobian approximation. Defaults to 'armijo'.
+            Which type of a line search to use to determine the step size in
+            the direction given by the Jacobian approximation. Defaults to
+            'armijo'.
         jac_options : dict, optional
             Options for the respective Jacobian approximation.
                 alpha : float, optional
@@ -2698,8 +2790,9 @@ def show_options(solver, method=None):
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
-            Which type of a line search to use to determine the step size in the
-            direction given by the Jacobian approximation. Defaults to 'armijo'.
+            Which type of a line search to use to determine the step size in
+            the direction given by the Jacobian approximation. Defaults to
+            'armijo'.
         jac_options : dict, optional
             Options for the respective Jacobian approximation.
                 alpha : float, optional
@@ -2731,16 +2824,19 @@ def show_options(solver, method=None):
         tol_norm : function(vector) -> scalar, optional
             Norm to use in convergence check. Default is the maximum norm.
         line_search : {None, 'armijo' (default), 'wolfe'}, optional
-            Which type of a line search to use to determine the step size in the
-            direction given by the Jacobian approximation. Defaults to 'armijo'.
+            Which type of a line search to use to determine the step size in
+            the direction given by the Jacobian approximation. Defaults to
+            'armijo'.
         jac_options : dict, optional
             Options for the respective Jacobian approximation.
                 rdiff : float, optional
                     Relative step size to use in numerical differentiation.
-                method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres'} or function
+                method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres'} or
+                    function
                     Krylov method to use to approximate the Jacobian.
-                    Can be a string, or a function implementing the same interface as
-                    the iterative solvers in `scipy.sparse.linalg`.
+                    Can be a string, or a function implementing the same
+                    interface as the iterative solvers in
+                    `scipy.sparse.linalg`.
 
                     The default is `scipy.sparse.linalg.lgmres`.
                 inner_M : LinearOperator or InverseJacobian
@@ -2751,14 +2847,17 @@ def show_options(solver, method=None):
                     >>> jac = BroydenFirst()
                     >>> kjac = KrylovJacobian(inner_M=jac.inverse).
 
-                    If the preconditioner has a method named 'update', it will be called
-                    as ``update(x, f)`` after each nonlinear step, with ``x`` giving
-                    the current point, and ``f`` the current function value.
+                    If the preconditioner has a method named 'update', it will
+                    be called as ``update(x, f)`` after each nonlinear step,
+                    with ``x`` giving the current point, and ``f`` the current
+                    function value.
                 inner_tol, inner_maxiter, ...
-                    Parameters to pass on to the \"inner\" Krylov solver.
+                    Parameters to pass on to the "inner" Krylov solver.
                     See `scipy.sparse.linalg.gmres` for details.
                 outer_k : int, optional
-                    Size of the subspace kept across LGMRES nonlinear iterations.
+                    Size of the subspace kept across LGMRES nonlinear
+                    iterations.
+
                     See `scipy.sparse.linalg.lgmres` for details.
 
     """

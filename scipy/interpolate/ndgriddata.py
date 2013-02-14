@@ -28,9 +28,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     Parameters
     ----------
-    points : ndarray of floats, shape (npoints, ndims)
+    points : (Npoints, Ndims) ndarray of floats
         Data point coordinates.
-    values : ndarray of float or complex, shape (npoints, ...)
+    values : (Npoints,) ndarray of float or complex
         Data values.
 
     Notes
@@ -74,29 +74,29 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
 
     Parameters
     ----------
-    points : ndarray of floats, shape (npoints, ndims)
-        Data point coordinates. Can either be a ndarray of
-        size (npoints, ndim), or a tuple of `ndim` arrays.
-    values : ndarray of float or complex, shape (npoints, ...)
+    points : ndarray of floats, shape (N, ndim)
+        Data point coordinates. Can either be an array of
+        size (N, ndim), or a tuple of `ndim` arrays.
+    values : ndarray of float or complex, shape (N,)
         Data values.
-    xi : ndarray of float, shape (..., ndim)
-        Points where to interpolate data at.
+    xi : ndarray of float, shape (M, ndim)
+        Points at which to interpolate data.
 
     method : {'linear', 'nearest', 'cubic'}, optional
         Method of interpolation. One of
 
-        - ``nearest``: return the value at the data point closest to
+        ``nearest``: return the value at the data point closest to
           the point of interpolation.  See `NearestNDInterpolator` for
           more details.
 
-        - ``linear``: tesselate the input point set to n-dimensional
+        ``linear``: tesselate the input point set to n-dimensional
           simplices, and interpolate linearly on each simplex.  See
           `LinearNDInterpolator` for more details.
 
-        - ``cubic`` (1-D): return the value determined from a cubic
+        ``cubic`` (1-D): return the value determined from a cubic
           spline.
 
-        - ``cubic`` (2-D): return the value determined from a
+        ``cubic`` (2-D): return the value determined from a
           piecewise cubic, continuously differentiable (C1), and
           approximately curvature-minimizing polynomial surface. See
           `CloughTocher2DInterpolator` for more details.

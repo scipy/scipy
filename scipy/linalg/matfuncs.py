@@ -29,17 +29,18 @@ eps = np.finfo(float).eps
 feps = np.finfo(single).eps
 
 def expm(A, q=None):
-    """Compute the matrix exponential using Pade approximation.
+    """
+    Compute the matrix exponential using Pade approximation.
 
     Parameters
     ----------
-    A : array or sparse matrix, shape(M,M)
-        2D Array or Matrix (sparse or dense) to be exponentiated
+    A : (N, N) array_like
+        Matrix to be exponentiated
 
     Returns
     -------
-    expA : array, shape(M,M)
-        Matrix exponential of A
+    expm : (N, N) ndarray
+        Matrix exponential of `A`
 
     References
     ----------
@@ -54,17 +55,18 @@ def expm(A, q=None):
     return scipy.sparse.linalg.expm(A)
 
 def expm2(A):
-    """Compute the matrix exponential using eigenvalue decomposition.
+    """
+    Compute the matrix exponential using eigenvalue decomposition.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
         Matrix to be exponentiated
 
     Returns
     -------
-    expA : array, shape(M,M)
-        Matrix exponential of A
+    expm2 : (N, N) ndarray
+        Matrix exponential of `A`
 
     """
     A = asarray(A)
@@ -81,19 +83,20 @@ def expm2(A):
         return r.astype(t)
 
 def expm3(A, q=20):
-    """Compute the matrix exponential using Taylor series.
+    """
+    Compute the matrix exponential using Taylor series.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
         Matrix to be exponentiated
-    q : integer
+    q : int
         Order of the Taylor series
 
     Returns
     -------
-    expA : array, shape(M,M)
-        Matrix exponential of A
+    expm3 : (N, N) ndarray
+        Matrix exponential of `A`
 
     """
     A = asarray(A)
@@ -133,17 +136,19 @@ def toreal(arr, tol=None):
     return arr
 
 def cosm(A):
-    """Compute the matrix cosine.
+    """
+    Compute the matrix cosine.
 
     This routine uses expm to compute the matrix exponentials.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
+        Input array
 
     Returns
     -------
-    cosA : array, shape(M,M)
+    cosm : (N, N) ndarray
         Matrix cosine of A
 
     """
@@ -155,18 +160,20 @@ def cosm(A):
 
 
 def sinm(A):
-    """Compute the matrix sine.
+    """
+    Compute the matrix sine.
 
     This routine uses expm to compute the matrix exponentials.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
+        Input array.
 
     Returns
     -------
-    sinA : array, shape(M,M)
-        Matrix cosine of A
+    sinm : (N, N) ndarray
+        Matrix cosine of `A`
 
     """
     A = asarray(A)
@@ -176,18 +183,20 @@ def sinm(A):
         return -0.5j*(expm(1j*A) - expm(-1j*A))
 
 def tanm(A):
-    """Compute the matrix tangent.
+    """
+    Compute the matrix tangent.
 
     This routine uses expm to compute the matrix exponentials.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
+        Input array.
 
     Returns
     -------
-    tanA : array, shape(M,M)
-        Matrix tangent of A
+    tanm : (N, N) ndarray
+        Matrix tangent of `A`
 
     """
     A = asarray(A)
@@ -197,18 +206,20 @@ def tanm(A):
         return solve(cosm(A), sinm(A))
 
 def coshm(A):
-    """Compute the hyperbolic matrix cosine.
+    """
+    Compute the hyperbolic matrix cosine.
 
     This routine uses expm to compute the matrix exponentials.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
+        Input array.
 
     Returns
     -------
-    coshA : array, shape(M,M)
-        Hyperbolic matrix cosine of A
+    coshm : (N, N) ndarray
+        Hyperbolic matrix cosine of `A`
 
     """
     A = asarray(A)
@@ -218,18 +229,20 @@ def coshm(A):
         return 0.5*(expm(A) + expm(-A))
 
 def sinhm(A):
-    """Compute the hyperbolic matrix sine.
+    """
+    Compute the hyperbolic matrix sine.
 
     This routine uses expm to compute the matrix exponentials.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
+        Input array.
 
     Returns
     -------
-    sinhA : array, shape(M,M)
-        Hyperbolic matrix sine of A
+    sinhm : (N, N) ndarray
+        Hyperbolic matrix sine of `A`
 
     """
     A = asarray(A)
@@ -239,18 +252,20 @@ def sinhm(A):
         return 0.5*(expm(A) - expm(-A))
 
 def tanhm(A):
-    """Compute the hyperbolic matrix tangent.
+    """
+    Compute the hyperbolic matrix tangent.
 
     This routine uses expm to compute the matrix exponentials.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
+        Input array
 
     Returns
     -------
-    tanhA : array, shape(M,M)
-        Hyperbolic matrix tangent of A
+    tanhm : (N, N) ndarray
+        Hyperbolic matrix tangent of `A`
 
     """
     A = asarray(A)
@@ -260,29 +275,31 @@ def tanhm(A):
         return solve(coshm(A), sinhm(A))
 
 def funm(A, func, disp=True):
-    """Evaluate a matrix function specified by a callable.
+    """
+    Evaluate a matrix function specified by a callable.
 
-    Returns the value of matrix-valued function f at A. The function f
-    is an extension of the scalar-valued function func to matrices.
+    Returns the value of matrix-valued function ``f`` at `A`. The
+    function ``f`` is an extension of the scalar-valued function `func`
+    to matrices.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
         Matrix at which to evaluate the function
     func : callable
         Callable object that evaluates a scalar function f.
         Must be vectorized (eg. using vectorize).
-    disp : boolean
+    disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
 
     Returns
     -------
-    fA : array, shape(M,M)
-        Value of the matrix function specified by func evaluated at A
-
-    (if disp == False)
+    funm : (N, N) ndarray
+        Value of the matrix function specified by func evaluated at `A`
     errest : float
+        (if disp == False)
+
         1-norm of the estimated error, ||err||_1 / ||A||_1
 
     """
@@ -335,25 +352,27 @@ def funm(A, func, disp=True):
         return F, err
 
 def logm(A, disp=True):
-    """Compute matrix logarithm.
+    """
+    Compute matrix logarithm.
 
-    The matrix logarithm is the inverse of expm: expm(logm(A)) == A
+    The matrix logarithm is the inverse of
+    expm: expm(logm(`A`)) == `A`
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
         Matrix whose logarithm to evaluate
-    disp : boolean
+    disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
 
     Returns
     -------
-    logA : array, shape(M,M)
-        Matrix logarithm of A
-
-    (if disp == False)
+    logm : (N, N) ndarray
+        Matrix logarithm of `A`
     errest : float
+        (if disp == False)
+
         1-norm of the estimated error, ||err||_1 / ||A||_1
 
     """
@@ -386,25 +405,26 @@ def logm(A, disp=True):
         return F, errest
 
 def signm(a, disp=True):
-    """Matrix sign function.
+    """
+    Matrix sign function.
 
     Extension of the scalar sign(x) to matrices.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
         Matrix at which to evaluate the sign function
-    disp : boolean
+    disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
 
     Returns
     -------
-    sgnA : array, shape(M,M)
-        Value of the sign function at A
-
-    (if disp == False)
+    signm : (N, N) ndarray
+        Value of the sign function at `A`
     errest : float
+        (if disp == False)
+
         1-norm of the estimated error, ||err||_1 / ||A||_1
 
     Examples
@@ -463,23 +483,25 @@ def signm(a, disp=True):
         return S0, errest
 
 def sqrtm(A, disp=True):
-    """Matrix square root.
+    """
+    Matrix square root.
 
     Parameters
     ----------
-    A : array, shape(M,M)
+    A : (N, N) array_like
         Matrix whose square root to evaluate
-    disp : boolean
+    disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
 
     Returns
     -------
-    sgnA : array, shape(M,M)
-        Value of the sign function at A
+    sgrtm : (N, N) ndarray
+        Value of the sign function at `A`
 
-    (if disp == False)
     errest : float
+        (if disp == False)
+
         Frobenius norm of the estimated error, ||err||_F / ||A||_F
 
     Notes

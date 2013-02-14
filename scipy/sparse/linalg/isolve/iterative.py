@@ -393,10 +393,10 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
 
     Notes
     -----
-    A preconditioner, P, is chosen such that P is close to A but easy to solve for.
-    The preconditioner parameter required by this routine is ``M = P^-1``.
-    The inverse should preferably not be calculated explicitly.  Rather, use the
-    following template to produce M::
+    A preconditioner, P, is chosen such that P is close to A but easy to solve
+    for. The preconditioner parameter required by this routine is
+    ``M = P^-1``. The inverse should preferably not be calculated
+    explicitly.  Rather, use the following template to produce M::
 
       # Construct a linear operator that computes P^-1 * x.
       import scipy.sparse.linalg as spla

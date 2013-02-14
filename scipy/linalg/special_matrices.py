@@ -42,7 +42,8 @@ def tri(N, M=None, k=0, dtype=None):
 
     Returns
     -------
-    A : array, shape (N, M)
+    tri : (N, M) ndarray
+        Tri matrix.
 
     Examples
     --------
@@ -72,19 +73,22 @@ def tri(N, M=None, k=0, dtype=None):
 
 
 def tril(m, k=0):
-    """Make a copy of a matrix with elements above the k-th diagonal zeroed.
+    """
+    Make a copy of a matrix with elements above the k-th diagonal zeroed.
 
     Parameters
     ----------
-    m : array
+    m : array_like
         Matrix whose elements to return
     k : integer
         Diagonal above which to zero elements.
-        k == 0 is the main diagonal, k < 0 subdiagonal and k > 0 superdiagonal.
+        `k` == 0 is the main diagonal, `k` < 0 subdiagonal and
+        `k` > 0 superdiagonal.
 
     Returns
     -------
-    A : array, shape m.shape, dtype m.dtype
+    tril : ndarray
+        Return is the same shape and type as `m`.
 
     Examples
     --------
@@ -102,19 +106,23 @@ def tril(m, k=0):
 
 
 def triu(m, k=0):
-    """Make a copy of a matrix with elements below the k-th diagonal zeroed.
+    """
+    Make a copy of a matrix with elements below the k-th diagonal zeroed.
 
     Parameters
     ----------
-    m : array
+    m : array_like
         Matrix whose elements to return
-    k : integer
+    k : int, optional
         Diagonal below which to zero elements.
-        k == 0 is the main diagonal, k < 0 subdiagonal and k > 0 superdiagonal.
+        `k` == 0 is the main diagonal, `k` < 0 subdiagonal and
+        `k` > 0 superdiagonal.
 
     Returns
     -------
-    A : array, shape m.shape, dtype m.dtype
+    triu : ndarray
+        Return matrix with zeroed elements below the k-th diagonal and has
+        same shape and type as `m`.
 
     Examples
     --------
@@ -153,7 +161,7 @@ def toeplitz(c, r=None):
 
     Returns
     -------
-    A : array, shape (len(c), len(r))
+    A : (len(c), len(r)) ndarray
         The Toeplitz matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
     See also
@@ -201,12 +209,12 @@ def circulant(c):
 
     Parameters
     ----------
-    c : array_like
+    c : (N,) array_like
         1-D array, the first column of the matrix.
 
     Returns
     -------
-    A : array, shape (len(c), len(c))
+    A : (N, N) ndarray
         A circulant matrix whose first column is `c`.
 
     See also
@@ -248,7 +256,7 @@ def hankel(c, r=None):
     c : array_like
         First column of the matrix.  Whatever the actual shape of `c`, it
         will be converted to a 1-D array.
-    r : array_like, 1D
+    r : array_like
         Last row of the matrix. If None, ``r = zeros_like(c)`` is assumed.
         r[0] is ignored; the last row of the returned matrix is
         ``[c[-1], r[1:]]``.  Whatever the actual shape of `r`, it will be
@@ -256,7 +264,7 @@ def hankel(c, r=None):
 
     Returns
     -------
-    A : array, shape (len(c), len(r))
+    A : (len(c), len(r)) ndarray
         The Hankel matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
     See also
@@ -297,7 +305,7 @@ def hadamard(n, dtype=int):
     """
     Construct a Hadamard matrix.
 
-    `hadamard(n)` constructs an n-by-n Hadamard matrix, using Sylvester's
+    Constructs an n-by-n Hadamard matrix, using Sylvester's
     construction.  `n` must be a power of 2.
 
     Parameters
@@ -309,7 +317,7 @@ def hadamard(n, dtype=int):
 
     Returns
     -------
-    H : ndarray with shape (n, n)
+    H : (n, n) ndarray
         The Hadamard matrix.
 
     Notes
@@ -359,17 +367,16 @@ def leslie(f, s):
 
     Parameters
     ----------
-    f : array_like
-        The "fecundity" coefficients, has to be 1-D.
-    s : array_like
+    f : (N,) array_like
+        The "fecundity" coefficients.
+    s : (N-1,) array_like
         The "survival" coefficients, has to be 1-D.  The length of `s`
         must be one less than the length of `f`, and it must be at least 1.
 
     Returns
     -------
-    L : ndarray
-        Returns a 2-D ndarray of shape ``(n, n)``, where `n` is the
-        length of `f`.  The array is zero except for the first row,
+    L : (N, N) ndarray
+        The array is zero except for the first row,
         which is `f`, and the first sub-diagonal, which is `s`.
         The data-type of the array will be the data-type of ``f[0]+s[0]``.
 
@@ -427,7 +434,8 @@ def all_mat(*args):
 
 
 def kron(a, b):
-    """Kronecker product of a and b.
+    """
+    Kronecker product.
 
     The result is the block matrix::
 
@@ -438,13 +446,15 @@ def kron(a, b):
 
     Parameters
     ----------
-    a : array, shape (M, N)
-    b : array, shape (P, Q)
+    a : (M, N) ndarray
+        Input array
+    b : (P, Q) ndarray
+        Input array
 
     Returns
     -------
-    A : array, shape (M*P, N*Q)
-        Kronecker product of a and b
+    A : (M*P, N*Q) ndarray
+        Kronecker product of `a` and `b`.
 
     Examples
     --------
@@ -542,15 +552,14 @@ def companion(a):
 
     Parameters
     ----------
-    a : array_like
+    a : (N,) array_like
         1-D array of polynomial coefficients.  The length of `a` must be
         at least two, and ``a[0]`` must not be zero.
 
     Returns
     -------
-    c : ndarray
-        A square array of shape ``(n-1, n-1)``, where `n` is the length
-        of `a`.  The first row of `c` is ``-a[1:]/a[0]``, and the first
+    c : (N-1, N-1) ndarray
+        The first row of `c` is ``-a[1:]/a[0]``, and the first
         sub-diagonal is all ones.  The data-type of the array is the same
         as the data-type of ``1.0*a[0]``.
 
@@ -599,7 +608,8 @@ def companion(a):
 
 
 def hilbert(n):
-    """Create a Hilbert matrix of order `n`.
+    """
+    Create a Hilbert matrix of order `n`.
 
     Returns the `n` by `n` array with entries `h[i,j] = 1 / (i + j + 1)`.
 
@@ -610,7 +620,7 @@ def hilbert(n):
 
     Returns
     -------
-    h : ndarray with shape (n, n)
+    h : (n, n) ndarray
         The Hilbert matrix.
 
     See Also
@@ -636,7 +646,8 @@ def hilbert(n):
 
 
 def invhilbert(n, exact=False):
-    """Compute the inverse of the Hilbert matrix of order `n`.
+    """
+    Compute the inverse of the Hilbert matrix of order `n`.
 
     The entries in the inverse of a Hilbert matrix are integers.  When `n`
     is greater than 14, some entries in the inverse exceed the upper limit
@@ -657,7 +668,7 @@ def invhilbert(n, exact=False):
 
     Returns
     -------
-    invh : ndarray with shape (n, n)
+    invh : (n, n) ndarray
         The data type of the array is np.float64 if `exact` is False.
         If `exact` is True, the data type is either np.int64 (for n <= 14)
         or object (for n > 14).  In the latter case, the objects in the
@@ -688,6 +699,7 @@ def invhilbert(n, exact=False):
     4.2475099528537506e+19
     >>> invhilbert(16, exact=True)[7,7]
     42475099528537378560L
+
     """
     if exact:
         if n > 14:
@@ -710,7 +722,8 @@ def invhilbert(n, exact=False):
 
 
 def pascal(n, kind='symmetric', exact=True):
-    """Returns the n x n Pascal matrix.
+    """
+    Returns the n x n Pascal matrix.
 
     The Pascal matrix is a matrix containing the binomial coefficients as
     its elements.
@@ -735,7 +748,7 @@ def pascal(n, kind='symmetric', exact=True):
 
     Returns
     -------
-    p : 2-D ndarray
+    p : (n, n) ndarray
         The Pascal matrix.
 
     Notes
@@ -761,6 +774,7 @@ def pascal(n, kind='symmetric', exact=True):
     >>> from scipy.misc import comb
     >>> comb(98, 49, exact=True)
     25477612258980856902730428600L
+
     """
 
     if kind not in ['symmetric', 'lower', 'upper']:

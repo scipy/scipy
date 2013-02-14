@@ -44,6 +44,11 @@ def lagrange(x, w):
     w : array_like
         `w` represents the y-coordinates of a set of datapoints, i.e. f(`x`).
 
+    Returns
+    -------
+    lagrange : numpy.poly1d instance
+        The Lagrange interpolating polynomial.
+
     """
     M = len(x)
     p = poly1d(0.0)
@@ -71,13 +76,16 @@ class interp2d(object):
     f: ``z = f(x, y)``. This class returns a function whose call method uses
     spline interpolation to find the value of new points.
 
+    If `x` and `y` represent a regular grid, consider using
+    RectBivariateSpline.
+
     Methods
     -------
     __call__
 
     Parameters
     ----------
-    x, y : 1-D ndarrays
+    x, y : array_like
         Arrays defining the data point coordinates.
 
         If the points lie on a regular grid, `x` can specify the column
@@ -85,16 +93,19 @@ class interp2d(object):
 
           >>> x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]]
 
-        Otherwise, x and y must specify the full coordinates for each point,
-        for example::
+        Otherwise, `x` and `y` must specify the full coordinates for each
+        point, for example::
 
           >>> x = [0,1,2,0,1,2];  y = [0,0,0,3,3,3]; z = [1,2,3,4,5,6]
 
         If `x` and `y` are multi-dimensional, they are flattened before use.
-
-    z : 1-D ndarray
+    z : array_like
         The values of the function to interpolate at the data points. If
-        `z` is a multi-dimensional array, it is flattened before use.
+        `z` is a multi-dimensional array, it is flattened before use.  The
+        length of a flattened `z` array is either
+        len(`x`)*len(`y`) if `x` and `y` specify the column and row coordinates
+        or ``len(z) == len(x) == len(y)`` if `x` and `y` specify coordinates
+        for each point.
     kind : {'linear', 'cubic', 'quintic'}, optional
         The kind of spline interpolation to use. Default is 'linear'.
     copy : bool, optional
@@ -111,10 +122,12 @@ class interp2d(object):
 
     See Also
     --------
-    bisplrep, bisplev
+    RectBivariateSpline :
+        Much faster 2D interpolation if your input data is on a grid
+    bisplrep, bisplev :
         Spline interpolation based on FITPACK
     BivariateSpline : a more recent wrapper of the FITPACK routines
-    interp1d
+    interp1d : one dimension version of this function
 
     Notes
     -----
@@ -264,11 +277,11 @@ class interp1d(_Interpolator1D):
 
     Parameters
     ----------
-    x : array_like
+    x : (N,) array_like
         A 1-D array of monotonically increasing real values.
-    y : array_like
-        A N-D array of real or complex values. The length of `y` along the
-        interpolation axis must be equal to the length of `x`.
+    y : (...,N,...) array_like
+        A N-D array of real values. The length of `y` along the interpolation
+        axis must be equal to the length of `x`.
     kind : str or int, optional
         Specifies the kind of interpolation as a string
         ('linear','nearest', 'zero', 'slinear', 'quadratic, 'cubic')
@@ -783,21 +796,34 @@ def _find_mixed(xk, yk, order, conds, B):
 
 
 def splmake(xk, yk, order=3, kind='smoothest', conds=None):
-    """Return a (xk, cvals, k) representation of a spline given
-    data-points where the (internal) knots are at the data-points.
+    """
+    Return a representation of a spline given data-points at internal knots
 
-    yk can be an N-d array to represent more than one curve, through
-    the same xk points. The first dimension is assumed to be the
-    interpolating dimension.
+    Parameters
+    ----------
+    xk : array_like
+        The input array of x values of rank 1
+    yk : array_like
+        The input array of y values of rank N. `yk` can be an N-d array to
+        represent more than one curve, through the same `xk` points. The first
+        dimension is assumed to be the interpolating dimension and is the same
+        length of `xk`.
+    order : int, optional
+        Order of the spline
+    kind : str, optional
+        Can be 'smoothest', 'not_a_knot', 'fixed', 'clamped', 'natural',
+        'periodic', 'symmetric', 'user', 'mixed' and it is ignored if order < 2
+    conds : optional
+        Conds
 
-    kind can be 'smoothest', 'not_a_knot', 'fixed',
-                'clamped', 'natural', 'periodic', 'symmetric',
-                'user', 'mixed'
+    Returns
+    -------
+    splmake : tuple
+        Return a (`xk`, `cvals`, `k`) representation of a spline given
+        data-points where the (internal) knots are at the data-points.
 
-                it is ignored if order < 2
     """
     yk = np.asanyarray(yk)
-    N = yk.shape[0]-1
 
     order = int(order)
     if order < 0:
@@ -819,17 +845,40 @@ def splmake(xk, yk, order=3, kind='smoothest', conds=None):
 
 
 def spleval(xck, xnew, deriv=0):
-    """Evaluate a fixed spline represented by the given tuple at the new
-    x-values. The xj values are the interior knot points.  The approximation
-    region is xj[0] to xj[-1].  If N+1 is the length of xj, then cvals should
-    have length N+k where k is the order of the spline.
+    """
+    Evaluate a fixed spline represented by the given tuple at the new x-values
 
-    Internally, an additional k-1 knot points are added on either side of
+    The `xj` values are the interior knot points.  The approximation
+    region is `xj[0]` to `xj[-1]`.  If N+1 is the length of `xj`, then `cvals`
+    should have length N+k where `k` is the order of the spline.
+
+    Parameters
+    ----------
+    (xj, cvals, k) : tuple
+        Parameters that define the fixed spline
+    xj : array_like
+        Interior knot points
+    cvals : array_like
+        Curvature
+    k : int
+        Order of the spline
+    xnew : array_like
+        Locations to calculate spline
+    deriv : int
+        Deriv
+
+    Returns
+    -------
+    spleval : ndarray
+        If `cvals` represents more than one curve (`cvals.ndim` > 1) and/or
+        `xnew` is N-d, then the result is `xnew.shape` + `cvals.shape[1:]`
+        providing the interpolation of multiple curves.
+
+    Notes
+    -----
+    Internally, an additional `k`-1 knot points are added on either side of
     the spline.
 
-    If cvals represents more than one curve (cvals.ndim > 1) and/or xnew is
-    N-d, then the result is xnew.shape + cvals.shape[1:] providing the
-    interpolation of multiple curves.
     """
     (xj,cvals,k) = xck
     oldshape = np.shape(xnew)
@@ -854,6 +903,26 @@ def spltopp(xk, cvals, k):
 
 
 def spline(xk, yk, xnew, order=3, kind='smoothest', conds=None):
-    """Interpolate a curve (xk,yk) at points xnew using a spline fit.
+    """
+    Interpolate a curve at new points using a spline fit
+
+    Parameters
+    ----------
+    xk, yk : array_like
+        The x and y values that define the curve.
+    xnew : array_like
+        The x values where spline should estimate the y values.
+    order : int
+        Default is 3.
+    kind : string
+        One of {'smoothest'}
+    conds : Don't know
+        Don't know
+
+    Returns
+    -------
+    spline : ndarray
+        An array of y values; the spline evaluated at the positions `xnew`.
+
     """
     return spleval(splmake(xk,yk,order=order,kind=kind,conds=conds),xnew)

@@ -42,24 +42,23 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     t : array
         A sequence of time points for which to solve for y.  The initial
         value point should be the first element of this sequence.
-    args : tuple
+    args : tuple, optional
         Extra arguments to pass to function.
     Dfun : callable(y, t0, ...)
-        Gradient (Jacobian) of func.
-    col_deriv : boolean
-        True if Dfun defines derivatives down columns (faster),
-        otherwise Dfun should define derivatives across rows.
-    full_output : boolean
+        Gradient (Jacobian) of `func`.
+    col_deriv : bool, optional
+        True if `Dfun` defines derivatives down columns (faster),
+        otherwise `Dfun` should define derivatives across rows.
+    full_output : bool, optional
         True if to return a dictionary of optional outputs as the second output
-    printmessg : boolean
+    printmessg : bool, optional
         Whether to print the convergence message
 
     Returns
     -------
     y : array, shape (len(t), len(y0))
         Array containing the value of y for each desired time in t,
-        with the initial value y0 in the first row.
-
+        with the initial value `y0` in the first row.
     infodict : dict, only returned if full_output == True
         Dictionary containing additional output information
 
@@ -88,16 +87,15 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     Other Parameters
     ----------------
-
-    ml, mu : int
+    ml, mu : int, optional
         If either of these are not None or non-negative, then the
         Jacobian is assumed to be banded.  These give the number of
         lower and upper non-zero diagonals in this banded matrix.
-        For the banded case, Dfun should return a matrix whose
+        For the banded case, `Dfun` should return a matrix whose
         columns contain the non-zero bands (starting with the
-        lowest diagonal).  Thus, the return matrix from Dfun should
+        lowest diagonal).  Thus, the return matrix from `Dfun` should
         have shape ``len(y0) * (ml + mu + 1)`` when ``ml >=0`` or ``mu >=0``.
-    rtol, atol : float
+    rtol, atol : float, optional
         The input parameters `rtol` and `atol` determine the error
         control performed by the solver.  The solver will control the
         vector, e, of estimated local errors in y, according to an
@@ -106,25 +104,25 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         ``ewt = rtol * abs(y) + atol``.
         rtol and atol can be either vectors the same length as y or scalars.
         Defaults to 1.49012e-8.
-    tcrit : ndarray
+    tcrit : ndarray, optional
         Vector of critical points (e.g. singularities) where integration
         care should be taken.
-    h0 : float, (0: solver-determined)
+    h0 : float, (0: solver-determined), optional
         The step size to be attempted on the first step.
-    hmax : float, (0: solver-determined)
+    hmax : float, (0: solver-determined), optional
         The maximum absolute step size allowed.
-    hmin : float, (0: solver-determined)
+    hmin : float, (0: solver-determined), optional
         The minimum absolute step size allowed.
-    ixpr : bool
+    ixpr : bool, optional
         Whether to generate extra printing at method switches.
-    mxstep : int, (0: solver-determined)
+    mxstep : int, (0: solver-determined), optional
         Maximum number of (internally defined) steps allowed for each
         integration point in t.
-    mxhnil : int, (0: solver-determined)
+    mxhnil : int, (0: solver-determined), optional
         Maximum number of messages printed.
-    mxordn : int, (0: solver-determined)
+    mxordn : int, (0: solver-determined), optional
         Maximum order to be allowed for the non-stiff (Adams) method.
-    mxords : int, (0: solver-determined)
+    mxords : int, (0: solver-determined), optional
         Maximum order to be allowed for the stiff (BDF) method.
 
     See Also

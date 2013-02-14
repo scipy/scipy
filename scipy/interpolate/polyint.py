@@ -326,12 +326,13 @@ def krogh_interpolate(xi,yi,x,der=0,axis=0):
     Parameters
     ----------
     xi : array_like
-        1-d array of known x-coordinates
+        Known x-coordinates.
     yi : array_like
-        Known y-coordinates
-    x : array-like
-        Point or points at which to evaluate the derivatives
-    der : integer or list
+        Known y-coordinates, of shape ``(xi.size, R)``.  Interpreted as
+        vectors of length R, or scalars if R=1.
+    x : array_like
+        Point or points at which to evaluate the derivatives.
+    der : int or list
         How many derivatives to extract; None for all potentially
         nonzero derivatives (that is a number equal to the number
         of points), or a list of derivatives to extract. This number
@@ -342,8 +343,10 @@ def krogh_interpolate(xi,yi,x,der=0,axis=0):
     Returns
     -------
     d : ndarray
-        Interpolated values or derivatives. If multiple derivatives
-        were requested, these are given along the first axis.
+        If the interpolator's values are R-dimensional then the
+        returned array will be the number of derivatives by N by R.
+        If `x` is a scalar, the middle dimension will be dropped; if
+        the `yi` are scalars then the last dimension will be dropped.
 
     See Also
     --------
@@ -373,7 +376,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     ----------
     f : callable
         The function whose Taylor polynomial is sought. Should accept
-        a vector of x values.
+        a vector of `x` values.
     x : scalar
         The point at which the polynomial is to be evaluated.
     degree : int
@@ -382,8 +385,8 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
         The width of the interval to use to evaluate the Taylor polynomial.
         Function values spread over a range this wide are used to fit the
         polynomial. Must be chosen carefully.
-    order : int or None
-        The order of the polynomial to be used in the fitting; f will be
+    order : int or None, optional
+        The order of the polynomial to be used in the fitting; `f` will be
         evaluated ``order+1`` times. If None, use `degree`.
 
     Returns
@@ -505,11 +508,14 @@ class BarycentricInterpolator(_Interpolator1D):
         Parameters
         ----------
         xi : array_like
-            The x coordinates of the points the polynomial should pass through
-        yi : array_like or None
+            The x coordinates of the points that the polynomial should pass
+            through.
+        yi : array_like, optional
             The y coordinates of the points the polynomial should pass through.
-            If None, the y values will be supplied later. The yi should be
-            specified if and only if the interpolator has y values specified.
+            Should have shape ``(xi.size, R)``; if R > 1 then the polynomial is
+            vector-valued.
+            If `yi` is not given, the y values will be supplied later. `yi` should
+            be given if and only if the interpolator has y values specified.
 
         """
         if yi is not None:
@@ -572,11 +578,22 @@ class BarycentricInterpolator(_Interpolator1D):
                 p[r[:-1]] = self.yi[r[-1]]
         return p
 
+
 def barycentric_interpolate(xi, yi, x, axis=0):
     """
-    Convenience function for barycentric polynomial interpolation
+    Convenience function for polynomial interpolation.
 
-    See `BarycentricInterpolator` for details.
+    Constructs a polynomial that passes through a given set of points,
+    then evaluates the polynomial. For reasons of numerical stability,
+    this function does not compute the coefficients of the polynomial.
+
+    This function uses a "barycentric interpolation" method that treats
+    the problem as a special case of rational function interpolation.
+    This algorithm is quite stable, numerically, but even in a world of
+    exact computation, unless the `x` coordinates are chosen very
+    carefully - Chebyshev zeros (e.g. cos(i*pi/n)) are a good choice -
+    polynomial interpolation itself is a very ill-conditioned process
+    due to the Runge phenomenon.
 
     Parameters
     ----------
@@ -716,10 +733,9 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
         Parameters
         ----------
         xi : float
-
+            Input
         yi : array_like
-            yi is the list of derivatives known at xi
-
+            `yi` is the list of derivatives known at `xi`
         order : integer or None
             a polynomial order, or instructions to use the highest
             possible order
@@ -756,17 +772,21 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
 
         Parameters
         ----------
-        xi : array_like of length N1
-            a sorted list of x-coordinates
+        xi : array_like
+            A sorted list of x-coordinates.
         yi : list of lists of length N1
-            yi[i] (if axis==0) is the list of derivatives known at xi[i]
-        orders : list of integers, or integer
-            a list of polynomial orders, or a single universal order
+            ``yi[i]`` (if ``axis == 0``) is the list of derivatives known
+            at ``xi[i]``.
+        orders : int or list of ints
+            A list of polynomial orders, or a single universal order.
         direction : {None, 1, -1}
-            indicates whether the xi are increasing or decreasing
-            +1 indicates increasing
-            -1 indicates decreasing
-            None indicates that it should be deduced from the first two xi
+            Indicates whether the `xi` are increasing or decreasing.
+
+                +1 indicates increasing
+
+                -1 indicates decreasing
+
+            None indicates that it should be deduced from the first two `xi`.
 
         """
         if self._y_axis == 0:
@@ -819,32 +839,27 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
     """
     Convenience function for piecewise polynomial interpolation.
 
-    See `PiecewisePolynomial` for details.
-
     Parameters
     ----------
-    xi : array-like
-        a sorted 1-d array of x-coordinates
-    yi : array-like or list of array-likes
-        yi[i][j] is the j-th derivative known at xi[i]   (for axis=0)
-    orders : list of integers, or integer
-        a list of polynomial orders, or a single universal order
-    direction : {None, 1, -1}
-        indicates whether the xi are increasing or decreasing
-        +1 indicates increasing
-        -1 indicates decreasing
-        None indicates that it should be deduced from the first two xi
-    der : integer or list
+    xi : array_like
+        A sorted list of x-coordinates.
+    yi : list of lists
+        ``yi[i]`` is the list of derivatives known at ``xi[i]``.
+    x : scalar or array_like
+        Coordinates at which to evalualte the polynomial.
+    orders : int or list of ints, optional
+        A list of polynomial orders, or a single universal order.
+    der : int or list
         How many derivatives to extract; None for all potentially
         nonzero derivatives (that is a number equal to the number
         of points), or a list of derivatives to extract. This number
         includes the function value as 0th derivative.
     axis : int, optional
-        Axis in the yi array corresponding to the x-coordinate values.
+        Axis in the `yi` array corresponding to the x-coordinate values.
 
     Returns
     -------
-    y : scalar or array_like
+    y : ndarray
         Interpolated values or derivatives. If multiple derivatives
         were requested, these are given along the first axis.
 
@@ -854,6 +869,14 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
 
     Notes
     -----
+    If `orders` is None, or ``orders[i]`` is None, then the degree of the
+    polynomial segment is exactly the degree required to match all i
+    available derivatives at both endpoints.  If ``orders[i]`` is not None,
+    then some derivatives will be ignored.  The code will try to use an
+    equal number of derivatives from each end; if the total number of
+    derivatives needed is odd, it will prefer the rightmost endpoint. If
+    not enough derivatives are available, an exception is raised.
+
     Construction of these piecewise polynomials can be an expensive process;
     if you repeatedly evaluate the same polynomial, consider using the class
     PiecewisePolynomial (which is what this function does).
@@ -877,12 +900,12 @@ class PchipInterpolator(PiecewisePolynomial):
 
     Parameters
     ----------
-    x : array
-        A 1D array of monotonically increasing real values.  x cannot
+    x : ndarray
+        A 1-D array of monotonically increasing real values.  `x` cannot
         include duplicate values (otherwise f is overspecified)
-    y : array
-        A 1-D array of real values.  y's length along the interpolation
-        axis must be equal to the length of x.
+    y : ndarray
+        A 1-D array of real values.  `y`'s length along the interpolation
+        axis must be equal to the length of `x`.
     axis : int, optional
         Axis in the yi array corresponding to the x-coordinate values.
 
@@ -891,7 +914,6 @@ class PchipInterpolator(PiecewisePolynomial):
     Assumes x is sorted in monotonic order (e.g. ``x[1] > x[0]``).
 
     """
-
     def __init__(self, x, y, axis=0):
         x = np.asarray(x)
         y = np.asarray(y)

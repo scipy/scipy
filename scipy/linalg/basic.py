@@ -27,9 +27,9 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
 
     Parameters
     ----------
-    a : array_like, shape (M, M)
+    a : (M, M) array_like
         A square matrix.
-    b : array_like, shape (M,) or (M, N)
+    b : (M,) or (M, N) array_like
         Right-hand side matrix in ``a x = b``.
     sym_pos : bool
         Assume `a` is symmetric and positive definite.
@@ -49,8 +49,9 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
 
     Returns
     -------
-    x : array, shape (M,) or (M, N) depending on `b`
-        Solution to the system ``a x = b``.
+    x : (M,) or (M, N) ndarray
+        Solution to the system ``a x = b``.  Shape of the return matches the
+        shape of `b`.
 
     Raises
     ------
@@ -102,51 +103,52 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, debug=False, check_finite=True):
-    """Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
+    """
+    Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
 
     Parameters
     ----------
-    a : array, shape (M, M)
-    b : array, shape (M,) or (M, N)
+    a : (M, M) array_like
+        A triangular matrix
+    b : (M,) or (M, N) array_like
+        Right-hand side matrix in `a x = b`
     lower : boolean
-        Use only data contained in the lower triangle of a.
+        Use only data contained in the lower triangle of `a`.
         Default is to use upper triangle.
-    trans : {0, 1, 2, 'N', 'T', 'C'}
+    trans : {0, 1, 2, 'N', 'T', 'C'}, optional
         Type of system to solve:
 
         ========  =========
         trans     system
         ========  =========
-        0 or 'N'  a x   = b
+        0 or 'N'  a x  = b
         1 or 'T'  a^T x = b
         2 or 'C'  a^H x = b
         ========  =========
-
-    unit_diagonal : boolean
-        If True, diagonal elements of A are assumed to be 1 and
+    unit_diagonal : bool, optional
+        If True, diagonal elements of `a` are assumed to be 1 and
         will not be referenced.
-
-    overwrite_b : boolean
-        Allow overwriting data in b (may enhance performance)
-
-    check_finite : boolean, optional
+    overwrite_b : bool, optional
+        Allow overwriting data in `b` (may enhance performance)
+    check_finite : bool, optional
         Whether to check the input matrixes contain only finite numbers.
         Disabling may give a performance gain, but may result to problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
-    x : array, shape (M,) or (M, N) depending on b
-        Solution to the system a x = b
+    x : (M,) or (M, N) ndarray
+        Solution to the system `a x = b`.  Shape of return matches `b`.
 
     Raises
     ------
     LinAlgError
-        If a is singular
+        If `a` is singular
 
     Notes
     -----
     .. versionadded:: 0.9.0
+
     """
 
     if check_finite:
@@ -175,11 +177,12 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                 debug=False, check_finite=True):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
-    The matrix a is stored in ab using the matrix diagonal ordered form::
+
+    The matrix a is stored in `ab` using the matrix diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]
 
-    Example of ab (shape of a is (6,6), u=1, l=2)::
+    Example of `ab` (shape of a is (6,6), `u` =1, `l` =2)::
 
         *    a01  a12  a23  a34  a45
         a00  a11  a22  a33  a44  a55
@@ -190,14 +193,14 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     ----------
     (l, u) : (integer, integer)
         Number of non-zero lower and upper diagonals
-    ab : array, shape (l+u+1, M)
+    ab : (`l` + `u` + 1, M) array_like
         Banded matrix
-    b : array, shape (M,) or (M, K)
+    b : (M,) or (M, K) array_like
         Right-hand side
-    overwrite_ab : boolean
-        Discard data in ab (may enhance performance)
-    overwrite_b : boolean
-        Discard data in b (may enhance performance)
+    overwrite_ab : boolean, optional
+        Discard data in `ab` (may enhance performance)
+    overwrite_b : boolean, optional
+        Discard data in `b` (may enhance performance)
     check_finite : boolean, optional
         Whether to check the input matrixes contain only finite numbers.
         Disabling may give a performance gain, but may result to problems
@@ -205,8 +208,9 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     Returns
     -------
-    x : array, shape (M,) or (M, K)
-        The solution to the system a x = b
+    x : (M,) or (M, K) ndarray
+        The solution to the system a x = b.  Returned shape depends on the
+        shape of `b`.
 
     """
     (l, u) = l_and_u
@@ -236,15 +240,16 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                     check_finite=True):
-    """Solve equation a x = b. a is Hermitian positive-definite banded matrix.
+    """
+    Solve equation a x = b. a is Hermitian positive-definite banded matrix.
 
-    The matrix a is stored in ab either in lower diagonal or upper
+    The matrix a is stored in `ab` either in lower diagonal or upper
     diagonal ordered form:
 
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
 
-    Example of ab (shape of a is (6,6), u=2)::
+    Example of `ab` (shape of a is (6,6), `u` =2)::
 
         upper form:
         *   *   a02 a13 a24 a35
@@ -260,15 +265,15 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
     Parameters
     ----------
-    ab : array, shape (u + 1, M)
+    ab : (`u` + 1, M) array_like
         Banded matrix
-    b : array, shape (M,) or (M, K)
+    b : (M,) or (M, K) array_like
         Right-hand side
-    overwrite_ab : boolean
-        Discard data in ab (may enhance performance)
-    overwrite_b : boolean
-        Discard data in b (may enhance performance)
-    lower : boolean
+    overwrite_ab : bool, optional
+        Discard data in `ab` (may enhance performance)
+    overwrite_b : bool, optional
+        Discard data in `b` (may enhance performance)
+    lower : bool, optional
         Is the matrix in the lower form. (Default is upper form)
     check_finite : boolean, optional
         Whether to check the input matrixes contain only finite numbers.
@@ -277,8 +282,9 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
     Returns
     -------
-    x : array, shape (M,) or (M, K)
-        The solution to the system a x = b
+    x : (M,) or (M, K) ndarray
+        The solution to the system a x = b.  Shape of return matches shape
+        of `b`.
 
     """
 
@@ -393,11 +399,11 @@ def det(a, overwrite_a=False, check_finite=True):
         d    e    f = A
         g    h    i
 
-        det(A) = a*e*i +b*f*g + c*d*h - c*e*g - b*d*i - a*f*h
+        det(A) = a*e*i + b*f*g + c*d*h - c*e*g - b*d*i - a*f*h
 
     Parameters
     ----------
-    a : array_like, shape (M, M)
+    a : (M, M) array_like
         A square matrix.
     overwrite_a : bool
         Allow overwriting data in a (may enhance performance).
@@ -450,9 +456,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Parameters
     ----------
-    a : array, shape (M, N)
+    a : (M, N) array_like
         Left hand side matrix (2-D array).
-    b : array, shape (M,) or (M, K)
+    b : (M,) or (M, K) array_like
         Right hand side matrix or vector (1-D or 2-D array).
     cond : float, optional
         Cutoff for 'small' singular values; used to determine effective
@@ -469,15 +475,15 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Returns
     -------
-    x : array, shape (N,) or (N, K) depending on shape of b
-        Least-squares solution.
-    residues : ndarray, shape () or (1,) or (K,)
+    x : (N,) or (N, K) ndarray
+        Least-squares solution.  Return shape matches shape of `b`.
+    residues : () or (1,) or (K,) ndarray
         Sums of residues, squared 2-norm for each column in ``b - a x``.
         If rank of matrix a is < N or > M this is an empty array.
         If b was 1-D, this is an (1,) shape array, otherwise the shape is (K,).
     rank : int
         Effective rank of matrix `a`.
-    s : array, shape (min(M,N),)
+    s : (min(M,N),) ndarray
         Singular values of `a`. The condition number of a is
         ``abs(s[0]/s[-1])``.
 
@@ -551,7 +557,7 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
     Parameters
     ----------
-    a : array, shape (M, N)
+    a : (M, N) array_like
         Matrix to be pseudo-inverted.
     cond, rcond : float, optional
         Cutoff for 'small' singular values in the least-squares solver.
@@ -566,7 +572,7 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
     Returns
     -------
-    B : array, shape (N, M)
+    B : (N, M) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
         The effective rank of the matrix.  Returned if return_rank == True
@@ -612,7 +618,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
     Parameters
     ----------
-    a : array, shape (M, N)
+    a : (M, N) array_like
         Matrix to be pseudo-inverted.
     cond, rcond : float or None
         Cutoff for 'small' singular values.
@@ -628,7 +634,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
     Returns
     -------
-    B : array, shape (N, M)
+    B : (N, M) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
         The effective rank of the matrix.  Returned if return_rank == True
@@ -675,7 +681,8 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
 def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
           check_finite=True):
-    """Compute the (Moore-Penrose) pseudo-inverse of a Hermitian matrix.
+    """
+    Compute the (Moore-Penrose) pseudo-inverse of a Hermitian matrix.
 
     Calculate a generalized inverse of a Hermitian or real symmetric matrix
     using its eigenvalue decomposition and including all eigenvalues with
@@ -683,7 +690,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
 
     Parameters
     ----------
-    a : array, shape (N, N)
+    a : (N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
     cond, rcond : float or None
         Cutoff for 'small' eigenvalues.
@@ -691,7 +698,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         zero.
 
         If None or -1, suitable machine precision is used.
-    lower : boolean
+    lower : bool
         Whether the pertinent array data is taken from the lower or upper
         triangle of a. (Default: lower)
     return_rank : bool, optional
@@ -703,7 +710,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
 
     Returns
     -------
-    B : array, shape (N, N)
+    B : (N, N) ndarray
         The pseudo-inverse of matrix `a`.
     rank : int
         The effective rank of the matrix.  Returned if return_rank == True
