@@ -306,7 +306,7 @@ def hadamard(n, dtype=int):
     Construct a Hadamard matrix.
 
     Constructs an n-by-n Hadamard matrix, using Sylvester's
-    construction.
+    construction.  `n` must be a power of 2.
 
     Parameters
     ----------

@@ -43,8 +43,8 @@ def lagrange(x, w):
 
     Returns
     -------
-    lagrange : Lagrange interpolating polynomial
-        Return.
+    lagrange : numpy.poly1d instance
+        The Lagrange interpolating polynomial.
 
     """
     M = len(x)

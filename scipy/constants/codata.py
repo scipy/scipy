@@ -36,7 +36,7 @@ all fields of science and technology. The values became available on 2 June
 2011 and replaced the 2006 CODATA set. They are based on all of the data
 available through 31 December 2010. The 2010 adjustment was carried out under
 the auspices of the CODATA Task Group on Fundamental Constants. See References
-for an Introduction to the constants for nonexperts.
+for an introduction to the constants for nonexperts.
 
 References
 ----------
