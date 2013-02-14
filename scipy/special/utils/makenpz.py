@@ -32,7 +32,7 @@ def main():
 
     data = {}
     for key, fn in files:
-        key = key.replace('/', '-')
+        key = key.replace('/', '-').strip('-')
         try:
             data[key] = np.loadtxt(fn)
         except ValueError:

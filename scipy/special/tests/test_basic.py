@@ -366,20 +366,94 @@ class TestCephes(TestCase):
 
     def test_mathieu_a(self):
         assert_equal(cephes.mathieu_a(1,0),1.0)
+
     def test_mathieu_b(self):
         assert_equal(cephes.mathieu_b(1,0),1.0)
+
     def test_mathieu_cem(self):
         assert_equal(cephes.mathieu_cem(1,0,0),(1.0,0.0))
-    def test_mathieu_modcem1(self):
-        assert_equal(cephes.mathieu_modcem1(1,0,0),(0.0,0.0))
-    def test_mathieu_modcem2(self):
-        cephes.mathieu_modcem2(1,1,1)
+
+        # Test AMS 20.2.27
+        @np.vectorize
+        def ce_smallq(m, q, z):
+            z *= np.pi/180
+            if m == 0:
+                return 2**(-0.5) * (1 - .5*q*cos(2*z)) # + O(q^2)
+            elif m == 1:
+                return cos(z) - q/8 * cos(3*z) # + O(q^2)
+            elif m == 2:
+                return cos(2*z) - q*(cos(4*z)/12 - 1/4) # + O(q^2)
+            else:
+                return cos(m*z) - q*(cos((m+2)*z)/(4*(m+1)) - cos((m-2)*z)/(4*(m-1))) # + O(q^2)
+        m = np.arange(0, 100)
+        q = np.r_[0, np.logspace(-30, -9, 10)]
+        assert_allclose(cephes.mathieu_cem(m[:,None], q[None,:], 0.123)[0],
+                        ce_smallq(m[:,None], q[None,:], 0.123),
+                        rtol=1e-14, atol=0)
+
     def test_mathieu_sem(self):
         assert_equal(cephes.mathieu_sem(1,0,0),(0.0,1.0))
+
+        # Test AMS 20.2.27
+        @np.vectorize
+        def se_smallq(m, q, z):
+            z *= np.pi/180
+            if m == 1:
+                return sin(z) - q/8 * sin(3*z) # + O(q^2)
+            elif m == 2:
+                return sin(2*z) - q*sin(4*z)/12 # + O(q^2)
+            else:
+                return sin(m*z) - q*(sin((m+2)*z)/(4*(m+1)) - sin((m-2)*z)/(4*(m-1))) # + O(q^2)
+        m = np.arange(1, 100)
+        q = np.r_[0, np.logspace(-30, -9, 10)]
+        assert_allclose(cephes.mathieu_sem(m[:,None], q[None,:], 0.123)[0],
+                        se_smallq(m[:,None], q[None,:], 0.123),
+                        rtol=1e-14, atol=0)
+
+    def test_mathieu_modcem1(self):
+        assert_equal(cephes.mathieu_modcem1(1,0,0),(0.0,0.0))
+
+    def test_mathieu_modcem2(self):
+        cephes.mathieu_modcem2(1,1,1)
+
+        # Test reflection relation AMS 20.6.19
+        m = np.arange(0, 4)[:,None,None]
+        q = np.r_[np.logspace(-2, 2, 10)][None,:,None]
+        z = np.linspace(0, 1, 7)[None,None,:]
+
+        y1 = cephes.mathieu_modcem2(m, q, -z)[0]
+
+        fr = -cephes.mathieu_modcem2(m, q, 0)[0] / cephes.mathieu_modcem1(m, q, 0)[0]
+        y2 = -cephes.mathieu_modcem2(m, q, z)[0] - 2*fr*cephes.mathieu_modcem1(m, q, z)[0]
+
+        assert_allclose(y1, y2, rtol=1e-10)
+        
     def test_mathieu_modsem1(self):
         assert_equal(cephes.mathieu_modsem1(1,0,0),(0.0,0.0))
+
     def test_mathieu_modsem2(self):
         cephes.mathieu_modsem2(1,1,1)
+
+        # Test reflection relation AMS 20.6.20
+        m = np.arange(1, 4)[:,None,None]
+        q = np.r_[np.logspace(-2, 2, 10)][None,:,None]
+        z = np.linspace(0, 1, 7)[None,None,:]
+
+        y1 = cephes.mathieu_modsem2(m, q, -z)[0]
+        fr = cephes.mathieu_modsem2(m, q, 0)[1] / cephes.mathieu_modsem1(m, q, 0)[1]
+        y2 = cephes.mathieu_modsem2(m, q, z)[0] - 2*fr*cephes.mathieu_modsem1(m, q, z)[0]
+        assert_allclose(y1, y2, rtol=1e-10)
+
+    def test_mathieu_overflow(self):
+        # Check that these return NaNs instead of causing a SEGV
+        assert_equal(cephes.mathieu_cem(10000, 0, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_sem(10000, 0, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_cem(10000, 1.5, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_sem(10000, 1.5, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_modcem1(10000, 1.5, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_modsem1(10000, 1.5, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_modcem2(10000, 1.5, 1.3), (np.nan, np.nan))
+        assert_equal(cephes.mathieu_modsem2(10000, 1.5, 1.3), (np.nan, np.nan))
 
     def test_modfresnelm(self):
         cephes.modfresnelm(0)
