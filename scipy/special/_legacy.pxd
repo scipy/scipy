@@ -33,9 +33,10 @@ cdef extern from "Python.h":
 cdef inline void _legacy_cast_check(char *func_name, double x, double y) nogil:
     if <int>x != x or <int>y != y:
         with gil:
-            PyErr_WarnEx_noerr(RuntimeWarning,
-                               "floating point number truncated to an integer",
-                               1)
+            msg = (b"scipy.special." + func_name
+                   + b": floating point number truncated to an integer "
+                   + b"(this behavior changes in a future Scipy release)")
+            PyErr_WarnEx_noerr(FutureWarning, msg, 1)
 
 cdef inline double bdtrc_unsafe(double k, double n, double p) nogil:
     _legacy_cast_check("bdtrc", k, n)
