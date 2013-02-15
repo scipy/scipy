@@ -128,6 +128,13 @@ class TestRankData(TestCase):
         r = rankdata(data)
         assert_array_equal(r, [2.0, 1.0])
 
+    def test_big_tie(self):
+        for n in [10000, 100000, 1000000]:
+            data = np.ones(n, dtype=int)
+            r = rankdata(data)
+            expected_rank = 0.5 * (n + 1)
+            assert_array_equal(r, expected_rank * data, "test failed with n=%d" % n)
+
 
 if __name__ == "__main__":
     run_module_suite()
