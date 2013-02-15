@@ -60,7 +60,7 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
     an Euler's method technique, or a backwards differencing technique.
 
     The Zero-Order Hold (zoh) method is based on [1]_, the generalized bilinear
-    approximation is based on [2]_ and [3].
+    approximation is based on [2]_ and [3]_.
 
     References
     ----------
