@@ -83,7 +83,7 @@ class TestRankData(TestCase):
         r = rankdata(a)
         assert_array_equal(r, np.array([1.0], dtype=np.float64))
         r = rankdata(data)
-        assert_array_equal(r, np.array([1.0], dtype=np.float64))        
+        assert_array_equal(r, np.array([1.0], dtype=np.float64))
 
     def test_basic(self):
         """Basic tests of stats.rankdata."""
@@ -113,7 +113,7 @@ class TestRankData(TestCase):
         # The docstring states explicitly that the argument is flattened.
         a2d = a.reshape(2, 3)
         r = rankdata(a2d)
-        assert_array_equal(r, expected)        
+        assert_array_equal(r, expected)
 
     def test_large_int(self):
         data = np.array([2**60, 2**60+1], dtype=np.uint64)
@@ -133,7 +133,8 @@ class TestRankData(TestCase):
             data = np.ones(n, dtype=int)
             r = rankdata(data)
             expected_rank = 0.5 * (n + 1)
-            assert_array_equal(r, expected_rank * data, "test failed with n=%d" % n)
+            assert_array_equal(r, expected_rank * data,
+                               "test failed with n=%d" % n)
 
 
 if __name__ == "__main__":
