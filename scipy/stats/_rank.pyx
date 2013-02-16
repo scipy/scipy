@@ -33,7 +33,7 @@ ctypedef fused array_data_type:
 @cython.boundscheck(False)
 @cython.cdivision(True)
 cdef np.ndarray[np.float64_t, ndim=1] _rankdata_fused(np.ndarray[array_data_type, ndim=1] b):
-    cdef unsigned int i, j, n, isize, sumranks, dupcount, inext
+    cdef unsigned int i, j, n, isize, dupcount, inext
     cdef np.ndarray[np.intp_t, ndim=1] order
     cdef np.ndarray[np.float64_t, ndim=1] ranks
     cdef double averank
@@ -44,17 +44,14 @@ cdef np.ndarray[np.float64_t, ndim=1] _rankdata_fused(np.ndarray[array_data_type
     order = _np.argsort(b).astype(_np.intp)
 
     with nogil:
-        sumranks = 0
         dupcount = 0
         for i in xrange(n):
-            sumranks += i
             dupcount += 1
             inext = i + 1
             if i == n - 1 or b[order[i]] != b[order[inext]]:
-                averank = sumranks / float(dupcount) + 1
+                averank = i - 0.5 * dupcount + 1.5
                 for j in xrange(inext - dupcount, inext):
                     ranks[order[j]] = averank
-                sumranks = 0
                 dupcount = 0
 
     return ranks
