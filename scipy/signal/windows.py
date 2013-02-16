@@ -1183,7 +1183,7 @@ def chebwin(M, at, sym=True):
 
 
 def slepian(M, width, sym=True):
-    """Return a digital Slepian window.
+    """Return a digital Slepian (DPSS) window.
 
     Used to maximize the energy concentration in the main lobe.  Also called
     the digital prolate spheroidal sequence (DPSS).
