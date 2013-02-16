@@ -331,6 +331,8 @@ jn = jv
 """
 
 EXTRA_CODE_CXX = EXTRA_CODE_COMMON + """
+# distutils: language = c++
+
 """
 
 
@@ -875,19 +877,6 @@ def main():
     subprocess.call(['cython', '_ufuncs.pyx'])
     subprocess.call(['cython', '--cplus', '-o', '_ufuncs_cxx.cxx',
                      '_ufuncs_cxx.pyx'])
-
-    # Strip comments
-    for fn in ['_ufuncs.c', '_ufuncs_cxx.cxx']:
-        f = open(fn, 'r')
-        text = f.read()
-        f.close()
-
-        r = re.compile(r'/\*(.*?)\*/', re.S)
-
-        text = r.sub('', text)
-        f = open(fn, 'w')
-        f.write(text)
-        f.close()
 
 if __name__ == "__main__":
     main()

@@ -11,16 +11,12 @@ Checks pyx files to see if they have been changed relative to their
 corresponding C files.  If they have, then runs cython on these files to
 recreate the C files.
 
-The script thinks that the pyx files have changed relative to the C files if:
-
-* The pyx file is modified compared to the version checked into git, and the C
-  file is not
-* The pyx file was committed to the repository more recently than the C file.
+The script thinks that the pyx files have changed relative to the C files
+by comparing hashes stored in a database file.
 
 Simple script to invoke Cython (and Tempita) on all .pyx (.pyx.in)
 files; while waiting for a proper build system. Uses file hashes to
-figure out if rebuild is needed (using dates seem to fail with
-frequent change of git branch).
+figure out if rebuild is needed.
 
 For now, this script should be run by developers when changing Cython files
 only, and the resulting C files checked in, so that end-users (and Python-only
@@ -34,20 +30,13 @@ Note: this script does not check any of the dependent C libraries; it only
 operates on the Cython .pyx files.
 """
 
+from __future__ import division, print_function, absolute_import
+
 import os
+import re
 import sys
 import hashlib
-import cPickle
-from subprocess import Popen, PIPE
-from distutils.version import LooseVersion
-
-try:
-    import Cython
-except ImportError:
-    raise OSError('We need cython for this script')
-from Cython.Compiler.Version import version as cython_version
-
-HAVE_CYTHON_0p14 = LooseVersion(cython_version) >= LooseVersion('0.14')
+import subprocess
 
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
@@ -56,28 +45,41 @@ DEFAULT_ROOT = 'scipy'
 # Rules
 #
 def process_pyx(fromfile, tofile):
-    if HAVE_CYTHON_0p14:
-        opt_str = '--fast-fail'
-    else:
-        opt_str = ''
-    if os.system('cython %s -o "%s" "%s"' % (opt_str, tofile, fromfile)) != 0:
-        raise Exception('Cython failed')
+    try:
+        from Cython.Compiler.Version import version as cython_version
+        from distutils.version import LooseVersion
+        if LooseVersion(cython_version) < LooseVersion('0.17'):
+            raise Exception('Building SciPy requires Cython >= 0.17')
+
+    except ImportError:
+        pass
+
+    flags = ['--fast-fail']
+    if tofile.endswith('.cxx'):
+        flags += ['--cplus']
+
+    try:
+        r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile])
+        if r != 0:
+            raise Exception('Cython failed')
+    except OSError:
+        raise OSError('Cython needs to be installed')
 
 def process_tempita_pyx(fromfile, tofile):
     import tempita
-    with file(fromfile) as f:
+    with open(fromfile, "rb") as f:
         tmpl = f.read()
     pyxcontent = tempita.sub(tmpl)
     assert fromfile.endswith('.pyx.in')
     pyxfile = fromfile[:-len('.pyx.in')] + '.pyx'
-    with file(pyxfile, 'w') as f:
+    with open(pyxfile, "wb") as f:
         f.write(pyxcontent)
     process_pyx(pyxfile, tofile)
 
 rules = {
-    # fromext : (toext, function)
-    '.pyx' : ('.c', process_pyx),
-    '.pyx.in' : ('.c', process_tempita_pyx)
+    # fromext : function
+    '.pyx' : process_pyx,
+    '.pyx.in' : process_tempita_pyx
     }
 #
 # Hash db
@@ -85,59 +87,35 @@ rules = {
 def load_hashes(filename):
     # Return { filename : (sha1 of input, sha1 of output) }
     if os.path.isfile(filename):
-        with file(filename) as f:
-            hashes = cPickle.load(f)
+        hashes = {}
+        with open(filename, 'r') as f:
+            for line in f:
+                filename, inhash, outhash = line.split()
+                hashes[filename] = (inhash, outhash)
     else:
         hashes = {}
     return hashes
 
 def save_hashes(hash_db, filename):
-    with file(filename, 'w') as f:
-        cPickle.dump(hash_db, f)
+    with open(filename, 'w') as f:
+        for key, value in sorted(hash_db.items()):
+            f.write("%s %s %s\n" % (key, value[0], value[1]))
 
 def sha1_of_file(filename):
     h = hashlib.sha1()
-    with file(filename) as f:
+    with open(filename, "rb") as f:
         h.update(f.read())
     return h.hexdigest()
 
 #
-# interface with git
-#
-
-def execproc(cmd):
-    assert isinstance(cmd, (list, tuple))
-    pp = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    result = pp.stdout.read().strip()
-    err = pp.stderr.read()
-    retcode = pp.wait()
-    if retcode != 0:
-        return None
-    else:
-        return result
-
-def git_last_commit_to(filename):
-    out = execproc(['git', 'log', '-1', '--format=format:%H', filename])
-    if out == '':
-        out = None
-    return out
-
-def git_is_dirty(filename):
-    out = execproc(['git', 'status', '--porcelain', filename])
-    assert out is not None
-    return (out != '')
-
-def git_is_child(parent_sha, child_sha):
-    out = execproc(['git', 'rev-list', child_sha, '^%s^' % parent_sha])
-    assert out is not None
-    for line in out.split('\n'):
-        if line == parent_sha:
-            return True
-    return False
-
-#
 # Main program
 #
+
+def normpath(path):
+    path = path.replace(os.sep, '/')
+    if path.startswith('./'):
+        path = path[2:]
+    return path
 
 def get_hash(frompath, topath):
     from_hash = sha1_of_file(frompath)
@@ -148,42 +126,35 @@ def process(path, fromfile, tofile, processor_function, hash_db):
     fullfrompath = os.path.join(path, fromfile)
     fulltopath = os.path.join(path, tofile)
     current_hash = get_hash(fullfrompath, fulltopath)
-    if current_hash == hash_db.get(fullfrompath, None):
-        print '%s has not changed' % fullfrompath
+    if current_hash == hash_db.get(normpath(fullfrompath), None):
+        print('%s has not changed' % fullfrompath)
         return
-
-    from_sha = git_last_commit_to(fullfrompath)
-    to_sha = git_last_commit_to(fulltopath)
-    if (from_sha is not None and to_sha is not None and
-        not git_is_dirty(fullfrompath)):
-        # Both source and target is under revision control;
-        # check with revision control system whether we need to
-        # update
-        if git_is_child(from_sha, to_sha):
-            hash_db[fullfrompath] = current_hash
-            print '%s is up to date (according to git)' % fullfrompath
-            return
 
     orig_cwd = os.getcwd()
     try:
         os.chdir(path)
-        print 'Processing %s' % fullfrompath
+        print('Processing %s' % fullfrompath)
         processor_function(fromfile, tofile)
     finally:
         os.chdir(orig_cwd)
     # changed target file, recompute hash
     current_hash = get_hash(fullfrompath, fulltopath)
     # store hash in db
-    hash_db[fullfrompath] = current_hash
+    hash_db[normpath(fullfrompath)] = current_hash
 
 
 def find_process_files(root_dir):
     hash_db = load_hashes(HASH_FILE)
     for cur_dir, dirs, files in os.walk(root_dir):
         for filename in files:
-            for fromext, rule in rules.iteritems():
+            for fromext, function in rules.items():
                 if filename.endswith(fromext):
-                    toext, function = rule
+                    toext = ".c"
+                    with open(os.path.join(cur_dir, filename), 'rb') as f:
+                        data = f.read()
+                        m = re.search(br"^\s*#\s*distutils:\s*language\s*=\s*c\+\+\s*$", data, re.I|re.M)
+                        if m:
+                            toext = ".cxx"
                     fromfile = filename
                     tofile = filename[:-len(fromext)] + toext
                     process(cur_dir, fromfile, tofile, function, hash_db)

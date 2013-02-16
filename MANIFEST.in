@@ -8,6 +8,10 @@ include setupscons.py
 include setupegg.py
 include setup.py
 include scipy/*.py
+# Cython generation
+include cythonize.dat
+include tools/cythonize.py
+include scipy/cluster/_vq_rewrite.c  # unused, but ship still
 # Add Cython files
 recursive-include scipy *.pyx *.pyx.in *.pxd *.pxi
 # Add swig files

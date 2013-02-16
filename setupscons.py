@@ -50,6 +50,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 try:
     setup_py = __import__("setup")
     write_version_py = setup_py.write_version_py
+    generate_cython = setup_py.generate_cython
 finally:
     sys.path.pop(0)
 
@@ -86,6 +87,8 @@ def setup_package():
         os.remove('scipy/version.py')
 
     write_version_py()
+
+    generate_cython()
 
     try:
         setup(
