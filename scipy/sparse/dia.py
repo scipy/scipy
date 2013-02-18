@@ -108,7 +108,9 @@ class dia_matrix(_data_matrix):
                     if shape is None:
                         raise ValueError('expected a shape argument')
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
-                    self.offsets = np.atleast_1d(np.array(arg1[1], dtype=get_index_dtype(nnz=max(shape)), copy=copy))
+                    self.offsets = np.atleast_1d(np.array(arg1[1],
+                                                          dtype=get_index_dtype(nnz=max(shape)),
+                                                          copy=copy))
                     self.shape = shape
         else:
             #must be dense, convert to COO first, then to DIA

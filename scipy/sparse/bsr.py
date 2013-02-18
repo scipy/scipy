@@ -218,7 +218,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             warn("indices array has non-integer dtype (%s)"
                     % self.indices.dtype.name)
 
-        idx_dtype = get_index_dtype([self.indices, self.indptr])
+        idx_dtype = get_index_dtype((self.indices, self.indptr))
         self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
         self.indices = np.asarray(self.indices, dtype=idx_dtype)
         self.data = to_native(self.data)
@@ -363,7 +363,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         bnnz = indptr[-1]
 
-        idx_dtype = get_index_dtype(nnz=bnnz)
+        idx_dtype = get_index_dtype((self.indptr, self.indices,
+                                     other.indptr, other.indices),
+                                    nnz=bnnz)
         indptr = indptr.astype(idx_dtype)
         indices = np.empty(bnnz, dtype=idx_dtype)
         data = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
@@ -526,7 +528,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         R,C = self.blocksize
 
         max_bnnz = len(self.data) + len(other.data)
-        idx_dtype = get_index_dtype(nnz=max_bnnz)
+        idx_dtype = get_index_dtype((self.indptr, self.indices,
+                                     other.indptr, other.indices),
+                                    nnz=max_bnnz)
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
         indices = np.empty(max_bnnz, dtype=idx_dtype)
 
