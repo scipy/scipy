@@ -34,6 +34,32 @@
   }
 }
 
+/*
+ * Typemaps for additional scalar index types
+ */
+%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) npy_int32 {
+   $1 = PyNumber_Check($input) ? 1 : 0;
+}
+%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) npy_int64 {
+   $1 = PyNumber_Check($input) ? 1 : 0;
+}
+%typemap(in) npy_int32 {
+    $1 = PyNumber_AsSsize_t($input, NULL);
+}
+%typemap(in) npy_int64 {
+    $1 = PyNumber_AsSsize_t($input, NULL);
+}
+%typemap(out) npy_int32 %{
+#if PY_VERSION_HEX >= 0x03000000
+    $result = PyLong_FromSsize_t($1);
+#else
+    $result = PyInt_FromSsize_t($1);
+#endif
+%}
+%typemap(out) npy_int64 {
+    $result = PyLong_FromSsize_t($1);
+}
+
 
  /*
   * IN types
@@ -156,8 +182,8 @@ T_INPLACE_ARRAY2( ctype )
 /*
  * Create all desired index and data types here
  */
-DECLARE_INDEX_TYPE( int       )
-DECLARE_INDEX_TYPE( long long )
+DECLARE_INDEX_TYPE( npy_int32 )
+DECLARE_INDEX_TYPE( npy_int64 )
 
 DECLARE_DATA_TYPE( npy_bool_wrapper        )
 DECLARE_DATA_TYPE( signed char             )
@@ -187,78 +213,78 @@ DECLARE_DATA_TYPE( npy_clongdouble_wrapper )
 
 %define INSTANTIATE_ALL( f_name )
 /* 32-bit indices */
-%template(f_name)   f_name<int,npy_bool_wrapper>;
-%template(f_name)   f_name<int,signed char>;
-%template(f_name)   f_name<int,unsigned char>;
-%template(f_name)   f_name<int,short>;
-%template(f_name)   f_name<int,unsigned short>;
-%template(f_name)   f_name<int,int>;
-%template(f_name)   f_name<int,unsigned int>;
-%template(f_name)   f_name<int,long long>;
-%template(f_name)   f_name<int,unsigned long long>;
-%template(f_name)   f_name<int,float>;
-%template(f_name)   f_name<int,double>;
-%template(f_name)   f_name<int,long double>;
-%template(f_name)   f_name<int,npy_cfloat_wrapper>;
-%template(f_name)   f_name<int,npy_cdouble_wrapper>;
-%template(f_name)   f_name<int,npy_clongdouble_wrapper>;
-/* 64-bit indices would go here */
-%template(f_name)   f_name<long long,npy_bool_wrapper>;
-%template(f_name)   f_name<long long,signed char>;
-%template(f_name)   f_name<long long,unsigned char>;
-%template(f_name)   f_name<long long,short>;
-%template(f_name)   f_name<long long,unsigned short>;
-%template(f_name)   f_name<long long,int>;
-%template(f_name)   f_name<long long,unsigned int>;
-%template(f_name)   f_name<long long,long long>;
-%template(f_name)   f_name<long long,unsigned long long>;
-%template(f_name)   f_name<long long,float>;
-%template(f_name)   f_name<long long,double>;
-%template(f_name)   f_name<long long,long double>;
-%template(f_name)   f_name<long long,npy_cfloat_wrapper>;
-%template(f_name)   f_name<long long,npy_cdouble_wrapper>;
-%template(f_name)   f_name<long long,npy_clongdouble_wrapper>;
+%template(f_name)   f_name<npy_int32,npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,signed char>;
+%template(f_name)   f_name<npy_int32,unsigned char>;
+%template(f_name)   f_name<npy_int32,short>;
+%template(f_name)   f_name<npy_int32,unsigned short>;
+%template(f_name)   f_name<npy_int32,int>;
+%template(f_name)   f_name<npy_int32,unsigned int>;
+%template(f_name)   f_name<npy_int32,long long>;
+%template(f_name)   f_name<npy_int32,unsigned long long>;
+%template(f_name)   f_name<npy_int32,float>;
+%template(f_name)   f_name<npy_int32,double>;
+%template(f_name)   f_name<npy_int32,long double>;
+%template(f_name)   f_name<npy_int32,npy_cfloat_wrapper>;
+%template(f_name)   f_name<npy_int32,npy_cdouble_wrapper>;
+%template(f_name)   f_name<npy_int32,npy_clongdouble_wrapper>;
+/* 64-bit indices */
+%template(f_name)   f_name<npy_int64,npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,signed char>;
+%template(f_name)   f_name<npy_int64,unsigned char>;
+%template(f_name)   f_name<npy_int64,short>;
+%template(f_name)   f_name<npy_int64,unsigned short>;
+%template(f_name)   f_name<npy_int64,int>;
+%template(f_name)   f_name<npy_int64,unsigned int>;
+%template(f_name)   f_name<npy_int64,long long>;
+%template(f_name)   f_name<npy_int64,unsigned long long>;
+%template(f_name)   f_name<npy_int64,float>;
+%template(f_name)   f_name<npy_int64,double>;
+%template(f_name)   f_name<npy_int64,long double>;
+%template(f_name)   f_name<npy_int64,npy_cfloat_wrapper>;
+%template(f_name)   f_name<npy_int64,npy_cdouble_wrapper>;
+%template(f_name)   f_name<npy_int64,npy_clongdouble_wrapper>;
 %enddef
 
 
 %define INSTANTIATE_INDEX( f_name )
 /* 32-bit indices */
-%template(f_name)   f_name<int>;
-/* 64-bit indices would go here */
-%template(f_name)   f_name<long long>;
+%template(f_name)   f_name<npy_int32>;
+/* 64-bit indices */
+%template(f_name)   f_name<npy_int64>;
 %enddef
 
 %define INSTANTIATE_BOOL_OUT( f_name )
 /* 32-bit indices */
-%template(f_name)   f_name<int,npy_bool_wrapper,        npy_bool_wrapper>;
-%template(f_name)   f_name<int,signed char,             npy_bool_wrapper>;
-%template(f_name)   f_name<int,unsigned char,           npy_bool_wrapper>;
-%template(f_name)   f_name<int,short,                   npy_bool_wrapper>;
-%template(f_name)   f_name<int,unsigned short,          npy_bool_wrapper>;
-%template(f_name)   f_name<int,int,                     npy_bool_wrapper>;
-%template(f_name)   f_name<int,unsigned int,            npy_bool_wrapper>;
-%template(f_name)   f_name<int,long long,               npy_bool_wrapper>;
-%template(f_name)   f_name<int,unsigned long long,      npy_bool_wrapper>;
-%template(f_name)   f_name<int,float,                   npy_bool_wrapper>;
-%template(f_name)   f_name<int,double,                  npy_bool_wrapper>;
-%template(f_name)   f_name<int,long double,             npy_bool_wrapper>;
-%template(f_name)   f_name<int,npy_cfloat_wrapper,      npy_bool_wrapper>;
-%template(f_name)   f_name<int,npy_cdouble_wrapper,     npy_bool_wrapper>;
-%template(f_name)   f_name<int,npy_clongdouble_wrapper, npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,npy_bool_wrapper,        npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,signed char,             npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,unsigned char,           npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,short,                   npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,unsigned short,          npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,int,                     npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,unsigned int,            npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,long long,               npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,unsigned long long,      npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,float,                   npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,double,                  npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,long double,             npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,npy_cfloat_wrapper,      npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,npy_cdouble_wrapper,     npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int32,npy_clongdouble_wrapper, npy_bool_wrapper>;
 /* 64-bit indices would go here */
-%template(f_name)   f_name<long long,npy_bool_wrapper,        npy_bool_wrapper>;
-%template(f_name)   f_name<long long,signed char,             npy_bool_wrapper>;
-%template(f_name)   f_name<long long,unsigned char,           npy_bool_wrapper>;
-%template(f_name)   f_name<long long,short,                   npy_bool_wrapper>;
-%template(f_name)   f_name<long long,unsigned short,          npy_bool_wrapper>;
-%template(f_name)   f_name<long long,int,                     npy_bool_wrapper>;
-%template(f_name)   f_name<long long,unsigned int,            npy_bool_wrapper>;
-%template(f_name)   f_name<long long,long long,               npy_bool_wrapper>;
-%template(f_name)   f_name<long long,unsigned long long,      npy_bool_wrapper>;
-%template(f_name)   f_name<long long,float,                   npy_bool_wrapper>;
-%template(f_name)   f_name<long long,double,                  npy_bool_wrapper>;
-%template(f_name)   f_name<long long,long double,             npy_bool_wrapper>;
-%template(f_name)   f_name<long long,npy_cfloat_wrapper,      npy_bool_wrapper>;
-%template(f_name)   f_name<long long,npy_cdouble_wrapper,     npy_bool_wrapper>;
-%template(f_name)   f_name<long long,npy_clongdouble_wrapper, npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,npy_bool_wrapper,        npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,signed char,             npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,unsigned char,           npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,short,                   npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,unsigned short,          npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,int,                     npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,unsigned int,            npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,long long,               npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,unsigned long long,      npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,float,                   npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,double,                  npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,long double,             npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,npy_cfloat_wrapper,      npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,npy_cdouble_wrapper,     npy_bool_wrapper>;
+%template(f_name)   f_name<npy_int64,npy_clongdouble_wrapper, npy_bool_wrapper>;
 %enddef
