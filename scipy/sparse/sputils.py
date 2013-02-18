@@ -111,8 +111,11 @@ def get_index_dtype(arrays=(), nnz=None):
     Based on input (integer) arrays `a`, determine a suitable index data
     type that can hold the data in the arrays.
     """
+
+    # play safe
+    int32max = np.iinfo(np.int32).max//2 - 1
+
     dtype = np.intc
-    int32max = np.iinfo(np.int32).max
     if nnz is not None:
         if nnz > int32max:
             dtype = np.int64
