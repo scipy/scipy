@@ -347,8 +347,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
         Nyquist frequency.  Each frequency in `freq` must be between 0 and
         `nyq` (inclusive).
     antisymmetric : bool
-        Flag setting wither resulting impulse responce is
-        symmetric/antisymmetric.
+        Whether resulting impulse response is symmetric/antisymmetric.
         See Notes for more details.
 
     Returns
