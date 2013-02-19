@@ -748,7 +748,7 @@ class _TestGetSet:
             C[0,1] = 1
             C[3,0] = 4
             C[3,0] = 9
-        assert_array_equal(A.A, B)
+        assert_array_equal(A.toarray(), B)
 
 
 class _TestSolve:
@@ -910,7 +910,7 @@ class _TestSlicingAssign:
             C[3:4,0] = 9
             C[0,4:] = 1
             C[3::-1,4:] = 9
-        assert_array_equal(A.A, B)
+        assert_array_equal(A.toarray(), B)
 
     def test_slice_assign_2(self):
         n, m = (5, 10)
@@ -922,7 +922,8 @@ class _TestSlicingAssign:
             assert_almost_equal(A[i, j].todense(), 1, err_msg=msg)
 
         # [i,1:2]
-        for i, j in [(2, slice(3)), (2, slice(5, -2)), (array(2), slice(5, -2))]:
+        for i, j in [(2, slice(3)), (2, slice(5, -2)), 
+                     (array(2), slice(5, -2))]:
             _test_set(i, j, 3)
 
     def test_self_self_assignment(self):
@@ -1119,12 +1120,6 @@ class _TestFancyIndexing:
                         ([[1, 2, 3], [0, 2, 4]],  [[0, 4, 3], [4, 1, 2]], 6)]:
             _test_set_slice(i, j, c)
 
-        A = self.spmatrix((5, 5))
-        assert_raises(NotImplementedError, A.__setitem__, 
-                      ([[1, 2], [0, 1]], [1, 2]), range(2))
-        assert_raises(IndexError, A.__setitem__, 
-                      ([[1, 2], [0, 1]], slice(None)), 1)
-
     def test_fancy_indexing_randomized(self):
         random.seed(1234) # make runs repeatable
 
@@ -1182,7 +1177,7 @@ class _TestFancyIndexingAssign:
         B = np.zeros((3,3))
         for C in [A, B]:
             C[[0,1,2], [0,1,2]] = [4,5,6]
-        assert_array_equal(A.A, B)
+        assert_array_equal(A.toarray(), B)
 
 class _TestFancyMultidim:
     def test_fancy_indexing_ndarray(self):
@@ -1773,14 +1768,9 @@ class TestLIL(sparse_test_class(fancy_multidim_assign=False,
     B[2,1] = 3
     B[3,0] = 10
 
-
-    #@dec.knownfailureif(True, "Fancy indexing is known to be broken for LIL" \
-    #                          " matrices")
     def test_fancy_indexing_set(self):
         _TestFancyIndexing.test_fancy_indexing_set(self)
 
-    #@dec.knownfailureif(True, "Fancy indexing is known to be broken for LIL" \
-    #                          " matrices")
     def test_fancy_indexing_randomized(self):
         _TestFancyIndexing.test_fancy_indexing_randomized(self)
 
