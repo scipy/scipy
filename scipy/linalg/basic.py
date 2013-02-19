@@ -15,7 +15,6 @@ from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs
 from .misc import LinAlgError, _datacopied
 from scipy.linalg import calc_lwork
-from .decomp_schur import schur
 from . import decomp, decomp_svd
 
 
