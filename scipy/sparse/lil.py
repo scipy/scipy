@@ -381,12 +381,8 @@ class lil_matrix(spmatrix):
                 if not j:
                     return
             j = np.atleast_1d(j).ravel()
-            if j.shape[0]==1:
-                j = j[0]*np.ones((1, i.shape[0]), dtype=int)
-                i = np.atleast_2d(i)
-            else:
-                j = np.vstack([j]*i.shape[0])
-                i = np.outer(i, np.ones(j.shape[1], dtype=int))
+            i = np.outer(i, np.ones(j.shape[0], dtype=int))
+            j = np.vstack([j]*i.shape[0])
         else:
             i = np.atleast_2d(i)
             j = np.atleast_2d(j)
