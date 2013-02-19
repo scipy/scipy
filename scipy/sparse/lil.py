@@ -201,19 +201,26 @@ class lil_matrix(spmatrix):
             return self.dtype.type(0)
 
     def _slicetoseq(self, j, shape):
+        step = j.step or 1
         if j.start is not None and j.start < 0:
             start =  shape + j.start
         elif j.start is None:
-            start = 0
+            if step > 0:
+                start = 0
+            else:
+                start = shape
         else:
             start = j.start
         if j.stop is not None and j.stop < 0:
             stop = shape + j.stop
         elif j.stop is None:
-            stop = shape
+            if step > 0:
+                stop = shape
+            else:
+                stop = -1
         else:
             stop = j.stop
-        j = list(range(start, stop, j.step or 1))
+        j = list(range(start, stop, step))
         return j
 
 
@@ -354,104 +361,95 @@ class lil_matrix(spmatrix):
             else:
                 raise IndexError('invalid index')
 
-        # shortcut for common case of single entry assign:
-        if np.isscalar(x) and np.isscalar(i) and np.isscalar(j):
-            self._insertat2(self.rows[i], self.data[i], j, x)
+        # shortcut for common case of full matrix assign:
+        if (isspmatrix(x) and isinstance(i, slice) and i == slice(None) and
+            isinstance(j, slice) and j == slice(None)):
+            x = lil_matrix(x, dtype=self.dtype)
+            self.rows = x.rows
+            self.data = x.data
             return
 
-        # shortcut for common case of full matrix assign:
-        if isspmatrix(x):
-            if isinstance(i, slice) and i == slice(None) and \
-               isinstance(j, slice) and j == slice(None):
-                x = lil_matrix(x, dtype=self.dtype)
-                self.rows = x.rows
-                self.data = x.data
-                return
-
-        # can't index lists with tuple
-        if isinstance(i, tuple):       
-            i = list(i)
-        if isinstance(i, np.ndarray) and i.ndim==0:
-            i = int(i)
-        if isinstance(j, np.ndarray) and j.ndim==0:
-             j = int(j)
-        if np.isscalar(i):
-            rows = [self.rows[i]]
-            datas = [self.data[i]]
-        elif ismatrix(i):
-            pass
+        # Transform data into numpy arrays to enable ravel()
+        if isinstance(i, slice) or isinstance(j, slice):
+            if isinstance(i, slice):
+                i = self._slicetoseq(i, self.shape[0])
+                if not i:
+                    return
+            i = np.atleast_1d(i).ravel()
+            if isinstance(j, slice):
+                j = self._slicetoseq(j, self.shape[1])
+                if not j:
+                    return
+            j = np.atleast_1d(j).ravel()
+            if j.shape[0]==1:
+                j = j[0]*np.ones((1, i.shape[0]), dtype=int)
+                i = np.atleast_2d(i)
+            else:
+                j = np.vstack([j]*i.shape[0])
+                i = np.outer(i, np.ones(j.shape[1], dtype=int))
         else:
-            rows = self.rows[i]
-            datas = self.data[i]
-
-        x = lil_matrix(x, copy=False)
-        xrows, xcols = x.shape
-        if ismatrix(i) or ismatrix(j):
-            if xrows!=1 or xcols!=1:
-                raise NotImplementedError
-            if isinstance(i, slice) or isinstance(j, slice):
-                raise IndexError('invalid index')
             i = np.atleast_2d(i)
             j = np.atleast_2d(j)
-            if i.shape[1] != j.shape[1]:
-                if i.ndim==0:
-                    i = int(i)*np.ones(j.shape, dtype=int)
-                elif j.ndim==0:
-                    j = int(j)*np.ones(i.shape, dtype=int)
+        # Make i and j into same shape
+            if j.shape==i.shape:
+                pass
+            elif i.shape==(1, 1):
+                i = i[0][0]*np.ones(j.shape, dtype=int)
+            elif j.shape==(1, 1):
+                j = j[0][0]*np.ones(i.shape, dtype=int)
+            elif i.shape[1]==j.shape[1]:
+                if i.shape[0]==1:
+                    i = np.vstack([i]*j.shape[0])
+                elif j.shape[0]==1:
+                    j = np.vstack([j]*i.shape[0])
                 else:
-                    raise ValueError('shape mismatch: objects cannot be ' +
+                    raise ValueError('shape mismatch: objects cannot be '+\
+                                         'broadcast to a single shape')
+            else:
+                raise ValueError('shape mismatch: objects cannot be '+\
                                      'broadcast to a single shape')
-            if i.shape[0]==j.shape[0]:
-                for ii, jj in zip(i, j):
-                    for row, data, col in zip(self.rows[ii], self.data[ii], 
-                                              jj):
-                        self._setitem_setrow(row, data, col, x.rows[0], 
-                                             x.data[0], xcols)
-            elif i.shape[0]==1:
-                for jj in j:
-                    for row, data, col in zip(self.rows[i[0]], self.data[i[0]],
-                                              jj):
-                        self._setitem_setrow(row, data, col, x.rows[0], 
-                                             x.data[0], xcols)
-            elif j.shape[0]==1:
-                for ii in i:
-                    for row, data, col in zip(self.rows[ii], self.data[ii], 
-                                              j[0]):
-                        self._setitem_setrow(row, data, col, x.rows[0], 
-                                             x.data[0], xcols)
-        # if one of the indexes is a slice, copy all entries in i X j
-        elif (isinstance(i, slice) or isinstance(j, slice) or np.isscalar(i)
-            or np.isscalar(j)):
-            if xrows == len(rows):    # normal rectangular copy
-                for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
-                    self._setitem_setrow(row, data, j, xrow, xdata, xcols)
-            # needed to pass 'test_lil_sequence_assignement' unit test:
-            # -- set row from column of entries --
-            elif xcols == len(rows):
-                x = x.T
-                for row, data, xrow, xdata in zip(rows, datas, x.rows, x.data):
-                    self._setitem_setrow(row, data, j, xrow, xdata, xrows)
-            elif xrows == 1:          # OK, broadcast down column
-                for row, data in zip(rows, datas):
-                    self._setitem_setrow(row, data, j, x.rows[0], x.data[0], 
-                                         xcols)
+
+        # If input is a sparse matrix, handle separately
+        if isspmatrix(x):
+            if x.shape==(1, 1):
+                for ii, jj in zip(i.ravel(), j.ravel()):
+                    self._insertat2(self.rows[ii], self.data[ii], 
+                                    j[jj], x[0, 0])
+                return
+            elif x.shape==i.shape:
+                for ii, jj, xx in zip(i.ravel(), j.ravel(), 
+                                      x.toarray().ravel()):
+                    self._insertat2(self.rows[ii], self.data[ii], jj, xx)
+                return
+            elif x.shape[1]==i.shape[1] and x.shape[0]==1:
+                for ii, jj in zip(i.ravel(), j.ravel(), 
+                                  np.concatenat([x.toarry()]*i.shape[1])):
+                    self._insertat2(self.rows[ii], self.data[ii], jj, xx)
+                return
             else:
-                raise IndexError('invalid index')
-        # else: only copy (i[0], j[0]), (i[1], j[1]) ...
-        elif issequence(i) and issequence(j):
-            if len(i)==len(j):
-                if xrows==1:
-                    if xcols==1:
-                        for (row, data, col) in zip(rows, datas, j):
-                            self._insertat2(row, data, col, x.data[0][0])
-                    elif xcols==len(i):
-                        for (row, data, col, val) in zip(rows, datas, j, 
-                                                         x.data[0]):
-                            self._insertat2(row, data, col, val)
-            else:
-                raise ValueError('shape mismatch')
+                raise ValueError('shape mismatch: objects cannot be '+\
+                                     'broadcast to a single shape')
+
+        x = np.atleast_2d(np.asarray(x))
+        # Shortcut for scalar x
+        if x.shape==(1, 1):
+            for ii, jj in zip(i.ravel(), j.ravel()):
+                self._insertat2(self.rows[ii], self.data[ii], 
+                                jj, x[0, 0])
+            return
+        # Make x and i into the same shape
+        if i.shape==x.shape:
+            pass
+        elif x.shape[1]==i.shape[1] and x.shape[0]==1:
+            x = np.vstack([x]*i.shape[0])
         else:
-            return IndexError('invalid index')
+            raise ValueError('shape mismatch: objects cannot be '+\
+                                 'broadcast to a single shape')
+        # Set values
+        for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
+            self._insertat2(self.rows[ii], self.data[ii], jj, xx)
+
+
     def _mul_scalar(self, other):
         if other == 0:
             # Multiply by zero: return the zero matrix
