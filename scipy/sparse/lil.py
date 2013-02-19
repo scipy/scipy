@@ -243,50 +243,50 @@ class lil_matrix(spmatrix):
                  'Pre-converting to CSC or CSR beforehand is more efficient.',
                  SparseEfficiencyWarning)
 
-        if isinstance(i, np.ndarray) and i.ndim==0:
-            i = int(i)
-        if isinstance(j, np.ndarray) and j.ndim==0:
-            j = int(j)
-        if np.isscalar(i):
-            if np.isscalar(j):
-                return self._get1(i, j)
-            if isinstance(j, slice):
-                j = self._slicetoseq(j, self.shape[1])
-            if issequence(j):
-                return self.__class__([[self._get1(i, jj) for jj in j]])
-        elif ismatrix(i) or ismatrix(j):
-            if isinstance(i, slice) or isinstance(j, slice):
-                raise IndexError('invalid index')
-            i = np.atleast_2d(i)
-            j = np.atleast_2d(j)
-            if i.shape[1] != j.shape[1]:
-                raise ValueError('shape mismatch: objects cannot be broadcast'+
-                                 ' to a single shape')
-            elif i.shape[0]==j.shape[0]:
-                return self.__class__([[self._get1(iii, jjj) for (iii, jjj) in
-                                        zip(ii, jj)] for (ii, jj) in zip(i, j)])
-            if i.shape[0]==1:
-                return self.__class__([[self._get1(iii, jjj) for (iii, jjj)
-                                        in zip(i[0], jj)] for jj in j])
-            elif j.shape[0]==1:
-                return self.__class__([[self._get1(iii, jjj) for (iii, jjj)
-                                        in zip(ii, j[0])] for ii in i])
-            else:
-                raise ValueError('shape mismatch: objects cannot be broadcast'+
-                                 ' to a single shape')
-        elif issequence(i) and issequence(j):
-            return self.__class__([[self._get1(ii, jj) for (ii, jj) in zip(i, j)]])
-        elif issequence(i) or isinstance(i, slice):
+        # Indicator variable so that 1 element slices generate matrices
+        slicemat=0
+        if isinstance(i, slice) or isinstance(j, slice):
+            slicemat=1
             if isinstance(i, slice):
                 i = self._slicetoseq(i, self.shape[0])
-            if np.isscalar(j):
-                return self.__class__([[self._get1(ii, j)] for ii in i])
+                if not i:
+                    return
+            i = np.atleast_1d(i)
             if isinstance(j, slice):
                 j = self._slicetoseq(j, self.shape[1])
-            if issequence(j):
-                return self.__class__([[self._get1(ii, jj) for jj in j] for ii in i])
+                if not j:
+                    return
+            j = np.atleast_1d(j)
+            if i.ndim>1 or j.ndim>1:
+                raise IndexError('indices can only return 2-d matrix')
+            i = np.outer(i, np.ones(j.shape[0], dtype=int))
+            j = np.vstack([j]*i.shape[0])
         else:
-            raise IndexError
+            i = np.atleast_2d(i)
+            j = np.atleast_2d(j)
+        # Make i and j into same shape
+            if j.shape==i.shape:
+                pass
+            elif i.shape==(1, 1):
+                i = i[0][0]*np.ones(j.shape, dtype=int)
+            elif j.shape==(1, 1):
+                j = j[0][0]*np.ones(i.shape, dtype=int)
+            elif i.shape[1]==j.shape[1]:
+                if i.shape[0]==1:
+                    i = np.vstack([i]*j.shape[0])
+                elif j.shape[0]==1:
+                    j = np.vstack([j]*i.shape[0])
+                else:
+                    raise ValueError('shape mismatch: objects cannot be '+\
+                                         'broadcast to a single shape')
+            else:
+                raise ValueError('shape mismatch: objects cannot be '+\
+                                     'broadcast to a single shape')
+        if i.shape==j.shape and i.shape==(1, 1) and not slicemat:
+            return self._get1(i[0, 0], j[0, 0])
+        return self.__class__([[self._get1(i[ii, jj], j[ii, jj]) for jj in 
+                                xrange(i.shape[1])] for ii in 
+                               xrange(i.shape[0])])
 
     def _insertat2(self, row, data, j, x):
         """ helper for __setitem__: insert a value in the given row/data at
@@ -430,7 +430,7 @@ class lil_matrix(spmatrix):
                 raise ValueError('shape mismatch: objects cannot be '+\
                                      'broadcast to a single shape')
 
-        x = np.atleast_2d(np.asarray(x))
+        x = np.atleast_2d(np.asarray(x, dtype=self.dtype))
         # Shortcut for scalar x
         if x.shape==(1, 1):
             for ii, jj in zip(i.ravel(), j.ravel()):
