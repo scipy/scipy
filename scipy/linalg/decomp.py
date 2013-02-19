@@ -106,8 +106,8 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     overwrite_b : bool, optional
         Whether to overwrite `b`; may improve performance.  Default is False.
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -237,8 +237,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     overwrite_b : bool, optional
         Whether to overwrite data in `b` (may improve performance)
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -463,8 +463,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         In doubt, leave this parameter untouched.
 
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -580,8 +580,8 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True):
     overwrite_a : boolean, optional
         Whether to overwrite data in a (may improve performance)
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -650,8 +650,8 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     overwrite_b : bool, optional
         Whether to overwrite data in `b` (may improve performance)
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -733,8 +733,8 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
     select_range : (min, max)
         Range of selected eigenvalues
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -782,8 +782,8 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
         Whether to overwrite `a`; may improve performance.
         Default is False.
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
