@@ -1069,6 +1069,9 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
 
     To get maximally flat group delay at higher frequencies, the analog
     Bessel filter must be transformed using phase-preserving techniques.
+    
+    For a given `Wn`, the lowpass and highpass filter have the same phase vs 
+    frequency curves.
 
     Examples
     --------
