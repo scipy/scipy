@@ -604,7 +604,7 @@ def block_diag(mats, format=None, dtype=None):
         rows.append(row)
     return bmat(rows, format=format, dtype=dtype)
 
-def rand(m, n, density=0.01, format="coo", dtype=None):
+def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     """Generate a sparse matrix of the given shape and density with uniformely
     distributed values.
 
@@ -619,6 +619,9 @@ def rand(m, n, density=0.01, format="coo", dtype=None):
         sparse matrix format.
     dtype : dtype
         type of the returned matrix values.
+    random_state : {numpy.random.RandomState, int}, optional
+        Random number generator or random seed. If not given, the singleton
+        numpy.random will be used.
 
     Notes
     -----
@@ -650,16 +653,21 @@ greater than %d - this is not supported on this machine
     fac = 1.02
     gk = min(k + mlow, fac * k)
 
-    def _gen_unique_rand(_gk):
-        id = np.random.rand(_gk)
-        return np.unique(np.floor(id * mn))[:k]
+    if random_state is None:
+        random_state = np.random
+    elif isinstance(random_state, (int, np.integer)):
+        random_state = np.random.RandomState(random_state)
 
-    id = _gen_unique_rand(gk)
-    while id.size < k:
+    def _gen_unique_rand(rng, _gk):
+        ind = rng.rand(_gk)
+        return np.unique(np.floor(ind * mn))[:k]
+
+    ind = _gen_unique_rand(random_state, gk)
+    while ind.size < k:
         gk *= 1.05
-        id = _gen_unique_rand(gk)
+        ind = _gen_unique_rand(random_state, gk)
 
-    j = np.floor(id * 1. / m).astype(tp)
-    i = (id - j * m).astype(tp)
-    vals = np.random.rand(k).astype(dtype)
+    j = np.floor(ind * 1. / m).astype(tp)
+    i = (ind - j * m).astype(tp)
+    vals = random_state.rand(k).astype(dtype)
     return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
