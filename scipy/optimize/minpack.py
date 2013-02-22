@@ -452,8 +452,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         can be determined using introspection, otherwise a ValueError
         is raised).
     sigma : None or N-length sequence
-        If not None, it represents the standard-deviation of ydata.
-        This vector, if given, will be used as weights in the
+        If not None, this vector will be used as relative weights in the
         least-squares problem.
 
     Returns
