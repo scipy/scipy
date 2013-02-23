@@ -155,15 +155,8 @@ def configuration(parent_package='',top_path=None):
 
 
 def setup_package():
-    from numpy.distutils.core import setup
 
-    # Rewrite the version file everytime
-    write_version_py()
-
-    # Generate Cython sources
-    generate_cython()
-
-    setup(
+    META_DATA = dict(
         name = 'scipy',
         maintainer = "SciPy Developers",
         maintainer_email = "scipy-dev@scipy.org",
@@ -174,8 +167,25 @@ def setup_package():
         license = 'BSD',
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
-        configuration=configuration)
+    )
 
+    # NumPy is required for install and build only
+    # for other cases just META_DATA is required and
+    # simple setuptools.setup will do the job
+    if sys.argv[1] in ('install', 'build'):
+        from numpy.distutils.core import setup
+
+        # Rewrite the version file everytime
+        write_version_py()
+
+        # Generate Cython sources
+        generate_cython()
+
+        META_DATA['configuration'] = configuration
+    else:
+        from setuptools import setup
+
+    setup(**META_DATA)
 
 if __name__ == '__main__':
     setup_package()
