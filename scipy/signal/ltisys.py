@@ -244,9 +244,9 @@ class lti(object):
     Notes
     -----
     `lti` instances have all types of representations available; for example
-    after creating an instance s with ``(zeros, poles, gain)`` the state-space
-    representation (numerator, denominator) can be accessed as ``s.num`` and
-    ``s.den``.
+    after creating an instance s with ``(zeros, poles, gain)`` the transfer 
+    function representation (numerator, denominator) can be accessed as 
+    ``s.num`` and ``s.den``.
 
     """
     def __init__(self, *args, **kwords):
@@ -340,7 +340,8 @@ class lti(object):
         return lsim(self, U, T, X0=X0)
 
     def bode(self, w=None, n=100):
-        """Calculate bode magnitude and phase data.
+        """
+        Calculate Bode magnitude and phase data.
 
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
         [dB] and phase [deg]. See scipy.signal.bode for details.
@@ -356,10 +357,11 @@ class lti(object):
         >>> w, mag, phase = s1.bode()
 
         >>> plt.figure()
-        >>> plt.semilogx(w, mag)    # bode magnitude plot
+        >>> plt.semilogx(w, mag)    # Bode magnitude plot
         >>> plt.figure()
-        >>> plt.semilogx(w, phase)  # bode phase plot
+        >>> plt.semilogx(w, phase)  # Bode phase plot
         >>> plt.show()
+
         """
         return bode(self, w=w, n=n)
 
@@ -404,7 +406,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
         given, the initial conditions are assumed to be 0.
     kwargs : dict
         Additional keyword arguments are passed on to the function
-        odeint.  See the notes below for more details.
+        `odeint`.  See the notes below for more details.
 
     Returns
     -------
@@ -612,7 +614,8 @@ def _default_response_times(A, n):
 
 
 def _default_response_frequencies(A, n):
-    """Compute a reasonable set of frequency points for bode plot.
+    """
+    Compute a reasonable set of frequency points for Bode plot.
 
     This function is used by `bode` to compute the frequency points (in rad/s)
     when the `w` argument to the function is None.
@@ -698,7 +701,6 @@ def impulse(system, X0=None, T=None, N=None):
 def impulse2(system, X0=None, T=None, N=None, **kwargs):
     """
     Impulse response of a single-input, continuous-time linear system.
-
 
     Parameters
     ----------
@@ -879,7 +881,8 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
 
 
 def bode(system, w=None, n=100):
-    """Calculate bode magnitude and phase data of a continuous-time system.
+    """
+    Calculate Bode magnitude and phase data of a continuous-time system.
 
     .. versionadded:: 0.11.0
 
@@ -921,10 +924,11 @@ def bode(system, w=None, n=100):
     >>> w, mag, phase = signal.bode(s1)
 
     >>> plt.figure()
-    >>> plt.semilogx(w, mag)    # bode magnitude plot
+    >>> plt.semilogx(w, mag)    # Bode magnitude plot
     >>> plt.figure()
-    >>> plt.semilogx(w, phase)  # bode phase plot
+    >>> plt.semilogx(w, phase)  # Bode phase plot
     >>> plt.show()
+
     """
     if isinstance(system, lti):
         sys = system
