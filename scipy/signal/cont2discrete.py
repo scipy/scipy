@@ -48,9 +48,9 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
     sysd : tuple containing the discrete system
         Based on the input type, the output will be of the form
 
-        (num, den, dt)   for transfer function input
-        (zeros, poles, gain, dt)   for zeros-poles-gain input
-        (A, B, C, D, dt) for state-space system input
+        * (num, den, dt)   for transfer function input
+        * (zeros, poles, gain, dt)   for zeros-poles-gain input
+        * (A, B, C, D, dt) for state-space system input
 
     Notes
     -----
