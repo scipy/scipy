@@ -148,7 +148,7 @@ def dimpulse(system, x0=None, t=None, n=None):
     t : ndarray
         A 1-D array of time points.
     yout : tuple of array_like
-        Step response of system.  Each element of the tuple represents
+        Impulse response of system.  Each element of the tuple represents
         the output of the system based on an impulse in each input.
 
     See Also
