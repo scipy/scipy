@@ -55,27 +55,34 @@ cdef np.ndarray[np.float64_t, ndim=1] _rankdata_fused(np.ndarray[array_data_type
     n = b.size
     ranks = _np.empty((n,))
 
-    order = _np.argsort(b).astype(_np.intp)
+    if tie_method == METHOD_ORDINAL:
+        order = _np.argsort(b, kind="mergesort").astype(_np.intp)
+    else:
+        order = _np.argsort(b).astype(_np.intp)
 
     with nogil:
-        dupcount = 0
-        for i in xrange(n):
-            inext = i + 1
-            if i == n - 1 or b[order[i]] != b[order[inext]]:
-                if tie_method == METHOD_AVERAGE:
-                    tie_rank = inext - 0.5 * dupcount
-                elif tie_method == METHOD_MIN:
-                    tie_rank = inext - dupcount
-                elif tie_method == METHOD_MAX:
-                    tie_rank = inext
-                elif tie_method == METHOD_DENSE:
-                    tie_rank = inext - dupcount - total_tie_count
-                    total_tie_count += dupcount
-                for j in xrange(i - dupcount, inext):
-                    ranks[order[j]] = tie_rank
-                dupcount = 0
-            else:
-                dupcount += 1
+        if tie_method == METHOD_ORDINAL:
+            for i in xrange(n):
+                ranks[order[i]] = i + 1
+        else:
+            dupcount = 0
+            for i in xrange(n):
+                inext = i + 1
+                if i == n - 1 or b[order[i]] != b[order[inext]]:
+                    if tie_method == METHOD_AVERAGE:
+                        tie_rank = inext - 0.5 * dupcount
+                    elif tie_method == METHOD_MIN:
+                        tie_rank = inext - dupcount
+                    elif tie_method == METHOD_MAX:
+                        tie_rank = inext
+                    elif tie_method == METHOD_DENSE:
+                        tie_rank = inext - dupcount - total_tie_count
+                        total_tie_count += dupcount
+                    for j in xrange(i - dupcount, inext):
+                        ranks[order[j]] = tie_rank
+                    dupcount = 0
+                else:
+                    dupcount += 1
 
     return ranks
 
@@ -126,10 +133,9 @@ def rankdata(a, method='average'):
 
     Notes
     -----
-    For each method except 'ordinal', all floating point types are converted
-    to numpy.float64 before ranking.  This may result in spurious ties if an
-    input array of floats has a wider data type than numpy.float64 (e.g.
-    numpy.float128).
+    All floating point types are converted to numpy.float64 before ranking.
+    This may result in spurious ties if an input array of floats has a wider
+    data type than numpy.float64 (e.g. numpy.float128).
 
     References
     ----------
@@ -164,12 +170,6 @@ def rankdata(a, method='average'):
 
     if b.size == 0:
         return _np.array([], dtype=_np.float64)
-
-    if tie_method == METHOD_ORDINAL:
-        ranks = _np.empty(b.size)
-        s = b.argsort(kind='mergesort')
-        ranks[s] = xrange(1, b.size + 1)
-        return ranks
 
     if _np.issubdtype(b.dtype, _np.unsignedinteger):
         # Any unsigned type is converted to np.uint64.
