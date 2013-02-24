@@ -20,11 +20,13 @@ DEF METHOD_AVERAGE = 0
 DEF METHOD_MIN     = 1
 DEF METHOD_MAX     = 2
 DEF METHOD_DENSE   = 3
+DEF METHOD_ORDINAL = 4
 
 _tie_method_map = dict(average=METHOD_AVERAGE,
                        min=METHOD_MIN,
                        max=METHOD_MAX,
-                       dense=METHOD_DENSE)
+                       dense=METHOD_DENSE,
+                       ordinal=METHOD_ORDINAL)
 
 ctypedef fused array_data_type:
     np.int64_t
@@ -110,6 +112,9 @@ def rankdata(a, method='average'):
         'dense':
             Like 'min', but the rank of the next highest element is assigned
             the rank immediately after those assigned to the tied elements.
+        'ordinal':
+            All values are given a distinct rank, corresponding to the order
+            that the values occur in `a`.
 
         The default is 'average'.
 
@@ -121,9 +126,10 @@ def rankdata(a, method='average'):
 
     Notes
     -----
-    All floating point types are converted to numpy.float64 before ranking.
-    This may result in spurious ties if an input array of floats has a
-    wider data type than numpy.float64 (e.g. numpy.float128).
+    For each method except 'ordinal', all floating point types are converted
+    to numpy.float64 before ranking.  This may result in spurious ties if an
+    input array of floats has a wider data type than numpy.float64 (e.g.
+    numpy.float128).
 
     References
     ----------
@@ -139,7 +145,8 @@ def rankdata(a, method='average'):
     array([ 1.,  3.,  4.,  3.])
     >>> rankdata([0, 2, 3, 2], method='dense')
     array([ 1.,  2.,  3.,  2.])
-
+    >>> rankdata([0, 2, 3, 2], method='ordinal')
+    array([ 1.,  2.,  4.,  3.])
     """
     cdef np.ndarray[np.int64_t, ndim=1] b_int64
     cdef np.ndarray[np.uint64_t, ndim=1] b_uint64
@@ -157,6 +164,12 @@ def rankdata(a, method='average'):
 
     if b.size == 0:
         return _np.array([], dtype=_np.float64)
+
+    if tie_method == METHOD_ORDINAL:
+        ranks = _np.empty(b.size)
+        s = b.argsort(kind='mergesort')
+        ranks[s] = xrange(1, b.size + 1)
+        return ranks
 
     if _np.issubdtype(b.dtype, _np.unsignedinteger):
         # Any unsigned type is converted to np.uint64.
