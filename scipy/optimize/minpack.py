@@ -448,7 +448,7 @@ def _weighted_general_function(params, xdata, ydata, function, weights):
     return weights * (function(xdata, *params) - ydata)
 
 
-def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
+def curve_fit(f, xdata, ydata, p0=None, sigma=None, scale_pcov=True, **kw):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -471,8 +471,20 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         can be determined using introspection, otherwise a ValueError
         is raised).
     sigma : None or N-length sequence
-        If not None, this vector will be used as relative weights in the
-        least-squares problem.
+        If not None, this vector will be used as relative weights
+        (if ``scale_pcov=True``) or standard deviation errors on ``ydata``
+        (if ``scale_pcov=False``) in the least-squares problem.
+    scale_pcov : bool
+        Multiply output covariance matrix ``pcov`` by ``sum(chi ** 2) / dof``,
+        where ``chi = (f(xdata, *popt) - ydata) / sigma`` and
+        ``dof = len(xdata) - len(popt)``.
+        Use ``scale_pcov=True`` if the ``sigma`` represent relative
+        weights and you would like to estimate the parameter uncertainty
+        based on the actual data. In this case multiplying the ``sigma`` array
+        by any number will not change the output ``pcov``.
+        Use ``scale_pcov=False`` if the ``sigma`` represent one standard
+        deviation errors on ``ydata``. In this case multiplying the ``sigma`` array
+        by a factor ``k`` will change the output ``pcov`` by a factor ``k ** 2``.
 
     Returns
     -------
@@ -480,8 +492,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         Optimal values for the parameters so that the sum of the squared error
         of ``f(xdata, *popt) - ydata`` is minimized
     pcov : 2d array
-        The estimated covariance of popt.  The diagonals provide the variance
-        of the parameter estimate.
+        The estimated covariance of popt. The diagonals provide the variance
+        of the parameter estimate. To compute one standard deviation errors
+        on the parameters use ``perr = np.sqrt(np.diag(pcov))``. 
 
     See Also
     --------
@@ -497,13 +510,13 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     >>> import numpy as np
     >>> from scipy.optimize import curve_fit
     >>> def func(x, a, b, c):
-    ...     return a*np.exp(-b*x) + c
+    ...     return a * np.exp(-b * x) + c
 
-    >>> x = np.linspace(0,4,50)
-    >>> y = func(x, 2.5, 1.3, 0.5)
-    >>> yn = y + 0.2*np.random.normal(size=len(x))
+    >>> xdata = np.linspace(0, 4, 50)
+    >>> y = func(xdata, 2.5, 1.3, 0.5)
+    >>> ydata = y + 0.2 * np.random.normal(size=len(xdata))
 
-    >>> popt, pcov = curve_fit(func, x, yn)
+    >>> popt, pcov = curve_fit(func, xdata, ydata)
 
     """
     if p0 is None:
@@ -537,11 +550,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         msg = "Optimal parameters not found: " + errmsg
         raise RuntimeError(msg)
 
-    if (len(ydata) > len(p0)) and pcov is not None:
-        s_sq = (func(popt, *args)**2).sum()/(len(ydata)-len(p0))
-        pcov = pcov * s_sq
-    else:
-        pcov = inf
+    if scale_pcov:
+        if (len(ydata) > len(p0)) and pcov is not None:
+            s_sq = (func(popt, *args)**2).sum()/(len(ydata)-len(p0))
+            pcov = pcov * s_sq
+        else:
+            pcov = inf
 
     if return_full:
         return popt, pcov, infodict, errmsg, ier
