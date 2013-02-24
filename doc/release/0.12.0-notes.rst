@@ -171,7 +171,7 @@ Authors
 * Nathan Crock +
 * endolith
 * Bradley M. Froehle +
-* Matty G
+* Matthew R Goodman
 * Christoph Gohlke
 * Ralf Gommers
 * Robert David Grant +
@@ -206,7 +206,7 @@ Authors
 * Josef Perktold
 * Zach Ploskey +
 * Alex Reinhart +
-* richli +
+* Richard Lindsley +
 * Gilles Rochefort +
 * Ciro Duran Santillli +
 * Jan Schlueter +
@@ -220,7 +220,7 @@ Authors
 * Julian Taylor +
 * thorstenkranz +
 * John Travers +
-* trueprice +
+* True Price +
 * Nicky van Foreest
 * Jacob Vanderplas
 * Patrick Varilly
