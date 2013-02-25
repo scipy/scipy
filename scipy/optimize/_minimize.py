@@ -78,7 +78,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         using finite differences on `jac`. `hessp` must compute the Hessian
         times an arbitrary vector.
     bounds : sequence, optional
-        Bounds for variables (only for L-BFGS-B, TNC, COBYLA and SLSQP).
+        Bounds for variables (only for L-BFGS-B, TNC and SLSQP).
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for one of ``min`` or
         ``max`` when there is no bound in that direction.
@@ -303,7 +303,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     if meth in ['l-bfgs-b', 'tnc'] and any(constraints):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
-    if meth is 'cobyla' and bounds is not None:
+    if meth == 'cobyla' and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
