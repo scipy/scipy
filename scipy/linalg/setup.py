@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
-import os
-from distutils.dep_util import newer_group, newer
 from os.path import join
 
 from scipy._build_utils import needs_g77_abi_wrapper
+
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
@@ -23,8 +22,6 @@ def configuration(parent_package='',top_path=None):
                       if k=='ATLAS_INFO']+[None])[0]
     if atlas_version:
         print(('ATLAS version: %s' % atlas_version))
-
-    target_dir = ''
 
     # fblas:
     if needs_g77_abi_wrapper(lapack_opt):

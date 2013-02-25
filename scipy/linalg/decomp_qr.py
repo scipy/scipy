@@ -46,7 +46,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         Determines what information is to be returned: either both Q and R
         ('full', default), only R ('r') or both Q and R but computed in
         economy-size ('economic', see Notes). The final option 'raw'
-        (added in Scipy 0.11) makes the function return two matrixes
+        (added in Scipy 0.11) makes the function return two matrices
         (Q, TAU) in the internal format used by LAPACK.
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
@@ -54,8 +54,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         ``A P = Q R`` as above, but where P is chosen such that the diagonal
         of R is non-increasing.
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -310,8 +310,8 @@ def qr_old(a, overwrite_a=False, lwork=None, check_finite=True):
         Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
         is computed.
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -376,8 +376,8 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
         ('full', default), only R ('r') or both Q and R but computed in
         economy-size ('economic', see Notes).
     check_finite : bool, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
