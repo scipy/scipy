@@ -1184,7 +1184,7 @@ class TestCSR(_TestCommon, _TestGetSet, _TestSolve,
         X = csr_matrix(np.arange(20).reshape(4, 5) / 20.)
         for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
                   "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
-                  "deg2rad", "rad2deg", "floor", "ceil", "trunc"]:
+                  "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt"]:
             assert_equal(hasattr(csr_matrix, f), True)
             X2 = getattr(X, f)()
             assert_equal(X.shape, X2.shape)
@@ -1284,7 +1284,7 @@ class TestCSC(_TestCommon, _TestGetSet, _TestSolve,
         X = csc_matrix(np.arange(21).reshape(7, 3) / 21.)
         for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
                   "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
-                  "deg2rad", "rad2deg", "floor", "ceil", "trunc"]:
+                  "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt"]:
             assert_equal(hasattr(csr_matrix, f), True)
             X2 = getattr(X, f)()
             assert_equal(X.shape, X2.shape)
