@@ -156,6 +156,9 @@ def configuration(parent_package='',top_path=None):
 
 def setup_package():
 
+    # Rewrite the version file everytime
+    write_version_py()
+
     META_DATA = dict(
         name = 'scipy',
         maintainer = "SciPy Developers",
@@ -169,21 +172,22 @@ def setup_package():
         platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
     )
 
-    # NumPy is required for install and build only
-    # for other cases just META_DATA is required and
-    # simple setuptools.setup will do the job
-    if sys.argv[1] in ('install', 'build'):
+    # For actins line egg_info and --version NumPy is not required
+    if '--help' in sys.argv[1:] or \
+      sys.argv[1] in ('--help-commands', 'egg_info', '--version'):
+        try:
+            from setuptools import setup
+        except ImportError:
+            from distutils.core import setup
+        from scipy.version import full_version
+        META_DATA['version'] = full_version
+    else:
         from numpy.distutils.core import setup
-
-        # Rewrite the version file everytime
-        write_version_py()
 
         # Generate Cython sources
         generate_cython()
 
         META_DATA['configuration'] = configuration
-    else:
-        from setuptools import setup
 
     setup(**META_DATA)
 
