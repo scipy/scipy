@@ -97,7 +97,10 @@ def get_version_info():
         GIT_REVISION = git_version()
     elif os.path.exists('scipy/version.py'):
         # must be a source distribution, use existing version file
-        from scipy.version import git_revision as GIT_REVISION
+        # load it as a separate module to not load scipy/__init__.py
+        import imp
+        version = imp.load_source('scipy.version', 'scipy/version.py')
+        GIT_REVISION = version.git_revision
     else:
         GIT_REVISION = "Unknown"
 
