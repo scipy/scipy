@@ -12,6 +12,8 @@ include scipy/*.py
 include cythonize.dat
 include tools/cythonize.py
 include scipy/cluster/_vq_rewrite.c  # unused, but ship still
+# Add all source files
+recursive-include scipy *.src *.c *.f *.pyf
 # Add Cython files
 recursive-include scipy *.pyx *.pyx.in *.pxd *.pxi
 # Add swig files
