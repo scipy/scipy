@@ -177,6 +177,10 @@ def configuration(parent_package='',top_path=None):
     return config
 
 def setup_package():
+    try:
+        import setuptools
+    except ImportError:
+        pass
 
     # Rewrite the version file everytime
     write_version_py()
@@ -208,10 +212,7 @@ def setup_package():
         # They are required to succeed without Numpy for example when
         # pip is used to install Scipy when Numpy is not yet present in
         # the system.
-        try:
-            from setuptools import setup
-        except ImportError:
-           from distutils.core import setup
+        from distutils.core import setup
 
         FULLVERSION, GIT_REVISION = get_version_info()
         metadata['version'] = FULLVERSION
