@@ -149,10 +149,11 @@ if HAVE_SPHINX:
             BuildDoc.run(self)
 
 def generate_cython():
-    cwd = os.path.dirname(__file__)
+    cwd = os.path.abspath(os.path.dirname(__file__))
     p = subprocess.Popen([sys.executable,
                           os.path.join(cwd, 'tools', 'cythonize.py'),
-                          os.path.join(cwd, 'scipy')],
+                          'scipy'],
+                         cwd=cwd,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
     out, err = p.communicate()
