@@ -88,18 +88,7 @@ if os.path.exists('MANIFEST'):
 # a lot more robust than what was previously being used.
 builtins.__SCIPY_SETUP__ = True
 
-def write_version_py(filename='scipy/version.py'):
-    cnt = """
-# THIS FILE IS GENERATED FROM SCIPY SETUP.PY
-short_version = '%(version)s'
-version = '%(version)s'
-full_version = '%(full_version)s'
-git_revision = '%(git_revision)s'
-release = %(isrelease)s
-
-if not release:
-    version = full_version
-"""
+def get_version_info():
     # Adding the git rev number needs to be done inside
     # write_version_py(), otherwise the import of scipy.version messes
     # up the build under Python 3.
@@ -114,6 +103,23 @@ if not release:
 
     if not ISRELEASED:
         FULLVERSION += '.dev-' + GIT_REVISION[:7]
+
+    return FULLVERSION, GIT_REVISION
+
+
+def write_version_py(filename='scipy/version.py'):
+    cnt = """
+# THIS FILE IS GENERATED FROM SCIPY SETUP.PY
+short_version = '%(version)s'
+version = '%(version)s'
+full_version = '%(full_version)s'
+git_revision = '%(git_revision)s'
+release = %(isrelease)s
+
+if not release:
+    version = full_version
+"""
+    FULLVERSION, GIT_REVISION = get_version_info()
 
     a = open(filename, 'w')
     try:
@@ -178,9 +184,10 @@ def setup_package():
         try:
             from setuptools import setup
         except ImportError:
-            from distutils.core import setup
-        from scipy.version import full_version
-        META_DATA['version'] = full_version
+           from distutils.core import setup
+
+        FULLVERSION, GIT_REVISION = get_version_info()
+        META_DATA['version'] = FULLVERSION
     else:
         from numpy.distutils.core import setup
 
