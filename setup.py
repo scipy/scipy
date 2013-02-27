@@ -168,7 +168,7 @@ def setup_package():
     # Rewrite the version file everytime
     write_version_py()
 
-    META_DATA = dict(
+    metadata = dict(
         name = 'scipy',
         maintainer = "SciPy Developers",
         maintainer_email = "scipy-dev@scipy.org",
@@ -181,25 +181,29 @@ def setup_package():
         platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
     )
 
-    # For actins line egg_info and --version NumPy is not required
-    if '--help' in sys.argv[1:] or \
-      sys.argv[1] in ('--help-commands', 'egg_info', '--version'):
+    if len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or
+            sys.argv[1] in ('--help-commands', 'egg_info', '--version')):
+        # For these actions, NumPy is not required.
+        #
+        # They are required to succeed without Numpy for example when
+        # pip is used to install Scipy when Numpy is not yet present in
+        # the system.
         try:
             from setuptools import setup
         except ImportError:
            from distutils.core import setup
 
         FULLVERSION, GIT_REVISION = get_version_info()
-        META_DATA['version'] = FULLVERSION
+        metadata['version'] = FULLVERSION
     else:
         from numpy.distutils.core import setup
 
         # Generate Cython sources
         generate_cython()
 
-        META_DATA['configuration'] = configuration
+        metadata['configuration'] = configuration
 
-    setup(**META_DATA)
+    setup(**metadata)
 
 if __name__ == '__main__':
     setup_package()
