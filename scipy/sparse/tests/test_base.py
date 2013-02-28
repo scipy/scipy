@@ -969,7 +969,7 @@ class _TestSlicingAssign:
         B[0, 1:10:2] = xrange(1,10,2)
         assert_array_equal(A.todense(), B)
         caught = 0
-        # The next 6 commands should raise exceptions
+        # The next commands should raise exceptions
         assert_raises(ValueError, A.__setitem__, (0, 0), list(range(100)))
         assert_raises(ValueError, A.__setitem__, (0, 0), arange(100))
         assert_raises(ValueError, A.__setitem__, (0, slice(None)), 
@@ -977,6 +977,11 @@ class _TestSlicingAssign:
         assert_raises(ValueError, A.__setitem__, (slice(None), 1), 
                       list(range(100)))
         assert_raises(ValueError, A.__setitem__, (slice(None), 1), A.copy())
+        assert_raises(ValueError, A.__setitem__,
+                      ([[1, 2, 3], [0, 3, 4]], [1, 2, 3]), [1, 2, 3, 4])
+        assert_raises(ValueError, A.__setitem__,
+                      ([[1, 2, 3], [0, 3, 4], [4, 1, 3]], 
+                       [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
 
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -1185,11 +1190,20 @@ class _TestFancyMultidimAssign:
 
         S[I,J] = X
         D[I,J] = X
-
         assert_equal(S.todense(), D)
 
         I_bad = I + 5
         J_bad = J + 7
+        C = [1, 2, 3]
+
+        S[I,J] = C
+        D[I,J] = C
+        assert_equal(S.todense(), D)
+
+        S[I,J] = 3
+        D[I,J] = 3
+        assert_equal(S.todense(), D)
+
         assert_raises(IndexError, S.__setitem__, (I_bad,J), C)
         assert_raises(IndexError, S.__setitem__, (I,J_bad), C)
 
