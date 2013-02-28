@@ -1176,6 +1176,8 @@ class _TestFancyMultidim:
 
             assert_raises(IndexError, S.__getitem__, (I_bad,J))
             assert_raises(IndexError, S.__getitem__, (I,J_bad))
+            assert_raises(IndexError, S.__geitem___, (I, slice(None)))
+            assert_raises(IndexError, S.__geitem___, (slice(None), J))
 
 class _TestFancyMultidimAssign:
     def test_fancy_assign_ndarray(self):
@@ -1256,6 +1258,10 @@ class _TestFancyMultidimAssign:
 
         S[:,J] = C
         D[:,J] = C
+        assert_equal(S.todense(), D)
+
+        S[I,:] = [C, C, C]
+        D[I,:] = [C, C, C]
         assert_equal(S.todense(), D)
 
         S[I,:] = 3
