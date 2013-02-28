@@ -1207,6 +1207,63 @@ class _TestFancyMultidimAssign:
         assert_raises(IndexError, S.__setitem__, (I_bad,J), C)
         assert_raises(IndexError, S.__setitem__, (I,J_bad), C)
 
+    def test_fancy_assign_list(self):
+        np.random.seed(1234)
+
+        D = np.asmatrix(np.random.rand(5, 7))
+        S = self.spmatrix(D)
+        X = np.random.rand(2, 3)
+
+        I = [[1, 2, 3], [3, 4, 2]]
+        J = [[5, 6, 3], [2, 3, 1]]
+
+        S[I,J] = X
+        D[I,J] = X
+        assert_equal(S.todense(), D)
+
+        I_bad = I + 5
+        J_bad = J + 7
+        C = [1, 2, 3]
+
+        S[I,J] = C
+        D[I,J] = C
+        assert_equal(S.todense(), D)
+
+        S[I,J] = 3
+        D[I,J] = 3
+        assert_equal(S.todense(), D)
+
+        assert_raises(IndexError, S.__setitem__, (I_bad,J), C)
+        assert_raises(IndexError, S.__setitem__, (I,J_bad), C)
+
+    def test_fancy_assign_slice(self):
+        np.random.seed(1234)
+
+        D = np.asmatrix(np.random.rand(5, 7))
+        S = self.spmatrix(D)
+        X = np.random.rand(2, 3)
+
+        I = [[1, 2, 3], [3, 4, 2]]
+        J = [[5, 6, 3], [2, 3, 1]]
+
+        I_bad = I + 5
+        J_bad = J + 7
+        C = [1, 2, 3, 4, 5, 6, 7]
+
+        S[I,:] = C
+        D[I,:] = C
+        assert_equal(S.todense(), D)
+
+        S[:,J] = C
+        D[:,J] = C
+        assert_equal(S.todense(), D)
+
+        S[I,:] = 3
+        D[:,J] = 3
+        assert_equal(S.todense(), D)
+
+        assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C)
+        assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C)
 
 class _TestArithmetic:
     """
@@ -1732,6 +1789,14 @@ class TestDOK(sparse_test_class(slicing=False,
 
     @dec.knownfailureif(True, "known deficiency in DOK")
     def test_fancy_assign_ndarray(self):
+        pass
+
+    @dec.knownfailureif(True, "known deficiency in DOK")
+    def test_fancy_assign_list(self):
+        pass
+
+    @dec.knownfailureif(True, "known deficiency in DOK")
+    def test_fancy_assign_slice(self):
         pass
 
 class TestLIL(sparse_test_class(fancy_multidim_assign=False,
