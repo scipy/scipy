@@ -789,16 +789,8 @@ class _TestSlicing:
         assert_array_equal(E[2, -2:], F[2, -2:].A)
 
         # The following should raise exceptions:
-        caught = 0
-        try:
-            a = A[:,11]
-        except IndexError:
-            caught += 1
-        try:
-            a = A[6,3:7]
-        except IndexError:
-            caught += 1
-        assert_(caught == 2)
+        assert_raises(IndexError, A.__getitem__, (slice(None), 11))
+        assert_raises(IndexError, A.__getitem__, (6, slice(3, 7)))
 
     def test_get_vert_slice(self):
         B = asmatrix(arange(50.).reshape(5,10))
@@ -818,16 +810,8 @@ class _TestSlicing:
         assert_array_equal(E[-2:, 2], F[-2:, 2].todense())
 
         # The following should raise exceptions:
-        caught = 0
-        try:
-            a = A[:,11]
-        except IndexError:
-            caught += 1
-        try:
-            a = A[6,3:7]
-        except IndexError:
-            caught += 1
-        assert_(caught == 2)
+        assert_raises(IndexError, A.__getitem__, (slice(None), 11))
+        assert_raises(IndexError, A.__getitem__, (6, slice(3, 7)))
 
     def test_get_slices(self):
         B = asmatrix(arange(50.).reshape(5,10))
@@ -959,7 +943,7 @@ class _TestSlicingAssign:
 
     def test_set_slice(self):
         A = self.spmatrix((5,10))
-        B = zeros((5,10), float)
+        B = matrix(zeros((5,10), float))
         A[:,0] = 1
         B[:,0] = 1
         assert_array_equal(A.todense(), B)
@@ -981,36 +965,18 @@ class _TestSlicingAssign:
         A[1, 3:10:3] = 7
         B[1, 3:10:3] = 7
         assert_array_equal(A.todense(), B)
-        A[1:5, 0] = range(1,5)
-        B[1:5, 0] = range(1,5)
-        assert_array_equal(A.todense(), B)
         A[0, 1:10:2] = xrange(1,10,2)
         B[0, 1:10:2] = xrange(1,10,2)
         assert_array_equal(A.todense(), B)
         caught = 0
         # The next 6 commands should raise exceptions
-        try:
-            A[0,0] = list(range(100))
-        except ValueError:
-            caught += 1
-        try:
-            A[0,0] = arange(100)
-        except ValueError:
-            caught += 1
-        try:
-            A[0,:] = list(range(100))
-        except ValueError:
-            caught += 1
-        try:
-            A[:,1] = list(range(100))
-        except ValueError:
-            caught += 1
-        try:
-            A[:,1] = A.copy()
-        except:
-            caught += 1
-        assert_equal(caught,5)
-
+        assert_raises(ValueError, A.__setitem__, (0, 0), list(range(100)))
+        assert_raises(ValueError, A.__setitem__, (0, 0), arange(100))
+        assert_raises(ValueError, A.__setitem__, (0, slice(None)), 
+                      list(range(100)))
+        assert_raises(ValueError, A.__setitem__, (slice(None), 1), 
+                      list(range(100)))
+        assert_raises(ValueError, A.__setitem__, (slice(None), 1), A.copy())
 
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -1687,11 +1653,7 @@ class TestDOK(sparse_test_class(slicing=False,
     def test_ctor(self):
         caught = 0
         # Empty ctor
-        try:
-            A = dok_matrix()
-        except TypeError as e:
-            caught+=1
-        assert_equal(caught, 1)
+        assert_raises(TypeError, dok_matrix)
 
         # Dense ctor
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
