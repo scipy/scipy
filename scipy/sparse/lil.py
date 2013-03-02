@@ -321,36 +321,6 @@ class lil_matrix(spmatrix):
                 del row[pos]
                 del data[pos]
 
-    def _setitem_setrow(self, row, data, j, xrow, xdata, xcols):
-        if isinstance(j, slice):
-            j = self._slicetoseq(j, self.shape[1])
-        if issequence(j):
-            if xcols == len(j):
-                for jj, xi in zip(j, xrange(xcols)):
-                    pos = bisect_left(xrow, xi)
-                    if pos != len(xdata) and xrow[pos] == xi:
-                        self._insertat2(row, data, jj, xdata[pos])
-                    else:
-                        self._insertat2(row, data, jj, 0)
-            elif xcols == 1:           # OK, broadcast across row
-                if len(xdata) > 0 and xrow[0] == 0:
-                    val = xdata[0]
-                else:
-                    val = 0
-                for jj in j:
-                    self._insertat2(row, data, jj,val)
-            else:
-                raise IndexError('invalid index')
-        elif np.isscalar(j):
-            if not xcols == 1:
-                raise ValueError('array dimensions are not compatible for copy')
-            if len(xdata) > 0 and xrow[0] == 0:
-                self._insertat2(row, data, j, xdata[0])
-            else:
-                self._insertat2(row, data, j, 0)
-        else:
-            raise ValueError('invalid column value: %s' % str(j))
-
     def __setitem__(self, index, x):
         try:
             i, j = index
