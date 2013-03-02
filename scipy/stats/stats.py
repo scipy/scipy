@@ -2921,8 +2921,8 @@ def kendalltau(x, y, initial_lexsort=True):
     v += ((n - first) * (n - first - 1)) // 2
 
     tot = (n * (n - 1)) // 2
-    if tot == u and tot == v:
-        return 1    # Special case for all ties in both ranks
+    if tot == u or tot == v:
+        return (np.nan, np.nan)    # Special case for all ties in both ranks
 
     # Prevent overflow; equal to np.sqrt((tot - u) * (tot - v))
     denom = np.exp(0.5 * (np.log(tot - u) + np.log(tot - v)))
