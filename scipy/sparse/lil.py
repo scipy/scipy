@@ -333,7 +333,8 @@ class lil_matrix(spmatrix):
 
         # shortcut for common case of full matrix assign:
         if (isspmatrix(x) and isinstance(i, slice) and i == slice(None) and
-                isinstance(j, slice) and j == slice(None)):
+                isinstance(j, slice) and j == slice(None)
+                and x.shape == self.shape):
             x = lil_matrix(x, dtype=self.dtype)
             self.rows = x.rows
             self.data = x.data
@@ -341,42 +342,16 @@ class lil_matrix(spmatrix):
 
         i, j, is_scalar = self._index_to_arrays(index)
 
-        # If input is a sparse matrix, handle separately
         if isspmatrix(x):
-            if x.shape==(1, 1):
-                for ii, jj in zip(i.ravel(), j.ravel()):
-                    self._insertat2(self.rows[ii], self.data[ii], 
-                                    j[jj], x[0, 0])
-                return
-            elif x.shape==i.shape:
-                for ii, jj, xx in zip(i.ravel(), j.ravel(), 
-                                      x.toarray().ravel()):
-                    self._insertat2(self.rows[ii], self.data[ii], jj, xx)
-                return
-            elif x.shape[1]==i.shape[1] and x.shape[0]==1:
-                for ii, jj in zip(i.ravel(), j.ravel(), 
-                                  np.concatenat([x.toarry()]*i.shape[1])):
-                    self._insertat2(self.rows[ii], self.data[ii], jj, xx)
-                return
-            else:
-                raise ValueError('shape mismatch: objects cannot be '+\
-                                     'broadcast to a single shape')
+            x = x.toarray()
 
-        x = np.atleast_2d(np.asarray(x, dtype=self.dtype))
-        # Shortcut for scalar x
-        if x.shape==(1, 1):
-            for ii, jj in zip(i.ravel(), j.ravel()):
-                self._insertat2(self.rows[ii], self.data[ii], 
-                                jj, x[0, 0])
-            return
         # Make x and i into the same shape
-        if i.shape==x.shape:
-            pass
-        elif x.shape[1]==i.shape[1] and x.shape[0]==1:
-            x = np.vstack([x]*i.shape[0])
-        else:
-            raise ValueError('shape mismatch: objects cannot be '+\
-                                 'broadcast to a single shape')
+        x = np.asarray(x, dtype=self.dtype)
+        x, _ = np.broadcast_arrays(x, i)
+
+        if x.shape != i.shape:
+            raise ValueError("shape mismatch in assignment")
+
         # Set values
         for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
             self._insertat2(self.rows[ii], self.data[ii], jj, xx)
