@@ -212,7 +212,8 @@ class lil_matrix(spmatrix):
         try:
             i, j = index
         except (AssertionError, TypeError):
-            if isinstance(index, (list, np.ndarray, slice)):
+            if isinstance(index, (list, np.ndarray, slice)) \
+                   or hasattr(index, '__index__'):
                 i = index
                 j = slice(None)
             else:
@@ -305,7 +306,8 @@ class lil_matrix(spmatrix):
         try:
             i, j = index
         except (ValueError, TypeError):
-            if isinstance(index, (list, np.ndarray, slice)):
+            if isinstance(index, (list, np.ndarray, slice)) \
+                   or hasattr(index, '__index__'):
                 i = index
                 j = slice(None)
             else:
