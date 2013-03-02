@@ -127,6 +127,30 @@ class lil_matrix(spmatrix):
                 self.rows  = A.rows
                 self.data  = A.data
 
+    def set_shape(self,shape):
+        shape = tuple(shape)
+
+        if len(shape) != 2:
+            raise ValueError("Only two-dimensional sparse arrays "
+                                     "are supported.")
+        try:
+            shape = int(shape[0]),int(shape[1]) #floats, other weirdness
+        except:
+            raise TypeError('invalid shape')
+
+        if not (shape[0] >= 0 and shape[1] >= 0):
+            raise ValueError('invalid shape')
+
+        if (self._shape != shape) and (self._shape is not None):
+            try:
+                self = self.reshape(shape)
+            except NotImplementedError:
+                raise NotImplementedError("Reshaping not implemented for %s." %
+                                          self.__class__.__name__)
+        self._shape = shape
+
+    shape = property(fget=spmatrix.get_shape, fset=set_shape)
+
     def __iadd__(self,other):
         self[:,:] = self + other
         return self
@@ -231,12 +255,12 @@ class lil_matrix(spmatrix):
             if isinstance(i, slice):
                 i = self._slicetoseq(i, self.shape[0])
                 if not i:
-                    return
+                    return lil_matrix((0,0), dtype=self.dtype)
             i = np.atleast_1d(i)
             if isinstance(j, slice):
                 j = self._slicetoseq(j, self.shape[1])
                 if not j:
-                    return
+                    return lil_matrix((0,0), dtype=self.dtype)
             j = np.atleast_1d(j)
             if i.ndim>1 or j.ndim>1:
                 raise IndexError('indices can only return 2-d matrix')
