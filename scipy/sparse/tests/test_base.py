@@ -897,9 +897,12 @@ class _TestSlicing:
             x = A[a]
             y = B[a]
             if y.shape == ():
-                assert_equal(x, y, a)
+                assert_equal(x, y, repr(a))
             else:
-                assert_array_equal(x.todense(), y, a)
+                if x.size == 0 and y.size == 0:
+                    pass
+                else:
+                    assert_array_equal(x.todense(), y, repr(a))
 
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
@@ -908,8 +911,10 @@ class _TestSlicing:
                 if y.shape == ():
                     assert_equal(x, y, (a, b))
                 else:
-                    assert_array_equal(x.todense(), y, (a, b))
-
+                    if x.size == 0 and y.size == 0:
+                        pass
+                    else:
+                        assert_array_equal(x.todense(), y, repr((a, b)))
 
 
 class _TestSlicingAssign:
@@ -982,13 +987,13 @@ class _TestSlicingAssign:
         for j, a in enumerate(slices):
             A[a] = j
             B[a] = j
-            assert_array_equal(A.todense(), B, a)
+            assert_array_equal(A.todense(), B, repr(a))
 
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
                 A[a,b] = 10*i + 1000*(j+1)
                 B[a,b] = 10*i + 1000*(j+1)
-                assert_array_equal(A.todense(), B, (a, b))
+                assert_array_equal(A.todense(), B, repr((a, b)))
 
         A[0, 1:10:2] = xrange(1,10,2)
         B[0, 1:10:2] = xrange(1,10,2)
@@ -1203,8 +1208,6 @@ class _TestFancyMultidim:
 
             assert_raises(IndexError, S.__getitem__, (I_bad,J))
             assert_raises(IndexError, S.__getitem__, (I,J_bad))
-            assert_raises(IndexError, S.__getitem__, (I, slice(None)))
-            assert_raises(IndexError, S.__getitem__, (slice(None), J))
 
             # This would generate 3-D arrays -- not supported
             assert_raises(IndexError, S.__getitem__, ([I, I], slice(None)))
