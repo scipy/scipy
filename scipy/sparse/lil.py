@@ -224,20 +224,15 @@ class lil_matrix(spmatrix):
         else:
             return self.dtype.type(0)
 
-    def _slicetoseq(self, j, shape):
+    def _slicetoarange(self, j, shape):
         start, stop, step = j.indices(shape)
-        return list(range(start, stop, step))
+        return np.arange(start, stop, step)
 
-    def __getitem__(self, index):
-        """Return the element(s) index=(i, j), where j may be a slice.
-        This always returns a copy for consistency, since slices into
-        Python lists return copies.
-        """
+    def _index_to_arrays(self, index):
         try:
             i, j = index
         except (AssertionError, TypeError):
-            if isinstance(index, (list, np.ndarray, slice)) \
-                   or hasattr(index, '__index__'):
+            if isinstance(index, (list, np.ndarray, slice)) or hasattr(index, '__index__'):
                 i = index
                 j = slice(None)
             else:
@@ -248,47 +243,46 @@ class lil_matrix(spmatrix):
                  'Pre-converting to CSC or CSR beforehand is more efficient.',
                  SparseEfficiencyWarning)
 
-        # Indicator variable so that 1 element slices generate matrices
-        slicemat=0
-        if isinstance(i, slice) or isinstance(j, slice):
-            slicemat=1
-            if isinstance(i, slice):
-                i = self._slicetoseq(i, self.shape[0])
-                if not i:
-                    return lil_matrix((0,0), dtype=self.dtype)
-            i = np.atleast_1d(i)
-            if isinstance(j, slice):
-                j = self._slicetoseq(j, self.shape[1])
-                if not j:
-                    return lil_matrix((0,0), dtype=self.dtype)
-            j = np.atleast_1d(j)
-            if i.ndim>1 or j.ndim>1:
-                raise IndexError('indices can only return 2-d matrix')
-            i = np.outer(i, np.ones(j.shape[0], dtype=int))
-            j = np.vstack([j]*i.shape[0])
+        is_scalar = True
+        if not np.isscalar(i) and getattr(i, 'shape', None) != ():
+            is_scalar = False
+        if not np.isscalar(j) and getattr(j, 'shape', None) != ():
+            is_scalar = False
+
+        if isinstance(i, slice):
+            i = self._slicetoarange(i, self.shape[0])[:,None]
         else:
-            i = np.atleast_2d(i)
-            j = np.atleast_2d(j)
-        # Make i and j into same shape
-            if j.shape==i.shape:
-                pass
-            elif i.shape==(1, 1):
-                i = i[0][0]*np.ones(j.shape, dtype=int)
-            elif j.shape==(1, 1):
-                j = j[0][0]*np.ones(i.shape, dtype=int)
-            elif i.shape[1]==j.shape[1]:
-                if i.shape[0]==1:
-                    i = np.vstack([i]*j.shape[0])
-                elif j.shape[0]==1:
-                    j = np.vstack([j]*i.shape[0])
-                else:
-                    raise ValueError('shape mismatch: objects cannot be '+\
-                                         'broadcast to a single shape')
-            else:
-                raise ValueError('shape mismatch: objects cannot be '+\
-                                     'broadcast to a single shape')
-        if i.shape==j.shape and i.shape==(1, 1) and not slicemat:
+            i = np.atleast_1d(i)
+
+        if isinstance(j, slice):
+            j = self._slicetoarange(j, self.shape[1])[None,:]
+            if i.ndim == 1:
+                i = i[:,None]
+        else:
+            j = np.atleast_1d(j)
+
+        i, j = np.broadcast_arrays(i, j)
+
+        if i.ndim == 1:
+            # return column vectors for 1-D indexing
+            i = i[None,:]
+            j = j[None,:]
+        elif i.ndim > 2:
+            raise IndexError("Index dimension must be <= 2")
+
+        return i, j, is_scalar
+
+    def __getitem__(self, index):
+        """Return the element(s) index=(i, j), where j may be a slice.
+        This always returns a copy for consistency, since slices into
+        Python lists return copies.
+        """
+        i, j, is_scalar = self._index_to_arrays(index)
+        if i.size == 0:
+            return lil_matrix((0,0), dtype=self.dtype)
+        elif i.shape == j.shape and i.shape == (1, 1) and is_scalar:
             return self._get1(i[0, 0], j[0, 0])
+
         return self.__class__([[self._get1(i[ii, jj], j[ii, jj]) for jj in 
                                 xrange(i.shape[1])] for ii in 
                                xrange(i.shape[0])])
@@ -339,47 +333,13 @@ class lil_matrix(spmatrix):
 
         # shortcut for common case of full matrix assign:
         if (isspmatrix(x) and isinstance(i, slice) and i == slice(None) and
-            isinstance(j, slice) and j == slice(None)):
+                isinstance(j, slice) and j == slice(None)):
             x = lil_matrix(x, dtype=self.dtype)
             self.rows = x.rows
             self.data = x.data
             return
 
-        # Transform data into numpy arrays to enable ravel()
-        if isinstance(i, slice) or isinstance(j, slice):
-            if isinstance(i, slice):
-                i = self._slicetoseq(i, self.shape[0])
-                if not i:
-                    return
-            i = np.atleast_1d(i).ravel()
-            if isinstance(j, slice):
-                j = self._slicetoseq(j, self.shape[1])
-                if not j:
-                    return
-            j = np.atleast_1d(j).ravel()
-            i = np.outer(i, np.ones(j.shape[0], dtype=int))
-            j = np.vstack([j]*i.shape[0])
-        else:
-            i = np.atleast_2d(i)
-            j = np.atleast_2d(j)
-        # Make i and j into same shape
-            if j.shape==i.shape:
-                pass
-            elif i.shape==(1, 1):
-                i = i[0][0]*np.ones(j.shape, dtype=int)
-            elif j.shape==(1, 1):
-                j = j[0][0]*np.ones(i.shape, dtype=int)
-            elif i.shape[1]==j.shape[1]:
-                if i.shape[0]==1:
-                    i = np.vstack([i]*j.shape[0])
-                elif j.shape[0]==1:
-                    j = np.vstack([j]*i.shape[0])
-                else:
-                    raise ValueError('shape mismatch: objects cannot be '+\
-                                         'broadcast to a single shape')
-            else:
-                raise ValueError('shape mismatch: objects cannot be '+\
-                                     'broadcast to a single shape')
+        i, j, is_scalar = self._index_to_arrays(index)
 
         # If input is a sparse matrix, handle separately
         if isspmatrix(x):
