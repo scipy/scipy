@@ -232,22 +232,13 @@ class lil_matrix(spmatrix):
         try:
             i, j = index
         except (AssertionError, TypeError):
-            if isinstance(index, (list, np.ndarray, slice)) or hasattr(index, '__index__'):
+            if isinstance(index, (list, np.ndarray, slice)) or isscalarlike(index):
                 i = index
                 j = slice(None)
             else:
                 raise IndexError('invalid index')
 
-        if not np.isscalar(i) and np.isscalar(j):
-            warn('Indexing into a lil_matrix with multiple indices is slow. '
-                 'Pre-converting to CSC or CSR beforehand is more efficient.',
-                 SparseEfficiencyWarning)
-
-        is_scalar = True
-        if not np.isscalar(i) and getattr(i, 'shape', None) != ():
-            is_scalar = False
-        if not np.isscalar(j) and getattr(j, 'shape', None) != ():
-            is_scalar = False
+        is_scalar = isscalarlike(i) and isscalarlike(j)
 
         if isinstance(i, slice):
             i = self._slicetoarange(i, self.shape[0])[:,None]
@@ -324,8 +315,7 @@ class lil_matrix(spmatrix):
         try:
             i, j = index
         except (ValueError, TypeError):
-            if isinstance(index, (list, np.ndarray, slice)) \
-                   or hasattr(index, '__index__'):
+            if isinstance(index, (list, np.ndarray, slice)) or isscalarlike(index):
                 i = index
                 j = slice(None)
             else:
