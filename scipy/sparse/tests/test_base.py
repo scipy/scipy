@@ -908,8 +908,14 @@ class _TestSlicing:
             for j, b in enumerate(slices):
                 x = A[a,b]
                 y = B[a,b]
+
+                if b == np.array(-1) and isinstance(b, np.ndarray):
+                    # Bug in np.matrix
+                    # https://github.com/numpy/numpy/issues/3110
+                    y = B[a,-1]
+
                 if y.shape == ():
-                    assert_equal(x, y, (a, b))
+                    assert_equal(x, y, repr((a, b)))
                 else:
                     if x.size == 0 and y.size == 0:
                         pass
