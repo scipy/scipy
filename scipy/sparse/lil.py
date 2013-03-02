@@ -201,28 +201,8 @@ class lil_matrix(spmatrix):
             return self.dtype.type(0)
 
     def _slicetoseq(self, j, shape):
-        step = j.step or 1
-        if j.start is not None and j.start < 0:
-            start =  shape + j.start
-        elif j.start is None:
-            if step > 0:
-                start = 0
-            else:
-                start = shape
-        else:
-            start = j.start
-        if j.stop is not None and j.stop < 0:
-            stop = shape + j.stop
-        elif j.stop is None:
-            if step > 0:
-                stop = shape
-            else:
-                stop = -1
-        else:
-            stop = j.stop
-        j = list(range(start, stop, step))
-        return j
-
+        start, stop, step = j.indices(shape)
+        return list(range(start, stop, step))
 
     def __getitem__(self, index):
         """Return the element(s) index=(i, j), where j may be a slice.
