@@ -883,6 +883,34 @@ class _TestSlicing:
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
 
+    def test_slicing_3(self):
+        B = asmatrix(arange(50).reshape(5,10))
+        A = self.spmatrix( B )
+
+        s_ = np.s_
+        slices = [s_[:2], s_[1:2], s_[3:], s_[3::2],
+                  s_[8:3:-1], s_[4::-2], s_[:5:-1],
+                  0, 1, s_[:], s_[1:5], -1, -2, -5,
+                  array(-1), np.int8(-3)]
+
+        for j, a in enumerate(slices):
+            x = A[a]
+            y = B[a]
+            if y.shape == ():
+                assert_equal(x, y, a)
+            else:
+                assert_array_equal(x.todense(), y, a)
+
+        for i, a in enumerate(slices):
+            for j, b in enumerate(slices):
+                x = A[a,b]
+                y = B[a,b]
+                if y.shape == ():
+                    assert_equal(x, y, (a, b))
+                else:
+                    assert_array_equal(x.todense(), y, (a, b))
+
+
 
 class _TestSlicingAssign:
     def test_slice_scalar_assign(self):
@@ -944,31 +972,31 @@ class _TestSlicingAssign:
     def test_set_slice(self):
         A = self.spmatrix((5,10))
         B = matrix(zeros((5,10), float))
-        A[:,0] = 1
-        B[:,0] = 1
-        assert_array_equal(A.todense(), B)
-        A[1,:] = 2
-        B[1,:] = 2
-        assert_array_equal(A.todense(), B)
-        A[:,:] = 3
-        B[:,:] = 3
-        assert_array_equal(A.todense(), B)
-        A[1:5, 3] = 4
-        B[1:5, 3] = 4
-        assert_array_equal(A.todense(), B)
-        A[1, 3:6] = 5
-        B[1, 3:6] = 5
-        assert_array_equal(A.todense(), B)
-        A[1:4, 3:6] = 6
-        B[1:4, 3:6] = 6
-        assert_array_equal(A.todense(), B)
-        A[1, 3:10:3] = 7
-        B[1, 3:10:3] = 7
-        assert_array_equal(A.todense(), B)
+
+        s_ = np.s_
+        slices = [s_[:2], s_[1:2], s_[3:], s_[3::2],
+                  s_[8:3:-1], s_[4::-2], s_[:5:-1],
+                  0, 1, s_[:], s_[1:5], -1, -2, -5,
+                  array(-1), np.int8(-3)]
+
+        for j, a in enumerate(slices):
+            A[a] = j
+            B[a] = j
+            assert_array_equal(A.todense(), B, a)
+
+        for i, a in enumerate(slices):
+            for j, b in enumerate(slices):
+                A[a,b] = 10*i + 1000*(j+1)
+                B[a,b] = 10*i + 1000*(j+1)
+                assert_array_equal(A.todense(), B, (a, b))
+
         A[0, 1:10:2] = xrange(1,10,2)
         B[0, 1:10:2] = xrange(1,10,2)
         assert_array_equal(A.todense(), B)
-        caught = 0
+        A[1:5:2,0] = np.array(range(1,5,2))[:,None]
+        B[1:5:2,0] = np.array(range(1,5,2))[:,None]
+        assert_array_equal(A.todense(), B)
+
         # The next commands should raise exceptions
         assert_raises(ValueError, A.__setitem__, (0, 0), list(range(100)))
         assert_raises(ValueError, A.__setitem__, (0, 0), arange(100))
@@ -988,9 +1016,17 @@ class _TestFancyIndexing:
     that implement these features should derive from this class.
     """
 
+    def test_bad_index(self):
+        A = self.spmatrix(np.zeros([5, 5]))
+        assert_raises((IndexError, ValueError, TypeError), A.__getitem__, "foo")
+        assert_raises((IndexError, ValueError, TypeError), A.__getitem__, (2, "foo"))
+
     def test_fancy_indexing(self):
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix( B )
+
+        # [i]
+        assert_equal(A[[1,3]].todense(),  B[[1,3]])
 
         # [i,[1,2]]
         assert_equal(A[3,[1,3]].todense(),  B[3,[1,3]])
@@ -1080,6 +1116,11 @@ class _TestFancyIndexing:
 
 
 class _TestFancyIndexingAssign:
+    def test_bad_index_assign(self):
+        A = self.spmatrix(np.zeros([5, 5]))
+        assert_raises((IndexError, ValueError, TypeError), A.__setitem__, "foo", 2)
+        assert_raises((IndexError, ValueError, TypeError), A.__setitem__, (2, "foo"), 5)
+
     def test_fancy_indexing_set(self):
         n, m = (5, 10)
         def _test_set_slice(i, j):
@@ -1380,7 +1421,7 @@ def _possibly_unimplemented(cls, require=True):
                 try:
                     return fc(*a, **kw)
                 except (NotImplementedError, TypeError, ValueError,
-                        IndexError):
+                        IndexError, AttributeError):
                     raise nose.SkipTest("feature not implemented")
 
             wrapper.__name__ = fc.__name__
@@ -1565,6 +1606,10 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
             SIJ = SIJ.todense()
         assert_equal(SIJ, D[I,J])
 
+    @dec.knownfailureif(True, "CSC not implemented")
+    def test_slicing_3(self):
+        pass
+
 class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csc_matrix
@@ -1677,6 +1722,10 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
 
     @dec.knownfailureif(True, "CSC bug")
     def test_fancy_indexing_ndarray(self):
+        pass
+
+    @dec.knownfailureif(True, "CSC not implemented")
+    def test_slicing_3(self):
         pass
 
 
