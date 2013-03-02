@@ -962,6 +962,14 @@ class _TestSlicingAssign:
         B[0,:] = A[0,:]
         assert_array_equal(A[0,:].A, B[0,:].A)
 
+        A = B / 10
+        B[:,:] = A[:1,:1]
+        assert_equal(A[0,0], B[3,2])
+
+        A = B / 10
+        B[:-1,0] = A[0,:].T
+        assert_array_equal(A[0,:].A.T, B[:-1,0].A)
+
     def test_slice_assignment(self):
         B = self.spmatrix((4,3))
         B[0,0] = 5
