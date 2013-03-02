@@ -898,17 +898,17 @@ class _TestSlicingAssign:
 
     def test_slice_assign_2(self):
         n, m = (5, 10)
-        def _test_set(i, j, nitems):
-            msg = "%r ; %r ; %r" % (i, j, nitems)
+        def _test_set(i, j):
+            msg = "i=%r; j=%r" % (i, j)
             A = self.spmatrix((n, m))
             A[i, j] = 1
-            assert_almost_equal(A.sum(), nitems, err_msg=msg)
-            assert_almost_equal(A[i, j].todense(), 1, err_msg=msg)
-
+            B = np.zeros((n, m))
+            B[i, j] = 1
+            assert_array_almost_equal(A.todense(), B, err_msg=msg)
         # [i,1:2]
-        for i, j in [(2, slice(3)), (2, slice(5, -2)), 
+        for i, j in [(2, slice(3)), (2, slice(None, 10, 4)), (2, slice(5, -2)),
                      (array(2), slice(5, -2))]:
-            _test_set(i, j, 3)
+            _test_set(i, j)
 
     def test_self_self_assignment(self):
         # Tests whether a row of one lil_matrix can be assigned to
@@ -1052,45 +1052,6 @@ class _TestFancyIndexing:
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
 
-    def test_fancy_indexing_set(self):
-        n, m = (5, 10)
-        def _test_set(i, j):
-            A = self.spmatrix((n, m))
-            A[i, j] = 1
-            assert_almost_equal(A[i, j], 1)
-            A[i, j] = 2
-            assert_almost_equal(A.sum(), 2)
-        # [i,j]
-        for i, j in [(2, 3), (-1, 8), (-1, -2), (array(-1), -2), 
-                     (-1, array(-2)), (array(-1), array(-2))]:
-            _test_set(i, j)
-
-        def _test_set_slice(i, j, nitems):
-            A = self.spmatrix((n, m))
-            A[i, j] = 1
-            B = np.zeros((n, m))
-            B[i, j] = 1
-            assert_almost_equal(A.sum(), nitems)
-            assert_array_almost_equal(A.todense(), B)
-            A[i, j] = 2
-            assert_almost_equal(A.sum(), 2*nitems)
-        # [i,1:2]
-        for i, j in [(2, slice(None, 10, 4)), (2, slice(5, -2)), 
-                     (array(2), slice(5, -2))]:
-            _test_set_slice(i, j, 3)
-        # [1:2,1:2]
-        for i, j in [((2, 3, 4), slice(None, 10, 4)), 
-                     (np.arange(3), slice(5, -2)), 
-                     (slice(2, 5), slice(5, -2))]:
-            _test_set_slice(i, j, 9)
-        for i, j in [(np.arange(3), np.arange(3)), ((0, 3, 4), (1, 2, 4))]:
-            _test_set_slice(i, j, 3)
-        # [[[1, 2], [1, 2]], [1, 2]]
-        for i, j, c in [(np.array([[1, 2], [1, 3]]), [1, 3], 3), 
-                        (np.array([0, 4]), [[0, 3], [1, 2]], 4),
-                        ([[1, 2, 3], [0, 2, 4]],  [[0, 4, 3], [4, 1, 2]], 6)]:
-            _test_set_slice(i, j, c)
-
     def test_fancy_indexing_randomized(self):
         random.seed(1234) # make runs repeatable
 
@@ -1116,10 +1077,25 @@ class _TestFancyIndexing:
 
         assert_raises(IndexError, S.__getitem__, (I_bad,J))
         assert_raises(IndexError, S.__getitem__, (I,J_bad))
-        assert_raises(IndexError, S.__getitem__, ([I, I], slice(None)))
-        assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
+
 
 class _TestFancyIndexingAssign:
+    def test_fancy_indexing_set(self):
+        n, m = (5, 10)
+        def _test_set_slice(i, j):
+            A = self.spmatrix((n, m))
+            A[i, j] = 1
+            B = np.zeros((n, m))
+            B[i, j] = 1
+            assert_array_almost_equal(A.todense(), B)
+        # [1:2,1:2]
+        for i, j in [((2, 3, 4), slice(None, 10, 4)), 
+                     (np.arange(3), slice(5, -2)), 
+                     (slice(2, 5), slice(5, -2))]:
+            _test_set_slice(i, j)
+        for i, j in [(np.arange(3), np.arange(3)), ((0, 3, 4), (1, 2, 4))]:
+            _test_set_slice(i, j)
+
     def test_sequence_assignment(self):
         A = self.spmatrix((4,3))
         B = self.spmatrix(eye(3,4))
@@ -1150,6 +1126,14 @@ class _TestFancyIndexingAssign:
             C[[0,1,2], [0,1,2]] = [4,5,6]
         assert_array_equal(A.toarray(), B)
 
+        # both slices (2)
+        A = self.spmatrix((4, 3))
+        A[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
+        assert_almost_equal(A.sum(), 6)
+        B = np.zeros((4, 3))
+        B[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
+        assert_array_equal(A.todense(), B)
+
 class _TestFancyMultidim:
     def test_fancy_indexing_ndarray(self):
         sets = [
@@ -1159,6 +1143,8 @@ class _TestFancyMultidim:
             (np.array([1, 2, 3]), np.array([[3], [4], [2]])),
             (np.array([[1, 2, 3], [3, 4, 2]]),
              np.array([[5, 6, 3], [2, 3, 1]])),
+            (np.array([[[1], [2], [3]], [[3], [4], [2]]]),
+             np.array([[[5], [6], [3]], [[2], [3], [1]]])),
         ]
 
         for I, J in sets:
@@ -1176,8 +1162,12 @@ class _TestFancyMultidim:
 
             assert_raises(IndexError, S.__getitem__, (I_bad,J))
             assert_raises(IndexError, S.__getitem__, (I,J_bad))
-            assert_raises(IndexError, S.__geitem___, (I, slice(None)))
-            assert_raises(IndexError, S.__geitem___, (slice(None), J))
+            assert_raises(IndexError, S.__getitem__, (I, slice(None)))
+            assert_raises(IndexError, S.__getitem__, (slice(None), J))
+
+            # This would generate 3-D arrays -- not supported
+            assert_raises(IndexError, S.__getitem__, ([I, I], slice(None)))
+            assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
 
 class _TestFancyMultidimAssign:
     def test_fancy_assign_ndarray(self):
@@ -1196,6 +1186,7 @@ class _TestFancyMultidimAssign:
 
         I_bad = I + 5
         J_bad = J + 7
+
         C = [1, 2, 3]
 
         S[I,J] = C
@@ -1208,6 +1199,20 @@ class _TestFancyMultidimAssign:
 
         assert_raises(IndexError, S.__setitem__, (I_bad,J), C)
         assert_raises(IndexError, S.__setitem__, (I,J_bad), C)
+
+    def test_fancy_indexing_multidim_set(self):
+        n, m = (5, 10)
+        def _test_set_slice(i, j):
+            A = self.spmatrix((n, m))
+            A[i, j] = 1
+            B = np.zeros((n, m))
+            B[i, j] = 1
+            assert_array_almost_equal(A.todense(), B)
+        # [[[1, 2], [1, 2]], [1, 2]]
+        for i, j in [(np.array([[1, 2], [1, 3]]), [1, 3]), 
+                        (np.array([0, 4]), [[0, 3], [1, 2]]),
+                        ([[1, 2, 3], [0, 2, 4]],  [[0, 4, 3], [4, 1, 2]])]:
+            _test_set_slice(i, j)
 
     def test_fancy_assign_list(self):
         np.random.seed(1234)
@@ -1270,6 +1275,7 @@ class _TestFancyMultidimAssign:
 
         assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C)
         assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C)
+
 
 class _TestArithmetic:
     """
@@ -1384,7 +1390,7 @@ def _possibly_unimplemented(cls, require=True):
         for name, func in cls.__dict__.items():
             if name.startswith('test_'):
                 new_dict[name] = wrap(func)
-        return type(cls.__name__ + "NotImplementedError",
+        return type(cls.__name__ + "NotImplemented",
                     cls.__bases__,
                     new_dict)
 
@@ -1772,7 +1778,6 @@ class TestDOK(sparse_test_class(slicing=False,
     ##       than raising errors in some indexing operations
     ##
 
-
     @dec.knownfailureif(True, "known deficiency in DOK")
     def test_slice_scalar_assign(self):
         pass
@@ -1798,6 +1803,10 @@ class TestDOK(sparse_test_class(slicing=False,
         pass
 
     @dec.knownfailureif(True, "known deficiency in DOK")
+    def test_fancy_indexing_set(self):
+        pass
+
+    @dec.knownfailureif(True, "known deficiency in DOK")
     def test_fancy_assign_list(self):
         pass
 
@@ -1805,21 +1814,14 @@ class TestDOK(sparse_test_class(slicing=False,
     def test_fancy_assign_slice(self):
         pass
 
+    @dec.knownfailureif(True, "known deficiency in DOK")
+    def test_fancy_indexing_multidim_set(self):
+        pass
+
+
 class TestLIL(sparse_test_class(fancy_multidim_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = lil_matrix
-
-    B = lil_matrix((4,3))
-    B[0,0] = 2
-    B[1,2] = 7
-    B[2,1] = 3
-    B[3,0] = 10
-
-    def test_fancy_indexing_set(self):
-        _TestFancyIndexing.test_fancy_indexing_set(self)
-
-    def test_fancy_indexing_randomized(self):
-        _TestFancyIndexing.test_fancy_indexing_randomized(self)
 
     def test_dot(self):
         A = matrix(zeros((10,10)))
@@ -1853,16 +1855,6 @@ class TestLIL(sparse_test_class(fancy_multidim_assign=False,
             assert_array_equal(x.reshape(s).todense(),
                                x.todense().reshape(s))
 
-    def test_lil_lil_assignment(self):
-        """ Tests whether a row of one lil_matrix can be assigned to
-        another.
-        """
-        B = self.B.copy()
-        A = B / 10
-        B[0,:] = A[0,:]
-        assert_array_equal(A[0,:].A, B[0,:].A)
-
-
     def test_inplace_ops(self):
         A = lil_matrix([[0,2,3],[4,0,6]])
         B = lil_matrix([[0,1,0],[0,2,3]])
@@ -1882,54 +1874,6 @@ class TestLIL(sparse_test_class(fancy_multidim_assign=False,
         B = array([0.1,0.1,0.1])
         A[0,:] += B
         assert_array_equal(A[0,:].toarray().squeeze(), B)
-
-    def test_lil_slice_assignment(self):
-        B = lil_matrix((4,3))
-        B[0,0] = 5
-        B[1,2] = 3
-        B[2,1] = 7
-
-        expected = array([[10,0,0],
-                          [0,0,6],
-                          [0,14,0],
-                          [0,0,0]])
-
-        B[:,:] = B+B
-        assert_array_equal(B.todense(),expected)
-
-        block = [[1,0],[0,4]]
-        B[:2,:2] = csc_matrix(array(block))
-        assert_array_equal(B.todense()[:2,:2],block)
-
-    def test_lil_sequence_assignment(self):
-        A = lil_matrix((4,3))
-        B = eye(3,4,format='lil')
-
-        i0 = [0,1,2]
-        i1 = (0,1,2)
-        i2 = array( i0 )
-
-        A[0,i0] = B[i0,0]
-        A[1,i1] = B[i1,1]
-        A[2,i2] = B[i2,2]
-        assert_array_equal(A.todense(),B.T.todense())
-
-        A = lil_matrix((4, 3))
-        A[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
-        assert_almost_equal(A.sum(), 6)
-        B = np.zeros((4, 3))
-        B[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
-        assert_array_equal(A.todense(), B)
-
-        # column slice
-        A = lil_matrix((2,3))
-        A[1,1:3] = [10,20]
-        assert_array_equal(A.todense(), [[0,0,0],[0,10,20]])
-
-        # column slice
-        A = lil_matrix((3,2))
-        A[1:3,1] = [[10],[20]]
-        assert_array_equal(A.todense(), [[0,0],[0,10],[0,20]])
 
     def test_lil_iteration(self):
         row_data = [[1,2,3],[4,5,6]]
@@ -1985,31 +1929,6 @@ class TestLIL(sparse_test_class(fancy_multidim_assign=False,
         a *= 2.
         a[0, :] = 0
 
-    ##
-    ## TODO: LIL fails the following tests by producing invalid results
-    ##
-
-    """
-    @dec.knownfailureif(True, "LIL bug")
-    def test_slice_assign_2(self):
-        pass
-
-    @dec.knownfailureif(True, "LIL bug")
-    def test_sequence_assignment(self):
-        pass
-
-    @dec.knownfailureif(True, "LIL bug")
-    def test_scalar_assign_2(self):
-        pass
-
-    @dec.knownfailureif(True, "LIL bug")
-    def test_slicing_2(self):
-        pass
-
-    @dec.knownfailureif(True, "LIL bug")
-    def test_set_slice(self):
-        pass
-    """
 
 class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
