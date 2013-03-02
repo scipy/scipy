@@ -104,7 +104,7 @@ def rankdata(a, method='average'):
         The array of values to be ranked.  The array is first flattened.
     method : str, optional
         The method used to assign ranks to tied elements.
-        The options are 'average', 'min', 'max' and 'dense'.
+        The options are 'average', 'min', 'max', 'dense' and 'ordinal'.
 
         'average':
             The average of the ranks that would have been assigned to
