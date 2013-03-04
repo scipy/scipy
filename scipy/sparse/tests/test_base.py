@@ -1286,8 +1286,8 @@ class _TestFancyMultidimAssign:
         D[I,J] = X
         assert_equal(S.todense(), D)
 
-        I_bad = I + 5
-        J_bad = J + 7
+        I_bad = [[ii + 5 for ii in i] for i in I]
+        J_bad = [[jj + 7 for jj in j] for j in J]
         C = [1, 2, 3]
 
         S[I,J] = C
@@ -1311,8 +1311,8 @@ class _TestFancyMultidimAssign:
         I = [[1, 2, 3], [3, 4, 2]]
         J = [[5, 6, 3], [2, 3, 1]]
 
-        I_bad = I + 5
-        J_bad = J + 7
+        I_bad = [[ii + 5 for ii in i] for i in I]
+        J_bad = [[jj + 7 for jj in j] for j in J]
         C = [1, 2, 3, 4, 5, 6, 7]
 
         S[I,:] = C
@@ -1884,9 +1884,7 @@ class TestDOK(sparse_test_class(slicing=False,
     def test_fancy_indexing_multidim_set(self):
         pass
 
-
-class TestLIL(sparse_test_class(fancy_multidim_assign=False,
-                                fancy_multidim_indexing=False)):
+class TestLIL(sparse_test_class()):
     spmatrix = lil_matrix
 
     def test_dot(self):
