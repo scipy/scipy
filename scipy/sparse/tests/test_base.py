@@ -1958,7 +1958,7 @@ class TestLIL(sparse_test_class()):
         D = lil_matrix(C)
         assert_array_equal(C.A, D.A)
 
-    def test_fancy_indexing(self):
+    def test_fancy_indexing_lil(self):
         M = arange(25).reshape(5,5)
         A = lil_matrix( M )
 
