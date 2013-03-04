@@ -229,14 +229,19 @@ class lil_matrix(spmatrix):
         return np.arange(start, stop, step)
 
     def _index_to_arrays(self, index):
-        try:
-            i, j = index
-        except (AssertionError, TypeError):
-            if isinstance(index, (list, np.ndarray, slice)) or isscalarlike(index):
-                i = index
-                j = slice(None)
-            else:
-                raise IndexError('invalid index')
+        if isinstance(index, (list, np.ndarray)):
+            i = index
+            j = slice(None)
+        else:
+            try:
+                i, j = index
+            except (AssertionError, TypeError):
+                if (isinstance(index, (list, np.ndarray, slice)) or 
+                    isscalarlike(index)):
+                    i = index
+                    j = slice(None)
+                else:
+                    raise IndexError('invalid index')
 
         is_scalar = isscalarlike(i) and isscalarlike(j)
 
@@ -249,6 +254,14 @@ class lil_matrix(spmatrix):
             j = self._slicetoarange(j, self.shape[1])[None,:]
             if i.ndim == 1:
                 i = i[:,None]
+        elif isscalarlike(j):
+            # row vector special case
+            j = np.atleast_1d(j)
+            if i.ndim == 1:
+                i, j = np.broadcast_arrays(i, j)
+                i = i[:, None]
+                j = j[:, None]
+                return i, j, is_scalar
         else:
             j = np.atleast_1d(j)
 
