@@ -363,7 +363,7 @@ class LSQUnivariateSpline(UnivariateSpline):
         Input dimension of data points -- must be increasing
     y : (N,) array_like
         Input dimension of data points
-    t: (M,) array_like
+    t : (M,) array_like
         interior knots of the spline.  Must be in ascending order
         and bbox[0]<t[0]<...<t[-1]<bbox[-1]
     w : (N,) array_like, optional
