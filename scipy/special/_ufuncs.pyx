@@ -3899,7 +3899,22 @@ cdef void *ufunc_gdtria_ptr[4]
 cdef void *ufunc_gdtria_data[2]
 cdef char ufunc_gdtria_types[8]
 cdef char *ufunc_gdtria_doc = (
-    "")
+    "a = gdtria(p, b, x) returns the inverse with respect to the parameter `a`\n"
+    "of `p = scipy.special.gdtr(a, b, x)`, the cumulative distribution function\n"
+    "of the gamma distribution.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    "First evaluate `gdtr`.\n"
+    "\n"
+    ">>> p = gdtr(1.2, 3.4, 5.6)\n"
+    ">>> print(p)\n"
+    "0.94378087442\n"
+    "\n"
+    "Verify the inverse.\n"
+    "\n"
+    ">>> gdtria(p, 3.4, 5.6)\n"
+    "1.2")
 ufunc_gdtria_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_gdtria_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_gdtria_types[0] = <char>NPY_FLOAT
@@ -3923,7 +3938,22 @@ cdef void *ufunc_gdtrib_ptr[4]
 cdef void *ufunc_gdtrib_data[2]
 cdef char ufunc_gdtrib_types[8]
 cdef char *ufunc_gdtrib_doc = (
-    "")
+    "b = gdtrib(a, p, x) returns the inverse with respect to the parameter `b`\n"
+    "of `p = scipy.special.gdtr(a, b, x)`, the cumulative distribution function\n"
+    "of the gamma distribution.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    "First evaluate `gdtr`.\n"
+    "\n"
+    ">>> p = gdtr(1.2, 3.4, 5.6)\n"
+    ">>> print(p)\n"
+    "0.94378087442\n"
+    "\n"
+    "Verify the inverse.\n"
+    "\n"
+    ">>> gdtrib(1.2, p, 5.6)\n"
+    "3.3999999999723882")
 ufunc_gdtrib_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_gdtrib_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_gdtrib_types[0] = <char>NPY_FLOAT
@@ -3947,7 +3977,23 @@ cdef void *ufunc_gdtrix_ptr[4]
 cdef void *ufunc_gdtrix_data[2]
 cdef char ufunc_gdtrix_types[8]
 cdef char *ufunc_gdtrix_doc = (
-    "")
+    "x = gdtrix(a, b, p) returns the inverse with respect to the parameter `x`\n"
+    "of `p = scipy.special.gdtr(a, b, x)`, the cumulative distribution function\n"
+    "of the gamma distribution.  This is also known as the p'th quantile of the\n"
+    "distribution.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    "First evaluate `gdtr`.\n"
+    "\n"
+    ">>> p = gdtr(1.2, 3.4, 5.6)\n"
+    ">>> print(p)\n"
+    "0.94378087442\n"
+    "\n"
+    "Verify the inverse.\n"
+    "\n"
+    ">>> gdtrix(1.2, 3.4, p)\n"
+    "5.5999999999999996")
 ufunc_gdtrix_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_gdtrix_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_gdtrix_types[0] = <char>NPY_FLOAT

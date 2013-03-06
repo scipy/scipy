@@ -606,23 +606,65 @@ add_newdoc("scipy.special", "gdtrc",
     probability density function.  SEE gdtr, gdtri
     """)
 
-add_newdoc("scipy.special", "gdtri",
-    """
-    x=gdtri(a,b,p) returns pth quantile of the gamma distribution.  It is
-    the inverse of the gamma cdf returning the value of x for which
-    gdtr(b,a,x) = p.
-    """)
-
 add_newdoc("scipy.special", "gdtria",
     """
+    a = gdtria(p, b, x) returns the inverse with respect to the parameter `a`
+    of `p = scipy.special.gdtr(a, b, x)`, the cumulative distribution function
+    of the gamma distribution.
+
+    Examples
+    --------
+    First evaluate `gdtr`.
+
+    >>> p = gdtr(1.2, 3.4, 5.6)
+    >>> print(p)
+    0.94378087442
+
+    Verify the inverse.
+
+    >>> gdtria(p, 3.4, 5.6)
+    1.2
     """)
 
 add_newdoc("scipy.special", "gdtrib",
     """
+    b = gdtrib(a, p, x) returns the inverse with respect to the parameter `b`
+    of `p = scipy.special.gdtr(a, b, x)`, the cumulative distribution function
+    of the gamma distribution.
+
+    Examples
+    --------
+    First evaluate `gdtr`.
+
+    >>> p = gdtr(1.2, 3.4, 5.6)
+    >>> print(p)
+    0.94378087442
+
+    Verify the inverse.
+
+    >>> gdtrib(1.2, p, 5.6)
+    3.3999999999723882
     """)
 
 add_newdoc("scipy.special", "gdtrix",
     """
+    x = gdtrix(a, b, p) returns the inverse with respect to the parameter `x`
+    of `p = scipy.special.gdtr(a, b, x)`, the cumulative distribution function
+    of the gamma distribution.  This is also known as the p'th quantile of the
+    distribution.
+
+    Examples
+    --------
+    First evaluate `gdtr`.
+
+    >>> p = gdtr(1.2, 3.4, 5.6)
+    >>> print(p)
+    0.94378087442
+
+    Verify the inverse.
+
+    >>> gdtrix(1.2, 3.4, p)
+    5.5999999999999996
     """)
 
 add_newdoc("scipy.special", "hankel1",
