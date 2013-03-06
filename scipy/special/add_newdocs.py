@@ -623,6 +623,10 @@ add_newdoc("scipy.special", "gdtria",
         of the gamma distribution.
     x : array_like
         Nonnegative real values, from the domain of the gamma distribution.
+    out : ndarray, optional
+        If a fourth argument is given, it must be a numpy.ndarray whose size
+        matches the broadcast result of `a`, `b` and `x`.  `out` is then the
+        array returned by the function.
 
     Returns
     -------
@@ -667,6 +671,10 @@ add_newdoc("scipy.special", "gdtrib",
         Probability values.
     x : array_like
         Nonnegative real values, from the domain of the gamma distribution.
+    out : ndarray, optional
+        If a fourth argument is given, it must be a numpy.ndarray whose size
+        matches the broadcast result of `a`, `b` and `x`.  `out` is then the
+        array returned by the function.
 
     Returns
     -------
@@ -712,6 +720,10 @@ add_newdoc("scipy.special", "gdtrix",
         of the gamma distribution.
     p : array_like
         Probability values.
+    out : ndarray, optional
+        If a fourth argument is given, it must be a numpy.ndarray whose size
+        matches the broadcast result of `a`, `b` and `x`.  `out` is then the
+        array returned by the function.
 
     Returns
     -------
