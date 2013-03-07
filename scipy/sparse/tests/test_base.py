@@ -1145,7 +1145,7 @@ class _TestFancyIndexingAssign:
         def _test_set_slice(i, j):
             A = self.spmatrix((n, m))
             A[i, j] = 1
-            B = np.zeros((n, m))
+            B = asmatrix(np.zeros((n, m)))
             B[i, j] = 1
             assert_array_almost_equal(A.todense(), B)
         # [1:2,1:2]
@@ -1181,7 +1181,7 @@ class _TestFancyIndexingAssign:
 
         # both slices
         A = self.spmatrix((3,3))
-        B = np.zeros((3,3))
+        B = asmatrix(np.zeros((3,3)))
         for C in [A, B]:
             C[[0,1,2], [0,1,2]] = [4,5,6]
         assert_array_equal(A.toarray(), B)
@@ -1190,7 +1190,7 @@ class _TestFancyIndexingAssign:
         A = self.spmatrix((4, 3))
         A[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
         assert_almost_equal(A.sum(), 6)
-        B = np.zeros((4, 3))
+        B = asmatrix(np.zeros((4, 3)))
         B[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
         assert_array_equal(A.todense(), B)
 
@@ -1263,7 +1263,7 @@ class _TestFancyMultidimAssign:
         def _test_set_slice(i, j):
             A = self.spmatrix((n, m))
             A[i, j] = 1
-            B = np.zeros((n, m))
+            B = asmatrix(np.zeros((n, m)))
             B[i, j] = 1
             assert_array_almost_equal(A.todense(), B)
         # [[[1, 2], [1, 2]], [1, 2]]
@@ -1959,7 +1959,7 @@ class TestLIL(sparse_test_class()):
         assert_array_equal(C.A, D.A)
 
     def test_fancy_indexing_lil(self):
-        M = arange(25).reshape(5,5)
+        M = asmatrix(arange(25).reshape(5,5))
         A = lil_matrix( M )
 
         assert_equal(A[array([1,2,3]),2:3].todense(), M[array([1,2,3]),2:3])
