@@ -245,7 +245,8 @@ class lil_matrix(spmatrix):
 
         is_scalar = isscalarlike(i) and isscalarlike(j)
 
-        if isinstance(i, slice):
+        i_slice = isinstance(i, slice)
+        if i_slice:
             i = self._slicetoarange(i, self.shape[0])[:,None]
         else:
             i = np.atleast_1d(i)
@@ -254,6 +255,8 @@ class lil_matrix(spmatrix):
             j = self._slicetoarange(j, self.shape[1])[None,:]
             if i.ndim == 1:
                 i = i[:,None]
+            elif not i_slice:
+                raise IndexError('index returns 3-dim structure')
         elif isscalarlike(j):
             # row vector special case
             j = np.atleast_1d(j)
@@ -264,6 +267,8 @@ class lil_matrix(spmatrix):
                 return i, j, is_scalar
         else:
             j = np.atleast_1d(j)
+            if i_slice and j.ndim>1:
+                raise IndexError('index returns 3-dim structure')
 
         i, j = np.broadcast_arrays(i, j)
 
