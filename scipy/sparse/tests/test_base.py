@@ -1164,9 +1164,14 @@ class _TestFancyIndexingAssign:
         i1 = (0,1,2)
         i2 = array( i0 )
 
-        A[0,i0] = B[i0,0]
-        A[1,i1] = B[i1,1]
-        A[2,i2] = B[i2,2]
+        # Commented out for incompatible shapes
+        # A[0,i0] = B[i0,0]
+        # A[1,i1] = B[i1,1]
+        # A[2,i2] = B[i2,2]
+
+        A[0,i0] = B[i0,0].T
+        A[1,i1] = B[i1,1].T
+        A[2,i2] = B[i2,2].T
         assert_array_equal(A.todense(),B.T.todense())
 
         # column slice
