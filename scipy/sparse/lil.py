@@ -306,7 +306,7 @@ class lil_matrix(spmatrix):
 
         try:
             x = self.dtype.type(x)
-        except:
+        except ValueError, TypeError:
             raise TypeError('Unable to convert value (%s) to dtype [%s]' % (x,self.dtype.name))
 
         pos = bisect_left(row, j)
