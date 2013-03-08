@@ -1044,6 +1044,11 @@ class _TestFancyIndexing:
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix( B )
 
+        def todense(a):
+            if isinstance(a, np.ndarray):
+                return a
+            return a.todense()
+            
         # [i]
         assert_equal(A[[1,3]].todense(),  B[[1,3]])
 
@@ -1073,11 +1078,11 @@ class _TestFancyIndexing:
         assert_equal(A[array([2,-5]),8:-1].todense(),B[[2,-5],8:-1])
 
         # [[1,2],[1,2]]
-        assert_equal(A[[1,3],[2,4]].todense(),   B[[1,3],[2,4]])
-        assert_equal(A[[-1,-3],[2,-4]].todense(), B[[-1,-3],[2,-4]])
-        assert_equal(A[array([-1,-3]),[2,-4]].todense(), B[[-1,-3],[2,-4]])
-        assert_equal(A[[-1,-3],array([2,-4])].todense(), B[[-1,-3],[2,-4]])
-        assert_equal(A[array([-1,-3]),array([2,-4])].todense(), B[[-1,-3],[2,-4]])
+        assert_equal(todense(A[[1,3],[2,4]]),   B[[1,3],[2,4]])
+        assert_equal(todense(A[[-1,-3],[2,-4]]), B[[-1,-3],[2,-4]])
+        assert_equal(todense(A[array([-1,-3]),[2,-4]]), B[[-1,-3],[2,-4]])
+        assert_equal(todense(A[[-1,-3],array([2,-4])]), B[[-1,-3],[2,-4]])
+        assert_equal(todense(A[array([-1,-3]),array([2,-4])]), B[[-1,-3],[2,-4]])
 
         # [[[1],[2]],[1,2]]
         assert_equal(A[[[1],[3]],[2,4]].todense(),        B[[[1],[3]],[2,4]])
