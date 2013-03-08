@@ -288,9 +288,9 @@ class lil_matrix(spmatrix):
         if i.size == 0:
             return lil_matrix((0,0), dtype=self.dtype)
         elif is_scalar:
-            return self._get1(i[0, 0], j[0, 0])
+            return self._get1(int(i[0, 0]), int(j[0, 0]))
 
-        return self.__class__([[self._get1(i[ii, jj], j[ii, jj]) for jj in 
+        return self.__class__([[self._get1(int(i[ii, jj]), int(j[ii, jj])) for jj in
                                 xrange(i.shape[1])] for ii in 
                                xrange(i.shape[0])])
 
@@ -353,7 +353,7 @@ class lil_matrix(spmatrix):
 
         # Set values
         for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
-            self._insertat2(self.rows[ii], self.data[ii], jj, xx)
+            self._insertat2(self.rows[int(ii)], self.data[int(ii)], int(jj), xx)
 
 
     def _mul_scalar(self, other):
