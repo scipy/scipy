@@ -229,14 +229,17 @@ class lil_matrix(spmatrix):
         return np.arange(start, stop, step)
 
     def _index_to_arrays(self, index):
-        if isinstance(index, (list, np.ndarray, slice)) or isscalarlike(index):
-            i = index
-            j = slice(None)
-        else:
+        if isinstance(index, tuple):
             try:
                 i, j = index
             except (AssertionError, TypeError):
                 raise IndexError('invalid index')
+        elif (isinstance(index, (list, np.ndarray, slice)) or 
+              isscalarlike(index)):
+            i = index
+            j = slice(None)
+        else:
+            raise IndexError('unkown index type')
 
         is_scalar = isscalarlike(i) and isscalarlike(j)
 
