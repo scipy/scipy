@@ -1164,11 +1164,6 @@ class _TestFancyIndexingAssign:
         i1 = (0,1,2)
         i2 = array( i0 )
 
-        # Commented out for incompatible shapes
-        # A[0,i0] = B[i0,0]
-        # A[1,i1] = B[i1,1]
-        # A[2,i2] = B[i2,2]
-
         A[0,i0] = B[i0,0].T
         A[1,i1] = B[i1,1].T
         A[2,i2] = B[i2,2].T
@@ -1323,23 +1318,6 @@ class _TestFancyMultidimAssign:
         C = [1, 2, 3, 4, 5, 6, 7]
         assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C)
         assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C)
-
-        # The below code requires 3-D intermediates inside __setitem__
-        # S[I,:] = C
-        # D[I,:] = C
-        # assert_equal(S.todense(), D)
-
-        # S[:,J] = C
-        # D[:,J] = C
-        # assert_equal(S.todense(), D)
-
-        # S[I,:] = [C, C, C]
-        # D[I,:] = [C, C, C]
-        # assert_equal(S.todense(), D)
-
-        # S[I,:] = 3
-        # D[:,J] = 3
-        # assert_equal(S.todense(), D)
 
 class _TestArithmetic:
     """
