@@ -611,12 +611,10 @@ cdef int _connected_components_directed(np.ndarray[ITYPE_t, ndim=1, mode='c'] in
     of a directed graph represented as a sparse matrix (scipy.sparse.csc_matrix or scipy.sparse.csr_matrix).
 
     The algorithmic complexity is for a graph with E edges and V vertices is O(E + V).
+    The storage requirement is 2*V integer arrays.
 
-    See: http://en.wikipedia.org/wiki/Tarjan%E2%80%99s_strongly_connected_components_algorithm
-
-    Uses http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
-
-    Returns a list of sets representing the indices of the connected nodes.
+    Uses an iterative version of the algorithm described here:
+    http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
     """
     cdef int v, w, index, low_v, low_w, label, j, SS_head, root, stack_head, f, b
     cdef int VOID = -1
@@ -627,18 +625,28 @@ cdef int _connected_components_directed(np.ndarray[ITYPE_t, ndim=1, mode='c'] in
     cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] lowlinks = labels
     cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] stack_f = SS
     cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] stack_b = np.ndarray((N,), dtype=np.int32)
+
+    # The stack of nodes which have been backtracked and are in the current SCC
+    SS.fill(VOID)
+    SS_head = END
+
+    # The array containing the lowlinks of nodes not yet assigned an SCC.
+    # Shares memory with the labels array, since they are not used at the same time.
+    lowlinks.fill(VOID)
+
+    # The DFS stack. Stored with both forwards and backwards pointers to allow us
+    # to move a node up to the top of the stack, as we only need to visit each node
+    # once. stach_f shared memory with SS, as nodes aren't put on the SS stack until
+    # after they've been popped from the DFS stack.
     stack_head = END
     stack_f.fill(VOID)
     stack_b.fill(VOID)
 
-    SS.fill(VOID)
-    SS_head = END
-    lowlinks.fill(VOID)
     index = 0
-    label = N - 1
+    label = N - 1 # Count SCC labels backwards so as not to class with lowlinks values.
     for v in range(N):
         if lowlinks[v] == VOID:
-            # Dual-stack push
+            # DFS-stack push
             stack_head = v
             stack_f[v] = END
             stack_b[v] = END
@@ -652,7 +660,7 @@ cdef int _connected_components_directed(np.ndarray[ITYPE_t, ndim=1, mode='c'] in
                     for j from indptr[v] <= j < indptr[v+1]:
                         w = indices[j]
                         if lowlinks[w] == VOID:
-                            # Dual-stack push
+                            # DFS-stack push
                             if stack_f[w] != VOID:
                                 # w is already inside the stack, so need to excise it
                                 f = stack_f[w]
@@ -668,7 +676,7 @@ cdef int _connected_components_directed(np.ndarray[ITYPE_t, ndim=1, mode='c'] in
                             stack_head = w
 
                 else:
-                    # Dual-stack pop
+                    # DFS-stack pop
                     stack_head = stack_f[v]
                     if stack_head >= 0:
                         stack_b[stack_head] = END
@@ -687,7 +695,7 @@ cdef int _connected_components_directed(np.ndarray[ITYPE_t, ndim=1, mode='c'] in
                     if root: # Found a root node
                         index -= 1
                         # while S not empty and rindex[v] <= rindex[top[S]
-                        while SS_head != END and lowlinks[SS_head] >= lowlinks[v]:
+                        while SS_head != END and lowlinks[v] <= lowlinks[SS_head]:
                             w = SS_head        # w = pop(S)
                             SS_head = SS[w]
                             SS[w] = VOID
