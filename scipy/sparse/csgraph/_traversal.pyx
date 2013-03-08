@@ -573,135 +573,166 @@ cdef unsigned int _depth_first_undirected(
     return i_nl_end
 
 
+cdef int _connected_components_directed(
+                                 np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
+                                 np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
+                                 np.ndarray[ITYPE_t, ndim=1, mode='c'] labels):
+    """
+    Uses an iterative version of Tarjan's algorithm to find the
+    strongly connected components of a directed graph represented as a
+    sparse matrix (scipy.sparse.csc_matrix or scipy.sparse.csr_matrix).
+
+    The algorithmic complexity is for a graph with E edges and V
+    vertices is O(E + V).
+    The storage requirement is 2*V integer arrays.
+
+    Uses an iterative version of the algorithm described here:
+    http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
+    """
+    cdef int v, w, index, low_v, low_w, label, j
+    cdef int SS_head, root, stack_head, f, b
+    cdef int VOID = -1
+    cdef int END = -2
+    cdef int N = labels.shape[0]
+    cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] SS, lowlinks, stack_f, stack_b
+
+    lowlinks = labels
+    SS = np.ndarray((N,), dtype=ITYPE)
+    stack_b = np.ndarray((N,), dtype=ITYPE)
+    stack_f = SS
+
+    # The stack of nodes which have been backtracked and are in the current SCC
+    SS.fill(VOID)
+    SS_head = END
+
+    # The array containing the lowlinks of nodes not yet assigned an SCC. Shares
+    # memory with the labels array, since they are not used at the same time.
+    lowlinks.fill(VOID)
+
+    # The DFS stack. Stored with both forwards and backwards pointers to allow
+    # us to move a node up to the top of the stack, as we only need to visit
+    # each node once. stack_f shares memory with SS, as nodes aren't put on the
+    # SS stack until after they've been popped from the DFS stack.
+    stack_head = END
+    stack_f.fill(VOID)
+    stack_b.fill(VOID)
+
+    index = 0
+    # Count SCC labels backwards so as not to class with lowlinks values.
+    label = N - 1
+    for v in range(N):
+        if lowlinks[v] == VOID:
+            # DFS-stack push
+            stack_head = v
+            stack_f[v] = END
+            stack_b[v] = END
+            while stack_head != END:
+                v = stack_head
+                if lowlinks[v] == VOID:
+                    lowlinks[v] = index
+                    index += 1
+
+                    # Add successor nodes
+                    for j from indptr[v] <= j < indptr[v+1]:
+                        w = indices[j]
+                        if lowlinks[w] == VOID:
+                            # DFS-stack push
+                            if stack_f[w] != VOID:
+                                # w is already inside the stack, so excise it.
+                                f = stack_f[w]
+                                b = stack_b[w]
+                                if b != END:
+                                    stack_f[b] = f
+                                if f != END:
+                                    stack_b[f] = b
+
+                            stack_f[w] = stack_head
+                            stack_b[w] = END
+                            stack_b[stack_head] = w
+                            stack_head = w
+
+                else:
+                    # DFS-stack pop
+                    stack_head = stack_f[v]
+                    if stack_head >= 0:
+                        stack_b[stack_head] = END
+                    stack_f[v] = VOID
+                    stack_b[v] = VOID
+
+                    root = 1 # True
+                    low_v = lowlinks[v]
+                    for j from indptr[v] <= j < indptr[v+1]:
+                        low_w = lowlinks[indices[j]]
+                        if low_w < low_v:
+                            low_v = low_w
+                            root = 0 # False
+                    lowlinks[v] = low_v
+
+                    if root: # Found a root node
+                        index -= 1
+                        # while S not empty and rindex[v] <= rindex[top[S]
+                        while SS_head != END and lowlinks[v] <= lowlinks[SS_head]:
+                            w = SS_head        # w = pop(S)
+                            SS_head = SS[w]
+                            SS[w] = VOID
+
+                            labels[w] = label  # rindex[w] = c
+                            index -= 1         # index = index - 1
+                        labels[v] = label  # rindex[v] = c
+                        label -= 1         # c = c - 1
+                    else:
+                        SS[v] = SS_head  # push(S, v)
+                        SS_head = v
+
+    # labels count down from N-1 to zero. Modify them so they
+    # count upward from 0
+    labels *= -1
+    labels += (N - 1)
+    return (N - 1) - label
+
 cdef int _connected_components_undirected(
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indices1,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr1,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indices2,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr2,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] labels):
-    cdef unsigned int N = labels.shape[0]
-    cdef unsigned int i, label=0
 
-    cdef np.ndarray node_list = np.empty(N, dtype=ITYPE)
-    cdef np.ndarray predecessors = np.empty(N, dtype=ITYPE)
-    cdef np.ndarray root_list = np.empty(N, dtype=ITYPE)
-    cdef np.ndarray flag = np.zeros(N, dtype=ITYPE)
+    cdef int v, w, j, label, SS_head
+    cdef int N = labels.shape[0]
+    cdef int VOID = -1
+    cdef int END = -2
+    labels.fill(VOID)
+    label = 0
 
-    root_list.fill(NULL_IDX)
-    predecessors.fill(NULL_IDX)
-    node_list.fill(NULL_IDX)
+    # Share memory for the stack and labels, since labels are only
+    # applied once a node has been popped from the stack.
+    cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] SS = labels
+    SS_head = END
+    for v in range(N):
+        if labels[v] == VOID:
+            # SS.push(v)
+            SS_head = v
+            SS[v] = END
 
-    for i from 0 <= i < N:
-        if labels[i] < 0:
-            _depth_first_undirected(i, indices1, indptr1,
-                                    indices2, indptr2,
-                                    node_list, predecessors, root_list, flag)
-            labels[flag > 0] = label
-            flag.fill(0)
+            while SS_head != END:
+                # v = SS.pop()
+                v = SS_head
+                SS_head = SS[v]
+
+                labels[v] = label
+
+                # Push children onto the stack if they havn't been
+                # seen at all yet.
+                for j from indptr1[v] <= j < indptr1[v+1]:
+                    w = indices1[j]
+                    if SS[w] == VOID:
+                        SS[w] = SS_head
+                        SS_head = w
+                for j from indptr2[v] <= j < indptr2[v+1]:
+                    w = indices2[j]
+                    if SS[w] == VOID:
+                        SS[w] = SS_head
+                        SS_head = w
             label += 1
 
     return label
-
-
-cdef int _connected_components_directed(
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] labels):
-    # uses http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
-    global NULL_IDX
-
-    cdef int N = labels.shape[0]
-    cdef int i_node
-
-    cdef NodeStack *stack = <NodeStack*>stdlib.malloc(sizeof(NodeStack)
-                                                 + N * sizeof(int))
-    stack.label = 0
-    stack.index = 0
-    stack.i = 0
-    stack.N = N
-    stack.c = N - 1
-
-    labels.fill(-1)
-
-    for i_node from 0 <= i_node < N:
-        if labels[i_node] == -1:
-            _cc_visit(i_node, stack,
-                      labels, indices, indptr)
-
-    # labels count down from N-1 to zero.  Modify them so they
-    # count upward from 0
-    labels *= -1
-    labels += (N - 1)
-
-    N -= stack.c + 1
-    stdlib.free(stack)
-
-    return N
-
-
-cdef int _cc_visit(int i_node, NodeStack *stack,
-                   np.ndarray[ITYPE_t, ndim=1, mode='c'] rindex,
-                   np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
-                   np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr):
-    global NULL_IDX
-
-    cdef int root = True
-
-    cdef int i, j, i_node2
-
-    rindex[i_node] = stack.index
-    stack.index += 1
-
-    # look at all edges coming out of node i_node.  We'll label these i_node2
-    for j from indptr[i_node] <= j < indptr[i_node + 1]:
-        i_node2 = indices[j]
-
-        # i_node2 not yet seen.  Search paths from this
-        if rindex[i_node2] == -1:
-            _cc_visit(i_node2, stack, rindex,
-                      indices, indptr)
-        if rindex[i_node2] < rindex[i_node]:
-            rindex[i_node] = rindex[i_node2]
-            root = False
-
-    if root:
-        stack.index -= 1
-        while (stack.i > 0):
-            if rindex[i_node] > rindex[stack.arr[stack.i - 1]]:
-                break
-            i_node2 = stack_pop(stack)  # i_node & i_node2 strongly connected
-            rindex[i_node2] = stack.c
-            stack.index -= 1
-        rindex[i_node] = stack.c
-        stack.c -= 1
-    else:
-        stack_push(stack, i_node)
-
-
-cdef struct NodeStack:
-    int index
-    int label
-    int i
-    int N
-    int c
-    int arr[0]
-
-cdef int stack_pop(NodeStack *s):
-    s.i -= 1
-    if s.i < 0:
-        raise ValueError('s.i < 0')
-    return s.arr[s.i]
-
-cdef int stack_push(NodeStack *s, int item):
-    if s.i >= s.N:
-        raise ValueError('s.i >= N')
-    s.arr[s.i] = item
-    s.i += 1
-
-cdef int in_stack(NodeStack *s, int item):
-    cdef int i = s.i - 1
-    while i >= 0:
-        if s.arr[i] == item:
-            return 1
-        i -= 1
-    return 0
