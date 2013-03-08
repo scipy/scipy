@@ -15,7 +15,6 @@ from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs
 from .misc import LinAlgError, _datacopied
 from scipy.linalg import calc_lwork
-from .decomp_schur import schur
 from . import decomp, decomp_svd
 
 
@@ -43,8 +42,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
         Allow overwriting data in `b` (may enhance performance).
         Default is False.
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -131,8 +130,8 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     overwrite_b : bool, optional
         Allow overwriting data in `b` (may enhance performance)
     check_finite : bool, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -202,8 +201,8 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     overwrite_b : boolean, optional
         Discard data in `b` (may enhance performance)
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -276,8 +275,8 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     lower : bool, optional
         Is the matrix in the lower form. (Default is upper form)
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -319,8 +318,8 @@ def inv(a, overwrite_a=False, check_finite=True):
     overwrite_a : bool, optional
         Discard data in `a` (may improve performance). Default is False.
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -408,8 +407,8 @@ def det(a, overwrite_a=False, check_finite=True):
     overwrite_a : bool
         Allow overwriting data in a (may enhance performance).
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -469,8 +468,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     overwrite_b : bool, optional
         Discard data in `b` (may enhance performance). Default is False.
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -566,8 +565,8 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -628,8 +627,8 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -704,8 +703,8 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns

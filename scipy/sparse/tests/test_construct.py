@@ -341,7 +341,6 @@ class TestConstructUtils(TestCase):
         assert_equal(construct.block_diag([1]).todense(),
                      matrix([[1]]))
 
-
     def test_rand(self):
         # Simple sanity checks for sparse.rand
         for t in [np.float32, np.float64, np.longdouble]:
@@ -350,8 +349,16 @@ class TestConstructUtils(TestCase):
             assert_equal(x.shape, (5, 10))
             assert_equal(x.nonzero()[0].size, 5)
 
-        x = sprand(5, 10, density=0.1)
-        assert_equal(x.dtype, np.double)
+        x1 = sprand(5, 10, density=0.1,
+                    random_state=4321)
+        assert_equal(x1.dtype, np.double)
+
+        x2 = sprand(5, 10, density=0.1,
+                    random_state=np.random.RandomState(4321))
+
+        assert_array_equal(x1.data, x2.data)
+        assert_array_equal(x1.row, x2.row)
+        assert_array_equal(x1.col, x2.col)
 
         for fmt in ['coo', 'csc', 'csr', 'lil']:
             x = sprand(5, 10, format=fmt)

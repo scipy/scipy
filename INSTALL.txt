@@ -12,7 +12,7 @@ INTRODUCTION
 It is *strongly* recommended that you use either a complete scientific Python
 distribution or binary packages on your platform if they are available, in
 particular on Windows and Mac OS X. You should not attempt to build SciPy if
-you are not familiar with compiling softwares from sources.
+you are not familiar with compiling software from sources.
 
 Recommended distributions are:
 
@@ -142,7 +142,7 @@ First make sure that all SciPy prerequisites are installed and working
 properly.  Then be sure to remove any old SciPy installations (e.g.
 /usr/lib/python2.4/site-packages/scipy or $HOME/lib/python2.4/
 site-packages/scipy). On windows, if you installed scipy previously from a
-binary, use the remove facility from the add/remove softwares panel, or remote
+binary, use the remove facility from the add/remove software panel, or remote
 the scipy directory by hand if you installed from sources (e.g.
 C:\Python24\Lib\site-packages\scipy for python 2.4).
 
@@ -187,7 +187,7 @@ COMPILER NOTES
 ==============
 
 Note that SciPy is developed mainly using GNU compilers. Compilers from
-other vendors such as Intel, Absoft, Sun, NAG, Compaq, Vast, Porland,
+other vendors such as Intel, Absoft, Sun, NAG, Compaq, Vast, Portland,
 Lahey, HP, IBM are supported in the form of community feedback.
 
 gcc__ compiler is recommended.  gcc 3.x and 4.x are known to work. 
@@ -245,7 +245,7 @@ Also consult 'ifc -help' for additional optimization flags suitable
 for your computers CPU.
 
 If you want to have the LAPACK tests pass the 'ieee' compliancy test, you have to
-use the -mp (='more precise') compiler option. Note that there's a signifant hit
+use the -mp (='more precise') compiler option. Note that there's a significant hit
 on the resulting performance though, reducing it to almost GNU level, but not quite.
 
 When finishing LAPACK build, you must recompile ?lamch.f, xerbla.f

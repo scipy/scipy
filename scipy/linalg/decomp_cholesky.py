@@ -50,8 +50,8 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     overwrite_a : bool
         Whether to overwrite data in `a` (may improve performance).
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -104,8 +104,8 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     overwrite_a : boolean
         Whether to overwrite data in a (may improve performance)
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -142,8 +142,8 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     b : array
         Right-hand side
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -208,8 +208,8 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     lower : boolean
         Is the matrix in the lower form. (Default is upper form)
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -246,8 +246,8 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     overwrite_b : bool
         If True, the function will overwrite the values in `b`.
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns

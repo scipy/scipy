@@ -7,14 +7,13 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm']
 
-from numpy import asarray, Inf, dot, floor, eye, diag, exp, \
+from numpy import asarray, Inf, dot, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
      cast, log, ogrid, imag, real, absolute, amax, sign, \
-     isfinite, sqrt, identity, single, ceil, log2
+     isfinite, sqrt, single
 from numpy import matrix as mat
 import numpy as np
 
-from scipy.lib.six.moves import xrange
 
 # Local imports
 from .misc import norm

@@ -53,8 +53,8 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 
         Defaults to None (no sorting).
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
@@ -191,8 +191,8 @@ def rsf2csf(T, Z, check_finite=True):
     Z : (M, M) array_like
         Schur transformation matrix
     check_finite : boolean, optional
-        Whether to check the input matrixes contain only finite numbers.
-        Disabling may give a performance gain, but may result to problems
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
