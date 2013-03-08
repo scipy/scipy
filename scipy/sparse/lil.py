@@ -228,19 +228,18 @@ class lil_matrix(spmatrix):
         start, stop, step = j.indices(shape)
         return np.arange(start, stop, step)
 
-    def _index_to_arrays(self, index):
+    def _unpack_index(self, index):
         if isinstance(index, tuple):
-            try:
-                i, j = index
-            except (AssertionError, TypeError):
-                raise IndexError('invalid index')
-        elif (isinstance(index, (list, np.ndarray, slice)) or 
-              isscalarlike(index)):
-            i = index
-            j = slice(None)
+            if len(index) == 1:
+                return index[0], slice(None)
+            elif len(index) == 2:
+                return index
+            else:
+                raise IndexError('invalid number of indices')
         else:
-            raise IndexError('unkown index type')
+            return index, slice(None)
 
+    def _index_to_arrays(self, i, j):
         is_scalar = isscalarlike(i) and isscalarlike(j)
 
         i_slice = isinstance(i, slice)
@@ -284,10 +283,11 @@ class lil_matrix(spmatrix):
         This always returns a copy for consistency, since slices into
         Python lists return copies.
         """
-        i, j, is_scalar = self._index_to_arrays(index)
+        i, j = self._unpack_index(index)
+        i, j, is_scalar = self._index_to_arrays(i, j)
         if i.size == 0:
             return lil_matrix((0,0), dtype=self.dtype)
-        elif i.shape == j.shape and i.shape == (1, 1) and is_scalar:
+        elif is_scalar:
             return self._get1(i[0, 0], j[0, 0])
 
         return self.__class__([[self._get1(i[ii, jj], j[ii, jj]) for jj in 
@@ -328,14 +328,7 @@ class lil_matrix(spmatrix):
                 del data[pos]
 
     def __setitem__(self, index, x):
-        try:
-            i, j = index
-        except (ValueError, TypeError):
-            if isinstance(index, (list, np.ndarray, slice)) or isscalarlike(index):
-                i = index
-                j = slice(None)
-            else:
-                raise IndexError('invalid index')
+        i, j = self._unpack_index(index)
 
         # shortcut for common case of full matrix assign:
         if (isspmatrix(x) and isinstance(i, slice) and i == slice(None) and
@@ -346,7 +339,7 @@ class lil_matrix(spmatrix):
             self.data = x.data
             return
 
-        i, j, is_scalar = self._index_to_arrays(index)
+        i, j, is_scalar = self._index_to_arrays(i, j)
 
         if isspmatrix(x):
             x = x.toarray()
