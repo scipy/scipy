@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['upcast','getdtype','isscalarlike','isintlike',
-            'isshape','issequence','isdense']
+            'isshape','issequence','isdense','ismatrix']
 
 import numpy as np
 
@@ -125,6 +125,10 @@ def isshape(x):
 def issequence(t):
     return isinstance(t, (list, tuple))\
            or (isinstance(t, np.ndarray) and (t.ndim == 1))
+
+def ismatrix(t):
+    return ((issequence(t) and issequence(t[0]) and np.isscalar(t[0][0])) 
+            or (isinstance(t, np.ndarray) and t.ndim == 2))
 
 def isdense(x):
     return isinstance(x, np.ndarray)
