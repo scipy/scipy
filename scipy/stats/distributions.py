@@ -30,13 +30,10 @@ import numpy
 import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
-try:
-    from . import vonmises_cython
-    from ._tukeylambda_stats import tukeylambda_variance as _tlvar, \
+
+from . import vonmises_cython
+from ._tukeylambda_stats import tukeylambda_variance as _tlvar, \
                                     tukeylambda_kurtosis as _tlkurt
-except:
-    vonmises_cython = None
-    _tlvar = _tlkurt = None
 __all__ = [
            'rv_continuous',
            'ksone', 'kstwobign', 'norm', 'alpha', 'anglit', 'arcsine',
