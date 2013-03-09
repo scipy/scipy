@@ -25,14 +25,18 @@ from numpy import all, where, arange, putmask, \
 from numpy import atleast_1d, polyval, ceil, place, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf, \
      NINF, empty
+_log1p = log1p
 import numpy
 import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
-from . import vonmises_cython
-from ._tukeylambda_stats import tukeylambda_variance as _tlvar, \
-                                tukeylambda_kurtosis as _tlkurt
-
+try:
+    from . import vonmises_cython
+    from ._tukeylambda_stats import tukeylambda_variance as _tlvar, \
+                                    tukeylambda_kurtosis as _tlkurt
+except:
+    vonmises_cython = None
+    _tlvar = _tlkurt = None
 __all__ = [
            'rv_continuous',
            'ksone', 'kstwobign', 'norm', 'alpha', 'anglit', 'arcsine',
@@ -71,7 +75,11 @@ except ImportError:
     # Python 3
     def instancemethod(func, obj, cls):
         return types.MethodType(func, obj)
-
+    
+def log1p(x):
+    '''avoids warnings for x==-1'''
+    mx = where(x==-1, 0, x)
+    return where(x==-1, -inf, _log1p(mx))
 
 # These are the docstring parts used for substitution in specific
 # distribution docstrings.
@@ -6599,7 +6607,12 @@ class binom_gen(rv_discrete):
         k = floor(x)
         combiln = (gamln(n+1) - (gamln(k+1) +
                                            gamln(n-k+1)))
-        return combiln + k*np.log(p) + (n-k)*np.log(1-p)
+        logp = where((p==0) & (k==0), 1, log(p)) 
+        log1mp = where((p==1) & (k==n), 1, log1p(-p))
+        klogp_nmklog1mp = where(k==0, n * log1mp,
+                                where(k==n, k * logp,
+                                      k*logp + (n-k)*log1mp))
+        return combiln + klogp_nmklog1mp   
     def _pmf(self, x, n, p):
         return exp(self._logpmf(x, n, p))
     def _cdf(self, x, n, p):
@@ -7282,3 +7295,8 @@ class skellam_gen(rv_discrete):
         return mean, var, g1, g2
 skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam',
                       shapes="mu1,mu2")
+
+if __name__ == '__main__':
+    print( binom(100,0).pmf(0))
+    print( binom(100,1).pmf(100))
+    
