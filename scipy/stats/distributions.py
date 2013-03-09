@@ -7293,7 +7293,4 @@ class skellam_gen(rv_discrete):
 skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam',
                       shapes="mu1,mu2")
 
-if __name__ == '__main__':
-    print( binom(100,0).pmf(0))
-    print( binom(100,1).pmf(100))
     
