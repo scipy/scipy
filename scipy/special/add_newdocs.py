@@ -608,6 +608,8 @@ add_newdoc("scipy.special", "gdtrc",
 
 add_newdoc("scipy.special", "gdtria",
     """
+    gdtria(p, b, x, out=None)
+
     Inverse with respect to `a` of `gdtr(a, b, x)`.
 
     `a = gdtria(p, b, x)` returns the inverse with respect to the parameter `a`
@@ -656,6 +658,8 @@ add_newdoc("scipy.special", "gdtria",
 
 add_newdoc("scipy.special", "gdtrib",
     """
+    gdtrib(a, p, x, out=None)
+
     Inverse with respect to `b` of `gdtr(a, b, x)`.
 
     `b = gdtrib(a, p, x)` returns the inverse with respect to the parameter `b`
@@ -704,6 +708,8 @@ add_newdoc("scipy.special", "gdtrib",
 
 add_newdoc("scipy.special", "gdtrix",
     """
+    gdtrix(a, b, p, out=None)
+
     Inverse with respect to `x` of `gdtr(a, b, x)`.
 
     `x = gdtrix(a, b, p)` returns the inverse with respect to the parameter `x`

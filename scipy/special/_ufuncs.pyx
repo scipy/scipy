@@ -3899,6 +3899,8 @@ cdef void *ufunc_gdtria_ptr[4]
 cdef void *ufunc_gdtria_data[2]
 cdef char ufunc_gdtria_types[8]
 cdef char *ufunc_gdtria_doc = (
+    "gdtria(p, b, x, out=None)\n"
+    "\n"
     "Inverse with respect to `a` of `gdtr(a, b, x)`.\n"
     "\n"
     "`a = gdtria(p, b, x)` returns the inverse with respect to the parameter `a`\n"
@@ -3966,6 +3968,8 @@ cdef void *ufunc_gdtrib_ptr[4]
 cdef void *ufunc_gdtrib_data[2]
 cdef char ufunc_gdtrib_types[8]
 cdef char *ufunc_gdtrib_doc = (
+    "gdtrib(a, p, x, out=None)\n"
+    "\n"
     "Inverse with respect to `b` of `gdtr(a, b, x)`.\n"
     "\n"
     "`b = gdtrib(a, p, x)` returns the inverse with respect to the parameter `b`\n"
@@ -4033,6 +4037,8 @@ cdef void *ufunc_gdtrix_ptr[4]
 cdef void *ufunc_gdtrix_data[2]
 cdef char ufunc_gdtrix_types[8]
 cdef char *ufunc_gdtrix_doc = (
+    "gdtrix(a, b, p, out=None)\n"
+    "\n"
     "Inverse with respect to `x` of `gdtr(a, b, x)`.\n"
     "\n"
     "`x = gdtrix(a, b, p)` returns the inverse with respect to the parameter `x`\n"
