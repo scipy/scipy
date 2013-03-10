@@ -230,18 +230,16 @@ class lil_matrix(spmatrix):
 
     def _unpack_index(self, index):
         if isinstance(index, tuple):
-            if len(index) == 1:
-                return index[0], slice(None)
-            elif len(index) == 2:
+            if len(index) == 2:
                 return index
+            elif len(index) == 1:
+                return index[0], slice(None)
             else:
                 raise IndexError('invalid number of indices')
         else:
             return index, slice(None)
 
     def _index_to_arrays(self, i, j):
-        is_scalar = isscalarlike(i) and isscalarlike(j)
-
         i_slice = isinstance(i, slice)
         if i_slice:
             i = self._slicetoarange(i, self.shape[0])[:,None]
@@ -261,7 +259,7 @@ class lil_matrix(spmatrix):
                 i, j = np.broadcast_arrays(i, j)
                 i = i[:, None]
                 j = j[:, None]
-                return i, j, is_scalar
+                return i, j
         else:
             j = np.atleast_1d(j)
             if i_slice and j.ndim>1:
@@ -276,7 +274,7 @@ class lil_matrix(spmatrix):
         elif i.ndim > 2:
             raise IndexError("Index dimension must be <= 2")
 
-        return i, j, is_scalar
+        return i, j
 
     def __getitem__(self, index):
         """Return the element(s) index=(i, j), where j may be a slice.
@@ -284,12 +282,13 @@ class lil_matrix(spmatrix):
         Python lists return copies.
         """
         i, j = self._unpack_index(index)
-        i, j, is_scalar = self._index_to_arrays(i, j)
+
+        if isscalarlike(i) and isscalarlike(j):
+            return self._get1(int(i), int(j))
+
+        i, j = self._index_to_arrays(i, j)
         if i.size == 0:
             return lil_matrix((0,0), dtype=self.dtype)
-        elif is_scalar:
-            return self._get1(int(i[0, 0]), int(j[0, 0]))
-
         return self.__class__([[self._get1(int(i[ii, jj]), int(j[ii, jj])) for jj in
                                 xrange(i.shape[1])] for ii in 
                                xrange(i.shape[0])])
@@ -339,7 +338,7 @@ class lil_matrix(spmatrix):
             self.data = x.data
             return
 
-        i, j, is_scalar = self._index_to_arrays(i, j)
+        i, j = self._index_to_arrays(i, j)
 
         if isspmatrix(x):
             x = x.toarray()
