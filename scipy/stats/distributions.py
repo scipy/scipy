@@ -1677,9 +1677,10 @@ class rv_continuous(rv_generic):
         return -sum(self._logpdf(x, *args),axis=0)
 
     def nnlf(self, theta, x):
-        # - sum (log pdf(x, theta),axis=0)
-        #   where theta are the parameters (including loc and scale)
-        #
+        ''' Return negative loglikelihood function, 
+        i.e., - sum (log pdf(x, theta),axis=0)
+           where theta are the parameters (including loc and scale)
+        '''
         try:
             loc = theta[-2]
             scale = theta[-1]
@@ -1689,9 +1690,15 @@ class rv_continuous(rv_generic):
         if not self._argcheck(*args) or scale <= 0:
             return inf
         x = asarray((x-loc) / scale)
-        cond0 = (x <= self.a) | (x >= self.b)
+        cond0 = (x <= self.a) | (self.b <= x )
         if (any(cond0)):
-            return inf
+            # old call: return inf
+            goodargs = argsreduce(1 - cond0, *((x,)))
+            goodargs = tuple(goodargs + list(args))
+            N = len(x)
+            Nbad = sum(cond0)
+            xmax = floatinfo.machar.xmax
+            return self._nnlf(*goodargs) + N * log(scale) + Nbad * 100.0 * log(xmax)
         else:
             N = len(x)
             return self._nnlf(x, *args) + N*log(scale)
