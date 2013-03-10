@@ -1466,7 +1466,7 @@ class rv_continuous(rv_generic):
         output = valarray(shape(cond),value=self.a*scale + loc)
         place(output,(1-cond0)+(1-cond1)*(q!=0.0), self.badvalue)
         
-		proxy_value = self.b * scale + loc
+        proxy_value = self.b * scale + loc
         if product(shape(proxy_value)) != 1:
             proxy_value = extract(cond2, proxy_value * cond2)
         place(output, cond2, proxy_value)
