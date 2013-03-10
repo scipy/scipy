@@ -30,10 +30,11 @@ import numpy
 import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
-
+ 
 from . import vonmises_cython
 from ._tukeylambda_stats import tukeylambda_variance as _tlvar, \
                                     tukeylambda_kurtosis as _tlkurt
+ 
 __all__ = [
            'rv_continuous',
            'ksone', 'kstwobign', 'norm', 'alpha', 'anglit', 'arcsine',
@@ -6606,10 +6607,7 @@ class binom_gen(rv_discrete):
                                            gamln(n-k+1)))
         logp = where((p==0) & (k==0), 1, log(p)) 
         log1mp = where((p==1) & (k==n), 1, log1p(-p))
-        klogp_nmklog1mp = where(k==0, n * log1mp,
-                                where(k==n, k * logp,
-                                      k*logp + (n-k)*log1mp))
-        return combiln + klogp_nmklog1mp   
+        return combiln + k*logp + (n-k)*log1mp   
     def _pmf(self, x, n, p):
         return exp(self._logpmf(x, n, p))
     def _cdf(self, x, n, p):
@@ -7292,5 +7290,6 @@ class skellam_gen(rv_discrete):
         return mean, var, g1, g2
 skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam',
                       shapes="mu1,mu2")
+
 
     
