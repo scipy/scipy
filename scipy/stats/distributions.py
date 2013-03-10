@@ -492,7 +492,8 @@ class rv_frozen(object):
 def valarray(shape,value=nan,typecode=None):
     """Return an array of all value.
     """
-    out = reshape(repeat([value],product(shape,axis=0),axis=0),shape)
+    #out = reshape(repeat([value],product(shape,axis=0),axis=0),shape)
+    out = ones(shape, dtype=bool) * value
     if typecode is not None:
         out = out.astype(typecode)
     if not isinstance(out, ndarray):
@@ -1464,7 +1465,11 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = valarray(shape(cond),value=self.a*scale + loc)
         place(output,(1-cond0)+(1-cond1)*(q!=0.0), self.badvalue)
-        place(output,cond2,self.b*scale + loc)
+        
+		proxy_value = self.b * scale + loc
+        if product(shape(proxy_value)) != 1:
+            proxy_value = extract(cond2, proxy_value * cond2)
+        place(output, cond2, proxy_value)
         if any(cond):  #call only if at least 1 entry
             goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
@@ -1503,10 +1508,16 @@ class rv_continuous(rv_generic):
         cond1 = (q > 0) & (q < 1)
         cond2 = (q==1) & cond0
         cond = cond0 & cond1
-        output = valarray(shape(cond),value=self.b)
+   
+        initial_value = self.b * scale + loc
+        output = valarray(shape(cond), value=initial_value)
         #place(output,(1-cond0)*(cond1==cond1), self.badvalue)
         place(output,(1-cond0)*(cond1==cond1)+(1-cond1)*(q!=0.0), self.badvalue)
-        place(output,cond2,self.a)
+        proxy_value = self.a * scale + loc
+        if product(shape(proxy_value)) != 1:
+            proxy_value = extract(cond2, proxy_value * cond2)
+        place(output, cond2, proxy_value)
+
         if any(cond):  #call only if at least 1 entry
             goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))  #PB replace 1-q by q
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
