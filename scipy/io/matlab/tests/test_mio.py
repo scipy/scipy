@@ -836,11 +836,13 @@ def test_write_big_endian():
     # behave correctly if the user supplies a big-endian numpy array to write out
     stream = BytesIO()
     savemat_future(stream, {'a': np.array([[ 2.,  3.],
-                                           [ 3.,  4.]], dtype='>f4')})
+                                           [ 3.,  4.]], dtype='>f4'),
+                            'b': np.array([u'hello', u'world'], dtype='>U')})
     rdr = MatFile5Reader_future(stream)
     d = rdr.get_variables()
     assert_array_equal(d['a'], np.array([[ 2.,  3.],
                                          [ 3.,  4.]], dtype='f4'))
+    assert_array_equal(d['b'], np.array([u'hello', u'world'], dtype='U'))
     stream.close()
 
 
