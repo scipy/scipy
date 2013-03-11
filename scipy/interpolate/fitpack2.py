@@ -109,12 +109,16 @@ class UnivariateSpline(object):
     --------
     >>> from numpy import linspace,exp
     >>> from numpy.random import randn
+    >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import UnivariateSpline
     >>> x = linspace(-3, 3, 100)
     >>> y = exp(-x**2) + randn(100)/10
     >>> s = UnivariateSpline(x, y, s=1)
     >>> xs = linspace(-3, 3, 1000)
     >>> ys = s(xs)
+    >>> plt.plot(x, y, '.-')
+    >>> plt.plot(xs, ys)
+    >>> plt.show()
 
     xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y.
 
@@ -315,11 +319,15 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     >>> from numpy import linspace,exp
     >>> from numpy.random import randn
     >>> from scipy.interpolate import InterpolatedUnivariateSpline
+    >>> import matplotlib.pyplot as plt
     >>> x = linspace(-3, 3, 100)
     >>> y = exp(-x**2) + randn(100)/10
     >>> s = InterpolatedUnivariateSpline(x, y)
     >>> xs = linspace(-3, 3, 1000)
     >>> ys = s(xs)
+    >>> plt.plot(x, y, '.-')
+    >>> plt.plot(xs, ys)
+    >>> plt.show()
 
     xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y
 
@@ -357,7 +365,7 @@ class LSQUnivariateSpline(UnivariateSpline):
         Input dimension of data points -- must be increasing
     y : (N,) array_like
         Input dimension of data points
-    t: (M,) array_like
+    t : (M,) array_like
         interior knots of the spline.  Must be in ascending order
         and bbox[0]<t[0]<...<t[-1]<bbox[-1]
     w : (N,) array_like, optional
@@ -392,13 +400,17 @@ class LSQUnivariateSpline(UnivariateSpline):
     >>> from numpy import linspace,exp
     >>> from numpy.random import randn
     >>> from scipy.interpolate import LSQUnivariateSpline
+    >>> import matplotlib.pyplot as plt
     >>> x = linspace(-3,3,100)
     >>> y = exp(-x**2) + randn(100)/10
     >>> t = [-1,0,1]
     >>> s = LSQUnivariateSpline(x,y,t)
     >>> xs = linspace(-3,3,1000)
     >>> ys = s(xs)
-
+    >>> plt.plot(x, y, '.-')
+    >>> plt.plot(xs, ys)
+    >>> plt.show()
+    
     xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y
     with knots [-3,-1,0,1,3]
 
