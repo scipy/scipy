@@ -285,19 +285,15 @@ class Test_bode(object):
         assert_almost_equal(phase, expected_phase)
 
     def test_05(self):
-        """Test that bode() finds a reasonable frequency range.
-
-        A reasonable frequency range is two orders of magnitude before the
-        minimum (slowest) pole and two orders of magnitude after the maximum
-        (fastest) pole.
-        """
+        """Test that bode() finds a reasonable frequency range."""
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         system = lti([1], [1, 1])
         vals = linalg.eigvals(system.A)
         minpole = min(abs(np.real(vals)))
         maxpole = max(abs(np.real(vals)))
         n = 10;
-        expected_w = np.logspace(np.log10(minpole) - 2, np.log10(maxpole) + 2, n)
+        # Expected range is from 0.01 to 10.
+        expected_w = np.logspace(-2, 1, n)
         w, mag, phase = bode(system, n=n)
         assert_almost_equal(w, expected_w)
 
@@ -307,6 +303,12 @@ class Test_bode(object):
         system = lti([1], [1, 0])
         w, mag, phase = bode(system, n=2)
         assert_equal(w[0], 0.01)  # a fail would give not-a-number
+
+    def test_07(self):
+        """bode() should not fail on a system with pure imaginary poles."""
+        # The test passes if bode doesn't raise an exception.
+        system = lti([1], [1, 0, 100])
+        w, mag, phase = bode(system, n=2)
 
 
 class Test_freqresp(object):
@@ -376,6 +378,7 @@ class Test_freqresp(object):
         system = lti([1], [1, 0])
         w, H = freqresp(system, n=2)
         assert_equal(w[0], 0.01)  # a fail would give not-a-number
+
 
 if __name__ == "__main__":
     run_module_suite()
