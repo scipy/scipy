@@ -203,9 +203,9 @@ Raw Statistical Functions
    fdtri      -- Inverse of fdtrc
    gdtr       -- Integral from 0 to x of gamma pdf.
    gdtrc      -- Integral from x to infinity under gamma pdf.
-   gdtria     --
-   gdtrib     --
-   gdtrix     --
+   gdtria     -- Inverse with respect to `a` of gdtr.
+   gdtrib     -- Inverse with respect to `b` of gdtr.
+   gdtrix     -- Inverse with respect to `x` of gdtr.
    nbdtr      -- Sum of terms 0 through k of the negative binomial pdf.
    nbdtrc     -- Sum of terms k+1 to infinity under negative binomial pdf.
    nbdtri     -- Inverse of nbdtr
