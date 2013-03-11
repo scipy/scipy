@@ -573,36 +573,6 @@ cdef unsigned int _depth_first_undirected(
     return i_nl_end
 
 
-cdef int _connected_components_undirected(
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices1,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr1,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices2,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr2,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] labels):
-    cdef unsigned int N = labels.shape[0]
-    cdef unsigned int i, label=0
-
-    cdef np.ndarray node_list = np.empty(N, dtype=ITYPE)
-    cdef np.ndarray predecessors = np.empty(N, dtype=ITYPE)
-    cdef np.ndarray root_list = np.empty(N, dtype=ITYPE)
-    cdef np.ndarray flag = np.zeros(N, dtype=ITYPE)
-
-    root_list.fill(NULL_IDX)
-    predecessors.fill(NULL_IDX)
-    node_list.fill(NULL_IDX)
-
-    for i from 0 <= i < N:
-        if labels[i] < 0:
-            _depth_first_undirected(i, indices1, indptr1,
-                                    indices2, indptr2,
-                                    node_list, predecessors, root_list, flag)
-            labels[flag > 0] = label
-            flag.fill(0)
-            label += 1
-
-    return label
-
-
 cdef int _connected_components_directed(np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
                                         np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
                                         np.ndarray[ITYPE_t, ndim=1, mode='c'] labels):
@@ -713,3 +683,50 @@ cdef int _connected_components_directed(np.ndarray[ITYPE_t, ndim=1, mode='c'] in
     labels *= -1
     labels += (N - 1)
     return (N - 1) - label
+
+cdef int _connected_components_undirected(
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices1,
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr1,
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices2,
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr2,
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] labels):
+
+    cdef int v, w, j, label, SS_head
+    cdef int N = labels.shape[0]
+    cdef int VOID = -1
+    cdef int END = -2
+    labels.fill(VOID)
+    label = 0
+
+    # Share memory for the stack and labels, since labels are only
+    # applied once a node has been popped from the stack.
+    cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] SS = labels
+    SS_head = END
+    for v in range(N):
+        if labels[v] == VOID:
+            # SS.push(v)
+            SS_head = v
+            SS[v] = END
+
+            while SS_head != END:
+                # v = SS.pop()
+                v = SS_head
+                SS_head = SS[v]
+
+                labels[v] = label
+
+                # Push children onto the stack if they havn't been
+                # seen at all yet.
+                for j from indptr1[v] <= j < indptr1[v+1]:
+                    w = indices1[j]
+                    if SS[w] == VOID:
+                        SS[w] = SS_head
+                        SS_head = w
+                for j from indptr2[v] <= j < indptr2[v+1]:
+                    w = indices2[j]
+                    if SS[w] == VOID:
+                        SS[w] = SS_head
+                        SS_head = w
+            label += 1
+
+    return label
