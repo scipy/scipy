@@ -118,6 +118,7 @@ class UnivariateSpline(object):
     >>> ys = s(xs)
     >>> plt.plot(x, y, '.-')
     >>> plt.plot(xs, ys)
+    >>> plt.show()
 
     xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y.
 
@@ -326,6 +327,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     >>> ys = s(xs)
     >>> plt.plot(x, y, '.-')
     >>> plt.plot(xs, ys)
+    >>> plt.show()
 
     xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y
 
@@ -407,7 +409,8 @@ class LSQUnivariateSpline(UnivariateSpline):
     >>> ys = s(xs)
     >>> plt.plot(x, y, '.-')
     >>> plt.plot(xs, ys)
-
+    >>> plt.show()
+    
     xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y
     with knots [-3,-1,0,1,3]
 
