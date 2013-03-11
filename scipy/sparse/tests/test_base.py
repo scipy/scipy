@@ -1575,6 +1575,26 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
         assert_array_equal(asp.data,[1, 2, 3])
         assert_array_equal(asp.todense(),bsp.todense())
 
+    def test_minmax(self):
+        for dtype in [np.float32, np.float64, np.int32, np.int64]:
+            D = np.arange(20, dtype=dtype).reshape(5,4)
+
+            X = csr_matrix(D)
+            assert_equal(X.min(), 0)
+            assert_equal(X.max(), 19)
+            assert_equal(X.min().dtype, dtype)
+            assert_equal(X.max().dtype, dtype)
+
+            D *= -1
+            X = csr_matrix(D)
+            assert_equal(X.min(), -19)
+            assert_equal(X.max(), 0)
+
+            D += 5
+            X = csr_matrix(D)
+            assert_equal(X.min(), -14)
+            assert_equal(X.max(), 5)
+
     def test_ufuncs(self):
         X = csr_matrix(np.arange(20).reshape(4, 5) / 20.)
         for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
@@ -1684,6 +1704,21 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
         asp.sort_indices()
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         assert_array_equal(asp.todense(),bsp.todense())
+
+    def test_minmax(self):
+        # try a fully dense matrix
+        X = csc_matrix(np.arange(1, 10).reshape(3, 3))
+        assert_equal(X.min(), 1)
+        assert_equal(X.min().dtype, X.dtype)
+
+        X = -X
+        assert_equal(X.max(), -1)
+
+        # and a fully sparse matrix
+        Z = csc_matrix(np.zeros(1))
+        assert_equal(Z.min(), 0)
+        assert_equal(Z.max(), 0)
+        assert_equal(Z.max().dtype, Z.dtype)
 
     def test_ufuncs(self):
         X = csc_matrix(np.arange(21).reshape(7, 3) / 21.)
@@ -2109,6 +2144,13 @@ class TestBSR(sparse_test_class(getset=False,
         asp.eliminate_zeros()
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.todense(),bsp.todense())
+
+    def test_bsr(self):
+        D = np.arange(20, dtype=float).reshape(5,4)
+        D[0:2, :] = 0
+        X = bsr_matrix(D)
+        assert_equal(X.min(), 0)
+        assert_equal(X.max(), 19)
 
     def test_bsr_matvec(self):
         A = bsr_matrix( arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5) )

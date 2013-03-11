@@ -10,13 +10,13 @@ import numpy as np
 from scipy.lib.six.moves import xrange
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
-from .data import _data_matrix
+from .data import _data_matrix, _minmax_mixin
 from . import sparsetools
 from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
      getdtype, isscalarlike, isintlike
 
 
-class _cs_matrix(_data_matrix):
+class _cs_matrix(_data_matrix, _minmax_mixin):
     """base matrix class for compressed row and column oriented matrices"""
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):

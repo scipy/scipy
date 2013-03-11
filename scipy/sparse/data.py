@@ -92,3 +92,46 @@ for npfunc in [np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
         return method
 
     setattr(_data_matrix, name, _create_method(npfunc))
+
+
+class _minmax_mixin(object):
+    """Mixin for min and max methods.
+
+    These are not implemented for dia_matrix, hence the separate class.
+    """
+
+    def max(self):
+        """Maximum of the elements of this matrix.
+
+        This takes all elements into account, not just the non-zero ones.
+
+        Returns
+        -------
+        amax : self.dtype
+            Maximum element.
+        """
+        zero = self.dtype.type(0)
+        if self.nnz == 0:
+            return zero
+        mx = np.max(self.data)
+        if self.nnz != np.product(self.shape):
+            mx = max(zero, mx)
+        return mx
+
+    def min(self):
+        """Minimum of the elements of this matrix.
+
+        This takes all elements into account, not just the non-zero ones.
+
+        Returns
+        -------
+        amin : self.dtype
+            Minimum element.
+        """
+        zero = self.dtype.type(0)
+        if self.nnz == 0:
+            return zero
+        mn = np.min(self.data)
+        if self.nnz != np.product(self.shape):
+            mn = min(zero, mn)
+        return mn
