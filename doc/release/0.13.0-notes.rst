@@ -29,6 +29,27 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
+LIL matrix assignment
+---------------------
+Assigning values to LIL matrices with two index arrays now works similarly as
+assigning into ndarrays::
+
+    >>> x = lil_matrix((3, 3))
+    >>> x[[0,1,2],[0,1,2]]=[0,1,2]
+    >>> x.todense()
+    matrix([[ 0.,  0.,  0.],
+            [ 0.,  1.,  0.],
+            [ 0.,  0.,  2.]])
+
+rather than giving the result::
+
+    >>> x.todense()
+    matrix([[ 0.,  1.,  2.],
+            [ 0.,  1.,  2.],
+            [ 0.,  1.,  2.]])
+
+Users relying on the previous behavior will need to revisit their code.
+
 
 Other changes
 =============

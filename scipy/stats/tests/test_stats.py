@@ -610,8 +610,6 @@ class TestCorrSpearmanrTies(TestCase):
 
 @dec.knownfailureif(sys.version[:3] < '2.5', "Can't index array with np.int64")
 def test_kendalltau():
-    """Some tests for kendalltau."""
-
     # with some ties
     x1 = [12, 2, 1, 12, 2]
     x2 = [1, 4, 7, 1, 0]
@@ -619,6 +617,11 @@ def test_kendalltau():
     res = stats.kendalltau(x1, x2)
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
+
+    # with only ties in one or both inputs
+    assert_(np.all(np.isnan(stats.kendalltau([2,2,2], [2,2,2]))))
+    assert_(np.all(np.isnan(stats.kendalltau([2,0,2], [2,2,2]))))
+    assert_(np.all(np.isnan(stats.kendalltau([2,2,2], [2,0,2]))))
 
     # check two different sort methods
     assert_approx_equal(stats.kendalltau(x1, x2, initial_lexsort=False)[1],
