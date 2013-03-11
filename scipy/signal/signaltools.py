@@ -725,6 +725,30 @@ def lfiltic(b, a, y, x=None):
 def deconvolve(signal, divisor):
     """Deconvolves `divisor` out of `signal`.
 
+    Parameters
+    ----------
+    signal : array
+        Signal input
+    divisor : array
+        Divisor input
+
+    Returns
+    -------
+    q : array
+        Quotient of the division
+    r : array
+        Remainder
+
+    Examples
+    -------
+    >>> from scipy import signal
+    >>> sig = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1,])
+    >>> filter = np.array([1,1,0])
+    >>> res = signal.convolve(sig, filter)
+    >>> signal.deconvolve(res, filter)
+    (array([ 0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.]),
+     array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]))
+
     """
     num = atleast_1d(signal)
     den = atleast_1d(divisor)
