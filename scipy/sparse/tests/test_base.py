@@ -1410,6 +1410,49 @@ class _TestArithmetic:
                 assert_equal(S1.dtype,D1.dtype)
 
 
+class _TestMinMax(object):
+    def test_minmax(self):
+        for dtype in [np.float32, np.float64, np.int32, np.int64]:
+            D = np.arange(20, dtype=dtype).reshape(5,4)
+
+            X = self.spmatrix(D)
+            assert_equal(X.min(), 0)
+            assert_equal(X.max(), 19)
+            assert_equal(X.min().dtype, dtype)
+            assert_equal(X.max().dtype, dtype)
+
+            D *= -1
+            X = self.spmatrix(D)
+            assert_equal(X.min(), -19)
+            assert_equal(X.max(), 0)
+
+            D += 5
+            X = self.spmatrix(D)
+            assert_equal(X.min(), -14)
+            assert_equal(X.max(), 5)
+
+        # try a fully dense matrix
+        X = self.spmatrix(np.arange(1, 10).reshape(3, 3))
+        assert_equal(X.min(), 1)
+        assert_equal(X.min().dtype, X.dtype)
+
+        X = -X
+        assert_equal(X.max(), -1)
+
+        # and a fully sparse matrix
+        Z = self.spmatrix(np.zeros(1))
+        assert_equal(Z.min(), 0)
+        assert_equal(Z.max(), 0)
+        assert_equal(Z.max().dtype, Z.dtype)
+
+        # another test
+        D = np.arange(20, dtype=float).reshape(5,4)
+        D[0:2, :] = 0
+        X = self.spmatrix(D)
+        assert_equal(X.min(), 0)
+        assert_equal(X.max(), 19)
+
+
 #------------------------------------------------------------------------------
 # Tailored base class for generic tests
 #------------------------------------------------------------------------------
@@ -1443,7 +1486,8 @@ def _possibly_unimplemented(cls, require=True):
 
 def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                       fancy_indexing=True, fancy_assign=True,
-                      fancy_multidim_indexing=True, fancy_multidim_assign=True):
+                      fancy_multidim_indexing=True, fancy_multidim_assign=True,
+                      minmax=True):
     """
     Construct a base class, optionally converting some of the tests in
     the suite to check that the feature is not implemented.
@@ -1462,6 +1506,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                                      fancy_indexing and fancy_multidim_indexing),
              _possibly_unimplemented(_TestFancyMultidimAssign,
                                      fancy_multidim_assign and fancy_assign),
+             _possibly_unimplemented(_TestMinMax, minmax),
              TestCase)
 
     # check that test names do not clash
@@ -1738,7 +1783,8 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
 class TestDOK(sparse_test_class(slicing=False,
                                 slicing_assign=False,
                                 fancy_indexing=False,
-                                fancy_assign=False)):
+                                fancy_assign=False,
+                                minmax=False)):
     spmatrix = dok_matrix
 
     def test_mult(self):
@@ -1873,7 +1919,7 @@ class TestDOK(sparse_test_class(slicing=False,
     def test_fancy_indexing_multidim_set(self):
         pass
 
-class TestLIL(sparse_test_class()):
+class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix
 
     def test_dot(self):
@@ -2034,7 +2080,8 @@ class TestCOO(sparse_test_class(getset=False,
 
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
-                                fancy_indexing=False, fancy_assign=False)):
+                                fancy_indexing=False, fancy_assign=False,
+                                minmax=False)):
     spmatrix = dia_matrix
 
     def test_constructor1(self):

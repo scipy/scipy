@@ -10,7 +10,7 @@ from warnings import warn
 
 import numpy as np
 
-from .data import _data_matrix
+from .data import _data_matrix, _minmax_mixin
 from .compressed import _cs_matrix
 from .base import isspmatrix, _formats
 from .sputils import isshape, getdtype, to_native, upcast
@@ -18,7 +18,7 @@ from . import sparsetools
 from .sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, \
                         bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
 
-class bsr_matrix(_cs_matrix):
+class bsr_matrix(_cs_matrix, _minmax_mixin):
     """Block Sparse Row matrix
 
     This can be instantiated in several ways:
