@@ -4,7 +4,7 @@ __all__ = ['imread']
 
 from numpy import array
 
-def imread(fname, flatten=False):
+def imread(fname, flatten=False, mode=None):
     """
     Load an image from file.
 
@@ -14,6 +14,9 @@ def imread(fname, flatten=False):
         Image file name, e.g. ``test.jpg``.
     flatten : bool, optional
         If true, convert the output to grey-scale. Default is False.
+    mode : str, optional
+        mode to convert image to, e.g. ``RGB``.
+
 
     Returns
     -------
@@ -36,10 +39,11 @@ def imread(fname, flatten=False):
                           " http://pypi.python.org/pypi/PIL/ for installation"
                           " instructions.")
 
-    fp = open(fname, "rb")
-    im = Image.open(fp)
-    if flatten:
-        im = im.convert('F')
-    result = array(im)
-    fp.close()
-    return result
+    with open(fname, "rb") as fp:
+        im = Image.open(fp)
+        if mode:
+            im = im.convert(mode)
+        if flatten:
+            im = im.convert('F')
+        result = array(im)
+        return result
