@@ -57,8 +57,7 @@ static blitz::Array<T,N> py_to_blitz(PyArrayObject* arr_obj,const char* name)
 }
 """
 
-from . import blitz_spec
-local_dir,junk = os.path.split(os.path.abspath(blitz_spec.__file__))
+local_dir,junk = os.path.split(os.path.abspath(__file__))
 blitz_dir = os.path.join(local_dir,'blitz')
 
 # The need to warn about compilers made the info_object method in
