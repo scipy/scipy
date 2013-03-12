@@ -779,6 +779,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
     >>> plt.axvline(100, color='green') # cutoff frequency
+    >>> plt.show()
 
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
@@ -856,6 +857,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     >>> plt.grid(which='both', axis='both')
     >>> plt.axvline(100, color='green') # cutoff frequency
     >>> plt.axhline(-5, color='green') # rp
+    >>> plt.show()
 
     """
     return iirfilter(N, Wn, rp=rp, btype=btype, analog=analog,
@@ -932,6 +934,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     >>> plt.grid(which='both', axis='both')
     >>> plt.axvline(100, color='green') # cutoff frequency
     >>> plt.axhline(-40, color='green') # rs
+    >>> plt.show()
 
     """
     return iirfilter(N, Wn, rs=rs, btype=btype, analog=analog,
@@ -1015,6 +1018,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     >>> plt.axvline(100, color='green') # cutoff frequency
     >>> plt.axhline(-40, color='green') # rs
     >>> plt.axhline(-5, color='green') # rp
+    >>> plt.show()
 
     """
     return iirfilter(N, Wn, rs=rs, rp=rp, btype=btype, analog=analog,
@@ -1097,6 +1101,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
     >>> plt.axvline(100, color='green') # cutoff frequency
+    >>> plt.show()
 
     >>> plt.figure()
     >>> plt.plot(w[1:], -np.diff(np.unwrap(np.angle(h)))/np.diff(w))
@@ -1106,6 +1111,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     >>> plt.ylabel('Group delay [seconds]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
+    >>> plt.show()
 
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
