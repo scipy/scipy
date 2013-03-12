@@ -179,6 +179,7 @@ def setup_package():
         license = 'BSD',
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
+        install_requires=['numpy>=1.5.0'],
     )
 
     if len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or
