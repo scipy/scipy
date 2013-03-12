@@ -174,9 +174,9 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     t : ndarray or the string 'cutoff'
         Input array.
     fc : int, optional
-        Center frequency (Hz).  Default is 1000.
+        Center frequency (e.g. Hz).  Default is 1000.
     bw : float, optional
-        Fractional bandwidth in frequency domain of pulse (Hz).
+        Fractional bandwidth in frequency domain of pulse (e.g. Hz).
         Default is 0.5.
     bwr : float, optional
         Reference level at which fractional bandwidth is calculated (dB).
@@ -256,21 +256,21 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
 def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
     """Frequency-swept cosine generator.
 
-    In the following, 'Hz' should be interpreted as 'cycles per time unit';
-    there is no assumption here that the time unit is one second.  The
+    In the following, 'Hz' should be interpreted as 'cycles per unit';
+    there is no requirement here that the unit is one second.  The
     important distinction is that the units of rotation are cycles, not
-    radians.
+    radians. Likewise, `t` could be a measurement of space instead of time.
 
     Parameters
     ----------
     t : ndarray
         Times at which to evaluate the waveform.
     f0 : float
-        Frequency (in Hz) at time t=0.
+        Frequency (e.g. Hz) at time t=0.
     t1 : float
         Time at which `f1` is specified.
     f1 : float
-        Frequency (in Hz) of the waveform at time `t1`.
+        Frequency (e.g. Hz) of the waveform at time `t1`.
     method : {'linear', 'quadratic', 'logarithmic', 'hyperbolic'}, optional
         Kind of frequency sweep.  If not given, `linear` is assumed.  See
         Notes below for more details.

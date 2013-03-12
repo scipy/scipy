@@ -97,7 +97,7 @@ def freqs(b, a, worN=None, plot=None):
         If None, then compute at 200 frequencies around the interesting parts
         of the response curve (determined by pole-zero locations).  If a single
         integer, then compute at that many frequencies.  Otherwise, compute the
-        response at frequencies given in `worN`, in radians per second.
+        response at the angular frequencies (e.g. rad/s) given in `worN`.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
@@ -106,7 +106,7 @@ def freqs(b, a, worN=None, plot=None):
     Returns
     -------
     w : ndarray
-        The frequencies at which h was computed, in radians per second.
+        The angular frequencies at which h was computed.
     h : ndarray
         The frequency response.
 
@@ -170,13 +170,16 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
         numerator of a linear filter
     a : ndarray
         denominator of a linear filter
-    worN : {None, int}, optional
-        If None, then compute at 512 frequencies around the unit circle.
+    worN : {None, int, array_like}, optional
+        If None (default), then compute at 512 frequencies equally spaced
+        around the unit circle.
         If a single integer, then compute at that many frequencies.
-        Otherwise, compute the response at frequencies given in worN
+        If an array_like, compute the response at the frequencies given (in
+        radians/sample).
     whole : bool, optional
-        Normally, frequencies are computed from 0 to pi (upper-half of
-        unit-circle).  If `whole` is True, compute frequencies from 0 to 2*pi.
+        Normally, frequencies are computed from 0 to the Nyquist frequency,
+        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
+        compute frequencies from 0 to 2*pi radians/sample.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
@@ -185,7 +188,7 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     Returns
     -------
     w : ndarray
-        The frequencies at which h was computed.
+        The normalized frequencies at which h was computed, in radians/sample.
     h : ndarray
         The frequency response.
 
@@ -526,7 +529,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
     wp, ws : float
         Passband and stopband edge frequencies.
         For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`wp` and `ws` are thus in
+        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
@@ -534,7 +537,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
             - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
-        For analog filters, `wp` and `ws` are in radians / second.
+        For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
 
     gpass : float
         The maximum loss in the passband (dB).
@@ -604,9 +607,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     Wn : array_like
         A scalar or length-2 sequence giving the critical frequencies.
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`Wn` is thus in
+        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
         half-cycles / sample.)
-        For analog filters, `Wn` is in radians / second.
+        For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     rp : float, optional
         For Chebyshev and elliptic filters, provides the maximum ripple
         in the passband. (dB)
@@ -734,9 +737,9 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
         For a Butterworth filter, this is the point at which the gain
         drops to 1/sqrt(1/2) that of the passband (the "-3 dB point").
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`Wn` is thus in
+        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
         half-cycles / sample.)
-        For analog filters, `Wn` is in radians / second.
+        For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
     analog : bool, optional
@@ -801,9 +804,9 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
         For Type I filters, this is the point in the transition band at which
         the gain first drops below -`rp`.
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`Wn` is thus in
+        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
         half-cycles / sample.)
-        For analog filters, `Wn` is in radians / second.
+        For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
     analog : bool, optional
@@ -878,9 +881,9 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
         For Type II filters, this is the point in the transition band at which
         the gain first reaches -`rs`.
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`Wn` is thus in
+        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
         half-cycles / sample.)
-        For analog filters, `Wn` is in radians / second.
+        For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
     analog : bool, optional
@@ -957,9 +960,9 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
         For elliptic filters, this is the point in the transition band at
         which the gain first drops below -`rp`.
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`Wn` is thus in
+        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
         half-cycles / sample.)
-        For analog filters, `Wn` is in radians / second.
+        For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
     analog : bool, optional
@@ -1034,9 +1037,9 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
         asymptotes of the response are the same as a Butterworth filter of
         the same order.
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`Wn` is thus in
+        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
         half-cycles / sample.)
-        For analog filters, `Wn` is in radians / second.
+        For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
     analog : bool, optional
@@ -1069,8 +1072,8 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
 
     To get maximally flat group delay at higher frequencies, the analog
     Bessel filter must be transformed using phase-preserving techniques.
-    
-    For a given `Wn`, the lowpass and highpass filter have the same phase vs 
+
+    For a given `Wn`, the lowpass and highpass filter have the same phase vs
     frequency curves.
 
     Examples
@@ -1185,7 +1188,7 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     wp, ws : float
         Passband and stopband edge frequencies.
         For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`wp` and `ws` are thus in
+        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
@@ -1193,7 +1196,7 @@ def buttord(wp, ws, gpass, gstop, analog=False):
             - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
-        For analog filters, `wp` and `ws` are in radians / second.
+        For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
 
     gpass : float
         The maximum loss in the passband (dB).
@@ -1307,7 +1310,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
     wp, ws : float
         Passband and stopband edge frequencies.
         For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`wp` and `ws` are thus in
+        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
@@ -1315,7 +1318,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
             - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
-        For analog filters, `wp` and `ws` are in radians / second.
+        For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
 
     gpass : float
         The maximum loss in the passband (dB).
@@ -1399,7 +1402,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
     wp, ws : float
         Passband and stopband edge frequencies.
         For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`wp` and `ws` are thus in
+        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
@@ -1407,7 +1410,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
             - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
-        For analog filters, `wp` and `ws` are in radians / second.
+        For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
 
     gpass : float
         The maximum loss in the passband (dB).
@@ -1513,7 +1516,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
     wp, ws : float
         Passband and stopband edge frequencies.
         For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians / sample.  (`wp` and `ws` are thus in
+        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
@@ -1521,7 +1524,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
             - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
-        For analog filters, `wp` and `ws` are in radians / second.
+        For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
 
     gpass : float
         The maximum loss in the passband (dB).
@@ -1596,7 +1599,8 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
 
 def buttap(N):
     """Return (z,p,k) zero, pole, gain for analog prototype of an Nth
-    order Butterworth filter with a cutoff frequency of 1 radian per second.
+    order Butterworth filter with an angular (e.g. rad/s) cutoff frequency
+    of 1.
 
     """
     z = array([])
@@ -1610,7 +1614,7 @@ def cheb1ap(N, rp):
     """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type I lowpass
     analog filter prototype with `rp` decibels of ripple in the passband.
 
-    The filter's cutoff frequency is normalized to 1 radian per second,
+    The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the gain first drops below -`rp`.
 
     """
@@ -1631,7 +1635,7 @@ def cheb2ap(N, rs):
     """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type II lowpass
     analog filter prototype with `rs` decibels of ripple in the stopband.
 
-    The filter's cutoff frequency is normalized to 1 radian per second,
+    The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the gain first reaches -`rs`.
 
     """
@@ -1684,7 +1688,7 @@ def ellipap(N, rp, rs):
     prototype elliptic analog lowpass filter with `rp` decibels of ripple in
     the passband and a stopband `rs` decibels down.
 
-    The filter's cutoff frequency is normalized to 1 radian per second,
+    The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the gain first drops below -`rp`.
 
     References
@@ -1760,8 +1764,8 @@ def besselap(N):
     Bessel filter.
 
     The filter is normalized such that the filter asymptotes are the same as
-    a Butterworth filter of the same order with a cutoff frequency of
-    1 radian/second.
+    a Butterworth filter of the same order with an angular (e.g. rad/s)
+    cutoff frequency of 1.
 
     """
     z = []
