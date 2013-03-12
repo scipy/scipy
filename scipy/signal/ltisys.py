@@ -844,7 +844,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
         Time points (computed if not given).
     N : int
         Number of time points to compute if `T` is not given.
-    kwargs :
+    kwargs : various types
         Additional keyword arguments are passed on the function
         `scipy.signal.lsim2`, which in turn passes them on to
         `scipy.integrate.odeint`.  See the documentation for
