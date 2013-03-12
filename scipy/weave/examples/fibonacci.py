@@ -9,6 +9,7 @@
 #  speed in c: 5.00000715256e-005
 #  speed up: 10.42
 # fib(30) 832040 832040 832040 832040
+from __future__ import absolute_import, print_function
 
 import sys
 sys.path.insert(0,'..')
@@ -98,13 +99,13 @@ def py_fib2(a):
 import time
 
 def recurse_compare(n):
-    print 'Recursively computing the first %d fibonacci numbers:' % n
+    print('Recursively computing the first %d fibonacci numbers:' % n)
     t1 = time.time()
     for i in range(n):
         py_fib1(i)
     t2 = time.time()
     py = t2- t1
-    print ' speed in python:', t2 - t1
+    print(' speed in python:', t2 - t1)
 
     #load into cache
     c_fib1(i)
@@ -112,18 +113,18 @@ def recurse_compare(n):
     for i in range(n):
         c_fib1(i)
     t2 = time.time()
-    print ' speed in c:',t2 - t1
-    print ' speed up: %3.2f' % (py/(t2-t1))
+    print(' speed in c:',t2 - t1)
+    print(' speed up: %3.2f' % (py/(t2-t1)))
 
 def loop_compare(m,n):
-    print 'Looping to compute the first %d fibonacci numbers:' % n
+    print('Looping to compute the first %d fibonacci numbers:' % n)
     t1 = time.time()
     for i in range(m):
         for i in range(n):
             py_fib2(i)
     t2 = time.time()
     py = (t2-t1)
-    print ' speed in python:', (t2 - t1)/m
+    print(' speed in python:', (t2 - t1)/m)
 
     #load into cache
     c_fib2(i)
@@ -132,12 +133,12 @@ def loop_compare(m,n):
         for i in range(n):
             c_fib2(i)
     t2 = time.time()
-    print ' speed in c:',(t2 - t1)/ m
-    print ' speed up: %3.2f' % (py/(t2-t1))
+    print(' speed in c:',(t2 - t1)/ m)
+    print(' speed up: %3.2f' % (py/(t2-t1)))
 
 if __name__ == "__main__":
     n = 30
     recurse_compare(n)
     m= 1000
     loop_compare(m,n)
-    print 'fib(30)', c_fib1(30),py_fib1(30),c_fib2(30),py_fib2(30)
+    print('fib(30)', c_fib1(30),py_fib1(30),c_fib2(30),py_fib2(30))

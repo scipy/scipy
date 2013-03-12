@@ -1,6 +1,8 @@
+from __future__ import absolute_import, print_function
+
 import types
-from base_spec import base_converter
-import base_info
+from .base_spec import base_converter
+from . import base_info
 
 #----------------------------------------------------------------------------
 # C++ code template for converting code from python objects to C++ objects
@@ -294,7 +296,7 @@ num_to_c_types[type(1)]  = 'long'
 num_to_c_types[type(1.)] = 'double'
 num_to_c_types[type(1.+1.j)] = 'std::complex<double> '
 # !! hmmm. The following is likely unsafe...
-num_to_c_types[type(1L)]  = 'npy_longlong'
+num_to_c_types[long]  = 'npy_longlong'
 
 #----------------------------------------------------------------------------
 # Numeric array Python numeric --> C type maps
@@ -460,10 +462,10 @@ class catchall_converter(scxx_converter):
 
 if __name__ == "__main__":
     x = list_converter().type_spec("x",1)
-    print x.py_to_c_code()
-    print
-    print x.c_to_py_code()
-    print
-    print x.declaration_code(inline=1)
-    print
-    print x.cleanup_code()
+    print(x.py_to_c_code())
+    print()
+    print(x.c_to_py_code())
+    print()
+    print(x.declaration_code(inline=1))
+    print()
+    print(x.cleanup_code())

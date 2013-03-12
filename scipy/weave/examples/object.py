@@ -3,6 +3,8 @@
     Note: std::cout type operations currently crash python...
           Not sure what is up with this...
 """
+from __future__ import absolute_import, print_function
+
 import scipy.weave as weave
 
 #----------------------------------------------------------------------------
@@ -34,7 +36,7 @@ code = """
        return_val = result;
        """
 
-print 'initial, inc(2), set(5)/get:', weave.inline(code,['obj'])
+print('initial, inc(2), set(5)/get:', weave.inline(code,['obj']))
 
 #----------------------------------------------------------------------------
 # indexing of values.
@@ -53,4 +55,4 @@ code = """
            obj[i] = "goodbye";
        """
 weave.inline(code,['obj'])
-print "obj with new values:", obj
+print("obj with new values:", obj)

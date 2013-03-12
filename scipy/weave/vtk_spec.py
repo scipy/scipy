@@ -15,8 +15,9 @@ Authors:
   Prabhu Ramachandran <prabhu@aero.iitm.ernet.in>
   Eric Jones <eric@enthought.com>
 """
+from __future__ import absolute_import, print_function
 
-from c_spec import common_base_converter
+from .c_spec import common_base_converter
 
 
 vtk_py_to_c_template = \
@@ -99,7 +100,7 @@ class vtk_converter(common_base_converter):
         else:
             # if there isn't a class_name, we don't want the
             # we don't want the support_code to be included
-            import base_info
+            from . import base_info
             res = base_info.base_info()
         return res
 

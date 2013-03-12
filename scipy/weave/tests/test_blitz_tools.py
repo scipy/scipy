@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 import os
 import time
 
@@ -62,7 +64,7 @@ class TestBlitz(TestCase):
     def generic_check(self,expr,arg_dict,type,size,mod_location):
         clean_result = array(arg_dict['result'],copy=1)
         t1 = time.time()
-        exec expr in globals(),arg_dict
+        exec(expr, globals(),arg_dict)
         t2 = time.time()
         standard = t2 - t1
         desired = arg_dict['result']
@@ -83,11 +85,11 @@ class TestBlitz(TestCase):
             assert_(allclose(abs(actual.ravel()),abs(desired.ravel()),1e-4,1e-6))
         except:
             diff = actual-desired
-            print diff[:4,:4]
-            print diff[:4,-4:]
-            print diff[-4:,:4]
-            print diff[-4:,-4:]
-            print sum(abs(diff.ravel()),axis=0)
+            print(diff[:4,:4])
+            print(diff[:4,-4:])
+            print(diff[-4:,:4])
+            print(diff[-4:,-4:])
+            print(sum(abs(diff.ravel()),axis=0))
             raise AssertionError
         return standard,compiled
 
@@ -100,7 +102,7 @@ class TestBlitz(TestCase):
         arg_list = harvest_variables(ast.tolist())
         #print arg_list
         all_sizes = [(10,10), (50,50), (100,100), (500,500), (1000,1000)]
-        print '\nExpression:', expr
+        print('\nExpression:', expr)
         for size in all_sizes:
             result = zeros(size,typ)
             arg_dict = {}
@@ -109,23 +111,23 @@ class TestBlitz(TestCase):
                 # set imag part of complex values to non-zero value
                 try:     arg_dict[arg].imag = arg_dict[arg].real
                 except:  pass
-            print 'Run:', size,typ
+            print('Run:', size,typ)
             standard,compiled = self.generic_check(expr,arg_dict,type,size,
                                                   mod_location)
             try:
                 speed_up = standard/compiled
             except:
                 speed_up = -1.
-            print "1st run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, " \
-                  "%3.4f" % (standard,compiled,speed_up)
+            print("1st run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, " \
+                  "%3.4f" % (standard,compiled,speed_up))
             standard,compiled = self.generic_check(expr,arg_dict,type,size,
                                                   mod_location)
             try:
                 speed_up = standard/compiled
             except:
                 speed_up = -1.
-            print "2nd run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, " \
-                  "%3.4f" % (standard,compiled,speed_up)
+            print("2nd run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, " \
+                  "%3.4f" % (standard,compiled,speed_up))
         cleanup_temp_dir(mod_location)
 
     #def test_simple_2d(self):

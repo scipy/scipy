@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 # still needed
 # tests for MingW32Compiler
 # don't know how to test gcc_exists() and msvc_exists()...
