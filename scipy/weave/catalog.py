@@ -30,6 +30,7 @@
     along with the path information to its module, are also stored in a
     persistent catalog for future use by python sessions.
 """
+from __future__ import absolute_import, print_function
 
 import os
 import sys
@@ -104,7 +105,7 @@ def unique_file(d,expr):
     #base = 'scipy_compile'
     base = expr_to_filename(expr)
     for i in xrange(1000000):
-        fname = base + `i`
+        fname = base + repr(i)
         if not (fname+'.cpp' in files or
                 fname+'.o' in files or
                 fname+'.so' in files or
@@ -182,7 +183,7 @@ def default_dir():
         except KeyError:
             pass
 
-        temp_dir = `os.getuid()` + '_' + python_name
+        temp_dir = repr(os.getuid()) + '_' + python_name
         path_candidates.append(os.path.join(tempfile.gettempdir(), temp_dir))
     else:
         path_candidates.append(os.path.join(tempfile.gettempdir(),
@@ -200,8 +201,8 @@ def default_dir():
             break
 
     if not writable:
-        print 'warning: default directory is not write accessible.'
-        print 'default:', path
+        print('warning: default directory is not write accessible.')
+        print('default:', path)
 
     # Cache the default dir path so that this function returns quickly after
     # being called once (nothing in it should change after the first call)
@@ -224,8 +225,8 @@ def default_temp_dir():
     if not os.path.exists(path):
         os.makedirs(path, mode=0o700)
     if not is_writable(path):
-        print 'warning: default directory is not write accessible.'
-        print 'default:', path
+        print('warning: default directory is not write accessible.')
+        print('default:', path)
     return path
 
 
@@ -554,14 +555,14 @@ class catalog(object):
         try:
             writable_cat = get_catalog(catalog_path,'w')
         except:
-            print 'warning: unable to repair catalog entry\n %s\n in\n %s' % \
-                  (code,catalog_path)
+            print('warning: unable to repair catalog entry\n %s\n in\n %s' % \
+                  (code,catalog_path))
             # shelve doesn't guarantee flushing, so it's safest to explicitly
             # close the catalog
             writable_cat.close()
             return
         if code in writable_cat:
-            print 'repairing catalog by removing key'
+            print('repairing catalog by removing key')
             del writable_cat[code]
 
         # it is possible that the path key doesn't exist (if the function
@@ -665,7 +666,7 @@ class catalog(object):
         if cat is None:
             cat_dir = default_dir()
             cat_file = catalog_path(cat_dir)
-            print 'problems with default catalog -- removing'
+            print('problems with default catalog -- removing')
             import glob
             files = glob.glob(cat_file+'*')
             for f in files:

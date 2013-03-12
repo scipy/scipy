@@ -15,6 +15,7 @@ C/C++ integration
           scipy.
 
 """
+from __future__ import absolute_import, print_function
 
 import sys
 
@@ -22,18 +23,18 @@ if sys.version_info[0] >= 3:
     raise ImportError("scipy.weave only supports Python 2.x")
 
 
-from weave_version import weave_version as __version__
+from .weave_version import weave_version as __version__
 
 try:
-    from blitz_tools import blitz
+    from .blitz_tools import blitz
 except ImportError:
     pass # scipy (core) wasn't available
 
-from inline_tools import inline
-import ext_tools
-from ext_tools import ext_module, ext_function
+from .inline_tools import inline
+from . import ext_tools
+from .ext_tools import ext_module, ext_function
 try:
-    from accelerate_tools import accelerate
+    from .accelerate_tools import accelerate
 except:
     pass
 

@@ -4,7 +4,7 @@
     or so have been translated into C++.
 
 """
-
+from __future__ import absolute_import, print_function
 
 import sys
 sys.path.insert(0,'..')

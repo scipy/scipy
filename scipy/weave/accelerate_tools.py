@@ -8,6 +8,7 @@ accelerate_tools contains the interface for on-the-fly building of
 C++ equivalents to Python functions.
 """
 #**************************************************************************#
+from __future__ import absolute_import, print_function
 
 from types import InstanceType, XRangeType
 import inspect
@@ -15,7 +16,7 @@ import scipy.weave.md5_load as md5
 import scipy.weave as weave
 from numpy.testing import assert_
 
-from bytecodecompiler import CXXCoder,Type_Descriptor,Function_Descriptor
+from .bytecodecompiler import CXXCoder,Type_Descriptor,Function_Descriptor
 
 def CStr(s):
     "Hacky way to get legal C string from Python string"
@@ -315,9 +316,9 @@ class accelerate(object):
 
         # See if we have an accelerated version of module
         try:
-            print 'lookup',self.module.__name__+'_weave'
+            print('lookup',self.module.__name__+'_weave')
             accelerated_module = __import__(self.module.__name__+'_weave')
-            print 'have accelerated',self.module.__name__+'_weave'
+            print('have accelerated',self.module.__name__+'_weave')
             fast = getattr(accelerated_module,identifier)
             return fast
         except ImportError:

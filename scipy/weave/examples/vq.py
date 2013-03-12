@@ -1,5 +1,7 @@
 """
 """
+from __future__ import absolute_import, print_function
+
 # C:\home\ej\wrk\scipy\weave\examples>python vq.py
 # vq with 1000 observation, 10 features and 30 codes fo 100 iterations
 #  speed in python: 0.150119999647
@@ -193,23 +195,23 @@ def compare(m,Nobs,Ncodes,Nfeatures):
     codes = RandomArray.normal(0.,1.,(Ncodes,Nfeatures))
     import scipy.cluster.vq
     scipy.cluster.vq
-    print 'vq with %d observation, %d features and %d codes for %d iterations' % \
-           (Nobs,Nfeatures,Ncodes,m)
+    print('vq with %d observation, %d features and %d codes for %d iterations' % \
+           (Nobs,Nfeatures,Ncodes,m))
     t1 = time.time()
     for i in range(m):
         code,dist = scipy.cluster.vq.py_vq(obs,codes)
     t2 = time.time()
     py = (t2-t1)
-    print ' speed in python:', (t2 - t1)/m
-    print code[:2],dist[:2]
+    print(' speed in python:', (t2 - t1)/m)
+    print(code[:2],dist[:2])
 
     t1 = time.time()
     for i in range(m):
         code,dist = scipy.cluster.vq.vq(obs,codes)
     t2 = time.time()
-    print ' speed in standard c:', (t2 - t1)/m
-    print code[:2],dist[:2]
-    print ' speed up: %3.2f' % (py/(t2-t1))
+    print(' speed in standard c:', (t2 - t1)/m)
+    print(code[:2],dist[:2])
+    print(' speed up: %3.2f' % (py/(t2-t1)))
 
     # load into cache
     b = vq(obs,codes)
@@ -217,9 +219,9 @@ def compare(m,Nobs,Ncodes,Nfeatures):
     for i in range(m):
         code,dist = vq(obs,codes)
     t2 = time.time()
-    print ' speed inline/blitz:',(t2 - t1)/ m
-    print code[:2],dist[:2]
-    print ' speed up: %3.2f' % (py/(t2-t1))
+    print(' speed inline/blitz:',(t2 - t1)/ m)
+    print(code[:2],dist[:2])
+    print(' speed up: %3.2f' % (py/(t2-t1)))
 
     # load into cache
     b = vq2(obs,codes)
@@ -227,9 +229,9 @@ def compare(m,Nobs,Ncodes,Nfeatures):
     for i in range(m):
         code,dist = vq2(obs,codes)
     t2 = time.time()
-    print ' speed inline/blitz2:',(t2 - t1)/ m
-    print code[:2],dist[:2]
-    print ' speed up: %3.2f' % (py/(t2-t1))
+    print(' speed inline/blitz2:',(t2 - t1)/ m)
+    print(code[:2],dist[:2])
+    print(' speed up: %3.2f' % (py/(t2-t1)))
 
     # load into cache
     b = vq3(obs,codes)
@@ -237,9 +239,9 @@ def compare(m,Nobs,Ncodes,Nfeatures):
     for i in range(m):
         code,dist = vq3(obs,codes)
     t2 = time.time()
-    print ' speed using C arrays:',(t2 - t1)/ m
-    print code[:2],dist[:2]
-    print ' speed up: %3.2f' % (py/(t2-t1))
+    print(' speed using C arrays:',(t2 - t1)/ m)
+    print(code[:2],dist[:2])
+    print(' speed up: %3.2f' % (py/(t2-t1)))
 
 if __name__ == "__main__":
     compare(100,1000,30,10)

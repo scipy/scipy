@@ -4,6 +4,7 @@
 # it has been hand edited for brevity.
 #
 # Prabhu Ramachandran <prabhu_r@users.sf.net>
+from __future__ import absolute_import, print_function
 
 ######################################################################
 # This is for SWIG-1.3.x where x < 22.

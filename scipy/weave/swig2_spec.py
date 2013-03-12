@@ -74,10 +74,11 @@ to consider when using the swig2_converter.
 
 Prabhu Ramachandran <prabhu_r@users.sf.net>
 """
+from __future__ import absolute_import, print_function
 
 import sys
-from c_spec import common_base_converter
-import swigptr2
+from .c_spec import common_base_converter
+from . import swigptr2
 
 
 #----------------------------------------------------------------------
@@ -209,8 +210,8 @@ class swig2_converter(common_base_converter):
         elif nver == 1:
             return versions[0]
         else:
-            print "WARNING: Multiple SWIG versions detected.  No version was"
-            print "explicitly specified.  Using the highest possible version."
+            print("WARNING: Multiple SWIG versions detected.  No version was")
+            print("explicitly specified.  Using the highest possible version.")
             return max(versions)
 
     def init_info(self, runtime=0):
@@ -315,7 +316,7 @@ class swig2_converter(common_base_converter):
         else:
             # if there isn't a class_name, we don't want the
             # support_code to be included
-            import base_info
+            from . import base_info
             res = base_info.base_info()
         return res
 

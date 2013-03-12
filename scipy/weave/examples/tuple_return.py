@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 import sys
 sys.path.insert(0,'..')
 import inline_tools
@@ -23,7 +25,7 @@ def compare(m):
         py_result = multi_return()
     t2 = time.time()
     py = t2 - t1
-    print 'python speed:', py
+    print('python speed:', py)
 
     #load cache
     result = c_multi_return()
@@ -32,11 +34,11 @@ def compare(m):
         c_result = c_multi_return()
     t2 = time.time()
     c = t2-t1
-    print 'c speed:', c
-    print 'speed up:', py / c
-    print 'or slow down (more likely:', c / py
-    print 'python result:', py_result
-    print 'c result:', c_result
+    print('c speed:', c)
+    print('speed up:', py / c)
+    print('or slow down (more likely:', c / py)
+    print('python result:', py_result)
+    print('c result:', c_result)
 
 if __name__ == "__main__":
     compare(10000)

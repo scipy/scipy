@@ -1,8 +1,9 @@
 """ converters.py
 """
+from __future__ import absolute_import, print_function
 
-import common_info
-import c_spec
+from . import common_info
+from . import c_spec
 
 #----------------------------------------------------------------------------
 # The "standard" conversion classes
@@ -25,7 +26,7 @@ default = [c_spec.int_converter(),
 # converter list.
 #----------------------------------------------------------------------------
 try:
-    import standard_array_spec
+    from . import standard_array_spec
     default.append(standard_array_spec.array_converter())
 except ImportError:
     pass
@@ -35,7 +36,7 @@ except ImportError:
 # converter list.
 #----------------------------------------------------------------------------
 try:
-    import numpy_scalar_spec
+    from . import numpy_scalar_spec
     default.append(numpy_scalar_spec.numpy_complex_scalar_converter())
 except ImportError:
     pass
@@ -45,7 +46,7 @@ except ImportError:
 #----------------------------------------------------------------------------
 
 try:
-    import vtk_spec
+    from . import vtk_spec
     default.insert(0,vtk_spec.vtk_converter())
 except IndexError:
     pass
@@ -68,7 +69,7 @@ standard_info += [x.generate_build_info() for x in default]
 # !! only available if numerix is installed !!
 #----------------------------------------------------------------------------
 try:
-    import blitz_spec
+    from . import blitz_spec
     blitz = [blitz_spec.array_converter()] + default
     #-----------------------------------
     # Add "sentinal" catchall converter
