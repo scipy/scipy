@@ -412,6 +412,9 @@ class TestSkellam(TestCase):
 
 class TestBeta(TestCase):
     def test_logpdf(self):
+        ''' Regression test for Ticket #1326: 
+        cornercase avoid nan with 0*log(0) situation
+        '''
         logpdf = stats.beta.logpdf(0,1,0.5)
         assert_almost_equal(logpdf, -0.69314718056)
         logpdf = stats.beta.logpdf(0,0.5,1)
