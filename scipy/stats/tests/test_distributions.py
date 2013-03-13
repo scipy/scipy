@@ -419,15 +419,8 @@ class TestBeta(TestCase):
         assert_almost_equal(logpdf, -0.69314718056)
         logpdf = stats.beta.logpdf(0,0.5,1)
         assert_almost_equal(logpdf, np.inf)
-        
-class TestGamma(TestCase):
-    def test_logpdf(self):
-        ''' Regression test for Ticket #1326: 
-        cornercase avoid nan with 0*log(0) situation
-        '''
-        logpdf = stats.beta.logpdf(0,1,0.5)
-        assert_almost_equal(logpdf, 0)
-        
+            
+class TestGamma(TestCase):    
     def test_pdf(self):
         # a few test cases to compare with R
         pdf = stats.gamma.pdf(90, 394, scale=1./5)
