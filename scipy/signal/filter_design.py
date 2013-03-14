@@ -957,9 +957,10 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
 
     Notes
     -----
-    The elliptical filter maximizes the rate of transition between the 
-    frequency response's passband and stopband, at the expense of ripple in 
-    both, and increased ringing in the step response.
+    Also known as Cauer or Zolotarev filters, the elliptical filter maximizes 
+    the rate of transition between the frequency response's passband and 
+    stopband, at the expense of ripple in both, and increased ringing in the 
+    step response.
     
     As `rp` approaches 0, the elliptical filter becomes a Chebyshev 
     type II filter (`cheby2`).  As `rs` approaches 0, it becomes a Chebyshev 
@@ -993,7 +994,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
 
 
 def bessel(N, Wn, btype='low', analog=False, output='ba'):
-    """Bessel digital and analog filter design.
+    """Bessel/Thomson digital and analog filter design.
 
     Design an Nth order digital or analog Bessel filter and return the
     filter coefficients in (B,A) or (Z,P,K) form.
@@ -1031,8 +1032,9 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
 
     Notes
     -----
-    The analog Bessel filter has maximally flat group delay and maximally 
-    linear phase response, with very little ringing in the step response.
+    Also known as a Thomson filter, the analog Bessel filter has maximally 
+    flat group delay and maximally linear phase response, with very little 
+    ringing in the step response.
     
     As order increases, the Bessel filter approaches a Gaussian filter.
     
