@@ -69,7 +69,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     derivative at the last position.  When dotted with `x` the result should
     be 6.
 
-    >>> x = array([-1, 0, 1, 4, 9])
+    >>> x = array([1, 0, 1, 4, 9])
     >>> c = savgol_coeffs(5, 2, pos=4, deriv=1, use='dot')
     >>> c.dot(x)
     6.0000000000000018
