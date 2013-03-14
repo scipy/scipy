@@ -1,7 +1,15 @@
-from _complexstuff cimport zlog, zisnan, number_t
+# -*-cython-*-
 
-cdef inline number_t xlogy(number_t y, number_t x) nogil:
-    if y == 0 and not zisnan(x):
+from _complexstuff cimport zlog, npy_log1p, zisnan, number_t
+
+cdef inline number_t xlogy(number_t x, number_t y) nogil:
+    if x == 0 and not zisnan(y):
         return 0
     else:
-        return y * zlog(x)
+        return x * zlog(y)
+
+cdef inline double xlog1py(double x, double y) nogil:
+    if x == 0 and not zisnan(y):
+        return 0
+    else:
+        return x * npy_log1p(y)

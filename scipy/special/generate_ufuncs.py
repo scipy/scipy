@@ -264,6 +264,7 @@ obl_rad2 -- oblate_radial2_nocv_wrap: dddd*d->d            -- specfun_wrappers.h
 modfresnelp -- modified_fresnel_plus_wrap: d*DD->*i        -- specfun_wrappers.h
 modfresnelm -- modified_fresnel_minus_wrap: d*DD->*i       -- specfun_wrappers.h
 xlogy -- xlogy[double]: dd->d, xlogy[double_complex]: DD->D -- _xlogy.pxd
+xlog1py -- xlog1py: dd->d                                  -- _xlogy.pxd
 """
 
 # Ufuncs with C++

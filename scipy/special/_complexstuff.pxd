@@ -10,6 +10,7 @@ cdef extern from "_complexstuff.h":
     double npy_cabs(np.npy_cdouble z) nogil
     np.npy_cdouble npy_clog(np.npy_cdouble z) nogil
     np.npy_cdouble npy_cexp(np.npy_cdouble z) nogil
+    double npy_log1p(double x) nogil
     int npy_isnan(double x) nogil
     int npy_isinf(double x) nogil
     int npy_isfinite(double x) nogil
