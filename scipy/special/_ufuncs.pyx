@@ -1534,6 +1534,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_tandg "tandg"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_tukeylambdacdf "tukeylambdacdf"(double, double) nogil
+from _xlogy cimport xlog1py as _func_xlog1py
+ctypedef double _proto_xlog1py_t(double, double) nogil
+cdef _proto_xlog1py_t *_proto_xlog1py_t_var = &_func_xlog1py
 from _xlogy cimport xlogy as _func_xlogy
 ctypedef double _proto_xlogy_double__t(double, double) nogil
 cdef _proto_xlogy_double__t *_proto_xlogy_double__t_var = &_func_xlogy[double]
@@ -7182,6 +7185,42 @@ ufunc_tklmbda_ptr[2*1+1] = <void*>(<char*>"tklmbda")
 ufunc_tklmbda_data[0] = &ufunc_tklmbda_ptr[2*0]
 ufunc_tklmbda_data[1] = &ufunc_tklmbda_ptr[2*1]
 tklmbda = np.PyUFunc_FromFuncAndData(ufunc_tklmbda_loops, ufunc_tklmbda_data, ufunc_tklmbda_types, 2, 2, 1, 0, "tklmbda", ufunc_tklmbda_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_xlog1py_loops[2]
+cdef void *ufunc_xlog1py_ptr[4]
+cdef void *ufunc_xlog1py_data[2]
+cdef char ufunc_xlog1py_types[6]
+cdef char *ufunc_xlog1py_doc = (
+    "xlog1py(x, y)\n"
+    "\n"
+    "Compute ``x*log1p(y)`` so that the result is 0 if `x = 0`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Multiplier\n"
+    "y : array_like\n"
+    "    Argument\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "z : array_like\n"
+    "    Computed x*log1p(y)")
+ufunc_xlog1py_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_xlog1py_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_xlog1py_types[0] = <char>NPY_FLOAT
+ufunc_xlog1py_types[1] = <char>NPY_FLOAT
+ufunc_xlog1py_types[2] = <char>NPY_FLOAT
+ufunc_xlog1py_types[3] = <char>NPY_DOUBLE
+ufunc_xlog1py_types[4] = <char>NPY_DOUBLE
+ufunc_xlog1py_types[5] = <char>NPY_DOUBLE
+ufunc_xlog1py_ptr[2*0] = <void*>_func_xlog1py
+ufunc_xlog1py_ptr[2*0+1] = <void*>(<char*>"xlog1py")
+ufunc_xlog1py_ptr[2*1] = <void*>_func_xlog1py
+ufunc_xlog1py_ptr[2*1+1] = <void*>(<char*>"xlog1py")
+ufunc_xlog1py_data[0] = &ufunc_xlog1py_ptr[2*0]
+ufunc_xlog1py_data[1] = &ufunc_xlog1py_ptr[2*1]
+xlog1py = np.PyUFunc_FromFuncAndData(ufunc_xlog1py_loops, ufunc_xlog1py_data, ufunc_xlog1py_types, 2, 2, 1, 0, "xlog1py", ufunc_xlog1py_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_xlogy_loops[4]
 cdef void *ufunc_xlogy_ptr[8]
