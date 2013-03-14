@@ -4165,8 +4165,9 @@ class lognorm_gen(rv_continuous):
     def _rvs(self, s):
         return exp(s * norm.rvs(size=self._size))
     def _pdf(self, x, s):
-        Px = exp(-log(x)**2 / (2*s**2))
-        return Px / (s*x*sqrt(2*pi))
+        return exp(self._logpdf(x, s))
+    def _logpdf(self, x, s):
+        return -log(x)**2 / (2*s**2) + np.where(x==0 , 0, - log(s*x*sqrt(2*pi)))
     def _cdf(self, x, s):
         return norm.cdf(log(x)/s)
     def _ppf(self, q, s):
