@@ -31,7 +31,7 @@
 Direct wrappers for Fortran `id_dist` backend.
 """
 
-import id_dist as _id
+import scipy.linalg._interpolative as _id
 import numpy as np
 
 #-------------------------------------------------------------------------------
