@@ -35,140 +35,140 @@ import numpy as np
 import time
 
 if __name__ == '__main__':
-  """
-  Test ID routines on a Hilbert matrix.
-  """
-  # construct Hilbert matrix
-  m = n = 1000
-  A = np.empty((m, n), order='F')
-  for j in range(n):
-    for i in range(m):
-      A[i,j] = 1. / (i + j + 1)
+      """
+      Test ID routines on a Hilbert matrix.
+      """
+      # construct Hilbert matrix
+      m = n = 1000
+      A = np.empty((m, n), order='F')
+      for j in range(n):
+        for i in range(m):
+          A[i,j] = 1. / (i + j + 1)
 
-  # define multiplication functions
-  def matvec (x): return np.dot(A,   x)
-  def matveca(x): return np.dot(A.T, x)
+      # define multiplication functions
+      def matvec (x): return np.dot(A,   x)
+      def matveca(x): return np.dot(A.T, x)
 
-  # set relative precision
-  eps = 1e-12
+      # set relative precision
+      eps = 1e-12
 
-  # find true rank
-  S = np.linalg.svd(A, compute_uv=False)
-  try:    rank = np.nonzero(S < 1e-12)[0][0]
-  except: rank = n
+      # find true rank
+      S = np.linalg.svd(A, compute_uv=False)
+      try:    rank = np.nonzero(S < 1e-12)[0][0]
+      except: rank = n
 
-  # print input summary
-  print "Hilbert matrix dimension:        %8i" % n
-  print "Working precision:               %8.2e" % eps
-  print "Rank to working precision:       %8i" % rank
-  print "-----------------------------------------"
+      # print input summary
+      print "Hilbert matrix dimension:        %8i" % n
+      print "Working precision:               %8.2e" % eps
+      print "Rank to working precision:       %8i" % rank
+      print "-----------------------------------------"
 
-  # set print format
-  fmt = "%8.2e (s) / %5s"
+      # set print format
+      fmt = "%8.2e (s) / %5s"
 
-  # test ID routines
-  print "ID routines"
-  print "-----------------------------------------"
+      # test ID routines
+      print "ID routines"
+      print "-----------------------------------------"
 
-  # fixed precision
-  print "Calling iddp_id  ...",
-  t0 = time.clock()
-  k, idx, proj = interpolative.compute_id(A, eps, rand=False)
-  t = time.clock() - t0
-  B = interpolative.reconstruct_skeleton(A, k, idx)
-  C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
-  print fmt % (t, np.allclose(A, C, eps))
+      # fixed precision
+      print "Calling iddp_id  ...",
+      t0 = time.clock()
+      k, idx, proj = interpolative.compute_id(A, eps, rand=False)
+      t = time.clock() - t0
+      B = interpolative.reconstruct_skeleton(A, k, idx)
+      C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
+      print fmt % (t, np.allclose(A, C, eps))
 
-  print "Calling iddp_aid ...",
-  t0 = time.clock()
-  k, idx, proj = interpolative.compute_id(A, eps)
-  t = time.clock() - t0
-  B = interpolative.reconstruct_skeleton(A, k, idx)
-  C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
-  print fmt % (t, np.allclose(A, C, eps))
+      print "Calling iddp_aid ...",
+      t0 = time.clock()
+      k, idx, proj = interpolative.compute_id(A, eps)
+      t = time.clock() - t0
+      B = interpolative.reconstruct_skeleton(A, k, idx)
+      C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
+      print fmt % (t, np.allclose(A, C, eps))
 
-  print "Calling iddp_rid ...",
-  t0 = time.clock()
-  k, idx, proj = interpolative.compute_id(m, n, matveca, eps)
-  t = time.clock() - t0
-  B = interpolative.reconstruct_skeleton(A, k, idx)
-  C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
-  print fmt % (t, np.allclose(A, C, eps))
+      print "Calling iddp_rid ...",
+      t0 = time.clock()
+      k, idx, proj = interpolative.compute_id(m, n, matveca, eps)
+      t = time.clock() - t0
+      B = interpolative.reconstruct_skeleton(A, k, idx)
+      C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
+      print fmt % (t, np.allclose(A, C, eps))
 
-  # fixed rank
-  k = rank
+      # fixed rank
+      k = rank
 
-  print "Calling iddr_id  ...",
-  t0 = time.clock()
-  idx, proj = interpolative.compute_id(A, k, rand=False)
-  t = time.clock() - t0
-  B = interpolative.reconstruct_skeleton(A, k, idx)
-  C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
-  print fmt % (t, np.allclose(A, C, eps))
+      print "Calling iddr_id  ...",
+      t0 = time.clock()
+      idx, proj = interpolative.compute_id(A, k, rand=False)
+      t = time.clock() - t0
+      B = interpolative.reconstruct_skeleton(A, k, idx)
+      C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
+      print fmt % (t, np.allclose(A, C, eps))
 
-  print "Calling iddr_aid ...",
-  t0 = time.clock()
-  idx, proj = interpolative.compute_id(A, k)
-  t = time.clock() - t0
-  B = interpolative.reconstruct_skeleton(A, k, idx)
-  C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
-  print fmt % (t, np.allclose(A, C, eps))
+      print "Calling iddr_aid ...",
+      t0 = time.clock()
+      idx, proj = interpolative.compute_id(A, k)
+      t = time.clock() - t0
+      B = interpolative.reconstruct_skeleton(A, k, idx)
+      C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
+      print fmt % (t, np.allclose(A, C, eps))
 
-  print "Calling iddr_rid ...",
-  t0 = time.clock()
-  idx, proj = interpolative.compute_id(m, n, matveca, k)
-  t = time.clock() - t0
-  B = interpolative.reconstruct_skeleton(A, k, idx)
-  C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
-  print fmt % (t, np.allclose(A, C, eps))
+      print "Calling iddr_rid ...",
+      t0 = time.clock()
+      idx, proj = interpolative.compute_id(m, n, matveca, k)
+      t = time.clock() - t0
+      B = interpolative.reconstruct_skeleton(A, k, idx)
+      C = interpolative.reconstruct_matrix_from_id(B, idx, proj)
+      print fmt % (t, np.allclose(A, C, eps))
 
-  # test SVD routines
-  print "-----------------------------------------"
-  print "SVD routines"
-  print "-----------------------------------------"
+      # test SVD routines
+      print "-----------------------------------------"
+      print "SVD routines"
+      print "-----------------------------------------"
 
-  # fixed precision
-  print "Calling iddp_svd ...",
-  t0 = time.clock()
-  U, S, V = interpolative.svd(A, eps, rand=False)
-  t = time.clock() - t0
-  B = np.dot(U, np.dot(np.diag(S), V.T))
-  print fmt % (t, np.allclose(A, B, eps))
+      # fixed precision
+      print "Calling iddp_svd ...",
+      t0 = time.clock()
+      U, S, V = interpolative.svd(A, eps, rand=False)
+      t = time.clock() - t0
+      B = np.dot(U, np.dot(np.diag(S), V.T))
+      print fmt % (t, np.allclose(A, B, eps))
 
-  print "Calling iddp_asvd...",
-  t0 = time.clock()
-  U, S, V = interpolative.svd(A, eps)
-  t = time.clock() - t0
-  B = np.dot(U, np.dot(np.diag(S), V.T))
-  print fmt % (t, np.allclose(A, B, eps))
+      print "Calling iddp_asvd...",
+      t0 = time.clock()
+      U, S, V = interpolative.svd(A, eps)
+      t = time.clock() - t0
+      B = np.dot(U, np.dot(np.diag(S), V.T))
+      print fmt % (t, np.allclose(A, B, eps))
 
-  print "Calling iddp_rsvd...",
-  t0 = time.clock()
-  U, S, V = interpolative.svd(m, n, matvec, matveca, eps)
-  t = time.clock() - t0
-  B = np.dot(U, np.dot(np.diag(S), V.T))
-  print fmt % (t, np.allclose(A, B, eps))
+      print "Calling iddp_rsvd...",
+      t0 = time.clock()
+      U, S, V = interpolative.svd(m, n, matvec, matveca, eps)
+      t = time.clock() - t0
+      B = np.dot(U, np.dot(np.diag(S), V.T))
+      print fmt % (t, np.allclose(A, B, eps))
 
-  # fixed rank
-  k = rank
+      # fixed rank
+      k = rank
 
-  print "Calling iddr_svd ...",
-  t0 = time.clock()
-  U, S, V = interpolative.svd(A, k, rand=False)
-  t = time.clock() - t0
-  B = np.dot(U, np.dot(np.diag(S), V.T))
-  print fmt % (t, np.allclose(A, B, eps))
+      print "Calling iddr_svd ...",
+      t0 = time.clock()
+      U, S, V = interpolative.svd(A, k, rand=False)
+      t = time.clock() - t0
+      B = np.dot(U, np.dot(np.diag(S), V.T))
+      print fmt % (t, np.allclose(A, B, eps))
 
-  print "Calling iddr_asvd...",
-  t0 = time.clock()
-  U, S, V = interpolative.svd(A, k)
-  t = time.clock() - t0
-  B = np.dot(U, np.dot(np.diag(S), V.T))
-  print fmt % (t, np.allclose(A, B, eps))
+      print "Calling iddr_asvd...",
+      t0 = time.clock()
+      U, S, V = interpolative.svd(A, k)
+      t = time.clock() - t0
+      B = np.dot(U, np.dot(np.diag(S), V.T))
+      print fmt % (t, np.allclose(A, B, eps))
 
-  print "Calling iddr_rsvd...",
-  t0 = time.clock()
-  U, S, V = interpolative.svd(m, n, matvec, matveca, k)
-  t = time.clock() - t0
-  B = np.dot(U, np.dot(np.diag(S), V.T))
-  print fmt % (t, np.allclose(A, B, eps))
+      print "Calling iddr_rsvd...",
+      t0 = time.clock()
+      U, S, V = interpolative.svd(m, n, matvec, matveca, k)
+      t = time.clock() - t0
+      B = np.dot(U, np.dot(np.diag(S), V.T))
+      print fmt % (t, np.allclose(A, B, eps))
