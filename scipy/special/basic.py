@@ -10,9 +10,8 @@ from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
         less, vectorize, inexact, nan, zeros, sometrue, atleast_1d
 from ._ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
-        hankel1, hankel2, yv, kv, gammaln, ndtri
+        hankel1, hankel2, yv, kv, gammaln, ndtri, errprint
 from . import _ufuncs
-from . import _ufuncs_cxx
 import types
 from . import specfun
 from . import orthogonal
@@ -38,11 +37,6 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
 class SpecialFunctionWarning(Warning):
     pass
 warnings.simplefilter("always", category=SpecialFunctionWarning)
-
-def errprint(inflag=None):
-    _ufuncs_cxx._errprint(inflag)
-    return _ufuncs._errprint(inflag)
-errprint.__doc__ = _ufuncs._errprint.__doc__
 
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.

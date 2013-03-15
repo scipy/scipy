@@ -37,7 +37,6 @@ from numpy.testing.utils import WarningManager
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import _ufuncs_cxx
 from scipy.special import ellipk
 
 from scipy.special._testutils import assert_tol_equal, with_special_errors, \
@@ -184,8 +183,8 @@ class TestCephes(TestCase):
         assert_almost_equal(cephes.cotdg(45),1.0)
 
     def test_dawsn(self):
-        assert_equal(_ufuncs_cxx.dawsn(0),0.0)
-        assert_allclose(_ufuncs_cxx.dawsn(1.23), 0.50053727749081767)
+        assert_equal(cephes.dawsn(0),0.0)
+        assert_allclose(cephes.dawsn(1.23), 0.50053727749081767)
 
     def test_ellipe(self):
         assert_equal(cephes.ellipe(1),1.0)
@@ -199,9 +198,9 @@ class TestCephes(TestCase):
         assert_equal(cephes.ellipkinc(0,0),0.0)
 
     def test_erf(self):
-        assert_equal(_ufuncs_cxx.erf(0),0.0)
+        assert_equal(cephes.erf(0),0.0)
     def test_erfc(self):
-        assert_equal(_ufuncs_cxx.erfc(0),1.0)
+        assert_equal(cephes.erfc(0),1.0)
 
     def test_exp1(self):
         cephes.exp1(1)
@@ -682,7 +681,7 @@ class TestCephes(TestCase):
             complex(2.82094791773878143474039725787438662716372268e-15,
 		    2.82094791773878143474039725773333923127678361e-15)
         ]
-        assert_func_equal(_ufuncs_cxx.wofz, w, z, rtol=1e-13)
+        assert_func_equal(cephes.wofz, w, z, rtol=1e-13)
 
 class TestAiry(TestCase):
     def test_airy(self):
@@ -1122,30 +1121,30 @@ class TestErf(TestCase):
 
     def test_erfc_consistent(self):
         self._check_variant_func(
-            _ufuncs_cxx.erfc,
-            lambda z: 1 - _ufuncs_cxx.erf(z),
+            cephes.erfc,
+            lambda z: 1 - cephes.erf(z),
             rtol=1e-12,
             atol=1e-14 # <- the test function loses precision
             )
 
     def test_erfcx_consistent(self):
         self._check_variant_func(
-            _ufuncs_cxx.erfcx,
-            lambda z: np.exp(z*z) * _ufuncs_cxx.erfc(z),
+            cephes.erfcx,
+            lambda z: np.exp(z*z) * cephes.erfc(z),
             rtol=1e-12
             )
 
     def test_erfi_consistent(self):
         self._check_variant_func(
-            _ufuncs_cxx.erfi,
-            lambda z: -1j * _ufuncs_cxx.erf(1j*z),
+            cephes.erfi,
+            lambda z: -1j * cephes.erf(1j*z),
             rtol=1e-12
             )
 
     def test_dawsn_consistent(self):
         self._check_variant_func(
-            _ufuncs_cxx.dawsn,
-            lambda z: sqrt(pi)/2 * np.exp(-z*z) * _ufuncs_cxx.erfi(z),
+            cephes.dawsn,
+            lambda z: sqrt(pi)/2 * np.exp(-z*z) * cephes.erfi(z),
             rtol=1e-12
             )
 
