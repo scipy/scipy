@@ -295,7 +295,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     array([ 1.66,  3.17,  3.54,  2.86,  0.66,  0.17,  1.  ,  4.  ,  9.  ])
 
     Note that the last five values in x are samples of a parabola, so
-    when mode='interp' (the dedault) is used with polyorder=2, the last
+    when mode='interp' (the default) is used with polyorder=2, the last
     three values are unchanged.  Compare that to, for example,
     `mode='nearest'`:
 
