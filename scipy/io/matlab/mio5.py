@@ -520,6 +520,14 @@ class VarWriter5(object):
         ''' write tag and data '''
         if mdtype is None:
             mdtype = NP_TO_MTYPES[arr.dtype.str[1:]]
+        
+        # We are writing a little-endian Matlab file but our incoming arrays may
+        # be big-endian. In particular, they might be big-endian because we originally
+        # *read* them from a big-endian Matlab file
+        byte_order = arr.dtype.byteorder
+        if byte_order == '>' or (byte_order == '=' and not boc.sys_is_le):
+            arr = arr.byteswap().newbyteorder()
+        
         byte_count = arr.size*arr.itemsize
         if byte_count <= 4:
             self.write_smalldata_element(arr, mdtype, byte_count)

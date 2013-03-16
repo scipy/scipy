@@ -203,11 +203,10 @@ cdef class VarReader5:
             if isinstance(key, str):
                 continue
             self.class_dtypes[key] = <PyObject*>dt
-        # cache correctly byte ordered dtypes
-        if self.little_endian:
-            self.U1_dtype = np.dtype('<U1')
-        else:
-            self.U1_dtype = np.dtype('>U1')
+        # Always use U1 rather than <U  or >U1 for interpreting string
+        # data because the strings are created by the Python runtime
+        # by .decode() and hence use native byte order rather the mat file's
+        self.U1_dtype = np.dtype('U1')
         bool_dtype = np.dtype('bool')
         
     def set_stream(self, fobj):

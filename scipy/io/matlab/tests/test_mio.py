@@ -818,6 +818,34 @@ def test_empty_string():
     stream.close()
 
 
+def test_read_big_endian():
+    # make sure big-endian data is read correctly
+    estring_fname = pjoin(test_data_path, 'big_endian.mat')
+    fp = open(estring_fname, 'rb')
+    rdr = MatFile5Reader_future(fp)
+    d = rdr.get_variables()
+    fp.close()
+    assert_array_equal(d['strings'], np.array([[u'hello'],
+                                               [u'world']], dtype=np.object))
+    assert_array_equal(d['floats'], np.array([[ 2.,  3.],
+                                              [ 3.,  4.]], dtype=np.float32))
+
+
+def test_write_big_endian():
+    # we don't support writing actual big-endian .mat files, but we need to
+    # behave correctly if the user supplies a big-endian numpy array to write out
+    stream = BytesIO()
+    savemat_future(stream, {'a': np.array([[ 2.,  3.],
+                                           [ 3.,  4.]], dtype='>f4'),
+                            'b': np.array([u'hello', u'world'], dtype='>U')})
+    rdr = MatFile5Reader_future(stream)
+    d = rdr.get_variables()
+    assert_array_equal(d['a'], np.array([[ 2.,  3.],
+                                         [ 3.,  4.]], dtype='f4'))
+    assert_array_equal(d['b'], np.array([u'hello', u'world'], dtype='U'))
+    stream.close()
+
+
 def test_mat4_3d():
     # test behavior when writing 3D arrays to matlab 4 files
     stream = BytesIO()

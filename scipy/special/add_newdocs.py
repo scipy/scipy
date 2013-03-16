@@ -606,23 +606,154 @@ add_newdoc("scipy.special", "gdtrc",
     probability density function.  SEE gdtr, gdtri
     """)
 
-add_newdoc("scipy.special", "gdtri",
-    """
-    x=gdtri(a,b,p) returns pth quantile of the gamma distribution.  It is
-    the inverse of the gamma cdf returning the value of x for which
-    gdtr(b,a,x) = p.
-    """)
-
 add_newdoc("scipy.special", "gdtria",
     """
+    gdtria(p, b, x, out=None)
+
+    Inverse with respect to `a` of `gdtr(a, b, x)`.
+
+    `a = gdtria(p, b, x)` returns the inverse with respect to the parameter `a`
+    of `p = gdtr(a, b, x)`, the cumulative distribution function of the gamma
+    distribution.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability values.
+    b : array_like
+        `b` parameter values of `gdtr(a, b, x)`.  `b` is the "shape" parameter
+        of the gamma distribution.
+    x : array_like
+        Nonnegative real values, from the domain of the gamma distribution.
+    out : ndarray, optional
+        If a fourth argument is given, it must be a numpy.ndarray whose size
+        matches the broadcast result of `a`, `b` and `x`.  `out` is then the
+        array returned by the function.
+
+    Returns
+    -------
+    a : ndarray
+        Values of the `a` parameter such that `p = gdtr(a, b, x)`.  `1/a`
+        is the "scale" parameter of the gamma distribution.
+
+    See Also
+    --------
+    gdtr : CDF of the gamma distribution.
+    gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
+    gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
+
+    Examples
+    --------
+    First evaluate `gdtr`.
+
+    >>> p = gdtr(1.2, 3.4, 5.6)
+    >>> print(p)
+    0.94378087442
+
+    Verify the inverse.
+
+    >>> gdtria(p, 3.4, 5.6)
+    1.2
     """)
 
 add_newdoc("scipy.special", "gdtrib",
     """
+    gdtrib(a, p, x, out=None)
+
+    Inverse with respect to `b` of `gdtr(a, b, x)`.
+
+    `b = gdtrib(a, p, x)` returns the inverse with respect to the parameter `b`
+    of `p = gdtr(a, b, x)`, the cumulative distribution function of the gamma
+    distribution.
+
+    Parameters
+    ----------
+    a : array_like
+        `a` parameter values of `gdtr(a, b, x)`. `1/a` is the "scale"
+        parameter of the gamma distribution.
+    p : array_like
+        Probability values.
+    x : array_like
+        Nonnegative real values, from the domain of the gamma distribution.
+    out : ndarray, optional
+        If a fourth argument is given, it must be a numpy.ndarray whose size
+        matches the broadcast result of `a`, `b` and `x`.  `out` is then the
+        array returned by the function.
+
+    Returns
+    -------
+    b : ndarray
+        Values of the `b` parameter such that `p = gdtr(a, b, x)`.  `b` is
+        the "shape" parameter of the gamma distribution.
+
+    See Also
+    --------
+    gdtr : CDF of the gamma distribution.
+    gdtria : Inverse with respect to `a` of `gdtr(a, b, x)`.
+    gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.
+
+    Examples
+    --------
+    First evaluate `gdtr`.
+
+    >>> p = gdtr(1.2, 3.4, 5.6)
+    >>> print(p)
+    0.94378087442
+
+    Verify the inverse.
+
+    >>> gdtrib(1.2, p, 5.6)
+    3.3999999999723882
     """)
 
 add_newdoc("scipy.special", "gdtrix",
     """
+    gdtrix(a, b, p, out=None)
+
+    Inverse with respect to `x` of `gdtr(a, b, x)`.
+
+    `x = gdtrix(a, b, p)` returns the inverse with respect to the parameter `x`
+    of `p = gdtr(a, b, x)`, the cumulative distribution function of the gamma
+    distribution. This is also known as the p'th quantile of the distribution.
+
+    Parameters
+    ----------
+    a : array_like
+        `a` parameter values of `gdtr(a, b, x)`.  `1/a` is the "scale"
+        parameter of the gamma distribution.
+    b : array_like
+        `b` parameter values of `gdtr(a, b, x)`.  `b` is the "shape" parameter
+        of the gamma distribution.
+    p : array_like
+        Probability values.
+    out : ndarray, optional
+        If a fourth argument is given, it must be a numpy.ndarray whose size
+        matches the broadcast result of `a`, `b` and `x`.  `out` is then the
+        array returned by the function.
+
+    Returns
+    -------
+    x : ndarray
+        Values of the `x` parameter such that `p = gdtr(a, b, x)`.
+
+    See Also
+    --------
+    gdtr : CDF of the gamma distribution.
+    gdtria : Inverse with respect to `a` of `gdtr(a, b, x)`.
+    gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.
+
+    Examples
+    --------
+    First evaluate `gdtr`.
+
+    >>> p = gdtr(1.2, 3.4, 5.6)
+    >>> print(p)
+    0.94378087442
+
+    Verify the inverse.
+
+    >>> gdtrix(1.2, 3.4, p)
+    5.5999999999999996
     """)
 
 add_newdoc("scipy.special", "hankel1",
@@ -1337,6 +1468,46 @@ add_newdoc("scipy.special", "wofz",
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
        http://ab-initio.mit.edu/Faddeeva
+    """)
+
+add_newdoc("scipy.special", "xlogy",
+    """
+    xlogy(x, y)
+
+    Compute ``x*log(y)`` so that the result is 0 if `x = 0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Multiplier
+    y : array_like
+        Argument
+    
+    Returns
+    -------
+    z : array_like
+        Computed x*log(y)
+
+    """)
+
+add_newdoc("scipy.special", "xlog1py",
+    """
+    xlog1py(x, y)
+
+    Compute ``x*log1p(y)`` so that the result is 0 if `x = 0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Multiplier
+    y : array_like
+        Argument
+    
+    Returns
+    -------
+    z : array_like
+        Computed x*log1p(y)
+
     """)
 
 add_newdoc("scipy.special", "y0",
