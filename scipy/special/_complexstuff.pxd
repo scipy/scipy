@@ -4,30 +4,63 @@
 #
 
 cimport numpy as np
+cimport libc.math
 
 cdef extern from "_complexstuff.h":
     double npy_cabs(np.npy_cdouble z) nogil
     np.npy_cdouble npy_clog(np.npy_cdouble z) nogil
     np.npy_cdouble npy_cexp(np.npy_cdouble z) nogil
+    double npy_log1p(double x) nogil
     int npy_isnan(double x) nogil
+    int npy_isinf(double x) nogil
+    int npy_isfinite(double x) nogil
     double inf "NPY_INFINITY"
     double pi "NPY_PI"
     double nan "NPY_NAN"
 
-cdef inline bint zisnan(double complex x) nogil:
-    return npy_isnan(x.real) or npy_isnan(x.imag)
+ctypedef double complex double_complex
 
-cdef inline double zabs(double complex x) nogil:
-    cdef double r
-    r = npy_cabs((<np.npy_cdouble*>&x)[0])
-    return r
+ctypedef fused number_t:
+    double
+    double_complex
 
-cdef inline double complex zlog(double complex x) nogil:
+cdef inline bint zisnan(number_t x) nogil:
+    if number_t is double_complex:
+        return npy_isnan(x.real) or npy_isnan(x.imag)
+    else:
+        return npy_isnan(x)
+
+cdef inline bint zisfinite(number_t x) nogil:
+    if number_t is double_complex:
+        return npy_isfinite(x.real) and npy_isfinite(x.imag)
+    else:
+        return npy_isfinite(x)
+
+cdef inline bint zisinf(number_t x) nogil:
+    if number_t is double_complex:
+        return not zisnan(x) and not zisfinite(x)
+    else:
+        return npy_isinf(x)
+
+cdef inline double zabs(number_t x) nogil:
+    if number_t is double_complex:
+        return npy_cabs((<np.npy_cdouble*>&x)[0])
+    else:
+        return libc.math.fabs(x)
+
+cdef inline number_t zlog(number_t x) nogil:
     cdef np.npy_cdouble r
-    r = npy_clog((<np.npy_cdouble*>&x)[0])
-    return (<double complex*>&r)[0]
+    if number_t is double_complex:
+        r = npy_clog((<np.npy_cdouble*>&x)[0])
+        return (<double_complex*>&r)[0]
+    else:
+        return libc.math.log(x)
 
-cdef inline double complex zexp(double complex x) nogil:
+cdef inline number_t zexp(number_t x) nogil:
     cdef np.npy_cdouble r
-    r = npy_cexp((<np.npy_cdouble*>&x)[0])
-    return (<double complex*>&r)[0]
+    if number_t is double_complex:
+        r = npy_cexp((<np.npy_cdouble*>&x)[0])
+        return (<double_complex*>&r)[0]
+    else:
+        return libc.math.exp(x)
+

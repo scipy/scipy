@@ -1470,6 +1470,46 @@ add_newdoc("scipy.special", "wofz",
        http://ab-initio.mit.edu/Faddeeva
     """)
 
+add_newdoc("scipy.special", "xlogy",
+    """
+    xlogy(x, y)
+
+    Compute ``x*log(y)`` so that the result is 0 if `x = 0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Multiplier
+    y : array_like
+        Argument
+    
+    Returns
+    -------
+    z : array_like
+        Computed x*log(y)
+
+    """)
+
+add_newdoc("scipy.special", "xlog1py",
+    """
+    xlog1py(x, y)
+
+    Compute ``x*log1p(y)`` so that the result is 0 if `x = 0`.
+
+    Parameters
+    ----------
+    x : array_like
+        Multiplier
+    y : array_like
+        Argument
+    
+    Returns
+    -------
+    z : array_like
+        Computed x*log1p(y)
+
+    """)
+
 add_newdoc("scipy.special", "y0",
     """
     y=y0(x) returns the Bessel function of the second kind of order 0 at x.
