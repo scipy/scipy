@@ -517,6 +517,8 @@ Convenience Functions
    expm1    -- exp(x)-1
    cosm1    -- cos(x)-1
    round    -- round the argument to the nearest integer. If argument ends in 0.5 exactly, pick the nearest even integer.
+   xlogy    -- x*log(y)
+   xlog1py  -- x*log1p(y)
 
 .. [+] in the description indicates a function which is not a universal
 .. function and does not follow broadcasting and automatic

@@ -26,7 +26,7 @@ cimport cython
 from libc.math cimport sqrt, exp, floor, fabs
 
 from numpy cimport npy_cdouble
-from _complexstuff cimport nan, inf
+from _complexstuff cimport nan, inf, number_t
 
 cdef extern from "cephes.h":
     double Gamma(double x) nogil
@@ -43,10 +43,6 @@ cdef extern from "c_misc/misc.h":
     double gammasgn(double x) nogil
 
 # Fused type wrappers
-
-ctypedef fused number_t:
-    double
-    double complex
 
 cdef inline number_t hyp2f1(double a, double b, double c, number_t z) nogil:
     cdef npy_cdouble r
