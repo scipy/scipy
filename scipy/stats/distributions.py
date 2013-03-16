@@ -6605,9 +6605,7 @@ class binom_gen(rv_discrete):
         k = floor(x)
         combiln = (gamln(n+1) - (gamln(k+1) +
                                            gamln(n-k+1)))
-        logp = where((p==0) & (k==0), 1, log(p)) 
-        log1mp = where((p==1) & (k==n), 1, log1p(-p))
-        return combiln + k*logp + (n-k)*log1mp   
+        return combiln + special.xlogy(k,p) + special.xlog1py(n-k, -p)   
     def _pmf(self, x, n, p):
         return exp(self._logpmf(x, n, p))
     def _cdf(self, x, n, p):
