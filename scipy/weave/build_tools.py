@@ -266,6 +266,11 @@ def build_extension(module_path,compiler_name='',build_dir=None,
         old_SysExit = builtin.__dict__['SystemExit']
         builtin.__dict__['SystemExit'] = CompileError
 
+        # change current working directory to 'build_dir' so compiler won't
+        # pick up anything by mistake
+        oldcwd = os.path.abspath(os.getcwd())
+        os.chdir(build_dir)
+
         # distutils for MSVC messes with the environment, so we save the
         # current state and restore them afterward.
         import copy
@@ -277,6 +282,8 @@ def build_extension(module_path,compiler_name='',build_dir=None,
             os.environ = environ
             # restore SystemExit
             builtin.__dict__['SystemExit'] = old_SysExit
+            # restore working directory to one before setup
+            os.chdir(oldcwd)
         t2 = time.time()
 
         if verbose == 1:
