@@ -155,7 +155,7 @@ def _polyder(p, m):
 def _fit_edge(x, window_start, window_stop, interp_start, interp_stop,
               axis, polyorder, deriv, delta, y):
     """
-    Given an n-d array`x` and the specification of a slice of `x` from
+    Given an n-d array `x` and the specification of a slice of `x` from
     `window_start` to `window_stop` along `axis`, create an interpolating
     polynomial of each 1-d slice, and evaluate that polynomial in the slice
     from `interp_start` to `interp_stop`.  Put the result into the
