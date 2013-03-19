@@ -221,7 +221,9 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     Parameters
     ----------
     x : array_like
-        The data to be filtered.
+        The data to be filtered.  If `x` is not a single or double precision
+        floating point array, it will be converted to type `numpy.float64`
+        before filtering.
     window_length : int
         The length of the filter window (i.e. the number of coefficients).
         `window_length` must be a positive odd integer.
@@ -307,8 +309,10 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
         raise ValueError("mode must be 'mirror', 'constant', 'nearest' "
                          "or 'interp'.")
 
-    # Multiply by 1.0 to ensure float without forcing float64.
-    x = 1.0 * np.asarray(x)
+    x = np.asarray(x)
+    # Ensure that x is either single or double precision floating point.
+    if x.dtype != np.float64 and x.dtype != np.float32:
+        x = x.astype(np.float64)
 
     coeffs = savgol_coeffs(window_length, polyorder, deriv=deriv, delta=delta)
 
