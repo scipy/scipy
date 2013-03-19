@@ -240,6 +240,11 @@ class lil_matrix(spmatrix):
             return index, slice(None)
 
     def _index_to_arrays(self, i, j):
+        if isinstance(i, np.ndarray) and i.dtype.kind=='b':
+            i = i.nonzero()
+        if isinstance(j, np.ndarray) and j.dtype.kind=='b':
+            j = j.nonzero()
+
         i_slice = isinstance(i, slice)
         if i_slice:
             i = self._slicetoarange(i, self.shape[0])[:,None]
