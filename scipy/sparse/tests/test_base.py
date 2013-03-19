@@ -1138,6 +1138,25 @@ class _TestFancyIndexing:
         assert_raises(IndexError, S.__getitem__, (I_bad,J))
         assert_raises(IndexError, S.__getitem__, (I,J_bad))
 
+    def test_fancy_indexing_boolean(self):
+        random.seed(1234) # make runs repeatable
+
+        B = asmatrix(arange(50).reshape(5,10))
+        A = self.spmatrix( B )
+
+        I = np.array(np.random.randint(0, 2, size=5), dtype=bool)
+        J = np.array(np.random.randint(0, 2, size=10), dtype=bool)
+        X = np.array(np.random.randint(0, 2, size=(5, 10)), dtype=bool)
+
+        assert_equal(A[I].todense(), B[I])
+        assert_equal(A[:,J].todense(), B[:, J])
+        assert_equal(A[X], B[X])
+
+        I = np.array([True, False, True, True, False])
+        J = np.array([False, True, True, False, True])
+
+        assert_equal(A[I, J].todense(), B[I, J])
+        
 
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
