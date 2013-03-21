@@ -136,7 +136,13 @@ class TestBinom(TestCase):
         val = stats.binom(10, 0.75).rvs(3)
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
-
+    
+    def test_pmf(self):
+        # regression test for Ticket #1842
+        vals1 = stats.binom.pmf(100, 100,1)
+        vals2 = stats.binom.pmf(0, 100,0)
+        assert_allclose(vals1, 1.0, rtol=1e-15, atol=0)
+        assert_allclose(vals2, 1.0, rtol=1e-15, atol=0)
 
 class TestBernoulli(TestCase):
     def test_rvs(self):
