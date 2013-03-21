@@ -410,9 +410,17 @@ class TestSkellam(TestCase):
 
         assert_almost_equal(stats.skellam.cdf(k, mu1, mu2), skcdfR, decimal=5)
 
-
-class TestGamma(TestCase):
-
+class TestBeta(TestCase):
+    def test_logpdf(self):
+        ''' Regression test for Ticket #1326: 
+        cornercase avoid nan with 0*log(0) situation
+        '''
+        logpdf = stats.beta.logpdf(0,1,0.5)
+        assert_almost_equal(logpdf, -0.69314718056)
+        logpdf = stats.beta.logpdf(0,0.5,1)
+        assert_almost_equal(logpdf, np.inf)
+            
+class TestGamma(TestCase):    
     def test_pdf(self):
         # a few test cases to compare with R
         pdf = stats.gamma.pdf(90, 394, scale=1./5)
@@ -420,8 +428,14 @@ class TestGamma(TestCase):
 
         pdf = stats.gamma.pdf(3, 10, scale=1./5)
         assert_almost_equal(pdf, 0.1620358)
-
-
+        
+    def test_logpdf(self):
+        ''' Regression test for Ticket #1326: 
+        cornercase avoid nan with 0*log(0) situation
+        '''
+        logpdf = stats.gamma.logpdf(0,1)
+        assert_almost_equal(logpdf, 0)
+        
 class TestChi2(TestCase):
     # regression tests after precision improvements, ticket:1041, not verified
     def test_precision(self):

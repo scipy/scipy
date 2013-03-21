@@ -2186,12 +2186,10 @@ class beta_gen(rv_continuous):
     def _rvs(self, a, b):
         return mtrand.beta(a,b,self._size)
     def _pdf(self, x, a, b):
-        Px = (1.0-x)**(b-1.0) * x**(a-1.0)
-        Px /= special.beta(a,b)
-        return Px
+        return np.exp(self._logpdf(x, a, b))
     def _logpdf(self, x, a, b):
-        lPx = (b-1.0)*log(1.0-x) + (a-1.0)*log(x)
-        lPx -= log(special.beta(a,b))
+        lPx = special.xlog1py(b-1.0, -x) + special.xlogy(a-1.0, x)
+        lPx -= special.betaln(a,b)
         return lPx
     def _cdf(self, x, a, b):
         return special.btdtr(a,b,x)
@@ -3313,7 +3311,7 @@ class gamma_gen(rv_continuous):
     def _pdf(self, x, a):
         return exp(self._logpdf(x, a))
     def _logpdf(self, x, a):
-        return (a-1)*log(x) - x - gamln(a)
+        return special.xlogy(a-1.0, x) - x - gamln(a)
     def _cdf(self, x, a):
         return special.gammainc(a, x)
     def _ppf(self, q, a):
