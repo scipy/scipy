@@ -693,20 +693,20 @@ class TestExpect(TestCase):
 ##        (array(6.333333333333333), array(0.055555555555555552))
         v = stats.beta.expect(lambda x: (x-19/3.)*(x-19/3.), args=(10,5),
                               loc=5, scale=2)
-        assert_almost_equal(v, 1./18., decimal=14)
+        assert_almost_equal(v, 1./18., decimal=13)
 
         m = stats.beta.expect(lambda x: x, args=(10,5), loc=5., scale=2.)
-        assert_almost_equal(m, 19/3., decimal=14)
+        assert_almost_equal(m, 19/3., decimal=13)
 
         ub = stats.beta.ppf(0.95, 10, 10, loc=5, scale=2)
         lb = stats.beta.ppf(0.05, 10, 10, loc=5, scale=2)
         prob90 = stats.beta.expect(lambda x: 1., args=(10,10), loc=5.,
                                    scale=2.,lb=lb, ub=ub, conditional=False)
-        assert_almost_equal(prob90, 0.9, decimal=14)
+        assert_almost_equal(prob90, 0.9, decimal=13)
 
         prob90c = stats.beta.expect(lambda x: 1, args=(10,10), loc=5,
                                     scale=2, lb=lb, ub=ub, conditional=True)
-        assert_almost_equal(prob90c, 1., decimal=14)
+        assert_almost_equal(prob90c, 1., decimal=13)
 
 
     def test_hypergeom(self):
@@ -1030,6 +1030,20 @@ def test_ncx2_tails_ticket_955():
     a = stats.ncx2.cdf(np.arange(20, 25, 0.2), 2, 1.07458615e+02)
     b = stats.ncx2.veccdf(np.arange(20, 25, 0.2), 2, 1.07458615e+02)
     assert_allclose(a, b, rtol=1e-3, atol=0)
+
+def test_beta_logpdf_ticket_1866():
+    alpha, beta = 267, 1472
+    x = np.array([0.2, 0.5, 0.6])
+    b = stats.beta(alpha, beta)
+    assert_allclose(b.logpdf(x).sum(), -1201.699061824062)
+    assert_allclose(b.pdf(x), np.exp(b.logpdf(x)))
+
+def test_betaprime_logpdf():
+    alpha, beta = 267, 1472
+    x = np.array([0.2, 0.5, 0.6])
+    b = stats.betaprime(alpha, beta)
+    assert_(np.isfinite(b.logpdf(x)).all())
+    assert_allclose(b.pdf(x), np.exp(b.logpdf(x)))
 
 if __name__ == "__main__":
     run_module_suite()
