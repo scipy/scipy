@@ -239,11 +239,28 @@ class lil_matrix(spmatrix):
         else:
             return index, slice(None)
 
+    def _boolean_to_array(self, i):
+        if i.ndim<2:
+            i = i.nonzero()
+        elif (i.shape[0]>self.shape[0] or i.shape[1]>self.shape[1] or
+              i.ndim>2):
+            raise IndexError('invalid index shape')
+        else:
+            i = i.nonzero()
+        return i
+
     def _index_to_arrays(self, i, j):
         if isinstance(i, np.ndarray) and i.dtype.kind=='b':
-            i = i.nonzero()
+            i = self._boolean_to_array(i)
+            if len(i)==2:
+                if isinstance(j, slice):
+                    j = i[1]
+
+                else:
+                    raise ValueError('too many incdices for array')
+            i = i[0]
         if isinstance(j, np.ndarray) and j.dtype.kind=='b':
-            j = j.nonzero()
+            j = self._boolean_to_array(j)[0]
 
         i_slice = isinstance(i, slice)
         if i_slice:
