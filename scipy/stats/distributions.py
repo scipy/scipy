@@ -2186,12 +2186,10 @@ class beta_gen(rv_continuous):
     def _rvs(self, a, b):
         return mtrand.beta(a,b,self._size)
     def _pdf(self, x, a, b):
-        Px = (1.0-x)**(b-1.0) * x**(a-1.0)
-        Px /= special.beta(a,b)
-        return Px
+        return np.exp(self._logpdf(x, a, b))
     def _logpdf(self, x, a, b):
-        lPx = (b-1.0)*log(1.0-x) + (a-1.0)*log(x)
-        lPx -= log(special.beta(a,b))
+        lPx = special.xlog1py(b-1.0, -x) + special.xlogy(a-1.0, x)
+        lPx -= special.betaln(a,b)
         return lPx
     def _cdf(self, x, a, b):
         return special.btdtr(a,b,x)
@@ -2256,9 +2254,9 @@ class betaprime_gen(rv_continuous):
         u2 = gamma.rvs(b,size=self._size)
         return (u1 / u2)
     def _pdf(self, x, a, b):
-        return 1.0/special.beta(a,b)*x**(a-1.0)/(1+x)**(a+b)
+        return np.exp(self._logpdf(x, a, b))
     def _logpdf(self, x, a, b):
-        return (a-1.0)*log(x) - (a+b)*log(1+x) - log(special.beta(a,b))
+        return special.xlogy(a-1.0, x) - special.xlog1py(a+b, x) - special.betaln(a,b)
     def _cdf_skip(self, x, a, b):
         # remove for now: special.hyp2f1 is incorrect for large a
         x = where(x==1.0, 1.0-1e-6,x)
@@ -3313,7 +3311,7 @@ class gamma_gen(rv_continuous):
     def _pdf(self, x, a):
         return exp(self._logpdf(x, a))
     def _logpdf(self, x, a):
-        return (a-1)*log(x) - x - gamln(a)
+        return special.xlogy(a-1.0, x) - x - gamln(a)
     def _cdf(self, x, a):
         return special.gammainc(a, x)
     def _ppf(self, q, a):
