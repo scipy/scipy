@@ -4202,6 +4202,8 @@ class gilbrat_gen(lognorm_gen):
         return lognorm_gen._rvs(self, 1.0)
     def _pdf(self, x):
         return lognorm_gen._pdf(self, x, 1.0)
+    def _logpdf(self, x):
+        return lognorm_gen._logpdf(self, x, 1.0)
     def _cdf(self, x):
         return lognorm_gen._cdf(self, x, 1.0)
     def _ppf(self, q):
