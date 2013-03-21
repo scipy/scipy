@@ -416,6 +416,13 @@ class TestSkellam(TestCase):
 
         assert_almost_equal(stats.skellam.cdf(k, mu1, mu2), skcdfR, decimal=5)
 
+class TestLognorm(TestCase):
+    def test_pdf(self):
+        ''' Regression test for Ticket #1471: 
+        cornercase avoid nan with 0/0 situation
+        '''
+        pdf = stats.lognorm.pdf(0,1)
+        assert_almost_equal(pdf, 0.0)
 
 class TestBeta(TestCase):
     def test_logpdf(self):
