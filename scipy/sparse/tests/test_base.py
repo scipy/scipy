@@ -1150,13 +1150,19 @@ class _TestFancyIndexing:
 
         assert_equal(A[I].todense(), B[I])
         assert_equal(A[:,J].todense(), B[:, J])
-        assert_equal(A[X], B[X])
+        assert_equal(A[X].todense(), B[X])
 
         I = np.array([True, False, True, True, False])
         J = np.array([False, True, True, False, True])
 
         assert_equal(A[I, J].todense(), B[I, J])
-        
+
+        Z = np.array(np.random.randint(0, 2, size=(5, 11)), dtype=bool)
+        Y = np.array(np.random.randint(0, 2, size=(6, 10)), dtype=bool)
+
+        assert_raises(IndexError, A.__getitem__, Z)
+        assert_raises(IndexError, A.__getitem__, Y)
+        assert_raises(ValueError, A.__getitem__, (X, 1))
 
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
