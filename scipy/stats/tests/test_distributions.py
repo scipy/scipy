@@ -7,7 +7,7 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, assert_almost_equal, assert_array_almost_equal, \
     assert_allclose, assert_, assert_raises, rand, dec
 from numpy.testing.utils import WarningManager
-
+from nose import SkipTest
 
 import numpy
 import numpy as np
@@ -531,14 +531,14 @@ def TestArgsreduce():
     assert_array_equal(c, [2] * numpy.size(a))
 
 
-class TestFitMethod(TestCase):
+class TestFitMethod(object):
     skip = ['ncf']
 
     @dec.slow
     def test_fit(self):
-        for func, dist, args, alpha in test_all_distributions():
+        def check(func, dist, args, alpha):
             if dist in self.skip:
-                continue
+                raise SkipTest("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
             res = distfunc.rvs(*args, **{'size':200})
             vals = distfunc.fit(res)
@@ -553,13 +553,16 @@ class TestFitMethod(TestCase):
                 assert_(len(vals) == 2+len(args))
                 assert_(len(vals2)==2+len(args))
 
+        for func, dist, args, alpha in test_all_distributions():
+            yield check, func, dist, args, alpha
+
     @dec.slow
     def test_fix_fit(self):
-        for func, dist, args, alpha in test_all_distributions():
+        def check(func, dist, args, alpha):
             # Not sure why 'ncf', and 'beta' are failing
             # erlang and frechet have different len(args) than distfunc.numargs
-            if dist in self.skip + ['erlang', 'frechet', 'beta']:
-                continue
+            if dist in self.skip + ['erlang', 'frechet']:
+                raise SkipTest("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
             res = distfunc.rvs(*args, **{'size':200})
             vals = distfunc.fit(res,floc=0)
@@ -580,6 +583,9 @@ class TestFitMethod(TestCase):
                 vals5 = distfunc.fit(res, f2=args[2])
                 assert_(len(vals5) == 2+len(args))
                 assert_(vals5[2] == args[2])
+
+        for func, dist, args, alpha in test_all_distributions():
+            yield check, func, dist, args, alpha
 
     def test_fix_fit_2args_lognorm(self):
         """Regression test for #1551."""
