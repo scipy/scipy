@@ -573,47 +573,53 @@ cdef unsigned int _depth_first_undirected(
     return i_nl_end
 
 
-cdef int _connected_components_directed(np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
-                                        np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
-                                        np.ndarray[ITYPE_t, ndim=1, mode='c'] labels):
+cdef int _connected_components_directed(
+                                 np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
+                                 np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
+                                 np.ndarray[ITYPE_t, ndim=1, mode='c'] labels):
     """
-    Uses an iterative version of Tarjan's algorithm to find the strongly connected components
-    of a directed graph represented as a sparse matrix (scipy.sparse.csc_matrix or scipy.sparse.csr_matrix).
+    Uses an iterative version of Tarjan's algorithm to find the
+    strongly connected components of a directed graph represented as a
+    sparse matrix (scipy.sparse.csc_matrix or scipy.sparse.csr_matrix).
 
-    The algorithmic complexity is for a graph with E edges and V vertices is O(E + V).
+    The algorithmic complexity is for a graph with E edges and V
+    vertices is O(E + V).
     The storage requirement is 2*V integer arrays.
 
     Uses an iterative version of the algorithm described here:
     http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
     """
-    cdef int v, w, index, low_v, low_w, label, j, SS_head, root, stack_head, f, b
+    cdef int v, w, index, low_v, low_w, label, j
+    cdef int SS_head, root, stack_head, f, b
     cdef int VOID = -1
     cdef int END = -2
     cdef int N = labels.shape[0]
+    cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] SS, lowlinks, stack_f, stack_b
 
-    cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] SS = np.ndarray((N,), dtype=np.int32)
-    cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] lowlinks = labels
-    cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] stack_f = SS
-    cdef np.ndarray[ITYPE_t, ndim=1, mode="c"] stack_b = np.ndarray((N,), dtype=np.int32)
+    lowlinks = labels
+    SS = np.ndarray((N,), dtype=ITYPE)
+    stack_b = np.ndarray((N,), dtype=ITYPE)
+    stack_f = SS
 
     # The stack of nodes which have been backtracked and are in the current SCC
     SS.fill(VOID)
     SS_head = END
 
-    # The array containing the lowlinks of nodes not yet assigned an SCC.
-    # Shares memory with the labels array, since they are not used at the same time.
+    # The array containing the lowlinks of nodes not yet assigned an SCC. Shares
+    # memory with the labels array, since they are not used at the same time.
     lowlinks.fill(VOID)
 
-    # The DFS stack. Stored with both forwards and backwards pointers to allow us
-    # to move a node up to the top of the stack, as we only need to visit each node
-    # once. stach_f shared memory with SS, as nodes aren't put on the SS stack until
-    # after they've been popped from the DFS stack.
+    # The DFS stack. Stored with both forwards and backwards pointers to allow
+    # us to move a node up to the top of the stack, as we only need to visit
+    # each node once. stack_f shares memory with SS, as nodes aren't put on the
+    # SS stack until after they've been popped from the DFS stack.
     stack_head = END
     stack_f.fill(VOID)
     stack_b.fill(VOID)
 
     index = 0
-    label = N - 1 # Count SCC labels backwards so as not to class with lowlinks values.
+    # Count SCC labels backwards so as not to class with lowlinks values.
+    label = N - 1
     for v in range(N):
         if lowlinks[v] == VOID:
             # DFS-stack push
@@ -632,7 +638,7 @@ cdef int _connected_components_directed(np.ndarray[ITYPE_t, ndim=1, mode='c'] in
                         if lowlinks[w] == VOID:
                             # DFS-stack push
                             if stack_f[w] != VOID:
-                                # w is already inside the stack, so need to excise it
+                                # w is already inside the stack, so excise it.
                                 f = stack_f[w]
                                 b = stack_b[w]
                                 if b != END:
@@ -678,7 +684,7 @@ cdef int _connected_components_directed(np.ndarray[ITYPE_t, ndim=1, mode='c'] in
                         SS[v] = SS_head  # push(S, v)
                         SS_head = v
 
-    # labels count down from N-1 to zero.  Modify them so they
+    # labels count down from N-1 to zero. Modify them so they
     # count upward from 0
     labels *= -1
     labels += (N - 1)
