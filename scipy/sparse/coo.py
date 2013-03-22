@@ -13,10 +13,10 @@ from scipy.lib.six.moves import zip as izip
 
 from .sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix
-from .data import _data_matrix
+from .data import _data_matrix, _minmax_mixin
 from .sputils import upcast, upcast_char, to_native, isshape, getdtype, isintlike
 
-class coo_matrix(_data_matrix):
+class coo_matrix(_data_matrix, _minmax_mixin):
     """
     A sparse matrix in COOrdinate format.
 

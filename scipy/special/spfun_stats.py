@@ -88,10 +88,5 @@ def multigammaln(a, d):
                          % (a, 0.5 * (d-1)))
 
     res = (d * (d-1) * 0.25) * np.log(np.pi)
-    if a.size == 1:
-        axis = -1
-    else:
-        axis = 0
-
-    res += np.sum(loggam([(a - (j - 1.)/2) for j in range(1, d+1)]), axis)
+    res += np.sum(loggam([(a - (j - 1.)/2) for j in range(1, d+1)]), axis=0)
     return res

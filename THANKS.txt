@@ -113,6 +113,7 @@ Steven G. Johnson for Faddeeva W and erf* implementations.
 Lorenzo Luengo for whosmat() in scipy.io.
 Eric Moore for orthogonal polynomial recurrences in scipy.special.
 Jacob Stevenson for the basinhopping optimization algorithm
+Daniel Smith for sparse matrix functionality improvements
 
 
 Institutions

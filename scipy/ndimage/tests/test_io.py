@@ -14,7 +14,7 @@ except ImportError:
 @dec.skipif(pil_missing, msg="The Python Image Library could not be found.")
 def test_imread():
     lp = os.path.join(os.path.dirname(__file__), 'dots.png')
-    img = ndi.imread(lp)
+    img = ndi.imread(lp, mode="RGB")
     assert_array_equal(img.shape, (300, 420, 3))
 
     img = ndi.imread(lp, flatten=True)

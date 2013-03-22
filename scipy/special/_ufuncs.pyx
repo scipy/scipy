@@ -468,6 +468,20 @@ cdef void loop_D_Dld__As_Dld_D(char **args, np.npy_intp *dims, np.npy_intp *step
         op0 += steps[3]
     sf_error.check_fpe(func_name)
 
+cdef void loop_D_DD__As_DD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef double complex ov0
+    for i in range(n):
+        ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<double complex*>ip0)[0], <double complex>(<double complex*>ip1)[0])
+        (<double complex *>op0)[0] = <double complex>ov0
+        ip0 += steps[0]
+        ip1 += steps[1]
+        op0 += steps[2]
+    sf_error.check_fpe(func_name)
+
 cdef void loop_i_dd_dd_As_ff_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
@@ -533,6 +547,20 @@ cdef void loop_d_dddd__As_dddd_d(char **args, np.npy_intp *dims, np.npy_intp *st
         ip2 += steps[2]
         ip3 += steps[3]
         op0 += steps[4]
+    sf_error.check_fpe(func_name)
+
+cdef void loop_D_DD__As_FF_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef double complex ov0
+    for i in range(n):
+        ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<float complex*>ip0)[0], <double complex>(<float complex*>ip1)[0])
+        (<float complex *>op0)[0] = <float complex>ov0
+        ip0 += steps[0]
+        ip1 += steps[1]
+        op0 += steps[2]
     sf_error.check_fpe(func_name)
 
 cdef void loop_d_iid__As_lld_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -1506,6 +1534,15 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_tandg "tandg"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_tukeylambdacdf "tukeylambdacdf"(double, double) nogil
+from _xlogy cimport xlog1py as _func_xlog1py
+ctypedef double _proto_xlog1py_t(double, double) nogil
+cdef _proto_xlog1py_t *_proto_xlog1py_t_var = &_func_xlog1py
+from _xlogy cimport xlogy as _func_xlogy
+ctypedef double _proto_xlogy_double__t(double, double) nogil
+cdef _proto_xlogy_double__t *_proto_xlogy_double__t_var = &_func_xlogy[double]
+from _xlogy cimport xlogy as _func_xlogy
+ctypedef double complex _proto_xlogy_double_complex__t(double complex, double complex) nogil
+cdef _proto_xlogy_double_complex__t *_proto_xlogy_double_complex__t_var = &_func_xlogy[double_complex]
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_y0 "y0"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -3899,7 +3936,52 @@ cdef void *ufunc_gdtria_ptr[4]
 cdef void *ufunc_gdtria_data[2]
 cdef char ufunc_gdtria_types[8]
 cdef char *ufunc_gdtria_doc = (
-    "")
+    "gdtria(p, b, x, out=None)\n"
+    "\n"
+    "Inverse with respect to `a` of `gdtr(a, b, x)`.\n"
+    "\n"
+    "`a = gdtria(p, b, x)` returns the inverse with respect to the parameter `a`\n"
+    "of `p = gdtr(a, b, x)`, the cumulative distribution function of the gamma\n"
+    "distribution.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "p : array_like\n"
+    "    Probability values.\n"
+    "b : array_like\n"
+    "    `b` parameter values of `gdtr(a, b, x)`.  `b` is the \"shape\" parameter\n"
+    "    of the gamma distribution.\n"
+    "x : array_like\n"
+    "    Nonnegative real values, from the domain of the gamma distribution.\n"
+    "out : ndarray, optional\n"
+    "    If a fourth argument is given, it must be a numpy.ndarray whose size\n"
+    "    matches the broadcast result of `a`, `b` and `x`.  `out` is then the\n"
+    "    array returned by the function.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "a : ndarray\n"
+    "    Values of the `a` parameter such that `p = gdtr(a, b, x)`.  `1/a`\n"
+    "    is the \"scale\" parameter of the gamma distribution.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "gdtr : CDF of the gamma distribution.\n"
+    "gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.\n"
+    "gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    "First evaluate `gdtr`.\n"
+    "\n"
+    ">>> p = gdtr(1.2, 3.4, 5.6)\n"
+    ">>> print(p)\n"
+    "0.94378087442\n"
+    "\n"
+    "Verify the inverse.\n"
+    "\n"
+    ">>> gdtria(p, 3.4, 5.6)\n"
+    "1.2")
 ufunc_gdtria_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_gdtria_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_gdtria_types[0] = <char>NPY_FLOAT
@@ -3923,7 +4005,52 @@ cdef void *ufunc_gdtrib_ptr[4]
 cdef void *ufunc_gdtrib_data[2]
 cdef char ufunc_gdtrib_types[8]
 cdef char *ufunc_gdtrib_doc = (
-    "")
+    "gdtrib(a, p, x, out=None)\n"
+    "\n"
+    "Inverse with respect to `b` of `gdtr(a, b, x)`.\n"
+    "\n"
+    "`b = gdtrib(a, p, x)` returns the inverse with respect to the parameter `b`\n"
+    "of `p = gdtr(a, b, x)`, the cumulative distribution function of the gamma\n"
+    "distribution.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "a : array_like\n"
+    "    `a` parameter values of `gdtr(a, b, x)`. `1/a` is the \"scale\"\n"
+    "    parameter of the gamma distribution.\n"
+    "p : array_like\n"
+    "    Probability values.\n"
+    "x : array_like\n"
+    "    Nonnegative real values, from the domain of the gamma distribution.\n"
+    "out : ndarray, optional\n"
+    "    If a fourth argument is given, it must be a numpy.ndarray whose size\n"
+    "    matches the broadcast result of `a`, `b` and `x`.  `out` is then the\n"
+    "    array returned by the function.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "b : ndarray\n"
+    "    Values of the `b` parameter such that `p = gdtr(a, b, x)`.  `b` is\n"
+    "    the \"shape\" parameter of the gamma distribution.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "gdtr : CDF of the gamma distribution.\n"
+    "gdtria : Inverse with respect to `a` of `gdtr(a, b, x)`.\n"
+    "gdtrix : Inverse with respect to `x` of `gdtr(a, b, x)`.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    "First evaluate `gdtr`.\n"
+    "\n"
+    ">>> p = gdtr(1.2, 3.4, 5.6)\n"
+    ">>> print(p)\n"
+    "0.94378087442\n"
+    "\n"
+    "Verify the inverse.\n"
+    "\n"
+    ">>> gdtrib(1.2, p, 5.6)\n"
+    "3.3999999999723882")
 ufunc_gdtrib_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_gdtrib_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_gdtrib_types[0] = <char>NPY_FLOAT
@@ -3947,7 +4074,52 @@ cdef void *ufunc_gdtrix_ptr[4]
 cdef void *ufunc_gdtrix_data[2]
 cdef char ufunc_gdtrix_types[8]
 cdef char *ufunc_gdtrix_doc = (
-    "")
+    "gdtrix(a, b, p, out=None)\n"
+    "\n"
+    "Inverse with respect to `x` of `gdtr(a, b, x)`.\n"
+    "\n"
+    "`x = gdtrix(a, b, p)` returns the inverse with respect to the parameter `x`\n"
+    "of `p = gdtr(a, b, x)`, the cumulative distribution function of the gamma\n"
+    "distribution. This is also known as the p'th quantile of the distribution.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "a : array_like\n"
+    "    `a` parameter values of `gdtr(a, b, x)`.  `1/a` is the \"scale\"\n"
+    "    parameter of the gamma distribution.\n"
+    "b : array_like\n"
+    "    `b` parameter values of `gdtr(a, b, x)`.  `b` is the \"shape\" parameter\n"
+    "    of the gamma distribution.\n"
+    "p : array_like\n"
+    "    Probability values.\n"
+    "out : ndarray, optional\n"
+    "    If a fourth argument is given, it must be a numpy.ndarray whose size\n"
+    "    matches the broadcast result of `a`, `b` and `x`.  `out` is then the\n"
+    "    array returned by the function.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "x : ndarray\n"
+    "    Values of the `x` parameter such that `p = gdtr(a, b, x)`.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "gdtr : CDF of the gamma distribution.\n"
+    "gdtria : Inverse with respect to `a` of `gdtr(a, b, x)`.\n"
+    "gdtrib : Inverse with respect to `b` of `gdtr(a, b, x)`.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    "First evaluate `gdtr`.\n"
+    "\n"
+    ">>> p = gdtr(1.2, 3.4, 5.6)\n"
+    ">>> print(p)\n"
+    "0.94378087442\n"
+    "\n"
+    "Verify the inverse.\n"
+    "\n"
+    ">>> gdtrix(1.2, 3.4, p)\n"
+    "5.5999999999999996")
 ufunc_gdtrix_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_gdtrix_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_gdtrix_types[0] = <char>NPY_FLOAT
@@ -7013,6 +7185,92 @@ ufunc_tklmbda_ptr[2*1+1] = <void*>(<char*>"tklmbda")
 ufunc_tklmbda_data[0] = &ufunc_tklmbda_ptr[2*0]
 ufunc_tklmbda_data[1] = &ufunc_tklmbda_ptr[2*1]
 tklmbda = np.PyUFunc_FromFuncAndData(ufunc_tklmbda_loops, ufunc_tklmbda_data, ufunc_tklmbda_types, 2, 2, 1, 0, "tklmbda", ufunc_tklmbda_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_xlog1py_loops[2]
+cdef void *ufunc_xlog1py_ptr[4]
+cdef void *ufunc_xlog1py_data[2]
+cdef char ufunc_xlog1py_types[6]
+cdef char *ufunc_xlog1py_doc = (
+    "xlog1py(x, y)\n"
+    "\n"
+    "Compute ``x*log1p(y)`` so that the result is 0 if `x = 0`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Multiplier\n"
+    "y : array_like\n"
+    "    Argument\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "z : array_like\n"
+    "    Computed x*log1p(y)")
+ufunc_xlog1py_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_xlog1py_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_xlog1py_types[0] = <char>NPY_FLOAT
+ufunc_xlog1py_types[1] = <char>NPY_FLOAT
+ufunc_xlog1py_types[2] = <char>NPY_FLOAT
+ufunc_xlog1py_types[3] = <char>NPY_DOUBLE
+ufunc_xlog1py_types[4] = <char>NPY_DOUBLE
+ufunc_xlog1py_types[5] = <char>NPY_DOUBLE
+ufunc_xlog1py_ptr[2*0] = <void*>_func_xlog1py
+ufunc_xlog1py_ptr[2*0+1] = <void*>(<char*>"xlog1py")
+ufunc_xlog1py_ptr[2*1] = <void*>_func_xlog1py
+ufunc_xlog1py_ptr[2*1+1] = <void*>(<char*>"xlog1py")
+ufunc_xlog1py_data[0] = &ufunc_xlog1py_ptr[2*0]
+ufunc_xlog1py_data[1] = &ufunc_xlog1py_ptr[2*1]
+xlog1py = np.PyUFunc_FromFuncAndData(ufunc_xlog1py_loops, ufunc_xlog1py_data, ufunc_xlog1py_types, 2, 2, 1, 0, "xlog1py", ufunc_xlog1py_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_xlogy_loops[4]
+cdef void *ufunc_xlogy_ptr[8]
+cdef void *ufunc_xlogy_data[4]
+cdef char ufunc_xlogy_types[12]
+cdef char *ufunc_xlogy_doc = (
+    "xlogy(x, y)\n"
+    "\n"
+    "Compute ``x*log(y)`` so that the result is 0 if `x = 0`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Multiplier\n"
+    "y : array_like\n"
+    "    Argument\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "z : array_like\n"
+    "    Computed x*log(y)")
+ufunc_xlogy_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_xlogy_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_xlogy_loops[2] = <np.PyUFuncGenericFunction>loop_D_DD__As_FF_F
+ufunc_xlogy_loops[3] = <np.PyUFuncGenericFunction>loop_D_DD__As_DD_D
+ufunc_xlogy_types[0] = <char>NPY_FLOAT
+ufunc_xlogy_types[1] = <char>NPY_FLOAT
+ufunc_xlogy_types[2] = <char>NPY_FLOAT
+ufunc_xlogy_types[3] = <char>NPY_DOUBLE
+ufunc_xlogy_types[4] = <char>NPY_DOUBLE
+ufunc_xlogy_types[5] = <char>NPY_DOUBLE
+ufunc_xlogy_types[6] = <char>NPY_CFLOAT
+ufunc_xlogy_types[7] = <char>NPY_CFLOAT
+ufunc_xlogy_types[8] = <char>NPY_CFLOAT
+ufunc_xlogy_types[9] = <char>NPY_CDOUBLE
+ufunc_xlogy_types[10] = <char>NPY_CDOUBLE
+ufunc_xlogy_types[11] = <char>NPY_CDOUBLE
+ufunc_xlogy_ptr[2*0] = <void*>_func_xlogy[double]
+ufunc_xlogy_ptr[2*0+1] = <void*>(<char*>"xlogy")
+ufunc_xlogy_ptr[2*1] = <void*>_func_xlogy[double]
+ufunc_xlogy_ptr[2*1+1] = <void*>(<char*>"xlogy")
+ufunc_xlogy_ptr[2*2] = <void*>_func_xlogy[double_complex]
+ufunc_xlogy_ptr[2*2+1] = <void*>(<char*>"xlogy")
+ufunc_xlogy_ptr[2*3] = <void*>_func_xlogy[double_complex]
+ufunc_xlogy_ptr[2*3+1] = <void*>(<char*>"xlogy")
+ufunc_xlogy_data[0] = &ufunc_xlogy_ptr[2*0]
+ufunc_xlogy_data[1] = &ufunc_xlogy_ptr[2*1]
+ufunc_xlogy_data[2] = &ufunc_xlogy_ptr[2*2]
+ufunc_xlogy_data[3] = &ufunc_xlogy_ptr[2*3]
+xlogy = np.PyUFunc_FromFuncAndData(ufunc_xlogy_loops, ufunc_xlogy_data, ufunc_xlogy_types, 4, 2, 1, 0, "xlogy", ufunc_xlogy_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_y0_loops[2]
 cdef void *ufunc_y0_ptr[4]

@@ -1138,6 +1138,32 @@ class _TestFancyIndexing:
         assert_raises(IndexError, S.__getitem__, (I_bad,J))
         assert_raises(IndexError, S.__getitem__, (I,J_bad))
 
+    def test_fancy_indexing_boolean(self):
+        random.seed(1234) # make runs repeatable
+
+        B = asmatrix(arange(50).reshape(5,10))
+        A = self.spmatrix( B )
+
+        I = np.array(np.random.randint(0, 2, size=5), dtype=bool)
+        J = np.array(np.random.randint(0, 2, size=10), dtype=bool)
+        X = np.array(np.random.randint(0, 2, size=(5, 10)), dtype=bool)
+
+        assert_equal(A[I].todense(), B[I])
+        assert_equal(A[:,J].todense(), B[:, J])
+        assert_equal(A[X].todense(), B[X])
+        assert_equal(A[B>9].todense(), B[B>9])
+
+        I = np.array([True, False, True, True, False])
+        J = np.array([False, True, True, False, True])
+
+        assert_equal(A[I, J].todense(), B[I, J])
+
+        Z = np.array(np.random.randint(0, 2, size=(5, 11)), dtype=bool)
+        Y = np.array(np.random.randint(0, 2, size=(6, 10)), dtype=bool)
+
+        assert_raises(IndexError, A.__getitem__, Z)
+        assert_raises(IndexError, A.__getitem__, Y)
+        assert_raises(ValueError, A.__getitem__, (X, 1))
 
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
@@ -1410,6 +1436,49 @@ class _TestArithmetic:
                 assert_equal(S1.dtype,D1.dtype)
 
 
+class _TestMinMax(object):
+    def test_minmax(self):
+        for dtype in [np.float32, np.float64, np.int32, np.int64]:
+            D = np.arange(20, dtype=dtype).reshape(5,4)
+
+            X = self.spmatrix(D)
+            assert_equal(X.min(), 0)
+            assert_equal(X.max(), 19)
+            assert_equal(X.min().dtype, dtype)
+            assert_equal(X.max().dtype, dtype)
+
+            D *= -1
+            X = self.spmatrix(D)
+            assert_equal(X.min(), -19)
+            assert_equal(X.max(), 0)
+
+            D += 5
+            X = self.spmatrix(D)
+            assert_equal(X.min(), -14)
+            assert_equal(X.max(), 5)
+
+        # try a fully dense matrix
+        X = self.spmatrix(np.arange(1, 10).reshape(3, 3))
+        assert_equal(X.min(), 1)
+        assert_equal(X.min().dtype, X.dtype)
+
+        X = -X
+        assert_equal(X.max(), -1)
+
+        # and a fully sparse matrix
+        Z = self.spmatrix(np.zeros(1))
+        assert_equal(Z.min(), 0)
+        assert_equal(Z.max(), 0)
+        assert_equal(Z.max().dtype, Z.dtype)
+
+        # another test
+        D = np.arange(20, dtype=float).reshape(5,4)
+        D[0:2, :] = 0
+        X = self.spmatrix(D)
+        assert_equal(X.min(), 0)
+        assert_equal(X.max(), 19)
+
+
 #------------------------------------------------------------------------------
 # Tailored base class for generic tests
 #------------------------------------------------------------------------------
@@ -1443,7 +1512,8 @@ def _possibly_unimplemented(cls, require=True):
 
 def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                       fancy_indexing=True, fancy_assign=True,
-                      fancy_multidim_indexing=True, fancy_multidim_assign=True):
+                      fancy_multidim_indexing=True, fancy_multidim_assign=True,
+                      minmax=True):
     """
     Construct a base class, optionally converting some of the tests in
     the suite to check that the feature is not implemented.
@@ -1462,6 +1532,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                                      fancy_indexing and fancy_multidim_indexing),
              _possibly_unimplemented(_TestFancyMultidimAssign,
                                      fancy_multidim_assign and fancy_assign),
+             _possibly_unimplemented(_TestMinMax, minmax),
              TestCase)
 
     # check that test names do not clash
@@ -1612,9 +1683,14 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
             SIJ = SIJ.todense()
         assert_equal(SIJ, D[I,J])
 
-    @dec.knownfailureif(True, "CSC not implemented")
+    @dec.knownfailureif(True, "CSR not implemented")
     def test_slicing_3(self):
         pass
+
+    @dec.knownfailureif(True, "CSR not implemented")
+    def test_fancy_indexing_boolean(self):
+        pass
+
 
 class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
@@ -1734,11 +1810,15 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
     def test_slicing_3(self):
         pass
 
+    @dec.knownfailureif(True, "CSC not implemented")
+    def test_fancy_indexing_boolean(self):
+        pass
 
 class TestDOK(sparse_test_class(slicing=False,
                                 slicing_assign=False,
                                 fancy_indexing=False,
-                                fancy_assign=False)):
+                                fancy_assign=False,
+                                minmax=False)):
     spmatrix = dok_matrix
 
     def test_mult(self):
@@ -1873,7 +1953,7 @@ class TestDOK(sparse_test_class(slicing=False,
     def test_fancy_indexing_multidim_set(self):
         pass
 
-class TestLIL(sparse_test_class()):
+class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix
 
     def test_dot(self):
@@ -2034,7 +2114,8 @@ class TestCOO(sparse_test_class(getset=False,
 
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
-                                fancy_indexing=False, fancy_assign=False)):
+                                fancy_indexing=False, fancy_assign=False,
+                                minmax=False)):
     spmatrix = dia_matrix
 
     def test_constructor1(self):

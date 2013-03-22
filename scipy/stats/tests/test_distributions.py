@@ -7,7 +7,7 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, assert_almost_equal, assert_array_almost_equal, \
     assert_allclose, assert_, assert_raises, rand, dec
 from numpy.testing.utils import WarningManager
-
+from nose import SkipTest
 
 import numpy
 import numpy as np
@@ -137,6 +137,12 @@ class TestBinom(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_pmf(self):
+        # regression test for Ticket #1842
+        vals1 = stats.binom.pmf(100, 100,1)
+        vals2 = stats.binom.pmf(0, 100,0)
+        assert_allclose(vals1, 1.0, rtol=1e-15, atol=0)
+        assert_allclose(vals2, 1.0, rtol=1e-15, atol=0)
 
 class TestBernoulli(TestCase):
     def test_rvs(self):
@@ -410,9 +416,42 @@ class TestSkellam(TestCase):
 
         assert_almost_equal(stats.skellam.cdf(k, mu1, mu2), skcdfR, decimal=5)
 
+class TestLognorm(TestCase):
+    def test_pdf(self):
+        ''' Regression test for Ticket #1471: 
+        cornercase avoid nan with 0/0 situation
+        '''
+        pdf = stats.lognorm.pdf(0,1)
+        assert_almost_equal(pdf, 0.0)
 
-class TestGamma(TestCase):
+class TestBeta(TestCase):
+    def test_logpdf(self):
+        ''' Regression test for Ticket #1326: 
+        cornercase avoid nan with 0*log(0) situation
+        '''
+        logpdf = stats.beta.logpdf(0,1,0.5)
+        assert_almost_equal(logpdf, -0.69314718056)
+        logpdf = stats.beta.logpdf(0,0.5,1)
+        assert_almost_equal(logpdf, np.inf)
 
+    def test_logpdf_ticket_1866(self):
+        alpha, beta = 267, 1472
+        x = np.array([0.2, 0.5, 0.6])
+        b = stats.beta(alpha, beta)
+        assert_allclose(b.logpdf(x).sum(), -1201.699061824062)
+        assert_allclose(b.pdf(x), np.exp(b.logpdf(x)))
+
+
+class TestBetaPrime(TestCase):
+    def test_logpdf(self):
+        alpha, beta = 267, 1472
+        x = np.array([0.2, 0.5, 0.6])
+        b = stats.betaprime(alpha, beta)
+        assert_(np.isfinite(b.logpdf(x)).all())
+        assert_allclose(b.pdf(x), np.exp(b.logpdf(x)))
+
+
+class TestGamma(TestCase):    
     def test_pdf(self):
         # a few test cases to compare with R
         pdf = stats.gamma.pdf(90, 394, scale=1./5)
@@ -420,8 +459,14 @@ class TestGamma(TestCase):
 
         pdf = stats.gamma.pdf(3, 10, scale=1./5)
         assert_almost_equal(pdf, 0.1620358)
-
-
+        
+    def test_logpdf(self):
+        ''' Regression test for Ticket #1326: 
+        cornercase avoid nan with 0*log(0) situation
+        '''
+        logpdf = stats.gamma.logpdf(0,1)
+        assert_almost_equal(logpdf, 0)
+        
 class TestChi2(TestCase):
     # regression tests after precision improvements, ticket:1041, not verified
     def test_precision(self):
@@ -486,14 +531,14 @@ def TestArgsreduce():
     assert_array_equal(c, [2] * numpy.size(a))
 
 
-class TestFitMethod(TestCase):
+class TestFitMethod(object):
     skip = ['ncf']
 
     @dec.slow
     def test_fit(self):
-        for func, dist, args, alpha in test_all_distributions():
+        def check(func, dist, args, alpha):
             if dist in self.skip:
-                continue
+                raise SkipTest("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
             res = distfunc.rvs(*args, **{'size':200})
             vals = distfunc.fit(res)
@@ -508,13 +553,16 @@ class TestFitMethod(TestCase):
                 assert_(len(vals) == 2+len(args))
                 assert_(len(vals2)==2+len(args))
 
+        for func, dist, args, alpha in test_all_distributions():
+            yield check, func, dist, args, alpha
+
     @dec.slow
     def test_fix_fit(self):
-        for func, dist, args, alpha in test_all_distributions():
+        def check(func, dist, args, alpha):
             # Not sure why 'ncf', and 'beta' are failing
             # erlang and frechet have different len(args) than distfunc.numargs
-            if dist in self.skip + ['erlang', 'frechet', 'beta']:
-                continue
+            if dist in self.skip + ['erlang', 'frechet']:
+                raise SkipTest("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
             res = distfunc.rvs(*args, **{'size':200})
             vals = distfunc.fit(res,floc=0)
@@ -535,6 +583,9 @@ class TestFitMethod(TestCase):
                 vals5 = distfunc.fit(res, f2=args[2])
                 assert_(len(vals5) == 2+len(args))
                 assert_(vals5[2] == args[2])
+
+        for func, dist, args, alpha in test_all_distributions():
+            yield check, func, dist, args, alpha
 
     def test_fix_fit_2args_lognorm(self):
         """Regression test for #1551."""
@@ -693,20 +744,20 @@ class TestExpect(TestCase):
 ##        (array(6.333333333333333), array(0.055555555555555552))
         v = stats.beta.expect(lambda x: (x-19/3.)*(x-19/3.), args=(10,5),
                               loc=5, scale=2)
-        assert_almost_equal(v, 1./18., decimal=14)
+        assert_almost_equal(v, 1./18., decimal=13)
 
         m = stats.beta.expect(lambda x: x, args=(10,5), loc=5., scale=2.)
-        assert_almost_equal(m, 19/3., decimal=14)
+        assert_almost_equal(m, 19/3., decimal=13)
 
         ub = stats.beta.ppf(0.95, 10, 10, loc=5, scale=2)
         lb = stats.beta.ppf(0.05, 10, 10, loc=5, scale=2)
         prob90 = stats.beta.expect(lambda x: 1., args=(10,10), loc=5.,
                                    scale=2.,lb=lb, ub=ub, conditional=False)
-        assert_almost_equal(prob90, 0.9, decimal=14)
+        assert_almost_equal(prob90, 0.9, decimal=13)
 
         prob90c = stats.beta.expect(lambda x: 1, args=(10,10), loc=5,
                                     scale=2, lb=lb, ub=ub, conditional=True)
-        assert_almost_equal(prob90c, 1., decimal=14)
+        assert_almost_equal(prob90c, 1., decimal=13)
 
 
     def test_hypergeom(self):
