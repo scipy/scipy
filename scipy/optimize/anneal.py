@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy
 from numpy import asarray, tan, exp, ones, squeeze, sign, \
-     all, log, sqrt, pi, shape, array, minimum, where, random
+    all, log, sqrt, pi, shape, array, minimum, where, random
 from .optimize import Result, _check_unknown_options
 from scipy.lib.six.moves import xrange
 
@@ -13,6 +13,8 @@ __all__ = ['anneal']
 
 _double_min = numpy.finfo(float).min
 _double_max = numpy.finfo(float).max
+
+
 class base_schedule(object):
     def __init__(self):
         self.dwell = 20
@@ -114,6 +116,7 @@ class fast_sa(base_schedule):
         self.k += 1
         return
 
+
 class cauchy_sa(base_schedule):
     def update_guess(self, x0):
         x0 = asarray(x0)
@@ -127,9 +130,11 @@ class cauchy_sa(base_schedule):
         self.k += 1
         return
 
+
 class boltzmann_sa(base_schedule):
     def update_guess(self, x0):
-        std = minimum(sqrt(self.T)*ones(self.dims), (self.upper-self.lower)/3.0/self.learn_rate)
+        std = minimum(sqrt(self.T) * ones(self.dims),
+                      (self.upper - self.lower) / 3.0 / self.learn_rate)
         x0 = asarray(x0)
         xc = squeeze(random.normal(0, 1.0, size=self.dims))
 
@@ -141,10 +146,12 @@ class boltzmann_sa(base_schedule):
         self.T = self.T0 / log(self.k+1.0)
         return
 
+
 class _state(object):
     def __init__(self):
         self.x = None
         self.cost = None
+
 
 # TODO:
 #     allow for general annealing temperature profile
@@ -319,11 +326,12 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     else:
         return res['x'], res['status']
 
+
 def _minimize_anneal(func, x0, args=(),
                      schedule='fast', T0=None, Tf=1e-12, maxfev=None,
-                     maxaccept=None, maxiter=400, boltzmann=1.0, learn_rate=0.5,
-                     ftol=1e-6, quench=1.0, m=1.0, n=1.0, lower=-100,
-                     upper=100, dwell=50, disp=False,
+                     maxaccept=None, maxiter=400, boltzmann=1.0,
+                     learn_rate=0.5, ftol=1e-6, quench=1.0, m=1.0, n=1.0,
+                     lower=-100, upper=100, dwell=50, disp=False,
                      **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -373,8 +381,8 @@ def _minimize_anneal(func, x0, args=(),
 
     schedule = eval(schedule+'_sa()')
     #   initialize the schedule
-    schedule.init(dims=shape(x0),func=func,args=args,boltzmann=boltzmann,T0=T0,
-                  learn_rate=learn_rate, lower=lower, upper=upper,
+    schedule.init(dims=shape(x0), func=func, args=args, boltzmann=boltzmann,
+                  T0=T0, learn_rate=learn_rate, lower=lower, upper=upper,
                   m=m, n=n, quench=quench, dwell=dwell)
 
     current_state, last_state, best_state = _state(), _state(), _state()
@@ -385,7 +393,7 @@ def _minimize_anneal(func, x0, args=(),
         best_state.cost = numpy.Inf
 
     last_state.x = asarray(x0).copy()
-    fval = func(x0,*args)
+    fval = func(x0, *args)
     schedule.feval += 1
     last_state.cost = fval
     if last_state.cost < best_state.cost:
@@ -397,7 +405,7 @@ def _minimize_anneal(func, x0, args=(),
     while 1:
         for n in xrange(dwell):
             current_state.x = schedule.update_guess(last_state.x)
-            current_state.cost = func(current_state.x,*args)
+            current_state.cost = func(current_state.x, *args)
             schedule.feval += 1
 
             dE = current_state.cost - last_state.cost
@@ -425,9 +433,9 @@ def _minimize_anneal(func, x0, args=(),
             if abs(af[-1]-best_state.cost) > feps*10:
                 retval = 5
                 if disp:
-                    print("Warning: Cooled to %f at %s but this is not" \
+                    print("Warning: Cooled to %f at %s but this is not"
                           % (squeeze(last_state.cost),
-                             str(squeeze(last_state.x))) \
+                             str(squeeze(last_state.x)))
                           + " the smallest point found.")
             break
         if (Tf is not None) and (schedule.T < Tf):
@@ -459,17 +467,26 @@ def _minimize_anneal(func, x0, args=(),
     return result
 
 
-
 if __name__ == "__main__":
     from numpy import cos
     # minimum expected at ~-0.195
-    func = lambda x: cos(14.5*x-0.3) + (x+0.2)*x
-    print(anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='cauchy'))
-    print(anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='fast'))
-    print(anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='boltzmann'))
+    func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
+    print(anneal(func, 1.0, full_output=1, upper=3.0, lower=-3.0,
+          feps=1e-4, maxiter=2000, schedule='cauchy'))
+    print(anneal(func, 1.0, full_output=1, upper=3.0, lower=-3.0,
+          feps=1e-4, maxiter=2000, schedule='fast'))
+    print(anneal(func, 1.0, full_output=1, upper=3.0, lower=-3.0,
+          feps=1e-4, maxiter=2000, schedule='boltzmann'))
 
     # minimum expected at ~[-0.195, -0.1]
-    func = lambda x: cos(14.5*x[0]-0.3) + (x[1]+0.2)*x[1] + (x[0]+0.2)*x[0]
-    print(anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='cauchy'))
-    print(anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='fast'))
-    print(anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='boltzmann'))
+    func = lambda x: (cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] +
+                      (x[0] + 0.2) * x[0])
+    print(anneal(func, [1.0, 1.0], full_output=1,
+          upper=[3.0, 3.0], lower=[-3.0, -3.0],
+          feps=1e-4, maxiter=2000, schedule='cauchy'))
+    print(anneal(func, [1.0, 1.0], full_output=1,
+          upper=[3.0, 3.0], lower=[-3.0, -3.0],
+          feps=1e-4, maxiter=2000, schedule='fast'))
+    print(anneal(func, [1.0, 1.0], full_output=1,
+          upper=[3.0, 3.0], lower=[-3.0, -3.0],
+          feps=1e-4, maxiter=2000, schedule='boltzmann'))
