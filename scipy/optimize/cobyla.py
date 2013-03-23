@@ -16,7 +16,7 @@ import numpy as np
 from scipy.lib.six import callable
 from scipy.optimize import _cobyla
 from .optimize import Result, _check_unknown_options
-from warnings import warn
+
 
 __all__ = ['fmin_cobyla']
 
@@ -138,10 +138,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     err = "cons must be a sequence of callable functions or a single"\
           " callable function."
     try:
-        m = len(cons)
+        len(cons)
     except TypeError:
         if callable(cons):
-            m = 1
             cons = [cons]
         else:
             raise TypeError(err)
