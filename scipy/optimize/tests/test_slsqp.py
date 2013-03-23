@@ -99,6 +99,14 @@ class TestSLSQP(TestCase):
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
 
+    def test_minimize_bounded_approximated(self):
+        """ Minimize, method='SLSQP': bounded, approximated jacobian. """
+        res = minimize(self.fun, [-1.0, 1.0], args = (-1.0, ),
+                       bounds=((2.5, None), (None, 0.5)),
+                       method='SLSQP', options=self.opts)
+        assert_(res['success'], res['message'])
+        assert_allclose(res.x, [2.5, 0.5])
+
     def test_minimize_unbounded_combined(self):
         """ \
         Minimize, method='SLSQP': unbounded, combined function and jacobian.
