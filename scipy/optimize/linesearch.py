@@ -402,7 +402,6 @@ def _cubicmin(a,fa,fpa,b,fb,c,fc):
     # f(x) = A *(x-a)^3 + B*(x-a)^2 + C*(x-a) + D
 
     C = fpa
-    D = fa
     db = b-a
     dc = c-a
     if (db == 0) or (dc == 0) or (b==c): return None
