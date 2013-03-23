@@ -245,7 +245,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     optimization, as there are usually better algorithms for continuous
     optimization problems.
 
-    Some experimentation by trying the difference temperature
+    Some experimentation by trying the different temperature
     schedules and altering their parameters is likely required to
     obtain good performance.
 
