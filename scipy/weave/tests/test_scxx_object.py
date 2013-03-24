@@ -1,5 +1,6 @@
 """ Test refcounting and behavior of SCXX.
 """
+from __future__ import absolute_import, print_function
 
 import sys
 
@@ -91,7 +92,7 @@ class TestObjectPrint(TestCase):
                val.print(file_imposter);
                """
         res = inline_tools.inline(code,['file_imposter'])
-        print file_imposter.getvalue()
+        print(file_imposter.getvalue())
         assert_equal(file_imposter.getvalue(),"'how now brown cow'")
 
 ##    @dec.slow
@@ -217,8 +218,8 @@ class TestObjectHasattr(TestCase):
                 res = inline_tools.inline(code,['a'])
             except:
                 after2 = sys.getrefcount(a)
-            print "after and after2 should be equal in the following"
-            print 'before, after, after2:', before, after, after2
+            print("after and after2 should be equal in the following")
+            print('before, after, after2:', before, after, after2)
             pass
 
     @dec.slow
@@ -531,7 +532,7 @@ class TestObjectStr(TestCase):
         res = inline_tools.inline('return_val = a.str();',['a'])
         second = sys.getrefcount(res)
         assert_equal(first,second)
-        print res
+        print(res)
         assert_equal(res,"str return")
 
 
@@ -759,7 +760,7 @@ class TestObjectHash(TestCase):
                 return 123
         a= Foo()
         res = inline_tools.inline('return_val = a.hash(); ',['a'])
-        print 'hash:', res
+        print('hash:', res)
         assert_equal(res,123)
 
 

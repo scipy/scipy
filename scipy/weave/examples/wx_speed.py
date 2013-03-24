@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 """ Implements a fast replacement for calling DrawLines with an array as an
     argument.  It uses weave, so you'll need that installed.
 
@@ -129,7 +131,7 @@ if __name__ == '__main__':
 
         def OnPaint(self,event):
             w,h = self.GetSizeTuple()
-            print len(self.points)
+            print(len(self.points))
             dc = wxPaintDC(self)
             dc.BeginDrawing()
 
@@ -163,7 +165,7 @@ if __name__ == '__main__':
                 pt_copy[:,1] = next_y
                 phase += ang
             t2 = time.clock()
-            print 'Weave Polyline:', t2-t1
+            print('Weave Polyline:', t2-t1)
 
             t1 = time.clock()
             pt_copy = self.points.copy()
@@ -184,7 +186,7 @@ if __name__ == '__main__':
                 phase += ang
             t2 = time.clock()
             dc.SetPen(red_pen)
-            print 'wxPython DrawLines:', t2-t1
+            print('wxPython DrawLines:', t2-t1)
 
             dc.EndDrawing()
 

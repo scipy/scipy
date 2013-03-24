@@ -4,8 +4,9 @@
         swig pointer (old style) conversion support
 
 """
+from __future__ import absolute_import, print_function
 
-import base_info
+from . import base_info
 
 module_support_code = \
 """
@@ -123,7 +124,7 @@ class inline_info(base_info.base_info):
 # installations. New style swig pointers are not yet supported.
 #----------------------------------------------------------------------------
 
-import swigptr
+from . import swigptr
 swig_support_code = swigptr.swigptr_code
 
 class swig_info(base_info.base_info):

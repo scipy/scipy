@@ -8,6 +8,8 @@
     info_list -- a handy list class for working with multiple
                  info classes at the same time.
 """
+from __future__ import absolute_import, print_function
+
 import UserList
 
 class base_info(object):

@@ -5,6 +5,7 @@
     class ft_converter(cpp_namespace_converter):
         namespace = 'ft::'
 """
+from __future__ import absolute_import, print_function
 
 from weave import common_info
 from weave import  base_info

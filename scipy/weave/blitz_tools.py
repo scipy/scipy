@@ -1,15 +1,17 @@
+from __future__ import absolute_import, print_function
+
 import parser
 import sys
-import ast_tools
-import slice_handler
-import size_check
-import converters
+from . import ast_tools
+from . import slice_handler
+from . import size_check
+from . import converters
 
 import numpy
 import copy
 
-import inline_tools
-from inline_tools import attempt_function_call
+from . import inline_tools
+from .inline_tools import attempt_function_call
 function_catalog = inline_tools.function_catalog
 function_cache = inline_tools.function_cache
 
@@ -64,8 +66,8 @@ def blitz(expr,local_dict=None, global_dict=None,check_size=1,verbose=0,**kw):
         try:
             results = attempt_function_call(expr,local_dict,global_dict)
         except ValueError:
-            print 'warning: compilation failed. Executing as python code'
-            exec expr in global_dict, local_dict
+            print('warning: compilation failed. Executing as python code')
+            exec(expr, global_dict, local_dict)
 
 def ast_to_blitz_expr(ast_seq):
     """ Convert an ast_sequence to a blitz expression.
