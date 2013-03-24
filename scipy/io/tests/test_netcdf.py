@@ -85,7 +85,6 @@ def test_read_write_files():
     shutil.rmtree(tmpdir)
 
 
-@dec.skipif(sys.version[:3] < '2.5', "Random StringIO issue on 2.4")
 def test_read_write_sio():
     eg_sio1 = BytesIO()
     f1 = make_simple(eg_sio1, 'w')
@@ -169,10 +168,10 @@ def test_dtype_specifiers():
     # Specifying np.int16 or similar only works from the same commit as this
     # comment was made.
     f = make_simple(BytesIO(), mode='w')
-    x = f.createDimension('x',4)
-    v1 = f.createVariable('v1', 'i2', ['x'])
-    v2 = f.createVariable('v2', np.int16, ['x'])
-    v3 = f.createVariable('v3', np.dtype(np.int16), ['x'])
+    f.createDimension('x',4)
+    f.createVariable('v1', 'i2', ['x'])
+    f.createVariable('v2', np.int16, ['x'])
+    f.createVariable('v3', np.dtype(np.int16), ['x'])
     f.close()
 
 
