@@ -77,7 +77,9 @@ def correlate(in1, in2, mode='full'):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`.
+        Second input. Should have the same number of dimensions as `in1`;
+        if sizes of `in1` and `in2` are not equal then `in1` has to be the
+        larger array.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -163,7 +165,9 @@ def fftconvolve(in1, in2, mode="full"):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`.
+        Second input. Should have the same number of dimensions as `in1`;
+        if sizes of `in1` and `in2` are not equal then `in1` has to be the
+        larger array.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -201,7 +205,12 @@ def fftconvolve(in1, in2, mode="full"):
     size = s1 + s2 - 1
 
     if mode == "valid":
-        _check_valid_mode_shapes(s1, s2)
+        for d1, d2 in zip(s1, s2):
+            if not d1 >= d2:
+                warnings.warn("in1 should have at least as many items as in2 in "
+                              "every dimension for 'valid' mode.  In scipy "
+                              "0.13.0 this will raise an error",
+                              DeprecationWarning)
 
     # Always use 2**n-sized FFT
     fsize = 2 ** np.ceil(np.log2(size)).astype(int)
@@ -218,7 +227,7 @@ def fftconvolve(in1, in2, mode="full"):
     elif mode == "same":
         return _centered(ret, s1)
     elif mode == "valid":
-        return _centered(ret, s1 - s2 + 1)
+        return _centered(ret, abs(s1 - s2) + 1)
 
 
 def convolve(in1, in2, mode='full'):
@@ -233,7 +242,9 @@ def convolve(in1, in2, mode='full'):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`.
+        Second input. Should have the same number of dimensions as `in1`;
+        if sizes of `in1` and `in2` are not equal then `in1` has to be the
+        larger array.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
