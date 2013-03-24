@@ -188,11 +188,11 @@ class TestFFTConvolve(TestCase):
         assert_array_almost_equal(c,d)
 
     def test_real_valid_mode(self):
+        # len(a) < len(b) deprecated in 0.12.0, removed for 0.13.0
         a = array([3,2,1])
         b = array([3,3,5,6,8,7,9,0,1])
-        def _test():
-            fftconvolve(a,b,'valid')
-        self.assertRaises(ValueError, _test)
+        assert_array_almost_equal(fftconvolve(a, b, 'valid'),
+                                  fftconvolve(b, a, 'valid'))
 
     def test_real_valid_mode2(self):
         a = array([3,3,5,6,8,7,9,0,1])
