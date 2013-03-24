@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 from numpy import ones, ndarray, array, asarray, concatenate, zeros, shape, \
          alltrue, equal, divide, arccos, arcsin, arctan, cos, cosh, \
          sin, sinh, exp, ceil, floor, fabs, log, log10, sqrt, argmin, \
@@ -27,8 +29,8 @@ def time_it():
     for i in range(N):
         passed = check_expr(expr,locals())
     t2 = time.time()
-    print 'time per call:', (t2 - t1)/N
-    print 'passed:', passed
+    print('time per call:', (t2 - t1)/N)
+    print('passed:', passed)
 
 def check_expr(expr,local_vars,global_vars={}):
     """ Currently only checks expressions (not suites).

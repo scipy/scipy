@@ -3,6 +3,8 @@
 #from weave import ext_tools
 
 # use the following so that development version is used.
+from __future__ import absolute_import, print_function
+
 import sys
 sys.path.insert(0,'..')
 import ext_tools
@@ -33,5 +35,5 @@ if __name__ == "__main__":
         build_increment_ext()
         import increment_ext
     a = 1
-    print 'a, a+1:', a, increment_ext.increment(a)
-    print 'a, a+2:', a, increment_ext.increment_by_2(a)
+    print('a, a+1:', a, increment_ext.increment(a))
+    print('a, a+2:', a, increment_ext.increment_by_2(a))

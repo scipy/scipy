@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 import os
 
 def remove_whitespace(in_str):
@@ -57,7 +59,7 @@ def empty_temp_dir():
     import tempfile
     d = catalog.default_dir()
     for i in range(10000):
-        new_d = os.path.join(d,tempfile.gettempprefix()[1:-1]+`i`)
+        new_d = os.path.join(d,tempfile.gettempprefix()[1:-1]+repr(i))
         if not os.path.exists(new_d):
             os.mkdir(new_d)
             break
@@ -102,7 +104,7 @@ def move_file (src, dst,
     import errno
 
     if verbose:
-        print "moving %s -> %s" % (src, dst)
+        print("moving %s -> %s" % (src, dst))
 
     if dry_run:
         return dst
@@ -123,7 +125,8 @@ def move_file (src, dst,
     copy_it = 0
     try:
         os.rename(src, dst)
-    except os.error, (num, msg):
+    except os.error as xxx_todo_changeme1:
+        (num, msg) = xxx_todo_changeme1.args
         if num == errno.EXDEV:
             copy_it = 1
         else:
@@ -134,7 +137,8 @@ def move_file (src, dst,
         distutils.file_util.copy_file(src, dst)
         try:
             os.unlink(src)
-        except os.error, (num, msg):
+        except os.error as xxx_todo_changeme:
+            (num, msg) = xxx_todo_changeme.args
             try:
                 os.unlink(dst)
             except os.error:

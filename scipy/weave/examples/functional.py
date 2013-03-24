@@ -7,6 +7,7 @@
 #       speed up: 0.666666666667
 #       c speed: 0.0200001001358
 #       speed up: 1.99998807913
+from __future__ import absolute_import, print_function
 
 import sys
 sys.path.insert(0,'..')
@@ -59,9 +60,9 @@ def c_list_map2(func,seq):
 
 def main():
     seq = ['aa','bbb','cccc']
-    print 'desired:', map(len,seq)
-    print 'actual:', c_list_map(len,seq)
-    print 'actual2:', c_list_map2(len,seq)
+    print('desired:', map(len,seq))
+    print('actual:', c_list_map(len,seq))
+    print('actual2:', c_list_map2(len,seq))
 
 def time_it(m,n):
     import time
@@ -71,7 +72,7 @@ def time_it(m,n):
         result = map(len,seq)
     t2 = time.time()
     py = t2 - t1
-    print 'python speed:', py
+    print('python speed:', py)
 
     #load cache
     result = c_list_map(len,seq)
@@ -80,8 +81,8 @@ def time_it(m,n):
         result = c_list_map(len,seq)
     t2 = time.time()
     c = t2-t1
-    print 'SCXX speed:', c
-    print 'speed up:', py / c
+    print('SCXX speed:', c)
+    print('speed up:', py / c)
 
     #load cache
     result = c_list_map2(len,seq)
@@ -90,8 +91,8 @@ def time_it(m,n):
         result = c_list_map2(len,seq)
     t2 = time.time()
     c = t2-t1
-    print 'c speed:', c
-    print 'speed up:', py / c
+    print('c speed:', c)
+    print('speed up:', py / c)
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import absolute_import, print_function
 
 from os.path import join
 
@@ -14,7 +15,7 @@ def configuration(parent_package='',top_path=None):
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    from weave_version import weave_version
+    from .weave_version import weave_version
     setup(version = weave_version,
           description = "Tools for inlining C/C++ in Python",
           author = "Eric Jones",

@@ -4,6 +4,7 @@
     keep the object files and shared libaries straight when
     multiple platforms share the same file system.
 """
+from __future__ import absolute_import, print_function
 
 import os, sys, subprocess
 
@@ -227,10 +228,10 @@ if __name__ == "__main__":
     print
     """
     path = get_compiler_dir('gcc')
-    print 'gcc path:', path
-    print
+    print('gcc path:', path)
+    print()
     try:
         path = get_compiler_dir('msvc')
-        print 'gcc path:', path
+        print('gcc path:', path)
     except ValueError:
         pass

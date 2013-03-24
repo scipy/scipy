@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 import numpy as np
 from numpy.testing import TestCase, assert_array_equal, run_module_suite
 
@@ -208,7 +210,7 @@ class TestDummyArrayIndexing(TestCase):
         """ through a bunch of different indexes at it for good measure.
         """
         import random
-        choices = map(lambda x: `x`,range(50)) + range(50) + ['']*50
+        choices = map(lambda x: repr(x),range(50)) + range(50) + ['']*50
         for i in range(100):
             try:
                 beg = random.choice(choices)
@@ -229,7 +231,7 @@ class TestDummyArrayIndexing(TestCase):
         """ through a bunch of different indexes at it for good measure.
         """
         import random
-        choices = map(lambda x: `x`,range(50)) + range(50) + ['']*50
+        choices = map(lambda x: repr(x),range(50)) + range(50) + ['']*50
         for i in range(100):
             try:
                 beg = random.choice(choices)
@@ -248,7 +250,7 @@ class TestDummyArrayIndexing(TestCase):
         """ through a bunch of different indexes at it for good measure.
         """
         import random
-        choices = map(lambda x: `x`,range(50)) + range(50) + ['']*50
+        choices = map(lambda x: repr(x),range(50)) + range(50) + ['']*50
         for i in range(100):
             try:
                 idx = []
@@ -314,9 +316,9 @@ class TestExpressions(TestCase):
         try:
             assert_array_equal(actual,desired, expr)
         except:
-            print 'EXPR:',expr
-            print 'ACTUAL:',actual
-            print 'DESIRED:',desired
+            print('EXPR:',expr)
+            print('ACTUAL:',actual)
+            print('DESIRED:',desired)
     def generic_wrap(self,expr,**kw):
         try:
             x = np.array(eval(expr,kw))
