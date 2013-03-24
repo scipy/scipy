@@ -16,6 +16,12 @@ def configuration(parent_package='', top_path=None):
         include_dirs=['src']+[get_include()],
     )
 
+    # Cython wants the .c and .pyx to have the underscore.
+    config.add_extension("_ni_label",
+                         sources=["src/_ni_label.c",],
+                         include_dirs=['src']+[get_include()],
+    )
+
     config.add_data_dir('tests')
 
     return config
