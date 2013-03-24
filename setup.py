@@ -133,12 +133,27 @@ if not release:
     finally:
         a.close()
 
+try:
+    from sphinx.setup_command import BuildDoc
+    HAVE_SPHINX = True
+except ImportError:
+    HAVE_SPHINX = False
+
+if HAVE_SPHINX:
+    class ScipyBuildDoc(BuildDoc):
+        """Run in-place build before Sphinx doc build"""
+        def run(self):
+            ret = subprocess.call([sys.executable, sys.argv[0], 'build_ext', '-i'])
+            if ret != 0:
+                raise RuntimeError("Building Scipy failed!")
+            BuildDoc.run(self)
 
 def generate_cython():
-    cwd = os.path.dirname(__file__)
+    cwd = os.path.abspath(os.path.dirname(__file__))
     p = subprocess.Popen([sys.executable,
                           os.path.join(cwd, 'tools', 'cythonize.py'),
-                          os.path.join(cwd, 'scipy')],
+                          'scipy'],
+                         cwd=cwd,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
     out, err = p.communicate()
@@ -162,11 +177,19 @@ def configuration(parent_package='',top_path=None):
 
     return config
 
-
 def setup_package():
+    try:
+        import setuptools
+    except ImportError:
+        pass
 
     # Rewrite the version file everytime
     write_version_py()
+
+    if HAVE_SPHINX:
+        cmdclass = {'build_sphinx': ScipyBuildDoc}
+    else:
+        cmdclass = {}
 
     metadata = dict(
         name = 'scipy',
@@ -177,8 +200,10 @@ def setup_package():
         url = "http://www.scipy.org",
         download_url = "http://sourceforge.net/project/showfiles.php?group_id=27747&package_id=19531",
         license = 'BSD',
+        cmdclass=cmdclass,
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
+        test_suite='nose.collector',
     )
 
     if len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or
@@ -188,18 +213,16 @@ def setup_package():
         # They are required to succeed without Numpy for example when
         # pip is used to install Scipy when Numpy is not yet present in
         # the system.
-        try:
-            from setuptools import setup
-        except ImportError:
-           from distutils.core import setup
+        from distutils.core import setup
 
         FULLVERSION, GIT_REVISION = get_version_info()
         metadata['version'] = FULLVERSION
     else:
         from numpy.distutils.core import setup
 
-        # Generate Cython sources
-        generate_cython()
+        if not ISRELEASED:
+            # Generate Cython sources
+            generate_cython()
 
         metadata['configuration'] = configuration
 

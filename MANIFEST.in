@@ -1,38 +1,20 @@
-# Use .add_data_files and .add_data_dir methods in a appropriate
-# setup.py files to include non-python files such as documentation,
-# data, etc files to distribution. Avoid using MANIFEST.in for that.
-#
 include MANIFEST.in
 include *.txt
-include setupscons.py
-include setupegg.py
-include setup.py
-include scipy/*.py
-# Cython generation
-include cythonize.dat
-include tools/cythonize.py
-include scipy/cluster/_vq_rewrite.c  # unused, but ship still
-# Add Cython files
-recursive-include scipy *.pyx *.pyx.in *.pxd *.pxi
-# Add swig files
-recursive-include scipy *.i
-# Adding scons build related files not found by distutils
-recursive-include scipy SConstruct SConscript
-recursive-include scipy README
-# Add files to allow Bento build
-include f2py.py
-include interface_gen.py
-include bscript bento.info
-recursive-include scipy bscript bento.info
+# Top-level build scripts
+include setup.py setupscons.py bscript bento.info
+# All source files
+recursive-include scipy *
+# All documentation
+recursive-include doc *
 # Add build and testing tools
-include tools/py3tool.py
 include tox.ini
-include tools/test-installed-scipy.py
-# Add documentation: we don't use add_data_dir since we do not want to include
-# this at installation, only for sdist-generated tarballs
-include doc/Makefile doc/postprocess.py
-recursive-include doc/release *
-recursive-include doc/source *
-recursive-include doc/sphinxext *
+recursive-include tools *
+# Cached Cython signatures
+include cythonize.dat
+# Exclude what we don't want to include
 prune scipy/special/tests/data/boost
-include scipy/special/Faddeeva.hh
+prune scipy/special/tests/data/gsl
+prune doc/build
+prune doc/source/generated
+prune */__pycache__
+global-exclude *.pyc *~ *.bak *.swp *.pyo
