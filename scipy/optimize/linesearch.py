@@ -21,6 +21,7 @@ __all__ = ['line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
            'line_search_armijo']
 
+
 #------------------------------------------------------------------------------
 # Minpack's Wolfe line and scalar searches
 #------------------------------------------------------------------------------
@@ -156,7 +157,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     dsave = np.zeros((13,), float)
     task = b'START'
 
-    maxiter=30
+    maxiter = 30
     for i in xrange(maxiter):
         stp, phi1, derphi1, task = minpack2.dcsrch(alpha1, phi1, derphi1,
                                                    c1, c2, xtol, task,
@@ -169,7 +170,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
             break
     else:
         # maxiter reached, the line search did not converge
-        stp=None
+        stp = None
 
     if task[:5] == b'ERROR' or task[:4] == b'WARN':
         stp = None  # failed
@@ -177,6 +178,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     return stp, phi1, phi0
 
 line_search = line_search_wolfe1
+
 
 #------------------------------------------------------------------------------
 # Pure-Python Wolfe line and scalar searches
@@ -238,17 +240,18 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     if isinstance(myfprime, tuple):
         def derphi(alpha):
-            fc[0] += len(xk)+1
+            fc[0] += len(xk) + 1
             eps = myfprime[1]
             fprime = myfprime[0]
-            newargs = (f,eps) + args
-            gval[0] = fprime(xk+alpha*pk, *newargs)  # store for later use
+            newargs = (f, eps) + args
+            gval[0] = fprime(xk + alpha * pk, *newargs)  # store for later use
             return np.dot(gval[0], pk)
     else:
         fprime = myfprime
+
         def derphi(alpha):
             gc[0] += 1
-            gval[0] = fprime(xk+alpha*pk, *args)  # store for later use
+            gval[0] = fprime(xk + alpha * pk, *args)  # store for later use
             return np.dot(gval[0], pk)
 
     if gfk is None:
@@ -352,7 +355,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
     for i in xrange(maxiter):
         if alpha1 == 0:
             break
-        if (phi_a1 > phi0 + c1*alpha1*derphi0) or \
+        if (phi_a1 > phi0 + c1 * alpha1 * derphi0) or \
            ((phi_a1 >= phi_a0) and (i > 1)):
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
@@ -391,7 +394,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
     return alpha_star, phi_star, phi0, derphi_star
 
 
-def _cubicmin(a,fa,fpa,b,fb,c,fc):
+def _cubicmin(a, fa, fpa, b, fb, c, fc):
     """
     Finds the minimizer for a cubic polynomial that goes through the
     points (a,fa), (b,fb), and (c,fc) with derivative at a of fpa.
@@ -402,27 +405,30 @@ def _cubicmin(a,fa,fpa,b,fb,c,fc):
     # f(x) = A *(x-a)^3 + B*(x-a)^2 + C*(x-a) + D
 
     C = fpa
-    D = fa
-    db = b-a
-    dc = c-a
-    if (db == 0) or (dc == 0) or (b==c): return None
-    denom = (db*dc)**2 * (db-dc)
-    d1 = np.empty((2,2))
-    d1[0,0] = dc**2
-    d1[0,1] = -db**2
-    d1[1,0] = -dc**3
-    d1[1,1] = db**3
-    [A,B] = np.dot(d1, np.asarray([fb-fa-C*db,fc-fa-C*dc]).flatten())
+    db = b - a
+    dc = c - a
+    if (db == 0) or (dc == 0) or (b == c):
+        return None
+    denom = (db * dc) ** 2 * (db - dc)
+    d1 = np.empty((2, 2))
+    d1[0, 0] = dc ** 2
+    d1[0, 1] = -db ** 2
+    d1[1, 0] = -dc ** 3
+    d1[1, 1] = db ** 3
+    [A, B] = np.dot(d1, np.asarray([fb - fa - C * db,
+                                    fc - fa - C * dc]).flatten())
     A /= denom
     B /= denom
-    radical = B*B-3*A*C
-    if radical < 0:  return None
-    if (A == 0): return None
-    xmin = a + (-B + np.sqrt(radical))/(3*A)
+    radical = B * B - 3 * A * C
+    if radical < 0:
+        return None
+    if A == 0:
+        return None
+    xmin = a + (-B + np.sqrt(radical)) / (3 * A)
     return xmin
 
 
-def _quadmin(a,fa,fpa,b,fb):
+def _quadmin(a, fa, fpa, b, fb):
     """
     Finds the minimizer for a quadratic polynomial that goes through
     the points (a,fa), (b,fb) with derivative at a of fpa,
@@ -431,12 +437,15 @@ def _quadmin(a,fa,fpa,b,fb):
     # f(x) = B*(x-a)^2 + C*(x-a) + D
     D = fa
     C = fpa
-    db = b-a*1.0
-    if (db==0): return None
-    B = (fb-D-C*db)/(db*db)
-    if (B <= 0): return None
-    xmin = a  - C / (2.0*B)
+    db = b - a * 1.0
+    if db == 0:
+        return None
+    B = (fb - D - C * db) / (db * db)
+    if B <= 0:
+        return None
+    xmin = a - C / (2.0 * B)
     return xmin
+
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
           phi, derphi, phi0, derphi0, c1, c2):
@@ -450,7 +459,7 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
     delta2 = 0.1  # quadratic interpolant check
     phi_rec = phi0
     a_rec = 0
-    while 1:
+    while True:
         # interpolate to find a trial step length between a_lo and
         # a_hi Need to choose interpolation here.  Use cubic
         # interpolation and then if the result is within delta *
@@ -458,9 +467,11 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
         # then use quadratic interpolation, if the result is still too
         # close, then use bisection
 
-        dalpha = a_hi-a_lo;
-        if dalpha < 0: a,b = a_hi,a_lo
-        else: a,b = a_lo, a_hi
+        dalpha = a_hi - a_lo
+        if dalpha < 0:
+            a, b = a_hi, a_lo
+        else:
+            a, b = a_lo, a_hi
 
         # minimizer of cubic interpolant
         # (uses phi_lo, derphi_lo, phi_hi, and the most recent value of phi)
@@ -471,10 +482,11 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
         # end points (or out of the interval) then use bisection
 
         if (i > 0):
-            cchk = delta1*dalpha
-            a_j = _cubicmin(a_lo, phi_lo, derphi_lo, a_hi, phi_hi, a_rec, phi_rec)
-        if (i==0) or (a_j is None) or (a_j > b-cchk) or (a_j < a+cchk):
-            qchk = delta2*dalpha
+            cchk = delta1 * dalpha
+            a_j = _cubicmin(a_lo, phi_lo, derphi_lo, a_hi, phi_hi,
+                            a_rec, phi_rec)
+        if (i == 0) or (a_j is None) or (a_j > b - cchk) or (a_j < a + cchk):
+            qchk = delta2 * dalpha
             a_j = _quadmin(a_lo, phi_lo, derphi_lo, a_hi, phi_hi)
             if (a_j is None) or (a_j > b-qchk) or (a_j < a+qchk):
                 a_j = a_lo + 0.5*dalpha
@@ -562,11 +574,13 @@ def line_search_armijo(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     if old_fval is None:
         phi0 = phi(0.)
     else:
-        phi0 = old_fval # compute f(xk) -- done in past loop
+        phi0 = old_fval  # compute f(xk) -- done in past loop
 
     derphi0 = np.dot(gfk, pk)
-    alpha, phi1 = scalar_search_armijo(phi, phi0, derphi0, c1=c1, alpha0=alpha0)
+    alpha, phi1 = scalar_search_armijo(phi, phi0, derphi0, c1=c1,
+                                       alpha0=alpha0)
     return alpha, fc[0], phi1
+
 
 def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     """
@@ -575,6 +589,7 @@ def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     r = line_search_armijo(f, xk, pk, gfk, old_fval, args=args, c1=c1,
                            alpha0=alpha0)
     return r[0], r[1], 0, r[2]
+
 
 def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
     """Minimize over alpha, the function ``phi(alpha)``.

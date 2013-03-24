@@ -6,7 +6,7 @@ from numpy import asarray_chkfinite, zeros, double
 __all__ = ['nnls']
 
 
-def nnls(A,b):
+def nnls(A, b):
     """
     Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``. This is a wrapper
     for a FORTAN non-negative least squares solver.
@@ -37,23 +37,23 @@ def nnls(A,b):
 
     """
 
-    A,b = map(asarray_chkfinite, (A,b))
+    A, b = map(asarray_chkfinite, (A, b))
 
-    if len(A.shape)!=2:
+    if len(A.shape) != 2:
         raise ValueError("expected matrix")
-    if len(b.shape)!=1:
+    if len(b.shape) != 1:
         raise ValueError("expected vector")
 
-    m,n = A.shape
+    m, n = A.shape
 
     if m != b.shape[0]:
         raise ValueError("incompatible dimensions")
 
-    w   = zeros((n,), dtype=double)
-    zz  = zeros((m,), dtype=double)
-    index=zeros((n,), dtype=int)
+    w = zeros((n,), dtype=double)
+    zz = zeros((m,), dtype=double)
+    index = zeros((n,), dtype=int)
 
-    x,rnorm,mode = _nnls.nnls(A,m,n,b,w,zz,index)
+    x, rnorm, mode = _nnls.nnls(A, m, n, b, w, zz, index)
     if mode != 1:
         raise RuntimeError("too many iterations")
 
