@@ -11,7 +11,7 @@ from io import BytesIO
 from glob import glob
 
 import numpy as np
-from numpy.testing import dec, assert_
+from numpy.testing import dec, assert_, assert_allclose
 
 from scipy.io.netcdf import netcdf_file
 
@@ -175,3 +175,27 @@ def test_dtype_specifiers():
     v3 = f.createVariable('v3', np.dtype(np.int16), ['x'])
     f.close()
 
+
+def test_ticket_1720():
+    io = BytesIO()
+
+    items = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+
+    f = netcdf_file(io, 'w')
+    f.history = 'Created for a test'
+    f.createDimension('float_var', 10)
+    float_var = f.createVariable('float_var', 'f', ('float_var',))
+    float_var[:] = items
+    float_var.units = 'metres'
+    f.flush()
+    contents = io.getvalue()
+    f.close()
+
+    io = BytesIO(contents)
+    f = netcdf_file(io, 'r')
+    assert_equal(f.history, b'Created for a test')
+    float_var = f.variables['float_var']
+    assert_equal(float_var.units, b'metres')
+    assert_equal(float_var.shape, (10,))
+    assert_allclose(float_var[:], items)
+    f.close()
