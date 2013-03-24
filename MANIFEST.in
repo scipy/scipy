@@ -17,4 +17,4 @@ prune scipy/special/tests/data/gsl
 prune doc/build
 prune doc/source/generated
 prune */__pycache__
-global-exclude *.pyc *~ *.bak
+global-exclude *.pyc *~ *.bak *.swp *.pyo
