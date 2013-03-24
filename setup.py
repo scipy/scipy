@@ -220,8 +220,9 @@ def setup_package():
     else:
         from numpy.distutils.core import setup
 
-        # Generate Cython sources
-        generate_cython()
+        if not ISRELEASED:
+            # Generate Cython sources
+            generate_cython()
 
         metadata['configuration'] = configuration
 
