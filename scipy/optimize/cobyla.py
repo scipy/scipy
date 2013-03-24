@@ -16,13 +16,13 @@ import numpy as np
 from scipy.lib.six import callable
 from scipy.optimize import _cobyla
 from .optimize import Result, _check_unknown_options
-from warnings import warn
+
 
 __all__ = ['fmin_cobyla']
 
 
-def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
-                iprint=1, maxfun=1000, disp=None):
+def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
+                rhoend=1e-4, iprint=1, maxfun=1000, disp=None):
     """
     Minimize a function using the Constrained Optimization BY Linear
     Approximation (COBYLA) method. This method wraps a FORTRAN
@@ -138,10 +138,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     err = "cons must be a sequence of callable functions or a single"\
           " callable function."
     try:
-        m = len(cons)
+        len(cons)
     except TypeError:
         if callable(cons):
-            m = 1
             cons = [cons]
         else:
             raise TypeError(err)
@@ -162,11 +161,12 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0, rhoend=1e-4,
     opts = {'rhobeg': rhobeg,
             'tol': rhoend,
             'iprint': iprint,
-            'disp'  : iprint != 0,
+            'disp': iprint != 0,
             'maxiter': maxfun}
 
     return _minimize_cobyla(func, x0, args, constraints=con,
                             **opts)['x']
+
 
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, iprint=1, maxiter=1000,
@@ -239,7 +239,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
 
     return Result(x=xopt,
                   status=int(info[0]),
-                  success=info[0]==1,
+                  success=info[0] == 1,
                   message={1: 'Optimization terminated successfully.',
                            2: 'Maximum number of function evaluations has '
                               'been exceeded.',
@@ -249,6 +249,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
                   nfev=int(info[1]),
                   fun=info[2],
                   maxcv=info[3])
+
 
 if __name__ == '__main__':
 
@@ -260,6 +261,6 @@ if __name__ == '__main__':
     def cons(x):
         return 1 - x[0]**2 - x[1]**2
 
-    x = fmin_cobyla(fun, [1., 1.], cons, iprint = 3, disp = 1)
+    x = fmin_cobyla(fun, [1., 1.], cons, iprint=3, disp=1)
 
     print('\nTheoretical solution: %e, %e' % (1. / sqrt(2.), -1. / sqrt(2.)))

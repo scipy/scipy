@@ -1073,14 +1073,12 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         grad_calls, myfprime = wrap_function(fprime, args)
     gfk = myfprime(x0)
     k = 0
-    N = len(x0)
     xk = x0
     old_fval = f(xk)
     old_old_fval = old_fval + 5000
 
     if retall:
         allvecs = [xk]
-    sk = [2*gtol]
     warnflag = 0
     pk = -gfk
     gnorm = vecnorm(gfk, ord=norm)
@@ -1660,8 +1658,6 @@ class Brent:
             tol2 = 2.0*tol1
             xmid = 0.5*(a + b)
             if numpy.abs(x - xmid) < (tol2 - 0.5*(b - a)):  # check for convergence
-                xmin = x
-                fval = fx
                 break
             if (numpy.abs(deltax) <= tol1):
                 if (x >= xmid): deltax = a - x       # do a golden section step

@@ -13,25 +13,25 @@ Functions
 
 ## Copyright (c) 2004 David M. Cooke <cookedm@physics.mcmaster.ca>
 
-## Permission is hereby granted, free of charge, to any person obtaining a copy of
-## this software and associated documentation files (the "Software"), to deal in
-## the Software without restriction, including without limitation the rights to
-## use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-## of the Software, and to permit persons to whom the Software is furnished to do
-## so, subject to the following conditions:
+## Permission is hereby granted, free of charge, to any person obtaining a
+## copy of this software and associated documentation files (the "Software"),
+## to deal in the Software without restriction, including without limitation
+## the rights to use, copy, modify, merge, publish, distribute, sublicense,
+## and/or sell copies of the Software, and to permit persons to whom the
+## Software is furnished to do so, subject to the following conditions:
 
-## The above copyright notice and this permission notice shall be included in all
-## copies or substantial portions of the Software.
+## The above copyright notice and this permission notice shall be included in
+## all copies or substantial portions of the Software.
 
 ## THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ## IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ## FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 ## AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-## LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-## OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-## SOFTWARE.
+## LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+## FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+## DEALINGS IN THE SOFTWARE.
 
-## Modifications by Travis Oliphant and Enthought, Inc.  for inclusion in SciPy
+## Modifications by Travis Oliphant and Enthought, Inc. for inclusion in SciPy
 
 from __future__ import division, print_function, absolute_import
 
@@ -171,27 +171,28 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     # build options
     if disp is None:
         disp = iprint
-    opts = {'disp'  : disp,
+    opts = {'disp': disp,
             'iprint': iprint,
             'maxcor': m,
-            'ftol'  : factr * np.finfo(float).eps,
-            'gtol'  : pgtol,
-            'eps'   : epsilon,
+            'ftol': factr * np.finfo(float).eps,
+            'gtol': pgtol,
+            'eps': epsilon,
             'maxfun': maxfun,
             'maxiter': maxiter,
-            'callback': callback }
+            'callback': callback}
 
     res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
                            **opts)
     d = {'grad': res['jac'],
          'task': res['message'],
          'funcalls': res['nfev'],
-         'nit' : res['nit'],
+         'nit': res['nit'],
          'warnflag': res['status']}
     f = res['fun']
     x = res['x']
 
     return x, f, d
+
 
 def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                      disp=None, maxcor=10, ftol=2.2204460492503131e-09,
@@ -242,7 +243,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     n, = x0.shape
 
     if bounds is None:
-        bounds = [(None,None)] * n
+        bounds = [(None, None)] * n
     if len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
 
@@ -267,11 +268,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     low_bnd = zeros(n, float64)
     upper_bnd = zeros(n, float64)
     bounds_map = {(None, None): 0,
-              (1, None) : 1,
-              (1, 1) : 2,
-              (None, 1) : 3}
+                  (1, None): 1,
+                  (1, 1): 2,
+                  (None, 1): 3}
     for i in range(0, n):
-        l,u = bounds[i]
+        l, u = bounds[i]
         if l is not None:
             low_bnd[i] = l
             l = 1
@@ -286,7 +287,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     wa = zeros(2*m*n + 5*n + 11*m*m + 8*m, float64)
     iwa = zeros(3*n, int32)
     task = zeros(1, 'S60')
-    csave = zeros(1,'S60')
+    csave = zeros(1, 'S60')
     lsave = zeros(4, int32)
     isave = zeros(44, int32)
     dsave = zeros(29, float64)
@@ -304,7 +305,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         task_str = task.tostring()
         if task_str.startswith(b'FG'):
             if n_function_evals > maxfun:
-                task[:] = 'STOP: TOTAL NO. of f AND g EVALUATIONS EXCEEDS LIMIT'
+                task[:] = ('STOP: TOTAL NO. of f AND g EVALUATIONS '
+                           'EXCEEDS LIMIT')
             else:
                 # minimization routine wants f and g at the current x
                 n_function_evals += 1
@@ -333,28 +335,30 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     return Result(fun=f, jac=g, nfev=n_function_evals, nit=n_iterations,
                   status=warnflag, message=task_str, x=x,
-                  success=(warnflag==0))
+                  success=(warnflag == 0))
+
 
 if __name__ == '__main__':
     def func(x):
-        f = 0.25*(x[0]-1)**2
+        f = 0.25 * (x[0] - 1) ** 2
         for i in range(1, x.shape[0]):
-            f += (x[i] - x[i-1]**2)**2
+            f += (x[i] - x[i-1] ** 2) ** 2
         f *= 4
         return f
+
     def grad(x):
         g = zeros(x.shape, float64)
-        t1 = x[1] - x[0]**2
-        g[0] = 2*(x[0]-1) - 16*x[0]*t1
-        for i in range(1, g.shape[0]-1):
+        t1 = x[1] - x[0] ** 2
+        g[0] = 2 * (x[0] - 1) - 16 * x[0] * t1
+        for i in range(1, g.shape[0] - 1):
             t2 = t1
-            t1 = x[i+1] - x[i]**2
-            g[i] = 8*t2 - 16*x[i]*t1
-        g[-1] = 8*t1
+            t1 = x[i + 1] - x[i] ** 2
+            g[i] = 8 * t2 - 16*x[i] * t1
+        g[-1] = 8 * t1
         return g
+
     def func_and_grad(x):
         return func(x), grad(x)
-
 
     class Problem(object):
         def fun(self, x):
@@ -363,10 +367,10 @@ if __name__ == '__main__':
     factr = 1e7
     pgtol = 1e-5
 
-    n=25
-    m=10
+    n = 25
+    m = 10
 
-    bounds = [(None,None)] * n
+    bounds = [(None, None)] * n
     for i in range(0, n, 2):
         bounds[i] = (1.0, 100)
     for i in range(1, n, 2):

@@ -117,14 +117,14 @@ import sys
 import numpy as np
 from scipy.lib.six import callable, exec_
 from scipy.lib.six.moves import xrange
-from scipy.linalg import norm, solve, inv, qr, svd, lstsq, LinAlgError
+from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
 import inspect
 from .linesearch import scalar_search_wolfe1, scalar_search_armijo
-import collections
+
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
