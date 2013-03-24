@@ -125,10 +125,11 @@ def _set_mangling_var(conf, u, du, case, f2pycompat=True):
     env.DEFINES.extend(macros)
 
 def _generate_cython():
-    cwd = os.path.dirname(__file__)
+    cwd = os.path.abspath(os.path.dirname(__file__))
     subprocess.call([sys.executable,
                      os.path.join(cwd, 'tools', 'cythonize.py'),
-                     os.path.join(cwd, 'scipy')])
+                     'scipy'],
+                    cwd=cwd)
 
 @hooks.post_configure
 def post_configure(context):
