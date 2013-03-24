@@ -220,7 +220,7 @@ def setup_package():
     else:
         from numpy.distutils.core import setup
 
-        if not ISRELEASED:
+        if not ISRELEASED or 'sdist' in sys.argv[1:]:
             # Generate Cython sources
             generate_cython()
 
