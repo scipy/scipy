@@ -472,21 +472,21 @@ if __name__ == "__main__":
     # minimum expected at ~-0.195
     func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
     print(anneal(func, 1.0, full_output=1, upper=3.0, lower=-3.0,
-          feps=1e-4, maxiter=2000, schedule='cauchy'))
+                 feps=1e-4, maxiter=2000, schedule='cauchy'))
     print(anneal(func, 1.0, full_output=1, upper=3.0, lower=-3.0,
-          feps=1e-4, maxiter=2000, schedule='fast'))
+                 feps=1e-4, maxiter=2000, schedule='fast'))
     print(anneal(func, 1.0, full_output=1, upper=3.0, lower=-3.0,
-          feps=1e-4, maxiter=2000, schedule='boltzmann'))
+                 feps=1e-4, maxiter=2000, schedule='boltzmann'))
 
     # minimum expected at ~[-0.195, -0.1]
     func = lambda x: (cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] +
                       (x[0] + 0.2) * x[0])
     print(anneal(func, [1.0, 1.0], full_output=1,
-          upper=[3.0, 3.0], lower=[-3.0, -3.0],
-          feps=1e-4, maxiter=2000, schedule='cauchy'))
+                 upper=[3.0, 3.0], lower=[-3.0, -3.0],
+                 feps=1e-4, maxiter=2000, schedule='cauchy'))
     print(anneal(func, [1.0, 1.0], full_output=1,
-          upper=[3.0, 3.0], lower=[-3.0, -3.0],
-          feps=1e-4, maxiter=2000, schedule='fast'))
+                 upper=[3.0, 3.0], lower=[-3.0, -3.0],
+                 feps=1e-4, maxiter=2000, schedule='fast'))
     print(anneal(func, [1.0, 1.0], full_output=1,
-          upper=[3.0, 3.0], lower=[-3.0, -3.0],
-          feps=1e-4, maxiter=2000, schedule='boltzmann'))
+                 upper=[3.0, 3.0], lower=[-3.0, -3.0],
+                 feps=1e-4, maxiter=2000, schedule='boltzmann'))
