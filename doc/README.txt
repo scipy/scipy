@@ -7,8 +7,7 @@ The easy way to build the documentation is to run
 
     python setup.py build_sphinx
 
-This will make first build Scipy in-place, and then generate documentation for
-it.
+This will first build Scipy in-place, and then generate documentation for it.
 
 Another way
 -----------
