@@ -16,6 +16,7 @@ from scipy import special
 from scipy import optimize
 from scipy import integrate
 from scipy.special import gammaln as gamln
+from scipy.special import xlogy
 
 import inspect
 from numpy import all, where, arange, putmask, \
@@ -1875,7 +1876,9 @@ class rv_continuous(rv_generic):
     def _entropy(self, *args):
         def integ(x):
             val = self._pdf(x, *args)
-            return val*log(val)
+            #return xlogy(val, val)
+            #return val*log(val)
+            return None
 
         entr = -integrate.quad(integ,self.a,self.b)[0]
         if not np.isnan(entr):
@@ -5425,7 +5428,9 @@ def entropy(pk, qk=None, base=None):
     pk = asarray(pk)
     pk = 1.0* pk / sum(pk, axis=0)
     if qk is None:
-        vec = where(pk == 0, 0.0, pk*log(pk))
+        #vec = xlogy(pk, pk)
+        #vec = where(pk == 0, 0.0, pk*log(pk))
+        pass
     else:
         qk = asarray(qk)
         if len(qk) != len(pk):
@@ -5435,7 +5440,9 @@ def entropy(pk, qk=None, base=None):
         #   too, the relative entropy is infinite.
         if any(take(pk, nonzero(qk == 0.0), axis=0) != 0.0, 0):
             return inf
-        vec = where (pk == 0, 0.0, -pk*log(pk / qk))
+        #vec = -xlogy(pk, pk / qk)
+        #vec = where (pk == 0, 0.0, -pk*log(pk / qk))
+        pass
     S = -sum(vec, axis=0)
     if base is not None:
         S /= log(base)
