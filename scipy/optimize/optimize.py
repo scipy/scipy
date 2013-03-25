@@ -2860,10 +2860,7 @@ def show_options(solver, method=None):
     solver = solver.lower()
     if solver not in ('minimize', 'root'):
         raise ValueError('Unknown solver.')
-    solver_header = (' ' * 4 + solver + "\n" + ' ' * 4 + '~' * len(solver))
 
-    notes_header = "Notes\n    -----"
-    all_doc = show_options.__doc__.split(notes_header)[1:]
     solvers_doc = [s.strip()
                    for s in show_options.__doc__.split('** ')[1:]]
     solver_doc = [s for s in solvers_doc
