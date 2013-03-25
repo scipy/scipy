@@ -825,8 +825,8 @@ def test_read_big_endian():
     rdr = MatFile5Reader_future(fp)
     d = rdr.get_variables()
     fp.close()
-    assert_array_equal(d['strings'], np.array([[u'hello'],
-                                               [u'world']], dtype=np.object))
+    assert_array_equal(d['strings'], np.array([['hello'],
+                                               ['world']], dtype=np.object))
     assert_array_equal(d['floats'], np.array([[ 2.,  3.],
                                               [ 3.,  4.]], dtype=np.float32))
 
@@ -837,12 +837,12 @@ def test_write_big_endian():
     stream = BytesIO()
     savemat_future(stream, {'a': np.array([[ 2.,  3.],
                                            [ 3.,  4.]], dtype='>f4'),
-                            'b': np.array([u'hello', u'world'], dtype='>U')})
+                            'b': np.array(['hello', 'world'], dtype='>U')})
     rdr = MatFile5Reader_future(stream)
     d = rdr.get_variables()
     assert_array_equal(d['a'], np.array([[ 2.,  3.],
                                          [ 3.,  4.]], dtype='f4'))
-    assert_array_equal(d['b'], np.array([u'hello', u'world'], dtype='U'))
+    assert_array_equal(d['b'], np.array(['hello', 'world'], dtype='U'))
     stream.close()
 
 
@@ -934,7 +934,7 @@ def test_str_round():
     out_arr = np.array(['Hello', 'Foob '])
     savemat_future(stream, dict(a=in_arr))
     res = loadmat(stream)
-    # resulted in [u'HloolFoa', u'elWrdobr']
+    # resulted in ['HloolFoa', 'elWrdobr']
     assert_array_equal(res['a'], out_arr)
     stream.truncate(0)
     stream.seek(0)
