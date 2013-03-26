@@ -114,8 +114,8 @@ class TestNonlin(object):
         """ Tests for root """
         for f in [F, F2, F3, F4_powell, F5, F6]:
             for meth in SOLVERS.keys():
-                if meth in f.KNOWN_BAD.keys():
-                    if meth in MUST_WORK.keys():
+                if meth in f.KNOWN_BAD:
+                    if meth in MUST_WORK:
                         yield self._check_func_fail, f, meth
                     continue
                 yield self._check_root, f, meth

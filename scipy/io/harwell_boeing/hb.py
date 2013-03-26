@@ -402,11 +402,11 @@ class HBMatrixType(object):
         self.structure = structure
         self.storage = storage
 
-        if not value_type in self._q2f_type.keys():
+        if not value_type in self._q2f_type:
             raise ValueError("Unrecognized type %s" % value_type)
-        if not structure in self._q2f_structure.keys():
+        if not structure in self._q2f_structure:
             raise ValueError("Unrecognized structure %s" % structure)
-        if not storage in self._q2f_storage.keys():
+        if not storage in self._q2f_storage:
             raise ValueError("Unrecognized storage %s" % storage)
 
     @property

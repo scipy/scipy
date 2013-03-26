@@ -285,7 +285,7 @@ class UmfpackContext( Struct ):
         self.maxCond = 1e12
         Struct.__init__( self, **kwargs )
 
-        if family not in umfFamilyTypes.keys():
+        if family not in umfFamilyTypes:
             raise TypeError('wrong family: %s' % family)
 
         self.family = family

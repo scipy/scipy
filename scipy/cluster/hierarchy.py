@@ -624,7 +624,7 @@ def linkage(y, method='single', metric='euclidean'):
     if len(s) == 1:
         distance.is_valid_y(y, throw=True, name='y')
         d = distance.num_obs_y(y)
-        if method not in _cpy_non_euclid_methods.keys():
+        if method not in _cpy_non_euclid_methods:
             raise ValueError("Valid methods when the raw observations are "
                              "omitted are 'single', 'complete', 'weighted', "
                              "and 'average'.")
@@ -640,12 +640,12 @@ def linkage(y, method='single', metric='euclidean'):
         m = s[1]
         if method not in _cpy_linkage_methods:
             raise ValueError('Invalid method: %s' % method)
-        if method in _cpy_non_euclid_methods.keys():
+        if method in _cpy_non_euclid_methods:
             dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_wrap(dm, Z, n, \
                                        int(_cpy_non_euclid_methods[method]))
-        elif method in _cpy_euclid_methods.keys():
+        elif method in _cpy_euclid_methods:
             if metric != 'euclidean':
                 raise ValueError(('Method %s requires the distance metric to '
                                  'be euclidean') % s)
@@ -2519,7 +2519,7 @@ def is_isomorphic(T1, T2):
     n = T1S[0]
     d = {}
     for i in xrange(0, n):
-        if T1[i] in list(d.keys()):
+        if T1[i] in d:
             if d[T1[i]] != T2[i]:
                 return False
         else:

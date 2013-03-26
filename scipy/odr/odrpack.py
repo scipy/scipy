@@ -322,7 +322,7 @@ class Data(object):
         """ Dispatch aatribute access to the metadata dictionary.
         """
 
-        if attr in self.meta.keys():
+        if attr in self.meta:
             return self.meta[attr]
         else:
             raise AttributeError("'%s' not in metadata" % attr)
@@ -447,7 +447,7 @@ class RealData(Data):
 
 
         if attr not in ('wd', 'we'):
-            if attr in self.meta.keys():
+            if attr in self.meta:
                 return self.meta[attr]
             else:
                 raise AttributeError("'%s' not in metadata" % attr)
@@ -566,7 +566,7 @@ class Model(object):
         """ Dispatch attribute access to the metadata.
         """
 
-        if attr in self.meta.keys():
+        if attr in self.meta:
             return self.meta[attr]
         else:
             raise AttributeError("'%s' not in metadata" % attr)
