@@ -73,3 +73,16 @@ def test_weak_connections2():
     assert_(n_components == 2)
     labels.sort()
     assert_array_almost_equal(labels, [0, 0, 1, 1, 1, 1])
+
+def test_ticket1876():
+    # Regression test: this failed in the original implementation
+    # There should be two strongly-connected components; previously gave one
+    g = np.array([[0, 1, 1, 0],
+                  [1, 0, 0, 1],
+                  [0, 0, 0, 1],
+                  [0, 0, 1, 0]])
+    N, comp = csgraph.connected_components(g, connection='strong')
+
+    assert_(N == 2)
+    assert_(comp[0] == comp[1])
+    assert_(comp[2] == comp[3])
