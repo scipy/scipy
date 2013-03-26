@@ -178,7 +178,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
   }
 
   arr_x = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_x0,
-                                            NPY_DOUBLE, NPY_INOUT_ARRAY);
+                                            NPY_DOUBLE, NPY_IN_ARRAY);
   if (arr_x == NULL)
   {
     PyErr_SetString(PyExc_ValueError, "tnc: invalid initial vector.");

@@ -332,7 +332,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     fmin = minfev
     pgtol = gtol
 
-    x0 = asfarray(x0).flatten().tolist()
+    x0 = asfarray(x0).flatten()
     n = len(x0)
 
     if bounds is None:
@@ -350,13 +350,11 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     if jac is None:
         def func_and_grad(x):
-            x = asarray(x)
             f = fun(x, *args)
             g = approx_fprime(x, fun, epsilon, *args)
             return f, g
     else:
         def func_and_grad(x):
-            x = asarray(x)
             f = fun(x, *args)
             g = jac(x, *args)
             return f, asarray(g)
@@ -385,13 +383,9 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     if scale is None:
         scale = array([])
-    else:
-        scale = asarray(scale)
 
     if offset is None:
         offset = array([])
-    else:
-        offset = asarray(offset)
 
     if maxfun is None:
         maxfun = max(100, 10*len(x0))
@@ -419,7 +413,7 @@ if __name__ == '__main__':
             g[1] = 3.0*pow(abs(x[1]),2.0)
             if x[1]<0:
                 g[1] = -g[1]
-            return f, asarray(g)
+            return f, g
 
         # Optimizer call
         x, nf, rc = fmin_tnc(function, [-7, 3], bounds=([-10, 1], [10, 10]))
