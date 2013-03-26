@@ -171,7 +171,7 @@ class TestBasinHopping(TestCase):
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
-        self.assertGreater(res.nfev, 0)
+        self.assertTrue(res.nfev > 0)
 
     def test_njev(self):
         # test njev is returned correctly
@@ -182,7 +182,7 @@ class TestBasinHopping(TestCase):
         res = basinhopping(func2d, self.x0[i],
                            minimizer_kwargs=minimizer_kwargs, niter=self.niter,
                            disp=self.disp)
-        self.assertGreater(res.nfev, 0)
+        self.assertTrue(res.nfev > 0)
         self.assertEqual(res.nfev, res.njev)
 
     def test_2d_nograd(self):
@@ -345,7 +345,7 @@ class Test_AdaptiveStepsize(TestCase):
         for i in range(self.takestep.interval):
             self.takestep(x)
             self.takestep.report(True)
-        self.assertGreater(self.ts.stepsize, self.stepsize)
+        self.assertTrue(self.ts.stepsize > self.stepsize)
 
     def test_adaptive_decrease(self):
         #if few steps are rejected, the stepsize should increase
@@ -355,7 +355,7 @@ class Test_AdaptiveStepsize(TestCase):
         for i in range(self.takestep.interval):
             self.takestep(x)
             self.takestep.report(False)
-        self.assertLess(self.ts.stepsize, self.stepsize)
+        self.assertTrue(self.ts.stepsize < self.stepsize)
 
     def test_all_accepted(self):
         #test that everything works OK if all steps were accepted
@@ -363,7 +363,7 @@ class Test_AdaptiveStepsize(TestCase):
         for i in range(self.takestep.interval + 1):
             self.takestep(x)
             self.takestep.report(True)
-        self.assertGreater(self.ts.stepsize, self.stepsize)
+        self.assertTrue(self.ts.stepsize > self.stepsize)
 
     def test_all_rejected(self):
         #test that everything works OK if all steps were rejected
@@ -371,7 +371,7 @@ class Test_AdaptiveStepsize(TestCase):
         for i in range(self.takestep.interval + 1):
             self.takestep(x)
             self.takestep.report(False)
-        self.assertLess(self.ts.stepsize, self.stepsize)
+        self.assertTrue(self.ts.stepsize < self.stepsize)
 
 
 if __name__ == "__main__":
