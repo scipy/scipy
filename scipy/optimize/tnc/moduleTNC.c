@@ -145,6 +145,11 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 
   arr_scale = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_scale,
                                                 NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_scale == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "tnc: invalid scaling parameters.");
+    goto failure;
+  }
   if ((n3 = PyArray_Size((PyObject *)arr_scale)) != 0)
   {
     scale = (double *)PyArray_GETPTR1(arr_scale, 0);
@@ -157,6 +162,11 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 
   arr_offset = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_offset,
                                                  NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_offset == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "tnc: invalid offset parameters.");
+    goto failure;
+  }
   if ((n4 = PyArray_Size((PyObject *)arr_offset)) != 0)
   {
     offset = (double *)PyArray_GETPTR1(arr_offset, 0);
@@ -169,6 +179,11 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 
   arr_x = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_x0,
                                             NPY_DOUBLE, NPY_INOUT_ARRAY);
+  if (arr_x == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "tnc: invalid initial vector.");
+    goto failure;
+  }
   if ((n = PyArray_Size((PyObject *)arr_x)) != 0)
   {
     x = (double *)PyArray_GETPTR1(arr_x, 0);
@@ -181,21 +196,35 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 
   arr_low = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_low,
                                               NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_low == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "tnc: invalid lower bound.");
+    goto failure;
+  }
   if ((n1 = PyArray_Size((PyObject *)arr_low)) != 0)
   {
     low = (double *)PyArray_GETPTR1(arr_low, 0);
+    if (low == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError, "tnc: invalid lower bound.");
+      goto failure;
+    }
   }
   arr_up = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_up,
                                              NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_up == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "tnc: invalid upper bound.");
+    goto failure;
+  }
   if ((n2 = PyArray_Size((PyObject *)arr_up)) != 0)
   {
     up = (double *)PyArray_GETPTR1(arr_up, 0);
-  }
-
-  if ((n1 != 0 && low == NULL) || (n2 != 0 && up == NULL))
-  {
-    PyErr_SetString(PyExc_ValueError, "tnc: invalid bounds.");
-    goto failure;
+    if (up == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError, "tnc: invalid upper bound.");
+      goto failure;
+    }
   }
 
   if (n1 != n2 || n != n1 || (scale != NULL && n != n3)
