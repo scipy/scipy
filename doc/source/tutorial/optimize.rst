@@ -330,6 +330,8 @@ Note that since :func:`minimize` only minimizes functions, the ``sign``
 parameter is introduced to multiply the objective function (and its
 derivative by -1) in order to perform a maximization.
 
+Note also that most methods do not *require* passing a Jacobian.
+
 Then constraints are defined as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
 
