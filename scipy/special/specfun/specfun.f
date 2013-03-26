@@ -272,7 +272,7 @@ C
         ZS=LS*(1.0D0-Z*Z)
         DO 25 I=1,M
 25         CPM(I,I)=-LS*(2.0D0*I-1.0D0)*ZQ*CPM(I-1,I-1)
-        DO 30 I=0,M
+        DO 30 I=0,MIN(M,N-1)
 30         CPM(I,I+1)=(2.0D0*I+1.0D0)*Z*CPM(I,I)
         DO 35 I=0,M
         DO 35 J=I+2,N

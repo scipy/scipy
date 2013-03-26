@@ -2186,6 +2186,17 @@ class TestLog1p(TestCase):
         assert_array_almost_equal(l1pm,l1pmrl,8)
 
 class TestLegendreFunctions(TestCase):
+    def test_clpmn(self):
+        clp = special.specfun.clpmn(1, 1, 0.5, 0.3)
+        assert_array_almost_equal(clp,(array([[ 1.0000,
+                                                0.5+0.3j ],
+                                              [ 0.0000,
+                                                -0.9305815721+0.1611895232j ]]),
+                                       array([[ 0.0000,
+                                                1.0000 ],
+                                              [ 0.0000,
+                                                0.4674335183+0.4033449589j ]])),7)
+
     def test_lpmn(self):
         lp = special.lpmn(0,2,.5)
         assert_array_almost_equal(lp,(array([       [ 1.00000 ,
