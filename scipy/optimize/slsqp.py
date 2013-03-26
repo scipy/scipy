@@ -318,7 +318,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Decompose bounds into xl and xu
     if bounds is None or len(bounds) == 0:
-        xl, xu = array([-1.0E12]*n), array([1.0E12]*n)
+        xl, xu = array([-finfo(float).max]*n), array([finfo(float).max]*n)
     else:
         bnds = array(bounds, float)
         if bnds.shape[0] != n:
@@ -333,8 +333,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         # filter -inf, inf and NaN values
         infbnd = ~isfinite(bnds)
-        xl[infbnd[:, 0]] = -1.0E12
-        xu[infbnd[:, 1]] = 1.0E12
+        xl[infbnd[:, 0]] = -finfo(float).max
+        xu[infbnd[:, 1]] = finfo(float).max
 
     # Initialize the iteration counter and the mode value
     mode = array(0,int)
