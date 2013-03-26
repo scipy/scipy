@@ -983,7 +983,7 @@ class CXXCoder(ByteCodeMeaning):
 
         # First, figure out who owns this global
         myHash = id(self.function.func_globals)
-        for module_name in sys.modules.keys():
+        for module_name in sys.modules:
             module = sys.modules[module_name]
             if module and id(module.__dict__) == myHash:
                 break

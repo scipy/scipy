@@ -197,7 +197,7 @@ class swig2_converter(common_base_converter):
         will not work properly.
         """
         versions = []
-        for key in sys.modules.keys():
+        for key in sys.modules:
             idx = key.find('swig_runtime_data')
             if idx > -1:
                 ver = int(key[idx+17:])

@@ -113,7 +113,7 @@ class TestNonlin(object):
     def test_problem_root(self):
         """ Tests for root """
         for f in [F, F2, F3, F4_powell, F5, F6]:
-            for meth in SOLVERS.keys():
+            for meth in SOLVERS:
                 if meth in f.KNOWN_BAD:
                     if meth in MUST_WORK:
                         yield self._check_func_fail, f, meth

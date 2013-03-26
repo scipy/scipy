@@ -830,16 +830,16 @@ _current_codata = "CODATA 2010"
 
 # check obsolete values
 _obsolete_constants = {}
-for k in physical_constants.keys():
+for k in physical_constants:
     if k not in _current_constants:
         _obsolete_constants[k] = True
 
 # generate some additional aliases
 _aliases = {}
-for k in _physical_constants_2002.keys():
+for k in _physical_constants_2002:
     if 'magn.' in k:
         _aliases[k] = k.replace('magn.', 'mag.')
-for k in _physical_constants_2006.keys():
+for k in _physical_constants_2006:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
 

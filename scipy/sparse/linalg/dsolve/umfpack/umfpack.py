@@ -46,7 +46,7 @@ def configure( **kwargs ):
 def updateDictWithVars( adict, module, pattern, group = None ):
     match = re.compile( pattern ).match
 
-    for name in [ii for ii in vars( module ).keys()
+    for name in [ii for ii in vars( module )
                  if match( ii )]:
         if group is not None:
             outName = match( name ).group( group )

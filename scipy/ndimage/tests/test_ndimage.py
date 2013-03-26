@@ -1318,7 +1318,7 @@ class TestNdimage:
                     'mirror' : [1.5,2.5,3.5,3.5,2.5,1.5,1.5],
                     'nearest' : [1.5,2.5,3.5,4,4,4,4]}
 
-        for mode in expected.keys():
+        for mode in expected:
             assert_array_equal(expected[mode],
                                ndimage.geometric_transform(data,shift,
                                                            cval=-1,mode=mode,
@@ -1336,7 +1336,7 @@ class TestNdimage:
                     'mirror' : [2,1,2,3],
                     'nearest' : [1,1,2,3]}
 
-        for mode in expected.keys():
+        for mode in expected:
             assert_array_equal(expected[mode],
                                ndimage.geometric_transform(data,shift,
                                                            cval=-1,mode=mode,

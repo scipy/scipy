@@ -10,7 +10,7 @@ def slice_ast_to_dict(ast_seq):
                            'end':'_end',
                            'step':'_stp',
                            'single_index':'_index'}
-                for key in data.keys():
+                for key in data:
                     data[key] = ast_to_string(data[key])
                 sl_vars.update(data)
                 break;
