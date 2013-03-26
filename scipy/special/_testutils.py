@@ -54,7 +54,7 @@ def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
 
 def assert_func_equal(func, results, points, rtol=None, atol=None,
                       param_filter=None, knownfailure=None,
-                      vectorized=True, dtype=None):
+                      vectorized=True, dtype=None, nan_ok=False):
     if hasattr(points, 'next'):
         # it's a generator
         points = list(points)
@@ -82,7 +82,7 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
     data = np.c_[points, results]
     fdata = FuncData(func, data, list(range(npoints)), list(range(npoints, data.shape[1])),
                      rtol=rtol, atol=atol, param_filter=param_filter,
-                     knownfailure=knownfailure)
+                     knownfailure=knownfailure, nan_ok=nan_ok)
     fdata.check()
 
 class FuncData(object):
@@ -111,12 +111,14 @@ class FuncData(object):
     knownfailure : str, optional
         Known failure error message to raise when the test is run.
         If omitted, no exception is raised.
+    nan_ok : bool,
+        If nan is always an accepted result.
 
     """
 
     def __init__(self, func, data, param_columns, result_columns,
                  rtol=None, atol=None, param_filter=None, knownfailure=None,
-                 dataname=None):
+                 dataname=None, nan_ok=False):
         self.func = func
         self.data = data
         self.dataname = dataname
@@ -132,6 +134,7 @@ class FuncData(object):
             param_filter = (param_filter,)
         self.param_filter = param_filter
         self.knownfailure = knownfailure
+        self.nan_ok = nan_ok
 
     def get_tolerances(self, dtype):
         info = np.finfo(dtype)
@@ -208,9 +211,13 @@ class FuncData(object):
             tol_mask = (diff <= atol + rtol*abs_y)
             pinf_mask = (pinf_x == pinf_y)
             minf_mask = (minf_x == minf_y)
+            
             nan_mask = (nan_x == nan_y)
 
             bad_j = ~(tol_mask & pinf_mask & minf_mask & nan_mask)
+
+            if self.nan_ok:
+                bad_j &= ~nan_x
 
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad
