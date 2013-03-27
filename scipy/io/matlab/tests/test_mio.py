@@ -983,6 +983,11 @@ def test_loadmat_varnames():
     assert_equal(set(vars.keys()), set(['a'] + sys_v_names))
     vars = loadmat(eg_file, variable_names=['theta'])
     assert_equal(set(vars.keys()), set(['theta'] + sys_v_names))
+    vars = loadmat(eg_file, variable_names=('theta',))
+    assert_equal(set(vars.keys()), set(['theta'] + sys_v_names))
+    vnames = ['theta']
+    vars = loadmat(eg_file, variable_names=vnames)
+    assert_equal(vnames, ['theta'])
 
 
 def test_round_types():

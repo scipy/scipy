@@ -265,6 +265,9 @@ class MatFile5Reader(MatFileReader):
         '''
         if isinstance(variable_names, string_types):
             variable_names = [variable_names]
+        elif variable_names is not None:
+            variable_names = list(variable_names)
+
         self.mat_stream.seek(0)
         # Here we pass all the parameters in self to the reading objects
         self.initialize_read()
