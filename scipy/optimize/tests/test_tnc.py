@@ -39,7 +39,7 @@ class TestTnc(TestCase):
         return x[1] + pow(x[1] - x[0], 2) * 1.0e-5
 
     def g3(self, x):
-        dif = [0,0]
+        dif = [0, 0]
         dif[0] = -2.0 * (x[1] - x[0]) * 1.0e-5
         dif[1] = 1.0 - dif[0]
         return dif
@@ -51,7 +51,7 @@ class TestTnc(TestCase):
         return pow(x[0] + 1.0, 3) / 3.0 + x[1]
 
     def g4(self, x):
-        dif = [0,0]
+        dif = [0, 0]
         dif[0] = pow(x[0] + 1.0, 2)
         dif[1] = 1.0
         return dif
@@ -64,7 +64,7 @@ class TestTnc(TestCase):
                 1.5 * x[0] + 2.5 * x[1] + 1.0
 
     def g5(self, x):
-        dif = [0,0]
+        dif = [0, 0]
         v1 = np.cos(x[0] + x[1])
         v2 = 2.0*(x[0] - x[1])
 
@@ -115,8 +115,7 @@ class TestTnc(TestCase):
     # tests
     # minimize with method=TNC
     def test_minimize_tnc1(self):
-        """Minimize, method=TNC, 1"""
-        x0, bnds = [-2, 1], ([-np.inf, None],[-1.5, None])
+        x0, bnds = [-2, 1], ([-np.inf, None], [-1.5, None])
         xopt = [1, 1]
         iterx = [] # to test callback
 
@@ -127,7 +126,6 @@ class TestTnc(TestCase):
         assert_equal(len(iterx), res.nit)
 
     def test_minimize_tnc1b(self):
-        """Minimize, method=TNC, 1b (approx gradient), x0 is a matrix"""
         x0, bnds = np.matrix([-2, 1]), ([-np.inf, None],[-1.5, None])
         xopt = [1, 1]
         x = optimize.minimize(self.f1, x0, method='TNC',
@@ -135,7 +133,6 @@ class TestTnc(TestCase):
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-4)
 
     def test_minimize_tnc1c(self):
-        """Minimize, method=TNC, 1c (combined function and gradient)"""
         x0, bnds = [-2, 1], ([-np.inf, None],[-1.5, None])
         xopt = [1, 1]
         x = optimize.minimize(self.fg1, x0, method='TNC',
@@ -144,7 +141,6 @@ class TestTnc(TestCase):
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8)
 
     def test_minimize_tnc2(self):
-        """Minimize, method=TNC, 2"""
         x0, bnds = [-2, 1], ([-np.inf, None], [1.5, None])
         xopt = [-1.2210262419616387, 1.5]
         x = optimize.minimize(self.f1, x0, method='TNC',
@@ -153,7 +149,6 @@ class TestTnc(TestCase):
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8)
 
     def test_minimize_tnc3(self):
-        """Minimize, method=TNC, 3"""
         x0, bnds = [10, 1], ([-np.inf, None], [0.0, None])
         xopt = [0, 0]
         x = optimize.minimize(self.f3, x0, method='TNC',
@@ -162,8 +157,7 @@ class TestTnc(TestCase):
         assert_allclose(self.f3(x), self.f3(xopt), atol=1e-8)
 
     def test_minimize_tnc4(self):
-        """Minimize, method=TNC, 4"""
-        x0 ,bnds = [1.125,0.125], [(1, None), (0, None)]
+        x0 ,bnds = [1.125, 0.125], [(1, None), (0, None)]
         xopt = [1, 0]
         x = optimize.minimize(self.f4, x0, method='TNC',
                               jac=self.g4, bounds=bnds,
@@ -171,7 +165,6 @@ class TestTnc(TestCase):
         assert_allclose(self.f4(x), self.f4(xopt), atol=1e-8)
 
     def test_minimize_tnc5(self):
-        """Minimize, method=TNC, 5"""
         x0, bnds = [0, 0], [(-1.5, 4),(-3, 3)]
         xopt = [-0.54719755119659763, -1.5471975511965976]
         x = optimize.minimize(self.f5, x0, method='TNC',
@@ -180,7 +173,6 @@ class TestTnc(TestCase):
         assert_allclose(self.f5(x), self.f5(xopt), atol=1e-8)
 
     def test_minimize_tnc38(self):
-        """Minimize, method=TNC, 38"""
         x0, bnds = np.array([-3, -1, -3, -1]), [(-10, 10)]*4
         xopt = [1]*4
         x = optimize.minimize(self.f38, x0, method='TNC',
@@ -189,7 +181,6 @@ class TestTnc(TestCase):
         assert_allclose(self.f38(x), self.f38(xopt), atol=1e-8)
 
     def test_minimize_tnc45(self):
-        """Minimize, method=TNC, 45"""
         x0, bnds = [2] * 5, [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
         xopt = [1, 2, 3, 4, 5]
         x = optimize.minimize(self.f45, x0, method='TNC',
@@ -199,8 +190,7 @@ class TestTnc(TestCase):
 
     # fmin_tnc
     def test_tnc1(self):
-        " TNC: test 1"
-        fg, x, bounds = self.fg1, [-2, 1], ([-np.inf, None],[-1.5, None])
+        fg, x, bounds = self.fg1, [-2, 1], ([-np.inf, None], [-1.5, None])
         xopt = [1, 1]
 
         x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds, args=(100.0, ),
@@ -212,8 +202,7 @@ class TestTnc(TestCase):
                                 optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc1b(self):
-        " TNC: test 1 (approx. gradient)"
-        x, bounds = [-2, 1], ([-np.inf, None],[-1.5, None])
+        x, bounds = [-2, 1], ([-np.inf, None], [-1.5, None])
         xopt = [1, 1]
 
         x, nf, rc = optimize.fmin_tnc(self.f1, x, approx_grad=True,
@@ -226,8 +215,7 @@ class TestTnc(TestCase):
                                 optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc1c(self):
-        " TNC: test 1 (separate fprime)"
-        x, bounds = [-2, 1], ([-np.inf, None],[-1.5, None])
+        x, bounds = [-2, 1], ([-np.inf, None], [-1.5, None])
         xopt = [1, 1]
 
         x, nf, rc = optimize.fmin_tnc(self.f1, x, fprime=self.g1,
@@ -240,7 +228,6 @@ class TestTnc(TestCase):
                                 optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc2(self):
-        " TNC: test 2"
         fg, x, bounds = self.fg1, [-2, 1], ([-np.inf, None], [1.5, None])
         xopt = [-1.2210262419616387, 1.5]
 
@@ -253,7 +240,6 @@ class TestTnc(TestCase):
                                 optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc3(self):
-        " TNC: test 3"
         fg, x, bounds = self.fg3, [10, 1], ([-np.inf, None], [0.0, None])
         xopt = [0, 0]
 
@@ -266,8 +252,7 @@ class TestTnc(TestCase):
                                 optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc4(self):
-        " TNC: test 4"
-        fg, x, bounds = self.fg4, [1.125,0.125], [(1, None), (0, None)]
+        fg, x, bounds = self.fg4, [1.125, 0.125], [(1, None), (0, None)]
         xopt = [1, 0]
 
         x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds,
@@ -279,7 +264,6 @@ class TestTnc(TestCase):
                                 optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc5(self):
-        " TNC: test 5"
         fg, x, bounds = self.fg5, [0, 0], [(-1.5, 4),(-3, 3)]
         xopt = [-0.54719755119659763, -1.5471975511965976]
 
@@ -292,7 +276,6 @@ class TestTnc(TestCase):
                                 optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc38(self):
-        " TNC: test 38"
         fg, x, bounds = self.fg38, np.array([-3, -1, -3, -1]), [(-10, 10)]*4
         xopt = [1]*4
 
@@ -305,7 +288,6 @@ class TestTnc(TestCase):
                                 optimize.tnc.RCSTRINGS[rc])
 
     def test_tnc45(self):
-        " TNC: test 45"
         fg, x, bounds = self.fg45, [2] * 5, [(0, 1), (0, 2), (0, 3),
                                              (0, 4), (0, 5)]
         xopt = [1, 2, 3, 4, 5]
