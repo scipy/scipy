@@ -173,6 +173,9 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     """
     variable_names = kwargs.pop('variable_names', None)
     MR = mat_reader_factory(file_name, appendmat, **kwargs)
+    # cast variable_names to list, as MR.get_variables calls list.pop
+    if variable_names is not None:
+        variable_names = list(variable_names)
     matfile_dict = MR.get_variables(variable_names)
     if mdict is not None:
         mdict.update(matfile_dict)
