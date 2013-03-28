@@ -637,6 +637,18 @@ def check_grad(func, grad, x0, *args):
     --------
     approx_fprime
 
+    Notes
+    -----
+    The step size used for the finite difference approximation is
+    `sqrt(numpy.finfo(float).eps)`, which is approximately 1.49e-08.
+
+    Examples
+    --------
+    >>> def func(x): return x[0]**2 - 0.5 * x[1]**3
+    >>> def grad(x): return [2 * x[0], -1.5 * x[1]**2]
+    >>> check_grad(func, grad, [1.5, -1.5])
+    2.9802322387695312e-08
+
     """
     return sqrt(sum((grad(x0, *args) -
                      approx_fprime(x0, func, _epsilon, *args))**2))
