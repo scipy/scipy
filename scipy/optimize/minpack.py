@@ -569,7 +569,6 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     return (good, err)
 
 
-# Steffensen's Method using Aitken's Del^2 convergence acceleration.
 def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     """
     Find a fixed point of the function.
