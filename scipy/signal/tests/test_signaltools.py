@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
 from decimal import Decimal
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
@@ -191,8 +192,10 @@ class TestFFTConvolve(TestCase):
         # len(a) < len(b) deprecated in 0.12.0, removed for 0.13.0
         a = array([3,2,1])
         b = array([3,3,5,6,8,7,9,0,1])
-        assert_array_almost_equal(fftconvolve(a, b, 'valid'),
-                                  fftconvolve(b, a, 'valid'))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_array_almost_equal(fftconvolve(a, b, 'valid'),
+                                      fftconvolve(b, a, 'valid'))
 
     def test_real_valid_mode2(self):
         a = array([3,3,5,6,8,7,9,0,1])
