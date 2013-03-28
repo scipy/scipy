@@ -263,6 +263,9 @@ class MatFile5Reader(MatFileReader):
 
         If variable_names is None, then get all variables in file
         '''
+        if variable_names is not None:
+            variable_names = list(variable_names)
+
         if isinstance(variable_names, string_types):
             variable_names = [variable_names]
         self.mat_stream.seek(0)
