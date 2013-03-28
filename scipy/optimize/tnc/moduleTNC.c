@@ -47,8 +47,8 @@ static PyObject *moduleTNC_minimize(PyObject *self, PyObject *args);
 
 static int function(double x[], double *f, double g[], void *state)
 {
-  PyArrayObject *py_x, *py_grad;
-  PyObject *arglist, *result = NULL;
+  PyArrayObject *py_x, *arr_grad=NULL;
+  PyObject *arglist, *result = NULL, *py_grad;
   pytnc_state *py_state = (pytnc_state *)state;
 
   py_x = (PyArrayObject *)PyArray_SimpleNew(1, &py_state->n, NPY_DOUBLE);
@@ -72,20 +72,27 @@ static int function(double x[], double *f, double g[], void *state)
     return 1;
   }
 
-  if (!PyArg_ParseTuple(result, "dO!", f, &PyArray_Type, &py_grad))
+  if (!PyArg_ParseTuple(result, "dO", f, &py_grad))
   {
     PyErr_SetString(PyExc_ValueError,
       "tnc: invalid return value from minimized function.");
     goto failure;
   }
+  arr_grad = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_grad,
+                                               NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_grad == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "tnc: invalid gradient vector.");
+    goto failure;
+  }
 
-  if (PyArray_SIZE(py_grad) != py_state->n)
+  if (PyArray_SIZE(arr_grad) != py_state->n)
   {
     PyErr_SetString(PyExc_ValueError,
       "tnc: invalid gradient vector from minimized function.");
     goto failure;
   }
-  memcpy(g, py_grad->data, (py_state->n)*sizeof(double));
+  memcpy(g, arr_grad->data, (py_state->n)*sizeof(double));
 
   Py_DECREF(result);
 
@@ -93,6 +100,7 @@ static int function(double x[], double *f, double g[], void *state)
 
 failure:
   py_state->failed = 1;
+  Py_XDECREF(arr_grad);
   Py_XDECREF(result);
   return 1;
 }

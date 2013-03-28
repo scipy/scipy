@@ -36,7 +36,7 @@ from __future__ import division, print_function, absolute_import
 
 from scipy.optimize import moduleTNC, approx_fprime
 from .optimize import MemoizeJac, Result, _check_unknown_options
-from numpy import asarray, inf, array, asfarray
+from numpy import inf, array, zeros, asfarray
 
 __all__ = ['fmin_tnc']
 
@@ -357,7 +357,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         def func_and_grad(x):
             f = fun(x, *args)
             g = jac(x, *args)
-            return f, asarray(g)
+            return f, g
 
     """
     low, up   : the bounds (lists of floats)
