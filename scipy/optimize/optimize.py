@@ -1334,6 +1334,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         allvecs = [xk]
     k = 0
     old_fval = f(x0)
+    float64eps = numpy.finfo(numpy.float64).eps
     while (numpy.add.reduce(numpy.abs(update)) > xtol) and (k < maxiter):
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
@@ -1363,7 +1364,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             # check curvature
             Ap = asarray(Ap).squeeze()  # get rid of matrices...
             curv = numpy.dot(psupi, Ap)
-            if 0 <= curv <= 3 * numpy.finfo(numpy.float64).eps:
+            if 0 <= curv <= 3 * float64eps:
                 break
             elif curv < 0:
                 if (i > 0):
