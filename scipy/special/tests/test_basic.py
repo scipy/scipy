@@ -455,6 +455,15 @@ class TestCephes(TestCase):
         assert_equal(cephes.mathieu_modcem2(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modsem2(10000, 1.5, 1.3), (np.nan, np.nan))
 
+    def test_mathieu_ticket_1847(self):
+        # Regression test --- this call had some out-of-bounds access
+        # and could return nan occasionally
+        for k in range(60):
+            v = cephes.mathieu_modsem2(2, 100, -1)
+            # Values from ACM TOMS 804 (derivate by numerical differentiation)
+            assert_allclose(v[0], 0.1431742913063671074347, rtol=1e-10)
+            assert_allclose(v[1], 0.9017807375832909144719, rtol=1e-4)
+
     def test_modfresnelm(self):
         cephes.modfresnelm(0)
     def test_modfresnelp(self):
