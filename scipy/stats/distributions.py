@@ -1465,8 +1465,11 @@ class rv_continuous(rv_generic):
         cond3 = cond0 & (q==1)
         cond = cond0 & cond1        
         output = valarray(shape(cond), value=self.badvalue)
-        place(output, cond2, argsreduce(cond2, self.a * scale + loc)[0])
-        place(output, cond3, argsreduce(cond3, self.b * scale + loc)[0])
+        
+        lower_bound = self.a * scale + loc
+        upper_bound = self.b * scale + loc
+        place(output, cond2, argsreduce(cond2, lower_bound)[0])
+        place(output, cond3, argsreduce(cond3, upper_bound)[0])
         
         if any(cond):  #call only if at least 1 entry
             goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
@@ -1504,12 +1507,15 @@ class rv_continuous(rv_generic):
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
         cond1 = (0 < q) & (q < 1)
-        cond2 = cond0 & (q==0)
-        cond3 = cond0 & (q==1)      
+        cond2 = cond0 & (q==1)
+        cond3 = cond0 & (q==0)      
         cond = cond0 & cond1
         output = valarray(shape(cond), value=self.badvalue)
-        place(output, cond2, argsreduce(cond2, self.a * scale + loc)[0])
-        place(output, cond3, argsreduce(cond3, self.b * scale + loc)[0])
+        
+        lower_bound = self.a * scale + loc
+        upper_bound = self.b * scale + loc
+        place(output, cond2, argsreduce(cond2, lower_bound)[0])
+        place(output, cond3, argsreduce(cond3, upper_bound)[0])
         
         if any(cond):   
             goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))   
