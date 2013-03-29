@@ -1712,16 +1712,13 @@ class rv_continuous(rv_generic):
             return inf
         x = asarray((x-loc) / scale)
         cond0 = (x <= self.a) | (self.b <= x )
-        if (any(cond0)):
-            goodargs = argsreduce(1 - cond0, *((x,)))
-            goodargs = tuple(goodargs + list(args))
-            N = len(x)
-            Nbad = sum(cond0)
-            xmax = floatinfo.machar.xmax
-            return self._nnlf(*goodargs) + N * log(scale) + Nbad * 100.0 * log(xmax)
-        else:
-            N = len(x)
-            return self._nnlf(x, *args) + N * log(scale)
+        Nbad = sum(cond0)
+        loginf = log(floatinfo.machar.xmax)
+        if Nbad>0:
+            x = argsreduce(~cond0, x)[0]
+             
+        N = len(x)
+        return self._nnlf(x, *args) + N*log(scale) + Nbad * 100.0 * loginf
 
     # return starting point for fit (shape arguments + loc + scale)
     def _fitstart(self, data, args=None):
@@ -1872,6 +1869,10 @@ class rv_continuous(rv_generic):
         mu2hat = tmp.var()
         Shat = sqrt(mu2hat / mu2)
         Lhat = muhat - Shat*mu
+        if not np.isfinite(Lhat):
+            Lhat = 0
+        if not (np.isfinite(Shat) and (0 < Shat)) :
+            Shat = 1
         return Lhat, Shat
 
     @np.deprecate
