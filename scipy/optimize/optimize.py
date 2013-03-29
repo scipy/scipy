@@ -30,11 +30,10 @@ __docformat__ = "restructuredtext en"
 import warnings
 import numpy
 from scipy.lib.six import callable
-from numpy import atleast_1d, eye, mgrid, argmin, zeros, shape, \
-    squeeze, vectorize, asarray, sqrt, Inf, asfarray, isinf
-from .linesearch import \
-    line_search_BFGS, line_search_wolfe1, line_search_wolfe2, \
-    line_search_wolfe2 as line_search
+from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
+                   vectorize, asarray, sqrt, Inf, asfarray, isinf)
+from .linesearch import (line_search_BFGS, line_search_wolfe1,
+                         line_search_wolfe2, line_search_wolfe2 as line_search)
 
 
 # standard status messages of optimizers
@@ -1999,12 +1998,8 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     fa = func(*(xa,) + args)
     fb = func(*(xb,) + args)
     if (fa < fb):                      # Switch so fa > fb
-        dum = xa
-        xa = xb
-        xb = dum
-        dum = fa
-        fa = fb
-        fb = dum
+        xa, xb = xb, xa
+        fa, fb = fb, fa
     xc = xb + _gold * (xb - xa)
     fc = func(*((xc,) + args))
     funcalls = 3
