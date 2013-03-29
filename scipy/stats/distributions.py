@@ -492,7 +492,7 @@ class rv_frozen(object):
 def valarray(shape,value=nan,typecode=None):
     """Return an array of all value.
     """
-    #out = reshape(repeat([value],product(shape,axis=0),axis=0),shape)
+    
     out = ones(shape, dtype=bool) * value
     if typecode is not None:
         out = out.astype(typecode)
@@ -1455,30 +1455,28 @@ class rv_continuous(rv_generic):
             quantile corresponding to the lower tail probability q.
 
         """
-        loc,scale=map(kwds.get,['loc','scale'])
+        loc, scale = map(kwds.get,['loc', 'scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        q,loc,scale = map(asarray,(q,loc,scale))
-        args = tuple(map(asarray,args))
+        q, loc, scale = map(asarray,(q, loc, scale))
+        args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
-        cond1 = (q > 0) & (q < 1)
-        cond2 = (q==1) & cond0
-        cond = cond0 & cond1
-        output = valarray(shape(cond),value=self.a*scale + loc)
-        place(output,(1-cond0)+(1-cond1)*(q!=0.0), self.badvalue)
+        cond1 = (0 < q) & (q < 1)
+        cond2 = cond0 & (q==0)
+        cond3 = cond0 & (q==1)
+        cond = cond0 & cond1        
+        output = valarray(shape(cond), value=self.badvalue)
+        place(output, cond2, argsreduce(cond2, self.a * scale + loc)[0])
+        place(output, cond3, argsreduce(cond3, self.b * scale + loc)[0])
         
-        proxy_value = self.b * scale + loc
-        if product(shape(proxy_value)) != 1:
-            proxy_value = extract(cond2, proxy_value * cond2)
-        place(output, cond2, proxy_value)
         if any(cond):  #call only if at least 1 entry
             goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
-            place(output,cond,self._ppf(*goodargs)*scale + loc)
+            place(output, cond, self._ppf(*goodargs) * scale + loc)
         if output.ndim == 0:
             return output[()]
         return output
 
-    def isf(self,q,*args,**kwds):
+    def isf(self, q, *args, **kwds):
         """
         Inverse survival function at q of the given RV.
 
@@ -1500,28 +1498,23 @@ class rv_continuous(rv_generic):
             Quantile corresponding to the upper tail probability q.
 
         """
-        loc,scale=map(kwds.get,['loc','scale'])
+        loc, scale = map(kwds.get,['loc', 'scale'])
         args, loc, scale = self._fix_loc_scale(args, loc, scale)
-        q,loc,scale = map(asarray,(q,loc,scale))
-        args = tuple(map(asarray,args))
+        q, loc, scale = map(asarray,(q, loc, scale))
+        args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc==loc)
-        cond1 = (q > 0) & (q < 1)
-        cond2 = (q==1) & cond0
+        cond1 = (0 < q) & (q < 1)
+        cond2 = cond0 & (q==0)
+        cond3 = cond0 & (q==1)      
         cond = cond0 & cond1
-   
-        initial_value = self.b * scale + loc
-        output = valarray(shape(cond), value=initial_value)
-        #place(output,(1-cond0)*(cond1==cond1), self.badvalue)
-        place(output,(1-cond0)*(cond1==cond1)+(1-cond1)*(q!=0.0), self.badvalue)
-        proxy_value = self.a * scale + loc
-        if product(shape(proxy_value)) != 1:
-            proxy_value = extract(cond2, proxy_value * cond2)
-        place(output, cond2, proxy_value)
-
-        if any(cond):  #call only if at least 1 entry
-            goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))  #PB replace 1-q by q
+        output = valarray(shape(cond), value=self.badvalue)
+        place(output, cond2, argsreduce(cond2, self.a * scale + loc)[0])
+        place(output, cond3, argsreduce(cond3, self.b * scale + loc)[0])
+        
+        if any(cond):   
+            goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))   
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
-            place(output,cond,self._isf(*goodargs)*scale + loc) #PB use _isf instead of _ppf
+            place(output, cond, self._isf(*goodargs) * scale + loc)  
         if output.ndim == 0:
             return output[()]
         return output
@@ -2447,7 +2440,7 @@ class cauchy_gen(rv_continuous):
         return inf, inf, nan, nan
     def _entropy(self):
         return log(4*pi)
-    def _fitstart(data, args=None):
+    def _fitstart(self, data, args=None):
        return (0, 1)
 cauchy = cauchy_gen(name='cauchy')
 
