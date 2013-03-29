@@ -12491,7 +12491,7 @@ C
            QM=17.0+3.1*SQRT(Q)-.126*Q+.0037*SQRT(Q)*Q
         ENDIF
         KM=INT(QM+0.5*M)
-        IF(KM.GT.251) THEN
+        IF(KM.GE.251) THEN
            F1R=DNAN()
            D1R=DNAN()
            F2R=DNAN()
@@ -12505,8 +12505,8 @@ C
         C2=DEXP(X)
         U1=DSQRT(Q)*C1
         U2=DSQRT(Q)*C2
-        CALL JYNB(KM,U1,NM,BJ1,DJ1,BY1,DY1)
-        CALL JYNB(KM,U2,NM,BJ2,DJ2,BY2,DY2)
+        CALL JYNB(KM+1,U1,NM,BJ1,DJ1,BY1,DY1)
+        CALL JYNB(KM+1,U2,NM,BJ2,DJ2,BY2,DY2)
         W1=0.0D0
         W2=0.0D0
         IF (KC.EQ.2) GO TO 50
