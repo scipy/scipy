@@ -42,7 +42,7 @@ def configuration(parent_package='',top_path=None):
     if 'libraries' in blas_opt:    # key doesn't exist on OS X ...
         libs.extend(blas_opt['libraries'])
     newblas = {}
-    for key in blas_opt.keys():
+    for key in blas_opt:
         if key == 'libraries':
             continue
         newblas[key] = blas_opt[key]

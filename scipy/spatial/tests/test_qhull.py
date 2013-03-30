@@ -506,7 +506,7 @@ class TestDelaunay(object):
             assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
                                               tpl=sorted_tuple)
 
-        for name in sorted(DATASETS.keys()):
+        for name in sorted(DATASETS):
             for chunksize in 1, 4:
                 yield check, name, chunksize
 
@@ -578,7 +578,7 @@ class TestConvexHull:
 
             assert_hulls_equal(points, tri.convex_hull, hull.simplices)
 
-        for name in sorted(DATASETS.keys()):
+        for name in sorted(DATASETS):
             yield check, name
 
     def test_incremental(self):
@@ -606,7 +606,7 @@ class TestConvexHull:
             assert_hulls_equal(points, obj.simplices, obj2.simplices)
             assert_hulls_equal(points, obj.simplices, obj3.simplices)
 
-        for name in sorted(DATASETS.keys()):
+        for name in sorted(DATASETS):
             for chunksize in 1, 4:
                 yield check, name, chunksize
 
@@ -712,7 +712,7 @@ class TestVoronoi:
                 dist, k = tree.query(ridge_midpoint - d, k=1)
                 assert_equal(k, p[1])
 
-        for name in DATASETS.keys():
+        for name in DATASETS:
             yield check, name
 
     def test_furthest_site(self):
@@ -802,7 +802,7 @@ class TestVoronoi:
 
                 # XXX: compare ridge_points --- not clear exactly how to do this
 
-        for name in sorted(DATASETS.keys()):
+        for name in sorted(DATASETS):
             if DATASETS[name].shape[1] > 3:
                 # too slow (testing of the result --- qhull is still fast)
                 continue

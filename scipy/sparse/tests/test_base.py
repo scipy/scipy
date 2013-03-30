@@ -1538,7 +1538,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
     # check that test names do not clash
     names = {}
     for cls in bases:
-        for name in cls.__dict__.keys():
+        for name in cls.__dict__:
             if not name.startswith('test_'):
                 continue
             old_cls = names.get(name)
