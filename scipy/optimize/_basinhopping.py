@@ -143,7 +143,7 @@ class BasinHoppingRunner(object):
         xlowest, energy_lowest = self.storage.get_lowest()
         print("basinhopping step %d: f %g trial_f %g accepted %d "
               " lowest_f %g" % (self.nstep, self.energy, energy_trial,
-                               accept, energy_lowest))
+                                accept, energy_lowest))
 
 
 class AdaptiveStepsize(object):

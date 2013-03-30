@@ -88,7 +88,7 @@ import scipy.sparse
 
 from scipy.lib.six import string_types
 
-from . import byteordercodes as boc
+from .byteordercodes import native_code, swapped_code
 
 from .miobase import MatFileReader, docfiller, matdims, \
      read_dtype, arr_to_chars, arr_dtype_number, \
@@ -373,7 +373,7 @@ def varmats_from_mat(file_obj):
     rdr = MatFile5Reader(file_obj)
     file_obj.seek(0)
     # Raw read of top-level file header
-    hdr_len = MDTYPES[boc.native_code]['dtypes']['file_header'].itemsize
+    hdr_len = MDTYPES[native_code]['dtypes']['file_header'].itemsize
     raw_hdr = file_obj.read(hdr_len)
     # Initialize variable reading
     file_obj.seek(0)
@@ -490,10 +490,10 @@ def to_writeable(source):
 
 
 # Native byte ordered dtypes for convenience for writers
-NDT_FILE_HDR = MDTYPES[boc.native_code]['dtypes']['file_header']
-NDT_TAG_FULL = MDTYPES[boc.native_code]['dtypes']['tag_full']
-NDT_TAG_SMALL = MDTYPES[boc.native_code]['dtypes']['tag_smalldata']
-NDT_ARRAY_FLAGS = MDTYPES[boc.native_code]['dtypes']['array_flags']
+NDT_FILE_HDR = MDTYPES[native_code]['dtypes']['file_header']
+NDT_TAG_FULL = MDTYPES[native_code]['dtypes']['tag_full']
+NDT_TAG_SMALL = MDTYPES[native_code]['dtypes']['tag_smalldata']
+NDT_ARRAY_FLAGS = MDTYPES[native_code]['dtypes']['array_flags']
 
 
 class VarWriter5(object):
@@ -520,14 +520,9 @@ class VarWriter5(object):
         ''' write tag and data '''
         if mdtype is None:
             mdtype = NP_TO_MTYPES[arr.dtype.str[1:]]
-        
-        # We are writing a little-endian Matlab file but our incoming arrays may
-        # be big-endian. In particular, they might be big-endian because we originally
-        # *read* them from a big-endian Matlab file
-        byte_order = arr.dtype.byteorder
-        if byte_order == '>' or (byte_order == '=' and not boc.sys_is_le):
+        # Array needs to be in native byte order
+        if arr.dtype.byteorder == swapped_code:
             arr = arr.byteswap().newbyteorder()
-        
         byte_count = arr.size*arr.itemsize
         if byte_count <= 4:
             self.write_smalldata_element(arr, mdtype, byte_count)

@@ -1,5 +1,7 @@
-from c_spec import common_base_converter
-from c_spec import num_to_c_types
+from __future__ import absolute_import, print_function
+
+from .c_spec import common_base_converter
+from .c_spec import num_to_c_types
 import numpy
 
 num_typecode = {}

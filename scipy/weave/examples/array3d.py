@@ -4,6 +4,7 @@ converters and the other shows how it can be done without using blitz
 by accessing the numpy array data directly.
 
 """
+from __future__ import absolute_import, print_function
 
 import scipy.weave as weave
 from scipy.weave import converters
@@ -91,13 +92,13 @@ def blitz_inline(arr):
 
 def main():
     arr = create_array()
-    print "numpy:"
-    print arr
+    print("numpy:")
+    print(arr)
 
-    print "Pure Inline:"
+    print("Pure Inline:")
     pure_inline(arr)
 
-    print "Blitz Inline:"
+    print("Blitz Inline:")
     blitz_inline(arr)
 
 

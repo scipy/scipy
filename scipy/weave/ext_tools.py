@@ -1,11 +1,13 @@
+from __future__ import absolute_import, print_function
+
 import os
 import sys
 import re
 
-import catalog
-import build_tools
-import converters
-import base_spec
+from . import catalog
+from . import build_tools
+from . import converters
+from . import base_spec
 
 class ext_function_from_specs(object):
     def __init__(self,name,code_block,arg_specs):
@@ -179,7 +181,7 @@ class ext_function(ext_function_from_specs):
         ext_function_from_specs.__init__(self,name,code_block,arg_specs)
 
 
-import base_info
+from . import base_info
 
 class ext_module(object):
     def __init__(self,name,compiler=''):

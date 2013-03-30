@@ -7,6 +7,8 @@ import numpy as np
 
 import scipy.ndimage as ndimage
 
+import os.path
+
 types = [np.int8, np.uint8, np.int16,
          np.uint16, np.int32, np.uint32,
          np.int64, np.uint64,
@@ -230,6 +232,25 @@ def test_label11():
         assert_array_almost_equal(out, expected)
         assert_equal(n, 4)
 
+def test_label11_inplace():
+    "label 11 in place"
+    for type in types:
+        data = np.array([[1, 0, 0, 0, 0, 0],
+                               [0, 0, 1, 1, 0, 0],
+                               [0, 0, 1, 1, 1, 0],
+                               [1, 1, 0, 0, 0, 0],
+                               [1, 1, 0, 0, 0, 0],
+                               [0, 0, 0, 1, 1, 0]], type)
+        n = ndimage.label(data, output=data)
+        expected = [[1, 0, 0, 0, 0, 0],
+                    [0, 0, 2, 2, 0, 0],
+                    [0, 0, 2, 2, 2, 0],
+                    [3, 3, 0, 0, 0, 0],
+                    [3, 3, 0, 0, 0, 0],
+                    [0, 0, 0, 4, 4, 0]]
+        assert_array_almost_equal(data, expected)
+        assert_equal(n, 4)
+
 def test_label12():
     "label 12"
     for type in types:
@@ -285,7 +306,23 @@ def test_label_output_wrong_size():
     data = np.ones([5])
     for t in types:
         output = np.zeros([10], t)
-        assert_raises(RuntimeError, ndimage.label, data, output=output)
+        assert_raises((RuntimeError, ValueError), ndimage.label, data, output=output)
+
+def test_label_structuring_elements():
+    "test label with different structuring element neighborhoods"
+    data = np.loadtxt(os.path.join(os.path.dirname(__file__), "data", "label_inputs.txt"))
+    strels = np.loadtxt(os.path.join(os.path.dirname(__file__), "data", "label_strels.txt"))
+    results = np.loadtxt(os.path.join(os.path.dirname(__file__), "data", "label_results.txt"))
+    data = data.reshape((-1, 7, 7))
+    strels = strels.reshape((-1, 3, 3))
+    results = results.reshape((-1, 7, 7))
+    r = 0
+    for i in range(data.shape[0]):
+        d = data[i, :, :]
+        for j in range(strels.shape[0]):
+            s = strels[j, :, :]
+            assert_equal(ndimage.label(d, s)[0], results[r, :, :])
+            r += 1
 
 def test_find_objects01():
     "find_objects 1"

@@ -6,9 +6,11 @@
 #**************************************************************************#
 #*  *#
 #**************************************************************************#
+from __future__ import absolute_import, print_function
+
 import sys
 import inspect
-import accelerate_tools
+from . import accelerate_tools
 
 from numpy.testing import assert_
 
@@ -1001,7 +1003,7 @@ class CXXCoder(ByteCodeMeaning):
             rhs_type.cxxtype,
             lhs,
             rhs))
-        print self.__body
+        print(self.__body)
         self.push(lhs,rhs_type)
         return
 
@@ -1029,7 +1031,7 @@ class CXXCoder(ByteCodeMeaning):
     def BINARY_SUBTRACT(self,pc):
         return self.binop(pc,'-')
     def BINARY_MULTIPLY(self,pc):
-        print 'MULTIPLY',self.stack[-2],self.types[-2],'*',self.stack[-1],self.types[-1]
+        print('MULTIPLY',self.stack[-2],self.types[-2],'*',self.stack[-1],self.types[-1])
         return self.binop(pc,'*')
     def BINARY_DIVIDE(self,pc):
         return self.binop(pc,'/')
@@ -1121,7 +1123,7 @@ class CXXCoder(ByteCodeMeaning):
         # Fetch the constant
         k = self.consts[consti]
         t = type(k)
-        print 'LOAD_CONST',repr(k),t
+        print('LOAD_CONST',repr(k),t)
 
         # Fetch a None is just skipped
         if t is None:
@@ -1154,13 +1156,13 @@ class CXXCoder(ByteCodeMeaning):
     def LOAD_FAST(self,pc,var_num):
         v = self.stack[var_num]
         t = self.types[var_num]
-        print 'LOADFAST',var_num,v,t
+        print('LOADFAST',var_num,v,t)
         for VV, TT in zip(self.stack, self.types):
-            print VV,':',TT
+            print(VV,':',TT)
         if t is None:
             raise TypeError('%s used before set?' % v)
-            print self.__body
-            print 'PC',pc
+            print(self.__body)
+            print('PC',pc)
         self.push(v,t)
         return
 
@@ -1171,10 +1173,10 @@ class CXXCoder(ByteCodeMeaning):
     def LOAD_ATTR(self,pc,namei):
         v,t = self.pop()
         attr_name = self.codeobject.co_names[namei]
-        print 'LOAD_ATTR',namei,v,t,attr_name
+        print('LOAD_ATTR',namei,v,t,attr_name)
         aType,aCode = t.get_attribute(attr_name)
-        print 'ATTR',aType
-        print aCode
+        print('ATTR',aType)
+        print(aCode)
         lhs = self.unique()
         rhs = v
         lhsType = aType.cxxtype
@@ -1189,12 +1191,12 @@ class CXXCoder(ByteCodeMeaning):
     def STORE_ATTR(self,pc,namei):
         v,t = self.pop()
         attr_name = self.codeobject.co_names[namei]
-        print 'STORE_ATTR',namei,v,t,attr_name
+        print('STORE_ATTR',namei,v,t,attr_name)
         v2,t2 = self.pop()
-        print 'SA value',v2,t2
+        print('SA value',v2,t2)
         aType,aCode = t.set_attribute(attr_name)
-        print 'ATTR',aType
-        print aCode
+        print('ATTR',aType)
+        print(aCode)
         assert_(t2 is aType)
         rhs = v2
         lhs = v
@@ -1274,7 +1276,7 @@ class CXXCoder(ByteCodeMeaning):
     def STORE_FAST(self,pc,var_num):
 
         v,t = self.pop()
-        print 'STORE FAST',var_num,v,t
+        print('STORE FAST',var_num,v,t)
 
         save = self.stack[var_num]
         saveT = self.types[var_num]
@@ -1393,4 +1395,4 @@ class CXXCoder(ByteCodeMeaning):
             self.emit('return;')
         else:
             self.emit('return %s;'%v)
-        print 'return with',v
+        print('return with',v)

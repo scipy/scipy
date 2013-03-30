@@ -14,6 +14,7 @@
 # Note -- really need to differentiate between conversion errors and
 # run time errors.  This would reduce useless compiles and provide a
 # more intelligent control of things.
+from __future__ import absolute_import, print_function
 
 import sys
 sys.path.insert(0,'..')
@@ -142,13 +143,13 @@ def py_int_search(seq, t):
 import time
 
 def search_compare(a,n):
-    print 'Binary search for %d items in %d length list of integers:'%(n,m)
+    print('Binary search for %d items in %d length list of integers:'%(n,m))
     t1 = time.time()
     for i in range(n):
         py_int_search(a,i)
     t2 = time.time()
     py = (t2-t1)
-    print ' speed in python:', (t2 - t1)
+    print(' speed in python:', (t2 - t1))
 
     # bisect
     t1 = time.time()
@@ -156,8 +157,8 @@ def search_compare(a,n):
         bisect(a,i)
     t2 = time.time()
     bi = (t2-t1) +1e-20 # protect against div by zero
-    print ' speed of bisect:', bi
-    print ' speed up: %3.2f' % (py/bi)
+    print(' speed of bisect:', bi)
+    print(' speed up: %3.2f' % (py/bi))
 
     # get it in cache
     c_int_search(a,i)
@@ -166,8 +167,8 @@ def search_compare(a,n):
         c_int_search(a,i,chk=1)
     t2 = time.time()
     sp = (t2-t1)+1e-20 # protect against div by zero
-    print ' speed in c:',sp
-    print ' speed up: %3.2f' % (py/sp)
+    print(' speed in c:',sp)
+    print(' speed up: %3.2f' % (py/sp))
 
     # get it in cache
     c_int_search(a,i)
@@ -176,8 +177,8 @@ def search_compare(a,n):
         c_int_search(a,i,chk=0)
     t2 = time.time()
     sp = (t2-t1)+1e-20 # protect against div by zero
-    print ' speed in c(no asserts):',sp
-    print ' speed up: %3.2f' % (py/sp)
+    print(' speed in c(no asserts):',sp)
+    print(' speed up: %3.2f' % (py/sp))
 
     # get it in cache
     c_int_search_scxx(a,i)
@@ -186,8 +187,8 @@ def search_compare(a,n):
         c_int_search_scxx(a,i,chk=1)
     t2 = time.time()
     sp = (t2-t1)+1e-20 # protect against div by zero
-    print ' speed for scxx:',sp
-    print ' speed up: %3.2f' % (py/sp)
+    print(' speed for scxx:',sp)
+    print(' speed up: %3.2f' % (py/sp))
 
     # get it in cache
     c_int_search_scxx(a,i)
@@ -196,8 +197,8 @@ def search_compare(a,n):
         c_int_search_scxx(a,i,chk=0)
     t2 = time.time()
     sp = (t2-t1)+1e-20 # protect against div by zero
-    print ' speed for scxx(no asserts):',sp
-    print ' speed up: %3.2f' % (py/sp)
+    print(' speed for scxx(no asserts):',sp)
+    print(' speed up: %3.2f' % (py/sp))
 
     # get it in cache
     a = array(a)
@@ -209,8 +210,8 @@ def search_compare(a,n):
             c_array_int_search(a,i)
         t2 = time.time()
         sp = (t2-t1)+1e-20 # protect against div by zero
-        print ' speed in c(numpy arrays):',sp
-        print ' speed up: %3.2f' % (py/sp)
+        print(' speed in c(numpy arrays):',sp)
+        print(' speed up: %3.2f' % (py/sp))
     except:
         pass
 
@@ -220,6 +221,6 @@ if __name__ == "__main__":
     a = range(m)
     n = 50000
     search_compare(a,n)
-    print 'search(a,3450)', c_int_search(a,3450), py_int_search(a,3450), bisect(a,3450)
-    print 'search(a,-1)', c_int_search(a,-1), py_int_search(a,-1), bisect(a,-1)
-    print 'search(a,10001)', c_int_search(a,10001), py_int_search(a,10001),bisect(a,10001)
+    print('search(a,3450)', c_int_search(a,3450), py_int_search(a,3450), bisect(a,3450))
+    print('search(a,-1)', c_int_search(a,-1), py_int_search(a,-1), bisect(a,-1))
+    print('search(a,10001)', c_int_search(a,10001), py_int_search(a,10001),bisect(a,10001))

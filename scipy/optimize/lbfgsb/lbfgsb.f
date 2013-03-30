@@ -3276,8 +3276,10 @@ c
  55   continue
       if ( dd_p .gt.zero ) then
          call dcopy( n, xp, 1, x, 1 )
-         write(6,*) ' Positive dir derivative in projection '
-         write(6,*) ' Using the backtracking step '
+         if (iprint .ge. 0) then
+            write(6,*) ' Positive dir derivative in projection '
+            write(6,*) ' Using the backtracking step '
+         endif
       else
          go to 911
       endif

@@ -455,6 +455,15 @@ class TestCephes(TestCase):
         assert_equal(cephes.mathieu_modcem2(10000, 1.5, 1.3), (np.nan, np.nan))
         assert_equal(cephes.mathieu_modsem2(10000, 1.5, 1.3), (np.nan, np.nan))
 
+    def test_mathieu_ticket_1847(self):
+        # Regression test --- this call had some out-of-bounds access
+        # and could return nan occasionally
+        for k in range(60):
+            v = cephes.mathieu_modsem2(2, 100, -1)
+            # Values from ACM TOMS 804 (derivate by numerical differentiation)
+            assert_allclose(v[0], 0.1431742913063671074347, rtol=1e-10)
+            assert_allclose(v[1], 0.9017807375832909144719, rtol=1e-4)
+
     def test_modfresnelm(self):
         cephes.modfresnelm(0)
     def test_modfresnelp(self):
@@ -2186,6 +2195,17 @@ class TestLog1p(TestCase):
         assert_array_almost_equal(l1pm,l1pmrl,8)
 
 class TestLegendreFunctions(TestCase):
+    def test_clpmn(self):
+        clp = special.specfun.clpmn(1, 1, 0.5, 0.3)
+        assert_array_almost_equal(clp,(array([[ 1.0000,
+                                                0.5+0.3j ],
+                                              [ 0.0000,
+                                                -0.9305815721+0.1611895232j ]]),
+                                       array([[ 0.0000,
+                                                1.0000 ],
+                                              [ 0.0000,
+                                                0.4674335183+0.4033449589j ]])),7)
+
     def test_lpmn(self):
         lp = special.lpmn(0,2,.5)
         assert_array_almost_equal(lp,(array([       [ 1.00000 ,

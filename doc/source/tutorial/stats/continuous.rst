@@ -192,7 +192,8 @@ References
 Alpha
 =====
 
-One shape parameters :math:`\alpha>0` (paramter :math:`\beta` in DATAPLOT is a scale-parameter). Standard form is :math:`x>0:`
+One shape parameters :math:`\alpha>0` (parameter :math:`\beta` in DATAPLOT
+is a scale-parameter). Standard form is :math:`x>0:`
 
 
 

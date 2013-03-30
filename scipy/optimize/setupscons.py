@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
-from os.path import join
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
     config = Configuration('optimize',parent_package, top_path)
 
     config.add_sconscript('SConstruct')

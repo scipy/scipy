@@ -4154,7 +4154,7 @@ class lognorm_gen(rv_continuous):
     for ``x > 0``, ``s > 0``.
 
     If log x is normally distributed with mean mu and variance sigma**2,
-    then x is log-normally distributed with shape paramter sigma and scale
+    then x is log-normally distributed with shape parameter sigma and scale
     parameter exp(mu).
 
     %(example)s

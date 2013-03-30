@@ -6,9 +6,10 @@
 
     array_info -- for building functions that use scipy arrays
 """
+from __future__ import absolute_import, print_function
 
-import base_info
-import standard_array_spec
+from . import base_info
+from . import standard_array_spec
 import os
 
 blitz_support_code =  \
@@ -56,8 +57,7 @@ static blitz::Array<T,N> py_to_blitz(PyArrayObject* arr_obj,const char* name)
 }
 """
 
-import blitz_spec
-local_dir,junk = os.path.split(os.path.abspath(blitz_spec.__file__))
+local_dir,junk = os.path.split(os.path.abspath(__file__))
 blitz_dir = os.path.join(local_dir,'blitz')
 
 # The need to warn about compilers made the info_object method in

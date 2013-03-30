@@ -1,5 +1,6 @@
 """ Test refcounting and behavior of SCXX.
 """
+from __future__ import absolute_import, print_function
 
 import time
 import sys
@@ -126,19 +127,19 @@ class _TestSequenceBase(TestCase):
     @dec.slow
     def test_access_speed(self):
         N = 1000000
-        print '%s access -- val = a[i] for N =', (self.seq_type, N)
+        print('%s access -- val = a[i] for N =', (self.seq_type, N))
         a = self.seq_type([0]) * N
         val = 0
         t1 = time.time()
         for i in xrange(N):
             val = a[i]
         t2 = time.time()
-        print 'python1:', t2 - t1
+        print('python1:', t2 - t1)
         t1 = time.time()
         for i in a:
             val = i
         t2 = time.time()
-        print 'python2:', t2 - t1
+        print('python2:', t2 - t1)
 
         code = """
                const int N = a.length();
@@ -151,13 +152,13 @@ class _TestSequenceBase(TestCase):
         t1 = time.time()
         inline_tools.inline(code,['a'])
         t2 = time.time()
-        print 'weave:', t2 - t1
+        print('weave:', t2 - t1)
 
 # Fails
     @dec.slow
     def test_access_set_speed(self):
         N = 1000000
-        print '%s access/set -- b[i] = a[i] for N =', (self.seq_type,N)
+        print('%s access/set -- b[i] = a[i] for N =', (self.seq_type,N))
         a = self.seq_type([0]) * N
         # b is always a list so we can assign to it.
         b = [1] * N
@@ -165,7 +166,7 @@ class _TestSequenceBase(TestCase):
         for i in xrange(N):
             b[i] = a[i]
         t2 = time.time()
-        print 'python:', t2 - t1
+        print('python:', t2 - t1)
 
         a = self.seq_type([0]) * N
         b = [1] * N
@@ -179,7 +180,7 @@ class _TestSequenceBase(TestCase):
         t1 = time.time()
         inline_tools.inline(code,['a','b'])
         t2 = time.time()
-        print 'weave:', t2 - t1
+        print('weave:', t2 - t1)
         assert_(list(b) == list(a))
 
 
@@ -391,14 +392,14 @@ class TestList(_TestSequenceBase):
     @dec.slow
     def test_string_add_speed(self):
         N = 1000000
-        print 'string add -- b[i] = a[i] + "blah" for N =', N
+        print('string add -- b[i] = a[i] + "blah" for N =', N)
         a = ["blah"] * N
         desired = [1] * N
         t1 = time.time()
         for i in xrange(N):
             desired[i] = a[i] + 'blah'
         t2 = time.time()
-        print 'python:', t2 - t1
+        print('python:', t2 - t1)
 
         a = ["blah"] * N
         b = [1] * N
@@ -413,20 +414,20 @@ class TestList(_TestSequenceBase):
         t1 = time.time()
         inline_tools.inline(code,['a','b'])
         t2 = time.time()
-        print 'weave:', t2 - t1
+        print('weave:', t2 - t1)
         assert_(b == desired)
 
     @dec.slow
     def test_int_add_speed(self):
         N = 1000000
-        print 'int add -- b[i] = a[i] + 1 for N =', N
+        print('int add -- b[i] = a[i] + 1 for N =', N)
         a = [0] * N
         desired = [1] * N
         t1 = time.time()
         for i in xrange(N):
             desired[i] = a[i] + 1
         t2 = time.time()
-        print 'python:', t2 - t1
+        print('python:', t2 - t1)
 
         a = [0] * N
         b = [0] * N
@@ -440,7 +441,7 @@ class TestList(_TestSequenceBase):
         t1 = time.time()
         inline_tools.inline(code,['a','b'])
         t2 = time.time()
-        print 'weave:', t2 - t1
+        print('weave:', t2 - t1)
         assert_(b == desired)
 
 

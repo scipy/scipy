@@ -23,6 +23,7 @@ Copyright (c) 2004, Prabhu Ramachandran
 License: BSD Style.
 
 """
+from __future__ import absolute_import, print_function
 
 # Import our SWIG2 wrapped library
 import swig2_ext

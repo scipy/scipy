@@ -679,31 +679,6 @@ exit:
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
-static PyObject *Py_Label(PyObject *obj, PyObject *args)
-{
-    PyArrayObject *input = NULL, *output = NULL, *strct = NULL;
-    npy_intp max_label;
-
-    if (!PyArg_ParseTuple(args, "O&O&O&",
-                          NI_ObjectToInputArray, &input,
-                          NI_ObjectToInputArray, &strct,
-                          NI_ObjectToOutputArray, &output))
-        goto exit;
-
-    if (!NI_Label(input, strct, &max_label, output))
-        goto exit;
-
-exit:
-    Py_XDECREF(input);
-    Py_XDECREF(strct);
-    Py_XDECREF(output);
-#if PY_VERSION_HEX < 0x02050000
-    return PyErr_Occurred() ? NULL : Py_BuildValue("l", (long)max_label);
-#else
-    return PyErr_Occurred() ? NULL : Py_BuildValue("n", (npy_intp)max_label);
-#endif
-}
-
 static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL;
@@ -1005,8 +980,6 @@ static PyMethodDef methods[] = {
     {"geometric_transform",   (PyCFunction)Py_GeometricTransform,
         METH_VARARGS, NULL},
     {"zoom_shift",            (PyCFunction)Py_ZoomShift,
-     METH_VARARGS, NULL},
-    {"label",                 (PyCFunction)Py_Label,
      METH_VARARGS, NULL},
     {"find_objects",          (PyCFunction)Py_FindObjects,
      METH_VARARGS, NULL},

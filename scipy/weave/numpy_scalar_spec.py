@@ -1,8 +1,10 @@
 """ Converters for all of NumPy's scalar types such as
     int32, float32, complex128, etc.
 """
+from __future__ import absolute_import, print_function
+
 import numpy
-import c_spec
+from . import c_spec
 
 class numpy_complex_scalar_converter(c_spec.complex_converter):
     """ Handles conversion of all the NumPy complex types.

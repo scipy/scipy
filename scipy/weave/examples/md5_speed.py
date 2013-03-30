@@ -27,6 +27,8 @@ their strings.  Yeah, the expected result, but it never hurts
 to check...
 
 """
+from __future__ import absolute_import, print_function
+
 import random, md5, time, cStringIO
 
 def speed(n,m):
@@ -35,7 +37,7 @@ def speed(n,m):
     for i in range(m):
         q= md5.new(s).digest()
     t2 = time.time()
-    print (t2 - t1) / m
+    print((t2 - t1) / m)
 
 #speed(50,1e6)
 
@@ -58,14 +60,14 @@ def md5_dict(lst):
         key= md5.new(s).digest()
         catalog[key] = None
     t2 = time.time()
-    print 'md5 build(len,sec,per):', len(lst), t2 - t1, (t2-t1)/len(lst)
+    print('md5 build(len,sec,per):', len(lst), t2 - t1, (t2-t1)/len(lst))
 
     t1 = time.time()
     for s in lst:
         key= md5.new(s).digest()
         val = catalog[key]
     t2 = time.time()
-    print 'md5 retrv(len,sec,per):', len(lst), t2 - t1, (t2-t1)/len(lst)
+    print('md5 retrv(len,sec,per):', len(lst), t2 - t1, (t2-t1)/len(lst))
 
 def std_dict(lst):
     catalog = {}
@@ -73,13 +75,13 @@ def std_dict(lst):
     for s in lst:
         catalog[s] = None
     t2 = time.time()
-    print 'std build(len,sec,per):', len(lst), t2 - t1, (t2-t1)/len(lst)
+    print('std build(len,sec,per):', len(lst), t2 - t1, (t2-t1)/len(lst))
 
     t1 = time.time()
     for s in lst:
         val = catalog[s]
     t2 = time.time()
-    print 'std retrv(len,sec,per):', len(lst), t2 - t1, (t2-t1)/len(lst)
+    print('std retrv(len,sec,per):', len(lst), t2 - t1, (t2-t1)/len(lst))
 
 def run(m=200,n=10):
     lst = generate_random(m,n)

@@ -1,10 +1,12 @@
 # should re-write compiled functions to take a local and global dict
 # as input.
+from __future__ import absolute_import, print_function
+
 import sys
 import os
-import ext_tools
-import catalog
-import common_info
+from . import ext_tools
+from . import catalog
+from . import common_info
 
 from numpy.core.multiarray import _get_ndarray_c_version
 ndarray_api_version = '/* NDARRAY API VERSION %x */' % (_get_ndarray_c_version(),)
@@ -73,7 +75,7 @@ class inline_ext_function(ext_tools.ext_function):
         return "".join(arg_strings)
 
     def function_code(self):
-        from ext_tools import indent
+        from .ext_tools import indent
         decl_code = indent(self.arg_declaration_code(),4)
         cleanup_code = indent(self.arg_cleanup_code(),4)
         function_code = indent(self.code_block,4)
@@ -322,13 +324,13 @@ def inline(code,arg_names=[],local_dict = None, global_dict = None,
         try:
             results = apply(function_cache[code],(local_dict,global_dict))
             return results
-        except TypeError, msg:
+        except TypeError as msg:
             msg = str(msg).strip()
             if msg[:16] == "Conversion Error":
                 pass
             else:
                 raise TypeError(msg)
-        except NameError, msg:
+        except NameError as msg:
             msg = str(msg).strip()
             if msg[:16] == "Conversion Error":
                 pass
@@ -367,13 +369,13 @@ def attempt_function_call(code,local_dict,global_dict):
     try:
         results = apply(function_cache[code],(local_dict,global_dict))
         return results
-    except TypeError, msg:
+    except TypeError as msg:
         msg = str(msg).strip()
         if msg[:16] == "Conversion Error":
             pass
         else:
             raise TypeError(msg)
-    except NameError, msg:
+    except NameError as msg:
         msg = str(msg).strip()
         if msg[:16] == "Conversion Error":
             pass
@@ -389,7 +391,7 @@ def attempt_function_call(code,local_dict,global_dict):
             function_catalog.fast_cache(code,func)
             function_cache[code] = func
             return results
-        except TypeError, msg: # should specify argument types here.
+        except TypeError as msg: # should specify argument types here.
             # This should really have its own error type, instead of
             # checking the beginning of the message, but I don't know
             # how to define that yet.
@@ -398,7 +400,7 @@ def attempt_function_call(code,local_dict,global_dict):
                 pass
             else:
                 raise TypeError(msg)
-        except NameError, msg:
+        except NameError as msg:
             msg = str(msg).strip()
             if msg[:16] == "Conversion Error":
                 pass
@@ -429,7 +431,7 @@ def inline_function_code(code,arg_names,local_dict=None,
     ext_func = inline_ext_function('compiled_func',code,arg_names,
                                    local_dict,global_dict,auto_downcast,
                                    type_converters = type_converters)
-    import build_tools
+    from . import build_tools
     compiler = build_tools.choose_compiler(compiler)
     ext_func.set_compiler(compiler)
     return ext_func.function_code()
@@ -474,7 +476,7 @@ def compile_function(code,arg_names,local_dict,global_dict,
     # it's nice to let the users know when anything gets compiled, as the
     # slowdown is very noticeable.
     if verbose > 0:
-        print '<weave: compiling>'
+        print('<weave: compiling>')
 
     # compile code in correct location, with the given compiler and verbosity
     # setting.  All input keywords are passed through to distutils
@@ -485,7 +487,7 @@ def compile_function(code,arg_names,local_dict,global_dict,
     # the directory where it lives is in the python path.
     try:
         sys.path.insert(0,storage_dir)
-        exec 'import ' + module_name
+        exec('import ' + module_name)
         func = eval(module_name+'.compiled_func')
     finally:
         del sys.path[0]

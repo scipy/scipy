@@ -77,7 +77,9 @@ def correlate(in1, in2, mode='full'):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`.
+        Second input. Should have the same number of dimensions as `in1`;
+        if sizes of `in1` and `in2` are not equal then `in1` has to be the
+        larger array.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -163,7 +165,9 @@ def fftconvolve(in1, in2, mode="full"):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`.
+        Second input. Should have the same number of dimensions as `in1`;
+        if sizes of `in1` and `in2` are not equal then `in1` has to be the
+        larger array.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -233,7 +237,9 @@ def convolve(in1, in2, mode='full'):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`.
+        Second input. Should have the same number of dimensions as `in1`;
+        if sizes of `in1` and `in2` are not equal then `in1` has to be the
+        larger array.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 

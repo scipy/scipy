@@ -19,7 +19,7 @@ __all__ = ['approx_jacobian','fmin_slsqp']
 
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
-                  sqrt, vstack, exp, inf, where, isinf, atleast_1d
+                  sqrt, vstack, exp, inf, where, isfinite, atleast_1d
 from .optimize import wrap_function, Result, _check_unknown_options
 
 __docformat__ = "restructuredtext en"
@@ -318,7 +318,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Decompose bounds into xl and xu
     if bounds is None or len(bounds) == 0:
-        xl, xu = array([-1.0E12]*n), array([1.0E12]*n)
+        xl, xu = array([-finfo(float).max]*n), array([finfo(float).max]*n)
     else:
         bnds = array(bounds, float)
         if bnds.shape[0] != n:
@@ -331,10 +331,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                              ', '.join(str(b) for b in bnderr))
         xl, xu = bnds[:, 0], bnds[:, 1]
 
-        # filter -inf and inf values
-        infbnd = isinf(bnds)
-        xl[infbnd[:, 0]] = -1.0E12
-        xu[infbnd[:, 1]] = 1.0E12
+        # filter -inf, inf and NaN values
+        infbnd = ~isfinite(bnds)
+        xl[infbnd[:, 0]] = -finfo(float).max
+        xu[infbnd[:, 1]] = finfo(float).max
 
     # Initialize the iteration counter and the mode value
     mode = array(0,int)

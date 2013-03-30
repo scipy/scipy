@@ -149,7 +149,6 @@ cdef class VarReader5:
     # pointers to stuff in preader.class_dtypes
     cdef PyObject* class_dtypes[_N_MXS]
     # cached here for convenience in later array creation
-    cdef cnp.dtype U1_dtype
     cdef cnp.dtype bool_dtype
     # element processing options
     cdef:
@@ -203,10 +202,6 @@ cdef class VarReader5:
             if isinstance(key, str):
                 continue
             self.class_dtypes[key] = <PyObject*>dt
-        # Always use U1 rather than <U  or >U1 for interpreting string
-        # data because the strings are created by the Python runtime
-        # by .decode() and hence use native byte order rather the mat file's
-        self.U1_dtype = np.dtype('U1')
         bool_dtype = np.dtype('bool')
         
     def set_stream(self, fobj):
@@ -789,7 +784,7 @@ cdef class VarReader5:
         if byte_count == 0:
             arr = np.array(' ' * length, dtype='U')
             return np.ndarray(shape=header.dims,
-                              dtype=self.U1_dtype,
+                              dtype='U1',
                               buffer=arr,
                               order='F')
         # Character data can be of apparently numerical types,
@@ -819,7 +814,7 @@ cdef class VarReader5:
         # could take this to numpy C-API level, but probably not worth
         # it
         return np.ndarray(shape=header.dims,
-                          dtype=self.U1_dtype,
+                          dtype='U1',
                           buffer=arr,
                           order='F')
 

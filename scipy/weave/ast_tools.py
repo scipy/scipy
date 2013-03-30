@@ -1,3 +1,5 @@
+from __future__ import absolute_import, print_function
+
 import token
 import symbol
 import parser
@@ -63,7 +65,7 @@ def build_atom(expr_string):
     if isinstance(expr_string, str):
         ast = parser.expr(expr_string).totuple()[1][1]
     else:
-        ast = parser.expr(`expr_string`).totuple()[1][1]
+        ast = parser.expr(repr(expr_string)).totuple()[1][1]
     return ast
 
 def atom_tuple(expr_string):

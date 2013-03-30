@@ -13,6 +13,7 @@
 #  speed up: 3.48
 #  inplace transpose c: 0.129999995232
 #  speed up: 6.70
+from __future__ import absolute_import, print_function
 
 import numpy
 from numpy import *
@@ -138,14 +139,14 @@ import time
 def compare(m,n):
     a = ones((n,n),float64)
     type = float32
-    print 'Cast/Copy/Transposing (%d,%d)array %d times' % (n,n,m)
+    print('Cast/Copy/Transposing (%d,%d)array %d times' % (n,n,m))
     t1 = time.time()
     for i in range(m):
         for i in range(n):
             b = _castCopyAndTranspose(type,a)
     t2 = time.time()
     py = (t2-t1)
-    print ' speed in python:', (t2 - t1)/m
+    print(' speed in python:', (t2 - t1)/m)
 
 
     # load into cache
@@ -155,8 +156,8 @@ def compare(m,n):
         for i in range(n):
             b = cast_copy_transpose(type,a)
     t2 = time.time()
-    print ' speed in c (blitz):',(t2 - t1)/ m
-    print ' speed up   (blitz): %3.2f' % (py/(t2-t1))
+    print(' speed in c (blitz):',(t2 - t1)/ m)
+    print(' speed up   (blitz): %3.2f' % (py/(t2-t1)))
 
     # load into cache
     b = cast_copy_transpose2(type,a)
@@ -165,8 +166,8 @@ def compare(m,n):
         for i in range(n):
             b = cast_copy_transpose2(type,a)
     t2 = time.time()
-    print ' speed in c (pointers):',(t2 - t1)/ m
-    print ' speed up   (pointers): %3.2f' % (py/(t2-t1))
+    print(' speed in c (pointers):',(t2 - t1)/ m)
+    print(' speed up   (pointers): %3.2f' % (py/(t2-t1)))
 
     # inplace tranpose
     b = _inplace_transpose(a)
@@ -175,8 +176,8 @@ def compare(m,n):
         for i in range(n):
             b = _inplace_transpose(a)
     t2 = time.time()
-    print ' inplace transpose c:',(t2 - t1)/ m
-    print ' speed up: %3.2f' % (py/(t2-t1))
+    print(' inplace transpose c:',(t2 - t1)/ m)
+    print(' speed up: %3.2f' % (py/(t2-t1)))
 
 if __name__ == "__main__":
     m,n = 1,500

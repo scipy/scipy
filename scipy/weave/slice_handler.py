@@ -1,4 +1,6 @@
-from ast_tools import token, symbol, ast_to_string, match, atom_list
+from __future__ import absolute_import, print_function
+
+from .ast_tools import token, symbol, ast_to_string, match, atom_list
 
 def slice_ast_to_dict(ast_seq):
     sl_vars = {}
@@ -52,7 +54,7 @@ def build_slice_atom(slice_vars, position):
     else:
         begin = slice_vars['begin'].strip()
         if begin[0] == '-':
-            slice_vars['begin'] = 'N' + slice_vars['var']+`position`+begin;
+            slice_vars['begin'] = 'N' + slice_vars['var']+repr(position)+begin;
 
         end = slice_vars['end'].strip()
         if end != '_end' and end[0] != '-':
