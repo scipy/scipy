@@ -176,6 +176,13 @@ class netcdf_file(object):
         >>> print(time[-1])
         9
         >>> f.close()
+
+    A NetCDF file can also be used as context manager:
+
+        >>> from scipy.io import netcdf
+        >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
+        >>>     print(f.history)
+        Created for a test
     """
     def __init__(self, filename, mode='r', mmap=None, version=1):
         """Initialize netcdf_file from fileobj (str or file-like)."""
@@ -227,6 +234,12 @@ class netcdf_file(object):
             finally:
                 self.fp.close()
     __del__ = close
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
 
     def createDimension(self, name, length):
         """
