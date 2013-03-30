@@ -1225,7 +1225,7 @@ def oneway(*args,**kwds):
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    if 'equal_var' in kwds.keys():
+    if 'equal_var' in kwds:
         if kwds['equal_var']: evar = 1
         else: evar = 0
     else:
