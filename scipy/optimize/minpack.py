@@ -183,7 +183,7 @@ def _root_hybr(func, x0, args=(), jac=None,
     _check_unknown_options(unknown_options)
     epsfcn = eps
 
-    x0 = array(x0, ndmin=1)
+    x0 = asarray(x0).flatten()
     n = len(x0)
     if type(args) != type(()):
         args = (args,)
@@ -350,7 +350,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
          params
 
     """
-    x0 = array(x0, ndmin=1)
+    x0 = asarray(x0).flatten()
     n = len(x0)
     if type(args) != type(()):
         args = (args,)
