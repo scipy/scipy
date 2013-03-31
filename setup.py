@@ -219,8 +219,9 @@ def setup_package():
     else:
         from numpy.distutils.core import setup
 
-        if not ISRELEASED or 'sdist' in sys.argv[1:]:
-            # Generate Cython sources
+        cwd = os.path.abspath(os.path.dirname(__file__))
+        if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
+            # Generate Cython sources, unless building from source release
             generate_cython()
 
         metadata['configuration'] = configuration
