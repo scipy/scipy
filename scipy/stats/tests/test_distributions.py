@@ -430,15 +430,15 @@ class TestSkellam(TestCase):
 
 class TestLognorm(TestCase):
     def test_pdf(self):
-        # Regression test for Ticket #1471: cornercase avoid nan with 0/0
-        # situation
-        pdf = stats.lognorm.pdf(0,1)
-        assert_almost_equal(pdf, 0.0)
+        # Regression test for Ticket #1471: avoid nan with 0/0 situation
+        with np.errstate(divide='ignore'):
+            pdf = stats.lognorm.pdf([0, 0.5, 1], 1)
+            assert_array_almost_equal(pdf, [0.0, 0.62749608, 0.39894228])
+
 
 class TestBeta(TestCase):
     def test_logpdf(self):
-        # Regression test for Ticket #1326: cornercase avoid nan with 0*log(0)
-        # situation
+        # Regression test for Ticket #1326: avoid nan with 0*log(0) situation
         logpdf = stats.beta.logpdf(0,1,0.5)
         assert_almost_equal(logpdf, -0.69314718056)
         logpdf = stats.beta.logpdf(0,0.5,1)
@@ -521,6 +521,11 @@ class TestEntropy(TestCase):
         S = stats.entropy(pk, qk)
         S2 = stats.entropy(pk, qk, base=2.)
         assert_(abs(S/S2 - np.log(2.)) < 1.e-5)
+
+    def test_entropy_zero(self):
+        # Test for PR-479
+        assert_almost_equal(stats.entropy([0, 1, 2]), 0.63651416829481278,
+                            decimal=12)
 
 
 
