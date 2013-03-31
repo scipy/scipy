@@ -454,7 +454,7 @@ def imfilter(arr,ftype):
 
 
 def radon(arr,theta=None):
-    """`radon` is deprecated in scipy 0.11, and will be removed in 0.12
+    """`radon` is deprecated in scipy 0.11, and will be removed in 0.13
 
     For this functionality, please use the "radon" function in scikits-image.
 

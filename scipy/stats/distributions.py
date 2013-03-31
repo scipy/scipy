@@ -1003,10 +1003,10 @@ class rv_continuous(rv_generic):
             self.b = inf
         if xa is not None:
             warnings.warn("The `xa` parameter is deprecated and will be "
-                          "removed in scipy 0.12", DeprecationWarning)
+                          "removed in scipy 0.13", DeprecationWarning)
         if xb is not None:
             warnings.warn("The `xb` parameter is deprecated and will be "
-                          "removed in scipy 0.12", DeprecationWarning)
+                          "removed in scipy 0.13", DeprecationWarning)
         self.xa = xa
         self.xb = xb
         self.xtol = xtol
