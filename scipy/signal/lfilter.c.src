@@ -40,7 +40,7 @@ typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, int
 static BasicFilterFunction *BasicFilterFunctions[256];
 
 void
-scipy_signal_sigtools_linear_filter_module_init()
+scipy_signal_sigtools_linear_filter_module_init(void)
 {
     int k;
     for (k = 0; k < 256; ++k) {

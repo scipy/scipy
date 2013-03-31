@@ -62,7 +62,7 @@ PyObject*
 scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args);
 
 void
-scipy_signal_sigtools_linear_filter_module_init();
+scipy_signal_sigtools_linear_filter_module_init(void);
 
 /*
 static int index_out_of_bounds(int *, int *, int );
