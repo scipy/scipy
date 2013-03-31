@@ -51,6 +51,14 @@ rather than giving the result::
 Users relying on the previous behavior will need to revisit their code.
 
 
+Deprecated ``radon`` function removed
+-------------------------------------
+
+The ``misc.radon`` function, which was deprecated in scipy 0.11.0, has been
+removed.  Users can find a more full-featured ``radon`` function in
+scikit-image.
+
+
 Other changes
 =============
 
