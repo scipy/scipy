@@ -203,6 +203,22 @@ class TestGeom(TestCase):
         assert_array_almost_equal(vals,expected)
         assert_array_almost_equal(vals_sf,1-expected)
 
+class TestTruncnorm(TestCase):
+    def test_ppf_ticket1131(self):
+        vals = stats.truncnorm.ppf([-0.5,0,1e-4,0.5, 1-1e-4,1,2],-1., 1., 
+                               loc=[3]*7,scale=2)
+        NaN = np.NaN
+        expected = np.array([        NaN,  1.        ,  1.00056419,  3.        
+                          ,  4.99943581,      5.        ,         NaN])
+        assert_array_almost_equal(vals, expected)
+        
+    def test_isf_ticket1131(self):
+        NaN = np.NaN
+        vals = stats.truncnorm.isf([-0.5,0,1e-4,0.5, 1-1e-4,1,2],-1., 1., 
+                                   loc=[3]*7,scale=2)
+        expected = np.array([        NaN,  5.        ,  4.99943581,  3.,
+                               1.00056419,  1.        ,         NaN])
+        assert_array_almost_equal(vals, expected)
 
 class TestHypergeom(TestCase):
     def test_rvs(self):
