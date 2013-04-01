@@ -7,7 +7,7 @@ from numpy.testing import assert_, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, TestCase, run_module_suite, assert_raises, \
         assert_allclose
 import numpy as np
-from numpy import array, float64
+from numpy import array, float64, matrix
 
 from scipy import optimize
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
@@ -155,7 +155,7 @@ class TestRootHybr(TestCase):
         """root/hybr with gradient, equal pipes -> equal flows"""
         k = np.ones(4) * 0.5
         Qtot = 4
-        initial_guess = array([2., 0., 2., 0.])
+        initial_guess = matrix([2., 0., 2., 0.])
         final_flows = optimize.root(pressure_network, initial_guess,
                                     args=(Qtot, k), method='hybr',
                                     jac=pressure_network_jacobian).x
@@ -206,7 +206,7 @@ class TestLeastSq(TestCase):
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
     def test_full_output(self):
-        p0 = array([0,0,0])
+        p0 = matrix([0,0,0])
         full_output = leastsq(self.residuals, p0,
                               args=(self.y_meas, self.x),
                               full_output=True)
