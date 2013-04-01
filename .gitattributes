@@ -11,6 +11,20 @@ scipy/special/_ufuncs_cxx.pyx binary
 scipy/special/_ufuncs_cxx.pxd binary
 scipy/special/_ufuncs.pyx binary
 
+# SWIG-generated files
+scipy/sparse/sparsetools/bsr.py binary
+scipy/sparse/sparsetools/bsr_wrap.cxx binary
+scipy/sparse/sparsetools/coo.py binary
+scipy/sparse/sparsetools/coo_wrap.cxx binary
+scipy/sparse/sparsetools/csc.py binary
+scipy/sparse/sparsetools/csc_wrap.cxx binary
+scipy/sparse/sparsetools/csr.py binary
+scipy/sparse/sparsetools/csr_wrap.cxx binary
+scipy/sparse/sparsetools/dia.py binary
+scipy/sparse/sparsetools/dia_wrap.cxx binary
+scipy/sparse/sparsetools/csgraph.py binary
+scipy/sparse/sparsetools/csgraph_wrap.cxx binary
+
 # Cython-generated files
 scipy/interpolate/interpnd.c binary
 scipy/io/matlab/mio_utils.c binary
