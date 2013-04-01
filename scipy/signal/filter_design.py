@@ -234,11 +234,10 @@ def tf2zpk(b, a):
     k : float
         System gain.
 
-    Raises
-    ------
-    BadCoefficients
-        If some values of `b` are too close to 0, they are removed and this
-        warning is emitted.
+    Notes
+    -----
+    If some values of `b` are too close to 0, they are removed. In that case,
+    a BadCoefficients warning is emitted.
 
     """
     b, a = normalize(b, a)
@@ -520,11 +519,11 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
     ftype : str, optional
         The type of IIR filter to design:
 
-            - elliptic    : 'ellip'
-            - Butterworth : 'butter',
-            - Chebyshev I : 'cheby1',
-            - Chebyshev II: 'cheby2',
-            - Bessel :      'bessel'
+            - Butterworth   : 'butter'
+            - Chebyshev I   : 'cheby1'
+            - Chebyshev II  : 'cheby2'
+            - Cauer/elliptic: 'ellip'
+            - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk'}, optional
         Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
@@ -594,11 +593,11 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     ftype : str, optional
         The type of IIR filter to design:
 
-            - elliptic    : 'ellip'
-            - Butterworth : 'butter',
-            - Chebyshev I : 'cheby1',
-            - Chebyshev II: 'cheby2',
-            - Bessel :      'bessel'
+            - Butterworth   : 'butter'
+            - Chebyshev I   : 'cheby1'
+            - Chebyshev II  : 'cheby2'
+            - Cauer/elliptic: 'ellip'
+            - Bessel/Thomson: 'bessel'
 
     output : {'ba', 'zpk'}, optional
         Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
@@ -693,9 +692,6 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
 
     Design an Nth order digital or analog Butterworth filter and return
     the filter coefficients in (B,A) or (Z,P,K) form.
-    
-    The Butterworth filter has maximally flat frequency response in the 
-    passband.
 
     Parameters
     ----------
@@ -730,6 +726,11 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     See also
     --------
     buttord.
+
+    Notes
+    -----
+    The Butterworth filter has maximally flat frequency response in the 
+    passband.
 
     Examples
     --------
@@ -1102,7 +1103,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
 
     Parameters
     ----------
-    wp
+    wp : scalar
         Edge of passband `passb`.
     ind : int
         Index specifying which `passb` edge to vary (0 or 1).
