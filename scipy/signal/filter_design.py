@@ -667,6 +667,12 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         bw = warped[1] - warped[0]
         wo = sqrt(warped[0] * warped[1])
 
+    if rp is not None and rp < 0:
+        raise ValueError("passband ripple (rp) must be positive")
+
+    if rs is not None and rs < 0:
+        raise ValueError("stopband attenuation (rs) must be positive")
+    
     # Get analog lowpass prototype
     if typefunc in [buttap, besselap]:
         z, p, k = typefunc(N)
@@ -674,24 +680,16 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         if rp is None:
             raise ValueError("passband ripple (rp) must be provided to "
                              "design a Chebyshev I filter.")
-        elif rp < 0:
-            raise ValueError("passband ripple (rp) must be positive")
         z, p, k = typefunc(N, rp)
     elif typefunc == cheb2ap:
         if rs is None:
             raise ValueError("stopband attenuation (rs) must be provided to "
                              "design an Chebyshev II filter.")
-        elif rs < 0:
-            raise ValueError("stopband attenuation (rs) must be positive")
         z, p, k = typefunc(N, rs)
     else:  # Elliptic filters
         if rs is None or rp is None:
             raise ValueError("Both rp and rs must be provided to design an "
                              "elliptic filter.")
-        elif rp < 0:
-            raise ValueError("passband ripple (rp) must be positive")
-        elif rs < 0:
-            raise ValueError("stopband attenuation (rs) must be positive")
         z, p, k = typefunc(N, rp, rs)
 
     b, a = zpk2tf(z, p, k)
@@ -1612,7 +1610,7 @@ def buttap(N):
     of 1.
 
     """
-    z = array([])
+    z = numpy.array([])
     n = numpy.arange(1, N + 1)
     p = numpy.exp(1j * (2 * n - 1) / (2.0 * N) * pi) * 1j
     k = 1
@@ -1627,7 +1625,7 @@ def cheb1ap(N, rp):
     defined as the point at which the gain first drops below -`rp`.
 
     """
-    z = array([])
+    z = numpy.array([])
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
     n = numpy.arange(1, N + 1)
     mu = 1.0 / N * numpy.log((1.0 + numpy.sqrt(1 + eps * eps)) / eps)
