@@ -573,7 +573,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
     except KeyError:
         raise ValueError("Invalid IIR filter type: %s" % ftype)
     except IndexError:
-        raise ValueError(("%s does not have order selection use "
+        raise ValueError(("%s does not have order selection. Use "
                           "iirfilter function.") % ftype)
 
     wp = atleast_1d(wp)
@@ -653,20 +653,6 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     if output not in ['ba', 'zpk']:
         raise ValueError("%s is not a valid output form." % output)
 
-    # pre-warp frequencies for digital filter design
-    if not analog:
-        fs = 2.0
-        warped = 2 * fs * tan(pi * Wn / fs)
-    else:
-        warped = Wn
-
-    # convert bandpass and bandstop to low-pass prototype
-    if btype in ['lowpass', 'highpass']:
-        wo = warped
-    else:
-        bw = warped[1] - warped[0]
-        wo = sqrt(warped[0] * warped[1])
-
     if rp is not None and rp < 0:
         raise ValueError("passband ripple (rp) must be positive")
 
@@ -686,23 +672,38 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             raise ValueError("stopband attenuation (rs) must be provided to "
                              "design an Chebyshev II filter.")
         z, p, k = typefunc(N, rs)
-    else:  # Elliptic filters
+    elif typefunc == ellipap:
         if rs is None or rp is None:
             raise ValueError("Both rp and rs must be provided to design an "
                              "elliptic filter.")
         z, p, k = typefunc(N, rp, rs)
+    else:
+        raise NotImplementedError("%s not implemented in iirfilter." % ftype)
 
     b, a = zpk2tf(z, p, k)
 
+    # Pre-warp frequencies for digital filter design
+    if not analog:
+        fs = 2.0
+        warped = 2 * fs * tan(pi * Wn / fs)
+    else:
+        warped = Wn
+
     # transform to lowpass, bandpass, highpass, or bandstop
     if btype == 'lowpass':
-        b, a = lp2lp(b, a, wo=wo)
+        b, a = lp2lp(b, a, wo=warped)
     elif btype == 'highpass':
-        b, a = lp2hp(b, a, wo=wo)
+        b, a = lp2hp(b, a, wo=warped)
     elif btype == 'bandpass':
+        bw = warped[1] - warped[0]
+        wo = sqrt(warped[0] * warped[1])
         b, a = lp2bp(b, a, wo=wo, bw=bw)
-    else:  # 'bandstop'
+    elif btype == 'bandstop':
+        bw = warped[1] - warped[0]
+        wo = sqrt(warped[0] * warped[1])
         b, a = lp2bs(b, a, wo=wo, bw=bw)
+    else:
+        raise NotImplementedError("%s not implemented in iirfilter." % btype)
 
     # Find discrete equivalent if necessary
     if not analog:
@@ -1229,10 +1230,10 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     if wp[0] >= ws[0]:
         filter_type += 1
 
-    # Pre-warp frequencies
+    # Pre-warp frequencies for digital filter design
     if not analog:
-        passb = tan(wp * pi / 2.0)
-        stopb = tan(ws * pi / 2.0)
+        passb = tan(pi * wp / 2.0)
+        stopb = tan(pi * ws / 2.0)
     else:
         passb = wp * 1.0
         stopb = ws * 1.0
@@ -1352,10 +1353,10 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
     else:
         filter_type += 2
 
-    # Pre-wagpass frequencies
+    # Pre-warp frequencies for digital filter design
     if not analog:
-        passb = tan(pi * wp / 2.)
-        stopb = tan(pi * ws / 2.)
+        passb = tan(pi * wp / 2.0)
+        stopb = tan(pi * ws / 2.0)
     else:
         passb = wp * 1.0
         stopb = ws * 1.0
@@ -1444,7 +1445,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
     else:
         filter_type += 2
 
-    # Pre-wagpass frequencies
+    # Pre-warp frequencies for digital filter design
     if not analog:
         passb = tan(pi * wp / 2.0)
         stopb = tan(pi * ws / 2.0)
@@ -1557,13 +1558,13 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
     if wp[0] >= ws[0]:
         filter_type += 1
 
-    # Pre-wagpass frequencies
-    if analog:
+    # Pre-warp frequencies for digital filter design
+    if not analog:
+        passb = tan(pi * wp / 2.0)
+        stopb = tan(pi * ws / 2.0)
+    else:
         passb = wp * 1.0
         stopb = ws * 1.0
-    else:
-        passb = tan(wp * pi / 2.0)
-        stopb = tan(ws * pi / 2.0)
 
     if filter_type == 1:           # low
         nat = stopb / passb
@@ -2145,7 +2146,7 @@ filter_dict = {'butter': [buttap, buttord],
                'chebyshevi': [cheb1ap, cheb1ord],
                'cheby2': [cheb2ap, cheb2ord],
                'chebyshev2': [cheb2ap, cheb2ord],
-               'chebyshevii': [cheb2ap, cheb2ord]
+               'chebyshevii': [cheb2ap, cheb2ord],
                }
 
 band_dict = {'band': 'bandpass',
@@ -2161,6 +2162,6 @@ band_dict = {'band': 'bandpass',
              'lowpass': 'lowpass',
              'high': 'highpass',
              'highpass': 'highpass',
-             'h': 'highpass'
+             'h': 'highpass',
              }
 
