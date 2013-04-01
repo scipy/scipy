@@ -43,6 +43,8 @@ npy_double ellie(npy_double, npy_double);
 npy_int ellpj(npy_double, npy_double, npy_double *, npy_double *, npy_double *, npy_double *);
 npy_double ellik(npy_double, npy_double);
 npy_double ellpk(npy_double);
+npy_double erf(npy_double);
+npy_double erfc(npy_double);
 npy_double exp1_wrap(npy_double);
 npy_cdouble cexp1_wrap(npy_cdouble);
 npy_double exp10(npy_double);
