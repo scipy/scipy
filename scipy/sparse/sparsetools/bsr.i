@@ -1,3 +1,4 @@
+/* -*- C++ -*- */
 %module bsr
 
 %include "sparsetools.i"
