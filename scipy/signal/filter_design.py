@@ -2,7 +2,6 @@
 """
 from __future__ import division, print_function, absolute_import
 
-import types
 import warnings
 
 import numpy
@@ -658,7 +657,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     if rs is not None and rs < 0:
         raise ValueError("stopband attenuation (rs) must be positive")
-    
+
     # Get analog lowpass prototype
     if typefunc in [buttap, besselap]:
         z, p, k = typefunc(N)
@@ -986,7 +985,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
 
     See also
     --------
-    ellipord.
+    ellipord
 
     Notes
     -----
