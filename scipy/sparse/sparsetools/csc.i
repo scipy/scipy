@@ -1,3 +1,4 @@
+/* -*- C++ -*- */
 %module csc
 
 %include "sparsetools.i"
