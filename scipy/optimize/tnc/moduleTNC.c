@@ -27,6 +27,7 @@ static char const rcsid[] =
   "@(#) $Jeannot: moduleTNC.c,v 1.12 2005/01/28 18:27:31 js Exp $";
 
 #include "Python.h"
+#include "numpy/arrayobject.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -37,115 +38,28 @@ typedef struct _pytnc_state
 {
   PyObject *py_function;
   PyObject *py_callback;
-  int n;
+  npy_intp n;
   int failed;
 } pytnc_state;
 
 static tnc_function function;
 static PyObject *moduleTNC_minimize(PyObject *self, PyObject *args);
-static int PyObject_AsDouble(PyObject *py_obj, double *x);
-static double *PyList_AsDoubleArray(PyObject *py_list, int *size);
-static PyObject *PyDoubleArray_AsList(int size, double *x);
-static int PyList_IntoDoubleArray(PyObject *py_list, double *x, int size);
-
-int PyObject_AsDouble(PyObject *py_obj, double *x)
-{
-  PyObject *py_float;
-
-  py_float = PyNumber_Float(py_obj);
-
-  if (py_float == NULL) return -1;
-
-  *x = PyFloat_AsDouble(py_float);
-
-  Py_DECREF(py_float);
-  return 0;
-}
-
-double *PyList_AsDoubleArray(PyObject *py_list, int *size)
-{
-  int i;
-  double *x;
-
-  if (!PyList_Check(py_list))
-  {
-    *size = -1;
-    return NULL;
-  }
-
-  *size = PyList_Size(py_list);
-  if (*size <= 0) return NULL;
-  x = malloc((*size)*sizeof(*x));
-  if (x == NULL) return NULL;
-
-  for (i=0; i<(*size); i++)
-  {
-    PyObject *py_float = PyList_GetItem(py_list, i);
-    if (py_float == NULL || PyObject_AsDouble(py_float, &(x[i])))
-    {
-      free(x);
-      return NULL;
-    }
-  }
-
-  return x;
-}
-
-int PyList_IntoDoubleArray(PyObject *py_list, double *x, int size)
-{
-  int i;
-
-  if (py_list == NULL) return 1;
-
-  if (!PyList_Check(py_list)) return 1;
-
-  if (size != PyList_Size(py_list)) return 1;
-
-  for (i=0; i<size; i++)
-  {
-    PyObject *py_float = PyList_GetItem(py_list, i);
-    if (py_float == NULL || PyObject_AsDouble(py_float, &(x[i])))
-      return 1;
-  }
-
-  return 0;
-}
-
-PyObject *PyDoubleArray_AsList(int size, double *x)
-{
-  int i;
-  PyObject *py_list;
-
-  py_list = PyList_New(size);
-  if (py_list == NULL) return NULL;
-
-  for (i=0; i<size; i++)
-  {
-    PyObject *py_float;
-    py_float = PyFloat_FromDouble(x[i]);
-    if (py_float == NULL || PyList_SetItem(py_list, i, py_float))
-    {
-      Py_DECREF(py_list);
-      return NULL;
-    }
-  }
-
-  return py_list;
-}
 
 static int function(double x[], double *f, double g[], void *state)
 {
-  PyObject *py_list, *arglist, *py_grad, *result = NULL;
+  PyArrayObject *py_x, *arr_grad=NULL;
+  PyObject *arglist, *result = NULL, *py_grad;
   pytnc_state *py_state = (pytnc_state *)state;
 
-  py_list = PyDoubleArray_AsList(py_state->n, x);
-  if (py_list == NULL)
+  py_x = (PyArrayObject *)PyArray_SimpleNew(1, &py_state->n, NPY_DOUBLE);
+  if (py_x == NULL)
   {
     PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
     goto failure;
   }
+  memcpy(py_x->data, x, (py_state->n)*sizeof(double));
 
-  arglist = Py_BuildValue("(N)", py_list);
+  arglist = Py_BuildValue("(N)", py_x);
   result = PyEval_CallObject(py_state->py_function, arglist);
   Py_DECREF(arglist);
 
@@ -158,15 +72,27 @@ static int function(double x[], double *f, double g[], void *state)
     return 1;
   }
 
-  if (!PyArg_ParseTuple(result, "dO!", f, &PyList_Type, &py_grad))
+  if (!PyArg_ParseTuple(result, "dO", f, &py_grad))
   {
     PyErr_SetString(PyExc_ValueError,
       "tnc: invalid return value from minimized function.");
     goto failure;
   }
-
-  if (PyList_IntoDoubleArray(py_grad, g, py_state->n))
+  arr_grad = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_grad,
+                                               NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_grad == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "tnc: invalid gradient vector.");
     goto failure;
+  }
+
+  if (PyArray_SIZE(arr_grad) != py_state->n)
+  {
+    PyErr_SetString(PyExc_ValueError,
+      "tnc: invalid gradient vector from minimized function.");
+    goto failure;
+  }
+  memcpy(g, arr_grad->data, (py_state->n)*sizeof(double));
 
   Py_DECREF(result);
 
@@ -174,22 +100,26 @@ static int function(double x[], double *f, double g[], void *state)
 
 failure:
   py_state->failed = 1;
+  Py_XDECREF(arr_grad);
   Py_XDECREF(result);
   return 1;
 }
 
 static void callback(double x[], void *state)
 {
-  PyObject *py_list, *arglist, *result = NULL;
+  PyArrayObject *py_x;
+  PyObject *arglist, *result = NULL;
   pytnc_state *py_state = (pytnc_state *)state;
 
-  py_list = PyDoubleArray_AsList(py_state->n, x);
-  if (py_list == NULL)
+  py_x = (PyArrayObject *)PyArray_SimpleNew(1, &py_state->n, NPY_DOUBLE);
+  if (py_x == NULL)
   {
     PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
+    return;
   }
+  memcpy(py_x->data, x, (py_state->n)*sizeof(double));
 
-  arglist = Py_BuildValue("(N)", py_list);
+  arglist = Py_BuildValue("(N)", py_x);
   result = PyEval_CallObject(py_state->py_callback, arglist);
   Py_DECREF(arglist);
   Py_XDECREF(result);
@@ -197,7 +127,9 @@ static void callback(double x[], void *state)
 
 PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
 {
-  PyObject *py_x0, *py_low, *py_up, *py_list, *py_scale, *py_offset;
+  PyArrayObject *arr_x=NULL, *arr_low=NULL, *arr_up=NULL, *arr_scale=NULL,
+                *arr_offset=NULL;
+  PyObject *py_x0, *py_low, *py_up, *py_scale, *py_offset;
   PyObject *py_function = NULL;
   PyObject *py_callback = NULL;
   pytnc_state py_state;
@@ -205,22 +137,13 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
   tnc_callback *callback_function = NULL;
 
   int rc, msg, maxCGit, maxnfeval, nfeval = 0, niter = 0;
-  double *x, *low, *up, *scale = NULL, *offset = NULL;
+  double *x = NULL, *low = NULL, *up = NULL, *scale = NULL, *offset = NULL;
   double f, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol, rescale;
 
-  if (!PyArg_ParseTuple(args, "OO!O!O!O!O!iiiddddddddO",
-    &py_function,
-    &PyList_Type, &py_x0,
-    &PyList_Type, &py_low,
-    &PyList_Type, &py_up,
-    &PyList_Type, &py_scale,
-    &PyList_Type, &py_offset,
-    &msg, &maxCGit, &maxnfeval, &eta, &stepmx, &accuracy, &fmin, &ftol,
-    &xtol, &pgtol,
-    &rescale,
-    &py_callback
-    ))
-    return NULL;
+  if (!PyArg_ParseTuple(args, "OOOOOOiiiddddddddO",
+      &py_function, &py_x0, &py_low, &py_up, &py_scale, &py_offset,
+      &msg, &maxCGit, &maxnfeval, &eta, &stepmx, &accuracy, &fmin, &ftol,
+      &xtol, &pgtol, &rescale, &py_callback)) return NULL;
 
   if (!PyCallable_Check(py_function))
   {
@@ -228,54 +151,95 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  scale = PyList_AsDoubleArray(py_scale, &n3);
-  if (n3 != 0 && scale == NULL)
+  arr_scale = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_scale,
+                                                NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_scale == NULL)
   {
     PyErr_SetString(PyExc_ValueError, "tnc: invalid scaling parameters.");
-    return NULL;
+    goto failure;
+  }
+  if ((n3 = PyArray_Size((PyObject *)arr_scale)) != 0)
+  {
+    scale = (double *)PyArray_GETPTR1(arr_scale, 0);
+    if (scale == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError, "tnc: invalid scaling parameters.");
+      goto failure;
+    }
   }
 
-  offset = PyList_AsDoubleArray(py_offset, &n4);
-  if (n4 != 0 && offset == NULL)
+  arr_offset = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_offset,
+                                                 NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_offset == NULL)
   {
     PyErr_SetString(PyExc_ValueError, "tnc: invalid offset parameters.");
-    return NULL;
+    goto failure;
+  }
+  if ((n4 = PyArray_Size((PyObject *)arr_offset)) != 0)
+  {
+    offset = (double *)PyArray_GETPTR1(arr_offset, 0);
+    if (offset == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError, "tnc: invalid offset parameters.");
+      goto failure;
+    }
   }
 
-  x = PyList_AsDoubleArray(py_x0, &n);
-  if (n != 0 && x == NULL)
+  arr_x = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_x0,
+                                            NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_x == NULL)
   {
-    if (scale) free(scale);
-
     PyErr_SetString(PyExc_ValueError, "tnc: invalid initial vector.");
-    return NULL;
+    goto failure;
+  }
+  if ((n = PyArray_Size((PyObject *)arr_x)) != 0)
+  {
+    x = (double *)PyArray_GETPTR1(arr_x, 0);
+    if (x == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError, "tnc: invalid initial vector.");
+      goto failure;
+    }
   }
 
-  low = PyList_AsDoubleArray(py_low, &n1);
-  up = PyList_AsDoubleArray(py_up, &n2);
-
-  if ((n1 != 0 && low == NULL) || (n2 != 0 && up == NULL))
+  arr_low = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_low,
+                                              NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_low == NULL)
   {
-    if (scale) free(scale);
-    if (x) free(x);
-    if (low) free(low);
-    if (up) free(up);
-
-    PyErr_SetString(PyExc_ValueError, "tnc: invalid bounds.");
-    return NULL;
+    PyErr_SetString(PyExc_ValueError, "tnc: invalid lower bound.");
+    goto failure;
+  }
+  if ((n1 = PyArray_Size((PyObject *)arr_low)) != 0)
+  {
+    low = (double *)PyArray_GETPTR1(arr_low, 0);
+    if (low == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError, "tnc: invalid lower bound.");
+      goto failure;
+    }
+  }
+  arr_up = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_up,
+                                             NPY_DOUBLE, NPY_IN_ARRAY);
+  if (arr_up == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "tnc: invalid upper bound.");
+    goto failure;
+  }
+  if ((n2 = PyArray_Size((PyObject *)arr_up)) != 0)
+  {
+    up = (double *)PyArray_GETPTR1(arr_up, 0);
+    if (up == NULL)
+    {
+      PyErr_SetString(PyExc_ValueError, "tnc: invalid upper bound.");
+      goto failure;
+    }
   }
 
   if (n1 != n2 || n != n1 || (scale != NULL && n != n3)
     || (offset != NULL && n != n4))
   {
-    if (scale) free(scale);
-    if (offset) free(offset);
-    if (x) free(x);
-    if (low) free(low);
-    if (up) free(up);
-
     PyErr_SetString(PyExc_ValueError, "tnc: vector sizes must be equal.");
-    return NULL;
+    goto failure;
   }
 
   py_state.py_function = py_function;
@@ -290,7 +254,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
       {
         PyErr_SetString(PyExc_TypeError,
                         "tnc: callback must be callable or None.");
-        return NULL;
+        goto failure;
       }
       py_state.py_callback = py_callback;
       Py_INCREF(py_callback);
@@ -304,33 +268,28 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
   Py_DECREF(py_function);
   if (py_callback != Py_None) Py_DECREF(py_callback);
 
-  if (low) free(low);
-  if (up) free(up);
-  if (scale) free(scale);
-  if (offset) free(offset);
-
-  if (py_state.failed)
-  {
-    if (x) free(x);
-    return NULL;
-  }
+  if (py_state.failed) goto failure;
 
   if (rc == TNC_ENOMEM)
   {
     PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
-    if (x) free(x);
-    return NULL;
+    goto failure;
   }
 
-  py_list = PyDoubleArray_AsList(n, x);
-  if (x) free(x);
-  if (py_list == NULL)
-  {
-    PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
-    return NULL;
-  }
+  Py_DECREF(arr_scale);
+  Py_DECREF(arr_offset);
+  Py_DECREF(arr_low);
+  Py_DECREF(arr_up);
 
-  return Py_BuildValue("(iiiN)", rc, nfeval, niter, py_list);;
+  return Py_BuildValue("(iiiN)", rc, nfeval, niter, PyArray_Return(arr_x));
+
+failure:
+  Py_XDECREF(arr_scale);
+  Py_XDECREF(arr_offset);
+  Py_XDECREF(arr_low);
+  Py_XDECREF(arr_up);
+  Py_XDECREF(arr_x);
+  return NULL;
 }
 
 static PyMethodDef moduleTNC_methods[] =
@@ -354,11 +313,13 @@ static struct PyModuleDef moduledef = {
 
 PyObject *PyInit_moduleTNC(void)
 {
+    import_array();
     return PyModule_Create(&moduledef);
 }
 #else
 PyMODINIT_FUNC initmoduleTNC(void)
 {
   (void) Py_InitModule("moduleTNC", moduleTNC_methods);
+  import_array();
 }
 #endif
