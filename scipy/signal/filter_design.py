@@ -827,7 +827,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
 
     See also
     --------
-    cheb1ord.
+    cheb1ord
 
     Notes
     -----
