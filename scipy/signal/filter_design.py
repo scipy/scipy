@@ -729,7 +729,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     Wn : array_like
         A scalar or length-2 sequence giving the critical frequencies.
         For a Butterworth filter, this is the point at which the gain
-        drops to 1/sqrt(1/2) that of the passband (the "-3 dB point").
+        drops to 1/sqrt(2) that of the passband (the "-3 dB point").
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
         Nyquist frequency, pi radians/sample.  (`Wn` is thus in
         half-cycles / sample.)
@@ -1073,13 +1073,12 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     The digital Bessel filter is generated using the bilinear
     transform, which does not preserve the phase response of the analog
     filter. As such, it is only approximately correct at frequencies
-    below about fs/4.
-
-    To get maximally flat group delay at higher frequencies, the analog
-    Bessel filter must be transformed using phase-preserving techniques.
+    below about fs/4.  To get maximally flat group delay at higher 
+    frequencies, the analog Bessel filter must be transformed using 
+    phase-preserving techniques.
 
     For a given `Wn`, the lowpass and highpass filter have the same phase vs
-    frequency curves.
+    frequency curves; they are "phase-matched".
 
     Examples
     --------
