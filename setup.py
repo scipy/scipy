@@ -150,15 +150,12 @@ if HAVE_SPHINX:
 
 def generate_cython():
     cwd = os.path.abspath(os.path.dirname(__file__))
-    p = subprocess.Popen([sys.executable,
+    print("Cythonizing sources")
+    p = subprocess.call([sys.executable,
                           os.path.join(cwd, 'tools', 'cythonize.py'),
                           'scipy'],
-                         cwd=cwd,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-    out, err = p.communicate()
-    if p.returncode != 0:
-        print(out.decode('latin1'))
+                         cwd=cwd)
+    if p != 0:
         raise RuntimeError("Running cythonize failed!")
 
 
