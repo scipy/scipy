@@ -99,7 +99,7 @@ def kaiserord(ripple, width):
     -------
     numtaps : int
         The length of the kaiser window.
-    beta :
+    beta : float
         The beta parameter for the kaiser window.
 
     See Also
@@ -176,12 +176,11 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         response is exactly unity at a certain frequency.
         That frequency is either:
 
-            0 (DC) if the first passband starts at 0 (i.e. pass_zero
-              is True)
-
-            `nyq` (the Nyquist rate) if the first passband ends at
-              `nyq` (i.e the filter is a single band highpass filter);
-              center of first passband otherwise
+        - 0 (DC) if the first passband starts at 0 (i.e. pass_zero
+          is True)
+        - `nyq` (the Nyquist rate) if the first passband ends at
+          `nyq` (i.e the filter is a single band highpass filter);
+          center of first passband otherwise
 
     nyq : float
         Nyquist frequency.  Each frequency in `cutoff` must be between 0
