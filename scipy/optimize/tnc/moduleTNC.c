@@ -313,6 +313,7 @@ static struct PyModuleDef moduledef = {
 
 PyObject *PyInit_moduleTNC(void)
 {
+    import_array();
     return PyModule_Create(&moduledef);
 }
 #else
