@@ -95,15 +95,21 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     infodict : dict
         A dictionary of optional outputs with the keys:
 
-          * 'nfev' : number of function calls
-          * 'njev' : number of Jacobian calls
-          * 'fvec' : function evaluated at the output
-          * 'fjac' : the orthogonal matrix, q, produced by the QR
-                    factorization of the final approximate Jacobian
-                    matrix, stored column wise
-          * 'r' : upper triangular matrix produced by QR factorization
-                  of the same matrix
-          * 'qtf': the vector ``(transpose(q) * fvec)``
+        ``nfev``
+            number of function calls
+        ``njev``
+            number of Jacobian calls
+        ``fvec``
+            function evaluated at the output
+        ``fjac``
+            the orthogonal matrix, q, produced by the QR
+            factorization of the final approximate Jacobian
+            matrix, stored column wise
+        ``r``
+            upper triangular matrix produced by QR factorization
+            of the same matrix
+        ``qtf``
+            the vector ``(transpose(q) * fvec)``
 
     ier : int
         An integer flag.  Set to 1 if a solution was found, otherwise refer
@@ -111,10 +117,10 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     mesg : str
         If no solution is found, `mesg` details the cause of failure.
 
-    See also
+    See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See the 'hybr' `method` in particular.
+    functions. See the 'hybr' `method` in particular.
 
     Notes
     -----
@@ -308,22 +314,27 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         residual variance to get the covariance of the
         parameter estimates -- see curve_fit.
     infodict : dict
-        a dictionary of optional outputs with the key s::
+        a dictionary of optional outputs with the key s:
 
-            - 'nfev' : the number of function calls
-            - 'fvec' : the function evaluated at the output
-            - 'fjac' : A permutation of the R matrix of a QR
-                     factorization of the final approximate
-                     Jacobian matrix, stored column wise.
-                     Together with ipvt, the covariance of the
-                     estimate can be approximated.
-            - 'ipvt' : an integer array of length N which defines
-                     a permutation matrix, p, such that
-                     fjac*p = q*r, where r is upper triangular
-                     with diagonal elements of nonincreasing
-                     magnitude. Column j of p is column ipvt(j)
-                     of the identity matrix.
-            - 'qtf'  : the vector (transpose(q) * fvec).
+        ``nfev``
+            The number of function calls
+        ``fvec``
+            The function evaluated at the output
+        ``fjac``
+            A permutation of the R matrix of a QR
+            factorization of the final approximate
+            Jacobian matrix, stored column wise.
+            Together with ipvt, the covariance of the
+            estimate can be approximated.
+        ``ipvt``
+            An integer array of length N which defines
+            a permutation matrix, p, such that
+            fjac*p = q*r, where r is upper triangular
+            with diagonal elements of nonincreasing
+            magnitude. Column j of p is column ipvt(j)
+            of the identity matrix.
+        ``qtf``
+            The vector (transpose(q) * fvec).
 
     mesg : str
         A string message giving information about the cause of failure.
