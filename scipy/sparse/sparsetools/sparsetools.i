@@ -1,4 +1,4 @@
-/* -*- C -*-  (not really, but good for syntax highlighting) */
+/* -*- C++ -*- */
 /*%module sparsetools*/
 
  /* why does SWIG complain about int arrays? a typecheck is provided */

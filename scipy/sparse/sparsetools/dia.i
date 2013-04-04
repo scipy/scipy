@@ -1,3 +1,4 @@
+/* -*- C++ -*- */
 %module dia
 
 %include "sparsetools.i"

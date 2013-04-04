@@ -1,4 +1,4 @@
-/* -*- C -*- */
+/* -*- C++ -*- */
 %module csgraph
 
 %include "sparsetools.i"

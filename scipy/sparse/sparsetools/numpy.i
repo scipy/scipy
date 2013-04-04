@@ -1,4 +1,4 @@
-/* -*- C -*-  (not really, but good for syntax highlighting) */
+/* -*- C -*- */
 %{
 #ifndef SWIG_FILE_WITH_INIT
 #  define NO_IMPORT_ARRAY

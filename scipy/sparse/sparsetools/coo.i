@@ -1,3 +1,4 @@
+/* -*- C++ -*- */
 %module coo
 
 %include "sparsetools.i"
