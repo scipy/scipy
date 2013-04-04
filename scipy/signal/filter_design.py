@@ -1650,11 +1650,9 @@ def cheb2ap(N, rs):
     mu = arcsinh(1.0 / de) / N
 
     if N % 2:
-        m = N - 1
         n = numpy.concatenate((numpy.arange(1, N - 1, 2),
                                numpy.arange(N + 2, 2 * N, 2)))
     else:
-        m = N
         n = numpy.arange(1, 2 * N, 2)
 
     z = conjugate(1j / cos(n * pi / (2.0 * N)))
@@ -1717,7 +1715,6 @@ def ellipap(N, rp, rs):
         raise ValueError("Cannot design a filter with given rp and rs"
                          " specifications.")
 
-    wp = 1
     val = special.ellipk([ck1 * ck1, ck1p * ck1p])
     if abs(1 - ck1p * ck1p) < EPSILON:
         krat = 0
@@ -1731,8 +1728,6 @@ def ellipap(N, rp, rs):
                                maxiter=250, disp=0)
 
     capk = special.ellipk(m)
-    ws = wp / sqrt(m)
-    m1 = 1 - m
 
     j = numpy.arange(1 - N % 2, N, 2)
     jj = len(j)
