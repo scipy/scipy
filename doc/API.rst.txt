@@ -96,6 +96,7 @@ change is made.
 * scipy.io
 
   - arff
+  - fortran
   - harwell_boeing
   - idl
   - matlab

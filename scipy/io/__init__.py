@@ -71,6 +71,15 @@ Netcdf (:mod:`scipy.io.netcdf`)
    netcdf_file - A file object for NetCDF data
    netcdf_variable - A data object for the netcdf module
 
+Unformatted Fortran files (:mod:`scipy.io.fortran`)
+===============================
+
+.. module:: scipy.io.fortran
+
+.. autosummary::
+   :toctree: generated/
+
+   fortran_file - A file object for unformatted Fortran files
 """
 from __future__ import division, print_function, absolute_import
 
@@ -80,6 +89,8 @@ from .matlab import loadmat, savemat, whosmat, byteordercodes
 # netCDF file support
 from .netcdf import netcdf_file, netcdf_variable
 
+# Fortran file support
+from .fortran import fortran_file
 from .mmio import mminfo, mmread, mmwrite
 from .idl import readsav
 from .harwell_boeing import hb_read, hb_write
