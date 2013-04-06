@@ -1020,7 +1020,7 @@ from lambertw cimport lambertw_scalar as _func_lambertw_scalar
 ctypedef double complex _proto_lambertw_scalar_t(double complex, long, double) nogil
 cdef _proto_lambertw_scalar_t *_proto_lambertw_scalar_t_var = &_func_lambertw_scalar
 cdef extern from "_ufuncs_defs.h":
-    cdef int _func_airy "airy"(double, double *, double *, double *, double *) nogil
+    cdef int _func_airy_wrap "airy_wrap"(double, double *, double *, double *, double *) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_cairy_wrap "cairy_wrap"(double complex, double complex *, double complex *, double complex *, double complex *) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1666,9 +1666,9 @@ ufunc_airy_types[16] = <char>NPY_CDOUBLE
 ufunc_airy_types[17] = <char>NPY_CDOUBLE
 ufunc_airy_types[18] = <char>NPY_CDOUBLE
 ufunc_airy_types[19] = <char>NPY_CDOUBLE
-ufunc_airy_ptr[2*0] = <void*>_func_airy
+ufunc_airy_ptr[2*0] = <void*>_func_airy_wrap
 ufunc_airy_ptr[2*0+1] = <void*>(<char*>"airy")
-ufunc_airy_ptr[2*1] = <void*>_func_airy
+ufunc_airy_ptr[2*1] = <void*>_func_airy_wrap
 ufunc_airy_ptr[2*1+1] = <void*>(<char*>"airy")
 ufunc_airy_ptr[2*2] = <void*>_func_cairy_wrap
 ufunc_airy_ptr[2*2+1] = <void*>(<char*>"airy")
