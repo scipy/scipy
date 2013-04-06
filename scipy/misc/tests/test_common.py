@@ -2,9 +2,9 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_almost_equal, \
-                          assert_array_almost_equal
+                          assert_array_almost_equal, assert_equal
 
-from scipy.misc import pade, logsumexp
+from scipy.misc import pade, logsumexp, face, ascent
 
 
 def test_pade_trivial():
@@ -82,3 +82,8 @@ def test_logsumexp_b():
     assert_array_almost_equal(np.exp(logsumexp(logX, b=B, axis=1)),
                                 (B * X).sum(axis=1))
 
+def test_face():
+    assert_equal(face().shape, (768, 1024, 3))
+
+def test_ascent():
+    assert_equal(ascent().shape, (512, 512))

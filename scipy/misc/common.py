@@ -524,9 +524,8 @@ def ascent():
     """
     import pickle, os
     fname = os.path.join(os.path.dirname(__file__),'ascent.dat')
-    f = open(fname,'rb')
-    ascent = array(pickle.load(f))
-    f.close()
+    with open(fname, 'rb') as f:
+        ascent = array(pickle.load(f))
     return ascent
 
 def face(gray=False):
@@ -563,7 +562,8 @@ def face(gray=False):
 
     """
     import bz2, os
-    rawdata = open(os.path.join(os.path.dirname(__file__), 'face.dat')).read()
+    with open(os.path.join(os.path.dirname(__file__), 'face.dat'), 'rb') as f:
+        rawdata = f.read()
     data = bz2.decompress(rawdata)
     face = fromstring(data, dtype='uint8')
     face.shape = (768, 1024, 3)
