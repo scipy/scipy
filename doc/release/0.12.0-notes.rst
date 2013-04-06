@@ -2,8 +2,6 @@
 SciPy 0.12.0 Release Notes
 ==========================
 
-.. note:: Scipy 0.12.0 is not released yet!
-
 .. contents::
 
 SciPy 0.12.0 is the culmination of 7 months of hard work. It contains
@@ -192,6 +190,8 @@ Authors
 * Josh Lawrence
 * Denis Laxalde
 * Alex Leach +
+* Tim Leslie
+* Richard Lindsley +
 * Lorenzo Luengo +
 * Stephen McQuay +
 * MinRK
@@ -206,7 +206,6 @@ Authors
 * Josef Perktold
 * Zach Ploskey +
 * Alex Reinhart +
-* Richard Lindsley +
 * Gilles Rochefort +
 * Ciro Duran Santillli +
 * Jan Schlueter +
@@ -229,6 +228,6 @@ Authors
 * Stefan van der Walt
 * Warren Weckesser
 
-A total of 74 people contributed to this release.
+A total of 75 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 
