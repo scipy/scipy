@@ -13,7 +13,7 @@ import numpy as np
 from glob import iglob
 import re
 
-from scipy.io.fortran import fortran_file
+from scipy.io import FortranFile
 
 def test_fortranfiles_read():
     for filename in iglob(path.join(DATA_PATH, "fortran-*-*x*x*.dat")):
@@ -22,8 +22,8 @@ def test_fortranfiles_read():
             raise RuntimeError("Couldn't match %s filename to regex" % filename)
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
 
-        f = fortran_file(filename, 'r', '<i4')
-        data = f.readRecord(dtype=m.group(1)).reshape(dims)
+        f = FortranFile(filename, 'r', '<i4')
+        data = f.read_record(dtype=m.group(1)).reshape(dims)
         f.close()
 
         counter = 0
@@ -50,8 +50,8 @@ def test_fortranfiles_write():
         try:
             tmpdir = tempfile.mkdtemp()
             testFile = path.join(tmpdir,path.basename(filename))
-            f = fortran_file(testFile, 'w','<i4')
-            f.writeRecord(data)
+            f = FortranFile(testFile, 'w','<i4')
+            f.write_record(data)
             f.close()
             originalfile = open(filename, 'rb')
             newfile = open(testFile, 'rb')
