@@ -2646,8 +2646,29 @@ cdef void *ufunc_ellipkm1_ptr[4]
 cdef void *ufunc_ellipkm1_data[2]
 cdef char ufunc_ellipkm1_types[4]
 cdef char *ufunc_ellipkm1_doc = (
-    "y=ellipkm1(1 - m) returns the complete integral of the first kind:\n"
-    "integral(1/sqrt(1-m*sin(t)**2),t=0..pi/2)")
+    "ellipkm1(p)\n"
+    "\n"
+    "The complete elliptic integral of the first kind around m=1.\n"
+    "\n"
+    "This function is defined as\n"
+    "\n"
+    ".. math:: K(p) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt\n"
+    "\n"
+    "where `m = 1 - p`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "p : array_like\n"
+    "    Defines the parameter of the elliptic integral as m = 1 - p.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "K : array_like\n"
+    "    Value of the elliptic integral.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "ellipk")
 ufunc_ellipkm1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ellipkm1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ellipkm1_types[0] = <char>NPY_FLOAT

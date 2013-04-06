@@ -900,11 +900,28 @@ def obl_cv_seq(m,n,c):
     return specfun.segv(m,n,c,-1)[1][:maxL]
 
 def ellipk(m):
-    """y=ellipk(m) returns the complete integral of the first kind:
-    integral(1/sqrt(1-m*sin(t)**2),t=0..pi/2)
+    """
+    Computes the complete elliptic integral of the first kind.
 
-    This function is rather imprecise around m==1. For more precision
-    around this point, use ellipkm1."""
+    This function is defined as
+
+    .. math:: K(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{-1/2} dt
+
+    Parameters
+    ----------
+    m : array_like
+        The parameter of the elliptic integral.
+
+    Returns
+    -------
+    K : array_like
+        Value of the elliptic integral.
+
+    Notes
+    -----
+    For more precision around point m = 1, use `ellipkm1`.
+
+    """
     return ellipkm1(1 - asarray(m))
 
 def agm(a,b):

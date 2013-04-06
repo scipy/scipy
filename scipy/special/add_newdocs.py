@@ -251,8 +251,30 @@ add_newdoc("scipy.special", "ellipj",
 
 add_newdoc("scipy.special", "ellipkm1",
     """
-    y=ellipkm1(1 - m) returns the complete integral of the first kind:
-    integral(1/sqrt(1-m*sin(t)**2),t=0..pi/2)
+    ellipkm1(p)
+
+    The complete elliptic integral of the first kind around m=1.
+
+    This function is defined as
+
+    .. math:: K(p) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{-1/2} dt
+
+    where `m = 1 - p`.
+
+    Parameters
+    ----------
+    p : array_like
+        Defines the parameter of the elliptic integral as m = 1 - p.
+
+    Returns
+    -------
+    K : array_like
+        Value of the elliptic integral.
+
+    See Also
+    --------
+    ellipk
+
     """)
 
 add_newdoc("scipy.special", "ellipkinc",
