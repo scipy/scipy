@@ -1,22 +1,43 @@
 """
-Module to read / write Fortran unformatted files.
-
-This module allows one to read sequential unformatted Fortran files, provided the structure of the file is known. Sequential files typically have a record size written, the contents of the record, and the size a second time. Files from compilers without both sizes are not supported yet.
-
-This is in the spirit of code written by Neil Martinsen-Burrell and Joe Zuntz.
-
-As Joe Zuntz states, "Like all Fortran-later language interoperability code documentation should, this docstring ends with an exhortation to please stop using fortran."
+Module to read / write Fortran unformatted sequential files.
 
 """
 
-__all__ = ['FortranFile']
-
-import numpy as np
 import warnings
+import numpy as np
+
+__all__ = ['FortranFile']
 
 class FortranFile(object):
     """
-    A file object for unformatted Fortran files.
+    A file object for unformatted sequential files from Fortran code.
+
+    These files are broken up into records of unspecified types. The size of
+    each record is given at the start (although the size of this header is not
+    standard) and the data is written onto disk without any formatting. Fortran
+    compilers supporting the BACKSPACE statement will write a second copy of
+    the size to facilitate backwards seeking.
+
+    This class only supports files written with both sizes for the record.
+    It also does not support the subrecords used in Intel and gfortran compilers
+    for records which are greater than 2GB with a 4-byte header.
+
+    An example of an unformatted sequential file in Fortran would be written as::
+        OPEN(1, FILE=myfilename, FORM='unformatted')
+
+        WRITE(1) myvariable
+
+    Since this is a non-standard file format, whose contents depend on the
+    compiler and the endianness of the machine, caution is advised. Files from
+    gfortran 4.8.0 and gfortran 4.1.2 on x86_64 are known to work.
+
+    This is in the spirit of code written by Neil Martinsen-Burrell and Joe Zuntz.
+
+    As Joe Zuntz states, "Like all Fortran-later language interoperability code
+    documentation should, this docstring ends with an exhortation to please stop
+    using fortran." If you are the creator of the code generating these files,
+    consider using direct-access files or files from the newer Stream I/O, which
+    are easily read by numpy.fromfile.
 
     Parameters
     ----------
@@ -29,31 +50,37 @@ class FortranFile(object):
 
     Examples
     --------
-    To create an unformatted Fortran file:
+    To create an unformatted sequential Fortran file:
 
-        >>> from scipy.io import FortranFile
-        >>> f = FortranFile('test.unf', 'w')
-        >>> f.write_record(np.array([1,2,3,4,5],dtype=np.int32))
-        >>> f.write_record(np.linspace(0,1,20).reshape((5,-1)))
-        >>> f.close()
+    >>> from scipy.io import FortranFile
+    >>> f = FortranFile('test.unf', 'w')
+    >>> f.write_record(np.array([1,2,3,4,5],dtype=np.int32))
+    >>> f.write_record(np.linspace(0,1,20).reshape((5,-1)))
+    >>> f.close()
 
     To read this file:
 
-        >>> from scipy.io import FortranFile
-        >>> f = FortranFile('test.unf', 'r')
-        >>> print(f.read_ints(dtype=np.int32))
-        [1 2 3 4 5]
-        >>> print(f.read_reals(dtype=np.float).reshape((5,-1)))
-        [[ 0.          0.05263158  0.10526316  0.15789474]
-         [ 0.21052632  0.26315789  0.31578947  0.36842105]
-         [ 0.42105263  0.47368421  0.52631579  0.57894737]
-         [ 0.63157895  0.68421053  0.73684211  0.78947368]
-         [ 0.84210526  0.89473684  0.94736842  1.        ]]
-        >>> f.close()
+    >>> from scipy.io import FortranFile
+    >>> f = FortranFile('test.unf', 'r')
+    >>> print(f.read_ints(dtype=np.int32))
+    [1 2 3 4 5]
+    >>> print(f.read_reals(dtype=np.float).reshape((5,-1)))
+    [[ 0.          0.05263158  0.10526316  0.15789474]
+     [ 0.21052632  0.26315789  0.31578947  0.36842105]
+     [ 0.42105263  0.47368421  0.52631579  0.57894737]
+     [ 0.63157895  0.68421053  0.73684211  0.78947368]
+     [ 0.84210526  0.89473684  0.94736842  1.        ]]
+    >>> f.close()
 
     """
-    def __init__(self, filename, mode='r', header_dtype=np.integer):
+    def __init__(self, filename, mode='r', header_dtype=np.uint32):
+        if header_dtype is None:
+            raise ValueError('Must specify dtype')
+
         header_dtype = np.dtype(header_dtype)
+        if header_dtype.kind != 'u':
+            warnings.warn("Given a dtype which is not unsigned.")
+
         if mode not in 'rw' or len(mode) != 1:
             raise ValueError('mode must be either r or w')
 
@@ -69,12 +96,13 @@ class FortranFile(object):
 
     def write_record(self, s):
         """
-        Write a record (including header/footer) to the file.
+        Write a record (including sizes) to the file.
 
         Parameters
         ----------
         s : array_like
            The data to write.
+
         """
         s = np.array(s, order='F')
         np.array([s.nbytes],dtype=self._header_dtype).tofile(self._fp)
@@ -93,17 +121,25 @@ class FortranFile(object):
         Returns
         -------
         data : ndarray
-            A one-diminsional array object.
+            A one-dimensional array object.
 
         Notes
         -----
-        If the record contains a multi-dimensional array, calling reshape or resize will restructure the array to the correct size.
-        Since Fortran multidiminsional arrays are stored in column-major format, this may have some non-intuitive consequences. If the variable was declared as 'INTEGER var(5,4)', for example, var could be read with 'read_record(dtype=np.integer).reshape( (5,4) )' since Python uses row-major ordering of indices. For two-diminsional arrays, one can transpose to obtain the indices in the same order as in Fortran.
+        If the record contains a multi-dimensional array, calling reshape or
+        resize will restructure the array to the correct size.
+        Since Fortran multidimensional arrays are stored in column-major format,
+        this may have some non-intuitive consequences. If the variable was
+        declared as 'INTEGER var(5,4)', for example, var could be read with
+        'read_record(dtype=np.integer).reshape( (4,5) )' since Python uses
+        row-major ordering of indices.
+
+        One can transpose to obtain the indices in the same order as in Fortran.
 
         See Also
         --------
         read_reals
         read_ints
+
         """
         if dtype is None:
             raise ValueError('Must specify dtype')
@@ -120,7 +156,8 @@ class FortranFile(object):
 
     def read_ints(self, dtype='i4'):
         """
-        Reads a record of a given type from the file, defaulting to an integer type (INTEGER*4 in Fortran)
+        Reads a record of a given type from the file, defaulting to an integer
+        type (INTEGER*4 in Fortran)
 
         Parameters
         ----------
@@ -130,18 +167,20 @@ class FortranFile(object):
         Returns
         -------
         data : ndarray
-            A one-diminsional array object.
+            A one-dimensional array object.
 
         See Also
         --------
         read_reals
         read_record
+
         """
         return self.read_record(dtype=dtype)
 
     def read_reals(self, dtype='f8'):
         """
-        Reads a record of a given type from the file, defaulting to a floating point number (real*8 in Fortran)
+        Reads a record of a given type from the file, defaulting to a floating
+        point number (real*8 in Fortran)
 
         Parameters
         ----------
@@ -151,18 +190,22 @@ class FortranFile(object):
         Returns
         -------
         data : ndarray
-            A one-diminsional array object.
+            A one-dimensional array object.
 
         See Also
         --------
         read_ints
         read_record
+
         """
         return self.read_record(dtype=dtype)
 
     def close(self):
         """
-        Closes the file. It is unsupported to call any other methods off this object after closing it. Note that this class supports the 'with' statement in modern versions of Python, to call this automatically
+        Closes the file. It is unsupported to call any other methods off this
+        object after closing it. Note that this class supports the 'with'
+        statement in modern versions of Python, to call this automatically
+
         """
         self._fp.close()
 

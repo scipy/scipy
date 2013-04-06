@@ -22,7 +22,7 @@ def test_fortranfiles_read():
             raise RuntimeError("Couldn't match %s filename to regex" % filename)
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
 
-        f = FortranFile(filename, 'r', '<i4')
+        f = FortranFile(filename, 'r', '<u4')
         data = f.read_record(dtype=m.group(1)).reshape(dims)
         f.close()
 
@@ -50,7 +50,7 @@ def test_fortranfiles_write():
         try:
             tmpdir = tempfile.mkdtemp()
             testFile = path.join(tmpdir,path.basename(filename))
-            f = FortranFile(testFile, 'w','<i4')
+            f = FortranFile(testFile, 'w','<u4')
             f.write_record(data)
             f.close()
             originalfile = open(filename, 'rb')
