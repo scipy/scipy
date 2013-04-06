@@ -479,14 +479,13 @@ double xxa, *ssa, *cca;
 	goto done;
     }
 
-
-
-
-
-
     if (x > 36974.0) {
-	cc = 0.5;
-	ss = 0.5;
+        /*
+         * http://functions.wolfram.com/GammaBetaErf/FresnelC/06/02/
+         * http://functions.wolfram.com/GammaBetaErf/FresnelS/06/02/
+         */
+	cc = 0.5 + 1/(M_PI*x) * sin(M_PI*x*x/2);
+	ss = 0.5 - 1/(M_PI*x) * cos(M_PI*x*x/2);
 	goto done;
     }
 
