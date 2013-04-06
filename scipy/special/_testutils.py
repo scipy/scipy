@@ -54,7 +54,8 @@ def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
 
 def assert_func_equal(func, results, points, rtol=None, atol=None,
                       param_filter=None, knownfailure=None,
-                      vectorized=True, dtype=None, nan_ok=False):
+                      vectorized=True, dtype=None, nan_ok=False,
+                      ignore_inf_sign=False):
     if hasattr(points, 'next'):
         # it's a generator
         points = list(points)
@@ -78,7 +79,8 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
     fdata = FuncData(func, data, list(range(nparams)),
                      result_columns=result_columns, result_func=result_func,
                      rtol=rtol, atol=atol, param_filter=param_filter,
-                     knownfailure=knownfailure, nan_ok=nan_ok, vectorized=vectorized)
+                     knownfailure=knownfailure, nan_ok=nan_ok, vectorized=vectorized,
+                     ignore_inf_sign=False)
     fdata.check()
 
 class FuncData(object):
@@ -113,12 +115,16 @@ class FuncData(object):
         If nan is always an accepted result.
     vectorized : bool, optional
         Whether all functions passed in are vectorized.
+    ignore_inf_sign : bool, optional
+        Whether to ignore signs of infinities.
+        (Doesn't matter for complex-valued functions.)
 
     """
 
     def __init__(self, func, data, param_columns, result_columns=None,
                  result_func=None, rtol=None, atol=None, param_filter=None,
-                 knownfailure=None, dataname=None, nan_ok=False, vectorized=True):
+                 knownfailure=None, dataname=None, nan_ok=False, vectorized=True,
+                 ignore_inf_sign=False):
         self.func = func
         self.data = data
         self.dataname = dataname
@@ -144,6 +150,7 @@ class FuncData(object):
         self.knownfailure = knownfailure
         self.nan_ok = nan_ok
         self.vectorized = vectorized
+        self.ignore_inf_sign = ignore_inf_sign
 
     def get_tolerances(self, dtype):
         if not np.issubdtype(dtype, np.inexact):
@@ -224,7 +231,7 @@ class FuncData(object):
         assert_(len(got) == len(wanted))
 
         for output_num, (x, y) in enumerate(zip(got, wanted)):
-            if np.issubdtype(x.dtype, np.complexfloating):
+            if np.issubdtype(x.dtype, np.complexfloating) or self.ignore_inf_sign:
                 pinf_x = np.isinf(x)
                 pinf_y = np.isinf(y)
                 minf_x = np.isinf(x)
