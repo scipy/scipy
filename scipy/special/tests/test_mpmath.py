@@ -588,7 +588,6 @@ def _inf_to_nan(func):
 HYPERKW = dict(maxprec=200, maxterms=200)
 
 class TestSystematic(with_metaclass(_SystematicMeta, object)):
-    @knownfailure_overridable("accuracy issues at large arguments")
     def test_airyai(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[0],
                             mpmath.airyai,
@@ -599,7 +598,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.airyai,
                             [ComplexArg()])
 
-    @knownfailure_overridable("accuracy issues at large arguments")
     def test_airyai_prime(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
@@ -610,7 +608,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.airyai(z, derivative=1),
                             [ComplexArg()])
 
-    @knownfailure_overridable("accuracy issues at large arguments")
     def test_airybi(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),
@@ -621,7 +618,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.airybi(z),
                             [ComplexArg()])
 
-    @knownfailure_overridable("accuracy issues at large arguments")
     def test_airybi_prime(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[3], lambda z:
                             mpmath.airybi(z, derivative=1),
