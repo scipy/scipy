@@ -137,7 +137,8 @@ def test_hyp2f1_real_some():
 
     olderr = np.seterr(invalid='ignore')
     try:
-        FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9).check()
+        FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9,
+                 ignore_inf_sign=True).check()
     finally:
         np.seterr(**olderr)
 
@@ -228,10 +229,20 @@ def test_lpmv():
             (-5, -11.3, x),
         ])
 
-    dataset = [p + (mpmath.legenp(p[1], p[0], p[2]),) for p in pts]
+    def mplegenp(nu, mu, x):
+        if mu == int(mu) and x == 1:
+            # mpmath 0.17 gets this wrong
+            if mu == 0:
+                return 1
+            else:
+                return 0
+        return mpmath.legenp(nu, mu, x)
+
+    dataset = [p + (mplegenp(p[1], p[0], p[2]),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
 
-    evf = lambda mu,nu,x: sc.lpmv(mu.astype(int), nu, x)
+    def evf(mu, nu, x):
+        return sc.lpmv(mu.astype(int), nu, x)
 
     olderr = np.seterr(invalid='ignore')
     try:
