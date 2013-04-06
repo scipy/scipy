@@ -241,7 +241,7 @@ def bohman(M, sym=True):
 
 
 def blackman(M, sym=True):
-    """
+    r"""
     Return a Blackman window.
 
     The Blackman window is a taper formed by using the the first three
@@ -268,7 +268,7 @@ def blackman(M, sym=True):
     -----
     The Blackman window is defined as
 
-    .. math::  w(n) = 0.42 - 0.5 \\cos(2\\pi n/M) + 0.08 \\cos(4\\pi n/M)
+    .. math::  w(n) = 0.42 - 0.5 \cos(2\pi n/M) + 0.08 \cos(4\pi n/M)
 
     Most references to the Blackman window come from the signal processing
     literature, where it is used as one of many windowing functions for
@@ -508,7 +508,7 @@ def flattop(M, sym=True):
 
 
 def bartlett(M, sym=True):
-    """
+    r"""
     Return a Bartlett window.
 
     The Bartlett window is very similar to a triangular window, except
@@ -536,9 +536,9 @@ def bartlett(M, sym=True):
     -----
     The Bartlett window is defined as
 
-    .. math:: w(n) = \\frac{2}{M-1} \\left(
-              \\frac{M-1}{2} - \\left|n - \\frac{M-1}{2}\\right|
-              \\right)
+    .. math:: w(n) = \frac{2}{M-1} \left(
+              \frac{M-1}{2} - \left|n - \frac{M-1}{2}\right|
+              \right)
 
     Most references to the Bartlett window come from the signal
     processing literature, where it is used as one of many windowing
@@ -605,7 +605,7 @@ def bartlett(M, sym=True):
 
 
 def hann(M, sym=True):
-    """
+    r"""
     Return a Hann window.
 
     The Hann window is a taper formed by using a raised cosine or sine-squared
@@ -630,8 +630,8 @@ def hann(M, sym=True):
     -----
     The Hann window is defined as
 
-    .. math::  w(n) = 0.5 - 0.5 \\cos\\left(\\frac{2\\pi{n}}{M-1}\\right)
-               \\qquad 0 \\leq n \\leq M-1
+    .. math::  w(n) = 0.5 - 0.5 \cos\left(\frac{2\pi{n}}{M-1}\right)
+               \qquad 0 \leq n \leq M-1
 
     The window was named for Julius van Hann, an Austrian meterologist. It is
     also known as the Cosine Bell. It is sometimes erroneously referred to as

@@ -729,7 +729,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     Wn : array_like
         A scalar or length-2 sequence giving the critical frequencies.
         For a Butterworth filter, this is the point at which the gain
-        drops to 1/sqrt(1/2) that of the passband (the "-3 dB point").
+        drops to 1/sqrt(2) that of the passband (the "-3 dB point").
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
         Nyquist frequency, pi radians/sample.  (`Wn` is thus in
         half-cycles / sample.)
@@ -827,7 +827,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
 
     See also
     --------
-    cheb1ord.
+    cheb1ord
 
     Notes
     -----
@@ -1073,13 +1073,12 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     The digital Bessel filter is generated using the bilinear
     transform, which does not preserve the phase response of the analog
     filter. As such, it is only approximately correct at frequencies
-    below about fs/4.
-
-    To get maximally flat group delay at higher frequencies, the analog
-    Bessel filter must be transformed using phase-preserving techniques.
+    below about fs/4.  To get maximally flat group delay at higher 
+    frequencies, the analog Bessel filter must be transformed using 
+    phase-preserving techniques.
 
     For a given `Wn`, the lowpass and highpass filter have the same phase vs
-    frequency curves.
+    frequency curves; they are "phase-matched".
 
     Examples
     --------
@@ -1650,11 +1649,9 @@ def cheb2ap(N, rs):
     mu = arcsinh(1.0 / de) / N
 
     if N % 2:
-        m = N - 1
         n = numpy.concatenate((numpy.arange(1, N - 1, 2),
                                numpy.arange(N + 2, 2 * N, 2)))
     else:
-        m = N
         n = numpy.arange(1, 2 * N, 2)
 
     z = conjugate(1j / cos(n * pi / (2.0 * N)))
@@ -1717,7 +1714,6 @@ def ellipap(N, rp, rs):
         raise ValueError("Cannot design a filter with given rp and rs"
                          " specifications.")
 
-    wp = 1
     val = special.ellipk([ck1 * ck1, ck1p * ck1p])
     if abs(1 - ck1p * ck1p) < EPSILON:
         krat = 0
@@ -1731,8 +1727,6 @@ def ellipap(N, rp, rs):
                                maxiter=250, disp=0)
 
     capk = special.ellipk(m)
-    ws = wp / sqrt(m)
-    m1 = 1 - m
 
     j = numpy.arange(1 - N % 2, N, 2)
     jj = len(j)
