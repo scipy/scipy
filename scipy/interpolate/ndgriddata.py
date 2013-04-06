@@ -85,18 +85,22 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
     method : {'linear', 'nearest', 'cubic'}, optional
         Method of interpolation. One of
 
-        ``nearest``: return the value at the data point closest to
+        ``nearest``
+          return the value at the data point closest to
           the point of interpolation.  See `NearestNDInterpolator` for
           more details.
 
-        ``linear``: tesselate the input point set to n-dimensional
+        ``linear``
+          tesselate the input point set to n-dimensional
           simplices, and interpolate linearly on each simplex.  See
           `LinearNDInterpolator` for more details.
 
-        ``cubic`` (1-D): return the value determined from a cubic
+        ``cubic`` (1-D)
+          return the value determined from a cubic
           spline.
 
-        ``cubic`` (2-D): return the value determined from a
+        ``cubic`` (2-D)
+          return the value determined from a
           piecewise cubic, continuously differentiable (C1), and
           approximately curvature-minimizing polynomial surface. See
           `CloughTocher2DInterpolator` for more details.
