@@ -386,14 +386,23 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
-  DO_SFERR("yv:", &cy_y);
-  if (ierr == 2) {
-    if (z.real >= 0 && z.imag == 0) {
+
+  if (z.real == 0 && z.imag == 0) {
       /* overflow */
-      cy_y.real = NPY_INFINITY;
+      cy_y.real = -NPY_INFINITY;
       cy_y.imag = 0;
-    }
+      sf_error("yv", SF_ERROR_OVERFLOW, NULL);
+  }
+  else {
+      F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
+      DO_SFERR("yv:", &cy_y);
+      if (ierr == 2) {
+          if (z.real >= 0 && z.imag == 0) {
+              /* overflow */
+              cy_y.real = -NPY_INFINITY;
+              cy_y.imag = 0;
+          }
+      }
   }
 
   if (sign == -1) {
