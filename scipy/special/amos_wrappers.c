@@ -156,6 +156,15 @@ int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi
   int kode = 1;
   int nz;
 
+  ai->real = NPY_NAN;
+  ai->imag = NPY_NAN;
+  bi->real = NPY_NAN;
+  bi->imag = NPY_NAN;
+  aip->real = NPY_NAN;
+  aip->imag = NPY_NAN;
+  bip->real = NPY_NAN;
+  bip->imag = NPY_NAN;
+
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
   DO_SFERR("airy:", ai);
   nz = 0;
@@ -175,6 +184,15 @@ int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *
   int id = 0;
   int kode = 2;        /* Exponential scaling */
   int nz, ierr;
+
+  ai->real = NPY_NAN;
+  ai->imag = NPY_NAN;
+  bi->real = NPY_NAN;
+  bi->imag = NPY_NAN;
+  aip->real = NPY_NAN;
+  aip->imag = NPY_NAN;
+  bip->real = NPY_NAN;
+  bip->imag = NPY_NAN;
 
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
   DO_SFERR("airye:", ai);
@@ -197,6 +215,15 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   int nz, ierr;
   npy_cdouble cz, cai, caip, cbi, cbip;
 
+  cai.real = NPY_NAN;
+  cai.imag = NPY_NAN;
+  cbi.real = NPY_NAN;
+  cbi.imag = NPY_NAN;
+  caip.real = NPY_NAN;
+  caip.imag = NPY_NAN;
+  cbip.real = NPY_NAN;
+  cbip.imag = NPY_NAN;
+  
   cz.real = z;
   cz.imag = 0;
 
@@ -233,6 +260,11 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
   int sign = 1;
   int nz, ierr;
   npy_cdouble cy, cy_k;
+
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+  cy_k.real = NPY_NAN;
+  cy_k.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -272,6 +304,11 @@ npy_cdouble cbesi_wrap_e( double v, npy_cdouble z) {
   int sign = 1;
   int nz, ierr;
   npy_cdouble cy, cy_k;
+
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+  cy_k.real = NPY_NAN;
+  cy_k.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -317,6 +354,11 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy_j, cy_y, cwork;
 
+  cy_j.real = NPY_NAN;
+  cy_j.imag = NPY_NAN;
+  cy_y.real = NPY_NAN;
+  cy_y.imag = NPY_NAN;
+
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -346,6 +388,11 @@ npy_cdouble cbesj_wrap_e( double v, npy_cdouble z) {
   int nz, ierr;
   int sign = 1;
   npy_cdouble cy_j, cy_y, cwork;
+
+  cy_j.real = NPY_NAN;
+  cy_j.imag = NPY_NAN;
+  cy_y.real = NPY_NAN;
+  cy_y.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -381,6 +428,11 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   int nz, ierr;
   int sign = 1;
   npy_cdouble cy_y, cy_j, cwork;
+
+  cy_j.real = NPY_NAN;
+  cy_j.imag = NPY_NAN;
+  cy_y.real = NPY_NAN;
+  cy_y.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -421,6 +473,11 @@ npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
   int nz, ierr;
   int sign = 1;
   npy_cdouble cy_y, cy_j, cwork;
+
+  cy_j.real = NPY_NAN;
+  cy_j.imag = NPY_NAN;
+  cy_y.real = NPY_NAN;
+  cy_y.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -464,6 +521,9 @@ npy_cdouble cbesk_wrap( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy;
 
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+
   if (v < 0) {
     /* K_v == K_{-v} even for non-integer v */
     v = -v;
@@ -486,6 +546,9 @@ npy_cdouble cbesk_wrap_e( double v, npy_cdouble z) {
   int kode = 2;
   int nz, ierr;
   npy_cdouble cy;
+
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
 
   if (v < 0) {
     /* K_v == K_{-v} even for non-integer v */
@@ -549,6 +612,9 @@ npy_cdouble cbesh_wrap1( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -568,6 +634,9 @@ npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z) {
   int nz, ierr;
   int sign = 1;
   npy_cdouble cy;
+
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -589,6 +658,9 @@ npy_cdouble cbesh_wrap2( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -608,6 +680,9 @@ npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z) {
   int nz, ierr;
   int sign = 1;
   npy_cdouble cy;
+
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
