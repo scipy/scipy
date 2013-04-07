@@ -1023,17 +1023,23 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(lambda a, b, x: mpmath.hyperu(a, b, x, **HYPERKW)),
                             [Arg(), Arg(), Arg()])
 
-    @knownfailure_overridable("issues at large arguments")
     def test_j0(self):
+        # The Bessel function at large arguments is j0(x) ~ cos(x + phi)/sqrt(x)
+        # and at large arguments the phase of the cosine loses precision.
+        #
+        # This is numerically expected behavior, so we compare only up to
+        # 1e8 = 1e15 * 1e-7
         assert_mpmath_equal(sc.j0,
                             mpmath.j0,
-                            [Arg()])
+                            [Arg(-1e8, 1e8)],
+                            rtol=1e-7)
 
-    @knownfailure_overridable("issues at large arguments")
     def test_j1(self):
+        # See comment in test_j0
         assert_mpmath_equal(sc.j1,
                             mpmath.j1,
-                            [Arg()])
+                            [Arg(-1e8, 1e8)],
+                            rtol=1e-7)
 
     @knownfailure_overridable()
     def test_jacobi(self):
