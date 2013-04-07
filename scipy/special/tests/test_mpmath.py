@@ -690,21 +690,40 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
     def test_besselk_complex(self):
         assert_mpmath_equal(lambda v, z: sc.kv(v.real, z),
-                            _exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
+                            _time_limited()(_exception_to_nan(mpmath.besselk)),
                             [Arg(-1e100, 1e100), ComplexArg()])
 
-    @knownfailure_overridable()
     def test_bessely(self):
+        def mpbessely(v, x):
+            r = float(mpmath.bessely(v, x))
+            if abs(r) > 1e307:
+                # overflowing to inf a bit earlier is OK
+                r = np.inf * np.sign(r)
+            if abs(r) == 0 and x == 0:
+                # invalid result from mpmath, point x=0 is a divergence
+                return np.nan
+            return r
         assert_mpmath_equal(sc.yv,
-                            _exception_to_nan(lambda v, z: mpmath.bessely(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg()],
+                            _exception_to_nan(mpbessely),
+                            [Arg(-1e100, 1e100), Arg(-1e8, 1e8)],
                             n=1000)
 
     def test_bessely_complex(self):
         assert_mpmath_equal(lambda v, z: sc.yv(v.real, z),
-                            lambda v, z: _exception_to_nan(mpmath.bessely)(v, z, **HYPERKW),
+                            _exception_to_nan(mpmath.bessely),
                             [Arg(), ComplexArg()],
-                            n=2000)
+                            n=2000, dps=200)
+
+    def test_bessely_int(self):
+        def mpbessely(v, x):
+            r = float(mpmath.bessely(v, x))
+            if abs(r) == 0 and x == 0:
+                # invalid result from mpmath, point x=0 is a divergence
+                return np.nan
+            return r
+        assert_mpmath_equal(lambda v, z: sc.yn(int(v), z),
+                            _exception_to_nan(mpbessely),
+                            [IntArg(-1000, 1000), Arg(-1e8, 1e8)])
 
     @knownfailure_overridable()
     def test_beta(self):

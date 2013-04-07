@@ -467,6 +467,27 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   return cy_y;
 }
 
+double cephes_yv(double v, double x);
+
+double cbesy_wrap_real(double v, double x)
+{
+    npy_cdouble z, r;
+
+    if (x < 0.0) {
+        sf_error("yv", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
+    }
+
+    z.real = x;
+    z.imag = 0;
+    r = cbesy_wrap(v, z);
+    if (r.real != r.real) {
+        /* AMOS returned NaN or a complex value */
+        return cephes_yv(v, x);
+    }
+    return r.real;
+}
+
 npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
   int n = 1;
   int kode = 2;
