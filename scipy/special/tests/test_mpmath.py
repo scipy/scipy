@@ -309,27 +309,27 @@ class Arg(object):
 
     def values(self, n):
         """Return an array containing approximatively `n` numbers."""
-        n1 = max(3, int(0.4*n))
-        n2 = max(3, int(0.3*n))
-        n3 = max(2, n - n1 - n2)
+        n1 = max(2, int(0.4*n))
+        n2 = max(2, int(0.2*n))
+        n3 = max(8, n - n1 - n2)
 
         v1 = np.linspace(-1, 1, n1)
         v2 = np.linspace(-10, 10, n2)
         if self.a >= 0 and self.b > 0:
             v3 = np.logspace(-30, np.log10(self.b), n3//2)
-            v4 = np.logspace(-30, 5, n3//2)
+            v4 = np.logspace(1, 5, 1 + n3//2)
         elif self.a < 0 and self.b > 0:
             v3 = np.r_[
                 np.logspace(-30, np.log10(self.b), n3//4),
                 -np.logspace(-30, np.log10(-self.a), n3//4)
                 ]
             v4 = np.r_[
-                np.logspace(-30, 5, n3//4),
-                -np.logspace(-30, 5, n3//4)
+                np.logspace(1, 5, 1 + n3//4),
+                -np.logspace(1, 5, 1 + n3//4)
                 ]
         elif self.b < 0:
             v3 = -np.logspace(-30, np.log10(-self.b), n3//2)
-            v3 = -np.logspace(-30, 5, n3//2)
+            v4 = -np.logspace(1, 5, 1 + n3//2)
         else:
             v3 = []
             v4 = []
@@ -389,12 +389,15 @@ class MpmathData(object):
     def check(self):
         np.random.seed(1234)
 
-        # Generate values for the arguments
         num_args = len(self.arg_spec)
-        m = int(self.n**(1./num_args)) + 1
+
+        # Generate values for the arguments
+        ms = np.asarray([1.5 if isinstance(arg, ComplexArg) else 1.0
+                         for arg in self.arg_spec])
+        ms = (self.n**(ms/sum(ms))).astype(int) + 1
 
         argvals = []
-        for arg in self.arg_spec:
+        for arg, m in zip(self.arg_spec, ms):
             argvals.append(arg.values(m))
 
         argarr = np.array(np.broadcast_arrays(*np.ix_(*argvals))).reshape(num_args, -1).T
@@ -947,6 +950,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(lambda v, x: mpmath.hankel2(v, x, **HYPERKW)),
                             [Arg(-1e20, 1e20), Arg()])
 
+    @knownfailure_overridable("issues at intermediately large orders")
     def test_hermite(self):
         assert_mpmath_equal(lambda n, x: sc.eval_hermite(int(n), x),
                             _exception_to_nan(mpmath.hermite),
