@@ -270,12 +270,17 @@ double v, x;
     double y, t;
     int n;
 
-    y = floor(v);
-    if (y == v) {
-	n = v;
+    n = v;
+    if (n == v) {
 	y = yn(n, x);
 	return (y);
     }
+    else if (v == floor(v)) {
+        /* Zero in denominator. */
+	mtherr("yv", DOMAIN);
+        return NPY_NAN;
+    }
+
     t = NPY_PI * v;
     y = (cos(t) * jv(v, x) - jv(-v, x)) / sin(t);
 
