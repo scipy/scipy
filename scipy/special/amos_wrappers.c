@@ -476,12 +476,25 @@ double cbesk_wrap_real( double v, double z) {
   npy_cdouble cy, w;
   if (z < 0) {
     return NPY_NAN;
-  } else {
+  }
+  else if (z > 710 * (1 + fabs(v))) {
+      /* Underflow. See uniform expansion http://dlmf.nist.gov/10.41
+       * This condition is not a strict bound (it can underflow earlier),
+       * rather, we are here working around a restriction in AMOS.
+       */
+      return 0;
+  }
+  else {
     w.real = z;
     w.imag = 0;
     cy = cbesk_wrap(v, w);
     return cy.real;
   }
+}
+
+double cbesk_wrap_real_int(int n, double z)
+{
+    return cbesk_wrap_real(n, z);
 }
 
 double cbesk_wrap_e_real( double v, double z) {

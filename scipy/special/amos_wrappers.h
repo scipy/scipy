@@ -38,6 +38,7 @@ npy_cdouble cbesk_wrap( double v, npy_cdouble z);
 npy_cdouble cbesk_wrap_e( double v, npy_cdouble z);  
 double cbesk_wrap_real( double v, double z);
 double cbesk_wrap_e_real( double v, double z);
+double cbesk_wrap_real_int(int n, double z);
 npy_cdouble cbesh_wrap1( double v, npy_cdouble z);
 npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z);  
 npy_cdouble cbesh_wrap2( double v, npy_cdouble z);

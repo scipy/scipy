@@ -678,16 +678,15 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
     def test_besselk(self):
         assert_mpmath_equal(sc.kv,
-                            _exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
+                            _time_limited()(_exception_to_nan(mpmath.besselk)),
                             [Arg(-1e100, 1e100), Arg()],
                             n=1000)
 
-    @knownfailure_overridable("spurious inf at large arguments")
     def test_besselk_int(self):
         assert_mpmath_equal(sc.kn,
-                            _exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
-                            [IntArg(), Arg()],
-                            n=1000)
+                            _time_limited()(_exception_to_nan(mpmath.besselk)),
+                            [IntArg(-1000, 1000), Arg()],
+                            n=5000)
 
     def test_besselk_complex(self):
         assert_mpmath_equal(lambda v, z: sc.kv(v.real, z),
