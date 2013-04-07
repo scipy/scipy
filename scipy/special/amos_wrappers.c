@@ -69,12 +69,35 @@ void set_nan_if_no_computation_done(npy_cdouble *v, int ierr) {
   }
 }
 
+static double sin_pi(double x)
+{
+    if (floor(x) == x && fabs(x) < 1e14) {
+        /* Return 0 when at exact zero, as long as the floating point number is
+         * small enough to distinguish integer points from other points.
+         */
+        return 0;
+    }
+    return sin(M_PI * x);
+}
+
+static double cos_pi(double x)
+{
+    double x05 = x + 0.5;
+    if (floor(x05) == x05 && fabs(x) < 1e14) {
+        /* Return 0 when at exact zero, as long as the floating point number is
+         * small enough to distinguish integer points from other points.
+         */
+        return 0;
+    }
+    return cos(M_PI * x);
+}
+
 static npy_cdouble
 rotate(npy_cdouble z, double v)
 {
     npy_cdouble w;
-    double c = cos(v * NPY_PI);
-    double s = sin(v * NPY_PI);
+    double c = cos_pi(v);
+    double s = sin_pi(v);
     w.real = z.real*c - z.imag*s;
     w.imag = z.real*s + z.imag*c;
     return w;
@@ -84,8 +107,8 @@ static npy_cdouble
 rotate_jy(npy_cdouble j, npy_cdouble y, double v)
 {
     npy_cdouble w;
-    double c = cos(v * NPY_PI);
-    double s = sin(v * NPY_PI);
+    double c = cos_pi(v);
+    double s = sin_pi(v);
     w.real = j.real * c - y.real * s;
     w.imag = j.imag * c - y.imag * s;
     return w;
