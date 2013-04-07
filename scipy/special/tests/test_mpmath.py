@@ -1273,8 +1273,9 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(spherharm,
                             mpmath.spherharm,
                             [IntArg(0, 100), IntArg(0, 100),
-                             Arg(a=0, b=2*pi), Arg(a=0, b=pi)],
-                            atol=1e-13, n=6000)
+                             Arg(a=0, b=pi), Arg(a=0, b=2*pi)],
+                            atol=1e-8, n=6000,
+                            dps=150)
 
     @knownfailure_overridable("problems at extremely large arguments (absolute tolerance OK, relative not)")
     def test_struve(self):
