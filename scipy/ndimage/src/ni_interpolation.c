@@ -554,7 +554,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             for(hh = 0; hh < filter_size; hh++) {
                 double coeff = 0.0;
                 int idx = 0;
-                if (edge) {
+
+                if (NI_UNLIKELY(edge)) {
                     for(ll = 0; ll < irank; ll++) {
                         if (edge_offsets[ll])
                             idx += edge_offsets[ll][ff[ll]];
@@ -838,7 +839,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             for(hh = 0; hh < filter_size; hh++) {
                 int idx = 0;
                 double coeff = 0.0;
-                if (edge) {
+
+                if (NI_UNLIKELY(edge)) {
                         /* use precalculated edge offsets: */
                     for(jj = 0; jj < rank; jj++) {
                         if (edge_offsets[jj][io.coordinates[jj]])
