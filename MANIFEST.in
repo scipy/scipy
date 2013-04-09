@@ -10,6 +10,8 @@ include setup.py
 include scipy/*.py
 # Add Cython files
 recursive-include scipy *.pyx *.pyx.in *.pxd *.pxi
+# Add f2py files
+recursive-include scipy *.pyf *.pyf.src
 # Add swig files
 recursive-include scipy *.i
 # Adding scons build related files not found by distutils
