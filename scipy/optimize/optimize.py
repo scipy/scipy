@@ -658,6 +658,35 @@ def approx_fhess_p(x0, p, fprime, epsilon, *args):
     f1 = fprime(*((x0,) + args))
     return (f2 - f1) / epsilon
 
+class _LineSearchError(RuntimeError):
+    pass
+
+def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
+                         **kwargs):
+    """
+    Same as line_search_wolfe1, but fall back to line_search_wolfe2 if
+    suitable step length is not found, and raise an exception if a
+    suitable step length is not found.
+
+    Raises
+    ------
+    _LineSearchError
+        If no suitable step size is found
+
+    """
+    ret = line_search_wolfe1(f, fprime, xk, pk, gfk,
+                             old_fval, old_old_fval,
+                             **kwargs)
+
+    if ret[0] is None:
+        # line search failed: try different one.
+        ret  = line_search_wolfe2(f, fprime, xk, pk, gfk,
+                                  old_fval, old_old_fval)
+
+    if ret[0] is None:
+        raise _LineSearchError()
+
+    return ret
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
@@ -808,21 +837,15 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     gnorm = vecnorm(gfk, ord=norm)
     while (gnorm > gtol) and (k < maxiter):
         pk = -numpy.dot(Hk, gfk)
-        alpha_k, fc, gc, old_fval2, old_old_fval2, gfkp1 = \
-            line_search_wolfe1(f, myfprime, xk, pk, gfk,
-                               old_fval, old_old_fval)
-        if alpha_k is not None:
-            old_fval = old_fval2
-            old_old_fval = old_old_fval2
-        else:
-            # line search failed: try different one.
+        try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
-                line_search_wolfe2(f, myfprime, xk, pk, gfk,
-                                   old_fval, old_old_fval)
-            if alpha_k is None:
-                # This line search also failed to find a better solution.
-                warnflag = 2
-                break
+                     _line_search_wolfe12(f, myfprime, xk, pk, gfk,
+                                          old_fval, old_old_fval)
+        except _LineSearchError:
+            # Line search failed to find a better solution.
+            warnflag = 2
+            break
+
         xkp1 = xk + alpha_k * pk
         if retall:
             allvecs.append(xkp1)
@@ -1120,21 +1143,15 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     while (gnorm > gtol) and (k < maxiter):
         deltak = numpy.dot(gfk, gfk)
 
-        # These values are modified by the line search, even if it fails
-        old_fval_backup = old_fval
-        old_old_fval_backup = old_old_fval
-
-        alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
-            line_search_wolfe1(f, myfprime, xk, pk, gfk, old_fval,
-                               old_old_fval, c2=0.4)
-        if alpha_k is None:  # line search failed -- use different one.
+        try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
-                line_search_wolfe2(f, myfprime, xk, pk, gfk,
-                                   old_fval_backup, old_old_fval_backup)
-            if alpha_k is None or alpha_k == 0:
-                # This line search also failed to find a better solution.
-                warnflag = 2
-                break
+                     _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
+                                          old_old_fval, c2=0.4)
+        except _LineSearchError:
+            # Line search failed to find a better solution.
+            warnflag = 2
+            break
+
         xk = xk + alpha_k * pk
         if retall:
             allvecs.append(xk)
@@ -1346,6 +1363,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     k = 0
     old_fval = f(x0)
     float64eps = numpy.finfo(numpy.float64).eps
+    warnflag = 0
     while (numpy.add.reduce(numpy.abs(update)) > xtol) and (k < maxiter):
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
@@ -1394,7 +1412,14 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         pk = xsupi  # search direction is solution to system.
         gfk = -b    # gradient at xk
-        alphak, fc, gc, old_fval = line_search_BFGS(f, xk, pk, gfk, old_fval)
+        alphak, fc, gc, old_fval2 = line_search_BFGS(f, xk, pk, gfk, old_fval)
+
+        if alphak is None:
+            # Line search failed to find a better solution.
+            warnflag = 2
+            break
+        else:
+            old_fval = old_fval2
 
         update = alphak * pk
         xk = xk + update        # upcast if necessary
@@ -1405,7 +1430,16 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         k += 1
 
     fval = old_fval
-    if k >= maxiter:
+    if warnflag == 2:
+        msg = _status_message['pr_loss']
+        if disp:
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % fcalls[0])
+            print("         Gradient evaluations: %d" % gcalls[0])
+            print("         Hessian evaluations: %d" % hcalls)
+    elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
         if disp:
@@ -1416,7 +1450,6 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print("         Gradient evaluations: %d" % gcalls[0])
             print("         Hessian evaluations: %d" % hcalls)
     else:
-        warnflag = 0
         msg = _status_message['success']
         if disp:
             print(msg)
