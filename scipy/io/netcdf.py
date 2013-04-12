@@ -9,7 +9,7 @@ as member variables of the `netcdf_file` and `netcdf_variable` objects.
 This module implements the Scientific.IO.NetCDF API to read and create
 NetCDF files. The same API is also used in the PyNIO and pynetcdf
 modules, allowing these modules to be used interchangeably when working
-with NetCDF files. 
+with NetCDF files.
 """
 
 from __future__ import division, print_function, absolute_import
@@ -110,7 +110,7 @@ class netcdf_file(object):
 
     Notes
     -----
-    The major advantage of this module over other modules is that it doesn't 
+    The major advantage of this module over other modules is that it doesn't
     require the code to be linked to the NetCDF libraries. This module is
     derived from `pupynere <https://bitbucket.org/robertodealmeida/pupynere/>`_.
 

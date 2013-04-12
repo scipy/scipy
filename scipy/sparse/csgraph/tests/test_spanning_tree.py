@@ -47,7 +47,7 @@ def test_minimum_spanning_tree():
         graph = 3 + np.random.random((N, N))
         csgraph = csr_matrix(graph)
 
-        # The spanning tree has at most N - 1 edges.        
+        # The spanning tree has at most N - 1 edges.
         mintree = minimum_spanning_tree(csgraph)
         assert_(mintree.nnz < N)
 

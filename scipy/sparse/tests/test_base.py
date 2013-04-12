@@ -1019,15 +1019,15 @@ class _TestSlicingAssign:
         # The next commands should raise exceptions
         assert_raises(ValueError, A.__setitem__, (0, 0), list(range(100)))
         assert_raises(ValueError, A.__setitem__, (0, 0), arange(100))
-        assert_raises(ValueError, A.__setitem__, (0, slice(None)), 
+        assert_raises(ValueError, A.__setitem__, (0, slice(None)),
                       list(range(100)))
-        assert_raises(ValueError, A.__setitem__, (slice(None), 1), 
+        assert_raises(ValueError, A.__setitem__, (slice(None), 1),
                       list(range(100)))
         assert_raises(ValueError, A.__setitem__, (slice(None), 1), A.copy())
         assert_raises(ValueError, A.__setitem__,
                       ([[1, 2, 3], [0, 3, 4]], [1, 2, 3]), [1, 2, 3, 4])
         assert_raises(ValueError, A.__setitem__,
-                      ([[1, 2, 3], [0, 3, 4], [4, 1, 3]], 
+                      ([[1, 2, 3], [0, 3, 4], [4, 1, 3]],
                        [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
 
 class _TestFancyIndexing:
@@ -1180,8 +1180,8 @@ class _TestFancyIndexingAssign:
             B[i, j] = 1
             assert_array_almost_equal(A.todense(), B)
         # [1:2,1:2]
-        for i, j in [((2, 3, 4), slice(None, 10, 4)), 
-                     (np.arange(3), slice(5, -2)), 
+        for i, j in [((2, 3, 4), slice(None, 10, 4)),
+                     (np.arange(3), slice(5, -2)),
                      (slice(2, 5), slice(5, -2))]:
             _test_set_slice(i, j)
         for i, j in [(np.arange(3), np.arange(3)), ((0, 3, 4), (1, 2, 4))]:
@@ -1299,7 +1299,7 @@ class _TestFancyMultidimAssign:
             B[i, j] = 1
             assert_array_almost_equal(A.todense(), B)
         # [[[1, 2], [1, 2]], [1, 2]]
-        for i, j in [(np.array([[1, 2], [1, 3]]), [1, 3]), 
+        for i, j in [(np.array([[1, 2], [1, 3]]), [1, 3]),
                         (np.array([0, 4]), [[0, 3], [1, 2]]),
                         ([[1, 2, 3], [0, 2, 4]],  [[0, 4, 3], [4, 1, 2]])]:
             _test_set_slice(i, j)
@@ -2002,7 +2002,7 @@ class TestLIL(sparse_test_class(minmax=False)):
 
             assert_array_equal(result.todense(), expected.todense())
 
-        # Ticket 1604. 
+        # Ticket 1604.
         A = lil_matrix((1,3), dtype=np.dtype('float64'))
         B = array([0.1,0.1,0.1])
         A[0,:] += B

@@ -127,7 +127,7 @@ def issequence(t):
            or (isinstance(t, np.ndarray) and (t.ndim == 1))
 
 def ismatrix(t):
-    return ((issequence(t) and issequence(t[0]) and np.isscalar(t[0][0])) 
+    return ((issequence(t) and issequence(t[0]) and np.isscalar(t[0][0]))
             or (isinstance(t, np.ndarray) and t.ndim == 2))
 
 def isdense(x):

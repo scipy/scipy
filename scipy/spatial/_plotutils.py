@@ -154,7 +154,7 @@ def voronoi_plot_2d(vor, ax=None):
             direction = np.sign(np.dot(midpoint - center, n)) * n
             far_point = vor.vertices[i] + direction * ptp_bound.max()
 
-            ax.plot([vor.vertices[i,0], far_point[0]], 
+            ax.plot([vor.vertices[i,0], far_point[0]],
                     [vor.vertices[i,1], far_point[1]], 'k--')
 
     _adjust_bounds(ax, vor.points)

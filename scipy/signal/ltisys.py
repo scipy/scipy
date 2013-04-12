@@ -244,8 +244,8 @@ class lti(object):
     Notes
     -----
     `lti` instances have all types of representations available; for example
-    after creating an instance s with ``(zeros, poles, gain)`` the transfer 
-    function representation (numerator, denominator) can be accessed as 
+    after creating an instance s with ``(zeros, poles, gain)`` the transfer
+    function representation (numerator, denominator) can be accessed as
     ``s.num`` and ``s.den``.
 
     """
@@ -923,8 +923,8 @@ def freqresp(system, w=None, n=10000):
             * 4 (A, B, C, D)
 
     w : array_like, optional
-        Array of frequencies (in rad/s). Magnitude and phase data is 
-        calculated for every value in this array. If not given a reasonable 
+        Array of frequencies (in rad/s). Magnitude and phase data is
+        calculated for every value in this array. If not given a reasonable
         set will be calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`

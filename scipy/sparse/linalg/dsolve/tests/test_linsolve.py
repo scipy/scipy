@@ -7,7 +7,7 @@ import numpy.random as random
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
     assert_raises, assert_almost_equal, assert_equal, assert_array_equal, assert_
 
-import scipy.linalg 
+import scipy.linalg
 from scipy.linalg import norm, inv
 from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix, csr_matrix
 from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu

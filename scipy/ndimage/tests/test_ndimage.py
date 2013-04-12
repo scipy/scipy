@@ -3016,7 +3016,7 @@ class TestNdimage:
 
     def test_distance_transform_edt5(self):
         "Ticket #954"
-        out = ndimage.distance_transform_edt(False) 
+        out = ndimage.distance_transform_edt(False)
         assert_array_almost_equal(out, [0.])
 
     def test_generate_structure01(self):

@@ -473,7 +473,7 @@ class TestDelaunay(object):
             nmin = ndim + 2
 
             if name == 'some-points':
-                # since Qz is not allowed, use QJ 
+                # since Qz is not allowed, use QJ
                 opts = 'QJ Pp'
             elif name == 'pathological-1':
                 # include enough points so that we get different x-coordinates
@@ -622,11 +622,11 @@ class TestVoronoi:
         output = """
         2
         5 10 1
-        -10.101 -10.101 
-           0.5    0.5 
-           1.5    0.5 
-           0.5    1.5 
-           1.5    1.5 
+        -10.101 -10.101
+           0.5    0.5
+           1.5    0.5
+           0.5    1.5
+           1.5    1.5
         2 0 1
         3 3 0 1
         2 0 3
@@ -722,9 +722,9 @@ class TestVoronoi:
         output = """
         2
         3 5 1
-        -10.101 -10.101 
-        0.6000000000000001    0.5 
-           0.5 0.6000000000000001 
+        -10.101 -10.101
+        0.6000000000000001    0.5
+           0.5 0.6000000000000001
         3 0 1 2
         2 0 1
         2 0 2
@@ -750,7 +750,7 @@ class TestVoronoi:
             nmin = ndim + 2
 
             if name == 'some-points':
-                # since Qz is not allowed, use QJ 
+                # since Qz is not allowed, use QJ
                 opts = 'QJ Pp'
             elif name == 'pathological-1':
                 # include enough points so that we get different x-coordinates

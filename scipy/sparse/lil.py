@@ -312,7 +312,7 @@ class lil_matrix(spmatrix):
         if i.size == 0:
             return lil_matrix((0,0), dtype=self.dtype)
         return self.__class__([[self._get1(int(i[ii, jj]), int(j[ii, jj])) for jj in
-                                xrange(i.shape[1])] for ii in 
+                                xrange(i.shape[1])] for ii in
                                xrange(i.shape[0])])
 
     def _insertat2(self, row, data, j, x):
