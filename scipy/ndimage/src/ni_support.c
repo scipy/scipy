@@ -359,6 +359,7 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int16);
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int32);
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int64);
+            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float16);
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float32);
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float64);
         default:
@@ -422,6 +423,7 @@ int NI_LineBufferToArray(NI_LineBuffer *buffer)
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int16);
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int32);
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int64);
+            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float16);
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float32);
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float64);
         default:

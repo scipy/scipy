@@ -63,7 +63,8 @@ typedef enum
          tComplex128=NPY_COMPLEX128,
          tObject=NPY_OBJECT,        /* placeholder... does nothing */
          tMaxType=NPY_NTYPES,
-         tDefault=NPY_FLOAT64
+         tDefault=NPY_FLOAT64,
+         tFloat16=NPY_FLOAT16
 } NumarrayType;
 
 #define NI_MAXDIM NPY_MAXDIMS

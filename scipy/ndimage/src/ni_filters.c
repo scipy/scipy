@@ -238,6 +238,8 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
                                                      tmp, border_flag_value);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Int64,
                                                      tmp, border_flag_value);
+            CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Float16,
+                                                     tmp, border_flag_value);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Float32,
                                                      tmp, border_flag_value);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Float64,
@@ -258,6 +260,7 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
             CASE_FILTER_OUT(po, tmp, Int16);
             CASE_FILTER_OUT(po, tmp, Int32);
             CASE_FILTER_OUT(po, tmp, Int64);
+            CASE_FILTER_OUT(po, tmp, Float16);
             CASE_FILTER_OUT(po, tmp, Float32);
             CASE_FILTER_OUT(po, tmp, Float64);
         default:
@@ -510,6 +513,8 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
                                                         minimum, tmp, border_flag_value, ss);
             CASE_MIN_OR_MAX_POINT(pi, oo, filter_size, cvalue, Int64,
                                                         minimum, tmp, border_flag_value, ss);
+            CASE_MIN_OR_MAX_POINT(pi, oo, filter_size, cvalue, Float16,
+                                                        minimum, tmp, border_flag_value, ss);
             CASE_MIN_OR_MAX_POINT(pi, oo, filter_size, cvalue, Float32,
                                                         minimum, tmp, border_flag_value, ss);
             CASE_MIN_OR_MAX_POINT(pi, oo, filter_size, cvalue, Float64,
@@ -530,6 +535,7 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
             CASE_FILTER_OUT(po, tmp, Int16);
             CASE_FILTER_OUT(po, tmp, Int32);
             CASE_FILTER_OUT(po, tmp, Int64);
+            CASE_FILTER_OUT(po, tmp, Float16);
             CASE_FILTER_OUT(po, tmp, Float32);
             CASE_FILTER_OUT(po, tmp, Float64);
         default:
@@ -670,6 +676,8 @@ int NI_RankFilter(PyArrayObject* input, int rank,
                                             rank, buffer, tmp, border_flag_value);
             CASE_RANK_POINT(pi, oo, filter_size, cvalue, Int64,
                                             rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(pi, oo, filter_size, cvalue, Float16,
+                                            rank, buffer, tmp, border_flag_value);
             CASE_RANK_POINT(pi, oo, filter_size, cvalue, Float32,
                                             rank, buffer, tmp, border_flag_value);
             CASE_RANK_POINT(pi, oo, filter_size, cvalue, Float64,
@@ -690,6 +698,7 @@ int NI_RankFilter(PyArrayObject* input, int rank,
             CASE_FILTER_OUT(po, tmp, Int16);
             CASE_FILTER_OUT(po, tmp, Int32);
             CASE_FILTER_OUT(po, tmp, Int64);
+            CASE_FILTER_OUT(po, tmp, Float16);
             CASE_FILTER_OUT(po, tmp, Float32);
             CASE_FILTER_OUT(po, tmp, Float64);
         default:
@@ -854,6 +863,8 @@ int NI_GenericFilter(PyArrayObject* input,
                                                 tmp, border_flag_value, function, data, buffer);
             CASE_FILTER_POINT(pi, oo, filter_size, cvalue, Int64,
                                                 tmp, border_flag_value, function, data, buffer);
+            CASE_FILTER_POINT(pi, oo, filter_size, cvalue, Float16,
+                                                tmp, border_flag_value, function, data, buffer);
             CASE_FILTER_POINT(pi, oo, filter_size, cvalue, Float32,
                                                 tmp, border_flag_value, function, data, buffer);
             CASE_FILTER_POINT(pi, oo, filter_size, cvalue, Float64,
@@ -874,6 +885,7 @@ int NI_GenericFilter(PyArrayObject* input,
             CASE_FILTER_OUT(po, tmp, Int16);
             CASE_FILTER_OUT(po, tmp, Int32);
             CASE_FILTER_OUT(po, tmp, Int64);
+            CASE_FILTER_OUT(po, tmp, Float16);
             CASE_FILTER_OUT(po, tmp, Float32);
             CASE_FILTER_OUT(po, tmp, Float64);
         default:
