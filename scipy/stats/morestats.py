@@ -799,7 +799,7 @@ def ansari(x,y):
     uxy = unique(xy)
     repeats = (len(uxy) != len(xy))
     exact = ((m<55) and (n<55) and not repeats)
-    if repeats and ((m < 55)  or (n < 55)):
+    if repeats and ((m < 55) or (n < 55)):
         warnings.warn("Ties preclude use of exact statistic.")
     if exact:
         astart, a1, ifault = statlib.gscale(n,m)

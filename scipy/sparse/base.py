@@ -250,7 +250,7 @@ class spmatrix(object):
                 return self._mul_vector(other)
             elif other.shape == (N, 1):
                 return self._mul_vector(other.ravel()).reshape(M, 1)
-            elif other.ndim == 2  and other.shape[0] == N:
+            elif other.ndim == 2 and other.shape[0] == N:
                 return self._mul_multivector(other)
 
         if isscalarlike(other):

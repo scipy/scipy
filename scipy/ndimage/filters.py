@@ -960,7 +960,7 @@ def _rank_filter(input, rank, size = None, footprint = None, output = None,
             rank = int(float(filter_size) * percentile / 100.0)
     if rank < 0:
         rank += filter_size
-    if rank < 0  or rank >= filter_size:
+    if rank < 0 or rank >= filter_size:
         raise RuntimeError('rank not within filter footprint size')
     if rank == 0:
         return minimum_filter(input, None, footprint, output, mode, cval,
