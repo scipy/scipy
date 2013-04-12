@@ -128,7 +128,8 @@ except:
     pass
 
 def py_int_search(seq, t):
-    min = 0; max = len(seq) - 1
+    min = 0
+    max = len(seq) - 1
     while 1:
         if max < min:
             return -1

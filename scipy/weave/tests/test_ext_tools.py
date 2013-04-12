@@ -65,7 +65,8 @@ class TestExtModule(TestCase):
     @dec.slow
     def test_string_and_int(self):
         # decalaring variables
-        a = 2;b = 'string'
+        a = 2
+        b = 'string'
         # declare module
         mod = ext_tools.ext_module('ext_string_and_int')
         code = """

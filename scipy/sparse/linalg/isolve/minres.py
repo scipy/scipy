@@ -75,8 +75,12 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         print(first + 'itnlim =  %3g     rtol   =  %11.2e'   % (maxiter,tol))
         print()
 
-    istop = 0;   itn   = 0;   Anorm = 0;    Acond = 0;
-    rnorm = 0;   ynorm = 0;
+    istop = 0
+    itn   = 0
+    Anorm = 0
+    Acond = 0
+    rnorm = 0
+    ynorm = 0
 
     xtype = x.dtype
 
@@ -126,10 +130,18 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
 
     # Initialize other quantities
-    oldb   = 0;          beta   = beta1;   dbar   = 0;       epsln  = 0;
-    qrnorm = beta1;      phibar = beta1;   rhs1   = beta1;
-    rhs2   = 0;          tnorm2 = 0;       ynorm2 = 0;
-    cs     = -1;         sn     = 0;
+    oldb   = 0
+    beta   = beta1
+    dbar   = 0
+    epsln  = 0
+    qrnorm = beta1
+    phibar = beta1
+    rhs1   = beta1
+    rhs2   = 0
+    tnorm2 = 0
+    ynorm2 = 0
+    cs     = -1
+    sn     = 0
     w      = zeros(n, dtype=xtype)
     w2     = zeros(n, dtype=xtype)
     r2     = r1

@@ -5519,7 +5519,9 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     if isinf(b):            # Be sure ending point is > q
         b = int(max(100*q,10))
         while 1:
-            if b >= self.b: qb = 1.0; break
+            if b >= self.b:
+                qb = 1.0
+                break
             qb = self._cdf(b,*args)
             if (qb < q): b += 10
             else: break
@@ -5528,7 +5530,9 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     if isinf(a):    # be sure starting point < q
         a = int(min(-100*q,-10))
         while 1:
-            if a <= self.a: qb = 0.0; break
+            if a <= self.a:
+                qb = 0.0
+                break
             qa = self._cdf(a,*args)
             if (qa > q): a -= 10
             else: break

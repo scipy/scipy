@@ -127,7 +127,8 @@ def lsmrtest(m, n, damp):
     x, istop, itn, normr, normar, norma, conda, normx \
       = lsmr(A, b, damp, atol, btol, conlim, itnlim, show )
 
-    j1 = min(n,5);   j2 = max(n-4,1);
+    j1 = min(n,5)
+    j2 = max(n-4,1)
     print(' ')
     print('First elements of x:')
     str = [ '%10.4f' %(xi) for xi in x[0:j1] ]

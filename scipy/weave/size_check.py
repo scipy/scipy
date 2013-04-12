@@ -164,7 +164,8 @@ class dummy_array(object):
     def __len__(self):
         return self.shape[0]
     def __getslice__(self,i,j):
-        i = max(i, 0); j = max(j, 0)
+        i = max(i, 0)
+        j = max(j, 0)
         return self.__getitem__((slice(i,j),))
     def __getitem__(self,indices):
         # ayeyaya this is a mess
