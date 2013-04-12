@@ -579,7 +579,7 @@ def _inf_to_nan(func):
             return np.nan
         return v
     return wrap
-    
+
 
 #------------------------------------------------------------------------------
 # Systematic tests

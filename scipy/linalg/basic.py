@@ -658,17 +658,17 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     else:
         a = np.asarray(a)
     u, s, vh = decomp_svd.svd(a, full_matrices=False)
-    
+
     if rcond is not None:
         cond = rcond
     if cond in [None,-1]:
         t = u.dtype.char.lower()
         factor = {'f': 1E3, 'd': 1E6}
         cond = factor[t] * np.finfo(t).eps
-    
+
     rank = np.sum(s > cond * np.max(s))
     psigma_diag = 1.0 / s[: rank]
- 
+
     B = np.transpose(np.conjugate(np.dot(u[:, : rank] *
                                          psigma_diag, vh[: rank])))
 
@@ -743,7 +743,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         t = u.dtype.char.lower()
         factor = {'f': 1E3, 'd': 1E6}
         cond = factor[t] * np.finfo(t).eps
-    
+
     # For Hermitian matrices, singular values equal abs(eigenvalues)
     above_cutoff = (abs(s) > cond * np.max(abs(s)))
     psigma_diag = 1.0 / s[above_cutoff]

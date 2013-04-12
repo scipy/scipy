@@ -259,7 +259,7 @@ class FuncData(object):
             tol_mask = (diff <= atol + rtol*abs_y)
             pinf_mask = (pinf_x == pinf_y)
             minf_mask = (minf_x == minf_y)
-            
+
             nan_mask = (nan_x == nan_y)
 
             bad_j = ~(tol_mask & pinf_mask & minf_mask & nan_mask)

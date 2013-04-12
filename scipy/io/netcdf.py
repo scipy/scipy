@@ -119,11 +119,11 @@ class netcdf_file(object):
     details about NetCDF files can be found `here
     <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`_. There
     are three main sections to a NetCDF data structure:
-    
+
     1. Dimensions
     2. Variables
     3. Attributes
-    
+
     The dimensions section records the name and length of each dimension used
     by the variables. The variables would then indicate which dimensions it
     uses and any attributes such as data units, along with containing the data
@@ -132,23 +132,23 @@ class netcdf_file(object):
     that axes. Lastly, the attributes section would contain additional
     information such as the name of the file creator or the instrument used to
     collect the data.
-    
+
     When writing data to a NetCDF file, there is often the need to indicate the
     'record dimension'. A record dimension is the unbounded dimension for a
     variable. For example, a temperature variable may have dimensions of
     latitude, longitude and time. If one wants to add more temperature data to
     the NetCDF file as time progresses, then the temperature variable should
     have the time dimension flagged as the record dimension.
-    
+
     In addition, the NetCDF file header contains the position of the data in
     the file, so access can be done in an efficient manner without loading
     unnecessary data into memory. It uses the ``mmap`` module to create
     Numpy arrays mapped to the data on disk, for the same purpose.
-    
+
     Examples
     --------
     To create a NetCDF file:
-    
+
         >>> from scipy.io import netcdf
         >>> f = netcdf.netcdf_file('simple.nc', 'w')
         >>> f.history = 'Created for a test'
@@ -157,13 +157,13 @@ class netcdf_file(object):
         >>> time[:] = np.arange(10)
         >>> time.units = 'days since 2008-01-01'
         >>> f.close()
-    
+
     Note the assignment of ``range(10)`` to ``time[:]``.  Exposing the slice
     of the time variable allows for the data to be set in the object, rather
     than letting ``range(10)`` overwrite the ``time`` variable.
-    
+
     To read the NetCDF file we just created:
-    
+
         >>> from scipy.io import netcdf
         >>> f = netcdf.netcdf_file('simple.nc', 'r')
         >>> print(f.history)

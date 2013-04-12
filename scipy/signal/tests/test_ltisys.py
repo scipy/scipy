@@ -312,7 +312,7 @@ class Test_bode(object):
 
 
 class Test_freqresp(object):
-    
+
     def test_real_part_manual(self):
         # Test freqresp() real part calculation (manual sanity check).
         # 1st order low-pass filter: H(s) = 1 / (s + 1),

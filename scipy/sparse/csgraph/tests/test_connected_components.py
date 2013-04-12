@@ -15,7 +15,7 @@ def test_weak_connections():
         n_components, labels =\
             csgraph.connected_components(X, directed=True,
                                          connection='weak')
-        
+
         assert_equal(n_components, 2)
         assert_array_almost_equal(labels, [0, 0, 1])
 
@@ -32,7 +32,7 @@ def test_strong_connections():
         n_components, labels =\
             csgraph.connected_components(X, directed=True,
                                          connection='strong')
-        
+
         assert_equal(n_components, 3)
         labels.sort()
         assert_array_almost_equal(labels, [0, 1, 2])
@@ -41,11 +41,11 @@ def test_strong_connections():
         n_components, labels =\
             csgraph.connected_components(X, directed=True,
                                          connection='strong')
-        
+
         assert_equal(n_components, 2)
         labels.sort()
         assert_array_almost_equal(labels, [0, 0, 1])
-        
+
 def test_strong_connections2():
     X = np.array([[0, 0, 0, 0, 0, 0],
                   [1, 0, 1, 0, 0, 0],

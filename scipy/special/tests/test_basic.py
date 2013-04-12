@@ -426,7 +426,7 @@ class TestCephes(TestCase):
         y2 = -cephes.mathieu_modcem2(m, q, z)[0] - 2*fr*cephes.mathieu_modcem1(m, q, z)[0]
 
         assert_allclose(y1, y2, rtol=1e-10)
-        
+
     def test_mathieu_modsem1(self):
         assert_equal(cephes.mathieu_modsem1(1,0,0),(0.0,0.0))
 

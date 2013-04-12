@@ -410,7 +410,7 @@ class LSQUnivariateSpline(UnivariateSpline):
     >>> plt.plot(x, y, '.-')
     >>> plt.plot(xs, ys)
     >>> plt.show()
-    
+
     xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y
     with knots [-3,-1,0,1,3]
 

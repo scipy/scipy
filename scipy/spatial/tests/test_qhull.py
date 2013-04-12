@@ -83,7 +83,7 @@ class Test_Qhull(object):
                          np.array([[0,0],[0,1],[1,0],[1,1.],[0.5,0.5]]),
                          b'Qz')
         xd = copy.deepcopy(x.get_voronoi_diagram())
-        
+
         y = qhull._Qhull(b'v',
                          np.array([[0,0],[0,1],[1,0],[1,2.]]),
                          b'Qz')
@@ -113,7 +113,7 @@ class Test_Qhull(object):
         assert_raises(RuntimeError, x.get_voronoi_diagram)
         y.close()
         assert_raises(RuntimeError, y.get_voronoi_diagram)
-        
+
 
 class TestUtilities(object):
     """
@@ -563,8 +563,8 @@ def assert_hulls_equal(points, facets_1, facets_2):
         return
 
     assert_equal(facets_1, facets_2)
-    
-    
+
+
 
 class TestConvexHull:
     def test_hull_consistency_tri(self):
@@ -686,7 +686,7 @@ class TestVoronoi:
         p2.sort()
 
         assert_equal(p1, p2)
-    
+
     def test_ridges(self):
         # Check that the ridges computed by Voronoi indeed separate
         # the regions of nearest neighborhood, by comparing the result

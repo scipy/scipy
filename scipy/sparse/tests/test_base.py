@@ -1048,7 +1048,7 @@ class _TestFancyIndexing:
             if isinstance(a, np.ndarray):
                 return a
             return a.todense()
-            
+
         # [i]
         assert_equal(A[[1,3]].todense(),  B[[1,3]])
 
@@ -1345,7 +1345,7 @@ class _TestFancyMultidimAssign:
 
         I_bad = [[ii + 5 for ii in i] for i in I]
         J_bad = [[jj + 7 for jj in j] for j in J]
-        
+
         C = [1, 2, 3, 4, 5, 6, 7]
         assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C)
         assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C)

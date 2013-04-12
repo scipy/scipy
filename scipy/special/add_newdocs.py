@@ -72,7 +72,7 @@ add_newdoc("scipy.special", "binom",
 
     Binomial coefficient
     """)
- 
+
 add_newdoc("scipy.special", "btdtria",
     """
     """)
@@ -372,7 +372,7 @@ add_newdoc("scipy.special", "eval_sh_jacobi",
 
     Evaluate shifted Jacobi polynomial at a point.
     """)
- 
+
 add_newdoc("scipy.special", "eval_gegenbauer",
     """
     eval_gegenbauer(n, alpha, x, out=None)
@@ -396,7 +396,7 @@ add_newdoc("scipy.special", "eval_chebyu",
 
     Evaluate Chebyshev U polynomial at a point.
     """)
- 
+
 add_newdoc("scipy.special", "eval_chebys",
     """
     eval_chebys(n, x, out=None)
@@ -466,7 +466,7 @@ add_newdoc("scipy.special", "eval_hermitenorm",
 
     Evaluate normalized Hermite polynomial at a point.
     """)
- 
+
 add_newdoc("scipy.special", "exp1",
     """
     y=exp1(z) returns the exponential integral (n=1) of complex argument
@@ -1504,7 +1504,7 @@ add_newdoc("scipy.special", "xlogy",
         Multiplier
     y : array_like
         Argument
-    
+
     Returns
     -------
     z : array_like
@@ -1524,7 +1524,7 @@ add_newdoc("scipy.special", "xlog1py",
         Multiplier
     y : array_like
         Argument
-    
+
     Returns
     -------
     z : array_like

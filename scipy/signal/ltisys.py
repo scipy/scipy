@@ -948,7 +948,7 @@ def freqresp(system, w=None, n=10000):
 
     >>> s1 = signal.lti([], [1, 1, 1], [5])
     # transfer function: H(s) = 5 / (s-1)^3
-    
+
     >>> w, H = signal.freqresp(s1)
 
     >>> plt.figure()
