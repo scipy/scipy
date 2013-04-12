@@ -380,7 +380,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     See also ppcc_plot
     """
     try:
-        ppf_func = eval('distributions.%s.ppf'%dist)
+        ppf_func = eval('distributions.%s.ppf' % dist)
     except AttributeError:
         raise ValueError("%s is not a valid distribution with a ppf." % dist)
     """

@@ -265,8 +265,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         print('LSQR            Least-squares solution of  Ax = b')
         str1 = 'The matrix A has %8g rows  and %8g cols' % (m, n)
         str2 = 'damp = %20.14e   calc_var = %8g' % (damp, calc_var)
-        str3 = 'atol = %8.2e                 conlim = %8.2e'%( atol, conlim)
-        str4 = 'btol = %8.2e               iter_lim = %8g'  %( btol, iter_lim)
+        str3 = 'atol = %8.2e                 conlim = %8.2e' % ( atol, conlim)
+        str4 = 'btol = %8.2e               iter_lim = %8g'   % ( btol, iter_lim)
         print(str1)
         print(str2)
         print(str3)
@@ -333,7 +333,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         test1  = 1
         test2  = alfa / beta
         str1   = '%6g %12.5e'    %(    itn,   x[0] )
-        str2   = ' %10.3e %10.3e'%( r1norm, r2norm )
+        str2   = ' %10.3e %10.3e' % ( r1norm, r2norm )
         str3   = '  %8.1e %8.1e' %(  test1,  test2 )
         print(str1, str2, str3)
 

@@ -72,7 +72,7 @@ def diff(x,order=1,period=None, _cache=_cache):
                                                  zero_nyquist=1)
         _cache[(n,order,c)] = omega
     overwrite_x = _datacopied(tmp, x)
-    return convolve.convolve(tmp,omega,swap_real_imag=order%2,
+    return convolve.convolve(tmp,omega,swap_real_imag=order % 2,
                              overwrite_x=overwrite_x)
 del _cache
 

@@ -1064,7 +1064,7 @@ class rv_continuous(rv_generic):
             extradoc = ''
         if extradoc.startswith('\n\n'):
             extradoc = extradoc[2:]
-        self.__doc__ = ''.join(['%s continuous random variable.'%longname,
+        self.__doc__ = ''.join(['%s continuous random variable.' % longname,
                                 '\n\n%(before_notes)s\n', docheaders['notes'],
                                 extradoc, '\n%(example)s'])
         self._construct_doc()
@@ -5842,7 +5842,7 @@ class rv_discrete(rv_generic):
             extradoc = ''
         if extradoc.startswith('\n\n'):
             extradoc = extradoc[2:]
-        self.__doc__ = ''.join(['%s discrete random variable.'%longname,
+        self.__doc__ = ''.join(['%s discrete random variable.' % longname,
                                 '\n\n%(before_notes)s\n', docheaders['notes'],
                                 extradoc, '\n%(example)s'])
         self._construct_doc()

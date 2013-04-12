@@ -415,7 +415,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     # a way that avoids the Runge phenomenon. Ensure, by including the
     # endpoint or not as appropriate, that one point always falls at x
     # exactly.
-    xs = scale*np.cos(np.linspace(0,np.pi,n,endpoint=n%1)) + x
+    xs = scale*np.cos(np.linspace(0,np.pi,n,endpoint=n % 1)) + x
 
     P = KroghInterpolator(xs, f(xs))
     d = P.derivatives(x,der=degree+1)

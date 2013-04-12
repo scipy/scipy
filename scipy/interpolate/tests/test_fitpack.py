@@ -14,18 +14,18 @@ def norm2(x):
 def f1(x,d=0):
     if d is None: return "sin"
     if x is None: return "sin(x)"
-    if d%4 == 0: return sin(x)
-    if d%4 == 1: return cos(x)
-    if d%4 == 2: return -sin(x)
-    if d%4 == 3: return -cos(x)
+    if d % 4 == 0: return sin(x)
+    if d % 4 == 1: return cos(x)
+    if d % 4 == 2: return -sin(x)
+    if d % 4 == 3: return -cos(x)
 
 def f2(x,y=0,dx=0,dy=0):
     if x is None: return "sin(x+y)"
     d=dx+dy
-    if d%4 == 0: return sin(x+y)
-    if d%4 == 1: return cos(x+y)
-    if d%4 == 2: return -sin(x+y)
-    if d%4 == 3: return -cos(x+y)
+    if d % 4 == 0: return sin(x+y)
+    if d % 4 == 1: return cos(x+y)
+    if d % 4 == 2: return -sin(x+y)
+    if d % 4 == 3: return -cos(x+y)
 
 def makepairs(x, y):
     """Helper function to create an array of pairs of x and y."""
@@ -72,20 +72,20 @@ class TestSmokeTests(TestCase):
                 assert_(err < tol, (k, d, err, tol))
                 nd.append((err, tol))
             nk.append(nd)
-        put("\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]"%(f(None),
+        put("\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]" % (f(None),
                                                         repr(round(xb,3)),repr(round(xe,3)),
                                                           repr(round(a,3)),repr(round(b,3))))
         if at:
             str="at knots"
         else:
             str="at the middle of nodes"
-        put(" per=%d s=%s Evaluation %s"%(per,repr(s),str))
+        put(" per=%d s=%s Evaluation %s" % (per,repr(s),str))
         put(" k :  |f-s|^2  |f'-s'| |f''-.. |f'''-. |f''''- |f'''''")
         k=1
         for l in nk:
-            put(' %d : '%k)
+            put(' %d : ' % k)
             for r in l:
-                put(' %.1e  %.1e'%r)
+                put(' %.1e  %.1e' % r)
             put('\n')
             k=k+1
 
@@ -108,23 +108,23 @@ class TestSmokeTests(TestCase):
         for k in range(1,6):
             tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
             nk.append([splint(ia,ib,tck),spalde(dx,tck)])
-        put("\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]"%(f(None),
+        put("\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]" % (f(None),
                                                    repr(round(xb,3)),repr(round(xe,3)),
                                                     repr(round(a,3)),repr(round(b,3))))
-        put(" per=%d s=%s N=%d [a, b] = [%s, %s]  dx=%s"%(per,repr(s),N,repr(round(ia,3)),repr(round(ib,3)),repr(round(dx,3))))
+        put(" per=%d s=%s N=%d [a, b] = [%s, %s]  dx=%s" % (per,repr(s),N,repr(round(ia,3)),repr(round(ib,3)),repr(round(dx,3))))
         put(" k :  int(s,[a,b]) Int.Error   Rel. error of s^(d)(dx) d = 0, .., k")
         k=1
         for r in nk:
             if r[0]<0: sr='-'
             else: sr=' '
-            put(" %d   %s%.8f   %.1e "%(k,sr,abs(r[0]),
+            put(" %d   %s%.8f   %.1e " % (k,sr,abs(r[0]),
                                          abs(r[0]-(f(ib,-1)-f(ia,-1)))))
             d=0
             for dr in r[1]:
                 err = abs(1-dr/f(dx,d))
                 tol = err_est(k, d)
                 assert_(err < tol, (k, d))
-                put(" %.1e %.1e"%(err, tol))
+                put(" %.1e %.1e" % (err, tol))
                 d=d+1
             put("\n")
             k=k+1
@@ -144,7 +144,7 @@ class TestSmokeTests(TestCase):
             if k == 3:
                 assert_allclose(roots, pi*array([1, 2, 3, 4]),
                                 rtol=1e-3)
-            put('  %d  : %s'%(k,repr(roots.tolist())))
+            put('  %d  : %s' % (k,repr(roots.tolist())))
 
     def check_4(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
               ia=0,ib=2*pi,dx=0.2*pi):
@@ -154,8 +154,8 @@ class TestSmokeTests(TestCase):
         x1=a+(b-a)*arange(1,N,dtype=float)/float(N-1) # middle points of the nodes
         v,v1=f(x),f(x1)
         nk=[]
-        put(" u = %s   N = %d"%(repr(round(dx,3)),N))
-        put("  k  :  [x(u), %s(x(u))]  Error of splprep  Error of splrep "%(f(0,None)))
+        put(" u = %s   N = %d" % (repr(round(dx,3)),N))
+        put("  k  :  [x(u), %s(x(u))]  Error of splprep  Error of splrep " % (f(0,None)))
         for k in range(1,6):
             tckp,u=splprep([x,v],s=s,per=per,k=k,nest=-1)
             tck=splrep(x,v,s=s,per=per,k=k)
@@ -173,7 +173,7 @@ class TestSmokeTests(TestCase):
         tckp,u=splprep([x,v],s=s,per=per,k=k,nest=-1)
         for d in range(1,k+1):
             uv=splev(dx,tckp,d)
-            put(" %s "%(repr(uv[0])))
+            put(" %s " % (repr(uv[0])))
 
     def check_5(self,f=f2,kx=3,ky=3,xb=0,xe=2*pi,yb=0,ye=2*pi,Nx=20,Ny=20,s=0):
         x=xb+(xe-xb)*arange(Nx+1,dtype=float)/float(Nx)

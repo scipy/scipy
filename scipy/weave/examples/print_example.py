@@ -7,7 +7,7 @@ import inline_tools
 import time
 
 def print_compare(n):
-    print('Printing %d integers:'%n)
+    print('Printing %d integers:' % n)
     t1 = time.time()
     for i in range(n):
         print(i, end=' ')

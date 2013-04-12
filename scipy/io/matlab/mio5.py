@@ -765,7 +765,7 @@ class VarWriter5(object):
                  % (max_length-1))
         self.write_element(np.array([length], dtype='i4'))
         self.write_element(
-            np.array(fieldnames, dtype='S%d'%(length)),
+            np.array(fieldnames, dtype='S%d' % (length)),
             mdtype=miINT8)
         A = np.atleast_2d(arr).flatten('F')
         for el in A:

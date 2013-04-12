@@ -78,7 +78,7 @@ def sortedDictValues3(adict):
 import time
 
 def sort_compare(a,n):
-    print('Dict sort of %d items for %d iterations:'%(len(a),n))
+    print('Dict sort of %d items for %d iterations:' % (len(a),n))
     t1 = time.time()
     for i in range(n):
         b=sortedDictValues3(a)

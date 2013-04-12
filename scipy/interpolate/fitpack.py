@@ -214,7 +214,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     if per:
         for i in range(idim):
             if x[i][0]!=x[i][-1]:
-                if quiet<2:print('Warning: Setting x[%d][%d]=x[%d][0]'%(i,m,i))
+                if quiet<2:print('Warning: Setting x[%d][%d]=x[%d][0]' % (i,m,i))
                 x[i][-1]=x[i][0]
     if not 0 < idim < 11:
         raise TypeError('0 < idim < 11 must hold')
@@ -272,7 +272,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     tcku = [t,list(c),k],u
     if ier<=0 and not quiet:
         print(_iermess[ier][0])
-        print("\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s))
+        print("\tk=%d n=%d m=%d fp=%f s=%f" % (k,len(t),m,fp,s))
     if ier>0 and not full_output:
         if ier in [1,2,3]:
             print("Warning: "+_iermess[ier][0])
@@ -456,7 +456,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     tck = (t[:n],c[:n],k)
     if ier<=0 and not quiet:
         print(_iermess[ier][0])
-        print("\tk=%d n=%d m=%d fp=%f s=%f"%(k,len(t),m,fp,s))
+        print("\tk=%d n=%d m=%d fp=%f s=%f" % (k,len(t),m,fp,s))
     if ier>0 and not full_output:
         if ier in [1,2,3]:
             print("Warning: "+_iermess[ier][0])
@@ -540,7 +540,7 @@ def splev(x, tck, der=0, ext=0):
         return list(map(lambda c, x=x, t=t, k=k, der=der : splev(x, [t,c,k], der, ext), c))
     else:
         if not (0 <= der <= k):
-            raise ValueError("0<=der=%d<=k=%d must hold"%(der,k))
+            raise ValueError("0<=der=%d<=k=%d must hold" % (der,k))
         if not ext in (0,1,2):
             raise ValueError("ext not in (0, 1, 2)")
 
@@ -882,12 +882,12 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     ierm=min(11,max(-3,ier))
     if ierm<=0 and not quiet:
         print(_iermess2[ierm][0])
-        print("\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f"%(kx,ky,len(tx),
+        print("\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" % (kx,ky,len(tx),
                                                            len(ty),m,fp,s))
     if ierm>0 and not full_output:
         if ier in [1,2,3,4,5]:
             print("Warning: "+_iermess2[ierm][0])
-            print("\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f"%(kx,ky,len(tx),
+            print("\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" % (kx,ky,len(tx),
                                                            len(ty),m,fp,s))
         else:
             try:

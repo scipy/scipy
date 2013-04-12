@@ -215,7 +215,7 @@ def intermediate_dir():
         builds.
     """
     python_name = "python%d%d_intermediate" % tuple(sys.version_info[:2])
-    path = os.path.join(tempfile.gettempdir(),"%s"%whoami(),python_name)
+    path = os.path.join(tempfile.gettempdir(),"%s" % whoami(),python_name)
     if not os.path.exists(path):
         os.makedirs(path, mode=0o700)
     return path

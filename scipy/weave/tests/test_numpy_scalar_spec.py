@@ -117,11 +117,11 @@ class NumpyComplexScalarConverter(TestCase):
 for _n in dir():
     if _n[-9:]=='Converter':
         if msvc_exists():
-            exec("class Test%sMsvc(%s):\n    compiler = 'msvc'"%(_n,_n))
+            exec("class Test%sMsvc(%s):\n    compiler = 'msvc'" % (_n,_n))
         else:
-            exec("class Test%sUnix(%s):\n    compiler = ''"%(_n,_n))
+            exec("class Test%sUnix(%s):\n    compiler = ''" % (_n,_n))
         if gcc_exists():
-            exec("class Test%sGcc(%s):\n    compiler = 'gcc'"%(_n,_n))
+            exec("class Test%sGcc(%s):\n    compiler = 'gcc'" % (_n,_n))
 
 
 def setup_test_location():

@@ -144,7 +144,7 @@ def py_int_search(seq, t):
 import time
 
 def search_compare(a,n):
-    print('Binary search for %d items in %d length list of integers:'%(n,m))
+    print('Binary search for %d items in %d length list of integers:' % (n,m))
     t1 = time.time()
     for i in range(n):
         py_int_search(a,i)

@@ -166,7 +166,7 @@ class TestIrfft(TestCase):
             x1[0] = x[0]
             for i in range(1,size/2):
                 x1[i] = x[2*i-1] + 1j * x[2*i]
-            if not size%2:
+            if not size % 2:
                 x1[-1] = x[-1]
             y = irfft(x)
 
@@ -196,7 +196,7 @@ class TestFftn(TestCase):
                             ((256,256),10),
                             ((512,512),3),
                             ]:
-            print('%9s' % ('%sx%s'%size), end=' ')
+            print('%9s' % ('%sx%s' % size), end=' ')
             sys.stdout.flush()
 
             for x in [random(size).astype(double),

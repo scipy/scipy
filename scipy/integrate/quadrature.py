@@ -780,7 +780,7 @@ def newton_cotes(rn, equal=0):
     vec = 2.0/ (nvec[::2]+1)
     ai = np.dot(Cinv[:,::2],vec) * N/2
 
-    if (N%2 == 0) and equal:
+    if (N % 2 == 0) and equal:
         BN = N/(N+3.)
         power = N+2
     else:

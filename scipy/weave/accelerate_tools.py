@@ -37,7 +37,7 @@ class Instance(Type_Descriptor):
         self.prototype  = prototype
 
     def check(self,s):
-        return "PyInstance_Check(%s)"%s
+        return "PyInstance_Check(%s)" % s
 
     def inbound(self,s):
         return s
@@ -48,19 +48,19 @@ class Instance(Type_Descriptor):
     def get_attribute(self,name):
         proto = getattr(self.prototype,name)
         T = lookup_type(proto)
-        code = 'tempPY = PyObject_GetAttrString(%%(rhs)s,"%s");\n'%name
+        code = 'tempPY = PyObject_GetAttrString(%%(rhs)s,"%s");\n' % name
         convert = T.inbound('tempPY')
-        code += '%%(lhsType)s %%(lhs)s = %s;\n'%convert
+        code += '%%(lhsType)s %%(lhs)s = %s;\n' % convert
         return T,code
 
     def set_attribute(self,name):
         proto = getattr(self.prototype,name)
         T = lookup_type(proto)
         convert,owned = T.outbound('%(rhs)s')
-        code = 'tempPY = %s;'%convert
+        code = 'tempPY = %s;' % convert
         if not owned:
             code += ' Py_INCREF(tempPY);'
-        code += ' PyObject_SetAttrString(%%(lhs)s,"%s",tempPY);'%name
+        code += ' PyObject_SetAttrString(%%(lhs)s,"%s",tempPY);' % name
         code += ' Py_DECREF(tempPY);\n'
         return T,code
 
@@ -70,18 +70,18 @@ class Instance(Type_Descriptor):
 class Basic(Type_Descriptor):
     owned = 1
     def check(self,s):
-        return "%s(%s)"%(self.checker,s)
+        return "%s(%s)" % (self.checker,s)
     def inbound(self,s):
-        return "%s(%s)"%(self.inbounder,s)
+        return "%s(%s)" % (self.inbounder,s)
     def outbound(self,s):
-        return "%s(%s)"%(self.outbounder,s),self.owned
+        return "%s(%s)" % (self.outbounder,s),self.owned
 
 class Basic_Number(Basic):
     def literalizer(self,s):
         return str(s)
     def binop(self,symbol,a,b):
         assert_(symbol in ['+','-','*','/'], msg=symbol)
-        return '%s %s %s'%(a,symbol,b),self
+        return '%s %s %s' % (a,symbol,b),self
 
 class Integer(Basic_Number):
     cxxtype = "long"
@@ -126,20 +126,20 @@ class Vector(Type_Descriptor):
                     ['#include "numpy/arrayobject.h"']
     dims = 1
     def check(self,s):
-        return "PyArray_Check(%s) && ((PyArrayObject*)%s)->nd == %d &&  ((PyArrayObject*)%s)->descr->type_num == %s"%(
+        return "PyArray_Check(%s) && ((PyArrayObject*)%s)->nd == %d &&  ((PyArrayObject*)%s)->descr->type_num == %s" % (
             s,s,self.dims,s,self.typecode)
 
     def inbound(self,s):
-        return "%s(%s)"%(self.inbounder,s)
+        return "%s(%s)" % (self.inbounder,s)
     def outbound(self,s):
-        return "%s(%s)"%(self.outbounder,s),self.owned
+        return "%s(%s)" % (self.outbounder,s),self.owned
 
     def getitem(self,A,v,t):
-        assert_(self.dims == len(v), msg='Expect dimension %d'%self.dims)
-        code = '*((%s*)(%s->data'%(self.cxxbase,A)
+        assert_(self.dims == len(v), msg='Expect dimension %d' % self.dims)
+        code = '*((%s*)(%s->data' % (self.cxxbase,A)
         for i in range(self.dims):
             # assert that ''t[i]'' is an integer
-            code += '+%s*%s->strides[%d]'%(v[i],A,i)
+            code += '+%s*%s->strides[%d]' % (v[i],A,i)
         code += '))'
         return code,self.pybase
     def setitem(self,A,v,t):
@@ -390,7 +390,7 @@ class Python2CXX(CXXCoder):
         assert_(reduce(lambda x,y: x and y,
                       map(lambda x: isinstance(x,Type_Descriptor),
                           signature),
-                      1), msg='%s not all type objects'%signature)
+                      1), msg='%s not all type objects' % signature)
         self.arg_specs = []
         self.customize = weave.base_info.custom_info()
 
@@ -406,7 +406,7 @@ class Python2CXX(CXXCoder):
         return code
 
     def python_function_definition_code(self):
-        return '{ "%s", wrapper_%s, METH_VARARGS, %s },\n'%(
+        return '{ "%s", wrapper_%s, METH_VARARGS, %s },\n' % (
             self.name,
             self.name,
             CStr(self.function.__doc__))

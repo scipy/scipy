@@ -33,7 +33,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
     # check also values
     if xi.size > 0 and deriv_shape is None:
         bs_shape = (y.shape[:axis] + ((1,)*len(x_shape)) + y.shape[axis:][1:])
-        yv = y[((slice(None,None,None),)*(axis%y.ndim))+(1,)].reshape(bs_shape)
+        yv = y[((slice(None,None,None),)*(axis % y.ndim))+(1,)].reshape(bs_shape)
 
         yi, y = np.broadcast_arrays(yi, yv)
         assert_allclose(yi, y)
