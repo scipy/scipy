@@ -284,7 +284,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         win = np.asarray(window)
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
-        if  win.shape[0] > x.shape[-1]:
+        if win.shape[0] > x.shape[-1]:
             raise ValueError('window is longer than x.')
         nperseg = win.shape[0]
 

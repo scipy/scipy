@@ -1276,7 +1276,7 @@ def watershed_ift(input, markers, structure=None, output=None):
         raise RuntimeError('structure and input must have equal rank')
     for ii in structure.shape:
         if ii != 3:
-            raise  RuntimeError('structure dimensions must be equal to 3')
+            raise RuntimeError('structure dimensions must be equal to 3')
     if not structure.flags.contiguous:
         structure = structure.copy()
     markers = numpy.asarray(markers)

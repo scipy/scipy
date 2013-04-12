@@ -242,7 +242,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     distmass = []
     for ii in distsupport:
         current = distfn.cdf(ii,*arg)
-        if  current - last >= wsupp-1e-14:
+        if current - last >= wsupp-1e-14:
             distsupp.append(ii)
             distmass.append(current - last)
             last = current

@@ -366,7 +366,7 @@ def test_symmetric_modes():
                 for mattype in params.mattypes:
                     for (sigma, modes) in params.sigmas_modes.items():
                         for mode in modes:
-                            yield  (eval_evec, symmetric, D, typ, k, which,
+                            yield (eval_evec, symmetric, D, typ, k, which,
                                     None, sigma, mattype, None, mode)
 
 
@@ -380,7 +380,7 @@ def test_hermitian_modes():
                 if which == 'BE': continue  # BE invalid for complex
                 for mattype in params.mattypes:
                     for sigma in params.sigmas_modes:
-                        yield  (eval_evec, symmetric, D, typ, k, which,
+                        yield (eval_evec, symmetric, D, typ, k, which,
                                 None, sigma, mattype)
 
 

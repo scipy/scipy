@@ -55,7 +55,7 @@ class inline_ext_function(ext_tools.ext_function):
                                            '&py__globals))\n'\
                       '    return NULL;\n'
 
-        return   declare_return + declare_py_objects + \
+        return declare_return + declare_py_objects + \
                  init_values + parse_tuple
 
     def arg_declaration_code(self):

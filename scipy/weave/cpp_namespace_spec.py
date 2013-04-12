@@ -8,7 +8,7 @@
 from __future__ import absolute_import, print_function
 
 from weave import common_info
-from weave import  base_info
+from weave import base_info
 from weave.base_spec import base_converter
 
 cpp_support_template = \

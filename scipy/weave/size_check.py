@@ -195,7 +195,7 @@ class dummy_array(object):
                 #if hasattr(step,'value') and type(step.value) != ndarray:
                 #    step = step.value
                 if beg is None: beg = 0
-                if end == sys.maxint or  end is None:
+                if end == sys.maxint or end is None:
                     end = dim_len
                 if step is None:
                     step = 1
@@ -210,9 +210,9 @@ class dummy_array(object):
                 if end < 0: end = 0
                 if end > dim_len: end = dim_len
                 # This is rubbish.
-                if  beg == end:
+                if beg == end:
                     beg,end,step = 0,0,1
-                elif  beg >= dim_len and step > 0:
+                elif beg >= dim_len and step > 0:
                     beg,end,step = 0,0,1
                 #elif index.step > 0 and beg <= end:
                 elif step > 0 and beg <= end:

@@ -1097,13 +1097,13 @@ class rv_continuous(rv_generic):
             right = self.b
 
         factor = 10.
-        if  not left: # i.e. self.a = -inf
+        if not left: # i.e. self.a = -inf
             left = -1.*factor
             while self._ppf_to_solve(left, q,*args) > 0.:
                 right = left
                 left *= factor
             # left is now such that cdf(left) < q
-        if  not right: # i.e. self.b = inf
+        if not right: # i.e. self.b = inf
             right = factor
             while self._ppf_to_solve(right, q,*args) < 0.:
                 left = right
@@ -2308,7 +2308,7 @@ class bradford_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        return  c / (c*x + 1.0) / log(1.0+c)
+        return c / (c*x + 1.0) / log(1.0+c)
     def _cdf(self, x, c):
         return log(1.0+c*x) / log(c+1.0)
     def _ppf(self, q, c):

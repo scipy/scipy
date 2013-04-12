@@ -44,7 +44,7 @@ def kaiser_beta(a):
     ----------
     Oppenheim, Schafer, "Discrete-Time Signal Processing", p.475-476.
     """
-    if  a > 50:
+    if a > 50:
         beta = 0.1102 * (a - 8.7)
     elif a > 21:
         beta = 0.5842 * (a - 21) ** 0.4 + 0.07886 * (a - 21)

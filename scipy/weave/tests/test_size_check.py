@@ -311,7 +311,7 @@ class TestExpressions(TestCase):
             actual = eval(expr,locals()).shape
         except:
             actual = 'failed'
-        if actual is 'failed' and  desired is 'failed':
+        if actual is 'failed' and desired is 'failed':
             return
         try:
             assert_array_equal(actual,desired, expr)

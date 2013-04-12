@@ -81,7 +81,7 @@ class ext_function_from_specs(object):
                              (format,ref_string)
         parse_tuple += '   return NULL;\n'
 
-        return   declare_return + declare_kwlist + declare_py_objects  \
+        return declare_return + declare_kwlist + declare_py_objects  \
                + init_values + parse_tuple
 
     def arg_declaration_code(self):

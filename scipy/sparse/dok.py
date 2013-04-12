@@ -127,7 +127,7 @@ class dok_matrix(spmatrix, dict):
             raise IndexError('index out of bounds')
         return dict.get(self, key, default)
 
-    def  __getitem__(self, key):
+    def __getitem__(self, key):
         """If key=(i,j) is a pair of integers, return the corresponding
         element.  If either i or j is a slice or sequence, return a new sparse
         matrix with just these elements.

@@ -15,7 +15,7 @@ def f3(x) :
     return x*(x-1.)*(x-2.)*(x-3.)
 
 def f4(x) :
-    if x > 1 : return  1.0 + .1*x
+    if x > 1 : return 1.0 + .1*x
     if x < 1 : return -1.0 + .1*x
     return 0
 
@@ -24,7 +24,7 @@ def f5(x) :
     return 0
 
 def f6(x) :
-    if   x > 1 : return random()
+    if x > 1 : return random()
     elif x < 1 : return -random()
     else : return 0
 

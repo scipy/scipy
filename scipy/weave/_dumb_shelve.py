@@ -7,7 +7,7 @@ except ImportError:
     # Some python installations don't have zlib.
     pass
 
-import  pickle
+import pickle
 
 class DbfilenameShelf(Shelf):
     """Shelf implementation using the "anydbm" generic dbm interface.
