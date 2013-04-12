@@ -64,7 +64,7 @@ def solve_sylvester(a,b,q):
 
     # Call the Sylvester equation solver
     trsyl, = get_lapack_funcs(('trsyl',), (r,s,f))
-    if trsyl == None:
+    if trsyl is None:
         raise RuntimeError('LAPACK implementation does not contain a proper Sylvester equation solver (TRSYL)')
     y, scale, info = trsyl(r, s, f, tranb='C')
 
