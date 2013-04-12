@@ -321,7 +321,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         # Estimate cond(A).
         maxrbar = max(maxrbar, rhobarold)
         if itn > 1:
-          minrbar= min(minrbar, rhobarold)
+            minrbar= min(minrbar, rhobarold)
         condA = max(maxrbar, rhotemp) / min(minrbar, rhotemp)
 
         # Test for convergence.
