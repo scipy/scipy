@@ -774,7 +774,6 @@ class TestKelvin(TestCase):
                                                -0.88947990142654,
                                                0.929983638568022]),11)
 
-
     def test_beip_zeros(self):
         bip = special.beip_zeros(5)
         assert_array_almost_equal(bip,array([  3.772673304934953,
@@ -837,8 +836,6 @@ class TestKelvin(TestCase):
                                                 13.85827,
                                                 18.30717,
                                                 22.75379]),4)
-
-
 
     # numbers come from 9.9 of A&S pg. 381
     def test_kelvin_zeros(self):
@@ -1774,7 +1771,6 @@ class TestBessel(TestCase):
         kv2 = special.kv(2,0.2)
         assert_almost_equal(kv2, 49.51242928773287, 10)
 
-
     def test_negv_kve(self):
         assert_equal(special.kve(3.0, 2.2), special.kve(-3.0, 2.2))
 
@@ -1822,7 +1818,6 @@ class TestBessel(TestCase):
         allval = r_[ypo,zpo]
         assert_array_almost_equal(abs(special.yv(0.0,all)),0.0,11)
         assert_array_almost_equal(abs(special.yv(1,all)-allval),0.0,11)
-
 
     def test_y1_zeros(self):
         y1 = special.y1_zeros(1)
@@ -1880,7 +1875,6 @@ class TestBessel(TestCase):
         yvpr = (special.yv(1,.2) - special.yv(3,.2))/2.0
         yvp1 = special.yvp(2,.2)
         assert_array_almost_equal(yvp1,yvpr,10)
-
 
     def _cephes_vs_amos_points(self):
         """Yield points at which to compare Cephes implementation to AMOS"""

@@ -75,7 +75,6 @@ def polyline(dc,line,xoffset=0,yoffset=0):
                """
     weave.inline(code,['dc','line'])
 
-
     #------------------------------------------------------------------------
     # Find the maximum and minimum points in the drawing list and add
     # them to the bounding box.

@@ -1135,7 +1135,6 @@ def extrema(input, labels=None, index=None):
                                                                find_min=True, find_max=True,
                                                                find_min_positions=True, find_max_positions=True)
 
-
     if numpy.isscalar(minimums):
         return minimums, maximums, tuple((min_positions // dim_prod) % dims), tuple((max_positions // dim_prod) % dims)
 

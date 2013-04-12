@@ -1450,7 +1450,6 @@ class KrylovJacobian(Jacobian):
 
         self._update_diff_step()
 
-
         # Setup also the preconditioner, if possible
         if self.preconditioner is not None:
             if hasattr(self.preconditioner, 'setup'):

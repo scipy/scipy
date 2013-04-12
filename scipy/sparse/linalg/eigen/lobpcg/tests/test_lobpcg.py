@@ -14,7 +14,6 @@ from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 set_printoptions(precision=3,linewidth=90)
 
 
-
 def ElasticRod(n):
     # Fixed-free elastic rod
     L = 1.0

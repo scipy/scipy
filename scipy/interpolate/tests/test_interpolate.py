@@ -129,7 +129,6 @@ class TestInterp1D(object):
         assert_raises(ValueError, interp1d, self.x10, self.y1)
         assert_raises(ValueError, interp1d, self.x1, self.y1)
 
-
     def test_init(self):
         """ Check that the attributes are initialized appropriately by the
         constructor.
@@ -168,7 +167,6 @@ class TestInterp1D(object):
             interp1d(self.x10, self.y210).y,
             self.y210,
         )
-
 
     def test_linear(self):
         """ Check the actual implementation of linear interpolation.

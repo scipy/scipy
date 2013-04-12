@@ -188,7 +188,6 @@ if _um:
     umfDefines = updateDictWithVars( {}, _um, 'UMFPACK_.*' )
     locals().update( umfDefines )
 
-
     umfStatus = {
         UMFPACK_OK : 'UMFPACK_OK',
         UMFPACK_WARNING_singular_matrix : 'UMFPACK_WARNING_singular_matrix',
@@ -705,7 +704,6 @@ class UmfpackContext( Struct ):
             if status != UMFPACK_OK:
                 raise RuntimeError('%s failed with %s'
                         % (self.funs.get_numeric, umfStatus[status]))
-
 
             Lxz = np.zeros( (lnz,), dtype=np.complex128 )
             Uxz = np.zeros( (unz,), dtype=np.complex128 )

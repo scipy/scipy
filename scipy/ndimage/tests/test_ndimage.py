@@ -519,7 +519,6 @@ class TestNdimage:
             output = ndimage.prewitt(array, 0)
             assert_array_almost_equal(t, output)
 
-
     def test_prewitt02(self):
         "prewitt filter 2"
         for type in self.types:
@@ -1069,7 +1068,6 @@ class TestNdimage:
                                                     footprint=footprint)
         assert_array_almost_equal(expected, output)
 
-
     def test_rank12(self):
         "rank filter 12"
         expected = [[3, 3, 2, 4, 4],
@@ -1214,7 +1212,6 @@ class TestNdimage:
                                          mode=mode, cval=0)
             assert_array_equal(output, expected_value)
 
-
     def test_extend05(self):
         "line extension 5"
         array = numpy.array([[1, 2, 3],
@@ -1231,7 +1228,6 @@ class TestNdimage:
                                        mode=mode, cval=0)
             assert_array_equal(output, expected_value)
 
-
     def test_extend06(self):
         "line extension 6"
         array = numpy.array([[1, 2, 3],
@@ -1247,7 +1243,6 @@ class TestNdimage:
             output = ndimage.correlate(array, weights,
                                        mode=mode, cval=0)
             assert_array_equal(output, expected_value)
-
 
     def test_extend07(self):
         "line extension 7"
@@ -1716,7 +1711,6 @@ class TestNdimage:
                                                       (6, 8), order=order)
             assert_array_almost_equal(out[::2, ::2], data)
 
-
     def test_geometric_transform22(self):
         "geometric transform 22"
         data = numpy.array([[1, 2, 3, 4],
@@ -2074,7 +2068,6 @@ class TestNdimage:
             assert_array_almost_equal(out, [[0, 0, 0, 0],
                                        [4, 1, 3, 2],
                                        [7, 6, 8, 5]])
-
 
     def test_shift08(self):
         "shift 8"
@@ -2994,7 +2987,6 @@ class TestNdimage:
         out = ndimage.distance_transform_edt(data,
                                                        sampling=[2, 2])
         assert_array_almost_equal(ref, out)
-
 
     def test_distance_transform_edt4(self):
         "euclidean distance transform 4"
@@ -4452,7 +4444,6 @@ class TestNdimage:
         output = ndimage.grey_opening(array,
                                                 footprint=footprint)
         assert_array_almost_equal(expected, output)
-
 
     def test_grey_opening02(self):
         "grey opening 2"

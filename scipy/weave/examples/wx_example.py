@@ -27,7 +27,6 @@ class MyCanvas(wxScrolledWindow):
 
         EVT_PAINT(self, self.OnPaint)
 
-
         self.SetCursor(wxStockCursor(wxCURSOR_PENCIL))
         #bmp = images.getTest2Bitmap()
         #mask = wxMaskColour(bmp, wxBLUE)
@@ -42,12 +41,10 @@ class MyCanvas(wxScrolledWindow):
     def getHeight(self):
         return self.maxHeight
 
-
     def OnPaint(self, event):
         dc = wxPaintDC(self)
         self.PrepareDC(dc)
         self.DoDrawing2(dc)
-
 
     def DoDrawing(self, dc):
         dc.BeginDrawing()
@@ -148,13 +145,11 @@ class MyCanvas(wxScrolledWindow):
         self.DrawSavedLines(dc)
         dc.EndDrawing()
 
-
     def DrawSavedLines(self, dc):
         dc.SetPen(wxPen(wxNamedColour('MEDIUM FOREST GREEN'), 4))
         for line in self.lines:
             for coords in line:
                 apply(dc.DrawLine, coords)
-
 
     def SetXY(self, event):
         self.x, self.y = self.ConvertEventCoords(event)

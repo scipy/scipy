@@ -82,14 +82,12 @@ class LinearOperator:
         if dtype is not None:
             self.dtype = np.dtype(dtype)
 
-
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.  Falls back on
         the user-defined matvec() routine, which is always provided.
         """
 
         return np.hstack( [ self.matvec(col.reshape(-1,1)) for col in X.T ] )
-
 
     def matvec(self, x):
         """Matrix-vector multiplication
@@ -136,9 +134,7 @@ class LinearOperator:
         else:
             raise ValueError('invalid shape returned by user-defined matvec()')
 
-
         return y
-
 
     def matmat(self, X):
         """Matrix-matrix multiplication
@@ -181,7 +177,6 @@ class LinearOperator:
 
         return Y
 
-
     def __mul__(self,x):
         x = np.asarray(x)
 
@@ -191,7 +186,6 @@ class LinearOperator:
             return self.matmat(x)
         else:
             raise ValueError('expected rank-1 or rank-2 array or matrix')
-
 
     def __repr__(self):
         M,N = self.shape

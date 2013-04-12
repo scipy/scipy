@@ -565,7 +565,6 @@ def assert_hulls_equal(points, facets_1, facets_2):
     assert_equal(facets_1, facets_2)
 
 
-
 class TestConvexHull:
     def test_hull_consistency_tri(self):
         # Check that a convex hull returned by qhull in ndim

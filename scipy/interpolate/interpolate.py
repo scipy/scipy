@@ -674,7 +674,6 @@ def _get_spline3_Bb(xk, yk, kind, conds):
 
         return B, b, append_func, nlu
 
-
     elif kind in ['clamped', 'endslope', 'first', 'not-a-knot', 'runout',
                   'parabolic']:
         if kind == 'endslope':

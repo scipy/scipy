@@ -191,7 +191,6 @@ def test_erf_complex():
         mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
 
 
-
 #------------------------------------------------------------------------------
 # lpmv
 #------------------------------------------------------------------------------
@@ -671,7 +670,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             lambda v, z: mpmath.besselj(v, z, **HYPERKW),
                             [Arg(), ComplexArg()],
                             n=2000)
-
 
     def test_besselk(self):
         assert_mpmath_equal(sc.kv,

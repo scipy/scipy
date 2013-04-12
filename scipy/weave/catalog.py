@@ -536,7 +536,6 @@ class catalog(object):
                 cat.close()
         return function_list
 
-
     def repair_catalog(self,catalog_path,code):
         """ Remove entry for code from catalog_path
 

@@ -82,7 +82,6 @@ def diric(x,n):
     return y
 
 
-
 def jnjnp_zeros(nt):
     """Compute nt (<=1200) zeros of the Bessel functions Jn and Jn'
     and arange them in order of their magnitudes.

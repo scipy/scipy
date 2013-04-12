@@ -53,7 +53,6 @@ class TestLinearOperator(TestCase):
             assert_raises(ValueError, A.matvec, np.array([[1],[2],[3],[4]]))
 
 
-
 class TestAsLinearOperator(TestCase):
     def setUp(self):
         self.cases = []

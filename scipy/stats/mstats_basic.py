@@ -131,7 +131,6 @@ def argstoarray(*args):
     return output
 
 
-
 #####--------------------------------------------------------------------------
 #---- --- Ranking ---
 #####--------------------------------------------------------------------------
@@ -321,7 +320,6 @@ betai.__doc__ = stats.betai.__doc__
 def msign(x):
     """Returns the sign of x, or 0 if x is masked."""
     return ma.filled(np.sign(x), 0)
-
 
 
 def pearsonr(x,y):
@@ -1977,7 +1975,6 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
     return n_um / d_en
-
 
 
 def friedmanchisquare(*args):

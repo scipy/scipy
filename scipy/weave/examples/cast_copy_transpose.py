@@ -148,7 +148,6 @@ def compare(m,n):
     py = (t2-t1)
     print(' speed in python:', (t2 - t1)/m)
 
-
     # load into cache
     b = cast_copy_transpose(type,a)
     t1 = time.time()

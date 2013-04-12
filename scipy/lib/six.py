@@ -128,7 +128,6 @@ class MovedAttribute(_LazyDescr):
         return getattr(module, self.attr)
 
 
-
 class _MovedItems(types.ModuleType):
     """Lazy loading of moved objects"""
 
@@ -306,12 +305,10 @@ if PY3:
     import builtins
     exec_ = getattr(builtins, "exec")
 
-
     def reraise(tp, value, tb=None):
         if value.__traceback__ is not tb:
             raise value.with_traceback(tb)
         raise value
-
 
     print_ = getattr(builtins, "print")
     del builtins
@@ -329,11 +326,9 @@ else:
             locs = globs
         exec("""exec code in globs, locs""")
 
-
     exec_("""def reraise(tp, value, tb=None):
     raise tp, value, tb
 """)
-
 
     def print_(*args, **kwargs):
         """The new-style print function."""

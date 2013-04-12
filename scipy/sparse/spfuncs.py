@@ -59,7 +59,6 @@ def estimate_blocksize(A,efficiency=0.7):
     else:
         e33 = 0.0
 
-
     if e22 > high_efficiency and e33 > high_efficiency:
         e66 = nnz / ( 36 * count_blocks(A,(6,6)) )
         if e66 > efficiency:

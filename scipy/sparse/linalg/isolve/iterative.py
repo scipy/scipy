@@ -264,7 +264,6 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
 
-
     if info > 0 and iter_ == maxiter and resid > tol:
         #info isn't set appropriately otherwise
         info = iter_

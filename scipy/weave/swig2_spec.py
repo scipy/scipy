@@ -249,7 +249,6 @@ class swig2_converter(common_base_converter):
         elif self.pycobj == 2:
             self.define_macros.append(("SWIG_COBJECT_TYPES", None))
 
-
         if self.runtime_version is None:
             self.runtime_version = self._get_swig_runtime_version()
 

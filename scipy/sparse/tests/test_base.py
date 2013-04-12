@@ -129,7 +129,6 @@ class _TestCommon:
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
-
     def test_nonzero(self):
         A   = array([[1, 0, 1],[0, 1, 1],[ 0, 0, 1]])
         Asp = self.spmatrix(A)
@@ -138,7 +137,6 @@ class _TestCommon:
         Asp_nz = set( [tuple(ij) for ij in transpose(Asp.nonzero())] )
 
         assert_equal(A_nz, Asp_nz)
-
 
     def test_getrow(self):
         assert_array_equal(self.datsp.getrow(1).todense(), self.dat[1,:])
@@ -223,7 +221,6 @@ class _TestCommon:
         assert_array_equal(self.spmatrix(S).toarray(), D)
         S = self.spmatrix(D)
         assert_array_equal(self.spmatrix(S).toarray(), D)
-
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=np.ComplexWarning)
@@ -339,7 +336,6 @@ class _TestCommon:
         C = B.asfptype()
         assert_( B is C )
 
-
     def test_mul_scalar(self):
         assert_array_equal(self.dat*2,(self.datsp*2).todense())
         assert_array_equal(self.dat*17.3,(self.datsp*17.3).todense())
@@ -408,7 +404,6 @@ class _TestCommon:
         assert_almost_equal( Asp.multiply(Dsp).todense(), A*D) #sparse/sparse
         assert_almost_equal( Asp.multiply(D),             A*D) #sparse/dense
 
-
     def test_elementwise_divide(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
         assert_array_equal((self.datsp / self.datsp).todense(),expected)
@@ -438,7 +433,6 @@ class _TestCommon:
         #nonsquare matrix
         B = self.spmatrix(A[:3,:])
         self.assertRaises( Exception, B.__pow__, 1 )
-
 
     def test_rmatvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
@@ -543,7 +537,6 @@ class _TestCommon:
         assert_array_almost_equal(B.todense(), A.todense() * A.T.todense())
         assert_array_almost_equal(B.todense(), A.todense() * A.todense().T)
 
-
         # check dimension mismatch  2x2 times 3x2
         A = self.spmatrix( [[1,2],[3,4]] )
         B = self.spmatrix( [[1,2],[3,4],[5,6]] )
@@ -580,7 +573,6 @@ class _TestCommon:
             assert_equal(c.format,format)
             assert_array_equal(c.todense(), D)
 
-
     def test_tobsr(self):
         x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
         y = array([[0,1,2],[3,0,5]])
@@ -593,7 +585,6 @@ class _TestCommon:
                 for Y in [ 1, 2, 3, 4, 6, 12]:
                     assert_equal( fn(blocksize=(X,Y)).todense(), A)
 
-
     def test_transpose(self):
         a = self.datsp.transpose()
         b = self.dat.transpose()
@@ -601,7 +592,6 @@ class _TestCommon:
         assert_array_equal(a.transpose().todense(), self.dat)
 
         assert_array_equal( self.spmatrix((3,4)).T.todense(), zeros((4,3)) )
-
 
     def test_add_dense(self):
         # adding a dense matrix to a sparse matrix
@@ -616,7 +606,6 @@ class _TestCommon:
         assert_array_equal(sum1, 2*self.dat)
         sum2 = 3*self.datsp - self.dat
         assert_array_equal(sum2, 2*self.dat)
-
 
     def test_copy(self):
         # Check whether the copy=True and copy=False keywords work
@@ -640,7 +629,6 @@ class _TestCommon:
         assert_equal(toself().todense(), A.todense())
         assert_equal(toself(copy=True).todense(), A.todense())
         assert_equal(toself(copy=False).todense(), A.todense())
-
 
         # check whether the data is copied?
         # TODO: deal with non-indexable types somehow
@@ -1411,7 +1399,6 @@ class _TestArithmetic:
                 assert_array_equal(S1.todense(),D1)
                 assert_array_equal(Asp - B,D1)          #check sparse - dense
                 assert_array_equal(A - Bsp,D1)          #check dense - sparse
-
 
     def test_mu(self):
         self.__arith_init()

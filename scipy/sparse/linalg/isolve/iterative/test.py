@@ -4,7 +4,6 @@ from scipy import *
 from iterative import *
 
 
-
 def test_fun(alpha, x, beta, y, A, n):
     # compute z = alpha*A*x + beta*y
     xx = x[:n]

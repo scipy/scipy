@@ -27,7 +27,6 @@ def build_slice_atom(slice_vars, position):
     # problems in code, its just a maintance hassle (I'll forget I did it here)
     # and inelegant.  *FIX ME*.
 
-
     ###########################################################################
     #                        Handling negative indices.
     #

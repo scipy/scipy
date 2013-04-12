@@ -517,7 +517,6 @@ class KDTree(object):
             else:
                 raise ValueError("Requested %s nearest neighbors; acceptable numbers are integers greater than or equal to one, or None")
 
-
     def __query_ball_point(self, x, r, p=2., eps=0):
         R = Rectangle(self.maxes, self.mins)
 
@@ -769,7 +768,6 @@ class KDTree(object):
         traverse_checking(self.tree, Rectangle(self.maxes, self.mins),
                           self.tree, Rectangle(self.maxes, self.mins))
         return results
-
 
     def count_neighbors(self, other, r, p=2.):
         """

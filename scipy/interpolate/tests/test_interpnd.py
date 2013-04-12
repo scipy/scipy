@@ -224,7 +224,6 @@ class TestCloughTocher2DInterpolator(object):
         y = np.random.randn(30)
         assert_raises(ValueError, interpnd.CloughTocher2DInterpolator, x, y)
 
-
     def test_pickle(self):
         # Test at single points
         np.random.seed(1234)

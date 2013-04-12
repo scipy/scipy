@@ -376,7 +376,6 @@ class lil_matrix(spmatrix):
         for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
             self._insertat2(self.rows[int(ii)], self.data[int(ii)], int(jj), xx)
 
-
     def _mul_scalar(self, other):
         if other == 0:
             # Multiply by zero: return the zero matrix

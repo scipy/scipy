@@ -32,7 +32,6 @@ class TestOptimize(TestCase):
         self.gradcalls = 0
         self.trace = []
 
-
     def func(self, x):
         self.funccalls += 1
         if self.funccalls > 6000:
@@ -43,14 +42,12 @@ class TestOptimize(TestCase):
         self.trace.append(x)
         return f
 
-
     def grad(self, x):
         self.gradcalls += 1
         log_pdot = np.dot(self.F, x)
         logZ = np.log(sum(np.exp(log_pdot)))
         p = np.exp(log_pdot - logZ)
         return np.dot(self.F.transpose(), p) - self.K
-
 
     def hess(self, x):
         log_pdot = np.dot(self.F, x)
@@ -59,10 +56,8 @@ class TestOptimize(TestCase):
         return np.dot(self.F.T,
                       np.dot(np.diag(p), self.F - np.dot(self.F.T, p)))
 
-
     def hessp(self, x, p):
         return np.dot(self.hess(x), p)
-
 
     def test_cg(self, use_wrapper=False):
         """ conjugate gradient optimization routine """
@@ -95,7 +90,6 @@ class TestOptimize(TestCase):
                         [[0, -0.5, 0.5],
                          [0, -5.05700028e-01, 4.95985862e-01]],
                         atol=1e-14, rtol=1e-7)
-
 
     def test_bfgs(self, use_wrapper=False):
         """ Broyden-Fletcher-Goldfarb-Shanno optimization routine """
@@ -170,7 +164,6 @@ class TestOptimize(TestCase):
             assert_(not np.isfinite(func(x)))
         finally:
             np.seterr(**olderr)
-
 
     def test_powell(self, use_wrapper=False):
         """ Powell (direction set) optimization routine
@@ -346,7 +339,6 @@ class TestOptimize(TestCase):
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
-
 
     def test_l_bfgs_b(self):
         """ limited-memory bound-constrained BFGS algorithm
@@ -556,7 +548,6 @@ class TestOptimizeScalar(TestCase):
 
         x = optimize.fminbound(self.fun, 1, np.array(5))
         assert_allclose(x, self.solution, atol=1e-6)
-
 
     def test_minimize_scalar(self):
         # combine all tests above for the minimize_scalar wrapper

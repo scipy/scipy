@@ -528,7 +528,6 @@ class TestEntropy(TestCase):
                             decimal=12)
 
 
-
 def TestArgsreduce():
     a = array([1,3,2,1,2,3,3])
     b,c = argsreduce(a > 1, a, 2)
@@ -772,7 +771,6 @@ class TestExpect(TestCase):
                                     scale=2, lb=lb, ub=ub, conditional=True)
         assert_almost_equal(prob90c, 1., decimal=13)
 
-
     def test_hypergeom(self):
         #test case with finite bounds
 
@@ -813,13 +811,9 @@ class TestExpect(TestCase):
         prob_b_true = 1-stats.poisson.cdf(2,2)
         assert_almost_equal(prob_bounds, prob_b_true, decimal=14)
 
-
         prob_lb = stats.poisson.expect(lambda x: 1, args=(2,), lb=2,
                                        conditional=True)
         assert_almost_equal(prob_lb, 1, decimal=14)
-
-
-
 
 
 def test_regression_ticket_1316():
@@ -878,7 +872,6 @@ def test_nan_arguments_ticket_835():
     assert_(np.isnan(stats.bernoulli.logpmf(np.nan, 0.5)))
     assert_(np.isnan(stats.bernoulli.ppf(np.nan, 0.5)))
     assert_(np.isnan(stats.bernoulli.isf(np.nan, 0.5)))
-
 
 
 def test_frozen_fit_ticket_1536():

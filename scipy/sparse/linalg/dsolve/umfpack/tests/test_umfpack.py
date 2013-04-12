@@ -56,7 +56,6 @@ class TestSolvers(_DeprecationAccept):
         #print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b, decimal=4)
 
-
     def test_solve_without_umfpack(self):
         """Solve: single precision"""
         linsolve.use_solver( useUmfpack=False )
@@ -66,7 +65,6 @@ class TestSolvers(_DeprecationAccept):
         #print x
         #print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b, decimal=4)
-
 
     def test_solve_complex_umfpack(self):
         """Solve with UMFPACK: double precision complex"""
@@ -169,7 +167,6 @@ class TestFactorization(_DeprecationAccept):
             Q = eye(A.shape[1])[:,Q]
 
             assert_array_almost_equal(P*R*A*Q,L*U)
-
 
     def setUp(self):
         random.seed(0) #make tests repeatable

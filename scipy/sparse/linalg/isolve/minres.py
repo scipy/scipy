@@ -55,7 +55,6 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
     if maxiter is None:
         maxiter = 5 * n
 
-
     msg   =[' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
             ' beta1 = 0.  The exact solution is  x = 0          ',   #  0
             ' A solution to Ax = b was found, given rtol        ',   #  1
@@ -67,7 +66,6 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
             ' A  does not define a symmetric matrix             ',   #  7
             ' M  does not define a symmetric matrix             ',   #  8
             ' M  does not define a pos-def preconditioner       ']   #  9
-
 
     if show:
         print(first + 'Solution of symmetric Ax = b')
@@ -127,7 +125,6 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         epsa = (s + eps) * eps**(1.0/3.0)
         if z > epsa:
             raise ValueError('non-symmetric preconditioner')
-
 
     # Initialize other quantities
     oldb   = 0
@@ -286,7 +283,6 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
             callback(x)
 
         if istop != 0: break #TODO check this
-
 
     if show:
         print()

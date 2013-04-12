@@ -40,8 +40,6 @@ class Function_Descriptor(__Descriptor):
         return
 
 
-
-
 haveArgument = 90 # Opcodes greater-equal to this have argument
 byName = {
     'STOP_CODE': 0,
@@ -176,7 +174,6 @@ def opcodize(s):
             i += 1
         answer.append((bytecode,argument,name))
     return answer
-
 
 
 ##################################################################
@@ -676,7 +673,6 @@ class ByteCodeMeaning(object):
         raise NotImplementedError
 
 
-
 ##################################################################
 #                         CLASS CXXCODER                         #
 ##################################################################
@@ -791,7 +787,6 @@ class CXXCoder(ByteCodeMeaning):
         code += ') {\n'
         code += ' PyObject* tempPY= 0;\n'
 
-
         # Add in non-argument temporaries
         # Assuming first argcount locals are positional args
         for i in range(self.codeobject.co_argcount,
@@ -806,7 +801,6 @@ class CXXCoder(ByteCodeMeaning):
         code += self.__body
         code += '}\n\n'
         return code
-
 
     ##################################################################
     #                      MEMBER WRAPPED_CODE                       #
@@ -866,7 +860,6 @@ class CXXCoder(ByteCodeMeaning):
             ','.join(argnames),
             )
 
-
         code += '\n  // Pack return\n'
         if self.rtype is None:
             code += '  Py_INCREF(Py_None);\n'
@@ -925,7 +918,6 @@ class CXXCoder(ByteCodeMeaning):
         assert_(isinstance(T, tuple))
         self.types.append(T)
         return
-
 
     ##################################################################
     #                        MEMBER POPTUPLE                         #
@@ -993,7 +985,6 @@ class CXXCoder(ByteCodeMeaning):
             raise ValueError('Cannot locate module owning %s' % var_name)
         return module_name,var_name
 
-
     ##################################################################
     #                         MEMBER CODEUP                          #
     ##################################################################
@@ -1006,7 +997,6 @@ class CXXCoder(ByteCodeMeaning):
         print(self.__body)
         self.push(lhs,rhs_type)
         return
-
 
     ##################################################################
     #                          MEMBER BINOP                          #
@@ -1068,7 +1058,6 @@ class CXXCoder(ByteCodeMeaning):
         symbol = self.cmp_op(opname) # convert numeric to name
         return self.binop(pc,symbol)
 
-
     ##################################################################
     #                       MEMBER PRINT_ITEM                        #
     ##################################################################
@@ -1088,7 +1077,6 @@ class CXXCoder(ByteCodeMeaning):
         if owned:
             self.emit('Py_XDECREF(%s);' % py)
         return
-
 
     ##################################################################
     #                      MEMBER PRINT_NEWLINE                      #
@@ -1133,7 +1121,6 @@ class CXXCoder(ByteCodeMeaning):
         self.emit_value(k)
         return
 
-
     ##################################################################
     #                       MEMBER BUILD_TUPLE                       #
     ##################################################################
@@ -1166,7 +1153,6 @@ class CXXCoder(ByteCodeMeaning):
         self.push(v,t)
         return
 
-
     ##################################################################
     #                        MEMBER LOAD_ATTR                        #
     ##################################################################
@@ -1183,7 +1169,6 @@ class CXXCoder(ByteCodeMeaning):
         self.emit(aCode % locals())
         self.push(lhs,aType)
         return
-
 
     ##################################################################
     #                       MEMBER STORE_ATTR                        #
@@ -1269,7 +1254,6 @@ class CXXCoder(ByteCodeMeaning):
         "Removes one block from the block stack. Per frame, there is a stack of blocks, denoting nested loops, try statements, and such."
         return
 
-
     ##################################################################
     #                       MEMBER STORE_FAST                        #
     ##################################################################
@@ -1350,7 +1334,6 @@ class CXXCoder(ByteCodeMeaning):
         self.push(temp,descriptor.return_type)
         return
 
-
     ##################################################################
     #                      MEMBER JUMP_IF_FALSE                      #
     ##################################################################
@@ -1369,7 +1352,6 @@ class CXXCoder(ByteCodeMeaning):
         if not isinstance(t, int):
             raise TypeError('Invalid comparison type %s' % t)
         self.emit('if (%s) {\n' % v)
-
 
     ##################################################################
     #                      MEMBER JUMP_FORWARD                       #

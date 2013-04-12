@@ -178,7 +178,6 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     if alpha > 0:
         v = (1 / alpha) * v
 
-
     # Initialize variables for 1st iteration.
 
     itn = 0

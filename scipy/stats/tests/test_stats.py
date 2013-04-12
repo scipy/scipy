@@ -135,7 +135,6 @@ class TestBasicStats(TestCase):
                             significant=TestBasicStats.dprec)
 
 
-
 class TestNanFunc(TestCase):
     def __init__(self, *args, **kw):
         TestCase.__init__(self, *args, **kw)
@@ -665,7 +664,6 @@ class TestRegression(TestCase):
 ##     a few polynomials.
 ##     Scipy's stats.py does not seem to handle multiple linear regression
 ##     The datasets X1 . . X9 are at the top of the file.
-
 
     def test_regressXX(self):
         """ W.IV.B.  Regress X on X.
@@ -1407,7 +1405,6 @@ def test_percentileofscore():
               pcos([10, 20, 30, 40, 40, 40, 50, 60, 70, 80],
                    40, kind=kind), result
 
-
     for kind in ('rank', 'mean', 'strict', 'weak'):
         yield assert_equal, \
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
@@ -1465,7 +1462,6 @@ def test_friedmanchisquare():
           array([5.3,5.7,4.7,3.5,7.7]),
           array([4.9,7.6,5.5,2.8,8.4]),
           array([8.8,8.9,8.1,3.3,9.1])]
-
 
     assert_array_almost_equal(stats.friedmanchisquare(x1[0],x1[1],x1[2],x1[3]),(10.2283464566929, 0.0167215803284414))
     assert_array_almost_equal(stats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),(18.9428571428571, 0.000280938375189499))
@@ -1838,7 +1834,6 @@ def mannwhitneyu():
     #p-value verified with matlab and R to 5 significant digits
     assert_array_almost_equal(stats.stats.mannwhitneyu(x,y),
                     (16980.5, 2.8214327656317373e-005), decimal=12)
-
 
 
 def test_pointbiserial():

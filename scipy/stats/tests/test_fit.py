@@ -63,7 +63,6 @@ def check_cont_fit(distname,arg):
                 raise AssertionError('fit not very good in %s\n' % distfn.name + txt)
 
 
-
 if __name__ == "__main__":
     import nose
     #nose.run(argv=['', __file__])

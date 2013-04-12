@@ -41,7 +41,6 @@ def nearest(x, y, new_x):
     return new_y
 
 
-
 def linear(x, y, new_x):
     """
     Linearly interpolates values in new_x based on the values in x and y

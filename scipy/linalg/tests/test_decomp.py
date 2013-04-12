@@ -316,7 +316,6 @@ class TestEigBanded(TestCase):
                      +  diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1)
                      + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
-
         # Eigenvalues and -vectors from linalg.eig
         ew, ev = linalg.eig(self.sym_mat)
         ew = ew.real
@@ -330,7 +329,6 @@ class TestEigBanded(TestCase):
         self.w_herm_lin = ew[args]
         self.evec_herm_lin = ev[:,args]
 
-
         # Extract upper bands from symmetric and hermitian band matrices
         # (for use in dsbevd, dsbevx, zhbevd, zhbevx
         #  and their single precision versions)
@@ -340,7 +338,6 @@ class TestEigBanded(TestCase):
         for i in xrange(LDAB):
             self.bandmat_sym[LDAB-i-1,i:N]  = diag(self.sym_mat, i)
             self.bandmat_herm[LDAB-i-1,i:N] = diag(self.herm_mat, i)
-
 
         # Extract bands from general real and complex band matrix
         # (for use in dgbtrf, dgbtrs and their single precision versions)
@@ -365,9 +362,7 @@ class TestEigBanded(TestCase):
         self.b = 1.0*arange(N)
         self.bc = self.b *(1 + 1j)
 
-
     #####################################################################
-
 
     def test_dsbev(self):
         """Compare dsbev eigenvalues and eigenvectors with
@@ -377,8 +372,6 @@ class TestEigBanded(TestCase):
         assert_array_almost_equal(sort(w), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
 
-
-
     def test_dsbevd(self):
         """Compare dsbevd eigenvalues and eigenvectors with
            the result of linalg.eig."""
@@ -386,8 +379,6 @@ class TestEigBanded(TestCase):
         evec_ = evec[:,argsort(w)]
         assert_array_almost_equal(sort(w), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
-
-
 
     def test_dsbevx(self):
         """Compare dsbevx eigenvalues and eigenvectors
@@ -400,7 +391,6 @@ class TestEigBanded(TestCase):
         assert_array_almost_equal(sort(w), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
 
-
     def test_zhbevd(self):
         """Compare zhbevd eigenvalues and eigenvectors
            with the result of linalg.eig."""
@@ -408,8 +398,6 @@ class TestEigBanded(TestCase):
         evec_ = evec[:,argsort(w)]
         assert_array_almost_equal(sort(w), self.w_herm_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_herm_lin))
-
-
 
     def test_zhbevx(self):
         """Compare zhbevx eigenvalues and eigenvectors
@@ -421,8 +409,6 @@ class TestEigBanded(TestCase):
         evec_ = evec[:,argsort(w)]
         assert_array_almost_equal(sort(w), self.w_herm_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_herm_lin))
-
-
 
     def test_eigvals_banded(self):
         """Compare eigenvalues of eigvals_banded with those of linalg.eig."""
@@ -464,7 +450,6 @@ class TestEigBanded(TestCase):
         w_sym = eigvals_banded(self.bandmat_sym, check_finite=False)
         w_sym = w_sym.real
         assert_array_almost_equal(sort(w_sym), self.w_sym_lin)
-
 
     def test_eig_banded(self):
         """Compare eigenvalues and eigenvectors of eig_banded
@@ -520,7 +505,6 @@ class TestEigBanded(TestCase):
         assert_array_almost_equal(sort(w_sym), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_sym_), abs(self.evec_sym_lin))
 
-
     def test_dgbtrf(self):
         """Compare dgbtrf  LU factorisation with the LU factorisation result
            of linalg.lu."""
@@ -535,7 +519,6 @@ class TestEigBanded(TestCase):
         p_lin, l_lin, u_lin = lu(self.real_mat, permute_l=0)
         assert_array_almost_equal(u, u_lin)
 
-
     def test_zgbtrf(self):
         """Compare zgbtrf  LU factorisation with the LU factorisation result
            of linalg.lu."""
@@ -549,8 +532,6 @@ class TestEigBanded(TestCase):
 
         p_lin, l_lin, u_lin =lu(self.comp_mat, permute_l=0)
         assert_array_almost_equal(u, u_lin)
-
-
 
     def test_dgbtrs(self):
         """Compare dgbtrs  solutions for linear equation system  A*x = b
@@ -1755,7 +1736,6 @@ class TestQZ(TestCase):
         assert_array_almost_equal(dot(Z,Z.conjugate().T), eye(n))
         assert_(all(diag(BB) >= 0))
         assert_(all(diag(BB).imag == 0))
-
 
     def test_qz_complex64(self):
         n = 5

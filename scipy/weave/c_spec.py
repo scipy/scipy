@@ -249,7 +249,6 @@ class unicode_converter(common_base_converter):
                'int N%(name)s = PyUnicode_GET_SIZE(%(py_var)s);\n'  \
                % self.template_vars(inline=inline)
 
-
         return code
 #----------------------------------------------------------------------------
 # File Converter

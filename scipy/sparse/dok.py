@@ -7,7 +7,6 @@ __docformat__ = "restructuredtext en"
 __all__ = ['dok_matrix', 'isspmatrix_dok']
 
 
-
 import numpy as np
 
 from scipy.lib.six.moves import zip as izip, xrange
@@ -137,7 +136,6 @@ class dok_matrix(spmatrix, dict):
         except (ValueError, TypeError):
             raise TypeError('index must be a pair of integers or slices')
 
-
         # Bounds checking
         if isintlike(i):
             if i < 0:
@@ -224,7 +222,6 @@ class dok_matrix(spmatrix, dict):
                     dict.__setitem__(new, (0, jj-first),
                                      dict.__getitem__(self, (ii,jj)))
             return new
-
 
     def __setitem__(self, key, value):
         try:
@@ -329,7 +326,6 @@ class dok_matrix(spmatrix, dict):
                         for element, val in izip(seq, value):
                             self[i, element] = val
 
-
     def __add__(self, other):
         # First check if argument is a scalar
         if isscalarlike(other):
@@ -426,7 +422,6 @@ class dok_matrix(spmatrix, dict):
         else:
             return NotImplementedError
 
-
     def __truediv__(self, other):
         if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
@@ -437,7 +432,6 @@ class dok_matrix(spmatrix, dict):
             return new
         else:
             return self.tocsr() / other
-
 
     def __itruediv__(self, other):
         if isscalarlike(other):

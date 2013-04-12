@@ -14,7 +14,6 @@ class TestSparseFunctions(TestCase):
                     [0,4,0,5,0],
                     [0,0,6,7,0]])
 
-
         #TODO expose through function
         S = csr_matrix(D)
         v = array([1,2,3])
@@ -48,7 +47,6 @@ class TestSparseFunctions(TestCase):
         v = array([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15])
         bsr_scale_columns(3,5,2,3,S.indptr,S.indices,S.data,v)
         assert_equal(S.todense(), E*diag(v) )
-
 
     def test_estimate_blocksize(self):
         mats = []

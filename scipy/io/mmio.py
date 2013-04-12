@@ -540,7 +540,6 @@ class MMFile (object):
         for line in comment.split('\n'):
             stream.write(asbytes('%%%s\n' % (line)))
 
-
         template = self._field_template(field, precision)
 
         # write dense format

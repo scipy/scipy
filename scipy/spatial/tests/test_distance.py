@@ -254,7 +254,6 @@ class TestCdist(TestCase):
             print((Y1-Y2).max())
         self.assertTrue(within_tol(Y1, Y2, eps))
 
-
     def test_cdist_wminkowski_random_p3d8(self):
         "Tests cdist(X, 'wminkowski') on random data. (p=3.8)"
         eps = 1e-07
@@ -294,7 +293,6 @@ class TestCdist(TestCase):
             print((Y1-Y2).max())
         self.assertTrue(within_tol(Y1, Y2, eps))
 
-
     def test_cdist_seuclidean_random(self):
         "Tests cdist(X, 'seuclidean') on random data."
         eps = 1e-07
@@ -306,7 +304,6 @@ class TestCdist(TestCase):
         if verbose > 2:
             print((Y1-Y2).max())
         self.assertTrue(within_tol(Y1, Y2, eps))
-
 
     def test_cdist_cosine_random(self):
         "Tests cdist(X, 'cosine') on random data."

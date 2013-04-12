@@ -22,7 +22,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 
-
         if isspmatrix(arg1):
             if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
@@ -87,7 +86,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
     def getnnz(self):
         return self.indptr[-1]
     nnz = property(fget=getnnz)
-
 
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
@@ -167,7 +165,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         #    assert(self.has_sorted_indices())
         #TODO check for duplicates?
 
-
     def __add__(self,other):
         # First check if argument is a scalar
         if isscalarlike(other):
@@ -223,7 +220,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         else:
             raise NotImplementedError
 
-
     def __truediv__(self,other):
         if isscalarlike(other):
             return self * (1./other)
@@ -237,7 +233,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         else:
             raise NotImplementedError
 
-
     def multiply(self, other):
         """Point-wise multiplication by another matrix
         """
@@ -249,7 +244,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         else:
             other = self.__class__(other)
             return self._binopt(other,'_elmul_')
-
 
     ###########################
     # Multiplication handlers #
@@ -268,7 +262,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         return result
 
-
     def _mul_multivector(self, other):
         M,N = self.shape
         n_vecs = other.shape[1] #number of column vectors
@@ -281,7 +274,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         fn(M, N, n_vecs, self.indptr, self.indices, self.data, other.ravel(), result.ravel())
 
         return result
-
 
     def _mul_sparse_matrix(self, other):
         M, K1 = self.shape
@@ -306,7 +298,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                   indptr, indices, data)
 
         return self.__class__((data,indices,indptr),shape=(M,N))
-
 
     def diagonal(self):
         """Returns the main diagonal of the matrix
@@ -359,7 +350,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             return self[key, :]
         else:
             raise IndexError("invalid index")
-
 
     def _get_single_element(self,row,col):
         M, N = self.shape
@@ -460,7 +450,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         return self.__class__( (data,indices,indptr), shape=shape )
 
-
     def __setitem__(self, key, val):
         if isinstance(key, tuple):
             row,col = key
@@ -482,7 +471,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             indxs = np.where(minor_index == self.indices[start:end])[0]
 
             num_matches = len(indxs)
-
 
             if not np.isscalar(val):
                 raise ValueError('setting an array element with a sequence')
@@ -588,7 +576,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         self.prune() #nnz may have changed
 
-
     def __get_sorted(self):
         """Determine whether the matrix has sorted indices
 
@@ -644,7 +631,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         self.data    = self.data[:self.nnz]
         self.indices = self.indices[:self.nnz]
-
 
     ###################
     # utility methods #

@@ -285,7 +285,6 @@ class TestSolve(TestCase):
             x = solve(a,b)
             assert_array_almost_equal(dot(a,x),b)
 
-
     def test_simple_sym(self):
         a = [[2,3],[3,5]]
         for lower in [0,1]:
@@ -416,7 +415,6 @@ class TestSolveTriangular(TestCase):
         b = [1, 1]
         sol = solve_triangular(A, b, lower=True, check_finite=False)
         assert_array_almost_equal(sol, [1, 0])
-
 
 
 class TestInv(TestCase):

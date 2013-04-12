@@ -2140,7 +2140,6 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
     return a
 
 
-
 def sigmaclip(a, low=4., high=4.):
     """
     Iterative sigma-clipping of array elements.
@@ -3948,7 +3947,6 @@ def f_value(ER, EF, dfR, dfF):
 
     """
     return ((ER-EF)/float(dfR-dfF) / (EF/float(dfF)))
-
 
 
 def f_value_multivariate(ER, EF, dfnum, dfden):

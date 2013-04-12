@@ -463,7 +463,6 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
 
     fx2 = fx * shift
 
-
     # Use irfft to compute the inverse FFT.
     out_full = irfft(fx2)
 

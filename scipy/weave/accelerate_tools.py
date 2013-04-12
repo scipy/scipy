@@ -253,7 +253,6 @@ functiondefs = {
     }
 
 
-
 ##################################################################
 #                      FUNCTION LOOKUP_TYPE                      #
 ##################################################################
@@ -306,7 +305,6 @@ class accelerate(object):
         # Figure out type info -- Do as tuple so its hashable
         signature = tuple( map(lookup_type,args) )
         return self.singleton(signature)
-
 
     def singleton(self,signature):
         identifier = self.identifier(signature)

@@ -40,7 +40,6 @@ def configuration(parent_package='',top_path=None):
     else:
         methods += [join('FWRAPPERS', 'dummy.f')]
 
-
     Util = ['STOPTEST2.f.src','getbreak.f.src']
     sources = Util + methods + ['_iterative.pyf.src']
     config.add_extension('_iterative',

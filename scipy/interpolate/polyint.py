@@ -765,7 +765,6 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
             order, self.direction))
         self.n += 1
 
-
     def extend(self, xi, yi, orders=None):
         """
         Extend the PiecewisePolynomial by a list of points

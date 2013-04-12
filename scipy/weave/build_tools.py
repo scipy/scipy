@@ -52,7 +52,6 @@ def _init_posix():
         link_cmds[0] = 'g++'
         ld = ' '.join(link_cmds)
 
-
     if (sys.platform == 'darwin'):
         # The Jaguar distributed python 2.2 has -arch i386 in the link line
         # which doesn't seem right.  It omits all kinds of warnings, so
@@ -565,7 +564,6 @@ if sys.platform == 'win32':
                                extra_postargs,
                                build_temp,
                                target_lang)
-
 
     # On windows platforms, we want to default to mingw32 (gcc)
     # because msvc can't build blitz stuff.

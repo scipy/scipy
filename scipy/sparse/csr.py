@@ -185,7 +185,6 @@ class csr_matrix(_cs_matrix):
         """
         return (x[0],x[1])
 
-
     def __getitem__(self, key):
         def asindices(x):
             try:
@@ -222,7 +221,6 @@ class csr_matrix(_cs_matrix):
             shape   = (len(indices),N)
 
             return csr_matrix((data,indices,indptr), shape=shape)
-
 
         if isinstance(key, tuple):
             row = key[0]
@@ -284,7 +282,6 @@ class csr_matrix(_cs_matrix):
             return self[key,:]                                #[i] or [1:2]
         else:
             return self[asindices(key),:]                     #[[1,2]]
-
 
     def _get_single_element(self,row,col):
         """Returns the single element self[row, col]
@@ -417,7 +414,6 @@ class csr_matrix(_cs_matrix):
         shape =  (i1 - i0, j1 - j0)
 
         return self.__class__( (data,indices,indptr), shape=shape )
-
 
 
 def isspmatrix_csr(x):

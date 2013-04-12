@@ -41,7 +41,6 @@ def find(A):
     return A.row,A.col,A.data
 
 
-
 def tril(A, k=0, format=None):
     """Return the lower triangular portion of a matrix in sparse format
 

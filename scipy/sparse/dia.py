@@ -121,7 +121,6 @@ class dia_matrix(_data_matrix):
             self.offsets = A.offsets
             self.shape   = A.shape
 
-
         if dtype is not None:
             self.data = self.data.astype(dtype)
 

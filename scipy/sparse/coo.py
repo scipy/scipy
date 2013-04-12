@@ -228,7 +228,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             if self.col.min() < 0:
                 raise ValueError('negative column index found')
 
-
     def transpose(self, copy=False):
         M,N = self.shape
         return coo_matrix((self.data, (self.col, self.row)), shape=(N,M), copy=copy)
@@ -351,7 +350,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         dok.update( izip(izip(self.row,self.col),self.data) )
 
         return dok
-
 
     # needed by _data_matrix
     def _with_data(self,data,copy=True):

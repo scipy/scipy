@@ -417,7 +417,6 @@ def _kurtosis(data):
     return m4 / m2**2 - 3
 
 
-
 # Frozen RV class
 class rv_frozen(object):
 
@@ -486,7 +485,6 @@ class rv_frozen(object):
 
     def interval(self, alpha):
         return self.dist.interval(alpha, *self.args, **self.kwds)
-
 
 
 def valarray(shape,value=nan,typecode=None):
@@ -1263,7 +1261,6 @@ class rv_continuous(rv_generic):
             return output[()]
         return output
 
-
     def cdf(self,x,*args,**kwds):
         """
         Cumulative distribution function of the given RV.
@@ -1751,7 +1748,6 @@ class rv_continuous(rv_generic):
 
         return x0, func, restore, args
 
-
     def fit(self, data, *args, **kwds):
         """
         Return MLEs for shape, location, and scale parameters from data.
@@ -1901,7 +1897,6 @@ class rv_continuous(rv_generic):
             else:
                 lower = self.a
             return -integrate.quad(integ,lower,upper)[0]
-
 
     def entropy(self, *args, **kwds):
         """
@@ -3015,7 +3010,6 @@ frechet_r = frechet_r_gen(a=0.0, name='frechet_r', shapes='c')
 weibull_min = frechet_r_gen(a=0.0, name='weibull_min', shapes='c')
 
 
-
 class frechet_l_gen(rv_continuous):
     """A Frechet left (or Weibull maximum) continuous random variable.
 
@@ -3234,7 +3228,6 @@ class genextreme_gen(rv_continuous):
 
         return exp(logpdf)
 
-
     def _cdf(self, x, c):
         #return exp(-pow(1-c*x,1.0/c))
         loglogcdf = where((c==0)*(x==x),-x,log1p(-c*x)/c)
@@ -3267,7 +3260,6 @@ class genextreme_gen(rv_continuous):
         ku1 = where(c<-1./4,nan,(g4+(-4*g3+3*(g2+g2mg12)*g1)*g1)/((g2mg12)**2))
         ku = where(abs(c)<=(eps)**0.23,12.0/5.0,ku1-3.0)
         return m,v,sk,ku
-
 
     def _munp(self, n, c):
         k = arange(0,n+1)
@@ -5864,7 +5856,6 @@ class rv_discrete(rv_generic):
                 self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
             self.__doc__ = doccer.docformat(self.__doc__, tempdict)
 
-
     def _rvs(self, *args):
         return self._ppf(mtrand.random_sample(self._size),*args)
 
@@ -5911,7 +5902,6 @@ class rv_discrete(rv_generic):
 
     def _munp(self, n, *args):
         return self.generic_moment(n, *args)
-
 
     def rvs(self, *args, **kwargs):
         """
@@ -6432,7 +6422,6 @@ class rv_discrete(rv_generic):
                 result += comb(n,k,exact=True)*(fac**k) * valk
             result += fac**n * val
             return result * loc**n
-
 
     def freeze(self, *args, **kwds):
         return rv_frozen(self, *args, **kwds)

@@ -30,7 +30,6 @@ class TestLinsolve(TestCase):
         # condition number of A
         cond_A = norm(A.todense(),2) * norm(inv(A.todense()),2)
 
-
         for t in ['f','d','F','D']:
             eps = finfo(t).eps #floating point epsilon
             b = b.astype(t)

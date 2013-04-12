@@ -120,7 +120,6 @@ def makeOperator( operatorInput, expectedShape ):
     return operator
 
 
-
 def applyConstraints( blockVectorV, factYBY, blockVectorBY, blockVectorY ):
     """Internal. Changes blockVectorV in place."""
     gramYBV = sp.dot( blockVectorBY.T, blockVectorV )
@@ -259,7 +258,6 @@ def lobpcg( A, X,
             _lambda, eigBlockVector = symeig(A_dense, select=lohi )
 
         return _lambda, eigBlockVector
-
 
     if residualTolerance is None:
         residualTolerance = np.sqrt( 1e-15 ) * n
@@ -518,7 +516,6 @@ def lobpcg( A, X,
     aux = np.sum( blockVectorR.conjugate() * blockVectorR, 0 )
     residualNorms = np.sqrt( aux )
 
-
     if verbosityLevel > 0:
         print('final eigenvalue:', _lambda)
         print('final residual norms:', residualNorms)
@@ -549,7 +546,6 @@ if __name__ == '__main__':
 #    B[0,0] = 0
     B = np.eye( n, n )
     Y = np.eye( n, 3 )
-
 
 #    X = sp.rand( n, 3 )
     xfile = {100 : 'X.txt', 1000 : 'X2.txt', 10000 : 'X3.txt'}

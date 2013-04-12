@@ -325,7 +325,6 @@ class gaussian_kde(object):
                         special.ndtr(normalized_low))
         return value
 
-
     def integrate_box(self, low_bounds, high_bounds, maxpts=None):
         """Computes the integral of a pdf over a rectangular interval.
 

@@ -296,7 +296,6 @@ class TestConstructUtils(TestCase):
                            [0, 0, 7]])
         assert_equal( construct.bmat( [[A,B],[None,C]] ).todense(), expected )
 
-
         expected = matrix([[1, 2, 0],
                            [3, 4, 0],
                            [0, 0, 7]])

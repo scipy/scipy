@@ -37,7 +37,6 @@ def configuration(parent_package='',top_path=None):
                                   join('ARPACK', 'FWRAPPERS',
                                         'dummy.f')])
 
-
     config.add_extension('_arpack',
                          sources='arpack.pyf.src',
                          libraries=['arpack_scipy'],

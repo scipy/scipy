@@ -93,7 +93,6 @@ class BenchmarkSparse(TestCase):
                     operation = (X + '.' + op + '(' + Y + ')').center(17)
                     print(fmt % (format,operation,msec_per_it))
 
-
     def bench_sort(self):
         """sort CSR column indices"""
         matrices = []
@@ -183,7 +182,6 @@ class BenchmarkSparse(TestCase):
         matrices.append(('Poisson5pt', poisson2d(300,format='csc')))
         matrices.append(('Poisson5pt', poisson2d(300,format='bsr')))
 
-
         n_vecs = 10
 
         print()
@@ -213,7 +211,6 @@ class BenchmarkSparse(TestCase):
             MFLOPs = (2*n_vecs*A.nnz*iter/(end-start))/float(1e6)
 
             print(fmt % (A.format,name,shape,A.nnz,MFLOPs))
-
 
     def bench_construction(self):
         """build matrices by inserting single values"""

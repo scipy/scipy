@@ -175,9 +175,6 @@ class TestZscal(TestCase, BaseScal):
     blas_func = fblas.zscal
     dtype = complex128
 
-
-
-
 ##################################################
 ### Test blas ?copy
 

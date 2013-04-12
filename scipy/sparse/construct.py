@@ -520,7 +520,6 @@ def bmat(blocks, format=None, dtype=None):
                     if bcol_lengths[j] != A.shape[1]:
                         raise ValueError('blocks[:,%d] has incompatible column dimensions' % j)
 
-
     # ensure that at least one value in each row and col is not None
     if brow_lengths.min() == 0:
         raise ValueError('blocks[%d,:] is all None' % brow_lengths.argmin() )

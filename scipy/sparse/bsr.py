@@ -117,7 +117,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
         _data_matrix.__init__(self)
 
-
         if isspmatrix(arg1):
             if isspmatrix_bsr(arg1) and copy:
                 arg1 = arg1.copy()
@@ -275,7 +274,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                ( self.shape + (self.dtype.type, nnz) + self.blocksize +
                  (_formats[format][1],) )
 
-
     def diagonal(self):
         """Returns the main diagonal of the matrix
         """
@@ -375,9 +373,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C))
 
-
-
-
     ######################
     # Conversion methods #
     ######################
@@ -424,7 +419,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         from .coo import coo_matrix
         return coo_matrix((data,(row,col)), shape=self.shape)
 
-
     def transpose(self):
 
         R,C = self.blocksize
@@ -443,7 +437,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                       indptr,      indices,      data.ravel())
 
         return bsr_matrix((data,indices,indptr), shape=(N,M))
-
 
     ##############################################################
     # methods that examine or modify the internal data structure #
@@ -469,7 +462,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         proxy.eliminate_zeros()
 
         self.prune()
-
 
     def sum_duplicates(self):
         raise NotImplementedError
@@ -555,15 +547,12 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             return self.__class__((data,self.indices,self.indptr),
                                    shape=self.shape,dtype=data.dtype)
 
-
-
 #    # these functions are used by the parent class
 #    # to remove redudancy between bsc_matrix and bsr_matrix
 #    def _swap(self,x):
 #        """swap the members of x if this is a column-oriented matrix
 #        """
 #        return (x[0],x[1])
-
 
 def isspmatrix_bsr(x):
     return isinstance(x, bsr_matrix)

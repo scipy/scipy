@@ -475,8 +475,6 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     return R[(k,k)]
 
-
-
 # Romberg quadratures for numeric integration.
 #
 # Written by Scott M. Ransom <ransom@cfa.harvard.edu>

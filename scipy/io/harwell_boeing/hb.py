@@ -225,7 +225,6 @@ class HBInfo(object):
         if len(key) > 8:
             warnings.warn("key is > 8 characters (key is %s)" % key, LineOverflow)
 
-
         self.total_nlines = total_nlines
         self.pointer_nlines = pointer_nlines
         self.indices_nlines = indices_nlines

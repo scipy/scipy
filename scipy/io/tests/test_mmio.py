@@ -273,7 +273,6 @@ class TestMMIOCoordinate(TestCase):
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
-
     def test_real_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])

@@ -269,7 +269,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                          'jac' : cjac,
                          'args': con.get('args', ())}, )
 
-
     exit_modes = { -1 : "Gradient evaluation required (g & a)",
                     0 : "Optimization terminated successfully.",
                     1 : "Function evaluation required (f & c)",
@@ -282,7 +281,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     8 : "Positive directional derivative for linesearch",
                     9 : "Iteration limit exceeded" }
 
-
     # Wrap func
     feval, func = wrap_function(func, args)
 
@@ -294,7 +292,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Transform x0 into an array.
     x = asfarray(x0).flatten()
-
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints

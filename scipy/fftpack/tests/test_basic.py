@@ -655,7 +655,6 @@ class TestLongDoubleFailure(TestCase):
                 pass
 
 
-
 class FakeArray(object):
     def __init__(self, data):
         self._data = data

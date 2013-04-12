@@ -138,7 +138,6 @@ class csc_matrix(_cs_matrix):
         A.has_sorted_indices = True
         return A
 
-
     def __getitem__(self, key):
         # use CSR to implement fancy indexing
         if isinstance(key, tuple):

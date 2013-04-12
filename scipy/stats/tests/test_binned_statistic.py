@@ -25,7 +25,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(count1, count2)
         assert_array_almost_equal(edges1, edges2)
 
-
     def test_1d_sum(self):
         x = self.x
         v = self.v
@@ -35,7 +34,6 @@ class TestBinnedStatistic(object):
 
         assert_array_almost_equal(sum1, sum2)
         assert_array_almost_equal(edges1, edges2)
-
 
     def test_1d_mean(self):
         x = self.x
@@ -47,7 +45,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(stat1, stat2)
         assert_array_almost_equal(edges1, edges2)
 
-
     def test_1d_std(self):
         x = self.x
         v = self.v
@@ -57,7 +54,6 @@ class TestBinnedStatistic(object):
 
         assert_array_almost_equal(stat1, stat2)
         assert_array_almost_equal(edges1, edges2)
-
 
     def test_1d_median(self):
         x = self.x
@@ -82,7 +78,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(bc, bc2)
         assert_array_almost_equal(bcount, count1)
 
-
     def test_2d_count(self):
         x = self.x
         y = self.y
@@ -94,7 +89,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(count1, count2)
         assert_array_almost_equal(binx1, binx2)
         assert_array_almost_equal(biny1, biny2)
-
 
     def test_2d_sum(self):
         x = self.x
@@ -108,7 +102,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(binx1, binx2)
         assert_array_almost_equal(biny1, biny2)
 
-
     def test_2d_mean(self):
         x = self.x
         y = self.y
@@ -121,7 +114,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(binx1, binx2)
         assert_array_almost_equal(biny1, biny2)
 
-
     def test_2d_std(self):
         x = self.x
         y = self.y
@@ -133,7 +125,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(stat1, stat2)
         assert_array_almost_equal(binx1, binx2)
         assert_array_almost_equal(biny1, biny2)
-
 
     def test_2d_median(self):
         x = self.x
@@ -162,7 +153,6 @@ class TestBinnedStatistic(object):
         count1adj = count1[count1.nonzero()]
         assert_array_almost_equal(bcount, count1adj)
 
-
     def test_dd_count(self):
         X = self.X
         v = self.v
@@ -172,7 +162,6 @@ class TestBinnedStatistic(object):
 
         assert_array_almost_equal(count1, count2)
         assert_array_almost_equal(edges1, edges2)
-
 
     def test_dd_sum(self):
         X = self.X
@@ -184,7 +173,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(sum1, sum2)
         assert_array_almost_equal(edges1, edges2)
 
-
     def test_dd_mean(self):
         X = self.X
         v = self.v
@@ -194,7 +182,6 @@ class TestBinnedStatistic(object):
 
         assert_array_almost_equal(stat1, stat2)
         assert_array_almost_equal(edges1, edges2)
-
 
     def test_dd_std(self):
         X = self.X
@@ -206,7 +193,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(stat1, stat2)
         assert_array_almost_equal(edges1, edges2)
 
-
     def test_dd_median(self):
         X = self.X
         v = self.v
@@ -216,7 +202,6 @@ class TestBinnedStatistic(object):
 
         assert_array_almost_equal(stat1, stat2)
         assert_array_almost_equal(edges1, edges2)
-
 
     def test_dd_bincode(self):
         X = self.X[:20]

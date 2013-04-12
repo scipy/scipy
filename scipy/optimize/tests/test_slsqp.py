@@ -83,7 +83,6 @@ class TestSLSQP(TestCase):
         """ Vector inequality constraint, derivative """
         return np.identity(x.shape[0])
 
-
     # minimize
     def test_minimize_unbounded_approximated(self):
         """ Minimize, method='SLSQP': unbounded, approximated jacobian. """

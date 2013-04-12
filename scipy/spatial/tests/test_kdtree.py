@@ -221,7 +221,6 @@ class test_vectorization_compiled:
         for q, d, i in zip(qs,ds,i_s):
             assert_equal(self.kdtree.query(q),(d,i))
 
-
     def test_single_query_multiple_neighbors(self):
         s = 23
         kk = self.kdtree.n+s

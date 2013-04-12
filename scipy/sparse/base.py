@@ -382,7 +382,6 @@ class spmatrix(object):
         else:
             raise NotImplementedError
 
-
     def __getattr__(self, attr):
         if attr == 'A':
             return self.toarray()
@@ -418,7 +417,6 @@ class spmatrix(object):
     def _imag(self):
         return self.tocsr()._imag()
 
-
     def nonzero(self):
         """nonzero indices
 
@@ -438,7 +436,6 @@ class spmatrix(object):
         A = self.tocoo()
         nz_mask = A.data != 0
         return (A.row[nz_mask],A.col[nz_mask])
-
 
     def getcol(self, j):
         """Returns a copy of column j of the matrix, as an (m x 1) sparse

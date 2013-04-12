@@ -59,6 +59,5 @@ def test_csr_getcol():
         assert_(type(csr_col) is csr_matrix)
 
 
-
 if __name__ == "__main__":
     run_module_suite()
