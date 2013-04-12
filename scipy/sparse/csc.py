@@ -129,8 +129,8 @@ class csc_matrix(_cs_matrix):
         indices = np.empty(self.nnz, dtype=np.intc)
         data    = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-        csc_tocsr(M, N, \
-                 self.indptr, self.indices, self.data, \
+        csc_tocsr(M, N,
+                 self.indptr, self.indices, self.data,
                  indptr, indices, data)
 
         from .csr import csr_matrix

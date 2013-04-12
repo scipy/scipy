@@ -39,7 +39,7 @@ def _check_graph_laplacian(mat, normed):
                                              np.zeros(n_nodes))
     np.testing.assert_array_almost_equal(laplacian.T,
                                          laplacian)
-    np.testing.assert_array_almost_equal(\
+    np.testing.assert_array_almost_equal(
         laplacian,
         csgraph.laplacian(sp_mat, normed=normed).todense())
 

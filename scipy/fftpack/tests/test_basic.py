@@ -561,7 +561,7 @@ class TestFftn(TestCase):
         y = fftn(small_x,shape=(4,4),axes=(-2,-1))
         assert_array_almost_equal(y,fftn(large_x1))
         y = fftn(small_x,shape=(4,4),axes=(-1,-2))
-        assert_array_almost_equal(y,swapaxes(\
+        assert_array_almost_equal(y,swapaxes(
             fftn(swapaxes(large_x1,-1,-2)),-1,-2))
 
     def test_shape_axes_argument2(self):
@@ -634,7 +634,7 @@ class TestLongDoubleFailure(TestCase):
         for f in [fft, ifft]:
             try:
                 f(x)
-                raise AssertionError("Type %r not supported but does not fail" % \
+                raise AssertionError("Type %r not supported but does not fail" %
                                      np.longcomplex)
             except ValueError:
                 pass
@@ -649,7 +649,7 @@ class TestLongDoubleFailure(TestCase):
         for f in [fft, ifft]:
             try:
                 f(x)
-                raise AssertionError("Type %r not supported but does not fail" % \
+                raise AssertionError("Type %r not supported but does not fail" %
                                      np.longcomplex)
             except ValueError:
                 pass

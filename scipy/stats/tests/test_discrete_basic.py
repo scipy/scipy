@@ -95,7 +95,7 @@ def test_discrete_private():
 
 def check_sample_meanvar(sm,m,msg):
     if not np.isinf(m):
-        npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg + \
+        npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg +
                                 ' - finite moment')
     else:
         npt.assert_(sm > 10000, msg='infinite moment, sm = ' + str(sm))
@@ -139,7 +139,7 @@ def check_pmf_cdf(distfn, arg, msg):
     startind = np.int(distfn._ppf(0.01,*arg)-1)
     index = list(range(startind,startind+10))
     cdfs = distfn.cdf(index,*arg)
-    npt.assert_almost_equal(cdfs, distfn.pmf(index, *arg).cumsum() + \
+    npt.assert_almost_equal(cdfs, distfn.pmf(index, *arg).cumsum() +
                             cdfs[0] - distfn.pmf(index[0],*arg),
                             decimal=4, err_msg=msg + 'pmf-cdf')
 
@@ -154,7 +154,7 @@ def check_moment_frozen(distfn, arg, m, k, decim):
 def check_oth(distfn, arg, msg):
     #checking other methods of distfn
     meanint = round(float(distfn.stats(*arg)[0])) # closest integer to mean
-    npt.assert_almost_equal(distfn.sf(meanint, *arg), 1 - \
+    npt.assert_almost_equal(distfn.sf(meanint, *arg), 1 -
                             distfn.cdf(meanint, *arg), decimal=8)
     median_sf = distfn.isf(0.5, *arg)
 
@@ -186,7 +186,7 @@ def check_isf_limits(distfn,arg,msg):
 def assert_equal_inf_nan(v1,v2,msg):
     npt.assert_(not np.isnan(v1))
     if not np.isinf(v1):
-        npt.assert_almost_equal(v1, v2, decimal=10, err_msg=msg + \
+        npt.assert_almost_equal(v1, v2, decimal=10, err_msg=msg +
                                    ' - finite')
     else:
         npt.assert_(np.isinf(v2) or np.isnan(v2),

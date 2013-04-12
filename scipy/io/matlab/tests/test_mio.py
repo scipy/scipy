@@ -271,7 +271,7 @@ def _check_level(label, expected, actual):
                                   decimal=5)
         return
     # Check types are as expected
-    assert_true(types_compatible(expected, actual), \
+    assert_true(types_compatible(expected, actual),
            "Expected type %s, got %s at %s" %
                 (type(expected), type(actual), label))
     # A field in a record array may not be an ndarray

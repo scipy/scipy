@@ -44,7 +44,7 @@ count[0] = 0
 x1, info = la.lgmres(A, b, inner_m=M-6*2, outer_k=6, tol=1e-14)
 count_1 = count[0]
 err1 = np.linalg.norm(Am*x1 - b) / np.linalg.norm(b)
-print("LGMRES(%d,6) [same memory req.]:" % (M-2*6), count_1, \
+print("LGMRES(%d,6) [same memory req.]:" % (M-2*6), count_1,
       "matvecs, residual:", err1)
 if info != 0:
     print("Didn't converge")
@@ -53,7 +53,7 @@ count[0] = 0
 x2, info = la.lgmres(A, b, inner_m=M-6, outer_k=6, tol=1e-14)
 count_2 = count[0]
 err2 = np.linalg.norm(Am*x2 - b) / np.linalg.norm(b)
-print("LGMRES(%d,6) [same subspace size]:" % (M-6), count_2, \
+print("LGMRES(%d,6) [same subspace size]:" % (M-6), count_2,
       "matvecs, residual:", err2)
 if info != 0:
     print("Didn't converge")

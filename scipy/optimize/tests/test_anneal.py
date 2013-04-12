@@ -20,7 +20,7 @@ class TestAnneal(TestCase):
         least.
         """
         self.fun = (lambda x: np.cos(14.5 * x - 0.3)  +  (x + 0.2) * x,
-                    lambda x: np.cos(14.5 * x[0] - 0.3)  +  \
+                    lambda x: np.cos(14.5 * x[0] - 0.3)  +
                              (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0])
         self.x0 = (1.0, [1.0, 1.0])
         self.sol = (-0.195, np.array([-0.195, -0.1]))

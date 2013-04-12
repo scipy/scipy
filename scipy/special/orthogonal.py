@@ -242,8 +242,8 @@ def js_roots(n, p1, q1, mu=0):
 
     p,q = p1,q1
 
-    sbn_Js = lambda k: sqrt(np.where(k==1,q*(p-q+1.0)/(p+2.0), \
-                                  k*(k+q-1.0)*(k+p-1.0)*(k+p-q) \
+    sbn_Js = lambda k: sqrt(np.where(k==1,q*(p-q+1.0)/(p+2.0),
+                                  k*(k+q-1.0)*(k+p-1.0)*(k+p-q)
                                   / ((2.0*k+p-2) * (2.0*k+p))))/(2*k+p-1.0)
     an_Js = lambda k: np.where(k==0,q/(p+1.0),(2.0*k*(k+p)+q*(p-1.0)) / ((2.0*k+p+1.0)*(2*k+p-1.0)))
 

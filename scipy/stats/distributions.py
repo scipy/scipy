@@ -296,7 +296,7 @@ _doc_allmethods = ''.join([docdict_discrete[obj] for obj in
                                               _doc_disc_methods])
 docdict_discrete['allmethods'] = docheaders['methods'] + _doc_allmethods
 
-docdict_discrete['longsummary'] = _doc_default_longsummary.replace(\
+docdict_discrete['longsummary'] = _doc_default_longsummary.replace(
                                       'Continuous', 'Discrete')
 _doc_default_frozen_note = \
 """
@@ -1078,7 +1078,7 @@ class rv_continuous(rv_generic):
         if self.shapes is None:
             # remove shapes from call parameters if there are none
             for item in ['callparams', 'default', 'before_notes']:
-                tempdict[item] = tempdict[item].replace(\
+                tempdict[item] = tempdict[item].replace(
                         "\n%(shapes)s : array_like\n    shape parameters", "")
         for i in range(2):
             if self.shapes is None:
@@ -1110,7 +1110,7 @@ class rv_continuous(rv_generic):
                 right *= factor
             # right is now such that cdf(right) > q
 
-        return optimize.brentq(self._ppf_to_solve, \
+        return optimize.brentq(self._ppf_to_solve,
                                left, right, args=(q,)+args, xtol=self.xtol)
 
     # moment from definition
@@ -2281,7 +2281,7 @@ class betaprime_gen(rv_continuous):
                          inf)
         elif (n == 4.0):
             return where(b > 4,
-                         a*(a+1.0)*(a+2.0)*(a+3.0)/((b-4.0)*(b-3.0) \
+                         a*(a+1.0)*(a+2.0)*(a+3.0)/((b-4.0)*(b-3.0)
                                                     *(b-2.0)*(b-1.0)), inf)
         else:
             raise NotImplementedError
@@ -2963,7 +2963,7 @@ class foldnorm_gen(rv_continuous):
         mu2 = c*c + 1 - mu*mu
         c2 = c*c
         g1 = sqrt(2/pi)*exp(-1.5*c2)*(4-pi*exp(c2)*(2*c2+1.0))
-        g1 += 2*c*fac*(6*exp(-c2) + 3*sqrt(2*pi)*c*exp(-c2/2.0)*fac + \
+        g1 += 2*c*fac*(6*exp(-c2) + 3*sqrt(2*pi)*c*exp(-c2/2.0)*fac +
                        pi*c*(fac*fac-1))
         g1 /= pi*mu2**1.5
 
@@ -4417,8 +4417,8 @@ class ncf_gen(rv_continuous):
         return val
     def _stats(self, dfn, dfd, nc):
         mu = where(dfd <= 2, inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
-        mu2 = where(dfd <=4, inf, 2*(dfd*1.0/dfn)**2.0 * \
-                    ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) / \
+        mu2 = where(dfd <=4, inf, 2*(dfd*1.0/dfn)**2.0 *
+                    ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) /
                     ((dfd-2.0)**2.0 * (dfd-4.0)))
         return mu, mu2, None, None
 ncf = ncf_gen(a=0.0, name='ncf', shapes="dfn, dfd, nc")
@@ -4528,19 +4528,19 @@ class nct_gen(rv_continuous):
             var -= nc*nc*df* val1**2 / 2.0 / val2**2
             mu2 = var
         if 's' in moments:
-            g1n = 2*nc*sqrt(df)*val1*((nc*nc*(2*df-7)-3)*val2**2 \
+            g1n = 2*nc*sqrt(df)*val1*((nc*nc*(2*df-7)-3)*val2**2
                                       -nc*nc*(df-2)*(df-3)*val1**2)
-            g1d = (df-3)*sqrt(2*df*(nc*nc+1)/(df-2) - \
+            g1d = (df-3)*sqrt(2*df*(nc*nc+1)/(df-2) -
                               nc*nc*df*(val1/val2)**2) * val2 * \
-                              (nc*nc*(df-2)*val1**2 - \
+                              (nc*nc*(df-2)*val1**2 -
                                2*(nc*nc+1)*val2**2)
             g1 = g1n/g1d
         if 'k' in moments:
-            g2n = 2*(-3*nc**4*(df-2)**2 *(df-3) *(df-4)*val1**4 + \
-                     2**(6-2*df) * nc*nc*(df-2)*(df-4)* \
-                     (nc*nc*(2*df-7)-3)*pi* gam(df+1)**2 - \
+            g2n = 2*(-3*nc**4*(df-2)**2 *(df-3) *(df-4)*val1**4 +
+                     2**(6-2*df) * nc*nc*(df-2)*(df-4)*
+                     (nc*nc*(2*df-7)-3)*pi* gam(df+1)**2 -
                      4*(nc**4*(df-5)-6*nc*nc-3)*(df-3)*val2**4)
-            g2d = (df-3)*(df-4)*(nc*nc*(df-2)*val1**2 - \
+            g2d = (df-3)*(df-4)*(nc*nc*(df-2)*val1**2 -
                                  2*(nc*nc+1)*val2)**2
             g2 = g2n / g2d
         return mu, mu2, g1, g2
@@ -5492,7 +5492,7 @@ def _drv2_moment(self, n, *args):
     ulimit = max(1000, (min(self.b,1000) + max(self.a,-1000))/2.0 )
     llimit = min(-1000, (min(self.b,1000) + max(self.a,-1000))/2.0 )
 
-    while (pos <= self.b) and ((pos <= ulimit) or \
+    while (pos <= self.b) and ((pos <= ulimit) or
                                (diff > self.moment_tol)):
         diff = np.power(pos, n) * self.pmf(pos,*args)
         # use pmf because _pmf does not check support in randint
@@ -5504,7 +5504,7 @@ def _drv2_moment(self, n, *args):
     if self.a < 0: #handle case when self.a = -inf
         diff = 1e100
         pos = -self.inc
-        while (pos >= self.a) and ((pos >= llimit) or \
+        while (pos >= self.a) and ((pos >= llimit) or
                                    (diff > self.moment_tol)):
             diff = np.power(pos, n) * self.pmf(pos,*args)
             #using pmf instead of _pmf, see above
@@ -5856,7 +5856,7 @@ class rv_discrete(rv_generic):
         if self.shapes is None:
             # remove shapes from call parameters if there are none
             for item in ['callparams', 'default', 'before_notes']:
-                tempdict[item] = tempdict[item].replace(\
+                tempdict[item] = tempdict[item].replace(
                         "\n%(shapes)s : array_like\n    shape parameters", "")
         for i in range(2):
             if self.shapes is None:
@@ -6868,7 +6868,7 @@ class hypergeom_gen(rv_discrete):
         g2 = m3 - m5 + n*(3*m2-6*m3+m4) + 3*m*n2 - 12*m2*n2 + 8*m3*n2 + n3 \
              - 6*m*n3 + 8*m2*n3 + m*n4 - n5 - 6*m3*N + 6*m4*N + 18*m2*n*N \
              - 6*m3*n*N + 18*m*n2*N - 24*m2*n2*N - 6*n3*N - 6*m*n3*N \
-             + 6*n4*N + N*N*(6*m2 - 6*m3 - 24*m*n + 12*m2*n + 6*n2 + \
+             + 6*n4*N + N*N*(6*m2 - 6*m3 - 24*m*n + 12*m2*n + 6*n2 +
                              12*m*n2 - 6*n3)
         return mu, var, g1, g2
     def _entropy(self, M, n, N):
@@ -6930,7 +6930,7 @@ class logser_gen(rv_discrete):
         mu3 = mu3p - 3*mu*mu2p + 2*mu**3
         g1 = mu3 / var**1.5
 
-        mu4p = -pr / r * (1.0/(pr-1)**2 - 6*pr/(pr-1)**3 + \
+        mu4p = -pr / r * (1.0/(pr-1)**2 - 6*pr/(pr-1)**3 +
                           6*pr*pr / (pr-1)**4)
         mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
         g2 = mu4 / var**2 - 3.0
@@ -7136,7 +7136,7 @@ class randint_gen(rv_discrete):
 
     def _entropy(self, min, max):
         return log(max-min)
-randint = randint_gen(name='randint',longname='A discrete uniform '\
+randint = randint_gen(name='randint',longname='A discrete uniform '
                       '(random integer)', shapes="min, max")
 
 

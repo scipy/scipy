@@ -44,7 +44,7 @@ def configuration(parent_package='',top_path=None):
     sources = ['slsqp.pyf', 'slsqp_optmz.f']
     config.add_extension('_slsqp', sources=[join('slsqp', x) for x in sources])
 
-    config.add_extension('_nnls', sources=[join('nnls', x) \
+    config.add_extension('_nnls', sources=[join('nnls', x)
                                           for x in ["nnls.f","nnls.pyf"]])
 
     config.add_data_dir('tests')

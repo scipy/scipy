@@ -1543,7 +1543,7 @@ def _compute_qth_percentile(sorted, per, interpolation_method, axis):
         elif interpolation_method == 'fraction':
             pass  # keep idx as fraction and interpolate
         else:
-            raise ValueError("interpolation_method can only be 'fraction', " \
+            raise ValueError("interpolation_method can only be 'fraction', "
                              "'lower' or 'higher'")
 
     i = int(idx)
@@ -1750,7 +1750,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     extrapoints = len([v for v in a
                        if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
-        warnings.warn("Points outside given histogram range = %s" \
+        warnings.warn("Points outside given histogram range = %s"
                       %extrapoints)
     return (hist, defaultlimits[0], binsize, extrapoints)
 

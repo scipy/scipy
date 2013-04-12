@@ -484,7 +484,7 @@ def _stats(input, labels=None, index=None, centered=False):
         centered_input = input - means[labels]
         # bincount expects 1d inputs, so we ravel the arguments.
         bc = numpy.bincount(labels.ravel(),
-                              weights=(centered_input * \
+                              weights=(centered_input *
                                        centered_input.conjugate()).ravel())
         return bc
 

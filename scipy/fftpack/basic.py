@@ -426,7 +426,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     else:
         noaxes = False
     if len(axes) != len(s):
-        raise ValueError("when given, axes and shape arguments "\
+        raise ValueError("when given, axes and shape arguments "
                          "have to be of the same length")
 
     for dim in s:

@@ -195,7 +195,7 @@ def compare(m,Nobs,Ncodes,Nfeatures):
     codes = RandomArray.normal(0.,1.,(Ncodes,Nfeatures))
     import scipy.cluster.vq
     scipy.cluster.vq
-    print('vq with %d observation, %d features and %d codes for %d iterations' % \
+    print('vq with %d observation, %d features and %d codes for %d iterations' %
            (Nobs,Nfeatures,Ncodes,m))
     t1 = time.time()
     for i in range(m):

@@ -186,7 +186,7 @@ class dok_matrix(spmatrix, dict):
                     # ** linear time in the number of non-zeros:
                     for (ii, jj) in self.keys():
                         if jj == j and ii >= first and ii <= last:
-                            dict.__setitem__(new, (ii-first, 0), \
+                            dict.__setitem__(new, (ii-first, 0),
                                              dict.__getitem__(self, (ii,jj)))
                 else:
                     ###################################
@@ -221,7 +221,7 @@ class dok_matrix(spmatrix, dict):
             # ** if there are many non-zeros
             for (ii, jj) in self.keys():
                 if ii == i and jj >= first and jj <= last:
-                    dict.__setitem__(new, (0, jj-first), \
+                    dict.__setitem__(new, (0, jj-first),
                                      dict.__getitem__(self, (ii,jj)))
             return new
 

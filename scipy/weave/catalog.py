@@ -291,7 +291,7 @@ def get_catalog(module_path,mode='r'):
         raise ValueError(msg)
     catalog_file = catalog_path(module_path)
     if (catalog_file is not None) \
-           and ((dumb and os.path.exists(catalog_file+'.dat')) \
+           and ((dumb and os.path.exists(catalog_file+'.dat'))
                 or os.path.exists(catalog_file)):
         sh = shelve.open(catalog_file,mode)
     else:
@@ -555,7 +555,7 @@ class catalog(object):
         try:
             writable_cat = get_catalog(catalog_path,'w')
         except:
-            print('warning: unable to repair catalog entry\n %s\n in\n %s' % \
+            print('warning: unable to repair catalog entry\n %s\n in\n %s' %
                   (code,catalog_path))
             # shelve doesn't guarantee flushing, so it's safest to explicitly
             # close the catalog

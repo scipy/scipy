@@ -164,7 +164,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             try:
                 arg1 = np.asarray(arg1)
             except:
-                raise ValueError("unrecognized form for" \
+                raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format)
             from .coo import coo_matrix
             arg1 = coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize)
@@ -210,10 +210,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warn("indptr array has non-integer dtype (%s)" \
+            warn("indptr array has non-integer dtype (%s)"
                     % self.indptr.dtype.name )
         if self.indices.dtype.kind != 'i':
-            warn("indices array has non-integer dtype (%s)" \
+            warn("indices array has non-integer dtype (%s)"
                     % self.indices.dtype.name )
 
         # only support 32-bit ints for now
@@ -272,7 +272,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         format = self.getformat()
         return "<%dx%d sparse matrix of type '%s'\n" \
                "\twith %d stored elements (blocksize = %dx%d) in %s format>" % \
-               ( self.shape + (self.dtype.type, nnz) + self.blocksize + \
+               ( self.shape + (self.dtype.type, nnz) + self.blocksize +
                  (_formats[format][1],) )
 
 
@@ -282,7 +282,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         M,N = self.shape
         R,C = self.blocksize
         y = np.empty(min(M,N), dtype=upcast(self.dtype))
-        sparsetools.bsr_diagonal(M//R, N//C, R, C, \
+        sparsetools.bsr_diagonal(M//R, N//C, R, C,
                 self.indptr, self.indices, np.ravel(self.data), y)
         return y
 
@@ -315,7 +315,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         result = np.zeros(self.shape[0], dtype=upcast(self.dtype, other.dtype))
 
-        bsr_matvec(M//R, N//C, R, C, \
+        bsr_matvec(M//R, N//C, R, C,
             self.indptr, self.indices, self.data.ravel(),
             other, result)
 
@@ -328,8 +328,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         result = np.zeros((M,n_vecs), dtype=upcast(self.dtype,other.dtype))
 
-        bsr_matvecs(M//R, N//C, n_vecs, R, C, \
-                self.indptr, self.indices, self.data.ravel(), \
+        bsr_matvecs(M//R, N//C, n_vecs, R, C,
+                self.indptr, self.indices, self.data.ravel(),
                 other.ravel(), result.ravel())
 
         return result
@@ -355,18 +355,18 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         else:
             other = other.tobsr(blocksize=(n,C))
 
-        csr_matmat_pass1( M//R, N//C, \
-                self.indptr,  self.indices, \
-                other.indptr, other.indices, \
+        csr_matmat_pass1( M//R, N//C,
+                self.indptr,  self.indices,
+                other.indptr, other.indices,
                 indptr)
 
         bnnz = indptr[-1]
         indices = np.empty(bnnz, dtype=np.intc)
         data    = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
 
-        bsr_matmat_pass2( M//R, N//C, R, C, n, \
-                self.indptr,  self.indices,  np.ravel(self.data), \
-                other.indptr, other.indices, np.ravel(other.data), \
+        bsr_matmat_pass2( M//R, N//C, R, C, n,
+                self.indptr,  self.indices,  np.ravel(self.data),
+                other.indptr, other.indices, np.ravel(other.data),
                 indptr,       indices,       data)
 
         data = data.reshape(-1,R,C)
@@ -438,8 +438,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         indices = np.empty( NBLK,       dtype=self.indices.dtype)
         data    = np.empty( (NBLK,C,R), dtype=self.data.dtype)
 
-        bsr_transpose(M//R, N//C, R, C, \
-                      self.indptr, self.indices, self.data.ravel(), \
+        bsr_transpose(M//R, N//C, R, C,
+                      self.indptr, self.indices, self.data.ravel(),
                       indptr,      indices,      data.ravel())
 
         return bsr_matrix((data,indices,indptr), shape=(N,M))
@@ -549,10 +549,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         (i.e. .indptr and .indices) are copied.
         """
         if copy:
-            return self.__class__((data,self.indices.copy(),self.indptr.copy()), \
+            return self.__class__((data,self.indices.copy(),self.indptr.copy()),
                                    shape=self.shape,dtype=data.dtype)
         else:
-            return self.__class__((data,self.indices,self.indptr), \
+            return self.__class__((data,self.indices,self.indptr),
                                    shape=self.shape,dtype=data.dtype)
 
 

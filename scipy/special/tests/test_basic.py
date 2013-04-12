@@ -1562,9 +1562,9 @@ class TestHyper(TestCase):
         a,b = asarray(a), asarray(b)
         z = 0.5
         hypu = special.hyperu(a,b,z)
-        hprl = (pi/sin(pi*b))*(special.hyp1f1(a,b,z)/ \
-                               (special.gamma(1+a-b)*special.gamma(b))- \
-                               z**(1-b)*special.hyp1f1(1+a-b,2-b,z) \
+        hprl = (pi/sin(pi*b))*(special.hyp1f1(a,b,z)/
+                               (special.gamma(1+a-b)*special.gamma(b))-
+                               z**(1-b)*special.hyp1f1(1+a-b,2-b,z)
                                /(special.gamma(a)*special.gamma(2-b)))
         assert_array_almost_equal(hypu,hprl,12)
 

@@ -89,8 +89,8 @@ def make_system(A, M, x0, b, xtype=None):
             xtype = A.matvec(b).dtype.char
         xtype = coerce(xtype, b.dtype.char)
     else:
-        warn('Use of xtype argument is deprecated. '\
-                'Use LinearOperator( ... , dtype=xtype) instead.',\
+        warn('Use of xtype argument is deprecated. '
+                'Use LinearOperator( ... , dtype=xtype) instead.',
                 DeprecationWarning)
         if xtype == 0:
             xtype = b.dtype.char

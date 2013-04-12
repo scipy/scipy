@@ -236,14 +236,14 @@ def check_moment(distfn, arg, m, v, msg):
     m1  = distfn.moment(1,*arg)
     m2  = distfn.moment(2,*arg)
     if not np.isinf(m):
-        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg + \
+        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
                             ' - 1st moment')
     else:                     # or np.isnan(m1),
         npt.assert_(np.isinf(m1),
                msg + ' - 1st moment -infinite, m1=%s' % str(m1))
         #np.isnan(m1) temporary special treatment for loggamma
     if not np.isinf(v):
-        npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg=msg + \
+        npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg=msg +
                             ' - 2ndt moment')
     else:                     #or np.isnan(m2),
         npt.assert_(np.isinf(m2),
@@ -301,7 +301,7 @@ def check_sample_skew_kurt(distfn, arg, ss, sk, msg):
 
 def check_sample_meanvar(sm,m,msg):
     if not np.isinf(m) and not np.isnan(m):
-        npt.assert_almost_equal(sm, m, decimal=DECIMAL, err_msg=msg + \
+        npt.assert_almost_equal(sm, m, decimal=DECIMAL, err_msg=msg +
                                 ' - finite moment')
 ##    else:
 ##        npt.assert_(abs(sm) > 10000), msg='infinite moment, sm = ' + str(sm))
@@ -310,17 +310,17 @@ def check_sample_meanvar(sm,m,msg):
 def check_cdf_ppf(distfn,arg,msg):
     values = [0.001, 0.5, 0.999]
     npt.assert_almost_equal(distfn.cdf(distfn.ppf(values, *arg), *arg),
-                            values, decimal=DECIMAL, err_msg=msg + \
+                            values, decimal=DECIMAL, err_msg=msg +
                             ' - cdf-ppf roundtrip')
 
 @_silence_fp_errors
 def check_sf_isf(distfn,arg,msg):
     npt.assert_almost_equal(distfn.sf(distfn.isf([0.1,0.5,0.9], *arg), *arg),
-                            [0.1,0.5,0.9], decimal=DECIMAL, err_msg=msg + \
+                            [0.1,0.5,0.9], decimal=DECIMAL, err_msg=msg +
                             ' - sf-isf roundtrip')
     npt.assert_almost_equal(distfn.cdf([0.1,0.9], *arg),
                             1.0-distfn.sf([0.1,0.9], *arg),
-                            decimal=DECIMAL, err_msg=msg + \
+                            decimal=DECIMAL, err_msg=msg +
                             ' - cdf-sf relationship')
 
 @_silence_fp_errors

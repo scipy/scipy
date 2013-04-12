@@ -73,7 +73,7 @@ class TestLSMRReturns:
 
     def testNormar(self):
         x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
-        assert_almost_equal(normar, \
+        assert_almost_equal(normar,
                 norm(self.Afun.rmatvec(self.b - self.Afun.matvec(x))))
 
     def testNormx(self):
@@ -93,19 +93,19 @@ def lowerBidiagonalMatrix(m, n):
     #
     # 04 Jun 2010: First version for distribution with lsmr.py
     if m <= n:
-        row = hstack((arange(m, dtype=int), \
+        row = hstack((arange(m, dtype=int),
                       arange(1, m, dtype=int)))
-        col = hstack((arange(m, dtype=int), \
+        col = hstack((arange(m, dtype=int),
                       arange(m-1, dtype=int)))
-        data = hstack((arange(1, m+1, dtype=float), \
+        data = hstack((arange(1, m+1, dtype=float),
                        arange(1,m, dtype=float)))
         return coo_matrix((data, (row, col)), shape=(m,n))
     else:
-        row = hstack((arange(n, dtype=int), \
+        row = hstack((arange(n, dtype=int),
                       arange(1, n+1, dtype=int)))
-        col = hstack((arange(n, dtype=int), \
+        col = hstack((arange(n, dtype=int),
                       arange(n, dtype=int)))
-        data = hstack((arange(1, n+1, dtype=float), \
+        data = hstack((arange(1, n+1, dtype=float),
                        arange(1,n+1, dtype=float)))
         return coo_matrix((data,(row, col)), shape=(m,n))
 

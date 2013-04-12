@@ -12,7 +12,7 @@ from numpy.distutils.misc_util import get_numpy_include_dirs
 try:
     from numpy.distutils.misc_util import get_info
 except ImportError:
-    raise ValueError("numpy >= 1.4 is required (detected %s from %s)" % \
+    raise ValueError("numpy >= 1.4 is required (detected %s from %s)" %
                      (numpy.__version__, numpy.__file__))
 
 def configuration(parent_package='',top_path=None):

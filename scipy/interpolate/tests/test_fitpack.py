@@ -136,7 +136,7 @@ class TestSmokeTests(TestCase):
         x=a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
         v=f(x)
         nk=[]
-        put("  k  :     Roots of s(x) approx %s  x in [%s,%s]:"%\
+        put("  k  :     Roots of s(x) approx %s  x in [%s,%s]:"%
               (f(None),repr(round(a,3)),repr(round(b,3))))
         for k in range(1,6):
             tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
@@ -164,7 +164,7 @@ class TestSmokeTests(TestCase):
             err2 = abs(splev(uv[0],tck)-f(uv[0]))
             assert_(err1 < 1e-2)
             assert_(err2 < 1e-2)
-            put("  %d  :  %s    %.1e           %.1e"%\
+            put("  %d  :  %s    %.1e           %.1e"%
                   (k,repr([round(z,3) for z in uv]),
                    err1,
                    err2))

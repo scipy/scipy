@@ -113,7 +113,7 @@ class dia_matrix(_data_matrix):
             try:
                 arg1 = np.asarray(arg1)
             except:
-                raise ValueError("unrecognized form for" \
+                raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format)
             from .coo import coo_matrix
             A = coo_matrix(arg1, dtype=dtype).todia()
@@ -133,8 +133,8 @@ class dia_matrix(_data_matrix):
             raise ValueError('data array must have rank 2')
 
         if self.data.shape[0] != len(self.offsets):
-            raise ValueError('number of diagonals (%d) ' \
-                    'does not match the number of offsets (%d)' \
+            raise ValueError('number of diagonals (%d) '
+                    'does not match the number of offsets (%d)'
                     % (self.data.shape[0], len(self.offsets)))
 
         if len(np.unique(self.offsets)) != len(self.offsets):
@@ -145,7 +145,7 @@ class dia_matrix(_data_matrix):
         format = self.getformat()
         return "<%dx%d sparse matrix of type '%s'\n" \
                "\twith %d stored elements (%d diagonals) in %s format>" % \
-               ( self.shape +  (self.dtype.type, nnz, self.data.shape[0], \
+               ( self.shape +  (self.dtype.type, nnz, self.data.shape[0],
                  _formats[format][1],) )
 
     def getnnz(self):

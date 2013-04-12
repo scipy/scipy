@@ -297,7 +297,7 @@ class MatFile5Reader(MatFileReader):
                 res = self.read_var_array(hdr, process)
             except MatReadError as err:
                 warnings.warn(
-                    'Unreadable variable "%s", because "%s"' % \
+                    'Unreadable variable "%s", because "%s"' %
                     (name, err),
                     Warning, stacklevel=2)
                 res = "Read error: %s" % err

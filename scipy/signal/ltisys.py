@@ -94,7 +94,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     A, B, C, D = map(_none_to_empty, (A, B, C, D))
     A, B, C, D = map(atleast_2d, (A, B, C, D))
 
-    if ((len(A.shape) > 2) or (len(B.shape) > 2) or \
+    if ((len(A.shape) > 2) or (len(B.shape) > 2) or
         (len(C.shape) > 2) or (len(D.shape) > 2)):
         raise ValueError("A, B, C, D arrays can be no larger than rank-2.")
 

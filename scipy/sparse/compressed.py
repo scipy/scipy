@@ -117,10 +117,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warn("indptr array has non-integer dtype (%s)" \
+            warn("indptr array has non-integer dtype (%s)"
                     % self.indptr.dtype.name )
         if self.indices.dtype.kind != 'i':
-            warn("indices array has non-integer dtype (%s)" \
+            warn("indices array has non-integer dtype (%s)"
                     % self.indices.dtype.name )
 
         # only support 32-bit ints for now
@@ -292,8 +292,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         other = self.__class__(other) #convert to this format
         fn = getattr(sparsetools, self.format + '_matmat_pass1')
-        fn( M, N, self.indptr, self.indices, \
-                  other.indptr, other.indices, \
+        fn( M, N, self.indptr, self.indices,
+                  other.indptr, other.indices,
                   indptr)
 
         nnz = indptr[-1]
@@ -301,8 +301,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         data    = np.empty(nnz, dtype=upcast(self.dtype,other.dtype))
 
         fn = getattr(sparsetools, self.format + '_matmat_pass2')
-        fn( M, N, self.indptr, self.indices, self.data, \
-                  other.indptr, other.indices, other.data, \
+        fn( M, N, self.indptr, self.indices, self.data,
+                  other.indptr, other.indices, other.data,
                   indptr, indices, data)
 
         return self.__class__((data,indices,indptr),shape=(M,N))
@@ -408,7 +408,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         index  = self.indices[indices] - start
         data   = self.data[indices]
         indptr = np.array([0, len(indices)])
-        return self.__class__((data, index, indptr), shape=shape, \
+        return self.__class__((data, index, indptr), shape=shape,
                               dtype=self.dtype)
 
     def _get_submatrix( self, slice0, slice1 ):
@@ -491,8 +491,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
             if num_matches == 0:
                 #entry not already present
-                warn('changing the sparsity structure of a %s_matrix is expensive. ' \
-                        'lil_matrix is more efficient.' % self.format, \
+                warn('changing the sparsity structure of a %s_matrix is expensive. '
+                        'lil_matrix is more efficient.' % self.format,
                         SparseEfficiencyWarning)
 
                 if self.has_sorted_indices:
@@ -657,10 +657,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         (i.e. .indptr and .indices) are copied.
         """
         if copy:
-            return self.__class__((data,self.indices.copy(),self.indptr.copy()), \
+            return self.__class__((data,self.indices.copy(),self.indptr.copy()),
                                    shape=self.shape,dtype=data.dtype)
         else:
-            return self.__class__((data,self.indices,self.indptr), \
+            return self.__class__((data,self.indices,self.indptr),
                                    shape=self.shape,dtype=data.dtype)
 
     def _binopt(self, other, op):
@@ -675,7 +675,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         indices = np.empty(maxnnz, dtype=np.intc)
         data    = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
 
-        fn(self.shape[0], self.shape[1], \
+        fn(self.shape[0], self.shape[1],
                 self.indptr,  self.indices,  self.data,
                 other.indptr, other.indices, other.data,
                 indptr, indices, data)

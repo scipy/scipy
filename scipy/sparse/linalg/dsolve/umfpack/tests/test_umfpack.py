@@ -184,7 +184,7 @@ class TestFactorization(_DeprecationAccept):
         self.real_matrices.append(rand(5,4))
         self.real_matrices.append(rand(4,5))
 
-        self.real_matrices = [csc_matrix(x).astype('d') for x \
+        self.real_matrices = [csc_matrix(x).astype('d') for x
                 in self.real_matrices]
         self.complex_matrices = [x.astype(np.complex128)
                                  for x in self.real_matrices]

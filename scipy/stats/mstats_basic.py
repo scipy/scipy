@@ -89,7 +89,7 @@ def _chk_size(a,b):
     b = ma.asanyarray(b)
     (na, nb) = (a.size, b.size)
     if na != nb:
-        raise ValueError("The size of the input array should match!"\
+        raise ValueError("The size of the input array should match!"
                          " (%s <> %s)" % (na,nb))
     return (a,b,na)
 
@@ -570,7 +570,7 @@ Parameters
         for k in range(j,m,1):
             K[j,k] = np.sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
                                for i in range(n))
-            covmat[j,k] = (K[j,k] +4*(R[:,j]*R[:,k]).sum() - \
+            covmat[j,k] = (K[j,k] +4*(R[:,j]*R[:,k]).sum() -
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
             K[k,j] = K[j,k]
             covmat[k,j] = covmat[j,k]
@@ -929,7 +929,7 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
         d = csum.max()
         prob = np.exp(-2*n*d**2)
     else:
-        raise ValueError("Invalid value for the alternative hypothesis: "\
+        raise ValueError("Invalid value for the alternative hypothesis: "
                          "should be in 'two-sided', 'less' or 'greater'")
     return (d, prob)
 ks_2samp = ks_twosamp
@@ -1816,7 +1816,7 @@ def scoreatpercentile(data, per, limit=(), alphap=.4, betap=.4):
 
     """
     if (per < 0) or (per > 100.):
-        raise ValueError("The percentile should be between 0. and 100. !"\
+        raise ValueError("The percentile should be between 0. and 100. !"
                          " (got %s)" % per)
     return mquantiles(data, prob=[per/100.], alphap=alphap, betap=betap,
                       limit=limit, axis=0).squeeze()
@@ -1969,7 +1969,7 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     ER = ma.array(ER, copy=False, ndmin=2)
     EF = ma.array(EF, copy=False, ndmin=2)
     if ma.getmask(ER).any() or ma.getmask(EF).any():
-        raise NotImplementedError("Not implemented when the inputs "\
+        raise NotImplementedError("Not implemented when the inputs "
                                   "have missing data")
     lmbda = np.linalg.det(EF) / np.linalg.det(ER)
     q = ma.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 -5) )
@@ -2000,7 +2000,7 @@ def friedmanchisquare(*args):
     data = argstoarray(*args).astype(float)
     k = len(data)
     if k < 3:
-        raise ValueError("Less than 3 groups (%i): " % k +\
+        raise ValueError("Less than 3 groups (%i): " % k +
                          "the Friedman test is NOT appropriate.")
     ranked = ma.masked_values(rankdata(data, axis=0), 0)
     if ranked._mask is not nomask:

@@ -966,7 +966,7 @@ def find(sub=None, disp=False):
     if sub is None:
         result = list(_current_constants.keys())
     else:
-        result = [key for key in _current_constants \
+        result = [key for key in _current_constants
                  if sub.lower() in key.lower()]
 
     result.sort()

@@ -341,7 +341,7 @@ class interp1d(_Interpolator1D):
             order = kind
             kind = 'spline'
         elif kind not in ('linear', 'nearest'):
-            raise NotImplementedError("%s is unsupported: Use fitpack "\
+            raise NotImplementedError("%s is unsupported: Use fitpack "
                                       "routines for other types." % kind)
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)

@@ -140,8 +140,8 @@ class csr_matrix(_cs_matrix):
         indices = np.empty(self.nnz, dtype=np.intc)
         data    = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-        csr_tocsc(self.shape[0], self.shape[1], \
-                  self.indptr, self.indices, self.data, \
+        csr_tocsc(self.shape[0], self.shape[1],
+                  self.indptr, self.indices, self.data,
                   indptr, indices, data)
 
         from .csc import csc_matrix
@@ -173,7 +173,7 @@ class csr_matrix(_cs_matrix):
             indices = np.empty(blks,       dtype=np.intc)
             data    = np.zeros((blks,R,C), dtype=self.dtype)
 
-            csr_tobsr(M, N, R, C, self.indptr, self.indices, self.data, \
+            csr_tobsr(M, N, R, C, self.indptr, self.indices, self.data,
                     indptr, indices, data.ravel() )
 
             return bsr_matrix((data,indices,indptr), shape=self.shape)
@@ -401,8 +401,8 @@ class csr_matrix(_cs_matrix):
 
         def check_bounds( i0, i1, num ):
             if not (0<=i0<num) or not (0<i1<=num) or not (i0<i1):
-                raise IndexError( \
-                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %\
+                raise IndexError(
+                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %
                       (i0, num, i1, num, i0, i1) )
 
         i0, i1 = process_slice( row_slice, M )
@@ -410,8 +410,8 @@ class csr_matrix(_cs_matrix):
         check_bounds( i0, i1, M )
         check_bounds( j0, j1, N )
 
-        indptr, indices, data = get_csr_submatrix( M, N, \
-                self.indptr, self.indices, self.data, \
+        indptr, indices, data = get_csr_submatrix( M, N,
+                self.indptr, self.indices, self.data,
                 int(i0), int(i1), int(j0), int(j1) )
 
         shape =  (i1 - i0, j1 - j0)

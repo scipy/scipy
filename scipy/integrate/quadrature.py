@@ -274,8 +274,8 @@ def _basic_simps(y,start,stop,x,dx,axis):
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = h0 / h1
-        result = add.reduce(hsum/6.0*(y[slice0]*(2-1.0/h0divh1) + \
-                                              y[slice1]*hsum*hsum/hprod + \
+        result = add.reduce(hsum/6.0*(y[slice0]*(2-1.0/h0divh1) +
+                                              y[slice1]*hsum*hsum/hprod +
                                               y[slice2]*(2-h0divh1)),axis)
     return result
 
@@ -452,7 +452,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     if show:
         if not isscalar(R[(1,1)]):
-            print("*** Printing table only supported for integrals" + \
+            print("*** Printing table only supported for integrals" +
                   " of a single data set.")
         else:
             try:

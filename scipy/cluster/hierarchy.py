@@ -632,7 +632,7 @@ def linkage(y, method='single', metric='euclidean'):
         [y] = _copy_arrays_if_base_present([y])
 
         Z = np.zeros((d - 1, 4))
-        _hierarchy_wrap.linkage_wrap(y, Z, int(d), \
+        _hierarchy_wrap.linkage_wrap(y, Z, int(d),
                                    int(_cpy_non_euclid_methods[method]))
     elif len(s) == 2:
         X = y
@@ -643,7 +643,7 @@ def linkage(y, method='single', metric='euclidean'):
         if method in _cpy_non_euclid_methods:
             dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
-            _hierarchy_wrap.linkage_wrap(dm, Z, n, \
+            _hierarchy_wrap.linkage_wrap(dm, Z, n,
                                        int(_cpy_non_euclid_methods[method]))
         elif method in _cpy_euclid_methods:
             if metric != 'euclidean':
@@ -1560,7 +1560,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     return T
 
 
-def fclusterdata(X, t, criterion='inconsistent', \
+def fclusterdata(X, t, criterion='inconsistent',
                  metric='euclidean', depth=2, method='single', R=None):
     """
     Cluster observation data using a given metric.
@@ -2230,15 +2230,15 @@ def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks):
         _append_contraction_marks_sub(Z, iv, Z[i - n, 1], n, contraction_marks)
 
 
-def _dendrogram_calculate_info(Z, p, truncate_mode, \
-                               color_threshold=np.inf, get_leaves=True, \
-                               orientation='top', labels=None, \
-                               count_sort=False, distance_sort=False, \
-                               show_leaf_counts=False, i=-1, iv=0.0, \
-                               ivl=[], n=0, icoord_list=[], dcoord_list=[], \
-                               lvs=None, mhr=False, \
-                               current_color=[], color_list=[], \
-                               currently_below_threshold=[], \
+def _dendrogram_calculate_info(Z, p, truncate_mode,
+                               color_threshold=np.inf, get_leaves=True,
+                               orientation='top', labels=None,
+                               count_sort=False, distance_sort=False,
+                               show_leaf_counts=False, i=-1, iv=0.0,
+                               ivl=[], n=0, icoord_list=[], dcoord_list=[],
+                               lvs=None, mhr=False,
+                               current_color=[], color_list=[],
+                               currently_below_threshold=[],
                                leaf_label_func=None, level=0,
                                contraction_marks=None,
                                link_color_func=None):
@@ -2724,7 +2724,7 @@ def _leader_identify(tr, T):
         right = tr.get_right()
         lfid = _leader_identify(left, T)
         rfid = _leader_identify(right, T)
-        print('ndid: %d lid: %d lfid: %d rid: %d rfid: %d' \
+        print('ndid: %d lid: %d lfid: %d rid: %d rfid: %d'
               % (tr.get_id(), left.get_id(), lfid, right.get_id(), rfid))
         if lfid != rfid:
             if lfid != -1:

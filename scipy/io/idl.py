@@ -252,11 +252,11 @@ def _read_structure(f, array_desc, struct_desc):
         for col in columns:
             dtype = col['typecode']
             if col['structure']:
-                structure[col['name']][i] = _read_structure(f, \
-                                      struct_desc['arrtable'][col['name']], \
+                structure[col['name']][i] = _read_structure(f,
+                                      struct_desc['arrtable'][col['name']],
                                       struct_desc['structtable'][col['name']])
             elif col['array']:
-                structure[col['name']][i] = _read_array(f, dtype, \
+                structure[col['name']][i] = _read_array(f, dtype,
                                       struct_desc['arrtable'][col['name']])
             else:
                 structure[col['name']][i] = _read_data(f, dtype)
@@ -285,14 +285,14 @@ def _read_array(f, typecode, array_desc):
                 raise Exception("Error occurred while reading byte array")
 
         # Read bytes as numpy array
-        array = np.fromstring(f.read(array_desc['nbytes']), \
+        array = np.fromstring(f.read(array_desc['nbytes']),
                                 dtype=DTYPE_DICT[typecode])
 
     elif typecode in [2, 12]:
 
         # These are 2 byte types, need to skip every two as they are not packed
 
-        array = np.fromstring(f.read(array_desc['nbytes']*2), \
+        array = np.fromstring(f.read(array_desc['nbytes']*2),
                                 dtype=DTYPE_DICT[typecode])[1::2]
 
     else:
@@ -351,10 +351,10 @@ def _read_record(f):
             raise Exception("VARSTART is not 7")
 
         if rectypedesc['structure']:
-            record['data'] = _read_structure(f, rectypedesc['array_desc'], \
+            record['data'] = _read_structure(f, rectypedesc['array_desc'],
                                           rectypedesc['struct_desc'])
         elif rectypedesc['array']:
-            record['data'] = _read_array(f, rectypedesc['typecode'], \
+            record['data'] = _read_array(f, rectypedesc['typecode'],
                                       rectypedesc['array_desc'])
         else:
             dtype = rectypedesc['typecode']
@@ -413,7 +413,7 @@ def _read_record(f):
 
     else:
 
-        raise Exception("record['rectype']=%s not implemented" % \
+        raise Exception("record['rectype']=%s not implemented" %
                                                             record['rectype'])
 
     f.seek(nextrec)
@@ -846,7 +846,7 @@ def readsav(file_name, idict=None, python_dict=False,
                 break
 
         print("-"*50)
-        print("Successfully read %i records of which:" % \
+        print("Successfully read %i records of which:" %
                                             (len(records)))
 
         # Create convenience list of record types

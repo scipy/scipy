@@ -411,7 +411,7 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
 
     """
     if not mode in ['full', 'r', 'economic']:
-        raise ValueError(\
+        raise ValueError(
                  "Mode argument should be one of ['full', 'r', 'economic']")
 
     if check_finite:

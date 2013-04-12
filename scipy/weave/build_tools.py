@@ -399,8 +399,8 @@ def configure_temp_dir(temp_dir=None):
     if temp_dir is None:
         temp_dir = tempfile.gettempdir()
     elif not os.path.exists(temp_dir) or not os.access(temp_dir,os.W_OK):
-        print("warning: specified temp_dir '%s' does not exist " \
-              "or is not writable. Using the default temp directory" % \
+        print("warning: specified temp_dir '%s' does not exist "
+              "or is not writable. Using the default temp directory" %
               temp_dir)
         temp_dir = tempfile.gettempdir()
 
@@ -426,8 +426,8 @@ def configure_build_dir(build_dir=None):
         # if it doesn't work use the current directory.  This should always
         # be writable.
         if not os.access(build_dir,os.W_OK):
-            print("warning:, neither the module's directory nor the "\
-                  "current directory are writable.  Using the temporary"\
+            print("warning:, neither the module's directory nor the "
+                  "current directory are writable.  Using the temporary"
                   "directory.")
             build_dir = tempfile.gettempdir()
 

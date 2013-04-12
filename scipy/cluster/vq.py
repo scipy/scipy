@@ -251,7 +251,7 @@ def py_vq(obs, code_book):
     if not np.ndim(obs) == np.ndim(code_book):
         raise ValueError("Observation and code_book should have the same rank")
     elif not d == code_book.shape[1]:
-        raise ValueError("Code book(%d) and obs(%d) should have the same " \
+        raise ValueError("Code book(%d) and obs(%d) should have the same "
                          "number of features (eg columns)""" %
                          (code_book.shape[1], d))
 
@@ -496,7 +496,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
     if type(k_or_guess) == type(array([])):
         guess = k_or_guess
         if guess.size < 1:
-            raise ValueError("Asked for 0 cluster ? initial book was %s" % \
+            raise ValueError("Asked for 0 cluster ? initial book was %s" %
                              guess)
         result = _kmeans(obs, guess, thresh=thresh)
     else:

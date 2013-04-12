@@ -706,12 +706,12 @@ class LSQBivariateSpline(BivariateSpline):
         ty1[ky+1:ny-ky-1] = ty
 
         xb,xe,yb,ye = bbox
-        tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,\
-                                               xb,xe,yb,ye,\
+        tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,
+                                               xb,xe,yb,ye,
                                                kx,ky,eps,lwrk2=1)
         if ier>10:
-            tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,\
-                                                   xb,xe,yb,ye,\
+            tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,
+                                                   xb,xe,yb,ye,
                                                    kx,ky,eps,lwrk2=ier)
         if ier in [0,-1,-2]: # normal return
             pass

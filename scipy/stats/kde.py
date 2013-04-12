@@ -25,6 +25,7 @@ import warnings
 # Scipy imports.
 from scipy.lib.six import callable, string_types
 from scipy import linalg, special
+
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, power, atleast_1d, squeeze, sum, transpose
 import numpy as np
@@ -285,7 +286,7 @@ class gaussian_kde(object):
         tdiff = dot(linalg.inv(sum_cov), diff)
 
         energies = sum(diff * tdiff, axis=0) / 2.0
-        result = sum(exp(-energies), axis=0) / sqrt(linalg.det(2 * pi * \
+        result = sum(exp(-energies), axis=0) / sqrt(linalg.det(2 * pi *
                                                         sum_cov)) / self.n
 
         return result
@@ -320,7 +321,7 @@ class gaussian_kde(object):
         normalized_low = ravel((low - self.dataset) / stdev)
         normalized_high = ravel((high - self.dataset) / stdev)
 
-        value = np.mean(special.ndtr(normalized_high) - \
+        value = np.mean(special.ndtr(normalized_high) -
                         special.ndtr(normalized_low))
         return value
 

@@ -43,7 +43,7 @@ class TestFirwin(TestCase):
         for freq, expected in expected_response:
             actual = abs(np.sum(h*np.exp(-1.j*np.pi*m*freq)))
             mse = abs(actual-expected)**2
-            self.assertTrue(mse < tol, 'response not as expected, mse=%g > %g'\
+            self.assertTrue(mse < tol, 'response not as expected, mse=%g > %g'
                %(mse, tol))
 
     def test_response(self):

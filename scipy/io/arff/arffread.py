@@ -255,7 +255,7 @@ def tokenize_multilines(iterable, val):
         m = r_comattrval.match("".join(all[:-1]))
         return m.group(1), m.group(2), i
     else:
-        raise ValueError("Cannot parse attribute names spread over multi "\
+        raise ValueError("Cannot parse attribute names spread over multi "
                         "lines yet")
 
 
