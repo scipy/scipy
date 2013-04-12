@@ -5239,7 +5239,7 @@ class tukeylambda_gen(rv_continuous):
         q = q*1.0
         vals1 = (q**lam - (1-q)**lam)/lam
         vals2 = log(q/(1-q))
-        return where((lam == 0)&(q==q), vals2, vals1)
+        return where((lam == 0) & (q==q), vals2, vals1)
 
     def _stats(self, lam):
         return 0, _tlvar(lam), 0, _tlkurt(lam)
