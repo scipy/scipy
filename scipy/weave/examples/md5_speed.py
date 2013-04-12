@@ -29,7 +29,10 @@ to check...
 """
 from __future__ import absolute_import, print_function
 
-import random, md5, time, cStringIO
+import random
+import md5
+import time
+import cStringIO
 
 def speed(n,m):
     s = 'a'*n

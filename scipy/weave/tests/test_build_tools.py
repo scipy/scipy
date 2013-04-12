@@ -4,7 +4,10 @@ from __future__ import absolute_import, print_function
 # tests for MingW32Compiler
 # don't know how to test gcc_exists() and msvc_exists()...
 
-import os, sys, tempfile, warnings
+import os
+import sys
+import tempfile
+import warnings
 
 from numpy.testing import TestCase, assert_
 

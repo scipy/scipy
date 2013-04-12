@@ -6,7 +6,9 @@
 """
 from __future__ import absolute_import, print_function
 
-import os, sys, subprocess
+import os
+import sys
+import subprocess
 
 import distutils
 from distutils.sysconfig import customize_compiler

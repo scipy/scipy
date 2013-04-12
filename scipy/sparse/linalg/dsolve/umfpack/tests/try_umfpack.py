@@ -7,7 +7,9 @@ from __future__ import division, print_function, absolute_import
 
 from optparse import OptionParser
 import time
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
+import urllib.parse
+import urllib.error
 import gzip
 
 import numpy as np

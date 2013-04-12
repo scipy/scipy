@@ -177,7 +177,8 @@ class TestSplu(object):
         lu = splu(a_)
 
         # And now test that we don't have a refcount bug
-        import gc, sys
+        import gc
+        import sys
         rc = sys.getrefcount(lu)
         for attr in ('perm_r', 'perm_c'):
             perm =  getattr(lu, attr)

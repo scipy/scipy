@@ -81,7 +81,8 @@ class TestGetCatalog(TestCase):
 
     def get_test_dir(self,erase = 0):
         # make sure tempdir catalog doesn't exist
-        import tempfile, glob
+        import tempfile
+        import glob
         #temp = tempfile.gettempdir()
         pardir = tempfile.mktemp(suffix='cat_test')
         if not os.path.exists(pardir):

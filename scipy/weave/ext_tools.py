@@ -465,7 +465,8 @@ def indent(st,spaces):
 
 def format_error_msg(errors):
     #minimum effort right now...
-    import pprint,cStringIO
+    import pprint
+    import cStringIO
     msg = cStringIO.StringIO()
     pprint.pprint(errors,msg)
     return msg.getvalue()

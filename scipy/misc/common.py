@@ -484,7 +484,8 @@ def lena():
     >>> plt.show()
 
     """
-    import pickle, os
+    import pickle
+    import os
     fname = os.path.join(os.path.dirname(__file__),'lena.dat')
     f = open(fname,'rb')
     lena = array(pickle.load(f))
@@ -522,7 +523,8 @@ def ascent():
     >>> plt.show()
 
     """
-    import pickle, os
+    import pickle
+    import os
     fname = os.path.join(os.path.dirname(__file__),'ascent.dat')
     with open(fname, 'rb') as f:
         ascent = array(pickle.load(f))
@@ -561,7 +563,8 @@ def face(gray=False):
     >>> plt.show()
 
     """
-    import bz2, os
+    import bz2
+    import os
     with open(os.path.join(os.path.dirname(__file__), 'face.dat'), 'rb') as f:
         rawdata = f.read()
     data = bz2.decompress(rawdata)

@@ -34,7 +34,9 @@ __version__ = '3.3.2'
 
 __all__ = ["decorator", "FunctionMaker", "partial"]
 
-import sys, re, inspect
+import sys
+import re
+import inspect
 
 from scipy.lib.six import exec_
 
