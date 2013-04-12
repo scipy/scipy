@@ -2157,4 +2157,3 @@ band_dict = {'band': 'bandpass',
              'highpass': 'highpass',
              'h': 'highpass',
              }
-

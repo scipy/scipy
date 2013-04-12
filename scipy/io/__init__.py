@@ -87,4 +87,3 @@ from .harwell_boeing import hb_read, hb_write
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
-

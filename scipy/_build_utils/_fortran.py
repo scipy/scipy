@@ -30,4 +30,3 @@ def needs_g77_abi_wrapper(info):
         return True
     else:
         return False
-

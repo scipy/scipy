@@ -547,4 +547,3 @@ def hb_write(file, m, hb_info=None):
             fid.close()
     else:
         return _set_matrix(file)
-

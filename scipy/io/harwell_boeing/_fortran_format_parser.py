@@ -312,4 +312,3 @@ class FortranFormatParser(object):
         next = tokens.pop(0)
         self._expect(next, tp)
         return next
-

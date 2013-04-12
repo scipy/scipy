@@ -308,4 +308,3 @@ def whosmat(file_name, appendmat=True, **kwargs):
     if isinstance(file_name, string_types):
         ML.mat_stream.close()
     return variables
-

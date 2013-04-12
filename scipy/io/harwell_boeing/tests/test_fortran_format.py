@@ -72,4 +72,3 @@ class TestExpFormat(TestCase):
         r_f = [ExpFormat(24, 16, repeat=3), ExpFormat(25, 16, repeat=3)]
         for i, j in zip(f, r_f):
             assert_equal(ExpFormat.from_number(i).__dict__, j.__dict__)
-

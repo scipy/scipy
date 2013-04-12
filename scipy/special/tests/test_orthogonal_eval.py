@@ -234,4 +234,3 @@ class TestRecurrence(object):
     def test_laguerre(self):
         self.check_poly(orth.eval_laguerre,
                    param_ranges=[], x_range=[0, 100])
-

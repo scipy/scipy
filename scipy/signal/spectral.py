@@ -375,4 +375,3 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         Pxx = np.rollaxis(Pxx, -1, axis)
 
     return f, Pxx
-

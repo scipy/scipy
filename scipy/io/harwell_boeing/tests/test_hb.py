@@ -67,4 +67,3 @@ class TestRBRoundtrip(TestCase):
             os.remove(filename)
 
         assert_csc_almost_equal(m, rm)
-
