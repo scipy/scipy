@@ -10,7 +10,7 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
 
     config = Configuration('sparsetools',parent_package,top_path,
-                           setup_name = 'setupscons.py')
+                           setup_name='setupscons.py')
 
     config.add_sconscript('SConstruct')
 

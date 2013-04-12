@@ -109,7 +109,7 @@ if __name__ == '__main__':
     import time
 
     class Canvas(wxWindow):
-        def __init__(self, parent, id = -1, size = wxDefaultSize):
+        def __init__(self, parent, id=-1, size=wxDefaultSize):
             wxWindow.__init__(self, parent, id, wxPoint(0, 0), size,
                               wxSUNKEN_BORDER | wxWANTS_CHARS)
             self.calc_points()

@@ -132,14 +132,14 @@ class inline_ext_module(ext_tools.ext_module):
         self._build_information.append(common_info.inline_info())
 
 function_cache = {}
-def inline(code,arg_names=[],local_dict = None, global_dict = None,
-           force = 0,
+def inline(code,arg_names=[],local_dict=None, global_dict=None,
+           force=0,
            compiler='',
-           verbose = 0,
-           support_code = None,
-           headers = [],
+           verbose=0,
+           support_code=None,
+           headers=[],
            customize=None,
-           type_converters = None,
+           type_converters=None,
            auto_downcast=1,
            newarr_converter=0,
            **kw):
@@ -310,11 +310,11 @@ def inline(code,arg_names=[],local_dict = None, global_dict = None,
                                 global_dict,module_dir,
                                 compiler=compiler,
                                 verbose=verbose,
-                                support_code = support_code,
-                                headers = headers,
+                                support_code=support_code,
+                                headers=headers,
                                 customize=customize,
-                                type_converters = type_converters,
-                                auto_downcast = auto_downcast,
+                                type_converters=type_converters,
+                                auto_downcast=auto_downcast,
                                 **kw)
 
         function_catalog.add_function(code,func,module_dir)
@@ -349,11 +349,11 @@ def inline(code,arg_names=[],local_dict = None, global_dict = None,
                                     global_dict,module_dir,
                                     compiler=compiler,
                                     verbose=verbose,
-                                    support_code = support_code,
-                                    headers = headers,
+                                    support_code=support_code,
+                                    headers=headers,
                                     customize=customize,
-                                    type_converters = type_converters,
-                                    auto_downcast = auto_downcast,
+                                    type_converters=type_converters,
+                                    auto_downcast=auto_downcast,
                                     **kw)
 
             function_catalog.add_function(code,func,module_dir)
@@ -421,7 +421,7 @@ def attempt_function_call(code,local_dict,global_dict):
     raise ValueError('function with correct signature not found')
 
 def inline_function_code(code,arg_names,local_dict=None,
-                         global_dict=None,auto_downcast = 1,
+                         global_dict=None,auto_downcast=1,
                          type_converters=None,compiler=''):
     call_frame = sys._getframe().f_back
     if local_dict is None:
@@ -430,7 +430,7 @@ def inline_function_code(code,arg_names,local_dict=None,
         global_dict = call_frame.f_globals
     ext_func = inline_ext_function('compiled_func',code,arg_names,
                                    local_dict,global_dict,auto_downcast,
-                                   type_converters = type_converters)
+                                   type_converters=type_converters)
     from . import build_tools
     compiler = build_tools.choose_compiler(compiler)
     ext_func.set_compiler(compiler)
@@ -439,11 +439,11 @@ def inline_function_code(code,arg_names,local_dict=None,
 def compile_function(code,arg_names,local_dict,global_dict,
                      module_dir,
                      compiler='',
-                     verbose = 1,
-                     support_code = None,
-                     headers = [],
-                     customize = None,
-                     type_converters = None,
+                     verbose=1,
+                     support_code=None,
+                     headers=[],
+                     customize=None,
+                     type_converters=None,
                      auto_downcast=1,
                      **kw):
     # figure out where to store and what to name the extension module
@@ -458,7 +458,7 @@ def compile_function(code,arg_names,local_dict,global_dict,
     # type factories setting
     ext_func = inline_ext_function('compiled_func',code,arg_names,
                                    local_dict,global_dict,auto_downcast,
-                                   type_converters = type_converters)
+                                   type_converters=type_converters)
     mod.add_function(ext_func)
 
     # if customize (a custom_info object), then set the module customization.

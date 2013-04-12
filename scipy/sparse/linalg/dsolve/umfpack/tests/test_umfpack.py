@@ -48,7 +48,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_solve_complex_without_umfpack(self):
         """Solve: single precision complex"""
-        linsolve.use_solver( useUmfpack = False )
+        linsolve.use_solver( useUmfpack=False )
         a = self.a.astype('F')
         b = self.b
         x = linsolve.spsolve(a, b)
@@ -59,7 +59,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_solve_without_umfpack(self):
         """Solve: single precision"""
-        linsolve.use_solver( useUmfpack = False )
+        linsolve.use_solver( useUmfpack=False )
         a = self.a.astype('f')
         b = self.b
         x = linsolve.spsolve(a, b.astype('f'))
@@ -70,7 +70,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_solve_complex_umfpack(self):
         """Solve with UMFPACK: double precision complex"""
-        linsolve.use_solver( useUmfpack = True )
+        linsolve.use_solver( useUmfpack=True )
         a = self.a.astype('D')
         b = self.b
         x = linsolve.spsolve(a, b)
@@ -80,7 +80,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_solve_umfpack(self):
         """Solve with UMFPACK: double precision"""
-        linsolve.use_solver( useUmfpack = True )
+        linsolve.use_solver( useUmfpack=True )
         a = self.a.astype('d')
         b = self.b
         x = linsolve.spsolve(a, b)
@@ -90,7 +90,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_solve_sparse_rhs(self):
         """Solve with UMFPACK: double precision, sparse rhs"""
-        linsolve.use_solver( useUmfpack = True )
+        linsolve.use_solver( useUmfpack=True )
         a = self.a.astype('d')
         b = csc_matrix( self.b )
         x = linsolve.spsolve(a, b)
@@ -100,7 +100,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_factorized_umfpack(self):
         """Prefactorize (with UMFPACK) matrix for solving with multiple rhs"""
-        linsolve.use_solver( useUmfpack = True )
+        linsolve.use_solver( useUmfpack=True )
         a = self.a.astype('d')
         solve = linsolve.factorized( a )
 
@@ -111,7 +111,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_factorized_without_umfpack(self):
         """Prefactorize matrix for solving with multiple rhs"""
-        linsolve.use_solver( useUmfpack = False )
+        linsolve.use_solver( useUmfpack=False )
         a = self.a.astype('d')
         solve = linsolve.factorized( a )
 

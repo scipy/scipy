@@ -58,7 +58,7 @@ def c_int_search(seq,t,chk=1):
            }
            """
     #return inline_tools.inline(code,['seq','t'],compiler='msvc')
-    return inline_tools.inline(code,['seq','t'],verbose = 2)
+    return inline_tools.inline(code,['seq','t'],verbose=2)
 
 def c_int_search_scxx(seq,t,chk=1):
     # do partial type checking in Python.
@@ -91,7 +91,7 @@ def c_int_search_scxx(seq,t,chk=1):
            }
            """
     #return inline_tools.inline(code,['seq','t'],compiler='msvc')
-    return inline_tools.inline(code,['seq','t'],verbose = 2)
+    return inline_tools.inline(code,['seq','t'],verbose=2)
 
 try:
     from numpy import *
@@ -122,7 +122,7 @@ try:
                }
                """
         #return inline_tools.inline(code,['seq','t'],compiler='msvc')
-        return inline_tools.inline(code,['seq','t'],verbose = 2,
+        return inline_tools.inline(code,['seq','t'],verbose=2,
                                    extra_compile_args=['-O2','-G6'])
 except:
     pass

@@ -82,7 +82,7 @@ class IntConverter(TestCase):
         code = "a=2;"
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=1
         test(b)
@@ -109,7 +109,7 @@ class IntConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=1
         c = test(b)
@@ -150,7 +150,7 @@ class FloatConverter(TestCase):
         code = "a=2.;"
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=1.
         test(b)
@@ -177,7 +177,7 @@ class FloatConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=1.
         c = test(b)
@@ -217,7 +217,7 @@ class ComplexConverter(TestCase):
         code = "a=std::complex<double>(2.,2.);"
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=1.+1j
         test(b)
@@ -244,7 +244,7 @@ class ComplexConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=1.+1j
         c = test(b)
@@ -385,7 +385,7 @@ class StringConverter(TestCase):
         code = 'a=std::string("hello");'
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
 
         exec('from ' + mod_name + ' import test')
         b='bub'
@@ -413,7 +413,7 @@ class StringConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b='bub'
         c = test(b)
@@ -445,7 +445,7 @@ class ListConverter(TestCase):
         code = 'a=py::list();'
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=[1,2]
         test(b)
@@ -473,7 +473,7 @@ class ListConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=[1,2]
         c = test(b)
@@ -516,7 +516,7 @@ class ListConverter(TestCase):
                """
         no_checking = ext_tools.ext_function('no_checking',code,['a'])
         mod.add_function(no_checking)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import with_cxx, no_checking')
         import time
         t1 = time.time()
@@ -566,7 +566,7 @@ class TupleConverter(TestCase):
         code = 'a=py::tuple();'
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=(1,2)
         test(b)
@@ -595,7 +595,7 @@ class TupleConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=(1,2)
         c = test(b)
@@ -633,7 +633,7 @@ class DictConverter(TestCase):
         code = 'a=py::dict();' # This just checks to make sure the type is correct
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b={'y':2}
         test(b)
@@ -661,7 +661,7 @@ class DictConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b = {'z':2}
         c = test(b)

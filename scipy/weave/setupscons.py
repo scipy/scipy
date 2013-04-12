@@ -16,10 +16,10 @@ def configuration(parent_package='',top_path=None):
 if __name__ == '__main__':
     from numpy.distutils.core import setup
     from .weave_version import weave_version
-    setup(version = weave_version,
-          description = "Tools for inlining C/C++ in Python",
-          author = "Eric Jones",
-          author_email = "eric@enthought.com",
-          licence = "SciPy License (BSD Style)",
-          url = 'http://www.scipy.org',
+    setup(version=weave_version,
+          description="Tools for inlining C/C++ in Python",
+          author="Eric Jones",
+          author_email="eric@enthought.com",
+          licence="SciPy License (BSD Style)",
+          url='http://www.scipy.org',
           **configuration(top_path='').todict())

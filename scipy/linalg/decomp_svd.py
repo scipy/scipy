@@ -96,8 +96,8 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     gesdd, = get_lapack_funcs(('gesdd',), (a1,))
 
     lwork = calc_lwork.gesdd(gesdd.typecode, m, n, compute_uv)[1]
-    u,s,v,info = gesdd(a1,compute_uv = compute_uv, lwork = lwork,
-                       full_matrices=full_matrices, overwrite_a = overwrite_a)
+    u,s,v,info = gesdd(a1,compute_uv=compute_uv, lwork=lwork,
+                       full_matrices=full_matrices, overwrite_a=overwrite_a)
 
     if info > 0:
         raise LinAlgError("SVD did not converge")

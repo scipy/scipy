@@ -267,8 +267,8 @@ def _check_level(label, expected, actual):
         assert_true(SP.issparse(actual))
         assert_array_almost_equal(actual.todense(),
                                   expected.todense(),
-                                  err_msg = label,
-                                  decimal = 5)
+                                  err_msg=label,
+                                  decimal=5)
         return
     # Check types are as expected
     assert_true(types_compatible(expected, actual), \

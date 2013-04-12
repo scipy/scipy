@@ -124,7 +124,7 @@ class UnivariateSpline(object):
 
     """
 
-    def __init__(self, x, y, w=None, bbox = [None]*2, k=3, s=None):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -333,7 +333,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     """
 
-    def __init__(self, x, y, w=None, bbox = [None]*2, k=3):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -416,7 +416,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     """
 
-    def __init__(self, x, y, t, w=None, bbox = [None]*2, k=3):
+    def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be

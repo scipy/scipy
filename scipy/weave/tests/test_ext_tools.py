@@ -21,7 +21,7 @@ class TestExtModule(TestCase):
     def test_simple(self):
         """ Simplest possible module """
         mod = ext_tools.ext_module('simple_ext_module')
-        mod.compile(location = build_dir)
+        mod.compile(location=build_dir)
         import simple_ext_module
 
     @dec.slow
@@ -33,7 +33,7 @@ class TestExtModule(TestCase):
         mod.add_function(test)
         test2 = ext_tools.ext_function_from_specs('test2',code,var_specs)
         mod.add_function(test2)
-        mod.compile(location = build_dir)
+        mod.compile(location=build_dir)
         import module_multi_function
         module_multi_function.test()
         module_multi_function.test2()
@@ -58,7 +58,7 @@ class TestExtModule(TestCase):
         test = ext_tools.ext_function_from_specs('test',code,var_specs)
         mod.add_function(test)
         # build module
-        mod.compile(location = build_dir)
+        mod.compile(location=build_dir)
         import ext_module_with_include
         ext_module_with_include.test(a)
 
@@ -75,7 +75,7 @@ class TestExtModule(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a','b'])
         mod.add_function(test)
-        mod.compile(location = build_dir)
+        mod.compile(location=build_dir)
         import ext_string_and_int
         c = ext_string_and_int.test(a,b)
         assert_(c == len(b))
@@ -97,7 +97,7 @@ class TestExtModule(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = build_dir)
+        mod.compile(location=build_dir)
         import ext_return_tuple
         c,d = ext_return_tuple.test(a)
         assert_(c==a and d == a+1)
@@ -115,7 +115,7 @@ class TestExtFunction(TestCase):
         code = ""
         test = ext_tools.ext_function_from_specs('test',code,var_specs)
         mod.add_function(test)
-        mod.compile(location = build_dir)
+        mod.compile(location=build_dir)
         import simple_ext_function
         simple_ext_function.test()
 
@@ -130,8 +130,8 @@ class TestAssignVariableTypes(TestCase):
             return
 
         import types
-        a = arange(10,typecode = Float32)
-        b = arange(5,typecode = Float64)
+        a = arange(10,typecode=Float32)
+        b = arange(5,typecode=Float64)
         c = 5
         arg_list = ['a','b','c']
         actual = ext_tools.assign_variable_types(arg_list,locals())

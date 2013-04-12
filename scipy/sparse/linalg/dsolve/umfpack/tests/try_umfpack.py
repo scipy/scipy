@@ -48,7 +48,7 @@ def read_triplet( fd ):
         ij[ii] = int( aux[0] ), int( aux[1] )
         val[ii] = float( aux[2] )
 
-    mtx = sp.csc_matrix( (val, ij), dims = (nRow, nCol), nzmax = nItem )
+    mtx = sp.csc_matrix( (val, ij), dims=(nRow, nCol), nzmax = nItem )
 
     return mtx
 
@@ -59,11 +59,11 @@ def read_triplet2( fd ):
     nItem = int( fd.readline() )
 
     ij, val = io.read_array( fd,
-                             columns = [(0,1), (2,)],
-                             atype = (np.int32, np.float64),
+                             columns=[(0,1), (2,)],
+                             atype=(np.int32, np.float64),
                              rowsize = nItem )
 
-    mtx = sp.csc_matrix( (val, ij), dims = (nRow, nCol), nzmax = nItem )
+    mtx = sp.csc_matrix( (val, ij), dims=(nRow, nCol), nzmax = nItem )
 
     return mtx
 
@@ -113,22 +113,22 @@ def readMatrix( matrixName, options ):
 ##
 # 05.12.2005, c
 def main():
-    parser = OptionParser( usage = usage )
+    parser = OptionParser( usage=usage )
     parser.add_option( "-c", "--compare",
-                       action = "store_true", dest = "compare",
-                       default = False,
-                       help = "compare with default scipy.sparse solver [default: %default]" )
+                       action="store_true", dest="compare",
+                       default=False,
+                       help="compare with default scipy.sparse solver [default: %default]" )
     parser.add_option( "-p", "--plot",
-                       action = "store_true", dest = "plot",
-                       default = False,
-                       help = "plot time statistics [default: %default]" )
+                       action="store_true", dest="plot",
+                       default=False,
+                       help="plot time statistics [default: %default]" )
     parser.add_option( "-d", "--default-url",
-                       action = "store_true", dest = "default_url",
-                       default = False,
-                       help = "use default url [default: %default]" )
-    parser.add_option( "-f", "--format", type = type( '' ),
-                       dest = "format", default = 'triplet',
-                       help = "matrix format [default: %default]" )
+                       action="store_true", dest="default_url",
+                       default=False,
+                       help="use default url [default: %default]" )
+    parser.add_option( "-f", "--format", type=type( '' ),
+                       dest="format", default='triplet',
+                       help="matrix format [default: %default]" )
     (options, args) = parser.parse_args()
 
     if (len( args ) >= 1):
@@ -146,20 +146,20 @@ def main():
 
         sizes.append( mtx.shape )
         nnzs.append( mtx.nnz )
-        tts = np.zeros( (2,), dtype = np.double )
+        tts = np.zeros( (2,), dtype=np.double )
         times.append( tts )
-        err = np.zeros( (2,2), dtype = np.double )
+        err = np.zeros( (2,2), dtype=np.double )
         errors.append( err )
 
         print('size              : %s (%d nnz)' % (mtx.shape, mtx.nnz))
 
-        sol0 = np.ones( (mtx.shape[0],), dtype = np.double )
+        sol0 = np.ones( (mtx.shape[0],), dtype=np.double )
         rhs = mtx * sol0
 
         umfpack = um.UmfpackContext()
 
         tt = time.clock()
-        sol = umfpack( um.UMFPACK_A, mtx, rhs, autoTranspose = True )
+        sol = umfpack( um.UMFPACK_A, mtx, rhs, autoTranspose=True )
         tts[0] = time.clock() - tt
         print("umfpack           : %.2f s" % tts[0])
 

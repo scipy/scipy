@@ -295,7 +295,7 @@ class TestMoments(TestCase):
            [ 0.67696689,  0.91878127,  0.09769044,  0.04645137,  0.37615733],
            [ 0.05903624,  0.29908861,  0.34088298,  0.66216337,  0.83160998],
            [ 0.64619526,  0.94894632,  0.27855892,  0.0706151 ,  0.39962917]]),
-    mask = np.array([[ True, False, False,  True, False],
+    mask=np.array([[ True, False, False,  True, False],
            [ True,  True,  True, False,  True],
            [False, False, False, False, False],
            [True, True, True, True, True],

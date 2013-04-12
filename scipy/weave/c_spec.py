@@ -163,7 +163,7 @@ class common_base_converter(base_converter):
     def c_to_py_code(self):
         return simple_c_to_py_template % self.template_vars()
 
-    def declaration_code(self,templatize = 0,inline=0):
+    def declaration_code(self,templatize=0,inline=0):
         code = '%(py_var)s = %(var_lookup)s;\n'   \
                '%(c_type)s %(name)s = %(var_convert)s;\n' %  \
                self.template_vars(inline=inline)
@@ -241,7 +241,7 @@ class unicode_converter(common_base_converter):
         self.matching_types = [types.UnicodeType]
         #self.headers.append('<string>')
 
-    def declaration_code(self,templatize = 0,inline=0):
+    def declaration_code(self,templatize=0,inline=0):
         # since wstring doesn't seem to work everywhere, we need to provide
         # the length variable Nxxx for the unicode string xxx.
         code = '%(py_var)s = %(var_lookup)s;\n'                     \

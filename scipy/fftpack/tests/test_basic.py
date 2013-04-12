@@ -119,13 +119,13 @@ class _TestFFTBase(TestCase):
         np.random.seed(1234)
 
     def test_definition(self):
-        x = np.array([1,2,3,4+1j,1,2,3,4+2j], dtype = self.cdt)
+        x = np.array([1,2,3,4+1j,1,2,3,4+2j], dtype=self.cdt)
         y = fft(x)
         self.assertTrue(y.dtype == self.cdt,
                 "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         y1 = direct_dft(x)
         assert_array_almost_equal(y,y1)
-        x = np.array([1,2,3,4+0j,5], dtype = self.cdt)
+        x = np.array([1,2,3,4+0j,5], dtype=self.cdt)
         assert_array_almost_equal(fft(x),direct_dft(x))
 
     def test_n_argument_real(self):

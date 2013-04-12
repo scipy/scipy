@@ -66,7 +66,7 @@ class NumpyComplexScalarConverter(TestCase):
         code = "a=std::complex<double>(2.,2.);"
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=numpy.complex128(1.+1j)
         test(b)
@@ -93,7 +93,7 @@ class NumpyComplexScalarConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b=1.+1j
         c = test(b)

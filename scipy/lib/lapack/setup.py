@@ -33,9 +33,9 @@ def configuration(parent_package='',top_path=None):
 
     # flapack:
     config.add_extension('flapack',
-                         sources = ['flapack.pyf.src'],
-                         depends = [__file__,'flapack_*.pyf.src'],
-                         extra_info = lapack_opt
+                         sources=['flapack.pyf.src'],
+                         depends=[__file__,'flapack_*.pyf.src'],
+                         extra_info=lapack_opt
                          )
 
     # clapack:
@@ -55,15 +55,15 @@ def configuration(parent_package='',top_path=None):
         return target
 
     config.add_extension('clapack',
-                         sources = [get_clapack_source],
-                         depends = ['clapack.pyf.src'],
-                         extra_info = lapack_opt
+                         sources=[get_clapack_source],
+                         depends=['clapack.pyf.src'],
+                         extra_info=lapack_opt
                          )
 
     # calc_lwork:
     config.add_extension('calc_lwork',
-                         sources = ['calc_lwork.f'],
-                         extra_info = lapack_opt
+                         sources=['calc_lwork.f'],
+                         extra_info=lapack_opt
                          )
 
     config.add_data_dir('tests')

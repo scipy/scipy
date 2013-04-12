@@ -101,7 +101,7 @@ def check_sample_meanvar(sm,m,msg):
         npt.assert_(sm > 10000, msg='infinite moment, sm = ' + str(sm))
 
 def check_sample_var(sm,m,msg):
-    npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg= msg + 'var')
+    npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg + 'var')
 
 def check_cdf_ppf(distfn,arg,msg):
     ppf05 = distfn.ppf(0.5,*arg)
@@ -141,15 +141,15 @@ def check_pmf_cdf(distfn, arg, msg):
     cdfs = distfn.cdf(index,*arg)
     npt.assert_almost_equal(cdfs, distfn.pmf(index, *arg).cumsum() + \
                             cdfs[0] - distfn.pmf(index[0],*arg),
-                            decimal=4, err_msg= msg + 'pmf-cdf')
+                            decimal=4, err_msg=msg + 'pmf-cdf')
 
 def check_generic_moment(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn.generic_moment(k,*arg), m, decimal=decim,
-                            err_msg= str(distfn) + ' generic moment test')
+                            err_msg=str(distfn) + ' generic moment test')
 
 def check_moment_frozen(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn(*arg).moment(k), m, decimal=decim,
-                            err_msg= str(distfn) + ' frozen moment test')
+                            err_msg=str(distfn) + ' frozen moment test')
 
 def check_oth(distfn, arg, msg):
     #checking other methods of distfn
@@ -186,7 +186,7 @@ def check_isf_limits(distfn,arg,msg):
 def assert_equal_inf_nan(v1,v2,msg):
     npt.assert_(not np.isnan(v1))
     if not np.isinf(v1):
-        npt.assert_almost_equal(v1, v2, decimal=10, err_msg = msg + \
+        npt.assert_almost_equal(v1, v2, decimal=10, err_msg=msg + \
                                    ' - finite')
     else:
         npt.assert_(np.isinf(v2) or np.isnan(v2),

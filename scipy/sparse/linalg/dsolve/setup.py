@@ -28,18 +28,18 @@ def configuration(parent_package='',top_path=None):
         sources.remove(join(superlu_src, 'lsame.c'))
 
     config.add_library('superlu_src',
-                       sources = sources,
-                       macros = superlu_defs,
+                       sources=sources,
+                       macros=superlu_defs,
                        include_dirs=[superlu_src],
                        )
 
     # Extension
     config.add_extension('_superlu',
-                         sources = ['_superlumodule.c',
+                         sources=['_superlumodule.c',
                                     '_superlu_utils.c',
                                     '_superluobject.c'],
-                         libraries = ['superlu_src'],
-                         extra_info = lapack_opt,
+                         libraries=['superlu_src'],
+                         extra_info=lapack_opt,
                          )
 
     config.add_subpackage('umfpack')

@@ -42,15 +42,15 @@ def _get_output_fourier(output, input):
     if output is None:
         if input.dtype.type in [numpy.complex64, numpy.complex128,
                                 numpy.float32]:
-            output = numpy.zeros(input.shape, dtype = input.dtype)
+            output = numpy.zeros(input.shape, dtype=input.dtype)
         else:
-            output = numpy.zeros(input.shape, dtype = numpy.float64)
+            output = numpy.zeros(input.shape, dtype=numpy.float64)
         return_value = output
     elif type(output) is type:
         if output not in [numpy.complex64, numpy.complex128,
                           numpy.float32, numpy.float64]:
             raise RuntimeError("output type not supported")
-        output = numpy.zeros(input.shape, dtype = output)
+        output = numpy.zeros(input.shape, dtype=output)
         return_value = output
     else:
         if output.shape != input.shape:
@@ -61,14 +61,14 @@ def _get_output_fourier(output, input):
 def _get_output_fourier_complex(output, input):
     if output is None:
         if input.dtype.type in [numpy.complex64, numpy.complex128]:
-            output = numpy.zeros(input.shape, dtype = input.dtype)
+            output = numpy.zeros(input.shape, dtype=input.dtype)
         else:
-            output = numpy.zeros(input.shape, dtype = numpy.complex128)
+            output = numpy.zeros(input.shape, dtype=numpy.complex128)
         return_value = output
     elif type(output) is type:
         if output not in [numpy.complex64, numpy.complex128]:
             raise RuntimeError("output type not supported")
-        output = numpy.zeros(input.shape, dtype = output)
+        output = numpy.zeros(input.shape, dtype=output)
         return_value = output
     else:
         if output.shape != input.shape:
@@ -76,7 +76,7 @@ def _get_output_fourier_complex(output, input):
         return_value = None
     return output, return_value
 
-def fourier_gaussian(input, sigma, n = -1, axis = -1, output = None):
+def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
     """
     Multi-dimensional Gaussian fourier filter.
 
@@ -114,14 +114,14 @@ def fourier_gaussian(input, sigma, n = -1, axis = -1, output = None):
     output, return_value = _get_output_fourier(output, input)
     axis = _ni_support._check_axis(axis, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
-    sigmas = numpy.asarray(sigmas, dtype = numpy.float64)
+    sigmas = numpy.asarray(sigmas, dtype=numpy.float64)
     if not sigmas.flags.contiguous:
         sigmas = sigmas.copy()
 
     _nd_image.fourier_filter(input, sigmas, n, axis, output, 0)
     return return_value
 
-def fourier_uniform(input, size, n = -1, axis = -1, output = None):
+def fourier_uniform(input, size, n=-1, axis=-1, output=None):
     """
     Multi-dimensional uniform fourier filter.
 
@@ -159,13 +159,13 @@ def fourier_uniform(input, size, n = -1, axis = -1, output = None):
     output, return_value = _get_output_fourier(output, input)
     axis = _ni_support._check_axis(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
-    sizes = numpy.asarray(sizes, dtype = numpy.float64)
+    sizes = numpy.asarray(sizes, dtype=numpy.float64)
     if not sizes.flags.contiguous:
         sizes = sizes.copy()
     _nd_image.fourier_filter(input, sizes, n, axis, output, 1)
     return return_value
 
-def fourier_ellipsoid(input, size, n = -1, axis = -1, output = None):
+def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     """
     Multi-dimensional ellipsoid fourier filter.
 
@@ -207,13 +207,13 @@ def fourier_ellipsoid(input, size, n = -1, axis = -1, output = None):
     output, return_value = _get_output_fourier(output, input)
     axis = _ni_support._check_axis(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
-    sizes = numpy.asarray(sizes, dtype = numpy.float64)
+    sizes = numpy.asarray(sizes, dtype=numpy.float64)
     if not sizes.flags.contiguous:
         sizes = sizes.copy()
     _nd_image.fourier_filter(input, sizes, n, axis, output, 2)
     return return_value
 
-def fourier_shift(input, shift, n = -1, axis = -1, output = None):
+def fourier_shift(input, shift, n=-1, axis=-1, output=None):
     """
     Multi-dimensional fourier shift filter.
 
@@ -250,7 +250,7 @@ def fourier_shift(input, shift, n = -1, axis = -1, output = None):
     output, return_value = _get_output_fourier_complex(output, input)
     axis = _ni_support._check_axis(axis, input.ndim)
     shifts = _ni_support._normalize_sequence(shift, input.ndim)
-    shifts = numpy.asarray(shifts, dtype = numpy.float64)
+    shifts = numpy.asarray(shifts, dtype=numpy.float64)
     if not shifts.flags.contiguous:
         shifts = shifts.copy()
     _nd_image.fourier_shift(input, shifts, n, axis, output)

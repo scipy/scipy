@@ -37,7 +37,7 @@ class base_converter(object):
         return self._build_information
     def type_spec(self,name,value):
         pass
-    def declaration_code(self,templatize = 0):
+    def declaration_code(self,templatize=0):
         return ""
     def local_dict_code(self):
         return ""

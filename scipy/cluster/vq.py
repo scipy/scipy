@@ -379,7 +379,7 @@ def _kmeans(obs, guess, thresh=1e-5):
 
     """
 
-    code_book = array(guess, copy = True)
+    code_book = array(guess, copy=True)
     avg_dist = []
     diff = thresh+1.
     while diff > thresh:
@@ -498,7 +498,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
         if guess.size < 1:
             raise ValueError("Asked for 0 cluster ? initial book was %s" % \
                              guess)
-        result = _kmeans(obs, guess, thresh = thresh)
+        result = _kmeans(obs, guess, thresh=thresh)
     else:
         #initialize best distance value to a large value
         best_dist = np.inf
@@ -509,7 +509,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
         for i in range(iter):
             #the intial code book is randomly selected from observations
             guess = take(obs, randint(0, No, k), 0)
-            book, dist = _kmeans(obs, guess, thresh = thresh)
+            book, dist = _kmeans(obs, guess, thresh=thresh)
             if dist < best_dist:
                 best_book = book
                 best_dist = dist
@@ -567,7 +567,7 @@ def _krandinit(data, k):
         return x
     def init_rankn(data):
         mu  = np.mean(data, 0)
-        cov = np.atleast_2d(np.cov(data, rowvar = 0))
+        cov = np.atleast_2d(np.cov(data, rowvar=0))
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
@@ -595,8 +595,8 @@ def _missing_raise():
 
 _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
-def kmeans2(data, k, iter = 10, thresh = 1e-5, minit = 'random',
-        missing = 'warn'):
+def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
+        missing='warn'):
     """
     Classify a set of observations into k clusters using the k-means algorithm.
 

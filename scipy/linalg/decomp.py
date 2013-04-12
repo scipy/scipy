@@ -365,7 +365,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         # Use '*gv' routine if turbo is off and no eigvals are specified
         else:
             (gv,) = get_lapack_funcs((pfx+'gv',), (a1,b1))
-            v, w, info = gv(a1, b1, uplo=uplo, itype= type, jobz=_job,
+            v, w, info = gv(a1, b1, uplo=uplo, itype=type, jobz=_job,
                             overwrite_a=overwrite_a,
                             overwrite_b=overwrite_b)
 
@@ -402,7 +402,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
                           " computed." % (info-b1.shape[0]))
 
 def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
-               select='a', select_range=None, max_ev = 0, check_finite=True):
+               select='a', select_range=None, max_ev=0, check_finite=True):
     """
     Solve real symmetric or complex hermitian band matrix eigenvalue problem.
 

@@ -60,9 +60,9 @@ def vq(obs,code_book):
                 return_val = results;
             """ % locals()
     code, distortion = inline_tools.inline(code,['obs','code_book'],
-                                           type_converters = blitz_type_converters,
-                                           compiler = 'gcc',
-                                           verbose = 1)
+                                           type_converters=blitz_type_converters,
+                                           compiler='gcc',
+                                           verbose=1)
     return code, distortion
 
 def vq2(obs,code_book):
@@ -124,9 +124,9 @@ def vq2(obs,code_book):
                 return_val = results;
             """ % locals()
     code, distortion = inline_tools.inline(code,['obs','code_book'],
-                                         type_converters = blitz_type_converters,
-                                         compiler = 'gcc',
-                                         verbose = 1)
+                                         type_converters=blitz_type_converters,
+                                         compiler='gcc',
+                                         verbose=1)
     return code, distortion
 
 

@@ -27,7 +27,7 @@ __all__ = ['lobpcg']
 ## except:
 ##     raise ImportError('lobpcg requires symeig')
 
-def symeig( mtxA, mtxB = None, eigenvectors = True, select = None ):
+def symeig( mtxA, mtxB=None, eigenvectors=True, select=None ):
     import scipy.linalg as sla
     if select is None:
         if np.iscomplexobj( mtxA ):
@@ -52,7 +52,7 @@ def symeig( mtxA, mtxB = None, eigenvectors = True, select = None ):
 ##         from symeig import symeig
 ##         print symeig( mtxA, mtxB )
     else:
-        out = sla.eig( mtxA, mtxB, right = eigenvectors )
+        out = sla.eig( mtxA, mtxB, right=eigenvectors )
         w = out[0]
         ii = np.argsort( w )
         w = w[slice( *select )]
@@ -70,7 +70,7 @@ def pause():
 
 def save( ar, fileName ):
     from numpy import savetxt
-    savetxt( fileName, ar, precision = 8 )
+    savetxt( fileName, ar, precision=8 )
 
 ##
 # 21.05.2007, c
@@ -82,7 +82,7 @@ def as2d( ar ):
     if ar.ndim == 2:
         return ar
     else: # Assume 1!
-        aux = np.array( ar, copy = False )
+        aux = np.array( ar, copy=False )
         aux.shape = (ar.shape[0], 1)
         return aux
 
@@ -130,7 +130,7 @@ def applyConstraints( blockVectorV, factYBY, blockVectorBY, blockVectorY ):
 
 
 def b_orthonormalize( B, blockVectorV,
-                      blockVectorBV = None, retInvR = False ):
+                      blockVectorBV=None, retInvR=False ):
     """Internal."""
     import scipy.linalg as sla
     if blockVectorBV is None:
@@ -140,7 +140,7 @@ def b_orthonormalize( B, blockVectorV,
             blockVectorBV = blockVectorV # Shared data!!!
     gramVBV = sp.dot( blockVectorV.T, blockVectorBV )
     gramVBV = sla.cholesky( gramVBV )
-    gramVBV = sla.inv( gramVBV, overwrite_a = True )
+    gramVBV = sla.inv( gramVBV, overwrite_a=True )
     # gramVBV is now R^{-1}.
     blockVectorV = sp.dot( blockVectorV, gramVBV )
     if B is not None:
@@ -153,9 +153,9 @@ def b_orthonormalize( B, blockVectorV,
 
 def lobpcg( A, X,
             B=None, M=None, Y=None,
-            tol= None, maxiter=20,
-            largest = True, verbosityLevel = 0,
-            retLambdaHistory = False, retResidualNormsHistory = False ):
+            tol=None, maxiter=20,
+            largest=True, verbosityLevel=0,
+            retLambdaHistory=False, retResidualNormsHistory=False ):
     """Solve symmetric partial eigenproblems with optional preconditioning
 
     This function implements the Locally Optimal Block Preconditioned
@@ -331,14 +331,14 @@ def lobpcg( A, X,
 
     ##
     # Active index set.
-    activeMask = np.ones( (sizeX,), dtype = np.bool )
+    activeMask = np.ones( (sizeX,), dtype=np.bool )
 
     lambdaHistory = [_lambda]
     residualNormsHistory = []
 
     previousBlockSize = sizeX
-    ident  = np.eye( sizeX, dtype = A.dtype )
-    ident0 = np.eye( sizeX, dtype = A.dtype )
+    ident  = np.eye( sizeX, dtype=A.dtype )
+    ident0 = np.eye( sizeX, dtype=A.dtype )
 
     ##
     # Main iteration loop.
@@ -362,7 +362,7 @@ def lobpcg( A, X,
         currentBlockSize = activeMask.sum()
         if currentBlockSize != previousBlockSize:
             previousBlockSize = currentBlockSize
-            ident = np.eye( currentBlockSize, dtype = A.dtype )
+            ident = np.eye( currentBlockSize, dtype=A.dtype )
 
         if currentBlockSize == 0:
             failureFlag = False # All eigenpairs converged.
@@ -402,7 +402,7 @@ def lobpcg( A, X,
 
         if iterationNumber > 0:
             aux = b_orthonormalize( B, activeBlockVectorP,
-                                    activeBlockVectorBP, retInvR = True )
+                                    activeBlockVectorBP, retInvR=True )
             activeBlockVectorP, activeBlockVectorBP, invR = aux
             activeBlockVectorAP = sp.dot( activeBlockVectorAP, invR )
 
@@ -543,7 +543,7 @@ if __name__ == '__main__':
 ##         return vec
 
     n = 100
-    vals = [np.arange( n, dtype = np.float64 ) + 1]
+    vals = [np.arange( n, dtype=np.float64 ) + 1]
     A = spdiags( vals, 0, n, n )
     B = speye( n, n )
 #    B[0,0] = 0
@@ -553,7 +553,7 @@ if __name__ == '__main__':
 
 #    X = sp.rand( n, 3 )
     xfile = {100 : 'X.txt', 1000 : 'X2.txt', 10000 : 'X3.txt'}
-    X = np.fromfile( xfile[n], dtype = np.float64, sep = ' ' )
+    X = np.fromfile( xfile[n], dtype=np.float64, sep=' ' )
     X.shape = (n, 3)
 
     ivals = [1./vals[0]]
@@ -569,10 +569,10 @@ if __name__ == '__main__':
 #    precond = None
     tt = time.clock()
 #    B = None
-    eigs, vecs = lobpcg( X, A, B, blockVectorY = Y,
-                         M = precond,
-                         residualTolerance = 1e-4, maxIterations = 40,
-                         largest = False, verbosityLevel = 1 )
+    eigs, vecs = lobpcg( X, A, B, blockVectorY=Y,
+                         M=precond,
+                         residualTolerance=1e-4, maxIterations=40,
+                         largest=False, verbosityLevel=1 )
     print('solution time:', time.clock() - tt)
 
     print(vecs)

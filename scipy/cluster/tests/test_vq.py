@@ -111,13 +111,13 @@ class TestKMean(TestCase):
     def test_kmeans_simple(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
-        code1 = kmeans(X, code, iter = 1)[0]
+        code1 = kmeans(X, code, iter=1)[0]
 
         assert_array_almost_equal(code1, CODET2)
 
     def test_kmeans_lost_cluster(self):
         """This will cause kmean to have a cluster with no points."""
-        data = np.fromfile(DATAFILE1, sep = ", ")
+        data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
         initk = np.array([[-1.8127404, -0.67128041],
                          [ 2.04621601, 0.07401111],
@@ -139,31 +139,31 @@ class TestKMean(TestCase):
         """Testing simple call to kmeans2 and its results."""
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
-        code1 = kmeans2(X, code, iter = 1)[0]
-        code2 = kmeans2(X, code, iter = 2)[0]
+        code1 = kmeans2(X, code, iter=1)[0]
+        code2 = kmeans2(X, code, iter=2)[0]
 
         assert_array_almost_equal(code1, CODET1)
         assert_array_almost_equal(code2, CODET2)
 
     def test_kmeans2_rank1(self):
         """Testing simple call to kmeans2 with rank 1 data."""
-        data = np.fromfile(DATAFILE1, sep = ", ")
+        data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
         data1 = data[:, 0]
         data2 = data[:, 1]
 
         initc = data1[:3]
         code = initc.copy()
-        code1 = kmeans2(data1, code, iter = 1)[0]
-        code2 = kmeans2(data1, code, iter = 2)[0]
+        code1 = kmeans2(data1, code, iter=1)[0]
+        code2 = kmeans2(data1, code, iter=2)[0]
 
     def test_kmeans2_rank1_2(self):
         """Testing simple call to kmeans2 with rank 1 data."""
-        data = np.fromfile(DATAFILE1, sep = ", ")
+        data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
         data1 = data[:, 0]
 
-        code1 = kmeans2(data1, 2, iter = 1)
+        code1 = kmeans2(data1, 2, iter=1)
 
     def test_kmeans2_init(self):
         """Testing that kmeans2 init methods work."""

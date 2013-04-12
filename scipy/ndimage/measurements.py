@@ -146,7 +146,7 @@ def label(input, structure=None, output=None):
         raise TypeError('Complex type not supported')
     if structure is None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
-    structure = numpy.asarray(structure, dtype = bool)
+    structure = numpy.asarray(structure, dtype=bool)
     if structure.ndim != input.ndim:
         raise RuntimeError('structure and input must have equal rank')
     for ii in structure.shape:
@@ -1271,7 +1271,7 @@ def watershed_ift(input, markers, structure=None, output=None):
         raise TypeError('only 8 and 16 unsigned inputs are supported')
     if structure is None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
-    structure = numpy.asarray(structure, dtype = bool)
+    structure = numpy.asarray(structure, dtype=bool)
     if structure.ndim != input.ndim:
         raise RuntimeError('structure and input must have equal rank')
     for ii in structure.shape:

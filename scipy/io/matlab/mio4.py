@@ -217,7 +217,7 @@ class VarReader4(object):
         S = arr.tostring().decode('ascii')
         return np.ndarray(shape=hdr.dims,
                           dtype=np.dtype('U1'),
-                          buffer = np.array(S)).copy()
+                          buffer=np.array(S)).copy()
 
     def read_sparse_array(self, hdr):
         ''' Read and return sparse matrix type

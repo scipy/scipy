@@ -110,7 +110,7 @@ class array_converter(standard_array_spec.array_converter):
             res['dims'] = self.dims
         return res
 
-    def declaration_code(self,templatize = 0,inline=0):
+    def declaration_code(self,templatize=0,inline=0):
         code = '%(py_var)s = %(var_lookup)s;\n'   \
                '%(c_type)s %(array_name)s = %(var_convert)s;\n'  \
                'conversion_numpy_check_type(%(array_name)s,%(num_typecode)s,"%(name)s");\n' \

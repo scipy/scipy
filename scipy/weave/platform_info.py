@@ -163,7 +163,7 @@ def configure_sys_argv(compiler_name):
 def restore_sys_argv():
     sys.argv = old_argv
 
-def gcc_exists(name = 'gcc'):
+def gcc_exists(name='gcc'):
     """ Test to make sure gcc is found
 
         Does this return correct value on win98???

@@ -2483,7 +2483,7 @@ class TestNdimage:
                                   [ 0, 0, 0, 0, 0, 0, 0],
                                   [ 0, 0, 0, 0, 0, 0, 0]],
                                  numpy.int8)
-        out = numpy.zeros(shape, dtype = numpy.int16)
+        out = numpy.zeros(shape, dtype=numpy.int16)
         out = out.transpose()
         ndimage.watershed_ift(data, markers,
                                structure=[[1,1,1],
@@ -2866,8 +2866,8 @@ class TestNdimage:
                                                      return_indices=True)
         dts = []
         fts = []
-        dt = numpy.zeros(data.shape, dtype = numpy.int32)
-        ndimage.distance_transform_cdt(data, distances = dt)
+        dt = numpy.zeros(data.shape, dtype=numpy.int32)
+        ndimage.distance_transform_cdt(data, distances=dt)
         dts.append(dt)
         ft = ndimage.distance_transform_cdt(data,
                            return_distances=False, return_indices=True)
@@ -2882,7 +2882,7 @@ class TestNdimage:
         fts.append(ft)
         dt = numpy.zeros(data.shape, dtype=numpy.int32)
         ft = ndimage.distance_transform_cdt(data, distances=dt,
-                                                     return_indices = True)
+                                                     return_indices=True)
         dts.append(dt)
         fts.append(ft)
         ft = numpy.indices(data.shape, dtype=numpy.int32)

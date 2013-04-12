@@ -32,9 +32,9 @@ def _cast_copy_transpose(type,a_2d):
                    new_array(i,j) = a_2d(j,i);
            """
     inline_tools.inline(code,['new_array','a_2d'],
-                        type_converters = cblitz,
+                        type_converters=cblitz,
                         compiler='gcc',
-                        verbose = 1)
+                        verbose=1)
     return new_array
 
 def _cast_copy_transpose2(type,a_2d):
@@ -71,10 +71,10 @@ def _inplace_transpose(a_2d):
                }
            """ % numeric_type
     inline_tools.inline(code,['a_2d'],
-                        type_converters = cblitz,
+                        type_converters=cblitz,
                         compiler='gcc',
-                        extra_compile_args = ['-funroll-all-loops'],
-                        verbose =2 )
+                        extra_compile_args=['-funroll-all-loops'],
+                        verbose=2 )
     return a_2d
     #assert(len(shape(a_2d)) == 2)
     #type = a_2d.typecode()

@@ -21,7 +21,7 @@ if __name__ == '__main__':
     setup(version=fftpack_version,
           description='fftpack - Discrete Fourier Transform package',
           author='Pearu Peterson',
-          author_email = 'pearu@cens.ioc.ee',
-          maintainer_email = 'scipy-dev@scipy.org',
-          license = 'SciPy License (BSD Style)',
+          author_email='pearu@cens.ioc.ee',
+          maintainer_email='scipy-dev@scipy.org',
+          license='SciPy License (BSD Style)',
           **configuration(top_path='').todict())

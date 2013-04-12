@@ -19,7 +19,7 @@ def as2d( ar ):
     if ar.ndim == 2:
         return ar
     else: # Assume 1!
-        aux = nm.array( ar, copy = False )
+        aux = nm.array( ar, copy=False )
         aux.shape = (ar.shape[0], 1)
         return aux
 
@@ -41,8 +41,8 @@ for n in N:
 
     tt = time.clock()
     (LorU, lower) = linalg.cho_factor(A, lower=0, overwrite_a=0)
-    eigs,vecs = lobpcg.lobpcg(X,A,B,operatorT = precond,
-                              residualTolerance = 1e-4, maxIterations = 40)
+    eigs,vecs = lobpcg.lobpcg(X,A,B,operatorT=precond,
+                              residualTolerance=1e-4, maxIterations=40)
     data1.append(time.clock()-tt)
     eigs = sort(eigs)
     print()

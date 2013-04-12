@@ -64,7 +64,7 @@ def configuration(parent_package='',top_path=None):
                          sources=['_ufuncs.c', 'sf_error.c', '_logit.c.src',
                                   "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"],
                          include_dirs=[curdir],
-                         define_macros = define_macros,
+                         define_macros=define_macros,
                          extra_info=get_info("npymath"))
 
     # Extension _ufuncs_cxx

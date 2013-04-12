@@ -130,7 +130,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         family = {'d' : 'di', 'D' : 'zi'}
         umf = umfpack.UmfpackContext(family[A.dtype.char])
         x = umf.linsolve(umfpack.UMFPACK_A, A, b,
-                         autoTranspose = True )
+                         autoTranspose=True )
 
     elif b_is_vector:
         if isspmatrix_csc(A):
@@ -349,7 +349,7 @@ def factorized( A ):
         umf.numeric( A )
 
         def solve( b ):
-            return umf.solve( umfpack.UMFPACK_A, A, b, autoTranspose = True )
+            return umf.solve( umfpack.UMFPACK_A, A, b, autoTranspose=True )
 
         return solve
     else:

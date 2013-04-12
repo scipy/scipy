@@ -549,7 +549,7 @@ def _loadarff(ofile):
                 n = maxnomlen(value)
                 descr.append((name, 'S%d' % n))
                 pvalue = get_nom_val(value)
-                convertors.append(partial(safe_nominal, pvalue = pvalue))
+                convertors.append(partial(safe_nominal, pvalue=pvalue))
             else:
                 descr.append((name, acls2dtype[type]))
                 convertors.append(safe_float)
@@ -584,7 +584,7 @@ def _loadarff(ofile):
         # skip the @data line
         next(ofile)
 
-    def generator(row_iter, delim = ','):
+    def generator(row_iter, delim=','):
         # TODO: this is where we are spending times (~80%). I think things
         # could be made more efficiently:
         #   - We could for example "compile" the function, because some values
@@ -619,7 +619,7 @@ def _loadarff(ofile):
             row = raw.split(delim)
             yield tuple([convertors[i](row[i]) for i in elems])
 
-    a = generator(ofile, delim = delim)
+    a = generator(ofile, delim=delim)
     # No error should happen here: it is a bug otherwise
     data = np.fromiter(a, descr)
     return data, meta

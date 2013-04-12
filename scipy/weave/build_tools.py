@@ -126,8 +126,8 @@ def create_extension(module_path, **kw):
     ext = Extension(module_name, **kw)
     return ext
 
-def build_extension(module_path,compiler_name = '',build_dir = None,
-                    temp_dir = None, verbose = 0, **kw):
+def build_extension(module_path,compiler_name='',build_dir=None,
+                    temp_dir=None, verbose=0, **kw):
     """ Build the file given by module_path into a Python extension module.
 
         build_extensions uses distutils to build Python extension modules.
@@ -270,7 +270,7 @@ def build_extension(module_path,compiler_name = '',build_dir = None,
         import copy
         environ = copy.deepcopy(os.environ)
         try:
-            setup(name = module_name, ext_modules = [ext],verbose=verb)
+            setup(name=module_name, ext_modules=[ext],verbose=verb)
         finally:
             # restore state
             os.environ = environ

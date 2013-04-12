@@ -104,7 +104,7 @@ def binary_op_size(xx,yy):
     return res
 
 class dummy_array(object):
-    def __init__(self,ary,ary_is_shape = 0,name=None):
+    def __init__(self,ary,ary_is_shape=0,name=None):
         self.name = name
         if ary_is_shape:
             self.shape = ary

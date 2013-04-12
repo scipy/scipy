@@ -349,10 +349,10 @@ class _TestLinearFilter(TestCase):
         y_r2_a1 = np.array([[0, 2, 0], [6, -4, 6], [12, -10, 12],
                             [18, -16, 18]], dtype=self.dt)
 
-        y = lfilter(b, a, x, axis = 0)
+        y = lfilter(b, a, x, axis=0)
         assert_array_almost_equal(y_r2_a0, y)
 
-        y = lfilter(b, a, x, axis = 1)
+        y = lfilter(b, a, x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
     def test_rank2_init_cond_a1(self):
@@ -367,7 +367,7 @@ class _TestLinearFilter(TestCase):
         y_r2_a0_1 = np.array([[1, 1, 1], [7, -5, 7], [13, -11, 13],
                               [19, -17, 19]], dtype=self.dt)
         zf_r = np.array([-5, -17, -29, -41])[:, np.newaxis].astype(self.dt)
-        y, zf = lfilter(b, a, x, axis = 1, zi = np.ones((4, 1)))
+        y, zf = lfilter(b, a, x, axis=1, zi=np.ones((4, 1)))
         assert_array_almost_equal(y_r2_a0_1, y)
         assert_array_almost_equal(zf, zf_r)
 
@@ -383,7 +383,7 @@ class _TestLinearFilter(TestCase):
         y_r2_a0_0 = np.array([[1, 3, 5], [5, 3, 1], [1, 3, 5], [5 ,3 ,1]],
                              dtype=self.dt)
         zf_r = np.array([[-23, -23, -23]], dtype=self.dt)
-        y, zf = lfilter(b, a, x, axis = 0, zi = np.ones((1, 3)))
+        y, zf = lfilter(b, a, x, axis=0, zi=np.ones((1, 3)))
         assert_array_almost_equal(y_r2_a0_0, y)
         assert_array_almost_equal(zf, zf_r)
 

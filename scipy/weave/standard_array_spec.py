@@ -156,7 +156,7 @@ class array_converter(common_base_converter):
         res['cap_name'] = self.name.upper()
         return res
 
-    def declaration_code(self,templatize = 0,inline=0):
+    def declaration_code(self,templatize=0,inline=0):
         res = self.template_vars(inline=inline)
         cap_name = self.name.upper()
         res['cap_name'] = cap_name

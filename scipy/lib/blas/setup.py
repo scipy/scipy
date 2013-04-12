@@ -58,9 +58,9 @@ def configuration(parent_package='',top_path=None):
     else:
         sources = ['fblas.pyf.src','fblaswrap.f.src']
     config.add_extension('fblas',
-                         sources = sources,
-                         depends = depends,
-                         extra_info = blas_opt
+                         sources=sources,
+                         depends=depends,
+                         extra_info=blas_opt
                          )
     # cblas:
     def get_cblas_source(ext, build_dir):
@@ -79,9 +79,9 @@ def configuration(parent_package='',top_path=None):
         return target
 
     config.add_extension('cblas',
-                         sources = [get_cblas_source],
-                         depends = ['cblas.pyf.src','cblas_l?.pyf.src'],
-                         extra_info = blas_opt
+                         sources=[get_cblas_source],
+                         depends=['cblas.pyf.src','cblas_l?.pyf.src'],
+                         extra_info=blas_opt
                          )
 
     config.add_data_dir('tests')

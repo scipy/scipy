@@ -342,7 +342,7 @@ extern "C" {
         kw,file = self.build_kw_and_file(location,kw)
         return build_tools.create_extension(file, **kw)
 
-    def compile(self,location='.',compiler=None, verbose = 0, **kw):
+    def compile(self,location='.',compiler=None, verbose=0, **kw):
 
         if compiler is not None:
             self.compiler = compiler
@@ -364,9 +364,9 @@ extern "C" {
         # for speed, build in the machines temp directory
         temp = catalog.intermediate_dir()
 
-        success = build_tools.build_extension(file, temp_dir = temp,
-                                              compiler_name = compiler,
-                                              verbose = verbose, **kw)
+        success = build_tools.build_extension(file, temp_dir=temp,
+                                              compiler_name=compiler,
+                                              verbose=verbose, **kw)
         if not success:
             raise SystemError('Compilation failed')
 
@@ -391,9 +391,9 @@ def generate_module(module_string, module_file):
         f.close()
     return module_file
 
-def assign_variable_types(variables,local_dict = {}, global_dict = {},
-                          auto_downcast = 1,
-                          type_converters = converters.default):
+def assign_variable_types(variables,local_dict={}, global_dict={},
+                          auto_downcast=1,
+                          type_converters=converters.default):
     incoming_vars = {}
     incoming_vars.update(global_dict)
     incoming_vars.update(local_dict)

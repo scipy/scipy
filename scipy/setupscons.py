@@ -8,7 +8,7 @@ def configuration(parent_package='', top_path=None, setup_name='setupscons.py'):
 
     pkgname = 'scipy'
     config = Configuration(pkgname, parent_package, top_path,
-                           setup_name = 'setupscons.py')
+                           setup_name='setupscons.py')
     config.add_subpackage('cluster')
     config.add_subpackage('constants')
     config.add_subpackage('fftpack')
@@ -36,7 +36,7 @@ def configuration(parent_package='', top_path=None, setup_name='setupscons.py'):
             target = pjoin(kw['scons_cmd'].build_lib, kw['pkg_name'],
                            '__config__.py')
         scons_generate_config_py(target)
-    config.add_sconscript(None, post_hook = add_config)
+    config.add_sconscript(None, post_hook=add_config)
 
     return config
 

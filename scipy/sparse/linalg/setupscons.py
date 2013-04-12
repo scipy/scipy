@@ -5,7 +5,7 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
 
     config = Configuration('linalg',parent_package,top_path,
-                           setup_name = 'setupscons.py')
+                           setup_name='setupscons.py')
 
     config.add_subpackage(('isolve'))
     config.add_subpackage(('dsolve'))

@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 from os.path import join
 
-def configuration(parent_package = '', top_path = None):
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('cluster', parent_package, top_path)
 
@@ -18,11 +18,11 @@ def configuration(parent_package = '', top_path = None):
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    setup(maintainer = "SciPy Developers",
-          author = "Eric Jones",
-          maintainer_email = "scipy-dev@scipy.org",
-          description = "Clustering Algorithms (Information Theory)",
-          url = "http://www.scipy.org",
-          license = "SciPy License (BSD Style)",
+    setup(maintainer="SciPy Developers",
+          author="Eric Jones",
+          maintainer_email="scipy-dev@scipy.org",
+          description="Clustering Algorithms (Information Theory)",
+          url="http://www.scipy.org",
+          license="SciPy License (BSD Style)",
           **configuration(top_path='').todict()
           )

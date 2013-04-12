@@ -79,7 +79,7 @@ class TestGetCatalog(TestCase):
         catalog_dir tests.
     """
 
-    def get_test_dir(self,erase = 0):
+    def get_test_dir(self,erase=0):
         # make sure tempdir catalog doesn't exist
         import tempfile
         import glob

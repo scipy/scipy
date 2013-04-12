@@ -349,13 +349,13 @@ class BaseGemv(object):
     ''' Mixin class for gemv tests '''
 
     def get_data(self,x_stride=1,y_stride=1):
-        mult = array(1, dtype = self.dtype)
+        mult = array(1, dtype=self.dtype)
         if self.dtype in [complex64, complex128]:
-            mult = array(1+1j, dtype = self.dtype)
+            mult = array(1+1j, dtype=self.dtype)
         from numpy.random import normal, seed
         seed(1234)
-        alpha = array(1., dtype = self.dtype) * mult
-        beta = array(1.,dtype = self.dtype) * mult
+        alpha = array(1., dtype=self.dtype) * mult
+        beta = array(1.,dtype=self.dtype) * mult
         a = normal(0.,1.,(3,3)).astype(self.dtype) * mult
         x = arange(shape(a)[0]*x_stride,dtype=self.dtype) * mult
         y = arange(shape(a)[1]*y_stride,dtype=self.dtype) * mult

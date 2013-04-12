@@ -43,7 +43,7 @@ def configure( **kwargs ):
 
 ##
 # 30.11.2005, c
-def updateDictWithVars( adict, module, pattern, group = None ):
+def updateDictWithVars( adict, module, pattern, group=None ):
     match = re.compile( pattern ).match
 
     for name in [ii for ii in vars( module )
@@ -267,7 +267,7 @@ class UmfpackContext( Struct ):
     # 01.12.2005
     # 21.12.2005
     # 01.03.2006
-    def __init__( self, family = 'di', **kwargs ):
+    def __init__( self, family='di', **kwargs ):
         """
         Arguments:
 
@@ -289,8 +289,8 @@ class UmfpackContext( Struct ):
             raise TypeError('wrong family: %s' % family)
 
         self.family = family
-        self.control = np.zeros( (UMFPACK_CONTROL, ), dtype = np.double )
-        self.info = np.zeros( (UMFPACK_INFO, ), dtype = np.double )
+        self.control = np.zeros( (UMFPACK_CONTROL, ), dtype=np.double )
+        self.info = np.zeros( (UMFPACK_INFO, ), dtype=np.double )
         self._symbolic = None
         self._numeric = None
         self.mtx = None
@@ -299,7 +299,7 @@ class UmfpackContext( Struct ):
         ##
         # Functions corresponding to <family> are stored in self.funs.
         pattern = 'umfpack_' + family + '_(.*)'
-        fn = updateDictWithVars( {}, _um, pattern, group = 1 )
+        fn = updateDictWithVars( {}, _um, pattern, group=1 )
         self.funs = Struct( **fn )
 
         self.funs.defaults( self.control )
@@ -502,7 +502,7 @@ class UmfpackContext( Struct ):
     # 02.12.2005
     # 21.12.2005
     # 01.03.2006
-    def solve( self, sys, mtx, rhs, autoTranspose = False ):
+    def solve( self, sys, mtx, rhs, autoTranspose=False ):
         """
         Solution of system of linear equation using the Numeric object.
 
@@ -539,12 +539,12 @@ class UmfpackContext( Struct ):
 
         if self.isReal:
             rhs = rhs.astype( np.float64 )
-            sol = np.zeros( (mtx.shape[1],), dtype = np.float64 )
+            sol = np.zeros( (mtx.shape[1],), dtype=np.float64 )
             status = self.funs.solve( sys, mtx.indptr, indx, mtx.data, sol, rhs,
                                       self._numeric, self.control, self.info )
         else:
             rhs = rhs.astype( np.complex128 )
-            sol = np.zeros( (mtx.shape[1],), dtype = np.complex128 )
+            sol = np.zeros( (mtx.shape[1],), dtype=np.complex128 )
             mreal, mimag = mtx.data.real.copy(), mtx.data.imag.copy()
             sreal, simag = sol.real.copy(), sol.imag.copy()
             rreal, rimag = rhs.real.copy(), rhs.imag.copy()
@@ -574,7 +574,7 @@ class UmfpackContext( Struct ):
     ##
     # 30.11.2005, c
     # 01.12.2005
-    def linsolve( self, sys, mtx, rhs, autoTranspose = False ):
+    def linsolve( self, sys, mtx, rhs, autoTranspose=False ):
         """
         One-shot solution of system of linear equation. Reuses Numeric object
         if possible.
@@ -607,7 +607,7 @@ class UmfpackContext( Struct ):
     ##
     # 30.11.2005, c
     # 01.12.2005
-    def __call__( self, sys, mtx, rhs, autoTranspose = False ):
+    def __call__( self, sys, mtx, rhs, autoTranspose=False ):
         """
         Uses solve() or linsolve() depending on the presence of the Numeric
         object.
@@ -662,20 +662,20 @@ class UmfpackContext( Struct ):
         #allocate storage for decomposition data
         i_type = mtx.indptr.dtype
 
-        Lp = np.zeros( (n_row+1,), dtype = i_type )
-        Lj = np.zeros( (lnz,), dtype = i_type )
-        Lx = np.zeros( (lnz,), dtype = np.double )
+        Lp = np.zeros( (n_row+1,), dtype=i_type )
+        Lj = np.zeros( (lnz,), dtype=i_type )
+        Lx = np.zeros( (lnz,), dtype=np.double )
 
-        Up = np.zeros( (n_col+1,), dtype = i_type )
-        Ui = np.zeros( (unz,), dtype = i_type )
-        Ux = np.zeros( (unz,), dtype = np.double )
+        Up = np.zeros( (n_col+1,), dtype=i_type )
+        Ui = np.zeros( (unz,), dtype=i_type )
+        Ux = np.zeros( (unz,), dtype=np.double )
 
-        P  = np.zeros( (n_row,), dtype = i_type )
-        Q  = np.zeros( (n_col,), dtype = i_type )
+        P  = np.zeros( (n_row,), dtype=i_type )
+        Q  = np.zeros( (n_col,), dtype=i_type )
 
-        Dx = np.zeros( (min(n_row,n_col),), dtype = np.double )
+        Dx = np.zeros( (min(n_row,n_col),), dtype=np.double )
 
-        Rs = np.zeros( (n_row,), dtype = np.double )
+        Rs = np.zeros( (n_row,), dtype=np.double )
 
         if self.isReal:
             (status,do_recip) = self.funs.get_numeric( Lp,Lj,Lx,Up,Ui,Ux,
@@ -694,9 +694,9 @@ class UmfpackContext( Struct ):
 
         else:
             #allocate additional storage for imaginary parts
-            Lz = np.zeros( (lnz,), dtype = np.double )
-            Uz = np.zeros( (unz,), dtype = np.double )
-            Dz = np.zeros( (min(n_row,n_col),), dtype = np.double )
+            Lz = np.zeros( (lnz,), dtype=np.double )
+            Uz = np.zeros( (unz,), dtype=np.double )
+            Dz = np.zeros( (min(n_row,n_col),), dtype=np.double )
 
             (status,do_recip) = self.funs.get_numeric(Lp,Lj,Lx,Lz,Up,Ui,Ux,Uz,
                                                       P,Q,Dx,Dz,Rs,
@@ -707,9 +707,9 @@ class UmfpackContext( Struct ):
                         % (self.funs.get_numeric, umfStatus[status]))
 
 
-            Lxz = np.zeros( (lnz,), dtype = np.complex128 )
-            Uxz = np.zeros( (unz,), dtype = np.complex128 )
-            Dxz = np.zeros( (min(n_row,n_col),), dtype = np.complex128 )
+            Lxz = np.zeros( (lnz,), dtype=np.complex128 )
+            Uxz = np.zeros( (unz,), dtype=np.complex128 )
+            Dxz = np.zeros( (min(n_row,n_col),), dtype=np.complex128 )
 
             Lxz.real,Lxz.imag = Lx,Lz
             Uxz.real,Uxz.imag = Ux,Uz

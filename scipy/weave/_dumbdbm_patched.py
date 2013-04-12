@@ -148,6 +148,6 @@ class _Database(object):
         self._datfile = self._dirfile = self._bakfile = None
 
 
-def open(file, flag = None, mode = None):
+def open(file, flag=None, mode=None):
     # flag, mode arguments are currently ignored
     return _Database(file)

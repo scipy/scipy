@@ -32,45 +32,45 @@ def configuration(parent_package='',top_path=None):
     # Note: `depends` needs to include fblaswrap(_veclib) for both files to be
     # included by "python setup.py sdist"
     config.add_extension('_fblas',
-                         sources = sources,
-                         depends = ['fblas_l?.pyf.src',
+                         sources=sources,
+                         depends=['fblas_l?.pyf.src',
                                     join('src', 'fblaswrap_veclib_c.c'),
                                     join('src', 'fblaswrap.f')],
-                         extra_info = lapack_opt
+                         extra_info=lapack_opt
                          )
 
     # flapack:
     config.add_extension('_flapack',
-                         sources = ['flapack.pyf.src'],
-                         depends = ['flapack_user.pyf.src'],
-                         extra_info = lapack_opt
+                         sources=['flapack.pyf.src'],
+                         depends=['flapack_user.pyf.src'],
+                         extra_info=lapack_opt
                          )
 
     if atlas_version is not None:
         # cblas:
         config.add_extension('_cblas',
-                             sources = ['cblas.pyf.src'],
-                             depends = ['cblas.pyf.src', 'cblas_l1.pyf.src'],
-                             extra_info = lapack_opt
+                             sources=['cblas.pyf.src'],
+                             depends=['cblas.pyf.src', 'cblas_l1.pyf.src'],
+                             extra_info=lapack_opt
                              )
 
         # clapack:
         config.add_extension('_clapack',
-                             sources = ['clapack.pyf.src'],
-                             depends = ['clapack.pyf.src'],
-                             extra_info = lapack_opt
+                             sources=['clapack.pyf.src'],
+                             depends=['clapack.pyf.src'],
+                             extra_info=lapack_opt
                              )
 
     # _flinalg:
     config.add_extension('_flinalg',
-                         sources = [join('src','det.f'),join('src','lu.f')],
-                         extra_info = lapack_opt
+                         sources=[join('src','det.f'),join('src','lu.f')],
+                         extra_info=lapack_opt
                          )
 
     # calc_lwork:
     config.add_extension('calc_lwork',
                          [join('src','calc_lwork.f')],
-                         extra_info = lapack_opt
+                         extra_info=lapack_opt
                          )
 
     config.add_data_dir('tests')

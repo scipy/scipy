@@ -35,7 +35,7 @@ A,B, w_ex = sakurai(n) # Mikota pair
 X = rand(n,m)
 data=[]
 tt = time.clock()
-eigs,vecs, resnh = lobpcg(X,A,B, residualTolerance = 1e-6, maxIterations =500, retResidualNormsHistory=1)
+eigs,vecs, resnh = lobpcg(X,A,B, residualTolerance=1e-6, maxIterations=500, retResidualNormsHistory=1)
 data.append(time.clock()-tt)
 print('Results by LOBPCG for n='+str(n))
 print()

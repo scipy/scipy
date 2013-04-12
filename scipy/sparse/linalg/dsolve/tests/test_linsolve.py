@@ -15,7 +15,7 @@ from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
 #TODO add more comprehensive tests
-use_solver( useUmfpack = False )
+use_solver( useUmfpack=False )
 
 class TestLinsolve(TestCase):
     def test_singular(self):

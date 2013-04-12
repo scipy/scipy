@@ -30,7 +30,7 @@ def configuration(parent_package='',top_path=None):
 
     config.add_library('arpack_scipy', sources=arpack_sources,
                        include_dirs=[join('ARPACK', 'SRC')],
-                       depends = [join('ARPACK', 'FWRAPPERS',
+                       depends=[join('ARPACK', 'FWRAPPERS',
                                        'veclib_cabi_f.f'),
                                   join('ARPACK', 'FWRAPPERS',
                                        'veclib_cabi_c.c'),
@@ -41,7 +41,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_arpack',
                          sources='arpack.pyf.src',
                          libraries=['arpack_scipy'],
-                         extra_info = lapack_opt
+                         extra_info=lapack_opt
                         )
 
     config.add_data_dir('tests')

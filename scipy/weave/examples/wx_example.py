@@ -13,7 +13,7 @@ import inline_tools
 from wxPython.wx import *
 
 class MyCanvas(wxScrolledWindow):
-    def __init__(self, parent, id = -1, size = wxDefaultSize):
+    def __init__(self, parent, id=-1, size=wxDefaultSize):
         wxScrolledWindow.__init__(self, parent, id, wxPoint(0, 0), size, wxSUNKEN_BORDER)
 
         self.lines = []
@@ -191,7 +191,7 @@ class MyCanvas(wxScrolledWindow):
 # This example isn't currently used.
 
 class py_canvas(wx.wxWindow):
-    def __init__(self, parent, id = -1, pos=wx.wxPyDefaultPosition,
+    def __init__(self, parent, id=-1, pos=wx.wxPyDefaultPosition,
                  size=wx.wxPyDefaultSize, **attr):
         wx.wxWindow.__init__(self, parent, id, pos,size)
         #wx.EVT_PAINT(self,self.on_paint)
