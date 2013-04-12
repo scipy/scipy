@@ -240,5 +240,5 @@ def rsf2csf(T, Z, check_finite=True):
             T[i,k] = dot(T[i,k], Gc)
             i = slice(0, N)
             Z[i,k] = dot(Z[i,k], Gc)
-        T[m,m-1] = 0.0;
+        T[m,m-1] = 0.0
     return T, Z

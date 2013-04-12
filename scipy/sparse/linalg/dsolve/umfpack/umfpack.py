@@ -254,7 +254,7 @@ class Struct( object ):
                 ss += "  %s:\n    %s\n" % (key, self.__dict__[key].__class__)
             else:
                 aux = "\n" + str( val )
-                aux = aux.replace( "\n", "\n    " );
+                aux = aux.replace( "\n", "\n    " )
                 ss += "  %s:\n%s\n" % (key, aux[1:])
         return( ss.rstrip() )
 

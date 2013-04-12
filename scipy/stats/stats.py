@@ -2877,7 +2877,7 @@ def kendalltau(x, y, initial_lexsort=True):
                 d = (offs + i) - (middle + k)
                 k += 1
             if d > 0:
-                exchcnt += d;
+                exchcnt += d
             i += 1
         perm[offs:offs+length] = temp[0:length]
         return exchcnt

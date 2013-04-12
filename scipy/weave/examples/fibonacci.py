@@ -94,7 +94,7 @@ def py_fib2(a):
         result = last + next_to_last
         next_to_last = last
         last = result
-    return result;
+    return result
 
 import time
 

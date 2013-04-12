@@ -508,7 +508,7 @@ def _difftrap(function, interval, numtraps):
     else:
         numtosum = numtraps/2
         h = float(interval[1]-interval[0])/numtosum
-        lox = interval[0] + 0.5 * h;
+        lox = interval[0] + 0.5 * h
         points = lox + h * arange(0, numtosum)
         s = sum(function(points),0)
         return s

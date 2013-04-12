@@ -828,7 +828,7 @@ class TestIsMonotonic(TestCase):
 
     def test_is_monotonic_1x4(self):
         "Tests is_monotonic(Z) on 1x4 linkage. Expecting True."
-        Z = np.asarray([[0, 1, 0.3, 2]], dtype=np.double);
+        Z = np.asarray([[0, 1, 0.3, 2]], dtype=np.double)
         self.assertTrue(is_monotonic(Z) == True)
 
     def test_is_monotonic_2x4_T(self):

@@ -3249,10 +3249,10 @@ class genextreme_gen(rv_continuous):
         g = lambda n : gam(n*c+1)
         g1 = g(1)
         g2 = g(2)
-        g3 = g(3);
+        g3 = g(3)
         g4 = g(4)
         g2mg12 = where(abs(c)<1e-7,(c*pi)**2.0/6.0,g2-g1**2.0)
-        gam2k = where(abs(c)<1e-7,pi**2.0/6.0, expm1(gamln(2.0*c+1.0)-2*gamln(c+1.0))/c**2.0);
+        gam2k = where(abs(c)<1e-7,pi**2.0/6.0, expm1(gamln(2.0*c+1.0)-2*gamln(c+1.0))/c**2.0)
         eps = 1e-14
         gamk = where(abs(c)<eps,-_EULER,expm1(gamln(c+1))/c)
 
@@ -3260,7 +3260,7 @@ class genextreme_gen(rv_continuous):
         v = where(c<-0.5,nan,g1**2.0*gam2k)
 
         #% skewness
-        sk1 = where(c<-1./3,nan,np.sign(c)*(-g3+(g2+2*g2mg12)*g1)/((g2mg12)**(3./2.)));
+        sk1 = where(c<-1./3,nan,np.sign(c)*(-g3+(g2+2*g2mg12)*g1)/((g2mg12)**(3./2.)))
         sk = where(abs(c)<=eps**0.29,12*sqrt(6)*_ZETA3/pi**3,sk1)
 
         #% The kurtosis is:

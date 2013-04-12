@@ -96,9 +96,9 @@ class MyCanvas(wxScrolledWindow):
 
     def DoDrawing2(self, dc):
 
-        red = wxNamedColour("RED");
-        blue = wxNamedColour("BLUE");
-        grey_brush = wxLIGHT_GREY_BRUSH;
+        red = wxNamedColour("RED")
+        blue = wxNamedColour("BLUE")
+        grey_brush = wxLIGHT_GREY_BRUSH
         code = \
         """
         //#line 108 "wx_example.py"

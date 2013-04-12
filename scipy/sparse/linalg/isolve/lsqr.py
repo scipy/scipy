@@ -258,7 +258,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
          'Ax - b is small enough for this machine                   ',
          'The least-squares solution is good enough for this machine',
          'Cond(Abar) seems to be too large for this machine         ',
-         'The iteration limit has been reached                      ');
+         'The iteration limit has been reached                      ')
 
     if show:
         print(' ')
@@ -321,19 +321,19 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     # there was an error on return when arnorm==0
     arnorm = alfa * beta
     if arnorm == 0:
-        print(msg[0]);
+        print(msg[0])
         return x, istop, itn, r1norm, r2norm, anorm, acond, arnorm, xnorm, var
 
-    head1  = '   Itn      x[0]       r1norm     r2norm ';
-    head2  = ' Compatible    LS      Norm A   Cond A';
+    head1  = '   Itn      x[0]       r1norm     r2norm '
+    head2  = ' Compatible    LS      Norm A   Cond A'
 
     if show:
         print(' ')
         print(head1, head2)
         test1  = 1;             test2  = alfa / beta;
-        str1   = '%6g %12.5e'    %(    itn,   x[0] );
-        str2   = ' %10.3e %10.3e'%( r1norm, r2norm );
-        str3   = '  %8.1e %8.1e' %(  test1,  test2 );
+        str1   = '%6g %12.5e'    %(    itn,   x[0] )
+        str2   = ' %10.3e %10.3e'%( r1norm, r2norm )
+        str3   = '  %8.1e %8.1e' %(  test1,  test2 )
         print(str1, str2, str3)
 
     # Main iteration loop.
@@ -446,7 +446,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         if test1 <= rtol: istop = 1
 
         # See if it is time to print something.
-        prnt = False;
+        prnt = False
         if n <= 40: prnt = True
         if itn <= 10: prnt = True
         if itn >= iter_lim-10: prnt = True

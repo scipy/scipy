@@ -68,16 +68,16 @@ class TestLSMRReturns:
         self.returnValues = lsmr(self.A,self.b)
 
     def testNormr(self):
-        x, istop, itn, normr, normar, normA, condA, normx = self.returnValues;
+        x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
         assert_almost_equal(normr, norm(self.b - self.Afun.matvec(x)))
 
     def testNormar(self):
-        x, istop, itn, normr, normar, normA, condA, normx = self.returnValues;
+        x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
         assert_almost_equal(normar, \
                 norm(self.Afun.rmatvec(self.b - self.Afun.matvec(x))))
 
     def testNormx(self):
-        x, istop, itn, normr, normar, normA, condA, normx = self.returnValues;
+        x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
         assert_almost_equal(normx, norm(x))
 
 def lowerBidiagonalMatrix(m, n):
@@ -118,11 +118,11 @@ def lsmrtest(m, n, damp):
 
     b = Afun.matvec(xtrue)
 
-    atol      = 1.0e-7;
-    btol      = 1.0e-7;
-    conlim    = 1.0e+10;
-    itnlim    = 10*n;
-    show      = 1;
+    atol      = 1.0e-7
+    btol      = 1.0e-7
+    conlim    = 1.0e+10
+    itnlim    = 10*n
+    show      = 1
 
     x, istop, itn, normr, normar, norma, conda, normx \
       = lsmr(A, b, damp, atol, btol, conlim, itnlim, show )
@@ -137,7 +137,7 @@ def lsmrtest(m, n, damp):
     str = [ '%10.4f' %(xi) for xi in x[j2-1:] ]
     print(''.join(str))
 
-    r    = b - Afun.matvec(x);
+    r    = b - Afun.matvec(x)
     r2   = sqrt(norm(r)**2 + (damp*norm(x))**2)
     print(' ')
     str =  'normr (est.)  %17.10e' %(normr )

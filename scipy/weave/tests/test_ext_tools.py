@@ -41,7 +41,7 @@ class TestExtModule(TestCase):
     @dec.slow
     def test_with_include(self):
         # decalaring variables
-        a = 2.;
+        a = 2.
 
         # declare module
         mod = ext_tools.ext_module('ext_module_with_include')

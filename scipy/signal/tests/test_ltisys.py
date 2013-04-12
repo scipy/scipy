@@ -291,7 +291,7 @@ class Test_bode(object):
         vals = linalg.eigvals(system.A)
         minpole = min(abs(np.real(vals)))
         maxpole = max(abs(np.real(vals)))
-        n = 10;
+        n = 10
         # Expected range is from 0.01 to 10.
         expected_w = np.logspace(-2, 1, n)
         w, mag, phase = bode(system, n=n)

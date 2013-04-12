@@ -130,7 +130,7 @@ def main():
     (options, args) = parser.parse_args()
 
     if (len( args ) >= 1):
-        matrixNames = args;
+        matrixNames = args
     else:
         parser.print_help(),
         return

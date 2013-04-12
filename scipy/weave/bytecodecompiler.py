@@ -1098,8 +1098,8 @@ class CXXCoder(ByteCodeMeaning):
         # do the real work here
         w = self.unique()
         self.emit('PyObject* %s = PySys_GetObject("stdout");'%w)
-        self.emit('PyFile_WriteString("\\n",%s);'%w);
-        self.emit('PyFile_SoftSpace(%s,0);'%w);
+        self.emit('PyFile_WriteString("\\n",%s);'%w)
+        self.emit('PyFile_SoftSpace(%s,0);'%w)
         return
 
     ##################################################################

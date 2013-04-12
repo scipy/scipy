@@ -142,8 +142,8 @@ if __name__ == '__main__':
             t1 = time.clock()
             offset = array((1,0))
             mod = array((w,0))
-            x = pt_copy[:,0];
-            ang = 2*pi/w;
+            x = pt_copy[:,0]
+            ang = 2*pi/w
 
             size = 1
             red_pen = wxPen('red',size)
