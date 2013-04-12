@@ -116,7 +116,7 @@ class csr_matrix(_cs_matrix):
         from .lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
 
-        self.sort_indices() #lil_matrix needs sorted column indices
+        self.sort_indices() # lil_matrix needs sorted column indices
 
         ptr,ind,dat = self.indptr,self.indices,self.data
         rows, data  = lil.rows, lil.data
@@ -229,32 +229,32 @@ class csr_matrix(_cs_matrix):
             if isintlike(row):
                 #[1,??]
                 if isintlike(col):
-                    return self._get_single_element(row, col) #[i,j]
+                    return self._get_single_element(row, col) # [i,j]
                 elif isinstance(col, slice):
-                    return self._get_row_slice(row, col)      #[i,1:2]
+                    return self._get_row_slice(row, col)      # [i,1:2]
                 else:
-                    P = extractor(col,self.shape[1]).T        #[i,[1,2]]
+                    P = extractor(col,self.shape[1]).T        # [i,[1,2]]
                     return self[row,:]*P
 
             elif isinstance(row, slice):
                 #[1:2,??]
                 if isintlike(col) or isinstance(col, slice):
-                    return self._get_submatrix(row, col)      #[1:2,j]
+                    return self._get_submatrix(row, col)      # [1:2,j]
                 else:
-                    P = extractor(col,self.shape[1]).T        #[1:2,[1,2]]
+                    P = extractor(col,self.shape[1]).T        # [1:2,[1,2]]
                     return self[row,:]*P
 
             else:
                 #[[1,2],??] or [[[1],[2]],??]
                 if isintlike(col) or isinstance(col,slice):
-                    P = extractor(row, self.shape[0])        #[[1,2],j] or [[1,2],1:2]
+                    P = extractor(row, self.shape[0])        # [[1,2],j] or [[1,2],1:2]
                     return (P*self)[:,col]
 
                 else:
                     row = asindices(row)
                     col = asindices(col)
                     if len(row.shape) == 1:
-                        if len(row) != len(col):             #[[1,2],[1,2]]
+                        if len(row) != len(col):             # [[1,2],[1,2]]
                             raise IndexError('number of row and column indices differ')
 
                         check_bounds(row, self.shape[0])
@@ -271,7 +271,7 @@ class csr_matrix(_cs_matrix):
                         return np.asmatrix(val)
 
                     elif len(row.shape) == 2:
-                        row = np.ravel(row)                   #[[[1],[2]],[1,2]]
+                        row = np.ravel(row)                   # [[[1],[2]],[1,2]]
                         P = extractor(row, self.shape[0])
                         return (P*self)[:,col]
 
@@ -279,9 +279,9 @@ class csr_matrix(_cs_matrix):
                         raise NotImplementedError('unsupported indexing')
 
         elif isintlike(key) or isinstance(key,slice):
-            return self[key,:]                                #[i] or [1:2]
+            return self[key,:]                                # [i] or [1:2]
         else:
-            return self[asindices(key),:]                     #[[1,2]]
+            return self[asindices(key),:]                     # [[1,2]]
 
     def _get_single_element(self,row,col):
         """Returns the single element self[row, col]

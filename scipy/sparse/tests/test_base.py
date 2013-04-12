@@ -389,20 +389,20 @@ class _TestCommon:
         B = array([[0,7,0],[0,-4,0]])
         Asp = self.spmatrix(A)
         Bsp = self.spmatrix(B)
-        assert_almost_equal( Asp.multiply(Bsp).todense(), A*B) #sparse/sparse
-        assert_almost_equal( Asp.multiply(B),             A*B) #sparse/dense
+        assert_almost_equal( Asp.multiply(Bsp).todense(), A*B) # sparse/sparse
+        assert_almost_equal( Asp.multiply(B),             A*B) # sparse/dense
 
         # complex/complex
         C = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
         D = array([[5+2j,7-3j,-2+1j],[0-1j,-4+2j,9]])
         Csp = self.spmatrix(C)
         Dsp = self.spmatrix(D)
-        assert_almost_equal( Csp.multiply(Dsp).todense(), C*D) #sparse/sparse
-        assert_almost_equal( Csp.multiply(D),             C*D) #sparse/dense
+        assert_almost_equal( Csp.multiply(Dsp).todense(), C*D) # sparse/sparse
+        assert_almost_equal( Csp.multiply(D),             C*D) # sparse/dense
 
         # real/complex
-        assert_almost_equal( Asp.multiply(Dsp).todense(), A*D) #sparse/sparse
-        assert_almost_equal( Asp.multiply(D),             A*D) #sparse/dense
+        assert_almost_equal( Asp.multiply(Dsp).todense(), A*D) # sparse/sparse
+        assert_almost_equal( Asp.multiply(D),             A*D) # sparse/dense
 
     def test_elementwise_divide(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
@@ -744,7 +744,7 @@ class _TestSolve:
         # Test whether the lu_solve command segfaults, as reported by Nils
         # Wagner for a 64-bit machine, 02 March 2005 (EJS)
         n = 20
-        np.random.seed(0) #make tests repeatable
+        np.random.seed(0) # make tests repeatable
         A = zeros((n,n), dtype=complex)
         x = np.random.rand(n)
         y = np.random.rand(n-1)+1j*np.random.rand(n-1)
@@ -1388,8 +1388,8 @@ class _TestArithmetic:
 
                 assert_equal(S1.dtype,D1.dtype)
                 assert_array_equal(S1.todense(),D1)
-                assert_array_equal(Asp + B,D1)          #check sparse + dense
-                assert_array_equal(A + Bsp,D1)          #check dense + sparse
+                assert_array_equal(Asp + B,D1)          # check sparse + dense
+                assert_array_equal(A + Bsp,D1)          # check dense + sparse
 
                 #subtraction
                 D1 = A - B
@@ -1397,8 +1397,8 @@ class _TestArithmetic:
 
                 assert_equal(S1.dtype,D1.dtype)
                 assert_array_equal(S1.todense(),D1)
-                assert_array_equal(Asp - B,D1)          #check sparse - dense
-                assert_array_equal(A - Bsp,D1)          #check dense - sparse
+                assert_array_equal(Asp - B,D1)          # check sparse - dense
+                assert_array_equal(A - Bsp,D1)          # check dense - sparse
 
     def test_mu(self):
         self.__arith_init()

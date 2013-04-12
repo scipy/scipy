@@ -33,7 +33,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self.shape = arg1   #spmatrix checks for errors here
+                self.shape = arg1   # spmatrix checks for errors here
                 M, N = self.shape
                 self.data    = np.zeros(0, getdtype(dtype, default=float))
                 self.indices = np.zeros(0, np.intc)
@@ -264,7 +264,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
     def _mul_multivector(self, other):
         M,N = self.shape
-        n_vecs = other.shape[1] #number of column vectors
+        n_vecs = other.shape[1] # number of column vectors
 
         result = np.zeros((M,n_vecs), dtype=upcast_char(self.dtype.char,
                                                         other.dtype.char))
@@ -282,7 +282,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         major_axis = self._swap((M,N))[0]
         indptr = np.empty(major_axis + 1, dtype=np.intc)
 
-        other = self.__class__(other) #convert to this format
+        other = self.__class__(other) # convert to this format
         fn = getattr(sparsetools, self.format + '_matmat_pass1')
         fn( M, N, self.indptr, self.indices,
                   other.indptr, other.indices,
@@ -561,7 +561,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         M,N = self._swap(self.shape)
         fn( M, N, self.indptr, self.indices, self.data)
 
-        self.prune() #nnz may have changed
+        self.prune() # nnz may have changed
 
     def sum_duplicates(self):
         """Eliminate duplicate matrix entries by adding them together
@@ -574,7 +574,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         M,N = self._swap(self.shape)
         fn( M, N, self.indptr, self.indices, self.data)
 
-        self.prune() #nnz may have changed
+        self.prune() # nnz may have changed
 
     def __get_sorted(self):
         """Determine whether the matrix has sorted indices

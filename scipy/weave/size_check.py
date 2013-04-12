@@ -216,7 +216,7 @@ class dummy_array(object):
                     beg,end,step = 0,0,1
                 #elif index.step > 0 and beg <= end:
                 elif step > 0 and beg <= end:
-                    pass #slc_len = abs(divide(end-beg-1,step)+1)
+                    pass # slc_len = abs(divide(end-beg-1,step)+1)
                 # handle [::-1] and [-1::-1] correctly
                 #elif index.step > 0 and beg > end:
                 elif step > 0 and beg > end:

@@ -425,7 +425,7 @@ class rv_frozen(object):
         self.kwds = kwds
         self.dist = dist
 
-    def pdf(self, x):    #raises AttributeError in frozen discrete distribution
+    def pdf(self, x):    # raises AttributeError in frozen discrete distribution
         return self.dist.pdf(x, *self.args, **self.kwds)
 
     def logpdf(self, x):
@@ -1166,7 +1166,7 @@ class rv_continuous(rv_generic):
         return self.vecfunc(q,*args)
 
     def _isf(self, q, *args):
-        return self._ppf(1.0-q,*args) #use correct _ppf for subclasses
+        return self._ppf(1.0-q,*args) # use correct _ppf for subclasses
 
     # The actual cacluation functions (no basic checking need be done)
     #  If these are defined, the others won't be looked at.
@@ -1295,7 +1295,7 @@ class rv_continuous(rv_generic):
         output = zeros(shape(cond),'d')
         place(output,(1-cond0)+np.isnan(x),self.badvalue)
         place(output,cond2,1.0)
-        if any(cond):  #call only if at least 1 entry
+        if any(cond):  # call only if at least 1 entry
             goodargs = argsreduce(cond, *((x,)+args))
             place(output,cond,self._cdf(*goodargs))
         if output.ndim == 0:
@@ -1337,7 +1337,7 @@ class rv_continuous(rv_generic):
         output.fill(NINF)
         place(output,(1-cond0)*(cond1==cond1)+np.isnan(x),self.badvalue)
         place(output,cond2,0.0)
-        if any(cond):  #call only if at least 1 entry
+        if any(cond):  # call only if at least 1 entry
             goodargs = argsreduce(cond, *((x,)+args))
             place(output,cond,self._logcdf(*goodargs))
         if output.ndim == 0:
@@ -1468,7 +1468,7 @@ class rv_continuous(rv_generic):
         place(output, cond2, argsreduce(cond2, lower_bound)[0])
         place(output, cond3, argsreduce(cond3, upper_bound)[0])
 
-        if any(cond):  #call only if at least 1 entry
+        if any(cond):  # call only if at least 1 entry
             goodargs = argsreduce(cond, *((q,)+args+(scale,loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
             place(output, cond, self._ppf(*goodargs) * scale + loc)
@@ -1565,7 +1565,7 @@ class rv_continuous(rv_generic):
         if g1 is None:
             mu3 = None
         else:
-            mu3 = g1*np.power(mu2,1.5) #(mu2**1.5) breaks down for nan and inf
+            mu3 = g1*np.power(mu2,1.5) # (mu2**1.5) breaks down for nan and inf
         default = valarray(shape(cond), self.badvalue)
         output = []
 
@@ -1623,7 +1623,7 @@ class rv_continuous(rv_generic):
                 out0 = default.copy()
                 place(out0,cond,g2)
                 output.append(out0)
-        else: #no valid args
+        else: # no valid args
             output = []
             for _ in moments:
                 out0 = default.copy()
@@ -3211,7 +3211,7 @@ class genextreme_gen(rv_continuous):
         #self.a = where(c < 0, 1.0 / c, -inf)
         self.b = where(c > 0, 1.0 / max(c, sml),inf)
         self.a = where(c < 0, 1.0 / min(c,-sml), -inf)
-        return where(abs(c)==inf, 0, 1) #True #(c!=0)
+        return where(abs(c)==inf, 0, 1) # True #(c!=0)
     def _pdf(self, x, c):
         ##        ex2 = 1-c*x
         ##        pex2 = pow(ex2,1.0/c)
@@ -5018,7 +5018,7 @@ class recipinvgauss_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, mu): #added, taken from invgauss
+    def _rvs(self, mu): # added, taken from invgauss
         return 1.0/mtrand.wald(mu, 1.0, size=self._size)
     def _pdf(self, x, mu):
         return 1.0/sqrt(2*pi*x)*exp(-(1-mu*x)**2.0 / (2*x*mu**2.0))
@@ -5186,7 +5186,7 @@ class truncnorm_gen(rv_continuous):
         nA, nB = self._na, self._nb
         d = nB - nA
         pA, pB = _norm_pdf(a), _norm_pdf(b)
-        mu = (pA - pB) / d   #correction sign
+        mu = (pA - pB) / d   # correction sign
         mu2 = 1 + (a*pA - b*pB) / d - mu*mu
         return mu, mu2, None, None
 truncnorm = truncnorm_gen(name='truncnorm', shapes="a, b")
@@ -5493,7 +5493,7 @@ def _drv2_moment(self, n, *args):
         pos += self.inc
         count += 1
 
-    if self.a < 0: #handle case when self.a = -inf
+    if self.a < 0: # handle case when self.a = -inf
         diff = 1e100
         pos = -self.inc
         while (pos >= self.a) and ((pos >= llimit) or
@@ -6253,7 +6253,7 @@ class rv_discrete(rv_generic):
         if any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
-            place(output,cond,self._isf(*goodargs) + loc) #PB same as ticket 766
+            place(output,cond,self._isf(*goodargs) + loc) # PB same as ticket 766
 
         if output.ndim == 0:
             return output[()]
@@ -6509,7 +6509,7 @@ class rv_discrete(rv_generic):
 
         #avoid endless loop with unbound integral, eg. var of zipf(2)
         maxcount = 1000
-        suppnmin = 100  #minimum number of points to evaluate (+ and -)
+        suppnmin = 100  # minimum number of points to evaluate (+ and -)
 
         if func is None:
             def fun(x):
@@ -6527,11 +6527,11 @@ class rv_discrete(rv_generic):
         if lb is None:
             lb = (self.a)
         else:
-            lb = lb - loc   #convert bound for standardized distribution
+            lb = lb - loc   # convert bound for standardized distribution
         if ub is None:
             ub = (self.b)
         else:
-            ub = ub - loc   #convert bound for standardized distribution
+            ub = ub - loc   # convert bound for standardized distribution
         if conditional:
             if np.isposinf(ub)[()]:
                 #work around bug: stats.poisson.sf(stats.poisson.b, 2) is nan
@@ -6545,7 +6545,7 @@ class rv_discrete(rv_generic):
         low, upp = self._ppf(0.001, *args), self._ppf(0.999, *args)
         low = max(min(-suppnmin, low), lb)
         upp = min(max(suppnmin, upp), ub)
-        supp = np.arange(low, upp+1, self.inc) #check limits
+        supp = np.arange(low, upp+1, self.inc) # check limits
         #print 'low, upp', low, upp
         tot = np.sum(fun(supp))
         diff = 1e100
@@ -6560,7 +6560,7 @@ class rv_discrete(rv_generic):
             pos += self.inc
             count += 1
 
-        if self.a < 0: #handle case when self.a = -inf
+        if self.a < 0: # handle case when self.a = -inf
             diff = 1e100
             pos = low - self.inc
             while (pos >= lb) and (diff > self.moment_tol) and count <= maxcount:

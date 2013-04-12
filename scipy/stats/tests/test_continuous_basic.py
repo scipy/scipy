@@ -37,19 +37,19 @@ distcont = [
     ['beta', (2.3098496451481823, 0.62687954300963677)],
     ['betaprime', (5, 6)],   # avoid unbound error in entropy with (100, 86)],
     ['bradford', (0.29891359763170633,)],
-    ['burr', (10.5, 4.3)],    #incorrect mean and var for(0.94839838075366045, 4.3820284068855795)],
+    ['burr', (10.5, 4.3)],    # incorrect mean and var for(0.94839838075366045, 4.3820284068855795)],
     ['cauchy', ()],
     ['chi', (78,)],
     ['chi2', (55,)],
     ['cosine', ()],
     ['dgamma', (1.1023326088288166,)],
     ['dweibull', (2.0685080649914673,)],
-    ['erlang', (20,)],    #correction numargs = 1
+    ['erlang', (20,)],    # correction numargs = 1
     ['expon', ()],
     ['exponpow', (2.697119160358469,)],
     ['exponweib', (2.8923945291034436, 1.9505288745913174)],
     ['f', (29, 18)],
-    ['fatiguelife', (29,)],   #correction numargs = 1
+    ['fatiguelife', (29,)],   # correction numargs = 1
     ['fisk', (3.0857548622253179,)],
     ['foldcauchy', (4.7164673455831894,)],
     ['foldnorm', (1.9521253373555869,)],
@@ -57,7 +57,7 @@ distcont = [
     ['frechet_r', (1.8928171603534227,)],
     ['gamma', (1.9932305483800778,)],
     ['gausshyper', (13.763771604130699, 3.1189636648681431,
-                    2.5145980350183019, 5.1811649903971615)],  #veryslow
+                    2.5145980350183019, 5.1811649903971615)],  # veryslow
     ['genexpon', (9.1325976465418908, 16.231956600590632, 3.2819552690843983)],
     ['genextreme', (-0.1,)],  # sample mean test fails for (3.3184017469423535,)],
     ['gengamma', (4.4162385429431925, 3.1193091679242761)],
@@ -77,7 +77,7 @@ distcont = [
     ['invweibull', (10.58,)], # sample mean test fails at(0.58847112119264788,)]
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
     ['johnsonsu', (2.554395574161155, 2.2482281679651965)],
-    ['ksone', (1000,)],  #replace 22 by 100 to avoid failing range, ticket 956
+    ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
     ['kstwobign', ()],
     ['laplace', ()],
     ['levy', ()],
@@ -245,7 +245,7 @@ def check_moment(distfn, arg, m, v, msg):
     if not np.isinf(v):
         npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg=msg +
                             ' - 2ndt moment')
-    else:                     #or np.isnan(m2),
+    else:                     # or np.isnan(m2),
         npt.assert_(np.isinf(m2),
                msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
         #np.isnan(m2) temporary special treatment for loggamma
@@ -275,7 +275,7 @@ Returns: t-value, two-tailed prob
 ##    v = np.var(a, ddof=1)
 ##    n = len(a)
     df = n-1
-    svar = ((n-1)*v) / float(df)    #looks redundant
+    svar = ((n-1)*v) / float(df)    # looks redundant
     t = (sm-popmean)/np.sqrt(svar*(1.0/n))
     prob = stats.betai(0.5*df,0.5,df/(df+t*t))
 

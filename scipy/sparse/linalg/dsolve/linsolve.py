@@ -219,11 +219,11 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
         warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
     A.sort_indices()
-    A = A.asfptype()  #upcast to a floating point format
+    A = A.asfptype()  # upcast to a floating point format
 
     M, N = A.shape
     if (M != N):
-        raise ValueError("can only factor square matrices") #is this true?
+        raise ValueError("can only factor square matrices") # is this true?
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
@@ -283,11 +283,11 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
     A.sort_indices()
-    A = A.asfptype()  #upcast to a floating point format
+    A = A.asfptype()  # upcast to a floating point format
 
     M, N = A.shape
     if (M != N):
-        raise ValueError("can only factor square matrices") #is this true?
+        raise ValueError("can only factor square matrices") # is this true?
 
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,
@@ -336,7 +336,7 @@ def factorized( A ):
             warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
         A.sort_indices()
-        A = A.asfptype()  #upcast to a floating point format
+        A = A.asfptype()  # upcast to a floating point format
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"

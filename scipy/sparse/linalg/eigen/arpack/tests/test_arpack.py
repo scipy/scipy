@@ -309,7 +309,7 @@ class SymmetricParams:
 class NonSymmetricParams:
     def __init__(self):
         self.eigs = eigs
-        self.which = ['LM', 'LR', 'LI']#, 'SM', 'LR', 'SR', 'LI', 'SI']
+        self.which = ['LM', 'LR', 'LI']# , 'SM', 'LR', 'SR', 'LI', 'SI']
         self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
         self.sigmas_OPparts = {None : [None],
                                0.1 : ['r'],

@@ -36,11 +36,11 @@ def poisson2d(N,dtype='d',format=None):
 
     diags = empty((5,N**2),dtype=dtype)
 
-    diags[0]  =  4 #main diagonal
-    diags[1:] = -1 #all offdiagonals
+    diags[0]  =  4 # main diagonal
+    diags[1:] = -1 # all offdiagonals
 
-    diags[3,N-1::N] = 0  #first lower diagonal
-    diags[4,N::N]   = 0  #first upper diagonal
+    diags[3,N-1::N] = 0  # first lower diagonal
+    diags[4,N::N]   = 0  # first upper diagonal
 
     return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
 
@@ -80,7 +80,7 @@ class BenchmarkSparse(TestCase):
                 x,y = vars[X],vars[Y]
                 for op in ['__add__','__sub__','multiply','__div__','__mul__']:
                     fn = getattr(x,op)
-                    fn(y) #warmup
+                    fn(y) # warmup
 
                     start = time.clock()
                     iter = 0
@@ -157,7 +157,7 @@ class BenchmarkSparse(TestCase):
         for name,A in matrices:
             x = ones(A.shape[1],dtype=A.dtype)
 
-            y = A*x  #warmup
+            y = A*x  # warmup
 
             start = time.clock()
             iter = 0
@@ -195,7 +195,7 @@ class BenchmarkSparse(TestCase):
         for name,A in matrices:
             x = ones((A.shape[1],10),dtype=A.dtype)
 
-            y = A*x  #warmup
+            y = A*x  # warmup
 
             start = time.clock()
             iter = 0
@@ -269,7 +269,7 @@ class BenchmarkSparse(TestCase):
                 except:
                     times.append(None)
                 else:
-                    x = fn() #warmup
+                    x = fn() # warmup
                     start = time.clock()
                     iter = 0
                     while time.clock() < start + 0.2:

@@ -328,7 +328,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def todia(self):
         from .dia import dia_matrix
 
-        ks = self.col - self.row  #the diagonal for each nonzero
+        ks = self.col - self.row  # the diagonal for each nonzero
         diags = np.unique(ks)
 
         if len(diags) > 100:

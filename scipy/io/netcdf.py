@@ -303,7 +303,7 @@ class netcdf_file(object):
         if (typecode, size) not in REVERSE:
             raise ValueError("NetCDF 3 does not support type %s" % type)
 
-        data = empty(shape_, dtype=type.newbyteorder("B")) #convert to big endian always for NetCDF 3
+        data = empty(shape_, dtype=type.newbyteorder("B")) # convert to big endian always for NetCDF 3
         self.variables[name] = netcdf_variable(data, typecode, size, shape, dimensions)
         return self.variables[name]
 

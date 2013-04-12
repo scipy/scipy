@@ -169,7 +169,7 @@ class TestFactorization(_DeprecationAccept):
             assert_array_almost_equal(P*R*A*Q,L*U)
 
     def setUp(self):
-        random.seed(0) #make tests repeatable
+        random.seed(0) # make tests repeatable
         self.real_matrices = []
         self.real_matrices.append(spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]],
                                           [0, 1], 5, 5) )

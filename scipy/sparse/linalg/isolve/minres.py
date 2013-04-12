@@ -56,16 +56,16 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         maxiter = 5 * n
 
     msg   =[' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
-            ' beta1 = 0.  The exact solution is  x = 0          ',   #  0
-            ' A solution to Ax = b was found, given rtol        ',   #  1
-            ' A least-squares solution was found, given rtol    ',   #  2
-            ' Reasonable accuracy achieved, given eps           ',   #  3
-            ' x has converged to an eigenvector                 ',   #  4
-            ' acond has exceeded 0.1/eps                        ',   #  5
-            ' The iteration limit was reached                   ',   #  6
-            ' A  does not define a symmetric matrix             ',   #  7
-            ' M  does not define a symmetric matrix             ',   #  8
-            ' M  does not define a pos-def preconditioner       ']   #  9
+            ' beta1 = 0.  The exact solution is  x = 0          ',   # 0
+            ' A solution to Ax = b was found, given rtol        ',   # 1
+            ' A least-squares solution was found, given rtol    ',   # 2
+            ' Reasonable accuracy achieved, given eps           ',   # 3
+            ' x has converged to an eigenvector                 ',   # 4
+            ' acond has exceeded 0.1/eps                        ',   # 5
+            ' The iteration limit was reached                   ',   # 6
+            ' A  does not define a symmetric matrix             ',   # 7
+            ' M  does not define a symmetric matrix             ',   # 8
+            ' M  does not define a pos-def preconditioner       ']   # 9
 
     if show:
         print(first + 'Solution of symmetric Ax = b')
@@ -230,7 +230,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
         qrnorm = phibar
         rnorm  = qrnorm
-        test1  = rnorm / (Anorm*ynorm)    #  ||r|| / (||A|| ||x||)
+        test1  = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
         test2  = root  /  Anorm           # ||Ar|| / (||A|| ||r||)
 
         # Estimate  cond(A).
@@ -282,7 +282,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         if callback is not None:
             callback(x)
 
-        if istop != 0: break #TODO check this
+        if istop != 0: break # TODO check this
 
     if show:
         print()

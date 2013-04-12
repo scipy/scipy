@@ -449,11 +449,11 @@ class MMFile (object):
                 J = ascontiguousarray(flat_data[:,1], dtype='intc')
                 V = ascontiguousarray(flat_data[:,2], dtype='float')
 
-            I -= 1 #adjust indices (base 1 -> base 0)
+            I -= 1 # adjust indices (base 1 -> base 0)
             J -= 1
 
             if has_symmetry:
-                mask = (I != J)       #off diagonal mask
+                mask = (I != J)       # off diagonal mask
                 od_I = I[mask]
                 od_J = J[mask]
                 od_V = V[mask]

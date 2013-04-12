@@ -34,9 +34,9 @@ def find(A):
 
     """
 
-    A = coo_matrix(A).tocsr()  #sums duplicates
-    A.eliminate_zeros()        #removes explicit zeros
-    A = A.tocoo(copy=False)    #(cheaply) convert to COO
+    A = coo_matrix(A).tocsr()  # sums duplicates
+    A.eliminate_zeros()        # removes explicit zeros
+    A = A.tocoo(copy=False)    # (cheaply) convert to COO
 
     return A.row,A.col,A.data
 

@@ -734,19 +734,19 @@ class TestBesselpoly(TestCase):
 class TestKelvin(TestCase):
     def test_bei(self):
         mbei = special.bei(2)
-        assert_almost_equal(mbei, 0.9722916273066613,5)#this may not be exact
+        assert_almost_equal(mbei, 0.9722916273066613,5)# this may not be exact
 
     def test_beip(self):
         mbeip = special.beip(2)
-        assert_almost_equal(mbeip,0.91701361338403631,5)#this may not be exact
+        assert_almost_equal(mbeip,0.91701361338403631,5)# this may not be exact
 
     def test_ber(self):
         mber = special.ber(2)
-        assert_almost_equal(mber,0.75173418271380821,5)#this may not be exact
+        assert_almost_equal(mber,0.75173418271380821,5)# this may not be exact
 
     def test_berp(self):
         mberp = special.berp(2)
-        assert_almost_equal(mberp,-0.49306712470943909,5)#this may not be exact
+        assert_almost_equal(mberp,-0.49306712470943909,5)# this may not be exact
 
     def test_bei_zeros(self):
         bi = special.bi_zeros(5)
@@ -1155,11 +1155,11 @@ class TestErf(TestCase):
 
     def test_errprint(self):
         a = special.errprint()
-        b = 1-a #a is the state 1-a inverts state
-        c = special.errprint(b) #returns last state 'a'
+        b = 1-a # a is the state 1-a inverts state
+        c = special.errprint(b) # returns last state 'a'
         assert_equal(a,c)
-        d = special.errprint(a) #returns to original state
-        assert_equal(d,b) #makes sure state was returned
+        d = special.errprint(a) # returns to original state
+        assert_equal(d,b) # makes sure state was returned
         #assert_equal(d,1-a)
 
 class TestEuler(TestCase):
@@ -1792,7 +1792,7 @@ class TestBessel(TestCase):
         z = 2.2
         xc = -special.kv(v+1,z) + v/z*special.kv(v,z)
         x = special.kvp(v,z, n=1)
-        assert_almost_equal(xc, x, 10)   #this function (kvp) is broken
+        assert_almost_equal(xc, x, 10)   # this function (kvp) is broken
 
     def test_kvp_n2(self):
         v = 3.
@@ -2473,11 +2473,11 @@ class TestSpherical(TestCase):
     def test_sph_yn(self):
         sy1 = special.sph_yn(2,.2)[0][2]
         sy2 = special.sph_yn(0,.2)[0][0]
-        sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3 #correct derivative value
-        assert_almost_equal(sy1,-377.52483,5)#previous values in the system
+        sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3 # correct derivative value
+        assert_almost_equal(sy1,-377.52483,5)# previous values in the system
         assert_almost_equal(sy2,-4.9003329,5)
         sy3 = special.sph_yn(1,.2)[1][1]
-        assert_almost_equal(sy3,sphpy,4) #compare correct derivative val. (correct =-system val).
+        assert_almost_equal(sy3,sphpy,4) # compare correct derivative val. (correct =-system val).
 
 class TestStruve(object):
     def _series(self, v, z, n=100):

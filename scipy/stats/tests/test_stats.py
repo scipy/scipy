@@ -703,7 +703,7 @@ class TestRegression(TestCase):
         y += np.sin(np.linspace(0, 20, 100))
 
         res = stats.linregress(x, y)
-        assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3) # 4.3609875083149268e-3)
 
     def test_regress_simple_onearg_rows(self):
         """Regress a line with sinusoidal noise, with a single input of shape
@@ -715,7 +715,7 @@ class TestRegression(TestCase):
         rows = np.vstack((x, y))
 
         res = stats.linregress(rows)
-        assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3) # 4.3609875083149268e-3)
 
     def test_regress_simple_onearg_cols(self):
         """Regress a line with sinusoidal noise, with a single input of shape
@@ -727,7 +727,7 @@ class TestRegression(TestCase):
         cols = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
 
         res = stats.linregress(cols)
-        assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3) # 4.3609875083149268e-3)
 
     def test_regress_shape_error(self):
         """Check that a single input argument to linregress with wrong shape
@@ -1740,14 +1740,14 @@ def test_describe():
     assert_equal(mm, mmc)
     assert_equal(m, mc)
     assert_equal(v, vc)
-    assert_array_almost_equal(sk, skc, decimal=13) #not sure about precision
+    assert_array_almost_equal(sk, skc, decimal=13) # not sure about precision
     assert_array_almost_equal(kurt, kurtc, decimal=13)
     n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
     assert_equal(n, nc)
     assert_equal(mm, mmc)
     assert_equal(m, mc)
     assert_equal(v, vc)
-    assert_array_almost_equal(sk, skc, decimal=13) #not sure about precision
+    assert_array_almost_equal(sk, skc, decimal=13) # not sure about precision
     assert_array_almost_equal(kurt, kurtc, decimal=13)
 
 def test_normalitytests():
@@ -2091,7 +2091,7 @@ class Test_Trim(object):
 class TestSigamClip(object):
     def test_sigmaclip1(self):
         a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
-        fact = 4  #default
+        fact = 4  # default
         c, low, upp = stats.sigmaclip(a)
         assert_(c.min()>low)
         assert_(c.max()<upp)
@@ -2108,7 +2108,7 @@ class TestSigamClip(object):
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
         assert_equal(c.size, 4)
-        assert_equal(a.size, 36) #check original array unchanged
+        assert_equal(a.size, 36) # check original array unchanged
 
     def test_sigmaclip3(self):
         a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))

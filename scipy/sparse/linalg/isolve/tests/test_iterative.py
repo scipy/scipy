@@ -152,7 +152,7 @@ def check_convergence(solver, case):
 
     x, info = solver(A, b, x0=x0, tol=tol)
 
-    assert_array_equal(x0, 0*b) #ensure that x0 is not overwritten
+    assert_array_equal(x0, 0*b) # ensure that x0 is not overwritten
     assert_equal(info,0)
     assert_normclose(A.dot(x), b, tol=tol)
 

@@ -7,21 +7,21 @@ from scipy.lib.six.moves import xrange
 
 from scipy import stats
 
-DECIMAL_meanvar = 0#1  # was 0
+DECIMAL_meanvar = 0# 1  # was 0
 
 distdiscrete = [
     ['bernoulli',(0.3,)],
     ['binom',    (5, 0.4)],
     ['boltzmann',(1.4, 19)],
-    ['dlaplace', (0.8,)], #0.5
+    ['dlaplace', (0.8,)], # 0.5
     ['geom',     (0.5,)],
     ['hypergeom',(30, 12, 6)],
-    ['hypergeom',(21,3,12)],  #numpy.random (3,18,12) numpy ticket:921
-    ['hypergeom',(21,18,11)],  #numpy.random (18,3,11) numpy ticket:921
+    ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
+    ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
     ['logser',   (0.6,)],  # reenabled, numpy ticket:921
     ['nbinom',   (5, 0.5)],
-    ['nbinom',   (0.4, 0.4)], #from tickets: 583
-    ['planck',   (0.51,)],   #4.1
+    ['nbinom',   (0.4, 0.4)], # from tickets: 583
+    ['planck',   (0.51,)],   # 4.1
     ['poisson',  (0.6,)],
     ['randint',  (7, 31)],
     ['skellam',  (15, 8)]]
@@ -58,7 +58,7 @@ def test_discrete_basic():
 
         # dlaplace doesn't fail, but generates lots of floating point warnings.
         # Should be checked.
-        if not distname in ['dlaplace']: #['logser']:  #known failure, fixed
+        if not distname in ['dlaplace']: # ['logser']:  #known failure, fixed
             alpha = 0.01
             yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                           distname + ' chisquare'

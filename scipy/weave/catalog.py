@@ -525,7 +525,7 @@ class catalog(object):
                 self.configure_path(cat,code)
                 try:
                     function_list += cat[code]
-                except: #SystemError and ImportError so far seen
+                except: # SystemError and ImportError so far seen
                     # problems loading a function from the catalog.  Try to
                     # repair the cause.
                     cat.close()

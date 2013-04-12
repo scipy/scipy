@@ -181,7 +181,7 @@ class FunctionMaker(object):
         """
         if isinstance(obj, str): # "name(signature)"
             name, rest = obj.strip().split('(', 1)
-            signature = rest[:-1] #strip a right parens
+            signature = rest[:-1] # strip a right parens
             func = None
         else: # a function
             name = None

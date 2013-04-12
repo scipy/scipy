@@ -429,8 +429,8 @@ def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
     if plot is not None:
         plot.plot(svals, ppcc, 'x')
         plot.title('(%s) PPCC Plot' % dist)
-        plot.xlabel('Prob Plot Corr. Coef.')#,deltay=-0.01)
-        plot.ylabel('Shape Values')#,deltax=-0.01)
+        plot.xlabel('Prob Plot Corr. Coef.')# ,deltay=-0.01)
+        plot.ylabel('Shape Values')# ,deltax=-0.01)
     return svals, ppcc
 
 def boxcox_llf(lmb, data):
@@ -546,7 +546,7 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
     k = 0
     for sval in svals:
         #JP: this doesn't use sval, creates constant ppcc, and horizontal line
-        z = boxcox(x,sval)  #JP: this was missing
+        z = boxcox(x,sval)  # JP: this was missing
         r1,r2 = probplot(z,dist='norm',fit=1)
         ppcc[k] = r2[-1]
         k +=1

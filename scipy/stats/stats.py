@@ -529,9 +529,9 @@ def gmean(a, axis=0, dtype=None):
     arrays automatically mask any non-finite values.
 
     """
-    if not isinstance(a, np.ndarray): #if not an ndarray object attempt to convert it
+    if not isinstance(a, np.ndarray): # if not an ndarray object attempt to convert it
         log_a=np.log(np.array(a, dtype=dtype))
-    elif dtype: #Must change the default dtype allowing array type
+    elif dtype: # Must change the default dtype allowing array type
         if isinstance(a,np.ma.MaskedArray):
             log_a=np.log(np.ma.asarray(a, dtype=dtype))
         else:
@@ -1975,7 +1975,7 @@ def sem(a, axis=0, ddof=1):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n) #JP check normalization
+    s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n) # JP check normalization
     return s
 
 
@@ -3094,7 +3094,7 @@ def ttest_1samp(a, popmean, axis=0):
 
 def _ttest_finish(df,t):
     """Common code between all 3 t-test functions."""
-    prob = distributions.t.sf(np.abs(t), df) * 2 #use np.abs to get upper tail
+    prob = distributions.t.sf(np.abs(t), df) * 2 # use np.abs to get upper tail
     if t.ndim == 0:
         t = t[()]
 
@@ -3626,7 +3626,7 @@ def mannwhitneyu(x, y, use_continuity=True):
         z = abs((bigu-0.5-n1*n2/2.0) / sd)
     else:
         z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
-    return smallu, distributions.norm.sf(z)  #(1.0 - zprob(z))
+    return smallu, distributions.norm.sf(z)  # (1.0 - zprob(z))
 
 
 def ranksums(x, y):

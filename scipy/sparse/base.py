@@ -66,7 +66,7 @@ class spmatrix(object):
             raise ValueError("Only two-dimensional sparse arrays "
                                      "are supported.")
         try:
-            shape = int(shape[0]),int(shape[1]) #floats, other weirdness
+            shape = int(shape[0]),int(shape[1]) # floats, other weirdness
         except:
             raise TypeError('invalid shape')
 

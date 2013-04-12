@@ -482,7 +482,7 @@ class TestChi2(TestCase):
         assert_almost_equal(stats.chi2.pdf(1000, 1000), 8.919133934753128e-003, 14)
         assert_almost_equal(stats.chi2.pdf(100, 100), 0.028162503162596778, 14)
 
-class TestArrayArgument(TestCase): #test for ticket:992
+class TestArrayArgument(TestCase): # test for ticket:992
     def test_noexception(self):
         rvs = stats.norm.rvs(loc=(np.arange(5)), scale=np.ones(5), size=(10,5))
         assert_equal(rvs.shape, (10,5))

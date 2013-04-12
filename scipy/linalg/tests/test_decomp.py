@@ -1984,7 +1984,7 @@ def test_lapack_misaligned():
             (svd,(R,),dict(overwrite_a=True)), # no crash
             (svd,(S,),dict(overwrite_a=True)), # crash
             (svdvals,(S,),dict()), # no crash
-            (svdvals,(S,),dict(overwrite_a=True)), #crash
+            (svdvals,(S,),dict(overwrite_a=True)), # crash
             (cholesky,(M,),dict(overwrite_a=True)), # no crash
             (qr,(S,),dict(overwrite_a=True)), # crash
             (rq,(S,),dict(overwrite_a=True)), # crash

@@ -66,9 +66,9 @@ mxSPARSE_CLASS = 2
 order_codes = {
     0: '<',
     1: '>',
-    2: 'VAX D-float', #!
+    2: 'VAX D-float', # !
     3: 'VAX G-float',
-    4: 'Cray', #!!
+    4: 'Cray', # !!
     }
 
 mclass_info = {
@@ -249,7 +249,7 @@ class VarReader4(object):
         res = self.read_sub_array(hdr)
         tmp = res[:-1,:]
         dims = res[-1,0:2]
-        I = np.ascontiguousarray(tmp[:,0],dtype='intc') #fixes byte order also
+        I = np.ascontiguousarray(tmp[:,0],dtype='intc') # fixes byte order also
         J = np.ascontiguousarray(tmp[:,1],dtype='intc')
         I -= 1  # for 1-based indexing
         J -= 1
@@ -565,7 +565,7 @@ class VarWriter4(object):
 
         See docstring for VarReader4.read_sparse_array
         '''
-        A = arr.tocoo() #convert to sparse COO format (ijv)
+        A = arr.tocoo() # convert to sparse COO format (ijv)
         imagf = A.dtype.kind == 'c'
         ijv = np.zeros((A.nnz + 1, 3+imagf), dtype='f8')
         ijv[:-1,0] = A.row

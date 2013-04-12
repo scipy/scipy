@@ -322,7 +322,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     def _mul_multivector(self,other):
         R,C = self.blocksize
         M,N = self.shape
-        n_vecs = other.shape[1] #number of column vectors
+        n_vecs = other.shape[1] # number of column vectors
 
         result = np.zeros((M,n_vecs), dtype=upcast(self.dtype,other.dtype))
 
@@ -349,7 +349,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         from .csr import isspmatrix_csr
 
         if isspmatrix_csr(other) and n == 1:
-            other = other.tobsr(blocksize=(n,C), copy=False) #lightweight conversion
+            other = other.tobsr(blocksize=(n,C), copy=False) # lightweight conversion
         else:
             other = other.tobsr(blocksize=(n,C))
 
@@ -446,12 +446,12 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         R,C = self.blocksize
         M,N = self.shape
 
-        mask = (self.data != 0).reshape(-1,R*C).sum(axis=1) #nonzero blocks
+        mask = (self.data != 0).reshape(-1,R*C).sum(axis=1) # nonzero blocks
 
         nonzero_blocks = mask.nonzero()[0]
 
         if len(nonzero_blocks) == 0:
-            return #nothing to do
+            return # nothing to do
 
         self.data[:len(nonzero_blocks)] = self.data[nonzero_blocks]
 

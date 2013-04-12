@@ -40,14 +40,14 @@ class _data_matrix(spmatrix):
     def __neg__(self):
         return self._with_data(-self.data)
 
-    def __imul__(self, other): #self *= other
+    def __imul__(self, other): # self *= other
         if isscalarlike(other):
             self.data *= other
             return self
         else:
             raise NotImplementedError
 
-    def __itruediv__(self, other): #self /= other
+    def __itruediv__(self, other): # self /= other
         if isscalarlike(other):
             recip = 1.0 / other
             self.data *= recip

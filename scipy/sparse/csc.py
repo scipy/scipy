@@ -164,9 +164,9 @@ class csc_matrix(_cs_matrix):
 
             return self.T[col,row].T
         elif isintlike(key) or isinstance(key,slice):
-            return self.T[:,key].T                              #[i] or [1:2]
+            return self.T[:,key].T                              # [i] or [1:2]
         else:
-            return self.T[:,key].T                              #[[1,2]]
+            return self.T[:,key].T                              # [[1,2]]
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)

@@ -31,7 +31,7 @@ class TestLinsolve(TestCase):
         cond_A = norm(A.todense(),2) * norm(inv(A.todense()),2)
 
         for t in ['f','d','F','D']:
-            eps = finfo(t).eps #floating point epsilon
+            eps = finfo(t).eps # floating point epsilon
             b = b.astype(t)
 
             for format in ['csc','csr']:

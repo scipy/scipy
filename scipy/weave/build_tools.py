@@ -281,7 +281,7 @@ def build_extension(module_path,compiler_name='',build_dir=None,
             print('finished compiling (sec): ', t2 - t1)
         success = 1
         configure_python_path(build_dir)
-    except SyntaxError: #TypeError:
+    except SyntaxError: # TypeError:
         success = 0
 
     # restore argv after our trick...

@@ -93,7 +93,7 @@ class dia_matrix(_data_matrix):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self.shape   = arg1   #spmatrix checks for errors here
+                self.shape   = arg1   # spmatrix checks for errors here
                 self.data    = np.zeros( (0,0), getdtype(dtype, default=float))
                 self.offsets = np.zeros( (0), dtype=np.intc)
             else:

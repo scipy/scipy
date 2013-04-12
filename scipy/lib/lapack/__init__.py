@@ -181,7 +181,7 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
     is returned for column major storaged arrays with
     rowmajor argument set to False.
     """
-    force_clapack=0  #XXX: Don't set it true! The feature is unreliable
+    force_clapack=0  # XXX: Don't set it true! The feature is unreliable
                      #     and may cause incorrect results.
                      #     See test_basic.test_solve.check_20Feb04_bug.
 

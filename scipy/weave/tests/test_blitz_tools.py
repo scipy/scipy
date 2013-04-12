@@ -72,7 +72,7 @@ class TestBlitz(TestCase):
         t1 = time.time()
         old_env = os.environ.get('PYTHONCOMPILED','')
         os.environ['PYTHONCOMPILED'] = mod_location
-        blitz_tools.blitz(expr,arg_dict,{},verbose=0) #,
+        blitz_tools.blitz(expr,arg_dict,{},verbose=0) # ,
                           #extra_compile_args = ['-O3','-malign-double','-funroll-loops'])
         os.environ['PYTHONCOMPILED'] = old_env
         t2 = time.time()

@@ -25,7 +25,7 @@ class TestSlice(TestCase):
         import parser
         ast_tuple = parser.suite(suite_string).totuple()
         found, data = find_first_pattern(ast_tuple,indexed_array_pattern)
-        subscript = data['subscript_list'][1] #[0] is symbol, [1] is the supscript
+        subscript = data['subscript_list'][1] # [0] is symbol, [1] is the supscript
         actual = slice_handler.slice_ast_to_dict(subscript)
         assert_equal(actual,desired,suite_string)
 
