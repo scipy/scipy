@@ -326,7 +326,10 @@ class MatFile5Reader(MatFileReader):
                 name = '__function_workspace__'
 
             shape = self._matrix_reader.shape_from_header(hdr)
-            info = mclass_info.get(hdr.mclass, 'unknown')
+            if hdr.is_logical:
+                info = 'logical'
+            else:
+                info = mclass_info.get(hdr.mclass, 'unknown')
             vars.append((name, shape, info))
 
             self.mat_stream.seek(next_position)
@@ -662,6 +665,7 @@ class VarWriter5(object):
 
     def write_numeric(self, arr):
         imagf = arr.dtype.kind == 'c'
+        logif = arr.dtype.kind == 'b'
         try:
             mclass = NP_TO_MXTYPES[arr.dtype.str[1:]]
         except KeyError:
@@ -669,12 +673,15 @@ class VarWriter5(object):
             # Cast data to complex128 / float64.
             if imagf:
                 arr = arr.astype('c128')
+            elif logif:
+                arr = arr.astype('i1') # Should only contain 0/1
             else:
                 arr = arr.astype('f8')
             mclass = mxDOUBLE_CLASS
         self.write_header(matdims(arr, self.oned_as),
                           mclass,
-                          is_complex=imagf)
+                          is_complex=imagf,
+                          is_logical=logif)
         if imagf:
             self.write_element(arr.real)
             self.write_element(arr.imag)
@@ -730,10 +737,12 @@ class VarWriter5(object):
         A = arr.tocsc() # convert to sparse CSC format
         A.sort_indices()     # MATLAB expects sorted row indices
         is_complex = (A.dtype.kind == 'c')
+        is_logical = (A.dtype.kind == 'b')
         nz = A.nnz
         self.write_header(matdims(arr, self.oned_as),
                           mxSPARSE_CLASS,
                           is_complex=is_complex,
+                          is_logical=is_logical,
                           nzmax=nz)
         self.write_element(A.indices.astype('i4'))
         self.write_element(A.indptr.astype('i4'))

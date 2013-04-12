@@ -123,7 +123,7 @@ cdef class VarHeader5:
     cdef cnp.int32_t dims_ptr[_MAT_MAXDIMS]
     cdef int n_dims
     cdef int is_complex
-    cdef int is_logical
+    cdef readonly int is_logical
     cdef public int is_global
     cdef size_t nzmax
 
@@ -202,7 +202,7 @@ cdef class VarReader5:
             if isinstance(key, str):
                 continue
             self.class_dtypes[key] = <PyObject*>dt
-        bool_dtype = np.dtype('bool')
+        self.bool_dtype = np.dtype('bool')
         
     def set_stream(self, fobj):
         ''' Set stream of best type from file-like `fobj`
