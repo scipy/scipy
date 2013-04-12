@@ -378,7 +378,7 @@ def lobpcg( A, X,
         activeBlockVectorR = as2d( blockVectorR[:,activeMask] )
 
         if iterationNumber > 0:
-            activeBlockVectorP  = as2d( blockVectorP [:,activeMask] )
+            activeBlockVectorP  = as2d( blockVectorP[:,activeMask] )
             activeBlockVectorAP = as2d( blockVectorAP[:,activeMask] )
             activeBlockVectorBP = as2d( blockVectorBP[:,activeMask] )
 

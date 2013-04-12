@@ -454,12 +454,12 @@ if sys.platform == 'win32':
 
         compiler_type = 'mingw32'
 
-        def __init__ (self,
+        def __init__(self,
                       verbose=0,
                       dry_run=0,
                       force=0):
 
-            distutils.cygwinccompiler.CygwinCCompiler.__init__ (self,
+            distutils.cygwinccompiler.CygwinCCompiler.__init__(self,
                                                        verbose,dry_run, force)
 
             # we need to support 3.2 which doesn't match the standard

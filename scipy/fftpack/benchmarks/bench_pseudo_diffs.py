@@ -15,7 +15,7 @@ def random(size):
 
 def direct_diff(x,k=1,period=None):
     fx = fft(x)
-    n = len (fx)
+    n = len(fx)
     if period is None:
         period = 2*pi
     w = fftfreq(n)*2j*pi/period*n
@@ -30,7 +30,7 @@ def direct_diff(x,k=1,period=None):
 
 def direct_tilbert(x,h=1,period=None):
     fx = fft(x)
-    n = len (fx)
+    n = len(fx)
     if period is None:
         period = 2*pi
     w = fftfreq(n)*h*2*pi/period*n
@@ -41,7 +41,7 @@ def direct_tilbert(x,h=1,period=None):
 
 def direct_hilbert(x):
     fx = fft(x)
-    n = len (fx)
+    n = len(fx)
     w = fftfreq(n)*n
     w = 1j*sign(w)
     return ifft(w*fx)
@@ -73,7 +73,7 @@ class TestDiff(TestCase):
                             ]:
             print('%6s' % size, end=' ')
             sys.stdout.flush()
-            x = arange (size)*2*pi/size
+            x = arange(size)*2*pi/size
             if size<2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
             else:
@@ -105,7 +105,7 @@ class TestTilbert(TestCase):
                             ]:
             print('%6s' % size, end=' ')
             sys.stdout.flush()
-            x = arange (size)*2*pi/size
+            x = arange(size)*2*pi/size
             if size<2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
             else:
@@ -136,7 +136,7 @@ class TestHilbert(TestCase):
                             ]:
             print('%6s' % size, end=' ')
             sys.stdout.flush()
-            x = arange (size)*2*pi/size
+            x = arange(size)*2*pi/size
             if size<2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
             else:
@@ -167,7 +167,7 @@ class TestShift(TestCase):
                             ]:
             print('%6s' % size, end=' ')
             sys.stdout.flush()
-            x = arange (size)*2*pi/size
+            x = arange(size)*2*pi/size
             a = 1
             if size<2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))

@@ -89,7 +89,7 @@ def cleanup_temp_dir(d):
 # a working version is available.
 from distutils.errors import DistutilsFileError
 import distutils.file_util
-def move_file (src, dst,
+def move_file(src, dst,
                verbose=0,
                dry_run=0):
 

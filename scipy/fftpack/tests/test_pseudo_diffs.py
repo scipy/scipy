@@ -26,7 +26,7 @@ def random(size):
 
 def direct_diff(x,k=1,period=None):
     fx = fft(x)
-    n = len (fx)
+    n = len(fx)
     if period is None:
         period = 2*pi
     w = fftfreq(n)*2j*pi/period*n
@@ -41,7 +41,7 @@ def direct_diff(x,k=1,period=None):
 
 def direct_tilbert(x,h=1,period=None):
     fx = fft(x)
-    n = len (fx)
+    n = len(fx)
     if period is None:
         period = 2*pi
     w = fftfreq(n)*h*2*pi/period*n
@@ -52,7 +52,7 @@ def direct_tilbert(x,h=1,period=None):
 
 def direct_itilbert(x,h=1,period=None):
     fx = fft(x)
-    n = len (fx)
+    n = len(fx)
     if period is None:
         period = 2*pi
     w = fftfreq(n)*h*2*pi/period*n
@@ -61,7 +61,7 @@ def direct_itilbert(x,h=1,period=None):
 
 def direct_hilbert(x):
     fx = fft(x)
-    n = len (fx)
+    n = len(fx)
     w = fftfreq(n)*n
     w = 1j*sign(w)
     return ifft(w*fx)
@@ -156,7 +156,7 @@ class TestDiff(TestCase):
     def test_random_even(self):
         for k in [0,2,4,6]:
             for n in [60,32,64,56,55]:
-                f=random ((n,))
+                f=random((n,))
                 af=sum(f,axis=0)/n
                 f=f-af
                 # zeroing Nyquist mode:
@@ -168,17 +168,17 @@ class TestDiff(TestCase):
     def test_random_odd(self):
         for k in [0,1,2,3,4,5,6]:
             for n in [33,65,55]:
-                f=random ((n,))
+                f=random((n,))
                 af=sum(f,axis=0)/n
                 f=f-af
                 assert_almost_equal(sum(f,axis=0),0.0)
                 assert_array_almost_equal(diff(diff(f,k),-k),f)
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
-    def test_zero_nyquist (self):
+    def test_zero_nyquist(self):
         for k in [0,1,2,3,4,5,6]:
             for n in [32,33,64,56,55]:
-                f=random ((n,))
+                f=random((n,))
                 af=sum(f,axis=0)/n
                 f=f-af
                 # zeroing Nyquist mode:
@@ -196,7 +196,7 @@ class TestTilbert(TestCase):
                 x = arange(n)*2*pi/n
                 y = tilbert(sin(x),h)
                 y1 = direct_tilbert(sin(x),h)
-                assert_array_almost_equal (y,y1)
+                assert_array_almost_equal(y,y1)
                 assert_array_almost_equal(tilbert(sin(x),h),
                                           direct_tilbert(sin(x),h))
                 assert_array_almost_equal(tilbert(sin(2*x),h),
@@ -205,7 +205,7 @@ class TestTilbert(TestCase):
     def test_random_even(self):
         for h in [0.1,0.5,1,5.5,10]:
             for n in [32,64,56]:
-                f=random ((n,))
+                f=random((n,))
                 af=sum(f,axis=0)/n
                 f=f-af
                 assert_almost_equal(sum(f,axis=0),0.0)
@@ -214,7 +214,7 @@ class TestTilbert(TestCase):
     def test_random_odd(self):
         for h in [0.1,0.5,1,5.5,10]:
             for n in [33,65,55]:
-                f=random ((n,))
+                f=random((n,))
                 af=sum(f,axis=0)/n
                 f=f-af
                 assert_almost_equal(sum(f,axis=0),0.0)
@@ -230,7 +230,7 @@ class TestITilbert(TestCase):
                 x = arange(n)*2*pi/n
                 y = itilbert(sin(x),h)
                 y1 = direct_itilbert(sin(x),h)
-                assert_array_almost_equal (y,y1)
+                assert_array_almost_equal(y,y1)
                 assert_array_almost_equal(itilbert(sin(x),h),
                                           direct_itilbert(sin(x),h))
                 assert_array_almost_equal(itilbert(sin(2*x),h),
@@ -243,23 +243,23 @@ class TestHilbert(TestCase):
             x = arange(n)*2*pi/n
             y = hilbert(sin(x))
             y1 = direct_hilbert(sin(x))
-            assert_array_almost_equal (y,y1)
+            assert_array_almost_equal(y,y1)
             assert_array_almost_equal(hilbert(sin(2*x)),
                                       direct_hilbert(sin(2*x)))
 
     def test_tilbert_relation(self):
         for n in [16,17,64,127]:
             x = arange(n)*2*pi/n
-            f = sin (x)+cos (2*x)*sin(x)
+            f = sin(x)+cos(2*x)*sin(x)
             y = hilbert(f)
             y1 = direct_hilbert(f)
-            assert_array_almost_equal (y,y1)
+            assert_array_almost_equal(y,y1)
             y2 = tilbert(f,h=10)
-            assert_array_almost_equal (y,y2)
+            assert_array_almost_equal(y,y2)
 
     def test_random_odd(self):
         for n in [33,65,55]:
-            f=random ((n,))
+            f=random((n,))
             af=sum(f,axis=0)/n
             f=f-af
             assert_almost_equal(sum(f,axis=0),0.0)
@@ -268,7 +268,7 @@ class TestHilbert(TestCase):
 
     def test_random_even(self):
         for n in [32,64,56]:
-            f=random ((n,))
+            f=random((n,))
             af=sum(f,axis=0)/n
             f=f-af
             # zeroing Nyquist mode:
@@ -285,19 +285,19 @@ class TestIHilbert(TestCase):
             x = arange(n)*2*pi/n
             y = ihilbert(sin(x))
             y1 = direct_ihilbert(sin(x))
-            assert_array_almost_equal (y,y1)
+            assert_array_almost_equal(y,y1)
             assert_array_almost_equal(ihilbert(sin(2*x)),
                                       direct_ihilbert(sin(2*x)))
 
     def test_itilbert_relation(self):
         for n in [16,17,64,127]:
             x = arange(n)*2*pi/n
-            f = sin (x)+cos (2*x)*sin(x)
+            f = sin(x)+cos(2*x)*sin(x)
             y = ihilbert(f)
             y1 = direct_ihilbert(f)
-            assert_array_almost_equal (y,y1)
+            assert_array_almost_equal(y,y1)
             y2 = itilbert(f,h=10)
-            assert_array_almost_equal (y,y2)
+            assert_array_almost_equal(y,y2)
 
 class TestShift(TestCase):
 

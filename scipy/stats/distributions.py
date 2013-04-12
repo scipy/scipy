@@ -2916,7 +2916,7 @@ class f_gen(rv_continuous):
     def _stats(self, dfn, dfd):
         v2 = asarray(dfd*1.0)
         v1 = asarray(dfn*1.0)
-        mu = where (v2 > 2, v2 / asarray(v2 - 2), inf)
+        mu = where(v2 > 2, v2 / asarray(v2 - 2), inf)
         mu2 = 2*v2*v2*(v2+v1-2)/(v1*(v2-2)**2 * (v2-4))
         mu2 = where(v2 > 4, mu2, inf)
         g1 = 2*(v2+2*v1-2)/(v2-6)*sqrt((2*v2-4)/(v1*(v2+v1-2)))

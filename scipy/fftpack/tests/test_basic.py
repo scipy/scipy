@@ -220,8 +220,8 @@ class _TestIFFTBase(TestCase):
                     "Output dtype is %s, expected %s" % (y1.dtype, self.cdt))
             self.assertTrue(y2.dtype == self.cdt,
                     "Output dtype is %s, expected %s" % (y2.dtype, self.cdt))
-            assert_array_almost_equal (y1, x)
-            assert_array_almost_equal (y2, x)
+            assert_array_almost_equal(y1, x)
+            assert_array_almost_equal(y2, x)
 
     def test_random_real(self):
         for size in [1,51,111,100,200,64,128,256,1024]:
@@ -232,8 +232,8 @@ class _TestIFFTBase(TestCase):
                     "Output dtype is %s, expected %s" % (y1.dtype, self.cdt))
             self.assertTrue(y2.dtype == self.cdt,
                     "Output dtype is %s, expected %s" % (y2.dtype, self.cdt))
-            assert_array_almost_equal (y1, x)
-            assert_array_almost_equal (y2, x)
+            assert_array_almost_equal(y1, x)
+            assert_array_almost_equal(y2, x)
 
     def test_size_accuracy(self):
         # Sanity check for the accuracy for prime and non-prime sized inputs
@@ -353,9 +353,9 @@ class _TestIRFFTBase(TestCase):
                     "Output dtype is %s, expected %s" % (y1.dtype, self.rdt))
             self.assertTrue(y2.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y2.dtype, self.rdt))
-            assert_array_almost_equal (y1, x, decimal=self.ndec,
+            assert_array_almost_equal(y1, x, decimal=self.ndec,
                                        err_msg="size=%d" % size)
-            assert_array_almost_equal (y2, x, decimal=self.ndec,
+            assert_array_almost_equal(y2, x, decimal=self.ndec,
                                        err_msg="size=%d" % size)
 
     def test_size_accuracy(self):
@@ -541,9 +541,9 @@ class TestFftn(TestCase):
         small_x = [[1,2,3],[4,5,6]]
         large_x1 = [[1,2,3,0],[4,5,6,0],[0,0,0,0],[0,0,0,0]]
         y = fftn(small_x,shape=(4,4))
-        assert_array_almost_equal (y,fftn(large_x1))
+        assert_array_almost_equal(y,fftn(large_x1))
         y = fftn(small_x,shape=(3,4))
-        assert_array_almost_equal (y,fftn(large_x1[:-1]))
+        assert_array_almost_equal(y,fftn(large_x1[:-1]))
 
     def test_shape_axes_argument(self):
         small_x = [[1,2,3],[4,5,6],[7,8,9]]
@@ -559,9 +559,9 @@ class TestFftn(TestCase):
         #for i in range(4):
         #    assert_array_almost_equal (y[:,i],fft(large_x1[:,i]))
         y = fftn(small_x,shape=(4,4),axes=(-2,-1))
-        assert_array_almost_equal (y,fftn(large_x1))
+        assert_array_almost_equal(y,fftn(large_x1))
         y = fftn(small_x,shape=(4,4),axes=(-1,-2))
-        assert_array_almost_equal (y,swapaxes(\
+        assert_array_almost_equal(y,swapaxes(\
             fftn(swapaxes(large_x1,-1,-2)),-1,-2))
 
     def test_shape_axes_argument2(self):
