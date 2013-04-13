@@ -1362,6 +1362,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         allvecs = [xk]
     k = 0
     old_fval = f(x0)
+    old_old_fval = None
     float64eps = numpy.finfo(numpy.float64).eps
     warnflag = 0
     while (numpy.add.reduce(numpy.abs(update)) > xtol) and (k < maxiter):
@@ -1412,14 +1413,15 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         pk = xsupi  # search direction is solution to system.
         gfk = -b    # gradient at xk
-        alphak, fc, gc, old_fval2 = line_search_BFGS(f, xk, pk, gfk, old_fval)
 
-        if alphak is None:
+        try:
+            alphak, fc, gc, old_fval, old_old_fval, gfkp1 = \
+                     _line_search_wolfe12(f, fprime, xk, pk, gfk,
+                                          old_fval, old_old_fval)
+        except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
             break
-        else:
-            old_fval = old_fval2
 
         update = alphak * pk
         xk = xk + update        # upcast if necessary

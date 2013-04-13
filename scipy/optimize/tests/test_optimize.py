@@ -269,7 +269,8 @@ class TestOptimize(TestCase):
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
-        assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
+        assert_(self.gradcalls <= 20, self.gradcalls) # 0.13.0
+        #assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
         #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
@@ -610,6 +611,18 @@ class TestOptimizeScalar(TestCase):
         x = optimize.minimize_scalar(self.fun, bounds=(1, np.array(5)),
                                      method='bounded').x
         assert_allclose(x, self.solution, atol=1e-6)
+
+
+class TestNewtonCg(object):
+    def test_rosenbrock(self):
+        x0 = np.array([-1.2, 1.0])
+        sol = optimize.minimize(optimize.rosen, x0,
+                                jac=optimize.rosen_der,
+                                hess=optimize.rosen_hess,
+                                tol=1e-5,
+                                method='Newton-CG')
+        assert_(sol.success, sol.message)
+        assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
 
 
 class TestRosen(TestCase):
