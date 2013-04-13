@@ -496,12 +496,20 @@ class _SystematicMeta(type):
 #------------------------------------------------------------------------------
 
 def _trace_args(func):
+    def tofloat(x):
+        if isinstance(x, mpmath.mpc):
+            return complex(x)
+        else:
+            return float(x)
     def wrap(*a, **kw):
-        sys.stderr.write("%r %r: " % (a, kw))
+        sys.stderr.write("%r: " % (tuple(map(tofloat, a)),))
         sys.stderr.flush()
-        r = func(*a, **kw)
-        sys.stderr.write("-> %r\n" % r)
-        sys.stderr.flush()
+        try:
+            r = func(*a, **kw)
+            sys.stderr.write("-> %r" % r)
+        finally:
+            sys.stderr.write("\n")
+            sys.stderr.flush()
         return r
     return wrap
 
@@ -654,49 +662,58 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_besseli(self):
         assert_mpmath_equal(sc.iv,
                             _exception_to_nan(lambda v, z: mpmath.besseli(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg()],
-                            n=1000)
+                            [Arg(-1e100, 1e100), Arg()])
 
     def test_besseli_complex(self):
         assert_mpmath_equal(lambda v, z: sc.iv(v.real, z),
                             _exception_to_nan(lambda v, z: mpmath.besseli(v, z, **HYPERKW)),
                             [Arg(-1e100, 1e100), ComplexArg()])
 
-    @knownfailure_overridable("Cephes jv at large arguments (absolute tolerance OK, relative not, Trac #1740)")
     def test_besselj(self):
         assert_mpmath_equal(sc.jv,
                             _exception_to_nan(lambda v, z: mpmath.besselj(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg()],
-                            n=1000)
+                            [Arg(-1e100, 1e100), Arg(-1e8, 1e8)])
 
     def test_besselj_complex(self):
         assert_mpmath_equal(lambda v, z: sc.jv(v.real, z),
-                            lambda v, z: mpmath.besselj(v, z, **HYPERKW),
-                            [Arg(), ComplexArg()],
-                            n=2000)
+                            _exception_to_nan(lambda v, z: mpmath.besselj(v, z, **HYPERKW)),
+                            [Arg(), ComplexArg()])
 
 
     def test_besselk(self):
+        def mpbesselk(v, x):
+            r = float(mpmath.besselk(v, x, **HYPERKW))
+            if abs(r) > 1e305:
+                # overflowing to inf a bit earlier is OK
+                r = np.inf * np.sign(r)
+            if abs(v) == abs(x) and abs(r) == np.inf and abs(x) > 1:
+                # wrong result (kv(x,x) -> 0 for x > 1),
+                # try with higher dps
+                old_dps = mpmath.mp.dps
+                mpmath.mp.dps = 200
+                try:
+                    r = float(mpmath.besselk(v, x, **HYPERKW))
+                finally:
+                    mpmath.mp.dps = old_dps
+            return r
         assert_mpmath_equal(sc.kv,
-                            _time_limited()(_exception_to_nan(mpmath.besselk)),
-                            [Arg(-1e100, 1e100), Arg()],
-                            n=1000)
+                            _exception_to_nan(mpbesselk),
+                            [Arg(-1e100, 1e100), Arg()])
 
     def test_besselk_int(self):
         assert_mpmath_equal(sc.kn,
-                            _time_limited()(_exception_to_nan(mpmath.besselk)),
-                            [IntArg(-1000, 1000), Arg()],
-                            n=5000)
+                            _exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
+                            [IntArg(-1000, 1000), Arg()])
 
     def test_besselk_complex(self):
         assert_mpmath_equal(lambda v, z: sc.kv(v.real, z),
-                            _time_limited()(_exception_to_nan(mpmath.besselk)),
+                            _exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
                             [Arg(-1e100, 1e100), ComplexArg()])
 
     def test_bessely(self):
         def mpbessely(v, x):
-            r = float(mpmath.bessely(v, x))
-            if abs(r) > 1e307:
+            r = float(mpmath.bessely(v, x, **HYPERKW))
+            if abs(r) > 1e305:
                 # overflowing to inf a bit earlier is OK
                 r = np.inf * np.sign(r)
             if abs(r) == 0 and x == 0:
@@ -706,13 +723,19 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(sc.yv,
                             _exception_to_nan(mpbessely),
                             [Arg(-1e100, 1e100), Arg(-1e8, 1e8)],
-                            n=1000)
+                            n=5000)
 
     def test_bessely_complex(self):
+        def mpbessely(v, x):
+            r = complex(mpmath.bessely(v, x, **HYPERKW))
+            if abs(r) > 1e305:
+                # overflowing to inf a bit earlier is OK
+                r = np.inf * np.sign(r)
+            return r
         assert_mpmath_equal(lambda v, z: sc.yv(v.real, z),
-                            _exception_to_nan(mpmath.bessely),
+                            _exception_to_nan(mpbessely),
                             [Arg(), ComplexArg()],
-                            n=2000, dps=200)
+                            n=15000)
 
     def test_bessely_int(self):
         def mpbessely(v, x):
