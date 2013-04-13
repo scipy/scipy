@@ -1037,16 +1037,17 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(), Arg(), Arg(), Arg()],
                             n=20000)
 
+    @knownfailure_overridable()
     def test_hyp2f0(self):
-        def hyp2f0(a, b, c, x):
-            v, err = sc.hyp2f0(a, b, c, x)
+        def hyp2f0(a, b, x):
+            v, err = sc.hyp2f0(a, b, x, 1)
             if abs(err) > max(1, abs(v)) * 1e-7:
                 return np.nan
             return v
         assert_mpmath_equal(hyp2f0,
-                            _exception_to_nan(lambda a, b, c, x: mpmath.hyp2f0(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()],
-                            n=10000)
+                            lambda a, b, x: _time_limited(0.1)(_exception_to_nan(_trace_args(mpmath.hyp2f0)))(
+                                a, b, x, **HYPERKW),
+                            [Arg(), Arg(), Arg()])
 
     @knownfailure_overridable("spurious inf (or inf with wrong sign) for some argument values")
     def test_hyp2f1(self):
