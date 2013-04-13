@@ -1853,12 +1853,9 @@ class TestBessel(TestCase):
         ao = special.ynp_zeros(443,5)
         assert_tol_equal(special.yvp(443, ao), 0, atol=1e-9)
 
-    @dec.knownfailureif(True,
-                        "cephes/yv is not eps accurate for large orders on "
-                        "all platforms, and has nan/inf issues")
     def test_ynp_zeros_large_order(self):
         ao = special.ynp_zeros(443,5)
-        assert_tol_equal(special.yvp(443, ao), 0, atol=1e-15)
+        assert_tol_equal(special.yvp(443, ao), 0, atol=1e-14)
 
     def test_yn(self):
         yn2n = special.yn(1,.2)
@@ -1919,9 +1916,6 @@ class TestBessel(TestCase):
     def test_jv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(special.jv, special.jn, rtol=1e-10, atol=1e-305)
 
-    @dec.knownfailureif(True,
-                        "cephes/yv is not eps accurate for large orders on "
-                        "all platforms, and has nan/inf issues")
     def test_yv_cephes_vs_amos(self):
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305)
 
