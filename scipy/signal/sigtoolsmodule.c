@@ -1085,6 +1085,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
 
     switch (ret) {
     case 0:
+      free(aout_dimens);
       Py_DECREF(ain1);
       Py_DECREF(ain2);
       Py_XDECREF(afill);
