@@ -69,7 +69,7 @@ def build_slice_atom(slice_vars, position):
             expr = 'slice(%(begin)s,%(end)s)' % slice_vars
         else:
             expr = 'slice(%(begin)s,%(end)s,%(step)s)' % slice_vars
-    val =  atom_list(expr)
+    val = atom_list(expr)
     return val
 
 def transform_subscript_list(subscript_dict):

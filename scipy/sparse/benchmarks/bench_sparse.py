@@ -36,7 +36,7 @@ def poisson2d(N,dtype='d',format=None):
 
     diags = empty((5,N**2),dtype=dtype)
 
-    diags[0]  =  4 # main diagonal
+    diags[0]  = 4 # main diagonal
     diags[1:] = -1 # all offdiagonals
 
     diags[3,N-1::N] = 0  # first lower diagonal

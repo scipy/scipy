@@ -76,7 +76,7 @@ class ext_function_from_specs(object):
             ref_string = '&py_local_dict'
 
         format = "O"* len(self.arg_specs) + "|O" + ':' + self.name
-        parse_tuple =  'if(!PyArg_ParseTupleAndKeywords(args,' \
+        parse_tuple = 'if(!PyArg_ParseTupleAndKeywords(args,' \
                              'kywds,"%s",const_cast<char**>(kwlist),%s))\n' % \
                              (format,ref_string)
         parse_tuple += '   return NULL;\n'
@@ -98,7 +98,7 @@ class ext_function_from_specs(object):
         for arg in have_cleanup:
             code  = "if(%s)\n" % arg.init_flag()
             code += "{\n"
-            code +=     indent(arg.cleanup_code(),4)
+            code += indent(arg.cleanup_code(),4)
             code += "}\n"
             arg_strings.append(code)
         code = "".join(arg_strings)
@@ -123,14 +123,14 @@ class ext_function_from_specs(object):
                          local_dict_code                                    + \
                     "}                                                  \n"
 
-        try_code =    "try                              \n"   \
+        try_code = "try                              \n"   \
                       "{                                \n" + \
                            decl_code                        + \
                       "    /*<function call here>*/     \n" + \
                            function_code                    + \
                            indent(dict_code,4)              + \
                       "\n}                                \n"
-        catch_code =  "catch(...)                       \n"   \
+        catch_code = "catch(...)                       \n"   \
                       "{                                \n" + \
                       "    return_val =  py::object();      \n"   \
                       "    exception_occurred = 1;       \n"   \
@@ -277,7 +277,7 @@ extern "C" {
         all_definition_code = ""
         for func in self.functions:
             all_definition_code += func.python_function_definition_code()
-        all_definition_code =  indent(''.join(all_definition_code),4)
+        all_definition_code = indent(''.join(all_definition_code),4)
         code = 'static PyMethodDef compiled_methods[] = \n' \
                '{\n' \
                '%s' \
@@ -286,7 +286,7 @@ extern "C" {
         return code % (all_definition_code)
 
     def module_init_code(self):
-        init_code_list =  self.build_information().module_init_code()
+        init_code_list = self.build_information().module_init_code()
         init_code = indent(''.join(init_code_list),4)
         code = 'PyMODINIT_FUNC init%s(void)\n' \
                '{\n' \

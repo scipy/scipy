@@ -382,7 +382,7 @@ class MpmathData(object):
         if not name or name == '<lambda>':
             name = getattr(scipy_func, '__name__', None)
         if not name or name == '<lambda>':
-            name =  getattr(mpmath_func, '__name__', None)
+            name = getattr(mpmath_func, '__name__', None)
         self.name = name
 
     def check(self):

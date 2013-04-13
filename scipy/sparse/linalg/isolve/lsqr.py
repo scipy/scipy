@@ -399,7 +399,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         cs2 = gambar / gamma
         sn2 = theta  / gamma
         z = rhs / gamma
-        xxnorm = xxnorm  +  z**2
+        xxnorm = xxnorm  + z**2
 
         # Test for convergence.
         # First, estimate the condition of the matrix  Abar,
@@ -429,7 +429,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         test2 = arnorm / (anorm * rnorm)
         test3 = 1 / acond
         t1 = test1 / (1 + anorm * xnorm / bnorm)
-        rtol = btol + atol *  anorm * xnorm / bnorm
+        rtol = btol + atol * anorm * xnorm / bnorm
 
         # The following tests guard against extremely small values of
         # atol, btol  or  ctol.  (The user may have set any or all of

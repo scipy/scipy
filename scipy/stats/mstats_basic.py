@@ -553,7 +553,7 @@ Parameters
     #
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
-    corr_ties =  np.sum(v*k*(k-1) for (k,v) in iteritems(ties))
+    corr_ties = np.sum(v*k*(k-1) for (k,v) in iteritems(ties))
     denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
     #
     R = rankdata(x, axis=0, use_missing=True)

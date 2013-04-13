@@ -171,7 +171,7 @@ class common_base_converter(base_converter):
 
     def cleanup_code(self):
         if self.use_ref_count:
-            code =  'Py_XDECREF(%(py_var)s);\n' % self.template_vars()
+            code = 'Py_XDECREF(%(py_var)s);\n' % self.template_vars()
             #code += 'printf("cleaning up %(py_var)s\\n");\n' % self.template_vars()
         else:
             code = ""

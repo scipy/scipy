@@ -53,11 +53,11 @@ if __name__ == "__main__":
     print("Norms computed in %.2fs by LSQR" % (time() - tic))
     print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " %( chio, phio, psio))
     print("Residual norms computed directly:")
-    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" %  (norm(xo),
+    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" % (norm(xo),
                                                           norm(G*xo - b),
                                                           norm(G.T*(G*xo-b))))
     print("Direct solution norms:")
-    print(" ||x||  %9.4e  ||r|| %9.4e " %  (norm(svx), norm(G*svx -b)))
+    print(" ||x||  %9.4e  ||r|| %9.4e " % (norm(svx), norm(G*svx -b)))
     print("")
     print(" || x_{direct} - x_{LSQR}|| %9.4e " % norm(svx-xo))
     print("")

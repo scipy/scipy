@@ -36,7 +36,7 @@ def vq(obs,code_book):
     type = c_spec.num_to_c_types[obs.typecode()]
     # band aid for now.
     ar_type = 'PyArray_FLOAT'
-    code =  """
+    code = """
             #line 37 "vq.py"
             // Use tensor notation.
             blitz::Array<%(type)s,2> dist_sq(Ncode_book[0],Nobs[0]);
@@ -81,7 +81,7 @@ def vq2(obs,code_book):
     type = c_spec.num_to_c_types[obs.typecode()]
     # band aid for now.
     ar_type = 'PyArray_FLOAT'
-    code =  """
+    code = """
             #line 83 "vq.py"
             // THIS DOES NOT HANDLE STRIDED ARRAYS CORRECTLY
             // Surely there is a better way to do this...
@@ -144,7 +144,7 @@ def vq3(obs,code_book):
     assert(obs_sh[1] == code_book_sh[1])
     assert(obs.typecode() == code_book.typecode())
     type = c_spec.num_to_c_types[obs.typecode()]
-    code =  """
+    code = """
             #line 139 "vq.py"
             // Surely there is a better way to do this...
             PyArrayObject* py_code = (PyArrayObject*) PyArray_FromDims(1,&Nobs[0],PyArray_LONG);

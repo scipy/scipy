@@ -17,7 +17,7 @@ def sakurai(n):
     A = sparse.eye( n, n )
     d0 = array(r_[5,6*ones(n-2),5])
     d1 = -4*ones(n)
-    d2 =  ones(n)
+    d2 = ones(n)
     B = sparse.spdiags([d2,d1,d0,d1,d2],[-2,-1,0,1,2],n,n)
 
     k = arange(1,n+1)

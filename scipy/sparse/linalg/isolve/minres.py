@@ -184,10 +184,10 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         #   [gbar k dbar k+1]   [sn -cs][alfak betak+1].
 
         oldeps = epsln
-        delta  = cs * dbar  +  sn * alfa   # delta1 = 0         deltak
-        gbar   = sn * dbar  -  cs * alfa   # gbar 1 = alfa1     gbar k
-        epsln  =               sn * beta   # epsln2 = 0         epslnk+1
-        dbar   =            -  cs * beta   # dbar 2 = beta2     dbar k+1
+        delta  = cs * dbar + sn * alfa   # delta1 = 0         deltak
+        gbar   = sn * dbar - cs * alfa   # gbar 1 = alfa1     gbar k
+        epsln  = sn * beta     # epsln2 = 0         epslnk+1
+        dbar   = - cs * beta   # dbar 2 = beta2     dbar k+1
         root   = norm([gbar, dbar])
         Arnorm = phibar * root
 
@@ -213,9 +213,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         gmax   = max(gmax, gamma)
         gmin   = min(gmin, gamma)
         z      = rhs1 / gamma
-        ynorm2 = z**2  +  ynorm2
-        rhs1   = rhs2 -  delta*z
-        rhs2   =      -  epsln*z
+        ynorm2 = z**2  + ynorm2
+        rhs1   = rhs2 - delta*z
+        rhs2   = - epsln*z
 
         # Estimate various norms and test for convergence.
 
@@ -231,7 +231,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         qrnorm = phibar
         rnorm  = qrnorm
         test1  = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
-        test2  = root  /  Anorm           # ||Ar|| / (||A|| ||r||)
+        test2  = root  / Anorm            # ||Ar|| / (||A|| ||r||)
 
         # Estimate  cond(A).
         # In this version we look at the diagonals of  R  in the
@@ -268,7 +268,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         if qrnorm   <= 10*epsx    : prnt = True
         if qrnorm   <= 10*epsr    : prnt = True
         if Acond    <= 1e-2/eps   : prnt = True
-        if istop  !=  0           : prnt = True
+        if istop  != 0            : prnt = True
 
         if show and prnt:
             str1 = '%6g %12.5e %10.3e'  % (itn, x[0], test1)
@@ -289,7 +289,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         print(last + ' istop   =  %3g               itn   =%5g' % (istop,itn))
         print(last + ' Anorm   =  %12.4e      Acond =  %12.4e'  % (Anorm,Acond))
         print(last + ' rnorm   =  %12.4e      ynorm =  %12.4e'  % (rnorm,ynorm))
-        print(last + ' Arnorm  =  %12.4e'                       %  (Arnorm,))
+        print(last + ' Arnorm  =  %12.4e'                       % (Arnorm,))
         print(last + msg[istop+1])
 
     if istop == 6:

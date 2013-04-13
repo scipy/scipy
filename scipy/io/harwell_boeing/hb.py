@@ -309,7 +309,7 @@ def _expect_int(value, msg=None):
 
 def _read_hb_data(content, header):
     # XXX: look at a way to reduce memory here (big string creation)
-    ptr_string =  "".join([content.read(header.pointer_nbytes_full),
+    ptr_string = "".join([content.read(header.pointer_nbytes_full),
                            content.readline()])
     ptr = np.fromstring(ptr_string,
             dtype=np.int, sep=' ')

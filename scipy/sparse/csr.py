@@ -411,7 +411,7 @@ class csr_matrix(_cs_matrix):
                 self.indptr, self.indices, self.data,
                 int(i0), int(i1), int(j0), int(j1) )
 
-        shape =  (i1 - i0, j1 - j0)
+        shape = (i1 - i0, j1 - j0)
 
         return self.__class__( (data,indices,indptr), shape=shape )
 

@@ -298,7 +298,7 @@ class TestEigBanded(TestCase):
 
         # symmetric band matrix
         self.sym_mat = ( diag(1.0*ones(N))
-                     +  diag(-1.0*ones(N-1), -1) + diag(-1.0*ones(N-1), 1)
+                     + diag(-1.0*ones(N-1), -1) + diag(-1.0*ones(N-1), 1)
                      + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
         # hermitian band matrix
@@ -308,12 +308,12 @@ class TestEigBanded(TestCase):
 
         # general real band matrix
         self.real_mat = ( diag(1.0*ones(N))
-                     +  diag(-1.0*ones(N-1), -1) + diag(-3.0*ones(N-1), 1)
+                     + diag(-1.0*ones(N-1), -1) + diag(-3.0*ones(N-1), 1)
                      + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
         # general complex band matrix
         self.comp_mat = ( 1j*diag(1.0*ones(N))
-                     +  diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1)
+                     + diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1)
                      + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
         # Eigenvalues and -vectors from linalg.eig
@@ -1778,7 +1778,7 @@ class TestQZ(TestCase):
         #              [1.0,   3.0,  -5.0,   4.0],
         #              [1.0,   3.0,  -4.0,   3.0],
         #              [1.0,   3.0,  -4.0,   4.0]])
-        A =   np.array([[3.9,  12.5, -34.5,  2.5],
+        A = np.array([[3.9,  12.5, -34.5,  2.5],
                  [ 4.3,  21.5, -47.5,   7.5],
                  [ 4.3,  1.5, -43.5,   3.5],
                  [ 4.4,  6.0, -46.0,   6.0 ]])

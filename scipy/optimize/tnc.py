@@ -58,14 +58,14 @@ MSGS = {
 }
 
 INFEASIBLE   = -1 # Infeasible (low > up)
-LOCALMINIMUM =  0 # Local minima reach (|pg| ~= 0)
-FCONVERGED   =  1 # Converged (|f_n-f_(n-1)| ~= 0)
-XCONVERGED   =  2 # Converged (|x_n-x_(n-1)| ~= 0)
-MAXFUN       =  3 # Max. number of function evaluations reach
-LSFAIL       =  4 # Linear search failed
-CONSTANT     =  5 # All lower bounds are equal to the upper bounds
-NOPROGRESS   =  6 # Unable to progress
-USERABORT    =  7 # User requested end of minimization
+LOCALMINIMUM = 0  # Local minima reach (|pg| ~= 0)
+FCONVERGED   = 1  # Converged (|f_n-f_(n-1)| ~= 0)
+XCONVERGED   = 2  # Converged (|x_n-x_(n-1)| ~= 0)
+MAXFUN       = 3  # Max. number of function evaluations reach
+LSFAIL       = 4  # Linear search failed
+CONSTANT     = 5  # All lower bounds are equal to the upper bounds
+NOPROGRESS   = 6  # Unable to progress
+USERABORT    = 7  # User requested end of minimization
 
 RCSTRINGS = {
         INFEASIBLE   : "Infeasible (low > up)",

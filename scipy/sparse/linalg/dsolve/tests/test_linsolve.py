@@ -45,7 +45,7 @@ class TestLinsolve(TestCase):
         Adense = matrix([[ 0.,  1.,  1.],
                          [ 1.,  0.,  1.],
                          [ 0.,  0.,  1.]])
-        As =  csc_matrix(Adense)
+        As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3)
         b = As*x
@@ -57,7 +57,7 @@ class TestLinsolve(TestCase):
         Adense = matrix([[ 0.,  1.,  1.],
                          [ 1.,  0.,  1.],
                          [ 0.,  0.,  1.]])
-        As =  csc_matrix(Adense)
+        As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3, 4)
         Bdense = As.dot(x)
@@ -180,7 +180,7 @@ class TestSplu(object):
         import sys
         rc = sys.getrefcount(lu)
         for attr in ('perm_r', 'perm_c'):
-            perm =  getattr(lu, attr)
+            perm = getattr(lu, attr)
             assert_equal(sys.getrefcount(lu), rc + 1)
             del perm
             assert_equal(sys.getrefcount(lu), rc)

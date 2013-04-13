@@ -78,7 +78,7 @@ class TestHMean(TestCase):
     def test_1D(self):
         a = (1,2,3,4)
         actual= mstats.hmean(a)
-        desired =  4. / (1./1 + 1./2 + 1./3 + 1./4)
+        desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
         assert_almost_equal(actual, desired, decimal=14)
         desired1 = mstats.hmean(ma.array(a),axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)

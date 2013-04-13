@@ -56,7 +56,7 @@ class cpp_namespace_converter(base_converter):
     _build_information = [common_info.swig_info()]
     def __init__(self,class_name=None):
         self.type_name = 'unknown cpp_object'
-        self.name =  'no name'
+        self.name = 'no name'
         if class_name:
             # customize support_code for whatever type I was handed.
             clean_name = class_name.replace('::','_')

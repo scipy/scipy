@@ -342,7 +342,7 @@ def lobpcg( A, X,
     # Main iteration loop.
     for iterationNumber in xrange( maxIterations ):
         if verbosityLevel > 0:
-            print('iteration %d' %  iterationNumber)
+            print('iteration %d' % iterationNumber)
 
         aux = blockVectorBX * _lambda[np.newaxis,:]
         blockVectorR = blockVectorAX - aux

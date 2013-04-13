@@ -252,7 +252,7 @@ def js_roots(n, p1, q1, mu=0):
     #  so roots of Gn(p,q,x) are (roots of P^(p-q,q-1)_n + 1) / 2.0
     g = _gam
     # integral of weight over interval
-    mu0 =  g(q)*g(p-q+1)/g(p+1)
+    mu0 = g(q)*g(p-q+1)/g(p+1)
     val = gen_roots_and_weights(n,an_Js,sbn_Js,mu0)
     if mu:
         return val + [mu0]

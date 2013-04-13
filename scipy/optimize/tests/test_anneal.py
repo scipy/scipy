@@ -19,7 +19,7 @@ class TestAnneal(TestCase):
         first one is used since the second fails for the 'fast' schedule at
         least.
         """
-        self.fun = (lambda x: np.cos(14.5 * x - 0.3)  +  (x + 0.2) * x,
+        self.fun = (lambda x: np.cos(14.5 * x - 0.3)  + (x + 0.2) * x,
                     lambda x: np.cos(14.5 * x[0] - 0.3)  +
                              (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0])
         self.x0 = (1.0, [1.0, 1.0])

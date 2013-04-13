@@ -2259,7 +2259,7 @@ class TestMathieu(TestCase):
         pass
 
     def test_mathieu_even_coef(self):
-        mc =  special.mathieu_even_coef(2,5)
+        mc = special.mathieu_even_coef(2,5)
         #Q not defined broken and cannot figure out proper reporting order
 
     def test_mathieu_odd_coef(self):

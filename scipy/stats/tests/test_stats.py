@@ -970,7 +970,7 @@ class TestHMean(TestCase):
     def test_1D_list(self):
         a = (1,2,3,4)
         actual= stats.hmean(a)
-        desired =  4. / (1./1 + 1./2 + 1./3 + 1./4)
+        desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
         assert_almost_equal(actual, desired, decimal=14)
 
         desired1 = stats.hmean(array(a),axis=-1)
@@ -978,7 +978,7 @@ class TestHMean(TestCase):
     def test_1D_array(self):
         a = array((1,2,3,4), float64)
         actual= stats.hmean(a)
-        desired =  4. / (1./1 + 1./2 + 1./3 + 1./4)
+        desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
         assert_almost_equal(actual, desired, decimal=14)
 
         desired1 = stats.hmean(a,axis=-1)
@@ -1327,7 +1327,7 @@ class TestStudentTest(TestCase):
     T1_1 = -1.732051
     P1_1 = 0.2254033
     T1_2 = -3.464102
-    P1_2 =  0.0741799
+    P1_2 = 0.0741799
     T2_0 = 1.732051
     P2_0 = 0.2254033
     def test_onesample(self):

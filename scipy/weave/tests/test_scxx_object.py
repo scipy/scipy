@@ -880,7 +880,7 @@ class TestObjectSetItemOpKey(TestCase):
     @dec.slow
     def test_key_refcount(self):
         a = UserDict()
-        code =  """
+        code = """
                 py::object one = 1;
                 py::object two = 2;
                 py::tuple ref_counts(3);

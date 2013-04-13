@@ -4560,7 +4560,7 @@ class pareto_gen(rv_continuous):
     def _pdf(self, x, b):
         return b * x**(-b-1)
     def _cdf(self, x, b):
-        return 1 -  x**(-b)
+        return 1 - x**(-b)
     def _ppf(self, q, b):
         return pow(1-q, -1.0/b)
     def _stats(self, b, moments='mv'):

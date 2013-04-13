@@ -120,7 +120,7 @@ def create_extension(module_path, **kw):
     version = sys.version.lower()
     if platform[:5] == 'sunos' and 'gcc' in version:
         extra_link_args = kw.get('extra_link_args',[])
-        kw['extra_link_args'] = ['-mimpure-text'] +  extra_link_args
+        kw['extra_link_args'] = ['-mimpure-text'] + extra_link_args
 
     ext = Extension(module_name, **kw)
     return ext

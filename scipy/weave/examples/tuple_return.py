@@ -9,7 +9,7 @@ def multi_return():
 
 def c_multi_return():
 
-    code =  """
+    code = """
                 py::tuple results(2);
                 results[0] = 1;
                 results[1] = "2nd";

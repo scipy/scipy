@@ -99,7 +99,7 @@ class inline_ext_function(ext_tools.ext_function):
                      + function_code + \
             '        /*I would like to fill in changed locals and globals here...*/   \n'   \
             '    }\n'
-        catch_code =  "catch(...)                        \n"   \
+        catch_code = "catch(...)                        \n"   \
                       "{                                 \n" + \
                       "    return_val =  py::object();   \n"   \
                       "    exception_occurred = 1;        \n"   \

@@ -233,7 +233,7 @@ class MatFile5Reader(MatFileReader):
         else:
             self._matrix_reader.set_stream(self.mat_stream)
         if not mdtype == miMATRIX:
-            raise TypeError('Expecting miMATRIX type here, got %d' %  mdtype)
+            raise TypeError('Expecting miMATRIX type here, got %d' % mdtype)
         header = self._matrix_reader.read_header()
         return header, next_pos
 
@@ -823,7 +823,7 @@ class MatFile5Writer(object):
 
     def write_file_header(self):
         # write header
-        hdr =  np.zeros((), NDT_FILE_HDR)
+        hdr = np.zeros((), NDT_FILE_HDR)
         hdr['description']='MATLAB 5.0 MAT-file Platform: %s, Created on: %s' \
             % (os.name,time.asctime())
         hdr['version']= 0x0100

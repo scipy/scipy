@@ -47,7 +47,7 @@ class IterativeParams(object):
         # Symmetric and Positive Definite
         N = 40
         data = ones((3,N))
-        data[0,:] =  2
+        data[0,:] = 2
         data[1,:] = -1
         data[2,:] = -1
         Poisson1D = spdiags(data, [0,-1,1], N, N, format='csr')
@@ -104,7 +104,7 @@ class IterativeParams(object):
         # cgs, qmr, and bicg fail to converge on this one
         #   -- algorithmic limitation apparently
         data = ones((2,10))
-        data[0,:] =  2
+        data[0,:] = 2
         data[1,:] = -1
         A = spdiags( data, [0,-1], 10, 10, format='csr')
         self.cases.append(Case("nonsymposdef", A,

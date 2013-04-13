@@ -439,9 +439,9 @@ def signm(a, disp=True):
     def rounded_sign(x):
         rx = real(x)
         if rx.dtype.char=='f':
-            c =  1e3*feps*amax(x)
+            c = 1e3*feps*amax(x)
         else:
-            c =  1e3*eps*amax(x)
+            c = 1e3*eps*amax(x)
         return sign( (absolute(rx) > c) * rx )
     result,errest = funm(a, rounded_sign, disp=0)
     errtol = {0:1e3*feps, 1:1e3*eps}[_array_precision[result.dtype.char]]

@@ -225,7 +225,7 @@ class TestUtilities(object):
 
         if unit_cube:
             # If in unit cube, no interior point should be marked out of hull
-            at_boundary =  (centroids <= unit_cube_tol).any(axis=1)
+            at_boundary = (centroids <= unit_cube_tol).any(axis=1)
             at_boundary |= (centroids >= 1 - unit_cube_tol).any(axis=1)
 
             ok = (j != -1) | at_boundary
