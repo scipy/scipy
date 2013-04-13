@@ -12,12 +12,12 @@ To run it in its simplest form::
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_raises, assert_allclose, \
-        assert_equal, assert_, TestCase, run_module_suite
+        assert_equal, assert_, TestCase, run_module_suite, dec
 
 from scipy import optimize
 import numpy as np
 
-class TestOptimize(TestCase):
+class TestOptimize(object):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
@@ -463,6 +463,36 @@ class TestOptimize(TestCase):
                                      method=method)
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
+
+    def test_no_increase(self):
+        # Check that the solver doesn't return a value worse than the
+        # initial point.
+
+        def func(x):
+            return (x - 1)**2
+
+        def bad_grad(x):
+            # purposefully invalid gradient function, simulates a case
+            # where line searches start failing
+            return 2*(x - 1) * (-1) - 2
+
+        def check(method):
+            x0 = np.array([2.0])
+            f0 = func(x0)
+            jac = bad_grad
+            if method in ['nelder-mead', 'powell', 'anneal', 'cobyla']:
+                jac = None
+            sol = optimize.minimize(func, x0, jac=jac, method=method,
+                                    options=dict(maxiter=20))
+            assert_equal(func(sol.x), sol.fun)
+
+            dec.knownfailureif(method=='slsqp', "SLSQP returns slightly worse")(lambda: None)()
+            assert_(func(sol.x) <= f0)
+
+        for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
+                       'newton-cg', 'anneal', 'l-bfgs-b', 'tnc',
+                       'cobyla', 'slsqp']:
+            yield check, method
 
 
 class TestLBFGSBBounds(TestCase):
