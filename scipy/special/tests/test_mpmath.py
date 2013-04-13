@@ -675,7 +675,8 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_besselj(self):
         assert_mpmath_equal(sc.jv,
                             _exception_to_nan(lambda v, z: mpmath.besselj(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg(-1e8, 1e8)])
+                            [Arg(-1e100, 1e100), Arg(-1e8, 1e8)],
+                            ignore_inf_sign=True)
 
     def test_besselj_complex(self):
         assert_mpmath_equal(lambda v, z: sc.jv(v.real, z),
