@@ -346,7 +346,7 @@ double cbesi_wrap_e_real(double v, double z) {
     return cy.real;
   }
 }
-  
+
 npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
@@ -380,6 +380,27 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
     }
   }
   return cy_j;
+}
+
+double cephes_jv(double v, double x);
+
+double cbesj_wrap_real(double v, double x)
+{
+    npy_cdouble z, r;
+
+    if (x < 0 && v != (int)v) {
+        sf_error("yv", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
+    }
+
+    z.real = x;
+    z.imag = 0;
+    r = cbesj_wrap(v, z);
+    if (r.real != r.real) {
+        /* AMOS returned NaN, possibly due to overflow */
+        return cephes_jv(v, x);
+    }
+    return r.real;
 }
 
 npy_cdouble cbesj_wrap_e( double v, npy_cdouble z) {
@@ -482,7 +503,7 @@ double cbesy_wrap_real(double v, double x)
     z.imag = 0;
     r = cbesy_wrap(v, z);
     if (r.real != r.real) {
-        /* AMOS returned NaN or a complex value */
+        /* AMOS returned NaN, possibly due to overflow */
         return cephes_yv(v, x);
     }
     return r.real;

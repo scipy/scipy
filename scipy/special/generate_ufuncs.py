@@ -171,7 +171,7 @@ j0 -- j0: d->d                                             -- cephes.h
 y0 -- y0: d->d                                             -- cephes.h
 j1 -- j1: d->d                                             -- cephes.h
 y1 -- y1: d->d                                             -- cephes.h
-jv -- jv: dd->d, cbesj_wrap: dD->D                         -- cephes.h, amos_wrappers.h
+jv -- cbesj_wrap_real: dd->d, cbesj_wrap: dD->D            -- amos_wrappers.h
 jve -- cbesj_wrap_e_real: dd->d, cbesj_wrap_e: dD->D       -- amos_wrappers.h
 yv -- cbesy_wrap_real: dd->d, cbesy_wrap: dD->D            -- amos_wrappers.h
 yve -- cbesy_wrap_e_real: dd->d, cbesy_wrap_e: dD->D       -- amos_wrappers.h
