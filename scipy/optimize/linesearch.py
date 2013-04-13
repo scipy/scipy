@@ -519,8 +519,9 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
             derphi_lo = derphi_aj
         i += 1
         if (i > maxiter):
-            a_star = a_j
-            val_star = phi_aj
+            # Failed to find a conforming step size
+            a_star = None
+            val_star = None
             valprime_star = None
             break
     return a_star, val_star, valprime_star
