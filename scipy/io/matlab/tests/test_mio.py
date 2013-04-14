@@ -75,7 +75,7 @@ case_table4.append(
     {'name': 'string',
      'classes': {'teststring': 'char'},
      'expected': {'teststring':
-                  array([u('"Do nine men interpret?" "Nine men," I nod.')])},
+                  array([u('"Do nine men interpret?" "Nine men," I nod.')])}
      })
 case_table4.append(
     {'name': 'complex',
@@ -236,6 +236,12 @@ case_table5.append(
      'classes': {'testsparsecomplex': 'sparse'},
      'expected': {'testsparsecomplex': SP.coo_matrix(B)},
      })
+case_table5.append(
+    {'name': 'bool',
+     'classes': {'testbools': 'logical'},
+     'expected': {'testbools':
+                  array([[True], [False]])},
+     })
 
 case_table5_rt = case_table5[:]
 # Inline functions can't be concatenated in matlab, so RT only
@@ -300,8 +306,9 @@ def _check_level(label, expected, actual):
             _check_level(level_label,
                          expected[fn], actual[fn])
         return
-    if ex_dtype.type in (text_type, # string
-                         np.unicode_):
+    if ex_dtype.type in (text_type, # string or bool
+                         np.unicode_,
+                         np.bool_):
         assert_equal(actual, expected, err_msg=label)
         return
     # Something numeric
@@ -373,8 +380,8 @@ def test_round_trip():
     for case in case_table4 + case_table5_rt:
         name = case['name'] + '_round_trip'
         expected = case['expected']
-        format = case in case_table4 and '4' or '5'
-        yield _rt_check_case, name, expected, format
+        for format in (case in case_table4 and ['4', '5'] or ['5']):
+            yield _rt_check_case, name, expected, format
 
 
 def test_gzip_simple():
@@ -850,6 +857,18 @@ def test_write_opposite_endian():
     assert_array_equal(d['ints'], int_arr)
     assert_array_equal(d['uni_arr'], uni_arr)
     stream.close()
+
+
+def test_logical_array():
+    # The roundtrip test doesn't verify that we load the data up with the correct (bool) dtype
+    fp = open(pjoin(test_data_path, 'testbool_8_WIN64.mat'), 'rb')
+    rdr = MatFile5Reader_future(fp, mat_dtype=True)
+    d = rdr.get_variables()
+    fp.close()
+
+    x = np.array([[True], [False]], dtype=np.bool_)
+    assert_array_equal(d['testbools'], x)
+    assert_equal(d['testbools'].dtype, x.dtype)
 
 
 def test_mat4_3d():
