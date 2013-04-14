@@ -1821,6 +1821,13 @@ class rv_continuous(rv_generic):
             MLEs for any shape statistics, followed by those for location and
             scale.
 
+        Notes
+        -----
+        This fit is computed by maximizing a log-likelihood function, with
+        penalty applied for samples outside of range of the distribution. The
+        returned answer is not guaranteed to be the globally optimal MLE, it
+        may only be locally optimal, or the optimization may fail altogether.
+
         """
         Narg = len(args)
         if Narg > self.numargs:
