@@ -306,7 +306,7 @@ def _check_level(label, expected, actual):
             _check_level(level_label,
                          expected[fn], actual[fn])
         return
-    if ex_dtype.type in (text_type, # string
+    if ex_dtype.type in (text_type, # string or bool
                          np.unicode_,
                          np.bool_):
         assert_equal(actual, expected, err_msg=label)
