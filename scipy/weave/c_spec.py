@@ -70,6 +70,7 @@ PyObject* %(type_name)s_to_py(PyObject* obj)
 
 """
 
+
 class common_base_converter(base_converter):
 
     def __init__(self):
@@ -193,6 +194,8 @@ class common_base_converter(base_converter):
 #----------------------------------------------------------------------------
 # Module Converter
 #----------------------------------------------------------------------------
+
+
 class module_converter(common_base_converter):
     def init_info(self):
         common_base_converter.init_info(self)
@@ -204,6 +207,8 @@ class module_converter(common_base_converter):
 #----------------------------------------------------------------------------
 # String Converter
 #----------------------------------------------------------------------------
+
+
 class string_converter(common_base_converter):
     def init_info(self):
         common_base_converter.init_info(self)
@@ -227,6 +232,8 @@ class string_converter(common_base_converter):
 #----------------------------------------------------------------------------
 # Unicode Converter
 #----------------------------------------------------------------------------
+
+
 class unicode_converter(common_base_converter):
     def init_info(self):
         common_base_converter.init_info(self)
@@ -253,6 +260,8 @@ class unicode_converter(common_base_converter):
 #----------------------------------------------------------------------------
 # File Converter
 #----------------------------------------------------------------------------
+
+
 class file_converter(common_base_converter):
     def init_info(self):
         common_base_converter.init_info(self)
@@ -321,6 +330,7 @@ num_to_c_types['L'] = 'npy_ulong'
 num_to_c_types['q'] = 'npy_longlong'
 num_to_c_types['Q'] = 'npy_ulonglong'
 
+
 class scalar_converter(common_base_converter):
     def init_info(self):
         common_base_converter.init_info(self)
@@ -329,6 +339,8 @@ class scalar_converter(common_base_converter):
         self.use_ref_count = 0
 
 # This has to be int for SCXX to work.
+
+
 class int_converter(scalar_converter):
     def init_info(self):
         scalar_converter.init_info(self)
@@ -338,6 +350,7 @@ class int_converter(scalar_converter):
         self.return_type = 'int'
         self.to_c_return = "(int) PyInt_AsLong(py_obj)"
         self.matching_types = [types.IntType]
+
 
 class long_converter(scalar_converter):
     def init_info(self):
@@ -350,6 +363,7 @@ class long_converter(scalar_converter):
         self.to_c_return = "(longlong) PyLong_AsLongLong(py_obj)"
         self.matching_types = [types.LongType]
 
+
 class float_converter(scalar_converter):
     def init_info(self):
         scalar_converter.init_info(self)
@@ -360,6 +374,7 @@ class float_converter(scalar_converter):
         self.return_type = 'double'
         self.to_c_return = "PyFloat_AsDouble(py_obj)"
         self.matching_types = [types.FloatType]
+
 
 class complex_converter(scalar_converter):
     def init_info(self):
@@ -382,6 +397,7 @@ import os
 local_dir,junk = os.path.split(os.path.abspath(__file__))
 scxx_dir = os.path.join(local_dir,'scxx')
 
+
 class scxx_converter(common_base_converter):
     def init_info(self):
         common_base_converter.init_info(self)
@@ -389,6 +405,7 @@ class scxx_converter(common_base_converter):
                         '"scxx/dict.h"','<iostream>']
         self.include_dirs = [local_dir,scxx_dir]
         self.sources = [os.path.join(scxx_dir,'weave_imp.cpp'),]
+
 
 class list_converter(scxx_converter):
     def init_info(self):
@@ -402,6 +419,7 @@ class list_converter(scxx_converter):
         # ref counting handled by py::list
         self.use_ref_count = 0
 
+
 class tuple_converter(scxx_converter):
     def init_info(self):
         scxx_converter.init_info(self)
@@ -413,6 +431,7 @@ class tuple_converter(scxx_converter):
         self.matching_types = [types.TupleType]
         # ref counting handled by py::tuple
         self.use_ref_count = 0
+
 
 class dict_converter(scxx_converter):
     def init_info(self):
@@ -429,6 +448,8 @@ class dict_converter(scxx_converter):
 #----------------------------------------------------------------------------
 # Instance Converter
 #----------------------------------------------------------------------------
+
+
 class instance_converter(scxx_converter):
     def init_info(self):
         scxx_converter.init_info(self)
@@ -446,6 +467,8 @@ class instance_converter(scxx_converter):
 #
 # catch all now handles callable objects
 #----------------------------------------------------------------------------
+
+
 class catchall_converter(scxx_converter):
     def init_info(self):
         scxx_converter.init_info(self)

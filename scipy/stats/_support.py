@@ -8,6 +8,7 @@ ListType = list
 TupleType = tuple
 StringType = str
 
+
 def abut(source, *args):
     # comment: except for the repetition, this is equivalent to hstack.
     """\nLike the |Stat abut command.  It concatenates two arrays column-wise
@@ -76,6 +77,7 @@ def unique(inarray):
                         uniques = np.concatenate([uniques,np.array([item])])
     return uniques
 
+
 def colex(a, indices, axis=1):
     """\nExtracts specified indices (a list) from passed array, along passed
     axis (column extraction is default).  BEWARE: A 1D array is presumed to be a
@@ -90,6 +92,7 @@ def colex(a, indices, axis=1):
     else:
         cols = np.take(a,indices,axis)
     return cols
+
 
 def adm(a, criterion):
     """\nReturns rows from the passed list of lists that meet the criteria in
@@ -211,6 +214,7 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
             new_a = np.array(newlist,'O')
         return new_a
 
+
 def _chk_asarray(a, axis):
     if axis is None:
         a = np.ravel(a)
@@ -219,6 +223,7 @@ def _chk_asarray(a, axis):
         a = np.asarray(a)
         outaxis = axis
     return a, outaxis
+
 
 def _chk2_asarray(a, b, axis):
     if axis is None:
@@ -230,6 +235,7 @@ def _chk2_asarray(a, b, axis):
         b = np.asarray(b)
         outaxis = axis
     return a, b, outaxis
+
 
 def compute_stderr(a, axis=0, ddof=1):
     a, axis = _chk_asarray(a, axis)

@@ -8,6 +8,7 @@ import numpy as np
 
 from scipy.optimize import root
 
+
 class TestRoot(object):
     def test_tol_parameter(self):
         # Check that the minimize() tol= argument does something

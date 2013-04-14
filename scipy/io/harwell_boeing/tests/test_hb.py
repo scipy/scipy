@@ -43,6 +43,7 @@ SIMPLE_MATRIX = coo_matrix(
             (np.array([[36, 70, 88, 17, 29, 44, 69, 18, 24, 51],
                        [ 0, 4, 58, 61, 61, 72, 72, 73, 99, 99]]))))
 
+
 def assert_csc_almost_equal(r, l):
     r = csc_matrix(r)
     l = csc_matrix(l)
@@ -50,10 +51,12 @@ def assert_csc_almost_equal(r, l):
     assert_equal(r.indices, l.indices)
     assert_array_almost_equal_nulp(r.data, l.data, 10000)
 
+
 class TestHBReader(TestCase):
     def test_simple(self):
         m = hb_read(StringIO(SIMPLE))
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
+
 
 class TestRBRoundtrip(TestCase):
     def test_simple(self):

@@ -185,6 +185,7 @@ _symmetric_pattern_example = '''\
     5     4
 '''
 
+
 class TestMMIOCoordinate(TestCase):
     def test_read_general(self):
         """read a general matrix"""

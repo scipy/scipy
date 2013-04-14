@@ -50,8 +50,11 @@ r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
 #-------------------------
 # Module defined exception
 #-------------------------
+
+
 class ArffError(IOError):
     pass
+
 
 class ParseArffError(ArffError):
     pass
@@ -61,6 +64,8 @@ class ParseArffError(ArffError):
 #------------------
 
 # An attribute  is defined as @attribute name value
+
+
 def parse_type(attrtype):
     """Given an arff attribute value (meta data), returns its type.
 
@@ -511,6 +516,7 @@ def loadarff(f):
     finally:
         if ofile is not f:  # only close what we opened
             ofile.close()
+
 
 def _loadarff(ofile):
     # Parse the header file

@@ -73,6 +73,7 @@ class TestConvolve(_TestConvolve):
         d = array([57,61,63,57,45,36])
         assert_array_equal(c,d)
 
+
 class _TestConvolve2d(TestCase):
     def test_2d_arrays(self):
         a = [[1,2,3],[3,4,5]]
@@ -226,6 +227,7 @@ class TestFFTConvolve(TestCase):
         c = fftconvolve(a, b, 'full')
         d = np.convolve(a, b, 'full')
         assert_(np.allclose(c, d, rtol=1e-10))
+
 
 class TestMedFilt(TestCase):
     def test_basic(self):
@@ -411,26 +413,34 @@ class _TestLinearFilter(TestCase):
         self.assertTrue(zf.dtype == self.dt)
         self.assertTrue(zf.size == 0)
 
+
 class TestLinearFilterFloat32(_TestLinearFilter):
     dt = np.float32
+
 
 class TestLinearFilterFloat64(_TestLinearFilter):
     dt = np.float64
 
+
 class TestLinearFilterFloatExtended(_TestLinearFilter):
     dt = np.longdouble
+
 
 class TestLinearFilterComplex64(_TestLinearFilter):
     dt = np.complex64
 
+
 class TestLinearFilterComplex128(_TestLinearFilter):
     dt = np.complex128
+
 
 class TestLinearFilterComplexxxiExtended28(_TestLinearFilter):
     dt = np.longcomplex
 
+
 class TestLinearFilterDecimal(_TestLinearFilter):
     dt = np.dtype(Decimal)
+
 
 class TestLinearFilterObject(_TestLinearFilter):
     dt = np.object_

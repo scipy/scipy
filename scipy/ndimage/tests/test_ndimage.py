@@ -41,8 +41,10 @@ import scipy.ndimage as ndimage
 
 eps = 1e-12
 
+
 def sumsq(a, b):
     return math.sqrt(((a - b)**2).sum())
+
 
 class TestNdimage:
 

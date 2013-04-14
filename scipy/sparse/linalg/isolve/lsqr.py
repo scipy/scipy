@@ -57,6 +57,7 @@ import numpy as np
 from math import sqrt
 from scipy.sparse.linalg.interface import aslinearoperator
 
+
 def _sym_ortho(a, b):
     """
     Stable implementation of Givens rotation.

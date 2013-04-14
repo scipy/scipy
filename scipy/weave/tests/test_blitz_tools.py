@@ -56,6 +56,7 @@ class TestAstToBlitzExpr(TestCase):
                   '-hy(_all,blitz::Range(1,_end),blitz::Range(_beg,Nhy(2)-1-1)));'
         self.generic_check(expr,desired)
 
+
 class TestBlitz(TestCase):
     """* These are long running tests...
 

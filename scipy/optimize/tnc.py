@@ -82,6 +82,7 @@ RCSTRINGS = {
 # Changes to interface made by Travis Oliphant, Apr. 2004 for inclusion in
 #  SciPy
 
+
 def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
              bounds=None, epsilon=1e-8, scale=None, offset=None,
              messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
@@ -262,6 +263,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     res = _minimize_tnc(fun, x0, args, jac, bounds, callback=callback, **opts)
 
     return res['x'], res['nfev'], res['status']
+
 
 def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   eps=1e-8, scale=None, offset=None, mesg_num=None,

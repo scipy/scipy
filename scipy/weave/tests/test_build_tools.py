@@ -18,6 +18,7 @@ warnings.filterwarnings('ignore',
                 message="specified build_dir",
                 module='scipy.weave')
 
+
 def is_writable(val):
     return os.access(val,os.W_OK)
 

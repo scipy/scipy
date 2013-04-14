@@ -11,6 +11,7 @@ from scipy.interpolate.fitpack import splrep, splev, bisplrep, bisplev, \
 def norm2(x):
     return sqrt(dot(x.T,x))
 
+
 def f1(x,d=0):
     if d is None: return "sin"
     if x is None: return "sin(x)"
@@ -18,6 +19,7 @@ def f1(x,d=0):
     if d % 4 == 1: return cos(x)
     if d % 4 == 2: return -sin(x)
     if d % 4 == 3: return -cos(x)
+
 
 def f2(x,y=0,dx=0,dy=0):
     if x is None: return "sin(x+y)"
@@ -27,17 +29,20 @@ def f2(x,y=0,dx=0,dy=0):
     if d % 4 == 2: return -sin(x+y)
     if d % 4 == 3: return -cos(x+y)
 
+
 def makepairs(x, y):
     """Helper function to create an array of pairs of x and y."""
     # Or itertools.product (>= python 2.6)
     xy = array([[a, b] for a in asarray(x) for b in asarray(y)])
     return xy.T
 
+
 def put(*a):
     """Produce some output if file run directly"""
     import sys
     if hasattr(sys.modules['__main__'], '__put_prints'):
         sys.stderr.write("".join(map(str, a)) + "\n")
+
 
 class TestSmokeTests(TestCase):
     """
@@ -218,6 +223,7 @@ class TestSmokeTests(TestCase):
     def test_smoke_bisplrep_bisplev(self):
         put("***************** bisplev")
         self.check_5()
+
 
 class TestSplev(TestCase):
     def test_1d_shape(self):

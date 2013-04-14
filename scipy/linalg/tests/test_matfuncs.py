@@ -58,6 +58,7 @@ class TestSignM(TestCase):
         r = signm(a, disp=False)
         #XXX: what would be the correct result?
 
+
 class TestLogM(TestCase):
 
     def test_nils(self):
@@ -89,6 +90,7 @@ class TestSqrtM(TestCase):
         assert_array_almost_equal(dot(sa,sa),a)
         esa = sqrtm(a, disp=False)[0]
         assert_array_almost_equal(dot(esa,esa),a)
+
 
 class TestExpM(TestCase):
     def test_zero(self):

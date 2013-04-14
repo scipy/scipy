@@ -20,6 +20,7 @@ from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minr
 #TODO check that method preserve shape and type
 #TODO test both preconditioner methods
 
+
 class Case(object):
     def __init__(self, name, A, skip=None):
         self.name = name
@@ -30,6 +31,7 @@ class Case(object):
             self.skip = skip
     def __repr__(self):
         return "<%s>" % self.name
+
 
 class IterativeParams(object):
     def __init__(self):
@@ -110,9 +112,11 @@ class IterativeParams(object):
         self.cases.append(Case("nonsymposdef", A,
                                skip=sym_solvers+[cgs, qmr, bicg]))
 
+
 def setup_module():
     global params
     params = IterativeParams()
+
 
 def check_maxiter(solver, case):
     A = case.A
@@ -130,17 +134,20 @@ def check_maxiter(solver, case):
     assert_equal(len(residuals), 3)
     assert_equal(info, 3)
 
+
 def test_maxiter():
     case = params.Poisson1D
     for solver in params.solvers:
         if solver in case.skip: continue
         yield check_maxiter, solver, case
 
+
 def assert_normclose(a, b, tol=1e-8):
     residual = norm(a - b)
     tolerance = tol*norm(b)
     msg = "residual (%g) not smaller than tolerance %g" % (residual, tolerance)
     assert_(residual < tolerance, msg=msg)
+
 
 def check_convergence(solver, case):
     tol = 1e-8
@@ -156,11 +163,13 @@ def check_convergence(solver, case):
     assert_equal(info,0)
     assert_normclose(A.dot(x), b, tol=tol)
 
+
 def test_convergence():
     for solver in params.solvers:
         for case in params.cases:
             if solver in case.skip: continue
             yield check_convergence, solver, case
+
 
 def check_precond_dummy(solver, case):
     tol = 1e-8
@@ -194,11 +203,13 @@ def check_precond_dummy(solver, case):
     assert_equal(info,0)
     assert_normclose(A*x, b, tol=tol)
 
+
 def test_precond_dummy():
     case = params.Poisson1D
     for solver in params.solvers:
         if solver in case.skip: continue
         yield check_precond_dummy, solver, case
+
 
 def test_gmres_basic():
     A = np.vander(np.arange(10) + 1)[:, ::-1]
@@ -210,11 +221,13 @@ def test_gmres_basic():
 
     assert_allclose(x_gm[0], 0.359, rtol=1e-2)
 
+
 def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
     reentrant = [lgmres, minres]
     for solver in reentrant + non_reentrant:
         yield _check_reentrancy, solver, solver in reentrant
+
 
 def _check_reentrancy(solver, is_reentrant):
     def matvec(x):
@@ -271,6 +284,7 @@ class TestQMR(TestCase):
 
         assert_equal(info,0)
         assert_normclose(A*x, b, tol=1e-8)
+
 
 class TestGMRES(TestCase):
     def test_callback(self):

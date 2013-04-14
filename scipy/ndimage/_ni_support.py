@@ -34,6 +34,7 @@ import numpy
 
 from scipy.lib.six import integer_types, string_types
 
+
 def _extend_mode_to_code(mode):
     """Convert an extension mode to the corresponding integer code.
     """
@@ -50,6 +51,7 @@ def _extend_mode_to_code(mode):
     else:
         raise RuntimeError('boundary mode not supported')
 
+
 def _normalize_sequence(input, rank, array_type=None):
     """If input is a scalar, create a sequence of length equal to the
     rank by duplicating the input. If input is a sequence,
@@ -63,6 +65,7 @@ def _normalize_sequence(input, rank, array_type=None):
             err = "sequence argument must have length equal to input rank"
             raise RuntimeError(err)
     return normalized
+
 
 def _get_output(output, input, shape=None):
     if shape is None:
@@ -82,6 +85,7 @@ def _get_output(output, input, shape=None):
             raise RuntimeError("output shape not correct")
         return_value = None
     return output, return_value
+
 
 def _check_axis(axis, rank):
     if axis < 0:

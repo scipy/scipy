@@ -33,6 +33,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
                                                                     % -info)
     return c, lower
 
+
 def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     """
     Compute the Cholesky decomposition of a matrix.
@@ -176,6 +177,7 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
         raise ValueError('illegal value in %d-th argument of internal potrs'
                                                                     % -info)
     return x
+
 
 def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     """

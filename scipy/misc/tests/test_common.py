@@ -12,6 +12,7 @@ def test_pade_trivial():
     assert_array_equal(nump.c, [1.0])
     assert_array_equal(denomp.c, [1.0])
 
+
 def test_pade_4term_exp():
     # First four Taylor coefficients of exp(x).
     # Unlike poly1d, the first array element is the zero-order term.
@@ -32,6 +33,7 @@ def test_pade_4term_exp():
     nump, denomp = pade(an, 3)
     assert_array_almost_equal(nump.c, [1.0])
     assert_array_almost_equal(denomp.c, [-1.0/6, 0.5,  -1.0, 1.0])
+
 
 def test_logsumexp():
     """Test whether logsumexp() function correctly handles large inputs."""
@@ -58,6 +60,7 @@ def test_logsumexp():
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=0)), X.sum(axis=0))
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=1)), X.sum(axis=1))
 
+
 def test_logsumexp_b():
     a = np.arange(200)
     b = np.arange(200, 0, -1)
@@ -82,8 +85,10 @@ def test_logsumexp_b():
     assert_array_almost_equal(np.exp(logsumexp(logX, b=B, axis=1)),
                                 (B * X).sum(axis=1))
 
+
 def test_face():
     assert_equal(face().shape, (768, 1024, 3))
+
 
 def test_ascent():
     assert_equal(ascent().shape, (512, 512))

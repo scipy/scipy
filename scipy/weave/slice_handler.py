@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 
 from .ast_tools import token, symbol, ast_to_string, match, atom_list
 
+
 def slice_ast_to_dict(ast_seq):
     sl_vars = {}
     if isinstance(ast_seq, (list, tuple)):
@@ -17,6 +18,7 @@ def slice_ast_to_dict(ast_seq):
                 sl_vars.update(data)
                 break
     return sl_vars
+
 
 def build_slice_atom(slice_vars, position):
     # Note: This produces slices that are incorrect for Python
@@ -72,6 +74,7 @@ def build_slice_atom(slice_vars, position):
     val = atom_list(expr)
     return val
 
+
 def transform_subscript_list(subscript_dict):
     # this is gonna edit the ast_list...
     subscript_list = subscript_dict['subscript_list']
@@ -90,6 +93,7 @@ def transform_subscript_list(subscript_dict):
             # place of the x:y:z atom in the tree.
             subscript_list[i] = build_slice_atom(slice_vars, slice_position)
 
+
 def harvest_subscript_dicts(ast_list):
     """ Needs Tests!
     """
@@ -104,6 +108,7 @@ def harvest_subscript_dicts(ast_list):
             if isinstance(item, list):
                 subscript_lists.extend(harvest_subscript_dicts(item))
     return subscript_lists
+
 
 def transform_slices(ast_list):
     """ Walk through an ast_list converting all x:y:z subscripts

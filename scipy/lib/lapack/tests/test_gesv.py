@@ -10,6 +10,7 @@ from common import FUNCS_TP, FLAPACK_IS_EMPTY, CLAPACK_IS_EMPTY, FUNCS_FLAPACK, 
 A = np.array([[1,2,3],[2,2,3],[3,3,6]])
 B = np.array([[10,-1,1],[-1,8,-2],[1,-2,6]])
 
+
 class TestSygv(TestCase):
     def _test_base(self, func, lang, itype):
         tp = FUNCS_TP[func]

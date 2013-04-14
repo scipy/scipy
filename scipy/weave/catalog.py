@@ -53,6 +53,7 @@ except ImportError:
 #import shelve
 #dumb = 0
 
+
 def getmodule(object):
     """ Discover the name of the module where object was defined.
 
@@ -80,6 +81,7 @@ def getmodule(object):
                 pass
     return value
 
+
 def expr_to_filename(expr):
     """ Convert an arbitrary expr string to a valid file name.
 
@@ -90,6 +92,7 @@ def expr_to_filename(expr):
     import scipy.weave.md5_load as md5
     base = 'sc_'
     return base + md5.new(expr).hexdigest()
+
 
 def unique_file(d,expr):
     """ Generate a unqiue file name based on expr in directory d
@@ -114,6 +117,7 @@ def unique_file(d,expr):
                 fname+'.pyd' in files):
             break
     return os.path.join(d,fname)
+
 
 def is_writable(dir):
     """Determine whether a given directory is writable in a portable manner.
@@ -146,9 +150,11 @@ def is_writable(dir):
     tmp.close()
     return True
 
+
 def whoami():
     """return a string identifying the user."""
     return os.environ.get("USER") or os.environ.get("USERNAME") or "unknown"
+
 
 def default_dir():
     """ Return a default location to store compiled files and catalogs.
@@ -210,6 +216,7 @@ def default_dir():
 
     return path
 
+
 def intermediate_dir():
     """ Location in temp dir for storing .cpp and .o  files during
         builds.
@@ -219,6 +226,7 @@ def intermediate_dir():
     if not os.path.exists(path):
         os.makedirs(path, mode=0o700)
     return path
+
 
 def default_temp_dir():
     path = os.path.join(default_dir(),'temp')
@@ -243,6 +251,7 @@ def os_dependent_catalog_name():
     """
     version = '%d%d' % sys.version_info[:2]
     return sys.platform+version+'compiled_catalog'
+
 
 def catalog_path(module_path):
     """ Return the full path name for the catalog file in the given directory.
@@ -270,6 +279,7 @@ def catalog_path(module_path):
     else:
         catalog_file = os.path.join(module_path,os_dependent_catalog_name())
     return catalog_file
+
 
 def get_catalog(module_path,mode='r'):
     """ Return a function catalog (shelve object) from the path module_path
@@ -300,6 +310,7 @@ def get_catalog(module_path,mode='r'):
         else:
             sh = shelve.open(catalog_file,mode)
     return sh
+
 
 class catalog(object):
     """ Stores information about compiled functions both in cache and on disk.

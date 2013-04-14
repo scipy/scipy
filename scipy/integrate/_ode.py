@@ -504,6 +504,7 @@ def find_integrator(name):
             return cl
     return None
 
+
 class IntegratorConcurrencyError(RuntimeError):
     """
     Failure due to concurrent usage of an integrator that can be used
@@ -516,6 +517,7 @@ class IntegratorConcurrencyError(RuntimeError):
                "consider using a different integrator "
                "(see `ode.set_integrator`)") % name
         RuntimeError.__init__(self, msg)
+
 
 class IntegratorBase(object):
 
@@ -947,6 +949,7 @@ class dop853(dopri5):
 
 if dop853.runner is not None:
     IntegratorBase.integrator_classes.append(dop853)
+
 
 class lsoda(IntegratorBase):
 

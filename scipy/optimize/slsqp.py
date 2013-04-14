@@ -26,6 +26,7 @@ __docformat__ = "restructuredtext en"
 
 _epsilon = sqrt(finfo(float).eps)
 
+
 def approx_jacobian(x,func,epsilon,*args):
     """
     Approximate the Jacobian matrix of a callable function.
@@ -200,6 +201,7 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         return res['x'], res['fun'], res['nit'], res['status'], res['message']
     else:
         return res['x']
+
 
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     constraints=(),

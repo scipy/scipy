@@ -16,6 +16,7 @@ __all__ = ['with_special_errors', 'assert_tol_equal', 'assert_func_equal',
 # Enable convergence and loss of precision warnings -- turn off one by one
 #------------------------------------------------------------------------------
 
+
 def with_special_errors(func):
     """
     Enable special function errors (such as underflow, overflow,
@@ -38,6 +39,7 @@ def with_special_errors(func):
 # Comparing function values at many data points at once, with helpful
 #------------------------------------------------------------------------------
 
+
 def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
     """Assert that `a` and `b` are equal to tolerance ``atol + rtol*abs(b)``"""
     def compare(x, y):
@@ -51,6 +53,7 @@ def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
 # Comparing function values at many data points at once, with helpful
 # error reports
 #------------------------------------------------------------------------------
+
 
 def assert_func_equal(func, results, points, rtol=None, atol=None,
                       param_filter=None, knownfailure=None,
@@ -82,6 +85,7 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
                      knownfailure=knownfailure, nan_ok=nan_ok, vectorized=vectorized,
                      ignore_inf_sign=False)
     fdata.check()
+
 
 class FuncData(object):
     """

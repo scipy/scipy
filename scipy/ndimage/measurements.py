@@ -201,6 +201,7 @@ def label(input, structure=None, output=None):
     else:
         return output, max_label
 
+
 def find_objects(input, max_label=0):
     """
     Find objects in a labeled array.
@@ -264,6 +265,7 @@ def find_objects(input, max_label=0):
     if max_label < 1:
         max_label = input.max()
     return _nd_image.find_objects(input, max_label)
+
 
 def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_positions=False):
     """
@@ -419,12 +421,14 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
 
     return output
 
+
 def _safely_castable_to_int(dt):
     """Test whether the numpy data type `dt` can be safely cast to an int."""
     int_size = np.dtype(int).itemsize
     safe = ((np.issubdtype(dt, int) and dt.itemsize <= int_size) or
             (np.issubdtype(dt, np.unsignedinteger) and dt.itemsize < int_size))
     return safe
+
 
 def _stats(input, labels=None, index=None, centered=False):
     """Count, sum, and optionally compute (sum - centre)^2 of input by label
@@ -570,6 +574,7 @@ def sum(input, labels=None, index=None):
     count, sum = _stats(input, labels, index)
     return sum
 
+
 def mean(input, labels=None, index=None):
     """
     Calculate the mean of the values of an array at labels.
@@ -621,6 +626,7 @@ def mean(input, labels=None, index=None):
 
     count, sum = _stats(input, labels, index)
     return sum / numpy.asanyarray(count).astype(numpy.float)
+
 
 def variance(input, labels=None, index=None):
     """
@@ -675,6 +681,7 @@ def variance(input, labels=None, index=None):
 
     return sum_c_sq / np.asanyarray(count).astype(float)
 
+
 def standard_deviation(input, labels=None, index=None):
     """
     Calculate the standard deviation of the values of an n-D image array,
@@ -725,6 +732,7 @@ def standard_deviation(input, labels=None, index=None):
     """
 
     return numpy.sqrt(variance(input, labels, index))
+
 
 def _select(input, labels=None, index=None, find_min=False, find_max=False,
             find_min_positions=False, find_max_positions=False,
@@ -836,6 +844,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
 
     return result
 
+
 def minimum(input, labels=None, index=None):
     """
     Calculate the minimum of the values of an array over labeled regions.
@@ -895,6 +904,7 @@ def minimum(input, labels=None, index=None):
 
     """
     return _select(input, labels, index, find_min=True)[0]
+
 
 def maximum(input, labels=None, index=None):
     """
@@ -974,6 +984,7 @@ def maximum(input, labels=None, index=None):
     """
     return _select(input, labels, index, find_max=True)[0]
 
+
 def median(input, labels=None, index=None):
     """
     Calculate the median of the values of an array over labeled regions.
@@ -1033,6 +1044,7 @@ def median(input, labels=None, index=None):
     """
     return _select(input, labels, index, find_median=True)[0]
 
+
 def minimum_position(input, labels=None, index=None):
     """Find the positions of the minimums of the values of an array at labels.
 
@@ -1053,6 +1065,7 @@ def minimum_position(input, labels=None, index=None):
 
     return [tuple(v) for v in (result.reshape(-1, 1) // dim_prod) % dims]
 
+
 def maximum_position(input, labels=None, index=None):
     """Find the positions of the maximums of the values of an array at labels.
 
@@ -1072,6 +1085,7 @@ def maximum_position(input, labels=None, index=None):
         return tuple((result // dim_prod) % dims)
 
     return [tuple(v) for v in (result.reshape(-1, 1) // dim_prod) % dims]
+
 
 def extrema(input, labels=None, index=None):
     """
@@ -1143,6 +1157,7 @@ def extrema(input, labels=None, index=None):
 
     return minimums, maximums, min_positions, max_positions
 
+
 def center_of_mass(input, labels=None, index=None):
     """
     Calculate the center of mass of the values of an array at labels.
@@ -1195,6 +1210,7 @@ def center_of_mass(input, labels=None, index=None):
         return tuple(results)
 
     return [tuple(v) for v in numpy.array(results).T]
+
 
 def histogram(input, min, max, bins, labels=None, index=None):
     """
@@ -1254,6 +1270,7 @@ def histogram(input, min, max, bins, labels=None, index=None):
         return numpy.histogram(vals, _bins)[0]
 
     return labeled_comprehension(input, labels, index, _hist, object, None, pass_positions=False)
+
 
 def watershed_ift(input, markers, structure=None, output=None):
     """Apply watershed from markers using a iterative forest transform

@@ -20,6 +20,8 @@ accuracy = 5
 
 # Since numpy.dot likely uses the same blas, use this routine
 # to check.
+
+
 def matrixmultiply(a, b):
     if len(b.shape) == 1:
         b_is_vector = True
@@ -40,6 +42,7 @@ def matrixmultiply(a, b):
 
 ##################################################
 ### Test blas ?axpy
+
 
 class BaseAxpy(object):
 
@@ -108,6 +111,7 @@ try:
 except AttributeError:
     class TestSaxpy: pass
 
+
 class TestDaxpy(TestCase, BaseAxpy):
     blas_func = fblas.daxpy
     dtype = float64
@@ -118,6 +122,7 @@ try:
         dtype = complex64
 except AttributeError:
     class TestCaxpy: pass
+
 
 class TestZaxpy(TestCase, BaseAxpy):
     blas_func = fblas.zaxpy
@@ -160,6 +165,7 @@ try:
 except AttributeError:
     class TestSscal: pass
 
+
 class TestDscal(TestCase, BaseScal):
     blas_func = fblas.dscal
     dtype = float64
@@ -171,12 +177,14 @@ try:
 except AttributeError:
     class TestCscal: pass
 
+
 class TestZscal(TestCase, BaseScal):
     blas_func = fblas.zscal
     dtype = complex128
 
 ##################################################
 ### Test blas ?copy
+
 
 class BaseCopy(object):
 
@@ -240,6 +248,7 @@ try:
 except AttributeError:
     class TestScopy: pass
 
+
 class TestDcopy(TestCase, BaseCopy):
     blas_func = fblas.dcopy
     dtype = float64
@@ -250,6 +259,7 @@ try:
         dtype = complex64
 except AttributeError:
     class TestCcopy: pass
+
 
 class TestZcopy(TestCase, BaseCopy):
     blas_func = fblas.zcopy
@@ -326,6 +336,7 @@ try:
 except AttributeError:
     class TestSswap: pass
 
+
 class TestDswap(TestCase, BaseSwap):
     blas_func = fblas.dswap
     dtype = float64
@@ -337,6 +348,7 @@ try:
 except AttributeError:
     class TestCswap: pass
 
+
 class TestZswap(TestCase, BaseSwap):
     blas_func = fblas.zswap
     dtype = complex128
@@ -344,6 +356,7 @@ class TestZswap(TestCase, BaseSwap):
 ##################################################
 ### Test blas ?gemv
 ### This will be a mess to test all cases.
+
 
 class BaseGemv(object):
 
@@ -446,6 +459,7 @@ try:
 except AttributeError:
     class TestSgemv: pass
 
+
 class TestDgemv(TestCase, BaseGemv):
     blas_func = fblas.dgemv
     dtype = float64
@@ -456,6 +470,7 @@ try:
         dtype = complex64
 except AttributeError:
     class TestCgemv: pass
+
 
 class TestZgemv(TestCase, BaseGemv):
     blas_func = fblas.zgemv

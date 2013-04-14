@@ -238,6 +238,8 @@ umfComplexTypes = ('zi', 'zl')
 
 ##
 # 02.01.2005
+
+
 class Struct( object ):
     # 03.10.2005, c
     # 26.10.2005
@@ -259,6 +261,8 @@ class Struct( object ):
 
 ##
 # 30.11.2005, c
+
+
 class UmfpackContext( Struct ):
 
     ##

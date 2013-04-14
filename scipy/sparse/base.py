@@ -14,7 +14,11 @@ from .sputils import isdense, isscalarlike, isintlike
 
 
 class SparseWarning(Warning): pass
+
+
 class SparseFormatWarning(SparseWarning): pass
+
+
 class SparseEfficiencyWarning(SparseWarning): pass
 
 
@@ -43,6 +47,7 @@ _formats = {'csc':[0, "Compressed Sparse Column"],
 
 
 MAXPRINT = 50
+
 
 class spmatrix(object):
     """ This class provides a base class for all sparse matrices.  It

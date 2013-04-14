@@ -8,6 +8,7 @@ from scipy.weave.ast_tools import harvest_variables
 
 empty = np.array(())
 
+
 class TestMakeSameLength(TestCase):
 
     def generic_check(self,x,y,desired):
@@ -35,6 +36,7 @@ class TestMakeSameLength(TestCase):
         x,y = (1,2,3),(1,2)
         desired = np.array((1,2,3)), np.array((1,1,2))
         self.generic_check(x,y,desired)
+
 
 class TestBinaryOpSize(TestCase):
     def generic_check(self,x,y,desired):
@@ -95,6 +97,7 @@ class TestBinaryOpSize(TestCase):
         x,y = (5,5),(4,5)
         self.generic_error_check(x,y)
 
+
 class TestDummyArray(TestBinaryOpSize):
     def generic_check(self,x,y,desired):
         if type(x) is type(()):
@@ -111,6 +114,7 @@ class TestDummyArray(TestBinaryOpSize):
 
     def desired_type(self,val):
         return size_check.dummy_array(np.array(val),1)
+
 
 class TestDummyArrayIndexing(TestCase):
     def generic_check(self,ary,expr,desired):
@@ -264,6 +268,7 @@ class TestDummyArrayIndexing(TestCase):
             except IndexError:
                 pass
 
+
 class TestReduction(TestCase):
     def test_1d_0(self):
         a = np.ones((5,))
@@ -297,6 +302,7 @@ class TestReduction(TestCase):
             actual = size_check.reduction(a,1)
         except ValueError:
             pass
+
 
 class TestExpressions(TestCase):
     def generic_check(self,expr,desired,**kw):

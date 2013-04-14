@@ -88,6 +88,7 @@ class TestFreqz(TestCase):
                       freqz, [1.0], worN=8, plot=lambda w, h: 1 / 0)
         freqz([1.0], worN=8, plot=plot)
 
+
 class TestNormalize(TestCase):
 
     def test_allclose(self):

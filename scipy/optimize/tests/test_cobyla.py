@@ -7,6 +7,7 @@ from numpy.testing import assert_allclose, TestCase, run_module_suite, \
 
 from scipy.optimize import fmin_cobyla, minimize
 
+
 class TestCobyla(TestCase):
     def setUp(self):
         self.x0 = [4.95,0.66]

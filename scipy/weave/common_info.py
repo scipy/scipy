@@ -64,6 +64,7 @@ void handle_conversion_error(PyObject* py_obj, const char* good_type, const char
 #include "compile.h" /* Scary dangerous stuff */
 #include "frameobject.h" /* Scary dangerous stuff */
 
+
 class basic_module_info(base_info.base_info):
     _headers = ['"Python.h"','"compile.h"','"frameobject.h"']
     _support_code = [module_support_code]
@@ -111,6 +112,7 @@ PyObject* py_to_raw_dict(PyObject* py_obj, const char* name)
 }
 """
 
+
 class inline_info(base_info.base_info):
     _support_code = [get_variable_support_code, py_to_raw_dict_support_code]
 
@@ -126,6 +128,7 @@ class inline_info(base_info.base_info):
 
 from . import swigptr
 swig_support_code = swigptr.swigptr_code
+
 
 class swig_info(base_info.base_info):
     _support_code = [swig_support_code]

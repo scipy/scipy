@@ -21,6 +21,8 @@ del atexit
 
 
 _cache = {}
+
+
 def diff(x,order=1,period=None, _cache=_cache):
     """
     Return k-th derivative (or integral) of a periodic sequence x.
@@ -78,6 +80,8 @@ del _cache
 
 
 _cache = {}
+
+
 def tilbert(x, h, period=None, _cache=_cache):
     """
     Return h-Tilbert transform of a periodic sequence x.
@@ -144,6 +148,8 @@ del _cache
 
 
 _cache = {}
+
+
 def itilbert(x,h,period=None, _cache=_cache):
     """
     Return inverse h-Tilbert transform of a periodic sequence x.
@@ -179,6 +185,8 @@ del _cache
 
 
 _cache = {}
+
+
 def hilbert(x, _cache=_cache):
     """
     Return Hilbert transform of a periodic sequence x.
@@ -247,6 +255,8 @@ def ihilbert(x):
 
 
 _cache = {}
+
+
 def cs_diff(x, a, b, period=None, _cache=_cache):
     """
     Return (a,b)-cosh/sinh pseudo-derivative of a periodic sequence.
@@ -300,6 +310,8 @@ del _cache
 
 
 _cache = {}
+
+
 def sc_diff(x, a, b, period=None, _cache=_cache):
     """
     Return (a,b)-sinh/cosh pseudo-derivative of a periodic sequence x.
@@ -349,6 +361,8 @@ del _cache
 
 
 _cache = {}
+
+
 def ss_diff(x, a, b, period=None, _cache=_cache):
     """
     Return (a,b)-sinh/sinh pseudo-derivative of a periodic sequence x.
@@ -397,6 +411,8 @@ del _cache
 
 
 _cache = {}
+
+
 def cc_diff(x, a, b, period=None, _cache=_cache):
     """
     Return (a,b)-cosh/cosh pseudo-derivative of a periodic sequence.
@@ -448,6 +464,8 @@ del _cache
 
 
 _cache = {}
+
+
 def shift(x, a, period=None, _cache=_cache):
     """
     Shift periodic sequence x by a: y(u) = x(u+a).

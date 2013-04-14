@@ -13,8 +13,10 @@ import warnings
 
 from scipy.lib.six.moves import xrange
 
+
 class AccuracyWarning(Warning):
     pass
+
 
 def fixed_quad(func,a,b,args=(),n=5):
     """
@@ -59,6 +61,7 @@ def fixed_quad(func,a,b,args=(),n=5):
                 "finite limits.")
     y = (b-a)*(x+1)/2.0 + a
     return (b-a)/2.0*sum(w*func(y,*args),0), None
+
 
 def vectorize1(func, args=(), vec_func=False):
     """Vectorize the call to a function.
@@ -105,6 +108,7 @@ def vectorize1(func, args=(), vec_func=False):
                 output[i] = func(x[i], *args)
             return output
     return vfunc
+
 
 def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
                vec_func=True):
@@ -170,10 +174,12 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
             AccuracyWarning)
     return val, err
 
+
 def tupleset(t, i, value):
     l = list(t)
     l[i] = value
     return tuple(l)
+
 
 def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     """
@@ -385,6 +391,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         x = x.reshape(saveshape)
     return result
 
+
 def romb(y, dx=1.0, axis=-1, show=False):
     """
     Romberg integration using samples of a function.
@@ -486,6 +493,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
 # Adapted to scipy by Travis Oliphant <oliphant.travis@ieee.org>
 # last revision: Dec 2001
 
+
 def _difftrap(function, interval, numtraps):
     """
     Perform part of the trapezoidal rule to integrate a function.
@@ -511,6 +519,7 @@ def _difftrap(function, interval, numtraps):
         s = sum(function(points),0)
         return s
 
+
 def _romberg_diff(b, c, k):
     """
     Compute the differences for the Romberg quadrature corrections.
@@ -518,6 +527,7 @@ def _romberg_diff(b, c, k):
     """
     tmp = 4.0**k
     return (tmp * c - b)/(tmp - 1.0)
+
 
 def _printresmat(function, interval, resmat):
     # Print the Romberg result matrix.
@@ -534,6 +544,7 @@ def _printresmat(function, interval, resmat):
     print('')
     print('The final result is', resmat[i][j], end=' ')
     print('after', 2**(len(resmat)-1)+1, 'function evaluations.')
+
 
 def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
             divmax=10, vec_func=False):
@@ -707,6 +718,7 @@ _builtincoeffs = {
                         -770720657,710986864,90241897], -3740727473,
         1275983280000)
     }
+
 
 def newton_cotes(rn, equal=0):
     """

@@ -10,6 +10,7 @@ from numpy.testing import *
 from common import FUNCS_TP, FUNCS_CLAPACK, FUNCS_FLAPACK, FLAPACK_IS_EMPTY, \
                    CLAPACK_IS_EMPTY
 
+
 class TestLapack(TestCase):
     def _test_gebal_base(self, func, lang):
         tp = FUNCS_TP[func]

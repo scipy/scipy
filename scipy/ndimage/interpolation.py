@@ -43,6 +43,7 @@ def _extend_mode_to_code(mode):
     mode = _ni_support._extend_mode_to_code(mode)
     return mode
 
+
 def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
     """
     Calculates a one-dimensional spline filter along the given axis.
@@ -116,6 +117,7 @@ def spline_filter(input, order=3, output=numpy.float64):
     else:
         output[...] = input[...]
     return return_value
+
 
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
@@ -532,6 +534,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
     return return_value
 
+
 def _minmax(coor, minc, maxc):
     if coor[0] < minc[0]:
         minc[0] = coor[0]
@@ -542,6 +545,7 @@ def _minmax(coor, minc, maxc):
     if coor[1] > maxc[1]:
         maxc[1] = coor[1]
     return minc, maxc
+
 
 def rotate(input, angle, axes=(1, 0), reshape=True,
            output=None, order=3,

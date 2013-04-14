@@ -8,8 +8,11 @@ from numpy import ones, ndarray, array, asarray, concatenate, zeros, shape, \
 import sys
 
 numericTypes = (int, long, float, complex)
+
+
 def isnumeric(t):
     return isinstance(t, numericTypes)
+
 
 def time_it():
     import time
@@ -31,6 +34,7 @@ def time_it():
     t2 = time.time()
     print('time per call:', (t2 - t1)/N)
     print('passed:', passed)
+
 
 def check_expr(expr,local_vars,global_vars={}):
     """ Currently only checks expressions (not suites).
@@ -63,6 +67,7 @@ def check_expr(expr,local_vars,global_vars={}):
 empty = array(())
 empty_slice = slice(None)
 
+
 def make_same_length(x,y):
     try:
         Nx = len(x)
@@ -84,6 +89,7 @@ def make_same_length(x,y):
         elif Ny > Nx:
             return concatenate((front,x)),asarray(y)
 
+
 def binary_op_size(xx,yy):
     """ This returns the resulting size from operating on xx, and yy
         with a binary operator.  It accounts for broadcasting, and
@@ -102,6 +108,7 @@ def binary_op_size(xx,yy):
             # offer more information here about which variables.
             raise ValueError("frames are not aligned")
     return res
+
 
 class dummy_array(object):
     def __init__(self,ary,ary_is_shape=0,name=None):
@@ -250,8 +257,10 @@ class dummy_array(object):
         val = str((self.name, str(self.shape)))
         return val
 
+
 def unary(ary):
     return ary
+
 
 def not_implemented(ary):
     return ary
@@ -268,6 +277,7 @@ for func in unary_op:
 for func in unsupported:
     func = not_implemented
 
+
 def reduction(ary,axis=0):
     if axis < 0:
         axis += len(ary.shape)
@@ -279,5 +289,7 @@ def reduction(ary,axis=0):
 # functions currently not supported by compiler
 # reductions are gonna take some array reordering for the general case,
 # so this is gonna take some thought (probably some tree manipulation).
+
+
 def take(ary,axis=0): raise NotImplemented
 # and all the rest

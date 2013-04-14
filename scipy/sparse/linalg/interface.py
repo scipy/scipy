@@ -6,6 +6,7 @@ from scipy.sparse import isspmatrix
 
 __all__ = ['LinearOperator', 'aslinearoperator']
 
+
 class LinearOperator:
     """Common interface for performing matrix vector products
 
@@ -196,6 +197,7 @@ class LinearOperator:
 
         return '<%dx%d LinearOperator with %s>' % (M,N,dt)
 
+
 class MatrixLinearOperator(LinearOperator):
     def __init__(self, A):
         LinearOperator.__init__(self, shape=A.shape, dtype=A.dtype,
@@ -210,6 +212,7 @@ class MatrixLinearOperator(LinearOperator):
         if self.A_conj is None:
             self.A_conj = self.A.T.conj()
         return self.A_conj.dot(x)
+
 
 class IdentityOperator(LinearOperator):
     def __init__(self, shape, dtype):
@@ -227,6 +230,7 @@ class IdentityOperator(LinearOperator):
 
     def __mul__(self, x):
         return x
+
 
 def aslinearoperator(A):
     """Return A as a LinearOperator.

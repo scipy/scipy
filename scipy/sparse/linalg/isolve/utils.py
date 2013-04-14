@@ -18,6 +18,7 @@ _coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
                  ('D','f'):'D', ('D','d'):'D', ('D','F'):'D',
                  ('D','D'):'D'}
 
+
 def coerce(x,y):
     if x not in 'fdFD':
         x = 'd'
@@ -25,8 +26,10 @@ def coerce(x,y):
         y = 'd'
     return _coerce_rules[x,y]
 
+
 def id(x):
     return x
+
 
 def make_system(A, M, x0, b, xtype=None):
     """Make a linear system Ax=b

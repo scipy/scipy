@@ -91,6 +91,7 @@ from . import cblas
 
 from numpy import deprecate
 
+
 @deprecate(old_name="scipy.lib.blas", new_name="scipy.linalg.blas")
 def _deprecated():
     pass

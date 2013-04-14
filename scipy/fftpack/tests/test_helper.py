@@ -18,8 +18,10 @@ from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 
 from numpy import pi
 
+
 def random(size):
     return rand(*size)
+
 
 class TestFFTShift(TestCase):
 
@@ -38,6 +40,7 @@ class TestFFTShift(TestCase):
             x = random((n,))
             assert_array_almost_equal(ifftshift(fftshift(x)),x)
 
+
 class TestFFTFreq(TestCase):
 
     def test_definition(self):
@@ -47,6 +50,7 @@ class TestFFTFreq(TestCase):
         x = [0,1,2,3,4,-5,-4,-3,-2,-1]
         assert_array_almost_equal(10*fftfreq(10),x)
         assert_array_almost_equal(10*pi*fftfreq(10,pi),x)
+
 
 class TestRFFTFreq(TestCase):
 

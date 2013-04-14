@@ -11,8 +11,10 @@ from __future__ import division, print_function, absolute_import
 
 docdict = {}
 
+
 def get(name):
     return docdict.get(name)
+
 
 def add_newdoc(place, name, doc):
     docdict['.'.join((place, name))] = doc

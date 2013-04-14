@@ -27,6 +27,7 @@ from scipy.sparse import coo_matrix
 from scipy.sparse.linalg.interface import aslinearoperator
 from scipy.sparse.linalg import lsmr
 
+
 class TestLSMR:
     def setUp(self):
         self.n = 10
@@ -58,6 +59,7 @@ class TestLSMR:
         xtrue = transpose(arange(self.n,0,-1))
         self.assertCompatibleSystem(A,xtrue)
 
+
 class TestLSMRReturns:
     def setUp(self):
         self.n = 10
@@ -79,6 +81,7 @@ class TestLSMRReturns:
     def testNormx(self):
         x, istop, itn, normr, normar, normA, condA, normx = self.returnValues
         assert_almost_equal(normx, norm(x))
+
 
 def lowerBidiagonalMatrix(m, n):
     # This is a simple example for testing LSMR.
@@ -108,6 +111,7 @@ def lowerBidiagonalMatrix(m, n):
         data = hstack((arange(1, n+1, dtype=float),
                        arange(1,n+1, dtype=float)))
         return coo_matrix((data,(row, col)), shape=(m,n))
+
 
 def lsmrtest(m, n, damp):
     """Verbose testing of lsmr"""

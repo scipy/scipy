@@ -29,6 +29,7 @@ from .blas import get_blas_funcs
 
 _I = cast['F'](1j)
 
+
 def _make_complex_eigvecs(w, vin, dtype):
     """
     Produce complex-valued eigenvectors from LAPACK DGGEV real-valued output
@@ -41,6 +42,7 @@ def _make_complex_eigvecs(w, vin, dtype):
         v.imag[:,i] = vin[:,i+1]
         conj(v[:,i], v[:,i+1])
     return v
+
 
 def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
@@ -76,6 +78,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
             return w, vl, vr
         return w, vl
     return w, vr
+
 
 def eig(a, b=None, left=False, right=True, overwrite_a=False,
         overwrite_b=False, check_finite=True):
@@ -188,6 +191,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             return w, vl, vr
         return w, vl
     return w, vr
+
 
 def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
          overwrite_b=False, turbo=True, eigvals=None, type=1,
@@ -401,6 +405,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
                           " and no eigenvalues or eigenvectors were"
                           " computed." % (info-b1.shape[0]))
 
+
 def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
                select='a', select_range=None, max_ev=0, check_finite=True):
     """
@@ -561,6 +566,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         return w
     return w, v
 
+
 def eigvals(a, b=None, overwrite_a=False, check_finite=True):
     """
     Compute eigenvalues from an ordinary or generalized eigenvalue problem.
@@ -604,6 +610,7 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True):
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
                 check_finite=check_finite)
+
 
 def eigvalsh(a, b=None, lower=True, overwrite_a=False,
              overwrite_b=False, turbo=True, eigvals=None, type=1,
@@ -679,6 +686,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
                 turbo=turbo, eigvals=eigvals, type=type,
                 check_finite=check_finite)
+
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                    select='a', select_range=None, check_finite=True):

@@ -1,6 +1,7 @@
 import re
 import sys
 
+
 def _uses_veclib(info):
     r_accelerate = re.compile("Accelerate|vecLib")
 
@@ -11,6 +12,7 @@ def _uses_veclib(info):
 
     return False
 
+
 def _uses_mkl(info):
     r_mkl = re.compile("mkl_core")
 
@@ -20,6 +22,7 @@ def _uses_mkl(info):
             return True
 
     return False
+
 
 def needs_g77_abi_wrapper(info):
     """Returns true if g77 ABI wrapper must be used."""

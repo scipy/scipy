@@ -16,6 +16,7 @@ ndarray_api_version = '/* NDARRAY API VERSION %x */' % (_get_ndarray_c_version()
 
 function_catalog = catalog.catalog()
 
+
 class inline_ext_function(ext_tools.ext_function):
     # Some specialization is needed for inline extension functions
     def function_declaration_code(self):
@@ -126,12 +127,15 @@ class inline_ext_function(ext_tools.ext_function):
         function_decls = '{"%s",(PyCFunction)%s , METH_VARARGS},\n' % args
         return function_decls
 
+
 class inline_ext_module(ext_tools.ext_module):
     def __init__(self,name,compiler=''):
         ext_tools.ext_module.__init__(self,name,compiler)
         self._build_information.append(common_info.inline_info())
 
 function_cache = {}
+
+
 def inline(code,arg_names=[],local_dict=None, global_dict=None,
            force=0,
            compiler='',
@@ -360,6 +364,7 @@ def inline(code,arg_names=[],local_dict=None, global_dict=None,
             results = attempt_function_call(code,local_dict,global_dict)
     return results
 
+
 def attempt_function_call(code,local_dict,global_dict):
     # we try 3 levels here -- a local cache first, then the
     # catalog cache, and then persistent catalog.
@@ -420,6 +425,7 @@ def attempt_function_call(code,local_dict,global_dict):
     # if we get here, the function wasn't found
     raise ValueError('function with correct signature not found')
 
+
 def inline_function_code(code,arg_names,local_dict=None,
                          global_dict=None,auto_downcast=1,
                          type_converters=None,compiler=''):
@@ -435,6 +441,7 @@ def inline_function_code(code,arg_names,local_dict=None,
     compiler = build_tools.choose_compiler(compiler)
     ext_func.set_compiler(compiler)
     return ext_func.function_code()
+
 
 def compile_function(code,arg_names,local_dict,global_dict,
                      module_dir,

@@ -22,6 +22,7 @@ useUmfpack = True
 
 __all__ = [ 'use_solver', 'spsolve', 'splu', 'spilu', 'factorized' ]
 
+
 def use_solver( **kwargs ):
     """
     Valid keyword arguments with defaults (other ignored)::
@@ -232,6 +233,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
                           ilu=False, options=_options)
 
+
 def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
           diag_pivot_thresh=None, relax=None, panel_size=None, options=None):
     """
@@ -297,6 +299,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         _options.update(options)
     return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
                           ilu=True, options=_options)
+
 
 def factorized( A ):
     """

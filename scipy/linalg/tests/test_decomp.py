@@ -39,6 +39,8 @@ from scipy.linalg._testutils import assert_no_overwrite
 DIGITS = {'d':11, 'D':11, 'f':4, 'F':4}
 
 # XXX: This function should be available through numpy.testing
+
+
 def assert_dtype_equal(act, des):
     if isinstance(act, ndarray):
         act = act.dtype
@@ -54,6 +56,8 @@ def assert_dtype_equal(act, des):
 
 # XXX: This function should not be defined here, but somewhere in
 #      scipy.linalg namespace
+
+
 def symrand(dim_or_eigv):
     """Return a random symmetric (Hermitian) matrix.
 
@@ -81,6 +85,8 @@ def symrand(dim_or_eigv):
 
 # XXX: This function should not be defined here, but somewhere in
 #      scipy.linalg namespace
+
+
 def random_rot(dim):
     """Return a random rotation matrix, drawn from the Haar distribution
     (the only uniform distribution on SO(n)).
@@ -107,8 +113,10 @@ def random_rot(dim):
     H = (D*H.T).T
     return H
 
+
 def random(size):
     return rand(*size)
+
 
 class TestEigVals(TestCase):
 
@@ -139,6 +147,7 @@ class TestEigVals(TestCase):
         w = eigvals(a, check_finite=False)
         exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
         assert_array_almost_equal(w,exact_w)
+
 
 class TestEig(object):
 
@@ -281,6 +290,7 @@ class TestEig(object):
         B = np.arange(9.0).reshape(3,3)
         assert_raises(ValueError, eig, A, B)
         assert_raises(ValueError, eig, B, A)
+
 
 class TestEigBanded(TestCase):
 
@@ -553,6 +563,7 @@ class TestEigBanded(TestCase):
         y_lin = linalg.solve(self.comp_mat, self.bc)
         assert_array_almost_equal(y, y_lin)
 
+
 def test_eigh():
     DIM = 6
     v = {'dim': (DIM, ),
@@ -577,11 +588,13 @@ def test_eigh():
                                    dim, typ, overwrite, lower,
                                    turbo, eigvals)
 
+
 def _complex_symrand(dim, dtype):
     a1, a2 = symrand(dim), symrand(dim)
     # add antisymmetric matrix as imag part
     a = a1 + 1j*(triu(a2)-tril(a2))
     return a.astype(dtype)
+
 
 def eigenhproblem_standard(desc, dim, dtype,
                            overwrite, lower, turbo,
@@ -601,6 +614,7 @@ def eigenhproblem_standard(desc, dim, dtype,
     w = w.astype(dtype)
     diag_ = diag(dot(z.T.conj(), dot(a_c, z))).real
     assert_array_almost_equal(diag_, w, DIGITS[dtype])
+
 
 def eigenhproblem_general(desc, dim, dtype,
                           overwrite, lower, turbo,
@@ -627,11 +641,13 @@ def eigenhproblem_general(desc, dim, dtype,
     diag2_ = diag(dot(z.T.conj(), dot(b_c, z))).real
     assert_array_almost_equal(diag2_, ones(diag2_.shape[0]), DIGITS[dtype])
 
+
 def test_eigh_integer():
     a = array([[1,2],[2,7]])
     b = array([[3,1],[1,5]])
     w,z = eigh(a)
     w,z = eigh(a,b)
+
 
 class TestLU(TestCase):
 
@@ -729,6 +745,7 @@ class TestLUSingle(TestLU):
         self.med = self.vrect.astype(float32)
         self.cmed = self.vrect.astype(complex64)
 
+
 class TestLUSolve(TestCase):
     def setUp(self):
         seed(1234)
@@ -756,6 +773,7 @@ class TestLUSolve(TestCase):
         x2 = lu_solve(lu_a,b, check_finite=False)
 
         assert_array_almost_equal(x1,x2)
+
 
 class TestSVD(TestCase):
     def setUp(self):
@@ -900,6 +918,7 @@ class TestSVDVals(TestCase):
         s = svdvals(a, check_finite=False)
         assert_(len(s) == 3)
         assert_(s[0] >= s[1] >= s[2])
+
 
 class TestDiagSVD(TestCase):
 
@@ -1442,6 +1461,7 @@ class TestQR(TestCase):
         assert_array_almost_equal(dot(transpose(q),q),identity(3))
         assert_array_almost_equal(dot(q,r),a)
 
+
 class TestRQ(TestCase):
 
     def setUp(self):
@@ -1548,6 +1568,7 @@ class TestRQ(TestCase):
 
 transp = transpose
 any = sometrue
+
 
 class TestSchur(TestCase):
 
@@ -1932,6 +1953,7 @@ def test_aligned_mem():
     eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
 
+
 def test_aligned_mem_complex():
     """Check that complex objects don't need to be completely aligned"""
     # Allocate 1608 bytes of memory (allocated on boundary)
@@ -1944,6 +1966,7 @@ def test_aligned_mem_complex():
     eig(z, overwrite_a=True)
     # This does not need special handling
     eig(z.T, overwrite_a=True)
+
 
 def check_lapack_misaligned(func, args, kwargs):
     args = list(args)

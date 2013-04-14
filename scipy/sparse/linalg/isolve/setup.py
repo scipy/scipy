@@ -10,6 +10,7 @@ from os.path import join
 
 from scipy._build_utils import needs_g77_abi_wrapper
 
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
 

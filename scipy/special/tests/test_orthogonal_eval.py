@@ -140,6 +140,7 @@ class TestPolys(object):
         self.check_poly(orth.eval_hermitenorm, orth.hermitenorm,
                         param_ranges=[], x_range=[-100, 100])
 
+
 class TestRecurrence(object):
     """
     Check that the eval_* functions sig='ld->d' and 'dd->d' agree.

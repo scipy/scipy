@@ -16,6 +16,7 @@ from test_continuous_basic import distcont
 
 DECIMAL = 5
 
+
 @npt.dec.slow
 def test_cont_extra():
     for distname, arg in distcont[:]:
@@ -28,6 +29,7 @@ def test_cont_extra():
         yield check_loc_scale, distfn, arg, distname + \
               ' loc, scale test'
 
+
 @npt.dec.slow
 def _est_cont_skip():
     for distname, arg in distcont:
@@ -38,6 +40,7 @@ def _est_cont_skip():
         # _ppf test has 1 failure be design
         yield check_ppf_private, distfn, arg, distname + \
               ' _ppf private test'
+
 
 def test_540_567():
     # test for nan returned in tickets 540, 567
@@ -58,6 +61,7 @@ def check_ppf_limits(distfn,arg,msg):
     assert_equal_inf_nan(distfn.b,upp, msg + 'ppf upper bound')
     npt.assert_(np.isnan(below), msg + 'ppf out of bounds - below')
     npt.assert_(np.isnan(above), msg + 'ppf out of bounds - above')
+
 
 def check_ppf_private(distfn,arg,msg):
     #fails by design for trunk norm self.nb not defined
@@ -82,10 +86,12 @@ def check_loc_scale(distfn,arg,msg):
     assert_equal_inf_nan(m*scale+loc,mt,msg + 'mean')
     assert_equal_inf_nan(v*scale*scale,vt,msg + 'var')
 
+
 def check_entropy(distfn,arg,msg):
     ent = distfn.entropy(*arg)
     #print 'Entropy =', ent
     npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
+
 
 def assert_equal_inf_nan(v1,v2,msg):
     npt.assert_(not np.isnan(v1))

@@ -19,6 +19,7 @@ from .sputils import upcast, isintlike
 
 from .compressed import _cs_matrix
 
+
 class csr_matrix(_cs_matrix):
     """
     Compressed Sparse Row matrix

@@ -25,6 +25,7 @@ tol = 1e-10
 show = False
 maxit = None
 
+
 def test_basic():
     svx = np.linalg.solve(G, b)
     X = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)

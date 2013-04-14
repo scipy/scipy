@@ -18,6 +18,7 @@ from numpy.testing import assert_
 
 from .bytecodecompiler import CXXCoder,Type_Descriptor,Function_Descriptor
 
+
 def CStr(s):
     "Hacky way to get legal C string from Python string"
     if s is None:
@@ -67,6 +68,8 @@ class Instance(Type_Descriptor):
 ##################################################################
 #                          CLASS BASIC                           #
 ##################################################################
+
+
 class Basic(Type_Descriptor):
     owned = 1
     def check(self,s):
@@ -76,6 +79,7 @@ class Basic(Type_Descriptor):
     def outbound(self,s):
         return "%s(%s)" % (self.outbounder,s),self.owned
 
+
 class Basic_Number(Basic):
     def literalizer(self,s):
         return str(s)
@@ -83,17 +87,20 @@ class Basic_Number(Basic):
         assert_(symbol in ['+','-','*','/'], msg=symbol)
         return '%s %s %s' % (a,symbol,b),self
 
+
 class Integer(Basic_Number):
     cxxtype = "long"
     checker = "PyInt_Check"
     inbounder = "PyInt_AsLong"
     outbounder = "PyInt_FromLong"
 
+
 class Double(Basic_Number):
     cxxtype = "double"
     checker = "PyFloat_Check"
     inbounder = "PyFloat_AsDouble"
     outbounder = "PyFloat_FromDouble"
+
 
 class String(Basic):
     cxxtype = "char*"
@@ -112,6 +119,7 @@ Double = Double()
 String = String()
 
 import numpy as np
+
 
 class Vector(Type_Descriptor):
     cxxtype = 'PyArrayObject*'
@@ -145,33 +153,40 @@ class Vector(Type_Descriptor):
     def setitem(self,A,v,t):
         return self.getitem(A,v,t)
 
+
 class matrix(Vector):
     dims = 2
+
 
 class IntegerVector(Vector):
     typecode = 'PyArray_INT'
     cxxbase = 'int'
     pybase = Integer
 
+
 class Integermatrix(matrix):
     typecode = 'PyArray_INT'
     cxxbase = 'int'
     pybase = Integer
+
 
 class LongVector(Vector):
     typecode = 'PyArray_LONG'
     cxxbase = 'long'
     pybase = Integer
 
+
 class Longmatrix(matrix):
     typecode = 'PyArray_LONG'
     cxxbase = 'long'
     pybase = Integer
 
+
 class DoubleVector(Vector):
     typecode = 'PyArray_DOUBLE'
     cxxbase = 'double'
     pybase = Double
+
 
 class Doublematrix(matrix):
     typecode = 'PyArray_DOUBLE'
@@ -271,6 +286,8 @@ def lookup_type(x):
 ##################################################################
 #                        class ACCELERATE                        #
 ##################################################################
+
+
 class accelerate(object):
 
     def __init__(self, function, *args, **kw):

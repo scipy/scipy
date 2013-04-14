@@ -17,6 +17,7 @@ warnings.simplefilter('ignore',SparseEfficiencyWarning)
 #TODO add more comprehensive tests
 use_solver( useUmfpack=False )
 
+
 class TestLinsolve(TestCase):
     def test_singular(self):
         A = csc_matrix( (5,5), dtype='d' )
@@ -92,6 +93,7 @@ class TestLinsolve(TestCase):
         X = scipy.linalg.solve(M, N)
 
         assert_array_almost_equal(X, sX.todense())
+
 
 class TestSplu(object):
     def setUp(self):

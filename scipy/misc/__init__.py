@@ -46,6 +46,8 @@ from .common import *
 from numpy import who, source, info as _info
 
 import sys
+
+
 def info(object=None,maxwidth=76,output=sys.stdout,toplevel='scipy'):
     return _info(object, maxwidth, output, toplevel)
 info.__doc__ = _info.__doc__

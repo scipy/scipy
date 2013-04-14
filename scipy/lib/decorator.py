@@ -74,6 +74,8 @@ else:
 DEF = re.compile('\s*def\s*([_\w][_\w\d]*)\s*\(')
 
 # basic functionality
+
+
 class FunctionMaker(object):
     """
     An object with the ability to create functions with a given signature.
@@ -191,6 +193,7 @@ class FunctionMaker(object):
         ibody = '\n'.join('    ' + line for line in body.splitlines())
         return self.make('def %(name)s(%(signature)s):\n' + ibody,
                         evaldict, addsource, **attrs)
+
 
 def decorator(caller, func=None):
     """

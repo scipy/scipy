@@ -8,6 +8,7 @@ __all__ = ['LinAlgError', 'norm']
 
 _nrm2_prefix = {'f' : 's', 'F': 'sc', 'D': 'dz'}
 
+
 def norm(a, ord=None):
     """
     Matrix or vector norm.
@@ -122,6 +123,7 @@ def norm(a, ord=None):
     return np.linalg.norm(a, ord=ord)
 
 norm.__doc__ = np.linalg.norm.__doc__
+
 
 def _datacopied(arr, original):
     """

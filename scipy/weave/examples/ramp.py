@@ -20,10 +20,12 @@ import time
 import scipy.weave as weave
 from numpy import *
 
+
 def Ramp(result, size, start, end):
     step = (end-start)/(size-1)
     for i in xrange(size):
         result[i] = start + step*i
+
 
 def Ramp_numeric1(result,start,end):
     code = """
@@ -34,6 +36,7 @@ def Ramp_numeric1(result,start,end):
                *result++ = start + step*i;
            """
     weave.inline(code,['result','start','end'],compiler='gcc')
+
 
 def Ramp_numeric2(result,start,end):
     code = """
@@ -48,6 +51,7 @@ def Ramp_numeric2(result,start,end):
            """
     weave.inline(code,['result','start','end'],compiler='gcc')
 
+
 def Ramp_list1(result, start, end):
     code = """
            const int size = result.len();
@@ -56,6 +60,7 @@ def Ramp_list1(result, start, end):
                result[i] = start + step*i;
            """
     weave.inline(code, ["result","start", "end"], verbose=2)
+
 
 def Ramp_list2(result, start, end):
     code = """
@@ -68,6 +73,7 @@ def Ramp_list2(result, start, end):
            }
            """
     weave.inline(code, ["result", "start", "end"], verbose=2)
+
 
 def main():
     N_array = 10000

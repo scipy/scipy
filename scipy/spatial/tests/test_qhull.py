@@ -12,11 +12,14 @@ import copy
 import scipy.spatial.qhull as qhull
 from scipy.spatial import cKDTree as KDTree
 
+
 def sorted_tuple(x):
     return tuple(sorted(x))
 
+
 def sorted_unique_tuple(x):
     return tuple(np.unique(x))
+
 
 def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
     if isinstance(a, np.ndarray):
@@ -74,6 +77,7 @@ DATASETS = {
     'pathological-1': pathological_data_1,
     'pathological-2': pathological_data_2
 }
+
 
 class Test_Qhull(object):
     def test_swapping(self):
@@ -509,6 +513,7 @@ class TestDelaunay(object):
         for name in sorted(DATASETS):
             for chunksize in 1, 4:
                 yield check, name, chunksize
+
 
 def assert_hulls_equal(points, facets_1, facets_2):
     # Check that two convex hulls constructed from the same point set

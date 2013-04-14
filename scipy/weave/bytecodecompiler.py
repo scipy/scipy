@@ -17,6 +17,8 @@ from numpy.testing import assert_
 ##################################################################
 #                       CLASS __DESCRIPTOR                       #
 ##################################################################
+
+
 class __Descriptor(object):
     prerequisites = []
     refcount = 0
@@ -26,12 +28,16 @@ class __Descriptor(object):
 ##################################################################
 #                     CLASS TYPE_DESCRIPTOR                      #
 ##################################################################
+
+
 class Type_Descriptor(__Descriptor):
     module_init_code = ''
 
 ##################################################################
 #                   CLASS FUNCTION_DESCRIPTOR                    #
 ##################################################################
+
+
 class Function_Descriptor(__Descriptor):
     def __init__(self,code,return_type,support=''):
         self.code = code
@@ -212,6 +218,8 @@ def listing(f):
 ##################################################################
 #                     CLASS BYTECODEMEANING                      #
 ##################################################################
+
+
 class ByteCodeMeaning(object):
     def fetch(self, pc,code):
         opcode = ord(code[pc])

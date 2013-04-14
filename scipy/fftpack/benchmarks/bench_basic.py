@@ -12,8 +12,10 @@ import numpy.fft
 
 from numpy.random import rand
 
+
 def random(size):
     return rand(*size)
+
 
 def direct_dft(x):
     x = asarray(x)
@@ -23,6 +25,7 @@ def direct_dft(x):
     for i in range(n):
         y[i] = dot(exp(i*w),x)
     return y
+
 
 def direct_idft(x):
     x = asarray(x)
@@ -72,6 +75,7 @@ class TestFft(TestCase):
             print(' (secs for %s calls)' % (repeat))
         sys.stdout.flush()
 
+
 class TestIfft(TestCase):
 
     def bench_random(self):
@@ -110,6 +114,7 @@ class TestIfft(TestCase):
             print(' (secs for %s calls)' % (repeat))
         sys.stdout.flush()
 
+
 class TestRfft(TestCase):
 
     def bench_random(self):
@@ -139,6 +144,7 @@ class TestRfft(TestCase):
 
             print(' (secs for %s calls)' % (repeat))
         sys.stdout.flush()
+
 
 class TestIrfft(TestCase):
 
@@ -180,6 +186,7 @@ class TestIrfft(TestCase):
             print(' (secs for %s calls)' % (repeat))
 
         sys.stdout.flush()
+
 
 class TestFftn(TestCase):
 

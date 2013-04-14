@@ -1669,6 +1669,7 @@ _dtextsortedkeys.sort()
 _drotationsortedkeys = list(_drotation.keys())
 _drotationsortedkeys.sort()
 
+
 def _remove_dups(L):
     """
     Removes duplicates AND preserves the original order of the elements.
@@ -1682,15 +1683,18 @@ def _remove_dups(L):
             L2.append(i)
     return L2
 
+
 def _get_tick_text_size(p):
     for k in _dtextsortedkeys:
         if p <= k:
             return _dtextsizes[k]
 
+
 def _get_tick_rotation(p):
     for k in _drotationsortedkeys:
         if p <= k:
             return _drotation[k]
+
 
 def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                      no_labels, color_list, leaf_font_size=None,

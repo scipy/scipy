@@ -78,6 +78,7 @@ class TestObjectConstruct(TestCase):
         assert_equal(sys.getrefcount(res),2)
         assert_equal(res,"hello")
 
+
 class TestObjectPrint(TestCase):
     #------------------------------------------------------------------------
     # Check the object print protocol.

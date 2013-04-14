@@ -11,6 +11,7 @@ SYEV_ARG = np.array([[1,2,3],[2,2,3],[3,3,6]])
 SYEV_REF = np.array([-0.6699243371851365, 0.4876938861533345,
                      9.182230451031804])
 
+
 class TestEsv(TestCase):
     def _test_base(self, func, lang):
         tp = FUNCS_TP[func]

@@ -35,6 +35,7 @@ from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,\
 
 from scipy.linalg._testutils import assert_no_overwrite
 
+
 def random(size):
     return rand(*size)
 
@@ -506,6 +507,7 @@ def direct_lstsq(a,b,cmplx=0):
     b1 = dot(at, b)
     return solve(a1, b1)
 
+
 class TestLstsq(TestCase):
     def setUp(self):
         np.random.seed(1234)
@@ -641,6 +643,7 @@ class TestPinv(TestCase):
         a_pinv = pinv2(a, check_finite=False)
         assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
 
+
 class TestPinvSymmetric(TestCase):
 
     def test_simple_real(self):
@@ -704,6 +707,7 @@ class TestNorm(object):
     def test_zero_norm(self):
         assert_equal(norm([1,0,3], 0), 2)
         assert_equal(norm([1,2,3], 0), 3)
+
 
 class TestOverwrite(object):
     def test_solve(self):

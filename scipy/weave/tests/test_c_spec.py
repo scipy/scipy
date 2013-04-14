@@ -22,6 +22,7 @@ def unique_mod(d,file_name):
     m = os.path.splitext(f)[0]
     return m
 
+
 def remove_whitespace(in_str):
     out = in_str.replace(" ","")
     out = out.replace("\t","")
@@ -762,6 +763,7 @@ for _n in dir():
 # class TestGccInstanceConverter(TestInstanceConverter):
 #     compiler = 'gcc'
 
+
 def setup_location():
     import tempfile
     #test_dir = os.path.join(tempfile.gettempdir(),'test_files')
@@ -773,12 +775,14 @@ def setup_location():
 
 test_dir = setup_location()
 
+
 def teardown_location():
     import tempfile
     test_dir = os.path.join(tempfile.gettempdir(),'test_files')
     if sys.path[0] == test_dir:
         sys.path = sys.path[1:]
     return test_dir
+
 
 def remove_file(name):
     test_dir = os.path.abspath(name)

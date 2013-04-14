@@ -10,6 +10,7 @@ import numpy as np
 
 from scipy.optimize import anneal, minimize
 
+
 class TestAnneal(TestCase):
     """ Tests for anneal """
     def setUp(self):

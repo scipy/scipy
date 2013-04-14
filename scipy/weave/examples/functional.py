@@ -13,6 +13,8 @@ import sys
 sys.path.insert(0,'..')
 import inline_tools
 from types import *
+
+
 def c_list_map(func,seq):
     """ Uses CXX C code to implement a simple map-like function.
         It does not provide any error checking.
@@ -31,6 +33,7 @@ def c_list_map(func,seq):
            return_val = result;
            """
     return inline_tools.inline(code,['func','seq'])
+
 
 def c_list_map2(func,seq):
     """ Uses Python API more than CXX to implement a simple map-like function.
@@ -58,11 +61,13 @@ def c_list_map2(func,seq):
            """
     return inline_tools.inline(code,['func','seq'])
 
+
 def main():
     seq = ['aa','bbb','cccc']
     print('desired:', map(len,seq))
     print('actual:', c_list_map(len,seq))
     print('actual2:', c_list_map2(len,seq))
+
 
 def time_it(m,n):
     import time

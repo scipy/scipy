@@ -44,6 +44,7 @@ def minkowski_distance_p(x, y, p=2):
     else:
         return np.sum(np.abs(y-x)**p, axis=-1)
 
+
 def minkowski_distance(x, y, p=2):
     """
     Compute the L**p distance between two arrays.
@@ -69,6 +70,7 @@ def minkowski_distance(x, y, p=2):
         return minkowski_distance_p(x, y, p)
     else:
         return minkowski_distance_p(x, y, p)**(1./p)
+
 
 class Rectangle(object):
     """Hyperrectangle class.

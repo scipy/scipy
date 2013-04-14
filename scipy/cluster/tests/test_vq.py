@@ -39,6 +39,7 @@ CODET2  = np.array([[11.0/3, 8.0/3],
 
 LABEL1  = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
+
 class TestVq(TestCase):
     def test_py_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
@@ -90,6 +91,7 @@ class TestVq(TestCase):
             a = np.array([1, 2])
             b = a.astype(float)
             assert_raises(ValueError, _vq.vq, a, b)
+
 
 class TestKMean(TestCase):
     def test_large_features(self):

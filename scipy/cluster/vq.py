@@ -86,8 +86,10 @@ from numpy import shape, zeros, sqrt, argmin, minimum, array, \
      std, mean
 import numpy as np
 
+
 class ClusterError(Exception):
     pass
+
 
 def whiten(obs):
     """
@@ -130,6 +132,7 @@ def whiten(obs):
     """
     std_dev = std(obs, axis=0)
     return obs / std_dev
+
 
 def vq(obs, code_book):
     """
@@ -203,6 +206,7 @@ def vq(obs, code_book):
         results = py_vq(obs, code_book)
     return results
 
+
 def py_vq(obs, code_book):
     """ Python version of vq algorithm.
 
@@ -264,6 +268,7 @@ def py_vq(obs, code_book):
 
     return code, sqrt(min_dist)
 
+
 def _py_vq_1d(obs, code_book):
     """ Python version of vq algorithm for rank 1 only.
 
@@ -295,6 +300,7 @@ def _py_vq_1d(obs, code_book):
     min_dist = dist[code]
 
     return code, sqrt(min_dist)
+
 
 def py_vq2(obs, code_book):
     """2nd Python version of vq algorithm.
@@ -343,6 +349,7 @@ def py_vq2(obs, code_book):
     #min_dist = choose(code,dist) # but in practice, didn't seem to make
                                   # much difference.
     return code, min_dist
+
 
 def _kmeans(obs, guess, thresh=1e-5):
     """ "raw" version of k-means.
@@ -401,6 +408,7 @@ def _kmeans(obs, guess, thresh=1e-5):
             diff = avg_dist[-2] - avg_dist[-1]
     #print avg_dist
     return code_book, avg_dist[-1]
+
 
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
     """
@@ -516,6 +524,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
         result = best_book, best_dist
     return result
 
+
 def _kpoints(data, k):
     """Pick k points at random in data (one row = one observation).
 
@@ -541,6 +550,7 @@ def _kpoints(data, k):
     x = data[p[:k], :].copy()
 
     return x
+
 
 def _krandinit(data, k):
     """Returns k samples of a random variable which parameters depend on data.
@@ -583,10 +593,12 @@ def _krandinit(data, k):
 
 _valid_init_meth = {'random': _krandinit, 'points': _kpoints}
 
+
 def _missing_warn():
     """Print a warning when called."""
     warnings.warn("One of the clusters is empty. "
                  "Re-run kmean with a different initialization.")
+
 
 def _missing_raise():
     """raise a ClusterError when called."""
@@ -594,6 +606,7 @@ def _missing_raise():
                         "Re-run kmean with a different initialization.")
 
 _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
+
 
 def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         missing='warn'):
@@ -695,6 +708,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         raise ValueError("iter = %s is not valid.  iter must be a positive integer." % iter)
 
     return _kmeans2(data, clusters, iter, nc, _valid_miss_meth[missing])
+
 
 def _kmeans2(data, code, niter, nc, missing):
     """ "raw" version of kmeans2. Do not use directly.

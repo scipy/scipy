@@ -105,6 +105,7 @@ docdict = {
 
 docfiller = doccer.filldoc(docdict)
 
+
 @docfiller
 def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
                 cval=0.0, origin=0):

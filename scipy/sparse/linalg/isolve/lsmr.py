@@ -27,6 +27,7 @@ from scipy.sparse.linalg.interface import aslinearoperator
 
 from .lsqr import _sym_ortho
 
+
 def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
          maxiter=None, show=False):
     """Iterative solver for least-squares problems.

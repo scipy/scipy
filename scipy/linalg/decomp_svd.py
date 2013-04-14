@@ -109,6 +109,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     else:
         return s
 
+
 def svdvals(a, overwrite_a=False, check_finite=True):
     """
     Compute singular values of a matrix.
@@ -143,6 +144,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     """
     return svd(a, compute_uv=0, overwrite_a=overwrite_a,
                 check_finite=check_finite)
+
 
 def diagsvd(s, M, N):
     """

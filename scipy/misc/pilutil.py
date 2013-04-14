@@ -96,6 +96,7 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     bytedata[bytedata < 0] = 0
     return cast[uint8](bytedata) + cast[uint8](low)
 
+
 def imread(name,flatten=0):
     """
     Read an image file from a filename.
@@ -121,6 +122,7 @@ def imread(name,flatten=0):
 
     im = Image.open(name)
     return fromimage(im,flatten=flatten)
+
 
 def imsave(name, arr):
     """
@@ -158,6 +160,7 @@ def imsave(name, arr):
     im.save(name)
     return
 
+
 def fromimage(im, flatten=0):
     """
     Return a copy of a PIL image as a numpy array.
@@ -188,6 +191,7 @@ def fromimage(im, flatten=0):
     return array(im)
 
 _errstr = "Mode is unknown or incompatible with input array shape."
+
 
 def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             mode=None, channel_axis=None):
@@ -298,6 +302,7 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     image = Image.fromstring(mode, shape, strdata)
     return image
 
+
 def imrotate(arr,angle,interp='bilinear'):
     """
     Rotate an image counter-clockwise by angle degrees.
@@ -327,6 +332,7 @@ def imrotate(arr,angle,interp='bilinear'):
     im = toimage(arr)
     im = im.rotate(angle,resample=func[interp])
     return fromimage(im)
+
 
 def imshow(arr):
     """
@@ -368,6 +374,7 @@ def imshow(arr):
     os.unlink(fname)
     if status != 0:
         raise RuntimeError('Could not execute image viewer.')
+
 
 def imresize(arr, size, interp='bilinear', mode=None):
     """

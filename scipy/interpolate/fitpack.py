@@ -99,6 +99,7 @@ _iermess2 = {0:["""\
 _parcur_cache = {'t': array([],float), 'wrk': array([],float),
                  'iwrk':array([],int32), 'u': array([],float),'ub':0,'ue':1}
 
+
 def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
             full_output=0,nest=None,per=0,quiet=1):
     """
@@ -291,6 +292,8 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
 
 _curfit_cache = {'t': array([],float), 'wrk': array([],float),
                  'iwrk':array([],int32)}
+
+
 def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
            full_output=0,per=0,quiet=1):
     """
@@ -473,10 +476,12 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     else:
         return tck
 
+
 def _ntlist(l): # return non-trivial list
     return l
     #if len(l)>1: return l
     #return l[0]
+
 
 def splev(x, tck, der=0, ext=0):
     """
@@ -558,6 +563,7 @@ def splev(x, tck, der=0, ext=0):
 
         return y.reshape(shape)
 
+
 def splint(a,b,tck,full_output=0):
     """
     Evaluate the definite integral of a B-spline.
@@ -609,6 +615,7 @@ def splint(a,b,tck,full_output=0):
         aint,wrk = _fitpack._splint(t,c,k,a,b)
         if full_output: return aint,wrk
         else: return aint
+
 
 def sproot(tck,mest=10):
     """
@@ -671,6 +678,7 @@ def sproot(tck,mest=10):
             return z
         raise TypeError("Unknown error")
 
+
 def spalde(x,tck):
     """
     Evaluate all derivatives of a B-spline.
@@ -731,6 +739,8 @@ def spalde(x,tck):
 
 _surfit_cache = {'tx': array([],float),'ty': array([],float),
                  'wrk': array([],float), 'iwrk':array([],int32)}
+
+
 def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
              s=None,eps=1e-16,tx=None,ty=None,full_output=0,
              nxest=None,nyest=None,quiet=1):
@@ -902,6 +912,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     else:
         return tck
 
+
 def bisplev(x,y,tck,dx=0,dy=0):
     """
     Evaluate a bivariate B-spline and its derivatives.
@@ -968,6 +979,7 @@ def bisplev(x,y,tck,dx=0,dy=0):
     if len(z[0]) > 1: return z[0]
     return z[0][0]
 
+
 def dblint(xa,xb,ya,yb,tck):
     """Evaluate the integral of a spline over area [xa,xb] x [ya,yb].
 
@@ -989,6 +1001,7 @@ def dblint(xa,xb,ya,yb,tck):
     """
     tx,ty,c,kx,ky = tck
     return dfitpack.dblint(tx,ty,c,kx,ky,xb,xe,yb,ye)
+
 
 def insert(x,tck,m=1,per=0):
     """

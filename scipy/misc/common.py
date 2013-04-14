@@ -17,6 +17,7 @@ __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
 # XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
 
+
 def logsumexp(a, axis=None, b=None):
     """Compute the log of the sum of exponentials of input elements.
 
@@ -87,6 +88,7 @@ def logsumexp(a, axis=None, b=None):
         out = log(sum(exp(a - a_max), axis=0))
     out += a_max
     return out
+
 
 def factorial(n,exact=0):
     """
@@ -195,6 +197,7 @@ def factorial2(n, exact=False):
         place(vals,cond2,special.gamma(nd2e+1) * pow(2.0,nd2e))
         return vals
 
+
 def factorialk(n,k,exact=1):
     """
     n(!!...!)  = multifactorial of order k
@@ -293,6 +296,7 @@ def comb(N,k,exact=0):
         sv = special.errprint(sv)
         return where(cond, vals, 0.0)
 
+
 def central_diff_weights(Np, ndiv=1):
     """
     Return weights for an Np-point central derivative.
@@ -327,6 +331,7 @@ def central_diff_weights(Np, ndiv=1):
         X = hstack([X,x**k])
     w = product(arange(1,ndiv+1),axis=0)*linalg.inv(X)[ndiv]
     return w
+
 
 def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     """
@@ -400,6 +405,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
         val += weights[k]*func(x0+(k-ho)*dx,*args)
     return val / product((dx,)*n,axis=0)
 
+
 def pade(an, m):
     """
     Return Pade approximation to a polynomial as the ratio of two polynomials.
@@ -453,6 +459,7 @@ def pade(an, m):
     q = r_[1.0, pq[n+1:]]
     return poly1d(p[::-1]), poly1d(q[::-1])
 
+
 def lena():
     """
     Get classic image processing example image, Lena, at 8-bit grayscale
@@ -492,6 +499,7 @@ def lena():
     f.close()
     return lena
 
+
 def ascent():
     """
     Get an 8-bit grayscale bit-depth, 512 x 512 derived image for easy use in demos
@@ -529,6 +537,7 @@ def ascent():
     with open(fname, 'rb') as f:
         ascent = array(pickle.load(f))
     return ascent
+
 
 def face(gray=False):
     """

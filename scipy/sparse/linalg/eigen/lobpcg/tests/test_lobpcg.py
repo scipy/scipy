@@ -27,6 +27,7 @@ def ElasticRod(n):
     B = mass*(diag(r_[4.*ones(n-1),2])+diag(ones(n-1),1)+diag(ones(n-1),-1))
     return A,B
 
+
 def MikotaPair(n):
     # Mikota pair acts as a nice test since the eigenvalues
     # are the squares of the integers n, n=1,2,...
@@ -63,19 +64,23 @@ def compare_solutions(A,B,m):
     #ylabel(r'$\lambda_i$')
     #show()
 
+
 def test_Small():
     A,B = ElasticRod(10)
     compare_solutions(A,B,10)
     A,B = MikotaPair(10)
     compare_solutions(A,B,10)
 
+
 def test_ElasticRod():
     A,B = ElasticRod(100)
     compare_solutions(A,B,20)
 
+
 def test_MikotaPair():
     A,B = MikotaPair(100)
     compare_solutions(A,B,20)
+
 
 def test_trivial():
     n = 5

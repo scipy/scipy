@@ -17,6 +17,7 @@ from numpy.testing import assert_raises, assert_allclose, \
 from scipy import optimize
 import numpy as np
 
+
 class TestOptimize(TestCase):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
@@ -492,6 +493,7 @@ class TestLBFGSBBounds(TestCase):
                                 jac=self.jac, bounds=self.bounds)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, self.solution, atol=1e-6)
+
 
 class TestOptimizeScalar(TestCase):
     """Tests for scalar optimizers"""

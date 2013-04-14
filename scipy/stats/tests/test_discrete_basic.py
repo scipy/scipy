@@ -75,6 +75,7 @@ def test_discrete_extra():
         yield check_entropy, distfn, arg, distname + \
               ' entropy nan test'
 
+
 @npt.dec.skipif(True)
 def test_discrete_private():
     #testing private methods mostly for debugging
@@ -100,8 +101,10 @@ def check_sample_meanvar(sm,m,msg):
     else:
         npt.assert_(sm > 10000, msg='infinite moment, sm = ' + str(sm))
 
+
 def check_sample_var(sm,m,msg):
     npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg + 'var')
+
 
 def check_cdf_ppf(distfn,arg,msg):
     ppf05 = distfn.ppf(0.5,*arg)
@@ -109,6 +112,7 @@ def check_cdf_ppf(distfn,arg,msg):
     npt.assert_almost_equal(distfn.ppf(cdf05-1e-6,*arg),ppf05,
                             err_msg=msg + 'ppf-cdf-median')
     npt.assert_((distfn.ppf(cdf05+1e-4,*arg) > ppf05), msg + 'ppf-cdf-next')
+
 
 def check_cdf_ppf2(distfn,arg,supp,msg):
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg),*arg),
@@ -125,6 +129,7 @@ def check_cdf_ppf_private(distfn,arg,msg):
                             err_msg=msg + '_ppf-cdf-median ')
     npt.assert_((distfn._ppf(cdf05+1e-4,*arg) > ppf05), msg + '_ppf-cdf-next')
 
+
 def check_ppf_ppf(distfn, arg):
     npt.assert_(distfn.ppf(0.5,*arg) < np.inf)
     ppfs = distfn.ppf([0.5,0.9],*arg)
@@ -135,6 +140,7 @@ def check_ppf_ppf(distfn, arg):
     npt.assert_(ppf_s[0] == ppfs[0])
     npt.assert_(ppf_s[1] == ppfs[1])
 
+
 def check_pmf_cdf(distfn, arg, msg):
     startind = np.int(distfn._ppf(0.01,*arg)-1)
     index = list(range(startind,startind+10))
@@ -143,13 +149,16 @@ def check_pmf_cdf(distfn, arg, msg):
                             cdfs[0] - distfn.pmf(index[0],*arg),
                             decimal=4, err_msg=msg + 'pmf-cdf')
 
+
 def check_generic_moment(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn.generic_moment(k,*arg), m, decimal=decim,
                             err_msg=str(distfn) + ' generic moment test')
 
+
 def check_moment_frozen(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn(*arg).moment(k), m, decimal=decim,
                             err_msg=str(distfn) + ' frozen moment test')
+
 
 def check_oth(distfn, arg, msg):
     #checking other methods of distfn
@@ -165,6 +174,7 @@ def check_oth(distfn, arg, msg):
 #next 3 functions copied from test_continous_extra
 #    adjusted
 
+
 def check_ppf_limits(distfn,arg,msg):
     below,low,upp,above = distfn.ppf([-1,0,1,2], *arg)
     #print distfn.name, distfn.a, low, distfn.b, upp
@@ -173,6 +183,7 @@ def check_ppf_limits(distfn,arg,msg):
     assert_equal_inf_nan(distfn.b,upp, msg + 'ppf upper bound')
     npt.assert_(np.isnan(below), msg + 'ppf out of bounds - below')
     npt.assert_(np.isnan(above), msg + 'ppf out of bounds - above')
+
 
 def check_isf_limits(distfn,arg,msg):
     below,low,upp,above = distfn.isf([-1,0,1,2], *arg)
@@ -183,6 +194,7 @@ def check_isf_limits(distfn,arg,msg):
     npt.assert_(np.isnan(below), msg + 'isf out of bounds - below')
     npt.assert_(np.isnan(above), msg + 'isf out of bounds - above')
 
+
 def assert_equal_inf_nan(v1,v2,msg):
     npt.assert_(not np.isnan(v1))
     if not np.isinf(v1):
@@ -191,6 +203,7 @@ def assert_equal_inf_nan(v1,v2,msg):
     else:
         npt.assert_(np.isinf(v2) or np.isnan(v2),
                msg + ' - infinite, v2=%s' % str(v2))
+
 
 def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
     k,s = distfn.stats(moment='ks',*arg)

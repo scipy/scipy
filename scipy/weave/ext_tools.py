@@ -9,6 +9,7 @@ from . import build_tools
 from . import converters
 from . import base_spec
 
+
 class ext_function_from_specs(object):
     def __init__(self,name,code_block,arg_specs):
         self.name = name
@@ -182,6 +183,7 @@ class ext_function(ext_function_from_specs):
 
 
 from . import base_info
+
 
 class ext_module(object):
     def __init__(self,name,compiler=''):
@@ -370,9 +372,11 @@ extern "C" {
         if not success:
             raise SystemError('Compilation failed')
 
+
 def generate_file_name(module_name,module_location):
     module_file = os.path.join(module_location,module_name)
     return os.path.abspath(module_file)
+
 
 def generate_module(module_string, module_file):
     """ generate the source code file.  Only overwrite
@@ -390,6 +394,7 @@ def generate_module(module_string, module_file):
         f.write(module_string)
         f.close()
     return module_file
+
 
 def assign_variable_types(variables,local_dict={}, global_dict={},
                           auto_downcast=1,
@@ -428,6 +433,7 @@ def assign_variable_types(variables,local_dict={}, global_dict={},
         variable_specs = downcast(variable_specs)
     return variable_specs
 
+
 def downcast(var_specs):
     """ Cast python scalars down to most common type of
          arrays used.
@@ -456,12 +462,14 @@ def downcast(var_specs):
                     var.numeric_type = 'f'
     return var_specs
 
+
 def indent(st,spaces):
     indention = ' '*spaces
     indented = indention + st.replace('\n','\n'+indention)
     # trim off any trailing spaces
     indented = re.sub(r' +$',r'',indented)
     return indented
+
 
 def format_error_msg(errors):
     #minimum effort right now...

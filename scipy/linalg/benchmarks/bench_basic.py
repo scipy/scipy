@@ -4,8 +4,10 @@ import sys
 from numpy.testing import *
 import numpy.linalg as linalg
 
+
 def random(size):
     return rand(*size)
+
 
 class TestSolve(TestCase):
 
@@ -45,6 +47,7 @@ class TestSolve(TestCase):
             sys.stdout.flush()
 
             print('   (secs for %s calls)' % (repeat))
+
 
 class TestInv(TestCase):
 

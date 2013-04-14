@@ -364,6 +364,7 @@ def _moment(data, n, mu=None):
         mu = data.mean()
     return ((data - mu)**n).mean()
 
+
 def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
     if (n == 0):
         return 1.0
@@ -405,6 +406,7 @@ def _skew(data):
     m2 = ((data - mu)**2).mean()
     m3 = ((data - mu)**3).mean()
     return m3 / m2**1.5
+
 
 def _kurtosis(data):
     """
@@ -499,6 +501,8 @@ def valarray(shape,value=nan,typecode=None):
     return out
 
 # This should be rewritten
+
+
 def argsreduce(cond, *args):
     """Return the sequence of ravel(args[i]) where ravel(condition) is
     True in 1D.
@@ -525,6 +529,7 @@ def argsreduce(cond, *args):
         newargs = [newargs,]
     expand_arr = (cond == cond)
     return [extract(cond, arr1 * expand_arr) for arr1 in newargs]
+
 
 class rv_generic(object):
     """Class which encapsulates common functionality between rv_discrete
@@ -1986,6 +1991,7 @@ _ZETA3 = 1.202056903159594285399738161511449990765  # special.zeta(3,1)  Apery's
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 
+
 class ksone_gen(rv_continuous):
     """General Kolmogorov-Smirnov one-sided test.
 
@@ -1997,6 +2003,7 @@ class ksone_gen(rv_continuous):
     def _ppf(self, q, n):
         return special.smirnovi(n, 1.0 - q)
 ksone = ksone_gen(a=0.0, name='ksone', shapes="n")
+
 
 class kstwobign_gen(rv_continuous):
     """Kolmogorov-Smirnov two-sided test for large N.
@@ -2020,16 +2027,28 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 # by other distributions.
 _norm_pdf_C = math.sqrt(2*pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
+
+
 def _norm_pdf(x):
     return exp(-x**2/2.0) / _norm_pdf_C
+
+
 def _norm_logpdf(x):
     return -x**2 / 2.0 - _norm_pdf_logC
+
+
 def _norm_cdf(x):
     return special.ndtr(x)
+
+
 def _norm_logcdf(x):
     return special.log_ndtr(x)
+
+
 def _norm_ppf(q):
     return special.ndtri(q)
+
+
 class norm_gen(rv_continuous):
     """A normal continuous random variable.
 
@@ -2380,6 +2399,7 @@ burr = burr_gen(a=0.0, name='burr', shapes="c, d")
 # Fisk distribution
 # burr is a generalization
 
+
 class fisk_gen(burr_gen):
     """A Fisk continuous random variable.
 
@@ -2410,6 +2430,7 @@ fisk = fisk_gen(a=0.0, name='fisk', shapes='c')
 ## Cauchy
 
 # median = loc
+
 
 class cauchy_gen(rv_continuous):
     """A Cauchy continuous random variable.
@@ -5453,24 +5474,30 @@ def _drv_pmf(self, xk, *args):
     except KeyError:
         return 0.0
 
+
 def _drv_cdf(self, xk, *args):
     indx = argmax((self.xk > xk),axis=-1)-1
     return self.F[self.xk[indx]]
+
 
 def _drv_ppf(self, q, *args):
     indx = argmax((self.qvals >= q),axis=-1)
     return self.Finv[self.qvals[indx]]
 
+
 def _drv_nonzero(self, k, *args):
     return 1
+
 
 def _drv_moment(self, n, *args):
     n = asarray(n)
     return sum(self.xk**n[newaxis,...] * self.pk, axis=0)
 
+
 def _drv_moment_gen(self, t, *args):
     t = asarray(t)
     return sum(exp(self.xk * t[newaxis,...]) * self.pk, axis=0)
+
 
 def _drv2_moment(self, n, *args):
     """Non-central moment of discrete distribution."""
@@ -5504,6 +5531,7 @@ def _drv2_moment(self, n, *args):
             pos -= self.inc
             count += 1
     return tot
+
 
 def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     b = self.b
@@ -5562,6 +5590,7 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
         else:
             return c
 
+
 def reverse_dict(dict):
     newdict = {}
     sorted_keys = list(dict.keys())
@@ -5569,6 +5598,7 @@ def reverse_dict(dict):
     for key in sorted_keys[::-1]:
         newdict[dict[key]] = key
     return newdict
+
 
 def make_dict(keys, values):
     d = {}
@@ -5578,6 +5608,7 @@ def make_dict(keys, values):
 
 # Must over-ride one of _pmf or _cdf or pass in
 #  x_k, p(x_k) lists in initialization
+
 
 class rv_discrete(rv_generic):
     """
@@ -6634,6 +6665,7 @@ binom = binom_gen(name='binom',shapes="n, p")
 
 # Bernoulli distribution
 
+
 class bernoulli_gen(binom_gen):
     """A Bernoulli discrete random variable.
 
@@ -6674,6 +6706,8 @@ class bernoulli_gen(binom_gen):
 bernoulli = bernoulli_gen(b=1,name='bernoulli',shapes="p")
 
 # Negative binomial
+
+
 class nbinom_gen(rv_discrete):
     """A negative binomial discrete random variable.
 
@@ -6724,6 +6758,7 @@ class nbinom_gen(rv_discrete):
 nbinom = nbinom_gen(name='nbinom', shapes="n, p")
 
 ## Geometric distribution
+
 
 class geom_gen(rv_discrete):
     """A geometric discrete random variable.
@@ -6929,6 +6964,7 @@ logser = logser_gen(a=1,name='logser', longname='A logarithmic',
 
 ## Poisson distribution
 
+
 class poisson_gen(rv_discrete):
     """A Poisson discrete random variable.
 
@@ -6974,6 +7010,8 @@ class poisson_gen(rv_discrete):
 poisson = poisson_gen(name="poisson", longname='A Poisson', shapes="mu")
 
 ## (Planck) Discrete Exponential
+
+
 class planck_gen(rv_discrete):
     """A Planck discrete exponential random variable.
 
@@ -7074,6 +7112,7 @@ boltzmann = boltzmann_gen(name='boltzmann',longname='A truncated discrete expone
                     shapes="lamda, N")
 
 ## Discrete Uniform
+
 
 class randint_gen(rv_discrete):
     """A uniform discrete random variable.

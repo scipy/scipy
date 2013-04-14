@@ -419,6 +419,7 @@ TYPE_NAMES = {
     'l': 'NPY_LONG',
 }
 
+
 def cast_order(c):
     return ['ilfdgFDG'.index(x) for x in c]
 
@@ -444,6 +445,7 @@ NAN_VALUE = {
     'i': '0xbad0bad0',
     'l': '0xbad0bad0',
 }
+
 
 def generate_loop(func_inputs, func_outputs, func_retval,
                   ufunc_inputs, ufunc_outputs):
@@ -579,6 +581,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
 
     return name, body
 
+
 def iter_variants(inputs, outputs):
     """
     Generate variants of UFunc signatures, by changing variable types,
@@ -616,6 +619,7 @@ def iter_variants(inputs, outputs):
             new_inputs = new_inputs.replace(a, b)
             new_outputs = new_outputs.replace(a, b)
         yield new_inputs, new_outputs
+
 
 class Ufunc(object):
     """
@@ -940,6 +944,7 @@ def generate(filename, cxx_fn_prefix, ufuncs):
     f.write("\n".join(cxx_pxd_defs))
     f.close()
 
+
 def unique(lst):
     """
     Return a list without repeated entries (first occurrence is kept),
@@ -953,6 +958,7 @@ def unique(lst):
         seen.add(item)
         new_lst.append(item)
     return new_lst
+
 
 def main():
     p = optparse.OptionParser(usage=__doc__.strip())

@@ -64,6 +64,8 @@ Notes
     the corresponding value in y is masked.
 """
 #------------------------------------------------------------------------------
+
+
 def _chk_asarray(a, axis):
     if axis is None:
         a = ma.ravel(a)
@@ -72,6 +74,7 @@ def _chk_asarray(a, axis):
         a = ma.asanyarray(a)
         outaxis = axis
     return a, outaxis
+
 
 def _chk2_asarray(a, b, axis):
     if axis is None:
@@ -84,6 +87,7 @@ def _chk2_asarray(a, b, axis):
         outaxis = axis
     return a, b, outaxis
 
+
 def _chk_size(a,b):
     a = ma.asanyarray(a)
     b = ma.asanyarray(b)
@@ -92,6 +96,7 @@ def _chk_size(a,b):
         raise ValueError("The size of the input array should match!"
                          " (%s <> %s)" % (na,nb))
     return (a,b,na)
+
 
 def argstoarray(*args):
     """
@@ -872,6 +877,8 @@ kruskalwallis.__doc__ = stats.kruskal.__doc__
 
 
 _kolmog2 = special.kolmogorov
+
+
 def _kolmog1(x,n):
     if x <= 0:
         return 0
@@ -1172,6 +1179,8 @@ def trimboth(data, proportiontocut=0.2, inclusive=(True,True), axis=None):
                  inclusive=inclusive, axis=axis)
 
 #..............................................................................
+
+
 def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
              axis=None):
     """
@@ -1213,6 +1222,7 @@ def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
     return trimr(data, limits=limits, axis=axis, inclusive=inclusive)
 
 trim1 = trimtail
+
 
 def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                  axis=None):
@@ -1352,9 +1362,11 @@ def tmean(a, limits=None, inclusive=(True,True)):
     return trima(a, limits=limits, inclusive=inclusive).mean()
 tmean.__doc__ = stats.tmean.__doc__
 
+
 def tvar(a, limits=None, inclusive=(True,True)):
     return trima(a, limits=limits, inclusive=inclusive).var()
 tvar.__doc__ = stats.tvar.__doc__
+
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
@@ -1362,11 +1374,13 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     return ma.minimum.reduce(am, axis)
 tmin.__doc__  = stats.tmin.__doc__
 
+
 def tmax(a, upperlimit, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
 tmax.__doc__  = stats.tmax.__doc__
+
 
 def tsem(a, limits=None, inclusive=(True,True)):
     a = ma.asarray(a).ravel()
@@ -1581,6 +1595,8 @@ def describe(a, axis=0):
     return n, mm, m, v, sk, kurt
 
 #.............................................................................
+
+
 def stde_median(data, axis=None):
     """Returns the McKean-Schrader estimate of the standard error of the sample
 median along the given axis. masked values are discarded.
@@ -1613,6 +1629,7 @@ median along the given axis. masked values are discarded.
 #---- --- Normality Tests ---
 #####--------------------------------------------------------------------------
 
+
 def skewtest(a, axis=0):
     a, axis = _chk_asarray(a, axis)
     if axis is None:
@@ -1633,6 +1650,7 @@ def skewtest(a, axis=0):
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
     return Z, (1.0 - stats.zprob(Z))*2
 skewtest.__doc__ = stats.skewtest.__doc__
+
 
 def kurtosistest(a, axis=0):
     a, axis = _chk_asarray(a, axis)
@@ -1875,6 +1893,7 @@ meppf = plotting_positions
 #####--------------------------------------------------------------------------
 #---- --- Variability ---
 #####--------------------------------------------------------------------------
+
 
 def obrientransform(*args):
     """

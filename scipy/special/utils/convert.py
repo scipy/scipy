@@ -123,6 +123,7 @@ DATA_FILES = [
     'zeta_neg_data.ipp',
 ]
 
+
 def _raw_data(line):
     items = line.split(',')
     l = []
@@ -131,6 +132,7 @@ def _raw_data(line):
         if m:
             l.append(m.group(1))
     return l
+
 
 def parse_ipp_file(filename):
     a = open(filename, 'r')
@@ -166,6 +168,7 @@ def parse_ipp_file(filename):
 
     return data
 
+
 def dump_dataset(filename, data):
     fid = open(filename, 'w')
     try:
@@ -173,6 +176,7 @@ def dump_dataset(filename, data):
             fid.write("%s\n" % ",".join(line))
     finally:
         fid.close()
+
 
 def dump_datasets(filename):
     base, ext = os.path.splitext(os.path.basename(filename))

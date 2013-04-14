@@ -18,6 +18,7 @@ import sys
 sys.path.insert(0,'..')
 import inline_tools
 
+
 def c_sort(adict):
     assert(type(adict) is dict)
     code = """
@@ -38,6 +39,7 @@ def c_sort(adict):
            """
     return inline_tools.inline(code,['adict'])
 
+
 def c_sort2(adict):
     assert(type(adict) is dict)
     code = """
@@ -55,6 +57,8 @@ def c_sort2(adict):
     return inline_tools.inline(code,['adict'],verbose=1)
 
 # (IMHO) the simplest approach:
+
+
 def sortedDictValues1(adict):
     items = adict.items()
     items.sort()
@@ -63,6 +67,8 @@ def sortedDictValues1(adict):
 # an alternative implementation, which
 # happens to run a bit faster for large
 # dictionaries on my machine:
+
+
 def sortedDictValues2(adict):
     keys = adict.keys()
     keys.sort()
@@ -70,12 +76,15 @@ def sortedDictValues2(adict):
 
 # a further slight speed-up on my box
 # is to map a bound-method:
+
+
 def sortedDictValues3(adict):
     keys = adict.keys()
     keys.sort()
     return map(adict.get, keys)
 
 import time
+
 
 def sort_compare(a,n):
     print('Dict sort of %d items for %d iterations:' % (len(a),n))
@@ -104,6 +113,7 @@ def sort_compare(a,n):
     print(' speed in c (scxx):',(t2 - t1))
     print(' speed up: %3.2f' % (py/(t2-t1)))
     print(b[:5])
+
 
 def setup_dict(m):
     " does insertion order matter?"

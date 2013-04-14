@@ -25,6 +25,7 @@ try:
 except ImportError:
     cblas = None
 
+
 def test_get_blas_funcs():
     # check that it returns Fortran code for arrays that are
     # fortran-ordered
@@ -74,6 +75,7 @@ def test_get_blas_funcs_alias():
     assert f is g
     assert f is h
 
+
 class TestCBLAS1Simple(TestCase):
 
     def test_axpy(self):
@@ -85,6 +87,7 @@ class TestCBLAS1Simple(TestCase):
             f = getattr(cblas,p+'axpy',None)
             if f is None: continue
             assert_array_almost_equal(f([1,2j,3],[2,-1,3],a=5),[7,10j-1,18])
+
 
 class TestFBLAS1Simple(TestCase):
 
@@ -185,6 +188,7 @@ class TestFBLAS1Simple(TestCase):
             assert_equal(f([-5,4+3j,6]),1)
     #XXX: need tests for rot,rotm,rotg,rotmg
 
+
 class TestFBLAS2Simple(TestCase):
 
     def test_gemv(self):
@@ -233,6 +237,7 @@ class TestFBLAS2Simple(TestCase):
                 assert_array_almost_equal(f(2,[1j,
                                                2j,
                                                3j],[3j,4j]),[[6,8],[12,16],[18,24]])
+
 
 class TestFBLAS3Simple(TestCase):
 

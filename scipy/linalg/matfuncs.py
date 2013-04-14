@@ -27,6 +27,7 @@ import warnings
 eps = np.finfo(float).eps
 feps = np.finfo(single).eps
 
+
 def expm(A, q=None):
     """
     Compute the matrix exponential using Pade approximation.
@@ -52,6 +53,7 @@ def expm(A, q=None):
         warnings.warn("argument q=... in scipy.linalg.expm is deprecated.")
     import scipy.sparse.linalg
     return scipy.sparse.linalg.expm(A)
+
 
 def expm2(A):
     """
@@ -80,6 +82,7 @@ def expm2(A):
         return r.real.astype(t)
     else:
         return r.astype(t)
+
 
 def expm3(A, q=20):
     """
@@ -114,6 +117,7 @@ def expm3(A, q=20):
 
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
 
+
 def toreal(arr, tol=None):
     """Return as real array if imaginary part is small.
 
@@ -133,6 +137,7 @@ def toreal(arr, tol=None):
        np.allclose(arr.imag, 0.0, atol=tol):
         arr = arr.real
     return arr
+
 
 def cosm(A):
     """
@@ -181,6 +186,7 @@ def sinm(A):
     else:
         return -0.5j*(expm(1j*A) - expm(-1j*A))
 
+
 def tanm(A):
     """
     Compute the matrix tangent.
@@ -203,6 +209,7 @@ def tanm(A):
         return toreal(solve(cosm(A), sinm(A)))
     else:
         return solve(cosm(A), sinm(A))
+
 
 def coshm(A):
     """
@@ -227,6 +234,7 @@ def coshm(A):
     else:
         return 0.5*(expm(A) + expm(-A))
 
+
 def sinhm(A):
     """
     Compute the hyperbolic matrix sine.
@@ -250,6 +258,7 @@ def sinhm(A):
     else:
         return 0.5*(expm(A) - expm(-A))
 
+
 def tanhm(A):
     """
     Compute the hyperbolic matrix tangent.
@@ -272,6 +281,7 @@ def tanhm(A):
         return toreal(solve(coshm(A), sinhm(A)))
     else:
         return solve(coshm(A), sinhm(A))
+
 
 def funm(A, func, disp=True):
     """
@@ -350,6 +360,7 @@ def funm(A, func, disp=True):
     else:
         return F, err
 
+
 def logm(A, disp=True):
     """
     Compute matrix logarithm.
@@ -402,6 +413,7 @@ def logm(A, disp=True):
         return F
     else:
         return F, errest
+
 
 def signm(a, disp=True):
     """
@@ -480,6 +492,7 @@ def signm(a, disp=True):
         return S0
     else:
         return S0, errest
+
 
 def sqrtm(A, disp=True):
     """

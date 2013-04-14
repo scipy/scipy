@@ -23,6 +23,7 @@ thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 #distcont = [['genextreme', (3.3184017469423535,)]]
 
+
 def _est_cont_fit():
     # this tests the closeness of the estimated parameters to the true
     # parameters with fit method of continuous distributions

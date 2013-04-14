@@ -8,6 +8,7 @@ from pylab import loglog, show, xlabel, ylabel, title
 set_printoptions(precision=8,linewidth=90)
 import time
 
+
 def sakurai(n):
     """ Example taken from
         T. Sakurai, H. Tadano, Y. Inadomi and U. Nagashima

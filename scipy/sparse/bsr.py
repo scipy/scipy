@@ -18,6 +18,7 @@ from . import sparsetools
 from .sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, \
                         bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
 
+
 class bsr_matrix(_cs_matrix, _minmax_mixin):
     """Block Sparse Row matrix
 
@@ -553,6 +554,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 #        """swap the members of x if this is a column-oriented matrix
 #        """
 #        return (x[0],x[1])
+
 
 def isspmatrix_bsr(x):
     return isinstance(x, bsr_matrix)

@@ -15,6 +15,7 @@ from .inline_tools import attempt_function_call
 function_catalog = inline_tools.function_catalog
 function_cache = inline_tools.function_cache
 
+
 def blitz(expr,local_dict=None, global_dict=None,check_size=1,verbose=0,**kw):
     # this could call inline, but making a copy of the
     # code here is more efficient for several reasons.
@@ -69,6 +70,7 @@ def blitz(expr,local_dict=None, global_dict=None,check_size=1,verbose=0,**kw):
             print('warning: compilation failed. Executing as python code')
             exec(expr, global_dict, local_dict)
 
+
 def ast_to_blitz_expr(ast_seq):
     """ Convert an ast_sequence to a blitz expression.
     """
@@ -106,6 +108,7 @@ def ast_to_blitz_expr(ast_seq):
     #expr = expr.replace('_end', 'blitz::toEnd' )
 
     return expr + ';\n'
+
 
 def test_function():
     expr = "ex[:,1:,1:] = k +  ca_x[:,1:,1:] * ex[:,1:,1:]" \

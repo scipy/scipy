@@ -10,6 +10,7 @@ from scipy.optimize import zeros as cc
 from scipy.optimize._tstutils import methods, mstrings, functions, \
      fstrings, description
 
+
 class BenchZeros(TestCase):
     def bench_run(self):
         a = .5

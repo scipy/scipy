@@ -21,6 +21,8 @@ b = np.array(io.mmread(f)).ravel()
 f.close()
 
 count = [0]
+
+
 def matvec(v):
     count[0] += 1
     sys.stderr.write('%d\r' % count[0])

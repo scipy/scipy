@@ -16,6 +16,7 @@ from .base import isspmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import upcast, upcast_char, to_native, isshape, getdtype, isintlike
 
+
 class coo_matrix(_data_matrix, _minmax_mixin):
     """
     A sparse matrix in COOrdinate format.

@@ -2,16 +2,19 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
+
 class _FakeMatrix(object):
     def __init__(self, data):
         self._data = data
         self.__array_interface__ = data.__array_interface__
+
 
 class _FakeMatrix2(object):
     def __init__(self, data):
         self._data = data
     def __array__(self):
         return self._data
+
 
 def _get_array(shape, dtype):
     """
@@ -37,8 +40,10 @@ def _get_array(shape, dtype):
         np.random.seed(1234)
         return np.random.randn(*shape).astype(dtype)
 
+
 def _id(x):
     return x
+
 
 def assert_no_overwrite(call, shapes, dtypes=None):
     """

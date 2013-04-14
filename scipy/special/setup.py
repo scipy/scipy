@@ -15,6 +15,7 @@ except ImportError:
     raise ValueError("numpy >= 1.4 is required (detected %s from %s)" %
                      (numpy.__version__, numpy.__file__))
 
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('special', parent_package, top_path)

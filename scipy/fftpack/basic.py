@@ -20,8 +20,10 @@ atexit.register(_fftpack.destroy_cfftnd_cache)
 atexit.register(_fftpack.destroy_rfft_cache)
 del atexit
 
+
 def istype(arr, typeclass):
     return issubclass(arr.dtype.type, typeclass)
+
 
 def _datacopied(arr, original):
     """
@@ -44,6 +46,7 @@ def _datacopied(arr, original):
 #
 #      These should be re-enabled once the problems are resolved
 
+
 def _is_safe_size(n):
     """
     Is the size of FFT such that FFTPACK can handle it in single precision
@@ -57,11 +60,13 @@ def _is_safe_size(n):
             n /= c
     return (n <= 1)
 
+
 def _fake_crfft(x, n, *a, **kw):
     if _is_safe_size(n):
         return _fftpack.crfft(x, n, *a, **kw)
     else:
         return _fftpack.zrfft(x, n, *a, **kw).astype(numpy.complex64)
+
 
 def _fake_cfft(x, n, *a, **kw):
     if _is_safe_size(n):
@@ -69,11 +74,13 @@ def _fake_cfft(x, n, *a, **kw):
     else:
         return _fftpack.zfft(x, n, *a, **kw).astype(numpy.complex64)
 
+
 def _fake_rfft(x, n, *a, **kw):
     if _is_safe_size(n):
         return _fftpack.rfft(x, n, *a, **kw)
     else:
         return _fftpack.drfft(x, n, *a, **kw).astype(numpy.float32)
+
 
 def _fake_cfftnd(x, shape, *a, **kw):
     if numpy.all(list(map(_is_safe_size, shape))):
@@ -105,6 +112,7 @@ _DTYPE_TO_FFTN = {
         numpy.dtype(numpy.float64): _fftpack.zfftnd,
 }
 
+
 def _asfarray(x):
     """Like numpy asfarray, except that it does not modify x dtype if x is
     already an array with a float dtype, and do not cast complex types to
@@ -118,6 +126,7 @@ def _asfarray(x):
         if not ret.dtype.char in numpy.typecodes["AllFloat"]:
             return numpy.asfarray(x)
         return ret
+
 
 def _fix_shape(x, n, axis):
     """ Internal auxiliary function for _raw_fft, _raw_fftnd."""
@@ -238,6 +247,7 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     tmp = swapaxes(tmp, axis, -1)
     tmp = work_function(tmp,n,1,0,overwrite_x)
     return swapaxes(tmp, axis, -1)
+
 
 def ifft(x, n=None, axis=-1, overwrite_x=0):
     """
@@ -411,6 +421,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
 
     return _raw_fft(tmp,n,axis,-1,overwrite_x,work_function)
 
+
 def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     """ Internal auxiliary function for fftnd, ifftnd."""
     if s is None:
@@ -520,6 +531,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=0):
     """
     return _raw_fftn_dispatch(x, shape, axes, overwrite_x, 1)
 
+
 def _raw_fftn_dispatch(x, shape, axes, overwrite_x, direction):
     tmp = _asfarray(x)
 
@@ -555,6 +567,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
 
     """
     return _raw_fftn_dispatch(x, shape, axes, overwrite_x, -1)
+
 
 def fft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
     """

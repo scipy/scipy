@@ -19,6 +19,7 @@ from .optimize import MemoizeJac, Result, _check_unknown_options
 from .minpack import _root_hybr, leastsq
 from . import nonlin
 
+
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
          options=None):
     """
@@ -184,6 +185,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
 
     return sol
 
+
 def _root_leastsq(func, x0, args=(), jac=None,
                   col_deriv=0, xtol=1.49012e-08, ftol=1.49012e-08,
                   gtol=0.0, maxiter=0, eps=0.0, factor=100, diag=None,
@@ -200,6 +202,7 @@ def _root_leastsq(func, x0, args=(), jac=None,
                  fun=info.pop('fvec'))
     sol.update(info)
     return sol
+
 
 def _root_nonlin_solve(func, x0, args=(), jac=None,
                        _callback=None, _method=None,

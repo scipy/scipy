@@ -65,6 +65,7 @@ blitz_dir = os.path.join(local_dir,'blitz')
 # The spec/info unification needs to continue so that this can
 # incorporated into the spec somehow.
 
+
 class array_info(base_info.custom_info):
     # throw error if trying to use msvc compiler
 

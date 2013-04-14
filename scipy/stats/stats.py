@@ -305,6 +305,7 @@ def find_repeats(arr):
 ### NAN friendly functions
 ########
 
+
 def nanmean(x, axis=0):
     """
     Compute the mean over the given axis ignoring nans.
@@ -344,6 +345,7 @@ def nanmean(x, axis=0):
 
     x[np.isnan(x)] = 0
     return np.mean(x,axis)/factor
+
 
 def nanstd(x, axis=0, bias=False):
     """
@@ -406,6 +408,7 @@ def nanstd(x, axis=0, bias=False):
         m2c = m2 / (n - 1.)
     return np.sqrt(m2c)
 
+
 def _nanmedian(arr1d):  # This only works on 1d arrays
     """Private function for rank a arrays. Compute the median ignoring Nan.
 
@@ -424,6 +427,7 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
     if x.size == 0:
         return np.nan
     return np.median(x)
+
 
 def nanmedian(x, axis=0):
     """
@@ -539,6 +543,7 @@ def gmean(a, axis=0, dtype=None):
     else:
         log_a = np.log(a)
     return np.exp(log_a.mean(axis=axis))
+
 
 def hmean(a, axis=0, dtype=None):
     """
@@ -707,6 +712,7 @@ def mode(a, axis=0):
         oldmostfreq = mostfrequent
     return mostfrequent, oldcounts
 
+
 def mask_to_limits(a, limits, inclusive):
     """Mask an array for values outside of given limits.
 
@@ -748,6 +754,7 @@ def mask_to_limits(a, limits, inclusive):
         raise ValueError("No array values within given limits")
     return am
 
+
 def tmean(a, limits=None, inclusive=(True, True)):
     """
     Compute the trimmed mean
@@ -788,11 +795,13 @@ def tmean(a, limits=None, inclusive=(True, True)):
     am = mask_to_limits(a.ravel(), limits, inclusive)
     return am.mean()
 
+
 def masked_var(am):
     m = am.mean()
     s = ma.add.reduce((am - m)**2)
     n = am.count() - 1.0
     return s / n
+
 
 def tvar(a, limits=None, inclusive=(True, True)):
     """
@@ -829,6 +838,7 @@ def tvar(a, limits=None, inclusive=(True, True)):
     am = mask_to_limits(a, limits, inclusive)
     return masked_var(am)
 
+
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     """
     Compute the trimmed minimum
@@ -861,6 +871,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     am = mask_to_limits(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
 
+
 def tmax(a, upperlimit, axis=0, inclusive=True):
     """
     Compute the trimmed maximum
@@ -891,6 +902,7 @@ def tmax(a, upperlimit, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
     am = mask_to_limits(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
+
 
 def tstd(a, limits=None, inclusive=(True, True)):
     """
@@ -1076,6 +1088,7 @@ def skew(a, axis=0, bias=True):
         return vals.item()
     return vals
 
+
 def kurtosis(a, axis=0, fisher=True, bias=True):
     """
     Computes the kurtosis (Fisher or Pearson) of a dataset.
@@ -1141,6 +1154,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     else:
         return vals
 
+
 def describe(a, axis=0):
     """
     Computes several descriptive statistics of the passed array.
@@ -1191,6 +1205,7 @@ def describe(a, axis=0):
 ########  NORMALITY TESTS  ##########
 #####################################
 
+
 def skewtest(a, axis=0):
     """
     Tests whether the skew is different from the normal distribution.
@@ -1235,6 +1250,7 @@ def skewtest(a, axis=0):
     y = np.where(y == 0, 1, y)
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha) ** 2 + 1))
     return Z, 2 * distributions.norm.sf(np.abs(Z))
+
 
 def kurtosistest(a, axis=0):
     """
@@ -2277,6 +2293,7 @@ def trim1(a, proportiontocut, tail='right'):
         lowercut = int(proportiontocut*len(a))
         uppercut = len(a)
     return a[lowercut:uppercut]
+
 
 def trim_mean(a, proportiontocut):
     """
@@ -3437,6 +3454,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
             else:
                 return D, distributions.ksone.sf(D,N)*2
 
+
 def chisquare(f_obs, f_exp=None, ddof=0):
     """
     Calculates a one-way chi square test.
@@ -3806,6 +3824,7 @@ def friedmanchisquare(*args):
 
 zprob = special.ndtr
 
+
 def chisqprob(chisq, df):
     """
     Probability value (1-tail) for the Chi^2 probability distribution.
@@ -3829,6 +3848,7 @@ def chisqprob(chisq, df):
 
 ksprob = special.kolmogorov
 fprob = special.fdtrc
+
 
 def betai(a, b, x):
     """
@@ -3863,6 +3883,7 @@ def betai(a, b, x):
 #####################################
 #######  ANOVA CALCULATIONS  #######
 #####################################
+
 
 def glm(data, para):
     """
@@ -3920,6 +3941,7 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
     return n_um / d_en
+
 
 def f_value(ER, EF, dfR, dfF):
     """

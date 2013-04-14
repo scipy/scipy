@@ -33,6 +33,7 @@ _BLOCKSIZE = 512
 
 error = IOError             # For anydbm
 
+
 class _Database(object):
 
     def __init__(self, file):

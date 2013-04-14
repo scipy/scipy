@@ -16,6 +16,7 @@ sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
 #TODO check whether format=XXX is respected
 
+
 class TestConstructUtils(TestCase):
     def test_spdiags(self):
         diags1 = array( [[ 1, 2, 3, 4, 5]] )

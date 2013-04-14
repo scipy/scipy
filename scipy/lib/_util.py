@@ -1,6 +1,7 @@
 import sys
 import warnings
 
+
 class DeprecatedImport(object):
     """
     Deprecated import, with redirection + warning.

@@ -13,6 +13,7 @@ from .data import _data_matrix
 from .sputils import isshape, upcast, upcast_char, getdtype
 from .sparsetools import dia_matvec
 
+
 class dia_matrix(_data_matrix):
     """Sparse matrix with DIAgonal storage
 

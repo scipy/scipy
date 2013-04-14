@@ -40,6 +40,7 @@ for (int i = 0; i < bunches; i++)
 Polyline(hdc,(POINT*)p_data,left_over);
 """
 
+
 def polyline(dc,line,xoffset=0,yoffset=0):
     #------------------------------------------------------------------------
     # Make sure the array is the correct size/shape
@@ -88,6 +89,8 @@ def polyline(dc,line,xoffset=0,yoffset=0):
 # Define a new version of DrawLines that calls the optimized
 # version for numpy arrays when appropriate.
 #-----------------------------------------------------------------------------
+
+
 def NewDrawLines(dc,line):
     """
     """

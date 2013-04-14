@@ -35,6 +35,7 @@ from scipy.weave import swig2_spec, converters
 # swig2 converter to the default list of converters.
 converters.default.insert(0, swig2_spec.swig2_converter())
 
+
 def test():
     """Instantiate the SWIG wrapped object and then call its method
     from C++ using weave.inline

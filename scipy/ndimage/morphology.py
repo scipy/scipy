@@ -50,6 +50,7 @@ def _center_is_true(structure, origin):
                                                  origin)])
     return bool(structure[coor])
 
+
 def iterate_structure(structure, iterations, origin=None):
     """
     Iterate a structure by dilating it with itself.
@@ -123,6 +124,7 @@ def iterate_structure(structure, iterations, origin=None):
         origin = _ni_support._normalize_sequence(origin, structure.ndim)
         origin = [iterations * o for o in origin]
         return out, origin
+
 
 def generate_binary_structure(rank, connectivity):
     """
@@ -401,6 +403,7 @@ def binary_erosion(input, structure=None, iterations=1, mask=None,
     """
     return _binary_erosion(input, structure, iterations, mask,
                            output, border_value, origin, 0, brute_force)
+
 
 def binary_dilation(input, structure=None, iterations=1, mask=None,
         output=None, border_value=0, origin=0, brute_force=False):
@@ -920,6 +923,7 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
         numpy.logical_not(result, result)
         return numpy.logical_and(tmp1, result)
 
+
 def binary_propagation(input, structure=None, mask=None,
                        output=None, border_value=0, origin=0):
     """
@@ -1056,6 +1060,7 @@ def binary_propagation(input, structure=None, mask=None,
     return binary_dilation(input, structure, -1, mask, output,
                            border_value, origin)
 
+
 def binary_fill_holes(input, structure=None, output=None, origin=0):
     """
     Fill the holes in binary objects.
@@ -1146,6 +1151,7 @@ def binary_fill_holes(input, structure=None, output=None, origin=0):
                                  origin)
         numpy.logical_not(output, output)
         return output
+
 
 def grey_erosion(input,  size=None, footprint=None, structure=None,
                  output=None, mode="reflect", cval=0.0, origin=0):
@@ -1952,6 +1958,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         return result[0]
     else:
         return None
+
 
 def distance_transform_cdt(input, metric='chessboard',
                         return_distances=True, return_indices=False,

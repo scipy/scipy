@@ -24,6 +24,7 @@ import scipy.weave.converters as converters
 blitz_type_converters = converters.blitz
 import scipy.weave.c_spec as c_spec
 
+
 def vq(obs,code_book):
     # make sure we're looking at arrays.
     obs = asarray(obs)
@@ -64,6 +65,7 @@ def vq(obs,code_book):
                                            compiler='gcc',
                                            verbose=1)
     return code, distortion
+
 
 def vq2(obs,code_book):
     """ doesn't use blitz (except in conversion)
@@ -190,6 +192,8 @@ def vq3(obs,code_book):
 
 import time
 import RandomArray
+
+
 def compare(m,Nobs,Ncodes,Nfeatures):
     obs = RandomArray.normal(0.,1.,(Nobs,Nfeatures))
     codes = RandomArray.normal(0.,1.,(Ncodes,Nfeatures))

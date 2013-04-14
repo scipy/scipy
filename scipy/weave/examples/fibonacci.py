@@ -15,6 +15,7 @@ import sys
 sys.path.insert(0,'..')
 import ext_tools
 
+
 def build_fibonacci():
     """ Builds an extension module with fibonacci calculators.
     """
@@ -80,11 +81,13 @@ c_fib2 = fibonacci_ext.c_fib2
 #
 #################################################################
 
+
 def py_fib1(a):
     if a <= 2:
         return 1
     else:
         return py_fib1(a-2) + py_fib1(a-1)
+
 
 def py_fib2(a):
     if a <= 2:
@@ -97,6 +100,7 @@ def py_fib2(a):
     return result
 
 import time
+
 
 def recurse_compare(n):
     print('Recursively computing the first %d fibonacci numbers:' % n)
@@ -115,6 +119,7 @@ def recurse_compare(n):
     t2 = time.time()
     print(' speed in c:',t2 - t1)
     print(' speed up: %3.2f' % (py/(t2-t1)))
+
 
 def loop_compare(m,n):
     print('Looping to compute the first %d fibonacci numbers:' % n)

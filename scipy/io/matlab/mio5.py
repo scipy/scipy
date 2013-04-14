@@ -332,6 +332,7 @@ class MatFile5Reader(MatFileReader):
             self.mat_stream.seek(next_position)
         return vars
 
+
 def varmats_from_mat(file_obj):
     """ Pull variables out of mat 5 file as a sequence of mat file objects
 

@@ -12,6 +12,7 @@ import inline_tools
 
 from wxPython.wx import *
 
+
 class MyCanvas(wxScrolledWindow):
     def __init__(self, parent, id=-1, size=wxDefaultSize):
         wxScrolledWindow.__init__(self, parent, id, wxPoint(0, 0), size, wxSUNKEN_BORDER)
@@ -185,6 +186,7 @@ class MyCanvas(wxScrolledWindow):
 #---------------------------------------------------------------------------
 # This example isn't currently used.
 
+
 class py_canvas(wx.wxWindow):
     def __init__(self, parent, id=-1, pos=wx.wxPyDefaultPosition,
                  size=wx.wxPyDefaultSize, **attr):
@@ -197,6 +199,7 @@ class py_canvas(wx.wxWindow):
                """
         inline_tools.inline(code,['self','background'],compiler='msvc')
 #----------------------------------------------------------------------------
+
 
 class MyFrame(wxFrame):
     def __init__(self, parent, ID, title, pos=wxDefaultPosition,
@@ -211,6 +214,7 @@ class MyFrame(wxFrame):
         #canvas = py_canvas(self,-1)
         canvas = MyCanvas(self,-1)
         canvas.Show(true)
+
 
 class MyApp(wxApp):
     def OnInit(self):

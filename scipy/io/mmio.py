@@ -50,6 +50,8 @@ def mminfo(source):
     return MMFile.info(source)
 
 #-------------------------------------------------------------------------------
+
+
 def mmread(source):
     """
     Reads the contents of a Matrix Market file 'filename' into a matrix.
@@ -70,6 +72,8 @@ def mmread(source):
     return MMFile().read(source)
 
 #-------------------------------------------------------------------------------
+
+
 def mmwrite(target, a, comment='', field=None, precision=None):
     """
     Writes the sparse or dense matrix A to a Matrix Market formatted file.

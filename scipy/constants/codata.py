@@ -806,6 +806,7 @@ Wien wavelength displacement law constant              2.897 7721 e-3        0.0
 
 physical_constants = {}
 
+
 def parse_constants(d):
     constants = {}
     for line in d.split('\n'):
@@ -843,14 +844,17 @@ for k in _physical_constants_2006:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
 
+
 class ConstantWarning(DeprecationWarning):
     """Accessing a constant no longer in current CODATA data set"""
     pass
+
 
 def _check_obsolete(key):
     if key in _obsolete_constants and key not in _aliases:
         warnings.warn("Constant '%s' is not in current %s data set" % (
             key, _current_codata), ConstantWarning)
+
 
 def value(key) :
     """
@@ -881,6 +885,7 @@ def value(key) :
     _check_obsolete(key)
     return physical_constants[key][0]
 
+
 def unit(key) :
     """
     Unit in physical_constants indexed by key
@@ -910,6 +915,7 @@ def unit(key) :
     _check_obsolete(key)
     return physical_constants[key][1]
 
+
 def precision(key) :
     """
     Relative precision in physical_constants indexed by key
@@ -938,6 +944,7 @@ def precision(key) :
     """
     _check_obsolete(key)
     return physical_constants[key][2] / physical_constants[key][0]
+
 
 def find(sub=None, disp=False):
     """

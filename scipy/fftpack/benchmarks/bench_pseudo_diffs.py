@@ -10,8 +10,10 @@ from numpy import arange, sin, cos, pi, exp, tanh, sign
 from numpy.testing import *
 from scipy.fftpack import diff, fft, ifft, tilbert, hilbert, shift, fftfreq
 
+
 def random(size):
     return rand(*size)
+
 
 def direct_diff(x,k=1,period=None):
     fx = fft(x)
@@ -28,6 +30,7 @@ def direct_diff(x,k=1,period=None):
         w[250:n-250] = 0.0
     return ifft(w*fx).real
 
+
 def direct_tilbert(x,h=1,period=None):
     fx = fft(x)
     n = len(fx)
@@ -39,12 +42,14 @@ def direct_tilbert(x,h=1,period=None):
     w[0] = 0j
     return ifft(w*fx)
 
+
 def direct_hilbert(x):
     fx = fft(x)
     n = len(fx)
     w = fftfreq(n)*n
     w = 1j*sign(w)
     return ifft(w*fx)
+
 
 def direct_shift(x,a,period=None):
     n = len(x)

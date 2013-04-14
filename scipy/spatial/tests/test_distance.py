@@ -91,6 +91,7 @@ _ytdist = squareform(_tdist)
 
 eo = {}
 
+
 def load_testing_files():
     "Loading test data files for the scipy.spatial.distance tests."
     for fn in _filenames:

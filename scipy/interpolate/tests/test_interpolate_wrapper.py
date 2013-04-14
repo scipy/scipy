@@ -12,6 +12,7 @@ import numpy as np
 from scipy.interpolate.interpolate_wrapper import atleast_1d_and_contiguous, \
         linear, logarithmic, block_average_above, block, nearest
 
+
 class Test(unittest.TestCase):
 
     def assertAllclose(self, x, y, rtol=1.0e-5):

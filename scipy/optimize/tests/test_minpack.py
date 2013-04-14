@@ -25,6 +25,7 @@ class ReturnShape(object):
     def __call__(self, x):
         return np.ones(self.shape)
 
+
 def dummy_func(x, shape):
     """A function that returns an array of ones of the given shape.
     `x` is ignored.
@@ -33,6 +34,8 @@ def dummy_func(x, shape):
 
 # Function and jacobian for tests of solvers for systems of nonlinear
 # equations
+
+
 def pressure_network(flow_rates, Qtot, k):
     """Evaluate non-linear equation system representing
     the pressures and flows in a system of n parallel pipes::
@@ -63,6 +66,7 @@ def pressure_network(flow_rates, Qtot, k):
     F = np.hstack((P[1:] - P[0], flow_rates.sum() - Qtot))
     return F
 
+
 def pressure_network_jacobian(flow_rates, Qtot, k):
     """Return the jacobian of the equation system F(flow_rates)
     computed by `pressure_network` with respect to
@@ -85,9 +89,11 @@ def pressure_network_jacobian(flow_rates, Qtot, k):
 
     return jac
 
+
 def pressure_network_fun_and_grad(flow_rates, Qtot, k):
     return pressure_network(flow_rates, Qtot, k), \
         pressure_network_jacobian(flow_rates, Qtot, k)
+
 
 class TestFSolve(TestCase):
     def test_pressure_network_no_gradient(self):
@@ -141,6 +147,7 @@ class TestFSolve(TestCase):
         p = optimize.fsolve(func, np.array([1, 1], np.float32))
         assert_allclose(func(p), [0, 0], atol=1e-3)
 
+
 class TestRootHybr(TestCase):
     def test_pressure_network_no_gradient(self):
         """root/hybr without gradient, equal pipes -> equal flows"""
@@ -181,6 +188,7 @@ class TestRootLM(TestCase):
         final_flows = optimize.root(pressure_network, initial_guess,
                                     method='lm', args=(Qtot, k)).x
         assert_array_almost_equal(final_flows, np.ones(4))
+
 
 class TestLeastSq(TestCase):
     def setUp(self):
@@ -263,6 +271,7 @@ class TestLeastSq(TestCase):
 
         assert_(success in [1,2,3,4])
         assert_((func(p1,x,y)**2).sum() < 1e-4 * (func(p0,x,y)**2).sum())
+
 
 class TestCurveFit(TestCase):
     def setUp(self):

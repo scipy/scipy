@@ -4,8 +4,10 @@ import sys
 sys.path.insert(0,'..')
 import inline_tools
 
+
 def multi_return():
     return 1, '2nd'
+
 
 def c_multi_return():
 

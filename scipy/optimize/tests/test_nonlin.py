@@ -25,6 +25,7 @@ MUST_WORK = {'anderson': nonlin.anderson, 'broyden1': nonlin.broyden1,
 # Test problems
 #-------------------------------------------------------------------------------
 
+
 def F(x):
     x = np.asmatrix(x).T
     d = matrix(diag([3,2,1.5,1,0.5]))
@@ -34,11 +35,13 @@ def F(x):
 F.xin = [1,1,1,1,1]
 F.KNOWN_BAD = {}
 
+
 def F2(x):
     return x
 F2.xin = [1,2,3,4,5,6]
 F2.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
                 'excitingmixing': nonlin.excitingmixing}
+
 
 def F3(x):
     A = np.mat('-2 1 0; 1 -2 1; 0 1 -2')
@@ -46,6 +49,7 @@ def F3(x):
     return np.dot(A, x) - b
 F3.xin = [1,2,3]
 F3.KNOWN_BAD = {}
+
 
 def F4_powell(x):
     A = 1e4
@@ -55,12 +59,14 @@ F4_powell.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
                        'excitingmixing': nonlin.excitingmixing,
                        'diagbroyden': nonlin.diagbroyden}
 
+
 def F5(x):
     return pressure_network(x, 4, np.array([.5, .5, .5, .5]))
 F5.xin = [2., 0, 2, 0]
 F5.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
                 'linearmixing': nonlin.linearmixing,
                 'diagbroyden': nonlin.diagbroyden}
+
 
 def F6(x):
     x1, x2 = x
@@ -77,6 +83,7 @@ F6.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
 #-------------------------------------------------------------------------------
 # Tests
 #-------------------------------------------------------------------------------
+
 
 class TestNonlin(object):
     """
@@ -195,6 +202,7 @@ class TestSecant(TestCase):
         #
         # .. [Ey] V. Eyert, J. Comp. Phys., 124, 271 (1996).
         self._check_secant(nonlin.Anderson, M=3, w0=0, npoints=3)
+
 
 class TestLinear(TestCase):
     """Solve a linear equation;
@@ -330,6 +338,7 @@ class TestJacobianDotSolve(object):
     def test_krylov(self):
         self._check_dot(nonlin.KrylovJacobian, complex=False, tol=1e-4)
         self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-4)
+
 
 class TestNonlinOldTests(TestCase):
     """ Test case for a simple constrained entropy maximization problem

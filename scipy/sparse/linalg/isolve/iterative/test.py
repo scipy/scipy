@@ -24,17 +24,21 @@ def test_fun_t(alpha, x, beta, y, A, n):
     y[:n] = z
     return
 
+
 def test_psolve(x,b,n):
     x[:n] = b[:n]
     return
+
 
 def test_psolve_t(x,b,n):
     x[:n] = b[:n]
     return
 
+
 def test_psolveq(x,b,which,n):
     x[:n] = b[:n]
     return
+
 
 def test_psolveq_t(x,b,which,n):
     x[:n] = b[:n]

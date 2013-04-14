@@ -14,6 +14,7 @@ import numpy
 import struct
 import warnings
 
+
 class WavFileWarning(UserWarning):
     pass
 
@@ -21,6 +22,8 @@ _big_endian = False
 
 # assumes file pointer is immediately
 #  after the 'fmt ' id
+
+
 def _read_fmt_chunk(fid):
     if _big_endian:
         fmt = '>'
@@ -36,6 +39,8 @@ def _read_fmt_chunk(fid):
 
 # assumes file pointer is immediately
 #   after the 'data' id
+
+
 def _read_data_chunk(fid, noc, bits, mmap=False):
     if _big_endian:
         fmt = '>i'
@@ -62,6 +67,7 @@ def _read_data_chunk(fid, noc, bits, mmap=False):
     if noc > 1:
         data = data.reshape(-1,noc)
     return data
+
 
 def _skip_unknown_chunk(fid):
     if _big_endian:
@@ -94,6 +100,8 @@ def _read_riff_chunk(fid):
     return fsize
 
 # open a wave-file
+
+
 def read(file, mmap=False):
     """
     Return the sample rate (in samples/sec) and data from a WAV file
@@ -151,6 +159,8 @@ def read(file, mmap=False):
 
 # Write a wave-file
 # sample rate, data
+
+
 def write(filename, rate, data):
     """
     Write a numpy array as a WAV file

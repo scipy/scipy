@@ -1018,6 +1018,7 @@ class _TestSlicingAssign:
                       ([[1, 2, 3], [0, 3, 4], [4, 1, 3]],
                        [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
 
+
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
     that implement these features should derive from this class.
@@ -1153,6 +1154,7 @@ class _TestFancyIndexing:
         assert_raises(IndexError, A.__getitem__, Y)
         assert_raises(ValueError, A.__getitem__, (X, 1))
 
+
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
         A = self.spmatrix(np.zeros([5, 5]))
@@ -1213,6 +1215,7 @@ class _TestFancyIndexingAssign:
         B[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
         assert_array_equal(A.todense(), B)
 
+
 class _TestFancyMultidim:
     def test_fancy_indexing_ndarray(self):
         sets = [
@@ -1246,6 +1249,7 @@ class _TestFancyMultidim:
             # This would generate 3-D arrays -- not supported
             assert_raises(IndexError, S.__getitem__, ([I, I], slice(None)))
             assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
+
 
 class _TestFancyMultidimAssign:
     def test_fancy_assign_ndarray(self):
@@ -1337,6 +1341,7 @@ class _TestFancyMultidimAssign:
         C = [1, 2, 3, 4, 5, 6, 7]
         assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C)
         assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C)
+
 
 class _TestArithmetic:
     """
@@ -1496,6 +1501,7 @@ def _possibly_unimplemented(cls, require=True):
         return type(cls.__name__ + "NotImplemented",
                     cls.__bases__,
                     new_dict)
+
 
 def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                       fancy_indexing=True, fancy_assign=True,
@@ -1801,6 +1807,7 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
     def test_fancy_indexing_boolean(self):
         pass
 
+
 class TestDOK(sparse_test_class(slicing=False,
                                 slicing_assign=False,
                                 fancy_indexing=False,
@@ -1939,6 +1946,7 @@ class TestDOK(sparse_test_class(slicing=False,
     @dec.knownfailureif(True, "known deficiency in DOK")
     def test_fancy_indexing_multidim_set(self):
         pass
+
 
 class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix

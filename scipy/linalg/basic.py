@@ -100,6 +100,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
     raise ValueError('illegal value in %d-th argument of internal gesv|posv'
                                                                     % -info)
 
+
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, debug=False, check_finite=True):
     """
@@ -172,6 +173,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         raise LinAlgError("singular matrix: resolution failed at diagonal %s" % (info-1))
     raise ValueError('illegal value in %d-th argument of internal trtrs')
 
+
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                 debug=False, check_finite=True):
     """
@@ -236,6 +238,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     if info > 0:
         raise LinAlgError("singular matrix")
     raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
+
 
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                     check_finite=True):
@@ -445,6 +448,7 @@ def det(a, overwrite_a=False, check_finite=True):
     return a_det
 
 ### Linear Least Squares
+
 
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
           check_finite=True):

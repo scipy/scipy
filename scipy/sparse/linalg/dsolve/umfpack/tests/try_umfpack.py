@@ -54,6 +54,8 @@ def read_triplet( fd ):
 
 ##
 # 06.12.2005, c
+
+
 def read_triplet2( fd ):
     nRow, nCol = map( int, fd.readline().split() )
     nItem = int( fd.readline() )
@@ -71,6 +73,8 @@ def read_triplet2( fd ):
 formatMap = {'triplet' : read_triplet}
 ##
 # 05.12.2005, c
+
+
 def readMatrix( matrixName, options ):
 
     if options.default_url:
@@ -112,6 +116,8 @@ def readMatrix( matrixName, options ):
 
 ##
 # 05.12.2005, c
+
+
 def main():
     parser = OptionParser( usage=usage )
     parser.add_option( "-c", "--compare",

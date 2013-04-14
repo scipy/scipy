@@ -136,6 +136,7 @@ _blas_alias = {'cnrm2' : 'scnrm2', 'znrm2' : 'dznrm2',
                'sdotc': 'sdot', 'sdotu': 'sdot',
                'ddotc': 'ddot', 'ddotu': 'ddot'}
 
+
 def find_best_blas_type(arrays=(), dtype=None):
     """Find best-matching BLAS/LAPACK type.
 
@@ -178,6 +179,7 @@ def find_best_blas_type(arrays=(), dtype=None):
     prefix = _type_conv.get(dtype.char, 'd')
 
     return prefix, dtype, prefer_fortran
+
 
 def _get_funcs(names, arrays, dtype,
                lib_name, fmodule, cmodule,
@@ -223,6 +225,7 @@ def _get_funcs(names, arrays, dtype,
         return funcs[0]
     else:
         return funcs
+
 
 def get_blas_funcs(names, arrays=(), dtype=None):
     """Return available BLAS function objects from names.

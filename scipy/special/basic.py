@@ -34,9 +34,11 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta',
            'SpecialFunctionWarning']
 
+
 class SpecialFunctionWarning(Warning):
     pass
 warnings.simplefilter("always", category=SpecialFunctionWarning)
+
 
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.
@@ -49,6 +51,7 @@ def sinc(x):
     s = sin(w) / w
     seterr(**old_settings)
     return where(x == 0, 1.0, s)
+
 
 def diric(x,n):
     """Returns the periodic sinc function, also called the Dirichlet function:
@@ -109,6 +112,7 @@ def jnjnp_zeros(nt):
     n,m,t,zo = specfun.jdzo(nt)
     return zo[1:nt+1],n[:nt],m[:nt],t[:nt]
 
+
 def jnyn_zeros(n,nt):
     """Compute nt zeros of the Bessel functions Jn(x), Jn'(x), Yn(x), and
     Yn'(x), respectively. Returns 4 arrays of length nt.
@@ -123,22 +127,30 @@ def jnyn_zeros(n,nt):
         raise ValueError("nt > 0")
     return specfun.jyzo(abs(n),nt)
 
+
 def jn_zeros(n,nt):
     """Compute nt zeros of the Bessel function Jn(x).
     """
     return jnyn_zeros(n,nt)[0]
+
+
 def jnp_zeros(n,nt):
     """Compute nt zeros of the Bessel function Jn'(x).
     """
     return jnyn_zeros(n,nt)[1]
+
+
 def yn_zeros(n,nt):
     """Compute nt zeros of the Bessel function Yn(x).
     """
     return jnyn_zeros(n,nt)[2]
+
+
 def ynp_zeros(n,nt):
     """Compute nt zeros of the Bessel function Yn'(x).
     """
     return jnyn_zeros(n,nt)[3]
+
 
 def y0_zeros(nt,complex=0):
     """Returns nt (complex or real) zeros of Y0(z), z0, and the value
@@ -150,6 +162,7 @@ def y0_zeros(nt,complex=0):
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
 
+
 def y1_zeros(nt,complex=0):
     """Returns nt (complex or real) zeros of Y1(z), z1, and the value
     of Y1'(z1) = Y0(z1) at each zero.
@@ -160,6 +173,7 @@ def y1_zeros(nt,complex=0):
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
 
+
 def y1p_zeros(nt,complex=0):
     """Returns nt (complex or real) zeros of Y1'(z), z1', and the value
     of Y1(z1') at each zero.
@@ -169,6 +183,7 @@ def y1p_zeros(nt,complex=0):
     kf = 2
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
+
 
 def bessel_diff_formula(v, z, n, L, phase):
     # from AMS55.
@@ -182,6 +197,7 @@ def bessel_diff_formula(v, z, n, L, phase):
         s += p*L(v-n + i*2, z)
     return s / (2.**n)
 
+
 def jvp(v,z,n=1):
     """Return the nth derivative of Jv(z) with respect to z.
     """
@@ -192,6 +208,7 @@ def jvp(v,z,n=1):
     else:
         return bessel_diff_formula(v, z, n, jv, -1)
 #        return (jvp(v-1,z,n-1) - jvp(v+1,z,n-1))/2.0
+
 
 def yvp(v,z,n=1):
     """Return the nth derivative of Yv(z) with respect to z.
@@ -204,6 +221,7 @@ def yvp(v,z,n=1):
         return bessel_diff_formula(v, z, n, yv, -1)
 #        return (yvp(v-1,z,n-1) - yvp(v+1,z,n-1))/2.0
 
+
 def kvp(v,z,n=1):
     """Return the nth derivative of Kv(z) with respect to z.
     """
@@ -214,6 +232,7 @@ def kvp(v,z,n=1):
     else:
         return (-1)**n * bessel_diff_formula(v, z, n, kv, 1)
 
+
 def ivp(v,z,n=1):
     """Return the nth derivative of Iv(z) with respect to z.
     """
@@ -223,6 +242,7 @@ def ivp(v,z,n=1):
         return iv(v,z)
     else:
         return bessel_diff_formula(v, z, n, iv, 1)
+
 
 def h1vp(v,z,n=1):
     """Return the nth derivative of H1v(z) with respect to z.
@@ -235,6 +255,7 @@ def h1vp(v,z,n=1):
         return bessel_diff_formula(v, z, n, hankel1, -1)
 #        return (h1vp(v-1,z,n-1) - h1vp(v+1,z,n-1))/2.0
 
+
 def h2vp(v,z,n=1):
     """Return the nth derivative of H2v(z) with respect to z.
     """
@@ -245,6 +266,7 @@ def h2vp(v,z,n=1):
     else:
         return bessel_diff_formula(v, z, n, hankel2, -1)
 #        return (h2vp(v-1,z,n-1) - h2vp(v+1,z,n-1))/2.0
+
 
 def sph_jn(n,z):
     """Compute the spherical Bessel function jn(z) and its derivative for
@@ -262,6 +284,7 @@ def sph_jn(n,z):
         nm,jn,jnp = specfun.sphj(n1,z)
     return jn[:(n+1)], jnp[:(n+1)]
 
+
 def sph_yn(n,z):
     """Compute the spherical Bessel function yn(z) and its derivative for
     all orders up to and including n.
@@ -277,6 +300,7 @@ def sph_yn(n,z):
     else:
         nm,yn,ynp = specfun.sphy(n1,z)
     return yn[:(n+1)], ynp[:(n+1)]
+
 
 def sph_jnyn(n,z):
     """Compute the spherical Bessel functions, jn(z) and yn(z) and their
@@ -295,6 +319,7 @@ def sph_jnyn(n,z):
         nm,jn,jnp = specfun.sphj(n1,z)
     return jn[:(n+1)],jnp[:(n+1)],yn[:(n+1)],ynp[:(n+1)]
 
+
 def sph_in(n,z):
     """Compute the spherical Bessel function in(z) and its derivative for
     all orders up to and including n.
@@ -310,6 +335,7 @@ def sph_in(n,z):
     else:
         nm,In,Inp = specfun.sphi(n1,z)
     return In[:(n+1)], Inp[:(n+1)]
+
 
 def sph_kn(n,z):
     """Compute the spherical Bessel function kn(z) and its derivative for
@@ -327,6 +353,7 @@ def sph_kn(n,z):
         nm,kn,knp = specfun.sphk(n1,z)
     return kn[:(n+1)], knp[:(n+1)]
 
+
 def sph_inkn(n,z):
     """Compute the spherical Bessel functions, in(z) and kn(z) and their
     derivatives for all orders up to and including n.
@@ -342,6 +369,7 @@ def sph_inkn(n,z):
         nm,kn,knp = specfun.sphk(n,z)
     return In,Inp,kn,knp
 
+
 def riccati_jn(n,x):
     """Compute the Ricatti-Bessel function of the first kind and its
     derivative for all orders up to and including n.
@@ -355,6 +383,7 @@ def riccati_jn(n,x):
     nm,jn,jnp = specfun.rctj(n1,x)
     return jn[:(n+1)],jnp[:(n+1)]
 
+
 def riccati_yn(n,x):
     """Compute the Ricatti-Bessel function of the second kind and its
     derivative for all orders up to and including n.
@@ -367,6 +396,7 @@ def riccati_yn(n,x):
     else: n1 = n
     nm,jn,jnp = specfun.rcty(n1,x)
     return jn[:(n+1)],jnp[:(n+1)]
+
 
 def _sph_harmonic(m,n,theta,phi):
     """Compute spherical harmonics.
@@ -411,11 +441,14 @@ def _sph_harmonic(m,n,theta,phi):
 
 sph_harm = vectorize(_sph_harmonic,'D')
 
+
 def erfinv(y):
     return ndtri((y+1)/2.0)/sqrt(2)
 
+
 def erfcinv(y):
     return ndtri((2-y)/2.0)/sqrt(2)
+
 
 def erf_zeros(nt):
     """Compute nt complex zeros of the error function erf(z).
@@ -424,12 +457,14 @@ def erf_zeros(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.cerzo(nt)
 
+
 def fresnelc_zeros(nt):
     """Compute nt complex zeros of the cosine Fresnel integral C(z).
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(1,nt)
+
 
 def fresnels_zeros(nt):
     """Compute nt complex zeros of the sine Fresnel integral S(z).
@@ -438,6 +473,7 @@ def fresnels_zeros(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(2,nt)
 
+
 def fresnel_zeros(nt):
     """Compute nt complex zeros of the sine and cosine Fresnel integrals
     S(z) and C(z).
@@ -445,6 +481,7 @@ def fresnel_zeros(nt):
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(2,nt), specfun.fcszo(1,nt)
+
 
 def hyp0f1(v, z):
     r"""Confluent hypergeometric limit function 0F1.
@@ -481,10 +518,12 @@ def hyp0f1(v, z):
     den[z == 0] = 1
     return num / den
 
+
 def assoc_laguerre(x,n,k=0.0):
     return orthogonal.eval_genlaguerre(n, k, x)
 
 digamma = psi
+
 
 def polygamma(n, x):
     """Polygamma function which is the nth derivative of the digamma (psi)
@@ -516,6 +555,7 @@ def polygamma(n, x):
     fac2 = (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1,x)
     return where(n == 0, psi(x), fac2)
 
+
 def mathieu_even_coef(m,q):
     """Compute expansion coefficients for even Mathieu functions and
     modified Mathieu functions.
@@ -542,6 +582,7 @@ def mathieu_even_coef(m,q):
     a = mathieu_a(m,q)
     fc = specfun.fcoef(kd,m,q,a)
     return fc[:km]
+
 
 def mathieu_odd_coef(m,q):
     """Compute expansion coefficients for even Mathieu functions and
@@ -657,6 +698,7 @@ def bernoulli(n):
     else: n1 = n
     return specfun.bernob(int(n1))[:(n+1)]
 
+
 def euler(n):
     """Return an array of the Euler numbers E0..En (inclusive)
     """
@@ -666,6 +708,7 @@ def euler(n):
     if (n < 2): n1 = 2
     else:  n1 = n
     return specfun.eulerb(n1)[:(n+1)]
+
 
 def lpn(n,z):
     """Compute sequence of Legendre functions of the first kind (polynomials),
@@ -687,6 +730,7 @@ def lpn(n,z):
 
 ## lpni
 
+
 def lqn(n,z):
     """Compute sequence of Legendre functions of the second kind,
     Qn(z) and derivatives for all degrees from 0 to n (inclusive).
@@ -702,6 +746,7 @@ def lqn(n,z):
     else:
         qn,qd = specfun.lqnb(n1,z)
     return qn[:(n+1)],qd[:(n+1)]
+
 
 def ai_zeros(nt):
     """Compute the zeros of Airy Functions Ai(x) and Ai'(x), a and a'
@@ -719,6 +764,7 @@ def ai_zeros(nt):
         raise ValueError("nt must be a positive integer scalar.")
     return specfun.airyzo(nt,kf)
 
+
 def bi_zeros(nt):
     """Compute the zeros of Airy Functions Bi(x) and Bi'(x), b and b'
     respectively, and the associated values of Ai(b') and Ai'(b).
@@ -734,6 +780,7 @@ def bi_zeros(nt):
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be a positive integer scalar.")
     return specfun.airyzo(nt,kf)
+
 
 def lmbda(v,x):
     """Compute sequence of lambda functions with arbitrary order v
@@ -754,6 +801,7 @@ def lmbda(v,x):
         vm, vl, dl = specfun.lamn(v1,x)
     return vl[:(n+1)], dl[:(n+1)]
 
+
 def pbdv_seq(v,x):
     """Compute sequence of parabolic cylinder functions Dv(x) and
     their derivatives for Dv0(x)..Dv(x) with v0=v-int(v).
@@ -768,6 +816,7 @@ def pbdv_seq(v,x):
     dv,dp,pdf,pdd = specfun.pbdv(v1,x)
     return dv[:n1+1],dp[:n1+1]
 
+
 def pbvv_seq(v,x):
     """Compute sequence of parabolic cylinder functions Dv(x) and
     their derivatives for Dv0(x)..Dv(x) with v0=v-int(v).
@@ -781,6 +830,7 @@ def pbvv_seq(v,x):
     v1 = n1 + v0
     dv,dp,pdf,pdd = specfun.pbvv(v1,x)
     return dv[:n1+1],dp[:n1+1]
+
 
 def pbdn_seq(n,z):
     """Compute sequence of parabolic cylinder functions Dn(z) and
@@ -797,12 +847,14 @@ def pbdn_seq(n,z):
     cpb,cpd = specfun.cpbdn(n1,z)
     return cpb[:n1+1],cpd[:n1+1]
 
+
 def ber_zeros(nt):
     """Compute nt zeros of the Kelvin function ber x
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,1)
+
 
 def bei_zeros(nt):
     """Compute nt zeros of the Kelvin function bei x
@@ -811,12 +863,14 @@ def bei_zeros(nt):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,2)
 
+
 def ker_zeros(nt):
     """Compute nt zeros of the Kelvin function ker x
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,3)
+
 
 def kei_zeros(nt):
     """Compute nt zeros of the Kelvin function kei x
@@ -825,12 +879,14 @@ def kei_zeros(nt):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,4)
 
+
 def berp_zeros(nt):
     """Compute nt zeros of the Kelvin function ber' x
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,5)
+
 
 def beip_zeros(nt):
     """Compute nt zeros of the Kelvin function bei' x
@@ -839,6 +895,7 @@ def beip_zeros(nt):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,6)
 
+
 def kerp_zeros(nt):
     """Compute nt zeros of the Kelvin function ker' x
     """
@@ -846,12 +903,14 @@ def kerp_zeros(nt):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,7)
 
+
 def keip_zeros(nt):
     """Compute nt zeros of the Kelvin function kei' x
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,8)
+
 
 def kelvin_zeros(nt):
     """Compute nt zeros of all the Kelvin functions returned in a
@@ -870,6 +929,7 @@ def kelvin_zeros(nt):
            specfun.klvnzo(nt,7), \
            specfun.klvnzo(nt,8)
 
+
 def pro_cv_seq(m,n,c):
     """Compute a sequence of characteristic values for the prolate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
@@ -884,6 +944,7 @@ def pro_cv_seq(m,n,c):
     maxL = n-m+1
     return specfun.segv(m,n,c,1)[1][:maxL]
 
+
 def obl_cv_seq(m,n,c):
     """Compute a sequence of characteristic values for the oblate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
@@ -897,6 +958,7 @@ def obl_cv_seq(m,n,c):
         raise ValueError("Difference between n and m is too large.")
     maxL = n-m+1
     return specfun.segv(m,n,c,-1)[1][:maxL]
+
 
 def ellipk(m):
     """
@@ -922,6 +984,7 @@ def ellipk(m):
 
     """
     return ellipkm1(1 - asarray(m))
+
 
 def agm(a,b):
     """Arithmetic, Geometric Mean

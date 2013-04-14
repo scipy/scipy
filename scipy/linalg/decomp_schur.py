@@ -16,6 +16,7 @@ __all__ = ['schur', 'rsf2csf']
 
 _double_precision = ['i','l','d']
 
+
 def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
           check_finite=True):
     """
@@ -155,6 +156,7 @@ _array_kind = {'b':0, 'h':0, 'B': 0, 'i':0, 'l': 0, 'f': 0, 'd': 0, 'F': 1, 'D':
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
 _array_type = [['f', 'd'], ['F', 'D']]
 
+
 def _commonType(*arrays):
     kind = 0
     precision = 0
@@ -163,6 +165,7 @@ def _commonType(*arrays):
         kind = max(kind, _array_kind[t])
         precision = max(precision, _array_precision[t])
     return _array_type[kind][precision]
+
 
 def _castCopy(type, *arrays):
     cast_arrays = ()

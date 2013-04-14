@@ -33,6 +33,7 @@ else:
 _umfpack_skip = dec.skipif(not _have_umfpack,
                            'UMFPACK appears not to be compiled')
 
+
 class _DeprecationAccept:
     def setUp(self):
         self.mgr = WarningManager()
@@ -126,6 +127,7 @@ class TestSolvers(_DeprecationAccept):
         self.b2 = np.array([5, 4, 3, 2, 1])
 
         _DeprecationAccept.setUp(self)
+
 
 class TestFactorization(_DeprecationAccept):
     """Tests factorizing a sparse linear system"""

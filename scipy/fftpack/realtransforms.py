@@ -21,6 +21,7 @@ atexit.register(_fftpack.destroy_ddst2_cache)
 atexit.register(_fftpack.destroy_dst1_cache)
 atexit.register(_fftpack.destroy_dst2_cache)
 
+
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     """
     Return the Discrete Cosine Transform of arbitrary type sequence x.
@@ -121,6 +122,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
               "Orthonormalization not yet supported for DCT-I")
     return _dct(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)
 
+
 def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     """
     Return the Inverse Discrete Cosine Transform of an arbitrary type sequence.
@@ -167,6 +169,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     # Inverse/forward type table
     _TP = {1:1, 2:3, 3:2}
     return _dct(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
+
 
 def _dct(x, type, n=None, axis=-1, overwrite_x=0, normalize=None):
     """
@@ -332,6 +335,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
               "Orthonormalization not yet supported for IDCT-I")
     return _dst(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)
 
+
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     """
     Return the Inverse Discrete Sine Transform of an arbitrary type sequence.
@@ -377,6 +381,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
     # Inverse/forward type table
     _TP = {1:1, 2:3, 3:2}
     return _dst(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
+
 
 def _dst(x, type, n=None, axis=-1, overwrite_x=0, normalize=None):
     """

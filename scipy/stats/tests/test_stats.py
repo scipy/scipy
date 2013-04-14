@@ -52,6 +52,7 @@ X7 = X6 * X
 X8 = X7 * X
 X9 = X8 * X
 
+
 class TestRound(TestCase):
     """ W.II. ROUND
 
@@ -107,6 +108,7 @@ class TestRound(TestCase):
         """ W.II.A.3. Y = INT(3-EXP(LOG(SQR(2)*SQR(2))))    (Y should be 1)"""
         y = (int(round((3-np.exp(np.log(np.sqrt(2.0)*np.sqrt(2.0)))))))
         assert_equal(y,1)
+
 
 class TestBasicStats(TestCase):
     """ W.II.C. Compute basic statistic on all the variables.
@@ -339,6 +341,7 @@ class TestCorrPearsonr(TestCase):
         r, prob = stats.pearsonr(a,b)
         assert_equal(r, -1.0)
         assert_equal(prob, 0.0)
+
 
 class TestFisherExact(TestCase):
     """Some tests to show that fisher_exact() works correctly.
@@ -579,6 +582,7 @@ class TestCorrSpearmanr(TestCase):
         y = stats.spearmanr(ROUND,ROUND)
         r = y[0]
         assert_approx_equal(r,1.0)
+
 
 class TestCorrSpearmanrTies(TestCase):
     """Some tests of tie-handling by the spearmanr function."""
@@ -966,6 +970,7 @@ class TestGMean(TestCase):
         actual = stats.gmean(a)
         assert_approx_equal(actual, 1e200, significant=14)
 
+
 class TestHMean(TestCase):
     def test_1D_list(self):
         a = (1,2,3,4)
@@ -1307,6 +1312,7 @@ class TestMoments(TestCase):
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
 
+
 class TestThreshold(TestCase):
     def test_basic(self):
         a = [-1,2,3,4,5,-1,-2]
@@ -1319,6 +1325,8 @@ class TestThreshold(TestCase):
                            [0,2,3,4,0,0,0])
 
 # Hypothesis test tests
+
+
 class TestStudentTest(TestCase):
     X1 = np.array([-1, 0, 1])
     X2 = np.array([0, 1, 2])
@@ -1475,6 +1483,7 @@ def test_friedmanchisquare():
     assert_array_almost_equal(stats.mstats.friedmanchisquare(x3[0],x3[1],x3[2],x3[3]),(10.68, 0.0135882729582176))
     np.testing.assert_raises(ValueError,stats.mstats.friedmanchisquare,x3[0],x3[1])
 
+
 def test_kstest():
     #from numpy.testing import assert_almost_equal
 
@@ -1532,6 +1541,7 @@ def test_ks_2samp():
         np.array(stats.ks_2samp(np.linspace(1,100,100),
                               np.linspace(1,100,110)+20-0.1)),
         np.array((0.20818181818181825, 0.017981441789762638)))
+
 
 def test_ttest_rel():
     #regression test
@@ -1621,6 +1631,7 @@ def test_ttest_ind():
     finally:
         np.seterr(**olderr)
 
+
 def test_ttest_ind_with_uneq_var():
 
     # check vs. R
@@ -1687,6 +1698,7 @@ def test_ttest_ind_with_uneq_var():
     finally:
         np.seterr(**olderr)
 
+
 def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
     rvn1 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
@@ -1750,6 +1762,7 @@ def test_describe():
     assert_array_almost_equal(sk, skc, decimal=13) # not sure about precision
     assert_array_almost_equal(kurt, kurtc, decimal=13)
 
+
 def test_normalitytests():
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
@@ -1794,6 +1807,7 @@ def test_skewtest_too_few_samples():
     x = np.arange(7.0)
     assert_raises(ValueError, stats.skewtest, x)
 
+
 def test_kurtosistest_too_few_samples():
     """Regression test for ticket #1425.
 
@@ -1801,6 +1815,7 @@ def test_kurtosistest_too_few_samples():
     """
     x = np.arange(4.0)
     assert_raises(ValueError, stats.kurtosistest, x)
+
 
 def mannwhitneyu():
     x = np.array([ 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
@@ -1921,11 +1936,13 @@ class HarMeanTestCase:
 ##        b = 34.1417152147
 ##        self.do(a, b, dtype=np.float128)  # does not work on Win32
 
+
 class TestHarMean(HarMeanTestCase, TestCase):
     def do(self, a, b, axis=None, dtype=None):
         x = stats.hmean(a, axis=axis, dtype=dtype)
         assert_almost_equal(b, x)
         assert_equal(x.dtype, dtype)
+
 
 class GeoMeanTestCase:
     def test_1dlist(self):
@@ -2030,6 +2047,7 @@ class GeoMeanTestCase:
         finally:
             np.seterr(**olderr)
 
+
 class TestGeoMean(GeoMeanTestCase, TestCase):
     def do(self, a, b, axis=None, dtype=None):
         #Note this doesn't test when axis is not specified
@@ -2058,6 +2076,7 @@ def test_binomtest():
 
     assert_approx_equal(stats.binom_test(50,100,0.1), 5.8320387857343647e-024,
                             significant=12, err_msg='fail forp=%f' % p)
+
 
 class Test_Trim(object):
     # test trim functions

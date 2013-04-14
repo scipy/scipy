@@ -4,6 +4,7 @@ import csv
 
 import numpy as np
 
+
 def parse_txt_data(filename):
     f = open(filename)
     try:
@@ -30,6 +31,7 @@ def parse_txt_data(filename):
         f.close()
 
     return np.array(data)
+
 
 def run_test(filename, funcs, args=[0]):
     nargs = len(args)

@@ -9,6 +9,8 @@ import tnc
 # A function to minimize
 # Must return a tuple with the function value and the gradient (as a list)
 # or None to abort the minimization
+
+
 def function(x):
     f = pow(x[0],2.0)+pow(abs(x[1]),3.0)
     g = [0,0]

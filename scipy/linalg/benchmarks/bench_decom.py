@@ -9,8 +9,10 @@ import sys
 from numpy import linalg
 from numpy.testing import *
 
+
 def random(size):
     return rand(*size)
+
 
 def bench_random():
     Numeric_eigvals = linalg.eigvals

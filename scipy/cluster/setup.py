@@ -10,6 +10,7 @@ if sys.version_info[0] >= 3:
 else:
     DEFINE_MACROS = []
 
+
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('cluster', parent_package, top_path)

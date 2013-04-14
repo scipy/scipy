@@ -39,6 +39,7 @@ from numpy.distutils.core import Extension
 
 old_init_posix = distutils.sysconfig._init_posix
 
+
 def _init_posix():
     old_init_posix()
     ld = distutils.sysconfig._config_vars['LDSHARED']
@@ -124,6 +125,7 @@ def create_extension(module_path, **kw):
 
     ext = Extension(module_name, **kw)
     return ext
+
 
 def build_extension(module_path,compiler_name='',build_dir=None,
                     temp_dir=None, verbose=0, **kw):
@@ -290,6 +292,8 @@ def build_extension(module_path,compiler_name='',build_dir=None,
     return success
 
 old_argv = []
+
+
 def configure_sys_argv(compiler_name,temp_dir,build_dir):
     # We're gonna play some tricks with argv here to pass info to distutils
     # which is really built for command line use. better way??
@@ -302,8 +306,10 @@ def configure_sys_argv(compiler_name,temp_dir,build_dir):
     elif compiler_name:
         sys.argv.insert(2,'--compiler='+compiler_name)
 
+
 def restore_sys_argv():
     sys.argv = old_argv
+
 
 def configure_python_path(build_dir):
     #make sure the module lives in a directory on the python path.
@@ -312,6 +318,7 @@ def configure_python_path(build_dir):
         #print "warning: build directory was not part of python path."\
         #      " It has been appended to the path."
         sys.path.append(os.path.abspath(build_dir))
+
 
 def choose_compiler(compiler_name=''):
     """ Try and figure out which compiler is gonna be used on windows.
@@ -336,6 +343,7 @@ def choose_compiler(compiler_name=''):
             compiler_name = 'unix'
     return compiler_name
 
+
 def gcc_exists(name='gcc'):
     """ Test to make sure gcc is found."""
     result = 0
@@ -357,6 +365,7 @@ def gcc_exists(name='gcc'):
         # scripts)
         result = not os.system(" ".join(cmd))
     return result
+
 
 def msvc_exists():
     """ Determine whether MSVC is available on the machine.
@@ -409,6 +418,7 @@ def configure_temp_dir(temp_dir=None):
               " these locations: '%s'" % temp_dir
         raise ValueError(msg)
     return temp_dir
+
 
 def configure_build_dir(build_dir=None):
     # make sure build_dir exists and is writable

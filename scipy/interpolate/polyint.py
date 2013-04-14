@@ -11,9 +11,11 @@ __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator",
            "piecewise_polynomial_interpolate", "approximate_taylor_polynomial",
            "PchipInterpolator", "pchip_interpolate", "pchip"]
 
+
 def _isscalar(x):
     """Check whether x is if a scalar type, or 0-dim"""
     return np.isscalar(x) or hasattr(x, 'shape') and x.shape == ()
+
 
 class _Interpolator1D(object):
     """
@@ -104,6 +106,7 @@ class _Interpolator1D(object):
         else:
             if not union or self.dtype != np.complex_:
                 self.dtype = np.float_
+
 
 class _Interpolator1DWithDerivatives(_Interpolator1D):
     def derivatives(self, x, der=None):
@@ -316,6 +319,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
 
         cn[n,:,:] = 0
         return cn[:der]
+
 
 def krogh_interpolate(xi,yi,x,der=0,axis=0):
     """
@@ -890,6 +894,7 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
     else:
         return P.derivatives(x,der=np.amax(der)+1)[der]
 
+
 class PchipInterpolator(PiecewisePolynomial):
     """PCHIP 1-d monotonic cubic interpolation
 
@@ -978,6 +983,7 @@ class PchipInterpolator(PiecewisePolynomial):
         PchipInterpolator._edge_case(mk[-1],dk[-2], dk[-1])
 
         return dk.reshape(y_shape)
+
 
 def pchip_interpolate(xi, yi, x, der=0, axis=0):
     """

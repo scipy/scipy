@@ -23,6 +23,7 @@ import scipy.weave.inline_tools as inline_tools
 from bisect import bisect_left as bisect
 import types
 
+
 def c_int_search(seq,t,chk=1):
     # do partial type checking in Python.
     # checking that list items are ints should happen in py_to_scalar<int>
@@ -59,6 +60,7 @@ def c_int_search(seq,t,chk=1):
            """
     #return inline_tools.inline(code,['seq','t'],compiler='msvc')
     return inline_tools.inline(code,['seq','t'],verbose=2)
+
 
 def c_int_search_scxx(seq,t,chk=1):
     # do partial type checking in Python.
@@ -127,6 +129,7 @@ try:
 except:
     pass
 
+
 def py_int_search(seq, t):
     min = 0
     max = len(seq) - 1
@@ -142,6 +145,7 @@ def py_int_search(seq, t):
             return m
 
 import time
+
 
 def search_compare(a,n):
     print('Binary search for %d items in %d length list of integers:' % (n,m))

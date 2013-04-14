@@ -18,6 +18,7 @@ from .mio5 import MatFile5Reader, MatFile5Writer
 __all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat',
            'whosmat']
 
+
 @docfiller
 def find_mat_file(file_name, appendmat=True):
     ''' Try to find .mat file on system path
@@ -113,6 +114,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     else:
         raise TypeError('Did not recognize version %s' % mjv)
 
+
 @docfiller
 def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     """
@@ -181,6 +183,7 @@ def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
     if isinstance(file_name, string_types):
         MR.mat_stream.close()
     return mdict
+
 
 @docfiller
 def savemat(file_name, mdict,
@@ -270,6 +273,7 @@ def savemat(file_name, mdict,
     MW.put_variables(mdict)
     if file_is_string:
         file_stream.close()
+
 
 @docfiller
 def whosmat(file_name, appendmat=True, **kwargs):

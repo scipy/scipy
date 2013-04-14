@@ -78,6 +78,7 @@ class TestInterp2D(TestCase):
         assert_(np.isnan(iz[:,mx]).all())
         assert_(np.isfinite(iz[~my,:][:,~mx]).all())
 
+
 class TestInterp1D(object):
 
     def setUp(self):
@@ -374,6 +375,7 @@ class TestInterp1D(object):
         #yield self._nd_check_interp, 'zero'
         #yield self._nd_check_interp, 'zero'
         pass
+
 
 class TestLagrange(TestCase):
 

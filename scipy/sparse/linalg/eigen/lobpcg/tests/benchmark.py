@@ -7,6 +7,7 @@ from pylab import plot, show, legend, xlabel, ylabel
 set_printoptions(precision=3,linewidth=90)
 import time
 
+
 def test(n):
     x = arange(1,n+1)
     B = diag(1./x)
@@ -15,6 +16,7 @@ def test(n):
     A = diag(z)-diag(y,-1)-diag(y,1)
     return A,B
 
+
 def as2d( ar ):
     if ar.ndim == 2:
         return ar
@@ -22,6 +24,7 @@ def as2d( ar ):
         aux = nm.array( ar, copy=False )
         aux.shape = (ar.shape[0], 1)
         return aux
+
 
 def precond(x):
     y = linalg.cho_solve((LorU, lower),x)

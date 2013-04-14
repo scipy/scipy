@@ -11,6 +11,7 @@ __all__ = ['quad', 'dblquad', 'tplquad', 'quad_explain']
 
 error = _quadpack.error
 
+
 def quad_explain(output=sys.stdout):
     """
     Print extra information about integrate.quad() parameters and returns.
@@ -369,11 +370,13 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
         else:  # weight == 'cauchy'
             return _quadpack._qawce(func,a,b,wvar,args,full_output,epsabs,epsrel,limit)
 
+
 def _infunc(x,func,gfun,hfun,more_args):
     a = gfun(x)
     b = hfun(x)
     myargs = (x,) + more_args
     return quad(func,a,b,args=myargs)[0]
+
 
 def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     """
@@ -425,11 +428,13 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     """
     return quad(_infunc,a,b,(func,gfun,hfun,args),epsabs=epsabs,epsrel=epsrel)
 
+
 def _infunc2(y,x,func,qfun,rfun,more_args):
     a2 = qfun(x,y)
     b2 = rfun(x,y)
     myargs = (y,x) + more_args
     return quad(func,a2,b2,args=myargs)[0]
+
 
 def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
             epsrel=1.49e-8):

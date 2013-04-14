@@ -44,6 +44,7 @@ def poisson2d(N,dtype='d',format=None):
 
     return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
 
+
 class BenchmarkSparse(TestCase):
     """Simple benchmarks for sparse matrix module"""
 

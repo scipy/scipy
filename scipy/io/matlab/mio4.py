@@ -77,6 +77,7 @@ mclass_info = {
     mxSPARSE_CLASS: 'sparse',
     }
 
+
 class VarHeader4(object):
     # Mat4 variables never logical or global
     is_logical = False

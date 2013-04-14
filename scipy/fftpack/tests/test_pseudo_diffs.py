@@ -21,8 +21,10 @@ from scipy.fftpack import diff, fft, ifft, tilbert, itilbert, hilbert, \
 import numpy as np
 from numpy import arange, sin, cos, pi, exp, tanh, sum, sign
 
+
 def random(size):
     return rand(*size)
+
 
 def direct_diff(x,k=1,period=None):
     fx = fft(x)
@@ -39,6 +41,7 @@ def direct_diff(x,k=1,period=None):
         w[250:n-250] = 0.0
     return ifft(w*fx).real
 
+
 def direct_tilbert(x,h=1,period=None):
     fx = fft(x)
     n = len(fx)
@@ -50,6 +53,7 @@ def direct_tilbert(x,h=1,period=None):
     w[0] = 0j
     return ifft(w*fx)
 
+
 def direct_itilbert(x,h=1,period=None):
     fx = fft(x)
     n = len(fx)
@@ -59,6 +63,7 @@ def direct_itilbert(x,h=1,period=None):
     w = -1j*tanh(w)
     return ifft(w*fx)
 
+
 def direct_hilbert(x):
     fx = fft(x)
     n = len(fx)
@@ -66,8 +71,10 @@ def direct_hilbert(x):
     w = 1j*sign(w)
     return ifft(w*fx)
 
+
 def direct_ihilbert(x):
     return -direct_hilbert(x)
+
 
 def direct_shift(x,a,period=None):
     n = len(x)
@@ -236,6 +243,7 @@ class TestITilbert(TestCase):
                 assert_array_almost_equal(itilbert(sin(2*x),h),
                                           direct_itilbert(sin(2*x),h))
 
+
 class TestHilbert(TestCase):
 
     def test_definition(self):
@@ -298,6 +306,7 @@ class TestIHilbert(TestCase):
             assert_array_almost_equal(y,y1)
             y2 = itilbert(f,h=10)
             assert_array_almost_equal(y,y2)
+
 
 class TestShift(TestCase):
 

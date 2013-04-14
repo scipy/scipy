@@ -21,6 +21,7 @@ REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
+
 class TestFlapackSimple(TestCase):
 
     def test_gebal(self):
@@ -78,6 +79,7 @@ class TestFlapackSimple(TestCase):
             x, scale, info = trsyl(a1, b1, c1, isgn=-1)
             assert_array_almost_equal(np.dot(a1, x) - np.dot(x, b1), scale * c1, decimal=4)
 
+
 class TestLapack(TestCase):
 
     def test_flapack(self):
@@ -89,6 +91,7 @@ class TestLapack(TestCase):
         if hasattr(clapack,'empty_module'):
             #clapack module is empty
             pass
+
 
 class TestRegression(TestCase):
 

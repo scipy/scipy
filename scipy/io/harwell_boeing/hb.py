@@ -36,6 +36,7 @@ __all__ = ["MalformedHeader", "read_hb", "write", "HBInfo", "HBFile",
 class MalformedHeader(Exception):
     pass
 
+
 class LineOverflow(Warning):
     pass
 

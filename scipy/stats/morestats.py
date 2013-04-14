@@ -79,6 +79,7 @@ def bayes_mvs(data, alpha=0.90):
         raise ValueError("0 < alpha < 1 is required, but alpha=%s was given." % alpha)
     return tuple((x.mean(), x.interval(alpha)) for x in res)
 
+
 def mvsdist(data):
     """
     'Frozen' distributions for mean, variance, and standard deviation of data.
@@ -211,6 +212,7 @@ def kstat(data,n=2):
                 (N*(N-1.0)*(N-2.0)*(N-3.0))
     else:
         raise ValueError("Should not be here.")
+
 
 def kstatvar(data,n=2):
     """
@@ -372,6 +374,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     else:
         return osm, osr
 
+
 def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     """Returns the shape parameter that maximizes the probability plot
     correlation coefficient for the given data to a one-parameter
@@ -411,6 +414,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
         return 1-r
     return optimize.brent(tempfunc, brack=brack, args=(Ui, osr, ppf_func))
 
+
 def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
     """Returns (shape, ppcc), and optionally plots shape vs. ppcc
     (probability plot correlation coefficient) as a function of shape
@@ -433,6 +437,7 @@ def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
         plot.ylabel('Shape Values')# ,deltax=-0.01)
     return svals, ppcc
 
+
 def boxcox_llf(lmb, data):
     """The boxcox log-likelihood function.
     """
@@ -442,6 +447,7 @@ def boxcox_llf(lmb, data):
     f = (lmb-1)*sum(log(data),axis=0)
     f -= N/2.0*log(sum((y-my)**2.0/N,axis=0))
     return f
+
 
 def _boxcox_conf_interval(x, lmax, alpha):
     # Need to find the lambda for which
@@ -468,6 +474,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
         raise RuntimeError("Could not find endpoint.")
     lmminus = optimize.brentq(rootfunc, newlm, lmax, args=(x,target))
     return lmminus, lmplus
+
 
 def boxcox(x,lmbda=None,alpha=None):
     """
@@ -557,6 +564,7 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
         plot.ylabel('Transformation parameter')
     return svals, ppcc
 
+
 def shapiro(x,a=None,reta=False):
     """
     Perform the Shapiro-Wilk test for normality.
@@ -628,6 +636,8 @@ _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 #             on the Empirical Distribution Function.", Biometrika,
 #             Vol. 66, Issue 3, Dec. 1979, pp 591-595.
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
+
+
 def anderson(x,dist='norm'):
     """
     Anderson-Darling test for data coming from a particular distribution
@@ -837,6 +847,7 @@ def ansari(x,y):
     pval = distributions.norm.sf(abs(z)) * 2.0
     return AB, pval
 
+
 def bartlett(*args):
     """
     Perform Bartlett's test for equal variances
@@ -989,6 +1000,7 @@ def levene(*args,**kwds):
     pval = distributions.f.sf(W,k-1,Ntot-k) # 1 - cdf
     return W, pval
 
+
 @setastest(False)
 def binom_test(x,n=None,p=0.5):
     """
@@ -1048,6 +1060,7 @@ def binom_test(x,n=None,p=0.5):
 
     return min(1.0,pval)
 
+
 def _apply_func(x,g,func):
     # g is list of indices into x
     #  separating x into different groups
@@ -1057,6 +1070,7 @@ def _apply_func(x,g,func):
     for k in range(len(g)-1):
         output.append(func(x[g[k]:g[k+1]]))
     return asarray(output)
+
 
 def fligner(*args,**kwds):
     """
@@ -1344,6 +1358,7 @@ def wilcoxon(x, y=None, zero_method="wilcox"):
     prob = 2. * distributions.norm.sf(abs(z))
     return T, prob
 
+
 def _hermnorm(N):
     # return the negatively normalized hermite polynomials up to order N-1
     #  (inclusive)
@@ -1355,6 +1370,7 @@ def _hermnorm(N):
     for n in range(1,N):
         plist[n] = plist[n-1].deriv() - poly1d([1,0])*plist[n-1]
     return plist
+
 
 def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
     if g4 is None:
@@ -1378,6 +1394,7 @@ def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
         xn = (x-mu)/sig
         return totp(xn)*exp(-xn*xn/2.0)
     return thefunc
+
 
 def circmean(samples, high=2*pi, low=0, axis=None):
     """
@@ -1410,6 +1427,7 @@ def circmean(samples, high=2*pi, low=0, axis=None):
         res = res + 2*pi
     return res*(high-low)/2.0/pi + low
 
+
 def circvar(samples, high=2*pi, low=0, axis=None):
     """
     Compute the circular variance for samples assumed to be in a range
@@ -1441,6 +1459,7 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     res = np.mean(exp(1j*ang), axis=axis)
     R = abs(res)
     return ((high-low)/2.0/pi)**2 * 2 * log(1/R)
+
 
 def circstd(samples, high=2*pi, low=0, axis=None):
     """

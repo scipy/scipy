@@ -203,6 +203,7 @@ class TestSmoothBivariateSpline(TestCase):
                     * (tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
         assert_almost_equal(lut.integral(tx[0], tx[-2], ty[0], ty[-2]), trpz)
 
+
 class TestLSQSphereBivariateSpline(TestCase):
     def setUp(self):
         # define the input data and coordinates

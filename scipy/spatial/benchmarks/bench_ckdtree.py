@@ -5,6 +5,7 @@ from numpy.testing import *
 from scipy.spatial import cKDTree, KDTree
 import numpy as np
 
+
 class TestBuild(TestCase):
 
     def bench_build(self):
@@ -25,6 +26,7 @@ class TestBuild(TestCase):
             print('| %6.3fs' % (measure('T2 = cKDTree(data)', repeat) / repeat), end=' ')
             sys.stdout.flush()
             print('')
+
 
 class TestQuery(TestCase):
 
@@ -55,6 +57,7 @@ class TestQuery(TestCase):
             print('| %6.3fs' % (measure('T3.query(queries)', repeat) / repeat), end=' ')
             sys.stdout.flush()
             print('')
+
 
 class TestQueryBallPoint(TestCase):
     def bench_query_ball_point(self):

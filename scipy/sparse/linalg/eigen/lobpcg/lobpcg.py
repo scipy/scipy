@@ -27,6 +27,7 @@ __all__ = ['lobpcg']
 ## except:
 ##     raise ImportError('lobpcg requires symeig')
 
+
 def symeig( mtxA, mtxB=None, eigenvectors=True, select=None ):
     import scipy.linalg as sla
     if select is None:
@@ -65,8 +66,10 @@ def symeig( mtxA, mtxB=None, eigenvectors=True, select=None ):
 
     return out[:-1]
 
+
 def pause():
     input()
+
 
 def save( ar, fileName ):
     from numpy import savetxt
@@ -74,6 +77,8 @@ def save( ar, fileName ):
 
 ##
 # 21.05.2007, c
+
+
 def as2d( ar ):
     """
     If the input array is 2D return it, if it is 1D, append a dimension,
@@ -86,9 +91,11 @@ def as2d( ar ):
         aux.shape = (ar.shape[0], 1)
         return aux
 
+
 class CallableLinearOperator(LinearOperator):
     def __call__(self, x):
         return self.matmat(x)
+
 
 def makeOperator( operatorInput, expectedShape ):
     """Internal. Takes a dense numpy array or a sparse matrix or
@@ -149,6 +156,7 @@ def b_orthonormalize( B, blockVectorV,
         return blockVectorV, blockVectorBV, gramVBV
     else:
         return blockVectorV, blockVectorBV
+
 
 def lobpcg( A, X,
             B=None, M=None, Y=None,

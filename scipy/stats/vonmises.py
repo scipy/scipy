@@ -5,6 +5,7 @@ import scipy.stats
 from scipy.special import i0
 import numpy.testing
 
+
 def von_mises_cdf_series(k,x,p):
     x = float(x)
     s = np.sin(x)
@@ -20,12 +21,14 @@ def von_mises_cdf_series(k,x,p):
 
     return 0.5+x/(2*np.pi) + V/np.pi
 
+
 def von_mises_cdf_normalapprox(k,x,C1):
     b = np.sqrt(2/np.pi)*np.exp(k)/i0(k)
     z = b*np.sin(x/2.)
     C = 24*k
     chi = z - z**3/((C-2*z**2-16)/3.-(z**4+7/4.*z**2+167./2)/(C+C1-z**2+3))**2
     return scipy.stats.norm.cdf(z)
+
 
 def von_mises_cdf(k,x):
     ix = 2*np.pi*np.round(x/(2*np.pi))

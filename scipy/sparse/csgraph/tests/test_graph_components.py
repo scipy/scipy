@@ -7,6 +7,7 @@ from numpy.testing import assert_, assert_equal
 from numpy.testing.utils import WarningManager
 from scipy.sparse import csr_matrix, csgraph
 
+
 def test_cs_graph_components():
     D = np.eye(4, dtype=np.bool)
 

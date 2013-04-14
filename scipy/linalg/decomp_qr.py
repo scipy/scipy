@@ -11,6 +11,7 @@ from .misc import _datacopied
 # XXX: what is qr_old, should it be kept?
 __all__ = ['qr', 'qr_multiply', 'rq', 'qr_old']
 
+
 def safecall(f, name, *args, **kwargs):
     """Call a LAPACK routine, determining lwork automatically and handling
     error return values"""
@@ -24,6 +25,7 @@ def safecall(f, name, *args, **kwargs):
         raise ValueError("illegal value in %d-th argument of internal %s"
                          % (-ret[-1], name))
     return ret[:-2]
+
 
 def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
        check_finite=True):
@@ -172,6 +174,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
 
     return (Q,) + Rj
 
+
 def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     overwrite_a=False, overwrite_c=False):
     """
@@ -292,6 +295,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         cQ = cQ.ravel()
 
     return (cQ,) + raw[1:]
+
 
 @numpy.deprecate
 def qr_old(a, overwrite_a=False, lwork=None, check_finite=True):

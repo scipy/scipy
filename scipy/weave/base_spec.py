@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+
 class base_converter(object):
     """
         Properties:
@@ -72,6 +73,7 @@ class base_converter(object):
 
 import UserList
 from . import base_info
+
 
 class arg_spec_list(UserList.UserList):
     def build_information(self):

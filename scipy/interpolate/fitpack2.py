@@ -523,6 +523,7 @@ system (deficiency=%i). If deficiency is large, the results may be
 inaccurate. Deficiency may strongly depend on the value of eps."""
                     }
 
+
 class BivariateSpline(_BivariateSplineBase):
     """
     Base class for bivariate splines.

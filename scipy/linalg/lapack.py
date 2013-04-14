@@ -235,6 +235,7 @@ _lapack_alias = {
     'corgrq': 'cungrq', 'zorgrq': 'zungrq',
 }
 
+
 def get_lapack_funcs(names, arrays=(), dtype=None):
     """Return available LAPACK function objects from names.
 

@@ -22,6 +22,7 @@ except ImportError:
         return (hasattr(x, '__len__') or hasattr(x, '__next__')
                 or hasattr(x, 'next'))
 
+
 class dok_matrix(spmatrix, dict):
     """
     Dictionary Of Keys based sparse matrix.

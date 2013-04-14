@@ -47,6 +47,8 @@ from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
 
 # Use future defaults to silence unwanted test warnings
 savemat_future = partial(savemat, oned_as='row')
+
+
 class MatFile5Reader_future(MatFile5Reader):
     def __init__(self, *args, **kwargs):
         sar = kwargs.get('struct_as_record')
@@ -56,6 +58,7 @@ class MatFile5Reader_future(MatFile5Reader):
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
+
 
 def mlarr(*args, **kwargs):
     ''' Convenience function to return matlab-compatible 2D array
@@ -404,6 +407,7 @@ def test_gzip_simple():
                               expected['x'].todense(),
                               err_msg=repr(actual))
 
+
 def test_multiple_open():
     # Ticket #1039, on Windows: check that files are not left open
     tmpdir = mkdtemp()
@@ -431,6 +435,7 @@ def test_multiple_open():
         f.close()
     finally:
         shutil.rmtree(tmpdir)
+
 
 def test_mat73():
     # Check any hdf5 files raise an error

@@ -19,6 +19,7 @@ class TestBuildSliceAtom(TestCase):
         desired = 'slice(1,2-1)'
         self.generic_check(slice_vars,desired)
 
+
 class TestSlice(TestCase):
 
     def generic_check(self,suite_string,desired):
@@ -113,11 +114,13 @@ class TestSlice(TestCase):
                    'single_index':'0'}
         self.generic_check(test,desired)
 
+
 def replace_whitespace(in_str):
     out = in_str.replace(" ","")
     out = out.replace("\t","")
     out = out.replace("\n","")
     return out
+
 
 class TestTransformSlices(TestCase):
 

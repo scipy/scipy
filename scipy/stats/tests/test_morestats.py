@@ -265,13 +265,16 @@ def test_mood():
     assert_array_almost_equal(stats.mood(x1,x1**2),
             (-1.3830857299399906, 0.16663858066771478), 11)
 
+
 def test_mood_bad_arg():
     """Raise ValueError when the sum of the lengths of the args is less than 3."""
     assert_raises(ValueError, stats.mood, [1], [])
 
+
 def test_oneway_bad_arg():
     """Raise ValueError is fewer than two args are given."""
     assert_raises(ValueError, stats.oneway, [1])
+
 
 def test_wilcoxon_bad_arg():
     """Raise ValueError when two args of different lengths are given or
@@ -279,10 +282,12 @@ def test_wilcoxon_bad_arg():
     assert_raises(ValueError, stats.wilcoxon, [1], [1,2])
     assert_raises(ValueError, stats.wilcoxon, [1,2], [1,2], "dummy")
 
+
 def test_mvsdist_bad_arg():
     """Raise ValueError if fewer than two data points are given."""
     data = [1]
     assert_raises(ValueError, stats.mvsdist, data)
+
 
 def test_kstat_bad_arg():
     """Raise ValueError if n > 4 or n > 1."""
@@ -290,26 +295,31 @@ def test_kstat_bad_arg():
     n = 10
     assert_raises(ValueError, stats.kstat, data, n=n)
 
+
 def test_kstatvar_bad_arg():
     """Raise ValueError is n is not 1 or 2."""
     data = [1]
     n = 10
     assert_raises(ValueError, stats.kstatvar, data, n=n)
 
+
 def test_probplot_bad_arg():
     """Raise ValueError when given an invalid distribution."""
     data = [1]
     assert_raises(ValueError, stats.probplot, data, dist="plate_of_shrimp")
+
 
 def test_ppcc_max_bad_arg():
     """Raise ValueError when given an invalid distribution."""
     data = [1]
     assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
+
 def test_boxcox_bad_arg():
     """Raise ValueError if any data value is negative."""
     x = np.array([-1])
     assert_raises(ValueError, stats.boxcox, x)
+
 
 def test_circstats():
     x = np.array([355,5,2,359,10,350])
@@ -324,6 +334,7 @@ def test_circstats():
     S = stats.circstd(x, high=360)
     Sval = 6.520702116
     assert_allclose(S, Sval, rtol=1e-7)
+
 
 def test_circmean_axis():
     x = np.array([[355,5,2,359,10,350],
@@ -341,6 +352,7 @@ def test_circmean_axis():
     M2 = [stats.circmean(x[:,i], high=360) for i in range(x.shape[1])]
     assert_allclose(M1, M2, rtol=1e-14)
 
+
 def test_circvar_axis():
     x = np.array([[355,5,2,359,10,350],
                   [351,7,4,352,9,349],
@@ -357,6 +369,7 @@ def test_circvar_axis():
     V1 = stats.circvar(x, high=360, axis=0)
     V2 = [stats.circvar(x[:,i], high=360) for i in range(x.shape[1])]
     assert_allclose(V1, V2, rtol=1e-11)
+
 
 def test_circstd_axis():
     x = np.array([[355,5,2,359,10,350],
@@ -389,6 +402,7 @@ def test_circstats_small():
     S1 = x.std()
     S2 = stats.circstd(x, high=360)
     assert_allclose(S2, S1, rtol=1e-4)
+
 
 def test_accuracy_wilcoxon():
     freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]

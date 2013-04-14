@@ -172,6 +172,7 @@ kgf = kilogram_force = g # * 1 kg
 
 #functions for conversions that are not linear
 
+
 def C2K(C):
     """
     Convert Celsius to Kelvin
@@ -199,6 +200,7 @@ def C2K(C):
 
     """
     return _np.asanyarray(C) + zero_Celsius
+
 
 def K2C(K):
     """
@@ -228,6 +230,7 @@ def K2C(K):
     """
     return _np.asanyarray(K) - zero_Celsius
 
+
 def F2C(F):
     """
     Convert Fahrenheit to Celsius
@@ -255,6 +258,7 @@ def F2C(F):
     """
     return (_np.asanyarray(F) - 32) / 1.8
 
+
 def C2F(C):
     """
     Convert Celsius to Fahrenheit
@@ -281,6 +285,7 @@ def C2F(C):
 
     """
     return 1.8 * _np.asanyarray(C) + 32
+
 
 def F2K(F):
     """
@@ -310,6 +315,7 @@ def F2K(F):
 
     """
     return C2K(F2C(_np.asanyarray(F)))
+
 
 def K2F(K):
     """
@@ -342,6 +348,7 @@ def K2F(K):
 
 #optics
 
+
 def lambda2nu(lambda_):
     """
     Convert wavelength to optical frequency
@@ -369,6 +376,7 @@ def lambda2nu(lambda_):
 
     """
     return _np.asanyarray(c) / lambda_
+
 
 def nu2lambda(nu):
     """

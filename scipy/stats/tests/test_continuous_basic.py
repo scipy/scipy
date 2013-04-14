@@ -158,6 +158,7 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
             'powerlognorm', 'johnsonsu', 'kstwobign']
 #distslow are sorted by speed (very slow to slow)
 
+
 def _silence_fp_errors(func):
     def wrap(*a, **kw):
         olderr = np.seterr(all='ignore')
@@ -167,6 +168,7 @@ def _silence_fp_errors(func):
             np.seterr(**olderr)
     wrap.__name__ = func.__name__
     return wrap
+
 
 @_silence_fp_errors
 def test_cont_basic():
@@ -201,6 +203,7 @@ def test_cont_basic():
             alpha = 0.01
             yield check_distribution_rvs, distname, arg, alpha, rvs
 
+
 @npt.dec.slow
 def test_cont_basic_slow():
     # same as above for slow distributions
@@ -231,6 +234,7 @@ def test_cont_basic_slow():
             alpha = 0.01
             yield check_distribution_rvs, distname, arg, alpha, rvs
 
+
 @_silence_fp_errors
 def check_moment(distfn, arg, m, v, msg):
     m1  = distfn.moment(1,*arg)
@@ -250,6 +254,7 @@ def check_moment(distfn, arg, m, v, msg):
                msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
         #np.isnan(m2) temporary special treatment for loggamma
 
+
 @_silence_fp_errors
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
     #this did not work, skipped silently by nose
@@ -261,6 +266,7 @@ def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
         check_sample_var(sv, sn, v)
 ##    check_sample_meanvar( sm, m, msg + 'sample mean test')
 ##    check_sample_meanvar( sv, v, msg + 'sample var test')
+
 
 def check_sample_mean(sm,v,n, popmean):
     """
@@ -282,6 +288,7 @@ Returns: t-value, two-tailed prob
     #return t,prob
     npt.assert_(prob > 0.01, 'mean fail, t,prob = %f, %f, m,sm=%f,%f' % (t,prob,popmean,sm))
 
+
 def check_sample_var(sv,n, popvar):
     '''
 two-sided chisquare test for sample variance equal to hypothesized variance
@@ -299,6 +306,7 @@ def check_sample_skew_kurt(distfn, arg, ss, sk, msg):
     check_sample_meanvar( sk, kurt, msg + 'sample kurtosis test')
     check_sample_meanvar( ss, skew, msg + 'sample skew test')
 
+
 def check_sample_meanvar(sm,m,msg):
     if not np.isinf(m) and not np.isnan(m):
         npt.assert_almost_equal(sm, m, decimal=DECIMAL, err_msg=msg +
@@ -306,12 +314,14 @@ def check_sample_meanvar(sm,m,msg):
 ##    else:
 ##        npt.assert_(abs(sm) > 10000), msg='infinite moment, sm = ' + str(sm))
 
+
 @_silence_fp_errors
 def check_cdf_ppf(distfn,arg,msg):
     values = [0.001, 0.5, 0.999]
     npt.assert_almost_equal(distfn.cdf(distfn.ppf(values, *arg), *arg),
                             values, decimal=DECIMAL, err_msg=msg +
                             ' - cdf-ppf roundtrip')
+
 
 @_silence_fp_errors
 def check_sf_isf(distfn,arg,msg):
@@ -322,6 +332,7 @@ def check_sf_isf(distfn,arg,msg):
                             1.0-distfn.sf([0.1,0.9], *arg),
                             decimal=DECIMAL, err_msg=msg +
                             ' - cdf-sf relationship')
+
 
 @_silence_fp_errors
 def check_pdf(distfn, arg, msg):
@@ -340,6 +351,7 @@ def check_pdf(distfn, arg, msg):
     npt.assert_almost_equal(pdfv, cdfdiff,
                 decimal=DECIMAL, err_msg=msg + ' - cdf-pdf relationship')
 
+
 @_silence_fp_errors
 def check_pdf_logpdf(distfn, args, msg):
     # compares pdf at several points with the log of the pdf
@@ -351,6 +363,7 @@ def check_pdf_logpdf(distfn, args, msg):
     logpdf = logpdf[np.isfinite(logpdf)]
     npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg + " - logpdf-log(pdf) relationship")
 
+
 @_silence_fp_errors
 def check_sf_logsf(distfn, args, msg):
     # compares sf at several points with the log of the sf
@@ -361,6 +374,7 @@ def check_sf_logsf(distfn, args, msg):
     sf = sf[sf != 0]
     logsf = logsf[np.isfinite(logsf)]
     npt.assert_almost_equal(np.log(sf), logsf, decimal=7, err_msg=msg + " - logsf-log(sf) relationship")
+
 
 @_silence_fp_errors
 def check_cdf_logcdf(distfn, args, msg):

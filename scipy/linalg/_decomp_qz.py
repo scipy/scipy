@@ -14,6 +14,7 @@ __all__ = ['qz']
 
 _double_precision = ['i','l','d']
 
+
 def _select_function(sort, typ):
     if typ in ['F','D']:
         if callable(sort):

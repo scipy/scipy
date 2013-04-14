@@ -52,6 +52,7 @@ std::string %(cpp_clean_struct)s_to_py( %(cpp_struct)s* cpp_ptr)
 
 """
 
+
 class cpp_namespace_converter(base_converter):
     _build_information = [common_info.swig_info()]
     def __init__(self,class_name=None):

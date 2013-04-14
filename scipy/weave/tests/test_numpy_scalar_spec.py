@@ -18,10 +18,12 @@ from scipy.weave.build_tools import msvc_exists, gcc_exists
 from scipy.weave.catalog import unique_file
 from scipy.weave.numpy_scalar_spec import numpy_complex_scalar_converter
 
+
 def unique_mod(d,file_name):
     f = os.path.basename(unique_file(d,file_name))
     m = os.path.splitext(f)[0]
     return m
+
 
 def remove_whitespace(in_str):
     out = in_str.replace(" ","")
@@ -33,6 +35,7 @@ def remove_whitespace(in_str):
 # Scalar conversion test classes
 #   int, float, complex
 #----------------------------------------------------------------------------
+
 
 class NumpyComplexScalarConverter(TestCase):
 
@@ -135,12 +138,14 @@ def setup_test_location():
 
 test_dir = setup_test_location()
 
+
 def teardown_test_location():
     import tempfile
     test_dir = os.path.join(tempfile.gettempdir(),'test_files')
     if sys.path[0] == test_dir:
         sys.path = sys.path[1:]
     return test_dir
+
 
 def remove_file(name):
     test_dir = os.path.abspath(name)

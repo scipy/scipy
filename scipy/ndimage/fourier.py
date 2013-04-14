@@ -58,6 +58,7 @@ def _get_output_fourier(output, input):
         return_value = None
     return output, return_value
 
+
 def _get_output_fourier_complex(output, input):
     if output is None:
         if input.dtype.type in [numpy.complex64, numpy.complex128]:
@@ -75,6 +76,7 @@ def _get_output_fourier_complex(output, input):
             raise RuntimeError("output shape not correct")
         return_value = None
     return output, return_value
+
 
 def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
     """
@@ -121,6 +123,7 @@ def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
     _nd_image.fourier_filter(input, sigmas, n, axis, output, 0)
     return return_value
 
+
 def fourier_uniform(input, size, n=-1, axis=-1, output=None):
     """
     Multi-dimensional uniform fourier filter.
@@ -164,6 +167,7 @@ def fourier_uniform(input, size, n=-1, axis=-1, output=None):
         sizes = sizes.copy()
     _nd_image.fourier_filter(input, sizes, n, axis, output, 1)
     return return_value
+
 
 def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     """
@@ -212,6 +216,7 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
         sizes = sizes.copy()
     _nd_image.fourier_filter(input, sizes, n, axis, output, 2)
     return return_value
+
 
 def fourier_shift(input, shift, n=-1, axis=-1, output=None):
     """

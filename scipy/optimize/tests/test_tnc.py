@@ -9,6 +9,7 @@ from scipy import optimize
 import numpy as np
 from math import pow
 
+
 class TestTnc(TestCase):
     """TNC non-linear optimization.
 

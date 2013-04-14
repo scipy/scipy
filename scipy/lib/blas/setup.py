@@ -8,6 +8,7 @@ from distutils.dep_util import newer_group, newer
 from glob import glob
 from os.path import join
 
+
 def needs_cblas_wrapper(info):
     """Returns true if needs c wrapper around cblas for calling from
     fortran."""
@@ -34,6 +35,7 @@ python module cblas
   end interface
 end python module cblas
 '''
+
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
