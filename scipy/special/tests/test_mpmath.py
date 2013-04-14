@@ -884,7 +884,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.expint),
                             [IntArg(0, 100), Arg()])
 
-    @knownfailure_overridable("behavior at large arguments (asymptotic expansion missing a sub-leading term)")
     def test_fresnels(self):
         def fresnels(x):
             return sc.fresnel(x)[0]
@@ -892,7 +891,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.fresnels,
                             [Arg()])
 
-    @knownfailure_overridable("behavior at large arguments (asymptotic expansion missing a sub-leading term)")
     def test_fresnelc(self):
         def fresnelc(x):
             return sc.fresnel(x)[1]
