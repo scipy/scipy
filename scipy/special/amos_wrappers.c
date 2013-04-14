@@ -127,6 +127,30 @@ rotate_i(npy_cdouble i, npy_cdouble k, double v)
     return w;
 }
 
+int cephes_airy(double x, double *ai, double *aip, double *bi, double *bip);
+
+int airy_wrap(double x, double *ai, double *aip, double *bi, double *bip)
+{
+    npy_cdouble z, zai, zaip, zbi, zbip;
+
+    /* For small arguments, use Cephes as it's slightly faster.
+     * For large arguments, use AMOS as it's more accurate.
+     */
+    if (x < -10 || x > 10) {
+        z.real = x;
+        z.imag = 0;
+        cairy_wrap(z, &zai, &zaip, &zbi, &zbip);
+        *ai  = zai.real;
+        *aip = zaip.real;
+        *bi  = zbi.real;
+        *bip = zbip.real;
+    }
+    else {
+        cephes_airy(x, ai, aip, bi, bip);
+    }
+    return 0;
+}
+
 int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
   int id = 0;
   int ierr = 0;
