@@ -328,7 +328,8 @@ class TestSolve(TestCase):
 
         n = 20
         a = random([n,n])
-        for i in range(n): a[i,i] = 20*(.1+a[i,i])
+        for i in range(n):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(4):
             b = random([n,3])
             x = solve(a,b)
@@ -337,7 +338,8 @@ class TestSolve(TestCase):
     def test_random_complex(self):
         n = 20
         a = random([n,n]) + 1j * random([n,n])
-        for i in range(n): a[i,i] = 20*(.1+a[i,i])
+        for i in range(n):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(2):
             b = random([n,3])
             x = solve(a,b)
@@ -436,7 +438,8 @@ class TestInv(TestCase):
         n = 20
         for i in range(4):
             a = random([n,n])
-            for i in range(n): a[i,i] = 20*(.1+a[i,i])
+            for i in range(n):
+                a[i,i] = 20*(.1+a[i,i])
             a_inv = inv(a)
             assert_array_almost_equal(dot(a,a_inv),
                                       identity(n))
@@ -450,7 +453,8 @@ class TestInv(TestCase):
         n = 20
         for i in range(4):
             a = random([n,n])+2j*random([n,n])
-            for i in range(n): a[i,i] = 20*(.1+a[i,i])
+            for i in range(n):
+                a[i,i] = 20*(.1+a[i,i])
             a_inv = inv(a)
             assert_array_almost_equal(dot(a,a_inv),
                                       identity(n))
@@ -516,7 +520,8 @@ class TestLstsq(TestCase):
         #bug report: Nils Wagner
         n = 200
         a = random([n,2])
-        for i in range(2): a[i,i] = 20*(.1+a[i,i])
+        for i in range(2):
+            a[i,i] = 20*(.1+a[i,i])
         b = random([n,3])
         x = lstsq(a,b)[0]
         assert_array_almost_equal(x,direct_lstsq(a,b))
@@ -553,7 +558,8 @@ class TestLstsq(TestCase):
 
         n = 20
         a = random([n,n])
-        for i in range(n): a[i,i] = 20*(.1+a[i,i])
+        for i in range(n):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(4):
             b = random([n,3])
             x = lstsq(a,b)[0]
@@ -562,7 +568,8 @@ class TestLstsq(TestCase):
     def test_random_complex_exact(self):
         n = 20
         a = random([n,n]) + 1j * random([n,n])
-        for i in range(n): a[i,i] = 20*(.1+a[i,i])
+        for i in range(n):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(2):
             b = random([n,3])
             x = lstsq(a,b)[0]
@@ -572,7 +579,8 @@ class TestLstsq(TestCase):
         n = 20
         m = 15
         a = random([n,m])
-        for i in range(m): a[i,i] = 20*(.1+a[i,i])
+        for i in range(m):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(4):
             b = random([n,3])
             x,res,r,s = lstsq(a,b)

@@ -65,7 +65,8 @@ def diff(x,order=1,period=None, _cache=_cache):
     omega = _cache.get((n,order,c))
     if omega is None:
         if len(_cache) > 20:
-            while _cache: _cache.popitem()
+            while _cache:
+                _cache.popitem()
         def kernel(k,order=order,c=c):
             if k:
                 return pow(c*k,order)
@@ -173,9 +174,11 @@ def itilbert(x,h,period=None, _cache=_cache):
     omega = _cache.get((n,h))
     if omega is None:
         if len(_cache) > 20:
-            while _cache: _cache.popitem()
+            while _cache:
+                _cache.popitem()
         def kernel(k,h=h):
-            if k: return -tanh(h*k)
+            if k:
+                return -tanh(h*k)
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,h)] = omega
@@ -228,10 +231,13 @@ def hilbert(x, _cache=_cache):
     omega = _cache.get(n)
     if omega is None:
         if len(_cache) > 20:
-            while _cache: _cache.popitem()
+            while _cache:
+                _cache.popitem()
         def kernel(k):
-            if k > 0: return 1.0
-            elif k < 0: return -1.0
+            if k > 0:
+                return 1.0
+            elif k < 0:
+                return -1.0
             return 0.0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[n] = omega
@@ -298,9 +304,11 @@ def cs_diff(x, a, b, period=None, _cache=_cache):
     omega = _cache.get((n,a,b))
     if omega is None:
         if len(_cache) > 20:
-            while _cache: _cache.popitem()
+            while _cache:
+                _cache.popitem()
         def kernel(k,a=a,b=b):
-            if k: return -cosh(a*k)/sinh(b*k)
+            if k:
+                return -cosh(a*k)/sinh(b*k)
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,a,b)] = omega
@@ -349,9 +357,11 @@ def sc_diff(x, a, b, period=None, _cache=_cache):
     omega = _cache.get((n,a,b))
     if omega is None:
         if len(_cache) > 20:
-            while _cache: _cache.popitem()
+            while _cache:
+                _cache.popitem()
         def kernel(k,a=a,b=b):
-            if k: return sinh(a*k)/cosh(b*k)
+            if k:
+                return sinh(a*k)/cosh(b*k)
             return 0
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,a,b)] = omega
@@ -399,9 +409,11 @@ def ss_diff(x, a, b, period=None, _cache=_cache):
     omega = _cache.get((n,a,b))
     if omega is None:
         if len(_cache) > 20:
-            while _cache: _cache.popitem()
+            while _cache:
+                _cache.popitem()
         def kernel(k,a=a,b=b):
-            if k: return sinh(a*k)/sinh(b*k)
+            if k:
+                return sinh(a*k)/sinh(b*k)
             return float(a)/b
         omega = convolve.init_convolution_kernel(n,kernel)
         _cache[(n,a,b)] = omega
@@ -453,7 +465,8 @@ def cc_diff(x, a, b, period=None, _cache=_cache):
     omega = _cache.get((n,a,b))
     if omega is None:
         if len(_cache) > 20:
-            while _cache: _cache.popitem()
+            while _cache:
+                _cache.popitem()
         def kernel(k,a=a,b=b):
             return cosh(a*k)/cosh(b*k)
         omega = convolve.init_convolution_kernel(n,kernel)
@@ -493,9 +506,12 @@ def shift(x, a, period=None, _cache=_cache):
     omega = _cache.get((n,a))
     if omega is None:
         if len(_cache) > 20:
-            while _cache: _cache.popitem()
-        def kernel_real(k,a=a): return cos(a*k)
-        def kernel_imag(k,a=a): return sin(a*k)
+            while _cache:
+                _cache.popitem()
+        def kernel_real(k,a=a):
+            return cos(a*k)
+        def kernel_imag(k,a=a):
+            return sin(a*k)
         omega_real = convolve.init_convolution_kernel(n,kernel_real,d=0,
                                                       zero_nyquist=0)
         omega_imag = convolve.init_convolution_kernel(n,kernel_imag,d=1,

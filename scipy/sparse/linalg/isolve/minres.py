@@ -227,7 +227,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         epsr   = Anorm * ynorm * tol
         diag   = gbar
 
-        if diag == 0: diag = epsa
+        if diag == 0:
+            diag = epsa
 
         qrnorm = phibar
         rnorm  = qrnorm
@@ -248,28 +249,43 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         if istop == 0:
             t1 = 1 + test1      # These tests work if tol < eps
             t2 = 1 + test2
-            if t2    <= 1       : istop = 2
-            if t1    <= 1       : istop = 1
+            if t2    <= 1       :
+                istop = 2
+            if t1    <= 1       :
+                istop = 1
 
-            if itn   >= maxiter : istop = 6
-            if Acond >= 0.1/eps : istop = 4
-            if epsx  >= beta1   : istop = 3
+            if itn   >= maxiter :
+                istop = 6
+            if Acond >= 0.1/eps :
+                istop = 4
+            if epsx  >= beta1   :
+                istop = 3
             #if rnorm <= epsx   : istop = 2
             #if rnorm <= epsr   : istop = 1
-            if test2 <= tol     : istop = 2
-            if test1 <= tol     : istop = 1
+            if test2 <= tol     :
+                istop = 2
+            if test1 <= tol     :
+                istop = 1
 
         # See if it is time to print something.
 
         prnt = False
-        if n        <= 40         : prnt = True
-        if itn      <= 10         : prnt = True
-        if itn      >= maxiter-10 : prnt = True
-        if itn % 10 == 0          : prnt = True
-        if qrnorm   <= 10*epsx    : prnt = True
-        if qrnorm   <= 10*epsr    : prnt = True
-        if Acond    <= 1e-2/eps   : prnt = True
-        if istop  != 0            : prnt = True
+        if n        <= 40         :
+            prnt = True
+        if itn      <= 10         :
+            prnt = True
+        if itn      >= maxiter-10 :
+            prnt = True
+        if itn % 10 == 0          :
+            prnt = True
+        if qrnorm   <= 10*epsx    :
+            prnt = True
+        if qrnorm   <= 10*epsr    :
+            prnt = True
+        if Acond    <= 1e-2/eps   :
+            prnt = True
+        if istop  != 0            :
+            prnt = True
 
         if show and prnt:
             str1 = '%6g %12.5e %10.3e'  % (itn, x[0], test1)
@@ -278,12 +294,14 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
             print(str1 + str2 + str3)
 
-            if itn % 10 == 0: print()
+            if itn % 10 == 0:
+                print()
 
         if callback is not None:
             callback(x)
 
-        if istop != 0: break # TODO check this
+        if istop != 0:
+            break # TODO check this
 
     if show:
         print()

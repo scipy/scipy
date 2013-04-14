@@ -55,7 +55,8 @@ def lagrange(x, w):
     for j in xrange(M):
         pt = poly1d(w[j])
         for k in xrange(M):
-            if k == j: continue
+            if k == j:
+                continue
             fac = x[j]-x[k]
             pt *= poly1d([1.0, -x[k]])/fac
         p += pt

@@ -109,7 +109,8 @@ try:
         blas_func = fblas.saxpy
         dtype = float32
 except AttributeError:
-    class TestSaxpy: pass
+    class TestSaxpy:
+        pass
 
 
 class TestDaxpy(TestCase, BaseAxpy):
@@ -121,7 +122,8 @@ try:
         blas_func = fblas.caxpy
         dtype = complex64
 except AttributeError:
-    class TestCaxpy: pass
+    class TestCaxpy:
+        pass
 
 
 class TestZaxpy(TestCase, BaseAxpy):
@@ -163,7 +165,8 @@ try:
         blas_func = fblas.sscal
         dtype = float32
 except AttributeError:
-    class TestSscal: pass
+    class TestSscal:
+        pass
 
 
 class TestDscal(TestCase, BaseScal):
@@ -175,7 +178,8 @@ try:
         blas_func = fblas.cscal
         dtype = complex64
 except AttributeError:
-    class TestCscal: pass
+    class TestCscal:
+        pass
 
 
 class TestZscal(TestCase, BaseScal):
@@ -246,7 +250,8 @@ try:
         blas_func = fblas.scopy
         dtype = float32
 except AttributeError:
-    class TestScopy: pass
+    class TestScopy:
+        pass
 
 
 class TestDcopy(TestCase, BaseCopy):
@@ -258,7 +263,8 @@ try:
         blas_func = fblas.ccopy
         dtype = complex64
 except AttributeError:
-    class TestCcopy: pass
+    class TestCcopy:
+        pass
 
 
 class TestZcopy(TestCase, BaseCopy):
@@ -334,7 +340,8 @@ try:
         blas_func = fblas.sswap
         dtype = float32
 except AttributeError:
-    class TestSswap: pass
+    class TestSswap:
+        pass
 
 
 class TestDswap(TestCase, BaseSwap):
@@ -346,7 +353,8 @@ try:
         blas_func = fblas.cswap
         dtype = complex64
 except AttributeError:
-    class TestCswap: pass
+    class TestCswap:
+        pass
 
 
 class TestZswap(TestCase, BaseSwap):
@@ -457,7 +465,8 @@ try:
         blas_func = fblas.sgemv
         dtype = float32
 except AttributeError:
-    class TestSgemv: pass
+    class TestSgemv:
+        pass
 
 
 class TestDgemv(TestCase, BaseGemv):
@@ -469,7 +478,8 @@ try:
         blas_func = fblas.cgemv
         dtype = complex64
 except AttributeError:
-    class TestCgemv: pass
+    class TestCgemv:
+        pass
 
 
 class TestZgemv(TestCase, BaseGemv):

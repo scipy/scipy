@@ -13,21 +13,32 @@ def norm2(x):
 
 
 def f1(x,d=0):
-    if d is None: return "sin"
-    if x is None: return "sin(x)"
-    if d % 4 == 0: return sin(x)
-    if d % 4 == 1: return cos(x)
-    if d % 4 == 2: return -sin(x)
-    if d % 4 == 3: return -cos(x)
+    if d is None:
+        return "sin"
+    if x is None:
+        return "sin(x)"
+    if d % 4 == 0:
+        return sin(x)
+    if d % 4 == 1:
+        return cos(x)
+    if d % 4 == 2:
+        return -sin(x)
+    if d % 4 == 3:
+        return -cos(x)
 
 
 def f2(x,y=0,dx=0,dy=0):
-    if x is None: return "sin(x+y)"
+    if x is None:
+        return "sin(x+y)"
     d = dx+dy
-    if d % 4 == 0: return sin(x+y)
-    if d % 4 == 1: return cos(x+y)
-    if d % 4 == 2: return -sin(x+y)
-    if d % 4 == 3: return -cos(x+y)
+    if d % 4 == 0:
+        return sin(x+y)
+    if d % 4 == 1:
+        return cos(x+y)
+    if d % 4 == 2:
+        return -sin(x+y)
+    if d % 4 == 3:
+        return -cos(x+y)
 
 
 def makepairs(x, y):
@@ -51,8 +62,10 @@ class TestSmokeTests(TestCase):
     """
 
     def check_1(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,at=0,xb=None,xe=None):
-        if xb is None: xb = a
-        if xe is None: xe = b
+        if xb is None:
+            xb = a
+        if xe is None:
+            xe = b
         x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
         x1 = a+(b-a)*arange(1,N,dtype=float)/float(N-1) # middle points of the nodes
         v,v1 = f(x),f(x1)
@@ -68,8 +81,10 @@ class TestSmokeTests(TestCase):
 
         for k in range(1,6):
             tck = splrep(x,v,s=s,per=per,k=k,xe=xe)
-            if at:t = tck[0][k:-k]
-            else: t = x1
+            if at:
+                t = tck[0][k:-k]
+            else:
+                t = x1
             nd = []
             for d in range(k+1):
                 tol = err_est(k, d)
@@ -96,8 +111,10 @@ class TestSmokeTests(TestCase):
 
     def check_2(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
               ia=0,ib=2*pi,dx=0.2*pi):
-        if xb is None: xb = a
-        if xe is None: xe = b
+        if xb is None:
+            xb = a
+        if xe is None:
+            xe = b
         x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
         v = f(x)
 
@@ -120,8 +137,10 @@ class TestSmokeTests(TestCase):
         put(" k :  int(s,[a,b]) Int.Error   Rel. error of s^(d)(dx) d = 0, .., k")
         k = 1
         for r in nk:
-            if r[0] < 0: sr = '-'
-            else: sr = ' '
+            if r[0] < 0:
+                sr = '-'
+            else:
+                sr = ' '
             put(" %d   %s%.8f   %.1e " % (k,sr,abs(r[0]),
                                          abs(r[0]-(f(ib,-1)-f(ia,-1)))))
             d = 0
@@ -136,8 +155,10 @@ class TestSmokeTests(TestCase):
 
     def check_3(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
               ia=0,ib=2*pi,dx=0.2*pi):
-        if xb is None: xb = a
-        if xe is None: xe = b
+        if xb is None:
+            xb = a
+        if xe is None:
+            xe = b
         x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
         v = f(x)
         nk = []
@@ -153,8 +174,10 @@ class TestSmokeTests(TestCase):
 
     def check_4(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
               ia=0,ib=2*pi,dx=0.2*pi):
-        if xb is None: xb = a
-        if xe is None: xe = b
+        if xb is None:
+            xb = a
+        if xe is None:
+            xe = b
         x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
         x1 = a + (b-a)*arange(1,N,dtype=float)/float(N-1) # middle points of the nodes
         v,v1 = f(x),f(x1)

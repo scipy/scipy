@@ -384,7 +384,8 @@ def test_hermitian_modes():
     for D in params.complex_test_cases:
         for typ in 'FD':
             for which in params.which:
-                if which == 'BE': continue  # BE invalid for complex
+                if which == 'BE':
+                    continue  # BE invalid for complex
                 for mattype in params.mattypes:
                     for sigma in params.sigmas_modes:
                         yield (eval_evec, symmetric, D, typ, k, which,

@@ -333,11 +333,14 @@ def genlaguerre(n, alpha, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n == 0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = la_roots(n1,alpha,mu=1)
     wfunc = lambda x: exp(-x) * x**alpha
-    if n == 0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = _gam(n+alpha+1)/_gam(n+1)
     kn = (-1)**n / _gam(n+1)
     p = orthopoly1d(x,w,hn,kn,wfunc,(0,inf),monic,
@@ -364,10 +367,13 @@ def laguerre(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n == 0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = l_roots(n1,mu=1)
-    if n == 0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = 1.0
     kn = (-1)**n / _gam(n+1)
     p = orthopoly1d(x,w,hn,kn,lambda x: exp(-x),(0,inf),monic,
@@ -403,11 +409,14 @@ def hermite(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n == 0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = h_roots(n1,mu=1)
     wfunc = lambda x: exp(-x*x)
-    if n == 0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = 2**n * _gam(n+1)*sqrt(pi)
     kn = 2**n
     p = orthopoly1d(x,w,hn,kn,wfunc,(-inf,inf),monic,
@@ -444,11 +453,14 @@ def hermitenorm(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n == 0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = he_roots(n1,mu=1)
     wfunc = lambda x: exp(-x*x/4.0)
-    if n == 0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = sqrt(2*pi)*_gam(n+1)
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=wfunc,limits=(-inf,inf),monic=monic,
@@ -579,10 +591,13 @@ def chebyc(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n == 0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = c_roots(n1,mu=1)
-    if n == 0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = 4*pi * ((n == 0)+1)
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0/sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
@@ -616,10 +631,13 @@ def chebys(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n == 0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = s_roots(n1,mu=1)
-    if n == 0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = pi
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
@@ -673,7 +691,8 @@ def sh_chebyu(n, monic=0):
     Orthogonal over [0,1] with weight function (x-x**2)**(1/2).
     """
     base = sh_jacobi(n,2.0,1.5,monic=monic)
-    if monic: return base
+    if monic:
+        return base
     factor = 4**n
     base._scale(factor)
     return base
@@ -698,10 +717,13 @@ def legendre(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n == 0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = p_roots(n1,mu=1)
-    if n == 0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = 2.0/(2*n+1)
     kn = _gam(2*n+1)/_gam(n+1)**2 / 2.0**n
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0,limits=(-1,1),monic=monic,
@@ -729,8 +751,9 @@ def sh_legendre(n, monic=0):
         raise ValueError("n must be nonnegative.")
 
     wfunc = lambda x: 0.0*x + 1.0
-    if n == 0: return orthopoly1d([],[],1.0,1.0,wfunc,(0,1),monic,
-                                lambda x: eval_sh_legendre(n,x))
+    if n == 0:
+        return orthopoly1d([],[],1.0,1.0,wfunc,(0,1),monic,
+                           lambda x: eval_sh_legendre(n,x))
     x,w,mu0 = ps_roots(n,mu=1)
     hn = 1.0/(2*n+1.0)
     kn = _gam(2*n+1)/_gam(n+1)**2

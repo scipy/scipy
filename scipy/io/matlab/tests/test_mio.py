@@ -745,7 +745,8 @@ def test_recarray():
 
 
 def test_save_object():
-    class C(object): pass
+    class C(object):
+        pass
     c = C()
     c.field1 = 1
     c.field2 = 'a string'
@@ -1015,7 +1016,8 @@ def test_varmats_from_mat():
                   ('mynum', mlarr(10)))
     # Dict like thing to give variables in defined order
     class C(object):
-        def items(self): return names_vars
+        def items(self):
+            return names_vars
     stream = BytesIO()
     savemat_future(stream, C())
     varmats = varmats_from_mat(stream)

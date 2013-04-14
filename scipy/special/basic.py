@@ -276,8 +276,10 @@ def sph_jn(n,z):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
@@ -293,8 +295,10 @@ def sph_yn(n,z):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z) or less(z,0):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
@@ -310,8 +314,10 @@ def sph_jnyn(n,z):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z) or less(z,0):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
@@ -328,8 +334,10 @@ def sph_in(n,z):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z):
         nm,In,Inp,kn,knp = specfun.csphik(n1,z)
     else:
@@ -345,8 +353,10 @@ def sph_kn(n,z):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z) or less(z,0):
         nm,In,Inp,kn,knp = specfun.csphik(n1,z)
     else:
@@ -378,8 +388,10 @@ def riccati_jn(n,x):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n == 0): n1 = 1
-    else: n1 = n
+    if (n == 0):
+        n1 = 1
+    else:
+        n1 = n
     nm,jn,jnp = specfun.rctj(n1,x)
     return jn[:(n+1)],jnp[:(n+1)]
 
@@ -392,8 +404,10 @@ def riccati_yn(n,x):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n == 0): n1 = 1
-    else: n1 = n
+    if (n == 0):
+        n1 = 1
+    else:
+        n1 = n
     nm,jn,jnp = specfun.rcty(n1,x)
     return jn[:(n+1)],jnp[:(n+1)]
 
@@ -694,8 +708,10 @@ def bernoulli(n):
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     n = int(n)
-    if (n < 2): n1 = 2
-    else: n1 = n
+    if (n < 2):
+        n1 = 2
+    else:
+        n1 = n
     return specfun.bernob(int(n1))[:(n+1)]
 
 
@@ -705,8 +721,10 @@ def euler(n):
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     n = int(n)
-    if (n < 2): n1 = 2
-    else:  n1 = n
+    if (n < 2):
+        n1 = 2
+    else:
+        n1 = n
     return specfun.eulerb(n1)[:(n+1)]
 
 
@@ -720,8 +738,10 @@ def lpn(n,z):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z):
         pn,pd = specfun.clpn(n1,z)
     else:
@@ -739,8 +759,10 @@ def lqn(n,z):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z):
         qn,qd = specfun.clqn(n1,z)
     else:
@@ -792,8 +814,10 @@ def lmbda(v,x):
         raise ValueError("argument must be > 0.")
     n = int(v)
     v0 = v - n
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     v1 = n1 + v0
     if (v != floor(v)):
         vm, vl, dl = specfun.lamv(v1,x)
@@ -810,8 +834,10 @@ def pbdv_seq(v,x):
         raise ValueError("arguments must be scalars.")
     n = int(v)
     v0 = v-n
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     v1 = n1 + v0
     dv,dp,pdf,pdd = specfun.pbdv(v1,x)
     return dv[:n1+1],dp[:n1+1]
@@ -825,8 +851,10 @@ def pbvv_seq(v,x):
         raise ValueError("arguments must be scalars.")
     n = int(v)
     v0 = v-n
-    if (n <= 1): n1 = 1
-    else: n1 = n
+    if (n <= 1):
+        n1 = 1
+    else:
+        n1 = n
     v1 = n1 + v0
     dv,dp,pdf,pdd = specfun.pbvv(v1,x)
     return dv[:n1+1],dp[:n1+1]

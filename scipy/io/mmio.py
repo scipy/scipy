@@ -106,17 +106,23 @@ class MMFile (object):
       '_symmetry')
 
     @property
-    def rows(self): return self._rows
+    def rows(self):
+        return self._rows
     @property
-    def cols(self): return self._cols
+    def cols(self):
+        return self._cols
     @property
-    def entries(self): return self._entries
+    def entries(self):
+        return self._entries
     @property
-    def format(self): return self._format
+    def format(self):
+        return self._format
     @property
-    def field(self): return self._field
+    def field(self):
+        return self._field
     @property
-    def symmetry(self): return self._symmetry
+    def symmetry(self):
+        return self._symmetry
 
     @property
     def has_symmetry(self):
@@ -169,11 +175,13 @@ class MMFile (object):
 
     #---------------------------------------------------------------------------
     @staticmethod
-    def reader(): pass
+    def reader():
+        pass
 
     #---------------------------------------------------------------------------
     @staticmethod
-    def writer(): pass
+    def writer():
+        pass
 
     #---------------------------------------------------------------------------
     @classmethod
@@ -199,7 +207,8 @@ class MMFile (object):
                 format = self.FORMAT_COORDINATE
 
             # skip comments
-            while line.startswith(b'%'): line = source.readline()
+            while line.startswith(b'%'):
+                line = source.readline()
 
             line = line.split()
             if format == self.FORMAT_ARRAY:
@@ -215,7 +224,8 @@ class MMFile (object):
             return (rows, cols, entries, format, field, symmetry)
 
         finally:
-            if close_it: source.close()
+            if close_it:
+                source.close()
 
     #---------------------------------------------------------------------------
     @staticmethod
@@ -280,9 +290,12 @@ class MMFile (object):
                     isherm = 0
                 if not (issymm or isskew or isherm):
                     break
-        if issymm: return MMFile.SYMMETRY_SYMMETRIC
-        if isskew: return MMFile.SYMMETRY_SKEW_SYMMETRIC
-        if isherm: return MMFile.SYMMETRY_HERMITIAN
+        if issymm:
+            return MMFile.SYMMETRY_SYMMETRIC
+        if isskew:
+            return MMFile.SYMMETRY_SKEW_SYMMETRIC
+        if isherm:
+            return MMFile.SYMMETRY_HERMITIAN
         return MMFile.SYMMETRY_GENERAL
 
     #---------------------------------------------------------------------------
@@ -295,7 +308,8 @@ class MMFile (object):
         }.get(field, None)
 
     #---------------------------------------------------------------------------
-    def __init__(self, **kwargs): self._init_attrs(**kwargs)
+    def __init__(self, **kwargs):
+        self._init_attrs(**kwargs)
 
     #---------------------------------------------------------------------------
     def read(self, source):
@@ -306,7 +320,8 @@ class MMFile (object):
             return self._parse_body(stream)
 
         finally:
-            if close_it: stream.close()
+            if close_it:
+                stream.close()
 
     #---------------------------------------------------------------------------
     def write(self, target, a, comment='', field=None, precision=None):
@@ -316,8 +331,10 @@ class MMFile (object):
             self._write(stream, a, comment, field, precision)
 
         finally:
-            if close_it: stream.close()
-            else: stream.flush()
+            if close_it:
+                stream.close()
+            else:
+                stream.flush()
 
     #---------------------------------------------------------------------------
     def _init_attrs(self, **kwargs):
@@ -333,7 +350,8 @@ class MMFile (object):
             raise ValueError('found %s invalid keyword arguments, please only use %s' %
                                 (tuple(invalid_keys), public_attrs))
 
-        for attr in attrs: setattr(self, attr, kwargs.get(attr[1:], None))
+        for attr in attrs:
+            setattr(self, attr, kwargs.get(attr[1:], None))
 
     #---------------------------------------------------------------------------
     def _parse_header(self, stream):

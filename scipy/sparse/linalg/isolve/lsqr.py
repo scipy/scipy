@@ -76,8 +76,10 @@ def _sym_ortho(a, b):
            http://www.stanford.edu/group/SOL/dissertations/sou-cheng-choi-thesis.pdf
 
     """
-    if b == 0: return np.sign(a), 0, abs(a)
-    elif a == 0: return 0, np.sign(b), abs(b)
+    if b == 0:
+        return np.sign(a), 0, abs(a)
+    elif a == 0:
+        return 0, np.sign(b), abs(b)
     elif abs(b) > abs(a):
         tau = a / b
         s = np.sign(b) / sqrt(1 + tau * tau)
@@ -249,7 +251,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     b = b.squeeze()
 
     m, n = A.shape
-    if iter_lim is None: iter_lim = 2 * n
+    if iter_lim is None:
+        iter_lim = 2 * n
     var = np.zeros(n)
 
     msg = ('The exact solution is  x = 0                              ',
@@ -277,7 +280,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     istop = 0
     nstop = 0
     ctol = 0
-    if conlim > 0: ctol = 1/conlim
+    if conlim > 0:
+        ctol = 1/conlim
     anorm = 0
     acond = 0
     dampsq = damp**2
@@ -437,26 +441,40 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         # the parameters  atol, btol, conlim  to 0.)
         # The effect is equivalent to the normal tests using
         # atol = eps,  btol = eps,  conlim = 1/eps.
-        if itn >= iter_lim: istop = 7
-        if 1 + test3 <= 1: istop = 6
-        if 1 + test2 <= 1: istop = 5
-        if 1 + t1 <= 1: istop = 4
+        if itn >= iter_lim:
+            istop = 7
+        if 1 + test3 <= 1:
+            istop = 6
+        if 1 + test2 <= 1:
+            istop = 5
+        if 1 + t1 <= 1:
+            istop = 4
 
         # Allow for tolerances set by the user.
-        if test3 <= ctol: istop = 3
-        if test2 <= atol: istop = 2
-        if test1 <= rtol: istop = 1
+        if test3 <= ctol:
+            istop = 3
+        if test2 <= atol:
+            istop = 2
+        if test1 <= rtol:
+            istop = 1
 
         # See if it is time to print something.
         prnt = False
-        if n <= 40: prnt = True
-        if itn <= 10: prnt = True
-        if itn >= iter_lim-10: prnt = True
+        if n <= 40:
+            prnt = True
+        if itn <= 10:
+            prnt = True
+        if itn >= iter_lim-10:
+            prnt = True
         # if itn%10 == 0: prnt = True
-        if test3 <= 2*ctol: prnt = True
-        if test2 <= 10*atol: prnt = True
-        if test1 <= 10*rtol: prnt = True
-        if istop != 0: prnt = True
+        if test3 <= 2*ctol:
+            prnt = True
+        if test2 <= 10*atol:
+            prnt = True
+        if test1 <= 10*rtol:
+            prnt = True
+        if istop != 0:
+            prnt = True
 
         if prnt:
             if show:
@@ -466,7 +484,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
                 str4 = ' %8.1e %8.1e' % (anorm, acond)
                 print(str1, str2, str3, str4)
 
-        if istop != 0: break
+        if istop != 0:
+            break
 
     # End of iteration loop.
     # Print the stopping condition.

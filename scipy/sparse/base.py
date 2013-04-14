@@ -13,13 +13,16 @@ from scipy.lib.six.moves import xrange
 from .sputils import isdense, isscalarlike, isintlike
 
 
-class SparseWarning(Warning): pass
+class SparseWarning(Warning):
+    pass
 
 
-class SparseFormatWarning(SparseWarning): pass
+class SparseFormatWarning(SparseWarning):
+    pass
 
 
-class SparseEfficiencyWarning(SparseWarning): pass
+class SparseEfficiencyWarning(SparseWarning):
+    pass
 
 
 # The formats that we might potentially understand.

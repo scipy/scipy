@@ -215,7 +215,8 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     if per:
         for i in range(idim):
             if x[i][0] != x[i][-1]:
-                if quiet < 2:print('Warning: Setting x[%d][%d]=x[%d][0]' % (i,m,i))
+                if quiet < 2:
+                    print('Warning: Setting x[%d][%d]=x[%d][0]' % (i,m,i))
                 x[i][-1] = x[i][0]
     if not 0 < idim < 11:
         raise TypeError('0 < idim < 11 must hold')
@@ -226,18 +227,24 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     ipar = (u is not None)
     if ipar:
         _parcur_cache['u'] = u
-        if ub is None: _parcur_cache['ub'] = u[0]
-        else: _parcur_cache['ub'] = ub
-        if ue is None: _parcur_cache['ue'] = u[-1]
-        else: _parcur_cache['ue'] = ue
-    else: _parcur_cache['u'] = zeros(m,float)
+        if ub is None:
+            _parcur_cache['ub'] = u[0]
+        else:
+            _parcur_cache['ub'] = ub
+        if ue is None:
+            _parcur_cache['ue'] = u[-1]
+        else:
+            _parcur_cache['ue'] = ue
+    else:
+        _parcur_cache['u'] = zeros(m,float)
     if not (1 <= k <= 5):
         raise TypeError('1 <= k= %d <=5 must hold' % k)
     if not (-1 <= task <= 1):
         raise TypeError('task must be -1, 0 or 1')
     if (not len(w) == m) or (ipar == 1 and (not len(u) == m)):
         raise TypeError('Mismatch of input dimensions')
-    if s is None: s = m-sqrt(2*m)
+    if s is None:
+        s = m-sqrt(2*m)
     if t is None and task == -1:
         raise TypeError('Knots must be given for task=-1')
     if t is not None:
@@ -247,11 +254,14 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         raise TypeError('There must be at least 2*k+2 knots for task=-1')
     if m <= k:
         raise TypeError('m > k must hold')
-    if nest is None: nest = m+2*k
+    if nest is None:
+        nest = m+2*k
 
     if (task >= 0 and s == 0) or (nest < 0):
-        if per: nest = m+2*k
-        else: nest = m+k+1
+        if per:
+            nest = m+2*k
+        else:
+            nest = m+k+1
     nest = max(nest,2*k+3)
     u = _parcur_cache['u']
     ub = _parcur_cache['ub']
@@ -409,10 +419,12 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     m = len(x)
     if w is None:
         w = ones(m,float)
-        if s is None: s = 0.0
+        if s is None:
+            s = 0.0
     else:
         w = myasarray(w)
-        if s is None: s = m-sqrt(2*m)
+        if s is None:
+            s = m-sqrt(2*m)
     if not len(w) == m:
         raise TypeError('len(w)=%d is not equal to m=%d' % (len(w),m))
     if (m != len(y)) or (m != len(w)):
@@ -421,8 +433,10 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         raise TypeError('Given degree of the spline (k=%d) is not supported. (1<=k<=5)' % k)
     if m <= k:
         raise TypeError('m > k must hold')
-    if xb is None: xb = x[0]
-    if xe is None: xe = x[-1]
+    if xb is None:
+        xb = x[0]
+    if xe is None:
+        xe = x[-1]
     if not (-1 <= task <= 1):
         raise TypeError('task must be -1, 0 or 1')
     if t is not None:
@@ -442,8 +456,10 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         t = empty((nest,),float)
         _curfit_cache['t'] = t
     if task <= 0:
-        if per: _curfit_cache['wrk'] = empty((m*(k+1)+nest*(8+5*k),),float)
-        else: _curfit_cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),float)
+        if per:
+            _curfit_cache['wrk'] = empty((m*(k+1)+nest*(8+5*k),),float)
+        else:
+            _curfit_cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),float)
         _curfit_cache['iwrk'] = empty((nest,),int32)
     try:
         t = _curfit_cache['t']
@@ -613,8 +629,10 @@ def splint(a,b,tck,full_output=0):
         return _ntlist(list(map(lambda c,a=a,b=b,t=t,k=k:splint(a,b,[t,c,k]),c)))
     else:
         aint,wrk = _fitpack._splint(t,c,k,a,b)
-        if full_output: return aint,wrk
-        else: return aint
+        if full_output:
+            return aint,wrk
+        else:
+            return aint
 
 
 def sproot(tck,mest=10):
@@ -657,8 +675,10 @@ def sproot(tck,mest=10):
 
     """
     t,c,k = tck
-    if k == 4: t = t[1:-1]
-    if k == 5: t = t[2:-2]
+    if k == 4:
+        t = t[1:-1]
+    if k == 5:
+        t = t[2:-2]
     try:
         c[0][0]
         parametric = True
@@ -672,7 +692,8 @@ def sproot(tck,mest=10):
         z,ier = _fitpack._sproot(t,c,k,mest)
         if ier == 10:
             raise TypeError("Invalid input data. t1<=..<=t4<t5<..<tn-3<=..<=tn must hold.")
-        if ier == 0: return z
+        if ier == 0:
+            return z
         if ier == 1:
             print("Warning: the number of zeros exceeds mest")
             return z
@@ -729,7 +750,8 @@ def spalde(x,tck):
         if len(x) > 1:
             return list(map(lambda x,tck=tck:spalde(x,tck),x))
         d,ier = _fitpack._spalde(t,c,k,x[0])
-        if ier == 0: return d
+        if ier == 0:
+            return d
         if ier == 10:
             raise TypeError("Invalid input data. t(k)<=x<=t(n-k+1) must hold.")
         raise TypeError("Unknown error")
@@ -833,24 +855,33 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     m = len(x)
     if not (m == len(y) == len(z)):
         raise TypeError('len(x)==len(y)==len(z) must hold.')
-    if w is None: w = ones(m,float)
-    else: w = myasarray(w)
+    if w is None:
+        w = ones(m,float)
+    else:
+        w = myasarray(w)
     if not len(w) == m:
         raise TypeError('len(w)=%d is not equal to m=%d' % (len(w), m))
-    if xb is None: xb = x.min()
-    if xe is None: xe = x.max()
-    if yb is None: yb = y.min()
-    if ye is None: ye = y.max()
+    if xb is None:
+        xb = x.min()
+    if xe is None:
+        xe = x.max()
+    if yb is None:
+        yb = y.min()
+    if ye is None:
+        ye = y.max()
     if not (-1 <= task <= 1):
         raise TypeError('task must be -1, 0 or 1')
-    if s is None: s = m-sqrt(2*m)
+    if s is None:
+        s = m-sqrt(2*m)
     if tx is None and task == -1:
         raise TypeError('Knots_x must be given for task=-1')
-    if tx is not None: _surfit_cache['tx'] = myasarray(tx)
+    if tx is not None:
+        _surfit_cache['tx'] = myasarray(tx)
     nx = len(_surfit_cache['tx'])
     if ty is None and task == -1:
         raise TypeError('K nots_y must be given for task=-1')
-    if ty is not None: _surfit_cache['ty'] = myasarray(ty)
+    if ty is not None:
+        _surfit_cache['ty'] = myasarray(ty)
     ny = len(_surfit_cache['ty'])
     if task == -1 and nx < 2*kx+2:
         raise TypeError('There must be at least 2*kx+2 knots_x for task=-1')
@@ -860,8 +891,10 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
         raise TypeError('Given degree of the spline (kx,ky=%d,%d) is not supported. (1<=k<=5)' % (kx,ky))
     if m < (kx+1)*(ky+1):
         raise TypeError('m >= (kx+1)(ky+1) must hold')
-    if nxest is None: nxest = int(kx+sqrt(m/2))
-    if nyest is None: nyest = int(ky+sqrt(m/2))
+    if nxest is None:
+        nxest = int(kx+sqrt(m/2))
+    if nyest is None:
+        nyest = int(ky+sqrt(m/2))
     nxest,nyest = max(nxest,2*kx+3),max(nyest,2*ky+3)
     if task >= 0 and s == 0:
         nxest = int(kx+sqrt(3*m))
@@ -875,7 +908,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     u,v,km,ne = nxest-kx-1,nyest-ky-1,max(kx,ky)+1,max(nxest,nyest)
     bx,by = kx*v+ky+1,ky*u+kx+1
     b1,b2 = bx,bx+v-ky
-    if bx > by: b1,b2 = by,by+u-kx
+    if bx > by:
+        b1,b2 = by,by+u-kx
     try:
         lwrk1 = int32(u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1)
         lwrk2 = int32(u*v*(b2+1)+b2)
@@ -975,8 +1009,10 @@ def bisplev(x,y,tck,dx=0,dy=0):
     if ier:
         raise TypeError("An error occurred")
     z.shape = len(x),len(y)
-    if len(z) > 1: return z
-    if len(z[0]) > 1: return z[0]
+    if len(z) > 1:
+        return z
+    if len(z[0]) > 1:
+        return z[0]
     return z[0][0]
 
 

@@ -208,7 +208,8 @@ def test_cont_basic():
 def test_cont_basic_slow():
     # same as above for slow distributions
     for distname, arg in distcont[:]:
-        if distname not in distslow: continue
+        if distname not in distslow:
+            continue
         distfn = getattr(stats, distname)
         np.random.seed(765456)
         sn = 1000

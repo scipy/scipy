@@ -32,7 +32,8 @@ class TestFlapackSimple(TestCase):
               [0,1,0,0]]
         for p in 'sdzc':
             f = getattr(flapack,p+'gebal',None)
-            if f is None: continue
+            if f is None:
+                continue
             ba,lo,hi,pivscale,info = f(a)
             assert_(not info,repr(info))
             assert_array_almost_equal(ba,a)
@@ -50,7 +51,8 @@ class TestFlapackSimple(TestCase):
              [ -27,  -9, -25]]
         for p in 'd':
             f = getattr(flapack,p+'gehrd',None)
-            if f is None: continue
+            if f is None:
+                continue
             ht,tau,info = f(a)
             assert_(not info,repr(info))
 

@@ -138,23 +138,39 @@ class dummy_array(object):
             return 0
         return not alltrue(equal(self.shape,other.shape),axis=0)
 
-    def __add__(self,other): return self.binary_op(other)
-    def __radd__(self,other): return self.binary_op(other)
-    def __sub__(self,other): return self.binary_op(other)
-    def __rsub__(self,other): return self.binary_op(other)
-    def __mul__(self,other): return self.binary_op(other)
-    def __rmul__(self,other): return self.binary_op(other)
-    def __div__(self,other): return self.binary_op(other)
-    def __rdiv__(self,other): return self.binary_op(other)
-    def __mod__(self,other): return self.binary_op(other)
-    def __rmod__(self,other): return self.binary_op(other)
-    def __lshift__(self,other): return self.binary_op(other)
-    def __rshift__(self,other): return self.binary_op(other)
+    def __add__(self,other):
+        return self.binary_op(other)
+    def __radd__(self,other):
+        return self.binary_op(other)
+    def __sub__(self,other):
+        return self.binary_op(other)
+    def __rsub__(self,other):
+        return self.binary_op(other)
+    def __mul__(self,other):
+        return self.binary_op(other)
+    def __rmul__(self,other):
+        return self.binary_op(other)
+    def __div__(self,other):
+        return self.binary_op(other)
+    def __rdiv__(self,other):
+        return self.binary_op(other)
+    def __mod__(self,other):
+        return self.binary_op(other)
+    def __rmod__(self,other):
+        return self.binary_op(other)
+    def __lshift__(self,other):
+        return self.binary_op(other)
+    def __rshift__(self,other):
+        return self.binary_op(other)
     # unary ops
-    def __neg__(self,other): return self
-    def __pos__(self,other): return self
-    def __abs__(self,other): return self
-    def __invert__(self,other): return self
+    def __neg__(self,other):
+        return self
+    def __pos__(self,other):
+        return self
+    def __abs__(self,other):
+        return self
+    def __invert__(self,other):
+        return self
     # Not sure what to do with coersion ops.  Ignore for now.
     #
     # not currently supported by compiler.
@@ -201,21 +217,28 @@ class dummy_array(object):
                 #    end = end.value
                 #if hasattr(step,'value') and type(step.value) != ndarray:
                 #    step = step.value
-                if beg is None: beg = 0
+                if beg is None:
+                    beg = 0
                 if end == sys.maxint or end is None:
                     end = dim_len
                 if step is None:
                     step = 1
 
-                if beg < 0: beg += dim_len
-                if end < 0: end += dim_len
+                if beg < 0:
+                    beg += dim_len
+                if end < 0:
+                    end += dim_len
                 # the following is list like behavior,
                 # which isn't adhered to by arrays.
                 # FIX THIS ANOMOLY IN NUMERIC!
-                if beg < 0: beg = 0
-                if beg > dim_len: beg = dim_len
-                if end < 0: end = 0
-                if end > dim_len: end = dim_len
+                if beg < 0:
+                    beg = 0
+                if beg > dim_len:
+                    beg = dim_len
+                if end < 0:
+                    end = 0
+                if end > dim_len:
+                    end = dim_len
                 # This is rubbish.
                 if beg == end:
                     beg,end,step = 0,0,1
@@ -242,7 +265,8 @@ class dummy_array(object):
                 slc_len = abs(divide(end-beg-1,step)+1)
                 new_dims.append(slc_len)
             else:
-                if index < 0: index += dim_len
+                if index < 0:
+                    index += dim_len
                 if index >= 0 and index < dim_len:
                     #this reduces the array dimensions by one
                     pass
@@ -291,5 +315,6 @@ def reduction(ary,axis=0):
 # so this is gonna take some thought (probably some tree manipulation).
 
 
-def take(ary,axis=0): raise NotImplemented
+def take(ary,axis=0):
+    raise NotImplemented
 # and all the rest

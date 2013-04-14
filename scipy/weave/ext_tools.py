@@ -49,7 +49,8 @@ class ext_function_from_specs(object):
                          'PyObject *py_local_dict = NULL;\n'
         arg_string_list = self.arg_specs.variable_as_strings() + ['"local_dict"']
         arg_strings = ','.join(arg_string_list)
-        if arg_strings: arg_strings += ','
+        if arg_strings:
+            arg_strings += ','
         declare_kwlist = 'static const char *kwlist[] = {%s NULL};\n' % \
                          arg_strings
 

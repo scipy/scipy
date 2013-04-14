@@ -786,7 +786,8 @@ class TestSVD(TestCase):
             assert_array_almost_equal(dot(transpose(u),u),identity(3))
             assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
             sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-            for i in range(len(s)): sigma[i,i] = s[i]
+            for i in range(len(s)):
+                sigma[i,i] = s[i]
             assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_simple_singular(self):
@@ -796,7 +797,8 @@ class TestSVD(TestCase):
             assert_array_almost_equal(dot(transpose(u),u),identity(3))
             assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
             sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-            for i in range(len(s)): sigma[i,i] = s[i]
+            for i in range(len(s)):
+                sigma[i,i] = s[i]
             assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_simple_underdet(self):
@@ -805,7 +807,8 @@ class TestSVD(TestCase):
             u,s,vh = svd(a, full_matrices=full_matrices)
             assert_array_almost_equal(dot(transpose(u),u),identity(u.shape[0]))
             sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-            for i in range(len(s)): sigma[i,i] = s[i]
+            for i in range(len(s)):
+                sigma[i,i] = s[i]
             assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_simple_overdet(self):
@@ -815,7 +818,8 @@ class TestSVD(TestCase):
             assert_array_almost_equal(dot(transpose(u),u), identity(u.shape[1]))
             assert_array_almost_equal(dot(transpose(vh),vh),identity(2))
             sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
-            for i in range(len(s)): sigma[i,i] = s[i]
+            for i in range(len(s)):
+                sigma[i,i] = s[i]
             assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_random(self):
@@ -828,7 +832,8 @@ class TestSVD(TestCase):
                     assert_array_almost_equal(dot(transpose(u),u),identity(u.shape[1]))
                     assert_array_almost_equal(dot(vh, transpose(vh)),identity(vh.shape[0]))
                     sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
-                    for i in range(len(s)): sigma[i,i] = s[i]
+                    for i in range(len(s)):
+                        sigma[i,i] = s[i]
                     assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_simple_complex(self):
@@ -838,7 +843,8 @@ class TestSVD(TestCase):
             assert_array_almost_equal(dot(conj(transpose(u)),u),identity(u.shape[1]))
             assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(vh.shape[0]))
             sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-            for i in range(len(s)): sigma[i,i] = s[i]
+            for i in range(len(s)):
+                sigma[i,i] = s[i]
             assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_random_complex(self):
@@ -853,7 +859,8 @@ class TestSVD(TestCase):
                     # This fails when [m,n]
                     #assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),dtype=vh.dtype.char))
                     sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
-                    for i in range(len(s)): sigma[i,i] = s[i]
+                    for i in range(len(s)):
+                        sigma[i,i] = s[i]
                     assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
     def test_crash_1580(self):
@@ -871,7 +878,8 @@ class TestSVD(TestCase):
         assert_array_almost_equal(dot(transpose(u),u),identity(3))
         assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
         sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
-        for i in range(len(s)): sigma[i,i] = s[i]
+        for i in range(len(s)):
+            sigma[i,i] = s[i]
         assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
 

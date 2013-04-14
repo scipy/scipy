@@ -138,7 +138,8 @@ def check_maxiter(solver, case):
 def test_maxiter():
     case = params.Poisson1D
     for solver in params.solvers:
-        if solver in case.skip: continue
+        if solver in case.skip:
+            continue
         yield check_maxiter, solver, case
 
 
@@ -167,7 +168,8 @@ def check_convergence(solver, case):
 def test_convergence():
     for solver in params.solvers:
         for case in params.cases:
-            if solver in case.skip: continue
+            if solver in case.skip:
+                continue
             yield check_convergence, solver, case
 
 
@@ -207,7 +209,8 @@ def check_precond_dummy(solver, case):
 def test_precond_dummy():
     case = params.Poisson1D
     for solver in params.solvers:
-        if solver in case.skip: continue
+        if solver in case.skip:
+            continue
         yield check_precond_dummy, solver, case
 
 

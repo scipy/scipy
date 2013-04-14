@@ -207,7 +207,8 @@ def listing(f):
             lastLine = arg
         else:
             source = ''
-        if arg is None: arg = ''
+        if arg is None:
+            arg = ''
         s += '%3d] %20s %5s : %s\n' % (pc,name,arg,source)
         if op >= haveArgument:
             pc += 3
@@ -740,7 +741,8 @@ class CXXCoder(ByteCodeMeaning):
         self.types = list(self.signature)+[None]*(nlocals-arglen)
         self.used = []
         for T in self.types:
-            if T not in self.used: self.used.append(T)
+            if T not in self.used:
+                self.used.append(T)
 
         # -----------------------------------------------
         # One pass through the byte codes to generate
@@ -788,7 +790,8 @@ class CXXCoder(ByteCodeMeaning):
         code += '\n'
         code += '\nstatic %s %s(' % (rtype,self.name)
         for i in range(len(self.signature)):
-            if i != 0: code += ', '
+            if i != 0:
+                code += ', '
             n = self.stack[i]
             t = self.types[i]
             code += '%s %s' % (t.cxxtype,n)

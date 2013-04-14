@@ -144,7 +144,8 @@ class TestFactorization(_DeprecationAccept):
             L = L.todense()
             U = U.todense()
             A = A.todense()
-            if not do_recip: R = 1.0/R
+            if not do_recip:
+                R = 1.0/R
             R = matrix(diag(R))
             P = eye(A.shape[0])[P,:]
             Q = eye(A.shape[1])[:,Q]
@@ -163,7 +164,8 @@ class TestFactorization(_DeprecationAccept):
             L = L.todense()
             U = U.todense()
             A = A.todense()
-            if not do_recip: R = 1.0/R
+            if not do_recip:
+                R = 1.0/R
             R = matrix(diag(R))
             P = eye(A.shape[0])[P,:]
             Q = eye(A.shape[1])[:,Q]

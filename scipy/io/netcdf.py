@@ -470,7 +470,8 @@ class netcdf_file(object):
             except TypeError:
                 sample = values
             for class_, nc_type in types:
-                if isinstance(sample, class_): break
+                if isinstance(sample, class_):
+                    break
 
         typecode, size = TYPEMAP[nc_type]
         dtype_ = '>%s' % typecode
@@ -568,7 +569,8 @@ class netcdf_file(object):
                 # The netCDF "record size" is calculated as the sum of
                 # the vsize's of all the record variables.
                 self.__dict__['_recsize'] += vsize
-                if begin == 0: begin = begin_
+                if begin == 0:
+                    begin = begin_
                 dtypes['names'].append(name)
                 dtypes['formats'].append(str(shape[1:]) + dtype_)
 
@@ -658,7 +660,8 @@ class netcdf_file(object):
 
         if typecode is not 'c':
             values = fromstring(values, dtype='>%s' % typecode)
-            if values.shape == (1,): values = values[0]
+            if values.shape == (1,):
+                values = values[0]
         else:
             values = values.rstrip(b'\x00')
         return values

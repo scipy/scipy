@@ -28,7 +28,8 @@ class TestSolve(TestCase):
 
             a = random([size,size])
             # larger diagonal ensures non-singularity:
-            for i in range(size): a[i,i] = 10*(.1+a[i,i])
+            for i in range(size):
+                a[i,i] = 10*(.1+a[i,i])
             b = random([size])
 
             print('| %6.2f ' % measure('solve(a,b)',repeat), end=' ')
@@ -67,7 +68,8 @@ class TestInv(TestCase):
 
             a = random([size,size])
             # large diagonal ensures non-singularity:
-            for i in range(size): a[i,i] = 10*(.1+a[i,i])
+            for i in range(size):
+                a[i,i] = 10*(.1+a[i,i])
 
             print('| %6.2f ' % measure('inv(a)',repeat), end=' ')
             sys.stdout.flush()

@@ -19,20 +19,26 @@ def f3(x) :
 
 
 def f4(x) :
-    if x > 1 : return 1.0 + .1*x
-    if x < 1 : return -1.0 + .1*x
+    if x > 1 :
+        return 1.0 + .1*x
+    if x < 1 :
+        return -1.0 + .1*x
     return 0
 
 
 def f5(x) :
-    if x != 1 : return 1.0/(1. - x)
+    if x != 1 :
+        return 1.0/(1. - x)
     return 0
 
 
 def f6(x) :
-    if x > 1 : return random()
-    elif x < 1 : return -random()
-    else : return 0
+    if x > 1 :
+        return random()
+    elif x < 1 :
+        return -random()
+    else :
+        return 0
 
 description = """
 f2 is a symmetric parabola, x**2 - 1

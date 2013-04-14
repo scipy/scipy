@@ -58,16 +58,21 @@ class _Database(object):
         else:
             while 1:
                 line = string.rstrip(f.readline())
-                if not line: break
+                if not line:
+                    break
                 key, (pos, siz) = eval(line)
                 self._index[key] = (pos, siz)
             f.close()
 
     def _commit(self):
-        try: _os.unlink(self._bakfile)
-        except _os.error: pass
-        try: _os.rename(self._dirfile, self._bakfile)
-        except _os.error: pass
+        try:
+            _os.unlink(self._bakfile)
+        except _os.error:
+            pass
+        try:
+            _os.rename(self._dirfile, self._bakfile)
+        except _os.error:
+            pass
         f = _open(self._dirfile, 'w')
         for key, (pos, siz) in self._index.items():
             f.write("%s, (%s, %s)\n" % (repr(key), repr(pos), repr(siz)))

@@ -147,8 +147,10 @@ class TestCatalog(TestCase):
         assert_(r is None)
 
     def test_get_environ_path(self):
-        if sys.platform == 'win32': sep = ';'
-        else: sep = ':'
+        if sys.platform == 'win32':
+            sep = ';'
+        else:
+            sep = ':'
         os.environ['PYTHONCOMPILED'] = sep.join(('path1','path2','path3'))
         q = catalog.catalog()
         path = q.get_environ_path()

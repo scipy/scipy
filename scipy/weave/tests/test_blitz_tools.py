@@ -110,8 +110,10 @@ class TestBlitz(TestCase):
             for arg in arg_list:
                 arg_dict[arg] = random.normal(0,1,size).astype(typ)
                 # set imag part of complex values to non-zero value
-                try:     arg_dict[arg].imag = arg_dict[arg].real
-                except: pass
+                try:
+                    arg_dict[arg].imag = arg_dict[arg].real
+                except:
+                    pass
             print('Run:', size,typ)
             standard,compiled = self.generic_check(expr,arg_dict,type,size,
                                                   mod_location)

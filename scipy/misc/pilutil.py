@@ -285,8 +285,10 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
         strdata = transpose(bytedata,(1,2,0)).tostring()
         shape = (shape[2],shape[1])
     if mode is None:
-        if numch == 3: mode = 'RGB'
-        else: mode = 'RGBA'
+        if numch == 3:
+            mode = 'RGB'
+        else:
+            mode = 'RGBA'
 
     if mode not in ['RGB','RGBA','YCbCr','CMYK']:
         raise ValueError(_errstr)

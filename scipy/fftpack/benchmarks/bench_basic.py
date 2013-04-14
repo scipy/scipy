@@ -62,8 +62,10 @@ class TestFft(TestCase):
             for x in [random([size]).astype(double),
                       random([size]).astype(cdouble)+random([size]).astype(cdouble)*1j
                       ]:
-                if size > 500: y = fft(x)
-                else: y = direct_dft(x)
+                if size > 500:
+                    y = fft(x)
+                else:
+                    y = direct_dft(x)
                 assert_array_almost_equal(fft(x),y)
                 print('|%8.2f' % measure('fft(x)',repeat), end=' ')
                 sys.stdout.flush()
@@ -101,8 +103,10 @@ class TestIfft(TestCase):
             for x in [random([size]).astype(double),
                       random([size]).astype(cdouble)+random([size]).astype(cdouble)*1j
                       ]:
-                if size > 500: y = ifft(x)
-                else: y = direct_idft(x)
+                if size > 500:
+                    y = ifft(x)
+                else:
+                    y = direct_idft(x)
                 assert_array_almost_equal(ifft(x),y)
                 print('|%8.2f' % measure('ifft(x)',repeat), end=' ')
                 sys.stdout.flush()

@@ -525,8 +525,10 @@ class UmfpackContext( Struct ):
         if autoTranspose and self.isCSR:
             ##
             # UMFPACK uses CSC internally...
-            if self.family in umfRealTypes: ii = 0
-            else: ii = 1
+            if self.family in umfRealTypes:
+                ii = 0
+            else:
+                ii = 1
             if sys in umfSys_transposeMap[ii]:
                 sys = umfSys_transposeMap[ii][sys]
             else:

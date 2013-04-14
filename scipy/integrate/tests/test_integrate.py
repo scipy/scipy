@@ -32,7 +32,8 @@ class TestOdeint(TestCase):
     def test_odeint(self):
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.cmplx: continue
+            if problem.cmplx:
+                continue
             self._do_problem(problem)
 
 
@@ -63,7 +64,8 @@ class TestOde(TestCase):
         """Check the vode solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.cmplx: continue
+            if problem.cmplx:
+                continue
             if not problem.stiff:
                 self._do_problem(problem, 'vode', 'adams')
             self._do_problem(problem, 'vode', 'bdf')
@@ -80,25 +82,32 @@ class TestOde(TestCase):
         """Check the lsoda solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.cmplx: continue
+            if problem.cmplx:
+                continue
             self._do_problem(problem, 'lsoda')
 
     def test_dopri5(self):
         """Check the dopri5 solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.cmplx: continue
-            if problem.stiff: continue
-            if hasattr(problem, 'jac'): continue
+            if problem.cmplx:
+                continue
+            if problem.stiff:
+                continue
+            if hasattr(problem, 'jac'):
+                continue
             self._do_problem(problem, 'dopri5')
 
     def test_dop853(self):
         """Check the dop853 solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.cmplx: continue
-            if problem.stiff: continue
-            if hasattr(problem, 'jac'): continue
+            if problem.cmplx:
+                continue
+            if problem.stiff:
+                continue
+            if hasattr(problem, 'jac'):
+                continue
             self._do_problem(problem, 'dop853')
 
     def test_concurrent_fail(self):
@@ -194,16 +203,20 @@ class TestComplexOde(TestCase):
         """Check the dopri5 solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.stiff: continue
-            if hasattr(problem, 'jac'): continue
+            if problem.stiff:
+                continue
+            if hasattr(problem, 'jac'):
+                continue
             self._do_problem(problem, 'dopri5')
 
     def test_dop853(self):
         """Check the dop853 solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.stiff: continue
-            if hasattr(problem, 'jac'): continue
+            if problem.stiff:
+                continue
+            if hasattr(problem, 'jac'):
+                continue
             self._do_problem(problem, 'dop853')
 
 #------------------------------------------------------------------------------

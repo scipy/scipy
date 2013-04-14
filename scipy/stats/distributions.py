@@ -1661,7 +1661,8 @@ class rv_continuous(rv_generic):
             return nan
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
-        if (n < 0): raise ValueError("Moment must be positive.")
+        if (n < 0):
+            raise ValueError("Moment must be positive.")
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             signature = inspect.getargspec(get_method_function(self._stats))
@@ -3619,10 +3620,14 @@ class halflogistic_gen(rv_continuous):
     def _ppf(self, q):
         return 2*arctanh(q)
     def _munp(self, n):
-        if n == 1: return 2*log(2)
-        if n == 2: return pi*pi/3.0
-        if n == 3: return 9*_ZETA3
-        if n == 4: return 7*pi**4 / 15.0
+        if n == 1:
+            return 2*log(2)
+        if n == 2:
+            return pi*pi/3.0
+        if n == 3:
+            return 9*_ZETA3
+        if n == 4:
+            return 7*pi**4 / 15.0
         return 2*(1-pow(2.0,1-n))*special.gamma(n+1)*special.zeta(n,1)
     def _entropy(self):
         return 2-log(2)
@@ -5543,8 +5548,10 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
                 qb = 1.0
                 break
             qb = self._cdf(b,*args)
-            if (qb < q): b += 10
-            else: break
+            if (qb < q):
+                b += 10
+            else:
+                break
     else:
         qb = 1.0
     if isinf(a):    # be sure starting point < q
@@ -5554,8 +5561,10 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
                 qb = 0.0
                 break
             qa = self._cdf(a,*args)
-            if (qa > q): a -= 10
-            else: break
+            if (qa > q):
+                a -= 10
+            else:
+                break
     else:
         qa = self._cdf(a, *args)
 
@@ -6430,7 +6439,8 @@ class rv_discrete(rv_generic):
             return nan
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
-        if (n < 0): raise ValueError("Moment must be positive.")
+        if (n < 0):
+            raise ValueError("Moment must be positive.")
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             signature = inspect.getargspec(get_method_function(self._stats))
@@ -6463,16 +6473,21 @@ class rv_discrete(rv_generic):
         else:
             mu = int(self.stats(*args, **{'moments':'m'}))
             val = self.pmf(mu,*args)
-            if (val == 0.0): ent = 0.0
-            else: ent = -val*log(val)
+            if (val == 0.0):
+                ent = 0.0
+            else:
+                ent = -val*log(val)
             k = 1
             term = 1.0
             while (abs(term) > eps):
                 val = self.pmf(mu+k,*args)
-                if val == 0.0: term = 0.0
-                else: term = -val * log(val)
+                if val == 0.0:
+                    term = 0.0
+                else:
+                    term = -val * log(val)
                 val = self.pmf(mu-k,*args)
-                if val != 0.0: term -= val*log(val)
+                if val != 0.0:
+                    term -= val*log(val)
                 k += 1
                 ent += term
             return ent

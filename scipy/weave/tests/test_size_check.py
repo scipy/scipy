@@ -153,8 +153,10 @@ class TestDummyArrayIndexing(TestCase):
     def test_1d_index_2(self):
         self.generic_1d_index('a[-4]')
     def test_1d_index_3(self):
-        try: self.generic_1d('a[12]')
-        except IndexError: pass
+        try:
+            self.generic_1d('a[12]')
+        except IndexError:
+            pass
     def test_1d_index_calculated(self):
         self.generic_1d_index('a[0+1]')
     def test_1d_0(self):
@@ -177,8 +179,10 @@ class TestDummyArrayIndexing(TestCase):
         self.generic_1d('a[1:-5]')
     def test_1d_9(self):
         # don't support zero length slicing at the moment.
-        try: self.generic_1d('a[-1:-5]')
-        except IndexError: pass
+        try:
+            self.generic_1d('a[-1:-5]')
+        except IndexError:
+            pass
     def test_1d_10(self):
         self.generic_1d('a[-5:-1]')
 
@@ -192,8 +196,10 @@ class TestDummyArrayIndexing(TestCase):
         self.generic_1d('a[1::-1]')
     def test_1d_stride_4(self):
         # don't support zero length slicing at the moment.
-        try: self.generic_1d('a[1:5:-1]')
-        except IndexError: pass
+        try:
+            self.generic_1d('a[1:5:-1]')
+        except IndexError:
+            pass
     def test_1d_stride_5(self):
         self.generic_1d('a[5:1:-1]')
     def test_1d_stride_6(self):
@@ -220,7 +226,8 @@ class TestDummyArrayIndexing(TestCase):
                 beg = random.choice(choices)
                 end = random.choice(choices)
                 step = random.choice(choices)
-                if step in ['0',0]: step = 'None'
+                if step in ['0',0]:
+                    step = 'None'
                 self.generic_1d('a[%s:%s:%s]' % (beg,end,step))
             except IndexError:
                 pass
@@ -244,8 +251,10 @@ class TestDummyArrayIndexing(TestCase):
                 beg2 = random.choice(choices)
                 end2 = random.choice(choices)
                 step2 = random.choice(choices)
-                if step in ['0',0]: step = 'None'
-                if step2 in ['0',0]: step2 = 'None'
+                if step in ['0',0]:
+                    step = 'None'
+                if step2 in ['0',0]:
+                    step2 = 'None'
                 expr = 'a[%s:%s:%s,%s:%s:%s]' % (beg,end,step,beg2,end2,step2)
                 self.generic_2d(expr)
             except IndexError:

@@ -435,8 +435,10 @@ class LSQUnivariateSpline(UnivariateSpline):
         #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
         xe = bbox[1]
-        if xb is None: xb = x[0]
-        if xe is None: xe = x[-1]
+        if xb is None:
+            xb = x[0]
+        if xe is None:
+            xe = x[-1]
         t = concatenate(([xb]*(k+1),t,[xe]*(k+1)))
         n = len(t)
         if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0,axis=0):
