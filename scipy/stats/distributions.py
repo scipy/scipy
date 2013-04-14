@@ -1721,12 +1721,17 @@ class rv_continuous(rv_generic):
         if not self._argcheck(*args) or scale <= 0:
             return inf
         x = asarray((x-loc) / scale)
-        cond0 = (x <= self.a) | (self.b <= x )
-        Nbad = sum(cond0)
+
         loginf = log(floatinfo.machar.xmax)
-        if Nbad>0:
-            x = argsreduce(~cond0, x)[0]
-             
+
+        if np.isneginf(self.a).all() and np.isinf(self.b).all():
+            Nbad = 0
+        else:
+            cond0 = (x <= self.a) | (self.b <= x)
+            Nbad = sum(cond0)
+            if Nbad > 0:
+                x = argsreduce(~cond0, x)[0]
+
         N = len(x)
         return self._nnlf(x, *args) + N*log(scale) + Nbad * 100.0 * loginf
 
