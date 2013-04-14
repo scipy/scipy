@@ -19,7 +19,7 @@ def configuration(parent_package='',top_path=None):
         raise NotFoundError('no lapack/blas resources found')
 
     atlas_version = ([v[3:-3] for k,v in lapack_opt.get('define_macros',[])
-                      if k=='ATLAS_INFO']+[None])[0]
+                      if k == 'ATLAS_INFO']+[None])[0]
     if atlas_version:
         print(('ATLAS version: %s' % atlas_version))
 

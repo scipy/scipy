@@ -635,7 +635,7 @@ class TestPinv(TestCase):
         assert_array_almost_equal(a_pinv,a_pinv2)
 
     def test_check_finite(self):
-        a=array([[1,2,3],[4,5,6.],[7,8,10]])
+        a = array([[1,2,3],[4,5,6.],[7,8,10]])
         a_pinv = pinv(a, check_finite=False)
         assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
         a_pinv = pinv2(a, check_finite=False)

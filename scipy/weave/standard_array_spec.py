@@ -176,7 +176,7 @@ class array_converter(common_base_converter):
                'int D%(name)s = %(array_name)s->nd;\n' \
                '%(num_type)s* %(name)s = (%(num_type)s*) %(array_name)s->data;\n'
         code = code % res
-        self.__doundef=1
+        self.__doundef = 1
         return code
 
     def cleanup_code(self):

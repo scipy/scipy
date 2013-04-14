@@ -260,7 +260,7 @@ class MMFile (object):
     @staticmethod
     def _get_symmetry(a):
         m,n = a.shape
-        if m!=n:
+        if m != n:
             return MMFile.SYMMETRY_GENERAL
         issymm = 1
         isskew = 1
@@ -369,14 +369,14 @@ class MMFile (object):
                 else:
                     aij = float(line)
                 a[i,j] = aij
-                if has_symmetry and i!=j:
+                if has_symmetry and i != j:
                     if is_skew:
                         a[j,i] = -aij
                     elif is_herm:
                         a[j,i] = conj(aij)
                     else:
                         a[j,i] = aij
-                if i<rows-1:
+                if i < rows-1:
                     i = i + 1
                 else:
                     j = j + 1
@@ -404,7 +404,7 @@ class MMFile (object):
                 else:
                     aij = float(l[2])
                 a[i,j] = aij
-                if has_symmetry and i!=j:
+                if has_symmetry and i != j:
                     if is_skew:
                         a[j,i] = -aij
                     elif is_herm:

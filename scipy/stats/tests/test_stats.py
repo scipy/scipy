@@ -36,13 +36,13 @@ import scipy.stats as stats
 ##  Somewhat acceptable, since this is still beta software.  It would count as a
 ##  good target for 1.0 status
 X = array([1,2,3,4,5,6,7,8,9],float)
-ZERO= array([0,0,0,0,0,0,0,0,0], float)
+ZERO = array([0,0,0,0,0,0,0,0,0], float)
 #MISS=array([.,.,.,.,.,.,.,.,.], float)
-BIG=array([99999991,99999992,99999993,99999994,99999995,99999996,99999997,99999998,99999999],float)
-LITTLE=array([0.99999991,0.99999992,0.99999993,0.99999994,0.99999995,0.99999996,0.99999997,0.99999998,0.99999999],float)
-HUGE=array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12],float)
-TINY=array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12],float)
-ROUND=array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5],float)
+BIG = array([99999991,99999992,99999993,99999994,99999995,99999996,99999997,99999998,99999999],float)
+LITTLE = array([0.99999991,0.99999992,0.99999993,0.99999994,0.99999995,0.99999996,0.99999997,0.99999998,0.99999999],float)
+HUGE = array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12],float)
+TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12],float)
+ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5],float)
 X2 = X * X
 X3 = X2 * X
 X4 = X3 * X
@@ -95,17 +95,17 @@ class TestRound(TestCase):
 
     def test_rounding1(self):
         """ W.II.A.1. Y = INT(2.6*7 -0.2) (Y should be 18)"""
-        y = int(2.6*7 -0.2)
+        y = int(2.6*7 - 0.2)
         assert_equal(y, 18)
 
     def test_rounding2(self):
         """ W.II.A.2. Y = 2-INT(EXP(LOG(SQR(2)*SQR(2))))   (Y should be 0)"""
-        y=2-int(np.exp(np.log(np.sqrt(2.)*np.sqrt(2.))))
+        y = 2-int(np.exp(np.log(np.sqrt(2.)*np.sqrt(2.))))
         assert_equal(y,0)
 
     def test_rounding3(self):
         """ W.II.A.3. Y = INT(3-EXP(LOG(SQR(2)*SQR(2))))    (Y should be 1)"""
-        y=(int(round((3-np.exp(np.log(np.sqrt(2.0)*np.sqrt(2.0)))))))
+        y = (int(round((3-np.exp(np.log(np.sqrt(2.0)*np.sqrt(2.0)))))))
         assert_equal(y,1)
 
 class TestBasicStats(TestCase):
@@ -650,7 +650,7 @@ class TestRegression(TestCase):
         """
         y = stats.linregress(X,BIG)
         intercept = y[1]
-        r=y[2]
+        r = y[2]
         assert_almost_equal(intercept,99999990)
         assert_almost_equal(r,1.0)
 
@@ -673,7 +673,7 @@ class TestRegression(TestCase):
         """
         y = stats.linregress(X,X)
         intercept = y[1]
-        r=y[2]
+        r = y[2]
         assert_almost_equal(intercept,0.0)
         assert_almost_equal(r,1.0)
 ##     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
@@ -692,7 +692,7 @@ class TestRegression(TestCase):
         """
         y = stats.linregress(X,ZERO)
         intercept = y[1]
-        r=y[2]
+        r = y[2]
         assert_almost_equal(intercept,0.0)
         assert_almost_equal(r,0.0)
 
@@ -898,7 +898,7 @@ def test_cumfreq():
     assert_array_almost_equal(cumfreqs, np.array([ 3.,  4.,  5.,  6.]))
     cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4,
                                                       defaultreallimits=(1.5, 5))
-    assert_(extrapoints==3)
+    assert_(extrapoints == 3)
 
 
 def test_relfreq():
@@ -925,7 +925,7 @@ class TestGMean(TestCase):
 
     def test_1D_list(self):
         a = (1,2,3,4)
-        actual= stats.gmean(a)
+        actual = stats.gmean(a)
         desired = power(1*2*3*4,1./4.)
         assert_almost_equal(actual, desired,decimal=14)
 
@@ -934,7 +934,7 @@ class TestGMean(TestCase):
 
     def test_1D_array(self):
         a = array((1,2,3,4), float32)
-        actual= stats.gmean(a)
+        actual = stats.gmean(a)
         desired = power(1*2*3*4,1./4.)
         assert_almost_equal(actual, desired, decimal=7)
 
@@ -945,7 +945,7 @@ class TestGMean(TestCase):
         a = array(((1,2,3,4),
                    (1,2,3,4),
                    (1,2,3,4)))
-        actual= stats.gmean(a)
+        actual = stats.gmean(a)
         desired = array((1,2,3,4))
         assert_array_almost_equal(actual, desired, decimal=14)
 
@@ -956,7 +956,7 @@ class TestGMean(TestCase):
         a = array(((1,2,3,4),
                    (1,2,3,4),
                    (1,2,3,4)))
-        actual= stats.gmean(a, axis=1)
+        actual = stats.gmean(a, axis=1)
         v = power(1*2*3*4,1./4.)
         desired = array((v,v,v))
         assert_array_almost_equal(actual, desired, decimal=14)
@@ -969,7 +969,7 @@ class TestGMean(TestCase):
 class TestHMean(TestCase):
     def test_1D_list(self):
         a = (1,2,3,4)
-        actual= stats.hmean(a)
+        actual = stats.hmean(a)
         desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
         assert_almost_equal(actual, desired, decimal=14)
 
@@ -977,7 +977,7 @@ class TestHMean(TestCase):
         assert_almost_equal(actual, desired1, decimal=14)
     def test_1D_array(self):
         a = array((1,2,3,4), float64)
-        actual= stats.hmean(a)
+        actual = stats.hmean(a)
         desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
         assert_almost_equal(actual, desired, decimal=14)
 
@@ -1859,22 +1859,22 @@ def test_obrientransform():
 class HarMeanTestCase:
     def test_1dlist(self):
         ''' Test a 1d list'''
-        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         b = 34.1417152147
         self.do(a, b)
     def test_1darray(self):
         ''' Test a 1d array'''
-        a=np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 34.1417152147
         self.do(a, b)
     def test_1dma(self):
         ''' Test a 1d masked array'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 34.1417152147
         self.do(a, b)
     def test_1dmavalue(self):
         ''' Test a 1d masked array with a masked value'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
                       mask=[0,0,0,0,0,0,0,0,0,1])
         b = 31.8137186141
         self.do(a, b)
@@ -1882,42 +1882,42 @@ class HarMeanTestCase:
     # Note the next tests use axis=None as default, not axis=0
     def test_2dlist(self):
         ''' Test a 2d list'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 38.6696271841
         self.do(a, b)
     def test_2darray(self):
         ''' Test a 2d array'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 38.6696271841
         self.do(np.array(a), b)
     def test_2dma(self):
         ''' Test a 2d masked array'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 38.6696271841
         self.do(np.ma.array(a), b)
     def test_2daxis0(self):
         ''' Test a 2d list with axis=0'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([ 22.88135593,  39.13043478,  52.90076336,  65.45454545])
         self.do(a, b, axis=0)
     def test_2daxis1(self):
         ''' Test a 2d list with axis=1'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([  19.2       ,   63.03939962,  103.80078637])
         self.do(a, b, axis=1)
     def test_2dmatrixdaxis0(self):
         ''' Test a 2d list with axis=0'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[ 22.88135593,  39.13043478,  52.90076336,  65.45454545]])
         self.do(np.matrix(a), b, axis=0)
     def test_2dmatrixaxis1(self):
         ''' Test a 2d list with axis=1'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[  19.2       ,   63.03939962,  103.80078637]]).T
         self.do(np.matrix(a), b, axis=1)
 ##    def test_dtype(self):
 ##        ''' Test a 1d list with a new dtype'''
-##        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+##        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 ##        b = 34.1417152147
 ##        self.do(a, b, dtype=np.float128)  # does not work on Win32
 
@@ -1930,69 +1930,69 @@ class TestHarMean(HarMeanTestCase, TestCase):
 class GeoMeanTestCase:
     def test_1dlist(self):
         ''' Test a 1d list'''
-        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         b = 45.2872868812
         self.do(a, b)
     def test_1darray(self):
         ''' Test a 1d array'''
-        a=np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 45.2872868812
         self.do(a, b)
     def test_1dma(self):
         ''' Test a 1d masked array'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 45.2872868812
         self.do(a, b)
     def test_1dmavalue(self):
         ''' Test a 1d masked array with a masked value'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0,0,0,0,0,0,0,0,0,1])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0,0,0,0,0,0,0,0,0,1])
         b = 41.4716627439
         self.do(a, b)
 
     # Note the next tests use axis=None as default, not axis=0
     def test_2dlist(self):
         ''' Test a 2d list'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
         self.do(a, b)
     def test_2darray(self):
         ''' Test a 2d array'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
         self.do(np.array(a), b)
     def test_2dma(self):
         ''' Test a 2d masked array'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
         self.do(np.ma.array(a), b)
     def test_2daxis0(self):
         ''' Test a 2d list with axis=0'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([35.56893304,  49.32424149,  61.3579244 ,  72.68482371])
         self.do(a, b, axis=0)
     def test_2daxis1(self):
         ''' Test a 2d list with axis=1'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([  22.13363839,   64.02171746,  104.40086817])
         self.do(a, b, axis=1)
     def test_2dmatrixdaxis0(self):
         ''' Test a 2d list with axis=0'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[35.56893304,  49.32424149,  61.3579244 ,  72.68482371]])
         self.do(np.matrix(a), b, axis=0)
     def test_2dmatrixaxis1(self):
         ''' Test a 2d list with axis=1'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[  22.13363839,   64.02171746,  104.40086817]]).T
         self.do(np.matrix(a), b, axis=1)
 ##    def test_dtype(self):
 ##        ''' Test a 1d list with a new dtype'''
-##        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+##        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 ##        b = 45.2872868812
 ##        self.do(a, b, dtype=np.float128)  # does not exist on win32
     def test_1dlist0(self):
         ''' Test a 1d list with zero element'''
-        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
+        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
         b = 0.0 # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
@@ -2002,7 +2002,7 @@ class GeoMeanTestCase:
 
     def test_1darray0(self):
         ''' Test a 1d array with zero element'''
-        a=np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         b = 0.0 # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
@@ -2012,7 +2012,7 @@ class GeoMeanTestCase:
 
     def test_1dma0(self):
         ''' Test a 1d masked array with zero element'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         b = 41.4716627439
         olderr = np.seterr(all='ignore')
         try:
@@ -2022,7 +2022,7 @@ class GeoMeanTestCase:
 
     def test_1dmainf(self):
         ''' Test a 1d masked array with negative element'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
         b = 41.4716627439
         olderr = np.seterr(all='ignore')
         try:
@@ -2093,8 +2093,8 @@ class TestSigamClip(object):
         a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
         fact = 4  # default
         c, low, upp = stats.sigmaclip(a)
-        assert_(c.min()>low)
-        assert_(c.max()<upp)
+        assert_(c.min() > low)
+        assert_(c.max() < upp)
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
         assert_equal(c.size, a.size)
@@ -2103,8 +2103,8 @@ class TestSigamClip(object):
         a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
         fact = 1.5
         c, low, upp = stats.sigmaclip(a, fact, fact)
-        assert_(c.min()>low)
-        assert_(c.max()<upp)
+        assert_(c.min() > low)
+        assert_(c.max() < upp)
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
         assert_equal(c.size, 4)
@@ -2114,8 +2114,8 @@ class TestSigamClip(object):
         a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))
         fact = 1.8
         c, low, upp = stats.sigmaclip(a, fact, fact)
-        assert_(c.min()>low)
-        assert_(c.max()<upp)
+        assert_(c.min() > low)
+        assert_(c.max() < upp)
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
         assert_equal(c, np.linspace(9.5,10.5,11))

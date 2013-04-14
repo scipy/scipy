@@ -45,7 +45,7 @@ def polyline(dc,line,xoffset=0,yoffset=0):
     # Make sure the array is the correct size/shape
     #------------------------------------------------------------------------
     shp = line.shape
-    assert(len(shp)==2 and shp[1] == 2)
+    assert(len(shp) == 2 and shp[1] == 2)
 
     #------------------------------------------------------------------------
     # Offset data if necessary

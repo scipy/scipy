@@ -155,7 +155,7 @@ def compare(m,n):
         for i in range(n):
             b = cast_copy_transpose(type,a)
     t2 = time.time()
-    print(' speed in c (blitz):',(t2 - t1)/ m)
+    print(' speed in c (blitz):',(t2 - t1) / m)
     print(' speed up   (blitz): %3.2f' % (py/(t2-t1)))
 
     # load into cache
@@ -165,7 +165,7 @@ def compare(m,n):
         for i in range(n):
             b = cast_copy_transpose2(type,a)
     t2 = time.time()
-    print(' speed in c (pointers):',(t2 - t1)/ m)
+    print(' speed in c (pointers):',(t2 - t1) / m)
     print(' speed up   (pointers): %3.2f' % (py/(t2-t1)))
 
     # inplace tranpose
@@ -175,7 +175,7 @@ def compare(m,n):
         for i in range(n):
             b = _inplace_transpose(a)
     t2 = time.time()
-    print(' inplace transpose c:',(t2 - t1)/ m)
+    print(' inplace transpose c:',(t2 - t1) / m)
     print(' speed up: %3.2f' % (py/(t2-t1)))
 
 if __name__ == "__main__":

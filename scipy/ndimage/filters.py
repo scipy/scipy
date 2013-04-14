@@ -829,7 +829,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         if footprint is None:
             if size is None:
                 raise RuntimeError("no footprint provided")
-            separable= True
+            separable = True
         else:
             footprint = numpy.asarray(footprint)
             footprint = footprint.astype(bool)

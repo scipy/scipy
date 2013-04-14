@@ -379,13 +379,13 @@ def test_round_trip():
 
 def test_gzip_simple():
     xdense = np.zeros((20,20))
-    xdense[2,3]=2.3
-    xdense[4,5]=4.5
+    xdense[2,3] = 2.3
+    xdense[4,5] = 4.5
     x = SP.csc_matrix(xdense)
 
     name = 'gzip_test'
     expected = {'x':x}
-    format='4'
+    format = '4'
 
     tmpdir = mkdtemp()
     try:
@@ -436,7 +436,7 @@ def test_mat73():
     # Check any hdf5 files raise an error
     filenames = glob(
         pjoin(test_data_path, 'testhdf5*.mat'))
-    assert_true(len(filenames)>0)
+    assert_true(len(filenames) > 0)
     for filename in filenames:
         fp = open(filename, 'rb')
         assert_raises(NotImplementedError,
@@ -507,8 +507,8 @@ def test_long_field_names_in_struct():
     fldname = 'a' * lim
     cell = np.ndarray((1,2),dtype=object)
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
-    cell[0,0]=st1
-    cell[0,1]=st1
+    cell[0,0] = st1
+    cell[0,1] = st1
     mat_stream = BytesIO()
     savemat_future(BytesIO(), {'longstruct': cell}, format='5',long_field_names=True)
     #
@@ -523,13 +523,13 @@ def test_cell_with_one_thing_in_it():
     # strings in it.  It works. Make a cell array that's 1 x 1 and put
     # a string in it. It should work but, in the old days, it didn't.
     cells = np.ndarray((1,2),dtype=object)
-    cells[0,0]='Hello'
-    cells[0,1]='World'
+    cells[0,0] = 'Hello'
+    cells[0,1] = 'World'
     mat_stream = BytesIO()
     savemat_future(BytesIO(), {'x': cells}, format='5')
 
     cells = np.ndarray((1,1),dtype=object)
-    cells[0,0]='Hello, world'
+    cells[0,0] = 'Hello, world'
     mat_stream = BytesIO()
     savemat_future(BytesIO(), {'x': cells}, format='5')
 
@@ -644,7 +644,7 @@ def test_compression():
     compressed_len = len(stream.getvalue())
     vals = loadmat(stream)
     yield assert_array_equal, vals['arr'], arr
-    yield assert_true, raw_len>compressed_len
+    yield assert_true, raw_len > compressed_len
     # Concatenate, test later
     arr2 = arr.copy()
     arr2[0,0] = 1
@@ -787,7 +787,7 @@ def test_read_opts():
     rdr = MatFile5Reader_future(stream, chars_as_strings=False)
     carr = np.atleast_2d(np.array(list(arr.item()), dtype='U1'))
     assert_array_equal(rdr.get_variables()['a'], carr)
-    rdr.chars_as_strings=True
+    rdr.chars_as_strings = True
     assert_array_equal(rdr.get_variables()['a'], arr)
 
 

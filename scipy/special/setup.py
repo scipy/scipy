@@ -20,7 +20,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('special', parent_package, top_path)
 
     define_macros = []
-    if sys.platform=='win32':
+    if sys.platform == 'win32':
 #        define_macros.append(('NOINFINITIES',None))
 #        define_macros.append(('NONANS',None))
         define_macros.append(('_USE_MATH_DEFINES',None))

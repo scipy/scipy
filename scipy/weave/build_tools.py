@@ -516,7 +516,7 @@ if sys.platform == 'win32':
             # (-mthreads: Support thread-safe exception handling on `Mingw32')
 
             # no additional libraries needed
-            self.dll_libraries=[]
+            self.dll_libraries = []
 
         # __init__ ()
 

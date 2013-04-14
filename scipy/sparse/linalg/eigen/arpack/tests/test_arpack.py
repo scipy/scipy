@@ -133,7 +133,7 @@ def argsort_which(eval, typ, k, which,
     if sigma is None:
         reval = np.round(eval, decimals=_ndigits[typ])
     else:
-        if mode is None or mode=='normal':
+        if mode is None or mode == 'normal':
             if OPpart is None:
                 reval = 1. / (eval - sigma)
             elif OPpart == 'r':
@@ -142,9 +142,9 @@ def argsort_which(eval, typ, k, which,
             elif OPpart == 'i':
                 reval = -0.5j * (1. / (eval - sigma)
                                  - 1. / (eval - np.conj(sigma)))
-        elif mode=='cayley':
+        elif mode == 'cayley':
             reval = (eval + sigma) / (eval - sigma)
-        elif mode=='buckling':
+        elif mode == 'buckling':
             reval = eval / (eval - sigma)
         else:
             raise ValueError("mode='%s' not recognized" % mode)

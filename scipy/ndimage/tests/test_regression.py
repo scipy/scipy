@@ -27,7 +27,7 @@ def test_ticket_742():
         slices = ndimage.find_objects(la)
 
     if np.dtype(np.intp) != np.dtype('i'):
-        shape=(3,1240,1240)
+        shape = (3,1240,1240)
         a = np.random.rand(np.product(shape)).reshape(shape)
         # shouldn't crash
         SE(a)

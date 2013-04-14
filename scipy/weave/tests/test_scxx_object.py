@@ -547,7 +547,7 @@ class TestObjectUnicode(TestCase):
                 return "repr return"
             def __str__(self):
                 return "unicode"
-        a= Foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.unicode();',['a'])
         first = sys.getrefcount(res)
         del res
@@ -564,7 +564,7 @@ class TestObjectIsCallable(TestCase):
         class Foo:
             def __call__(self):
                 return 0
-        a= Foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.is_callable();',['a'])
         assert_(res)
 
@@ -572,7 +572,7 @@ class TestObjectIsCallable(TestCase):
     def test_false(self):
         class Foo:
             pass
-        a= Foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.is_callable();',['a'])
         assert_(not res)
 
@@ -758,7 +758,7 @@ class TestObjectHash(TestCase):
         class Foo:
             def __hash__(self):
                 return 123
-        a= Foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.hash(); ',['a'])
         print('hash:', res)
         assert_equal(res,123)
@@ -770,13 +770,13 @@ class TestObjectIsTrue(TestCase):
     def test_true(self):
         class Foo:
             pass
-        a= Foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.is_true();',['a'])
         assert_equal(res,1)
 
     @dec.slow
     def test_false(self):
-        a= None
+        a = None
         res = inline_tools.inline('return_val = a.is_true();',['a'])
         assert_equal(res,0)
 
@@ -787,7 +787,7 @@ class TestObjectType(TestCase):
     def test_type(self):
         class Foo:
             pass
-        a= Foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.type();',['a'])
         assert_equal(res,type(a))
 
@@ -799,7 +799,7 @@ class TestObjectSize(TestCase):
         class Foo:
             def __len__(self):
                 return 10
-        a= Foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.size();',['a'])
         assert_equal(res,len(a))
 
@@ -808,7 +808,7 @@ class TestObjectSize(TestCase):
         class Foo:
             def __len__(self):
                 return 10
-        a= Foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.len();',['a'])
         assert_equal(res,len(a))
 
@@ -817,7 +817,7 @@ class TestObjectSize(TestCase):
         class Foo:
             def __len__(self):
                 return 10
-        a= Foo()
+        a = Foo()
         res = inline_tools.inline('return_val = a.length();',['a'])
         assert_equal(res,len(a))
 

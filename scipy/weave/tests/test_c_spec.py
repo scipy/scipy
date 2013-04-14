@@ -84,7 +84,7 @@ class IntConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1
+        b = 1
         test(b)
         try:
             b = 1.
@@ -111,7 +111,7 @@ class IntConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1
+        b = 1
         c = test(b)
 
         assert_( c == 3)
@@ -152,7 +152,7 @@ class FloatConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1.
+        b = 1.
         test(b)
         try:
             b = 1.
@@ -179,7 +179,7 @@ class FloatConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1.
+        b = 1.
         c = test(b)
         assert_( c == 3.)
 
@@ -219,7 +219,7 @@ class ComplexConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1.+1j
+        b = 1.+1j
         test(b)
         try:
             b = 1.
@@ -246,7 +246,7 @@ class ComplexConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1.+1j
+        b = 1.+1j
         c = test(b)
         assert_( c == 3.+3j)
 
@@ -305,7 +305,7 @@ class InstanceConverter(TestCase):
 
 class CallableConverter(TestCase):
 
-    compiler=''
+    compiler = ''
 
     @dec.slow
     def test_call_function(self):
@@ -388,7 +388,7 @@ class StringConverter(TestCase):
         mod.compile(location=test_dir, compiler=self.compiler)
 
         exec('from ' + mod_name + ' import test')
-        b='bub'
+        b = 'bub'
         test(b)
         try:
             b = 1.
@@ -415,7 +415,7 @@ class StringConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b='bub'
+        b = 'bub'
         c = test(b)
         assert_( c == 'hello')
 
@@ -447,7 +447,7 @@ class ListConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=[1,2]
+        b = [1,2]
         test(b)
         try:
             b = 1.
@@ -475,7 +475,7 @@ class ListConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=[1,2]
+        b = [1,2]
         c = test(b)
         assert_( c == ['hello'])
 
@@ -568,7 +568,7 @@ class TupleConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=(1,2)
+        b = (1,2)
         test(b)
         try:
             b = 1.
@@ -597,7 +597,7 @@ class TupleConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=(1,2)
+        b = (1,2)
         c = test(b)
         assert_( c == ('hello',None))
 
@@ -610,7 +610,7 @@ class DictConverter(TestCase):
     # in all sub-classes, this base test class is found by the test
     # infrastructure and run. Therefore, we give it a default value
     # so that it can run on its own.
-    compiler=''
+    compiler = ''
 
     @dec.slow
     def test_type_match_bad(self):
@@ -635,7 +635,7 @@ class DictConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b={'y':2}
+        b = {'y':2}
         test(b)
         try:
             b = 1.
@@ -674,7 +674,7 @@ class DictConverter(TestCase):
     #         exec("class %s%s(%s):\n    compiler = '%s'"%(name,compiler,name,compiler))
 # for converter in
 for _n in dir():
-    if _n[-9:]=='Converter':
+    if _n[-9:] == 'Converter':
         if msvc_exists():
             exec("class Test%sMsvc(%s):\n    compiler = 'msvc'" % (_n,_n))
         else:

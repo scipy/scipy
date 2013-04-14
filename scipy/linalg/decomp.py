@@ -340,7 +340,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             w, v, info = evr(a1, uplo=uplo, jobz=_job, range="A", il=1,
                              iu=a1.shape[0], overwrite_a=overwrite_a)
         else:
-            (lo, hi)= eigvals
+            (lo, hi) = eigvals
             w_tot, v, info = evr(a1, uplo=uplo, jobz=_job, range="I",
                                  il=lo, iu=hi, overwrite_a=overwrite_a)
             w = w_tot[0:hi-lo+1]
@@ -824,7 +824,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     ger,gemm = get_blas_funcs(('ger','gemm'), dtype=typecode)
     q = None
     for i in range(lo, hi):
-        if tau[i]==0.0:
+        if tau[i] == 0.0:
             continue
         v = zeros(n, dtype=typecode)
         v[i+1] = 1.0

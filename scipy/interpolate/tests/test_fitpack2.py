@@ -134,7 +134,7 @@ class TestLSQBivariateSpline(TestCase):
 
         tz = lut(tx, ty)
         trpz = .25*(diff(tx)[:,None]*diff(ty)[None,:]
-                    *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
+                    * (tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
 
         assert_almost_equal(lut.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz)
 
@@ -191,7 +191,7 @@ class TestSmoothBivariateSpline(TestCase):
 
         tz = lut(tx, ty)
         trpz = .25*(diff(tx)[:,None]*diff(ty)[None,:]
-                    *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
+                    * (tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
         assert_almost_equal(lut.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz)
 
         lut2 = SmoothBivariateSpline(x, y, z, kx=2, ky=2, s=0)
@@ -200,7 +200,7 @@ class TestSmoothBivariateSpline(TestCase):
 
         tz = lut(tx[:-1], ty[:-1])
         trpz = .25*(diff(tx[:-1])[:,None]*diff(ty[:-1])[None,:]
-                    *(tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
+                    * (tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
         assert_almost_equal(lut.integral(tx[0], tx[-2], ty[0], ty[-2]), trpz)
 
 class TestLSQSphereBivariateSpline(TestCase):

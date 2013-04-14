@@ -1059,7 +1059,7 @@ def test_stat_funcs_2d():
     a   = np.array([[5,6,0,0,0], [8,9,0,0,0], [0,0,0,3,5]])
     lbl = np.array([[1,1,0,0,0], [1,1,0,0,0], [0,0,0,2,2]])
 
-    mean= ndimage.mean(a, labels=lbl, index=[1, 2])
+    mean = ndimage.mean(a, labels=lbl, index=[1, 2])
     assert_array_equal(mean, [7.0, 4.0])
 
     var = ndimage.variance(a, labels=lbl, index=[1, 2])

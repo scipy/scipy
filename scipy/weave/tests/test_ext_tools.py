@@ -100,7 +100,7 @@ class TestExtModule(TestCase):
         mod.compile(location=build_dir)
         import ext_return_tuple
         c,d = ext_return_tuple.test(a)
-        assert_(c==a and d == a+1)
+        assert_(c == a and d == a+1)
 
 
 class TestExtFunction(TestCase):

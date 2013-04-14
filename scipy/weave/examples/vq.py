@@ -219,7 +219,7 @@ def compare(m,Nobs,Ncodes,Nfeatures):
     for i in range(m):
         code,dist = vq(obs,codes)
     t2 = time.time()
-    print(' speed inline/blitz:',(t2 - t1)/ m)
+    print(' speed inline/blitz:',(t2 - t1) / m)
     print(code[:2],dist[:2])
     print(' speed up: %3.2f' % (py/(t2-t1)))
 
@@ -229,7 +229,7 @@ def compare(m,Nobs,Ncodes,Nfeatures):
     for i in range(m):
         code,dist = vq2(obs,codes)
     t2 = time.time()
-    print(' speed inline/blitz2:',(t2 - t1)/ m)
+    print(' speed inline/blitz2:',(t2 - t1) / m)
     print(code[:2],dist[:2])
     print(' speed up: %3.2f' % (py/(t2-t1)))
 
@@ -239,7 +239,7 @@ def compare(m,Nobs,Ncodes,Nfeatures):
     for i in range(m):
         code,dist = vq3(obs,codes)
     t2 = time.time()
-    print(' speed using C arrays:',(t2 - t1)/ m)
+    print(' speed using C arrays:',(t2 - t1) / m)
     print(code[:2],dist[:2])
     print(' speed up: %3.2f' % (py/(t2-t1)))
 

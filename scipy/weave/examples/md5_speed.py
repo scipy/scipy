@@ -38,7 +38,7 @@ def speed(n,m):
     s = 'a'*n
     t1 = time.time()
     for i in range(m):
-        q= md5.new(s).digest()
+        q = md5.new(s).digest()
     t2 = time.time()
     print((t2 - t1) / m)
 
@@ -60,14 +60,14 @@ def md5_dict(lst):
     catalog = {}
     t1 = time.time()
     for s in lst:
-        key= md5.new(s).digest()
+        key = md5.new(s).digest()
         catalog[key] = None
     t2 = time.time()
     print('md5 build(len,sec,per):', len(lst), t2 - t1, (t2-t1)/len(lst))
 
     t1 = time.time()
     for s in lst:
-        key= md5.new(s).digest()
+        key = md5.new(s).digest()
         val = catalog[key]
     t2 = time.time()
     print('md5 retrv(len,sec,per):', len(lst), t2 - t1, (t2-t1)/len(lst))

@@ -75,7 +75,7 @@ class TestGegenbauer(TestCase):
 
     def test_gegenbauer(self):
         a = 5*rand()-0.5
-        if np.any(a==0): a = -0.2
+        if np.any(a == 0): a = -0.2
         Ca0 = orth.gegenbauer(0,a)
         Ca1 = orth.gegenbauer(1,a)
         Ca2 = orth.gegenbauer(2,a)

@@ -18,7 +18,7 @@ def configuration(parent_package='',top_path=None):
 
     config = Configuration('arpack', parent_package, top_path)
 
-    arpack_sources=[join('ARPACK','SRC', '*.f')]
+    arpack_sources = [join('ARPACK','SRC', '*.f')]
     arpack_sources.extend([join('ARPACK','UTIL', '*.f')])
     arpack_sources.extend([join('ARPACK','LAPACK', '*.f')])
 

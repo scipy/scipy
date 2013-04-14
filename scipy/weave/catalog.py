@@ -295,7 +295,7 @@ def get_catalog(module_path,mode='r'):
                 or os.path.exists(catalog_file)):
         sh = shelve.open(catalog_file,mode)
     else:
-        if mode=='r':
+        if mode == 'r':
             sh = None
         else:
             sh = shelve.open(catalog_file,mode)
@@ -687,7 +687,7 @@ class catalog(object):
             # built in modules don't have the __file__ extension, so this
             # will fail.  Just pass in this case since path additions aren't
             # needed for built-in modules.
-            mod_path,f=os.path.split(os.path.abspath(module.__file__))
+            mod_path,f = os.path.split(os.path.abspath(module.__file__))
             pkey = self.path_key(code)
             cat[pkey] = [mod_path] + cat.get(pkey,[])
         except:

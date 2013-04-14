@@ -81,25 +81,25 @@ def sort_compare(a,n):
     print('Dict sort of %d items for %d iterations:' % (len(a),n))
     t1 = time.time()
     for i in range(n):
-        b=sortedDictValues3(a)
+        b = sortedDictValues3(a)
     t2 = time.time()
     py = (t2-t1)
     print(' speed in python:', (t2 - t1))
     print(b[:5])
 
-    b=c_sort(a)
+    b = c_sort(a)
     t1 = time.time()
     for i in range(n):
-        b=c_sort(a)
+        b = c_sort(a)
     t2 = time.time()
     print(' speed in c (Python API):',(t2 - t1))
     print(' speed up: %3.2f' % (py/(t2-t1)))
     print(b[:5])
 
-    b=c_sort2(a)
+    b = c_sort2(a)
     t1 = time.time()
     for i in range(n):
-        b=c_sort2(a)
+        b = c_sort2(a)
     t2 = time.time()
     print(' speed in c (scxx):',(t2 - t1))
     print(' speed up: %3.2f' % (py/(t2-t1)))
@@ -113,7 +113,7 @@ def setup_dict(m):
     for i in range(m):
         key = random.choice(a)
         a.remove(key)
-        d[key]=key
+        d[key] = key
     return d
 if __name__ == "__main__":
     m = 1000

@@ -187,11 +187,11 @@ def j_roots(n, alpha, beta, mu=0):
         (p,q) = (alpha,beta)
         # from recurrence relations
         sbn_J = lambda k: 2.0/(2.0*k+p+q)*sqrt((k+p)*(k+q)/(2*k+q+p+1)) * \
-                    (np.where(k==1,1.0,sqrt(k*(k+p+q)/(2.0*k+p+q-1))))
+                    (np.where(k == 1,1.0,sqrt(k*(k+p+q)/(2.0*k+p+q-1))))
         if any(p == q):  # XXX any or all???
             an_J = lambda k: 0.0*k
         else:
-            an_J = lambda k: np.where(k==0,(q-p)/(p+q+2.0),
+            an_J = lambda k: np.where(k == 0,(q-p)/(p+q+2.0),
                                    (q*q - p*p)/((2.0*k+p+q)*(2.0*k+p+q+2)))
         g = cephes.gamma
         mu0 = 2.0**(p+q+1)*g(p+1)*g(q+1)/(g(p+q+2))
@@ -213,7 +213,7 @@ def jacobi(n, alpha, beta, monic=0):
         raise ValueError("n must be nonnegative.")
 
     wfunc = lambda x: (1-x)**alpha * (1+x)**beta
-    if n==0:
+    if n == 0:
         return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic,
                            eval_func=np.ones_like)
     x,w,mu = j_roots(n,alpha,beta,mu=1)
@@ -242,10 +242,10 @@ def js_roots(n, p1, q1, mu=0):
 
     p,q = p1,q1
 
-    sbn_Js = lambda k: sqrt(np.where(k==1,q*(p-q+1.0)/(p+2.0),
+    sbn_Js = lambda k: sqrt(np.where(k == 1,q*(p-q+1.0)/(p+2.0),
                                   k*(k+q-1.0)*(k+p-1.0)*(k+p-q)
                                   / ((2.0*k+p-2) * (2.0*k+p))))/(2*k+p-1.0)
-    an_Js = lambda k: np.where(k==0,q/(p+1.0),(2.0*k*(k+p)+q*(p-1.0)) / ((2.0*k+p+1.0)*(2*k+p-1.0)))
+    an_Js = lambda k: np.where(k == 0,q/(p+1.0),(2.0*k*(k+p)+q*(p-1.0)) / ((2.0*k+p+1.0)*(2*k+p-1.0)))
 
     # could also use definition
     #  Gn(p,q,x) = constant_n * P^(p-q,q-1)_n(2x-1)
@@ -275,7 +275,7 @@ def sh_jacobi(n, p, q, monic=0):
         raise ValueError("n must be nonnegative.")
 
     wfunc = lambda x: (1.0-x)**(p-q) * (x)**(q-1.)
-    if n==0:
+    if n == 0:
         return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic,
                            eval_func=np.ones_like)
     n1 = n
@@ -321,11 +321,11 @@ def genlaguerre(n, alpha, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
+    if n == 0: n1 = n+1
     else: n1 = n
     x,w,mu0 = la_roots(n1,alpha,mu=1)
     wfunc = lambda x: exp(-x) * x**alpha
-    if n==0: x,w = [],[]
+    if n == 0: x,w = [],[]
     hn = _gam(n+alpha+1)/_gam(n+1)
     kn = (-1)**n / _gam(n+1)
     p = orthopoly1d(x,w,hn,kn,wfunc,(0,inf),monic,
@@ -349,10 +349,10 @@ def laguerre(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
+    if n == 0: n1 = n+1
     else: n1 = n
     x,w,mu0 = l_roots(n1,mu=1)
-    if n==0: x,w = [],[]
+    if n == 0: x,w = [],[]
     hn = 1.0
     kn = (-1)**n / _gam(n+1)
     p = orthopoly1d(x,w,hn,kn,lambda x: exp(-x),(0,inf),monic,
@@ -387,11 +387,11 @@ def hermite(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
+    if n == 0: n1 = n+1
     else: n1 = n
     x,w,mu0 = h_roots(n1,mu=1)
     wfunc = lambda x: exp(-x*x)
-    if n==0: x,w = [],[]
+    if n == 0: x,w = [],[]
     hn = 2**n * _gam(n+1)*sqrt(pi)
     kn = 2**n
     p = orthopoly1d(x,w,hn,kn,wfunc,(-inf,inf),monic,
@@ -425,11 +425,11 @@ def hermitenorm(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
+    if n == 0: n1 = n+1
     else: n1 = n
     x,w,mu0 = he_roots(n1,mu=1)
     wfunc = lambda x: exp(-x*x/4.0)
-    if n==0: x,w = [],[]
+    if n == 0: x,w = [],[]
     hn = sqrt(2*pi)*_gam(n+1)
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=wfunc,limits=(-inf,inf),monic=monic,
@@ -475,7 +475,7 @@ def t_roots(n, mu=0):
         raise ValueError("n must be positive.")
 
     # from recurrence relation
-    sbn_J = lambda k: np.where(k==1,sqrt(2)/2.0,0.5)
+    sbn_J = lambda k: np.where(k == 1,sqrt(2)/2.0,0.5)
     an_J = lambda k: 0.0*k
     g = cephes.gamma
     mu0 = pi
@@ -493,7 +493,7 @@ def chebyt(n, monic=0):
         raise ValueError("n must be nonnegative.")
 
     wfunc = lambda x: 1.0/sqrt(1-x*x)
-    if n==0:
+    if n == 0:
         return orthopoly1d([],[],pi,1.0,wfunc,(-1,1),monic,
                            lambda x: eval_chebyt(n,x))
     n1 = n
@@ -548,11 +548,11 @@ def chebyc(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
+    if n == 0: n1 = n+1
     else: n1 = n
     x,w,mu0 = c_roots(n1,mu=1)
-    if n==0: x,w = [],[]
-    hn = 4*pi * ((n==0)+1)
+    if n == 0: x,w = [],[]
+    hn = 4*pi * ((n == 0)+1)
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0/sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
     if not monic:
@@ -582,10 +582,10 @@ def chebys(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
+    if n == 0: n1 = n+1
     else: n1 = n
     x,w,mu0 = s_roots(n1,mu=1)
-    if n==0: x,w = [],[]
+    if n == 0: x,w = [],[]
     hn = pi
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
@@ -657,10 +657,10 @@ def legendre(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
+    if n == 0: n1 = n+1
     else: n1 = n
     x,w,mu0 = p_roots(n1,mu=1)
-    if n==0: x,w = [],[]
+    if n == 0: x,w = [],[]
     hn = 2.0/(2*n+1)
     kn = _gam(2*n+1)/_gam(n+1)**2 / 2.0**n
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0,limits=(-1,1),monic=monic,
@@ -685,7 +685,7 @@ def sh_legendre(n, monic=0):
         raise ValueError("n must be nonnegative.")
 
     wfunc = lambda x: 0.0*x + 1.0
-    if n==0: return orthopoly1d([],[],1.0,1.0,wfunc,(0,1),monic,
+    if n == 0: return orthopoly1d([],[],1.0,1.0,wfunc,(0,1),monic,
                                 lambda x: eval_sh_legendre(n,x))
     x,w,mu0 = ps_roots(n,mu=1)
     hn = 1.0/(2*n+1.0)

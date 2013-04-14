@@ -19,12 +19,12 @@ def direct_diff(x,k=1,period=None):
     if period is None:
         period = 2*pi
     w = fftfreq(n)*2j*pi/period*n
-    if k<0:
+    if k < 0:
         w = 1 / w**k
         w[0] = 0.0
     else:
         w = w**k
-    if n>2000:
+    if n > 2000:
         w[250:n-250] = 0.0
     return ifft(w*fx).real
 
@@ -74,7 +74,7 @@ class TestDiff(TestCase):
             print('%6s' % size, end=' ')
             sys.stdout.flush()
             x = arange(size)*2*pi/size
-            if size<2000:
+            if size < 2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
             else:
                 f = sin(x)*cos(4*x)
@@ -106,7 +106,7 @@ class TestTilbert(TestCase):
             print('%6s' % size, end=' ')
             sys.stdout.flush()
             x = arange(size)*2*pi/size
-            if size<2000:
+            if size < 2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
             else:
                 f = sin(x)*cos(4*x)
@@ -137,7 +137,7 @@ class TestHilbert(TestCase):
             print('%6s' % size, end=' ')
             sys.stdout.flush()
             x = arange(size)*2*pi/size
-            if size<2000:
+            if size < 2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
             else:
                 f = sin(x)*cos(4*x)
@@ -169,7 +169,7 @@ class TestShift(TestCase):
             sys.stdout.flush()
             x = arange(size)*2*pi/size
             a = 1
-            if size<2000:
+            if size < 2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
                 sf = sin(x+a)*cos(4*(x+a))+exp(sin(3*(x+a)))
             else:

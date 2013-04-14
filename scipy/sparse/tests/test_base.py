@@ -1139,7 +1139,7 @@ class _TestFancyIndexing:
         assert_equal(A[I].todense(), B[I])
         assert_equal(A[:,J].todense(), B[:, J])
         assert_equal(A[X].todense(), B[X])
-        assert_equal(A[B>9].todense(), B[B>9])
+        assert_equal(A[B > 9].todense(), B[B > 9])
 
         I = np.array([True, False, True, True, False])
         J = np.array([False, True, True, False, True])
@@ -1827,21 +1827,21 @@ class TestDOK(sparse_test_class(slicing=False,
     def test_convert(self):
         # Test provided by Andrew Straw.  Fails in SciPy <= r1477.
         (m, n) = (6, 7)
-        a=dok_matrix((m, n))
+        a = dok_matrix((m, n))
 
         # set a few elements, but none in the last column
-        a[2,1]=1
-        a[0,2]=2
-        a[3,1]=3
-        a[1,5]=4
-        a[4,3]=5
-        a[4,2]=6
+        a[2,1] = 1
+        a[0,2] = 2
+        a[3,1] = 3
+        a[1,5] = 4
+        a[4,3] = 5
+        a[4,2] = 6
 
         # assert that the last column is all zeros
         assert_array_equal( a.toarray()[:,n-1], zeros(m,) )
 
         # make sure it still works for CSC format
-        csc=a.tocsc()
+        csc = a.tocsc()
         assert_array_equal( csc.toarray()[:,n-1], zeros(m,) )
 
         # now test CSR
@@ -1852,7 +1852,7 @@ class TestDOK(sparse_test_class(slicing=False,
         assert_array_equal( b.toarray()[m-1,:], zeros(n,) )
 
         # make sure it still works for CSR format
-        csr=b.tocsr()
+        csr = b.tocsr()
         assert_array_equal( csr.toarray()[m-1,:], zeros(n,))
 
     def test_ctor(self):
@@ -1893,7 +1893,7 @@ class TestDOK(sparse_test_class(slicing=False,
         # Slice assignments were also affected.
         b = dok_matrix((3,3))
         b[:,0] = 0
-        assert_(len(b.keys())==0, "Unexpected entries in keys")
+        assert_(len(b.keys()) == 0, "Unexpected entries in keys")
 
     ##
     ## TODO: The DOK matrix currently returns invalid results rather

@@ -360,7 +360,7 @@ class TestEigBanded(TestCase):
 
         # absolute value for linear equation system A*x = b
         self.b = 1.0*arange(N)
-        self.bc = self.b *(1 + 1j)
+        self.bc = self.b * (1 + 1j)
 
     #####################################################################
 
@@ -530,7 +530,7 @@ class TestEigBanded(TestCase):
         for i in xrange(self.KL + self.KU):
             u += diag(lu_symm_band[2*self.KL-1-i,i+1:N], i+1)
 
-        p_lin, l_lin, u_lin =lu(self.comp_mat, permute_l=0)
+        p_lin, l_lin, u_lin = lu(self.comp_mat, permute_l=0)
         assert_array_almost_equal(u, u_lin)
 
     def test_dgbtrs(self):
@@ -580,7 +580,7 @@ def test_eigh():
 def _complex_symrand(dim, dtype):
     a1, a2 = symrand(dim), symrand(dim)
     # add antisymmetric matrix as imag part
-    a = a1 +1j*(triu(a2)-tril(a2))
+    a = a1 + 1j*(triu(a2)-tril(a2))
     return a.astype(dtype)
 
 def eigenhproblem_standard(desc, dim, dtype,
@@ -1957,7 +1957,7 @@ def check_lapack_misaligned(func, args, kwargs):
             aa[...] = a[i]
             a[i] = aa
             func(*a,**kwargs)
-            if len(a[i].shape)>1:
+            if len(a[i].shape) > 1:
                 a[i] = a[i].T
                 func(*a,**kwargs)
 

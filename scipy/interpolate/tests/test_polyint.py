@@ -352,5 +352,5 @@ class CheckPiecewise(TestCase):
         assert_almost_equal(P.derivatives(self.test_xs,2),piecewise_polynomial_interpolate(self.xi,self.yi,self.test_xs,der=[0,1]))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     run_module_suite()

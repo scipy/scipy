@@ -554,15 +554,15 @@ class TestOptimizeScalar(TestCase):
         x = optimize.minimize_scalar(self.fun).x
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x= optimize.minimize_scalar(self.fun, bracket=(-3, -2),
+        x = optimize.minimize_scalar(self.fun, bracket=(-3, -2),
                                     args=(1.5, ), method='Brent').x
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x= optimize.minimize_scalar(self.fun, method='Brent',
+        x = optimize.minimize_scalar(self.fun, method='Brent',
                                     args=(1.5,)).x
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x= optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
+        x = optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
                                     args=(1.5, ), method='Brent').x
         assert_allclose(x, self.solution, atol=1e-6)
 
@@ -582,11 +582,11 @@ class TestOptimizeScalar(TestCase):
                                      method='Bounded').x
         assert_allclose(x, 1, atol=1e-4)
 
-        x= optimize.minimize_scalar(self.fun, bounds=(1, 5), args=(1.5, ),
+        x = optimize.minimize_scalar(self.fun, bounds=(1, 5), args=(1.5, ),
                                     method='bounded').x
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x= optimize.minimize_scalar(self.fun, bounds=(np.array([1]),
+        x = optimize.minimize_scalar(self.fun, bounds=(np.array([1]),
                                                       np.array([5])),
                                     args=(np.array([1.5]), ),
                                     method='bounded').x

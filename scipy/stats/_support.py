@@ -19,13 +19,13 @@ def abut(source, *args):
     'left', arrays in <args> attached on the 'right'.\n"""
 
     source = asarray(source)
-    if len(source.shape)==1:
+    if len(source.shape) == 1:
         width = 1
         source = np.resize(source,[source.shape[0],width])
     else:
         width = source.shape[1]
     for addon in args:
-        if len(addon.shape)==1:
+        if len(addon.shape) == 1:
             width = 1
             addon = np.resize(addon,[source.shape[0],width])
         else:
@@ -118,7 +118,7 @@ def linexand(a, columnlist, valuelist):
         valuelist = [valuelist]
     criterion = ''
     for i in range(len(columnlist)):
-        if type(valuelist[i])==StringType:
+        if type(valuelist[i]) == StringType:
             critval = '\'' + valuelist[i] + '\''
         else:
             critval = str(valuelist[i])
@@ -192,13 +192,13 @@ def collapse(a, keepcols, collapsecols, stderr=0, ns=0, cfcn=None):
         newlist = []
         for item in uniques:
             if type(item) not in [ListType,TupleType,np.ndarray]:
-                item =[item]
+                item = [item]
             tmprows = linexand(a,keepcols,item)
             for col in collapsecols:
                 avgcol = colex(tmprows,col)
                 item.append(cfcn(avgcol))
                 if stderr:
-                    if len(avgcol)>1:
+                    if len(avgcol) > 1:
                         item.append(compute_stderr(avgcol))
                     else:
                         item.append('N/A')

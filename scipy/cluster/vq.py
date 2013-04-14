@@ -708,7 +708,7 @@ def _kmeans2(data, code, niter, nc, missing):
         label = vq(data, code)[0]
         # Update the code by computing centroids using the new code book
         for j in range(nc):
-            mbs = np.where(label==j)
+            mbs = np.where(label == j)
             if mbs[0].size > 0:
                 code[j] = np.mean(data[mbs], axis=0)
             else:

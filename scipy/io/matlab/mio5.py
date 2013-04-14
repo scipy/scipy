@@ -506,8 +506,8 @@ class VarWriter5(object):
 
     def __init__(self, file_writer):
         self.file_stream = file_writer.file_stream
-        self.unicode_strings=file_writer.unicode_strings
-        self.long_field_names=file_writer.long_field_names
+        self.unicode_strings = file_writer.unicode_strings
+        self.long_field_names = file_writer.long_field_names
         self.oned_as = file_writer.oned_as
         # These are used for top level writes, and unset after
         self._var_name = None
@@ -652,7 +652,7 @@ class VarWriter5(object):
             self.write_cells(narr)
         elif narr.dtype.kind in ('U', 'S'):
             if self.unicode_strings:
-                codec='UTF8'
+                codec = 'UTF8'
             else:
                 codec = 'ascii'
             self.write_char(narr, codec)
@@ -824,10 +824,10 @@ class MatFile5Writer(object):
     def write_file_header(self):
         # write header
         hdr = np.zeros((), NDT_FILE_HDR)
-        hdr['description']='MATLAB 5.0 MAT-file Platform: %s, Created on: %s' \
+        hdr['description'] = 'MATLAB 5.0 MAT-file Platform: %s, Created on: %s' \
             % (os.name,time.asctime())
-        hdr['version']= 0x0100
-        hdr['endian_test']=np.ndarray(shape=(),
+        hdr['version'] = 0x0100
+        hdr['endian_test'] = np.ndarray(shape=(),
                                       dtype='S2',
                                       buffer=np.uint16(0x4d49))
         self.file_stream.write(hdr.tostring())

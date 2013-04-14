@@ -98,7 +98,7 @@ class dok_matrix(spmatrix, dict):
             except:
                 raise TypeError('invalid input format')
 
-            if len(arg1.shape)!=2:
+            if len(arg1.shape) != 2:
                 raise TypeError('expected rank <=2 dense array or matrix')
 
             from .coo import coo_matrix

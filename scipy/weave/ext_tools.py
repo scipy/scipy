@@ -57,8 +57,8 @@ class ext_function_from_specs(object):
         init_flags_init = '= '.join(self.arg_specs.init_flags())
         py_vars = ' = '.join(self.arg_specs.py_variables())
         if py_objects:
-            declare_py_objects  = 'PyObject ' + py_objects +';\n'
-            declare_py_objects += 'int '+ init_flags + ';\n'
+            declare_py_objects = 'PyObject ' + py_objects + ';\n'
+            declare_py_objects += 'int ' + init_flags + ';\n'
             init_values  = py_vars + ' = NULL;\n'
             init_values += init_flags_init + ' = 0;\n\n'
         else:
@@ -75,7 +75,7 @@ class ext_function_from_specs(object):
         else:
             ref_string = '&py_local_dict'
 
-        format = "O"* len(self.arg_specs) + "|O" + ':' + self.name
+        format = "O" * len(self.arg_specs) + "|O" + ':' + self.name
         parse_tuple = 'if(!PyArg_ParseTupleAndKeywords(args,' \
                              'kywds,"%s",const_cast<char**>(kwlist),%s))\n' % \
                              (format,ref_string)
@@ -88,7 +88,7 @@ class ext_function_from_specs(object):
         arg_strings = []
         for arg in self.arg_specs:
             arg_strings.append(arg.declaration_code())
-            arg_strings.append(arg.init_flag() +" = 1;\n")
+            arg_strings.append(arg.init_flag() + " = 1;\n")
         code = "".join(arg_strings)
         return code
 
@@ -255,12 +255,12 @@ extern "C" {
 
     def warning_code(self):
         all_warnings = self.build_information().warnings()
-        w=map(lambda x: "#pragma warning(%s)\n" % x,all_warnings)
+        w = map(lambda x: "#pragma warning(%s)\n" % x,all_warnings)
         return '#ifndef __GNUC__\n' + ''.join(w) + '\n#endif'
 
     def header_code(self):
         h = self.get_headers()
-        h= map(lambda x: '#include ' + x + '\n',h)
+        h = map(lambda x: '#include ' + x + '\n',h)
         return ''.join(h) + '\n'
 
     def support_code(self):
@@ -398,7 +398,7 @@ def assign_variable_types(variables,local_dict={}, global_dict={},
     incoming_vars.update(global_dict)
     incoming_vars.update(local_dict)
     variable_specs = []
-    errors={}
+    errors = {}
     for var in variables:
         try:
             example_type = incoming_vars[var]
@@ -419,7 +419,7 @@ def assign_variable_types(variables,local_dict={}, global_dict={},
             errors[var] = ("The type and dimensionality specifications" +
                            "for variable '" + var + "' are missing.")
         except IndexError:
-            errors[var] = ("Unable to convert variable '"+ var +
+            errors[var] = ("Unable to convert variable '" + var +
                            "' to a C++ type.")
     if errors:
         raise TypeError(format_error_msg(errors))

@@ -460,7 +460,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
             work[slice2] += sclr1*matvec(x)
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
-            if not first_pass and old_ijob==3:
+            if not first_pass and old_ijob == 3:
                 resid_ready = True
 
             first_pass = False

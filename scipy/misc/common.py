@@ -135,7 +135,7 @@ def factorial(n,exact=0):
         sv = special.errprint(0)
         vals = special.gamma(n+1)
         sv = special.errprint(sv)
-        return where(n>=0,vals,0)
+        return where(n >= 0,vals,0)
 
 
 def factorial2(n, exact=False):
@@ -230,7 +230,7 @@ def factorialk(n,k,exact=1):
     if exact:
         if n < 1-k:
             return 0
-        if n<=0:
+        if n <= 0:
             return 1
         val = 1
         for j in xrange(n,0,-k):
@@ -370,7 +370,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
         raise ValueError("'order' (the number of points used to compute the derivative) "
                          "must be odd.")
     # pre-computed for n=1 and 2 and low-order for speed.
-    if n==1:
+    if n == 1:
         if order == 3:
             weights = array([-1,0,1])/2.0
         elif order == 5:
@@ -381,7 +381,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
             weights = array([3,-32,168,-672,0,672,-168,32,-3])/840.0
         else:
             weights = central_diff_weights(order,1)
-    elif n==2:
+    elif n == 2:
         if order == 3:
             weights = array([1,-2.0,1])
         elif order == 5:

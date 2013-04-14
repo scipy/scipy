@@ -338,17 +338,17 @@ class TestNonlinOldTests(TestCase):
     """
 
     def test_broyden1(self):
-        x= nonlin.broyden1(F,F.xin,iter=12,alpha=1)
+        x = nonlin.broyden1(F,F.xin,iter=12,alpha=1)
         assert_(nonlin.norm(x) < 1e-9)
         assert_(nonlin.norm(F(x)) < 1e-9)
 
     def test_broyden2(self):
-        x= nonlin.broyden2(F,F.xin,iter=12,alpha=1)
+        x = nonlin.broyden2(F,F.xin,iter=12,alpha=1)
         assert_(nonlin.norm(x) < 1e-9)
         assert_(nonlin.norm(F(x)) < 1e-9)
 
     def test_anderson(self):
-        x= nonlin.anderson(F,F.xin,iter=12,alpha=0.03,M=5)
+        x = nonlin.anderson(F,F.xin,iter=12,alpha=0.03,M=5)
         assert_(nonlin.norm(x) < 0.33)
 
     def test_linearmixing(self):
@@ -357,12 +357,12 @@ class TestNonlinOldTests(TestCase):
         assert_(nonlin.norm(F(x)) < 1e-7)
 
     def test_exciting(self):
-        x= nonlin.excitingmixing(F,F.xin,iter=20,alpha=0.5)
+        x = nonlin.excitingmixing(F,F.xin,iter=20,alpha=0.5)
         assert_(nonlin.norm(x) < 1e-5)
         assert_(nonlin.norm(F(x)) < 1e-5)
 
     def test_diagbroyden(self):
-        x= nonlin.diagbroyden(F,F.xin,iter=11,alpha=1)
+        x = nonlin.diagbroyden(F,F.xin,iter=11,alpha=1)
         assert_(nonlin.norm(x) < 1e-8)
         assert_(nonlin.norm(F(x)) < 1e-8)
 

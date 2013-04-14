@@ -264,14 +264,14 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         Vk = np.zeros((self.n, self.r), dtype=self.dtype)
         for k in xrange(1,self.n):
             s = 0
-            while s<=k and xi[k-s]==xi[k]:
+            while s <= k and xi[k-s] == xi[k]:
                 s += 1
             s -= 1
             Vk[0] = self.yi[k]/float(factorial(s))
             for i in xrange(k-s):
                 if xi[i] == xi[k]:
                     raise ValueError("Elements if `xi` can't be equal.")
-                if s==0:
+                if s == 0:
                     Vk[i+1] = (c[i]-Vk[i])/(xi[i]-xi[k])
                 else:
                     Vk[i+1] = (Vk[i+1]-Vk[i])/(xi[i]-xi[k])
@@ -312,7 +312,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
             for i in xrange(1,n-k+1):
                 pi[i] = w[k+i-1]*pi[i-1]+pi[i]
                 cn[k] = cn[k]+pi[i,:,np.newaxis]*cn[k+i]
-            cn[k]*=factorial(k)
+            cn[k] *= factorial(k)
 
         cn[n,:,:] = 0
         return cn[:der]
@@ -360,7 +360,7 @@ def krogh_interpolate(xi,yi,x,der=0,axis=0):
 
     """
     P = KroghInterpolator(xi, yi, axis=axis)
-    if der==0:
+    if der == 0:
         return P(x)
     elif _isscalar(der):
         return P.derivative(x,der=der)
@@ -408,7 +408,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
 
     """
     if order is None:
-        order=degree
+        order = degree
 
     n = order+1
     # Choose n points that cluster near the endpoints of the interval in
@@ -470,9 +470,9 @@ class BarycentricInterpolator(_Interpolator1D):
         self.wi = np.zeros(self.n)
         self.wi[0] = 1
         for j in xrange(1,self.n):
-            self.wi[:j]*=(self.xi[j]-self.xi[:j])
+            self.wi[:j] *= (self.xi[j]-self.xi[:j])
             self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
-        self.wi**=-1
+        self.wi **= -1
 
     def set_yi(self, yi, axis=None):
         """
@@ -529,14 +529,14 @@ class BarycentricInterpolator(_Interpolator1D):
         old_n = self.n
         self.xi = np.concatenate((self.xi,xi))
         self.n = len(self.xi)
-        self.wi**=-1
+        self.wi **= -1
         old_wi = self.wi
         self.wi = np.zeros(self.n)
         self.wi[:old_n] = old_wi
         for j in xrange(old_n,self.n):
-            self.wi[:j]*=(self.xi[j]-self.xi[:j])
+            self.wi[:j] *= (self.xi[j]-self.xi[:j])
             self.wi[j] = np.multiply.reduce(self.xi[:j]-self.xi[j])
-        self.wi**=-1
+        self.wi **= -1
 
     def __call__(self, x):
         """Evaluate the interpolating polynomial at the points x
@@ -565,14 +565,14 @@ class BarycentricInterpolator(_Interpolator1D):
             p = np.zeros((0, self.r), dtype=self.dtype)
         else:
             c = x[...,np.newaxis]-self.xi
-            z = c==0
+            z = c == 0
             c[z] = 1
             c = self.wi/c
             p = np.dot(c,self.yi)/np.sum(c,axis=-1)[...,np.newaxis]
             # Now fix where x==some xi
             r = np.nonzero(z)
-            if len(r)==1: # evaluation at a scalar
-                if len(r[0])>0: # equals one of the points
+            if len(r) == 1: # evaluation at a scalar
+                if len(r[0]) > 0: # equals one of the points
                     p = self.yi[r[0][0]]
             else:
                 p[r[:-1]] = self.yi[r[-1]]
@@ -711,7 +711,7 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
         n1 = min(n//2,len(y1))
         n2 = min(n-n1,len(y2))
         n1 = min(n-n2,len(y1))
-        if n1+n2!=n:
+        if n1+n2 != n:
             raise ValueError("Point %g has %d derivatives, point %g has %d derivatives, but order %d requested" % (x1, len(y1), x2, len(y2), order))
         if not (n1 <= len(y1) and n2 <= len(y2)):
             raise ValueError("`order` input incompatible with length y1 or y2.")
@@ -813,7 +813,7 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
             y = np.zeros((m, self.r), dtype=self.dtype)
             if y.size > 0:
                 for i in xrange(self.n-1):
-                    c = pos==i
+                    c = pos == i
                     y[c] = self.polynomials[i](x[c])
         return y
 
@@ -829,7 +829,7 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
             y = np.zeros((der,m,self.r), dtype=self.dtype)
             if y.size > 0:
                 for i in xrange(self.n-1):
-                    c = pos==i
+                    c = pos == i
                     y[:,c] = self.polynomials[i].derivatives(x[c],der=der)
         return y
 
@@ -883,7 +883,7 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
     """
 
     P = PiecewisePolynomial(xi, yi, orders, axis=axis)
-    if der==0:
+    if der == 0:
         return P(x)
     elif _isscalar(der):
         return P.derivative(x,der=der)
@@ -938,7 +938,7 @@ class PchipInterpolator(PiecewisePolynomial):
     def _edge_case(m0, d1, out):
         m0 = np.atleast_1d(m0)
         d1 = np.atleast_1d(d1)
-        mask = (d1!=0) & (m0!=0)
+        mask = (d1 != 0) & (m0 != 0)
         out[mask] = 1.0/(1.0/m0[mask]+1.0/d1[mask])
 
     @staticmethod
@@ -962,7 +962,7 @@ class PchipInterpolator(PiecewisePolynomial):
         hk = x[1:] - x[:-1]
         mk = (y[1:] - y[:-1]) / hk
         smk = np.sign(mk)
-        condition = ((smk[1:] != smk[:-1]) | (mk[1:]==0) | (mk[:-1]==0))
+        condition = ((smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0))
 
         w1 = 2*hk[1:] + hk[:-1]
         w2 = hk[1:] + 2*hk[:-1]

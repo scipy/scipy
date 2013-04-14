@@ -136,5 +136,5 @@ class TestEsv(TestCase):
     def test_clapack_dsyevr_ranges(self):
         self._test_syevr_ranges('dsyevr', 'C')
 
-if __name__=="__main__":
+if __name__ == "__main__":
     run_module_suite()

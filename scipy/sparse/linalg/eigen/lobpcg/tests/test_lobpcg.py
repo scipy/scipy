@@ -17,7 +17,7 @@ set_printoptions(precision=3,linewidth=90)
 def ElasticRod(n):
     # Fixed-free elastic rod
     L = 1.0
-    le=L/n
+    le = L/n
     rho = 7.85e3
     S = 1.e-4
     E = 2.1e11

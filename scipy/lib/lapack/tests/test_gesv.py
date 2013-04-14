@@ -92,5 +92,5 @@ class TestSygv(TestCase):
     def test_clapack_dsygv_3(self):
         self._test_base('dsygv', 'C', 3)
 
-if __name__=="__main__":
+if __name__ == "__main__":
     run_module_suite()

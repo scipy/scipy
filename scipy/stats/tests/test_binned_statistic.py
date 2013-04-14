@@ -73,7 +73,7 @@ class TestBinnedStatistic(object):
         bc2 = np.array([3, 2, 1, 3, 2, 3, 3, 3, 3, 1, 1, 3, 3, 1, 2, 3, 1,
                         1, 2, 1])
 
-        bcount = [(bc==i).sum() for i in np.unique(bc)]
+        bcount = [(bc == i).sum() for i in np.unique(bc)]
 
         assert_array_almost_equal(bc, bc2)
         assert_array_almost_equal(bcount, count1)
@@ -147,7 +147,7 @@ class TestBinnedStatistic(object):
         bc2 = np.array([17, 11,  6, 16, 11, 17, 18, 17, 17,  7,  6, 18, 16,
                         6, 11, 16,  6,  6, 11,  8])
 
-        bcount = [(bc==i).sum() for i in np.unique(bc)]
+        bcount = [(bc == i).sum() for i in np.unique(bc)]
 
         assert_array_almost_equal(bc, bc2)
         count1adj = count1[count1.nonzero()]
@@ -211,7 +211,7 @@ class TestBinnedStatistic(object):
         bc2 = np.array([63, 33, 86, 83, 88, 67, 57, 33, 42, 41, 82, 83, 92,
                         32, 36, 91, 43, 87, 81, 81])
 
-        bcount = [(bc==i).sum() for i in np.unique(bc)]
+        bcount = [(bc == i).sum() for i in np.unique(bc)]
 
         assert_array_almost_equal(bc, bc2)
         count1adj = count1[count1.nonzero()]

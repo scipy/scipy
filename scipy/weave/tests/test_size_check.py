@@ -217,7 +217,7 @@ class TestDummyArrayIndexing(TestCase):
                 end = random.choice(choices)
                 step = random.choice(choices)
                 if step in ['0',0]: step = 'None'
-                self.generic_1d('a[%s:%s:%s]' %(beg,end,step))
+                self.generic_1d('a[%s:%s:%s]' % (beg,end,step))
             except IndexError:
                 pass
 
@@ -242,7 +242,7 @@ class TestDummyArrayIndexing(TestCase):
                 step2 = random.choice(choices)
                 if step in ['0',0]: step = 'None'
                 if step2 in ['0',0]: step2 = 'None'
-                expr = 'a[%s:%s:%s,%s:%s:%s]' %(beg,end,step,beg2,end2,step2)
+                expr = 'a[%s:%s:%s,%s:%s:%s]' % (beg,end,step,beg2,end2,step2)
                 self.generic_2d(expr)
             except IndexError:
                 pass
@@ -305,7 +305,7 @@ class TestExpressions(TestCase):
         args = harvest_variables(ast_list)
         loc = locals().update(kw)
         for var in args:
-            s='%s = size_check.dummy_array(%s)'% (var,var)
+            s = '%s = size_check.dummy_array(%s)' % (var,var)
             exec(s,loc)
         try:
             actual = eval(expr,locals()).shape

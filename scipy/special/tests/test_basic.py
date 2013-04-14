@@ -1083,7 +1083,7 @@ class TestErf(TestCase):
 
     def test_erf_zeros(self):
         erz = special.erf_zeros(5)
-        erzr= array([1.45061616+1.88094300j,
+        erzr = array([1.45061616+1.88094300j,
                      2.24465928+2.61657514j,
                      2.83974105+3.17562810j,
                      3.33546074+3.64617438j,
@@ -1527,11 +1527,11 @@ class TestHyper(TestCase):
                       0.5/0.2/(-5)*((1+0.2)**(-5)-(1-0.2)**(-5))],
                   [-3, 3, 0.5, sin(0.2)**2, cos(2*3*0.2)],
                   [3, 4, 8, 1, special.gamma(8)*special.gamma(8-4-3)/special.gamma(8-3)/special.gamma(8-4)],
-                  [3, 2, 3-2+1, -1, 1./2**3*sqrt(pi)*
+                  [3, 2, 3-2+1, -1, 1./2**3*sqrt(pi) *
                       special.gamma(1+3-2)/special.gamma(1+0.5*3-2)/special.gamma(0.5+0.5*3)],
-                  [5, 2, 5-2+1, -1, 1./2**5*sqrt(pi)*
+                  [5, 2, 5-2+1, -1, 1./2**5*sqrt(pi) *
                       special.gamma(1+5-2)/special.gamma(1+0.5*5-2)/special.gamma(0.5+0.5*5)],
-                  [4, 0.5+4, 1.5-2*4, -1./3, (8./9)**(-2*4)*special.gamma(4./3)*
+                  [4, 0.5+4, 1.5-2*4, -1./3, (8./9)**(-2*4)*special.gamma(4./3) *
                       special.gamma(1.5-2*4)/special.gamma(3./2)/special.gamma(4./3-2*4)],
                   # and some others
                   # ticket #424
@@ -1559,10 +1559,10 @@ class TestHyper(TestCase):
         a,b = asarray(a), asarray(b)
         z = 0.5
         hypu = special.hyperu(a,b,z)
-        hprl = (pi/sin(pi*b))*(special.hyp1f1(a,b,z)/
-                               (special.gamma(1+a-b)*special.gamma(b))-
+        hprl = (pi/sin(pi*b))*(special.hyp1f1(a,b,z) /
+                               (special.gamma(1+a-b)*special.gamma(b)) -
                                z**(1-b)*special.hyp1f1(1+a-b,2-b,z)
-                               /(special.gamma(a)*special.gamma(2-b)))
+                               / (special.gamma(a)*special.gamma(2-b)))
         assert_array_almost_equal(hypu,hprl,12)
 
 class TestBessel(TestCase):
@@ -2120,7 +2120,7 @@ class TestBessel(TestCase):
         assert_almost_equal(special.iv(1,2), special.ivp(0,2), 10)
 
     def test_ivp(self):
-        y=(special.iv(0,2) + special.iv(2,2))/2
+        y = (special.iv(0,2) + special.iv(2,2))/2
         x = special.ivp(1,2)
         assert_almost_equal(x,y,10)
 
@@ -2410,20 +2410,20 @@ def test_sph_harm():
     yield (assert_array_almost_equal, sh(0,0,0,0),
            0.5/sqrt(pi))
     yield (assert_array_almost_equal, sh(-2,2,0.,pi/4),
-           0.25*sqrt(15./(2.*pi))*
+           0.25*sqrt(15./(2.*pi)) *
            (sin(pi/4))**2.)
     yield (assert_array_almost_equal, sh(-2,2,0.,pi/2),
            0.25*sqrt(15./(2.*pi)))
     yield (assert_array_almost_equal, sh(2,2,pi,pi/2),
-           0.25*sqrt(15/(2.*pi))*
+           0.25*sqrt(15/(2.*pi)) *
            exp(0+2.*pi*1j)*sin(pi/2.)**2.)
     yield (assert_array_almost_equal, sh(2,4,pi/4.,pi/3.),
-           (3./8.)*sqrt(5./(2.*pi))*
-           exp(0+2.*pi/4.*1j)*
-           sin(pi/3.)**2.*
+           (3./8.)*sqrt(5./(2.*pi)) *
+           exp(0+2.*pi/4.*1j) *
+           sin(pi/3.)**2. *
            (7.*cos(pi/3.)**2.-1))
     yield (assert_array_almost_equal, sh(4,4,pi/8.,pi/6.),
-           (3./16.)*sqrt(35./(2.*pi))*
+           (3./16.)*sqrt(35./(2.*pi)) *
            exp(0+4.*pi/8.*1j)*sin(pi/6.)**4.)
 
 

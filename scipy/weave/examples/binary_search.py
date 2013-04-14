@@ -157,7 +157,7 @@ def search_compare(a,n):
     for i in range(n):
         bisect(a,i)
     t2 = time.time()
-    bi = (t2-t1) +1e-20 # protect against div by zero
+    bi = (t2-t1) + 1e-20 # protect against div by zero
     print(' speed of bisect:', bi)
     print(' speed up: %3.2f' % (py/bi))
 
@@ -218,7 +218,7 @@ def search_compare(a,n):
 
 if __name__ == "__main__":
     # note bisect returns index+1 compared to other algorithms
-    m= 100000
+    m = 100000
     a = range(m)
     n = 50000
     search_compare(a,n)

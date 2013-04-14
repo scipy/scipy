@@ -261,7 +261,7 @@ def _basic_simps(y,start,stop,x,dx,axis):
     slice2 = tupleset(all, axis, slice(start+2, stop+2, step))
 
     if x is None:  # Even spaced Simpson's rule.
-        result = add.reduce(dx/3.0* (y[slice0]+4*y[slice1]+y[slice2]),
+        result = add.reduce(dx/3.0 * (y[slice0]+4*y[slice1]+y[slice2]),
                                     axis)
     else:
         # Account for possibly different spacings.
@@ -345,7 +345,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
             shapex[axis] = x.shape[0]
             saveshape = x.shape
             returnshape = 1
-            x=x.reshape(tuple(shapex))
+            x = x.reshape(tuple(shapex))
         elif len(x.shape) != len(y.shape):
             raise ValueError("If given, shape of x must be 1-d or the "
                     "same as y.")
@@ -752,7 +752,7 @@ def newton_cotes(rn, equal=0):
         N = len(rn)-1
         if equal:
             rn = np.arange(N+1)
-        elif np.all(np.diff(rn)==1):
+        elif np.all(np.diff(rn) == 1):
             equal = 1
     except:
         N = rn
@@ -775,7 +775,7 @@ def newton_cotes(rn, equal=0):
     Cinv = 2*Cinv - Cinv*C*Cinv
     Cinv = 2*Cinv - Cinv*C*Cinv
     Cinv = Cinv.A
-    vec = 2.0/ (nvec[::2]+1)
+    vec = 2.0 / (nvec[::2]+1)
     ai = np.dot(Cinv[:,::2],vec) * N/2
 
     if (N % 2 == 0) and equal:

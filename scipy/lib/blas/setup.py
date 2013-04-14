@@ -44,7 +44,7 @@ def configuration(parent_package='',top_path=None):
     blas_opt = get_info('blas_opt',notfound_action=2)
 
     atlas_version = ([v[3:-3] for k,v in blas_opt.get('define_macros',[])
-                      if k=='ATLAS_INFO']+[None])[0]
+                      if k == 'ATLAS_INFO']+[None])[0]
     if atlas_version:
         print(('ATLAS version: %s' % atlas_version))
 
@@ -65,7 +65,7 @@ def configuration(parent_package='',top_path=None):
     # cblas:
     def get_cblas_source(ext, build_dir):
         name = ext.name.split('.')[-1]
-        assert name=='cblas', repr(name)
+        assert name == 'cblas', repr(name)
         if atlas_version is None:
             target = join(build_dir,target_dir,'cblas.pyf')
             from distutils.dep_util import newer
@@ -75,7 +75,7 @@ def configuration(parent_package='',top_path=None):
                 f.close()
         else:
             target = ext.depends[0]
-            assert os.path.basename(target)=='cblas.pyf.src'
+            assert os.path.basename(target) == 'cblas.pyf.src'
         return target
 
     config.add_extension('cblas',

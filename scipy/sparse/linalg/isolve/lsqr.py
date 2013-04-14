@@ -251,7 +251,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     if iter_lim is None: iter_lim = 2 * n
     var = np.zeros(n)
 
-    msg=('The exact solution is  x = 0                              ',
+    msg = ('The exact solution is  x = 0                              ',
          'Ax - b is small enough, given atol, btol                  ',
          'The least-squares solution is good enough, given atol     ',
          'The estimate of cond(Abar) has exceeded conlim            ',
@@ -332,9 +332,9 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         print(head1, head2)
         test1  = 1
         test2  = alfa / beta
-        str1   = '%6g %12.5e'    %(    itn,   x[0] )
+        str1   = '%6g %12.5e'    % (    itn,   x[0] )
         str2   = ' %10.3e %10.3e' % ( r1norm, r2norm )
-        str3   = '  %8.1e %8.1e' %(  test1,  test2 )
+        str3   = '  %8.1e %8.1e' % (  test1,  test2 )
         print(str1, str2, str3)
 
     # Main iteration loop.
@@ -395,7 +395,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         rhs = phi - delta * z
         zbar = rhs / gambar
         xnorm = sqrt(xxnorm + zbar**2)
-        gamma = sqrt(gambar**2 +theta**2)
+        gamma = sqrt(gambar**2 + theta**2)
         cs2 = gambar / gamma
         sn2 = theta  / gamma
         z = rhs / gamma
@@ -478,8 +478,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         str2 = 'anorm =%8.1e   arnorm =%8.1e' % (anorm, arnorm)
         str3 = 'itn   =%8g   r2norm =%8.1e' % (itn, r2norm)
         str4 = 'acond =%8.1e   xnorm  =%8.1e' % (acond, xnorm)
-        print(str1+ '   ' + str2)
-        print(str3+ '   ' + str4)
+        print(str1 + '   ' + str2)
+        print(str3 + '   ' + str4)
         print(' ')
 
     return x, istop, itn, r1norm, r2norm, anorm, acond, arnorm, xnorm, var

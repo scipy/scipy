@@ -58,7 +58,7 @@ if __name__ == '__main__':
     from convert import DATA_DIR
     import os
 
-    data =[]
+    data = []
     for root, dirs, files in os.walk(DATA_DIR):
         for f in files:
             name = os.path.join(root, f)

@@ -585,7 +585,7 @@ def _find_smoothest2(xk, yk):
     # find pseudo-inverse of B directly.
     Bd = np.empty((Np1, N))
     for k in range(-N,N):
-        if (k<0):
+        if (k < 0):
             l = np.arange(-k, Np1)
             v = (l+k+1)
             if ((k+1) % 2):

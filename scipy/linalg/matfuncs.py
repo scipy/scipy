@@ -304,7 +304,7 @@ def funm(A, func, disp=True):
     """
     # Perform Shur decomposition (lapack ?gees)
     A = asarray(A)
-    if len(A.shape)!=2:
+    if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
     if A.dtype.char in ['F', 'D', 'G']:
         cmplx_type = 1
@@ -390,7 +390,7 @@ def logm(A, disp=True):
             R = mat(orth(eye(N,dtype='d')+X+Y))
             F, dontcare = funm(R*A*R.H,log,disp=0)
             F = R.H*F*R
-            if (norm(imag(F),1)<=1000*errtol*norm(F,1)):
+            if (norm(imag(F),1) <= 1000*errtol*norm(F,1)):
                 F = mat(real(F))
             E = mat(expm(F))
             temp = mat(solve(E.T,(E-A).T))
@@ -438,7 +438,7 @@ def signm(a, disp=True):
     """
     def rounded_sign(x):
         rx = real(x)
-        if rx.dtype.char=='f':
+        if rx.dtype.char == 'f':
             c = 1e3*feps*amax(x)
         else:
             c = 1e3*eps*amax(x)
@@ -469,9 +469,9 @@ def signm(a, disp=True):
     for i in range(100):
         iS0 = inv(S0)
         S0 = 0.5*(S0 + iS0)
-        Pp=0.5*(dot(S0,S0)+S0)
+        Pp = 0.5*(dot(S0,S0)+S0)
         errest = norm(dot(Pp,Pp)-Pp,1)
-        if errest < errtol or prev_errest==errest:
+        if errest < errtol or prev_errest == errest:
             break
         prev_errest = errest
     if disp:
@@ -509,7 +509,7 @@ def sqrtm(A, disp=True):
 
     """
     A = asarray(A)
-    if len(A.shape)!=2:
+    if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
     T, Z = schur(A)
     T, Z = rsf2csf(T,Z)
@@ -528,7 +528,7 @@ def sqrtm(A, disp=True):
     X = (Z * R * Z.H)
 
     if disp:
-        nzeig = np.any(diag(T)==0)
+        nzeig = np.any(diag(T) == 0)
         if nzeig:
             print("Matrix is singular and may not have a square root.")
         return X.A

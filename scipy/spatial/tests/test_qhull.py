@@ -590,7 +590,7 @@ class TestConvexHull:
                 # include enough points so that we get different x-coordinates
                 nmin = 12
             else:
-                nmin = ndim +2
+                nmin = ndim + 2
 
             obj = qhull.ConvexHull(points[:nmin], incremental=True)
             for j in xrange(nmin, len(points), chunksize):

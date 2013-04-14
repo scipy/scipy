@@ -12,7 +12,7 @@ support_code = """
                    return PyInt_FromLong(l);
                }
                """
-a='some string'
+a = 'some string'
 val = inline_tools.inline("return_val = length(a);",['a'],
                           support_code=support_code)
 print(val)

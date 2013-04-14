@@ -36,7 +36,7 @@ def check_expr(expr,local_vars,global_vars={}):
     """ Currently only checks expressions (not suites).
         Doesn't check that lhs = rhs. checked by compiled func though
     """
-    values ={}
+    values = {}
 
     #first handle the globals
     for var,val in global_vars.items():
@@ -236,7 +236,7 @@ class dummy_array(object):
                 new_dims.append(slc_len)
             else:
                 if index < 0: index += dim_len
-                if index >=0 and index < dim_len:
+                if index >= 0 and index < dim_len:
                     #this reduces the array dimensions by one
                     pass
                 else:

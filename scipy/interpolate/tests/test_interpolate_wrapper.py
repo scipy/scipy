@@ -78,7 +78,7 @@ class Test(unittest.TestCase):
         self.assertAllclose(new_y[:5], correct_y)
 
     def runTest(self):
-        test_list = [name for name in dir(self) if name.find('test_')==0]
+        test_list = [name for name in dir(self) if name.find('test_') == 0]
         for test_name in test_list:
             exec("self.%s()" % test_name)
 

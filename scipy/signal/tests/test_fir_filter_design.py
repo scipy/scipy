@@ -44,7 +44,7 @@ class TestFirwin(TestCase):
             actual = abs(np.sum(h*np.exp(-1.j*np.pi*m*freq)))
             mse = abs(actual-expected)**2
             self.assertTrue(mse < tol, 'response not as expected, mse=%g > %g'
-               %(mse, tol))
+               % (mse, tol))
 
     def test_response(self):
         N = 51
@@ -89,7 +89,7 @@ class TestFirwin(TestCase):
         f = w/np.pi
         passIndicator = np.zeros(len(w), bool)
         for left, right in bands:
-            passIndicator |= (f>=left) & (f<right)
+            passIndicator |= (f >= left) & (f < right)
         Hideal = np.where(passIndicator, 1, 0)
         mse = np.mean(abs(abs(H)-Hideal)**2)
         return mse

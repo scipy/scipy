@@ -15,10 +15,10 @@ from numpy.testing.utils import WarningManager
 from scipy.cluster.vq import kmeans, kmeans2, py_vq, py_vq2, vq, ClusterError
 try:
     from scipy.cluster import _vq
-    TESTC=True
+    TESTC = True
 except ImportError:
     print("== Error while importing _vq, not testing C imp of vq ==")
-    TESTC=False
+    TESTC = False
 
 #Optional:
 # import modules that are located in the same directory as this file.

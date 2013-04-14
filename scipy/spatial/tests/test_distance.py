@@ -1512,8 +1512,8 @@ class TestSquareForm(TestCase):
     def test_squareform_2by2_matrix(self):
         "Tests squareform on a 2x2 matrix."
         A = np.zeros((2,2))
-        A[0,1]=0.8
-        A[1,0]=0.8
+        A[0,1] = 0.8
+        A[1,0] = 0.8
         rA = squareform(np.array(A, dtype='double'))
         self.assertTrue(rA.shape == (1,))
         self.assertTrue(rA[0] == 0.8)
@@ -1906,5 +1906,5 @@ def test__validate_vector():
     assert_raises(ValueError, _validate_vector, x)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     run_module_suite()

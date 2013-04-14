@@ -314,7 +314,7 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
         else:
             return _quadpack._qagie(func,bound,infbounds,args,full_output,epsabs,epsrel,limit)
     else:
-        if infbounds !=0:
+        if infbounds != 0:
             raise ValueError("Infinity inputs cannot be used with break points.")
         else:
             nl = len(points)

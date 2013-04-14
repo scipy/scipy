@@ -121,7 +121,7 @@ class TestRandInt(TestCase):
     def test_cdf(self):
         x = numpy.r_[0:36:100j]
         k = numpy.floor(x)
-        out = numpy.select([k>=30,k>=5],[1.0,(k-5.0+1)/(30-5.0)],0)
+        out = numpy.select([k >= 30,k >= 5],[1.0,(k-5.0+1)/(30-5.0)],0)
         vals = stats.randint.cdf(x,5,30)
         assert_array_almost_equal(vals, out, decimal=12)
 
@@ -560,11 +560,11 @@ class TestFitMethod(object):
             # FIXME: should check the actual results to see if we are 'close'
             #   to what was created --- but what is 'close' enough
             if dist in ['erlang', 'frechet']:
-                assert_(len(vals)==len(args))
-                assert_(len(vals2)==len(args))
+                assert_(len(vals) == len(args))
+                assert_(len(vals2) == len(args))
             else:
                 assert_(len(vals) == 2+len(args))
-                assert_(len(vals2)==2+len(args))
+                assert_(len(vals2) == 2+len(args))
 
         for func, dist, args, alpha in test_all_distributions():
             yield check, func, dist, args, alpha

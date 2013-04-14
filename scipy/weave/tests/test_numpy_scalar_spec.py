@@ -68,7 +68,7 @@ class NumpyComplexScalarConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=numpy.complex128(1.+1j)
+        b = numpy.complex128(1.+1j)
         test(b)
         try:
             b = 1.
@@ -95,7 +95,7 @@ class NumpyComplexScalarConverter(TestCase):
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1.+1j
+        b = 1.+1j
         c = test(b)
         assert_( c == 3.+3j)
 
@@ -103,7 +103,7 @@ class NumpyComplexScalarConverter(TestCase):
     def test_inline(self):
         a = numpy.complex128(1+1j)
         result = inline_tools.inline("return_val=1.0/a;",['a'])
-        assert_( result==.5-.5j)
+        assert_( result == .5-.5j)
 
 # class TestMsvcNumpyComplexScalarConverter(
 #                   TestNumpyComplexScalarConverter):
@@ -115,7 +115,7 @@ class NumpyComplexScalarConverter(TestCase):
 #                   TestNumpyComplexScalarConverter):
 #     compiler = 'gcc'
 for _n in dir():
-    if _n[-9:]=='Converter':
+    if _n[-9:] == 'Converter':
         if msvc_exists():
             exec("class Test%sMsvc(%s):\n    compiler = 'msvc'" % (_n,_n))
         else:
@@ -147,14 +147,14 @@ def remove_file(name):
 
 if not msvc_exists():
     for _n in dir():
-        if _n[:8]=='TestMsvc': exec('del '+_n)
+        if _n[:8] == 'TestMsvc': exec('del '+_n)
 else:
     for _n in dir():
-        if _n[:8]=='TestUnix': exec('del '+_n)
+        if _n[:8] == 'TestUnix': exec('del '+_n)
 
 if not (gcc_exists() and msvc_exists() and sys.platform == 'win32'):
     for _n in dir():
-        if _n[:7]=='TestGcc': exec('del '+_n)
+        if _n[:7] == 'TestGcc': exec('del '+_n)
 
 
 if __name__ == "__main__":

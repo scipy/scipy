@@ -308,7 +308,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     n1 = n+1
     mineq = m - meq + n1 + n1
     len_w = (3*n1+m)*(n1+1)+(n1-meq+1)*(mineq+2) + 2*mineq+(n1+mineq)*(n1-meq) \
-            + 2*meq + n1 +(n+1)*n/2 + 2*m + 3*n + 3*n1 + 1
+            + 2*meq + n1 + (n+1)*n/2 + 2*m + 3*n + 3*n1 + 1
     len_jw = mineq
     w = zeros(len_w)
     jw = zeros(len_jw)
@@ -448,7 +448,7 @@ if __name__ == '__main__':
         return array([[1, 1]])
 
     # constraints dictionaries
-    cons=({'type': 'eq', 'fun' : feqcon, 'jac' : jeqcon, 'args': (1, )},
+    cons = ({'type': 'eq', 'fun' : feqcon, 'jac' : jeqcon, 'args': (1, )},
           {'type': 'ineq', 'fun' : fieqcon, 'jac' : jieqcon, 'args': (10,)})
 
     # Bounds constraint problem

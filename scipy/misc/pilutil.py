@@ -215,7 +215,7 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     if iscomplexobj(data):
         raise ValueError("Cannot convert a complex-valued array.")
     shape = list(data.shape)
-    valid = len(shape)==2 or ((len(shape)==3) and
+    valid = len(shape) == 2 or ((len(shape) == 3) and
                               ((3 in shape) or (4 in shape)))
     if not valid:
         raise ValueError("'arr' does not have a suitable array shape for any mode.")

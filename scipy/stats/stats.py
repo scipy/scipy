@@ -530,12 +530,12 @@ def gmean(a, axis=0, dtype=None):
 
     """
     if not isinstance(a, np.ndarray): # if not an ndarray object attempt to convert it
-        log_a=np.log(np.array(a, dtype=dtype))
+        log_a = np.log(np.array(a, dtype=dtype))
     elif dtype: # Must change the default dtype allowing array type
         if isinstance(a,np.ma.MaskedArray):
-            log_a=np.log(np.ma.asarray(a, dtype=dtype))
+            log_a = np.log(np.ma.asarray(a, dtype=dtype))
         else:
-            log_a=np.log(np.asarray(a, dtype=dtype))
+            log_a = np.log(np.asarray(a, dtype=dtype))
     else:
         log_a = np.log(a)
     return np.exp(log_a.mean(axis=axis))
@@ -581,13 +581,13 @@ def hmean(a, axis=0, dtype=None):
 
     """
     if not isinstance(a, np.ndarray):
-        a=np.array(a, dtype=dtype)
-    if np.all(a >0): # Harmonic mean only defined if greater than zero
+        a = np.array(a, dtype=dtype)
+    if np.all(a > 0): # Harmonic mean only defined if greater than zero
         if isinstance(a, np.ma.MaskedArray):
             size = a.count(axis)
         else:
             if axis is None:
-                a=a.ravel()
+                a = a.ravel()
                 size = a.shape[0]
             else:
                 size = a.shape[axis]
@@ -1275,14 +1275,14 @@ def kurtosistest(a, axis=0):
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
             int(n))
     b2 = kurtosis(a, axis, fisher=False)
-    E = 3.0*(n-1) /(n+1)
+    E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
     x = (b2-E)/np.sqrt(varb2)
-    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5))/
+    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
                                                        (n*(n-2)*(n-3)))
-    A = 6.0 + 8.0/sqrtbeta1 *(2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
-    term1 = 1 -2/(9.0*A)
-    denom = 1 +x*np.sqrt(2/(A-4.0))
+    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
+    term1 = 1 - 2/(9.0*A)
+    denom = 1 + x*np.sqrt(2/(A-4.0))
     denom = np.where(denom < 0, 99, denom)
     term2 = np.where(denom < 0, term1, np.power((1-2.0/A)/denom,1/3.0))
     Z = ( term1 - term2 ) / np.sqrt(2/(9.0*A))
@@ -1751,7 +1751,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
                        if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
         warnings.warn("Points outside given histogram range = %s"
-                      %extrapoints)
+                      % extrapoints)
     return (hist, defaultlimits[0], binsize, extrapoints)
 
 
@@ -2200,7 +2200,7 @@ def sigmaclip(a, low=4., high=4.):
         size = c.size
         critlower = c_mean - c_std*low
         critupper = c_mean + c_std*high
-        c = c[(c>critlower) & (c<critupper)]
+        c = c[(c > critlower) & (c < critupper)]
         delta = size-c.size
     return c, critlower, critupper
 
@@ -3080,7 +3080,7 @@ def ttest_1samp(a, popmean, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    df= n - 1
+    df = n - 1
 
     d = np.mean(a, axis) - popmean
     v = np.var(a, axis, ddof=1)
@@ -3916,7 +3916,7 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     if (a-1)**2 + (b-1)**2 == 5:
         q = 1
     else:
-        q = np.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 -5) )
+        q = np.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5) )
     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
     return n_um / d_en

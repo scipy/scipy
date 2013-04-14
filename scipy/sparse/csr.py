@@ -291,7 +291,7 @@ class csr_matrix(_cs_matrix):
             row += M
         if (col < 0):
             col += N
-        if not (0<=row<M) or not (0<=col<N):
+        if not (0 <= row < M) or not (0 <= col < N):
             raise IndexError("index out of bounds")
 
         #TODO make use of sorted indices (if present)
@@ -397,7 +397,7 @@ class csr_matrix(_cs_matrix):
                 raise TypeError('expected slice or scalar')
 
         def check_bounds( i0, i1, num ):
-            if not (0<=i0<num) or not (0<i1<=num) or not (i0<i1):
+            if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 < i1):
                 raise IndexError(
                       "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %
                       (i0, num, i1, num, i0, i1) )

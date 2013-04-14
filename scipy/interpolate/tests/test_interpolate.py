@@ -72,8 +72,8 @@ class TestInterp2D(TestCase):
 
         b = interp2d(x, y, z, fill_value=np.nan)
         iz = b(ix, iy)
-        mx = (ix<0) | (ix>1)
-        my = (iy<0) | (iy>2)
+        mx = (ix < 0) | (ix > 1)
+        my = (iy < 0) | (iy > 2)
         assert_(np.isnan(iz[my,:]).all())
         assert_(np.isnan(iz[:,mx]).all())
         assert_(np.isfinite(iz[~my,:][:,~mx]).all())

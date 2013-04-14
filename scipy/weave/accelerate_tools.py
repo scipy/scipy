@@ -122,7 +122,7 @@ class Vector(Type_Descriptor):
     outbounder = "(PyObject*)"
     owned = 0 # Convertion is by casting!
 
-    prerequisites = Type_Descriptor.prerequisites+\
+    prerequisites = Type_Descriptor.prerequisites + \
                     ['#include "numpy/arrayobject.h"']
     dims = 1
     def check(self,s):
@@ -343,10 +343,10 @@ class accelerate(object):
         # Build an MD5 checksum
         f = self.function
         co = f.func_code
-        identifier = str(signature)+\
-                     str(co.co_argcount)+\
-                     str(co.co_consts)+\
-                     str(co.co_varnames)+\
+        identifier = str(signature) + \
+                     str(co.co_argcount) + \
+                     str(co.co_consts) + \
+                     str(co.co_varnames) + \
                      co.co_code
         return 'F'+md5.md5(identifier).hexdigest()
 

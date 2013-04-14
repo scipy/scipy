@@ -33,11 +33,11 @@ def von_mises_cdf(k,x):
     k = float(k)
 
     # These values should give 12 decimal digits
-    CK=50
+    CK = 50
     a = [28., 0.5, 100., 5.0]
     C1 = 50.1
 
-    if k<CK:
+    if k < CK:
         p = int(np.ceil(a[0]+a[1]*k-a[2]/(k+a[3])))
 
         F = np.clip(von_mises_cdf_series(k,x,p),0,1)

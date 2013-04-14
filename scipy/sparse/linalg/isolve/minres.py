@@ -55,7 +55,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
     if maxiter is None:
         maxiter = 5 * n
 
-    msg   =[' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
+    msg = [' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
             ' beta1 = 0.  The exact solution is  x = 0          ',   # 0
             ' A solution to Ax = b was found, given rtol        ',   # 1
             ' A least-squares solution was found, given rtol    ',   # 2

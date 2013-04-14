@@ -115,7 +115,7 @@ def transform_slices(ast_list):
 
 slice_patterns = []
 CLN = (token.COLON,':')
-CLN2= (symbol.sliceop, (token.COLON, ':'))
+CLN2 = (symbol.sliceop, (token.COLON, ':'))
 CLN2_STEP = (symbol.sliceop, (token.COLON, ':'),['step'])
 # [begin:end:step]
 slice_patterns.append((symbol.subscript, ['begin'],CLN,['end'], CLN2_STEP ))

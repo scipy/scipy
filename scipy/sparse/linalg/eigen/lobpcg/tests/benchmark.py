@@ -24,14 +24,14 @@ def as2d( ar ):
         return aux
 
 def precond(x):
-    y= linalg.cho_solve((LorU, lower),x)
+    y = linalg.cho_solve((LorU, lower),x)
     return as2d(y)
 
 m = 10  # Blocksize
 N = array(([128,256,512,1024,2048])) # Increasing matrix size
 
-data1=[]
-data2=[]
+data1 = []
+data2 = []
 
 for n in N:
     print('******', n)
@@ -51,7 +51,7 @@ for n in N:
     print(n,eigs)
 
     tt = time.clock()
-    w,v=symeig(A,B,range=(1,m))
+    w,v = symeig(A,B,range=(1,m))
     data2.append(time.clock()-tt)
     print()
     print('Results by symeig')

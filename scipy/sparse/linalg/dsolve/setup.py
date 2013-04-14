@@ -14,7 +14,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('tests')
 
     lapack_opt = get_info('lapack_opt',notfound_action=2)
-    if sys.platform=='win32':
+    if sys.platform == 'win32':
         superlu_defs = [('NO_TIMER',1)]
     else:
         superlu_defs = []

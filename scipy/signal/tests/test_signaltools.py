@@ -281,13 +281,13 @@ class TestWiener(TestCase):
 
 class TestCSpline1DEval(TestCase):
     def test_basic(self):
-        y=array([1,2,3,4,3,2,1,2,3.0])
-        x=arange(len(y))
-        dx=x[1]-x[0]
+        y = array([1,2,3,4,3,2,1,2,3.0])
+        x = arange(len(y))
+        dx = x[1]-x[0]
         cj = signal.cspline1d(y)
 
-        x2=arange(len(y)*10.0)/10.0
-        y2=signal.cspline1d_eval(cj, x2, dx=dx,x0=x[0])
+        x2 = arange(len(y)*10.0)/10.0
+        y2 = signal.cspline1d_eval(cj, x2, dx=dx,x0=x[0])
 
         # make sure interpolated values are on knot points
         assert_array_almost_equal(y2[::10], y, decimal=5)

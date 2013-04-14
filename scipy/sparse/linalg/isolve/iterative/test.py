@@ -10,7 +10,7 @@ def test_fun(alpha, x, beta, y, A, n):
     yy = y[:n]
     w = dot(A,xx)
     z = alpha*w+beta*yy
-    y[:n]=z
+    y[:n] = z
     return
 
 
@@ -21,7 +21,7 @@ def test_fun_t(alpha, x, beta, y, A, n):
     AA = conj(transpose(A))
     w = dot(AA,xx)
     z = alpha*w+beta*yy
-    y[:n]=z
+    y[:n] = z
     return
 
 def test_psolve(x,b,n):

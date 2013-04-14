@@ -13,7 +13,7 @@ from __future__ import absolute_import, print_function
 import UserList
 
 class base_info(object):
-    _warnings =[]
+    _warnings = []
     _headers = []
     _include_dirs = []
     _libraries = []
@@ -62,7 +62,7 @@ class base_info(object):
 
 class custom_info(base_info):
     def __init__(self):
-        self._warnings =[]
+        self._warnings = []
         self._headers = []
         self._include_dirs = []
         self._libraries = []

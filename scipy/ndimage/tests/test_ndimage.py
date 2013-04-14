@@ -4516,7 +4516,7 @@ class TestNdimage:
         tmp2 = ndimage.grey_erosion(array, footprint=footprint,
                                               structure=structure)
         expected = tmp1 - tmp2
-        output =ndimage.morphological_gradient(array,
+        output = ndimage.morphological_gradient(array,
                                 footprint=footprint, structure=structure)
         assert_array_almost_equal(expected, output)
 

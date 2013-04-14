@@ -134,7 +134,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     A = aslinearoperator(A)
     b = b.squeeze()
 
-    msg=('The exact solution is  x = 0                              ',
+    msg = ('The exact solution is  x = 0                              ',
          'Ax - b is small enough, given atol, btol                  ',
          'The least-squares solution is good enough, given atol     ',
          'The estimate of cond(Abar) has exceeded conlim            ',
@@ -300,7 +300,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
         thetatildeold = thetatilde
         ctildeold, stildeold, rhotildeold = _sym_ortho(rhodold, thetabar)
-        thetatilde = stildeold* rhobar
+        thetatilde = stildeold * rhobar
         rhodold = ctildeold * rhobar
         betad = - stildeold * betad + ctildeold * betahat
 
@@ -320,7 +320,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         # Estimate cond(A).
         maxrbar = max(maxrbar, rhobarold)
         if itn > 1:
-            minrbar= min(minrbar, rhobarold)
+            minrbar = min(minrbar, rhobarold)
         condA = max(maxrbar, rhotemp) / min(minrbar, rhotemp)
 
         # Test for convergence.

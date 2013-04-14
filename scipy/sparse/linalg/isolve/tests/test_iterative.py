@@ -281,7 +281,7 @@ class TestGMRES(TestCase):
         #Define, A,b
         A = csr_matrix(array([[-2,1,0,0,0,0],[1,-2,1,0,0,0],[0,1,-2,1,0,0],[0,0,1,-2,1,0],[0,0,0,1,-2,1],[0,0,0,0,1,-2]]))
         b = ones((A.shape[0],))
-        maxiter=1
+        maxiter = 1
         rvec = zeros(maxiter+1)
         rvec[0] = 1.0
         callback = lambda r:store_residual(r, rvec)

@@ -40,7 +40,7 @@ class inline_ext_function(ext_tools.ext_function):
 
         py_objects = ', '.join(self.arg_specs.py_pointers())
         if py_objects:
-            declare_py_objects = 'PyObject ' + py_objects +';\n'
+            declare_py_objects = 'PyObject ' + py_objects + ';\n'
         else:
             declare_py_objects = ''
 

@@ -91,7 +91,7 @@ def direct_rdft(x):
         y = dot(exp(i*w),x)
         if i:
             r[2*i-1] = y.real
-            if 2*i<n:
+            if 2*i < n:
                 r[2*i] = y.imag
         else:
             r[0] = y.real
@@ -103,9 +103,9 @@ def direct_irdft(x):
     x1 = zeros(n,dtype=cdouble)
     for i in range(n//2+1):
         if i:
-            if 2*i<n:
-                x1[i] = x[2*i-1] + 1j* x[2*i]
-                x1[n-i] = x[2*i-1] - 1j* x[2*i]
+            if 2*i < n:
+                x1[i] = x[2*i-1] + 1j*x[2*i]
+                x1[n-i] = x[2*i-1] - 1j*x[2*i]
             else:
                 x1[i] = x[2*i-1]
         else:
@@ -213,7 +213,7 @@ class _TestIFFTBase(TestCase):
     def test_random_complex(self):
         for size in [1,51,111,100,200,64,128,256,1024]:
             x = random([size]).astype(self.cdt)
-            x = random([size]).astype(self.cdt) +1j*x
+            x = random([size]).astype(self.cdt) + 1j*x
             y1 = ifft(fft(x))
             y2 = fft(ifft(x))
             self.assertTrue(y1.dtype == self.cdt,
@@ -315,7 +315,7 @@ class _TestIRFFTBase(TestCase):
     def test_definition(self):
         x1 = [1,2,3,4,1,2,3,4]
         x1_1 = [1,2+3j,4+1j,2+3j,4,2-3j,4-1j,2-3j]
-        x2= [1,2,3,4,1,2,3,4,5]
+        x2 = [1,2,3,4,1,2,3,4,5]
         x2_1 = [1,2+3j,4+1j,2+3j,4+5j,4-5j,2-3j,4-1j,2-3j]
 
         def _test(x, xr):
