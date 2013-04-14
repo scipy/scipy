@@ -22,6 +22,7 @@
 
 int ierr_to_sferr( int nz, int ierr);
 void set_nan_if_no_computation_done(npy_cdouble *var, int ierr);
+int airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
 int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
 int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
 int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip);
