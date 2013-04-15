@@ -650,7 +650,7 @@ interface
      <ftype> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
      <ftype> dimension(MIN(m,n)),intent(out) :: tau
 
-     integer optional,intent(in),depend(n),check(lwork>=m||lwork==-1) :: lwork=3*m
+     integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=3*m
      <ftype> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix>gerqf
@@ -769,7 +769,7 @@ interface
      <ftype2> dimension(m,n),intent(in,out,copy,out=q) :: a
      <ftype2> dimension(k),intent(in) :: tau
 
-     integer optional,intent(in),depend(n),check(lwork>=m||lwork==-1) :: lwork=3*m
+     integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=3*m
      <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix2>orgrq
@@ -791,7 +791,7 @@ interface
      <ftype2c> dimension(m,n),intent(in,out,copy,out=q) :: a
      <ftype2c> dimension(k),intent(in) :: tau
 
-     integer optional,intent(in),depend(n),check(lwork>=m||lwork==-1) :: lwork=3*m
+     integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=3*m
      <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix2c>ungrq
