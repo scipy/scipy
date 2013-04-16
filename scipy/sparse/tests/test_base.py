@@ -655,6 +655,14 @@ class _TestCommon:
             # not all sparse matrices can be indexed
             pass
 
+    # test that __iter__ is compatible with NumPy matrix
+    def test_iterator(self):
+        B = np.matrix(np.arange(50).reshape(5, 10))
+        A = self.spmatrix(B)
+
+        for x, y in zip(A, B):
+            assert_equal(x.todense(), y)
+
     # Eventually we'd like to allow matrix products between dense
     # and sparse matrices using the normal dot() function:
     #def test_dense_dot_sparse(self):
