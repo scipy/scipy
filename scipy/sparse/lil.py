@@ -13,7 +13,8 @@ import numpy as np
 from scipy.lib.six.moves import xrange
 
 from .base import spmatrix, isspmatrix
-from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, IndexMixin
+from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
+    IndexMixin
 
 from warnings import warn
 from .base import SparseEfficiencyWarning
@@ -228,6 +229,8 @@ class lil_matrix(spmatrix, IndexMixin):
         """Return the element(s) index=(i, j), where j may be a slice.
         This always returns a copy for consistency, since slices into
         Python lists return copies.
+
+        Utilities found in IndexMixin
         """
         i, j = self._unpack_index(index)
 
