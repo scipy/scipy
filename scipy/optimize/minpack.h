@@ -31,7 +31,7 @@ the result tuple when the full_output argument is non-zero.
 #include "Python.h"
 #if PY_VERSION_HEX >= 0x03000000
     #define PyString_FromString PyBytes_FromString
-    #define PyString_ConcatAndDel PyBytes_ConcatAndDel
+    #define PyString_Concat PyBytes_Concat
     #define PyString_AsString PyBytes_AsString
     #define PyInt_FromLong PyLong_FromLong
 #endif
@@ -127,8 +127,8 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   */
 
   PyArrayObject *sequence = NULL;
-  PyObject *arglist = NULL, *tmpobj = NULL;
-  PyObject *arg1 = NULL, *str1 = NULL;
+  PyObject *arglist = NULL;
+  PyObject *arg1 = NULL;
   PyObject *result = NULL;
   PyArrayObject *result_array = NULL;
 
@@ -153,15 +153,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
           arguments are in another passed variable.
    */
   if ((result = PyEval_CallObject(func, arglist))==NULL) {
-    PyErr_Print();
-    tmpobj = PyObject_GetAttrString(func, "__name__");
-    if (tmpobj == NULL) goto fail;
-    str1 = PyString_FromString("Error occurred while calling the Python function named ");
-    if (str1 == NULL) { Py_DECREF(tmpobj); goto fail;}
-    PyString_ConcatAndDel(&str1, tmpobj);
-    PyErr_SetString(error_obj, PyString_AsString(str1));
-    Py_DECREF(str1);
-    goto fail;
+      goto fail;
   }
 
   if ((result_array = (PyArrayObject *)PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim))==NULL) 
@@ -177,16 +169,3 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   Py_XDECREF(arg1);
   return NULL;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

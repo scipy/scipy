@@ -98,8 +98,6 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
 
       if ((result = PyEval_CallObject(odr_global.fcn, arglist)) == NULL)
         {
-          PyObject *tmpobj, *str1;
-
           if (PyErr_ExceptionMatches(odr_stop))
             {
               /* stop, don't fail */
@@ -108,23 +106,6 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
               Py_DECREF(arglist);
               return;
             }
-
-          PyErr_Print();
-          tmpobj = PyObject_GetAttrString(odr_global.fcn, "__name__");
-          if (tmpobj == NULL)
-            goto fail;
-
-          str1 =
-            PyString_FromString
-            ("Error occurred while calling the Python function named ");
-          if (str1 == NULL)
-            {
-              Py_DECREF(tmpobj);
-              goto fail;
-            }
-          PyString_ConcatAndDel(&str1, tmpobj);
-          PyErr_SetString(odr_error, PyString_AsString(str1));
-          Py_DECREF(str1);
           goto fail;
         }
 
@@ -153,8 +134,6 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
 
       if ((result = PyEval_CallObject(odr_global.fjacb, arglist)) == NULL)
         {
-          PyObject *tmpobj, *str1;
-
           if (PyErr_ExceptionMatches(odr_stop))
             {
               /* stop, don't fail */
@@ -163,23 +142,6 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
               Py_DECREF(arglist);
               return;
             }
-
-          PyErr_Print();
-          tmpobj = PyObject_GetAttrString(odr_global.fjacb, "__name__");
-          if (tmpobj == NULL)
-            goto fail;
-
-          str1 =
-            PyString_FromString
-            ("Error occurred while calling the Python function named ");
-          if (str1 == NULL)
-            {
-              Py_DECREF(tmpobj);
-              goto fail;
-            }
-          PyString_ConcatAndDel(&str1, tmpobj);
-          PyErr_SetString(odr_error, PyString_AsString(str1));
-          Py_DECREF(str1);
           goto fail;
         }
 
@@ -231,8 +193,6 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
 
       if ((result = PyEval_CallObject(odr_global.fjacd, arglist)) == NULL)
         {
-          PyObject *tmpobj, *str1;
-
           if (PyErr_ExceptionMatches(odr_stop))
             {
               /* stop, don't fail */
@@ -241,23 +201,6 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
               Py_DECREF(arglist);
               return;
             }
-
-          PyErr_Print();
-          tmpobj = PyObject_GetAttrString(odr_global.fjacd, "__name__");
-          if (tmpobj == NULL)
-            goto fail;
-
-          str1 =
-            PyString_FromString
-            ("Error occurred while calling the Python function named ");
-          if (str1 == NULL)
-            {
-              Py_DECREF(tmpobj);
-              goto fail;
-            }
-          PyString_ConcatAndDel(&str1, tmpobj);
-          PyErr_SetString(odr_error, PyString_AsString(str1));
-          Py_DECREF(str1);
           goto fail;
         }
 
