@@ -2124,6 +2124,11 @@ class TestCOO(sparse_test_class(getset=False,
     def test_iterator(self):
         pass
 
+    def test_todia_all_zeros(self):
+        zeros = [[0, 0]]
+        dia = coo_matrix(zeros).todia()
+        assert_array_equal(dia.A, zeros)
+
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
