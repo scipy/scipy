@@ -145,3 +145,82 @@ def ismatrix(t):
 
 def isdense(x):
     return isinstance(x, np.ndarray)
+
+class IndexMixin(object):
+    """
+    This class simply exists to hold the methods necessary for fancy indexing.
+    """
+    def _slicetoarange(self, j, shape):
+        start, stop, step = j.indices(shape)
+        return np.arange(start, stop, step)
+
+    def _unpack_index(self, index):
+        if isinstance(index, tuple):
+            if len(index) == 2:
+                return index
+            elif len(index) == 1:
+                return index[0], slice(None)
+            else:
+                raise IndexError('invalid number of indices')
+        else:
+            return index, slice(None)
+
+    def _boolean_index_to_array(self, i):
+        if i.ndim < 2:
+            i = i.nonzero()
+        elif (i.shape[0] > self.shape[0] or i.shape[1] > self.shape[1] or
+              i.ndim > 2):
+            raise IndexError('invalid index shape')
+        else:
+            i = i.nonzero()
+        return i
+
+    def _index_to_arrays(self, i, j):
+        if isinstance(i, np.ndarray) and i.dtype.kind == 'b':
+            i = self._boolean_index_to_array(i)
+            if len(i) == 2:
+                if isinstance(j, slice):
+                    j = i[1]
+
+                else:
+                    raise ValueError('too many indices for array')
+            i = i[0]
+        if isinstance(j, np.ndarray) and j.dtype.kind == 'b':
+            j = self._boolean_index_to_array(j)[0]
+
+        i_slice = isinstance(i, slice)
+        if i_slice:
+            i = self._slicetoarange(i, self.shape[0])[:,None]
+        else:
+            i = np.atleast_1d(i)
+
+        if isinstance(j, slice):
+            j = self._slicetoarange(j, self.shape[1])[None,:]
+            if i.ndim == 1:
+                i = i[:,None]
+            elif not i_slice:
+                raise IndexError('index returns 3-dim structure')
+        elif isscalarlike(j):
+            # row vector special case
+            j = np.atleast_1d(j)
+            if i.ndim == 1:
+                i, j = np.broadcast_arrays(i, j)
+                i = i[:, None]
+                j = j[:, None]
+                return i, j
+        else:
+            j = np.atleast_1d(j)
+            if i_slice and j.ndim > 1:
+                raise IndexError('index returns 3-dim structure')
+
+        i, j = np.broadcast_arrays(i, j)
+
+        if i.ndim == 1:
+            # return column vectors for 1-D indexing
+            i = i[None,:]
+            j = j[None,:]
+        elif i.ndim > 2:
+            raise IndexError("Index dimension must be <= 2")
+
+        return i, j
+
