@@ -373,10 +373,11 @@ class spmatrix(object):
             elif other == 1:
                 return self.copy()
             else:
-                result = self
-                for i in range(1,other):
-                    result = result*self
-                return result
+                tmp = self.__pow__(self, other//2)
+                if (other % 2):
+                    return self * tmp * tmp
+                else:
+                    return tmp * tmp
         elif isscalarlike(other):
             raise ValueError('exponent must be an integer')
         else:
