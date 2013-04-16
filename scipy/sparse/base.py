@@ -373,7 +373,7 @@ class spmatrix(object):
             elif other == 1:
                 return self.copy()
             else:
-                tmp = self.__pow__(self, other//2)
+                tmp = self.__pow__(other//2)
                 if (other % 2):
                     return self * tmp * tmp
                 else:
