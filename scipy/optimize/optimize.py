@@ -1400,7 +1400,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                 if (i > 0):
                     break
                 else:
-                    xsupi = xsupi + dri0 / curv * psupi
+                    # fall back to steepest descent direction
+                    xsupi = dri0 / (-curv) * b
                     break
             alphai = dri0 / curv
             xsupi = xsupi + alphai * psupi
