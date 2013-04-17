@@ -654,6 +654,17 @@ class TestNewtonCg(object):
         assert_(sol.success, sol.message)
         assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
 
+    def test_himmelblau(self):
+        x0 = np.array(himmelblau_x0)
+        sol = optimize.minimize(himmelblau,
+                                x0,
+                                jac=himmelblau_grad,
+                                hess=himmelblau_hess,
+                                method='Newton-CG',
+                                tol=1e-6)
+        assert_(sol.success, sol.message)
+        assert_allclose(sol.x, himmelblau_xopt, rtol=1e-4)
+        assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
 
 class TestRosen(TestCase):
 
@@ -665,6 +676,29 @@ class TestRosen(TestCase):
         dothp = np.dot(optimize.rosen_hess(x), p)
         assert_equal(hp, dothp)
 
+def himmelblau(p):
+    """
+    R^2 -> R^1 test function for optimization.  The function has four local
+    minima where himmelblau(xopt) == 0.
+    """
+    x, y = p
+    a = x*x + y - 11
+    b = x + y*y - 7
+    return a*a + b*b
+
+def himmelblau_grad(p):
+    x, y = p
+    return np.array([4*x**3 + 4*x*y - 42*x + 2*y**2 - 14,
+                     2*x**2 + 4*x*y + 4*y**3 - 26*y - 22])
+
+def himmelblau_hess(p):
+    x, y = p
+    return np.array([[12*x**2 + 4*y - 42, 4*x + 4*y],
+                     [4*x + 4*y, 4*x + 12*y**2 - 26]])
+
+himmelblau_x0 = [-0.27, -0.9]
+himmelblau_xopt = [3, 2]
+himmelblau_min = 0.0
 
 if __name__ == "__main__":
     run_module_suite()
