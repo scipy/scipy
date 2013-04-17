@@ -617,7 +617,6 @@ class _TestCommon:
         sum2 = 3*self.datsp - self.dat
         assert_array_equal(sum2, 2*self.dat)
 
-
     def test_copy(self):
         # Check whether the copy=True and copy=False keywords work
         A = self.datsp
@@ -1884,11 +1883,19 @@ class TestDOK(sparse_test_class(slicing=False,
         # Dense ctor
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
         A = dok_matrix(b)
+        assert_equal(b.dtype, A.dtype)
         assert_equal(A.todense(), b)
 
         # Sparse ctor
         c = csr_matrix(b)
         assert_equal(A.todense(), c.todense())
+
+        data = [[0, 1, 2], [3, 0, 0]]
+        d = dok_matrix(data, dtype=np.float32)
+        assert_equal(d.dtype, np.float32)
+        da = d.toarray()
+        assert_equal(da.dtype, np.float32)
+        assert_array_equal(da, data)
 
     def test_resize(self):
         #A couple basic tests of the resize() method.
