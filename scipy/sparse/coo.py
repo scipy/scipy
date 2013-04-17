@@ -338,8 +338,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             pass
 
         #initialize and fill in data array
-        data = np.zeros( (len(diags), self.col.max()+1), dtype=self.dtype)
-        data[ np.searchsorted(diags,ks), self.col ] = self.data
+        if self.data.size == 0:
+            data = np.zeros((0, 0), dtype=self.dtype)
+        else:
+            data = np.zeros( (len(diags), self.col.max()+1), dtype=self.dtype)
+            data[ np.searchsorted(diags,ks), self.col ] = self.data
 
         return dia_matrix((data,diags), shape=self.shape)
 
