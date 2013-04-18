@@ -241,7 +241,16 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
     def multiply(self, other):
         """Point-wise multiplication by another matrix
         """
-        if other.shape != self.shape:
+        # Check if other shape is a vector (e.g. shape = (n,))
+        if len(other.shape) == 1:
+            if self.shape[0] != 1:
+                raise ValueError('inconsistent shapes')
+            elif other.shape[0] != self.shape[1]:
+                raise ValueError('inconsistent shapes')
+            else:
+                return np.multiply(self.todense(),other)
+
+        elif other.shape != self.shape:
             raise ValueError('inconsistent shapes')
 
         if isdense(other):
