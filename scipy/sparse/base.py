@@ -70,7 +70,7 @@ class spmatrix(object):
         except:
             raise TypeError('invalid shape')
 
-        if not (shape[0] >= 1 and shape[1] >= 1):
+        if not (shape[0] >= 0 and shape[1] >= 0):
             raise ValueError('invalid shape')
 
         if (self._shape != shape) and (self._shape is not None):
