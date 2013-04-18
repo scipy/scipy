@@ -1,11 +1,11 @@
 #ifndef UFUNCS_PROTO_H
 #define UFUNCS_PROTO_H 1
-#include "cephes.h"
-npy_int airy(npy_double, npy_double *, npy_double *, npy_double *, npy_double *);
 #include "amos_wrappers.h"
+npy_int airy_wrap(npy_double, npy_double *, npy_double *, npy_double *, npy_double *);
 npy_int cairy_wrap(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *);
 npy_int cairy_wrap_e_real(npy_double, npy_double *, npy_double *, npy_double *, npy_double *);
 npy_int cairy_wrap_e(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *);
+#include "cephes.h"
 npy_double bdtr(npy_int, npy_int, npy_double);
 npy_double bdtrc(npy_int, npy_int, npy_double);
 npy_double bdtri(npy_int, npy_int, npy_double);

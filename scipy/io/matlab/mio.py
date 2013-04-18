@@ -296,7 +296,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
         its shape (tuple of ints), and its data class (a string).
         Possible data classes are: int8, uint8, int16, uint16, int32, uint32,
         int64, uint64, single, double, cell, struct, object, char, sparse,
-        function, opaque, unknown.
+        function, opaque, logical, unknown.
 
     Notes
     -----

@@ -1347,13 +1347,10 @@ def wilcoxon(x, y=None, zero_method="wilcox"):
     if zero_method == "pratt":
         r = r[d != 0]
 
-    if (len(r) != len(unique(r))):  # handle ties in data
-        replist, repnum = find_repeats(r)
-        corr = 0.0
-        for i in range(len(replist)):
-            si = repnum[i]
-            corr += 0.5 * si * (si * si - 1.0)
-        se -= corr
+    replist, repnum = find_repeats(r)
+    if repnum.size != 0:
+        # Correction for repeated elements.
+        se -= 0.5 * (repnum * (repnum * repnum - 1)).sum()
 
     se = sqrt(se / 24)
     z = (T - mn) / se

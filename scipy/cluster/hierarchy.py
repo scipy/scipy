@@ -169,7 +169,6 @@ from __future__ import division, print_function, absolute_import
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import types
 import warnings
 
 import numpy as np
@@ -974,19 +973,16 @@ def cophenet(Z, Y=None):
         return zz
 
     Y = np.asarray(Y, order='c')
-    Ys = Y.shape
     distance.is_valid_y(Y, throw=True, name='Y')
 
     z = zz.mean()
     y = Y.mean()
     Yy = Y - y
     Zz = zz - z
-    #print Yy.shape, Zz.shape
     numerator = (Yy * Zz)
     denomA = Yy ** 2
     denomB = Zz ** 2
     c = numerator.sum() / np.sqrt((denomA.sum() * denomB.sum()))
-    #print c, numerator.sum()
     return (c, zz)
 
 
@@ -1029,8 +1025,6 @@ def inconsistent(Z, d=2):
     if (not d == np.floor(d)) or d < 0:
         raise ValueError('The second argument d must be a nonnegative '
                          'integer value.')
-#    if d == 0:
-#        d = 1
 
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
@@ -1350,12 +1344,6 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
             else:
                 raise ValueError('Linkage uses the same cluster more than '
                                  'once.')
-#         if _check_hierarchy_not_all_clusters_used(Z):
-#             if name:
-#                 raise ValueError('Linkage \'%s\' does not use all clusters.'
-#                                  % name)
-#             else:
-#                 raise ValueError('Linkage does not use all clusters.')
     except Exception as e:
         if throw:
             raise
@@ -1737,8 +1725,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         else:
             matplotlib.pylab.setp(lbls, 'size',
                                   float(_get_tick_text_size(len(ivl))))
-#        txt.set_fontsize()
-#        txt.set_rotation(45)
+
         # Make the tick marks invisible because they cover up the links
         for line in axis.get_xticklines():
             line.set_visible(False)
@@ -1840,8 +1827,6 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         axis.add_collection(colors_to_collections['b'])
 
     if contraction_marks is not None:
-        #xs=[x for (x, y) in contraction_marks]
-        #ys=[y for (x, y) in contraction_marks]
         if orientation in ('left', 'right'):
             for (x, y) in contraction_marks:
                 e = matplotlib.patches.Ellipse((y, x),
@@ -1859,11 +1844,6 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
 
-            #matplotlib.pylab.plot(xs, ys, 'go', markeredgecolor='k',
-            #                      markersize=3)
-
-            #matplotlib.pylab.plot(ys, xs, 'go', markeredgecolor='k',
-            #                      markersize=3)
     matplotlib.pylab.draw_if_interactive()
 
 _link_line_colors = ['g', 'r', 'c', 'm', 'y', 'k']
@@ -2144,7 +2124,6 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         color_threshold = max(Z[:, 2]) * 0.7
     R = {'icoord': icoord_list, 'dcoord': dcoord_list, 'ivl': ivl,
          'leaves': lvs, 'color_list': color_list}
-    props = {'cbt': False, 'cc': 0}
     if show_contracted:
         contraction_marks = []
     else:
@@ -2396,22 +2375,6 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         ua = aa
         ub = ab
 
-    # The distance of the cluster to draw to the left (ua) is uad
-    # and its count is uan. Likewise, the cluster to draw to the
-    # right has distance ubd and count ubn.
-    if ua < n:
-        uad = 0.0
-        uan = 1
-    else:
-        uad = Z[ua - n, 2]
-        uan = Z[ua - n, 3]
-    if ub < n:
-        ubd = 0.0
-        ubn = 1
-    else:
-        ubd = Z[ub - n, 2]
-        ubn = Z[ub - n, 3]
-
     # Updated iv variable and the amount of space used.
     (uiva, uwa, uah, uamd) = \
         _dendrogram_calculate_info(
@@ -2465,10 +2428,6 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             leaf_label_func=leaf_label_func,
             level=level + 1, contraction_marks=contraction_marks,
             link_color_func=link_color_func)
-
-    # The height of clusters a and b
-    ah = uad
-    bh = ubd
 
     max_dist = max(uamd, ubmd, h)
 

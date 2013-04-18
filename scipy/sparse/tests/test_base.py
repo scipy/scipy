@@ -643,6 +643,14 @@ class _TestCommon:
             # not all sparse matrices can be indexed
             pass
 
+    # test that __iter__ is compatible with NumPy matrix
+    def test_iterator(self):
+        B = np.matrix(np.arange(50).reshape(5, 10))
+        A = self.spmatrix(B)
+
+        for x, y in zip(A, B):
+            assert_equal(x.todense(), y)
+
     # Eventually we'd like to allow matrix products between dense
     # and sparse matrices using the normal dot() function:
     #def test_dense_dot_sparse(self):
@@ -1870,11 +1878,19 @@ class TestDOK(sparse_test_class(slicing=False,
         # Dense ctor
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
         A = dok_matrix(b)
+        assert_equal(b.dtype, A.dtype)
         assert_equal(A.todense(), b)
 
         # Sparse ctor
         c = csr_matrix(b)
         assert_equal(A.todense(), c.todense())
+
+        data = [[0, 1, 2], [3, 0, 0]]
+        d = dok_matrix(data, dtype=np.float32)
+        assert_equal(d.dtype, np.float32)
+        da = d.toarray()
+        assert_equal(da.dtype, np.float32)
+        assert_array_equal(da, data)
 
     def test_resize(self):
         #A couple basic tests of the resize() method.
@@ -2107,6 +2123,15 @@ class TestCOO(sparse_test_class(getset=False,
         coo = coo_matrix(mat)
         assert_array_equal(coo.todense(),mat.reshape(1,-1))
 
+    # COO does not have a __getitem__ to support iteration
+    def test_iterator(self):
+        pass
+
+    def test_todia_all_zeros(self):
+        zeros = [[0, 0]]
+        dia = coo_matrix(zeros).todia()
+        assert_array_equal(dia.A, zeros)
+
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
@@ -2122,6 +2147,9 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         offsets = np.array([0,-1,2])
         assert_equal(dia_matrix( (data,offsets), shape=(4,4)).todense(), D)
 
+    # DIA does not have a __getitem__ to support iteration
+    def test_iterator(self):
+        pass
 
 class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
@@ -2195,6 +2223,10 @@ class TestBSR(sparse_test_class(getset=False,
         A = bsr_matrix( arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5) )
         x = arange(A.shape[1]*6).reshape(-1,6)
         assert_equal(A*x, A.todense()*x)
+
+    @dec.knownfailureif(True, "BSR not implemented")
+    def test_iterator(self):
+        pass
 
 if __name__ == "__main__":
     run_module_suite()

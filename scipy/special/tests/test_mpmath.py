@@ -601,7 +601,6 @@ HYPERKW = dict(maxprec=200, maxterms=200)
 
 
 class TestSystematic(with_metaclass(_SystematicMeta, object)):
-    @knownfailure_overridable("accuracy issues at large arguments")
     def test_airyai(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[0],
                             mpmath.airyai,
@@ -612,7 +611,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.airyai,
                             [ComplexArg()])
 
-    @knownfailure_overridable("accuracy issues at large arguments")
     def test_airyai_prime(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
@@ -623,7 +621,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.airyai(z, derivative=1),
                             [ComplexArg()])
 
-    @knownfailure_overridable("accuracy issues at large arguments")
     def test_airybi(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),
@@ -634,7 +631,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.airybi(z),
                             [ComplexArg()])
 
-    @knownfailure_overridable("accuracy issues at large arguments")
     def test_airybi_prime(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[3], lambda z:
                             mpmath.airybi(z, derivative=1),
@@ -832,23 +828,28 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(a=0.0)],
                             dps=400)
 
-    @knownfailure_overridable("issues at large arguments")
     def test_ellipfun_sn(self):
+        # Oscillating function --- limit range of first argument; the
+        # loss of precision there is an expected numerical feature
+        # rather than an actual bug
         assert_mpmath_equal(lambda u, m: sc.ellipj(u, m)[0],
                             lambda u, m: mpmath.ellipfun("sn", u=u, m=m),
-                            [Arg(), Arg(a=0, b=1)])
+                            [Arg(-1e6, 1e6), Arg(a=0, b=1)],
+                            atol=1e-20)
 
-    @knownfailure_overridable("issues at large arguments")
     def test_ellipfun_cn(self):
+        # see comment in ellipfun_sn
         assert_mpmath_equal(lambda u, m: sc.ellipj(u, m)[1],
                             lambda u, m: mpmath.ellipfun("cn", u=u, m=m),
-                            [Arg(), Arg(a=0, b=1)])
+                            [Arg(-1e6, 1e6), Arg(a=0, b=1)],
+                            atol=1e-20)
 
-    @knownfailure_overridable("issues at large arguments")
     def test_ellipfun_dn(self):
+        # see comment in ellipfun_sn
         assert_mpmath_equal(lambda u, m: sc.ellipj(u, m)[2],
                             lambda u, m: mpmath.ellipfun("dn", u=u, m=m),
-                            [Arg(), Arg(a=0, b=1)])
+                            [Arg(-1e6, 1e6), Arg(a=0, b=1)],
+                            atol=1e-20)
 
     def test_erf(self):
         assert_mpmath_equal(sc.erf,
@@ -891,7 +892,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.expint),
                             [IntArg(0, 100), Arg()])
 
-    @knownfailure_overridable("behavior at large arguments (asymptotic expansion missing a sub-leading term)")
     def test_fresnels(self):
         def fresnels(x):
             return sc.fresnel(x)[0]
@@ -899,7 +899,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.fresnels,
                             [Arg()])
 
-    @knownfailure_overridable("behavior at large arguments (asymptotic expansion missing a sub-leading term)")
     def test_fresnelc(self):
         def fresnelc(x):
             return sc.fresnel(x)[1]

@@ -103,9 +103,10 @@ class dok_matrix(spmatrix, dict):
                 raise TypeError('expected rank <=2 dense array or matrix')
 
             from .coo import coo_matrix
-            self.update( coo_matrix(arg1, dtype=dtype).todok() )
+            d = coo_matrix(arg1, dtype=dtype).todok()
+            self.update(d)
             self.shape = arg1.shape
-            self.dtype = arg1.dtype
+            self.dtype = d.dtype
 
     def getnnz(self):
         return dict.__len__(self)
