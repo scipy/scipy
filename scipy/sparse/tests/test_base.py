@@ -2151,6 +2151,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     def test_iterator(self):
         pass
 
+
 class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
