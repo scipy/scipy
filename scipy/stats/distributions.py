@@ -6605,7 +6605,7 @@ class binom_gen(rv_discrete):
         return mtrand.binomial(n,p,self._size)
     def _argcheck(self, n, p):
         self.b = n
-        return (n>=0) & (p >= 0) & (p <= 1)
+        return (n>=1) & (p >= 0) & (p <= 1)
     def _logpmf(self, x, n, p):
         k = floor(x)
         combiln = (gamln(n+1) - (gamln(k+1) +
