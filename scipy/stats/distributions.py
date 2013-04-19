@@ -3131,13 +3131,16 @@ class foldnorm_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, c):
+        return (c >= 0)
+
     def _rvs(self, c):
         return abs(norm.rvs(loc=c,size=self._size))
 
     def _pdf(self, x, c):
         return sqrt(2.0/pi)*cosh(c*x)*exp(-(x*x+c*c)/2.0)
 
-    def _cdf(self, x, c,):
+    def _cdf(self, x, c):
         return special.ndtr(x-c) + special.ndtr(x+c) - 1.0
 
     def _stats(self, c):
