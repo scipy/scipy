@@ -886,6 +886,14 @@ class TestNct(TestCase):
                           [ 0.00153078,  0.00291093,  0.00525206,  0.00900815]])
         assert_allclose(res, expected, rtol=1e-5)
 
+    def text_variance_gh_issue_2401():
+        # Computation of the variance of a non-central t-distribution resulted
+        # in a TypeError: ufunc 'isinf' not supported for the input types,
+        # and the inputs could not be safely coerced to any supported types
+        # according to the casting rule 'safe'
+        rv = stats.nct(4, 0)
+        assert_equal(rv.var(), 2.0)
+
 
 def test_regression_ticket_1316():
     # The following was raising an exception, because _construct_default_doc()
