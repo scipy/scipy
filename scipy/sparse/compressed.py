@@ -242,6 +242,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         """Point-wise multiplication by another matrix
         """
         # Check if other shape is a vector (e.g. shape = (n,))
+        if isscalarlike(other):
+            return self.__mul__(other)
         if len(other.shape) == 1:
             if self.shape[0] != 1:
                 raise ValueError('inconsistent shapes')
