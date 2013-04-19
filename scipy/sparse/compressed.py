@@ -27,7 +27,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.asformat(self.format)
-            self._set_self(arg1 )
+            self._set_self(arg1)
 
         elif isinstance(arg1, tuple):
             if isshape(arg1):
@@ -42,8 +42,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 if len(arg1) == 2:
                     # (data, ij) format
                     from .coo import coo_matrix
-                    other = self.__class__(coo_matrix(arg1, shape=shape) )
-                    self._set_self(other )
+                    other = self.__class__(coo_matrix(arg1, shape=shape))
+                    self._set_self(other)
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
@@ -62,7 +62,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 raise ValueError("unrecognized %s_matrix constructor usage" %
                         self.format)
             from .coo import coo_matrix
-            self._set_self(self.__class__(coo_matrix(arg1, dtype=dtype)) )
+            self._set_self(self.__class__(coo_matrix(arg1, dtype=dtype)))
 
         # Read matrix dimensions given, if any
         if shape is not None:
@@ -116,10 +116,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
             warn("indptr array has non-integer dtype (%s)"
-                    % self.indptr.dtype.name )
+                    % self.indptr.dtype.name)
         if self.indices.dtype.kind != 'i':
             warn("indices array has non-integer dtype (%s)"
-                    % self.indices.dtype.name )
+                    % self.indices.dtype.name)
 
         # only support 32-bit ints for now
         self.indptr  = np.asarray(self.indptr,  dtype=np.intc)
@@ -131,7 +131,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             raise ValueError('data, indices, and indptr should be rank 1')
 
         # check index pointer
-        if (len(self.indptr) != major_dim + 1 ):
+        if (len(self.indptr) != major_dim + 1):
             raise ValueError("index pointer size (%d) should be (%d)" %
                                 (len(self.indptr), major_dim + 1))
         if (self.indptr[0] != 0):
@@ -304,7 +304,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         """
         #TODO support k-th diagonal
         fn = getattr(sparsetools, self.format + "_diagonal")
-        y = np.empty(min(self.shape), dtype=upcast(self.dtype) )
+        y = np.empty(min(self.shape), dtype=upcast(self.dtype))
         fn(self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)
         return y
 
@@ -339,10 +339,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 if isintlike(major) and isinstance(minor,slice):
                     minor_shape = self._swap(self.shape)[1]
                     start, stop, stride = minor.indices(minor_shape)
-                    out_shape   = self._swap((1, stop-start) )
+                    out_shape   = self._swap((1, stop-start))
                     return self._get_slice(major, start, stop, stride, out_shape)
                 elif isinstance(row, slice) or isinstance(col, slice):
-                    return self._get_submatrix(row, col )
+                    return self._get_submatrix(row, col)
                 else:
                     raise NotImplementedError
 
@@ -401,13 +401,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         return self.__class__((data, index, indptr), shape=shape,
                               dtype=self.dtype)
 
-    def _get_submatrix(self, slice0, slice1 ):
+    def _get_submatrix(self, slice0, slice1):
         """Return a submatrix of this matrix (new matrix is created)."""
 
         slice0, slice1 = self._swap((slice0,slice1))
         shape0, shape1 = self._swap(self.shape)
-        def _process_slice(sl, num ):
-            if isinstance(sl, slice ):
+        def _process_slice(sl, num):
+            if isinstance(sl, slice):
                 i0, i1 = sl.start, sl.stop
                 if i0 is None:
                     i0 = 0
@@ -421,7 +421,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
                 return i0, i1
 
-            elif np.isscalar(sl ):
+            elif np.isscalar(sl):
                 if sl < 0:
                     sl += num
 
@@ -430,25 +430,25 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             else:
                 return sl[0], sl[1]
 
-        def _in_bounds(i0, i1, num ):
+        def _in_bounds(i0, i1, num):
             if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 < i1):
                 raise IndexError("index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %
                                     (i0, num, i1, num, i0, i1))
 
-        i0, i1 = _process_slice(slice0, shape0 )
-        j0, j1 = _process_slice(slice1, shape1 )
-        _in_bounds(i0, i1, shape0 )
-        _in_bounds(j0, j1, shape1 )
+        i0, i1 = _process_slice(slice0, shape0)
+        j0, j1 = _process_slice(slice1, shape1)
+        _in_bounds(i0, i1, shape0)
+        _in_bounds(j0, j1, shape1)
 
         aux = sparsetools.get_csr_submatrix(shape0, shape1,
                                              self.indptr, self.indices,
                                              self.data,
-                                             i0, i1, j0, j1 )
+                                             i0, i1, j0, j1)
 
         data, indices, indptr = aux[2], aux[1], aux[0]
-        shape = self._swap((i1 - i0, j1 - j0) )
+        shape = self._swap((i1 - i0, j1 - j0))
 
-        return self.__class__((data,indices,indptr), shape=shape )
+        return self.__class__((data,indices,indptr), shape=shape)
 
     def __setitem__(self, key, val):
         if isinstance(key, tuple):

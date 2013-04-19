@@ -5513,8 +5513,8 @@ def _drv2_moment(self, n, *args):
     pos = max(0.0, 1.0*self.a)
     count = 0
     #handle cases with infinite support
-    ulimit = max(1000, (min(self.b,1000) + max(self.a,-1000))/2.0 )
-    llimit = min(-1000, (min(self.b,1000) + max(self.a,-1000))/2.0 )
+    ulimit = max(1000, (min(self.b,1000) + max(self.a,-1000))/2.0)
+    llimit = min(-1000, (min(self.b,1000) + max(self.a,-1000))/2.0)
 
     while (pos <= self.b) and ((pos <= ulimit) or
                                (diff > self.moment_tol)):

@@ -32,7 +32,7 @@ class TestMquantiles(TestCase):
                          [40., -999., -999.],
                          [36., -999., -999.]])
         desired = [[19.2, 14.6, 1.45],
-                   [40.0, 37.5, 2.5 ],
+                   [40.0, 37.5, 2.5],
                    [42.8, 40.05, 3.55]]
         quants = mstats.mquantiles(data, axis=0, limit=(0, 50))
         assert_almost_equal(quants, desired)

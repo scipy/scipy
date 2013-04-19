@@ -57,7 +57,7 @@ class IntConverter(TestCase):
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.int_converter()
-        assert_(not s.type_match('string') )
+        assert_(not s.type_match('string'))
 
     @dec.slow
     def test_type_match_int(self):
@@ -192,7 +192,7 @@ class ComplexConverter(TestCase):
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.complex_converter()
-        assert_(not s.type_match('string') )
+        assert_(not s.type_match('string'))
 
     @dec.slow
     def test_type_match_int(self):
@@ -360,7 +360,7 @@ class StringConverter(TestCase):
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.string_converter()
-        assert_(s.type_match('string') )
+        assert_(s.type_match('string'))
 
     @dec.slow
     def test_type_match_int(self):
@@ -430,7 +430,7 @@ class ListConverter(TestCase):
         s = c_spec.list_converter()
         objs = [{},(),'',1,1.,1+1j]
         for i in objs:
-            assert_(not s.type_match(i) )
+            assert_(not s.type_match(i))
 
     @dec.slow
     def test_type_match_good(self):
@@ -551,7 +551,7 @@ class TupleConverter(TestCase):
         s = c_spec.tuple_converter()
         objs = [{},[],'',1,1.,1+1j]
         for i in objs:
-            assert_(not s.type_match(i) )
+            assert_(not s.type_match(i))
 
     @dec.slow
     def test_type_match_good(self):
@@ -618,7 +618,7 @@ class DictConverter(TestCase):
         s = c_spec.dict_converter()
         objs = [[],(),'',1,1.,1+1j]
         for i in objs:
-            assert_(not s.type_match(i) )
+            assert_(not s.type_match(i))
 
     @dec.slow
     def test_type_match_good(self):

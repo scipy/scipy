@@ -1641,8 +1641,8 @@ def skewtest(a, axis=0):
         warnings.warn(
             "skewtest only valid for n>=8 ... continuing anyway, n=%i" %
             np.min(n))
-    y = b2 * ma.sqrt(((n+1)*(n+3)) / (6.0*(n-2)) )
-    beta2 = (3.0*(n*n+27*n-70)*(n+1)*(n+3) ) / ((n-2.0)*(n+5)*(n+7)*(n+9) )
+    y = b2 * ma.sqrt(((n+1)*(n+3)) / (6.0*(n-2)))
+    beta2 = (3.0*(n*n+27*n-70)*(n+1)*(n+3)) / ((n-2.0)*(n+5)*(n+7)*(n+9))
     W2 = -1 + ma.sqrt(2*(beta2-1))
     delta = 1/ma.sqrt(0.5*ma.log(W2))
     alpha = ma.sqrt(2.0/(W2-1))
@@ -1670,7 +1670,7 @@ def kurtosistest(a, axis=0):
     denom = 1 + x*ma.sqrt(2/(A-4.0))
     denom[denom < 0] = masked
     term2 = ma.power((1-2.0/A)/denom,1/3.0)
-    Z = (term1 - term2 ) / np.sqrt(2/(9.0*A))
+    Z = (term1 - term2) / np.sqrt(2/(9.0*A))
     return Z, (1.0-stats.zprob(Z))*2
 kurtosistest.__doc__ = stats.kurtosistest.__doc__
 
@@ -1989,7 +1989,7 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
         raise NotImplementedError("Not implemented when the inputs "
                                   "have missing data")
     lmbda = np.linalg.det(EF) / np.linalg.det(ER)
-    q = ma.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5) )
+    q = ma.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5))
     q = ma.filled(q, 1)
     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)

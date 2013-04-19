@@ -111,7 +111,7 @@ class Rbf(object):
     """
 
     def _euclidean_norm(self, x1, x2):
-        return sqrt(((x1 - x2)**2).sum(axis=0) )
+        return sqrt(((x1 - x2)**2).sum(axis=0))
 
     def _h_multiquadric(self, r):
         return sqrt((1.0/self.epsilon*r)**2 + 1)

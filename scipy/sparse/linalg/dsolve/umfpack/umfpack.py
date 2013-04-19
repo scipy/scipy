@@ -28,7 +28,7 @@ class UmfpackWarning(UserWarning):
 
 ##
 # 10.01.2006, c
-def configure(**kwargs ):
+def configure(**kwargs):
     """
     Valid keyword arguments with defaults (other ignored):
       assumeSortedIndices = False
@@ -43,13 +43,13 @@ def configure(**kwargs ):
 
 ##
 # 30.11.2005, c
-def updateDictWithVars(adict, module, pattern, group=None ):
-    match = re.compile(pattern ).match
+def updateDictWithVars(adict, module, pattern, group=None):
+    match = re.compile(pattern).match
 
-    for name in [ii for ii in vars(module )
-                 if match(ii )]:
+    for name in [ii for ii in vars(module)
+                 if match(ii)]:
         if group is not None:
-            outName = match(name ).group(group )
+            outName = match(name).group(group)
         else:
             outName = name
 
@@ -185,8 +185,8 @@ umfInfo = [
 if _um:
     ##
     # Export UMFPACK constants from _um.
-    umfDefines = updateDictWithVars({}, _um, 'UMFPACK_.*' )
-    locals().update(umfDefines )
+    umfDefines = updateDictWithVars({}, _um, 'UMFPACK_.*')
+    locals().update(umfDefines)
 
     umfStatus = {
         UMFPACK_OK : 'UMFPACK_OK',
@@ -240,37 +240,37 @@ umfComplexTypes = ('zi', 'zl')
 # 02.01.2005
 
 
-class Struct(object ):
+class Struct(object):
     # 03.10.2005, c
     # 26.10.2005
-    def __init__(self, **kwargs ):
+    def __init__(self, **kwargs):
         if kwargs:
-            self.__dict__.update(kwargs )
+            self.__dict__.update(kwargs)
 
     # 08.03.2005
-    def __str__(self ):
+    def __str__(self):
         ss = "%s\n" % self.__class__
         for key, val in iteritems(self.__dict__):
-            if (issubclass(self.__dict__[key].__class__, Struct )):
+            if (issubclass(self.__dict__[key].__class__, Struct)):
                 ss += "  %s:\n    %s\n" % (key, self.__dict__[key].__class__)
             else:
-                aux = "\n" + str(val )
-                aux = aux.replace("\n", "\n    " )
+                aux = "\n" + str(val)
+                aux = aux.replace("\n", "\n    ")
                 ss += "  %s:\n%s\n" % (key, aux[1:])
-        return(ss.rstrip() )
+        return(ss.rstrip())
 
 ##
 # 30.11.2005, c
 
 
-class UmfpackContext(Struct ):
+class UmfpackContext(Struct):
 
     ##
     # 30.11.2005, c
     # 01.12.2005
     # 21.12.2005
     # 01.03.2006
-    def __init__(self, family='di', **kwargs ):
+    def __init__(self, family='di', **kwargs):
         """
         Arguments:
 
@@ -286,14 +286,14 @@ class UmfpackContext(Struct ):
                               'header files before building scipy.')
 
         self.maxCond = 1e12
-        Struct.__init__(self, **kwargs )
+        Struct.__init__(self, **kwargs)
 
         if family not in umfFamilyTypes:
             raise TypeError('wrong family: %s' % family)
 
         self.family = family
-        self.control = np.zeros((UMFPACK_CONTROL, ), dtype=np.double )
-        self.info = np.zeros((UMFPACK_INFO, ), dtype=np.double )
+        self.control = np.zeros((UMFPACK_CONTROL,), dtype=np.double)
+        self.info = np.zeros((UMFPACK_INFO,), dtype=np.double)
         self._symbolic = None
         self._numeric = None
         self.mtx = None
@@ -302,10 +302,10 @@ class UmfpackContext(Struct ):
         ##
         # Functions corresponding to <family> are stored in self.funs.
         pattern = 'umfpack_' + family + '_(.*)'
-        fn = updateDictWithVars({}, _um, pattern, group=1 )
-        self.funs = Struct(**fn )
+        fn = updateDictWithVars({}, _um, pattern, group=1)
+        self.funs = Struct(**fn)
 
-        self.funs.defaults(self.control )
+        self.funs.defaults(self.control)
         self.control[UMFPACK_PRL] = 3
 
     def __del__(self):
@@ -313,33 +313,33 @@ class UmfpackContext(Struct ):
 
     ##
     # 30.11.2005, c
-    def strControl(self ):
-        maxLen = max([len(name ) for name in umfControls] )
+    def strControl(self):
+        maxLen = max([len(name) for name in umfControls])
         format = '%%-%ds : %%d' % maxLen
         aux = [format % (name, self.control[umfDefines[name]])
                for name in umfControls if name in umfDefines]
-        return '\n'.join(aux )
+        return '\n'.join(aux)
 
     ##
     # 01.12.2005, c
-    def strInfo(self ):
-        maxLen = max([len(name ) for name in umfInfo] )
+    def strInfo(self):
+        maxLen = max([len(name) for name in umfInfo])
         format = '%%-%ds : %%d' % maxLen
         aux = [format % (name, self.info[umfDefines[name]])
                for name in umfInfo if name in umfDefines]
-        return '\n'.join(aux )
+        return '\n'.join(aux)
 
     ##
     # 30.11.2005, c
     # 01.12.2005
     # 14.12.2005
     # 01.03.2006
-    def _getIndx(self, mtx ):
+    def _getIndx(self, mtx):
 
-        if sp.isspmatrix_csc(mtx ):
+        if sp.isspmatrix_csc(mtx):
             indx = mtx.indices
             self.isCSR = 0
-        elif sp.isspmatrix_csr(mtx ):
+        elif sp.isspmatrix_csr(mtx):
             indx = mtx.indices
             self.isCSR = 1
         else:
@@ -368,12 +368,12 @@ class UmfpackContext(Struct ):
     ##
     # 30.11.2005, c
     # last revision: 10.01.2007
-    def symbolic(self, mtx ):
+    def symbolic(self, mtx):
         """Symbolic object (symbolic LU decomposition) computation for a given
         sparsity pattern."""
         self.free_symbolic()
 
-        indx = self._getIndx(mtx )
+        indx = self._getIndx(mtx)
 
         if not assumeSortedIndices:
             # row/column indices cannot be assumed to be sorted
@@ -383,14 +383,14 @@ class UmfpackContext(Struct ):
             status, self._symbolic\
                     = self.funs.symbolic(mtx.shape[0], mtx.shape[1],
                                           mtx.indptr, indx, mtx.data,
-                                          self.control, self.info )
+                                          self.control, self.info)
         else:
             real, imag = mtx.data.real.copy(), mtx.data.imag.copy()
             status, self._symbolic\
                     = self.funs.symbolic(mtx.shape[0], mtx.shape[1],
                                           mtx.indptr, indx,
                                           real, imag,
-                                          self.control, self.info )
+                                          self.control, self.info)
 
         if status != UMFPACK_OK:
             raise RuntimeError('%s failed with %s' % (self.funs.symbolic,
@@ -403,7 +403,7 @@ class UmfpackContext(Struct ):
     # 01.12.2005
     # 02.12.2005
     # 01.03.2006
-    def numeric(self, mtx ):
+    def numeric(self, mtx):
         """Numeric object (LU decomposition) computation using the
         symbolic decomposition. The symbolic decomposition is (re)computed
         if necessary."""
@@ -411,9 +411,9 @@ class UmfpackContext(Struct ):
         self.free_numeric()
 
         if self._symbolic is None:
-            self.symbolic(mtx )
+            self.symbolic(mtx)
 
-        indx = self._getIndx(mtx )
+        indx = self._getIndx(mtx)
 
         failCount = 0
         while 1:
@@ -421,14 +421,14 @@ class UmfpackContext(Struct ):
                 status, self._numeric\
                         = self.funs.numeric(mtx.indptr, indx, mtx.data,
                                              self._symbolic,
-                                             self.control, self.info )
+                                             self.control, self.info)
             else:
                 real, imag = mtx.data.real.copy(), mtx.data.imag.copy()
                 status, self._numeric\
                         = self.funs.numeric(mtx.indptr, indx,
                                              real, imag,
                                              self._symbolic,
-                                             self.control, self.info )
+                                             self.control, self.info)
 
             if status != UMFPACK_OK:
                 if status == UMFPACK_WARNING_singular_matrix:
@@ -438,7 +438,7 @@ class UmfpackContext(Struct ):
                                 UMFPACK_ERROR_invalid_Symbolic_object):
                     # Try again.
                     warnings.warn('Recomputing symbolic', UmfpackWarning)
-                    self.symbolic(mtx )
+                    self.symbolic(mtx)
                     failCount += 1
                 else:
                     failCount += 100
@@ -450,52 +450,52 @@ class UmfpackContext(Struct ):
 
     ##
     # 14.12.2005, c
-    def report_symbolic(self ):
+    def report_symbolic(self):
         """Print information about the symbolic object. Output depends on
         self.control[UMFPACK_PRL]."""
-        self.funs.report_symbolic(self._symbolic, self.control )
+        self.funs.report_symbolic(self._symbolic, self.control)
 
     ##
     # 14.12.2005, c
-    def report_numeric(self ):
+    def report_numeric(self):
         """Print information about the numeric object. Output depends on
         self.control[UMFPACK_PRL]."""
-        self.funs.report_numeric(self._numeric, self.control )
+        self.funs.report_numeric(self._numeric, self.control)
 
     ##
     # 14.12.2005, c
-    def report_control(self ):
+    def report_control(self):
         """Print control values."""
-        self.funs.report_control(self.control )
+        self.funs.report_control(self.control)
 
     ##
     # 14.12.2005, c
-    def report_info(self ):
+    def report_info(self):
         """Print all status information. Output depends on
         self.control[UMFPACK_PRL]."""
-        self.funs.report_info(self.control, self.info )
+        self.funs.report_info(self.control, self.info)
 
     ##
     # 30.11.2005, c
     # 01.12.2005
-    def free_symbolic(self ):
+    def free_symbolic(self):
         if self._symbolic is not None:
-            self.funs.free_symbolic(self._symbolic )
+            self.funs.free_symbolic(self._symbolic)
             self._symbolic = None
             self.mtx = None
 
     ##
     # 30.11.2005, c
     # 01.12.2005
-    def free_numeric(self ):
+    def free_numeric(self):
         if self._numeric is not None:
-            self.funs.free_numeric(self._numeric )
+            self.funs.free_numeric(self._numeric)
             self._numeric = None
             self.free_symbolic()
 
     ##
     # 30.11.2005, c
-    def free(self ):
+    def free(self):
         self.free_symbolic()
         self.free_numeric()
 
@@ -505,7 +505,7 @@ class UmfpackContext(Struct ):
     # 02.12.2005
     # 21.12.2005
     # 01.03.2006
-    def solve(self, sys, mtx, rhs, autoTranspose=False ):
+    def solve(self, sys, mtx, rhs, autoTranspose=False):
         """
         Solution of system of linear equation using the Numeric object.
 
@@ -540,22 +540,22 @@ class UmfpackContext(Struct ):
         else:
             raise RuntimeError('numeric() not called')
 
-        indx = self._getIndx(mtx )
+        indx = self._getIndx(mtx)
 
         if self.isReal:
-            rhs = rhs.astype(np.float64 )
-            sol = np.zeros((mtx.shape[1],), dtype=np.float64 )
+            rhs = rhs.astype(np.float64)
+            sol = np.zeros((mtx.shape[1],), dtype=np.float64)
             status = self.funs.solve(sys, mtx.indptr, indx, mtx.data, sol, rhs,
-                                      self._numeric, self.control, self.info )
+                                      self._numeric, self.control, self.info)
         else:
-            rhs = rhs.astype(np.complex128 )
-            sol = np.zeros((mtx.shape[1],), dtype=np.complex128 )
+            rhs = rhs.astype(np.complex128)
+            sol = np.zeros((mtx.shape[1],), dtype=np.complex128)
             mreal, mimag = mtx.data.real.copy(), mtx.data.imag.copy()
             sreal, simag = sol.real.copy(), sol.imag.copy()
             rreal, rimag = rhs.real.copy(), rhs.imag.copy()
             status = self.funs.solve(sys, mtx.indptr, indx,
                                       mreal, mimag, sreal, simag, rreal, rimag,
-                                      self._numeric, self.control, self.info )
+                                      self._numeric, self.control, self.info)
             sol.real, sol.imag = sreal, simag
 
         #self.funs.report_info( self.control, self.info )
@@ -564,7 +564,7 @@ class UmfpackContext(Struct ):
             if status == UMFPACK_WARNING_singular_matrix:
                 ## Change inf, nan to zeros.
                 warnings.warn('Zeroing nan and inf entries...', UmfpackWarning)
-                sol[~np.isfinite(sol )] = 0.0
+                sol[~np.isfinite(sol)] = 0.0
             else:
                 raise RuntimeError('%s failed with %s' % (self.funs.solve,
                                                            umfStatus[status]))
@@ -579,7 +579,7 @@ class UmfpackContext(Struct ):
     ##
     # 30.11.2005, c
     # 01.12.2005
-    def linsolve(self, sys, mtx, rhs, autoTranspose=False ):
+    def linsolve(self, sys, mtx, rhs, autoTranspose=False):
         """
         One-shot solution of system of linear equation. Reuses Numeric object
         if possible.
@@ -599,12 +599,12 @@ class UmfpackContext(Struct ):
             raise ValueError('sys must be in' % umfSys)
 
         if self._numeric is None:
-            self.numeric(mtx )
+            self.numeric(mtx)
         else:
             if self.mtx is not mtx:
-                self.numeric(mtx )
+                self.numeric(mtx)
 
-        sol = self.solve(sys, mtx, rhs, autoTranspose )
+        sol = self.solve(sys, mtx, rhs, autoTranspose)
         self.free_numeric()
 
         return sol
@@ -612,7 +612,7 @@ class UmfpackContext(Struct ):
     ##
     # 30.11.2005, c
     # 01.12.2005
-    def __call__(self, sys, mtx, rhs, autoTranspose=False ):
+    def __call__(self, sys, mtx, rhs, autoTranspose=False):
         """
         Uses solve() or linsolve() depending on the presence of the Numeric
         object.
@@ -629,13 +629,13 @@ class UmfpackContext(Struct ):
         """
 
         if self._numeric is not None:
-            return self.solve(sys, mtx, rhs, autoTranspose )
+            return self.solve(sys, mtx, rhs, autoTranspose)
         else:
-            return self.linsolve(sys, mtx, rhs, autoTranspose )
+            return self.linsolve(sys, mtx, rhs, autoTranspose)
 
     ##
     # 21.09.2006, added by Nathan Bell
-    def lu(self, mtx ):
+    def lu(self, mtx):
         """
         Returns an LU decomposition of an m-by-n matrix in the form
         (L, U, P, Q, R, do_recip):
@@ -654,11 +654,11 @@ class UmfpackContext(Struct ):
 
         #this should probably be changed
         mtx = mtx.tocsc()
-        self.numeric(mtx )
+        self.numeric(mtx)
 
         #first find out how much space to reserve
         (status, lnz, unz, n_row, n_col, nz_udiag)\
-                 = self.funs.get_lunz(self._numeric )
+                 = self.funs.get_lunz(self._numeric)
 
         if status != UMFPACK_OK:
             raise RuntimeError('%s failed with %s' % (self.funs.get_lunz,
@@ -667,25 +667,25 @@ class UmfpackContext(Struct ):
         #allocate storage for decomposition data
         i_type = mtx.indptr.dtype
 
-        Lp = np.zeros((n_row+1,), dtype=i_type )
-        Lj = np.zeros((lnz,), dtype=i_type )
-        Lx = np.zeros((lnz,), dtype=np.double )
+        Lp = np.zeros((n_row+1,), dtype=i_type)
+        Lj = np.zeros((lnz,), dtype=i_type)
+        Lx = np.zeros((lnz,), dtype=np.double)
 
-        Up = np.zeros((n_col+1,), dtype=i_type )
-        Ui = np.zeros((unz,), dtype=i_type )
-        Ux = np.zeros((unz,), dtype=np.double )
+        Up = np.zeros((n_col+1,), dtype=i_type)
+        Ui = np.zeros((unz,), dtype=i_type)
+        Ux = np.zeros((unz,), dtype=np.double)
 
-        P  = np.zeros((n_row,), dtype=i_type )
-        Q  = np.zeros((n_col,), dtype=i_type )
+        P  = np.zeros((n_row,), dtype=i_type)
+        Q  = np.zeros((n_col,), dtype=i_type)
 
-        Dx = np.zeros((min(n_row,n_col),), dtype=np.double )
+        Dx = np.zeros((min(n_row,n_col),), dtype=np.double)
 
-        Rs = np.zeros((n_row,), dtype=np.double )
+        Rs = np.zeros((n_row,), dtype=np.double)
 
         if self.isReal:
             (status,do_recip) = self.funs.get_numeric(Lp,Lj,Lx,Up,Ui,Ux,
                                                        P,Q,Dx,Rs,
-                                                       self._numeric )
+                                                       self._numeric)
 
             if status != UMFPACK_OK:
                 raise RuntimeError('%s failed with %s'
@@ -699,9 +699,9 @@ class UmfpackContext(Struct ):
 
         else:
             #allocate additional storage for imaginary parts
-            Lz = np.zeros((lnz,), dtype=np.double )
-            Uz = np.zeros((unz,), dtype=np.double )
-            Dz = np.zeros((min(n_row,n_col),), dtype=np.double )
+            Lz = np.zeros((lnz,), dtype=np.double)
+            Uz = np.zeros((unz,), dtype=np.double)
+            Dz = np.zeros((min(n_row,n_col),), dtype=np.double)
 
             (status,do_recip) = self.funs.get_numeric(Lp,Lj,Lx,Lz,Up,Ui,Ux,Uz,
                                                       P,Q,Dx,Dz,Rs,
@@ -711,9 +711,9 @@ class UmfpackContext(Struct ):
                 raise RuntimeError('%s failed with %s'
                         % (self.funs.get_numeric, umfStatus[status]))
 
-            Lxz = np.zeros((lnz,), dtype=np.complex128 )
-            Uxz = np.zeros((unz,), dtype=np.complex128 )
-            Dxz = np.zeros((min(n_row,n_col),), dtype=np.complex128 )
+            Lxz = np.zeros((lnz,), dtype=np.complex128)
+            Uxz = np.zeros((unz,), dtype=np.complex128)
+            Dxz = np.zeros((min(n_row,n_col),), dtype=np.complex128)
 
             Lxz.real,Lxz.imag = Lx,Lz
             Uxz.real,Uxz.imag = Ux,Uz

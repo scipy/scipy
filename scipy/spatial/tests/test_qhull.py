@@ -60,8 +60,8 @@ pathological_data_1 = np.array([
 ])
 
 pathological_data_2 = np.array([
-    [-1, -1                          ], [-1, 0], [-1, 1],
-    [0, -1                          ], [0, 0], [0, 1],
+    [-1, -1], [-1, 0], [-1, 1],
+    [0, -1], [0, 0], [0, 1],
     [1, -1 - np.finfo(np.float_).eps], [1, 0], [1, 1],
 ])
 

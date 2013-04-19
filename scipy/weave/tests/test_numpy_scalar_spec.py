@@ -46,7 +46,7 @@ class NumpyComplexScalarConverter(TestCase):
 
     @dec.slow
     def test_type_match_string(self):
-        assert_(not self.converter.type_match('string') )
+        assert_(not self.converter.type_match('string'))
 
     @dec.slow
     def test_type_match_int(self):

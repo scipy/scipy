@@ -17,7 +17,7 @@ class TestArrayConverter(TestCase):
 
     def test_type_match_string(self):
         s = standard_array_spec.array_converter()
-        assert_(not s.type_match('string') )
+        assert_(not s.type_match('string'))
 
     def test_type_match_int(self):
         s = standard_array_spec.array_converter()

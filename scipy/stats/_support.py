@@ -57,7 +57,7 @@ def unique(inarray):
             for item in inarray[1:]:
                 if not np.sum(np.alltrue(np.equal(uniques,item),1),axis=0):
                     try:
-                        uniques = np.concatenate([uniques,item[np.newaxis,:]] )
+                        uniques = np.concatenate([uniques,item[np.newaxis,:]])
                     except TypeError:    # the item to add isn't a list
                         uniques = np.concatenate([uniques,np.array([item])])
                 else:
@@ -72,7 +72,7 @@ def unique(inarray):
                         break
                 if newflag == 1:
                     try:
-                        uniques = np.concatenate([uniques,item[np.newaxis,:]] )
+                        uniques = np.concatenate([uniques,item[np.newaxis,:]])
                     except TypeError:    # the item to add isn't a list
                         uniques = np.concatenate([uniques,np.array([item])])
     return uniques

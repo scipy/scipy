@@ -65,9 +65,9 @@ class _TestCommon:
         assert_equal(self.spmatrix((3,3)).nnz, 0)
 
     def test_invalid_shapes(self):
-        assert_raises(ValueError, self.spmatrix, (-1,3) )
-        assert_raises(ValueError, self.spmatrix, (3,-1) )
-        assert_raises(ValueError, self.spmatrix, (-1,-1) )
+        assert_raises(ValueError, self.spmatrix, (-1,3))
+        assert_raises(ValueError, self.spmatrix, (3,-1))
+        assert_raises(ValueError, self.spmatrix, (-1,-1))
 
     def test_repr(self):
         repr(self.datsp)
@@ -114,17 +114,17 @@ class _TestCommon:
     def test_diagonal(self):
         # Does the matrix's .diagonal() method work?
         mats = []
-        mats.append([[1,0,2]] )
-        mats.append([[1],[0],[2]] )
-        mats.append([[0,1],[0,2],[0,3]] )
-        mats.append([[0,0,1],[0,0,2],[0,3,0]] )
+        mats.append([[1,0,2]])
+        mats.append([[1],[0],[2]])
+        mats.append([[0,1],[0,2],[0,3]])
+        mats.append([[0,0,1],[0,0,2],[0,3,0]])
 
-        mats.append(kron(mats[0],[[1,2]]) )
-        mats.append(kron(mats[0],[[1],[2]]) )
-        mats.append(kron(mats[1],[[1,2],[3,4]]) )
-        mats.append(kron(mats[2],[[1,2],[3,4]]) )
-        mats.append(kron(mats[3],[[1,2],[3,4]]) )
-        mats.append(kron(mats[3],[[1,2,3,4]]) )
+        mats.append(kron(mats[0],[[1,2]]))
+        mats.append(kron(mats[0],[[1],[2]]))
+        mats.append(kron(mats[1],[[1,2],[3,4]]))
+        mats.append(kron(mats[2],[[1,2],[3,4]]))
+        mats.append(kron(mats[3],[[1,2],[3,4]]))
+        mats.append(kron(mats[3],[[1,2,3,4]]))
 
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
@@ -133,8 +133,8 @@ class _TestCommon:
         A   = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
         Asp = self.spmatrix(A)
 
-        A_nz   = set([tuple(ij) for ij in transpose(A.nonzero())] )
-        Asp_nz = set([tuple(ij) for ij in transpose(Asp.nonzero())] )
+        A_nz   = set([tuple(ij) for ij in transpose(A.nonzero())])
+        Asp_nz = set([tuple(ij) for ij in transpose(Asp.nonzero())])
 
         assert_equal(A_nz, Asp_nz)
 
@@ -324,17 +324,17 @@ class _TestCommon:
                 assert_equal(S.astype(x).format,    S.format)           # format preserved
 
     def test_asfptype(self):
-        A = self.spmatrix(arange(6,dtype='int32').reshape(2,3) )
+        A = self.spmatrix(arange(6,dtype='int32').reshape(2,3))
 
-        assert_equal(A.dtype , np.dtype('int32') )
-        assert_equal(A.asfptype().dtype, np.dtype('float64') )
-        assert_equal(A.asfptype().format, A.format )
-        assert_equal(A.astype('int16').asfptype().dtype , np.dtype('float32') )
-        assert_equal(A.astype('complex128').asfptype().dtype , np.dtype('complex128') )
+        assert_equal(A.dtype , np.dtype('int32'))
+        assert_equal(A.asfptype().dtype, np.dtype('float64'))
+        assert_equal(A.asfptype().format, A.format)
+        assert_equal(A.astype('int16').asfptype().dtype , np.dtype('float32'))
+        assert_equal(A.astype('complex128').asfptype().dtype , np.dtype('complex128'))
 
         B = A.asfptype()
         C = B.asfptype()
-        assert_(B is C )
+        assert_(B is C)
 
     def test_mul_scalar(self):
         assert_array_equal(self.dat*2,(self.datsp*2).todense())
@@ -421,18 +421,18 @@ class _TestCommon:
 
     def test_pow(self):
         A = matrix([[1,0,2,0],[0,3,4,0],[0,5,0,0],[0,6,7,8]])
-        B = self.spmatrix(A )
+        B = self.spmatrix(A)
 
         for exponent in [0,1,2,3]:
             assert_array_equal((B**exponent).todense(),A**exponent)
 
         #invalid exponents
         for exponent in [-1, 2.2, 1 + 3j]:
-            self.assertRaises(Exception, B.__pow__, exponent )
+            self.assertRaises(Exception, B.__pow__, exponent)
 
         #nonsquare matrix
         B = self.spmatrix(A[:3,:])
-        self.assertRaises(Exception, B.__pow__, 1 )
+        self.assertRaises(Exception, B.__pow__, 1)
 
     def test_rmatvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
@@ -538,8 +538,8 @@ class _TestCommon:
         assert_array_almost_equal(B.todense(), A.todense() * A.todense().T)
 
         # check dimension mismatch  2x2 times 3x2
-        A = self.spmatrix([[1,2],[3,4]] )
-        B = self.spmatrix([[1,2],[3,4],[5,6]] )
+        A = self.spmatrix([[1,2],[3,4]])
+        B = self.spmatrix([[1,2],[3,4],[5,6]])
         assert_raises(ValueError, A.__mul__, B)
 
     def test_matmat_dense(self):
@@ -547,16 +547,16 @@ class _TestCommon:
         asp = self.spmatrix(a)
 
         # check both array and matrix types
-        bs = [array([[1,2],[3,4],[5,6]]), matrix([[1,2],[3,4],[5,6]]) ]
+        bs = [array([[1,2],[3,4],[5,6]]), matrix([[1,2],[3,4],[5,6]])]
 
         for b in bs:
             result = asp*b
-            assert_(isinstance(result, type(b)) )
-            assert_equal(result.shape, (4,2) )
-            assert_equal(result, dot(a,b) )
+            assert_(isinstance(result, type(b)))
+            assert_equal(result.shape, (4,2))
+            assert_equal(result, dot(a,b))
 
     def test_sparse_format_conversions(self):
-        A = sparse.kron([[1,0,2],[0,3,4],[5,0,0]], [[1,2],[0,3]] )
+        A = sparse.kron([[1,0,2],[0,3,4],[5,0,0]], [[1,2],[0,3]])
         D = A.todense()
         A = self.spmatrix(A)
 
@@ -579,9 +579,9 @@ class _TestCommon:
         A = kron(x,y)
         Asp = self.spmatrix(A)
         for format in ['bsr']:
-            fn = getattr(Asp, 'to' + format )
+            fn = getattr(Asp, 'to' + format)
 
-            for X in [1, 2, 3, 6 ]:
+            for X in [1, 2, 3, 6]:
                 for Y in [1, 2, 3, 4, 6, 12]:
                     assert_equal(fn(blocksize=(X,Y)).todense(), A)
 
@@ -591,7 +591,7 @@ class _TestCommon:
         assert_array_equal(a.todense(), b)
         assert_array_equal(a.transpose().todense(), self.dat)
 
-        assert_array_equal(self.spmatrix((3,4)).T.todense(), zeros((4,3)) )
+        assert_array_equal(self.spmatrix((3,4)).T.todense(), zeros((4,3)))
 
     def test_add_dense(self):
         # adding a dense matrix to a sparse matrix
@@ -836,7 +836,7 @@ class _TestSlicing:
 
     def test_slicing_2(self):
         B = asmatrix(arange(50).reshape(5,10))
-        A = self.spmatrix(B )
+        A = self.spmatrix(B)
 
         # [i,j]
         assert_equal(A[2,3],  B[2,3])
@@ -881,7 +881,7 @@ class _TestSlicing:
 
     def test_slicing_3(self):
         B = asmatrix(arange(50).reshape(5,10))
-        A = self.spmatrix(B )
+        A = self.spmatrix(B)
 
         s_ = np.s_
         slices = [s_[:2], s_[1:2], s_[3:], s_[3::2],
@@ -1039,7 +1039,7 @@ class _TestFancyIndexing:
 
     def test_fancy_indexing(self):
         B = asmatrix(arange(50).reshape(5,10))
-        A = self.spmatrix(B )
+        A = self.spmatrix(B)
 
         def todense(a):
             if isinstance(a, np.ndarray):
@@ -1094,14 +1094,14 @@ class _TestFancyIndexing:
         assert_equal(A[array([-1,-3])].todense(),B[[-1,-3]])
 
         # [[1,2],:][:,[1,2]]
-        assert_equal(A[[1,3],:][:,[2,4]].todense(),    B[[1,3],:][:,[2,4]]    )
-        assert_equal(A[[-1,-3],:][:,[2,-4]].todense(), B[[-1,-3],:][:,[2,-4]] )
-        assert_equal(A[array([-1,-3]),:][:,array([2,-4])].todense(), B[[-1,-3],:][:,[2,-4]] )
+        assert_equal(A[[1,3],:][:,[2,4]].todense(),    B[[1,3],:][:,[2,4]])
+        assert_equal(A[[-1,-3],:][:,[2,-4]].todense(), B[[-1,-3],:][:,[2,-4]])
+        assert_equal(A[array([-1,-3]),:][:,array([2,-4])].todense(), B[[-1,-3],:][:,[2,-4]])
 
         # [:,[1,2]][[1,2],:]
-        assert_equal(A[:,[1,3]][[2,4],:].todense(),    B[:,[1,3]][[2,4],:]    )
-        assert_equal(A[:,[-1,-3]][[2,-4],:].todense(), B[:,[-1,-3]][[2,-4],:] )
-        assert_equal(A[:,array([-1,-3])][array([2,-4]),:].todense(), B[:,[-1,-3]][[2,-4],:] )
+        assert_equal(A[:,[1,3]][[2,4],:].todense(),    B[:,[1,3]][[2,4],:])
+        assert_equal(A[:,[-1,-3]][[2,-4],:].todense(), B[:,[-1,-3]][[2,-4],:])
+        assert_equal(A[:,array([-1,-3])][array([2,-4]),:].todense(), B[:,[-1,-3]][[2,-4],:])
 
         # Check bug reported by Robert Cimrman:
         # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986
@@ -1139,7 +1139,7 @@ class _TestFancyIndexing:
         random.seed(1234) # make runs repeatable
 
         B = asmatrix(arange(50).reshape(5,10))
-        A = self.spmatrix(B )
+        A = self.spmatrix(B)
 
         I = np.array(np.random.randint(0, 2, size=5), dtype=bool)
         J = np.array(np.random.randint(0, 2, size=10), dtype=bool)
@@ -1191,7 +1191,7 @@ class _TestFancyIndexingAssign:
 
         i0 = [0,1,2]
         i1 = (0,1,2)
-        i2 = array(i0 )
+        i2 = array(i0)
 
         A[0,i0] = B[i0,0].T
         A[1,i1] = B[i1,1].T
@@ -1627,20 +1627,20 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
         assert_array_equal(csr.shape,(3,6))
 
     def test_sort_indices(self):
-        data    = arange(5 )
-        indices = array([7, 2, 1, 5, 4] )
-        indptr  = array([0, 3, 5] )
-        asp = csr_matrix((data, indices, indptr), shape=(2,10) )
+        data    = arange(5)
+        indices = array([7, 2, 1, 5, 4])
+        indptr  = array([0, 3, 5])
+        asp = csr_matrix((data, indices, indptr), shape=(2,10))
         bsp = asp.copy()
         asp.sort_indices()
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
         assert_array_equal(asp.todense(),bsp.todense())
 
     def test_eliminate_zeros(self):
-        data    = array([1, 0, 0, 0, 2, 0, 3, 0] )
-        indices = array([1, 2, 3, 4, 5, 6, 7, 8] )
-        indptr  = array([0, 3, 8] )
-        asp = csr_matrix((data, indices, indptr), shape=(2,10) )
+        data    = array([1, 0, 0, 0, 2, 0, 3, 0])
+        indices = array([1, 2, 3, 4, 5, 6, 7, 8])
+        indptr  = array([0, 3, 8])
+        asp = csr_matrix((data, indices, indptr), shape=(2,10))
         bsp = asp.copy()
         asp.eliminate_zeros()
         assert_array_equal(asp.nnz, 3)
@@ -1660,14 +1660,14 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
             assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
 
     def test_unsorted_arithmetic(self):
-        data    = arange(5 )
-        indices = array([7, 2, 1, 5, 4] )
-        indptr  = array([0, 3, 5] )
-        asp = csr_matrix((data, indices, indptr), shape=(2,10) )
-        data    = arange(6 )
-        indices = array([8, 1, 5, 7, 2, 4] )
-        indptr  = array([0, 2, 6] )
-        bsp = csr_matrix((data, indices, indptr), shape=(2,10) )
+        data    = arange(5)
+        indices = array([7, 2, 1, 5, 4])
+        indptr  = array([0, 3, 5])
+        asp = csr_matrix((data, indices, indptr), shape=(2,10))
+        data    = arange(6)
+        indices = array([8, 1, 5, 7, 2, 4])
+        indptr  = array([0, 2, 6])
+        bsp = csr_matrix((data, indices, indptr), shape=(2,10))
         assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
 
     def test_fancy_indexing_broadcast(self):
@@ -1742,10 +1742,10 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
         assert_array_equal(csc.shape,(6,3))
 
     def test_eliminate_zeros(self):
-        data    = array([1, 0, 0, 0, 2, 0, 3, 0] )
-        indices = array([1, 2, 3, 4, 5, 6, 7, 8] )
-        indptr  = array([0, 3, 8] )
-        asp = csc_matrix((data, indices, indptr), shape=(10,2) )
+        data    = array([1, 0, 0, 0, 2, 0, 3, 0])
+        indices = array([1, 2, 3, 4, 5, 6, 7, 8])
+        indptr  = array([0, 3, 8])
+        asp = csc_matrix((data, indices, indptr), shape=(10,2))
         bsp = asp.copy()
         asp.eliminate_zeros()
         assert_array_equal(asp.nnz, 3)
@@ -1753,10 +1753,10 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
         assert_array_equal(asp.todense(),bsp.todense())
 
     def test_sort_indices(self):
-        data = arange(5 )
-        row = array([7, 2, 1, 5, 4] )
+        data = arange(5)
+        row = array([7, 2, 1, 5, 4])
         ptr = [0, 3, 5]
-        asp = csc_matrix((data, row, ptr), shape=(10,2) )
+        asp = csc_matrix((data, row, ptr), shape=(10,2))
         bsp = asp.copy()
         asp.sort_indices()
         assert_array_equal(asp.indices,[1, 2, 7, 4, 5])
@@ -1775,14 +1775,14 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
             assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
 
     def test_unsorted_arithmetic(self):
-        data    = arange(5 )
-        indices = array([7, 2, 1, 5, 4] )
-        indptr  = array([0, 3, 5] )
-        asp = csc_matrix((data, indices, indptr), shape=(10,2) )
-        data    = arange(6 )
-        indices = array([8, 1, 5, 7, 2, 4] )
-        indptr  = array([0, 2, 6] )
-        bsp = csc_matrix((data, indices, indptr), shape=(10,2) )
+        data    = arange(5)
+        indices = array([7, 2, 1, 5, 4])
+        indptr  = array([0, 3, 5])
+        asp = csc_matrix((data, indices, indptr), shape=(10,2))
+        data    = arange(6)
+        indices = array([8, 1, 5, 7, 2, 4])
+        indptr  = array([0, 2, 6])
+        bsp = csc_matrix((data, indices, indptr), shape=(10,2))
         assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
 
     def test_fancy_indexing_broadcast(self):
@@ -1853,18 +1853,18 @@ class TestDOK(sparse_test_class(slicing=False,
         a[4,2] = 6
 
         # assert that the last column is all zeros
-        assert_array_equal(a.toarray()[:,n-1], zeros(m,) )
+        assert_array_equal(a.toarray()[:,n-1], zeros(m,))
 
         # make sure it still works for CSC format
         csc = a.tocsc()
-        assert_array_equal(csc.toarray()[:,n-1], zeros(m,) )
+        assert_array_equal(csc.toarray()[:,n-1], zeros(m,))
 
         # now test CSR
         (m, n) = (n, m)
         b = a.transpose()
         assert_equal(b.shape, (m, n))
         # assert that the last row is all zeros
-        assert_array_equal(b.toarray()[m-1,:], zeros(n,) )
+        assert_array_equal(b.toarray()[m-1,:], zeros(n,))
 
         # make sure it still works for CSR format
         csr = b.tocsr()
@@ -2040,7 +2040,7 @@ class TestLIL(sparse_test_class(minmax=False)):
 
     def test_fancy_indexing_lil(self):
         M = asmatrix(arange(25).reshape(5,5))
-        A = lil_matrix(M )
+        A = lil_matrix(M)
 
         assert_equal(A[array([1,2,3]),2:3].todense(), M[array([1,2,3]),2:3])
 
@@ -2102,7 +2102,7 @@ class TestCOO(sparse_test_class(getset=False,
 
     def test_constructor3(self):
         # empty matrix
-        coo = coo_matrix((4,3) )
+        coo = coo_matrix((4,3))
 
         assert_array_equal(coo.shape,(4,3))
         assert_array_equal(coo.row,[])
@@ -2172,7 +2172,7 @@ class TestBSR(sparse_test_class(getset=False,
         data[3] = array([[0,  5, 10],
                          [15,  0, 25]])
 
-        A = kron([[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
+        A = kron([[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]])
         Asp = bsr_matrix((data,indices,indptr),shape=(6,12))
         assert_equal(Asp.todense(),A)
 
@@ -2191,7 +2191,7 @@ class TestBSR(sparse_test_class(getset=False,
         assert_equal(bsr_matrix(A,blocksize=(2,2)).todense(),A)
         assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
 
-        A = kron([[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]] )
+        A = kron([[1,0,2,0],[0,0,0,0],[0,0,4,5]], [[0,1,2],[3,0,5]])
         assert_equal(bsr_matrix(A).todense(),A)
         assert_equal(bsr_matrix(A,shape=(6,12)).todense(),A)
         assert_equal(bsr_matrix(A,blocksize=(1,1)).todense(),A)
@@ -2201,27 +2201,27 @@ class TestBSR(sparse_test_class(getset=False,
         assert_equal(bsr_matrix(A,blocksize=(3,12)).todense(),A)
         assert_equal(bsr_matrix(A,blocksize=(6,12)).todense(),A)
 
-        A = kron([[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]] )
+        A = kron([[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]])
         assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
 
     def test_eliminate_zeros(self):
         data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
         data = data.reshape(-1,2,2)
-        indices = array([1, 2, 3, 4, 5, 6, 7, 8] )
-        indptr  = array([0, 3, 8] )
-        asp = bsr_matrix((data, indices, indptr), shape=(4,20) )
+        indices = array([1, 2, 3, 4, 5, 6, 7, 8])
+        indptr  = array([0, 3, 8])
+        asp = bsr_matrix((data, indices, indptr), shape=(4,20))
         bsp = asp.copy()
         asp.eliminate_zeros()
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.todense(),bsp.todense())
 
     def test_bsr_matvec(self):
-        A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5) )
+        A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]).reshape(-1,1)
         assert_equal(A*x, A.todense()*x)
 
     def test_bsr_matvecs(self):
-        A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5) )
+        A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]*6).reshape(-1,6)
         assert_equal(A*x, A.todense()*x)
 

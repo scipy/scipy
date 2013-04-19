@@ -129,24 +129,24 @@ def lsmrtest(m, n, damp):
     show      = 1
 
     x, istop, itn, normr, normar, norma, conda, normx \
-      = lsmr(A, b, damp, atol, btol, conlim, itnlim, show )
+      = lsmr(A, b, damp, atol, btol, conlim, itnlim, show)
 
     j1 = min(n,5)
     j2 = max(n-4,1)
     print(' ')
     print('First elements of x:')
-    str = ['%10.4f' % (xi) for xi in x[0:j1] ]
+    str = ['%10.4f' % (xi) for xi in x[0:j1]]
     print(''.join(str))
     print(' ')
     print('Last  elements of x:')
-    str = ['%10.4f' % (xi) for xi in x[j2-1:] ]
+    str = ['%10.4f' % (xi) for xi in x[j2-1:]]
     print(''.join(str))
 
     r    = b - Afun.matvec(x)
     r2   = sqrt(norm(r)**2 + (damp*norm(x))**2)
     print(' ')
-    str = 'normr (est.)  %17.10e' % (normr )
-    str2 = 'normr (true)  %17.10e' % (r2 )
+    str = 'normr (est.)  %17.10e' % (normr)
+    str2 = 'normr (true)  %17.10e' % (r2)
     print(str)
     print(str2)
     print(' ')

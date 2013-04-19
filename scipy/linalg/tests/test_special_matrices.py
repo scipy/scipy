@@ -267,10 +267,10 @@ class TestKron:
         m1 = array([[1, 2], [3, 4]])
         m2 = array([[10], [11]])
         a = kron(m1, m2)
-        expected = array([[10, 20 ],
-                          [11, 22 ],
-                          [30, 40 ],
-                          [33, 44 ]])
+        expected = array([[10, 20],
+                          [11, 22],
+                          [30, 40],
+                          [33, 44]])
         assert_array_equal(a, expected)
 
 

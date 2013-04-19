@@ -15,15 +15,15 @@ except ImportError:
     from . import umfpack
     noScikit = True
 
-isUmfpack = hasattr(umfpack, 'UMFPACK_OK' )
+isUmfpack = hasattr(umfpack, 'UMFPACK_OK')
 
 useUmfpack = True
 
 
-__all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized' ]
+__all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized']
 
 
-def use_solver(**kwargs ):
+def use_solver(**kwargs):
     """
     Valid keyword arguments with defaults (other ignored)::
 
@@ -43,7 +43,7 @@ def use_solver(**kwargs ):
         globals()['useUmfpack'] = kwargs['useUmfpack']
 
     if isUmfpack:
-        umfpack.configure(**kwargs )
+        umfpack.configure(**kwargs)
 
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
@@ -121,7 +121,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if b_is_vector and isUmfpack and use_umfpack:
         if noScikit:
             warn('scipy.sparse.linalg.dsolve.umfpack will be removed,'
-                    ' install scikits.umfpack instead', DeprecationWarning )
+                    ' install scikits.umfpack instead', DeprecationWarning)
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
@@ -131,7 +131,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         family = {'d' : 'di', 'D' : 'zi'}
         umf = umfpack.UmfpackContext(family[A.dtype.char])
         x = umf.linsolve(umfpack.UMFPACK_A, A, b,
-                         autoTranspose=True )
+                         autoTranspose=True)
 
     elif b_is_vector:
         if isspmatrix_csc(A):
@@ -301,7 +301,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
                           ilu=True, options=_options)
 
 
-def factorized(A ):
+def factorized(A):
     """
     Return a fuction for solving a sparse linear system, with A pre-factorized.
 
@@ -332,7 +332,7 @@ def factorized(A ):
     if isUmfpack and useUmfpack:
         if noScikit:
             warn('scipy.sparse.linalg.dsolve.umfpack will be removed,'
-                    ' install scikits.umfpack instead', DeprecationWarning )
+                    ' install scikits.umfpack instead', DeprecationWarning)
 
         if not isspmatrix_csc(A):
             A = csc_matrix(A)
@@ -346,14 +346,14 @@ def factorized(A ):
                   " .astype(), or set linsolve.useUmfpack = False")
 
         family = {'d' : 'di', 'D' : 'zi'}
-        umf = umfpack.UmfpackContext(family[A.dtype.char] )
+        umf = umfpack.UmfpackContext(family[A.dtype.char])
 
         # Make LU decomposition.
-        umf.numeric(A )
+        umf.numeric(A)
 
-        def solve(b ):
-            return umf.solve(umfpack.UMFPACK_A, A, b, autoTranspose=True )
+        def solve(b):
+            return umf.solve(umfpack.UMFPACK_A, A, b, autoTranspose=True)
 
         return solve
     else:
-        return splu(A ).solve
+        return splu(A).solve

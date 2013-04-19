@@ -1301,7 +1301,7 @@ def kurtosistest(a, axis=0):
     denom = 1 + x*np.sqrt(2/(A-4.0))
     denom = np.where(denom < 0, 99, denom)
     term2 = np.where(denom < 0, term1, np.power((1-2.0/A)/denom,1/3.0))
-    Z = (term1 - term2 ) / np.sqrt(2/(9.0*A))
+    Z = (term1 - term2) / np.sqrt(2/(9.0*A))
     Z = np.where(denom == 99, 0, Z)
     if Z.ndim == 0:
         Z = Z[()]
@@ -3814,7 +3814,7 @@ def friedmanchisquare(*args):
     c = 1 - ties / float(k*(k*k-1)*n)
 
     ssbn = pysum(pysum(data)**2)
-    chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1) ) / c
+    chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
     return chisq, chisqprob(chisq,k-1)
 
 
@@ -3937,7 +3937,7 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     if (a-1)**2 + (b-1)**2 == 5:
         q = 1
     else:
-        q = np.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5) )
+        q = np.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5))
     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
     return n_um / d_en

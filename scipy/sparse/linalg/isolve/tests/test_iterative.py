@@ -62,7 +62,7 @@ class IterativeParams(object):
 
         # Symmetric and Indefinite
         data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]],dtype='d')
-        RandDiag = spdiags(data, [0], 10, 10, format='csr' )
+        RandDiag = spdiags(data, [0], 10, 10, format='csr')
         self.cases.append(Case("rand-diag", RandDiag, skip=posdef_solvers))
 
         # Random real-valued
@@ -280,8 +280,8 @@ class TestQMR(TestCase):
         def UT_solve(b):
             return U_solver.solve(b,'T')
 
-        M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve )
-        M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve )
+        M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve)
+        M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve)
 
         x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 

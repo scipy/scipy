@@ -9,8 +9,8 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('sparsetools',parent_package,top_path)
 
     for fmt in ['csr','csc','coo','bsr','dia','csgraph']:
-        sources = [fmt + '_wrap.cxx' ]
-        depends = [fmt + '.h' ]
+        sources = [fmt + '_wrap.cxx']
+        depends = [fmt + '.h']
         config.add_extension('_' + fmt, sources=sources,
             define_macros=[('__STDC_FORMAT_MACROS', 1)],
             depends=depends)

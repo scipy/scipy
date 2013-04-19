@@ -615,7 +615,7 @@ class MMFile (object):
 
             if field == self.FIELD_PATTERN:
                 IJV = vstack((coo.row, coo.col)).T
-            elif field in [self.FIELD_INTEGER, self.FIELD_REAL ]:
+            elif field in [self.FIELD_INTEGER, self.FIELD_REAL]:
                 IJV = vstack((coo.row, coo.col, coo.data)).T
             elif field == self.FIELD_COMPLEX:
                 IJV = vstack((coo.row, coo.col, coo.data.real, coo.data.imag)).T

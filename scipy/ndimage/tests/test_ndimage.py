@@ -287,7 +287,7 @@ class TestNdimage:
 
     def test_correlate16(self):
         "correlation 16"
-        kernel = numpy.array([[0.5, 0  ],
+        kernel = numpy.array([[0.5, 0],
                                  [0,   0.5]])
         for type1 in self.types:
             array = numpy.array([[1, 2, 3],

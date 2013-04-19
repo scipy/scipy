@@ -97,9 +97,9 @@ def random_rot(dim):
     For more information see
     http://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization"""
     H = eye(dim)
-    D = ones((dim, ))
+    D = ones((dim,))
     for n in range(1, dim):
-        x = normal(size=(dim-n+1, ))
+        x = normal(size=(dim-n+1,))
         D[n-1] = sign(x[0])
         x[0] -= D[n-1]*sqrt((x*x).sum())
         # Householder transformation
@@ -309,22 +309,22 @@ class TestEigBanded(TestCase):
         # symmetric band matrix
         self.sym_mat = (diag(1.0*ones(N))
                      + diag(-1.0*ones(N-1), -1) + diag(-1.0*ones(N-1), 1)
-                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
 
         # hermitian band matrix
         self.herm_mat = (diag(-1.0*ones(N))
                      + 1j*diag(1.0*ones(N-1), -1) - 1j*diag(1.0*ones(N-1), 1)
-                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
 
         # general real band matrix
         self.real_mat = (diag(1.0*ones(N))
                      + diag(-1.0*ones(N-1), -1) + diag(-3.0*ones(N-1), 1)
-                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
 
         # general complex band matrix
         self.comp_mat = (1j*diag(1.0*ones(N))
                      + diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1)
-                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
 
         # Eigenvalues and -vectors from linalg.eig
         ew, ev = linalg.eig(self.sym_mat)
@@ -434,11 +434,11 @@ class TestEigBanded(TestCase):
         ind1 = 2
         ind2 = 6
         w_sym_ind = eigvals_banded(self.bandmat_sym,
-                                    select='i', select_range=(ind1, ind2) )
+                                    select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_sym_ind),
                                   self.w_sym_lin[ind1:ind2+1])
         w_herm_ind = eigvals_banded(self.bandmat_herm,
-                                    select='i', select_range=(ind1, ind2) )
+                                    select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_herm_ind),
                                   self.w_herm_lin[ind1:ind2+1])
 
@@ -446,14 +446,14 @@ class TestEigBanded(TestCase):
         v_lower = self.w_sym_lin[ind1] - 1.0e-5
         v_upper = self.w_sym_lin[ind2] + 1.0e-5
         w_sym_val = eigvals_banded(self.bandmat_sym,
-                                select='v', select_range=(v_lower, v_upper) )
+                                select='v', select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_sym_val),
                                   self.w_sym_lin[ind1:ind2+1])
 
         v_lower = self.w_herm_lin[ind1] - 1.0e-5
         v_upper = self.w_herm_lin[ind2] + 1.0e-5
         w_herm_val = eigvals_banded(self.bandmat_herm,
-                                select='v', select_range=(v_lower, v_upper) )
+                                select='v', select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_herm_val),
                                   self.w_herm_lin[ind1:ind2+1])
 
@@ -478,37 +478,37 @@ class TestEigBanded(TestCase):
         ind1 = 2
         ind2 = 6
         w_sym_ind, evec_sym_ind = eig_banded(self.bandmat_sym,
-                                    select='i', select_range=(ind1, ind2) )
+                                    select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_sym_ind),
                                   self.w_sym_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_sym_ind),
-                                  abs(self.evec_sym_lin[:,ind1:ind2+1]) )
+                                  abs(self.evec_sym_lin[:,ind1:ind2+1]))
 
         w_herm_ind, evec_herm_ind = eig_banded(self.bandmat_herm,
-                                    select='i', select_range=(ind1, ind2) )
+                                    select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_herm_ind),
                                   self.w_herm_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_herm_ind),
-                                  abs(self.evec_herm_lin[:,ind1:ind2+1]) )
+                                  abs(self.evec_herm_lin[:,ind1:ind2+1]))
 
         # extracting eigenvalues with respect to a value range
         v_lower = self.w_sym_lin[ind1] - 1.0e-5
         v_upper = self.w_sym_lin[ind2] + 1.0e-5
         w_sym_val, evec_sym_val = eig_banded(self.bandmat_sym,
-                                select='v', select_range=(v_lower, v_upper) )
+                                select='v', select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_sym_val),
                                   self.w_sym_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_sym_val),
-                                  abs(self.evec_sym_lin[:,ind1:ind2+1]) )
+                                  abs(self.evec_sym_lin[:,ind1:ind2+1]))
 
         v_lower = self.w_herm_lin[ind1] - 1.0e-5
         v_upper = self.w_herm_lin[ind2] + 1.0e-5
         w_herm_val, evec_herm_val = eig_banded(self.bandmat_herm,
-                                select='v', select_range=(v_lower, v_upper) )
+                                select='v', select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_herm_val),
                                   self.w_herm_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_herm_val),
-                                  abs(self.evec_herm_lin[:,ind1:ind2+1]) )
+                                  abs(self.evec_herm_lin[:,ind1:ind2+1]))
 
         w_sym, evec_sym = eig_banded(self.bandmat_sym, check_finite=False)
         evec_sym_ = evec_sym[:,argsort(w_sym.real)]
@@ -566,7 +566,7 @@ class TestEigBanded(TestCase):
 
 def test_eigh():
     DIM = 6
-    v = {'dim': (DIM, ),
+    v = {'dim': (DIM,),
          'dtype': ('f','d','F','D'),
          'overwrite': (True, False),
          'lower': (True, False),
@@ -1810,7 +1810,7 @@ class TestQZ(TestCase):
         A = np.array([[3.9,  12.5, -34.5,  2.5],
                  [4.3,  21.5, -47.5,   7.5],
                  [4.3,  1.5, -43.5,   3.5],
-                 [4.4,  6.0, -46.0,   6.0 ]])
+                 [4.4,  6.0, -46.0,   6.0]])
 
         B = np.array([[1.0,   1.0,  -3.0,   1.0],
                       [1.0,   3.0,  -5.0,   4.4],
@@ -1830,7 +1830,7 @@ class TestQZ(TestCase):
             # test absolute values bc the sign is ambiguous and might be platform
             # dependent
             assert_array_almost_equal(np.abs(AA), np.abs(np.array(
-                            [[35.7864, -80.9061, -12.0629,  -9.498 ],
+                            [[35.7864, -80.9061, -12.0629,  -9.498],
                              [0.    ,   2.7638,  -2.3505,   7.3256],
                              [0.    ,   0.    ,   0.6258,  -0.0398],
                              [0.    ,   0.    ,   0.    , -12.8217]])), 4)
@@ -1838,7 +1838,7 @@ class TestQZ(TestCase):
                             [[4.5324, -8.7878,  3.2357, -3.5526],
                              [0.    ,  1.4314, -2.1894,  0.9709],
                              [0.    ,  0.    ,  1.3126, -0.3468],
-                             [0.    ,  0.    ,  0.    ,  0.559 ]])), 4)
+                             [0.    ,  0.    ,  0.    ,  0.559]])), 4)
             assert_array_almost_equal(np.abs(Q), np.abs(np.array(
                             [[-0.4193, -0.605 , -0.1894, -0.6498],
                              [-0.5495,  0.6987,  0.2654, -0.3734],

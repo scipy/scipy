@@ -146,7 +146,7 @@ class dia_matrix(_data_matrix):
         return "<%dx%d sparse matrix of type '%s'\n" \
                "\twith %d stored elements (%d diagonals) in %s format>" % \
                (self.shape + (self.dtype.type, nnz, self.data.shape[0],
-                 _formats[format][1],) )
+                 _formats[format][1],))
 
     def getnnz(self):
         """number of nonzero values
@@ -179,7 +179,7 @@ class dia_matrix(_data_matrix):
         return y
 
     def _mul_multimatrix(self, other):
-        return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T ] )
+        return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
 
     def todia(self,copy=False):
         if copy:

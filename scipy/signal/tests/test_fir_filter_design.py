@@ -365,7 +365,7 @@ class TestRemez(TestCase):
         a = 0.1 # width of the transition band
 
         # design an unity gain hilbert bandpass filter from w to 0.5-w
-        h = remez(11, [a, 0.5-a ], [1 ], type='hilbert')
+        h = remez(11, [a, 0.5-a], [1], type='hilbert')
 
         # make sure the filter has correct # of taps
         assert_(len(h) == N, "Number of Taps")
@@ -383,7 +383,7 @@ class TestRemez(TestCase):
         Hmag = abs(H)
 
         # should have a zero at 0 and pi (in this case close to zero)
-        assert_((Hmag[[0,-1] ] < 0.02).all(), "Zero at zero and pi")
+        assert_((Hmag[[0,-1]] < 0.02).all(), "Zero at zero and pi")
 
         # check that the pass band is close to unity
         idx = (f > a) * (f < 0.5-a)

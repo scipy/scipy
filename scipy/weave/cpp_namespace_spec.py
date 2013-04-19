@@ -68,7 +68,7 @@ class cpp_namespace_converter(base_converter):
             str_len = len(clean_name) + 20
             vals = {'cpp_struct': class_name,
                     'cpp_clean_struct': clean_name,
-                    'ptr_string_len': str_len }
+                    'ptr_string_len': str_len}
             specialized_support = cpp_support_template % vals
             custom = base_info.base_info()
             custom._support_code = [specialized_support]

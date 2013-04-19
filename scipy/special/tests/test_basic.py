@@ -1985,18 +1985,18 @@ class TestBessel(TestCase):
     def test_ticket_853(self):
         """Negative-order Bessels"""
         # cephes
-        assert_tol_equal(special.jv(-1,   1   ), -0.4400505857449335)
-        assert_tol_equal(special.jv(-2,   1   ), 0.1149034849319005)
-        assert_tol_equal(special.yv(-1,   1   ), 0.7812128213002887)
-        assert_tol_equal(special.yv(-2,   1   ), -1.650682606816255)
-        assert_tol_equal(special.iv(-1,   1   ), 0.5651591039924851)
-        assert_tol_equal(special.iv(-2,   1   ), 0.1357476697670383)
-        assert_tol_equal(special.kv(-1,   1   ), 0.6019072301972347)
-        assert_tol_equal(special.kv(-2,   1   ), 1.624838898635178)
-        assert_tol_equal(special.jv(-0.5, 1   ), 0.43109886801837607952)
-        assert_tol_equal(special.yv(-0.5, 1   ), 0.6713967071418031)
-        assert_tol_equal(special.iv(-0.5, 1   ), 1.231200214592967)
-        assert_tol_equal(special.kv(-0.5, 1   ), 0.4610685044478945)
+        assert_tol_equal(special.jv(-1,   1), -0.4400505857449335)
+        assert_tol_equal(special.jv(-2,   1), 0.1149034849319005)
+        assert_tol_equal(special.yv(-1,   1), 0.7812128213002887)
+        assert_tol_equal(special.yv(-2,   1), -1.650682606816255)
+        assert_tol_equal(special.iv(-1,   1), 0.5651591039924851)
+        assert_tol_equal(special.iv(-2,   1), 0.1357476697670383)
+        assert_tol_equal(special.kv(-1,   1), 0.6019072301972347)
+        assert_tol_equal(special.kv(-2,   1), 1.624838898635178)
+        assert_tol_equal(special.jv(-0.5, 1), 0.43109886801837607952)
+        assert_tol_equal(special.yv(-0.5, 1), 0.6713967071418031)
+        assert_tol_equal(special.iv(-0.5, 1), 1.231200214592967)
+        assert_tol_equal(special.kv(-0.5, 1), 0.4610685044478945)
         # amos
         assert_tol_equal(special.jv(-1,   1+0j), -0.4400505857449335)
         assert_tol_equal(special.jv(-2,   1+0j), 0.1149034849319005)
@@ -2209,13 +2209,13 @@ class TestLegendreFunctions(TestCase):
     def test_clpmn(self):
         clp = special.specfun.clpmn(1, 1, 0.5, 0.3)
         assert_array_almost_equal(clp,(array([[1.0000,
-                                                0.5+0.3j ],
+                                                0.5+0.3j],
                                               [0.0000,
-                                                -0.9305815721+0.1611895232j ]]),
+                                                -0.9305815721+0.1611895232j]]),
                                        array([[0.0000,
-                                                1.0000 ],
+                                                1.0000],
                                               [0.0000,
-                                                0.4674335183+0.4033449589j ]])),7)
+                                                0.4674335183+0.4033449589j]])),7)
 
     def test_lpmn(self):
         lp = special.lpmn(0,2,.5)

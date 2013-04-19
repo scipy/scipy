@@ -435,7 +435,7 @@ class lil_matrix(spmatrix):
         """
 
         indptr = np.asarray([len(x) for x in self.rows], dtype=np.intc)
-        indptr = np.concatenate((np.array([0], dtype=np.intc), np.cumsum(indptr)) )
+        indptr = np.concatenate((np.array([0], dtype=np.intc), np.cumsum(indptr)))
 
         nnz = indptr[-1]
 
@@ -458,5 +458,5 @@ class lil_matrix(spmatrix):
         return self.tocsr().tocsc()
 
 
-def isspmatrix_lil(x ):
+def isspmatrix_lil(x):
     return isinstance(x, lil_matrix)
