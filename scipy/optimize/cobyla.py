@@ -245,7 +245,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
                               'been exceeded.',
                            3: 'Rounding errors are becoming damaging in '
                               'COBYLA subroutine.'
-                          }.get(info[0], 'Unknown exit status.'),
+                           }.get(info[0], 'Unknown exit status.'),
                   nfev=int(info[1]),
                   fun=info[2],
                   maxcv=info[3])

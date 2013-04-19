@@ -845,7 +845,7 @@ class dopri5(IntegratorBase):
                 -2: 'larger nmax is needed',
                 -3: 'step size becomes too small',
                 -4: 'problem is probably stiff (interrupted)',
-               }
+                }
 
     def __init__(self,
                  rtol=1e-6, atol=1e-12,

@@ -647,7 +647,7 @@ class TestCephes(TestCase):
              complex(-53,30.1), complex(0.0,0.12345),
              complex(11,1), complex(-22,-2), complex(9,-28),
              complex(21,-33), complex(1e5,1e5), complex(1e14,1e14)
-        ]
+             ]
         w = [
             complex(-3.78270245518980507452677445620103199303131110e-7,
                     0.000903861276433172057331093754199933411710053155),
@@ -1616,7 +1616,7 @@ class TestBessel(TestCase):
                   [2./3, 1e-10, 0.1503423854873779e-6],
                   [3.1, 1e-10, 0.1711956265409013e-32],
                   [2./3, 4.0, -0.2325440850267039],
-                 ]
+                  ]
         for i, (v, x, y) in enumerate(values):
             yc = special.jv(v, x)
             assert_almost_equal(yc, y, 8, err_msg='test #%d' % i)
@@ -2084,7 +2084,7 @@ class TestBessel(TestCase):
                   [2.5, 0.2700464416],
                   [5.0, 0.1835408126],
                   [20.0, 0.0897803119],
-                 ]
+                  ]
         for i, (x, v) in enumerate(values):
             cv = special.i0(x) * exp(-x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
@@ -2102,7 +2102,7 @@ class TestBessel(TestCase):
                   [1.0, 0.2079104154],
                   [5.0, 0.1639722669],
                   [20.0, 0.0875062222],
-                 ]
+                  ]
         for i, (x, v) in enumerate(values):
             cv = special.i1(x) * exp(-x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)

@@ -361,8 +361,8 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                                'tolerance.',
                             2: 'The maximum number of iterations allowed '
                                'has been reached.'
-                           }[status]
-               }
+                            }[status]
+                }
         return _array_like(x, x0), info
     else:
         return _array_like(x, x0)

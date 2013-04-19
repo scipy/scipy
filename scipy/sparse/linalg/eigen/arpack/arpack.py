@@ -221,7 +221,7 @@ ZNEUPD_ERRORS = {0: "Normal exit.",
                       "indicates the user probably made an error in passing "
                       "data from ZNAUPD to ZNEUPD or that the data was "
                       "modified before entering ZNEUPD"
-}
+                 }
 
 CNEUPD_ERRORS = ZNEUPD_ERRORS.copy()
 CNEUPD_ERRORS[-14] = ("CNAUPD did not find any eigenvalues to sufficient "

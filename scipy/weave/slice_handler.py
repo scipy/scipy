@@ -155,5 +155,5 @@ indexed_array_pattern = \
                 (token.LSQB, '['),
                    ['subscript_list'],
                 (token.RSQB, ']')
-             )
-           )
+              )
+            )

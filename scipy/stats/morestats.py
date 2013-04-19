@@ -27,7 +27,7 @@ __all__ = ['mvsdist',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'oneway', 'wilcoxon',
            'pdf_fromgamma', 'circmean', 'circvar', 'circstd',
-          ]
+           ]
 
 
 def bayes_mvs(data, alpha=0.90):

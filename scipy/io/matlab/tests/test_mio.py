@@ -228,7 +228,7 @@ case_table5.append(
     {'name': 'unicode',
      'classes': {'testunicode': 'char'},
     'expected': {'testunicode': array([u_str])}
-    })
+     })
 case_table5.append(
     {'name': 'sparse',
      'classes': {'testsparse': 'sparse'},

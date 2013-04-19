@@ -269,7 +269,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
            'ss', 'square_of_sums',
            'fastsort', 'rankdata',
            'nanmean', 'nanstd', 'nanmedian',
-          ]
+           ]
 
 
 def find_repeats(arr):

@@ -254,7 +254,7 @@ class ByteCodeMeaning(object):
                 4: 'greater', 5: 'greatereq', 6: 'in', 7: 'not in',
                 8: 'is', 9: 'is not', 10: 'exe match',
                 11: 'bad',
-                }
+               }
     def cmp_op(self,opname):
         return self.symbols[opname]
 
