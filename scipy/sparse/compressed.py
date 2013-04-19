@@ -241,9 +241,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
     def multiply(self, other):
         """Point-wise multiplication by another matrix
         """
-        # Check if other shape is a vector (e.g. shape = (n,))
+        # scalar mult if necessary
         if isscalarlike(other):
             return self.__mul__(other)
+        # Check if other shape is a vector (e.g. shape = (n,))
         if len(other.shape) == 1:
             if self.shape[0] != 1:
                 raise ValueError('inconsistent shapes')
