@@ -19,51 +19,51 @@ sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
 class TestConstructUtils(TestCase):
     def test_spdiags(self):
-        diags1 = array( [[ 1, 2, 3, 4, 5]] )
-        diags2 = array( [[ 1, 2, 3, 4, 5],
-                         [ 6, 7, 8, 9,10]] )
-        diags3 = array( [[ 1, 2, 3, 4, 5],
-                         [ 6, 7, 8, 9,10],
+        diags1 = array([[1, 2, 3, 4, 5]] )
+        diags2 = array([[1, 2, 3, 4, 5],
+                         [6, 7, 8, 9,10]] )
+        diags3 = array([[1, 2, 3, 4, 5],
+                         [6, 7, 8, 9,10],
                          [11,12,13,14,15]] )
 
         cases = []
-        cases.append( (diags1,  0,  1, 1, [[1]]) )
-        cases.append( (diags1, [0], 1, 1, [[1]]) )
-        cases.append( (diags1, [0], 2, 1, [[1],[0]]) )
-        cases.append( (diags1, [0], 1, 2, [[1,0]]) )
-        cases.append( (diags1, [1], 1, 2, [[0,2]]) )
-        cases.append( (diags1,[-1], 1, 2, [[0,0]]) )
-        cases.append( (diags1, [0], 2, 2, [[1,0],[0,2]]) )
-        cases.append( (diags1,[-1], 2, 2, [[0,0],[1,0]]) )
-        cases.append( (diags1, [3], 2, 2, [[0,0],[0,0]]) )
-        cases.append( (diags1, [0], 3, 4, [[1,0,0,0],[0,2,0,0],[0,0,3,0]]) )
-        cases.append( (diags1, [1], 3, 4, [[0,2,0,0],[0,0,3,0],[0,0,0,4]]) )
-        cases.append( (diags1, [2], 3, 5, [[0,0,3,0,0],[0,0,0,4,0],[0,0,0,0,5]]) )
+        cases.append((diags1,  0,  1, 1, [[1]]) )
+        cases.append((diags1, [0], 1, 1, [[1]]) )
+        cases.append((diags1, [0], 2, 1, [[1],[0]]) )
+        cases.append((diags1, [0], 1, 2, [[1,0]]) )
+        cases.append((diags1, [1], 1, 2, [[0,2]]) )
+        cases.append((diags1,[-1], 1, 2, [[0,0]]) )
+        cases.append((diags1, [0], 2, 2, [[1,0],[0,2]]) )
+        cases.append((diags1,[-1], 2, 2, [[0,0],[1,0]]) )
+        cases.append((diags1, [3], 2, 2, [[0,0],[0,0]]) )
+        cases.append((diags1, [0], 3, 4, [[1,0,0,0],[0,2,0,0],[0,0,3,0]]) )
+        cases.append((diags1, [1], 3, 4, [[0,2,0,0],[0,0,3,0],[0,0,0,4]]) )
+        cases.append((diags1, [2], 3, 5, [[0,0,3,0,0],[0,0,0,4,0],[0,0,0,0,5]]) )
 
-        cases.append( (diags2, [0,2], 3, 3, [[1,0,8],[0,2,0],[0,0,3]]) )
-        cases.append( (diags2, [-1,0], 3, 4, [[6,0,0,0],[1,7,0,0],[0,2,8,0]]) )
-        cases.append( (diags2, [2,-3], 6, 6, [[0,0,3,0,0,0],
+        cases.append((diags2, [0,2], 3, 3, [[1,0,8],[0,2,0],[0,0,3]]) )
+        cases.append((diags2, [-1,0], 3, 4, [[6,0,0,0],[1,7,0,0],[0,2,8,0]]) )
+        cases.append((diags2, [2,-3], 6, 6, [[0,0,3,0,0,0],
                                               [0,0,0,4,0,0],
                                               [0,0,0,0,5,0],
                                               [6,0,0,0,0,0],
                                               [0,7,0,0,0,0],
                                               [0,0,8,0,0,0]]) )
 
-        cases.append( (diags3, [-1,0,1], 6, 6, [[ 6,12, 0, 0, 0, 0],
-                                                [ 1, 7,13, 0, 0, 0],
-                                                [ 0, 2, 8,14, 0, 0],
-                                                [ 0, 0, 3, 9,15, 0],
-                                                [ 0, 0, 0, 4,10, 0],
-                                                [ 0, 0, 0, 0, 5, 0]]) )
-        cases.append( (diags3, [-4,2,-1], 6, 5, [[ 0, 0, 8, 0, 0],
+        cases.append((diags3, [-1,0,1], 6, 6, [[6,12, 0, 0, 0, 0],
+                                                [1, 7,13, 0, 0, 0],
+                                                [0, 2, 8,14, 0, 0],
+                                                [0, 0, 3, 9,15, 0],
+                                                [0, 0, 0, 4,10, 0],
+                                                [0, 0, 0, 0, 5, 0]]) )
+        cases.append((diags3, [-4,2,-1], 6, 5, [[0, 0, 8, 0, 0],
                                                  [11, 0, 0, 9, 0],
-                                                 [ 0,12, 0, 0,10],
-                                                 [ 0, 0,13, 0, 0],
-                                                 [ 1, 0, 0,14, 0],
-                                                 [ 0, 2, 0, 0,15]]) )
+                                                 [0,12, 0, 0,10],
+                                                 [0, 0,13, 0, 0],
+                                                 [1, 0, 0,14, 0],
+                                                 [0, 2, 0, 0,15]]) )
 
         for d,o,m,n,result in cases:
-            assert_equal( construct.spdiags(d,o,m,n).todense(), result )
+            assert_equal(construct.spdiags(d,o,m,n).todense(), result )
 
     def test_diags(self):
         a = array([1, 2, 3, 4, 5])
@@ -71,42 +71,42 @@ class TestConstructUtils(TestCase):
         c = array([11, 12, 13, 14, 15])
 
         cases = []
-        cases.append( (a[:1],  0,    (1, 1), [[1]]) )
-        cases.append( ([a[:1]], [0], (1, 1), [[1]]) )
-        cases.append( ([a[:1]], [0], (2, 1), [[1],[0]]) )
-        cases.append( ([a[:1]], [0], (1, 2), [[1,0]]) )
-        cases.append( ([a[:1]], [1], (1, 2), [[0,1]]) )
-        cases.append( ([a[:2]], [0], (2, 2), [[1,0],[0,2]]) )
-        cases.append( ([a[:1]],[-1], (2, 2), [[0,0],[1,0]]) )
-        cases.append( ([a[:3]], [0], (3, 4), [[1,0,0,0],[0,2,0,0],[0,0,3,0]]) )
-        cases.append( ([a[:3]], [1], (3, 4), [[0,1,0,0],[0,0,2,0],[0,0,0,3]]) )
-        cases.append( ([a[:3]], [2], (3, 5), [[0,0,1,0,0],[0,0,0,2,0],[0,0,0,0,3]]) )
+        cases.append((a[:1],  0,    (1, 1), [[1]]) )
+        cases.append(([a[:1]], [0], (1, 1), [[1]]) )
+        cases.append(([a[:1]], [0], (2, 1), [[1],[0]]) )
+        cases.append(([a[:1]], [0], (1, 2), [[1,0]]) )
+        cases.append(([a[:1]], [1], (1, 2), [[0,1]]) )
+        cases.append(([a[:2]], [0], (2, 2), [[1,0],[0,2]]) )
+        cases.append(([a[:1]],[-1], (2, 2), [[0,0],[1,0]]) )
+        cases.append(([a[:3]], [0], (3, 4), [[1,0,0,0],[0,2,0,0],[0,0,3,0]]) )
+        cases.append(([a[:3]], [1], (3, 4), [[0,1,0,0],[0,0,2,0],[0,0,0,3]]) )
+        cases.append(([a[:3]], [2], (3, 5), [[0,0,1,0,0],[0,0,0,2,0],[0,0,0,0,3]]) )
 
-        cases.append( ([a[:3],b[:1]], [0,2], (3, 3), [[1,0,6],[0,2,0],[0,0,3]]) )
-        cases.append( ([a[:2],b[:3]], [-1,0], (3, 4), [[6,0,0,0],[1,7,0,0],[0,2,8,0]]) )
-        cases.append( ([a[:4],b[:3]], [2,-3], (6, 6), [[0,0,1,0,0,0],
+        cases.append(([a[:3],b[:1]], [0,2], (3, 3), [[1,0,6],[0,2,0],[0,0,3]]) )
+        cases.append(([a[:2],b[:3]], [-1,0], (3, 4), [[6,0,0,0],[1,7,0,0],[0,2,8,0]]) )
+        cases.append(([a[:4],b[:3]], [2,-3], (6, 6), [[0,0,1,0,0,0],
                                                      [0,0,0,2,0,0],
                                                      [0,0,0,0,3,0],
                                                      [6,0,0,0,0,4],
                                                      [0,7,0,0,0,0],
                                                      [0,0,8,0,0,0]]) )
 
-        cases.append( ([a[:4],b,c[:4]], [-1,0,1], (5, 5),    [[ 6,11, 0, 0, 0],
-                                                            [ 1, 7,12, 0, 0],
-                                                            [ 0, 2, 8,13, 0],
-                                                            [ 0, 0, 3, 9,14],
-                                                            [ 0, 0, 0, 4,10]]) )
-        cases.append( ([a[:2],b[:3],c], [-4,2,-1], (6, 5), [[ 0, 0, 6, 0, 0],
+        cases.append(([a[:4],b,c[:4]], [-1,0,1], (5, 5),    [[6,11, 0, 0, 0],
+                                                            [1, 7,12, 0, 0],
+                                                            [0, 2, 8,13, 0],
+                                                            [0, 0, 3, 9,14],
+                                                            [0, 0, 0, 4,10]]) )
+        cases.append(([a[:2],b[:3],c], [-4,2,-1], (6, 5), [[0, 0, 6, 0, 0],
                                                           [11, 0, 0, 7, 0],
-                                                          [ 0,12, 0, 0, 8],
-                                                          [ 0, 0,13, 0, 0],
-                                                          [ 1, 0, 0,14, 0],
-                                                          [ 0, 2, 0, 0,15]]) )
+                                                          [0,12, 0, 0, 8],
+                                                          [0, 0,13, 0, 0],
+                                                          [1, 0, 0,14, 0],
+                                                          [0, 2, 0, 0,15]]) )
 
         # scalar case: broadcasting
-        cases.append( ([1,-2,1], [1,0,-1], (3, 3), [[ -2,  1,  0],
-                                                    [  1, -2,  1],
-                                                    [  0,  1, -2]]) )
+        cases.append(([1,-2,1], [1,0,-1], (3, 3), [[-2,  1,  0],
+                                                    [1, -2,  1],
+                                                    [0,  1, -2]]) )
 
         for d, o, shape, result in cases:
             try:
@@ -126,16 +126,16 @@ class TestConstructUtils(TestCase):
         c = array([11, 12, 13, 14, 15])
 
         cases = []
-        cases.append( ([a[:0]],  0,  (1, 1)) )
-        cases.append( ([a], [0], (1, 1)) )
-        cases.append( ([a[:3],b], [0,2], (3, 3)) )
-        cases.append( ([a[:4],b,c[:3]], [-1,0,1], (5, 5)) )
-        cases.append( ([a[:2],c,b[:3]], [-4,2,-1], (6, 5)) )
-        cases.append( ([a[:2],c,b[:3]], [-4,2,-1], None) )
-        cases.append( ([], [-4,2,-1], None) )
-        cases.append( ([1], [-4], (4, 4)) )
-        cases.append( ([a[:0]], [-1], (1, 2)) )
-        cases.append( ([a], 0, None))
+        cases.append(([a[:0]],  0,  (1, 1)) )
+        cases.append(([a], [0], (1, 1)) )
+        cases.append(([a[:3],b], [0,2], (3, 3)) )
+        cases.append(([a[:4],b,c[:3]], [-1,0,1], (5, 5)) )
+        cases.append(([a[:2],c,b[:3]], [-4,2,-1], (6, 5)) )
+        cases.append(([a[:2],c,b[:3]], [-4,2,-1], None) )
+        cases.append(([], [-4,2,-1], None) )
+        cases.append(([1], [-4], (4, 4)) )
+        cases.append(([a[:0]], [-1], (1, 2)) )
+        cases.append(([a], 0, None))
 
         for d, o, shape in cases:
             try:
@@ -189,13 +189,13 @@ class TestConstructUtils(TestCase):
         assert_equal(construct.identity(2).toarray(), [[1,0],[0,1]])
 
         I = construct.identity(3, dtype='int8', format='dia')
-        assert_equal( I.dtype, np.dtype('int8') )
-        assert_equal( I.format, 'dia' )
+        assert_equal(I.dtype, np.dtype('int8') )
+        assert_equal(I.format, 'dia' )
 
         for fmt in sparse_formats:
-            I = construct.identity( 3, format=fmt )
-            assert_equal( I.format, fmt )
-            assert_equal( I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
+            I = construct.identity(3, format=fmt )
+            assert_equal(I.format, fmt )
+            assert_equal(I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
     def test_eye(self):
         assert_equal(construct.eye(1,1).toarray(), [[1]])
@@ -217,20 +217,20 @@ class TestConstructUtils(TestCase):
         assert_equal(construct.eye(2).toarray(), [[1,0],[0,1]])
 
         I = construct.eye(3, dtype='int8', format='dia')
-        assert_equal( I.dtype, np.dtype('int8') )
-        assert_equal( I.format, 'dia' )
+        assert_equal(I.dtype, np.dtype('int8') )
+        assert_equal(I.format, 'dia' )
 
         for fmt in sparse_formats:
-            I = construct.eye( 3, format=fmt )
-            assert_equal( I.format, fmt )
-            assert_equal( I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
+            I = construct.eye(3, format=fmt )
+            assert_equal(I.format, fmt )
+            assert_equal(I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
     def test_kron(self):
         cases = []
 
-        cases.append(array([[ 0]]))
+        cases.append(array([[0]]))
         cases.append(array([[-1]]))
-        cases.append(array([[ 4]]))
+        cases.append(array([[4]]))
         cases.append(array([[10]]))
         cases.append(array([[0],[0]]))
         cases.append(array([[0,0]]))
@@ -251,9 +251,9 @@ class TestConstructUtils(TestCase):
     def test_kronsum(self):
         cases = []
 
-        cases.append(array([[ 0]]))
+        cases.append(array([[0]]))
         cases.append(array([[-1]]))
-        cases.append(array([[ 4]]))
+        cases.append(array([[4]]))
         cases.append(array([[10]]))
         cases.append(array([[1,2],[3,4]]))
         cases.append(array([[0,2],[5,0]]))
@@ -275,7 +275,7 @@ class TestConstructUtils(TestCase):
         expected = matrix([[1, 2],
                            [3, 4],
                            [5, 6]])
-        assert_equal( construct.vstack( [A,B] ).todense(), expected )
+        assert_equal(construct.vstack([A,B] ).todense(), expected )
 
     def test_hstack(self):
 
@@ -284,7 +284,7 @@ class TestConstructUtils(TestCase):
 
         expected = matrix([[1, 2, 5],
                            [3, 4, 6]])
-        assert_equal( construct.hstack( [A,B] ).todense(), expected )
+        assert_equal(construct.hstack([A,B] ).todense(), expected )
 
     def test_bmat(self):
 
@@ -295,17 +295,17 @@ class TestConstructUtils(TestCase):
         expected = matrix([[1, 2, 5],
                            [3, 4, 6],
                            [0, 0, 7]])
-        assert_equal( construct.bmat( [[A,B],[None,C]] ).todense(), expected )
+        assert_equal(construct.bmat([[A,B],[None,C]] ).todense(), expected )
 
         expected = matrix([[1, 2, 0],
                            [3, 4, 0],
                            [0, 0, 7]])
-        assert_equal( construct.bmat( [[A,None],[None,C]] ).todense(), expected )
+        assert_equal(construct.bmat([[A,None],[None,C]] ).todense(), expected )
 
         expected = matrix([[0, 5],
                            [0, 6],
                            [7, 0]])
-        assert_equal( construct.bmat( [[None,B],[C,None]] ).todense(), expected )
+        assert_equal(construct.bmat([[None,B],[C,None]] ).todense(), expected )
 
         #TODO test failure cases
 

@@ -307,7 +307,7 @@ class accelerate(object):
             return self.__cache(*args)
         except TypeError:
             # Figure out type info -- Do as tuple so its hashable
-            signature = tuple( map(lookup_type,args) )
+            signature = tuple(map(lookup_type,args) )
 
             # If we know the function, call it
             try:
@@ -320,7 +320,7 @@ class accelerate(object):
 
     def signature(self,*args):
         # Figure out type info -- Do as tuple so its hashable
-        signature = tuple( map(lookup_type,args) )
+        signature = tuple(map(lookup_type,args) )
         return self.singleton(signature)
 
     def singleton(self,signature):
@@ -377,7 +377,7 @@ class accelerate(object):
                         (self.function.__name__,
                          self.function.func_code.co_argcount,
                          len(args)))
-        signature = tuple( map(lookup_type,args) )
+        signature = tuple(map(lookup_type,args) )
         ident = self.function.__name__
         return self.accelerate(signature,ident).function_code()
 

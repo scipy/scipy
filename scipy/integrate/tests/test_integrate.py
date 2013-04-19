@@ -302,7 +302,7 @@ def f(t, x):
 
 
 def jac(t, x):
-    j = array([[ 0.0, 1.0],
+    j = array([[0.0, 1.0],
                [-1.0, 0.0]])
     return j
 
@@ -313,7 +313,7 @@ def f1(t, x, omega):
 
 
 def jac1(t, x, omega):
-    j = array([[ 0.0, omega],
+    j = array([[0.0, omega],
                [-omega, 0.0]])
     return j
 
@@ -324,7 +324,7 @@ def f2(t, x, omega1, omega2):
 
 
 def jac2(t, x, omega1, omega2):
-    j = array([[ 0.0, omega1],
+    j = array([[0.0, omega1],
                [-omega2, 0.0]])
     return j
 
@@ -335,7 +335,7 @@ def fv(t, x, omega):
 
 
 def jacv(t, x, omega):
-    j = array([[ 0.0, omega[0]],
+    j = array([[0.0, omega[0]],
                [-omega[1], 0.0]])
     return j
 

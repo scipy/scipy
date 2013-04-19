@@ -41,8 +41,8 @@ class TestLapack(TestCase):
         tp = FUNCS_TP[func]
 
         a = np.array([[-149, -50,-154],
-             [ 537, 180, 546],
-             [ -27,  -9, -25]]).astype(tp)
+             [537, 180, 546],
+             [-27,  -9, -25]]).astype(tp)
 
         if lang == 'C':
             f = FUNCS_CLAPACK[func]

@@ -162,7 +162,7 @@ class spmatrix(object):
         # helper function, outputs "(i,j)  v"
         def tostr(row,col,data):
             triples = zip(list(zip(row,col)),data)
-            return '\n'.join( [ ('  %s\t%s' % t) for t in triples] )
+            return '\n'.join([('  %s\t%s' % t) for t in triples] )
 
         if nnz > maxprint:
             half = maxprint // 2
@@ -377,7 +377,7 @@ class spmatrix(object):
 
             if other == 0:
                 from .construct import eye
-                return eye( self.shape[0], dtype=self.dtype )
+                return eye(self.shape[0], dtype=self.dtype )
             elif other == 1:
                 return self.copy()
             else:
@@ -579,7 +579,7 @@ class spmatrix(object):
             return self * np.asmatrix(np.ones((n, 1), dtype=self.dtype))
         elif axis is None:
             # sum over rows and columns
-            return ( self * np.asmatrix(np.ones((n, 1), dtype=self.dtype)) ).sum()
+            return (self * np.asmatrix(np.ones((n, 1), dtype=self.dtype)) ).sum()
         else:
             raise ValueError("axis out of bounds")
 

@@ -135,11 +135,11 @@ def lsmrtest(m, n, damp):
     j2 = max(n-4,1)
     print(' ')
     print('First elements of x:')
-    str = [ '%10.4f' % (xi) for xi in x[0:j1] ]
+    str = ['%10.4f' % (xi) for xi in x[0:j1] ]
     print(''.join(str))
     print(' ')
     print('Last  elements of x:')
-    str = [ '%10.4f' % (xi) for xi in x[j2-1:] ]
+    str = ['%10.4f' % (xi) for xi in x[j2-1:] ]
     print(''.join(str))
 
     r    = b - Afun.matvec(x)

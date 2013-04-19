@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 
-__all__ = [ 'spdiags', 'eye', 'identity', 'kron', 'kronsum',
+__all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
             'hstack', 'vstack', 'bmat', 'rand', 'diags', 'block_diag']
 
 
@@ -313,7 +313,7 @@ def kron(A, B, format=None):
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
-            return coo_matrix( output_shape )
+            return coo_matrix(output_shape )
 
         B = B.toarray()
         data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
@@ -327,7 +327,7 @@ def kron(A, B, format=None):
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
-            return coo_matrix( output_shape )
+            return coo_matrix(output_shape )
 
         # expand entries of a into blocks
         row  = A.row.repeat(B.nnz)
@@ -451,7 +451,7 @@ def vstack(blocks, format=None, dtype=None):
             [5, 6]])
 
     """
-    return bmat([ [b] for b in blocks ], format=format, dtype=dtype)
+    return bmat([[b] for b in blocks ], format=format, dtype=dtype)
 
 
 def bmat(blocks, format=None, dtype=None):
@@ -534,9 +534,9 @@ def bmat(blocks, format=None, dtype=None):
     if bcol_lengths.min() == 0:
         raise ValueError('blocks[:,%d] is all None' % bcol_lengths.argmin() )
 
-    nnz = sum([ A.nnz for A in blocks[block_mask] ])
+    nnz = sum([A.nnz for A in blocks[block_mask] ])
     if dtype is None:
-        dtype = upcast( *tuple([A.dtype for A in blocks[block_mask]]) )
+        dtype = upcast(*tuple([A.dtype for A in blocks[block_mask]]) )
 
     row_offsets = np.concatenate(([0], np.cumsum(brow_lengths)))
     col_offsets = np.concatenate(([0], np.cumsum(bcol_lengths)))

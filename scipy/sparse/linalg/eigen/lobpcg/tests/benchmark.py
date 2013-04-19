@@ -17,11 +17,11 @@ def test(n):
     return A,B
 
 
-def as2d( ar ):
+def as2d(ar ):
     if ar.ndim == 2:
         return ar
     else: # Assume 1!
-        aux = nm.array( ar, copy=False )
+        aux = nm.array(ar, copy=False )
         aux.shape = (ar.shape[0], 1)
         return aux
 

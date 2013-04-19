@@ -400,7 +400,7 @@ class dok_matrix(spmatrix, dict):
 
     def _mul_vector(self, other):
         #matrix * vector
-        result = np.zeros( self.shape[0], dtype=upcast(self.dtype,other.dtype) )
+        result = np.zeros(self.shape[0], dtype=upcast(self.dtype,other.dtype) )
         for (i,j),v in iteritems(self):
             result[i] += v * other[j]
         return result
@@ -409,7 +409,7 @@ class dok_matrix(spmatrix, dict):
         #matrix * multivector
         M,N = self.shape
         n_vecs = other.shape[1] # number of column vectors
-        result = np.zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
+        result = np.zeros((M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
         for (i,j),v in iteritems(self):
             result[i,:] += v * other[j,:]
         return result

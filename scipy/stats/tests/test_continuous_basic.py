@@ -265,8 +265,8 @@ def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
         check_sample_mean(sm, sv, sn, m)
     if not np.isinf(v):
         check_sample_var(sv, sn, v)
-##    check_sample_meanvar( sm, m, msg + 'sample mean test')
-##    check_sample_meanvar( sv, v, msg + 'sample var test')
+##    check_sample_meanvar(sm, m, msg + 'sample mean test')
+##    check_sample_meanvar(sv, v, msg + 'sample var test')
 
 
 def check_sample_mean(sm,v,n, popmean):
@@ -304,8 +304,8 @@ def check_sample_skew_kurt(distfn, arg, ss, sk, msg):
     skew,kurt = distfn.stats(moments='sk',*arg)
 ##    skew = distfn.stats(moment='s',*arg)[()]
 ##    kurt = distfn.stats(moment='k',*arg)[()]
-    check_sample_meanvar( sk, kurt, msg + 'sample kurtosis test')
-    check_sample_meanvar( ss, skew, msg + 'sample skew test')
+    check_sample_meanvar(sk, kurt, msg + 'sample kurtosis test')
+    check_sample_meanvar(ss, skew, msg + 'sample skew test')
 
 
 def check_sample_meanvar(sm,m,msg):

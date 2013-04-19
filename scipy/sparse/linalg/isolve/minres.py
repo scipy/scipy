@@ -85,7 +85,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
     eps = finfo(xtype).eps
 
-    x = zeros( n, dtype=xtype )
+    x = zeros(n, dtype=xtype )
 
     # Set up y and v for the first Lanczos vector v1.
     # y  =  beta1 P' v1,  where  P = C**(-1).
@@ -103,7 +103,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
     elif beta1 == 0:
         return (postprocess(x), 0)
 
-    beta1 = sqrt( beta1 )
+    beta1 = sqrt(beta1 )
 
     if check:
         # are these too strict?
@@ -113,7 +113,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         r2   = matvec(w)
         s    = inner(w,w)
         t    = inner(y,r2)
-        z    = abs( s - t )
+        z    = abs(s - t )
         epsa = (s + eps) * eps**(1.0/3.0)
         if z > epsa:
             raise ValueError('non-symmetric matrix')
@@ -122,7 +122,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         r2   = psolve(y)
         s    = inner(y,y)
         t    = inner(r1,r2)
-        z    = abs( s - t )
+        z    = abs(s - t )
         epsa = (s + eps) * eps**(1.0/3.0)
         if z > epsa:
             raise ValueError('non-symmetric preconditioner')
@@ -220,8 +220,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
         # Estimate various norms and test for convergence.
 
-        Anorm  = sqrt( tnorm2 )
-        ynorm  = sqrt( ynorm2 )
+        Anorm  = sqrt(tnorm2 )
+        ynorm  = sqrt(ynorm2 )
         epsa   = Anorm * eps
         epsx   = Anorm * ynorm * eps
         epsr   = Anorm * ynorm * tol
@@ -332,9 +332,9 @@ if __name__ == '__main__':
         residuals.append(norm(b - A*x))
 
     #A = poisson((10,),format='csr')
-    A = spdiags( [arange(1,n+1,dtype=float)], [0], n, n, format='csr')
-    M = spdiags( [1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
+    A = spdiags([arange(1,n+1,dtype=float)], [0], n, n, format='csr')
+    M = spdiags([1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     A.psolve = M.matvec
-    b = 0*ones( A.shape[0] )
+    b = 0*ones(A.shape[0] )
     x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
     #x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]

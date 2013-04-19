@@ -64,7 +64,7 @@ def approx_jacobian(x,func,epsilon,*args):
     return jac.transpose()
 
 
-def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
+def fmin_slsqp(func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
                 bounds=[], fprime=None, fprime_eqcons=None,
                 fprime_ieqcons=None, args=(), iter = 100, acc = 1.0E-6,
                 iprint = 1, disp = None, full_output = 0, epsilon = _epsilon ):
@@ -271,7 +271,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                          'jac' : cjac,
                          'args': con.get('args', ())}, )
 
-    exit_modes = { -1 : "Gradient evaluation required (g & a)",
+    exit_modes = {-1 : "Gradient evaluation required (g & a)",
                     0 : "Optimization terminated successfully.",
                     1 : "Function evaluation required (f & c)",
                     2 : "More equality constraints than independent variables",

@@ -51,16 +51,16 @@ class TestSparseFunctions(TestCase):
 
     def test_estimate_blocksize(self):
         mats = []
-        mats.append( [[0,1],[1,0]] )
-        mats.append( [[1,1,0],[0,0,1],[1,0,1]] )
-        mats.append( [[0],[0],[1]] )
+        mats.append([[0,1],[1,0]] )
+        mats.append([[1,1,0],[0,0,1],[1,0,1]] )
+        mats.append([[0],[0],[1]] )
         mats = [array(x) for x in mats]
 
         blks = []
-        blks.append( [[1]] )
-        blks.append( [[1,1],[1,1]] )
-        blks.append( [[1,1],[0,1]] )
-        blks.append( [[1,1,0],[1,0,1],[1,1,1]] )
+        blks.append([[1]] )
+        blks.append([[1,1],[1,1]] )
+        blks.append([[1,1],[0,1]] )
+        blks.append([[1,1,0],[1,0,1],[1,1,1]] )
         blks = [array(x) for x in blks]
 
         for A in mats:
@@ -74,16 +74,16 @@ class TestSparseFunctions(TestCase):
         def gold(A,bs):
             R,C = bs
             I,J = A.nonzero()
-            return len( set( zip(I//R,J//C) ) )
+            return len(set(zip(I//R,J//C) ) )
 
         mats = []
-        mats.append( [[0]] )
-        mats.append( [[1]] )
-        mats.append( [[1,0]] )
-        mats.append( [[1,1]] )
-        mats.append( [[0,1],[1,0]] )
-        mats.append( [[1,1,0],[0,0,1],[1,0,1]] )
-        mats.append( [[0],[0],[1]] )
+        mats.append([[0]] )
+        mats.append([[1]] )
+        mats.append([[1,0]] )
+        mats.append([[1,1]] )
+        mats.append([[0,1],[1,0]] )
+        mats.append([[1,1,0],[0,0,1],[1,0,1]] )
+        mats.append([[0],[0],[1]] )
 
         for A in mats:
             for B in mats:

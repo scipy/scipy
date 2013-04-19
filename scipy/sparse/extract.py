@@ -105,7 +105,7 @@ def tril(A, k=0, format=None):
     col  = A.col[mask]
     data = A.data[mask]
 
-    return coo_matrix( (data,(row,col)), shape=A.shape ).asformat(format)
+    return coo_matrix((data,(row,col)), shape=A.shape ).asformat(format)
 
 
 def triu(A, k=0, format=None):
@@ -171,4 +171,4 @@ def triu(A, k=0, format=None):
     col  = A.col[mask]
     data = A.data[mask]
 
-    return coo_matrix( (data,(row,col)), shape=A.shape ).asformat(format)
+    return coo_matrix((data,(row,col)), shape=A.shape ).asformat(format)

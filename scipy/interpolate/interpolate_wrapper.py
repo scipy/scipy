@@ -8,7 +8,7 @@ from . import _interpolate # C extension.  Does all the real work.
 
 
 def atleast_1d_and_contiguous(ary, dtype=np.float64):
-    return np.atleast_1d( np.ascontiguousarray(ary, dtype) )
+    return np.atleast_1d(np.ascontiguousarray(ary, dtype) )
 
 
 def nearest(x, y, new_x):
@@ -30,9 +30,9 @@ def nearest(x, y, new_x):
         Rounds each `new_x` to nearest `x` and returns the corresponding `y`.
 
     """
-    shifted_x = np.concatenate(( np.array([x[0]-1]) , x[0:-1] ))
+    shifted_x = np.concatenate((np.array([x[0]-1]) , x[0:-1] ))
 
-    midpoints_of_x = atleast_1d_and_contiguous( .5*(x + shifted_x) )
+    midpoints_of_x = atleast_1d_and_contiguous(.5*(x + shifted_x) )
     new_x = atleast_1d_and_contiguous(new_x)
 
     TINY = 1e-10

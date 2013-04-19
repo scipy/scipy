@@ -88,7 +88,7 @@ class LinearOperator:
         the user-defined matvec() routine, which is always provided.
         """
 
-        return np.hstack( [ self.matvec(col.reshape(-1,1)) for col in X.T ] )
+        return np.hstack([self.matvec(col.reshape(-1,1)) for col in X.T ] )
 
     def matvec(self, x):
         """Matrix-vector multiplication

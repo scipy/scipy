@@ -250,7 +250,7 @@ class ByteCodeMeaning(object):
         else:
             raise ValueError("Executing code failed.")
 
-    symbols = { 0: 'less', 1: 'lesseq', 2: 'equal', 3: 'notequal',
+    symbols = {0: 'less', 1: 'lesseq', 2: 'equal', 3: 'notequal',
                 4: 'greater', 5: 'greatereq', 6: 'in', 7: 'not in',
                 8: 'is', 9: 'is not', 10: 'exe match',
                 11 : 'bad',

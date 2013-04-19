@@ -58,7 +58,7 @@ class TestExpit(TestCase):
         assert_equal(actual.dtype, np.dtype(dtype))
 
     def test_float32(self):
-        expected = np.array([ 0.01798621,  0.04265125,
+        expected = np.array([0.01798621,  0.04265125,
                             0.09777259,  0.20860852,
                             0.39068246, 0.60931754,
                             0.79139149,  0.9022274 ,
@@ -66,7 +66,7 @@ class TestExpit(TestCase):
         self.check_expit_out('f4',expected)
 
     def test_float64(self):
-        expected = np.array([ 0.01798621,  0.04265125,
+        expected = np.array([0.01798621,  0.04265125,
                             0.0977726 ,  0.20860853,
                             0.39068246, 0.60931754,
                             0.79139147,  0.9022274 ,

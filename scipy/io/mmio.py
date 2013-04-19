@@ -158,7 +158,7 @@ class MMFile (object):
     SYMMETRY_SYMMETRIC      = 'symmetric'
     SYMMETRY_SKEW_SYMMETRIC = 'skew-symmetric'
     SYMMETRY_HERMITIAN      = 'hermitian'
-    SYMMETRY_VALUES = ( SYMMETRY_GENERAL,        SYMMETRY_SYMMETRIC,
+    SYMMETRY_VALUES = (SYMMETRY_GENERAL,        SYMMETRY_SYMMETRIC,
                         SYMMETRY_SKEW_SYMMETRIC, SYMMETRY_HERMITIAN)
 
     @classmethod
@@ -615,7 +615,7 @@ class MMFile (object):
 
             if field == self.FIELD_PATTERN:
                 IJV = vstack((coo.row, coo.col)).T
-            elif field in [ self.FIELD_INTEGER, self.FIELD_REAL ]:
+            elif field in [self.FIELD_INTEGER, self.FIELD_REAL ]:
                 IJV = vstack((coo.row, coo.col, coo.data)).T
             elif field == self.FIELD_COMPLEX:
                 IJV = vstack((coo.row, coo.col, coo.data.real, coo.data.imag)).T

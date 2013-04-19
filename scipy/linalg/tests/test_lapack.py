@@ -47,8 +47,8 @@ class TestFlapackSimple(TestCase):
 
     def test_gehrd(self):
         a = [[-149, -50,-154],
-             [ 537, 180, 546],
-             [ -27,  -9, -25]]
+             [537, 180, 546],
+             [-27,  -9, -25]]
         for p in 'd':
             f = getattr(flapack,p+'gehrd',None)
             if f is None:

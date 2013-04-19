@@ -209,9 +209,9 @@ class TestEig(object):
         """Test singular pair"""
         # Example taken from
         # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
-        A = array(( [22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
+        A = array(([22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
             [27,31,26,21,15], [38,44,44,24,30]))
-        B = array(( [13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
+        B = array(([13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
             [16,25,27,14,23], [24,35,18,21,22]))
 
         olderr = np.seterr(all='ignore')
@@ -307,22 +307,22 @@ class TestEigBanded(TestCase):
         self.KU = 2   # number of superdiagonals (above the diagonal)
 
         # symmetric band matrix
-        self.sym_mat = ( diag(1.0*ones(N))
+        self.sym_mat = (diag(1.0*ones(N))
                      + diag(-1.0*ones(N-1), -1) + diag(-1.0*ones(N-1), 1)
                      + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
         # hermitian band matrix
-        self.herm_mat = ( diag(-1.0*ones(N))
+        self.herm_mat = (diag(-1.0*ones(N))
                      + 1j*diag(1.0*ones(N-1), -1) - 1j*diag(1.0*ones(N-1), 1)
                      + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
         # general real band matrix
-        self.real_mat = ( diag(1.0*ones(N))
+        self.real_mat = (diag(1.0*ones(N))
                      + diag(-1.0*ones(N-1), -1) + diag(-3.0*ones(N-1), 1)
                      + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
         # general complex band matrix
-        self.comp_mat = ( 1j*diag(1.0*ones(N))
+        self.comp_mat = (1j*diag(1.0*ones(N))
                      + diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1)
                      + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
 
@@ -1673,8 +1673,8 @@ class TestHessenberg(TestCase):
 
     def test_simple(self):
         a = [[-149, -50,-154],
-             [ 537, 180, 546],
-             [ -27,  -9, -25]]
+             [537, 180, 546],
+             [-27,  -9, -25]]
         h1 = [[-149.0000,42.2037,-156.3165],
               [-537.6783,152.5511,-554.9272],
               [0,0.0728, 2.4489]]
@@ -1684,8 +1684,8 @@ class TestHessenberg(TestCase):
 
     def test_simple_complex(self):
         a = [[-149, -50,-154],
-             [ 537, 180j, 546],
-             [ -27j,  -9, -25]]
+             [537, 180j, 546],
+             [-27j,  -9, -25]]
         h,q = hessenberg(a,calc_q=1)
         h1 = dot(transp(conj(q)),dot(a,q))
         assert_array_almost_equal(h1,h)
@@ -1718,8 +1718,8 @@ class TestHessenberg(TestCase):
 
     def test_check_finite(self):
         a = [[-149, -50,-154],
-             [ 537, 180, 546],
-             [ -27,  -9, -25]]
+             [537, 180, 546],
+             [-27,  -9, -25]]
         h1 = [[-149.0000,42.2037,-156.3165],
               [-537.6783,152.5511,-554.9272],
               [0,0.0728, 2.4489]]
@@ -1808,11 +1808,11 @@ class TestQZ(TestCase):
         #              [1.0,   3.0,  -4.0,   3.0],
         #              [1.0,   3.0,  -4.0,   4.0]])
         A = np.array([[3.9,  12.5, -34.5,  2.5],
-                 [ 4.3,  21.5, -47.5,   7.5],
-                 [ 4.3,  1.5, -43.5,   3.5],
-                 [ 4.4,  6.0, -46.0,   6.0 ]])
+                 [4.3,  21.5, -47.5,   7.5],
+                 [4.3,  1.5, -43.5,   3.5],
+                 [4.4,  6.0, -46.0,   6.0 ]])
 
-        B = np.array([[ 1.0,   1.0,  -3.0,   1.0],
+        B = np.array([[1.0,   1.0,  -3.0,   1.0],
                       [1.0,   3.0,  -5.0,   4.4],
                       [1.0,   2.0,  -4.0,   1.0],
                       [1.2,   3.0,  -4.0,   4.0]])
@@ -1830,15 +1830,15 @@ class TestQZ(TestCase):
             # test absolute values bc the sign is ambiguous and might be platform
             # dependent
             assert_array_almost_equal(np.abs(AA), np.abs(np.array(
-                            [[ 35.7864, -80.9061, -12.0629,  -9.498 ],
-                             [  0.    ,   2.7638,  -2.3505,   7.3256],
-                             [  0.    ,   0.    ,   0.6258,  -0.0398],
-                             [  0.    ,   0.    ,   0.    , -12.8217]])), 4)
+                            [[35.7864, -80.9061, -12.0629,  -9.498 ],
+                             [0.    ,   2.7638,  -2.3505,   7.3256],
+                             [0.    ,   0.    ,   0.6258,  -0.0398],
+                             [0.    ,   0.    ,   0.    , -12.8217]])), 4)
             assert_array_almost_equal(np.abs(BB), np.abs(np.array(
-                            [[ 4.5324, -8.7878,  3.2357, -3.5526],
-                             [ 0.    ,  1.4314, -2.1894,  0.9709],
-                             [ 0.    ,  0.    ,  1.3126, -0.3468],
-                             [ 0.    ,  0.    ,  0.    ,  0.559 ]])), 4)
+                            [[4.5324, -8.7878,  3.2357, -3.5526],
+                             [0.    ,  1.4314, -2.1894,  0.9709],
+                             [0.    ,  0.    ,  1.3126, -0.3468],
+                             [0.    ,  0.    ,  0.    ,  0.559 ]])), 4)
             assert_array_almost_equal(np.abs(Q), np.abs(np.array(
                             [[-0.4193, -0.605 , -0.1894, -0.6498],
                              [-0.5495,  0.6987,  0.2654, -0.3734],
@@ -1847,8 +1847,8 @@ class TestQZ(TestCase):
             assert_array_almost_equal(np.abs(Z), np.abs(np.array(
                             [[-0.9471, -0.2971, -0.1217,  0.0055],
                              [-0.0367,  0.1209,  0.0358,  0.9913],
-                             [ 0.3171, -0.9041, -0.2547,  0.1312],
-                             [ 0.0346,  0.2824, -0.9587,  0.0014]])), 4)
+                             [0.3171, -0.9041, -0.2547,  0.1312],
+                             [0.0346,  0.2824, -0.9587,  0.0014]])), 4)
 
         # test absolute values bc the sign is ambiguous and might be platform
         # dependent

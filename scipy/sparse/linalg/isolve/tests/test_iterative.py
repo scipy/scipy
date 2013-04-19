@@ -62,7 +62,7 @@ class IterativeParams(object):
 
         # Symmetric and Indefinite
         data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]],dtype='d')
-        RandDiag = spdiags( data, [0], 10, 10, format='csr' )
+        RandDiag = spdiags(data, [0], 10, 10, format='csr' )
         self.cases.append(Case("rand-diag", RandDiag, skip=posdef_solvers))
 
         # Random real-valued
@@ -108,7 +108,7 @@ class IterativeParams(object):
         data = ones((2,10))
         data[0,:] = 2
         data[1,:] = -1
-        A = spdiags( data, [0,-1], 10, 10, format='csr')
+        A = spdiags(data, [0,-1], 10, 10, format='csr')
         self.cases.append(Case("nonsymposdef", A,
                                skip=sym_solvers+[cgs, qmr, bicg]))
 
@@ -183,7 +183,7 @@ def check_precond_dummy(solver, case):
     A = case.A
 
     M,N = A.shape
-    D = spdiags( [1.0/A.diagonal()], [0], M, N)
+    D = spdiags([1.0/A.diagonal()], [0], M, N)
 
     b  = arange(A.shape[0], dtype=float)
     x0 = 0*b
@@ -266,7 +266,7 @@ class TestQMR(TestCase):
         b = arange(n,dtype='d')
 
         L = spdiags([-dat/2, dat], [-1,0], n, n)
-        U = spdiags([4*dat, -dat], [ 0,1], n, n)
+        U = spdiags([4*dat, -dat], [0,1], n, n)
 
         L_solver = splu(L)
         U_solver = splu(U)
@@ -280,8 +280,8 @@ class TestQMR(TestCase):
         def UT_solve(b):
             return U_solver.solve(b,'T')
 
-        M1 = LinearOperator( (n,n), matvec=L_solve, rmatvec=LT_solve )
-        M2 = LinearOperator( (n,n), matvec=U_solve, rmatvec=UT_solve )
+        M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve )
+        M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve )
 
         x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 

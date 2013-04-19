@@ -136,7 +136,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
                 self.row  = np.array(ij[0], copy=copy, dtype=np.intc)
                 self.col  = np.array(ij[1], copy=copy, dtype=np.intc)
-                self.data = np.array(  obj, copy=copy)
+                self.data = np.array(obj, copy=copy)
 
                 if shape is None:
                     if len(self.row) == 0 or len(self.col) == 0:
@@ -341,8 +341,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         if self.data.size == 0:
             data = np.zeros((0, 0), dtype=self.dtype)
         else:
-            data = np.zeros( (len(diags), self.col.max()+1), dtype=self.dtype)
-            data[ np.searchsorted(diags,ks), self.col ] = self.data
+            data = np.zeros((len(diags), self.col.max()+1), dtype=self.dtype)
+            data[np.searchsorted(diags,ks), self.col ] = self.data
 
         return dia_matrix((data,diags), shape=self.shape)
 
@@ -351,7 +351,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         dok = dok_matrix((self.shape), dtype=self.dtype)
 
-        dok.update( izip(izip(self.row,self.col),self.data) )
+        dok.update(izip(izip(self.row,self.col),self.data) )
 
         return dok
 
@@ -362,10 +362,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         (i.e. .row and .col) are copied.
         """
         if copy:
-            return coo_matrix( (data, (self.row.copy(), self.col.copy()) ),
+            return coo_matrix((data, (self.row.copy(), self.col.copy()) ),
                                    shape=self.shape, dtype=data.dtype)
         else:
-            return coo_matrix( (data, (self.row, self.col) ),
+            return coo_matrix((data, (self.row, self.col) ),
                                    shape=self.shape, dtype=data.dtype)
 
     ###########################
@@ -374,14 +374,14 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def _mul_vector(self, other):
         #output array
-        result = np.zeros( self.shape[0], dtype=upcast_char(self.dtype.char,
+        result = np.zeros(self.shape[0], dtype=upcast_char(self.dtype.char,
                                                             other.dtype.char) )
         coo_matvec(self.nnz, self.row, self.col, self.data, other, result)
         return result
 
     def _mul_multivector(self, other):
-        return np.hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
+        return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T ] )
 
 
-def isspmatrix_coo( x ):
+def isspmatrix_coo(x ):
     return isinstance(x, coo_matrix)

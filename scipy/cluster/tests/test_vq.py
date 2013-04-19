@@ -122,7 +122,7 @@ class TestKMean(TestCase):
         data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
         initk = np.array([[-1.8127404, -0.67128041],
-                         [ 2.04621601, 0.07401111],
+                         [2.04621601, 0.07401111],
                          [-2.31149087,-0.05160469]])
 
         res = kmeans(data, initk)

@@ -243,7 +243,7 @@ def js_roots(n, p1, q1, mu=0):
     function (1-x)**(p-q) x**(q-1) with p-q > -1 and q > 0.
     """
     # from recurrence relation
-    if not ( any((p1 - q1) > -1) and any(q1 > 0) ):
+    if not (any((p1 - q1) > -1) and any(q1 > 0) ):
         raise ValueError("(p - q) > -1 and q > 0 please.")
     if n <= 0:
         raise ValueError("n must be positive.")

@@ -400,11 +400,11 @@ def test_gzip_simple():
     tmpdir = mkdtemp()
     try:
         fname = pjoin(tmpdir,name)
-        mat_stream = gzip.open( fname,mode='wb')
+        mat_stream = gzip.open(fname,mode='wb')
         savemat_future(mat_stream, expected, format=format)
         mat_stream.close()
 
-        mat_stream = gzip.open( fname,mode='rb')
+        mat_stream = gzip.open(fname,mode='rb')
         actual = loadmat(mat_stream, struct_as_record=True)
         mat_stream.close()
     finally:
@@ -842,15 +842,15 @@ def test_read_both_endian():
                            np.array([['hello'],
                                      ['world']], dtype=np.object))
         assert_array_equal(d['floats'],
-                           np.array([[ 2.,  3.],
-                                     [ 3.,  4.]], dtype=np.float32))
+                           np.array([[2.,  3.],
+                                     [3.,  4.]], dtype=np.float32))
 
 
 def test_write_opposite_endian():
     # We don't support writing opposite endian .mat files, but we need to behave
     # correctly if the user supplies an other-endian numpy array to write out
-    float_arr = np.array([[ 2.,  3.],
-                          [ 3.,  4.]])
+    float_arr = np.array([[2.,  3.],
+                          [3.,  4.]])
     int_arr = np.arange(6).reshape((2, 3))
     uni_arr = np.array(['hello', 'world'], dtype='U')
     stream = BytesIO()

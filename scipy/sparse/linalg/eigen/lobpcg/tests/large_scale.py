@@ -15,7 +15,7 @@ def sakurai(n):
         A moment-based method for large-scale generalized eigenvalue problems
         Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004) """
 
-    A = sparse.eye( n, n )
+    A = sparse.eye(n, n )
     d0 = array(r_[5,6*ones(n-2),5])
     d1 = -4*ones(n)
     d2 = ones(n)

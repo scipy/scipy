@@ -27,12 +27,12 @@ class TestSparseUtils(TestCase):
         assert_equal(sputils.isscalarlike(2.5),True)
         assert_equal(sputils.isscalarlike(1 + 3j),True)
         assert_equal(sputils.isscalarlike(np.array(3)),True)
-        assert_equal(sputils.isscalarlike( "16" ), True)
+        assert_equal(sputils.isscalarlike("16" ), True)
 
-        assert_equal(sputils.isscalarlike( np.array([3])), False)
-        assert_equal(sputils.isscalarlike( [[3]] ), False)
-        assert_equal(sputils.isscalarlike( (1,) ), False)
-        assert_equal(sputils.isscalarlike( (1,2) ), False)
+        assert_equal(sputils.isscalarlike(np.array([3])), False)
+        assert_equal(sputils.isscalarlike([[3]] ), False)
+        assert_equal(sputils.isscalarlike((1,) ), False)
+        assert_equal(sputils.isscalarlike((1,2) ), False)
 
     def test_isintlike(self):
         assert_equal(sputils.isintlike(3.0),True)
@@ -42,30 +42,30 @@ class TestSparseUtils(TestCase):
 
         assert_equal(sputils.isintlike(2.5),False)
         assert_equal(sputils.isintlike(1 + 3j),False)
-        assert_equal(sputils.isintlike( (1,) ), False)
-        assert_equal(sputils.isintlike( (1,2) ), False)
+        assert_equal(sputils.isintlike((1,) ), False)
+        assert_equal(sputils.isintlike((1,2) ), False)
 
     def test_isshape(self):
-        assert_equal(sputils.isshape( (1,2) ),True)
-        assert_equal(sputils.isshape( (5,2) ),True)
+        assert_equal(sputils.isshape((1,2) ),True)
+        assert_equal(sputils.isshape((5,2) ),True)
 
-        assert_equal(sputils.isshape( (1.5,2) ),False)
-        assert_equal(sputils.isshape( (2,2,2) ),False)
-        assert_equal(sputils.isshape( ([2],2) ),False)
+        assert_equal(sputils.isshape((1.5,2) ),False)
+        assert_equal(sputils.isshape((2,2,2) ),False)
+        assert_equal(sputils.isshape(([2],2) ),False)
 
     def test_issequence(self):
-        assert_equal(sputils.issequence( (1,) ),True)
-        assert_equal(sputils.issequence( (1,2,3) ),True)
-        assert_equal(sputils.issequence( [1] ),True)
-        assert_equal(sputils.issequence( [1,2,3] ),True)
-        assert_equal(sputils.issequence( np.array([1,2,3]) ),True)
+        assert_equal(sputils.issequence((1,) ),True)
+        assert_equal(sputils.issequence((1,2,3) ),True)
+        assert_equal(sputils.issequence([1] ),True)
+        assert_equal(sputils.issequence([1,2,3] ),True)
+        assert_equal(sputils.issequence(np.array([1,2,3]) ),True)
 
-        assert_equal(sputils.issequence( np.array([[1],[2],[3]]) ),False)
-        assert_equal(sputils.issequence( 3 ),False)
+        assert_equal(sputils.issequence(np.array([[1],[2],[3]]) ),False)
+        assert_equal(sputils.issequence(3 ),False)
 
     def test_isdense(self):
-        assert_equal(sputils.isdense( np.array([1]) ),True)
-        assert_equal(sputils.isdense( np.matrix([1]) ),True)
+        assert_equal(sputils.isdense(np.array([1]) ),True)
+        assert_equal(sputils.isdense(np.matrix([1]) ),True)
 
 if __name__ == "__main__":
     run_module_suite()

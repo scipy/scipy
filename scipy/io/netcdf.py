@@ -57,14 +57,14 @@ NC_VARIABLE  = b'\x00\x00\x00\x0b'
 NC_ATTRIBUTE = b'\x00\x00\x00\x0c'
 
 
-TYPEMAP = { NC_BYTE:   ('b', 1),
+TYPEMAP = {NC_BYTE:   ('b', 1),
             NC_CHAR:   ('c', 1),
             NC_SHORT:  ('h', 2),
             NC_INT:    ('i', 4),
             NC_FLOAT:  ('f', 4),
             NC_DOUBLE: ('d', 8) }
 
-REVERSE = { ('b', 1): NC_BYTE,
+REVERSE = {('b', 1): NC_BYTE,
             ('B', 1): NC_CHAR,
             ('c', 1): NC_CHAR,
             ('h', 2): NC_SHORT,
@@ -369,9 +369,9 @@ class netcdf_file(object):
 
             # Sort variables non-recs first, then recs. We use a DSU
             # since some people use pupynere with Python 2.3.x.
-            deco = [ (v._shape and not v.isrec, k) for (k, v) in self.variables.items() ]
+            deco = [(v._shape and not v.isrec, k) for (k, v) in self.variables.items() ]
             deco.sort()
-            variables = [ k for (unused, k) in deco ][::-1]
+            variables = [k for (unused, k) in deco ][::-1]
 
             # Set the metadata for all variables.
             for name in variables:

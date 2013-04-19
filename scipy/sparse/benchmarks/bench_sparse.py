@@ -29,7 +29,7 @@ def poisson2d(N,dtype='d',format=None):
     square N-by-N grid.
     """
     if N == 1:
-        diags   = asarray( [[4]],dtype=dtype)
+        diags   = asarray([[4]],dtype=dtype)
         return dia_matrix((diags,[0]), shape=(1,1)).asformat(format)
 
     offsets = array([0,-N,N,-1,1])
@@ -51,8 +51,8 @@ class BenchmarkSparse(TestCase):
     def bench_arithmetic(self):
         matrices = []
         #matrices.append( ('A','Identity', sparse.eye(500**2,format='csr')) )
-        matrices.append( ('A','Poisson5pt', poisson2d(250,format='csr'))  )
-        matrices.append( ('B','Poisson5pt^2', poisson2d(250,format='csr')**2)  )
+        matrices.append(('A','Poisson5pt', poisson2d(250,format='csr'))  )
+        matrices.append(('B','Poisson5pt^2', poisson2d(250,format='csr')**2)  )
 
         print()
         print('                 Sparse Matrix Arithmetic')
@@ -76,8 +76,8 @@ class BenchmarkSparse(TestCase):
         fmt = space+'   %3s  | %17s |  %7.1f  '
 
         for format in ['csr']:
-            vars = dict( [(var,mat.asformat(format)) for (var,name,mat) in matrices ] )
-            for X,Y in [ ('A','A'),('A','B'),('B','A'),('B','B') ]:
+            vars = dict([(var,mat.asformat(format)) for (var,name,mat) in matrices ] )
+            for X,Y in [('A','A'),('A','B'),('B','A'),('B','B') ]:
                 x,y = vars[X],vars[Y]
                 for op in ['__add__','__sub__','multiply','__div__','__mul__']:
                     fn = getattr(x,op)
@@ -97,11 +97,11 @@ class BenchmarkSparse(TestCase):
     def bench_sort(self):
         """sort CSR column indices"""
         matrices = []
-        matrices.append( ('Rand10',  1e4,  10) )
-        matrices.append( ('Rand25',  1e4,  25) )
-        matrices.append( ('Rand50',  1e4,  50) )
-        matrices.append( ('Rand100', 1e4, 100) )
-        matrices.append( ('Rand200', 1e4, 200) )
+        matrices.append(('Rand10',  1e4,  10) )
+        matrices.append(('Rand25',  1e4,  25) )
+        matrices.append(('Rand50',  1e4,  50) )
+        matrices.append(('Rand100', 1e4, 100) )
+        matrices.append(('Rand200', 1e4, 200) )
 
         print()
         print('                    Sparse Matrix Index Sorting')
@@ -141,12 +141,12 @@ class BenchmarkSparse(TestCase):
         matrices.append(('Poisson5pt', poisson2d(300,format='bsr')))
 
         A = sparse.kron(poisson2d(150),ones((2,2))).tobsr(blocksize=(2,2))
-        matrices.append( ('Block2x2', A.tocsr()) )
-        matrices.append( ('Block2x2', A) )
+        matrices.append(('Block2x2', A.tocsr()) )
+        matrices.append(('Block2x2', A) )
 
         A = sparse.kron(poisson2d(100),ones((3,3))).tobsr(blocksize=(3,3))
-        matrices.append( ('Block3x3', A.tocsr()) )
-        matrices.append( ('Block3x3', A) )
+        matrices.append(('Block3x3', A.tocsr()) )
+        matrices.append(('Block3x3', A) )
 
         print()
         print('                 Sparse Matrix Vector Product')
@@ -216,9 +216,9 @@ class BenchmarkSparse(TestCase):
     def bench_construction(self):
         """build matrices by inserting single values"""
         matrices = []
-        matrices.append( ('Empty',csr_matrix((10000,10000))) )
-        matrices.append( ('Identity',sparse.eye(10000)) )
-        matrices.append( ('Poisson5pt', poisson2d(100)) )
+        matrices.append(('Empty',csr_matrix((10000,10000))) )
+        matrices.append(('Identity',sparse.eye(10000)) )
+        matrices.append(('Poisson5pt', poisson2d(100)) )
 
         print()
         print('                    Sparse Matrix Construction')
@@ -278,7 +278,7 @@ class BenchmarkSparse(TestCase):
                         iter += 1
                     end = time.clock()
                     del x
-                    times.append( (end - start)/float(iter))
+                    times.append((end - start)/float(iter))
 
             output = "  %3s   " % fromfmt
             for t in times:

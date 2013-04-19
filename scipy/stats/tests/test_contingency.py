@@ -105,10 +105,10 @@ def test_chi2_contingency_R():
           [35, 31, 11],
           [12, 32,  9],
           [12, 12, 14]],
-         [[ 4, 47, 11],
+         [[4, 47, 11],
           [34, 10, 18],
           [18, 13, 19],
-          [ 9, 33, 25]]])
+          [9, 33, 25]]])
     chi2, p, dof, expected = chi2_contingency(obs)
     assert_approx_equal(chi2, 102.17, significant=5)
     assert_approx_equal(p, 3.514e-14, significant=4)

@@ -20,17 +20,17 @@ class TestMquantiles(TestCase):
     """Regression tests for mstats module."""
     def test_mquantiles_limit_keyword(self):
         """Ticket #867"""
-        data = np.array([[   6.,    7.,    1.],
-                         [  47.,   15.,    2.],
-                         [  49.,   36.,    3.],
-                         [  15.,   39.,    4.],
-                         [  42.,   40., -999.],
-                         [  41.,   41., -999.],
-                         [   7., -999., -999.],
-                         [  39., -999., -999.],
-                         [  43., -999., -999.],
-                         [  40., -999., -999.],
-                         [  36., -999., -999.]])
+        data = np.array([[6.,    7.,    1.],
+                         [47.,   15.,    2.],
+                         [49.,   36.,    3.],
+                         [15.,   39.,    4.],
+                         [42.,   40., -999.],
+                         [41.,   41., -999.],
+                         [7., -999., -999.],
+                         [39., -999., -999.],
+                         [43., -999., -999.],
+                         [40., -999., -999.],
+                         [36., -999., -999.]])
         desired = [[19.2, 14.6, 1.45],
                    [40.0, 37.5, 2.5 ],
                    [42.8, 40.05, 3.55]]
@@ -150,12 +150,12 @@ class TestCorr(TestCase):
         (x, y) = (ma.fix_invalid(x), ma.fix_invalid(y))
         assert_almost_equal(mstats.spearmanr(x,y)[0], -0.6324555)
         #
-        x = [ 2.0, 47.4, 42.0, 10.8, 60.1,  1.7, 64.0, 63.1,
+        x = [2.0, 47.4, 42.0, 10.8, 60.1,  1.7, 64.0, 63.1,
               1.0,  1.4,  7.9,  0.3,  3.9,  0.3,  6.7]
         y = [22.6, 08.3, 44.4, 11.9, 24.6,  0.6,  5.7, 41.6,
               0.0,  0.6,  6.7,  3.8,  1.0,  1.2,  1.4]
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
-        x = [ 2.0, 47.4, 42.0, 10.8, 60.1,  1.7, 64.0, 63.1,
+        x = [2.0, 47.4, 42.0, 10.8, 60.1,  1.7, 64.0, 63.1,
               1.0,  1.4,  7.9,  0.3,  3.9,  0.3,  6.7, np.nan]
         y = [22.6, 08.3, 44.4, 11.9, 24.6,  0.6,  5.7, 41.6,
               0.0,  0.6,  6.7,  3.8,  1.0,  1.2,  1.4, np.nan]
@@ -172,9 +172,9 @@ class TestCorr(TestCase):
         assert_almost_equal(np.asarray(mstats.kendalltau(x,z)),
                             [-0.5477226,0.2785987])
         #
-        x = ma.fix_invalid([ 0, 0, 0, 0,20,20, 0,60, 0,20,
+        x = ma.fix_invalid([0, 0, 0, 0,20,20, 0,60, 0,20,
                             10,10, 0,40, 0,20, 0, 0, 0, 0, 0, np.nan])
-        y = ma.fix_invalid([ 0,80,80,80,10,33,60, 0,67,27,
+        y = ma.fix_invalid([0,80,80,80,10,33,60, 0,67,27,
                             25,80,80,80,80,80,80, 0,10,45, np.nan, 0])
         result = mstats.kendalltau(x,y)
         assert_almost_equal(np.asarray(result), [-0.1585188, 0.4128009])
@@ -182,8 +182,8 @@ class TestCorr(TestCase):
     def test_kendalltau_seasonal(self):
         "Tests the seasonal Kendall tau."
         x = [[nan,nan,  4,  2, 16, 26,  5,  1,  5,  1,  2,  3,  1],
-             [  4,  3,  5,  3,  2,  7,  3,  1,  1,  2,  3,  5,  3],
-             [  3,  2,  5,  6, 18,  4,  9,  1,  1,nan,  1,  1,nan],
+             [4,  3,  5,  3,  2,  7,  3,  1,  1,  2,  3,  5,  3],
+             [3,  2,  5,  6, 18,  4,  9,  1,  1,nan,  1,  1,nan],
              [nan,  6, 11,  4, 17,nan,  6,  1,  1,  2,  5,  1,  1]]
         x = ma.fix_invalid(x).T
         output = mstats.kendalltau_seasonal(x)
@@ -254,7 +254,7 @@ class TestTrimming(TestCase):
     #
     def test_trimmedmean(self):
         "Tests the trimmed mean."
-        data = ma.array([ 77, 87, 88,114,151,210,219,246,253,262,
+        data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(mstats.trimmed_mean(data,0.1), 343, 0)
         assert_almost_equal(mstats.trimmed_mean(data,(0.1,0.1)), 343, 0)
@@ -262,14 +262,14 @@ class TestTrimming(TestCase):
     #
     def test_trimmed_stde(self):
         "Tests the trimmed mean standard error."
-        data = ma.array([ 77, 87, 88,114,151,210,219,246,253,262,
+        data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(mstats.trimmed_stde(data,(0.2,0.2)), 56.13193, 5)
         assert_almost_equal(mstats.trimmed_stde(data,0.2), 56.13193, 5)
     #
     def test_winsorization(self):
         "Tests the Winsorization of the data."
-        data = ma.array([ 77, 87, 88,114,151,210,219,246,253,262,
+        data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(mstats.winsorize(data,(0.2,0.2)).var(ddof=1),
                             21551.4, 1)
@@ -290,13 +290,13 @@ class TestMoments(TestCase):
     testmathworks = ma.fix_invalid([1.165 , 0.6268, 0.0751, 0.3516, -0.6965,
                                     np.nan])
     testcase_2d = ma.array(
-    np.array([[ 0.05245846,  0.50344235,  0.86589117,  0.36936353,  0.46961149],
-           [ 0.11574073,  0.31299969,  0.45925772,  0.72618805,  0.75194407],
-           [ 0.67696689,  0.91878127,  0.09769044,  0.04645137,  0.37615733],
-           [ 0.05903624,  0.29908861,  0.34088298,  0.66216337,  0.83160998],
-           [ 0.64619526,  0.94894632,  0.27855892,  0.0706151 ,  0.39962917]]),
-    mask=np.array([[ True, False, False,  True, False],
-           [ True,  True,  True, False,  True],
+    np.array([[0.05245846,  0.50344235,  0.86589117,  0.36936353,  0.46961149],
+           [0.11574073,  0.31299969,  0.45925772,  0.72618805,  0.75194407],
+           [0.67696689,  0.91878127,  0.09769044,  0.04645137,  0.37615733],
+           [0.05903624,  0.29908861,  0.34088298,  0.66216337,  0.83160998],
+           [0.64619526,  0.94894632,  0.27855892,  0.0706151 ,  0.39962917]]),
+    mask=np.array([[True, False, False,  True, False],
+           [True,  True,  True, False,  True],
            [False, False, False, False, False],
            [True, True, True, True, True],
            [False, False,  True, False, False]], dtype=np.bool))
@@ -465,8 +465,8 @@ class TestMisc(TestCase):
     def test_kstwosamp(self):
         "Tests the Kolmogorov-Smirnov 2 samples test"
         x = [[nan,nan,  4,  2, 16, 26,  5,  1,  5,  1,  2,  3,  1],
-             [  4,  3,  5,  3,  2,  7,  3,  1,  1,  2,  3,  5,  3],
-             [  3,  2,  5,  6, 18,  4,  9,  1,  1,nan,  1,  1,nan],
+             [4,  3,  5,  3,  2,  7,  3,  1,  1,  2,  3,  5,  3],
+             [3,  2,  5,  6, 18,  4,  9,  1,  1,nan,  1,  1,nan],
              [nan,  6, 11,  4, 17,nan,  6,  1,  1,  2,  5,  1,  1]]
         x = ma.fix_invalid(x).T
         (winter,spring,summer,fall) = x.T
@@ -489,8 +489,8 @@ class TestMisc(TestCase):
         assert_almost_equal(result[1], 0.005317, 6)
         # Missing values
         x = [[nan,nan,  4,  2, 16, 26,  5,  1,  5,  1,  2,  3,  1],
-             [  4,  3,  5,  3,  2,  7,  3,  1,  1,  2,  3,  5,  3],
-             [  3,  2,  5,  6, 18,  4,  9,  1,  1,nan,  1,  1,nan],
+             [4,  3,  5,  3,  2,  7,  3,  1,  1,  2,  3,  5,  3],
+             [3,  2,  5,  6, 18,  4,  9,  1,  1,nan,  1,  1,nan],
              [nan,  6, 11,  4, 17,nan,  6,  1,  1,  2,  5,  1,  1]]
         x = ma.fix_invalid(x)
         result = mstats.friedmanchisquare(*x)

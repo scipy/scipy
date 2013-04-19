@@ -15,12 +15,12 @@ from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
 #TODO add more comprehensive tests
-use_solver( useUmfpack=False )
+use_solver(useUmfpack=False )
 
 
 class TestLinsolve(TestCase):
     def test_singular(self):
-        A = csc_matrix( (5,5), dtype='d' )
+        A = csc_matrix((5,5), dtype='d' )
         b = array([1, 2, 3, 4, 5],dtype='d')
         x = spsolve(A, b, use_umfpack=False)
 
@@ -40,12 +40,12 @@ class TestLinsolve(TestCase):
 
                 x = spsolve(Asp,b)
 
-                assert_( norm(b - Asp*x) < 10 * cond_A * eps )
+                assert_(norm(b - Asp*x) < 10 * cond_A * eps )
 
     def test_bvector_smoketest(self):
-        Adense = matrix([[ 0.,  1.,  1.],
-                         [ 1.,  0.,  1.],
-                         [ 0.,  0.,  1.]])
+        Adense = matrix([[0.,  1.,  1.],
+                         [1.,  0.,  1.],
+                         [0.,  0.,  1.]])
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3)
@@ -55,9 +55,9 @@ class TestLinsolve(TestCase):
         assert_array_almost_equal(x, x2)
 
     def test_bmatrix_smoketest(self):
-        Adense = matrix([[ 0.,  1.,  1.],
-                         [ 1.,  0.,  1.],
-                         [ 0.,  0.,  1.]])
+        Adense = matrix([[0.,  1.,  1.],
+                         [1.,  0.,  1.],
+                         [0.,  0.,  1.]])
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3, 4)
@@ -119,11 +119,11 @@ class TestSplu(object):
         assert_(abs(x - r).max() > 1e-5)
 
     def test_splu_nnz0(self):
-        A = csc_matrix( (5,5), dtype='d' )
+        A = csc_matrix((5,5), dtype='d' )
         assert_raises(RuntimeError, splu, A)
 
     def test_spilu_nnz0(self):
-        A = csc_matrix( (5,5), dtype='d' )
+        A = csc_matrix((5,5), dtype='d' )
         assert_raises(RuntimeError, spilu, A)
 
     def test_splu_basic(self):

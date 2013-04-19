@@ -329,7 +329,7 @@ class TestFromMLabLinkage(TestCase):
 
     def test_from_mlab_linkage_single_row(self):
         "Tests from_mlab_linkage on linkage array with single row."
-        expectedZP = np.asarray([[ 0.,  1.,  3.,  2.]])
+        expectedZP = np.asarray([[0.,  1.,  3.,  2.]])
         Z = [[1,2,3]]
         ZP = from_mlab_linkage(Z)
         return self.assertTrue((ZP == expectedZP).all())
@@ -338,11 +338,11 @@ class TestFromMLabLinkage(TestCase):
         "Tests from_mlab_linkage on linkage array with multiple rows."
         Z = np.asarray([[3, 6, 138], [4, 5, 219],
                         [1, 8, 255], [2, 9, 268], [7, 10, 295]])
-        expectedZS = np.array([[   2.,    5.,  138.,    2.],
-                               [   3.,    4.,  219.,    2.],
-                               [   0.,    7.,  255.,    3.],
-                               [   1.,    8.,  268.,    4.],
-                               [   6.,    9.,  295.,    6.]],
+        expectedZS = np.array([[2.,    5.,  138.,    2.],
+                               [3.,    4.,  219.,    2.],
+                               [0.,    7.,  255.,    3.],
+                               [1.,    8.,  268.,    4.],
+                               [6.,    9.,  295.,    6.]],
                               dtype=np.double)
         ZS = from_mlab_linkage(Z)
         self.assertTrue((expectedZS == ZS).all())
@@ -357,7 +357,7 @@ class TestToMLabLinkage(TestCase):
 
     def test_to_mlab_linkage_single_row(self):
         "Tests to_mlab_linkage on linkage array with single row."
-        Z = np.asarray([[ 0.,  1.,  3.,  2.]])
+        Z = np.asarray([[0.,  1.,  3.,  2.]])
         expectedZP = np.asarray([[1,2,3]])
         ZP = to_mlab_linkage(Z)
         return self.assertTrue((ZP == expectedZP).all())
@@ -366,11 +366,11 @@ class TestToMLabLinkage(TestCase):
         "Tests to_mlab_linkage on linkage array with multiple rows."
         expectedZM = np.asarray([[3, 6, 138], [4, 5, 219],
                         [1, 8, 255], [2, 9, 268], [7, 10, 295]])
-        Z = np.array([[   2.,    5.,  138.,    2.],
-                      [   3.,    4.,  219.,    2.],
-                      [   0.,    7.,  255.,    3.],
-                      [   1.,    8.,  268.,    4.],
-                      [   6.,    9.,  295.,    6.]],
+        Z = np.array([[2.,    5.,  138.,    2.],
+                      [3.,    4.,  219.,    2.],
+                      [0.,    7.,  255.,    3.],
+                      [1.,    8.,  268.,    4.],
+                      [6.,    9.,  295.,    6.]],
                      dtype=np.double)
         ZM = to_mlab_linkage(Z)
         self.assertTrue((expectedZM == ZM).all())

@@ -140,7 +140,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        assert_allclose(p, np.array([ 0.08333333,  0.15277778,  0.22222222,
+        assert_allclose(p, np.array([0.08333333,  0.15277778,  0.22222222,
             0.22222222,  0.11111111]))
 
     def test_real_onesided_odd(self):
@@ -149,7 +149,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        assert_allclose(p, np.array([ 0.15958226,  0.24193954,  0.24145223,
+        assert_allclose(p, np.array([0.15958226,  0.24193954,  0.24145223,
             0.24100919,  0.12188675]))
 
     def test_real_twosided(self):
@@ -158,7 +158,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        assert_allclose(p, np.array([ 0.08333333,  0.07638889,  0.11111111,
+        assert_allclose(p, np.array([0.08333333,  0.07638889,  0.11111111,
             0.11111111,  0.11111111,  0.11111111,  0.11111111,  0.07638889]))
 
     def test_real_spectrum(self):
@@ -167,7 +167,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8, scaling='spectrum')
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        assert_allclose(p, np.array([ 0.015625, 0.028645833333333332,
+        assert_allclose(p, np.array([0.015625, 0.028645833333333332,
             0.041666666666666664, 0.041666666666666664, 0.020833333333333332]))
 
     def test_complex(self):
@@ -176,7 +176,7 @@ class TestWelch(TestCase):
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        assert_allclose(p, np.array([ 0.41666667,  0.38194444,  0.55555556,
+        assert_allclose(p, np.array([0.41666667,  0.38194444,  0.55555556,
             0.55555556,  0.55555556, 0.55555556,  0.55555556,  0.38194444]))
 
     def test_unk_scaling(self):
