@@ -1137,10 +1137,20 @@ def test_ncx2_tails_ticket_955():
     b = stats.ncx2.veccdf(np.arange(20, 25, 0.2), 2, 1.07458615e+02)
     assert_allclose(a, b, rtol=1e-3, atol=0)
 
+
 def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
     assert_equal(rv.cdf(0), 0)  # rv.cdf(0) previously resulted in: nan
+
+
+def test_nct_ticket_1883():
+    # Parameter values c<=0 were not enabled
+    # For negative values c and for c=0 results of rv.cdf(0) below were nan
+    rv = stats.nct(5, 0)
+    assert_equal(rv.cdf(0), 0.5)
+    rv = stats.nct(5, -1)
+    assert_almost_equal(rv.cdf(0), 0.841344746069, decimal=10)
 
 
 if __name__ == "__main__":

@@ -4837,11 +4837,13 @@ class nct_gen(rv_continuous):
         nct.pdf(x, df, nc) = ----------------------------------------------------
                              2**df*exp(nc**2/2) * (df+x**2)**(df/2) * gamma(df/2)
 
-    for ``df > 0``, ``nc > 0``.
+    for ``df > 0``.
 
     %(example)s
 
     """
+    def _argcheck(self, df, nc):
+        return (df > 0) & (nc == nc)
     def _rvs(self, df, nc):
         return norm.rvs(loc=nc,size=self._size)*sqrt(df) / sqrt(chi2.rvs(df,size=self._size))
 
