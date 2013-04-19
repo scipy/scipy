@@ -6,38 +6,38 @@ from random import random
 from scipy.optimize import zeros as cc
 
 
-def f1(x) :
+def f1(x):
     return x*(x-1.)
 
 
-def f2(x) :
+def f2(x):
     return x**2 - 1
 
 
-def f3(x) :
+def f3(x):
     return x*(x-1.)*(x-2.)*(x-3.)
 
 
-def f4(x) :
-    if x > 1 :
+def f4(x):
+    if x > 1:
         return 1.0 + .1*x
-    if x < 1 :
+    if x < 1:
         return -1.0 + .1*x
     return 0
 
 
-def f5(x) :
-    if x != 1 :
+def f5(x):
+    if x != 1:
         return 1.0/(1. - x)
     return 0
 
 
-def f6(x) :
-    if x > 1 :
+def f6(x):
+    if x > 1:
         return random()
-    elif x < 1 :
+    elif x < 1:
         return -random()
-    else :
+    else:
         return 0
 
 description = """

@@ -128,7 +128,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
         b = asarray(b, dtype=A.dtype).reshape(-1)
 
-        family = {'d' : 'di', 'D' : 'zi'}
+        family = {'d': 'di', 'D': 'zi'}
         umf = umfpack.UmfpackContext(family[A.dtype.char])
         x = umf.linsolve(umfpack.UMFPACK_A, A, b,
                          autoTranspose=True)
@@ -345,7 +345,7 @@ def factorized(A):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        family = {'d' : 'di', 'D' : 'zi'}
+        family = {'d': 'di', 'D': 'zi'}
         umf = umfpack.UmfpackContext(family[A.dtype.char])
 
         # Make LU decomposition.

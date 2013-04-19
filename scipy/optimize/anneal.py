@@ -428,22 +428,22 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
     """
 
-    opts = {'schedule'  : schedule,
-            'T0'        : T0,
-            'Tf'        : Tf,
-            'maxfev'    : maxeval,
-            'maxaccept' : maxaccept,
-            'maxiter'   : maxiter,
-            'boltzmann' : boltzmann,
+    opts = {'schedule': schedule,
+            'T0': T0,
+            'Tf': Tf,
+            'maxfev': maxeval,
+            'maxaccept': maxaccept,
+            'maxiter': maxiter,
+            'boltzmann': boltzmann,
             'learn_rate': learn_rate,
-            'ftol'      : feps,
-            'quench'    : quench,
-            'm'         : m,
-            'n'         : n,
-            'lower'     : lower,
-            'upper'     : upper,
-            'dwell'     : dwell,
-            'disp'      : disp}
+            'ftol': feps,
+            'quench': quench,
+            'm': m,
+            'n': n,
+            'lower': lower,
+            'upper': upper,
+            'dwell': dwell,
+            'disp': disp}
 
     res = _minimize_anneal(func, x0, args, **opts)
 

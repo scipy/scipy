@@ -558,7 +558,7 @@ def splev(x, tck, der=0, ext=0):
     except:
         parametric = False
     if parametric:
-        return list(map(lambda c, x=x, t=t, k=k, der=der : splev(x, [t,c,k], der, ext), c))
+        return list(map(lambda c, x=x, t=t, k=k, der=der: splev(x, [t,c,k], der, ext), c))
     else:
         if not (0 <= der <= k):
             raise ValueError("0<=der=%d<=k=%d must hold" % (der,k))

@@ -49,12 +49,12 @@ MSG_EXIT = 8 # Exit reasons
 MSG_ALL = MSG_ITER + MSG_INFO + MSG_VERS + MSG_EXIT
 
 MSGS = {
-        MSG_NONE : "No messages",
-        MSG_ITER : "One line per iteration",
-        MSG_INFO : "Informational messages",
-        MSG_VERS : "Version info",
-        MSG_EXIT : "Exit reasons",
-        MSG_ALL  : "All messages"
+        MSG_NONE: "No messages",
+        MSG_ITER: "One line per iteration",
+        MSG_INFO: "Informational messages",
+        MSG_VERS: "Version info",
+        MSG_EXIT: "Exit reasons",
+        MSG_ALL: "All messages"
 }
 
 INFEASIBLE   = -1 # Infeasible (low > up)
@@ -68,15 +68,15 @@ NOPROGRESS   = 6  # Unable to progress
 USERABORT    = 7  # User requested end of minimization
 
 RCSTRINGS = {
-        INFEASIBLE   : "Infeasible (low > up)",
-        LOCALMINIMUM : "Local minima reach (|pg| ~= 0)",
-        FCONVERGED   : "Converged (|f_n-f_(n-1)| ~= 0)",
-        XCONVERGED   : "Converged (|x_n-x_(n-1)| ~= 0)",
-        MAXFUN       : "Max. number of function evaluations reach",
-        LSFAIL       : "Linear search failed",
-        CONSTANT     : "All lower bounds are equal to the upper bounds",
-        NOPROGRESS   : "Unable to progress",
-        USERABORT    : "User requested end of minimization"
+        INFEASIBLE: "Infeasible (low > up)",
+        LOCALMINIMUM: "Local minima reach (|pg| ~= 0)",
+        FCONVERGED: "Converged (|f_n-f_(n-1)| ~= 0)",
+        XCONVERGED: "Converged (|x_n-x_(n-1)| ~= 0)",
+        MAXFUN: "Max. number of function evaluations reach",
+        LSFAIL: "Linear search failed",
+        CONSTANT: "All lower bounds are equal to the upper bounds",
+        NOPROGRESS: "Unable to progress",
+        USERABORT: "User requested end of minimization"
 }
 
 # Changes to interface made by Travis Oliphant, Apr. 2004 for inclusion in
@@ -244,7 +244,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         mesg_num = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
                     4:MSG_EXIT, 5:MSG_ALL}.get(messages, MSG_ALL)
     # build options
-    opts = {'eps'  : epsilon,
+    opts = {'eps': epsilon,
             'scale': scale,
             'offset': offset,
             'mesg_num': mesg_num,

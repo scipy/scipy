@@ -287,14 +287,14 @@ class TestMoments(TestCase):
     # http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
     # Note that both test cases came from here.
     testcase = [1,2,3,4]
-    testmathworks = ma.fix_invalid([1.165 , 0.6268, 0.0751, 0.3516, -0.6965,
+    testmathworks = ma.fix_invalid([1.165, 0.6268, 0.0751, 0.3516, -0.6965,
                                     np.nan])
     testcase_2d = ma.array(
     np.array([[0.05245846,  0.50344235,  0.86589117,  0.36936353,  0.46961149],
            [0.11574073,  0.31299969,  0.45925772,  0.72618805,  0.75194407],
            [0.67696689,  0.91878127,  0.09769044,  0.04645137,  0.37615733],
            [0.05903624,  0.29908861,  0.34088298,  0.66216337,  0.83160998],
-           [0.64619526,  0.94894632,  0.27855892,  0.0706151 ,  0.39962917]]),
+           [0.64619526,  0.94894632,  0.27855892,  0.0706151,  0.39962917]]),
     mask=np.array([[True, False, False,  True, False],
            [True,  True,  True, False,  True],
            [False, False, False, False, False],
@@ -435,8 +435,8 @@ class TestVariability(TestCase):
         (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
         """
         y = mstats.zmap(self.testcase, self.testcase)
-        desired_unmaskedvals = ([-1.3416407864999, -0.44721359549996 ,
-                                 0.44721359549996 , 1.3416407864999])
+        desired_unmaskedvals = ([-1.3416407864999, -0.44721359549996,
+                                 0.44721359549996, 1.3416407864999])
         assert_array_almost_equal(desired_unmaskedvals,
                                   y.data[y.mask == False], decimal=12)
 
@@ -446,8 +446,8 @@ class TestVariability(TestCase):
         (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
         """
         y = mstats.zscore(self.testcase)
-        desired = ma.fix_invalid([-1.3416407864999, -0.44721359549996 ,
-                                  0.44721359549996 , 1.3416407864999, np.nan])
+        desired = ma.fix_invalid([-1.3416407864999, -0.44721359549996,
+                                  0.44721359549996, 1.3416407864999, np.nan])
         assert_almost_equal(desired, y, decimal=12)
 
 

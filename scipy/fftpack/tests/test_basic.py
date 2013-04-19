@@ -505,12 +505,12 @@ class TestFftn(TestCase):
         assert_array_almost_equal(swapaxes(y,-1,-3),fftn(ijk_space))
         y = fftn(x,axes=(2,0,1)) # ikj_space
         assert_array_almost_equal(swapaxes(swapaxes(y,-1,-3),
-                                                   -1,-2)
-                                  ,fftn(ikj_space))
+                                                   -1,-2),
+                                  fftn(ikj_space))
         y = fftn(x,axes=(1,2,0)) # jik_space
         assert_array_almost_equal(swapaxes(swapaxes(y,-1,-3),
-                                                   -3,-2)
-                                  ,fftn(jik_space))
+                                                   -3,-2),
+                                  fftn(jik_space))
         y = fftn(x,axes=(1,0,2)) # jki_space
         assert_array_almost_equal(swapaxes(y,-2,-3),fftn(jki_space))
         y = fftn(x,axes=(0,2,1)) # kij_space

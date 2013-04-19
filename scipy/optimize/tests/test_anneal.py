@@ -40,12 +40,12 @@ class TestAnneal(TestCase):
         """ Call anneal algorithm using specified schedule """
         n = 0 # index of test function
         if use_wrapper:
-            opts = {'upper'   : self.upper[n],
-                    'lower'   : self.lower[n],
-                    'ftol'    : 1e-3,
-                    'maxiter' : self.maxiter,
+            opts = {'upper': self.upper[n],
+                    'lower': self.lower[n],
+                    'ftol': 1e-3,
+                    'maxiter': self.maxiter,
                     'schedule': schedule,
-                    'disp'    : False}
+                    'disp': False}
             res = minimize(self.fun[n], self.x0[n], method='anneal',
                                options=opts)
             x, retval = res['x'], res['status']

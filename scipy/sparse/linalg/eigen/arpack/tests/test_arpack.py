@@ -267,8 +267,8 @@ class SymmetricParams:
         self.eigs = eigsh
         self.which = ['LM', 'SM', 'LA', 'SA', 'BE']
         self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
-        self.sigmas_modes = {None : ['normal'],
-                             0.5 : ['normal', 'buckling', 'cayley']}
+        self.sigmas_modes = {None: ['normal'],
+                             0.5: ['normal', 'buckling', 'cayley']}
 
         #generate matrices
         # these should all be float32 so that the eigenvalues
@@ -318,9 +318,9 @@ class NonSymmetricParams:
         self.eigs = eigs
         self.which = ['LM', 'LR', 'LI']# , 'SM', 'LR', 'SR', 'LI', 'SI']
         self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
-        self.sigmas_OPparts = {None : [None],
-                               0.1 : ['r'],
-                               0.1 + 0.1j : ['r', 'i']}
+        self.sigmas_OPparts = {None: [None],
+                               0.1: ['r'],
+                               0.1 + 0.1j: ['r', 'i']}
 
         #generate matrices
         # these should all be float32 so that the eigenvalues

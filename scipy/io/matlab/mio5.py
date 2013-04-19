@@ -484,7 +484,7 @@ def to_writeable(source):
                 dtype.append((field,object))
                 values.append(value)
         if dtype:
-            return np.array([tuple(values)] ,dtype)
+            return np.array([tuple(values)],dtype)
         else:
             return None
     # Next try and convert to an array

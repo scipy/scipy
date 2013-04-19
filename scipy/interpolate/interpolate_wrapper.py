@@ -30,7 +30,7 @@ def nearest(x, y, new_x):
         Rounds each `new_x` to nearest `x` and returns the corresponding `y`.
 
     """
-    shifted_x = np.concatenate((np.array([x[0]-1]) , x[0:-1]))
+    shifted_x = np.concatenate((np.array([x[0]-1]), x[0:-1]))
 
     midpoints_of_x = atleast_1d_and_contiguous(.5*(x + shifted_x))
     new_x = atleast_1d_and_contiguous(new_x)

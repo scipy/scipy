@@ -26,7 +26,7 @@ class TestLogit(TestCase):
         expected = np.array([-np.inf, -2.07944155,
                             -1.25276291, -0.69314718,
                             -0.22314353, 0.22314365,
-                            0.6931473 ,  1.25276303,
+                            0.6931473,  1.25276303,
                             2.07944155, np.inf], dtype=np.float32)
         self.check_logit_out('f4', expected)
 
@@ -61,14 +61,14 @@ class TestExpit(TestCase):
         expected = np.array([0.01798621,  0.04265125,
                             0.09777259,  0.20860852,
                             0.39068246, 0.60931754,
-                            0.79139149,  0.9022274 ,
+                            0.79139149,  0.9022274,
                             0.95734876,  0.98201376], dtype=np.float32)
         self.check_expit_out('f4',expected)
 
     def test_float64(self):
         expected = np.array([0.01798621,  0.04265125,
-                            0.0977726 ,  0.20860853,
+                            0.0977726,  0.20860853,
                             0.39068246, 0.60931754,
-                            0.79139147,  0.9022274 ,
+                            0.79139147,  0.9022274,
                             0.95734875,  0.98201379])
         self.check_expit_out('f8', expected)

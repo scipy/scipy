@@ -189,21 +189,21 @@ if _um:
     locals().update(umfDefines)
 
     umfStatus = {
-        UMFPACK_OK : 'UMFPACK_OK',
-        UMFPACK_WARNING_singular_matrix : 'UMFPACK_WARNING_singular_matrix',
-        UMFPACK_WARNING_determinant_underflow : 'UMFPACK_WARNING_determinant_underflow',
-        UMFPACK_WARNING_determinant_overflow : 'UMFPACK_WARNING_determinant_overflow',
-        UMFPACK_ERROR_out_of_memory : 'UMFPACK_ERROR_out_of_memory',
-        UMFPACK_ERROR_invalid_Numeric_object : 'UMFPACK_ERROR_invalid_Numeric_object',
-        UMFPACK_ERROR_invalid_Symbolic_object : 'UMFPACK_ERROR_invalid_Symbolic_object',
-        UMFPACK_ERROR_argument_missing : 'UMFPACK_ERROR_argument_missing',
-        UMFPACK_ERROR_n_nonpositive : 'UMFPACK_ERROR_n_nonpositive',
-        UMFPACK_ERROR_invalid_matrix : 'UMFPACK_ERROR_invalid_matrix',
-        UMFPACK_ERROR_different_pattern : 'UMFPACK_ERROR_different_pattern',
-        UMFPACK_ERROR_invalid_system : 'UMFPACK_ERROR_invalid_system',
-        UMFPACK_ERROR_invalid_permutation : 'UMFPACK_ERROR_invalid_permutation',
-        UMFPACK_ERROR_internal_error : 'UMFPACK_ERROR_internal_error',
-        UMFPACK_ERROR_file_IO : 'UMFPACK_ERROR_file_IO',
+        UMFPACK_OK: 'UMFPACK_OK',
+        UMFPACK_WARNING_singular_matrix: 'UMFPACK_WARNING_singular_matrix',
+        UMFPACK_WARNING_determinant_underflow: 'UMFPACK_WARNING_determinant_underflow',
+        UMFPACK_WARNING_determinant_overflow: 'UMFPACK_WARNING_determinant_overflow',
+        UMFPACK_ERROR_out_of_memory: 'UMFPACK_ERROR_out_of_memory',
+        UMFPACK_ERROR_invalid_Numeric_object: 'UMFPACK_ERROR_invalid_Numeric_object',
+        UMFPACK_ERROR_invalid_Symbolic_object: 'UMFPACK_ERROR_invalid_Symbolic_object',
+        UMFPACK_ERROR_argument_missing: 'UMFPACK_ERROR_argument_missing',
+        UMFPACK_ERROR_n_nonpositive: 'UMFPACK_ERROR_n_nonpositive',
+        UMFPACK_ERROR_invalid_matrix: 'UMFPACK_ERROR_invalid_matrix',
+        UMFPACK_ERROR_different_pattern: 'UMFPACK_ERROR_different_pattern',
+        UMFPACK_ERROR_invalid_system: 'UMFPACK_ERROR_invalid_system',
+        UMFPACK_ERROR_invalid_permutation: 'UMFPACK_ERROR_invalid_permutation',
+        UMFPACK_ERROR_internal_error: 'UMFPACK_ERROR_internal_error',
+        UMFPACK_ERROR_file_IO: 'UMFPACK_ERROR_file_IO',
     }
 
     umfSys = [
@@ -225,14 +225,14 @@ if _um:
 
     # Real, complex.
     umfSys_transposeMap = [
-        {UMFPACK_A : UMFPACK_At,
-         UMFPACK_At : UMFPACK_A,
-         UMFPACK_Aat : UMFPACK_A},
-        {UMFPACK_A : UMFPACK_Aat,
-         UMFPACK_Aat : UMFPACK_A}
+        {UMFPACK_A: UMFPACK_At,
+         UMFPACK_At: UMFPACK_A,
+         UMFPACK_Aat: UMFPACK_A},
+        {UMFPACK_A: UMFPACK_Aat,
+         UMFPACK_Aat: UMFPACK_A}
     ]
 
-umfFamilyTypes = {'di' : int, 'dl' : int, 'zi' : int, 'zl' : int}
+umfFamilyTypes = {'di': int, 'dl': int, 'zi': int, 'zl': int}
 umfRealTypes = ('di', 'dl')
 umfComplexTypes = ('zi', 'zl')
 

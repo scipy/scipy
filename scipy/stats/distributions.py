@@ -3261,7 +3261,7 @@ class genextreme_gen(rv_continuous):
         return where((c == 0)*(x == x),x,-expm1(-c*x)/c)
     def _stats(self,c):
 
-        g = lambda n : gam(n*c+1)
+        g = lambda n: gam(n*c+1)
         g1 = g(1)
         g2 = g(2)
         g3 = g(3)
@@ -4193,7 +4193,7 @@ class lognorm_gen(rv_continuous):
     def _pdf(self, x, s):
         return exp(self._logpdf(x, s))
     def _logpdf(self, x, s):
-        return -log(x)**2 / (2*s**2) + np.where(x == 0 , 0, - log(s*x*sqrt(2*pi)))
+        return -log(x)**2 / (2*s**2) + np.where(x == 0, 0, - log(s*x*sqrt(2*pi)))
     def _cdf(self, x, s):
         return norm.cdf(log(x)/s)
     def _ppf(self, q, s):

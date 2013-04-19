@@ -326,11 +326,11 @@ class _TestCommon:
     def test_asfptype(self):
         A = self.spmatrix(arange(6,dtype='int32').reshape(2,3))
 
-        assert_equal(A.dtype , np.dtype('int32'))
+        assert_equal(A.dtype, np.dtype('int32'))
         assert_equal(A.asfptype().dtype, np.dtype('float64'))
         assert_equal(A.asfptype().format, A.format)
-        assert_equal(A.astype('int16').asfptype().dtype , np.dtype('float32'))
-        assert_equal(A.astype('complex128').asfptype().dtype , np.dtype('complex128'))
+        assert_equal(A.astype('int16').asfptype().dtype, np.dtype('float32'))
+        assert_equal(A.astype('complex128').asfptype().dtype, np.dtype('complex128'))
 
         B = A.asfptype()
         C = B.asfptype()

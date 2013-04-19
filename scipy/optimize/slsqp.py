@@ -64,7 +64,7 @@ def approx_jacobian(x,func,epsilon,*args):
     return jac.transpose()
 
 
-def fmin_slsqp(func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
+def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
                 bounds=[], fprime=None, fprime_eqcons=None,
                 fprime_ieqcons=None, args=(), iter = 100, acc = 1.0E-6,
                 iprint = 1, disp = None, full_output = 0, epsilon = _epsilon):
@@ -174,17 +174,17 @@ def fmin_slsqp(func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
     if disp is not None:
         iprint = disp
     opts = {'maxiter': iter,
-            'ftol'   : acc,
-            'iprint' : iprint,
-            'disp'   : iprint != 0,
-            'eps'    : epsilon}
+            'ftol': acc,
+            'iprint': iprint,
+            'disp': iprint != 0,
+            'eps': epsilon}
 
     # Build the constraints as a tuple of dictionaries
     cons = ()
     # 1. constraints of the 1st kind (eqcons, ieqcons); no jacobian; take
     #    the same extra arguments as the objective function.
-    cons += tuple({'type': 'eq', 'fun' : c, 'args': args} for c in eqcons)
-    cons += tuple({'type': 'ineq', 'fun' : c, 'args': args} for c in ieqcons)
+    cons += tuple({'type': 'eq', 'fun': c, 'args': args} for c in eqcons)
+    cons += tuple({'type': 'ineq', 'fun': c, 'args': args} for c in ieqcons)
     # 2. constraints of the 2nd kind (f_eqcons, f_ieqcons) and their jacobian
     #    (fprime_eqcons, fprime_ieqcons); also take the same extra arguments
     #    as the objective function.
@@ -267,21 +267,21 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                 return approx_jacobian(x, con['fun'], epsilon, *args)
 
         # update constraints' dictionary
-        cons[ctype] += ({'fun' : con['fun'],
-                         'jac' : cjac,
+        cons[ctype] += ({'fun': con['fun'],
+                         'jac': cjac,
                          'args': con.get('args', ())}, )
 
-    exit_modes = {-1 : "Gradient evaluation required (g & a)",
-                    0 : "Optimization terminated successfully.",
-                    1 : "Function evaluation required (f & c)",
-                    2 : "More equality constraints than independent variables",
-                    3 : "More than 3*n iterations in LSQ subproblem",
-                    4 : "Inequality constraints incompatible",
-                    5 : "Singular matrix E in LSQ subproblem",
-                    6 : "Singular matrix C in LSQ subproblem",
-                    7 : "Rank-deficient equality constraint subproblem HFTI",
-                    8 : "Positive directional derivative for linesearch",
-                    9 : "Iteration limit exceeded"}
+    exit_modes = {-1: "Gradient evaluation required (g & a)",
+                    0: "Optimization terminated successfully.",
+                    1: "Function evaluation required (f & c)",
+                    2: "More equality constraints than independent variables",
+                    3: "More than 3*n iterations in LSQ subproblem",
+                    4: "Inequality constraints incompatible",
+                    5: "Singular matrix E in LSQ subproblem",
+                    6: "Singular matrix C in LSQ subproblem",
+                    7: "Rank-deficient equality constraint subproblem HFTI",
+                    8: "Positive directional derivative for linesearch",
+                    9: "Iteration limit exceeded"}
 
     # Wrap func
     feval, func = wrap_function(func, args)
@@ -450,8 +450,8 @@ if __name__ == '__main__':
         return array([[1, 1]])
 
     # constraints dictionaries
-    cons = ({'type': 'eq', 'fun' : feqcon, 'jac' : jeqcon, 'args': (1, )},
-          {'type': 'ineq', 'fun' : fieqcon, 'jac' : jieqcon, 'args': (10,)})
+    cons = ({'type': 'eq', 'fun': feqcon, 'jac': jeqcon, 'args': (1, )},
+          {'type': 'ineq', 'fun': fieqcon, 'jac': jieqcon, 'args': (10,)})
 
     # Bounds constraint problem
     print(' Bounds constraints '.center(72, '-'))

@@ -40,5 +40,5 @@ def bench_run():
             n_structs))
 
 
-if __name__ == '__main__' :
+if __name__ == '__main__':
     bench_run()

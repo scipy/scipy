@@ -220,7 +220,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     for ii in range(2 * lw + 1):
         weights[ii] /= sum
     # implement first, second and third order derivatives:
-    if order == 1 : # first derivative
+    if order == 1: # first derivative
         weights[lw] = 0.0
         for ii in range(1, lw + 1):
             x = float(ii)

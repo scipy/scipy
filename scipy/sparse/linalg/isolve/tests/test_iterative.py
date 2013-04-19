@@ -262,7 +262,7 @@ class TestQMR(TestCase):
         n = 100
 
         dat = ones(n)
-        A = spdiags([-2*dat, 4*dat, -dat], [-1,0,1] ,n,n)
+        A = spdiags([-2*dat, 4*dat, -dat], [-1,0,1],n,n)
         b = arange(n,dtype='d')
 
         L = spdiags([-dat/2, dat], [-1,0], n, n)

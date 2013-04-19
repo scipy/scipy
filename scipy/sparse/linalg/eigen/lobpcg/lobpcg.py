@@ -556,7 +556,7 @@ if __name__ == '__main__':
     Y = np.eye(n, 3)
 
 #    X = sp.rand( n, 3 )
-    xfile = {100 : 'X.txt', 1000 : 'X2.txt', 10000 : 'X3.txt'}
+    xfile = {100: 'X.txt', 1000: 'X2.txt', 10000: 'X3.txt'}
     X = np.fromfile(xfile[n], dtype=np.float64, sep=' ')
     X.shape = (n, 3)
 

@@ -70,7 +70,7 @@ def read_triplet2(fd):
     return mtx
 
 
-formatMap = {'triplet' : read_triplet}
+formatMap = {'triplet': read_triplet}
 ##
 # 05.12.2005, c
 

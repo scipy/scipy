@@ -158,7 +158,7 @@ class TestTnc(TestCase):
         assert_allclose(self.f3(x), self.f3(xopt), atol=1e-8)
 
     def test_minimize_tnc4(self):
-        x0 ,bnds = [1.125, 0.125], [(1, None), (0, None)]
+        x0,bnds = [1.125, 0.125], [(1, None), (0, None)]
         xopt = [1, 0]
         x = optimize.minimize(self.f4, x0, method='TNC',
                               jac=self.g4, bounds=bnds,

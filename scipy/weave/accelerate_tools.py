@@ -228,8 +228,8 @@ XRange = XRange()
 
 
 typedefs = {
-    int : Integer,
-    float : Double,
+    int: Integer,
+    float: Double,
     str: String,
     (np.ndarray,1,int): IntegerVector,
     (np.ndarray,2,int): Integermatrix,
@@ -237,7 +237,7 @@ typedefs = {
     (np.ndarray,2,np.long): Longmatrix,
     (np.ndarray,1,float): DoubleVector,
     (np.ndarray,2,float): Doublematrix,
-    XRangeType : XRange,
+    XRangeType: XRange,
     }
 
 import math

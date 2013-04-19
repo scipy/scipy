@@ -814,14 +814,14 @@ class TestHistogram(TestCase):
         basic_tests = ((self.low_values, (np.array([4.0,  0.0,  4.5,  -0.9,  0.0,
                                                       0.3,110.2,  0.0,  0.0,  42.0]),
                                           0.2, 0.1, 0)),
-                       (self.high_range, (np.array([9.6,  0. ,  -1. ,  0. ,  0. ,
-                                                      0. ,145.2,   0. ,  0.3,  7.]),
+                       (self.high_range, (np.array([9.6,  0.,  -1.,  0.,  0.,
+                                                      0.,145.2,   0.,  0.3,  7.]),
                                           2.0, 9.3, 0)),
-                       (self.low_range, (np.array([2.4,  0. ,  0. ,   0. ,  0. ,
-                                                    2. , 40. ,  0. , 103.2, 13.5]),
+                       (self.low_range, (np.array([2.4,  0.,  0.,   0.,  0.,
+                                                    2., 40.,  0., 103.2, 13.5]),
                                          2.0, 0.11, 0)),
-                       (self.few_values, (np.array([4.5,  0. ,  0.1,  0. ,  0. ,  0. ,
-                                                     0. ,  1. ,  0. ,  3.]),
+                       (self.few_values, (np.array([4.5,  0.,  0.1,  0.,  0.,  0.,
+                                                     0.,  1.,  0.,  3.]),
                                           -1., 0.4, 0)),
 
                        )
@@ -1038,8 +1038,8 @@ class TestScoreatpercentile(TestCase):
         assert_equal(scoreatperc(list(range(10)), 50), 4.5)
         assert_equal(scoreatperc(list(range(10)), 50, (2,7)), 4.5)
         assert_equal(scoreatperc(list(range(100)), 50, limit=(1, 8)), 4.5)
-        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (10,100)), 55)
-        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (1,10)), 5.5)
+        assert_equal(scoreatperc(np.array([1, 10,100]), 50, (10,100)), 55)
+        assert_equal(scoreatperc(np.array([1, 10,100]), 50, (1,10)), 5.5)
 
         # explicitly specify interpolation_method 'fraction' (the default)
         assert_equal(scoreatperc(list(range(10)), 50, interpolation_method='fraction'),
@@ -1050,10 +1050,10 @@ class TestScoreatpercentile(TestCase):
         assert_equal(scoreatperc(list(range(100)), 50, limit=(1, 8),
                                  interpolation_method='fraction'),
                      4.5)
-        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (10, 100),
+        assert_equal(scoreatperc(np.array([1, 10,100]), 50, (10, 100),
                                  interpolation_method='fraction'),
                      55)
-        assert_equal(scoreatperc(np.array([1, 10 ,100]), 50, (1,10),
+        assert_equal(scoreatperc(np.array([1, 10,100]), 50, (1,10),
                                  interpolation_method='fraction'),
                      5.5)
 
@@ -1150,7 +1150,7 @@ class TestVariability(TestCase):
         (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
         """
         y = stats.zmap(self.testcase,self.testcase)
-        desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
+        desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996, 1.3416407864999])
         assert_array_almost_equal(desired,y,decimal=12)
 
     def test_zmap_axis(self):
@@ -1198,7 +1198,7 @@ class TestVariability(TestCase):
         (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
         """
         y = stats.zscore(self.testcase)
-        desired = ([-1.3416407864999, -0.44721359549996 , 0.44721359549996 , 1.3416407864999])
+        desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996, 1.3416407864999])
         assert_array_almost_equal(desired,y,decimal=12)
 
     def test_zscore_axis(self):
@@ -1252,7 +1252,7 @@ class TestMoments(TestCase):
         Note that both test cases came from here.
     """
     testcase = [1,2,3,4]
-    testmathworks = [1.165 , 0.6268, 0.0751, 0.3516, -0.6965]
+    testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
     def test_moment(self):
         """
         mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))"""
@@ -1918,7 +1918,7 @@ class HarMeanTestCase:
     def test_2daxis1(self):
         ''' Test a 2d list with axis=1'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([19.2       ,   63.03939962,  103.80078637])
+        b = np.array([19.2,   63.03939962,  103.80078637])
         self.do(a, b, axis=1)
     def test_2dmatrixdaxis0(self):
         ''' Test a 2d list with axis=0'''
@@ -1928,7 +1928,7 @@ class HarMeanTestCase:
     def test_2dmatrixaxis1(self):
         ''' Test a 2d list with axis=1'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[19.2       ,   63.03939962,  103.80078637]]).T
+        b = np.matrix([[19.2,   63.03939962,  103.80078637]]).T
         self.do(np.matrix(a), b, axis=1)
 ##    def test_dtype(self):
 ##        ''' Test a 1d list with a new dtype'''
@@ -1985,7 +1985,7 @@ class GeoMeanTestCase:
     def test_2daxis0(self):
         ''' Test a 2d list with axis=0'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([35.56893304,  49.32424149,  61.3579244 ,  72.68482371])
+        b = np.array([35.56893304,  49.32424149,  61.3579244,  72.68482371])
         self.do(a, b, axis=0)
     def test_2daxis1(self):
         ''' Test a 2d list with axis=1'''
@@ -1995,7 +1995,7 @@ class GeoMeanTestCase:
     def test_2dmatrixdaxis0(self):
         ''' Test a 2d list with axis=0'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[35.56893304,  49.32424149,  61.3579244 ,  72.68482371]])
+        b = np.matrix([[35.56893304,  49.32424149,  61.3579244,  72.68482371]])
         self.do(np.matrix(a), b, axis=0)
     def test_2dmatrixaxis1(self):
         ''' Test a 2d list with axis=1'''

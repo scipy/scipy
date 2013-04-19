@@ -249,42 +249,42 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         if istop == 0:
             t1 = 1 + test1      # These tests work if tol < eps
             t2 = 1 + test2
-            if t2    <= 1       :
+            if t2    <= 1:
                 istop = 2
-            if t1    <= 1       :
+            if t1    <= 1:
                 istop = 1
 
-            if itn   >= maxiter :
+            if itn   >= maxiter:
                 istop = 6
-            if Acond >= 0.1/eps :
+            if Acond >= 0.1/eps:
                 istop = 4
-            if epsx  >= beta1   :
+            if epsx  >= beta:
                 istop = 3
             #if rnorm <= epsx   : istop = 2
             #if rnorm <= epsr   : istop = 1
-            if test2 <= tol     :
+            if test2 <= tol:
                 istop = 2
-            if test1 <= tol     :
+            if test1 <= tol:
                 istop = 1
 
         # See if it is time to print something.
 
         prnt = False
-        if n        <= 40         :
+        if n        <= 40:
             prnt = True
-        if itn      <= 10         :
+        if itn      <= 10:
             prnt = True
-        if itn      >= maxiter-10 :
+        if itn      >= maxiter-10:
             prnt = True
-        if itn % 10 == 0          :
+        if itn % 10 == 0:
             prnt = True
-        if qrnorm   <= 10*epsx    :
+        if qrnorm   <= 10*epsx:
             prnt = True
-        if qrnorm   <= 10*epsr    :
+        if qrnorm   <= 10*epsr:
             prnt = True
-        if Acond    <= 1e-2/eps   :
+        if Acond    <= 1e-2/eps:
             prnt = True
-        if istop  != 0            :
+        if istop  != 0:
             prnt = True
 
         if show and prnt:

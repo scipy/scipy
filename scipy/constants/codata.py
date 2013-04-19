@@ -856,7 +856,7 @@ def _check_obsolete(key):
             key, _current_codata), ConstantWarning)
 
 
-def value(key) :
+def value(key):
     """
     Value in physical_constants indexed by key
 
@@ -886,7 +886,7 @@ def value(key) :
     return physical_constants[key][0]
 
 
-def unit(key) :
+def unit(key):
     """
     Unit in physical_constants indexed by key
 
@@ -916,7 +916,7 @@ def unit(key) :
     return physical_constants[key][1]
 
 
-def precision(key) :
+def precision(key):
     """
     Relative precision in physical_constants indexed by key
 

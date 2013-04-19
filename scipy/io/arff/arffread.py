@@ -173,7 +173,7 @@ def go_data(ofile):
     """Skip header.
 
     the first next() call of the returned iterator will be the @data line"""
-    return itertools.dropwhile(lambda x : not r_datameta.match(x), ofile)
+    return itertools.dropwhile(lambda x: not r_datameta.match(x), ofile)
 
 
 #----------------
@@ -542,8 +542,8 @@ def _loadarff(ofile):
 
     # This can be used once we want to support integer as integer values and
     # not as numeric anymore (using masked arrays ?).
-    acls2dtype = {'real' : np.float, 'integer' : np.float, 'numeric' : np.float}
-    acls2conv = {'real' : safe_float, 'integer' : safe_float, 'numeric' : safe_float}
+    acls2dtype = {'real': np.float, 'integer': np.float, 'numeric': np.float}
+    acls2conv = {'real': safe_float, 'integer': safe_float, 'numeric': safe_float}
     descr = []
     convertors = []
     if not hasstr:

@@ -711,7 +711,7 @@ class TestAiry(TestCase):
         bia = (array([-1.17371322, -3.2710930]),
         array([-2.29443968, -4.07315509]),
         array([-0.45494438,  0.39652284]),
-        array([0.60195789 , -0.76031014]))
+        array([0.60195789, -0.76031014]))
         assert_array_almost_equal(bi,bia,4)
 
     def test_ai_zeros(self):
@@ -2219,20 +2219,20 @@ class TestLegendreFunctions(TestCase):
 
     def test_lpmn(self):
         lp = special.lpmn(0,2,.5)
-        assert_array_almost_equal(lp,(array([[1.00000 ,
+        assert_array_almost_equal(lp,(array([[1.00000,
                                                       0.50000,
                                                       -0.12500]]),
-                                      array([[0.00000 ,
-                                                      1.00000 ,
+                                      array([[0.00000,
+                                                      1.00000,
                                                       1.50000]])),4)
 
     def test_lpn(self):
         lpnf = special.lpn(2,.5)
-        assert_array_almost_equal(lpnf,(array([1.00000 ,
+        assert_array_almost_equal(lpnf,(array([1.00000,
                                                         0.50000,
                                                         -0.12500]),
-                                      array([0.00000 ,
-                                                      1.00000 ,
+                                      array([0.00000,
+                                                      1.00000,
                                                       1.50000])),4)
 
     def test_lpmv(self):
@@ -2269,7 +2269,7 @@ class TestLegendreFunctions(TestCase):
     def test_lqn(self):
         lqf = special.lqn(2,.5)
         assert_array_almost_equal(lqf,(array([0.5493, -0.7253, -0.8187]),
-                                       array([1.3333,  1.216 , -0.8427])),4)
+                                       array([1.3333,  1.216, -0.8427])),4)
 
 
 class TestMathieu(TestCase):

@@ -3449,7 +3449,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
             return D, distributions.kstwobign.sf(D*np.sqrt(N))
         if mode == 'approx':
             pval_two = distributions.kstwobign.sf(D*np.sqrt(N))
-            if N > 2666 or pval_two > 0.80 - N*0.3/1000.0 :
+            if N > 2666 or pval_two > 0.80 - N*0.3/1000.0:
                 return D, distributions.kstwobign.sf(D*np.sqrt(N))
             else:
                 return D, distributions.ksone.sf(D,N)*2

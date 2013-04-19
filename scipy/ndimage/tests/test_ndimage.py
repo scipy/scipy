@@ -1312,8 +1312,8 @@ class TestNdimage:
         data = numpy.array([1,2,3,4.])
         expected = {'constant': [1.5,2.5,3.5,-1,-1,-1,-1],
                     'wrap': [1.5,2.5,3.5,1.5,2.5,3.5,1.5],
-                    'mirror' : [1.5,2.5,3.5,3.5,2.5,1.5,1.5],
-                    'nearest' : [1.5,2.5,3.5,4,4,4,4]}
+                    'mirror': [1.5,2.5,3.5,3.5,2.5,1.5,1.5],
+                    'nearest': [1.5,2.5,3.5,4,4,4,4]}
 
         for mode in expected:
             assert_array_equal(expected[mode],
@@ -1330,8 +1330,8 @@ class TestNdimage:
         data = numpy.array([1,2,3,4])
         expected = {'constant': [-1,1,2,3],
                     'wrap': [3,1,2,3],
-                    'mirror' : [2,1,2,3],
-                    'nearest' : [1,1,2,3]}
+                    'mirror': [2,1,2,3],
+                    'nearest': [1,1,2,3]}
 
         for mode in expected:
             assert_array_equal(expected[mode],
