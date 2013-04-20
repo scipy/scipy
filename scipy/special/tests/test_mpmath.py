@@ -1232,12 +1232,14 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
     @nonfunctional_tooslow
     def test_laguerre(self):
-        assert_mpmath_equal(sc.eval_laguerre,
-                            mpmath.laguerre,
-                            [Arg(), Arg(), Arg()])
-        assert_mpmath_equal(sc.eval_laguerre,
-                            mpmath.laguerre,
-                            [IntArg(), Arg(), Arg()])
+        assert_mpmath_equal(_trace_args(sc.eval_laguerre),
+                            lambda n, x: _exception_to_nan(mpmath.laguerre)(n, x, **HYPERKW),
+                            [Arg(), Arg()])
+
+    def test_laguerre_int(self):
+        assert_mpmath_equal(lambda n, x: sc.eval_laguerre(int(n), x),
+                            lambda n, x: _exception_to_nan(mpmath.laguerre)(n, x, **HYPERKW),
+                            [IntArg(), Arg()], n=20000)
 
     def test_lambertw(self):
         assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k)),
