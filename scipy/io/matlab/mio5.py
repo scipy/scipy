@@ -104,6 +104,8 @@ from .mio5_params import MatlabObject, MatlabFunction, \
         mxCELL_CLASS, mxSTRUCT_CLASS, mxOBJECT_CLASS, mxCHAR_CLASS, \
         mxSPARSE_CLASS, mxDOUBLE_CLASS, mclass_info, mclass_dtypes_template
 
+from .streams import ZlibInputStream
+
 
 class MatFile5Reader(MatFileReader):
     ''' Reader for Mat 5 mat files
@@ -215,19 +217,14 @@ class MatFile5Reader(MatFileReader):
             raise ValueError("Did not read any bytes")
         next_pos = self.mat_stream.tell() + byte_count
         if mdtype == miCOMPRESSED:
-            # make new stream from compressed data
-            data = self.mat_stream.read(byte_count)
+            # Make new stream from compressed data
+            #
             # Some matlab files contain zlib streams without valid
             # Z_STREAM_END termination.  To get round this, we use the
             # decompressobj object, that allows you to decode an
             # incomplete stream.  See discussion at
             # http://bugs.python.org/issue8672
-            dcor = zlib.decompressobj()
-            stream = BytesIO(dcor.decompress(data))
-            # Check the stream is not so broken as to leave cruft behind
-            if not dcor.flush() == b'':
-                raise ValueError("Something wrong with byte stream.")
-            del data
+            stream = ZlibInputStream(self.mat_stream, byte_count)
             self._matrix_reader.set_stream(stream)
             mdtype, byte_count = self._matrix_reader.read_full_tag()
         else:
