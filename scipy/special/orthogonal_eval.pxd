@@ -240,6 +240,10 @@ cdef inline double eval_chebyt_l(long k, double x) nogil:
     cdef long m
     cdef double b2, b1, b0
 
+    if k < 0:
+        # symmetry
+        k = -k
+
     b2 = 0
     b1 = -1
     b0 = 0
@@ -267,7 +271,17 @@ cdef inline number_t eval_chebyu(double n, number_t x) nogil:
 
 cdef inline double eval_chebyu_l(long k, double x) nogil:
     cdef long m
+    cdef int sign
     cdef double b2, b1, b0
+
+    if k == -1:
+        return 0
+    elif k < -1:
+        # symmetry
+        k = -k - 2
+        sign = -1
+    else:
+        sign = 1
 
     b2 = 0
     b1 = -1
@@ -277,7 +291,7 @@ cdef inline double eval_chebyu_l(long k, double x) nogil:
         b2 = b1
         b1 = b0
         b0 = x*b1 - b2
-    return b0 
+    return b0 * sign
 
 #-----------------------------------------------------------------------------
 # Chebyshev S
