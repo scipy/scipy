@@ -194,6 +194,7 @@ cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) nogil:
 @cython.cdivision(True)
 cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
     cdef long kk
+    cdef int a, b
     cdef double p, d
     cdef double k
 
@@ -212,7 +213,12 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
             k = kk+1.0
             d = (2*(k+alpha)/(k+2*alpha))*(x-1)*p + (k/(k+2*alpha)) * d
             p = d + p
-        return binom(n+2*alpha-1, n)*p
+
+        if fabs(alpha/n) < 1e-8:
+            # avoid loss of precision
+            return 2*alpha/n * p
+        else:
+            return binom(n+2*alpha-1, n)*p
 
 #-----------------------------------------------------------------------------
 # Chebyshev 1st kind (T)
