@@ -1065,8 +1065,11 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.gegenbauer),
                             [Arg(-1e3, 1e3), Arg(), Arg()])
 
+    @knownfailure_overridable("loss of precision at |x| <~ eps")
     def test_gegenbauer_int(self):
         def gegenbauer(n, a, x):
+            if abs(a) > 1e100:
+                return np.nan
             if n == 0:
                 return 1.0
             elif n == 1:
@@ -1075,7 +1078,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(lambda n, a, x: sc.eval_gegenbauer(int(n), a, x),
                             _exception_to_nan(gegenbauer),
                             [IntArg(0, 100), Arg(), Arg()],
-                            n=20000, dps=50)
+                            n=20000, dps=100)
 
     @knownfailure_overridable()
     def test_gegenbauer_complex(self):
@@ -1251,9 +1254,13 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(sc.eval_legendre,
                             mpmath.legendre,
                             [Arg(), Arg()])
-        assert_mpmath_equal(sc.eval_legendre,
-                            mpmath.legendre,
-                            [IntArg(), Arg()])
+
+    @knownfailure_overridable("loss of precision at |x| <~ eps")
+    def test_legendre_int(self):
+        assert_mpmath_equal(lambda n, x: sc.eval_legendre(int(n), x),
+                            lambda n, x: _exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
+                            [IntArg(), Arg()], 
+                            n=20000, dps=50)
 
     @knownfailure_overridable("wrong function at |z| > 1 (Trac #1877)")
     def test_legenp(self):
