@@ -1205,6 +1205,16 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(lambda a, b, c, x: mpmath.jacobi(a, b, c, x, **HYPERKW)),
                             [IntArg(), Arg(), Arg(), Arg()])
 
+    def test_jacobi_int(self):
+        def jacobi(n, a, b, x):
+            if n == 0:
+                return 1.0
+            return mpmath.jacobi(n, a, b, x)
+        assert_mpmath_equal(lambda n, a, b, x: sc.eval_jacobi(int(n), a, b, x),
+                            lambda n, a, b, x: _exception_to_nan(jacobi)(n, a, b, x, **HYPERKW),
+                            [IntArg(), Arg(), Arg(), Arg()],
+                            n=20000, dps=50)
+
     def test_kei(self):
         def kei(x):
             if x == 0:
