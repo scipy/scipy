@@ -148,7 +148,7 @@ cdef inline double eval_jacobi_l(long n, double alpha, double beta, double x) no
     cdef double k, t
 
     if n < 0:
-        return 0.0
+        return eval_jacobi(n, alpha, beta, x)
     elif n == 0:
         return 1.0
     elif n == 1:
