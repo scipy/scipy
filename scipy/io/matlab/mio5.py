@@ -876,6 +876,7 @@ class MatFile5Writer(object):
                 tag = np.empty((), NDT_TAG_FULL)
                 tag['mdtype'] = miCOMPRESSED
                 tag['byte_count'] = len(out_str)
-                self.file_stream.write(tag.tostring() + out_str)
+                self.file_stream.write(tag.tostring())
+                self.file_stream.write(out_str)
             else: # not compressing
                 self._matrix_writer.write_top(var, asbytes(name), is_global)
