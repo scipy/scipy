@@ -860,31 +860,27 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             dps=400,
                             atol=1e-14)
 
-    @knownfailure_overridable("issues at negative orders")
     def test_chebyt_int(self):
         assert_mpmath_equal(lambda n, x: sc.eval_chebyt(int(n), x),
                             _exception_to_nan(lambda n, x: mpmath.chebyt(n, x, **HYPERKW)),
-                            [IntArg(), Arg()],
-                            n=2000)
+                            [IntArg(), Arg()], dps=50)
 
-    @dec.knownfailureif(True, "test causes a segmentation fault")
+    @knownfailure_overridable("some cases in hyp2f1 not fully accurate")
     def test_chebyt(self):
         assert_mpmath_equal(sc.eval_chebyt,
-                            _exception_to_nan(lambda n, x: mpmath.chebyt(n, x, **HYPERKW)),
-                            [Arg(), Arg()],
-                            n=2000)
+                            lambda n, x: _time_limited()(_exception_to_nan(mpmath.chebyt))(n, x, **HYPERKW),
+                            [Arg(-101, 101), Arg()], n=10000)
 
-    @knownfailure_overridable("issues at negative orders and at eps-small arguments")
     def test_chebyu_int(self):
-        assert_mpmath_equal(sc.eval_chebyu,
+        assert_mpmath_equal(lambda n, x: sc.eval_chebyu(int(n), x),
                             _exception_to_nan(lambda n, x: mpmath.chebyu(n, x, **HYPERKW)),
-                            [IntArg(), Arg()], n=2000)
+                            [IntArg(), Arg()], dps=50)
 
-    @dec.knownfailureif(True, "test causes a segmentation fault")
+    @knownfailure_overridable("some cases in hyp2f1 not fully accurate")
     def test_chebyu(self):
         assert_mpmath_equal(sc.eval_chebyu,
-                            _exception_to_nan(lambda n, x: mpmath.chebyu(n, x, **HYPERKW)),
-                            [Arg(), Arg()], n=2000)
+                            lambda n, x: _time_limited()(_exception_to_nan(mpmath.chebyu))(n, x, **HYPERKW),
+                            [Arg(-101, 101), Arg()])
 
     @knownfailure_overridable("overflows to inf somewhat too early at large arguments")
     def test_chi(self):
@@ -1069,11 +1065,17 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.gegenbauer),
                             [Arg(-1e3, 1e3), Arg(), Arg()])
 
-    @knownfailure_overridable()
     def test_gegenbauer_int(self):
+        def gegenbauer(n, a, x):
+            if n == 0:
+                return 1.0
+            elif n == 1:
+                return 2*a*x
+            return mpmath.gegenbauer(n, a, x)
         assert_mpmath_equal(lambda n, a, x: sc.eval_gegenbauer(int(n), a, x),
-                            _exception_to_nan(mpmath.gegenbauer),
-                            [IntArg(0, 100), Arg(), Arg()])
+                            _exception_to_nan(gegenbauer),
+                            [IntArg(0, 100), Arg(), Arg()],
+                            n=20000, dps=50)
 
     @knownfailure_overridable()
     def test_gegenbauer_complex(self):
