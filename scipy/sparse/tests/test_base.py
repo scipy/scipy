@@ -408,6 +408,28 @@ class _TestCommon:
         assert_almost_equal( Asp.multiply(Dsp).todense(), A*D) #sparse/sparse
         assert_almost_equal( Asp.multiply(D),             A*D) #sparse/dense
 
+    def test_elementwise_multiply_broadcast(self):
+        A = array([4])
+        B = array([[-9]])
+        C = array([1,-1,0])
+        D = array([[7,9,-9]])
+        E = array([[8,6,3],[-4,3,2],[6,6,6]])
+
+        # Rank 1 arrays can't be cast as spmatrices (A and C) so leave
+        # them out.
+        Bsp = self.spmatrix(B)
+        Dsp = self.spmatrix(D)
+        Esp = self.spmatrix(E)
+        
+        assert_almost_equal( Esp.multiply(A).todense(),     E*A) #sparse/dense
+
+        assert_almost_equal( Esp.multiply(Bsp).todense(),   E*B) #sparse/sparse
+        assert_almost_equal( Esp.multiply(B).todense(),     E*B) #sparse/dense
+
+        assert_almost_equal( Esp.multiply(C),               E*C) #sparse/dense
+
+        assert_almost_equal( Esp.multiply(Dsp),             E*D) #sparse/sparse
+        assert_almost_equal( Esp.multiply(D),               E*D) #sparse/dense
 
     def test_elementwise_divide(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]

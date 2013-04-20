@@ -241,18 +241,40 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
     def multiply(self, other):
         """Point-wise multiplication by another matrix
         """
-        # scalar mult if necessary
+        # Scalar multiplication.
         if isscalarlike(other):
             return self.__mul__(other)
-        # Check if other shape is a vector (e.g. shape = (n,))
-        if len(other.shape) == 1:
-            if self.shape[0] != 1:
-                raise ValueError('inconsistent shapes')
-            elif other.shape[0] != self.shape[1]:
-                raise ValueError('inconsistent shapes')
-            else:
-                return np.multiply(self.todense(),other)
+        # Catch 1D and 2D arrays with single elments.
+        elif other.size == 1:
+            #  Small, might as well be dense.
+            if not isdense(other):
+                other = other.todense()
+            # 1D array with single element.
+            if other.ndim == 1:
+                return self.__mul__(other[0])
+            # 2D array with single element.
+            elif other.ndim == 2:
+                return self.__mul__(other[0,0])
+            # What could it be if not one of these?
 
+        # Row vector multiplication.
+        # Check if other shape is a 1D or 2D row array.
+        if other.ndim == 1:
+            # cast as 2D array
+            other = np.array([other])
+        if other.shape[0] == 1:
+            # Check that it is correct dimensions.
+            if other.shape[1] != self.shape[1]:
+                raise ValueError('inconsistent shapes')
+            # Can only support dense multiplication at the moment. 
+            if not isdense(other):
+                other = other.todense()
+            else:
+                # Cast other as diagonal matrix, then matrix multiply.
+                other = np.multiply(np.eye(other.shape[1]), other)
+                return np.dot(self.todense(), other)
+
+        # Element by element-wise matrix multiplication. 
         elif other.shape != self.shape:
             raise ValueError('inconsistent shapes')
 
