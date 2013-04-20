@@ -355,8 +355,10 @@ cdef inline double eval_legendre_l(long n, double x) nogil:
     cdef double k
 
     if n < 0:
-        return 0.0
-    elif n == 0:
+        # symmetry
+        n = -n - 1
+
+    if n == 0:
         return 1.0
     elif n == 1:
         return x
