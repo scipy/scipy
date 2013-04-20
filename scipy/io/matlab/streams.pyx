@@ -44,6 +44,8 @@ cdef extern from "py3k.h":
 PycString_IMPORT
 
 
+DEF BLOCK_SIZE=262144
+
 cdef class GenericStream:
 
     def __init__(self, fobj):
@@ -62,25 +64,38 @@ cdef class GenericStream:
     cdef int read_into(self, void *buf, size_t n) except -1:
         """ Read n bytes from stream into pre-allocated buffer `buf`
         """
-        cdef char* d_ptr
-        data = self.fobj.read(n)
-        if PyBytes_Size(data) != n:
+        cdef char *p
+        cdef size_t read_size, count
+
+        # Read data to buf in BLOCK_SIZE blocks
+        count = 0
+        p = <char*>buf
+        while count < n:
+            read_size = min(n - count, BLOCK_SIZE)
+            data = self.fobj.read(read_size)
+            read_size = len(data)
+            if read_size == 0:
+                break
+            memcpy(p, <char*>data, read_size)
+            p += read_size
+            count += read_size
+
+        if count != n:
             raise IOError('could not read bytes')
             return -1
-        d_ptr = data
-        memcpy(buf, d_ptr, n)
         return 0
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
-        """ Make new memory, wrap with object """
-        data = self.fobj.read(n)
-        if PyBytes_Size(data) != n:
-            raise IOError('could not read bytes')
+        """Make new memory, wrap with object"""
         if copy != True:
-           pp[0] = <void*>PyBytes_AS_STRING(data)
-           return data
+            data = self.fobj.read(n)
+            if PyBytes_Size(data) != n:
+                raise IOError('could not read bytes')
+            pp[0] = <void*>PyBytes_AS_STRING(data)
+            return data
+
         cdef object d_copy = pyalloc_v(n, pp)
-        memcpy(pp[0], PyBytes_AS_STRING(data), n)
+        self.read_into(pp[0], n)
         return d_copy
 
 
