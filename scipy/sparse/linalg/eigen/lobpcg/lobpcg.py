@@ -330,7 +330,7 @@ def lobpcg(A, X,
     _lambda = _lambda[ii]
 
     eigBlockVector = np.asarray(eigBlockVector[:,ii])
-    blockVectorX  = sp.dot(blockVectorX,  eigBlockVector)
+    blockVectorX = sp.dot(blockVectorX,  eigBlockVector)
     blockVectorAX = sp.dot(blockVectorAX, eigBlockVector)
     if B is not None:
         blockVectorBX = sp.dot(blockVectorBX, eigBlockVector)
@@ -343,7 +343,7 @@ def lobpcg(A, X,
     residualNormsHistory = []
 
     previousBlockSize = sizeX
-    ident  = np.eye(sizeX, dtype=A.dtype)
+    ident = np.eye(sizeX, dtype=A.dtype)
     ident0 = np.eye(sizeX, dtype=A.dtype)
 
     ##
@@ -384,7 +384,7 @@ def lobpcg(A, X,
         activeBlockVectorR = as2d(blockVectorR[:,activeMask])
 
         if iterationNumber > 0:
-            activeBlockVectorP  = as2d(blockVectorP[:,activeMask])
+            activeBlockVectorP = as2d(blockVectorP[:,activeMask])
             activeBlockVectorAP = as2d(blockVectorAP[:,activeMask])
             activeBlockVectorBP = as2d(blockVectorBP[:,activeMask])
 
@@ -490,19 +490,19 @@ def lobpcg(A, X,
             eigBlockVectorR = eigBlockVector[sizeX:sizeX+currentBlockSize]
             eigBlockVectorP = eigBlockVector[sizeX+currentBlockSize:]
 
-            pp  = sp.dot(activeBlockVectorR, eigBlockVectorR)
+            pp = sp.dot(activeBlockVectorR, eigBlockVectorR)
             pp += sp.dot(activeBlockVectorP, eigBlockVectorP)
 
-            app  = sp.dot(activeBlockVectorAR, eigBlockVectorR)
+            app = sp.dot(activeBlockVectorAR, eigBlockVectorR)
             app += sp.dot(activeBlockVectorAP, eigBlockVectorP)
 
-            bpp  = sp.dot(activeBlockVectorBR, eigBlockVectorR)
+            bpp = sp.dot(activeBlockVectorBR, eigBlockVectorR)
             bpp += sp.dot(activeBlockVectorBP, eigBlockVectorP)
         else:
             eigBlockVectorX = eigBlockVector[:sizeX]
             eigBlockVectorR = eigBlockVector[sizeX:]
 
-            pp  = sp.dot(activeBlockVectorR,  eigBlockVectorR)
+            pp = sp.dot(activeBlockVectorR,  eigBlockVectorR)
             app = sp.dot(activeBlockVectorAR, eigBlockVectorR)
             bpp = sp.dot(activeBlockVectorBR, eigBlockVectorR)
 
@@ -512,7 +512,7 @@ def lobpcg(A, X,
             print(bpp)
             pause()
 
-        blockVectorX  = sp.dot(blockVectorX, eigBlockVectorX)  + pp
+        blockVectorX = sp.dot(blockVectorX, eigBlockVectorX) + pp
         blockVectorAX = sp.dot(blockVectorAX, eigBlockVectorX) + app
         blockVectorBX = sp.dot(blockVectorBX, eigBlockVectorX) + bpp
 
@@ -564,7 +564,7 @@ if __name__ == '__main__':
 
     def precond(x):
         invA = spdiags(ivals, 0, n, n)
-        y = invA  * x
+        y = invA * x
         if issparse(y):
             y = y.toarray()
 

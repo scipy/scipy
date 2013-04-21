@@ -35,9 +35,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 # create empty matrix
                 self.shape = arg1   # spmatrix checks for errors here
                 M, N = self.shape
-                self.data    = np.zeros(0, getdtype(dtype, default=float))
+                self.data = np.zeros(0, getdtype(dtype, default=float))
                 self.indices = np.zeros(0, np.intc)
-                self.indptr  = np.zeros(self._swap((M,N))[0] + 1, dtype=np.intc)
+                self.indptr = np.zeros(self._swap((M,N))[0] + 1, dtype=np.intc)
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
@@ -48,8 +48,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
                     self.indices = np.array(indices, copy=copy)
-                    self.indptr  = np.array(indptr, copy=copy)
-                    self.data    = np.array(data, copy=copy, dtype=getdtype(dtype, data))
+                    self.indptr = np.array(indptr, copy=copy)
+                    self.data = np.array(data, copy=copy, dtype=getdtype(dtype, data))
                 else:
                     raise ValueError("unrecognized %s_matrix constructor usage" %
                             self.format)
@@ -93,10 +93,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         if copy:
             other = other.copy()
 
-        self.data    = other.data
+        self.data = other.data
         self.indices = other.indices
-        self.indptr  = other.indptr
-        self.shape   = other.shape
+        self.indptr = other.indptr
+        self.shape = other.shape
 
     def check_format(self, full_check=True):
         """check whether the matrix format is valid
@@ -122,9 +122,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                     % self.indices.dtype.name)
 
         # only support 32-bit ints for now
-        self.indptr  = np.asarray(self.indptr,  dtype=np.intc)
+        self.indptr = np.asarray(self.indptr,  dtype=np.intc)
         self.indices = np.asarray(self.indices, dtype=np.intc)
-        self.data    = to_native(self.data)
+        self.data = to_native(self.data)
 
         # check array shapes
         if np.rank(self.data) != 1 or np.rank(self.indices) != 1 or np.rank(self.indptr) != 1:
@@ -290,7 +290,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         nnz = indptr[-1]
         indices = np.empty(nnz, dtype=np.intc)
-        data    = np.empty(nnz, dtype=upcast(self.dtype,other.dtype))
+        data = np.empty(nnz, dtype=upcast(self.dtype,other.dtype))
 
         fn = getattr(sparsetools, self.format + '_matmat_pass2')
         fn(M, N, self.indptr, self.indices, self.data,
@@ -339,7 +339,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 if isintlike(major) and isinstance(minor,slice):
                     minor_shape = self._swap(self.shape)[1]
                     start, stop, stride = minor.indices(minor_shape)
-                    out_shape   = self._swap((1, stop-start))
+                    out_shape = self._swap((1, stop-start))
                     return self._get_slice(major, start, stop, stride, out_shape)
                 elif isinstance(row, slice) or isinstance(col, slice):
                     return self._get_submatrix(row, col)
@@ -363,7 +363,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         major_index, minor_index = self._swap((row,col))
 
         start = self.indptr[major_index]
-        end   = self.indptr[major_index+1]
+        end = self.indptr[major_index+1]
         indxs = np.where(minor_index == self.indices[start:end])[0]
 
         num_matches = len(indxs)
@@ -395,8 +395,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             if self.indices[ind] >= start and self.indices[ind] < stop:
                 indices.append(ind)
 
-        index  = self.indices[indices] - start
-        data   = self.data[indices]
+        index = self.indices[indices] - start
+        data = self.data[indices]
         indptr = np.array([0, len(indices)])
         return self.__class__((data, index, indptr), shape=shape,
                               dtype=self.dtype)
@@ -468,7 +468,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             major_index, minor_index = self._swap((row,col))
 
             start = self.indptr[major_index]
-            end   = self.indptr[major_index+1]
+            end = self.indptr[major_index+1]
             indxs = np.where(minor_index == self.indices[start:end])[0]
 
             num_matches = len(indxs)
@@ -490,12 +490,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 else:
                     newindx = start
 
-                val         = np.array([val],         dtype=self.data.dtype)
+                val = np.array([val],         dtype=self.data.dtype)
                 minor_index = np.array([minor_index], dtype=self.indices.dtype)
 
-                self.data    = np.concatenate((self.data[:newindx],    val,         self.data[newindx:]))
+                self.data = np.concatenate((self.data[:newindx],    val,         self.data[newindx:]))
                 self.indices = np.concatenate((self.indices[:newindx], minor_index, self.indices[newindx:]))
-                self.indptr  = self.indptr.copy()
+                self.indptr = self.indptr.copy()
 
                 self.indptr[major_index+1:] += 1
 
@@ -630,7 +630,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         if len(self.data) < self.nnz:
             raise ValueError('data array has fewer than nnz elements')
 
-        self.data    = self.data[:self.nnz]
+        self.data = self.data[:self.nnz]
         self.indices = self.indices[:self.nnz]
 
     ###################
@@ -657,10 +657,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         # e.g. csr_plus_csr, csr_minus_csr, etc.
         fn = getattr(sparsetools, self.format + op + self.format)
 
-        maxnnz  = self.nnz + other.nnz
-        indptr  = np.empty_like(self.indptr)
+        maxnnz = self.nnz + other.nnz
+        indptr = np.empty_like(self.indptr)
         indices = np.empty(maxnnz, dtype=np.intc)
-        data    = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
+        data = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(self.shape[0], self.shape[1],
                 self.indptr,  self.indices,  self.data,
@@ -669,11 +669,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         actual_nnz = indptr[-1]
         indices = indices[:actual_nnz]
-        data    = data[:actual_nnz]
+        data = data[:actual_nnz]
         if actual_nnz < maxnnz // 2:
             # too much waste, trim arrays
             indices = indices.copy()
-            data    = data.copy()
+            data = data.copy()
 
         A = self.__class__((data, indices, indptr), shape=self.shape)
 

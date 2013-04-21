@@ -237,8 +237,8 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
                 continue
 
             # -- GMRES optimization problem
-            hess  = np.zeros((j+1, j), x.dtype)
-            e1    = np.zeros((j+1,), x.dtype)
+            hess = np.zeros((j+1, j), x.dtype)
+            e1 = np.zeros((j+1,), x.dtype)
             e1[0] = inner_res_0
             for q in xrange(j):
                 hess[:(q+2),q] = hs[q]

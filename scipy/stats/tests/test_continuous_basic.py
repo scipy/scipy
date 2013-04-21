@@ -238,8 +238,8 @@ def test_cont_basic_slow():
 
 @_silence_fp_errors
 def check_moment(distfn, arg, m, v, msg):
-    m1  = distfn.moment(1,*arg)
-    m2  = distfn.moment(2,*arg)
+    m1 = distfn.moment(1,*arg)
+    m2 = distfn.moment(2,*arg)
     if not np.isinf(m):
         npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
                             ' - 1st moment')

@@ -123,7 +123,7 @@ def check_maxiter(solver, case):
     A = case.A
     tol = 1e-12
 
-    b  = arange(A.shape[0], dtype=float)
+    b = arange(A.shape[0], dtype=float)
     x0 = 0*b
 
     residuals = []
@@ -157,7 +157,7 @@ def check_convergence(solver, case):
 
     A = case.A
 
-    b  = arange(A.shape[0], dtype=float)
+    b = arange(A.shape[0], dtype=float)
     x0 = 0*b
 
     x, info = solver(A, b, x0=x0, tol=tol)
@@ -187,7 +187,7 @@ def check_precond_dummy(solver, case):
     M,N = A.shape
     D = spdiags([1.0/A.diagonal()], [0], M, N)
 
-    b  = arange(A.shape[0], dtype=float)
+    b = arange(A.shape[0], dtype=float)
     x0 = 0*b
 
     precond = LinearOperator(A.shape, identity, rmatvec=identity)
@@ -200,7 +200,7 @@ def check_precond_dummy(solver, case):
     assert_normclose(A.dot(x), b, tol)
 
     A = aslinearoperator(A)
-    A.psolve  = identity
+    A.psolve = identity
     A.rpsolve = identity
 
     x, info = solver(A, b, x0=x0, tol=tol)

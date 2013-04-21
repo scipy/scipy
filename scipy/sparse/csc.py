@@ -125,9 +125,9 @@ class csc_matrix(_cs_matrix):
 
     def tocsr(self):
         M,N = self.shape
-        indptr  = np.empty(M + 1,    dtype=np.intc)
+        indptr = np.empty(M + 1,    dtype=np.intc)
         indices = np.empty(self.nnz, dtype=np.intc)
-        data    = np.empty(self.nnz, dtype=upcast(self.dtype))
+        data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
         csc_tocsr(M, N,
                  self.indptr, self.indices, self.data,

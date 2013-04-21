@@ -97,8 +97,8 @@ class lil_matrix(spmatrix):
 
             self.shape = A.shape
             self.dtype = A.dtype
-            self.rows  = A.rows
-            self.data  = A.data
+            self.rows = A.rows
+            self.data = A.data
         elif isinstance(arg1,tuple):
             if isshape(arg1):
                 if shape is not None:
@@ -124,8 +124,8 @@ class lil_matrix(spmatrix):
 
                 self.shape = A.shape
                 self.dtype = A.dtype
-                self.rows  = A.rows
-                self.data  = A.data
+                self.rows = A.rows
+                self.data = A.data
 
     def set_shape(self,shape):
         shape = tuple(shape)
@@ -215,7 +215,7 @@ class lil_matrix(spmatrix):
         if j < 0 or j >= self.shape[1]:
             raise IndexError('column index out of bounds')
 
-        row  = self.rows[i]
+        row = self.rows[i]
         data = self.data[i]
 
         pos = bisect_left(row, j)

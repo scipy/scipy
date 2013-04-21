@@ -102,7 +102,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
     matvec, rmatvec = A.matvec, A.rmatvec
     psolve, rpsolve = M.matvec, M.rmatvec
     ltr = _type_conv[x.dtype.char]
-    revcom   = getattr(_iterative, ltr + 'bicgrevcom')
+    revcom = getattr(_iterative, ltr + 'bicgrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol
@@ -167,7 +167,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
     matvec = A.matvec
     psolve = M.matvec
     ltr = _type_conv[x.dtype.char]
-    revcom   = getattr(_iterative, ltr + 'bicgstabrevcom')
+    revcom = getattr(_iterative, ltr + 'bicgstabrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol
@@ -229,7 +229,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
     matvec = A.matvec
     psolve = M.matvec
     ltr = _type_conv[x.dtype.char]
-    revcom   = getattr(_iterative, ltr + 'cgrevcom')
+    revcom = getattr(_iterative, ltr + 'cgrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol
@@ -288,7 +288,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
     matvec = A.matvec
     psolve = M.matvec
     ltr = _type_conv[x.dtype.char]
-    revcom   = getattr(_iterative, ltr + 'cgsrevcom')
+    revcom = getattr(_iterative, ltr + 'cgsrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol
@@ -429,13 +429,13 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     matvec = A.matvec
     psolve = M.matvec
     ltr = _type_conv[x.dtype.char]
-    revcom   = getattr(_iterative, ltr + 'gmresrevcom')
+    revcom = getattr(_iterative, ltr + 'gmresrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol
     ndx1 = 1
     ndx2 = -1
-    work  = np.zeros((6+restrt)*n,dtype=x.dtype)
+    work = np.zeros((6+restrt)*n,dtype=x.dtype)
     work2 = np.zeros((restrt+1)*(2*restrt+2),dtype=x.dtype)
     ijob = 1
     info = 0
@@ -582,7 +582,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
         maxiter = n*10
 
     ltr = _type_conv[x.dtype.char]
-    revcom   = getattr(_iterative, ltr + 'qmrrevcom')
+    revcom = getattr(_iterative, ltr + 'qmrrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
 
     resid = tol

@@ -79,23 +79,23 @@ class dia_matrix(_data_matrix):
         if isspmatrix_dia(arg1):
             if copy:
                 arg1 = arg1.copy()
-            self.data    = arg1.data
+            self.data = arg1.data
             self.offsets = arg1.offsets
-            self.shape   = arg1.shape
+            self.shape = arg1.shape
         elif isspmatrix(arg1):
             if isspmatrix_dia(arg1) and copy:
                 A = arg1.copy()
             else:
                 A = arg1.todia()
-            self.data    = A.data
+            self.data = A.data
             self.offsets = A.offsets
-            self.shape   = A.shape
+            self.shape = A.shape
         elif isinstance(arg1, tuple):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self.shape   = arg1   # spmatrix checks for errors here
-                self.data    = np.zeros((0,0), getdtype(dtype, default=float))
+                self.shape = arg1   # spmatrix checks for errors here
+                self.data = np.zeros((0,0), getdtype(dtype, default=float))
                 self.offsets = np.zeros((0), dtype=np.intc)
             else:
                 try:
@@ -106,9 +106,9 @@ class dia_matrix(_data_matrix):
                 else:
                     if shape is None:
                         raise ValueError('expected a shape argument')
-                    self.data    = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
+                    self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
                     self.offsets = np.atleast_1d(np.array(arg1[1], dtype=np.intc, copy=copy))
-                    self.shape   = shape
+                    self.shape = shape
         else:
             #must be dense, convert to COO first, then to DIA
             try:
@@ -118,9 +118,9 @@ class dia_matrix(_data_matrix):
                         " %s_matrix constructor" % self.format)
             from .coo import coo_matrix
             A = coo_matrix(arg1, dtype=dtype).todia()
-            self.data    = A.data
+            self.data = A.data
             self.offsets = A.offsets
-            self.shape   = A.shape
+            self.shape = A.shape
 
         if dtype is not None:
             self.data = self.data.astype(dtype)
@@ -207,7 +207,7 @@ class dia_matrix(_data_matrix):
 
         row,col,data = row.ravel(),col.ravel(),self.data.ravel()
 
-        mask  = (row >= 0)
+        mask = (row >= 0)
         mask &= (row < self.shape[0])
         mask &= (col < self.shape[1])
         mask &= data != 0

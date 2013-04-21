@@ -44,16 +44,16 @@ from functools import reduce
 from scipy.lib.six import integer_types
 
 
-ABSENT       = b'\x00\x00\x00\x00\x00\x00\x00\x00'
-ZERO         = b'\x00\x00\x00\x00'
-NC_BYTE      = b'\x00\x00\x00\x01'
-NC_CHAR      = b'\x00\x00\x00\x02'
-NC_SHORT     = b'\x00\x00\x00\x03'
-NC_INT       = b'\x00\x00\x00\x04'
-NC_FLOAT     = b'\x00\x00\x00\x05'
-NC_DOUBLE    = b'\x00\x00\x00\x06'
+ABSENT = b'\x00\x00\x00\x00\x00\x00\x00\x00'
+ZERO = b'\x00\x00\x00\x00'
+NC_BYTE = b'\x00\x00\x00\x01'
+NC_CHAR = b'\x00\x00\x00\x02'
+NC_SHORT = b'\x00\x00\x00\x03'
+NC_INT = b'\x00\x00\x00\x04'
+NC_FLOAT = b'\x00\x00\x00\x05'
+NC_DOUBLE = b'\x00\x00\x00\x06'
 NC_DIMENSION = b'\x00\x00\x00\n'
-NC_VARIABLE  = b'\x00\x00\x00\x0b'
+NC_VARIABLE = b'\x00\x00\x00\x0b'
 NC_ATTRIBUTE = b'\x00\x00\x00\x0c'
 
 
@@ -197,7 +197,7 @@ class netcdf_file(object):
             self.filename = filename
             self.fp = open(self.filename, '%sb' % mode)
             if mmap is None:
-                mmap  = True
+                mmap = True
         self.use_mmap = mmap
         self.version_byte = version
 

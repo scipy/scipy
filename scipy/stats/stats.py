@@ -2522,7 +2522,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     n1 = c[0,0] + c[0,1]
     n2 = c[1,0] + c[1,1]
-    n  = c[0,0] + c[1,0]
+    n = c[0,0] + c[1,0]
 
     def binary_search(n, n1, n2, side):
         """Binary search for where to begin lower/upper halves in two-sided

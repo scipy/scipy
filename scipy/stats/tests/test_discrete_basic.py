@@ -261,7 +261,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
             last = current
             if current > (1-wsupp):
                 break
-    if distsupp[-1]  < distfn.b:
+    if distsupp[-1] < distfn.b:
         distsupp.append(distfn.b)
         distmass.append(1-last)
     distsupp = np.array(distsupp)

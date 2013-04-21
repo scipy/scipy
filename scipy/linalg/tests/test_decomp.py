@@ -302,7 +302,7 @@ class TestEigBanded(TestCase):
     def create_bandmat(self):
         """Create the full matrix `self.fullmat` and
            the corresponding band matrix `self.bandmat`."""
-        N  = 10
+        N = 10
         self.KL = 2   # number of subdiagonals (below the diagonal)
         self.KU = 2   # number of superdiagonals (above the diagonal)
 
@@ -343,10 +343,10 @@ class TestEigBanded(TestCase):
         # (for use in dsbevd, dsbevx, zhbevd, zhbevx
         #  and their single precision versions)
         LDAB = self.KU + 1
-        self.bandmat_sym  = zeros((LDAB, N), dtype=float)
+        self.bandmat_sym = zeros((LDAB, N), dtype=float)
         self.bandmat_herm = zeros((LDAB, N), dtype=complex)
         for i in xrange(LDAB):
-            self.bandmat_sym[LDAB-i-1,i:N]  = diag(self.sym_mat, i)
+            self.bandmat_sym[LDAB-i-1,i:N] = diag(self.sym_mat, i)
             self.bandmat_herm[LDAB-i-1,i:N] = diag(self.herm_mat, i)
 
         # Extract bands from general real and complex band matrix
@@ -356,7 +356,7 @@ class TestEigBanded(TestCase):
         self.bandmat_real[2*self.KL,:] = diag(self.real_mat)     # diagonal
         for i in xrange(self.KL):
             # superdiagonals
-            self.bandmat_real[2*self.KL-1-i,i+1:N]   = diag(self.real_mat, i+1)
+            self.bandmat_real[2*self.KL-1-i,i+1:N] = diag(self.real_mat, i+1)
             # subdiagonals
             self.bandmat_real[2*self.KL+1+i,0:N-1-i] = diag(self.real_mat,-i-1)
 
@@ -364,7 +364,7 @@ class TestEigBanded(TestCase):
         self.bandmat_comp[2*self.KL,:] = diag(self.comp_mat)     # diagonal
         for i in xrange(self.KL):
             # superdiagonals
-            self.bandmat_comp[2*self.KL-1-i,i+1:N]   = diag(self.comp_mat, i+1)
+            self.bandmat_comp[2*self.KL-1-i,i+1:N] = diag(self.comp_mat, i+1)
             # subdiagonals
             self.bandmat_comp[2*self.KL+1+i,0:N-1-i] = diag(self.comp_mat,-i-1)
 
@@ -377,7 +377,7 @@ class TestEigBanded(TestCase):
     def test_dsbev(self):
         """Compare dsbev eigenvalues and eigenvectors with
            the result of linalg.eig."""
-        w, evec, info  = dsbev(self.bandmat_sym, compute_v=1)
+        w, evec, info = dsbev(self.bandmat_sym, compute_v=1)
         evec_ = evec[:,argsort(w)]
         assert_array_almost_equal(sort(w), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))

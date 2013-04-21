@@ -147,7 +147,7 @@ class MMFile (object):
 
     # field values
     FIELD_INTEGER = 'integer'
-    FIELD_REAL    = 'real'
+    FIELD_REAL = 'real'
     FIELD_COMPLEX = 'complex'
     FIELD_PATTERN = 'pattern'
     FIELD_VALUES = (FIELD_INTEGER, FIELD_REAL, FIELD_COMPLEX, FIELD_PATTERN)
@@ -159,10 +159,10 @@ class MMFile (object):
                                 (field, self.FIELD_VALUES))
 
     # symmetry values
-    SYMMETRY_GENERAL        = 'general'
-    SYMMETRY_SYMMETRIC      = 'symmetric'
+    SYMMETRY_GENERAL = 'general'
+    SYMMETRY_SYMMETRIC = 'symmetric'
     SYMMETRY_SKEW_SYMMETRIC = 'skew-symmetric'
-    SYMMETRY_HERMITIAN      = 'hermitian'
+    SYMMETRY_HERMITIAN = 'hermitian'
     SYMMETRY_VALUES = (SYMMETRY_GENERAL,        SYMMETRY_SYMMETRIC,
                         SYMMETRY_SKEW_SYMMETRIC, SYMMETRY_HERMITIAN)
 
@@ -197,7 +197,7 @@ class MMFile (object):
 
             # read and validate header line
             line = source.readline()
-            mmid, matrix, format, field, symmetry  = \
+            mmid, matrix, format, field, symmetry = \
               [asstr(part.strip().lower()) for part in line.split()]
             if not mmid.startswith('%%matrixmarket'):
                 raise ValueError('source is not in Matrix Market format')

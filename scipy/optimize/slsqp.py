@@ -353,7 +353,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             fx = func(x)
             # Compute the constraints
             if cons['eq']:
-                c_eq  = concatenate([atleast_1d(con['fun'](x, *con['args']))
+                c_eq = concatenate([atleast_1d(con['fun'](x, *con['args']))
                                      for con in cons['eq']])
             else:
                 c_eq = zeros(0)

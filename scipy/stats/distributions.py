@@ -6590,7 +6590,7 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        q,loc  = map(asarray,(q,loc))
+        q,loc = map(asarray,(q,loc))
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
@@ -6631,7 +6631,7 @@ class rv_discrete(rv_generic):
         """
         loc = kwds.get('loc')
         args, loc = self._fix_loc(args, loc)
-        q,loc  = map(asarray,(q,loc))
+        q,loc = map(asarray,(q,loc))
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)

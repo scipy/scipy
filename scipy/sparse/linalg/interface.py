@@ -66,7 +66,7 @@ class LinearOperator:
         if not isshape(shape):
             raise ValueError('invalid shape')
 
-        self.shape  = shape
+        self.shape = shape
         self._matvec = matvec
 
         if rmatvec is None:

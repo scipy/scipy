@@ -546,7 +546,7 @@ def boxcox_normmax(x,brack=(-1.0,1.0)):
     def tempfunc(lmbda, xvals, samps):
         y = boxcox(samps,lmbda)
         yvals = sort(y)
-        r, prob  = stats.pearsonr(xvals, yvals)
+        r, prob = stats.pearsonr(xvals, yvals)
         return 1-r
     return optimize.brent(tempfunc, brack=brack, args=(xvals, x))
 
@@ -632,7 +632,7 @@ def shapiro(x,a=None,reta=False):
 #             Some Comparisons", Journal of he American Statistical
 #             Association, Vol. 69, Issue 347, Sept. 1974, pp 730-737
 _Avals_norm = array([0.576, 0.656, 0.787, 0.918, 1.092])
-_Avals_expon  = array([0.922, 1.078, 1.341, 1.606, 1.957])
+_Avals_expon = array([0.922, 1.078, 1.341, 1.606, 1.957])
 # From Stephens, M A, "Goodness of Fit for the Extreme Value Distribution",
 #             Biometrika, Vol. 64, Issue 3, Dec. 1977, pp 583-588.
 _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])

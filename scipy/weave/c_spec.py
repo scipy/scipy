@@ -302,11 +302,11 @@ class file_converter(common_base_converter):
 # Standard Python numeric --> C type maps
 #----------------------------------------------------------------------------
 num_to_c_types = {}
-num_to_c_types[type(1)]  = 'long'
+num_to_c_types[type(1)] = 'long'
 num_to_c_types[type(1.)] = 'double'
 num_to_c_types[type(1.+1.j)] = 'std::complex<double> '
 # !! hmmm. The following is likely unsafe...
-num_to_c_types[long]  = 'npy_longlong'
+num_to_c_types[long] = 'npy_longlong'
 
 #----------------------------------------------------------------------------
 # Numeric array Python numeric --> C type maps

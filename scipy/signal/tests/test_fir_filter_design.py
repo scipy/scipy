@@ -346,7 +346,7 @@ class TestFirwin2(TestCase):
         assert_array_almost_equal(taps[: ntaps // 2], -taps[ntaps // 2 + 1:][::-1])
 
         freqs, response1 = freqz(taps, worN=2048)
-        response2        = np.interp(freqs / np.pi, freq, gain)
+        response2 = np.interp(freqs / np.pi, freq, gain)
         assert_array_almost_equal(abs(response1), response2, decimal=3)
 
     def test_nyq(self):

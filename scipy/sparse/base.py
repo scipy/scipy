@@ -157,7 +157,7 @@ class spmatrix(object):
     def __str__(self):
         maxprint = self.getmaxprint()
 
-        A   = self.tocoo()
+        A = self.tocoo()
         nnz = self.getnnz()
 
         # helper function, outputs "(i,j)  v"
@@ -167,12 +167,12 @@ class spmatrix(object):
 
         if nnz > maxprint:
             half = maxprint // 2
-            out  = tostr(A.row[:half], A.col[:half], A.data[:half])
+            out = tostr(A.row[:half], A.col[:half], A.data[:half])
             out += "\n  :\t:\n"
             half = maxprint - maxprint//2
             out += tostr(A.row[-half:], A.col[-half:], A.data[-half:])
         else:
-            out  = tostr(A.row, A.col, A.data)
+            out = tostr(A.row, A.col, A.data)
 
         return out
 

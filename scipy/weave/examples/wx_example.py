@@ -18,7 +18,7 @@ class MyCanvas(wxScrolledWindow):
         wxScrolledWindow.__init__(self, parent, id, wxPoint(0, 0), size, wxSUNKEN_BORDER)
 
         self.lines = []
-        self.maxWidth  = 1000
+        self.maxWidth = 1000
         self.maxHeight = 1000
 
         self.SetBackgroundColour(wxNamedColor("WHITE"))

@@ -244,7 +244,7 @@ class TestConstructUtils(TestCase):
 
         for a in cases:
             for b in cases:
-                result   = construct.kron(csr_matrix(a),csr_matrix(b)).todense()
+                result = construct.kron(csr_matrix(a),csr_matrix(b)).todense()
                 expected = np.kron(a,b)
                 assert_array_equal(result,expected)
 
@@ -262,7 +262,7 @@ class TestConstructUtils(TestCase):
 
         for a in cases:
             for b in cases:
-                result   = construct.kronsum(csr_matrix(a),csr_matrix(b)).todense()
+                result = construct.kronsum(csr_matrix(a),csr_matrix(b)).todense()
                 expected = np.kron(np.eye(len(b)), a) + \
                         np.kron(b, np.eye(len(a)))
                 assert_array_equal(result,expected)

@@ -412,8 +412,8 @@ class TestDelaunay(object):
         assert_equal(tri.neighbors, [[-1, -1, 1], [-1, -1, 0]])
 
     def test_duplicate_points(self):
-        x  = np.array([0, 1, 0, 1], dtype=np.float64)
-        y  = np.array([0, 0, 1, 1], dtype=np.float64)
+        x = np.array([0, 1, 0, 1], dtype=np.float64)
+        y = np.array([0, 0, 1, 1], dtype=np.float64)
 
         xp = np.r_[x, x]
         yp = np.r_[y, y]

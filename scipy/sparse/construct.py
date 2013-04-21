@@ -254,14 +254,14 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     if m == n and k == 0:
         # fast branch for special formats
         if format in ['csr', 'csc']:
-            indptr  = np.arange(n+1, dtype=np.intc)
+            indptr = np.arange(n+1, dtype=np.intc)
             indices = np.arange(n,   dtype=np.intc)
-            data    = np.ones(n,     dtype=dtype)
+            data = np.ones(n,     dtype=dtype)
             cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
             return cls((data,indices,indptr),(n,n))
         elif format == 'coo':
-            row  = np.arange(n, dtype=np.intc)
-            col  = np.arange(n, dtype=np.intc)
+            row = np.arange(n, dtype=np.intc)
+            col = np.arange(n, dtype=np.intc)
             data = np.ones(n, dtype=dtype)
             return coo_matrix((data,(row,col)),(n,n))
 
@@ -330,8 +330,8 @@ def kron(A, B, format=None):
             return coo_matrix(output_shape)
 
         # expand entries of a into blocks
-        row  = A.row.repeat(B.nnz)
-        col  = A.col.repeat(B.nnz)
+        row = A.row.repeat(B.nnz)
+        col = A.col.repeat(B.nnz)
         data = A.data.repeat(B.nnz)
 
         row *= B.shape[0]
@@ -504,7 +504,7 @@ def bmat(blocks, format=None, dtype=None):
 
     M,N = blocks.shape
 
-    block_mask   = np.zeros(blocks.shape,    dtype=np.bool)
+    block_mask = np.zeros(blocks.shape,    dtype=np.bool)
     brow_lengths = np.zeros(blocks.shape[0], dtype=np.intc)
     bcol_lengths = np.zeros(blocks.shape[1], dtype=np.intc)
 
@@ -542,8 +542,8 @@ def bmat(blocks, format=None, dtype=None):
     col_offsets = np.concatenate(([0], np.cumsum(bcol_lengths)))
 
     data = np.empty(nnz, dtype=dtype)
-    row  = np.empty(nnz, dtype=np.intc)
-    col  = np.empty(nnz, dtype=np.intc)
+    row = np.empty(nnz, dtype=np.intc)
+    col = np.empty(nnz, dtype=np.intc)
 
     nnz = 0
     for i in range(M):
@@ -551,8 +551,8 @@ def bmat(blocks, format=None, dtype=None):
             if blocks[i,j] is not None:
                 A = blocks[i,j]
                 data[nnz:nnz + A.nnz] = A.data
-                row[nnz:nnz + A.nnz]  = A.row
-                col[nnz:nnz + A.nnz]  = A.col
+                row[nnz:nnz + A.nnz] = A.row
+                col[nnz:nnz + A.nnz] = A.col
 
                 row[nnz:nnz + A.nnz] += row_offsets[i]
                 col[nnz:nnz + A.nnz] += col_offsets[j]

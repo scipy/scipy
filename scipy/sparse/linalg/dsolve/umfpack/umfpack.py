@@ -675,8 +675,8 @@ class UmfpackContext(Struct):
         Ui = np.zeros((unz,), dtype=i_type)
         Ux = np.zeros((unz,), dtype=np.double)
 
-        P  = np.zeros((n_row,), dtype=i_type)
-        Q  = np.zeros((n_col,), dtype=i_type)
+        P = np.zeros((n_row,), dtype=i_type)
+        Q = np.zeros((n_col,), dtype=i_type)
 
         Dx = np.zeros((min(n_row,n_col),), dtype=np.double)
 

@@ -130,10 +130,10 @@ class _TestCommon:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
     def test_nonzero(self):
-        A   = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
+        A = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
         Asp = self.spmatrix(A)
 
-        A_nz   = set([tuple(ij) for ij in transpose(A.nonzero())])
+        A_nz = set([tuple(ij) for ij in transpose(A.nonzero())])
         Asp_nz = set([tuple(ij) for ij in transpose(Asp.nonzero())])
 
         assert_equal(A_nz, Asp_nz)
@@ -1390,13 +1390,13 @@ class _TestArithmetic:
 
         # check conversions
         for x in supported_dtypes:
-            A   = self.__A.astype(x)
+            A = self.__A.astype(x)
             Asp = self.spmatrix(A)
             for y in supported_dtypes:
                 if not np.issubdtype(y, np.complexfloating):
-                    B   = self.__B.real.astype(y)
+                    B = self.__B.real.astype(y)
                 else:
-                    B   = self.__B.astype(y)
+                    B = self.__B.astype(y)
                 Bsp = self.spmatrix(B)
 
                 # addition
@@ -1424,13 +1424,13 @@ class _TestArithmetic:
         assert_array_equal((self.__Asp*self.__Bsp.T).todense(),self.__A*self.__B.T)
 
         for x in supported_dtypes:
-            A   = self.__A.astype(x)
+            A = self.__A.astype(x)
             Asp = self.spmatrix(A)
             for y in supported_dtypes:
                 if np.issubdtype(y, np.complexfloating):
-                    B   = self.__B.astype(y)
+                    B = self.__B.astype(y)
                 else:
-                    B   = self.__B.real.astype(y)
+                    B = self.__B.real.astype(y)
                 Bsp = self.spmatrix(B)
 
                 D1 = A * B.T
@@ -1613,8 +1613,8 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
 
     def test_constructor4(self):
         # using (data, ij) format
-        row  = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
-        col  = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
+        row = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
+        col = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
         data = array([6.,  10.,   3.,   9.,   1.,   4.,
                               11.,   2.,   8.,   5.,   7.])
 
@@ -1624,16 +1624,16 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
 
     def test_constructor5(self):
         # infer dimensions from arrays
-        indptr  = array([0,1,3,3])
+        indptr = array([0,1,3,3])
         indices = array([0,5,1,2])
-        data    = array([1,2,3,4])
+        data = array([1,2,3,4])
         csr = csr_matrix((data, indices, indptr))
         assert_array_equal(csr.shape,(3,6))
 
     def test_sort_indices(self):
-        data    = arange(5)
+        data = arange(5)
         indices = array([7, 2, 1, 5, 4])
-        indptr  = array([0, 3, 5])
+        indptr = array([0, 3, 5])
         asp = csr_matrix((data, indices, indptr), shape=(2,10))
         bsp = asp.copy()
         asp.sort_indices()
@@ -1641,9 +1641,9 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
         assert_array_equal(asp.todense(),bsp.todense())
 
     def test_eliminate_zeros(self):
-        data    = array([1, 0, 0, 0, 2, 0, 3, 0])
+        data = array([1, 0, 0, 0, 2, 0, 3, 0])
         indices = array([1, 2, 3, 4, 5, 6, 7, 8])
-        indptr  = array([0, 3, 8])
+        indptr = array([0, 3, 8])
         asp = csr_matrix((data, indices, indptr), shape=(2,10))
         bsp = asp.copy()
         asp.eliminate_zeros()
@@ -1664,13 +1664,13 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
             assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
 
     def test_unsorted_arithmetic(self):
-        data    = arange(5)
+        data = arange(5)
         indices = array([7, 2, 1, 5, 4])
-        indptr  = array([0, 3, 5])
+        indptr = array([0, 3, 5])
         asp = csr_matrix((data, indices, indptr), shape=(2,10))
-        data    = arange(6)
+        data = arange(6)
         indices = array([8, 1, 5, 7, 2, 4])
-        indptr  = array([0, 2, 6])
+        indptr = array([0, 2, 6])
         bsp = csr_matrix((data, indices, indptr), shape=(2,10))
         assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
 
@@ -1728,8 +1728,8 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
 
     def test_constructor4(self):
         # using (data, ij) format
-        row  = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
-        col  = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
+        row = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
+        col = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
         data = array([6.,  10.,   3.,   9.,   1.,   4.,
                               11.,   2.,   8.,   5.,   7.])
 
@@ -1739,16 +1739,16 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
 
     def test_constructor5(self):
         # infer dimensions from arrays
-        indptr  = array([0,1,3,3])
+        indptr = array([0,1,3,3])
         indices = array([0,5,1,2])
-        data    = array([1,2,3,4])
+        data = array([1,2,3,4])
         csc = csc_matrix((data, indices, indptr))
         assert_array_equal(csc.shape,(6,3))
 
     def test_eliminate_zeros(self):
-        data    = array([1, 0, 0, 0, 2, 0, 3, 0])
+        data = array([1, 0, 0, 0, 2, 0, 3, 0])
         indices = array([1, 2, 3, 4, 5, 6, 7, 8])
-        indptr  = array([0, 3, 8])
+        indptr = array([0, 3, 8])
         asp = csc_matrix((data, indices, indptr), shape=(10,2))
         bsp = asp.copy()
         asp.eliminate_zeros()
@@ -1779,13 +1779,13 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
             assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
 
     def test_unsorted_arithmetic(self):
-        data    = arange(5)
+        data = arange(5)
         indices = array([7, 2, 1, 5, 4])
-        indptr  = array([0, 3, 5])
+        indptr = array([0, 3, 5])
         asp = csc_matrix((data, indices, indptr), shape=(10,2))
-        data    = arange(6)
+        data = arange(6)
         indices = array([8, 1, 5, 7, 2, 4])
-        indptr  = array([0, 2, 6])
+        indptr = array([0, 2, 6])
         bsp = csc_matrix((data, indices, indptr), shape=(10,2))
         assert_equal((asp + bsp).todense(), asp.todense() + bsp.todense())
 
@@ -2085,8 +2085,8 @@ class TestCOO(sparse_test_class(getset=False,
 
     def test_constructor1(self):
         # unsorted triplet format
-        row  = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
-        col  = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
+        row = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
+        col = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
         data = array([6.,  10.,   3.,   9.,   1.,   4.,
                               11.,   2.,   8.,   5.,   7.])
 
@@ -2096,8 +2096,8 @@ class TestCOO(sparse_test_class(getset=False,
 
     def test_constructor2(self):
         # unsorted triplet format with duplicates (which are summed)
-        row  = array([0,1,2,2,2,2,0,0,2,2])
-        col  = array([0,2,0,2,1,1,1,0,0,2])
+        row = array([0,1,2,2,2,2,0,0,2,2])
+        col = array([0,2,0,2,1,1,1,0,0,2])
         data = array([2,9,-4,5,7,0,-1,2,1,-5])
         coo = coo_matrix((data,(row,col)),(3,3))
 
@@ -2148,7 +2148,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                     [1, 2, 0, 4],
                     [0, 2, 3, 0],
                     [0, 0, 3, 4]])
-        data    = np.array([[1,2,3,4]]).repeat(3,axis=0)
+        data = np.array([[1,2,3,4]]).repeat(3,axis=0)
         offsets = np.array([0,-1,2])
         assert_equal(dia_matrix((data,offsets), shape=(4,4)).todense(), D)
 
@@ -2164,9 +2164,9 @@ class TestBSR(sparse_test_class(getset=False,
 
     def test_constructor1(self):
         # check native BSR format constructor
-        indptr  = array([0,2,2,4])
+        indptr = array([0,2,2,4])
         indices = array([0,2,2,3])
-        data    = zeros((4,2,3))
+        data = zeros((4,2,3))
 
         data[0] = array([[0,  1,  2],
                          [3,  0,  5]])
@@ -2213,7 +2213,7 @@ class TestBSR(sparse_test_class(getset=False,
         data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
         data = data.reshape(-1,2,2)
         indices = array([1, 2, 3, 4, 5, 6, 7, 8])
-        indptr  = array([0, 3, 8])
+        indptr = array([0, 3, 8])
         asp = bsr_matrix((data, indices, indptr), shape=(4,20))
         bsp = asp.copy()
         asp.eliminate_zeros()

@@ -83,8 +83,8 @@ class TestLinsolve(TestCase):
         sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
         M = sM.todense()
 
-        row  = array([0,0,1,1,0,0])
-        col  = array([0,2,1,1,0,0])
+        row = array([0,0,1,1,0,0])
+        col = array([0,2,1,1,0,0])
         data = array([1,1,1,1,1,1])
         sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
         N = sN.todense()

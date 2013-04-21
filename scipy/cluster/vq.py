@@ -569,7 +569,7 @@ def _krandinit(data, k):
 
     """
     def init_rank1(data):
-        mu  = np.mean(data)
+        mu = np.mean(data)
         cov = np.cov(data)
         x = np.random.randn(k)
         x *= np.sqrt(cov)
@@ -577,7 +577,7 @@ def _krandinit(data, k):
         return x
 
     def init_rankn(data):
-        mu  = np.mean(data, 0)
+        mu = np.mean(data, 0)
         cov = np.atleast_2d(np.cov(data, rowvar=0))
 
         # k rows, d cols (one row = one obs)
@@ -663,7 +663,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     if missing not in _valid_miss_meth:
         raise ValueError("Unkown missing method: %s" % str(missing))
     # If data is rank 1, then we have 1 dimension problem.
-    nd  = np.ndim(data)
+    nd = np.ndim(data)
     if nd == 1:
         d = 1
         # raise ValueError("Input of rank 1 not supported yet")
@@ -731,7 +731,7 @@ def _kmeans2(data, code, niter, nc, missing):
 
     return code, label
 
-if __name__  == '__main__':
+if __name__ == '__main__':
     pass
     # import _vq
     # a = np.random.randn(4, 2)

@@ -1372,14 +1372,14 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
-tmin.__doc__  = stats.tmin.__doc__
+tmin.__doc__ = stats.tmin.__doc__
 
 
 def tmax(a, upperlimit, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
-tmax.__doc__  = stats.tmax.__doc__
+tmax.__doc__ = stats.tmax.__doc__
 
 
 def tsem(a, limits=None, inclusive=(True,True)):

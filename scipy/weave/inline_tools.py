@@ -20,7 +20,7 @@ function_catalog = catalog.catalog()
 class inline_ext_function(ext_tools.ext_function):
     # Some specialization is needed for inline extension functions
     def function_declaration_code(self):
-        code  = 'static PyObject* %s(PyObject*self, PyObject* args)\n{\n'
+        code = 'static PyObject* %s(PyObject*self, PyObject* args)\n{\n'
         return code % self.name
 
     def template_declaration_code(self):
@@ -95,7 +95,7 @@ class inline_ext_function(ext_tools.ext_function):
             '        raw_locals = py_to_raw_dict(py__locals,"_locals");\n'  \
             '        raw_globals = py_to_raw_dict(py__globals,"_globals");\n' \
             '        /* argument conversion code */     \n' \
-                     + decl_code  + \
+                     + decl_code + \
             '        /* inline code */                   \n' \
                      + function_code + \
             '        /*I would like to fill in changed locals and globals here...*/   \n'   \
@@ -106,7 +106,7 @@ class inline_ext_function(ext_tools.ext_function):
                       "    exception_occurred = 1;        \n"   \
                       "}                                 \n"
         return_code = "    /* cleanup code */                   \n" + \
-                           cleanup_code                             + \
+                           cleanup_code + \
                       "    if(!(PyObject*)return_val && !exception_occurred)\n"   \
                       "    {\n                                  \n"   \
                       "        return_val = Py_None;            \n"   \
@@ -114,10 +114,10 @@ class inline_ext_function(ext_tools.ext_function):
                       "    return return_val.disown();          \n"           \
                       "}                                \n"
 
-        all_code = self.function_declaration_code()         + \
-                       indent(self.parse_tuple_code(),4)    + \
-                       try_code                             + \
-                       indent(catch_code,4)                 + \
+        all_code = self.function_declaration_code() + \
+                       indent(self.parse_tuple_code(),4) + \
+                       try_code + \
+                       indent(catch_code,4) + \
                        return_code
 
         return all_code
