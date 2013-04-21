@@ -107,8 +107,17 @@ cdef class ZlibInputStream(GenericStream):
     ----------
     stream : file-like
         Stream to read compressed data from.
-    stream_length : int, optional
+    max_length : int, optional
         Maximum number of bytes to read from the stream.
+        -1 if the length is unlimited.
+
+    Notes
+    -----
+    Some matlab files contain zlib streams without valid Z_STREAM_END
+    termination.  To get round this, we use the decompressobj object, that
+    allows you to decode an incomplete stream.  See discussion at
+    http://bugs.python.org/issue8672
+
     """
 
     cdef ssize_t _max_length
