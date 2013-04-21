@@ -60,7 +60,7 @@ def tri(N, M=None, k=0, dtype=None):
     """
     if M is None:
         M = N
-    if type(M) == type('d'):
+    if isinstance(M, basestring):
         #pearu: any objections to remove this feature?
         #       As tri(N,'d') is equivalent to tri(N,dtype='d')
         dtype = M

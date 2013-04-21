@@ -241,7 +241,7 @@ class MMFile (object):
         extensions).  Otherwise, just return source.
         """
         close_it = False
-        if type(filespec) is type(''):
+        if isinstance(filespec, basestring):
             close_it = True
 
             # open for reading

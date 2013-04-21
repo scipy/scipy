@@ -244,7 +244,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     1.5
 
     """
-    if type(args) != type(()):
+    if not isinstance(args, tuple):
         args = (args,)
     if (weight is None):
         retval = _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points)

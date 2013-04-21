@@ -211,7 +211,7 @@ def bisect(f, a, b, args=(),
     fsolve : n-dimensional root-finding
 
     """
-    if type(args) != type(()):
+    if not isinstance(args, tuple):
         args = (args,)
     r = _zeros._bisect(f,a,b,xtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
@@ -281,7 +281,7 @@ def ridder(f, a, b, args=(),
        IEEE Trans. Circuits Systems 26, 979-980, 1979.
 
     """
-    if type(args) != type(()):
+    if not isinstance(args, tuple):
         args = (args,)
     r = _zeros._ridder(f,a,b,xtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
@@ -385,7 +385,7 @@ def brentq(f, a, b, args=(),
        Section 9.3:  "Van Wijngaarden-Dekker-Brent Method."
 
     """
-    if type(args) != type(()):
+    if not isinstance(args, tuple):
         args = (args,)
     r = _zeros._brentq(f,a,b,xtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
@@ -458,7 +458,7 @@ def brenth(f, a, b, args=(),
     fixed_point : scalar fixed-point finder
 
     """
-    if type(args) != type(()):
+    if not isinstance(args, tuple):
         args = (args,)
     r = _zeros._brenth(f,a, b, xtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)

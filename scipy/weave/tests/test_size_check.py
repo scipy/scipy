@@ -115,9 +115,9 @@ class TestBinaryOpSize(TestCase):
 
 class TestDummyArray(TestBinaryOpSize):
     def generic_check(self,x,y,desired):
-        if type(x) is type(()):
+        if isinstance(x, tuple):
             x = np.ones(x)
-        if type(y) is type(()):
+        if isinstance(y, tuple):
             y = np.ones(y)
         xx = size_check.dummy_array(x)
         yy = size_check.dummy_array(y)

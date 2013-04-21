@@ -191,7 +191,7 @@ def _root_hybr(func, x0, args=(), jac=None,
 
     x0 = asarray(x0).flatten()
     n = len(x0)
-    if type(args) != type(()):
+    if not isinstance(args, tuple):
         args = (args,)
     shape, dtype = _check_func('fsolve', 'func', func, x0, args, n, (n,))
     if epsfcn is None:
@@ -363,7 +363,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     """
     x0 = asarray(x0).flatten()
     n = len(x0)
-    if type(args) != type(()):
+    if not isinstance(args, tuple):
         args = (args,)
     shape, dtype = _check_func('leastsq', 'func', func, x0, args, n)
     m = shape[0]
