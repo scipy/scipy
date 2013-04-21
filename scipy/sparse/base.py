@@ -59,6 +59,7 @@ class spmatrix(object):
 
     __array_priority__ = 10.1
     ndim = 2
+
     def __init__(self, maxprint=MAXPRINT):
         self.format = self.__class__.__name__[:3]
         self._shape = None

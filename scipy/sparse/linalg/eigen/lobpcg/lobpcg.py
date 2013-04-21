@@ -561,6 +561,7 @@ if __name__ == '__main__':
     X.shape = (n, 3)
 
     ivals = [1./vals[0]]
+
     def precond(x):
         invA = spdiags(ivals, 0, n, n)
         y = invA  * x

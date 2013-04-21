@@ -24,6 +24,7 @@ class _data_matrix(spmatrix):
 
     def _get_dtype(self):
         return self.data.dtype
+
     def _set_dtype(self,newtype):
         self.data.dtype = newtype
     dtype = property(fget=_get_dtype,fset=_set_dtype)

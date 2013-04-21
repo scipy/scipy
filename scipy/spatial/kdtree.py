@@ -239,12 +239,16 @@ class KDTree(object):
         if sys.version_info[0] >= 3:
             def __lt__(self, other):
                 id(self) < id(other)
+
             def __gt__(self, other):
                 id(self) > id(other)
+
             def __le__(self, other):
                 id(self) <= id(other)
+
             def __ge__(self, other):
                 id(self) >= id(other)
+
             def __eq__(self, other):
                 id(self) == id(other)
 
@@ -628,6 +632,7 @@ class KDTree(object):
 
         """
         results = [[] for i in range(self.n)]
+
         def traverse_checking(node1, rect1, node2, rect2):
             if rect1.min_distance_rectangle(rect2, p) > r/(1.+eps):
                 return
@@ -695,6 +700,7 @@ class KDTree(object):
 
         """
         results = set()
+
         def traverse_checking(node1, rect1, node2, rect2):
             if rect1.min_distance_rectangle(rect2, p) > r/(1.+eps):
                 return

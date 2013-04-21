@@ -420,6 +420,7 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
     %(cval)s
     """
     input = numpy.asarray(input)
+
     def derivative2(input, axis, output, mode, cval, sigma):
         order = [0] * input.ndim
         order[axis] = 2
@@ -494,6 +495,7 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     %(cval)s
     """
     input = numpy.asarray(input)
+
     def derivative(input, axis, output, mode, cval, sigma):
         order = [0] * input.ndim
         order[axis] = 1

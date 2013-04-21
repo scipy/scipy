@@ -181,6 +181,7 @@ class common_base_converter(base_converter):
     def __repr__(self):
         msg = "(file:: name: %s)" % self.name
         return msg
+
     def __cmp__(self,other):
         #only works for equal
         result = -1
@@ -219,6 +220,7 @@ class string_converter(common_base_converter):
         self.to_c_return = "std::string(PyString_AsString(py_obj))"
         self.matching_types = [types.StringType]
         self.headers.append('<string>')
+
     def c_to_py_code(self):
         # !! Need to dedent returned code.
         code = """
@@ -479,6 +481,7 @@ class catchall_converter(scxx_converter):
         self.to_c_return = 'py::object(py_obj)'
         # ref counting handled by py::object
         self.use_ref_count = 0
+
     def type_match(self,value):
         return 1
 

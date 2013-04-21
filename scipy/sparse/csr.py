@@ -194,6 +194,7 @@ class csr_matrix(_cs_matrix):
                 raise IndexError('invalid index')
             else:
                 return x
+
         def check_bounds(indices,N):
             max_indx = indices.max()
             if max_indx >= N:

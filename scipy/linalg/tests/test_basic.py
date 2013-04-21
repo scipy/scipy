@@ -443,6 +443,7 @@ class TestInv(TestCase):
             a_inv = inv(a)
             assert_array_almost_equal(dot(a,a_inv),
                                       identity(n))
+
     def test_simple_complex(self):
         a = [[1,2],[3,4j]]
         a_inv = inv(a)
@@ -458,6 +459,7 @@ class TestInv(TestCase):
             a_inv = inv(a)
             assert_array_almost_equal(dot(a,a_inv),
                                       identity(n))
+
     def test_check_finite(self):
         a = [[1,2],[3,4]]
         a_inv = inv(a, check_finite=False)
@@ -720,23 +722,32 @@ class TestNorm(object):
 class TestOverwrite(object):
     def test_solve(self):
         assert_no_overwrite(solve, [(3,3), (3,)])
+
     def test_solve_triangular(self):
         assert_no_overwrite(solve_triangular, [(3,3), (3,)])
+
     def test_solve_banded(self):
         assert_no_overwrite(lambda ab, b: solve_banded((2,1), ab, b),
                             [(4,6), (6,)])
+
     def test_solveh_banded(self):
         assert_no_overwrite(solveh_banded, [(2,6), (6,)])
+
     def test_inv(self):
         assert_no_overwrite(inv, [(3,3)])
+
     def test_det(self):
         assert_no_overwrite(det, [(3,3)])
+
     def test_lstsq(self):
         assert_no_overwrite(lstsq, [(3,2), (3,)])
+
     def test_pinv(self):
         assert_no_overwrite(pinv, [(3,3)])
+
     def test_pinv2(self):
         assert_no_overwrite(pinv2, [(3,3)])
+
     def test_pinvh(self):
         assert_no_overwrite(pinvh, [(3,3)])
 

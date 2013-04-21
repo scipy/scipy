@@ -725,6 +725,7 @@ class _TestGetSet:
 
     def test_scalar_assign_2(self):
         n, m = (5, 10)
+
         def _test_set(i, j, nitems):
             msg = "%r ; %r ; %r" % (i, j, nitems)
             A = self.spmatrix((n, m))
@@ -933,6 +934,7 @@ class _TestSlicingAssign:
 
     def test_slice_assign_2(self):
         n, m = (5, 10)
+
         def _test_set(i, j):
             msg = "i=%r; j=%r" % (i, j)
             A = self.spmatrix((n, m))
@@ -1171,6 +1173,7 @@ class _TestFancyIndexingAssign:
 
     def test_fancy_indexing_set(self):
         n, m = (5, 10)
+
         def _test_set_slice(i, j):
             A = self.spmatrix((n, m))
             A[i, j] = 1
@@ -1292,6 +1295,7 @@ class _TestFancyMultidimAssign:
 
     def test_fancy_indexing_multidim_set(self):
         n, m = (5, 10)
+
         def _test_set_slice(i, j):
             A = self.spmatrix((n, m))
             A[i, j] = 1
@@ -2078,6 +2082,7 @@ class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spmatrix = coo_matrix
+
     def test_constructor1(self):
         # unsorted triplet format
         row  = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])

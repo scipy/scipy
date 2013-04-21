@@ -407,6 +407,7 @@ if __name__ == '__main__':
 
     def example():
         print("Example")
+
         # A function to minimize
         def function(x):
             f = pow(x[0],2.0)+pow(abs(x[1]),3.0)

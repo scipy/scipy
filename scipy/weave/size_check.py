@@ -122,6 +122,7 @@ class dummy_array(object):
             except:
                 self.shape = empty
         #self.value = ary
+
     def binary_op(self,other):
         try:
             x = other.shape
@@ -129,6 +130,7 @@ class dummy_array(object):
             x = empty
         new_shape = binary_op_size(self.shape,x)
         return dummy_array(new_shape,1)
+
     def __cmp__(self,other):
         # This isn't an exact compare, but does work for ==
         # cluge for Numeric
@@ -140,37 +142,53 @@ class dummy_array(object):
 
     def __add__(self,other):
         return self.binary_op(other)
+
     def __radd__(self,other):
         return self.binary_op(other)
+
     def __sub__(self,other):
         return self.binary_op(other)
+
     def __rsub__(self,other):
         return self.binary_op(other)
+
     def __mul__(self,other):
         return self.binary_op(other)
+
     def __rmul__(self,other):
         return self.binary_op(other)
+
     def __div__(self,other):
         return self.binary_op(other)
+
     def __rdiv__(self,other):
         return self.binary_op(other)
+
     def __mod__(self,other):
         return self.binary_op(other)
+
     def __rmod__(self,other):
         return self.binary_op(other)
+
     def __lshift__(self,other):
         return self.binary_op(other)
+
     def __rshift__(self,other):
         return self.binary_op(other)
+
     # unary ops
     def __neg__(self,other):
         return self
+
     def __pos__(self,other):
         return self
+
     def __abs__(self,other):
         return self
+
     def __invert__(self,other):
         return self
+
     # Not sure what to do with coersion ops.  Ignore for now.
     #
     # not currently supported by compiler.
@@ -184,12 +202,15 @@ class dummy_array(object):
     def __setitem__(self,indices,val):
         #ignore for now
         pass
+
     def __len__(self):
         return self.shape[0]
+
     def __getslice__(self,i,j):
         i = max(i, 0)
         j = max(j, 0)
         return self.__getitem__((slice(i,j),))
+
     def __getitem__(self,indices):
         # ayeyaya this is a mess
         #print indices, type(indices), indices.shape
@@ -277,6 +298,7 @@ class dummy_array(object):
         if 0 in new_dims:
             raise IndexError("Zero length slices not currently supported")
         return dummy_array(new_dims,1)
+
     def __repr__(self):
         val = str((self.name, str(self.shape)))
         return val

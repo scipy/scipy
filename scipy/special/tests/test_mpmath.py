@@ -353,6 +353,7 @@ class ComplexArg(object):
     def __init__(self, a=complex(-np.inf, -np.inf), b=complex(np.inf, np.inf)):
         self.real = Arg(a.real, b.real)
         self.imag = Arg(a.imag, b.imag)
+
     def values(self, n):
         m = max(2, int(np.sqrt(n)))
         x = self.real.values(m)
@@ -364,6 +365,7 @@ class IntArg(object):
     def __init__(self, a=-1000, b=1000):
         self.a = a
         self.b = b
+
     def values(self, n):
         v1 = Arg(self.a, self.b).values(max(1 + n//2, n-5)).astype(int)
         v2 = np.arange(-5, 5)
@@ -421,6 +423,7 @@ class MpmathData(object):
                 mptype = lambda x: mpmath.mpc(complex(x))
             else:
                 mptype = lambda x: mpmath.mpf(float(x))
+
                 def pytype(x):
                     if abs(x.imag) > 1e-16*(1 + abs(x.real)):
                         return np.nan
@@ -557,6 +560,7 @@ def _time_limited(timeout=0.5, return_val=np.nan, use_sigalrm=True):
         def deco(func):
             def wrap(*a, **kw):
                 start_time = time.time()
+
                 def trace(frame, event, arg):
                     if time.time() - start_time > timeout:
                         raise _TimeoutError()

@@ -406,6 +406,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         slice0, slice1 = self._swap((slice0,slice1))
         shape0, shape1 = self._swap(self.shape)
+
         def _process_slice(sl, num):
             if isinstance(sl, slice):
                 i0, i1 = sl.start, sl.stop

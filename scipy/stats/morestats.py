@@ -408,6 +408,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     #  and computes a linear regression (including the correlation)
     #  and returns 1-r so that a minimization function maximizes the
     #  correlation
+
     def tempfunc(shape, mi, yvals, func):
         xvals = func(mi, shape)
         r, prob = stats.pearsonr(xvals, yvals)
@@ -454,6 +455,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     #  f(x,lmbda) >= f(x,lmax) - 0.5*chi^2_alpha;1
     fac = 0.5*distributions.chi2.ppf(1-alpha,1)
     target = boxcox_llf(lmax,x)-fac
+
     def rootfunc(lmbda,data,target):
         return boxcox_llf(lmbda,data) - target
     # Find positive endpont
@@ -514,6 +516,7 @@ def boxcox(x,lmbda=None,alpha=None):
         lmbda = lmbda*(x == x)
         y = where(lmbda == 0, log(x), (x**lmbda - 1)/lmbda)
         return y
+
     # Otherwise find the lmbda that maximizes the log-likelihood function.
     def tempfunc(lmb, data):  # function to minimize
         return -boxcox_llf(lmb,data)
@@ -539,6 +542,7 @@ def boxcox_normmax(x,brack=(-1.0,1.0)):
     #  and returns 1-r so that a minimization function maximizes the
     #  correlation
     xvals = distributions.norm.ppf(Ui)
+
     def tempfunc(lmbda, xvals, samps):
         y = boxcox(samps,lmbda)
         yvals = sort(y)
@@ -1389,6 +1393,7 @@ def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
             g1*g1*g2/1728.0*p12[10] + g1**4.0/31104.0*p12[12])
     # Final normalization
     totp = totp / sqrt(2*pi)/sig
+
     def thefunc(x):
         xn = (x-mu)/sig
         return totp(xn)*exp(-xn*xn/2.0)

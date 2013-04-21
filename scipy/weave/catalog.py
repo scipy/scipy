@@ -366,10 +366,12 @@ class catalog(object):
             working with it.
         """
         self.module_dir = module_dir
+
     def get_module_directory(self):
         """ Return the path used to replace the 'MODULE' in searches.
         """
         return self.module_dir
+
     def clear_module_directory(self):
         """ Reset 'MODULE' path to None so that it is ignored in searches.
         """
@@ -451,6 +453,7 @@ class catalog(object):
         else:
             files = self.get_catalog_files()
         # filter for (file exists and is writable) OR directory is writable
+
         def file_test(x):
             from os import access, F_OK, W_OK
             return (access(x,F_OK) and access(x,W_OK) or

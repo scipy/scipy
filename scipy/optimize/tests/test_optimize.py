@@ -438,6 +438,7 @@ class TestOptimize(TestCase):
         def func(z):
             x, y = z
             return x**2*y**2 + x**4 + 1
+
         def dfunc(z):
             x, y = z
             return np.array([2*x*y**2 + 4*x**3, 2*x**2*y])

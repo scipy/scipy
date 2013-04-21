@@ -1033,6 +1033,7 @@ def test_varmats_from_mat():
     names_vars = (('arr', mlarr(np.arange(10))),
                   ('mystr', mlarr('a string')),
                   ('mynum', mlarr(10)))
+
     # Dict like thing to give variables in defined order
     class C(object):
         def items(self):

@@ -980,6 +980,7 @@ class TestHMean(TestCase):
 
         desired1 = stats.hmean(array(a),axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
+
     def test_1D_array(self):
         a = array((1,2,3,4), float64)
         actual = stats.hmean(a)
@@ -1253,6 +1254,7 @@ class TestMoments(TestCase):
     """
     testcase = [1,2,3,4]
     testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
+
     def test_moment(self):
         """
         mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))"""
@@ -1264,6 +1266,7 @@ class TestMoments(TestCase):
         assert_approx_equal(y,0.0)
         y = stats.moment(self.testcase,4)
         assert_approx_equal(y,2.5625)
+
     def test_variation(self):
         """
         variation = samplestd/mean """
@@ -1338,6 +1341,7 @@ class TestStudentTest(TestCase):
     P1_2 = 0.0741799
     T2_0 = 1.732051
     P2_0 = 0.2254033
+
     def test_onesample(self):
         t, p = stats.ttest_1samp(self.X1, 0)
 
@@ -1877,16 +1881,19 @@ class HarMeanTestCase:
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         b = 34.1417152147
         self.do(a, b)
+
     def test_1darray(self):
         ''' Test a 1d array'''
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 34.1417152147
         self.do(a, b)
+
     def test_1dma(self):
         ''' Test a 1d masked array'''
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 34.1417152147
         self.do(a, b)
+
     def test_1dmavalue(self):
         ''' Test a 1d masked array with a masked value'''
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
@@ -1900,31 +1907,37 @@ class HarMeanTestCase:
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 38.6696271841
         self.do(a, b)
+
     def test_2darray(self):
         ''' Test a 2d array'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 38.6696271841
         self.do(np.array(a), b)
+
     def test_2dma(self):
         ''' Test a 2d masked array'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 38.6696271841
         self.do(np.ma.array(a), b)
+
     def test_2daxis0(self):
         ''' Test a 2d list with axis=0'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([22.88135593,  39.13043478,  52.90076336,  65.45454545])
         self.do(a, b, axis=0)
+
     def test_2daxis1(self):
         ''' Test a 2d list with axis=1'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([19.2,   63.03939962,  103.80078637])
         self.do(a, b, axis=1)
+
     def test_2dmatrixdaxis0(self):
         ''' Test a 2d list with axis=0'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[22.88135593,  39.13043478,  52.90076336,  65.45454545]])
         self.do(np.matrix(a), b, axis=0)
+
     def test_2dmatrixaxis1(self):
         ''' Test a 2d list with axis=1'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
@@ -1950,16 +1963,19 @@ class GeoMeanTestCase:
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         b = 45.2872868812
         self.do(a, b)
+
     def test_1darray(self):
         ''' Test a 1d array'''
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 45.2872868812
         self.do(a, b)
+
     def test_1dma(self):
         ''' Test a 1d masked array'''
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 45.2872868812
         self.do(a, b)
+
     def test_1dmavalue(self):
         ''' Test a 1d masked array with a masked value'''
         a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0,0,0,0,0,0,0,0,0,1])
@@ -1972,41 +1988,49 @@ class GeoMeanTestCase:
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
         self.do(a, b)
+
     def test_2darray(self):
         ''' Test a 2d array'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
         self.do(np.array(a), b)
+
     def test_2dma(self):
         ''' Test a 2d masked array'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
         self.do(np.ma.array(a), b)
+
     def test_2daxis0(self):
         ''' Test a 2d list with axis=0'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([35.56893304,  49.32424149,  61.3579244,  72.68482371])
         self.do(a, b, axis=0)
+
     def test_2daxis1(self):
         ''' Test a 2d list with axis=1'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([22.13363839,   64.02171746,  104.40086817])
         self.do(a, b, axis=1)
+
     def test_2dmatrixdaxis0(self):
         ''' Test a 2d list with axis=0'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[35.56893304,  49.32424149,  61.3579244,  72.68482371]])
         self.do(np.matrix(a), b, axis=0)
+
     def test_2dmatrixaxis1(self):
         ''' Test a 2d list with axis=1'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[22.13363839,   64.02171746,  104.40086817]]).T
         self.do(np.matrix(a), b, axis=1)
+
 ##    def test_dtype(self):
 ##        ''' Test a 1d list with a new dtype'''
 ##        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 ##        b = 45.2872868812
 ##        self.do(a, b, dtype=np.float128)  # does not exist on win32
+
     def test_1dlist0(self):
         ''' Test a 1d list with zero element'''
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]

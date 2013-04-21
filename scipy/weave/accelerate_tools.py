@@ -72,10 +72,13 @@ class Instance(Type_Descriptor):
 
 class Basic(Type_Descriptor):
     owned = 1
+
     def check(self,s):
         return "%s(%s)" % (self.checker,s)
+
     def inbound(self,s):
         return "%s(%s)" % (self.inbounder,s)
+
     def outbound(self,s):
         return "%s(%s)" % (self.outbounder,s),self.owned
 
@@ -83,6 +86,7 @@ class Basic(Type_Descriptor):
 class Basic_Number(Basic):
     def literalizer(self,s):
         return str(s)
+
     def binop(self,symbol,a,b):
         assert_(symbol in ['+','-','*','/'], msg=symbol)
         return '%s %s %s' % (a,symbol,b),self
@@ -133,12 +137,14 @@ class Vector(Type_Descriptor):
     prerequisites = Type_Descriptor.prerequisites + \
                     ['#include "numpy/arrayobject.h"']
     dims = 1
+
     def check(self,s):
         return "PyArray_Check(%s) && ((PyArrayObject*)%s)->nd == %d &&  ((PyArrayObject*)%s)->descr->type_num == %s" % (
             s,s,self.dims,s,self.typecode)
 
     def inbound(self,s):
         return "%s(%s)" % (self.inbounder,s)
+
     def outbound(self,s):
         return "%s(%s)" % (self.outbounder,s),self.owned
 
@@ -150,6 +156,7 @@ class Vector(Type_Descriptor):
             code += '+%s*%s->strides[%d]' % (v[i],A,i)
         code += '))'
         return code,self.pybase
+
     def setitem(self,A,v,t):
         return self.getitem(A,v,t)
 

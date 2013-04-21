@@ -48,7 +48,7 @@ class TestGMean(TestCase):
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
         assert_(not isinstance(desired1, ma.MaskedArray))
-        #
+
         a = ma.array((1,2,3,4),mask=(0,0,0,1))
         actual = mstats.gmean(a)
         desired = np.power(1*2*3,1./3.)
@@ -56,7 +56,7 @@ class TestGMean(TestCase):
 
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
-    #
+
     def test_2D(self):
         a = ma.array(((1,2,3,4),(1,2,3,4),(1,2,3,4)),
                      mask=((0,0,0,0),(1,0,0,1),(0,1,1,0)))
@@ -106,10 +106,10 @@ class TestHMean(TestCase):
 
 
 class TestRanking(TestCase):
-    #
+
     def __init__(self, *args, **kwargs):
         TestCase.__init__(self, *args, **kwargs)
-    #
+
     def test_ranking(self):
         x = ma.array([0,1,1,1,2,3,4,5,5,6,])
         assert_almost_equal(mstats.rankdata(x),[1,3,3,3,5,6,7,8.5,8.5,10])
@@ -126,7 +126,7 @@ class TestRanking(TestCase):
 
 
 class TestCorr(TestCase):
-    #
+
     def test_pearsonr(self):
         "Tests some computations of Pearson's r"
         x = ma.arange(10)
@@ -141,7 +141,7 @@ class TestCorr(TestCase):
             np.seterr(**olderr)
         assert_(pr[0] is masked)
         assert_(pr[1] is masked)
-    #
+
     def test_spearmanr(self):
         "Tests some computations of Spearman's rho"
         (x, y) = ([5.05,6.75,3.21,2.66],[1.65,2.64,2.64,6.95])
@@ -161,7 +161,7 @@ class TestCorr(TestCase):
               0.0,  0.6,  6.7,  3.8,  1.0,  1.2,  1.4, np.nan]
         (x, y) = (ma.fix_invalid(x), ma.fix_invalid(y))
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
-    #
+
     def test_kendalltau(self):
         "Tests some computations of Kendall's tau"
         x = ma.fix_invalid([5.05, 6.75, 3.21, 2.66,np.nan])
@@ -178,7 +178,7 @@ class TestCorr(TestCase):
                             25,80,80,80,80,80,80, 0,10,45, np.nan, 0])
         result = mstats.kendalltau(x,y)
         assert_almost_equal(np.asarray(result), [-0.1585188, 0.4128009])
-    #
+
     def test_kendalltau_seasonal(self):
         "Tests the seasonal Kendall tau."
         x = [[nan,nan,  4,  2, 16, 26,  5,  1,  5,  1,  2,  3,  1],
@@ -190,7 +190,7 @@ class TestCorr(TestCase):
         assert_almost_equal(output['global p-value (indep)'], 0.008, 3)
         assert_almost_equal(output['seasonal p-value'].round(2),
                             [0.18,0.53,0.20,0.04])
-    #
+
     def test_pointbiserial(self):
         "Tests point biserial"
         x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
@@ -202,7 +202,7 @@ class TestCorr(TestCase):
 
 
 class TestTrimming(TestCase):
-    #
+
     def test_trim(self):
         "Tests trimming"
         a = ma.arange(10)
@@ -237,7 +237,7 @@ class TestTrimming(TestCase):
         assert_equal(trimx._mask.ravel(),[1]*20+[0]*70+[1]*20)
         trimx = mstats.trim(x.T,(0.1,0.2),relative=True,axis=-1)
         assert_equal(trimx.T._mask.ravel(),[1]*20+[0]*70+[1]*20)
-    #
+
     def test_trim_old(self):
         "Tests trimming."
         x = ma.arange(100)
@@ -251,7 +251,7 @@ class TestTrimming(TestCase):
         x.shape = (10,10)
         assert_equal(mstats.trimboth(x).count(), 60)
         assert_equal(mstats.trimtail(x).count(), 80)
-    #
+
     def test_trimmedmean(self):
         "Tests the trimmed mean."
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
@@ -259,14 +259,14 @@ class TestTrimming(TestCase):
         assert_almost_equal(mstats.trimmed_mean(data,0.1), 343, 0)
         assert_almost_equal(mstats.trimmed_mean(data,(0.1,0.1)), 343, 0)
         assert_almost_equal(mstats.trimmed_mean(data,(0.2,0.2)), 283, 0)
-    #
+
     def test_trimmed_stde(self):
         "Tests the trimmed mean standard error."
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(mstats.trimmed_stde(data,(0.2,0.2)), 56.13193, 5)
         assert_almost_equal(mstats.trimmed_stde(data,0.2), 56.13193, 5)
-    #
+
     def test_winsorization(self):
         "Tests the Winsorization of the data."
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
@@ -452,7 +452,7 @@ class TestVariability(TestCase):
 
 
 class TestMisc(TestCase):
-    #
+
     def test_obrientransform(self):
         "Tests Obrien transform"
         args = [[5]*5+[6]*11+[7]*9+[8]*3+[9]*2+[10]*2,
@@ -461,7 +461,7 @@ class TestMisc(TestCase):
                   [10.4352]+2*[4.8599]+4*[1.3836]+9*[0.0061]+16*[0.7277]]
         assert_almost_equal(np.round(mstats.obrientransform(*args).T,4),
                             result,4)
-    #
+
     def test_kstwosamp(self):
         "Tests the Kolmogorov-Smirnov 2 samples test"
         x = [[nan,nan,  4,  2, 16, 26,  5,  1,  5,  1,  2,  3,  1],
@@ -470,14 +470,14 @@ class TestMisc(TestCase):
              [nan,  6, 11,  4, 17,nan,  6,  1,  1,  2,  5,  1,  1]]
         x = ma.fix_invalid(x).T
         (winter,spring,summer,fall) = x.T
-        #
+
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring),4),
                             (0.1818,0.9892))
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'g'),4),
                             (0.1469,0.7734))
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'l'),4),
                             (0.1818,0.6744))
-    #
+
     def test_friedmanchisq(self):
         "Tests the Friedman Chi-square test"
         # No missing values

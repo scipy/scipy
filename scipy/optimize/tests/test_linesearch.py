@@ -222,6 +222,7 @@ class TestLineSearch(object):
         # Armijo should evaluate the function only once if the trial step
         # is already suitable
         count = [0]
+
         def phi(s):
             count[0] += 1
             return -s + 0.01*s**2

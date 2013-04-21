@@ -110,6 +110,7 @@ class TestKMean(TestCase):
         data[x.shape[0]:] = y
 
         res = kmeans(data, 2)
+
     def test_kmeans_simple(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()

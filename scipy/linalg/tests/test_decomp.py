@@ -2031,38 +2031,53 @@ class TestOverwrite(object):
     def test_eig(self):
         assert_no_overwrite(eig, [(3,3)])
         assert_no_overwrite(eig, [(3,3), (3,3)])
+
     def test_eigh(self):
         assert_no_overwrite(eigh, [(3,3)])
         assert_no_overwrite(eigh, [(3,3), (3,3)])
+
     def test_eig_banded(self):
         assert_no_overwrite(eig_banded, [(3,2)])
+
     def test_eigvals(self):
         assert_no_overwrite(eigvals, [(3,3)])
+
     def test_eigvalsh(self):
         assert_no_overwrite(eigvalsh, [(3,3)])
+
     def test_eigvals_banded(self):
         assert_no_overwrite(eigvals_banded, [(3,2)])
+
     def test_hessenberg(self):
         assert_no_overwrite(hessenberg, [(3,3)])
+
     def test_lu_factor(self):
         assert_no_overwrite(lu_factor, [(3,3)])
+
     def test_lu_solve(self):
         x = np.array([[1,2,3], [4,5,6], [7,8,8]])
         xlu = lu_factor(x)
         assert_no_overwrite(lambda b: lu_solve(xlu, b), [(3,)])
+
     def test_lu(self):
         assert_no_overwrite(lu, [(3,3)])
+
     def test_qr(self):
         assert_no_overwrite(qr, [(3,3)])
+
     def test_rq(self):
         assert_no_overwrite(rq, [(3,3)])
+
     def test_schur(self):
         assert_no_overwrite(schur, [(3,3)])
+
     def test_schur_complex(self):
         assert_no_overwrite(lambda a: schur(a, 'complex'), [(3,3)],
                             dtypes=[np.float32, np.float64])
+
     def test_svd(self):
         assert_no_overwrite(svd, [(3,3)])
+
     def test_svdvals(self):
         assert_no_overwrite(svdvals, [(3,3)])
 

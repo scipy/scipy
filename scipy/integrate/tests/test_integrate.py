@@ -287,6 +287,7 @@ class Pi(ODE):
 
     def f(self, z, t):
         return array([1./(t - 10 + 1j)])
+
     def verify(self, zs, t):
         u = -2j*numpy.arctan(10)
         return allclose(u, zs[-1,:], atol=self.atol, rtol=self.rtol)

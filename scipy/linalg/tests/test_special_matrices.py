@@ -32,6 +32,7 @@ class TestTri(TestCase):
                                                 [1,1,0,0],
                                                 [1,1,1,0],
                                                 [1,1,1,1]],'f'))
+
     def test_diag(self):
         assert_equal(tri(4,k=1),array([[1,1,0,0],
                                        [1,1,1,0],
@@ -41,6 +42,7 @@ class TestTri(TestCase):
                                         [1,0,0,0],
                                         [1,1,0,0],
                                         [1,1,1,0]]))
+
     def test_2d(self):
         assert_equal(tri(4,3),array([[1,0,0],
                                      [1,1,0],
@@ -49,6 +51,7 @@ class TestTri(TestCase):
         assert_equal(tri(3,4),array([[1,0,0,0],
                                      [1,1,0,0],
                                      [1,1,1,0]]))
+
     def test_diag2d(self):
         assert_equal(tri(3,4,k=2),array([[1,1,1,0],
                                          [1,1,1,1],

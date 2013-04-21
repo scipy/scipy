@@ -12,6 +12,7 @@ class _FakeMatrix(object):
 class _FakeMatrix2(object):
     def __init__(self, data):
         self._data = data
+
     def __array__(self):
         return self._data
 

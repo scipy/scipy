@@ -46,8 +46,10 @@ from scipy.special._testutils import assert_tol_equal, with_special_errors, \
 class TestCephes(TestCase):
     def test_airy(self):
         cephes.airy(0)
+
     def test_airye(self):
         cephes.airye(0)
+
     def test_binom(self):
         n = np.array([0.264, 4, 5.2, 17])
         k = np.array([2, 0.4, 7, 3.3])
@@ -110,21 +112,28 @@ class TestCephes(TestCase):
 
     def test_bdtr(self):
         assert_equal(cephes.bdtr(1,1,0.5),1.0)
+
     def test_bdtri(self):
         assert_equal(cephes.bdtri(1,3,0.5),0.5)
+
     def test_bdtrc(self):
         assert_equal(cephes.bdtrc(1,3,0.5),0.5)
+
     def test_bdtrin(self):
         assert_equal(cephes.bdtrin(1,0,1),5.0)
+
     def test_bdtrik(self):
         cephes.bdtrik(1,3,0.5)
 
     def test_bei(self):
         assert_equal(cephes.bei(0),0.0)
+
     def test_beip(self):
         assert_equal(cephes.beip(0),0.0)
+
     def test_ber(self):
         assert_equal(cephes.ber(0),1.0)
+
     def test_berp(self):
         assert_equal(cephes.berp(0),0.0)
 
@@ -133,21 +142,28 @@ class TestCephes(TestCase):
 
     def test_beta(self):
         assert_equal(cephes.beta(1,1),1.0)
+
     def test_betainc(self):
         assert_equal(cephes.betainc(1,1,1),1.0)
+
     def test_betaln(self):
         assert_equal(cephes.betaln(1,1),0.0)
+
     def test_betaincinv(self):
         assert_equal(cephes.betaincinv(1,1,1),1.0)
+
     def test_beta_inf(self):
         assert_(np.isinf(special.beta(-1, 2)))
 
     def test_btdtr(self):
         assert_equal(cephes.btdtr(1,1,1),1.0)
+
     def test_btdtri(self):
         assert_equal(cephes.btdtri(1,1,1),1.0)
+
     def test_btdtria(self):
         assert_equal(cephes.btdtria(1,1,1),5.0)
+
     def test_btdtrib(self):
         assert_equal(cephes.btdtrib(1,1,1),5.0)
 
@@ -156,10 +172,13 @@ class TestCephes(TestCase):
 
     def test_chdtr(self):
         assert_equal(cephes.chdtr(1,0),0.0)
+
     def test_chdtrc(self):
         assert_equal(cephes.chdtrc(1,0),1.0)
+
     def test_chdtri(self):
         assert_equal(cephes.chdtri(1,1),0.0)
+
     def test_chdtriv(self):
         assert_equal(cephes.chdtriv(0,0),5.0)
 
@@ -169,17 +188,22 @@ class TestCephes(TestCase):
         assert_allclose(p, [1.21805009e-09, 2.81979982e-09, 6.25652736e-09,
                             1.33520017e-08,   2.74909967e-08],
                         rtol=1e-6, atol=0)
+
     def test_chndtridf(self):
         assert_equal(cephes.chndtridf(0,0,1),5.0)
+
     def test_chndtrinc(self):
         assert_equal(cephes.chndtrinc(0,1,0),5.0)
+
     def test_chndtrix(self):
         assert_equal(cephes.chndtrix(0,1,0),0.0)
 
     def test_cosdg(self):
         assert_equal(cephes.cosdg(0),1.0)
+
     def test_cosm1(self):
         assert_equal(cephes.cosm1(0),0.0)
+
     def test_cotdg(self):
         assert_almost_equal(cephes.cotdg(45),1.0)
 
@@ -189,26 +213,34 @@ class TestCephes(TestCase):
 
     def test_ellipe(self):
         assert_equal(cephes.ellipe(1),1.0)
+
     def test_ellipeinc(self):
         assert_equal(cephes.ellipeinc(0,1),0.0)
+
     def test_ellipj(self):
         cephes.ellipj(0,1)
+
     def test_ellipk(self):
         assert_allclose(ellipk(0), pi/2)
+
     def test_ellipkinc(self):
         assert_equal(cephes.ellipkinc(0,0),0.0)
 
     def test_erf(self):
         assert_equal(cephes.erf(0),0.0)
+
     def test_erfc(self):
         assert_equal(cephes.erfc(0),1.0)
 
     def test_exp1(self):
         cephes.exp1(1)
+
     def test_expi(self):
         cephes.expi(1)
+
     def test_expn(self):
         cephes.expn(1,1)
+
     def test_exp1_reg(self):
         # Regression for #834
         a = cephes.exp1(-complex(19.9999990))
@@ -217,15 +249,19 @@ class TestCephes(TestCase):
 
     def test_exp10(self):
         assert_approx_equal(cephes.exp10(2),100.0)
+
     def test_exp2(self):
         assert_equal(cephes.exp2(2),4.0)
+
     def test_expm1(self):
         assert_equal(cephes.expm1(0),0.0)
 
     def test_fdtr(self):
         assert_equal(cephes.fdtr(1,1,0),0.0)
+
     def test_fdtrc(self):
         assert_equal(cephes.fdtrc(1,1,0),1.0)
+
     def test_fdtri(self):
         #cephes.fdtri(1,1,0.5)  #BUG: gives NaN, should be 1
         assert_allclose(cephes.fdtri(1, 1, [0.499, 0.501]),
@@ -239,36 +275,48 @@ class TestCephes(TestCase):
 
     def test_gamma(self):
         assert_equal(cephes.gamma(5),24.0)
+
     def test_gammainc(self):
         assert_equal(cephes.gammainc(5,0),0.0)
+
     def test_gammaincc(self):
         assert_equal(cephes.gammaincc(5,0),1.0)
+
     def test_gammainccinv(self):
         assert_equal(cephes.gammainccinv(5,1),0.0)
+
     def test_gammaln(self):
         cephes.gammaln(10)
+
     def test_gammasgn(self):
         vals = np.array([-4, -3.5, -2.3, 1, 4.2], np.float64)
         assert_array_equal(cephes.gammasgn(vals), np.sign(cephes.rgamma(vals)))
 
     def test_gdtr(self):
         assert_equal(cephes.gdtr(1,1,0),0.0)
+
     def test_gdtrc(self):
         assert_equal(cephes.gdtrc(1,1,0),1.0)
+
     def test_gdtria(self):
         assert_equal(cephes.gdtria(0,1,1),0.0)
+
     def test_gdtrib(self):
         cephes.gdtrib(1,0,1)
         #assert_equal(cephes.gdtrib(1,0,1),5.0)
+
     def test_gdtrix(self):
         cephes.gdtrix(1,1,.1)
 
     def test_hankel1(self):
         cephes.hankel1(1,1)
+
     def test_hankel1e(self):
         cephes.hankel1e(1,1)
+
     def test_hankel2(self):
         cephes.hankel2(1,1)
+
     def test_hankel2e(self):
         cephes.hankel2e(1,1)
 
@@ -276,91 +324,125 @@ class TestCephes(TestCase):
         assert_approx_equal(cephes.hyp1f1(1,1,1), exp(1.0))
         assert_approx_equal(cephes.hyp1f1(3,4,-6), 0.026056422099537251095)
         cephes.hyp1f1(1,1,1)
+
     def test_hyp1f2(self):
         cephes.hyp1f2(1,1,1,1)
+
     def test_hyp2f0(self):
         cephes.hyp2f0(1,1,1,1)
+
     def test_hyp2f1(self):
         assert_equal(cephes.hyp2f1(1,1,1,0),1.0)
+
     def test_hyp3f0(self):
         assert_equal(cephes.hyp3f0(1,1,1,0),(1.0,0.0))
+
     def test_hyperu(self):
         assert_equal(cephes.hyperu(0,1,1),1.0)
 
     def test_i0(self):
         assert_equal(cephes.i0(0),1.0)
+
     def test_i0e(self):
         assert_equal(cephes.i0e(0),1.0)
+
     def test_i1(self):
         assert_equal(cephes.i1(0),0.0)
+
     def test_i1e(self):
         assert_equal(cephes.i1e(0),0.0)
 
     def test_it2i0k0(self):
         cephes.it2i0k0(1)
+
     def test_it2j0y0(self):
         cephes.it2j0y0(1)
+
     def test_it2struve0(self):
         cephes.it2struve0(1)
+
     def test_itairy(self):
         cephes.itairy(1)
+
     def test_iti0k0(self):
         assert_equal(cephes.iti0k0(0),(0.0,0.0))
+
     def test_itj0y0(self):
         assert_equal(cephes.itj0y0(0),(0.0,0.0))
+
     def test_itmodstruve0(self):
         assert_equal(cephes.itmodstruve0(0),0.0)
+
     def test_itstruve0(self):
         assert_equal(cephes.itstruve0(0),0.0)
+
     def test_iv(self):
         assert_equal(cephes.iv(1,0),0.0)
+
     def _check_ive(self):
         assert_equal(cephes.ive(1,0),0.0)
 
     def test_j0(self):
         assert_equal(cephes.j0(0),1.0)
+
     def test_j1(self):
         assert_equal(cephes.j1(0),0.0)
+
     def test_jn(self):
         assert_equal(cephes.jn(0,0),1.0)
+
     def test_jv(self):
         assert_equal(cephes.jv(0,0),1.0)
+
     def _check_jve(self):
         assert_equal(cephes.jve(0,0),1.0)
 
     def test_k0(self):
         cephes.k0(2)
+
     def test_k0e(self):
         cephes.k0e(2)
+
     def test_k1(self):
         cephes.k1(2)
+
     def test_k1e(self):
         cephes.k1e(2)
+
     def test_kei(self):
         cephes.kei(2)
+
     def test_keip(self):
         assert_equal(cephes.keip(0),0.0)
+
     def test_ker(self):
         cephes.ker(2)
+
     def test_kerp(self):
         cephes.kerp(2)
+
     def _check_kelvin(self):
         cephes.kelvin(2)
+
     def test_kn(self):
         cephes.kn(1,1)
 
     def test_kolmogi(self):
         assert_equal(cephes.kolmogi(1),0.0)
         assert_(np.isnan(cephes.kolmogi(np.nan)))
+
     def test_kolmogorov(self):
         assert_equal(cephes.kolmogorov(0),1.0)
 
     def _check_kv(self):
         cephes.kv(1,1)
+
     def _check_kve(self):
         cephes.kve(1,1)
+
     def test_log1p(self):
         assert_equal(cephes.log1p(0),0.0)
+
     def test_lpmv(self):
         assert_equal(cephes.lpmv(0,0,1),1.0)
 
@@ -466,39 +548,52 @@ class TestCephes(TestCase):
 
     def test_modfresnelm(self):
         cephes.modfresnelm(0)
+
     def test_modfresnelp(self):
         cephes.modfresnelp(0)
+
     def _check_modstruve(self):
         assert_equal(cephes.modstruve(1,0),0.0)
 
     def test_nbdtr(self):
         assert_equal(cephes.nbdtr(1,1,1),1.0)
+
     def test_nbdtrc(self):
         assert_equal(cephes.nbdtrc(1,1,1),0.0)
+
     def test_nbdtri(self):
         assert_equal(cephes.nbdtri(1,1,1),1.0)
+
     def __check_nbdtrik(self):
         cephes.nbdtrik(1,.4,.5)
+
     def test_nbdtrin(self):
         assert_equal(cephes.nbdtrin(1,0,0),5.0)
 
     def test_ncfdtr(self):
         assert_equal(cephes.ncfdtr(1,1,1,0),0.0)
+
     def test_ncfdtri(self):
         assert_equal(cephes.ncfdtri(1,1,1,0),0.0)
+
     def test_ncfdtridfd(self):
         cephes.ncfdtridfd(1,0.5,0,1)
+
     def __check_ncfdtridfn(self):
         cephes.ncfdtridfn(1,0.5,0,1)
+
     def __check_ncfdtrinc(self):
         cephes.ncfdtrinc(1,0.5,0,1)
 
     def test_nctdtr(self):
         assert_equal(cephes.nctdtr(1,0,0),0.5)
+
     def __check_nctdtridf(self):
         cephes.nctdtridf(1,0.5,0)
+
     def test_nctdtrinc(self):
         cephes.nctdtrinc(1,0,0)
+
     def test_nctdtrit(self):
         cephes.nctdtrit(.1,0.2,.5)
 
@@ -508,14 +603,17 @@ class TestCephes(TestCase):
 
     def test_ndtri(self):
         assert_equal(cephes.ndtri(0.5),0.0)
+
     def test_nrdtrimn(self):
         assert_approx_equal(cephes.nrdtrimn(0.5,1,1),1.0)
+
     def test_nrdtrisd(self):
         assert_tol_equal(cephes.nrdtrisd(0.5,0.5,0.5), 0.0,
                          atol=0, rtol=0)
 
     def test_obl_ang1(self):
         cephes.obl_ang1(1,1,1,0)
+
     def test_obl_ang1_cv(self):
         result = cephes.obl_ang1_cv(1,1,1,1,0)
         assert_almost_equal(result[0],1.0)
@@ -523,25 +621,34 @@ class TestCephes(TestCase):
 
     def _check_obl_cv(self):
         assert_equal(cephes.obl_cv(1,1,0),2.0)
+
     def test_obl_rad1(self):
         cephes.obl_rad1(1,1,1,0)
+
     def test_obl_rad1_cv(self):
         cephes.obl_rad1_cv(1,1,1,1,0)
+
     def test_obl_rad2(self):
         cephes.obl_rad2(1,1,1,0)
+
     def test_obl_rad2_cv(self):
         cephes.obl_rad2_cv(1,1,1,1,0)
 
     def test_pbdv(self):
         assert_equal(cephes.pbdv(1,0),(0.0,1.0))
+
     def test_pbvv(self):
         cephes.pbvv(1,0)
+
     def test_pbwa(self):
         cephes.pbwa(1,0)
+
     def test_pdtr(self):
         cephes.pdtr(0,1)
+
     def test_pdtrc(self):
         cephes.pdtrc(0,1)
+
     def test_pdtri(self):
         warn_ctx = WarningManager()
         warn_ctx.__enter__()
@@ -550,22 +657,29 @@ class TestCephes(TestCase):
             cephes.pdtri(0.5,0.5)
         finally:
             warn_ctx.__exit__()
+
     def test_pdtrik(self):
         cephes.pdtrik(0.5,1)
 
     def test_pro_ang1(self):
         cephes.pro_ang1(1,1,1,0)
+
     def test_pro_ang1_cv(self):
         assert_array_almost_equal(cephes.pro_ang1_cv(1,1,1,1,0),
                                   array((1.0,0.0)))
+
     def _check_pro_cv(self):
         assert_equal(cephes.pro_cv(1,1,0),2.0)
+
     def test_pro_rad1(self):
         cephes.pro_rad1(1,1,1,0.1)
+
     def test_pro_rad1_cv(self):
         cephes.pro_rad1_cv(1,1,1,1,0)
+
     def test_pro_rad2(self):
         cephes.pro_rad2(1,1,1,0)
+
     def test_pro_rad2_cv(self):
         cephes.pro_rad2_cv(1,1,1,1,0)
 
@@ -574,8 +688,10 @@ class TestCephes(TestCase):
 
     def test_radian(self):
         assert_equal(cephes.radian(0,0,0),0)
+
     def test_rgamma(self):
         assert_equal(cephes.rgamma(1),1.0)
+
     def test_round(self):
         assert_equal(cephes.round(3.4),3.0)
         assert_equal(cephes.round(-3.4),-3.0)
@@ -586,6 +702,7 @@ class TestCephes(TestCase):
 
     def test_shichi(self):
         cephes.shichi(1)
+
     def test_sici(self):
         cephes.sici(1)
 
@@ -599,9 +716,11 @@ class TestCephes(TestCase):
 
     def test_sindg(self):
         assert_equal(cephes.sindg(90),1.0)
+
     def test_smirnov(self):
         assert_equal(cephes.smirnov(1,.1),0.9)
         assert_(np.isnan(cephes.smirnov(1,np.nan)))
+
     def test_smirnovi(self):
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.4)),0.4)
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.6)),0.6)
@@ -609,37 +728,48 @@ class TestCephes(TestCase):
 
     def test_spence(self):
         assert_equal(cephes.spence(1),0.0)
+
     def test_stdtr(self):
         assert_equal(cephes.stdtr(1,0),0.5)
         assert_almost_equal(cephes.stdtr(1,1), 0.75)
         assert_almost_equal(cephes.stdtr(1,2), 0.852416382349)
+
     def test_stdtridf(self):
         cephes.stdtridf(0.7,1)
+
     def test_stdtrit(self):
         cephes.stdtrit(1,0.7)
+
     def test_struve(self):
         assert_equal(cephes.struve(0,0),0.0)
 
     def test_tandg(self):
         assert_equal(cephes.tandg(45),1.0)
+
     def test_tklmbda(self):
         assert_almost_equal(cephes.tklmbda(1,1),1.0)
 
     def test_y0(self):
         cephes.y0(1)
+
     def test_y1(self):
         cephes.y1(1)
+
     def test_yn(self):
         cephes.yn(1,1)
+
     def test_yv(self):
         cephes.yv(1,1)
+
     def _check_yve(self):
         cephes.yve(1,1)
 
     def test_zeta(self):
         cephes.zeta(2,2)
+
     def test_zetac(self):
         assert_equal(cephes.zetac(0),-1.5)
+
     def test_wofz(self):
         z = [complex(624.2,-0.26123), complex(-0.4,3.), complex(0.6,2.),
              complex(-1.,1.), complex(-1.,-9.), complex(-1.,9.),
@@ -1680,6 +1810,7 @@ class TestBessel(TestCase):
 
     def test_jnjnp_zeros(self):
         jn = special.jn
+
         def jnp(n, x):
             return (jn(n-1,x) - jn(n+1,x))/2
         for nt in range(1, 30):

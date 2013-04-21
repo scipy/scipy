@@ -108,18 +108,23 @@ class MMFile (object):
     @property
     def rows(self):
         return self._rows
+
     @property
     def cols(self):
         return self._cols
+
     @property
     def entries(self):
         return self._entries
+
     @property
     def format(self):
         return self._format
+
     @property
     def field(self):
         return self._field
+
     @property
     def symmetry(self):
         return self._symmetry

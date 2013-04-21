@@ -197,6 +197,7 @@ class ext_module(object):
 
     def add_function(self,func):
         self.functions.append(func)
+
     def module_code(self):
         code = '\n'.join([
             """\

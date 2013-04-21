@@ -97,6 +97,7 @@ def c_int_search_scxx(seq,t,chk=1):
 
 try:
     from numpy import *
+
     def c_array_int_search(seq,t):
         code = """
                #line 62 "binary_search.py"

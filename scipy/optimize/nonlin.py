@@ -608,6 +608,7 @@ def asjacobian(J):
         class Jac(Jacobian):
             def update(self, x, F):
                 self.x = x
+
             def solve(self, v, tol=0):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
@@ -616,6 +617,7 @@ def asjacobian(J):
                     return spsolve(m, v)
                 else:
                     raise ValueError("Unknown matrix type")
+
             def matvec(self, v):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
@@ -624,6 +626,7 @@ def asjacobian(J):
                     return m*v
                 else:
                     raise ValueError("Unknown matrix type")
+
             def rsolve(self, v, tol=0):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
@@ -632,6 +635,7 @@ def asjacobian(J):
                     return spsolve(m.conj().T, v)
                 else:
                     raise ValueError("Unknown matrix type")
+
             def rmatvec(self, v):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):

@@ -13,6 +13,7 @@ class TestBuildSliceAtom(TestCase):
         ast_list = slice_handler.build_slice_atom(slice_vars,pos)
         actual = ast_to_string(ast_list)
         assert_equal(actual,desired)
+
     def test_exclusive_end(self):
         slice_vars = {'begin':'1', 'end':'2', 'step':'_stp',
                       'single_index':'_index','pos':0}
@@ -36,77 +37,90 @@ class TestSlice(TestCase):
         desired = {'begin':'_beg', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_begin_2_slice(self):
         """match slice from a[1:]"""
         test = "a[1:]"
         desired = {'begin':'1', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_end_2_slice(self):
         """match slice from a[:2]"""
         test = "a[:2]"
         desired = {'begin':'_beg', 'end':'2', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_begin_end_2_slice(self):
         """match slice from a[1:2]"""
         test = "a[1:2]"
         desired = {'begin':'1', 'end':'2', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_empty_3_slice(self):
         """match slice from a[::]"""
         test = "a[::]"
         desired = {'begin':'_beg', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_begin_3_slice(self):
         """match slice from a[1::]"""
         test = "a[1::]"
         desired = {'begin':'1', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_end_3_slice(self):
         """match slice from a[:2:]"""
         test = "a[:2:]"
         desired = {'begin':'_beg', 'end':'2', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_stp3_slice(self):
         """match slice from a[::3]"""
         test = "a[::3]"
         desired = {'begin':'_beg', 'end':'_end', 'step':'3',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_begin_end_3_slice(self):
         """match slice from a[1:2:]"""
         test = "a[1:2:]"
         desired = {'begin':'1', 'end':'2','step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_begin_step_3_slice(self):
         """match slice from a[1::3]"""
         test = "a[1::3]"
         desired = {'begin':'1', 'end':'_end','step':'3',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_end_step_3_slice(self):
         """match slice from a[:2:3]"""
         test = "a[:2:3]"
         desired = {'begin':'_beg', 'end':'2', 'step':'3',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_begin_end_stp3_slice(self):
         """match slice from a[1:2:3]"""
         test = "a[1:2:3]"
         desired = {'begin':'1', 'end':'2', 'step':'3','single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_expr_3_slice(self):
         """match slice from a[:1+i+2:]"""
         test = "a[:1+i+2:]"
         desired = {'begin':'_beg', 'end':"1+i+2",'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
+
     def test_single_index(self):
         """match slice from a[0]"""
         test = "a[0]"

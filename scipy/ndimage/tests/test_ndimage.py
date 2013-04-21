@@ -698,6 +698,7 @@ class TestNdimage:
         array = numpy.array([[3, 2, 5, 1, 4],
                                 [5, 8, 3, 7, 1],
                                 [5, 6, 9, 3, 5]], numpy.float64)
+
         def derivative(input, axis, output, mode, cval, a, b):
             sigma = [a, b / 2.0]
             input = numpy.asarray(input)
@@ -1121,6 +1122,7 @@ class TestNdimage:
     def test_generic_filter1d01(self):
         "generic 1d filter 1"
         weights = numpy.array([1.1, 2.2, 3.3])
+
         def _filter_func(input, output, fltr, total):
             fltr = fltr / total
             for ii in range(input.shape[0] - 2):
@@ -1142,6 +1144,7 @@ class TestNdimage:
         filter_ = numpy.array([[1.0, 2.0], [3.0, 4.0]])
         footprint = numpy.array([[1, 0], [0, 1]])
         cf = numpy.array([1., 4.])
+
         def _filter_func(buffer, weights, total=1.0):
             weights = cf / total
             return (buffer * weights).sum()
@@ -1498,6 +1501,7 @@ class TestNdimage:
     def test_geometric_transform01(self):
         "geometric transform 1"
         data = numpy.array([1])
+
         def mapping(x):
             return x
         for order in range(0, 6):
@@ -1509,6 +1513,7 @@ class TestNdimage:
     def test_geometric_transform02(self):
         "geometric transform 2"
         data = numpy.ones([4])
+
         def mapping(x):
             return x
         for order in range(0, 6):
@@ -1519,6 +1524,7 @@ class TestNdimage:
     def test_geometric_transform03(self):
         "geometric transform 3"
         data = numpy.ones([4])
+
         def mapping(x):
             return (x[0] - 1,)
         for order in range(0, 6):
@@ -1529,6 +1535,7 @@ class TestNdimage:
     def test_geometric_transform04(self):
         "geometric transform 4"
         data = numpy.array([4, 1, 3, 2])
+
         def mapping(x):
             return (x[0] - 1,)
         for order in range(0, 6):
@@ -1541,6 +1548,7 @@ class TestNdimage:
         data = numpy.array([[1, 1, 1, 1],
                                [1, 1, 1, 1],
                                [1, 1, 1, 1]])
+
         def mapping(x):
             return (x[0], x[1] - 1)
         for order in range(0, 6):
@@ -1555,6 +1563,7 @@ class TestNdimage:
         data = numpy.array([[4, 1, 3, 2],
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
+
         def mapping(x):
             return (x[0], x[1] - 1)
         for order in range(0, 6):
@@ -1569,6 +1578,7 @@ class TestNdimage:
         data = numpy.array([[4, 1, 3, 2],
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
+
         def mapping(x):
             return (x[0] - 1, x[1])
         for order in range(0, 6):
@@ -1583,6 +1593,7 @@ class TestNdimage:
         data = numpy.array([[4, 1, 3, 2],
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
+
         def mapping(x):
             return (x[0] - 1, x[1] - 1)
         for order in range(0, 6):
@@ -1597,6 +1608,7 @@ class TestNdimage:
         data = numpy.array([[4, 1, 3, 2],
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
+
         def mapping(x):
             return (x[0] - 1, x[1] - 1)
         for order in range(0, 6):
@@ -1614,6 +1626,7 @@ class TestNdimage:
     def test_geometric_transform13(self):
         "geometric transform 13"
         data = numpy.ones([2], numpy.float64)
+
         def mapping(x):
             return (x[0] // 2,)
         for order in range(0, 6):
@@ -1624,6 +1637,7 @@ class TestNdimage:
     def test_geometric_transform14(self):
         "geometric transform 14"
         data = [1, 5, 2, 6, 3, 7, 4, 4]
+
         def mapping(x):
             return (2 * x[0],)
         for order in range(0, 6):
@@ -1634,6 +1648,7 @@ class TestNdimage:
     def test_geometric_transform15(self):
         "geometric transform 15"
         data = [1, 2, 3, 4]
+
         def mapping(x):
             return (x[0] / 2,)
         for order in range(0, 6):
@@ -1646,6 +1661,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9.0, 10, 11, 12]]
+
         def mapping(x):
             return (x[0], x[1] * 2)
         for order in range(0, 6):
@@ -1658,6 +1674,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (x[0] * 2, x[1])
         for order in range(0, 6):
@@ -1670,6 +1687,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (x[0] * 2, x[1] * 2)
         for order in range(0, 6):
@@ -1682,6 +1700,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (x[0], x[1] / 2)
         for order in range(0, 6):
@@ -1694,6 +1713,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (x[0] / 2, x[1])
         for order in range(0, 6):
@@ -1706,6 +1726,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (x[0] / 2, x[1] / 2)
         for order in range(0, 6):
@@ -1718,8 +1739,10 @@ class TestNdimage:
         data = numpy.array([[1, 2, 3, 4],
                                [5, 6, 7, 8],
                                [9, 10, 11, 12]], numpy.float64)
+
         def mapping1(x):
             return (x[0] / 2, x[1] / 2)
+
         def mapping2(x):
             return (x[0] * 2, x[1] * 2)
         for order in range(0, 6):
@@ -1734,6 +1757,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (1, x[0] * 2)
         for order in range(0, 6):
@@ -1747,6 +1771,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x, a, b):
             return (a, x[0] * b)
         for order in range(0, 6):

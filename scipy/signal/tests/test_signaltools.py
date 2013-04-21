@@ -62,6 +62,7 @@ class TestConvolve(_TestConvolve):
         # behavior
         a = [1,2,3,6,5,3]
         b = [2,3,4,5,3,4,2,2,1]
+
         def _test():
             convolve(a,b,'valid')
         self.assertRaises(ValueError, _test)
@@ -133,6 +134,7 @@ class TestConvolve2d(_TestConvolve2d):
         # Test when in2.size > in1.size
         e = [[1,2,3],[3,4,5]]
         f = [[2,3,4,5,6,7,8],[4,5,6,7,8,9,10]]
+
         def _test():
             convolve2d(e,f,'valid')
         self.assertRaises(ValueError, _test)
@@ -191,6 +193,7 @@ class TestFFTConvolve(TestCase):
     def test_real_valid_mode(self):
         a = array([3,2,1])
         b = array([3,3,5,6,8,7,9,0,1])
+
         def _test():
             fftconvolve(a,b,'valid')
         self.assertRaises(ValueError, _test)
@@ -303,6 +306,7 @@ class TestOrderFilt(TestCase):
 
 class _TestLinearFilter(TestCase):
     dt = None
+
     def test_rank1(self):
         x = np.linspace(0, 5, 6).astype(self.dt)
         b = np.array([1, -1]).astype(self.dt)

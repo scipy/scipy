@@ -25,10 +25,13 @@ class TestBasic(TestCase):
 
     def test_bisect(self):
         self.run_check(cc.bisect, 'bisect')
+
     def test_ridder(self):
         self.run_check(cc.ridder, 'ridder')
+
     def test_brentq(self):
         self.run_check(cc.brentq, 'brentq')
+
     def test_brenth(self):
         self.run_check(cc.brenth, 'brenth')
 

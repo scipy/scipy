@@ -49,6 +49,7 @@ except ImportError: # for Python version < 2.5
             self.func = func
             self.args = args
             self.keywords = kw
+
         def __call__(self, *otherargs, **otherkw):
             kw = self.keywords.copy()
             kw.update(otherkw)
@@ -65,6 +66,7 @@ else:
             self.kwonlyargs = []
             self.kwonlydefaults = None
             self.annotations = getattr(f, '__annotations__', {})
+
         def __iter__(self):
             yield self.args
             yield self.varargs

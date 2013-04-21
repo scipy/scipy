@@ -256,6 +256,7 @@ class TestJacobianDotSolve(object):
         np.random.seed(123)
 
         N = 7
+
         def rand(*a):
             q = np.random.rand(*a)
             if complex:

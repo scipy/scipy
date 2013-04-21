@@ -29,6 +29,7 @@ class Case(object):
             self.skip = []
         else:
             self.skip = skip
+
     def __repr__(self):
         return "<%s>" % self.name
 
@@ -126,6 +127,7 @@ def check_maxiter(solver, case):
     x0 = 0*b
 
     residuals = []
+
     def callback(x):
         residuals.append(norm(b - case.A*x))
 
@@ -273,10 +275,13 @@ class TestQMR(TestCase):
 
         def L_solve(b):
             return L_solver.solve(b)
+
         def U_solve(b):
             return U_solver.solve(b)
+
         def LT_solve(b):
             return L_solver.solve(b,'T')
+
         def UT_solve(b):
             return U_solver.solve(b,'T')
 

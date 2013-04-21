@@ -59,6 +59,7 @@ def randwcdf(cdf, mean=1.0, args=(), size=None):
 
     """
     import scipy.optimize as optimize
+
     def _ppfopt(x, q, *nargs):
         newargs = (x,)+nargs
         return cdf(*newargs) - q

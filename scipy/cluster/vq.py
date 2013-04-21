@@ -575,6 +575,7 @@ def _krandinit(data, k):
         x *= np.sqrt(cov)
         x += mu
         return x
+
     def init_rankn(data):
         mu  = np.mean(data, 0)
         cov = np.atleast_2d(np.cov(data, rowvar=0))

@@ -20,6 +20,7 @@ class TestLinearOperator(TestCase):
         def matvec1(x):
             return np.array([1*x[0] + 2*x[1] + 3*x[2],
                               4*x[0] + 5*x[1] + 6*x[2]])
+
         def matvec2(x):
             return np.matrix(matvec1(x).reshape(2,1))
 
@@ -66,6 +67,7 @@ class TestAsLinearOperator(TestCase):
                 def __init__(self, dtype):
                     self.dtype = np.dtype(dtype)
                     self.shape = (2,3)
+
                 def matvec(self,x):
                     y = np.array([1*x[0] + 2*x[1] + 3*x[2],
                                    4*x[0] + 5*x[1] + 6*x[2]], dtype=self.dtype)

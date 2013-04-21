@@ -158,8 +158,10 @@ class TestObjectCast(TestCase):
 class Foo:
     def bar(self):
         return "bar results"
+
     def bar2(self,val1,val2):
         return val1, val2
+
     def bar3(self,val1,val2,val3=1):
         return val1, val2, val3
 
@@ -421,6 +423,7 @@ class TestObjectCmp(TestCase):
         class Foo:
             def __init__(self,x):
                 self.x = x
+
             def __cmp__(self,other):
                 return cmp(self.x,other.x)
         a,b = Foo(1),Foo(2)
@@ -505,6 +508,7 @@ class TestObjectRepr(TestCase):
         class Foo:
             def __str__(self):
                 return "str return"
+
             def __repr__(self):
                 return "repr return"
         a = Foo()
@@ -524,6 +528,7 @@ class TestObjectStr(TestCase):
         class Foo:
             def __str__(self):
                 return "str return"
+
             def __repr__(self):
                 return "repr return"
         a = Foo()
@@ -544,8 +549,10 @@ class TestObjectUnicode(TestCase):
     @dec.slow
     def test_unicode(self):
         class Foo:
+
             def __repr__(self):
                 return "repr return"
+
             def __str__(self):
                 return "unicode"
         a = Foo()
@@ -956,9 +963,11 @@ class TestObjectSetItemOpKey(TestCase):
     @dec.slow
     def test_set_class(self):
         a = UserDict()
+
         class Foo:
             def __init__(self,val):
                 self.val = val
+
             def __hash__(self):
                 return self.val
         key = Foo(4)

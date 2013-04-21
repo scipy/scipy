@@ -258,6 +258,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
 class DictWithRepr(dict):
     def __init__(self, name):
         self.name = name
+
     def __repr__(self):
         return "<%s>" % self.name
 

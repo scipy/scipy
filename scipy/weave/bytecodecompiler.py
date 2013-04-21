@@ -22,6 +22,7 @@ from numpy.testing import assert_
 class __Descriptor(object):
     prerequisites = []
     refcount = 0
+
     def __repr__(self):
         return self.__module__+'.'+self.__class__.__name__
 
@@ -255,12 +256,14 @@ class ByteCodeMeaning(object):
                 8: 'is', 9: 'is not', 10: 'exe match',
                 11: 'bad',
                }
+
     def cmp_op(self,opname):
         return self.symbols[opname]
 
     def STOP_CODE(self,pc):
         "Indicates end-of-code to the compiler, not used by the interpreter."
         raise NotImplementedError
+
     def POP_TOP(self,pc):
         "Removes the top-of-stack (TOS) item."
         raise NotImplementedError
@@ -941,6 +944,7 @@ class CXXCoder(ByteCodeMeaning):
         assert_(isinstance(t, tuple))
         del self.types[-1]
         return v,t
+
     ##################################################################
     #                        MEMBER MULTIARG                         #
     ##################################################################
@@ -1029,15 +1033,20 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def BINARY_ADD(self,pc):
         return self.binop(pc,'+')
+
     def BINARY_SUBTRACT(self,pc):
         return self.binop(pc,'-')
+
     def BINARY_MULTIPLY(self,pc):
         print('MULTIPLY',self.stack[-2],self.types[-2],'*',self.stack[-1],self.types[-1])
         return self.binop(pc,'*')
+
     def BINARY_DIVIDE(self,pc):
         return self.binop(pc,'/')
+
     def BINARY_MODULO(self,pc):
         return self.binop(pc,'%')
+
     def BINARY_SUBSCR(self,pc):
         if self.multiarg():
             v2,t2 = self.popTuple()

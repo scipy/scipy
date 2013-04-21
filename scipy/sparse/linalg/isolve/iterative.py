@@ -560,10 +560,13 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
         if hasattr(A_,'psolve'):
             def left_psolve(b):
                 return A_.psolve(b,'left')
+
             def right_psolve(b):
                 return A_.psolve(b,'right')
+
             def left_rpsolve(b):
                 return A_.rpsolve(b,'left')
+
             def right_rpsolve(b):
                 return A_.rpsolve(b,'right')
             M1 = LinearOperator(A.shape, matvec=left_psolve, rmatvec=left_rpsolve)

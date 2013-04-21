@@ -69,6 +69,7 @@ def test_docformat():
 def test_decorator():
     # with unindentation of parameters
     decorator = doccer.filldoc(doc_dict, True)
+
     @decorator
     def func():
         """ Docstring
@@ -78,8 +79,10 @@ def test_decorator():
         Another test
            with some indent
         """
+
     # without unindentation of parameters
     decorator = doccer.filldoc(doc_dict, False)
+
     @decorator
     def func():
         """ Docstring

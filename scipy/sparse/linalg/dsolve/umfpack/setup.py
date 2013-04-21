@@ -15,6 +15,7 @@ def configuration(parent_package='',top_path=None):
     umf_info = get_info('umfpack', notfound_action=1)
 
     umfpack_i_file = config.paths('umfpack.i')[0]
+
     def umfpack_i(ext, build_dir):
         if umf_info:
             return umfpack_i_file

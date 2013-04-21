@@ -2862,6 +2862,7 @@ def kendalltau(x, y, initial_lexsort=True):
     # this closure recursively sorts sections of perm[] by comparing
     # elements of y[perm[]] using temp[] as support
     # returns the number of swaps required by an equivalent bubble sort
+
     def mergesort(offs, length):
         exchcnt = 0
         if length == 1:

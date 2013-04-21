@@ -112,6 +112,7 @@ def filldoc(docdict, unindent_params=True):
     '''
     if unindent_params:
         docdict = unindent_dict(docdict)
+
     def decorate(f):
         f.__doc__ = docformat(f.__doc__, docdict)
         return f
