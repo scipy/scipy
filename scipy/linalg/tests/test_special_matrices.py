@@ -197,9 +197,9 @@ class TestLeslie(TestCase):
     def test_basic(self):
         a = leslie([1, 2, 3], [0.25, 0.5])
         expected = array([
-            [1.0,  2.0, 3.0],
+            [1.0, 2.0, 3.0],
             [0.25, 0.0, 0.0],
-            [0.0,  0.5, 0.0]])
+            [0.0, 0.5, 0.0]])
         assert_array_equal(a, expected)
 
 
@@ -215,7 +215,7 @@ class TestCompanion(TestCase):
         c = companion([1, 2, 3])
         expected = array([
             [-2.0, -3.0],
-            [1.0,  0.0]])
+            [1.0, 0.0]])
         assert_array_equal(c, expected)
 
         c = companion([2.0, 5.0, -10.0])
@@ -280,7 +280,7 @@ class TestKron:
 class TestHilbert(TestCase):
 
     def test_basic(self):
-        h3 = array([[1.0,  1/2., 1/3.],
+        h3 = array([[1.0, 1/2., 1/3.],
                     [1/2., 1/3., 1/4.],
                     [1/3., 1/4., 1/5.]])
         assert_array_almost_equal(hilbert(3), h3)
@@ -303,24 +303,24 @@ class TestInvHilbert(TestCase):
         assert_array_equal(invhilbert(2, exact=True), invh2)
         assert_array_almost_equal(invhilbert(2), invh2)
 
-        invh3 = array([[9,  -36,  30],
-                       [-36,  192, -180],
-                        [30, -180,  180]])
+        invh3 = array([[9, -36, 30],
+                       [-36, 192, -180],
+                        [30, -180, 180]])
         assert_array_equal(invhilbert(3, exact=True), invh3)
         assert_array_almost_equal(invhilbert(3), invh3)
 
-        invh4 = array([[16,  -120,   240,  -140],
-                       [-120,  1200, -2700,  1680],
-                       [240, -2700,  6480, -4200],
-                       [-140,  1680, -4200,  2800]])
+        invh4 = array([[16, -120, 240, -140],
+                       [-120, 1200, -2700, 1680],
+                       [240, -2700, 6480, -4200],
+                       [-140, 1680, -4200, 2800]])
         assert_array_equal(invhilbert(4, exact=True), invh4)
         assert_array_almost_equal(invhilbert(4), invh4)
 
-        invh5 = array([[25,   -300,    1050,  -1400,     630],
-                       [-300,   4800,  -18900,   26880, -12600],
-                       [1050, -18900,   79380, -117600,  56700],
-                       [-1400,  26880, -117600,  179200, -88200],
-                       [630, -12600,   56700,  -88200,  44100]])
+        invh5 = array([[25, -300, 1050, -1400, 630],
+                       [-300, 4800, -18900, 26880, -12600],
+                       [1050, -18900, 79380, -117600, 56700],
+                       [-1400, 26880, -117600, 179200, -88200],
+                       [630, -12600, 56700, -88200, 44100]])
         assert_array_equal(invhilbert(5, exact=True), invh5)
         assert_array_almost_equal(invhilbert(5), invh5)
 
@@ -461,10 +461,10 @@ class TestPascal(TestCase):
             array([[1, 0, 0],
                    [1, 1, 0],
                    [1, 2, 1]])),
-        (4, array([[1,  1,  1,  1],
-                   [1,  2,  3,  4],
-                   [1,  3,  6, 10],
-                   [1,  4, 10, 20]]),
+        (4, array([[1, 1, 1, 1],
+                   [1, 2, 3, 4],
+                   [1, 3, 6, 10],
+                   [1, 4, 10, 20]]),
             array([[1, 0, 0, 0],
                    [1, 1, 0, 0],
                    [1, 2, 1, 0],

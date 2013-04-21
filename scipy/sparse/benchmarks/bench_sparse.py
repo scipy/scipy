@@ -97,9 +97,9 @@ class BenchmarkSparse(TestCase):
     def bench_sort(self):
         """sort CSR column indices"""
         matrices = []
-        matrices.append(('Rand10',  1e4,  10))
-        matrices.append(('Rand25',  1e4,  25))
-        matrices.append(('Rand50',  1e4,  50))
+        matrices.append(('Rand10', 1e4, 10))
+        matrices.append(('Rand25', 1e4, 25))
+        matrices.append(('Rand50', 1e4, 50))
         matrices.append(('Rand100', 1e4, 100))
         matrices.append(('Rand200', 1e4, 200))
 
@@ -130,8 +130,8 @@ class BenchmarkSparse(TestCase):
 
     def bench_matvec(self):
         matrices = []
-        matrices.append(('Identity',   sparse.eye(10**4,format='dia')))
-        matrices.append(('Identity',   sparse.eye(10**4,format='csr')))
+        matrices.append(('Identity', sparse.eye(10**4,format='dia')))
+        matrices.append(('Identity', sparse.eye(10**4,format='csr')))
         matrices.append(('Poisson5pt', poisson2d(300,format='lil')))
         matrices.append(('Poisson5pt', poisson2d(300,format='dok')))
         matrices.append(('Poisson5pt', poisson2d(300,format='dia')))

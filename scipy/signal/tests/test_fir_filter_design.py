@@ -106,9 +106,9 @@ class TestFirwin(TestCase):
         """
         N = 11
         cases = [
-            ([.5],      True,   (0, 1)),
-            ([0.2, .6], False,  (.4, 1)),
-            ([.5],      False,  (1, 1)),
+            ([.5], True, (0, 1)),
+            ([0.2, .6], False, (.4, 1)),
+            ([.5], False, (1, 1)),
         ]
         for cutoff, pass_zero, expected_response in cases:
             h = firwin(N, cutoff, scale=False, pass_zero=pass_zero, window='ones')
@@ -248,8 +248,8 @@ class TestFirwin2(TestCase):
         # Decreasing value in `freq`
         assert_raises(ValueError, firwin2, 50, [0, 0.5, 0.4, 1.0], [0, .25, .5, 1.0])
         # Value in `freq` repeated more than once.
-        assert_raises(ValueError, firwin2, 50, [0,   .1,   .1,   .1, 1.0],
-                                               [0.0,  0.5, 0.75,  1.0, 1.0])
+        assert_raises(ValueError, firwin2, 50, [0, .1, .1, .1, 1.0],
+                                               [0.0, 0.5, 0.75, 1.0, 1.0])
         # `freq` does not start at 0.0.
         assert_raises(ValueError, firwin2, 50, [0.5, 1.0], [0.0, 1.0])
 
@@ -339,8 +339,8 @@ class TestFirwin2(TestCase):
         """Test firwin2 for calculating Type III filters"""
         ntaps = 1501
 
-        freq = [0.0, 0.5, 0.55,  1.0]
-        gain = [0.0, 0.5, 0.0,   0.0]
+        freq = [0.0, 0.5, 0.55, 1.0]
+        gain = [0.0, 0.5, 0.0, 0.0]
         taps = firwin2(ntaps, freq, gain, window=None, antisymmetric=True)
         assert_equal(taps[ntaps // 2], 0.0)
         assert_array_almost_equal(taps[: ntaps // 2], -taps[ntaps // 2 + 1:][::-1])

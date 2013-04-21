@@ -116,7 +116,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 
 
 @docfiller
-def loadmat(file_name,  mdict=None, appendmat=True, **kwargs):
+def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     """
     Load MATLAB file
 

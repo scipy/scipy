@@ -727,7 +727,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
             self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\
                 self._arpack_solver(self.ido, self.bmat, self.which, self.k,
                                     self.tol, self.resid, self.v, self.iparam,
-                                    self.ipntr,  self.workd, self.workl,
+                                    self.ipntr, self.workd, self.workl,
                                     self.info)
         else:
             self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\

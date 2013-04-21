@@ -11,20 +11,20 @@ DECIMAL_meanvar = 0  # 1  # was 0
 
 distdiscrete = [
     ['bernoulli',(0.3,)],
-    ['binom',    (5, 0.4)],
+    ['binom', (5, 0.4)],
     ['boltzmann',(1.4, 19)],
     ['dlaplace', (0.8,)],  # 0.5
-    ['geom',     (0.5,)],
+    ['geom', (0.5,)],
     ['hypergeom',(30, 12, 6)],
     ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
     ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
-    ['logser',   (0.6,)],  # reenabled, numpy ticket:921
-    ['nbinom',   (5, 0.5)],
-    ['nbinom',   (0.4, 0.4)],  # from tickets: 583
-    ['planck',   (0.51,)],   # 4.1
-    ['poisson',  (0.6,)],
-    ['randint',  (7, 31)],
-    ['skellam',  (15, 8)]]
+    ['logser', (0.6,)],  # reenabled, numpy ticket:921
+    ['nbinom', (5, 0.5)],
+    ['nbinom', (0.4, 0.4)],  # from tickets: 583
+    ['planck', (0.51,)],   # 4.1
+    ['poisson', (0.6,)],
+    ['randint', (7, 31)],
+    ['skellam', (15, 8)]]
 #    ['zipf',     (4,)] ]   # arg=4 is ok,
                            # Zipf broken for arg = 2, e.g. weird .stats
                            # looking closer, mean, var should be inf for arg=2

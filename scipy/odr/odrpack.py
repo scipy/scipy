@@ -436,9 +436,9 @@ class RealData(Data):
             return weights
 
     def __getattr__(self, attr):
-        lookup_tbl = {('wd', 'sx'):  (self._sd2wt, self.sx),
+        lookup_tbl = {('wd', 'sx'): (self._sd2wt, self.sx),
                       ('wd', 'covx'): (self._cov2wt, self.covx),
-                      ('we', 'sy'):  (self._sd2wt, self.sy),
+                      ('we', 'sy'): (self._sd2wt, self.sy),
                       ('we', 'covy'): (self._cov2wt, self.covy)}
 
         if attr not in ('wd', 'we'):

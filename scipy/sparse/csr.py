@@ -170,8 +170,8 @@ class csr_matrix(_cs_matrix):
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 
-            indptr = np.empty(M//R + 1,    dtype=np.intc)
-            indices = np.empty(blks,       dtype=np.intc)
+            indptr = np.empty(M//R + 1, dtype=np.intc)
+            indices = np.empty(blks, dtype=np.intc)
             data = np.zeros((blks,R,C), dtype=self.dtype)
 
             csr_tobsr(M, N, R, C, self.indptr, self.indices, self.data,

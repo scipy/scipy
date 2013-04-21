@@ -330,7 +330,7 @@ def lobpcg(A, X,
     _lambda = _lambda[ii]
 
     eigBlockVector = np.asarray(eigBlockVector[:,ii])
-    blockVectorX = sp.dot(blockVectorX,  eigBlockVector)
+    blockVectorX = sp.dot(blockVectorX, eigBlockVector)
     blockVectorAX = sp.dot(blockVectorAX, eigBlockVector)
     if B is not None:
         blockVectorBX = sp.dot(blockVectorBX, eigBlockVector)
@@ -416,29 +416,29 @@ def lobpcg(A, X,
         # Perform the Rayleigh Ritz Procedure:
         # Compute symmetric Gram matrices:
 
-        xaw = sp.dot(blockVectorX.T,       activeBlockVectorAR)
+        xaw = sp.dot(blockVectorX.T, activeBlockVectorAR)
         waw = sp.dot(activeBlockVectorR.T, activeBlockVectorAR)
-        xbw = sp.dot(blockVectorX.T,       activeBlockVectorBR)
+        xbw = sp.dot(blockVectorX.T, activeBlockVectorBR)
 
         if iterationNumber > 0:
-            xap = sp.dot(blockVectorX.T,       activeBlockVectorAP)
+            xap = sp.dot(blockVectorX.T, activeBlockVectorAP)
             wap = sp.dot(activeBlockVectorR.T, activeBlockVectorAP)
             pap = sp.dot(activeBlockVectorP.T, activeBlockVectorAP)
-            xbp = sp.dot(blockVectorX.T,       activeBlockVectorBP)
+            xbp = sp.dot(blockVectorX.T, activeBlockVectorBP)
             wbp = sp.dot(activeBlockVectorR.T, activeBlockVectorBP)
 
-            gramA = np.bmat([[np.diag(_lambda),   xaw,  xap],
-                              [xaw.T,   waw,  wap],
-                              [xap.T, wap.T,  pap]])
+            gramA = np.bmat([[np.diag(_lambda), xaw, xap],
+                              [xaw.T, waw, wap],
+                              [xap.T, wap.T, pap]])
 
-            gramB = np.bmat([[ident0,    xbw,    xbp],
-                              [xbw.T,  ident,    wbp],
-                              [xbp.T,  wbp.T,  ident]])
+            gramB = np.bmat([[ident0, xbw, xbp],
+                              [xbw.T, ident, wbp],
+                              [xbp.T, wbp.T, ident]])
         else:
-            gramA = np.bmat([[np.diag(_lambda),  xaw],
-                              [xaw.T,  waw]])
-            gramB = np.bmat([[ident0,    xbw],
-                              [xbw.T,  ident]])
+            gramA = np.bmat([[np.diag(_lambda), xaw],
+                              [xaw.T, waw]])
+            gramB = np.bmat([[ident0, xbw],
+                              [xbw.T, ident]])
 
         try:
             assert np.allclose(gramA.T, gramA)
@@ -502,7 +502,7 @@ def lobpcg(A, X,
             eigBlockVectorX = eigBlockVector[:sizeX]
             eigBlockVectorR = eigBlockVector[sizeX:]
 
-            pp = sp.dot(activeBlockVectorR,  eigBlockVectorR)
+            pp = sp.dot(activeBlockVectorR, eigBlockVectorR)
             app = sp.dot(activeBlockVectorAR, eigBlockVectorR)
             bpp = sp.dot(activeBlockVectorBR, eigBlockVectorR)
 

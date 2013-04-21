@@ -122,7 +122,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                     % self.indices.dtype.name)
 
         # only support 32-bit ints for now
-        self.indptr = np.asarray(self.indptr,  dtype=np.intc)
+        self.indptr = np.asarray(self.indptr, dtype=np.intc)
         self.indices = np.asarray(self.indices, dtype=np.intc)
         self.data = to_native(self.data)
 
@@ -490,10 +490,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 else:
                     newindx = start
 
-                val = np.array([val],         dtype=self.data.dtype)
+                val = np.array([val], dtype=self.data.dtype)
                 minor_index = np.array([minor_index], dtype=self.indices.dtype)
 
-                self.data = np.concatenate((self.data[:newindx],    val,         self.data[newindx:]))
+                self.data = np.concatenate((self.data[:newindx], val, self.data[newindx:]))
                 self.indices = np.concatenate((self.indices[:newindx], minor_index, self.indices[newindx:]))
                 self.indptr = self.indptr.copy()
 
@@ -663,7 +663,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         data = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(self.shape[0], self.shape[1],
-                self.indptr,  self.indices,  self.data,
+                self.indptr, self.indices, self.data,
                 other.indptr, other.indices, other.data,
                 indptr, indices, data)
 

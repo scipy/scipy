@@ -43,9 +43,9 @@ class TestLinsolve(TestCase):
                 assert_(norm(b - Asp*x) < 10 * cond_A * eps)
 
     def test_bvector_smoketest(self):
-        Adense = matrix([[0.,  1.,  1.],
-                         [1.,  0.,  1.],
-                         [0.,  0.,  1.]])
+        Adense = matrix([[0., 1., 1.],
+                         [1., 0., 1.],
+                         [0., 0., 1.]])
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3)
@@ -55,9 +55,9 @@ class TestLinsolve(TestCase):
         assert_array_almost_equal(x, x2)
 
     def test_bmatrix_smoketest(self):
-        Adense = matrix([[0.,  1.,  1.],
-                         [1.,  0.,  1.],
-                         [0.,  0.,  1.]])
+        Adense = matrix([[0., 1., 1.],
+                         [1., 0., 1.],
+                         [0., 0., 1.]])
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3, 4)

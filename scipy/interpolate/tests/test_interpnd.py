@@ -116,10 +116,10 @@ class TestEstimateGradients2DGlobal(object):
         # Should be exact for linear functions, independent of triangulation
 
         funcs = [
-            (lambda x, y: 0*x + 1,            (0, 0)),
-            (lambda x, y: 0 + x,              (1, 0)),
-            (lambda x, y: -2 + y,             (0, 1)),
-            (lambda x, y: 3 + 3*x + 14.15*y,  (3, 14.15))
+            (lambda x, y: 0*x + 1, (0, 0)),
+            (lambda x, y: 0 + x, (1, 0)),
+            (lambda x, y: -2 + y, (0, 1)),
+            (lambda x, y: 3 + 3*x + 14.15*y, (3, 14.15))
         ]
 
         for j, (func, grad) in enumerate(funcs):

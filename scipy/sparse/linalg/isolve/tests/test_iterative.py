@@ -308,7 +308,7 @@ class TestGMRES(TestCase):
         rvec[0] = 1.0
         callback = lambda r:store_residual(r, rvec)
         x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
-        diff = max(abs((rvec - array([1.0,   0.81649658092772603]))))
+        diff = max(abs((rvec - array([1.0, 0.81649658092772603]))))
         assert_(diff < 1e-5)
 
     def test_abi(self):

@@ -163,7 +163,7 @@ class MMFile (object):
     SYMMETRY_SYMMETRIC = 'symmetric'
     SYMMETRY_SKEW_SYMMETRIC = 'skew-symmetric'
     SYMMETRY_HERMITIAN = 'hermitian'
-    SYMMETRY_VALUES = (SYMMETRY_GENERAL,        SYMMETRY_SYMMETRIC,
+    SYMMETRY_VALUES = (SYMMETRY_GENERAL, SYMMETRY_SYMMETRIC,
                         SYMMETRY_SKEW_SYMMETRIC, SYMMETRY_HERMITIAN)
 
     @classmethod
@@ -174,7 +174,7 @@ class MMFile (object):
 
     DTYPES_BY_FIELD = {
       FIELD_INTEGER: 'i',
-      FIELD_REAL:    'd',
+      FIELD_REAL: 'd',
       FIELD_COMPLEX: 'D',
       FIELD_PATTERN: 'd'}
 

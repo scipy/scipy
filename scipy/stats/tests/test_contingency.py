@@ -24,7 +24,7 @@ def test_margins():
     a = np.arange(12).reshape(2, 6)
     m0, m1 = margins(a)
     expected0 = np.array([[15], [51]])
-    expected1 = np.array([[6,  8, 10, 12, 14, 16]])
+    expected1 = np.array([[6, 8, 10, 12, 14, 16]])
     assert_array_equal(m0, expected0)
     assert_array_equal(m1, expected1)
 
@@ -103,7 +103,7 @@ def test_chi2_contingency_R():
     obs = np.array(
         [[[12, 34, 23],
           [35, 31, 11],
-          [12, 32,  9],
+          [12, 32, 9],
           [12, 12, 14]],
          [[4, 47, 11],
           [34, 10, 18],
@@ -161,7 +161,7 @@ def test_chi2_contingency_R():
            [15, 16]]]])
     chi2, p, dof, expected = chi2_contingency(obs)
     assert_approx_equal(chi2, 8.758, significant=4)
-    assert_approx_equal(p,  0.6442, significant=4)
+    assert_approx_equal(p, 0.6442, significant=4)
     assert_equal(dof, 11)
 
 

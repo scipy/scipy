@@ -459,7 +459,7 @@ class VarWriter4(object):
     def write_string(self, s):
         self.file_stream.write(s)
 
-    def write_header(self, name, shape, P=miDOUBLE,  T=mxFULL_CLASS, imagf=0):
+    def write_header(self, name, shape, P=miDOUBLE, T=mxFULL_CLASS, imagf=0):
         ''' Write header for given data options
 
         Parameters

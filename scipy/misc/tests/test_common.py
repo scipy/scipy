@@ -32,7 +32,7 @@ def test_pade_4term_exp():
 
     nump, denomp = pade(an, 3)
     assert_array_almost_equal(nump.c, [1.0])
-    assert_array_almost_equal(denomp.c, [-1.0/6, 0.5,  -1.0, 1.0])
+    assert_array_almost_equal(denomp.c, [-1.0/6, 0.5, -1.0, 1.0])
 
 
 def test_logsumexp():

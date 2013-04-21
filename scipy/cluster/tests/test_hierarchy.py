@@ -48,12 +48,12 @@ from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage,
         is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram
 from scipy.spatial.distance import squareform, pdist
 
-_tdist = np.array([[0,    662,  877,  255,  412,  996],
-                   [662,  0,    295,  468,  268,  400],
-                   [877,  295,  0,    754,  564,  138],
-                   [255,  468,  754,  0,    219,  869],
-                   [412,  268,  564,  219,  0,    669],
-                   [996,  400,  138,  869,  669,  0]], dtype='double')
+_tdist = np.array([[0, 662, 877, 255, 412, 996],
+                   [662, 0, 295, 468, 268, 400],
+                   [877, 295, 0, 754, 564, 138],
+                   [255, 468, 754, 0, 219, 869],
+                   [412, 268, 564, 219, 0, 669],
+                   [996, 400, 138, 869, 669, 0]], dtype='double')
 
 _ytdist = squareform(_tdist)
 
@@ -329,7 +329,7 @@ class TestFromMLabLinkage(TestCase):
 
     def test_from_mlab_linkage_single_row(self):
         "Tests from_mlab_linkage on linkage array with single row."
-        expectedZP = np.asarray([[0.,  1.,  3.,  2.]])
+        expectedZP = np.asarray([[0., 1., 3., 2.]])
         Z = [[1,2,3]]
         ZP = from_mlab_linkage(Z)
         return self.assertTrue((ZP == expectedZP).all())
@@ -338,11 +338,11 @@ class TestFromMLabLinkage(TestCase):
         "Tests from_mlab_linkage on linkage array with multiple rows."
         Z = np.asarray([[3, 6, 138], [4, 5, 219],
                         [1, 8, 255], [2, 9, 268], [7, 10, 295]])
-        expectedZS = np.array([[2.,    5.,  138.,    2.],
-                               [3.,    4.,  219.,    2.],
-                               [0.,    7.,  255.,    3.],
-                               [1.,    8.,  268.,    4.],
-                               [6.,    9.,  295.,    6.]],
+        expectedZS = np.array([[2., 5., 138., 2.],
+                               [3., 4., 219., 2.],
+                               [0., 7., 255., 3.],
+                               [1., 8., 268., 4.],
+                               [6., 9., 295., 6.]],
                               dtype=np.double)
         ZS = from_mlab_linkage(Z)
         self.assertTrue((expectedZS == ZS).all())
@@ -357,7 +357,7 @@ class TestToMLabLinkage(TestCase):
 
     def test_to_mlab_linkage_single_row(self):
         "Tests to_mlab_linkage on linkage array with single row."
-        Z = np.asarray([[0.,  1.,  3.,  2.]])
+        Z = np.asarray([[0., 1., 3., 2.]])
         expectedZP = np.asarray([[1,2,3]])
         ZP = to_mlab_linkage(Z)
         return self.assertTrue((ZP == expectedZP).all())
@@ -366,11 +366,11 @@ class TestToMLabLinkage(TestCase):
         "Tests to_mlab_linkage on linkage array with multiple rows."
         expectedZM = np.asarray([[3, 6, 138], [4, 5, 219],
                         [1, 8, 255], [2, 9, 268], [7, 10, 295]])
-        Z = np.array([[2.,    5.,  138.,    2.],
-                      [3.,    4.,  219.,    2.],
-                      [0.,    7.,  255.,    3.],
-                      [1.,    8.,  268.,    4.],
-                      [6.,    9.,  295.,    6.]],
+        Z = np.array([[2., 5., 138., 2.],
+                      [3., 4., 219., 2.],
+                      [0., 7., 255., 3.],
+                      [1., 8., 268., 4.],
+                      [6., 9., 295., 6.]],
                      dtype=np.double)
         ZM = to_mlab_linkage(Z)
         self.assertTrue((expectedZM == ZM).all())
@@ -528,22 +528,22 @@ class TestIsIsomorphic(TestCase):
 class TestIsValidLinkage(TestCase):
     def test_is_valid_linkage_int_type(self):
         "Tests is_valid_linkage(Z) with integer type."
-        Z = np.asarray([[0,   1, 3.0, 2],
-                        [3,   2, 4.0, 3]], dtype=np.int)
+        Z = np.asarray([[0, 1, 3.0, 2],
+                        [3, 2, 4.0, 3]], dtype=np.int)
         self.assertTrue(is_valid_linkage(Z) == False)
         self.assertRaises(TypeError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_5_columns(self):
         "Tests is_valid_linkage(Z) with 5 columns."
-        Z = np.asarray([[0,   1, 3.0, 2, 5],
-                        [3,   2, 4.0, 3, 3]], dtype=np.double)
+        Z = np.asarray([[0, 1, 3.0, 2, 5],
+                        [3, 2, 4.0, 3, 3]], dtype=np.double)
         self.assertTrue(is_valid_linkage(Z) == False)
         self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_3_columns(self):
         "Tests is_valid_linkage(Z) with 3 columns."
-        Z = np.asarray([[0,   1, 3.0],
-                        [3,   2, 4.0]], dtype=np.double)
+        Z = np.asarray([[0, 1, 3.0],
+                        [3, 2, 4.0]], dtype=np.double)
         self.assertTrue(is_valid_linkage(Z) == False)
         self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -555,13 +555,13 @@ class TestIsValidLinkage(TestCase):
 
     def test_is_valid_linkage_1x4(self):
         "Tests is_valid_linkage(Z) on linkage over 2 observations."
-        Z = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
+        Z = np.asarray([[0, 1, 3.0, 2]], dtype=np.double)
         self.assertTrue(is_valid_linkage(Z) == True)
 
     def test_is_valid_linkage_2x4(self):
         "Tests is_valid_linkage(Z) on linkage over 3 observations."
-        Z = np.asarray([[0,   1, 3.0, 2],
-                        [3,   2, 4.0, 3]], dtype=np.double)
+        Z = np.asarray([[0, 1, 3.0, 2],
+                        [3, 2, 4.0, 3]], dtype=np.double)
         self.assertTrue(is_valid_linkage(Z) == True)
 
     def test_is_valid_linkage_4_and_up(self):
@@ -611,22 +611,22 @@ class TestIsValidLinkage(TestCase):
 class TestIsValidInconsistent(TestCase):
     def test_is_valid_im_int_type(self):
         "Tests is_valid_im(R) with integer type."
-        R = np.asarray([[0,   1, 3.0, 2],
-                        [3,   2, 4.0, 3]], dtype=np.int)
+        R = np.asarray([[0, 1, 3.0, 2],
+                        [3, 2, 4.0, 3]], dtype=np.int)
         self.assertTrue(is_valid_im(R) == False)
         self.assertRaises(TypeError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_5_columns(self):
         "Tests is_valid_im(R) with 5 columns."
-        R = np.asarray([[0,   1, 3.0, 2, 5],
-                        [3,   2, 4.0, 3, 3]], dtype=np.double)
+        R = np.asarray([[0, 1, 3.0, 2, 5],
+                        [3, 2, 4.0, 3, 3]], dtype=np.double)
         self.assertTrue(is_valid_im(R) == False)
         self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_3_columns(self):
         "Tests is_valid_im(R) with 3 columns."
-        R = np.asarray([[0,   1, 3.0],
-                        [3,   2, 4.0]], dtype=np.double)
+        R = np.asarray([[0, 1, 3.0],
+                        [3, 2, 4.0]], dtype=np.double)
         self.assertTrue(is_valid_im(R) == False)
         self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
@@ -638,13 +638,13 @@ class TestIsValidInconsistent(TestCase):
 
     def test_is_valid_im_1x4(self):
         "Tests is_valid_im(R) on im over 2 observations."
-        R = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
+        R = np.asarray([[0, 1, 3.0, 2]], dtype=np.double)
         self.assertTrue(is_valid_im(R) == True)
 
     def test_is_valid_im_2x4(self):
         "Tests is_valid_im(R) on im over 3 observations."
-        R = np.asarray([[0,   1, 3.0, 2],
-                        [3,   2, 4.0, 3]], dtype=np.double)
+        R = np.asarray([[0, 1, 3.0, 2],
+                        [3, 2, 4.0, 3]], dtype=np.double)
         self.assertTrue(is_valid_im(R) == True)
 
     def test_is_valid_im_4_and_up(self):
@@ -694,13 +694,13 @@ class TestNumObsLinkage(TestCase):
 
     def test_num_obs_linkage_1x4(self):
         "Tests num_obs_linkage(Z) on linkage over 2 observations."
-        Z = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
+        Z = np.asarray([[0, 1, 3.0, 2]], dtype=np.double)
         self.assertTrue(num_obs_linkage(Z) == 2)
 
     def test_num_obs_linkage_2x4(self):
         "Tests num_obs_linkage(Z) on linkage over 3 observations."
-        Z = np.asarray([[0,   1, 3.0, 2],
-                        [3,   2, 4.0, 3]], dtype=np.double)
+        Z = np.asarray([[0, 1, 3.0, 2],
+                        [3, 2, 4.0, 3]], dtype=np.double)
         self.assertTrue(num_obs_linkage(Z) == 3)
 
     def test_num_obs_linkage_4_and_up(self):
@@ -714,14 +714,14 @@ class TestNumObsLinkage(TestCase):
 class TestLeavesList(TestCase):
     def test_leaves_list_1x4(self):
         "Tests leaves_list(Z) on a 1x4 linkage."
-        Z = np.asarray([[0,   1, 3.0, 2]], dtype=np.double)
+        Z = np.asarray([[0, 1, 3.0, 2]], dtype=np.double)
         node = to_tree(Z)
         self.assertTrue((leaves_list(Z) == [0, 1]).all())
 
     def test_leaves_list_2x4(self):
         "Tests leaves_list(Z) on a 2x4 linkage."
-        Z = np.asarray([[0,   1, 3.0, 2],
-                        [3,   2, 4.0, 3]], dtype=np.double)
+        Z = np.asarray([[0, 1, 3.0, 2],
+                        [3, 2, 4.0, 3]], dtype=np.double)
         node = to_tree(Z)
         self.assertTrue((leaves_list(Z) == [0, 1, 2]).all())
 

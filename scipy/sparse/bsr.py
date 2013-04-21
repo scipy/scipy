@@ -155,8 +155,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                 # (data,indices,indptr) format
                 (data, indices, indptr) = arg1
                 self.indices = np.array(indices, copy=copy)
-                self.indptr = np.array(indptr,  copy=copy)
-                self.data = np.array(data,    copy=copy, dtype=getdtype(dtype, data))
+                self.indptr = np.array(indptr, copy=copy)
+                self.data = np.array(data, copy=copy, dtype=getdtype(dtype, data))
             else:
                 raise ValueError('unrecognized bsr_matrix constructor usage')
         else:
@@ -355,7 +355,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             other = other.tobsr(blocksize=(n,C))
 
         csr_matmat_pass1(M//R, N//C,
-                self.indptr,  self.indices,
+                self.indptr, self.indices,
                 other.indptr, other.indices,
                 indptr)
 
@@ -364,9 +364,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         data = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
 
         bsr_matmat_pass2(M//R, N//C, R, C, n,
-                self.indptr,  self.indices,  np.ravel(self.data),
+                self.indptr, self.indices, np.ravel(self.data),
                 other.indptr, other.indices, np.ravel(other.data),
-                indptr,       indices,       data)
+                indptr, indices, data)
 
         data = data.reshape(-1,R,C)
 
@@ -429,13 +429,13 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         if self.nnz == 0:
             return bsr_matrix((N,M), blocksize=(C,R))
 
-        indptr = np.empty(N//C + 1,    dtype=self.indptr.dtype)
-        indices = np.empty(NBLK,       dtype=self.indices.dtype)
+        indptr = np.empty(N//C + 1, dtype=self.indptr.dtype)
+        indices = np.empty(NBLK, dtype=self.indices.dtype)
         data = np.empty((NBLK,C,R), dtype=self.data.dtype)
 
         bsr_transpose(M//R, N//C, R, C,
                       self.indptr, self.indices, self.data.ravel(),
-                      indptr,      indices,      data.ravel())
+                      indptr, indices, data.ravel())
 
         return bsr_matrix((data,indices,indptr), shape=(N,M))
 
@@ -519,9 +519,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         data = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(self.shape[0]//R, self.shape[1]//C, R, C,
-                self.indptr,  self.indices,  np.ravel(self.data),
+                self.indptr, self.indices, np.ravel(self.data),
                 other.indptr, other.indices, np.ravel(other.data),
-                indptr,       indices,       data)
+                indptr, indices, data)
 
         actual_bnnz = indptr[-1]
         indices = indices[:actual_bnnz]

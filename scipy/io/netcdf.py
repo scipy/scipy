@@ -57,11 +57,11 @@ NC_VARIABLE = b'\x00\x00\x00\x0b'
 NC_ATTRIBUTE = b'\x00\x00\x00\x0c'
 
 
-TYPEMAP = {NC_BYTE:   ('b', 1),
-            NC_CHAR:   ('c', 1),
-            NC_SHORT:  ('h', 2),
-            NC_INT:    ('i', 4),
-            NC_FLOAT:  ('f', 4),
+TYPEMAP = {NC_BYTE: ('b', 1),
+            NC_CHAR: ('c', 1),
+            NC_SHORT: ('h', 2),
+            NC_INT: ('i', 4),
+            NC_FLOAT: ('f', 4),
             NC_DOUBLE: ('d', 8)}
 
 REVERSE = {('b', 1): NC_BYTE,

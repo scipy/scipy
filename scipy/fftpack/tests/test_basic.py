@@ -422,7 +422,7 @@ class Testfft2(TestCase):
         # used
         x = numpy.ones((4,4,2))
         y = fft2(x, shape=(8,8), axes=(-3,-2))
-        y_r = numpy.fft.fftn(x, s=(8, 8), axes=(-3,  -2))
+        y_r = numpy.fft.fftn(x, s=(8, 8), axes=(-3, -2))
         assert_array_almost_equal(y, y_r)
 
 

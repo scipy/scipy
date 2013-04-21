@@ -194,11 +194,11 @@ class TestMMIOCoordinate(TestCase):
         f.write(_general_example)
         f.close()
         assert_equal(mminfo(fn),(5,5,8,'coordinate','real','general'))
-        a = [[1,    0,      0,       6,      0],
-             [0,   10.5,    0,       0,      0],
-             [0,    0,    .015,      0,      0],
-             [0,  250.5,    0,     -280,    33.32],
-             [0,    0,      0,       0,     12]]
+        a = [[1, 0, 0, 6, 0],
+             [0, 10.5, 0, 0, 0],
+             [0, 0, .015, 0, 0],
+             [0, 250.5, 0, -280, 33.32],
+             [0, 0, 0, 0, 12]]
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
@@ -209,11 +209,11 @@ class TestMMIOCoordinate(TestCase):
         f.write(_hermitian_example)
         f.close()
         assert_equal(mminfo(fn),(5,5,7,'coordinate','complex','hermitian'))
-        a = [[1,      0,               0,       0,              0],
-             [0,     10.5,             0,    250.5 - 22.22j,    0],
-             [0,      0,            .015,       0,              0],
-             [0,  250.5 + 22.22j,      0,      -280,          -33.32j],
-             [0,      0,               0,     33.32j,          12]]
+        a = [[1, 0, 0, 0, 0],
+             [0, 10.5, 0, 250.5 - 22.22j, 0],
+             [0, 0, .015, 0, 0],
+             [0, 250.5 + 22.22j, 0, -280, -33.32j],
+             [0, 0, 0, 33.32j, 12]]
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
@@ -224,11 +224,11 @@ class TestMMIOCoordinate(TestCase):
         f.write(_skew_example)
         f.close()
         assert_equal(mminfo(fn),(5,5,7,'coordinate','real','skew-symmetric'))
-        a = [[1,      0,               0,       0,     0],
-             [0,     10.5,             0,  -250.5,     0],
-             [0,      0,            .015,       0,     0],
-             [0,  250.5,               0,    -280,     0],
-             [0,      0,               0,       0,    12]]
+        a = [[1, 0, 0, 0, 0],
+             [0, 10.5, 0, -250.5, 0],
+             [0, 0, .015, 0, 0],
+             [0, 250.5, 0, -280, 0],
+             [0, 0, 0, 0, 12]]
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
@@ -239,11 +239,11 @@ class TestMMIOCoordinate(TestCase):
         f.write(_symmetric_example)
         f.close()
         assert_equal(mminfo(fn),(5,5,7,'coordinate','real','symmetric'))
-        a = [[1,      0,               0,       0,     0],
-             [0,     10.5,             0,   250.5,     0],
-             [0,      0,            .015,       0,     0],
-             [0,  250.5,               0,    -280,     8],
-             [0,      0,               0,       8,    12]]
+        a = [[1, 0, 0, 0, 0],
+             [0, 10.5, 0, 250.5, 0],
+             [0, 0, .015, 0, 0],
+             [0, 250.5, 0, -280, 8],
+             [0, 0, 0, 8, 12]]
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
@@ -254,11 +254,11 @@ class TestMMIOCoordinate(TestCase):
         f.write(_symmetric_pattern_example)
         f.close()
         assert_equal(mminfo(fn),(5,5,7,'coordinate','pattern','symmetric'))
-        a = [[1,     0,     0,     0,     0],
-             [0,     1,     0,     1,     0],
-             [0,     0,     1,     0,     0],
-             [0,     1,     0,     1,     1],
-             [0,     0,     0,     1,     1]]
+        a = [[1, 0, 0, 0, 0],
+             [0, 1, 0, 1, 0],
+             [0, 0, 1, 0, 0],
+             [0, 1, 0, 1, 1],
+             [0, 0, 0, 1, 1]]
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
@@ -277,7 +277,7 @@ class TestMMIOCoordinate(TestCase):
     def test_real_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
-        V = array([1.0,   6.0,   10.5, 0.015,   250.5,  -280.0, 33.32, 12.0])
+        V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
 
         b = scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5))
 
@@ -292,8 +292,8 @@ class TestMMIOCoordinate(TestCase):
     def test_complex_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
-        V = array([1.0 + 3j,    6.0 + 2j,  10.50 + 0.9j, 0.015 + -4.4j,
-                   250.5 + 0j, -280.0 + 5j,  33.32 + 6.4j, 12.00 + 0.8j])
+        V = array([1.0 + 3j, 6.0 + 2j, 10.50 + 0.9j, 0.015 + -4.4j,
+                   250.5 + 0j, -280.0 + 5j, 33.32 + 6.4j, 12.00 + 0.8j])
 
         b = scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5))
 
@@ -311,11 +311,11 @@ class TestMMIOCoordinate(TestCase):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
 
-        V = array([1.0,   6.0,   10.5, 0.015,   250.5,  -280.0, 33.32, 12.0])
+        V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
         mats.append(scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5)))
 
-        V = array([1.0 + 3j,    6.0 + 2j,  10.50 + 0.9j, 0.015 + -4.4j,
-                   250.5 + 0j, -280.0 + 5j,  33.32 + 6.4j, 12.00 + 0.8j])
+        V = array([1.0 + 3j, 6.0 + 2j, 10.50 + 0.9j, 0.015 + -4.4j,
+                   250.5 + 0j, -280.0 + 5j, 33.32 + 6.4j, 12.00 + 0.8j])
         mats.append(scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5)))
 
         for mat in mats:

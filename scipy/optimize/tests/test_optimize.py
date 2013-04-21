@@ -201,11 +201,11 @@ class TestOptimize(TestCase):
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[34:39],
-                        [[0.72949016, -0.44156936,  0.47100962],
-                         [0.72949016, -0.44156936,  0.48052496],
-                         [1.45898031, -0.88313872,  0.95153458],
-                         [0.72949016, -0.44156936,  0.47576729],
-                         [1.72949016, -0.44156936,  0.47576729]],
+                        [[0.72949016, -0.44156936, 0.47100962],
+                         [0.72949016, -0.44156936, 0.48052496],
+                         [1.45898031, -0.88313872, 0.95153458],
+                         [0.72949016, -0.44156936, 0.47576729],
+                         [1.72949016, -0.44156936, 0.47576729]],
                         atol=1e-14, rtol=1e-7)
 
     def test_neldermead(self, use_wrapper=False):
@@ -236,8 +236,8 @@ class TestOptimize(TestCase):
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[76:78],
-                        [[0.1928968, -0.62780447,  0.35166118],
-                         [0.19572515, -0.63648426,  0.35838135]],
+                        [[0.1928968, -0.62780447, 0.35166118],
+                         [0.19572515, -0.63648426, 0.35838135]],
                         atol=1e-14, rtol=1e-7)
 
     def test_ncg(self, use_wrapper=False):
@@ -360,8 +360,8 @@ class TestOptimize(TestCase):
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[3:5],
-                        [[0., -0.52489628,  0.48753042],
-                         [0., -0.52489628,  0.48753042]],
+                        [[0., -0.52489628, 0.48753042],
+                         [0., -0.52489628, 0.48753042]],
                         atol=1e-14, rtol=1e-7)
 
     def test_l_bfgs_b_numjac(self):

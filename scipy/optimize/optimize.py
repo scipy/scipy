@@ -38,7 +38,7 @@ from .linesearch import (line_search_BFGS, line_search_wolfe1,
 
 # standard status messages of optimizers
 _status_message = {'success': 'Optimization terminated successfully.',
-                   'maxfev':  'Maximum number of function evaluations has '
+                   'maxfev': 'Maximum number of function evaluations has '
                               'been exceeded.',
                    'maxiter': 'Maximum number of iterations has been '
                               'exceeded.',

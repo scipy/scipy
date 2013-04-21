@@ -27,7 +27,7 @@ class TestConstructUtils(TestCase):
                          [11,12,13,14,15]])
 
         cases = []
-        cases.append((diags1,  0,  1, 1, [[1]]))
+        cases.append((diags1, 0, 1, 1, [[1]]))
         cases.append((diags1, [0], 1, 1, [[1]]))
         cases.append((diags1, [0], 2, 1, [[1],[0]]))
         cases.append((diags1, [0], 1, 2, [[1,0]]))
@@ -71,7 +71,7 @@ class TestConstructUtils(TestCase):
         c = array([11, 12, 13, 14, 15])
 
         cases = []
-        cases.append((a[:1],  0,    (1, 1), [[1]]))
+        cases.append((a[:1], 0, (1, 1), [[1]]))
         cases.append(([a[:1]], [0], (1, 1), [[1]]))
         cases.append(([a[:1]], [0], (2, 1), [[1],[0]]))
         cases.append(([a[:1]], [0], (1, 2), [[1,0]]))
@@ -91,7 +91,7 @@ class TestConstructUtils(TestCase):
                                                      [0,7,0,0,0,0],
                                                      [0,0,8,0,0,0]]))
 
-        cases.append(([a[:4],b,c[:4]], [-1,0,1], (5, 5),    [[6,11, 0, 0, 0],
+        cases.append(([a[:4],b,c[:4]], [-1,0,1], (5, 5), [[6,11, 0, 0, 0],
                                                             [1, 7,12, 0, 0],
                                                             [0, 2, 8,13, 0],
                                                             [0, 0, 3, 9,14],
@@ -104,9 +104,9 @@ class TestConstructUtils(TestCase):
                                                           [0, 2, 0, 0,15]]))
 
         # scalar case: broadcasting
-        cases.append(([1,-2,1], [1,0,-1], (3, 3), [[-2,  1,  0],
-                                                    [1, -2,  1],
-                                                    [0,  1, -2]]))
+        cases.append(([1,-2,1], [1,0,-1], (3, 3), [[-2, 1, 0],
+                                                    [1, -2, 1],
+                                                    [0, 1, -2]]))
 
         for d, o, shape, result in cases:
             try:
@@ -126,7 +126,7 @@ class TestConstructUtils(TestCase):
         c = array([11, 12, 13, 14, 15])
 
         cases = []
-        cases.append(([a[:0]],  0,  (1, 1)))
+        cases.append(([a[:0]], 0, (1, 1)))
         cases.append(([a], [0], (1, 1)))
         cases.append(([a[:3],b], [0,2], (3, 3)))
         cases.append(([a[:4],b,c[:3]], [-1,0,1], (5, 5)))

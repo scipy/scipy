@@ -524,12 +524,12 @@ class ListConverter(TestCase):
         sum1 = with_cxx(a)
         t2 = time.time()
         print('speed test for list access')
-        print('compiler:',  self.compiler)
-        print('scxx:',  t2 - t1)
+        print('compiler:', self.compiler)
+        print('scxx:', t2 - t1)
         t1 = time.time()
         sum2 = no_checking(a)
         t2 = time.time()
-        print('C, no checking:',  t2 - t1)
+        print('C, no checking:', t2 - t1)
         sum3 = 0
         t1 = time.time()
         for i in a:

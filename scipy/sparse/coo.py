@@ -269,7 +269,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            indptr = np.empty(N + 1,    dtype=np.intc)
+            indptr = np.empty(N + 1, dtype=np.intc)
             indices = np.empty(self.nnz, dtype=np.intc)
             data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
@@ -307,7 +307,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            indptr = np.empty(M + 1,    dtype=np.intc)
+            indptr = np.empty(M + 1, dtype=np.intc)
             indices = np.empty(self.nnz, dtype=np.intc)
             data = np.empty(self.nnz, dtype=upcast(self.dtype))
 

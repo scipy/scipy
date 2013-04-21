@@ -1153,7 +1153,7 @@ def binary_fill_holes(input, structure=None, output=None, origin=0):
         return output
 
 
-def grey_erosion(input,  size=None, footprint=None, structure=None,
+def grey_erosion(input, size=None, footprint=None, structure=None,
                  output=None, mode="reflect", cval=0.0, origin=0):
     """
     Calculate a greyscale erosion, using either a structuring element,
@@ -1279,7 +1279,7 @@ def grey_erosion(input,  size=None, footprint=None, structure=None,
                                       output, mode, cval, origin, 1)
 
 
-def grey_dilation(input,  size=None, footprint=None, structure=None,
+def grey_dilation(input, size=None, footprint=None, structure=None,
                  output=None, mode="reflect", cval=0.0, origin=0):
     """
     Calculate a greyscale dilation, using either a structuring element,

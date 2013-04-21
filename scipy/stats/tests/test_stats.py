@@ -392,17 +392,17 @@ class TestFisherExact(TestCase):
         # docstring), so those will not match.  We leave them in anyway, in
         # case they will be useful later on. We test only the p-value.
         tablist = [
-            ([[100, 2], [1000, 5]], (2.505583993422285e-001,  1.300759363430016e-001)),
-            ([[2, 7], [8, 2]], (8.586235135736206e-002,  2.301413756522114e-002)),
-            ([[5, 1], [10, 10]], (4.725646047336584e+000,  1.973244147157190e-001)),
-            ([[5, 15], [20, 20]], (3.394396617440852e-001,  9.580440012477637e-002)),
-            ([[5, 16], [20, 25]], (3.960558326183334e-001,  1.725864953812994e-001)),
-            ([[10, 5], [10, 1]], (2.116112781158483e-001,  1.973244147157190e-001)),
-            ([[10, 5], [10, 0]], (0.000000000000000e+000,  6.126482213438734e-002)),
-            ([[5, 0], [1, 4]], (np.inf,  4.761904761904762e-002)),
-            ([[0, 5], [1, 4]], (0.000000000000000e+000,  1.000000000000000e+000)),
-            ([[5, 1], [0, 4]], (np.inf,  4.761904761904758e-002)),
-            ([[0, 1], [3, 2]], (0.000000000000000e+000,  1.000000000000000e+000))
+            ([[100, 2], [1000, 5]], (2.505583993422285e-001, 1.300759363430016e-001)),
+            ([[2, 7], [8, 2]], (8.586235135736206e-002, 2.301413756522114e-002)),
+            ([[5, 1], [10, 10]], (4.725646047336584e+000, 1.973244147157190e-001)),
+            ([[5, 15], [20, 20]], (3.394396617440852e-001, 9.580440012477637e-002)),
+            ([[5, 16], [20, 25]], (3.960558326183334e-001, 1.725864953812994e-001)),
+            ([[10, 5], [10, 1]], (2.116112781158483e-001, 1.973244147157190e-001)),
+            ([[10, 5], [10, 0]], (0.000000000000000e+000, 6.126482213438734e-002)),
+            ([[5, 0], [1, 4]], (np.inf, 4.761904761904762e-002)),
+            ([[0, 5], [1, 4]], (0.000000000000000e+000, 1.000000000000000e+000)),
+            ([[5, 1], [0, 4]], (np.inf, 4.761904761904758e-002)),
+            ([[0, 1], [3, 2]], (0.000000000000000e+000, 1.000000000000000e+000))
             ]
         for table, res_r in tablist:
             res = stats.fisher_exact(np.asarray(table))
@@ -783,17 +783,17 @@ class TestHistogram(TestCase):
         """
         # basic tests, with expected results (no weighting)
         # results taken from the previous (slower) version of histogram
-        basic_tests = ((self.low_values, (np.array([1.,  1.,  1.,  2.,  2.,
-                                                     1.,  1.,  0.,  1.,  1.]),
+        basic_tests = ((self.low_values, (np.array([1., 1., 1., 2., 2.,
+                                                     1., 1., 0., 1., 1.]),
                                           0.14444444444444446, 0.11111111111111112, 0)),
-                       (self.high_range, (np.array([5.,  0.,  1.,  1.,  0.,
-                                                     0.,  5.,  1.,  0.,  1.]),
+                       (self.high_range, (np.array([5., 0., 1., 1., 0.,
+                                                     0., 5., 1., 0., 1.]),
                                           -3.1666666666666661, 10.333333333333332, 0)),
-                       (self.low_range, (np.array([3.,  1.,  1.,  1.,  0.,  1.,
-                                                    1.,  2.,  3.,  1.]),
+                       (self.low_range, (np.array([3., 1., 1., 1., 0., 1.,
+                                                    1., 2., 3., 1.]),
                                          1.9388888888888889, 0.12222222222222223, 0)),
-                       (self.few_values, (np.array([1.,  0.,  1.,  0.,  0.,  0.,
-                                                     0.,  1.,  0.,  1.]),
+                       (self.few_values, (np.array([1., 0., 1., 0., 0., 0.,
+                                                     0., 1., 0., 1.]),
                                           -1.2222222222222223, 0.44444444444444448, 0)),
                        )
         for inputs, expected_results in basic_tests:
@@ -811,17 +811,17 @@ class TestHistogram(TestCase):
         # weights used (first n are used for each test, where n is len of array) (14 values)
         weights = np.array([1., 3., 4.5, 0.1, -1.0, 0.0, 0.3, 7.0, 103.2, 2, 40, 0, 0, 1])
         # results taken from the numpy version of histogram
-        basic_tests = ((self.low_values, (np.array([4.0,  0.0,  4.5,  -0.9,  0.0,
-                                                      0.3,110.2,  0.0,  0.0,  42.0]),
+        basic_tests = ((self.low_values, (np.array([4.0, 0.0, 4.5, -0.9, 0.0,
+                                                      0.3,110.2, 0.0, 0.0, 42.0]),
                                           0.2, 0.1, 0)),
-                       (self.high_range, (np.array([9.6,  0.,  -1.,  0.,  0.,
-                                                      0.,145.2,   0.,  0.3,  7.]),
+                       (self.high_range, (np.array([9.6, 0., -1., 0., 0.,
+                                                      0.,145.2, 0., 0.3, 7.]),
                                           2.0, 9.3, 0)),
-                       (self.low_range, (np.array([2.4,  0.,  0.,   0.,  0.,
-                                                    2., 40.,  0., 103.2, 13.5]),
+                       (self.low_range, (np.array([2.4, 0., 0., 0., 0.,
+                                                    2., 40., 0., 103.2, 13.5]),
                                          2.0, 0.11, 0)),
-                       (self.few_values, (np.array([4.5,  0.,  0.1,  0.,  0.,  0.,
-                                                     0.,  1.,  0.,  3.]),
+                       (self.few_values, (np.array([4.5, 0., 0.1, 0., 0., 0.,
+                                                     0., 1., 0., 3.]),
                                           -1., 0.4, 0)),
 
                        )
@@ -843,13 +843,13 @@ class TestHistogram(TestCase):
         # basic tests, with expected results (no weighting),
         # except number of bins is halved to 5
         # results taken from the previous (slower) version of histogram
-        basic_tests = ((self.low_values, (np.array([2.,  3.,  3.,  1.,  2.]),
+        basic_tests = ((self.low_values, (np.array([2., 3., 3., 1., 2.]),
                                           0.075000000000000011, 0.25, 0)),
-                       (self.high_range, (np.array([5.,  2.,  0.,  6.,  1.]),
+                       (self.high_range, (np.array([5., 2., 0., 6., 1.]),
                                           -9.625, 23.25, 0)),
-                       (self.low_range, (np.array([4.,  2.,  1.,  3.,  4.]),
+                       (self.low_range, (np.array([4., 2., 1., 3., 4.]),
                                          1.8625, 0.27500000000000002, 0)),
-                       (self.few_values, (np.array([1.,  1.,  0.,  1.,  1.]),
+                       (self.few_values, (np.array([1., 1., 0., 1., 1.]),
                                           -1.5, 1.0, 0)),
                        )
         for inputs, expected_results in basic_tests:
@@ -866,25 +866,25 @@ class TestHistogram(TestCase):
         # basic tests, with expected results (no weighting),
         # except number of bins is double to 20
         # results taken from the previous (slower) version of histogram
-        basic_tests = ((self.low_values, (np.array([1.,  0.,  1.,  0.,  1.,
-                                                     0.,  2.,  0.,  1.,  0.,
-                                                     1.,  1.,  0.,  1.,  0.,
-                                                     0.,  0.,  1.,  0.,  1.]),
+        basic_tests = ((self.low_values, (np.array([1., 0., 1., 0., 1.,
+                                                     0., 2., 0., 1., 0.,
+                                                     1., 1., 0., 1., 0.,
+                                                     0., 0., 1., 0., 1.]),
                                           0.1736842105263158, 0.052631578947368418, 0)),
-                       (self.high_range, (np.array([5.,  0.,  0.,  0.,  1.,
-                                                     0.,  1.,  0.,  0.,  0.,
-                                                     0.,  0.,  0.,  5.,  0.,
-                                                     0.,  1.,  0.,  0.,  1.]),
+                       (self.high_range, (np.array([5., 0., 0., 0., 1.,
+                                                     0., 1., 0., 0., 0.,
+                                                     0., 0., 0., 5., 0.,
+                                                     0., 1., 0., 0., 1.]),
                                           -0.44736842105263142, 4.8947368421052628, 0)),
-                       (self.low_range, (np.array([3.,  0.,  1.,  1.,  0.,  0.,
-                                                    0.,  1.,  0.,  0.,  1.,  0.,
-                                                    1., 0.,  1.,  0.,  1.,  3.,
-                                                    0.,  1.]),
+                       (self.low_range, (np.array([3., 0., 1., 1., 0., 0.,
+                                                    0., 1., 0., 0., 1., 0.,
+                                                    1., 0., 1., 0., 1., 3.,
+                                                    0., 1.]),
                                          1.9710526315789474, 0.057894736842105263, 0)),
-                       (self.few_values, (np.array([1.,  0.,  0.,  0.,  0.,  1.,
-                                                     0.,  0.,  0.,  0.,  0.,  0.,
-                                                     0.,  0.,  1.,  0.,  0.,  0.,
-                                                     0.,  1.]),
+                       (self.few_values, (np.array([1., 0., 0., 0., 0., 1.,
+                                                     0., 0., 0., 0., 0., 0.,
+                                                     0., 0., 1., 0., 0., 0.,
+                                                     0., 1.]),
                                           -1.1052631578947367, 0.21052631578947367, 0)),
                        )
         for inputs, expected_results in basic_tests:
@@ -899,7 +899,7 @@ class TestHistogram(TestCase):
 def test_cumfreq():
     x = [1, 4, 2, 1, 3, 1]
     cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
-    assert_array_almost_equal(cumfreqs, np.array([3.,  4.,  5.,  6.]))
+    assert_array_almost_equal(cumfreqs, np.array([3., 4., 5., 6.]))
     cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4,
                                                       defaultreallimits=(1.5, 5))
     assert_(extrapoints == 3)
@@ -1168,8 +1168,8 @@ class TestVariability(TestCase):
         z1 = stats.zmap(x, x, axis=1)
 
         z0_expected = [[-t1, -t3/2, -t3/2, 0.0],
-                       [0.0,  t3,   -t3/2,  t1],
-                       [t1,  -t3/2,  t3,   -t1]]
+                       [0.0, t3, -t3/2, t1],
+                       [t1, -t3/2, t3, -t1]]
         z1_expected = [[-1.0, -1.0, 1.0, 1.0],
                        [-t2, -t2, -t2, np.sqrt(3.)],
                        [1.0, -1.0, 1.0, -1.0]]
@@ -1216,8 +1216,8 @@ class TestVariability(TestCase):
         z1 = stats.zscore(x, axis=1)
 
         z0_expected = [[-t1, -t3/2, -t3/2, 0.0],
-                       [0.0,  t3,   -t3/2,  t1],
-                       [t1,  -t3/2,  t3,   -t1]]
+                       [0.0, t3, -t3/2, t1],
+                       [t1, -t3/2, t3, -t1]]
         z1_expected = [[-1.0, -1.0, 1.0, 1.0],
                        [-t2, -t2, -t2, np.sqrt(3.)],
                        [1.0, -1.0, 1.0, -1.0]]
@@ -1746,9 +1746,9 @@ def test_ttest_1samp_new():
 
 def test_describe():
     x = np.vstack((np.ones((3,4)),2*np.ones((2,4))))
-    nc, mmc = (5, ([1.,  1.,  1.,  1.], [2.,  2.,  2.,  2.]))
-    mc = np.array([1.4,  1.4,  1.4,  1.4])
-    vc = np.array([0.3,  0.3,  0.3,  0.3])
+    nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
+    mc = np.array([1.4, 1.4, 1.4, 1.4])
+    vc = np.array([0.3, 0.3, 0.3, 0.3])
     skc = [0.40824829046386357]*4
     kurtc = [-1.833333333333333]*4
     n, mm, m, v, sk, kurt = stats.describe(x)
@@ -1770,7 +1770,7 @@ def test_describe():
 def test_normalitytests():
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
-    pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502,  0.98880019)
+    pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
     x = np.array((-2,-1,0,1,2,3)*4)**2
     yield assert_array_almost_equal, stats.normaltest(x), (st_normal, pv_normal)
     yield assert_array_almost_equal, stats.skewtest(x), (st_skew, pv_skew)
@@ -1870,8 +1870,8 @@ def test_obrientransform():
     # I didn't separately verigy the numbers
     x1 = np.arange(5)
     result = np.array(
-      [[5.41666667,   1.04166667,  -0.41666667,   1.04166667,  5.41666667],
-       [21.66666667,   4.16666667,  -1.66666667,   4.16666667, 21.66666667]])
+      [[5.41666667, 1.04166667, -0.41666667, 1.04166667, 5.41666667],
+       [21.66666667, 4.16666667, -1.66666667, 4.16666667, 21.66666667]])
     assert_array_almost_equal(stats.obrientransform(x1, 2*x1), result, decimal=8)
 
 
@@ -1923,25 +1923,25 @@ class HarMeanTestCase:
     def test_2daxis0(self):
         ''' Test a 2d list with axis=0'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([22.88135593,  39.13043478,  52.90076336,  65.45454545])
+        b = np.array([22.88135593, 39.13043478, 52.90076336, 65.45454545])
         self.do(a, b, axis=0)
 
     def test_2daxis1(self):
         ''' Test a 2d list with axis=1'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([19.2,   63.03939962,  103.80078637])
+        b = np.array([19.2, 63.03939962, 103.80078637])
         self.do(a, b, axis=1)
 
     def test_2dmatrixdaxis0(self):
         ''' Test a 2d list with axis=0'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[22.88135593,  39.13043478,  52.90076336,  65.45454545]])
+        b = np.matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
         self.do(np.matrix(a), b, axis=0)
 
     def test_2dmatrixaxis1(self):
         ''' Test a 2d list with axis=1'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[19.2,   63.03939962,  103.80078637]]).T
+        b = np.matrix([[19.2, 63.03939962, 103.80078637]]).T
         self.do(np.matrix(a), b, axis=1)
 ##    def test_dtype(self):
 ##        ''' Test a 1d list with a new dtype'''
@@ -2004,25 +2004,25 @@ class GeoMeanTestCase:
     def test_2daxis0(self):
         ''' Test a 2d list with axis=0'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([35.56893304,  49.32424149,  61.3579244,  72.68482371])
+        b = np.array([35.56893304, 49.32424149, 61.3579244, 72.68482371])
         self.do(a, b, axis=0)
 
     def test_2daxis1(self):
         ''' Test a 2d list with axis=1'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.array([22.13363839,   64.02171746,  104.40086817])
+        b = np.array([22.13363839, 64.02171746, 104.40086817])
         self.do(a, b, axis=1)
 
     def test_2dmatrixdaxis0(self):
         ''' Test a 2d list with axis=0'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[35.56893304,  49.32424149,  61.3579244,  72.68482371]])
+        b = np.matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
         self.do(np.matrix(a), b, axis=0)
 
     def test_2dmatrixaxis1(self):
         ''' Test a 2d list with axis=1'''
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        b = np.matrix([[22.13363839,   64.02171746,  104.40086817]]).T
+        b = np.matrix([[22.13363839, 64.02171746, 104.40086817]]).T
         self.do(np.matrix(a), b, axis=1)
 
 ##    def test_dtype(self):
@@ -2118,15 +2118,15 @@ class Test_Trim(object):
         assert_equal(stats.trimboth(np.arange(24).reshape(6,4), 0.2),
                      np.arange(4,20).reshape(4,4))
         assert_equal(stats.trimboth(np.arange(24).reshape(4,6).T, 2/6.),
-               np.array([[2,  8, 14, 20],[3,  9, 15, 21]]))
+               np.array([[2, 8, 14, 20],[3, 9, 15, 21]]))
         assert_raises(ValueError, stats.trimboth,
                np.arange(24).reshape(4,6).T, 4/6.)
 
     def test_trim_mean(self):
         assert_equal(stats.trim_mean(np.arange(24).reshape(4,6).T, 2/6.),
-                        np.array([2.5,   8.5,  14.5,  20.5]))
+                        np.array([2.5, 8.5, 14.5, 20.5]))
         assert_equal(stats.trim_mean(np.arange(24).reshape(4,6), 2/6.),
-                        np.array([9.,  10.,  11.,  12.,  13.,  14.]))
+                        np.array([9., 10., 11., 12., 13., 14.]))
         assert_equal(stats.trim_mean(np.arange(24), 2/6.), 11.5)
         assert_equal(stats.trim_mean([5,4,3,1,2,0], 2/6.), 2.5)
 

@@ -616,7 +616,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
     ix = input.shape[axes[1]]
     if reshape:
         mtrx = numpy.array([[m11, -m21],
-                               [-m12,  m22]], dtype=numpy.float64)
+                               [-m12, m22]], dtype=numpy.float64)
         minc = [0, 0]
         maxc = [0, 0]
         coor = numpy.dot(mtrx, [0, ix])

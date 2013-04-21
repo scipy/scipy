@@ -23,8 +23,8 @@ class MyCanvas(wxScrolledWindow):
 
         self.SetBackgroundColour(wxNamedColor("WHITE"))
         EVT_LEFT_DOWN(self, self.OnLeftButtonEvent)
-        EVT_LEFT_UP(self,   self.OnLeftButtonEvent)
-        EVT_MOTION(self,    self.OnLeftButtonEvent)
+        EVT_LEFT_UP(self, self.OnLeftButtonEvent)
+        EVT_MOTION(self, self.OnLeftButtonEvent)
 
         EVT_PAINT(self, self.OnPaint)
 

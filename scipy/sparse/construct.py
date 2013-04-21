@@ -255,8 +255,8 @@ def eye(m, n=None, k=0, dtype=float, format=None):
         # fast branch for special formats
         if format in ['csr', 'csc']:
             indptr = np.arange(n+1, dtype=np.intc)
-            indices = np.arange(n,   dtype=np.intc)
-            data = np.ones(n,     dtype=dtype)
+            indices = np.arange(n, dtype=np.intc)
+            data = np.ones(n, dtype=dtype)
             cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
             return cls((data,indices,indptr),(n,n))
         elif format == 'coo':
@@ -504,7 +504,7 @@ def bmat(blocks, format=None, dtype=None):
 
     M,N = blocks.shape
 
-    block_mask = np.zeros(blocks.shape,    dtype=np.bool)
+    block_mask = np.zeros(blocks.shape, dtype=np.bool)
     brow_lengths = np.zeros(blocks.shape[0], dtype=np.intc)
     bcol_lengths = np.zeros(blocks.shape[1], dtype=np.intc)
 

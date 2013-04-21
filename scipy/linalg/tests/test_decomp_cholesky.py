@@ -114,13 +114,13 @@ class TestCholeskyBanded(TestCase):
 
     def test_upper_complex(self):
         # Hermitian positive definite banded matrix `a`
-        a = array([[4.0, 1.0,  0.0,  0.0],
-                    [1.0, 4.0,  0.5,  0.0],
-                    [0.0, 0.5,  4.0, -0.2j],
-                    [0.0, 0.0,  0.2j, 4.0]])
+        a = array([[4.0, 1.0, 0.0, 0.0],
+                    [1.0, 4.0, 0.5, 0.0],
+                    [0.0, 0.5, 4.0, -0.2j],
+                    [0.0, 0.0, 0.2j, 4.0]])
         # Banded storage form of `a`.
         ab = array([[-1.0, 1.0, 0.5, -0.2j],
-                     [4.0, 4.0, 4.0,  4.0]])
+                     [4.0, 4.0, 4.0, 4.0]])
         c = cholesky_banded(ab, lower=False)
         ufac = zeros_like(a)
         ufac[list(range(4)),list(range(4))] = c[-1]
@@ -152,12 +152,12 @@ class TestCholeskyBanded(TestCase):
 
     def test_lower_complex(self):
         # Hermitian positive definite banded matrix `a`
-        a = array([[4.0, 1.0,  0.0,  0.0],
-                    [1.0, 4.0,  0.5,  0.0],
-                    [0.0, 0.5,  4.0, -0.2j],
-                    [0.0, 0.0,  0.2j, 4.0]])
+        a = array([[4.0, 1.0, 0.0, 0.0],
+                    [1.0, 4.0, 0.5, 0.0],
+                    [0.0, 0.5, 4.0, -0.2j],
+                    [0.0, 0.0, 0.2j, 4.0]])
         # Banded storage form of `a`.
-        ab = array([[4.0, 4.0, 4.0,  4.0],
+        ab = array([[4.0, 4.0, 4.0, 4.0],
                     [1.0, 0.5, 0.2j, -1.0]])
         c = cholesky_banded(ab, lower=True)
         lfac = zeros_like(a)
