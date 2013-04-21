@@ -1026,13 +1026,13 @@ class ODR(object):
 
         # make a list to convert iprint digits to/from argument inputs
         #                   rptfile, stdout
-        ip2arg = [[0, 0], # none,  none
-                  [1, 0], # short, none
-                  [2, 0], # long,  none
-                  [1, 1], # short, short
-                  [2, 1], # long,  short
-                  [1, 2], # short, long
-                  [2, 2]] # long,  long
+        ip2arg = [[0, 0],  # none,  none
+                  [1, 0],  # short, none
+                  [2, 0],  # long,  none
+                  [1, 1],  # short, short
+                  [2, 1],  # long,  short
+                  [1, 2],  # short, long
+                  [2, 2]]  # long,  long
 
         if (self.rptfile is None and
             (so_init is not None or

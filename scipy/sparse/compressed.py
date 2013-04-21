@@ -55,7 +55,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                             self.format)
 
         else:
-            #must be dense
+            # must be dense
             try:
                 arg1 = np.asarray(arg1)
             except:
@@ -109,7 +109,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 - False - basic check, O(1) operations
 
         """
-        #use _swap to determine proper bounds
+        # use _swap to determine proper bounds
         major_name,minor_name = self._swap(('row','column'))
         major_dim,minor_dim = self._swap(self.shape)
 
@@ -147,7 +147,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         self.prune()
 
         if full_check:
-            #check format validity (more expensive)
+            # check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= minor_dim:
                     raise ValueError("%s index values must be < %d" %
@@ -159,18 +159,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                     raise ValueError("index pointer values must form a "
                                         "non-decreasing sequence")
 
-        #if not self.has_sorted_indices():
+        # if not self.has_sorted_indices():
         #    warn('Indices were not in sorted order.  Sorting indices.')
         #    self.sort_indices()
         #    assert(self.has_sorted_indices())
-        #TODO check for duplicates?
+        # TODO check for duplicates?
 
     def __add__(self,other):
         # First check if argument is a scalar
         if isscalarlike(other):
             if other == 0:
                 return self.copy()
-            else: # Now we would add this scalar to every element.
+            else:  # Now we would add this scalar to every element.
                 raise NotImplementedError('adding a nonzero scalar to a '
                                           'sparse matrix is not supported')
         elif isspmatrix(other):
@@ -192,7 +192,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         if isscalarlike(other):
             if other == 0:
                 return self.copy()
-            else: # Now we would add this scalar to every element.
+            else:  # Now we would add this scalar to every element.
                 raise NotImplementedError('adding a nonzero scalar to a '
                                           'sparse matrix is not supported')
         elif isspmatrix(other):
@@ -207,11 +207,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             raise NotImplementedError
 
     def __rsub__(self,other):  # other - self
-        #note: this can't be replaced by other + (-self) for unsigned types
+        # note: this can't be replaced by other + (-self) for unsigned types
         if isscalarlike(other):
             if other == 0:
                 return -self.copy()
-            else: # Now we would add this scalar to every element.
+            else:  # Now we would add this scalar to every element.
                 raise NotImplementedError('adding a nonzero scalar to a '
                                           'sparse matrix is not supported')
         elif isdense(other):
@@ -264,7 +264,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
     def _mul_multivector(self, other):
         M,N = self.shape
-        n_vecs = other.shape[1] # number of column vectors
+        n_vecs = other.shape[1]  # number of column vectors
 
         result = np.zeros((M,n_vecs), dtype=upcast_char(self.dtype.char,
                                                         other.dtype.char))
@@ -282,7 +282,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         major_axis = self._swap((M,N))[0]
         indptr = np.empty(major_axis + 1, dtype=np.intc)
 
-        other = self.__class__(other) # convert to this format
+        other = self.__class__(other)  # convert to this format
         fn = getattr(sparsetools, self.format + '_matmat_pass1')
         fn(M, N, self.indptr, self.indices,
                   other.indptr, other.indices,
@@ -302,7 +302,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
     def diagonal(self):
         """Returns the main diagonal of the matrix
         """
-        #TODO support k-th diagonal
+        # TODO support k-th diagonal
         fn = getattr(sparsetools, self.format + "_diagonal")
         y = np.empty(min(self.shape), dtype=upcast(self.dtype))
         fn(self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)
@@ -329,8 +329,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             row = key[0]
             col = key[1]
 
-            #TODO implement CSR[ [1,2,3], X ] with sparse matmat
-            #TODO make use of sorted indices
+            # TODO implement CSR[ [1,2,3], X ] with sparse matmat
+            # TODO make use of sorted indices
 
             if isintlike(row) and isintlike(col):
                 return self._get_single_element(row,col)
@@ -386,8 +386,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         if stop <= start:
             raise ValueError("slice width must be >= 1")
 
-        #TODO make [i,:] faster
-        #TODO implement [i,x:y:z]
+        # TODO make [i,:] faster
+        # TODO implement [i,x:y:z]
 
         indices = []
 
@@ -479,7 +479,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             val = self.dtype.type(val)
 
             if num_matches == 0:
-                #entry not already present
+                # entry not already present
                 warn('changing the sparsity structure of a %s_matrix is expensive. '
                         'lil_matrix is more efficient.' % self.format,
                         SparseEfficiencyWarning)
@@ -500,10 +500,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 self.indptr[major_index+1:] += 1
 
             elif num_matches == 1:
-                #entry appears exactly once
+                # entry appears exactly once
                 self.data[start:end][indxs[0]] = val
             else:
-                #entry appears more than once
+                # entry appears more than once
                 raise ValueError('nonzero entry (%d,%d) occurs more than once'
                                 % (row,col))
 
@@ -562,7 +562,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         M,N = self._swap(self.shape)
         fn(M, N, self.indptr, self.indices, self.data)
 
-        self.prune() # nnz may have changed
+        self.prune()  # nnz may have changed
 
     def sum_duplicates(self):
         """Eliminate duplicate matrix entries by adding them together
@@ -575,7 +575,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         M,N = self._swap(self.shape)
         fn(M, N, self.indptr, self.indices, self.data)
 
-        self.prune() # nnz may have changed
+        self.prune()  # nnz may have changed
 
     def __get_sorted(self):
         """Determine whether the matrix has sorted indices
@@ -586,7 +586,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         """
 
-        #first check to see if result was cached
+        # first check to see if result was cached
         if not hasattr(self,'__has_sorted_indices'):
             fn = sparsetools.csr_has_sorted_indices
             self.__has_sorted_indices = \
@@ -607,7 +607,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         # an alternative that has linear complexity is the following
         # although the previous option is typically faster
-        #return self.toother().toother()
+        # return self.toother().toother()
 
     def sort_indices(self):
         """Sort the indices of this matrix *in place*
@@ -671,7 +671,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         indices = indices[:actual_nnz]
         data    = data[:actual_nnz]
         if actual_nnz < maxnnz // 2:
-            #too much waste, trim arrays
+            # too much waste, trim arrays
             indices = indices.copy()
             data    = data.copy()
 

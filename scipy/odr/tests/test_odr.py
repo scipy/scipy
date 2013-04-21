@@ -164,7 +164,7 @@ class TestODR(TestCase):
             if multi_x[i] < 100.0:
                 multi_ifixx[i] = 0
             elif multi_x[i] <= 150.0:
-                pass # defaults are fine
+                pass  # defaults are fine
             elif multi_x[i] <= 1000.0:
                 multi_delta[i] = 25.0
             elif multi_x[i] <= 10000.0:

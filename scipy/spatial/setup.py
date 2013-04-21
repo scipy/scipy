@@ -33,7 +33,7 @@ def configuration(parent_package='', top_path=None):
                          sources=['qhull.c'] + qhull_src,
                          **cfg)
 
-    config.add_extension('ckdtree', sources=['ckdtree.c']) # FIXME: cython
+    config.add_extension('ckdtree', sources=['ckdtree.c'])  # FIXME: cython
 
     config.add_extension('_distance_wrap',
         sources=[join('src', 'distance_wrap.c'), join('src', 'distance.c')],

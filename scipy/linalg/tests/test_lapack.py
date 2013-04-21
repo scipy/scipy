@@ -42,8 +42,8 @@ class TestFlapackSimple(TestCase):
 
             ba,lo,hi,pivscale,info = f(a1,permute=1,scale=1)
             assert_(not info,repr(info))
-            #print a1
-            #print ba,lo,hi,pivscale
+            # print a1
+            # print ba,lo,hi,pivscale
 
     def test_gehrd(self):
         a = [[-149, -50,-154],
@@ -67,7 +67,7 @@ class TestFlapackSimple(TestCase):
         for dtype in 'fdFD':
             a1, b1, c1 = a.astype(dtype), b.astype(dtype), c.astype(dtype)
             trsyl, = get_lapack_funcs(('trsyl',), (a1,))
-            if dtype.isupper(): # is complex dtype
+            if dtype.isupper():  # is complex dtype
                 a1[0] += 1j
                 trans = 'C'
 
@@ -86,12 +86,12 @@ class TestLapack(TestCase):
 
     def test_flapack(self):
         if hasattr(flapack,'empty_module'):
-            #flapack module is empty
+            # flapack module is empty
             pass
 
     def test_clapack(self):
         if hasattr(clapack,'empty_module'):
-            #clapack module is empty
+            # clapack module is empty
             pass
 
 

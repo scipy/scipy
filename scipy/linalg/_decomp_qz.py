@@ -18,7 +18,7 @@ _double_precision = ['i','l','d']
 def _select_function(sort, typ):
     if typ in ['F','D']:
         if callable(sort):
-            #assume the user knows what they're doing
+            # assume the user knows what they're doing
             sfunction = sort
         elif sort == 'lhp':
             sfunction = lambda x,y: (np.real(x/y) < 0.0)
@@ -33,7 +33,7 @@ def _select_function(sort, typ):
                 "one of ('lhp','rhp','iuc','ouc')")
     elif typ in ['f','d']:
         if callable(sort):
-            #assume the user knows what they're doing
+            # assume the user knows what they're doing
             sfunction = sort
         elif sort == 'lhp':
             sfunction = lambda x,y,z: (np.real((x+y*1j)/z) < 0.0)
@@ -46,7 +46,7 @@ def _select_function(sort, typ):
         else:
             raise ValueError("sort parameter must be None, a callable, or "
                 "one of ('lhp','rhp','iuc','ouc')")
-    else: # to avoid an error later
+    else:  # to avoid an error later
         raise ValueError("dtype %s not understood" % typ)
     return sfunction
 
@@ -234,9 +234,9 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise LinAlgError("Reordering failed in <s,d,c,z>tgsen")
 
     # output for real
-    #AA, BB, sdim, alphar, alphai, beta, vsl, vsr, work, info
+    # AA, BB, sdim, alphar, alphai, beta, vsl, vsr, work, info
     # output for complex
-    #AA, BB, sdim, alphai, beta, vsl, vsr, work, info
+    # AA, BB, sdim, alphai, beta, vsl, vsr, work, info
     if sort_t == 0:
         return result[0], result[1], result[-4], result[-3]
     else:

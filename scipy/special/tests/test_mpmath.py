@@ -564,7 +564,7 @@ def _time_limited(timeout=0.5, return_val=np.nan, use_sigalrm=True):
                 def trace(frame, event, arg):
                     if time.time() - start_time > timeout:
                         raise _TimeoutError()
-                    return None # turn off tracing except at function calls
+                    return None  # turn off tracing except at function calls
                 sys.settrace(trace)
                 try:
                     return func(*a, **kw)

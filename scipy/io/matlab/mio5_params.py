@@ -49,7 +49,7 @@ mxINT64_CLASS = 14
 mxUINT64_CLASS = 15
 mxFUNCTION_CLASS = 16
 # Not doing anything with these at the moment.
-mxOPAQUE_CLASS = 17 # This appears to be a function workspace
+mxOPAQUE_CLASS = 17  # This appears to be a function workspace
 # https://www-old.cae.wisc.edu/pipermail/octave-maintainers/2007-May/002824.html
 mxOBJECT_CLASS_FROM_MATRIX_H = 18
 

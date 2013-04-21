@@ -306,7 +306,7 @@ def kron(A, B, format=None):
     B = coo_matrix(B)
 
     if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
-        #B is fairly dense, use BSR
+        # B is fairly dense, use BSR
         A = csr_matrix(A,copy=True)
 
         output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
@@ -321,7 +321,7 @@ def kron(A, B, format=None):
 
         return bsr_matrix((data,A.indices,A.indptr), shape=output_shape)
     else:
-        #use COO
+        # use COO
         A = coo_matrix(A)
         output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
@@ -390,7 +390,7 @@ def kronsum(A, B, format=None):
     L = kron(eye(B.shape[0],dtype=dtype), A, format=format)
     R = kron(B, eye(A.shape[0],dtype=dtype), format=format)
 
-    return (L+R).asformat(format) # since L + R is not always same format
+    return (L+R).asformat(format)  # since L + R is not always same format
 
 
 def hstack(blocks, format=None, dtype=None):

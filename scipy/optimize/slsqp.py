@@ -347,7 +347,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     while 1:
 
-        if mode == 0 or mode == 1: # objective and constraint evaluation requird
+        if mode == 0 or mode == 1:  # objective and constraint evaluation requird
 
             # Compute objective function
             fx = func(x)
@@ -366,7 +366,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             # Now combine c_eq and c_ieq into a single matrix
             c = concatenate((c_eq, c_ieq))
 
-        if mode == 0 or mode == -1: # gradient evaluation required
+        if mode == 0 or mode == -1:  # gradient evaluation required
 
             # Compute the derivatives of the objective function
             # For some reason SLSQP wants g dimensioned to n+1
@@ -376,17 +376,17 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             if cons['eq']:
                 a_eq = vstack([con['jac'](x, *con['args'])
                                for con in cons['eq']])
-            else: # no equality constraint
+            else:  # no equality constraint
                 a_eq = zeros((meq, n))
 
             if cons['ineq']:
                 a_ieq = vstack([con['jac'](x, *con['args'])
                                 for con in cons['ineq']])
-            else: # no inequality constraint
+            else:  # no inequality constraint
                 a_ieq = zeros((mieq, n))
 
             # Now combine a_eq and a_ieq into a single a matrix
-            if m == 0: # no constraints
+            if m == 0:  # no constraints
                 a = zeros((la, n))
             else:
                 a = vstack((a_eq, a_ieq))

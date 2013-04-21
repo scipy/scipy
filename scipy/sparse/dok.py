@@ -78,10 +78,10 @@ class dok_matrix(spmatrix, dict):
         spmatrix.__init__(self)
 
         self.dtype = getdtype(dtype, default=float)
-        if isinstance(arg1, tuple) and isshape(arg1): # (M,N)
+        if isinstance(arg1, tuple) and isshape(arg1):  # (M,N)
             M, N = arg1
             self.shape = (M, N)
-        elif isspmatrix(arg1): # Sparse ctor
+        elif isspmatrix(arg1):  # Sparse ctor
             if isspmatrix_dok(arg1) and copy:
                 arg1 = arg1.copy()
             else:
@@ -93,7 +93,7 @@ class dok_matrix(spmatrix, dict):
             self.update(arg1)
             self.shape = arg1.shape
             self.dtype = arg1.dtype
-        else: # Dense ctor
+        else:  # Dense ctor
             try:
                 arg1 = np.asarray(arg1)
             except:
@@ -339,7 +339,7 @@ class dok_matrix(spmatrix, dict):
                     aij = self.get((i, j), 0) + other
                     if aij != 0:
                         new[i, j] = aij
-            #new.dtype.char = self.dtype.char
+            # new.dtype.char = self.dtype.char
         elif isinstance(other, dok_matrix):
             if other.shape != self.shape:
                 raise ValueError("matrix dimensions are not equal")
@@ -399,16 +399,16 @@ class dok_matrix(spmatrix, dict):
         return new
 
     def _mul_vector(self, other):
-        #matrix * vector
+        # matrix * vector
         result = np.zeros(self.shape[0], dtype=upcast(self.dtype,other.dtype))
         for (i,j),v in iteritems(self):
             result[i] += v * other[j]
         return result
 
     def _mul_multivector(self, other):
-        #matrix * multivector
+        # matrix * multivector
         M,N = self.shape
-        n_vecs = other.shape[1] # number of column vectors
+        n_vecs = other.shape[1]  # number of column vectors
         result = np.zeros((M,n_vecs), dtype=upcast(self.dtype,other.dtype))
         for (i,j),v in iteritems(self):
             result[i,:] += v * other[j,:]
@@ -419,7 +419,7 @@ class dok_matrix(spmatrix, dict):
             # Multiply this scalar by every element.
             for (key, val) in iteritems(self):
                 self[key] = val * other
-            #new.dtype.char = self.dtype.char
+            # new.dtype.char = self.dtype.char
             return self
         else:
             return NotImplementedError
@@ -430,7 +430,7 @@ class dok_matrix(spmatrix, dict):
             # Multiply this scalar by every element.
             for (key, val) in iteritems(self):
                 new[key] = val / other
-            #new.dtype.char = self.dtype.char
+            # new.dtype.char = self.dtype.char
             return new
         else:
             return self.tocsr() / other
@@ -477,7 +477,7 @@ class dok_matrix(spmatrix, dict):
         new = dok_matrix(dtype=self.dtype)    # what should the dimensions be ?!
         indx = int((columns == 1))
         N = len(cols_or_rows)
-        if indx: # columns
+        if indx:  # columns
             for key in self.keys():
                 num = np.searchsorted(cols_or_rows, key[1])
                 if num < N:

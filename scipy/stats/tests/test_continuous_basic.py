@@ -26,8 +26,8 @@ TODO:
 
 """
 
-#currently not used
-DECIMAL = 5 # specify the precision of the tests  # increased from 0 to 5
+# currently not used
+DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 DECIMAL_kurt = 0
 
 distcont = [
@@ -74,7 +74,7 @@ distcont = [
     ['hypsecant', ()],
     ['invgamma', (2.0668996136993067,)],
     ['invgauss', (0.14546264555347513,)],
-    ['invweibull', (10.58,)], # sample mean test fails at(0.58847112119264788,)]
+    ['invweibull', (10.58,)],  # sample mean test fails at(0.58847112119264788,)]
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
     ['johnsonsu', (2.554395574161155, 2.2482281679651965)],
     ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
@@ -91,7 +91,7 @@ distcont = [
     ['lognorm', (0.95368226960575331,)],
     ['lomax', (1.8771398388773268,)],
     ['maxwell', ()],
-    ['mielke', (10.4, 3.6)], # sample mean test fails for (4.6420495492121487, 0.59707419545516938)],
+    ['mielke', (10.4, 3.6)],  # sample mean test fails for (4.6420495492121487, 0.59707419545516938)],
                              # mielke: good results if 2nd parameter >2, weird mean or var below
     ['nakagami', (4.9673794866666237,)],
     ['ncf', (27, 27, 0.41578441799226107)],
@@ -124,13 +124,13 @@ distcont = [
     ['wrapcauchy', (0.031071279018614728,)]]
 
 # for testing only specific functions
-##distcont = [
+# distcont = [
 ##    ['erlang', (20,)],    #correction numargs = 1
 ##    ['fatiguelife', (29,)],   #correction numargs = 1
 ##    ['loggamma', (0.41411931826052117,)]]
 
 # for testing ticket:767
-##distcont = [
+# distcont = [
 ##    ['genextreme', (3.3184017469423535,)],
 ##    ['genextreme', (0.01,)],
 ##    ['genextreme', (0.00001,)],
@@ -138,12 +138,12 @@ distcont = [
 ##    ['genextreme', (-0.01,)]
 ##    ]
 
-##distcont = [['gumbel_l', ()],
+# distcont = [['gumbel_l', ()],
 ##            ['gumbel_r', ()],
 ##            ['norm', ()]
 ##            ]
 
-##distcont = [['norm', ()]]
+# distcont = [['norm', ()]]
 
 distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
     'loglaplace', 'rdist', 'semicircular', 'invweibull', 'ksone',
@@ -156,7 +156,7 @@ distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
 distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
             'vonmises', 'rice', 'mielke', 'semicircular', 'cosine', 'invweibull',
             'powerlognorm', 'johnsonsu', 'kstwobign']
-#distslow are sorted by speed (very slow to slow)
+# distslow are sorted by speed (very slow to slow)
 
 
 def _silence_fp_errors(func):
@@ -189,7 +189,7 @@ def test_cont_basic():
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
-        #yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
+        # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
         yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
@@ -222,7 +222,7 @@ def test_cont_basic_slow():
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
-        #yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
+        # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
         yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
@@ -230,7 +230,7 @@ def test_cont_basic_slow():
         yield check_pdf_logpdf, distfn, arg, distname
         yield check_cdf_logcdf, distfn, arg, distname
         yield check_sf_logsf, distfn, arg, distname
-        #yield check_oth, distfn, arg # is still missing
+        # yield check_oth, distfn, arg # is still missing
         if distname in distmissing:
             alpha = 0.01
             yield check_distribution_rvs, distname, arg, alpha, rvs
@@ -246,21 +246,21 @@ def check_moment(distfn, arg, m, v, msg):
     else:                     # or np.isnan(m1),
         npt.assert_(np.isinf(m1),
                msg + ' - 1st moment -infinite, m1=%s' % str(m1))
-        #np.isnan(m1) temporary special treatment for loggamma
+        # np.isnan(m1) temporary special treatment for loggamma
     if not np.isinf(v):
         npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg=msg +
                             ' - 2ndt moment')
     else:                     # or np.isnan(m2),
         npt.assert_(np.isinf(m2),
                msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
-        #np.isnan(m2) temporary special treatment for loggamma
+        # np.isnan(m2) temporary special treatment for loggamma
 
 
 @_silence_fp_errors
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
-    #this did not work, skipped silently by nose
-    #check_sample_meanvar, sm, m, msg + 'sample mean test'
-    #check_sample_meanvar, sv, v, msg + 'sample var test'
+    # this did not work, skipped silently by nose
+    # check_sample_meanvar, sm, m, msg + 'sample mean test'
+    # check_sample_meanvar, sv, v, msg + 'sample var test'
     if not np.isinf(m):
         check_sample_mean(sm, sv, sn, m)
     if not np.isinf(v):
@@ -286,7 +286,7 @@ Returns: t-value, two-tailed prob
     t = (sm-popmean)/np.sqrt(svar*(1.0/n))
     prob = stats.betai(0.5*df,0.5,df/(df+t*t))
 
-    #return t,prob
+    # return t,prob
     npt.assert_(prob > 0.01, 'mean fail, t,prob = %f, %f, m,sm=%f,%f' % (t,prob,popmean,sm))
 
 
@@ -347,8 +347,8 @@ def check_pdf(distfn, arg, msg):
         pdfv = distfn.pdf(median, *arg)
     cdfdiff = (distfn.cdf(median + eps, *arg) -
                distfn.cdf(median - eps, *arg))/eps/2.0
-    #replace with better diff and better test (more points),
-    #actually, this works pretty well
+    # replace with better diff and better test (more points),
+    # actually, this works pretty well
     npt.assert_almost_equal(pdfv, cdfdiff,
                 decimal=DECIMAL, err_msg=msg + ' - cdf-pdf relationship')
 
@@ -391,8 +391,8 @@ def check_cdf_logcdf(distfn, args, msg):
 
 @_silence_fp_errors
 def check_distribution_rvs(dist, args, alpha, rvs):
-    #test from scipy.stats.tests
-    #this version reuses existing random variables
+    # test from scipy.stats.tests
+    # this version reuses existing random variables
     D,pval = stats.kstest(rvs, dist, args=args, N=1000)
     if (pval < alpha):
         D,pval = stats.kstest(dist,'',args=args, N=1000)
@@ -401,5 +401,5 @@ def check_distribution_rvs(dist, args, alpha, rvs):
 
 
 if __name__ == "__main__":
-    #nose.run(argv=['', __file__])
+    # nose.run(argv=['', __file__])
     nose.runmodule(argv=[__file__,'-s'], exit=False)

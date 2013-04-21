@@ -127,10 +127,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         elif isinstance(arg1,tuple):
             if isshape(arg1):
-                #it's a tuple of matrix dimensions (M,N)
+                # it's a tuple of matrix dimensions (M,N)
                 self.shape  = arg1
                 M,N = self.shape
-                #process blocksize
+                # process blocksize
                 if blocksize is None:
                     blocksize = (1,1)
                 else:
@@ -160,7 +160,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             else:
                 raise ValueError('unrecognized bsr_matrix constructor usage')
         else:
-            #must be dense
+            # must be dense
             try:
                 arg1 = np.asarray(arg1)
             except:
@@ -186,7 +186,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         if self.shape is None:
             if shape is None:
-                #TODO infer shape here
+                # TODO infer shape here
                 raise ValueError('need to infer shape')
             else:
                 self.shape = shape
@@ -244,7 +244,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         self.prune()
 
         if full_check:
-            #check format validity (more expensive)
+            # check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= N//C:
                     raise ValueError("column index values must be < %d (now max %d)" % (N//C, self.indices.max()))
@@ -254,7 +254,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                     raise ValueError("index pointer values must form a "
                                         "non-decreasing sequence")
 
-        #if not self.has_sorted_indices():
+        # if not self.has_sorted_indices():
         #    warn('Indices were not in sorted order. Sorting indices.')
         #    self.sort_indices(check_first=False)
 
@@ -323,7 +323,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     def _mul_multivector(self,other):
         R,C = self.blocksize
         M,N = self.shape
-        n_vecs = other.shape[1] # number of column vectors
+        n_vecs = other.shape[1]  # number of column vectors
 
         result = np.zeros((M,n_vecs), dtype=upcast(self.dtype,other.dtype))
 
@@ -341,7 +341,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         R,n = self.blocksize
 
-        #convert to this format
+        # convert to this format
         if isspmatrix_bsr(other):
             C = other.blocksize[1]
         else:
@@ -350,7 +350,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         from .csr import isspmatrix_csr
 
         if isspmatrix_csr(other) and n == 1:
-            other = other.tobsr(blocksize=(n,C), copy=False) # lightweight conversion
+            other = other.tobsr(blocksize=(n,C), copy=False)  # lightweight conversion
         else:
             other = other.tobsr(blocksize=(n,C))
 
@@ -370,7 +370,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         data = data.reshape(-1,R,C)
 
-        #TODO eliminate zeros
+        # TODO eliminate zeros
 
         return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C))
 
@@ -388,7 +388,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
     def tocsr(self):
         return self.tocoo(copy=False).tocsr()
-        #TODO make this more efficient
+        # TODO make this more efficient
 
     def tocsc(self):
         return self.tocoo(copy=False).tocsc()
@@ -447,12 +447,12 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         R,C = self.blocksize
         M,N = self.shape
 
-        mask = (self.data != 0).reshape(-1,R*C).sum(axis=1) # nonzero blocks
+        mask = (self.data != 0).reshape(-1,R*C).sum(axis=1)  # nonzero blocks
 
         nonzero_blocks = mask.nonzero()[0]
 
         if len(nonzero_blocks) == 0:
-            return # nothing to do
+            return  # nothing to do
 
         self.data[:len(nonzero_blocks)] = self.data[nonzero_blocks]
 

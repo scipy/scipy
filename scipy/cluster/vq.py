@@ -344,9 +344,9 @@ def py_vq2(obs, code_book):
     diff = obs[newaxis, :, :] - code_book[:,newaxis,:]
     dist = sqrt(np.sum(diff * diff, -1))
     code = argmin(dist, 0)
-    min_dist = minimum.reduce(dist, 0) # the next line I think is equivalent
+    min_dist = minimum.reduce(dist, 0)  # the next line I think is equivalent
                                       #  - and should be faster
-    #min_dist = choose(code,dist) # but in practice, didn't seem to make
+    # min_dist = choose(code,dist) # but in practice, didn't seem to make
                                   # much difference.
     return code, min_dist
 
@@ -391,10 +391,10 @@ def _kmeans(obs, guess, thresh=1e-5):
     diff = thresh+1.
     while diff > thresh:
         nc = code_book.shape[0]
-        #compute membership and distances between obs and code_book
+        # compute membership and distances between obs and code_book
         obs_code, distort = vq(obs, code_book)
         avg_dist.append(mean(distort, axis=-1))
-        #recalc code_book as centroids of associated obs
+        # recalc code_book as centroids of associated obs
         if(diff > thresh):
             has_members = []
             for i in arange(nc):
@@ -402,11 +402,11 @@ def _kmeans(obs, guess, thresh=1e-5):
                 if cell_members.shape[0] > 0:
                     code_book[i] = mean(cell_members, 0)
                     has_members.append(i)
-            #remove code_books that didn't have any members
+            # remove code_books that didn't have any members
             code_book = take(code_book, has_members, 0)
         if len(avg_dist) > 1:
             diff = avg_dist[-2] - avg_dist[-1]
-    #print avg_dist
+    # print avg_dist
     return code_book, avg_dist[-1]
 
 
@@ -508,14 +508,14 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
                              guess)
         result = _kmeans(obs, guess, thresh=thresh)
     else:
-        #initialize best distance value to a large value
+        # initialize best distance value to a large value
         best_dist = np.inf
         No = obs.shape[0]
         k = k_or_guess
         if k < 1:
             raise ValueError("Asked for 0 cluster ? ")
         for i in range(iter):
-            #the intial code book is randomly selected from observations
+            # the intial code book is randomly selected from observations
             guess = take(obs, randint(0, No, k), 0)
             book, dist = _kmeans(obs, guess, thresh=thresh)
             if dist < best_dist:
@@ -666,7 +666,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     nd  = np.ndim(data)
     if nd == 1:
         d = 1
-        #raise ValueError("Input of rank 1 not supported yet")
+        # raise ValueError("Input of rank 1 not supported yet")
     elif nd == 2:
         d = data.shape[1]
     else:
@@ -733,14 +733,14 @@ def _kmeans2(data, code, niter, nc, missing):
 
 if __name__  == '__main__':
     pass
-    #import _vq
-    #a = np.random.randn(4, 2)
-    #b = np.random.randn(2, 2)
+    # import _vq
+    # a = np.random.randn(4, 2)
+    # b = np.random.randn(2, 2)
 
-    #print _vq.vq(a, b)
-    #print _vq.vq(np.array([[1], [2], [3], [4], [5], [6.]]),
+    # print _vq.vq(a, b)
+    # print _vq.vq(np.array([[1], [2], [3], [4], [5], [6.]]),
     #             np.array([[2.], [5.]]))
-    #print _vq.vq(np.array([1, 2, 3, 4, 5, 6.]), np.array([2., 5.]))
-    #_vq.vq(a.astype(np.float32), b.astype(np.float32))
-    #_vq.vq(a, b.astype(np.float32))
-    #_vq.vq([0], b)
+    # print _vq.vq(np.array([1, 2, 3, 4, 5, 6.]), np.array([2., 5.]))
+    # _vq.vq(a.astype(np.float32), b.astype(np.float32))
+    # _vq.vq(a, b.astype(np.float32))
+    # _vq.vq([0], b)

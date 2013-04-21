@@ -22,7 +22,7 @@ def sakurai(n):
     B = sparse.spdiags([d2,d1,d0,d1,d2],[-2,-1,0,1,2],n,n)
 
     k = arange(1,n+1)
-    w_ex = sort(1./(16.*pow(cos(0.5*k*pi/(n+1)),4))) # exact eigenvalues
+    w_ex = sort(1./(16.*pow(cos(0.5*k*pi/(n+1)),4)))  # exact eigenvalues
 
     return A,B, w_ex
 
@@ -32,7 +32,7 @@ m = 3  # Blocksize
 # Large scale
 #
 n = 2500
-A,B, w_ex = sakurai(n) # Mikota pair
+A,B, w_ex = sakurai(n)  # Mikota pair
 X = rand(n,m)
 data = []
 tt = time.clock()

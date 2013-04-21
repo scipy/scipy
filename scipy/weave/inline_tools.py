@@ -80,7 +80,7 @@ class inline_ext_function(ext_tools.ext_function):
         decl_code = indent(self.arg_declaration_code(),4)
         cleanup_code = indent(self.arg_cleanup_code(),4)
         function_code = indent(self.code_block,4)
-        #local_dict_code = indent(self.arg_local_dict_code(),4)
+        # local_dict_code = indent(self.arg_local_dict_code(),4)
 
         try_code = \
             '    try                              \n' \
@@ -396,7 +396,7 @@ def attempt_function_call(code,local_dict,global_dict):
             function_catalog.fast_cache(code,func)
             function_cache[code] = func
             return results
-        except TypeError as msg: # should specify argument types here.
+        except TypeError as msg:  # should specify argument types here.
             # This should really have its own error type, instead of
             # checking the beginning of the message, but I don't know
             # how to define that yet.
@@ -420,7 +420,7 @@ def attempt_function_call(code,local_dict,global_dict):
             function_catalog.fast_cache(code,func)
             function_cache[code] = func
             return results
-        except: # should specify argument types here.
+        except:  # should specify argument types here.
             pass
     # if we get here, the function wasn't found
     raise ValueError('function with correct signature not found')
@@ -455,7 +455,7 @@ def compile_function(code,arg_names,local_dict,global_dict,
                      **kw):
     # figure out where to store and what to name the extension module
     # that will contain the function.
-    #storage_dir = catalog.intermediate_dir()
+    # storage_dir = catalog.intermediate_dir()
     code = ndarray_api_version + '\n' + code
     module_path = function_catalog.unique_module_name(code, module_dir)
     storage_dir, module_name = os.path.split(module_path)

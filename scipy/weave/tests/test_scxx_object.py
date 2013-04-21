@@ -165,7 +165,7 @@ class Foo:
     def bar3(self,val1,val2,val3=1):
         return val1, val2, val3
 
-#class StrObj:
+# class StrObj:
 #    def __str__(self):
 #        return "b"
 
@@ -593,7 +593,7 @@ class TestObjectCall(TestCase):
             return (1,2,3)
         res = inline_tools.inline('return_val = Foo.call();',['Foo'])
         assert_equal(res,(1,2,3))
-        assert_equal(sys.getrefcount(res),3) # should be 2?
+        assert_equal(sys.getrefcount(res),3)  # should be 2?
 
     @dec.slow
     def test_args(self):
@@ -940,7 +940,7 @@ class TestObjectSetItemOpKey(TestCase):
         a = UserDict()
         key = 1.0
         inline_tools.inline('a[key] = 123.0;',['a','key'])
-        assert_equal(sys.getrefcount(key),4) # should be 3
+        assert_equal(sys.getrefcount(key),4)  # should be 3
         assert_equal(sys.getrefcount(a[key]),2)
         assert_equal(a[key],123.0)
 
@@ -949,7 +949,7 @@ class TestObjectSetItemOpKey(TestCase):
         a = UserDict()
         key = 1+1j
         inline_tools.inline("a[key] = 1234;",['a','key'])
-        assert_equal(sys.getrefcount(key),4) # should be 3
+        assert_equal(sys.getrefcount(key),4)  # should be 3
         assert_equal(sys.getrefcount(a[key]),2)
         assert_equal(a[key],1234)
 

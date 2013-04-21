@@ -79,7 +79,7 @@ class _Database(object):
         f.close()
 
     def __getitem__(self, key):
-        pos, siz = self._index[key] # may raise KeyError
+        pos, siz = self._index[key]  # may raise KeyError
         f = _open(self._datfile, 'rb')
         f.seek(pos)
         dat = f.read(siz)

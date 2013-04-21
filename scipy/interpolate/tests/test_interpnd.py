@@ -214,7 +214,7 @@ class TestCloughTocher2DInterpolator(object):
             lambda x, y: np.cos(2*np.pi*x)*np.sin(2*np.pi*y)
         ]
 
-        np.random.seed(4321) # use a different seed than the check!
+        np.random.seed(4321)  # use a different seed than the check!
         grid = np.r_[np.array([(0,0), (0,1), (1,0), (1,1)], dtype=float),
                      np.random.rand(30*30, 2)]
 

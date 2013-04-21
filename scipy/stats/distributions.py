@@ -382,14 +382,14 @@ def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
         if g1 is None or mu2 is None or mu is None:
             val = moment_func(3,*args)
         else:
-            mu3 = g1*(mu2**1.5) # 3rd central moment
-            val = mu3+3*mu*mu2+mu**3 # 3rd non-central moment
+            mu3 = g1*(mu2**1.5)  # 3rd central moment
+            val = mu3+3*mu*mu2+mu**3  # 3rd non-central moment
     elif (n == 4):
         if g1 is None or g2 is None or mu2 is None or mu is None:
             val = moment_func(4,*args)
         else:
-            mu4 = (g2+3.0)*(mu2**2.0) # 4th central moment
-            mu3 = g1*(mu2**1.5) # 3rd central moment
+            mu4 = (g2+3.0)*(mu2**2.0)  # 4th central moment
+            mu3 = g1*(mu2**1.5)  # 3rd central moment
             val = mu4+4*mu*mu3+6*mu*mu*mu2+mu**4
     else:
         val = moment_func(n, *args)
@@ -1021,13 +1021,13 @@ class rv_continuous(rv_generic):
         self.expandarr = 1
 
         if not hasattr(self,'numargs'):
-            #allows more general subclassing with *args
+            # allows more general subclassing with *args
             cdf_signature = inspect.getargspec(get_method_function(self._cdf))
             numargs1 = len(cdf_signature[0]) - 2
             pdf_signature = inspect.getargspec(get_method_function(self._pdf))
             numargs2 = len(pdf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
-        #nin correction
+        # nin correction
         self.vecfunc = sgf(self._ppf_single_call,otypes='d')
         self.vecfunc.nin = self.numargs + 1
         self.vecentropy = sgf(self._entropy,otypes='d')
@@ -1040,7 +1040,7 @@ class rv_continuous(rv_generic):
             self.generic_moment = sgf(self._mom0_sc,otypes='d')
         else:
             self.generic_moment = sgf(self._mom1_sc,otypes='d')
-        self.generic_moment.nin = self.numargs+1 # Because of the *args argument
+        self.generic_moment.nin = self.numargs+1  # Because of the *args argument
         # of _mom0_sc, vectorize cannot count the number of arguments correctly.
 
         if longname is None:
@@ -1100,13 +1100,13 @@ class rv_continuous(rv_generic):
             right = self.b
 
         factor = 10.
-        if not left: # i.e. self.a = -inf
+        if not left:  # i.e. self.a = -inf
             left = -1.*factor
             while self._ppf_to_solve(left, q,*args) > 0.:
                 right = left
                 left *= factor
             # left is now such that cdf(left) < q
-        if not right: # i.e. self.b = inf
+        if not right:  # i.e. self.b = inf
             right = factor
             while self._ppf_to_solve(right, q,*args) < 0.:
                 left = right
@@ -1174,7 +1174,7 @@ class rv_continuous(rv_generic):
         return self.vecfunc(q,*args)
 
     def _isf(self, q, *args):
-        return self._ppf(1.0-q,*args) # use correct _ppf for subclasses
+        return self._ppf(1.0-q,*args)  # use correct _ppf for subclasses
 
     # The actual cacluation functions (no basic checking need be done)
     #  If these are defined, the others won't be looked at.
@@ -1573,7 +1573,7 @@ class rv_continuous(rv_generic):
         if g1 is None:
             mu3 = None
         else:
-            mu3 = g1*np.power(mu2,1.5) # (mu2**1.5) breaks down for nan and inf
+            mu3 = g1*np.power(mu2,1.5)  # (mu2**1.5) breaks down for nan and inf
         default = valarray(shape(cond), self.badvalue)
         output = []
 
@@ -1595,7 +1595,7 @@ class rv_continuous(rv_generic):
                         mu = self._munp(1.0,*goodargs)
                     mu2 = mu2p - mu*mu
                 if np.isinf(mu):
-                    #if mean is inf then var is also inf
+                    # if mean is inf then var is also inf
                     mu2 = np.inf
                 out0 = default.copy()
                 place(out0,cond,mu2*scale*scale)
@@ -1631,7 +1631,7 @@ class rv_continuous(rv_generic):
                 out0 = default.copy()
                 place(out0,cond,g2)
                 output.append(out0)
-        else: # no valid args
+        else:  # no valid args
             output = []
             for _ in moments:
                 out0 = default.copy()
@@ -1930,7 +1930,7 @@ class rv_continuous(rv_generic):
         output = zeros(shape(cond0),'d')
         place(output,(1-cond0),self.badvalue)
         goodargs = argsreduce(cond0, *args)
-        #I don't know when or why vecentropy got broken when numargs == 0
+        # I don't know when or why vecentropy got broken when numargs == 0
         if self.numargs == 0:
             place(output,cond0,self._entropy()+log(scale))
         else:
@@ -2206,7 +2206,7 @@ class arcsine_gen(rv_continuous):
         return sin(pi/2.0*q)**2.0
 
     def _stats(self):
-        #mup = 0.5, 3.0/8.0, 15.0/48.0, 35.0/128.0
+        # mup = 0.5, 3.0/8.0, 15.0/48.0, 35.0/128.0
         mu = 0.5
         mu2 = 1.0/8
         g1 = 0
@@ -2288,7 +2288,7 @@ class beta_gen(rv_continuous):
             a = xbar * fac
             b = (1-xbar) * fac
             return a, b, floc, fscale
-        else: # do general fit
+        else:  # do general fit
             return super(beta_gen, self).fit(data, *args, **kwds)
 beta = beta_gen(a=0.0, b=1.0, name='beta', shapes='a, b')
 
@@ -2591,9 +2591,9 @@ class chi2_gen(rv_continuous):
         return exp(self._logpdf(x, df))
 
     def _logpdf(self, x, df):
-        #term1 = (df/2.-1)*log(x)
-        #term1[(df==2)*(x==0)] = 0
-        #avoid 0*log(0)==nan
+        # term1 = (df/2.-1)*log(x)
+        # term1[(df==2)*(x==0)] = 0
+        # avoid 0*log(0)==nan
         return (df/2.-1)*log(x+1e-300) - x/2. - gamln(df/2.) - (log(2)*df)/2.
 ##        Px = x**(df/2.0-1)*exp(-x/2.0)
 ##        Px /= special.gamma(df/2.0)* 2**(df/2.0)
@@ -2687,7 +2687,7 @@ class dgamma_gen(rv_continuous):
 
     def _sf(self, x, a):
         fac = 0.5*special.gammainc(a,abs(x))
-        #return where(x>0,0.5-0.5*fac,0.5+0.5*fac)
+        # return where(x>0,0.5-0.5*fac,0.5+0.5*fac)
         return where(x > 0,0.5-fac,0.5+fac)
 
     def _ppf(self, q, a):
@@ -3376,11 +3376,11 @@ class genextreme_gen(rv_continuous):
         min = np.minimum
         max = np.maximum
         sml = floatinfo.machar.xmin
-        #self.b = where(c > 0, 1.0 / c,inf)
-        #self.a = where(c < 0, 1.0 / c, -inf)
+        # self.b = where(c > 0, 1.0 / c,inf)
+        # self.a = where(c < 0, 1.0 / c, -inf)
         self.b = where(c > 0, 1.0 / max(c, sml),inf)
         self.a = where(c < 0, 1.0 / min(c,-sml), -inf)
-        return where(abs(c) == inf, 0, 1) # True #(c!=0)
+        return where(abs(c) == inf, 0, 1)  # True #(c!=0)
 
     def _pdf(self, x, c):
         ##        ex2 = 1-c*x
@@ -3394,17 +3394,17 @@ class genextreme_gen(rv_continuous):
         pex2 = exp(logpex2)
         # % Handle special cases
         logpdf = where((cx == 1) | (cx == -inf),-inf,-pex2+logpex2-logex2)
-        putmask(logpdf,(c == 1) & (x == 1),0.0) # logpdf(c==1 & x==1) = 0; % 0^0 situation
+        putmask(logpdf,(c == 1) & (x == 1),0.0)  # logpdf(c==1 & x==1) = 0; % 0^0 situation
 
         return exp(logpdf)
 
     def _cdf(self, x, c):
-        #return exp(-pow(1-c*x,1.0/c))
+        # return exp(-pow(1-c*x,1.0/c))
         loglogcdf = where((c == 0)*(x == x),-x,log1p(-c*x)/c)
         return exp(-exp(loglogcdf))
 
     def _ppf(self, q, c):
-        #return 1.0/c*(1.-(-log(q))**c)
+        # return 1.0/c*(1.-(-log(q))**c)
         x = -log(-log(q))
         return where((c == 0)*(x == x),x,-expm1(-c*x)/c)
 
@@ -4039,7 +4039,7 @@ class invweibull_gen(rv_continuous):
     """
     def _pdf(self, x, c):
         xc1 = x**(-c-1.0)
-        #xc2 = xc1*x
+        # xc2 = xc1*x
         xc2 = x**(-c)
         xc2 = exp(-xc2)
         return c*xc1*xc2
@@ -4692,7 +4692,7 @@ class ncf_gen(rv_continuous):
         Px *= (n2+n1*x)**(-(n1+n2)/2)
         Px *= special.assoc_laguerre(-nc*n1*x/(2.0*(n2+n1*x)),n2/2,n1/2-1)
         Px /= special.beta(n1/2,n2/2)
-         #this function does not have a return
+         # this function does not have a return
          #   drop it for now, the generic function seems to work ok
 
     def _cdf(self, x, dfn, dfd, nc):
@@ -4739,9 +4739,9 @@ class t_gen(rv_continuous):
     """
     def _rvs(self, df):
         return mtrand.standard_t(df, size=self._size)
-        #Y = f.rvs(df, df, size=self._size)
-        #sY = sqrt(Y)
-        #return 0.5*sqrt(df)*(sY-1.0/sY)
+        # Y = f.rvs(df, df, size=self._size)
+        # sY = sqrt(Y)
+        # return 0.5*sqrt(df)*(sY-1.0/sY)
 
     def _pdf(self, x, df):
         r = asarray(df*1.0)
@@ -5219,7 +5219,7 @@ class rdist_gen(rv_continuous):
         return np.power((1.0-x*x),c/2.0-1) / special.beta(0.5,c/2.0)
 
     def _cdf_skip(self, x, c):
-        #error inspecial.hyp2f1 for some values see tickets 758, 759
+        # error inspecial.hyp2f1 for some values see tickets 758, 759
         return 0.5 + x/special.beta(0.5,c/2.0) * \
                special.hyp2f1(0.5,1.0-c/2.0,1.5,x*x)
 
@@ -5366,7 +5366,7 @@ class recipinvgauss_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, mu): # added, taken from invgauss
+    def _rvs(self, mu):  # added, taken from invgauss
         return 1.0/mtrand.wald(mu, 1.0, size=self._size)
 
     def _pdf(self, x, mu):
@@ -5494,15 +5494,15 @@ class truncexpon_gen(rv_continuous):
         return -log(1-q+q*exp(-b))
 
     def _munp(self, n, b):
-        #wrong answer with formula, same as in continuous.pdf
-        #return gam(n+1)-special.gammainc(1+n,b)
+        # wrong answer with formula, same as in continuous.pdf
+        # return gam(n+1)-special.gammainc(1+n,b)
         if n == 1:
             return (1-(b+1)*exp(-b))/(-expm1(-b))
         elif n == 2:
             return 2*(1-0.5*(b*b+2*b+2)*exp(-b))/(-expm1(-b))
         else:
-            #return generic for higher moments
-            #return rv_continuous._mom1_sc(self,n, b)
+            # return generic for higher moments
+            # return rv_continuous._mom1_sc(self,n, b)
             return self._mom1_sc(n, b)
 
     def _entropy(self, b):
@@ -5752,9 +5752,9 @@ class wrapcauchy_gen(rv_continuous):
         c1 = x < pi
         c2 = 1-c1
         xp = extract(c1,x)
-        #valp = extract(c1,val)
+        # valp = extract(c1,val)
         xn = extract(c2,x)
-        #valn = extract(c2,val)
+        # valn = extract(c2,val)
         if (any(xn)):
             valn = extract(c2, np.ones_like(x)*val)
             xn = 2*pi - xn
@@ -5867,13 +5867,13 @@ def _drv_moment_gen(self, t, *args):
 
 def _drv2_moment(self, n, *args):
     """Non-central moment of discrete distribution."""
-    #many changes, originally not even a return
+    # many changes, originally not even a return
     tot = 0.0
     diff = 1e100
-    #pos = self.a
+    # pos = self.a
     pos = max(0.0, 1.0*self.a)
     count = 0
-    #handle cases with infinite support
+    # handle cases with infinite support
     ulimit = max(1000, (min(self.b,1000) + max(self.a,-1000))/2.0)
     llimit = min(-1000, (min(self.b,1000) + max(self.a,-1000))/2.0)
 
@@ -5886,13 +5886,13 @@ def _drv2_moment(self, n, *args):
         pos += self.inc
         count += 1
 
-    if self.a < 0: # handle case when self.a = -inf
+    if self.a < 0:  # handle case when self.a = -inf
         diff = 1e100
         pos = -self.inc
         while (pos >= self.a) and ((pos >= llimit) or
                                    (diff > self.moment_tol)):
             diff = np.power(pos, n) * self.pmf(pos,*args)
-            #using pmf instead of _pmf, see above
+            # using pmf instead of _pmf, see above
             tot += diff
             pos -= self.inc
             count += 1
@@ -5935,10 +5935,10 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
         if (qb == q):
             return b
         if b <= a+1:
-    #testcase: return wrong number at lower index
-    #python -c "from scipy.stats import zipf;print zipf.ppf(0.01,2)" wrong
-    #python -c "from scipy.stats import zipf;print zipf.ppf([0.01,0.61,0.77,0.83],2)"
-    #python -c "from scipy.stats import logser;print logser.ppf([0.1,0.66, 0.86,0.93],0.6)"
+    # testcase: return wrong number at lower index
+    # python -c "from scipy.stats import zipf;print zipf.ppf(0.01,2)" wrong
+    # python -c "from scipy.stats import zipf;print zipf.ppf([0.01,0.61,0.77,0.83],2)"
+    # python -c "from scipy.stats import logser;print logser.ppf([0.1,0.66, 0.86,0.93],0.6)"
             if qa > q:
                 return a
             else:
@@ -6198,20 +6198,20 @@ class rv_discrete(rv_generic):
             numargs2 = len(pmf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
 
-            #nin correction needs to be after we know numargs
-            #correct nin for generic moment vectorization
+            # nin correction needs to be after we know numargs
+            # correct nin for generic moment vectorization
             self.vec_generic_moment = sgf(_drv2_moment, otypes='d')
             self.vec_generic_moment.nin = self.numargs + 2
             self.generic_moment = instancemethod(self.vec_generic_moment,
                                                  self, rv_discrete)
 
-            #correct nin for ppf vectorization
+            # correct nin for ppf vectorization
             _vppf = sgf(_drv2_ppfsingle,otypes='d')
-            _vppf.nin = self.numargs + 2 # +1 is for self
+            _vppf.nin = self.numargs + 2  # +1 is for self
             self._vecppf = instancemethod(_vppf,
                                           self, rv_discrete)
 
-        #now that self.numargs is defined, we can adjust nin
+        # now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1
 
         # generate docstring for subclass instances
@@ -6597,7 +6597,7 @@ class rv_discrete(rv_generic):
         cond2 = (q == 1) & cond0
         cond = cond0 & cond1
         output = valarray(shape(cond),value=self.badvalue,typecode='d')
-        #output type 'd' to handle nin and inf
+        # output type 'd' to handle nin and inf
         place(output,(q == 0)*(cond == cond), self.a-1)
         place(output,cond2,self.b)
         if any(cond):
@@ -6637,16 +6637,16 @@ class rv_discrete(rv_generic):
         cond1 = (q > 0) & (q < 1)
         cond2 = (q == 1) & cond0
         cond = cond0 & cond1
-        #old:
+        # old:
 ##        output = valarray(shape(cond),value=self.b,typecode='d')
 ##        #typecode 'd' to handle nin and inf
 ##        place(output,(1-cond0)*(cond1==cond1), self.badvalue)
 ##        place(output,cond2,self.a-1)
 
-        #same problem as with ppf
+        # same problem as with ppf
         # copied from ppf and changed
         output = valarray(shape(cond),value=self.badvalue,typecode='d')
-        #output type 'd' to handle nin and inf
+        # output type 'd' to handle nin and inf
         place(output,(q == 0)*(cond == cond), self.b)
         place(output,cond2,self.a-1)
 
@@ -6654,7 +6654,7 @@ class rv_discrete(rv_generic):
         if any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
-            place(output,cond,self._isf(*goodargs) + loc) # PB same as ticket 766
+            place(output,cond,self._isf(*goodargs) + loc)  # PB same as ticket 766
 
         if output.ndim == 0:
             return output[()]
@@ -6692,7 +6692,7 @@ class rv_discrete(rv_generic):
         if N > self.numargs:
             if N == self.numargs + 1 and loc is None:  # loc is given without keyword
                 loc = args[-1]
-            elif N == self.numargs + 2 and moments is None: # loc, scale, and moments
+            elif N == self.numargs + 2 and moments is None:  # loc, scale, and moments
                 loc, moments = args[-2:]
             else:
                 raise TypeError("Too many input arguments.")
@@ -6911,26 +6911,26 @@ class rv_discrete(rv_generic):
 
         """
 
-        #moment_tol = 1e-12 # increase compared to self.moment_tol,
+        # moment_tol = 1e-12 # increase compared to self.moment_tol,
         # too slow for only small gain in precision for zipf
 
-        #avoid endless loop with unbound integral, eg. var of zipf(2)
+        # avoid endless loop with unbound integral, eg. var of zipf(2)
         maxcount = 1000
         suppnmin = 100  # minimum number of points to evaluate (+ and -)
 
         if func is None:
             def fun(x):
-                #loc and args from outer scope
+                # loc and args from outer scope
                 return (x+loc)*self._pmf(x, *args)
         else:
             def fun(x):
-                #loc and args from outer scope
+                # loc and args from outer scope
                 return func(x+loc)*self._pmf(x, *args)
         # used pmf because _pmf does not check support in randint
         # and there might be problems(?) with correct self.a, self.b at this stage
         # maybe not anymore, seems to work now with _pmf
 
-        self._argcheck(*args) # (re)generate scalar self.a and self.b
+        self._argcheck(*args)  # (re)generate scalar self.a and self.b
         if lb is None:
             lb = (self.a)
         else:
@@ -6941,7 +6941,7 @@ class rv_discrete(rv_generic):
             ub = ub - loc   # convert bound for standardized distribution
         if conditional:
             if np.isposinf(ub)[()]:
-                #work around bug: stats.poisson.sf(stats.poisson.b, 2) is nan
+                # work around bug: stats.poisson.sf(stats.poisson.b, 2) is nan
                 invfac = 1 - self.cdf(lb-1,*args)
             else:
                 invfac = 1 - self.cdf(lb-1,*args) - self.sf(ub,*args)
@@ -6952,14 +6952,14 @@ class rv_discrete(rv_generic):
         low, upp = self._ppf(0.001, *args), self._ppf(0.999, *args)
         low = max(min(-suppnmin, low), lb)
         upp = min(max(suppnmin, upp), ub)
-        supp = np.arange(low, upp+1, self.inc) # check limits
-        #print 'low, upp', low, upp
+        supp = np.arange(low, upp+1, self.inc)  # check limits
+        # print 'low, upp', low, upp
         tot = np.sum(fun(supp))
         diff = 1e100
         pos = upp + self.inc
         count = 0
 
-        #handle cases with infinite support
+        # handle cases with infinite support
 
         while (pos <= ub) and (diff > self.moment_tol) and count <= maxcount:
             diff = fun(pos)
@@ -6967,7 +6967,7 @@ class rv_discrete(rv_generic):
             pos += self.inc
             count += 1
 
-        if self.a < 0: # handle case when self.a = -inf
+        if self.a < 0:  # handle case when self.a = -inf
             diff = 1e100
             pos = low - self.inc
             while (pos >= lb) and (diff > self.moment_tol) and count <= maxcount:
@@ -7136,7 +7136,7 @@ class nbinom_gen(rv_discrete):
         return special.betainc(n, k+1, p)
 
     def _sf_skip(self, x, n, p):
-        #skip because special.nbdtrc doesn't work for 0<n<1
+        # skip because special.nbdtrc doesn't work for 0<n<1
         k = floor(x)
         return special.nbdtrc(k,n,p)
 
@@ -7283,8 +7283,8 @@ class hypergeom_gen(rv_discrete):
             + gamln(N+1)
 
     def _pmf(self, k, M, n, N):
-        #same as the following but numerically more precise
-        #return comb(good,k) * comb(bad,N-k) / comb(tot,N)
+        # same as the following but numerically more precise
+        # return comb(good,k) * comb(bad,N-k) / comb(tot,N)
         return exp(self._logpmf(k, M, n, N))
 
     def _stats(self, M, n, N):
@@ -7745,7 +7745,7 @@ class skellam_gen(rv_discrete):
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0, ncx2.pdf(2*mu2, 2*(1-x), 2*mu1)*2,
                          ncx2.pdf(2*mu1, 2*(x+1), 2*mu2)*2)
-        #ncx2.pdf() returns nan's for extremely low probabilities
+        # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):

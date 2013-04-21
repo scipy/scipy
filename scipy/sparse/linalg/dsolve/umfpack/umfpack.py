@@ -14,7 +14,7 @@ from scipy.lib.six import iteritems
 
 import numpy as np
 import scipy.sparse as sp
-try: # Silence import error.
+try:  # Silence import error.
     from . import _umfpack as _um
 except:
     _um = None
@@ -558,8 +558,8 @@ class UmfpackContext(Struct):
                                       self._numeric, self.control, self.info)
             sol.real, sol.imag = sreal, simag
 
-        #self.funs.report_info( self.control, self.info )
-        #pause()
+        # self.funs.report_info( self.control, self.info )
+        # pause()
         if status != UMFPACK_OK:
             if status == UMFPACK_WARNING_singular_matrix:
                 ## Change inf, nan to zeros.
@@ -652,11 +652,11 @@ class UmfpackContext(Struct):
                 LU = P(R^-1)AQ   when do_recip is false
         """
 
-        #this should probably be changed
+        # this should probably be changed
         mtx = mtx.tocsc()
         self.numeric(mtx)
 
-        #first find out how much space to reserve
+        # first find out how much space to reserve
         (status, lnz, unz, n_row, n_col, nz_udiag)\
                  = self.funs.get_lunz(self._numeric)
 
@@ -664,7 +664,7 @@ class UmfpackContext(Struct):
             raise RuntimeError('%s failed with %s' % (self.funs.get_lunz,
                                                        umfStatus[status]))
 
-        #allocate storage for decomposition data
+        # allocate storage for decomposition data
         i_type = mtx.indptr.dtype
 
         Lp = np.zeros((n_row+1,), dtype=i_type)
@@ -698,7 +698,7 @@ class UmfpackContext(Struct):
             return (L,U,P,Q,R,bool(do_recip))
 
         else:
-            #allocate additional storage for imaginary parts
+            # allocate additional storage for imaginary parts
             Lz = np.zeros((lnz,), dtype=np.double)
             Uz = np.zeros((unz,), dtype=np.double)
             Dz = np.zeros((min(n_row,n_col),), dtype=np.double)

@@ -131,7 +131,7 @@ def mvsdist(data):
         raise ValueError("Need at least 2 data-points.")
     xbar = x.mean()
     C = x.var()
-    if (n > 1000): # gaussian approximations for large n
+    if (n > 1000):  # gaussian approximations for large n
         mdist = distributions.norm(loc=xbar, scale=math.sqrt(C/n))
         sdist = distributions.norm(loc=math.sqrt(C), scale=math.sqrt(C/(2.*n)))
         vdist = distributions.norm(loc=C, scale=math.sqrt(2.0/n)*C)
@@ -434,8 +434,8 @@ def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
     if plot is not None:
         plot.plot(svals, ppcc, 'x')
         plot.title('(%s) PPCC Plot' % dist)
-        plot.xlabel('Prob Plot Corr. Coef.')# ,deltay=-0.01)
-        plot.ylabel('Shape Values')# ,deltax=-0.01)
+        plot.xlabel('Prob Plot Corr. Coef.')  # ,deltay=-0.01)
+        plot.ylabel('Shape Values')  # ,deltax=-0.01)
     return svals, ppcc
 
 
@@ -556,7 +556,7 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
     ppcc = svals*0.0
     k = 0
     for sval in svals:
-        #JP: this doesn't use sval, creates constant ppcc, and horizontal line
+        # JP: this doesn't use sval, creates constant ppcc, and horizontal line
         z = boxcox(x,sval)  # JP: this was missing
         r1,r2 = probplot(z,dist='norm',fit=1)
         ppcc[k] = r2[-1]
@@ -740,7 +740,7 @@ def anderson(x,dist='norm'):
         sig = array([25,10,5,2.5,1,0.5])
         critical = around(_Avals_logistic / (1.0+0.25/N),3)
     else:  # (dist == 'gumbel') or (dist == 'extreme1'):
-        #the following is incorrect, see ticket:1097
+        # the following is incorrect, see ticket:1097
 ##        def fixedsolve(th,xj,N):
 ##            val = stats.sum(xj)*1.0/N
 ##            tmp = exp(-xj/th)
@@ -843,7 +843,7 @@ def ansari(x,y):
     if repeats:   # adjust variance estimates
         # compute sum(tj * rj**2,axis=0)
         fac = sum(symrank**2,axis=0)
-        if N % 2: # N odd
+        if N % 2:  # N odd
             varAB = m*n*(16*N*fac-(N+1)**4)/(16.0 * N**2 * (N-1))
         else:  # N even
             varAB = m*n*(16*fac-N*(N+2)**2)/(16.0 * N * (N-1))
@@ -894,7 +894,7 @@ def bartlett(*args):
     numer = (Ntot*1.0-k)*log(spsq) - sum((Ni-1.0)*log(ssq),axis=0)
     denom = 1.0 + (1.0/(3*(k-1)))*((sum(1.0/(Ni-1.0),axis=0))-1.0/(Ntot-k))
     T = numer / denom
-    pval = distributions.chi2.sf(T,k-1) # 1 - cdf
+    pval = distributions.chi2.sf(T,k-1)  # 1 - cdf
     return T, pval
 
 
@@ -970,7 +970,7 @@ def levene(*args,**kwds):
         func = lambda x: np.median(x, axis=0)
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
-    else: # center == 'trimmed'
+    else:  # center == 'trimmed'
         args = tuple(stats.trimboth(arg, proportiontocut) for arg in args)
         func = lambda x: np.mean(x, axis=0)
 
@@ -1001,7 +1001,7 @@ def levene(*args,**kwds):
     denom = (k-1.0)*dvar
 
     W = numer / denom
-    pval = distributions.f.sf(W,k-1,Ntot-k) # 1 - cdf
+    pval = distributions.f.sf(W,k-1,Ntot-k)  # 1 - cdf
     return W, pval
 
 
@@ -1143,7 +1143,7 @@ def fligner(*args,**kwds):
         func = lambda x: np.median(x, axis=0)
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
-    else: # center == 'trimmed'
+    else:  # center == 'trimmed'
         args = tuple(stats.trimboth(arg, proportiontocut) for arg in args)
         func = lambda x: np.mean(x, axis=0)
 
@@ -1166,7 +1166,7 @@ def fligner(*args,**kwds):
     anbar = np.mean(a, axis=0)
     varsq = np.var(a,axis=0, ddof=1)
     Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0,axis=0)/varsq
-    pval = distributions.chi2.sf(Xsq,k-1) # 1 - cdf
+    pval = distributions.chi2.sf(Xsq,k-1)  # 1 - cdf
     return Xsq, pval
 
 
@@ -1330,7 +1330,7 @@ def wilcoxon(x, y=None, zero_method="wilcox"):
         d = x-y
 
     if zero_method == "wilcox":
-        d = compress(not_equal(d, 0), d, axis=-1) # Keep all non-zero differences
+        d = compress(not_equal(d, 0), d, axis=-1)  # Keep all non-zero differences
 
     count = len(d)
     if (count < 10):
@@ -1500,23 +1500,23 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     return ((high-low)/2.0/pi) * sqrt(-2*log(R))
 
 
-#Tests to include (from R) -- some of these already in stats.
+# Tests to include (from R) -- some of these already in stats.
 ########
-#X Ansari-Bradley
-#X Bartlett (and Levene)
-#X Binomial
-#Y Pearson's Chi-squared (stats.chisquare)
-#Y Association Between Paired samples (stats.pearsonr, stats.spearmanr)
+# X Ansari-Bradley
+# X Bartlett (and Levene)
+# X Binomial
+# Y Pearson's Chi-squared (stats.chisquare)
+# Y Association Between Paired samples (stats.pearsonr, stats.spearmanr)
 #                       stats.kendalltau) -- these need work though
 # Fisher's exact test
-#X Fligner-Killeen Test
-#Y Friedman Rank Sum (stats.friedmanchisquare?)
-#Y Kruskal-Wallis
-#Y Kolmogorov-Smirnov
+# X Fligner-Killeen Test
+# Y Friedman Rank Sum (stats.friedmanchisquare?)
+# Y Kruskal-Wallis
+# Y Kolmogorov-Smirnov
 # Cochran-Mantel-Haenszel Chi-Squared for Count
 # McNemar's Chi-squared for Count
-#X Mood Two-Sample
-#X Test For Equal Means in One-Way Layout (see stats.ttest also)
+# X Mood Two-Sample
+# X Test For Equal Means in One-Way Layout (see stats.ttest also)
 # Pairwise Comparisons of proportions
 # Pairwise t tests
 # Tabulate p values for pairwise comparisons
@@ -1526,6 +1526,6 @@ def circstd(samples, high=2*pi, low=0, axis=None):
 # Equal or Given Proportions
 # Trend in Proportions
 # Quade Test
-#Y Student's T Test
-#Y F Test to compare two variances
-#XY Wilcoxon Rank Sum and Signed Rank Tests
+# Y Student's T Test
+# Y F Test to compare two variances
+# XY Wilcoxon Rank Sum and Signed Rank Tests

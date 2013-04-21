@@ -113,7 +113,7 @@ class lil_matrix(spmatrix):
             else:
                 raise TypeError('unrecognized lil_matrix constructor usage')
         else:
-            #assume A is dense
+            # assume A is dense
             try:
                 A = np.asmatrix(arg1)
             except TypeError:
@@ -134,7 +134,7 @@ class lil_matrix(spmatrix):
             raise ValueError("Only two-dimensional sparse arrays "
                                      "are supported.")
         try:
-            shape = int(shape[0]),int(shape[1]) # floats, other weirdness
+            shape = int(shape[0]),int(shape[1])  # floats, other weirdness
         except:
             raise TypeError('invalid shape')
 
@@ -319,7 +319,7 @@ class lil_matrix(spmatrix):
         """ helper for __setitem__: insert a value in the given row/data at
         column j. """
 
-        if j < 0: # handle negative column indices
+        if j < 0:  # handle negative column indices
             j += self.shape[1]
 
         if j < 0 or j >= self.shape[1]:

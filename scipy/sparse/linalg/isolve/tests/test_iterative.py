@@ -17,8 +17,8 @@ from scipy.sparse import spdiags, csr_matrix
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres
 
-#TODO check that method preserve shape and type
-#TODO test both preconditioner methods
+# TODO check that method preserve shape and type
+# TODO test both preconditioner methods
 
 
 class Case(object):
@@ -162,7 +162,7 @@ def check_convergence(solver, case):
 
     x, info = solver(A, b, x0=x0, tol=tol)
 
-    assert_array_equal(x0, 0*b) # ensure that x0 is not overwritten
+    assert_array_equal(x0, 0*b)  # ensure that x0 is not overwritten
     assert_equal(info,0)
     assert_normclose(A.dot(x), b, tol=tol)
 
@@ -300,7 +300,7 @@ class TestGMRES(TestCase):
         def store_residual(r, rvec):
             rvec[rvec.nonzero()[0].max()+1] = r
 
-        #Define, A,b
+        # Define, A,b
         A = csr_matrix(array([[-2,1,0,0,0,0],[1,-2,1,0,0,0],[0,1,-2,1,0,0],[0,0,1,-2,1,0],[0,0,0,1,-2,1],[0,0,0,0,1,-2]]))
         b = ones((A.shape[0],))
         maxiter = 1

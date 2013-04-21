@@ -143,7 +143,7 @@ class UnivariateSpline(object):
                        if 1/w[i] is an estimate of the standard
                        deviation of y[i].
         """
-        #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
+        # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         data = dfitpack.fpcurf0(x,y,k,w=w,
                                 xb=bbox[0],xe=bbox[1],s=s)
         if data[-1] == 1:
@@ -189,7 +189,7 @@ class UnivariateSpline(object):
         n = data[10]
         if nest is None:
             k,m = data[5],len(data[0])
-            nest = m+k+1 # this is the maximum bound for nest
+            nest = m+k+1  # this is the maximum bound for nest
         else:
             if not n <= nest:
                 raise ValueError("`nest` can only be increased")
@@ -346,7 +346,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
                        By default, bbox=[x[0],x[-1]]
           k=3        - degree of the univariate spline.
         """
-        #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
+        # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         self._data = dfitpack.fpcurf0(x,y,k,w=w,
                                       xb=bbox[0],xe=bbox[1],s=0)
         self._reset_class()
@@ -432,7 +432,7 @@ class LSQUnivariateSpline(UnivariateSpline):
                        By default, bbox=[x[0],x[-1]]
           k=3        - degree of the univariate spline.
         """
-        #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
+        # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
         xe = bbox[1]
         if xb is None:
@@ -647,7 +647,7 @@ class SmoothBivariateSpline(BivariateSpline):
                                                          xb,xe,yb,ye,
                                                          kx,ky,s=s,
                                                          eps=eps,lwrk2=1)
-        if ier in [0,-1,-2]: # normal return
+        if ier in [0,-1,-2]:  # normal return
             pass
         else:
             message = _surfit_messages.get(ier,'ier=%s' % (ier))
@@ -716,7 +716,7 @@ class LSQBivariateSpline(BivariateSpline):
             tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,
                                                    xb,xe,yb,ye,
                                                    kx,ky,eps,lwrk2=ier)
-        if ier in [0,-1,-2]: # normal return
+        if ier in [0,-1,-2]:  # normal return
             pass
         else:
             if ier < -2:

@@ -86,7 +86,7 @@ def as2d(ar):
     """
     if ar.ndim == 2:
         return ar
-    else: # Assume 1!
+    else:  # Assume 1!
         aux = np.array(ar, copy=False)
         aux.shape = (ar.shape[0], 1)
         return aux
@@ -143,7 +143,7 @@ def b_orthonormalize(B, blockVectorV,
         if B is not None:
             blockVectorBV = B(blockVectorV)
         else:
-            blockVectorBV = blockVectorV # Shared data!!!
+            blockVectorBV = blockVectorV  # Shared data!!!
     gramVBV = sp.dot(blockVectorV.T, blockVectorBV)
     gramVBV = sla.cholesky(gramVBV)
     gramVBV = sla.inv(gramVBV, overwrite_a=True)
@@ -246,7 +246,7 @@ def lobpcg(A, X,
     M = makeOperator(M, (n,n))
 
     if (n - sizeY) < (5 * sizeX):
-        #warn('The problem size is small compared to the block size.' \
+        # warn('The problem size is small compared to the block size.' \
         #        ' Using dense eigensolver instead of LOBPCG.')
 
         if blockVectorY is not None:
@@ -371,7 +371,7 @@ def lobpcg(A, X,
             ident = np.eye(currentBlockSize, dtype=A.dtype)
 
         if currentBlockSize == 0:
-            failureFlag = False # All eigenpairs converged.
+            failureFlag = False  # All eigenpairs converged.
             break
 
         if verbosityLevel > 0:

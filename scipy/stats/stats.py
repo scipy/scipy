@@ -533,9 +533,9 @@ def gmean(a, axis=0, dtype=None):
     arrays automatically mask any non-finite values.
 
     """
-    if not isinstance(a, np.ndarray): # if not an ndarray object attempt to convert it
+    if not isinstance(a, np.ndarray):  # if not an ndarray object attempt to convert it
         log_a = np.log(np.array(a, dtype=dtype))
-    elif dtype: # Must change the default dtype allowing array type
+    elif dtype:  # Must change the default dtype allowing array type
         if isinstance(a,np.ma.MaskedArray):
             log_a = np.log(np.ma.asarray(a, dtype=dtype))
         else:
@@ -587,7 +587,7 @@ def hmean(a, axis=0, dtype=None):
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a > 0): # Harmonic mean only defined if greater than zero
+    if np.all(a > 0):  # Harmonic mean only defined if greater than zero
         if isinstance(a, np.ma.MaskedArray):
             size = a.count(axis)
         else:
@@ -656,7 +656,7 @@ def cmedian(a, numbins=1000):
     else:
         cfbelow = cumhist[cfbin-1]       # cum. freq. below bin
     freq = hist[cfbin]                  # frequency IN the 50%ile bin
-    median = LRL + ((n/2.0-cfbelow)/float(freq))*binsize # MEDIAN
+    median = LRL + ((n/2.0-cfbelow)/float(freq))*binsize  # MEDIAN
     return median
 
 
@@ -1147,7 +1147,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
             np.place(vals, can_correct, nval+3.0)
 
     if vals.ndim == 0:
-        vals = vals.item() # array scalar
+        vals = vals.item()  # array scalar
 
     if fisher:
         return vals - 3
@@ -1193,7 +1193,7 @@ def describe(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    #mm = (np.minimum.reduce(a), np.maximum.reduce(a))
+    # mm = (np.minimum.reduce(a), np.maximum.reduce(a))
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
     v = np.var(a, axis=axis, ddof=1)
@@ -1305,8 +1305,8 @@ def kurtosistest(a, axis=0):
     Z = np.where(denom == 99, 0, Z)
     if Z.ndim == 0:
         Z = Z[()]
-    #JPNote: p-value sometimes larger than 1
-    #zprob uses upper tail, so Z needs to be positive
+    # JPNote: p-value sometimes larger than 1
+    # zprob uses upper tail, so Z needs to be positive
     return Z, 2 * distributions.norm.sf(np.abs(Z))
 
 
@@ -1991,7 +1991,7 @@ def sem(a, axis=0, ddof=1):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n) # JP check normalization
+    s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n)  # JP check normalization
     return s
 
 
@@ -2367,7 +2367,7 @@ def f_oneway(*args):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     """
-    args = list(map(np.asarray, args)) # convert to an numpy array
+    args = list(map(np.asarray, args))  # convert to an numpy array
     na = len(args)              # ANOVA on 'na' groups, each in it's own array
     alldata = np.concatenate(args)
     bign = len(alldata)
@@ -2858,7 +2858,7 @@ def kendalltau(x, y, initial_lexsort=True):
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
     n = np.int64(len(x))
-    temp = list(range(n)) # support structure used by mergesort
+    temp = list(range(n))  # support structure used by mergesort
     # this closure recursively sorts sections of perm[] by comparing
     # elements of y[perm[]] using temp[] as support
     # returns the number of swaps required by an equivalent bubble sort
@@ -3028,7 +3028,7 @@ def linregress(x, y=None):
             r = 1.0
         elif (r < -1.0):
             r = -1.0
-    #z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
+    # z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
     t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
     prob = distributions.t.sf(np.abs(t),df)*2
@@ -3112,7 +3112,7 @@ def ttest_1samp(a, popmean, axis=0):
 
 def _ttest_finish(df,t):
     """Common code between all 3 t-test functions."""
-    prob = distributions.t.sf(np.abs(t), df) * 2 # use np.abs to get upper tail
+    prob = distributions.t.sf(np.abs(t), df) * 2  # use np.abs to get upper tail
     if t.ndim == 0:
         t = t[()]
 
@@ -3413,7 +3413,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
 
     """
     if isinstance(rvs, string_types):
-        #cdf = getattr(stats, rvs).cdf
+        # cdf = getattr(stats, rvs).cdf
         if (not cdf) or (cdf == rvs):
             cdf = getattr(distributions, rvs).cdf
             rvs = getattr(distributions, rvs).rvs
@@ -3583,7 +3583,7 @@ def ks_2samp(data1, data2):
     cdf1 = np.searchsorted(data1,data_all,side='right')/(1.0*n1)
     cdf2 = (np.searchsorted(data2,data_all,side='right'))/(1.0*n2)
     d = np.max(np.absolute(cdf1-cdf2))
-    #Note: d absolute not signed distance
+    # Note: d absolute not signed distance
     en = np.sqrt(n1*n2/float(n1+n2))
     try:
         prob = ksprob((en+0.12+0.11/en)*d)
@@ -3629,12 +3629,12 @@ def mannwhitneyu(x, y, use_continuity=True):
     n2 = len(y)
     ranked = rankdata(np.concatenate((x,y)))
     rankx = ranked[0:n1]       # get the x-ranks
-    #ranky = ranked[n1:]        # the rest are y-ranks
+    # ranky = ranked[n1:]        # the rest are y-ranks
     u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx,axis=0)  # calc U for x
     u2 = n1*n2 - u1                            # remainder is U for y
     bigu = max(u1,u2)
     smallu = min(u1,u2)
-    #T = np.sqrt(tiecorrect(ranked))  # correction factor for tied scores
+    # T = np.sqrt(tiecorrect(ranked))  # correction factor for tied scores
     T = tiecorrect(ranked)
     if T == 0:
         raise ValueError('All numbers are identical in amannwhitneyu')
@@ -3730,7 +3730,7 @@ def kruskal(*args):
     .. [1] http://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
 
     """
-    args = list(map(np.asarray, args)) # convert to a numpy array
+    args = list(map(np.asarray, args))  # convert to a numpy array
     na = len(args)               # Kruskal-Wallis on 'na' groups, each in it's own array
     if na < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")

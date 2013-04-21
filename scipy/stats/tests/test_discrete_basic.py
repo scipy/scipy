@@ -7,20 +7,20 @@ from scipy.lib.six.moves import xrange
 
 from scipy import stats
 
-DECIMAL_meanvar = 0# 1  # was 0
+DECIMAL_meanvar = 0  # 1  # was 0
 
 distdiscrete = [
     ['bernoulli',(0.3,)],
     ['binom',    (5, 0.4)],
     ['boltzmann',(1.4, 19)],
-    ['dlaplace', (0.8,)], # 0.5
+    ['dlaplace', (0.8,)],  # 0.5
     ['geom',     (0.5,)],
     ['hypergeom',(30, 12, 6)],
     ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
     ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
     ['logser',   (0.6,)],  # reenabled, numpy ticket:921
     ['nbinom',   (5, 0.5)],
-    ['nbinom',   (0.4, 0.4)], # from tickets: 583
+    ['nbinom',   (0.4, 0.4)],  # from tickets: 583
     ['planck',   (0.51,)],   # 4.1
     ['poisson',  (0.6,)],
     ['randint',  (7, 31)],
@@ -34,13 +34,13 @@ distdiscrete = [
 def test_discrete_basic():
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
-        #npt.assert_(stats.dlaplace.rvs(0.8) is not None)
+        # npt.assert_(stats.dlaplace.rvs(0.8) is not None)
         np.random.seed(9765456)
         rvs = distfn.rvs(size=2000,*arg)
         supp = np.unique(rvs)
         m,v = distfn.stats(*arg)
-        #yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
-        #yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
+        # yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
+        # yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
         yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
         yield check_sample_meanvar, rvs.var(), v, distname + ' sample var test'
         yield check_cdf_ppf, distfn, arg, distname + ' cdf_ppf'
@@ -58,7 +58,7 @@ def test_discrete_basic():
 
         # dlaplace doesn't fail, but generates lots of floating point warnings.
         # Should be checked.
-        if not distname in ['dlaplace']: # ['logser']:  #known failure, fixed
+        if not distname in ['dlaplace']:  # ['logser']:  #known failure, fixed
             alpha = 0.01
             yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                           distname + ' chisquare'
@@ -78,7 +78,7 @@ def test_discrete_extra():
 
 @npt.dec.skipif(True)
 def test_discrete_private():
-    #testing private methods mostly for debugging
+    # testing private methods mostly for debugging
     #   some tests might fail by design,
     #   e.g. incorrect definition of distfn.a and distfn.b
     for distname, arg in distdiscrete:
@@ -89,9 +89,9 @@ def test_discrete_private():
         yield check_ppf_ppf, distfn, arg
         yield check_cdf_ppf_private, distfn, arg, distname
         yield check_generic_moment, distfn, arg, m, 1, 3   # last is decimal
-        yield check_generic_moment, distfn, arg, v+m*m, 2, 3 # last is decimal
+        yield check_generic_moment, distfn, arg, v+m*m, 2, 3  # last is decimal
         yield check_moment_frozen, distfn, arg, m, 1, 3   # last is decimal
-        yield check_moment_frozen, distfn, arg, v+m*m, 2, 3 # last is decimal
+        yield check_moment_frozen, distfn, arg, v+m*m, 2, 3  # last is decimal
 
 
 def check_sample_meanvar(sm,m,msg):
@@ -161,8 +161,8 @@ def check_moment_frozen(distfn, arg, m, k, decim):
 
 
 def check_oth(distfn, arg, msg):
-    #checking other methods of distfn
-    meanint = round(float(distfn.stats(*arg)[0])) # closest integer to mean
+    # checking other methods of distfn
+    meanint = round(float(distfn.stats(*arg)[0]))  # closest integer to mean
     npt.assert_almost_equal(distfn.sf(meanint, *arg), 1 -
                             distfn.cdf(meanint, *arg), decimal=8)
     median_sf = distfn.isf(0.5, *arg)
@@ -171,14 +171,14 @@ def check_oth(distfn, arg, msg):
     npt.assert_(distfn.cdf(median_sf + 1, *arg) > 0.5)
     npt.assert_equal(distfn.isf(0.5, *arg), distfn.ppf(0.5, *arg))
 
-#next 3 functions copied from test_continous_extra
+# next 3 functions copied from test_continous_extra
 #    adjusted
 
 
 def check_ppf_limits(distfn,arg,msg):
     below,low,upp,above = distfn.ppf([-1,0,1,2], *arg)
-    #print distfn.name, distfn.a, low, distfn.b, upp
-    #print distfn.name,below,low,upp,above
+    # print distfn.name, distfn.a, low, distfn.b, upp
+    # print distfn.name,below,low,upp,above
     assert_equal_inf_nan(distfn.a-1,low, msg + 'ppf lower bound')
     assert_equal_inf_nan(distfn.b,upp, msg + 'ppf upper bound')
     npt.assert_(np.isnan(below), msg + 'ppf out of bounds - below')
@@ -187,8 +187,8 @@ def check_ppf_limits(distfn,arg,msg):
 
 def check_isf_limits(distfn,arg,msg):
     below,low,upp,above = distfn.isf([-1,0,1,2], *arg)
-    #print distfn.name, distfn.a, low, distfn.b, upp
-    #print distfn.name,below,low,upp,above
+    # print distfn.name, distfn.a, low, distfn.b, upp
+    # print distfn.name,below,low,upp,above
     assert_equal_inf_nan(distfn.a-1,upp, msg + 'isf lower bound')
     assert_equal_inf_nan(distfn.b,low, msg + 'isf upper bound')
     npt.assert_(np.isnan(below), msg + 'isf out of bounds - below')
@@ -213,7 +213,7 @@ def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
 
 def check_entropy(distfn,arg,msg):
     ent = distfn.entropy(*arg)
-    #print 'Entropy =', ent
+    # print 'Entropy =', ent
     npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
 
 
@@ -281,5 +281,5 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
 
 if __name__ == "__main__":
-    #nose.run(argv=['', __file__])
+    # nose.run(argv=['', __file__])
     nose.runmodule(argv=[__file__,'-s'], exit=False)

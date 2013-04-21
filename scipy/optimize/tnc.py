@@ -41,11 +41,11 @@ from numpy import inf, array, zeros, asfarray
 __all__ = ['fmin_tnc']
 
 
-MSG_NONE = 0 # No messages
-MSG_ITER = 1 # One line per iteration
-MSG_INFO = 2 # Informational messages
-MSG_VERS = 4 # Version info
-MSG_EXIT = 8 # Exit reasons
+MSG_NONE = 0  # No messages
+MSG_ITER = 1  # One line per iteration
+MSG_INFO = 2  # Informational messages
+MSG_VERS = 4  # Version info
+MSG_EXIT = 8  # Exit reasons
 MSG_ALL = MSG_ITER + MSG_INFO + MSG_VERS + MSG_EXIT
 
 MSGS = {
@@ -57,7 +57,7 @@ MSGS = {
         MSG_ALL: "All messages"
 }
 
-INFEASIBLE   = -1 # Infeasible (low > up)
+INFEASIBLE   = -1  # Infeasible (low > up)
 LOCALMINIMUM = 0  # Local minima reach (|pg| ~= 0)
 FCONVERGED   = 1  # Converged (|f_n-f_(n-1)| ~= 0)
 XCONVERGED   = 2  # Converged (|x_n-x_(n-1)| ~= 0)
@@ -238,7 +238,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         fun = func
         jac = fprime
 
-    if disp is not None: # disp takes precedence over messages
+    if disp is not None:  # disp takes precedence over messages
         mesg_num = disp
     else:
         mesg_num = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,

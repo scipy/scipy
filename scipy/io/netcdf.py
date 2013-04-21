@@ -14,19 +14,19 @@ with NetCDF files.
 
 from __future__ import division, print_function, absolute_import
 
-#TODO:
+# TODO:
 # * properly implement ``_FillValue``.
 # * implement Jeff Whitaker's patch for masked variables.
 # * fix character variables.
 # * implement PAGESIZE for Python 2.6?
 
-#The Scientific.IO.NetCDF API allows attributes to be added directly to
-#instances of ``netcdf_file`` and ``netcdf_variable``. To differentiate
-#between user-set attributes and instance attributes, user-set attributes
-#are automatically stored in the ``_attributes`` attribute by overloading
+# The Scientific.IO.NetCDF API allows attributes to be added directly to
+# instances of ``netcdf_file`` and ``netcdf_variable``. To differentiate
+# between user-set attributes and instance attributes, user-set attributes
+# are automatically stored in the ``_attributes`` attribute by overloading
 #``__setattr__``. This is the reason why the code sometimes uses
 #``obj.__dict__['key'] = value``, instead of simply ``obj.key = value``;
-#otherwise the key would be inserted into userspace attributes.
+# otherwise the key would be inserted into userspace attributes.
 
 
 __all__ = ['netcdf_file']
@@ -186,14 +186,14 @@ class netcdf_file(object):
     """
     def __init__(self, filename, mode='r', mmap=None, version=1):
         """Initialize netcdf_file from fileobj (str or file-like)."""
-        if hasattr(filename, 'seek'): # file-like
+        if hasattr(filename, 'seek'):  # file-like
             self.fp = filename
             self.filename = 'None'
             if mmap is None:
                 mmap = False
             elif mmap and not hasattr(filename, 'fileno'):
                 raise ValueError('Cannot use file object for mmap')
-        else: # maybe it's a string
+        else:  # maybe it's a string
             self.filename = filename
             self.fp = open(self.filename, '%sb' % mode)
             if mmap is None:
@@ -303,7 +303,7 @@ class netcdf_file(object):
         if (typecode, size) not in REVERSE:
             raise ValueError("NetCDF 3 does not support type %s" % type)
 
-        data = empty(shape_, dtype=type.newbyteorder("B")) # convert to big endian always for NetCDF 3
+        data = empty(shape_, dtype=type.newbyteorder("B"))  # convert to big endian always for NetCDF 3
         self.variables[name] = netcdf_variable(data, typecode, size, shape, dimensions)
         return self.variables[name]
 
@@ -564,7 +564,7 @@ class netcdf_file(object):
             # 32-bit vsize field is not large enough to contain the size
             # of variables that require more than 2^32 - 4 bytes, so
             # 2^32 - 1 is used in the vsize field for such variables.
-            if shape and shape[0] is None: # record variable
+            if shape and shape[0] is None:  # record variable
                 rec_vars.append(name)
                 # The netCDF "record size" is calculated as the sum of
                 # the vsize's of all the record variables.
@@ -584,7 +584,7 @@ class netcdf_file(object):
 
                 # Data will be set later.
                 data = None
-            else: # not a record variable
+            else:  # not a record variable
                 # Calculate size to avoid problems with vsize (above)
                 a_size = reduce(mul, shape, 1) * size
                 if self.use_mmap:

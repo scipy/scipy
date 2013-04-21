@@ -67,7 +67,7 @@ class TestSmokeTests(TestCase):
         if xe is None:
             xe = b
         x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
-        x1 = a+(b-a)*arange(1,N,dtype=float)/float(N-1) # middle points of the nodes
+        x1 = a+(b-a)*arange(1,N,dtype=float)/float(N-1)  # middle points of the nodes
         v,v1 = f(x),f(x1)
         nk = []
 
@@ -179,7 +179,7 @@ class TestSmokeTests(TestCase):
         if xe is None:
             xe = b
         x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
-        x1 = a + (b-a)*arange(1,N,dtype=float)/float(N-1) # middle points of the nodes
+        x1 = a + (b-a)*arange(1,N,dtype=float)/float(N-1)  # middle points of the nodes
         v,v1 = f(x),f(x1)
         nk = []
         put(" u = %s   N = %d" % (repr(round(dx,3)),N))

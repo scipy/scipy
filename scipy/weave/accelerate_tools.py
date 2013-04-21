@@ -24,7 +24,7 @@ def CStr(s):
     if s is None:
         return '""'
     assert_(isinstance(s, str), msg="only None and string allowed")
-    r = repr('"'+s) # Better for embedded quotes
+    r = repr('"'+s)  # Better for embedded quotes
     return '"'+r[2:-1]+'"'
 
 
@@ -132,7 +132,7 @@ class Vector(Type_Descriptor):
     module_init_code = 'import_array();\n'
     inbounder = "(PyArrayObject*)"
     outbounder = "(PyObject*)"
-    owned = 0 # Convertion is by casting!
+    owned = 0  # Convertion is by casting!
 
     prerequisites = Type_Descriptor.prerequisites + \
                     ['#include "numpy/arrayobject.h"']

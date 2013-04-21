@@ -53,8 +53,8 @@ class TestSolvers(_DeprecationAccept):
         a = self.a.astype('F')
         b = self.b
         x = linsolve.spsolve(a, b)
-        #print x
-        #print "Error: ", a*x-b
+        # print x
+        # print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b, decimal=4)
 
     def test_solve_without_umfpack(self):
@@ -63,8 +63,8 @@ class TestSolvers(_DeprecationAccept):
         a = self.a.astype('f')
         b = self.b
         x = linsolve.spsolve(a, b.astype('f'))
-        #print x
-        #print "Error: ", a*x-b
+        # print x
+        # print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b, decimal=4)
 
     def test_solve_complex_umfpack(self):
@@ -73,8 +73,8 @@ class TestSolvers(_DeprecationAccept):
         a = self.a.astype('D')
         b = self.b
         x = linsolve.spsolve(a, b)
-        #print x
-        #print "Error: ", a*x-b
+        # print x
+        # print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b)
 
     def test_solve_umfpack(self):
@@ -83,8 +83,8 @@ class TestSolvers(_DeprecationAccept):
         a = self.a.astype('d')
         b = self.b
         x = linsolve.spsolve(a, b)
-        #print x
-        #print "Error: ", a*x-b
+        # print x
+        # print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b)
 
     def test_solve_sparse_rhs(self):
@@ -93,8 +93,8 @@ class TestSolvers(_DeprecationAccept):
         a = self.a.astype('d')
         b = csc_matrix(self.b)
         x = linsolve.spsolve(a, b)
-        #print x
-        #print "Error: ", a*x-b
+        # print x
+        # print "Error: ", a*x-b
         assert_array_almost_equal(a*x, self.b)
 
     def test_factorized_umfpack(self):
@@ -121,8 +121,8 @@ class TestSolvers(_DeprecationAccept):
 
     def setUp(self):
         self.a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
-        #print "The sparse matrix (constructed from diagonals):"
-        #print self.a
+        # print "The sparse matrix (constructed from diagonals):"
+        # print self.a
         self.b = np.array([1, 2, 3, 4, 5])
         self.b2 = np.array([5, 4, 3, 2, 1])
 
@@ -173,7 +173,7 @@ class TestFactorization(_DeprecationAccept):
             assert_array_almost_equal(P*R*A*Q,L*U)
 
     def setUp(self):
-        random.seed(0) # make tests repeatable
+        random.seed(0)  # make tests repeatable
         self.real_matrices = []
         self.real_matrices.append(spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]],
                                           [0, 1], 5, 5))

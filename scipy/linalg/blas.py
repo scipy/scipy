@@ -218,7 +218,7 @@ def _get_funcs(names, arrays, dtype,
                 '%s function %s could not be found' % (lib_name, func_name))
         func.module_name, func.typecode = module_name, prefix
         func.dtype = dtype
-        func.prefix = prefix # Backward compatibility
+        func.prefix = prefix  # Backward compatibility
         funcs.append(func)
 
     if unpack:

@@ -1,11 +1,11 @@
-#this program corresponds to special.py
+# this program corresponds to special.py
 
 ### Means test is not done yet
-#E   Means test is giving error (E)
-#F   Means test is failing (F)
-#EF  Means test is giving error and Failing
+# E   Means test is giving error (E)
+# F   Means test is failing (F)
+# EF  Means test is giving error and Failing
 #!   Means test is segfaulting
-#8   Means test runs forever
+# 8   Means test runs forever
 
 ###  test_besselpoly
 ###  test_mathieu_a
@@ -263,7 +263,7 @@ class TestCephes(TestCase):
         assert_equal(cephes.fdtrc(1,1,0),1.0)
 
     def test_fdtri(self):
-        #cephes.fdtri(1,1,0.5)  #BUG: gives NaN, should be 1
+        # cephes.fdtri(1,1,0.5)  #BUG: gives NaN, should be 1
         assert_allclose(cephes.fdtri(1, 1, [0.499, 0.501]),
                         array([0.9937365, 1.00630298]), rtol=1e-6)
 
@@ -303,7 +303,7 @@ class TestCephes(TestCase):
 
     def test_gdtrib(self):
         cephes.gdtrib(1,0,1)
-        #assert_equal(cephes.gdtrib(1,0,1),5.0)
+        # assert_equal(cephes.gdtrib(1,0,1),5.0)
 
     def test_gdtrix(self):
         cephes.gdtrix(1,1,.1)
@@ -460,13 +460,13 @@ class TestCephes(TestCase):
         def ce_smallq(m, q, z):
             z *= np.pi/180
             if m == 0:
-                return 2**(-0.5) * (1 - .5*q*cos(2*z)) # + O(q^2)
+                return 2**(-0.5) * (1 - .5*q*cos(2*z))  # + O(q^2)
             elif m == 1:
-                return cos(z) - q/8 * cos(3*z) # + O(q^2)
+                return cos(z) - q/8 * cos(3*z)  # + O(q^2)
             elif m == 2:
-                return cos(2*z) - q*(cos(4*z)/12 - 1/4) # + O(q^2)
+                return cos(2*z) - q*(cos(4*z)/12 - 1/4)  # + O(q^2)
             else:
-                return cos(m*z) - q*(cos((m+2)*z)/(4*(m+1)) - cos((m-2)*z)/(4*(m-1))) # + O(q^2)
+                return cos(m*z) - q*(cos((m+2)*z)/(4*(m+1)) - cos((m-2)*z)/(4*(m-1)))  # + O(q^2)
         m = np.arange(0, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
         assert_allclose(cephes.mathieu_cem(m[:,None], q[None,:], 0.123)[0],
@@ -481,11 +481,11 @@ class TestCephes(TestCase):
         def se_smallq(m, q, z):
             z *= np.pi/180
             if m == 1:
-                return sin(z) - q/8 * sin(3*z) # + O(q^2)
+                return sin(z) - q/8 * sin(3*z)  # + O(q^2)
             elif m == 2:
-                return sin(2*z) - q*sin(4*z)/12 # + O(q^2)
+                return sin(2*z) - q*sin(4*z)/12  # + O(q^2)
             else:
-                return sin(m*z) - q*(sin((m+2)*z)/(4*(m+1)) - sin((m-2)*z)/(4*(m-1))) # + O(q^2)
+                return sin(m*z) - q*(sin((m+2)*z)/(4*(m+1)) - sin((m-2)*z)/(4*(m-1)))  # + O(q^2)
         m = np.arange(1, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
         assert_allclose(cephes.mathieu_sem(m[:,None], q[None,:], 0.123)[0],
@@ -817,7 +817,7 @@ class TestCephes(TestCase):
 
 class TestAiry(TestCase):
     def test_airy(self):
-        #This tests the airy function to ensure 8 place accuracy in computation
+        # This tests the airy function to ensure 8 place accuracy in computation
 
         x = special.airy(.99)
         assert_array_almost_equal(x,array([0.13689066,-0.16050153,1.19815925,0.92046818]),8)
@@ -869,19 +869,19 @@ class TestBesselpoly(TestCase):
 class TestKelvin(TestCase):
     def test_bei(self):
         mbei = special.bei(2)
-        assert_almost_equal(mbei, 0.9722916273066613,5)# this may not be exact
+        assert_almost_equal(mbei, 0.9722916273066613,5)  # this may not be exact
 
     def test_beip(self):
         mbeip = special.beip(2)
-        assert_almost_equal(mbeip,0.91701361338403631,5)# this may not be exact
+        assert_almost_equal(mbeip,0.91701361338403631,5)  # this may not be exact
 
     def test_ber(self):
         mber = special.ber(2)
-        assert_almost_equal(mber,0.75173418271380821,5)# this may not be exact
+        assert_almost_equal(mber,0.75173418271380821,5)  # this may not be exact
 
     def test_berp(self):
         mberp = special.berp(2)
-        assert_almost_equal(mberp,-0.49306712470943909,5)# this may not be exact
+        assert_almost_equal(mberp,-0.49306712470943909,5)  # this may not be exact
 
     def test_bei_zeros(self):
         bi = special.bi_zeros(5)
@@ -1261,7 +1261,7 @@ class TestErf(TestCase):
             cephes.erfc,
             lambda z: 1 - cephes.erf(z),
             rtol=1e-12,
-            atol=1e-14 # <- the test function loses precision
+            atol=1e-14  # <- the test function loses precision
             )
 
     def test_erfcx_consistent(self):
@@ -1295,12 +1295,12 @@ class TestErf(TestCase):
 
     def test_errprint(self):
         a = special.errprint()
-        b = 1-a # a is the state 1-a inverts state
-        c = special.errprint(b) # returns last state 'a'
+        b = 1-a  # a is the state 1-a inverts state
+        c = special.errprint(b)  # returns last state 'a'
         assert_equal(a,c)
-        d = special.errprint(a) # returns to original state
-        assert_equal(d,b) # makes sure state was returned
-        #assert_equal(d,1-a)
+        d = special.errprint(a)  # returns to original state
+        assert_equal(d,b)  # makes sure state was returned
+        # assert_equal(d,1-a)
 
 
 class TestEuler(TestCase):
@@ -2105,7 +2105,7 @@ class TestBessel(TestCase):
         assert_(dc[k] < 2e-7, (v[k], x[k], special.iv(v[k], x[k]), special.iv(v[k], x[k]+0j)))
 
     def test_kv_cephes_vs_amos(self):
-        #self.check_cephes_vs_amos(kv, kn, rtol=1e-9, atol=1e-305)
+        # self.check_cephes_vs_amos(kv, kn, rtol=1e-9, atol=1e-305)
         self.check_cephes_vs_amos(special.kv, special.kv, rtol=1e-9, atol=1e-305)
 
     def test_ticket_623(self):
@@ -2410,11 +2410,11 @@ class TestMathieu(TestCase):
 
     def test_mathieu_even_coef(self):
         mc = special.mathieu_even_coef(2,5)
-        #Q not defined broken and cannot figure out proper reporting order
+        # Q not defined broken and cannot figure out proper reporting order
 
     def test_mathieu_odd_coef(self):
         pass
-            #same problem as above
+            # same problem as above
 
 
 class TestFresnelIntegral(TestCase):
@@ -2631,11 +2631,11 @@ class TestSpherical(TestCase):
     def test_sph_yn(self):
         sy1 = special.sph_yn(2,.2)[0][2]
         sy2 = special.sph_yn(0,.2)[0][0]
-        sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3 # correct derivative value
-        assert_almost_equal(sy1,-377.52483,5)# previous values in the system
+        sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3  # correct derivative value
+        assert_almost_equal(sy1,-377.52483,5)  # previous values in the system
         assert_almost_equal(sy2,-4.9003329,5)
         sy3 = special.sph_yn(1,.2)[1][1]
-        assert_almost_equal(sy3,sphpy,4) # compare correct derivative val. (correct =-system val).
+        assert_almost_equal(sy3,sphpy,4)  # compare correct derivative val. (correct =-system val).
 
 
 class TestStruve(object):

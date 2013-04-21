@@ -38,7 +38,7 @@ class TestAnneal(TestCase):
 
     def anneal_schedule(self, schedule='fast', use_wrapper=False):
         """ Call anneal algorithm using specified schedule """
-        n = 0 # index of test function
+        n = 0  # index of test function
         if use_wrapper:
             opts = {'upper': self.upper[n],
                     'lower': self.lower[n],

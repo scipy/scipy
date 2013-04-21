@@ -118,7 +118,7 @@ class TestTnc(TestCase):
     def test_minimize_tnc1(self):
         x0, bnds = [-2, 1], ([-np.inf, None], [-1.5, None])
         xopt = [1, 1]
-        iterx = [] # to test callback
+        iterx = []  # to test callback
 
         res = optimize.minimize(self.f1, x0, method='TNC', jac=self.g1,
                                 bounds=bnds, options=self.opts,

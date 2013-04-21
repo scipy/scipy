@@ -476,7 +476,7 @@ class MMFile (object):
                 J = ascontiguousarray(flat_data[:,1], dtype='intc')
                 V = ascontiguousarray(flat_data[:,2], dtype='float')
 
-            I -= 1 # adjust indices (base 1 -> base 0)
+            I -= 1  # adjust indices (base 1 -> base 0)
             J -= 1
 
             if has_symmetry:
@@ -611,7 +611,7 @@ class MMFile (object):
             if symm != self.SYMMETRY_GENERAL:
                 raise NotImplementedError('symmetric matrices not yet supported')
 
-            coo = a.tocoo() # convert to COOrdinate format
+            coo = a.tocoo()  # convert to COOrdinate format
 
             # write shape spec
             stream.write(asbytes('%i %i %i\n' % (rows, cols, coo.nnz)))
@@ -627,7 +627,7 @@ class MMFile (object):
             else:
                 raise TypeError('Unknown field type %s' % field)
 
-            IJV[:,:2] += 1 # change base 0 -> base 1
+            IJV[:,:2] += 1  # change base 0 -> base 1
 
             savetxt(stream, IJV, fmt=fmt)
 

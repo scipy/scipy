@@ -16,12 +16,12 @@ from test_continuous_basic import distcont
 
 # this is not a proper statistical test for convergence, but only
 # verifies that the estimate and true values don't differ by too much
-n_repl1 = 1000 # sample size for first run
-n_repl2 = 5000 # sample size for second run, if first run fails
-thresh_percent = 0.25 # percent of true parameters for fail cut-off
+n_repl1 = 1000  # sample size for first run
+n_repl2 = 5000  # sample size for second run, if first run fails
+thresh_percent = 0.25  # percent of true parameters for fail cut-off
 thresh_min = 0.75  # minimum difference estimate - true to fail test
 
-#distcont = [['genextreme', (3.3184017469423535,)]]
+# distcont = [['genextreme', (3.3184017469423535,)]]
 
 
 def _est_cont_fit():
@@ -54,7 +54,7 @@ def check_cont_fit(distname,arg):
 ##            txt = 'WARNING - diff too large with small sample'
 ##            print 'parameter diff =', diff - diffthreshold, txt
             rvs = np.concatenate([rvs,distfn.rvs(size=n_repl2-n_repl1,*arg)])
-            est = distfn.fit(rvs) # ,*arg)
+            est = distfn.fit(rvs)  # ,*arg)
             truearg = np.hstack([arg,[0.0,1.0]])
             diff = est-truearg
             if np.any((np.abs(diff) - diffthreshold) > 0.0):
@@ -66,5 +66,5 @@ def check_cont_fit(distname,arg):
 
 if __name__ == "__main__":
     import nose
-    #nose.run(argv=['', __file__])
+    # nose.run(argv=['', __file__])
     nose.runmodule(argv=[__file__,'-s'], exit=False)

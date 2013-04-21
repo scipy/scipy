@@ -14,7 +14,7 @@ from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
-#TODO add more comprehensive tests
+# TODO add more comprehensive tests
 use_solver(useUmfpack=False)
 
 
@@ -32,7 +32,7 @@ class TestLinsolve(TestCase):
         cond_A = norm(A.todense(),2) * norm(inv(A.todense()),2)
 
         for t in ['f','d','F','D']:
-            eps = finfo(t).eps # floating point epsilon
+            eps = finfo(t).eps  # floating point epsilon
             b = b.astype(t)
 
             for format in ['csc','csr']:

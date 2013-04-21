@@ -4,9 +4,9 @@ An extension of scipy.stats.stats to support masked arrays
 :author: Pierre GF Gerard-Marchant
 :contact: pierregm_at_uga_edu
 """
-#TODO : f_value_wilks_lambda looks botched... what are dfnum & dfden for ?
-#TODO : ttest_reel looks botched:  what are x1,x2,v1,v2 for ?
-#TODO : reimplement ksonesamp
+# TODO : f_value_wilks_lambda looks botched... what are dfnum & dfden for ?
+# TODO : ttest_reel looks botched:  what are x1,x2,v1,v2 for ?
+# TODO : reimplement ksonesamp
 
 from __future__ import division, print_function, absolute_import
 
@@ -50,11 +50,11 @@ import itertools
 import warnings
 
 
-#import scipy.stats as stats
+# import scipy.stats as stats
 from . import stats
 import scipy.special as special
 import scipy.misc as misc
-#import scipy.stats.futil as futil
+# import scipy.stats.futil as futil
 from . import futil
 
 genmissingvaldoc = """
@@ -661,8 +661,8 @@ def linregress(*args):
     else:
         r = Sxy / r_den
         if (r > 1.0):
-            r = 1.0 # from numerical error
-    #z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
+            r = 1.0  # from numerical error
+    # z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
     t = r * ma.sqrt(df/(1.0-r*r))
     prob = betai(0.5*df,0.5,df/(df+t*t))
@@ -789,7 +789,7 @@ def ttest_rel(a,b,axis=None):
     df = (n-1.0)
     d = (a-b).astype('d')
     denom = ma.sqrt((n*ma.add.reduce(d*d,axis) - ma.add.reduce(d,axis)**2) / df)
-    #zerodivproblem = denom == 0
+    # zerodivproblem = denom == 0
     t = ma.add.reduce(d, axis) / denom
     t = ma.filled(t, 1)
     probs = betai(0.5*df,0.5,df/(df+t*t)).reshape(t.shape).squeeze()

@@ -290,7 +290,7 @@ class TestLombscargle:
         phi = 0.5 * np.pi
         nin = 100
         nout = 1000
-        p = 0.7 # Fraction of points to select
+        p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
         np.random.seed(2353425)
@@ -322,7 +322,7 @@ class TestLombscargle:
         phi = 0.5 * np.pi
         nin = 100
         nout = 1000
-        p = 0.7 # Fraction of points to select
+        p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
         np.random.seed(2353425)

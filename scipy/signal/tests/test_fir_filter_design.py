@@ -50,20 +50,20 @@ class TestFirwin(TestCase):
         N = 51
         f = .5
         # increase length just to try even/odd
-        h = firwin(N, f) # low-pass from 0 to f
+        h = firwin(N, f)  # low-pass from 0 to f
         self.check_response(h, [(.25,1), (.75,0)])
 
-        h = firwin(N+1, f, window='nuttall') # specific window
+        h = firwin(N+1, f, window='nuttall')  # specific window
         self.check_response(h, [(.25,1), (.75,0)])
 
-        h = firwin(N+2, f, pass_zero=False) # stop from 0 to f --> high-pass
+        h = firwin(N+2, f, pass_zero=False)  # stop from 0 to f --> high-pass
         self.check_response(h, [(.25,0), (.75,1)])
 
         f1, f2, f3, f4 = .2, .4, .6, .8
-        h = firwin(N+3, [f1, f2], pass_zero=False) # band-pass filter
+        h = firwin(N+3, [f1, f2], pass_zero=False)  # band-pass filter
         self.check_response(h, [(.1,0), (.3,1), (.5,0)])
 
-        h = firwin(N+4, [f1, f2]) # band-stop filter
+        h = firwin(N+4, [f1, f2])  # band-stop filter
         self.check_response(h, [(.1,1), (.3,0), (.5,1)])
 
         h = firwin(N+5, [f1, f2, f3, f4], pass_zero=False, scale=False)
@@ -72,10 +72,10 @@ class TestFirwin(TestCase):
         h = firwin(N+6, [f1, f2, f3, f4])  # multiband filter
         self.check_response(h, [(.1,1), (.3,0), (.5,1), (.7,0), (.9,1)])
 
-        h = firwin(N+7, 0.1, width=.03) # low-pass
+        h = firwin(N+7, 0.1, width=.03)  # low-pass
         self.check_response(h, [(.05,1), (.75,0)])
 
-        h = firwin(N+8, 0.1, pass_zero=False) # high-pass
+        h = firwin(N+8, 0.1, pass_zero=False)  # high-pass
         self.check_response(h, [(.05,0), (.75,1)])
 
     def mse(self, h, bands):
@@ -361,8 +361,8 @@ class TestRemez(TestCase):
         assert_raises(ValueError, remez, 11, [0.1, 0.4], [1], type='pooka')
 
     def test_hilbert(self):
-        N = 11 # number of taps in the filter
-        a = 0.1 # width of the transition band
+        N = 11  # number of taps in the filter
+        a = 0.1  # width of the transition band
 
         # design an unity gain hilbert bandpass filter from w to 0.5-w
         h = remez(11, [a, 0.5-a], [1], type='hilbert')

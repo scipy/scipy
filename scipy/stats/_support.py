@@ -68,7 +68,7 @@ def unique(inarray):
                 for unq in uniques:  # NOTE: cmp --> 0=same, -1=<, 1=>
                     test = np.sum(abs(np.array(list(map(cmp,item,unq)))),axis=0)
                     if test == 0:   # if item identical to any 1 row in uniques
-                        newflag = 0 # then not a novel item to add
+                        newflag = 0  # then not a novel item to add
                         break
                 if newflag == 1:
                     try:

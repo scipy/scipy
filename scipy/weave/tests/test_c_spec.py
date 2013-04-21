@@ -6,7 +6,7 @@ import sys
 # Note: test_dir is global to this file.
 #       It is made by setup_location()
 
-#globals
+# globals
 global test_dir
 test_dir = ''
 
@@ -631,7 +631,7 @@ class DictConverter(TestCase):
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
         a = {'z':1}
-        code = 'a=py::dict();' # This just checks to make sure the type is correct
+        code = 'a=py::dict();'  # This just checks to make sure the type is correct
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
@@ -766,7 +766,7 @@ for _n in dir():
 
 def setup_location():
     import tempfile
-    #test_dir = os.path.join(tempfile.gettempdir(),'test_files')
+    # test_dir = os.path.join(tempfile.gettempdir(),'test_files')
     test_dir = tempfile.mktemp()
     if not os.path.exists(test_dir):
         os.mkdir(test_dir)

@@ -147,7 +147,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
         ijob = 2
 
     if info > 0 and iter_ == maxiter and resid > tol:
-        #info isn't set appropriately otherwise
+        # info isn't set appropriately otherwise
         info = iter_
 
     return postprocess(x), info
@@ -209,7 +209,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
         ijob = 2
 
     if info > 0 and iter_ == maxiter and resid > tol:
-        #info isn't set appropriately otherwise
+        # info isn't set appropriately otherwise
         info = iter_
 
     return postprocess(x), info
@@ -269,7 +269,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
         ijob = 2
 
     if info > 0 and iter_ == maxiter and resid > tol:
-        #info isn't set appropriately otherwise
+        # info isn't set appropriately otherwise
         info = iter_
 
     return postprocess(x), info
@@ -328,7 +328,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
         ijob = 2
 
     if info > 0 and iter_ == maxiter and resid > tol:
-        #info isn't set appropriately otherwise
+        # info isn't set appropriately otherwise
         info = iter_
 
     return postprocess(x), info
@@ -450,11 +450,11 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
         olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
            revcom(b, x, restrt, work, work2, iter_, resid, info, ndx1, ndx2, ijob)
-        #if callback is not None and iter_ > olditer:
+        # if callback is not None and iter_ > olditer:
         #    callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1): # gmres success, update last residual
+        if (ijob == -1):  # gmres success, update last residual
             if resid_ready and callback is not None:
                 callback(resid)
                 resid_ready = False
@@ -490,7 +490,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
             break
 
     if info >= 0 and resid > tol:
-        #info isn't set appropriately otherwise
+        # info isn't set appropriately otherwise
         info = maxiter
 
     return postprocess(x), info
@@ -631,7 +631,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
         ijob = 2
 
     if info > 0 and iter_ == maxiter and resid > tol:
-        #info isn't set appropriately otherwise
+        # info isn't set appropriately otherwise
         info = iter_
 
     return postprocess(x), info

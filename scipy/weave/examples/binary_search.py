@@ -18,7 +18,7 @@ from __future__ import absolute_import, print_function
 
 import sys
 sys.path.insert(0,'..')
-#from compiler import inline_tools
+# from compiler import inline_tools
 import scipy.weave.inline_tools as inline_tools
 from bisect import bisect_left as bisect
 import types
@@ -27,7 +27,7 @@ import types
 def c_int_search(seq,t,chk=1):
     # do partial type checking in Python.
     # checking that list items are ints should happen in py_to_scalar<int>
-    #if chk:
+    # if chk:
     #    assert(type(t) is int)
     #    assert(type(seq) is list)
     code = """
@@ -58,7 +58,7 @@ def c_int_search(seq,t,chk=1):
                }
            }
            """
-    #return inline_tools.inline(code,['seq','t'],compiler='msvc')
+    # return inline_tools.inline(code,['seq','t'],compiler='msvc')
     return inline_tools.inline(code,['seq','t'],verbose=2)
 
 
@@ -92,7 +92,7 @@ def c_int_search_scxx(seq,t,chk=1):
                }
            }
            """
-    #return inline_tools.inline(code,['seq','t'],compiler='msvc')
+    # return inline_tools.inline(code,['seq','t'],compiler='msvc')
     return inline_tools.inline(code,['seq','t'],verbose=2)
 
 try:
@@ -124,7 +124,7 @@ try:
                    }
                }
                """
-        #return inline_tools.inline(code,['seq','t'],compiler='msvc')
+        # return inline_tools.inline(code,['seq','t'],compiler='msvc')
         return inline_tools.inline(code,['seq','t'],verbose=2,
                                    extra_compile_args=['-O2','-G6'])
 except:
@@ -162,7 +162,7 @@ def search_compare(a,n):
     for i in range(n):
         bisect(a,i)
     t2 = time.time()
-    bi = (t2-t1) + 1e-20 # protect against div by zero
+    bi = (t2-t1) + 1e-20  # protect against div by zero
     print(' speed of bisect:', bi)
     print(' speed up: %3.2f' % (py/bi))
 
@@ -172,7 +172,7 @@ def search_compare(a,n):
     for i in range(n):
         c_int_search(a,i,chk=1)
     t2 = time.time()
-    sp = (t2-t1)+1e-20 # protect against div by zero
+    sp = (t2-t1)+1e-20  # protect against div by zero
     print(' speed in c:',sp)
     print(' speed up: %3.2f' % (py/sp))
 
@@ -182,7 +182,7 @@ def search_compare(a,n):
     for i in range(n):
         c_int_search(a,i,chk=0)
     t2 = time.time()
-    sp = (t2-t1)+1e-20 # protect against div by zero
+    sp = (t2-t1)+1e-20  # protect against div by zero
     print(' speed in c(no asserts):',sp)
     print(' speed up: %3.2f' % (py/sp))
 
@@ -192,7 +192,7 @@ def search_compare(a,n):
     for i in range(n):
         c_int_search_scxx(a,i,chk=1)
     t2 = time.time()
-    sp = (t2-t1)+1e-20 # protect against div by zero
+    sp = (t2-t1)+1e-20  # protect against div by zero
     print(' speed for scxx:',sp)
     print(' speed up: %3.2f' % (py/sp))
 
@@ -202,7 +202,7 @@ def search_compare(a,n):
     for i in range(n):
         c_int_search_scxx(a,i,chk=0)
     t2 = time.time()
-    sp = (t2-t1)+1e-20 # protect against div by zero
+    sp = (t2-t1)+1e-20  # protect against div by zero
     print(' speed for scxx(no asserts):',sp)
     print(' speed up: %3.2f' % (py/sp))
 
@@ -215,7 +215,7 @@ def search_compare(a,n):
         for i in range(n):
             c_array_int_search(a,i)
         t2 = time.time()
-        sp = (t2-t1)+1e-20 # protect against div by zero
+        sp = (t2-t1)+1e-20  # protect against div by zero
         print(' speed in c(numpy arrays):',sp)
         print(' speed up: %3.2f' % (py/sp))
     except:

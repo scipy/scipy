@@ -46,12 +46,12 @@ except ImportError:
     from . import _dumb_shelve as shelve
     dumb = 1
 
-#For testing...
-#import scipy.io.dumb_shelve as shelve
-#dumb = 1
+# For testing...
+# import scipy.io.dumb_shelve as shelve
+# dumb = 1
 
-#import shelve
-#dumb = 0
+# import shelve
+# dumb = 0
 
 
 def getmodule(object):
@@ -63,7 +63,7 @@ def getmodule(object):
     import inspect
     value = inspect.getmodule(object)
     if value is None:
-        #walk trough all modules looking for function
+        # walk trough all modules looking for function
         for name,mod in sys.modules.items():
             # try except used because of some comparison failures
             # in wxPoint code.  Need to review this
@@ -105,7 +105,7 @@ def unique_file(d,expr):
         extension to it before creating files.
     """
     files = os.listdir(d)
-    #base = 'scipy_compile'
+    # base = 'scipy_compile'
     base = expr_to_filename(expr)
     for i in xrange(1000000):
         fname = base + repr(i)
@@ -438,7 +438,7 @@ class catalog(object):
                 existing_files.append(file)
                 cat.close()
         # This is the non-portable (and much faster) old code
-        #existing_files = filter(os.path.exists,files)
+        # existing_files = filter(os.path.exists,files)
         return existing_files
 
     def get_writable_file(self,existing_only=0):
@@ -539,7 +539,7 @@ class catalog(object):
                 self.configure_path(cat,code)
                 try:
                     function_list += cat[code]
-                except: # SystemError and ImportError so far seen
+                except:  # SystemError and ImportError so far seen
                     # problems loading a function from the catalog.  Try to
                     # repair the cause.
                     cat.close()
@@ -670,7 +670,7 @@ class catalog(object):
             matter what the user's Python path is.
         """
         # add function to data in first writable catalog
-        mode = 'c' # create if doesn't exist, otherwise, use existing
+        mode = 'c'  # create if doesn't exist, otherwise, use existing
         cat_dir = self.get_writable_dir()
         cat = get_catalog(cat_dir,mode)
         if cat is None:
@@ -723,7 +723,7 @@ class catalog(object):
         try:
             if self.cache[code][0] == function:
                 return
-        except: # KeyError, IndexError
+        except:  # KeyError, IndexError
             pass
         try:
             self.cache[code].remove(function)

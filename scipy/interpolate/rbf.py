@@ -133,7 +133,7 @@ class Rbf(object):
 
     def _h_thin_plate(self, r):
         result = r**2 * log(r)
-        result[r == 0] = 0 # the spline is zero at zero
+        result[r == 0] = 0  # the spline is zero at zero
         return result
 
     # Setup self._function and do smoke test on initial r

@@ -21,7 +21,7 @@ def random_sparse(m,n,nnz_per_row):
     return coo_matrix((vals,(rows,cols)),(m,n)).tocsr()
 
 
-#TODO move this to a matrix gallery and add unittests
+# TODO move this to a matrix gallery and add unittests
 def poisson2d(N,dtype='d',format=None):
     """
     Return a sparse matrix for the 2D Poisson problem
@@ -36,8 +36,8 @@ def poisson2d(N,dtype='d',format=None):
 
     diags = empty((5,N**2),dtype=dtype)
 
-    diags[0]  = 4 # main diagonal
-    diags[1:] = -1 # all offdiagonals
+    diags[0]  = 4  # main diagonal
+    diags[1:] = -1  # all offdiagonals
 
     diags[3,N-1::N] = 0  # first lower diagonal
     diags[4,N::N]   = 0  # first upper diagonal
@@ -50,7 +50,7 @@ class BenchmarkSparse(TestCase):
 
     def bench_arithmetic(self):
         matrices = []
-        #matrices.append( ('A','Identity', sparse.eye(500**2,format='csr')) )
+        # matrices.append( ('A','Identity', sparse.eye(500**2,format='csr')) )
         matrices.append(('A','Poisson5pt', poisson2d(250,format='csr')))
         matrices.append(('B','Poisson5pt^2', poisson2d(250,format='csr')**2))
 
@@ -81,7 +81,7 @@ class BenchmarkSparse(TestCase):
                 x,y = vars[X],vars[Y]
                 for op in ['__add__','__sub__','multiply','__div__','__mul__']:
                     fn = getattr(x,op)
-                    fn(y) # warmup
+                    fn(y)  # warmup
 
                     start = time.clock()
                     iter = 0
@@ -270,7 +270,7 @@ class BenchmarkSparse(TestCase):
                 except:
                     times.append(None)
                 else:
-                    x = fn() # warmup
+                    x = fn()  # warmup
                     start = time.clock()
                     iter = 0
                     while time.clock() < start + 0.2:
@@ -289,7 +289,7 @@ class BenchmarkSparse(TestCase):
             print(output)
 
 
-#class TestLarge(TestCase):
+# class TestLarge(TestCase):
 #    def bench_large(self):
 #        # Create a 100x100 matrix with 100 non-zero elements
 #        # and play around with it

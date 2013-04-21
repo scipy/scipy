@@ -135,9 +135,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     elif b_is_vector:
         if isspmatrix_csc(A):
-            flag = 1 # CSC format
+            flag = 1  # CSC format
         elif isspmatrix_csr(A):
-            flag = 0 # CSR format
+            flag = 0  # CSR format
         else:
             A = csc_matrix(A)
             flag = 1
@@ -224,7 +224,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     M, N = A.shape
     if (M != N):
-        raise ValueError("can only factor square matrices") # is this true?
+        raise ValueError("can only factor square matrices")  # is this true?
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
@@ -289,7 +289,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     M, N = A.shape
     if (M != N):
-        raise ValueError("can only factor square matrices") # is this true?
+        raise ValueError("can only factor square matrices")  # is this true?
 
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,

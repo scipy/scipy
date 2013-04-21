@@ -36,9 +36,9 @@ def clear_temp_catalog():
     os.mkdir(backup_dir)
     for file in temp_catalog_files():
         move_file(file,backup_dir)
-        #d,f = os.path.split(file)
-        #backup = os.path.join(backup_dir,f)
-        #os.rename(file,backup)
+        # d,f = os.path.split(file)
+        # backup = os.path.join(backup_dir,f)
+        # os.rename(file,backup)
 
 
 def restore_temp_catalog():
@@ -52,7 +52,7 @@ def restore_temp_catalog():
         dst_file = os.path.join(cat_dir, f)
         if os.path.exists(dst_file):
             os.remove(dst_file)
-        #os.rename(file,dst_file)
+        # os.rename(file,dst_file)
         move_file(file,dst_file)
     os.rmdir(backup_dir)
     backup_dir = None
@@ -83,7 +83,7 @@ def cleanup_temp_dir(d):
             else:
                 os.remove(i)
         except OSError:
-            pass # failed to remove file for whatever reason
+            pass  # failed to remove file for whatever reason
                  # (maybe it is a DLL Python is currently using)
     try:
         os.rmdir(d)

@@ -565,7 +565,7 @@ class test_sparse_distance_matrix:
             assert_(j in r[i])
 
     def test_zero_distance(self):
-        M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870
+        M = self.T1.sparse_distance_matrix(self.T1, self.r)  # raises an exception for bug 870
 
 
 class test_sparse_distance_matrix_compiled:
@@ -587,7 +587,7 @@ class test_sparse_distance_matrix_compiled:
             assert_(j in r[i])
 
     def test_zero_distance(self):
-        M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870 (FIXME: Does it?)
+        M = self.T1.sparse_distance_matrix(self.T1, self.r)  # raises an exception for bug 870 (FIXME: Does it?)
 
 
 def test_distance_matrix():

@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from . import _interpolate # C extension.  Does all the real work.
+from . import _interpolate  # C extension.  Does all the real work.
 
 
 def atleast_1d_and_contiguous(ary, dtype=np.float64):
@@ -65,7 +65,7 @@ def linear(x, y, new_x):
         raise ValueError("`linear` only works with 1-D or 2-D arrays.")
     if len(y.shape) == 2:
         new_y = np.zeros((y.shape[0], len(new_x)), np.float64)
-        for i in range(len(new_y)): # for each row
+        for i in range(len(new_y)):  # for each row
             _interpolate.linear_dddd(x, y[i], new_x, new_y[i])
     else:
         new_y = np.zeros(len(new_x), np.float64)

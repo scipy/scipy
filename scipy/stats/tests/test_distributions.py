@@ -51,7 +51,7 @@ def check_distribution(dist, args, alpha):
     D,pval = stats.kstest(dist,'', args=args, N=1000)
     if (pval < alpha):
         D,pval = stats.kstest(dist,'',args=args, N=1000)
-        #if (pval < alpha):
+        # if (pval < alpha):
         #    D,pval = stats.kstest(dist,'',args=args, N=1000)
         assert_(pval > alpha, msg="D = " + str(D) + "; pval = " + str(pval) +
                "; alpha = " + str(alpha) + "\nargs = " + str(args))
@@ -410,7 +410,7 @@ class TestExponpow(TestCase):
 
 class TestSkellam(TestCase):
     def test_pmf(self):
-        #comparison to R
+        # comparison to R
         k = numpy.arange(-10, 15)
         mu1, mu2 = 10, 5
         skpmfR = numpy.array(
@@ -431,7 +431,7 @@ class TestSkellam(TestCase):
         assert_almost_equal(stats.skellam.pmf(k, mu1, mu2), skpmfR, decimal=15)
 
     def test_cdf(self):
-        #comparison to R, only 5 decimals
+        # comparison to R, only 5 decimals
         k = numpy.arange(-10, 15)
         mu1, mu2 = 10, 5
         skcdfR = numpy.array(
@@ -508,7 +508,7 @@ class TestChi2(TestCase):
         assert_almost_equal(stats.chi2.pdf(100, 100), 0.028162503162596778, 14)
 
 
-class TestArrayArgument(TestCase): # test for ticket:992
+class TestArrayArgument(TestCase):  # test for ticket:992
     def test_noexception(self):
         rvs = stats.norm.rvs(loc=(np.arange(5)), scale=np.ones(5), size=(10,5))
         assert_equal(rvs.shape, (10,5))
@@ -778,7 +778,7 @@ class TestExpect(TestCase):
         assert_almost_equal(prob90c, 1., decimal=14)
 
     def test_beta(self):
-        #case with finite support interval
+        # case with finite support interval
 ##        >>> mtrue, vtrue = stats.beta.stats(10,5, loc=5., scale=2.)
 ##        >>> mtrue, vtrue
 ##        (array(6.333333333333333), array(0.055555555555555552))
@@ -800,9 +800,9 @@ class TestExpect(TestCase):
         assert_almost_equal(prob90c, 1., decimal=13)
 
     def test_hypergeom(self):
-        #test case with finite bounds
+        # test case with finite bounds
 
-        #without specifying bounds
+        # without specifying bounds
         m_true, v_true = stats.hypergeom.stats(20, 10, 8, loc=5.)
         m = stats.hypergeom.expect(lambda x: x, args=(20, 10, 8), loc=5.)
         assert_almost_equal(m, m_true, decimal=13)
@@ -811,29 +811,29 @@ class TestExpect(TestCase):
                                    loc=5.)
         assert_almost_equal(v, v_true, decimal=14)
 
-        #with bounds, bounds equal to shifted support
+        # with bounds, bounds equal to shifted support
         v_bounds = stats.hypergeom.expect(lambda x: (x-9.)**2, args=(20, 10, 8),
                                           loc=5., lb=5, ub=13)
         assert_almost_equal(v_bounds, v_true, decimal=14)
 
-        #drop boundary points
+        # drop boundary points
         prob_true = 1-stats.hypergeom.pmf([5, 13], 20, 10, 8, loc=5).sum()
         prob_bounds = stats.hypergeom.expect(lambda x: 1, args=(20, 10, 8),
                                           loc=5., lb=6, ub=12)
         assert_almost_equal(prob_bounds, prob_true, decimal=13)
 
-        #conditional
+        # conditional
         prob_bc = stats.hypergeom.expect(lambda x: 1, args=(20, 10, 8), loc=5.,
                                            lb=6, ub=12, conditional=True)
         assert_almost_equal(prob_bc, 1, decimal=14)
 
-        #check simple integral
+        # check simple integral
         prob_b = stats.hypergeom.expect(lambda x: 1, args=(20, 10, 8),
                                         lb=0, ub=8)
         assert_almost_equal(prob_b, 1, decimal=13)
 
     def test_poisson(self):
-        #poisson, use lower bound only
+        # poisson, use lower bound only
         prob_bounds = stats.poisson.expect(lambda x: 1, args=(2,), lb=3,
                                       conditional=False)
         prob_b_true = 1-stats.poisson.cdf(2,2)
@@ -851,7 +851,7 @@ def test_regression_ticket_1316():
 
 
 def test_regression_ticket_1326():
-    #adjust to avoid nan with 0*log(0)
+    # adjust to avoid nan with 0*log(0)
     assert_almost_equal(stats.chi2.pdf(0.0, 2), 0.5, 14)
 
 
@@ -1006,7 +1006,7 @@ def test_powerlaw_stats():
 
 
 def test_ksone_fit_freeze():
-    #Regression test for ticket #1638.
+    # Regression test for ticket #1638.
     d = np.array(
         [-0.18879233,  0.15734249,  0.18695107,  0.27908787, -0.248649,
          -0.2171497,  0.12233512,  0.15126419,  0.03119282,  0.4365294,
@@ -1053,16 +1053,16 @@ def test_norm_logcdf():
 
 
 def test_hypergeom_interval_1802():
-    #these two had endless loops
+    # these two had endless loops
     assert_equal(stats.hypergeom.interval(.95, 187601, 43192, 757),
                  (152.0, 197.0))
     assert_equal(stats.hypergeom.interval(.945, 187601, 43192, 757),
                  (152.0, 197.0))
-    #this was working also before
+    # this was working also before
     assert_equal(stats.hypergeom.interval(.94, 187601, 43192, 757),
                  (153.0, 196.0))
 
-    #degenerate case .a == .b
+    # degenerate case .a == .b
     assert_equal(stats.hypergeom.ppf(0.02, 100, 100, 8), 8)
     assert_equal(stats.hypergeom.ppf(1, 100, 100, 8), 8)
 

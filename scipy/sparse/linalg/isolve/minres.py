@@ -176,7 +176,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         if itn == 1:
             if beta/beta1 <= 10*eps:
                 istop = -1  # Terminate later
-            #tnorm2 = alfa**2 ??
+            # tnorm2 = alfa**2 ??
             gmax = abs(alfa)
             gmin = gmax
 
@@ -260,8 +260,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
                 istop = 4
             if epsx  >= beta:
                 istop = 3
-            #if rnorm <= epsx   : istop = 2
-            #if rnorm <= epsr   : istop = 1
+            # if rnorm <= epsx   : istop = 2
+            # if rnorm <= epsr   : istop = 1
             if test2 <= tol:
                 istop = 2
             if test1 <= tol:
@@ -301,7 +301,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
             callback(x)
 
         if istop != 0:
-            break # TODO check this
+            break  # TODO check this
 
     if show:
         print()
@@ -331,10 +331,10 @@ if __name__ == '__main__':
     def cb(x):
         residuals.append(norm(b - A*x))
 
-    #A = poisson((10,),format='csr')
+    # A = poisson((10,),format='csr')
     A = spdiags([arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     M = spdiags([1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     A.psolve = M.matvec
     b = 0*ones(A.shape[0])
     x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
-    #x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]
+    # x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]

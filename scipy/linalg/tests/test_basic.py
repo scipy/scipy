@@ -270,11 +270,11 @@ class TestSolve(TestCase):
         np.random.seed(1234)
 
     def test_20Feb04_bug(self):
-        a = [[1,1],[1.0,0]] # ok
+        a = [[1,1],[1.0,0]]  # ok
         x0 = solve(a,[1,0j])
         assert_array_almost_equal(dot(a,x0),[1,0])
 
-        a = [[1,1],[1.2,0]] # gives failure with clapack.zgesv(..,rowmajor=0)
+        a = [[1,1],[1.2,0]]  # gives failure with clapack.zgesv(..,rowmajor=0)
         b = [1,0j]
         x0 = solve(a,b)
         assert_array_almost_equal(dot(a,x0),[1,0])
@@ -360,7 +360,7 @@ class TestSolve(TestCase):
     def test_random_sym_complex(self):
         n = 20
         a = random([n,n])
-        #a  = a + 1j*random([n,n]) # XXX: with this the accuracy will be very low
+        # a  = a + 1j*random([n,n]) # XXX: with this the accuracy will be very low
         for i in range(n):
             a[i,i] = abs(20*(.1+a[i,i]))
             for j in range(i):
@@ -519,7 +519,7 @@ class TestLstsq(TestCase):
         np.random.seed(1234)
 
     def test_random_overdet_large(self):
-        #bug report: Nils Wagner
+        # bug report: Nils Wagner
         n = 200
         a = random([n,2])
         for i in range(2):
@@ -553,7 +553,7 @@ class TestLstsq(TestCase):
         a = [[1,2,3],[4,5,6]]
         b = [1,2]
         x,res,r,s = lstsq(a,b)
-        #XXX: need independent check
+        # XXX: need independent check
         assert_array_almost_equal(x,[-0.05555556, 0.11111111, 0.27777778])
 
     def test_random_exact(self):
@@ -587,7 +587,7 @@ class TestLstsq(TestCase):
             b = random([n,3])
             x,res,r,s = lstsq(a,b)
             assert_(r == m, 'unexpected efficient rank')
-            #XXX: check definition of res
+            # XXX: check definition of res
             assert_array_almost_equal(x,direct_lstsq(a,b))
 
     def test_random_complex_overdet(self):
@@ -600,7 +600,7 @@ class TestLstsq(TestCase):
             b = random([n,3])
             x,res,r,s = lstsq(a,b)
             assert_(r == m, 'unexpected efficient rank')
-            #XXX: check definition of res
+            # XXX: check definition of res
             assert_array_almost_equal(x,direct_lstsq(a,b,1))
 
     def test_check_finite(self):

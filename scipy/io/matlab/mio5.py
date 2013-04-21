@@ -591,7 +591,7 @@ class VarWriter5(object):
         self.write_element(np.array(shape, dtype='i4'))
         # write name
         name = np.asarray(name)
-        if name == '': # empty string zero-terminated
+        if name == '':  # empty string zero-terminated
             self.write_smalldata_element(name, miINT8, 0)
         else:
             self.write_element(name, miINT8)
@@ -650,9 +650,9 @@ class VarWriter5(object):
             self.write_object(narr)
         elif isinstance(narr, MatlabFunction):
             raise MatWriteError('Cannot write matlab functions')
-        elif narr.dtype.fields: # struct array
+        elif narr.dtype.fields:  # struct array
             self.write_struct(narr)
-        elif narr.dtype.hasobject: # cell array
+        elif narr.dtype.hasobject:  # cell array
             self.write_cells(narr)
         elif narr.dtype.kind in ('U', 'S'):
             if self.unicode_strings:
@@ -675,7 +675,7 @@ class VarWriter5(object):
             if imagf:
                 arr = arr.astype('c128')
             elif logif:
-                arr = arr.astype('i1') # Should only contain 0/1
+                arr = arr.astype('i1')  # Should only contain 0/1
             else:
                 arr = arr.astype('f8')
             mclass = mxDOUBLE_CLASS
@@ -723,7 +723,7 @@ class VarWriter5(object):
             n_chars = np.product(shape)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
-                                buffer=arr.T.copy()) # Fortran order
+                                buffer=arr.T.copy())  # Fortran order
             # Recode with codec to give byte string
             st = st_arr.item().encode(codec)
             # Reconstruct as one-dimensional byte array
@@ -735,7 +735,7 @@ class VarWriter5(object):
     def write_sparse(self, arr):
         ''' Sparse matrices are 2D
         '''
-        A = arr.tocsc() # convert to sparse CSC format
+        A = arr.tocsc()  # convert to sparse CSC format
         A.sort_indices()     # MATLAB expects sorted row indices
         is_complex = (A.dtype.kind == 'c')
         is_logical = (A.dtype.kind == 'b')
@@ -878,5 +878,5 @@ class MatFile5Writer(object):
                 tag['mdtype'] = miCOMPRESSED
                 tag['byte_count'] = len(out_str)
                 self.file_stream.write(tag.tostring() + out_str)
-            else: # not compressing
+            else:  # not compressing
                 self._matrix_writer.write_top(var, asbytes(name), is_global)

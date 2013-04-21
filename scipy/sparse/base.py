@@ -75,7 +75,7 @@ class spmatrix(object):
             raise ValueError("Only two-dimensional sparse arrays "
                                      "are supported.")
         try:
-            shape = int(shape[0]),int(shape[1]) # floats, other weirdness
+            shape = int(shape[0]),int(shape[1])  # floats, other weirdness
         except:
             raise TypeError('invalid shape')
 
@@ -127,7 +127,7 @@ class spmatrix(object):
             maxprint = MAXPRINT
         return maxprint
 
-    #def typecode(self):
+    # def typecode(self):
     #    try:
     #        typ = self.dtype.char
     #    except AttributeError:
@@ -236,7 +236,7 @@ class spmatrix(object):
         return self.tocsr().__radd__(other)
 
     def __sub__(self, other):   # self - other
-        #note: this can't be replaced by self + (-other) for unsigned types
+        # note: this can't be replaced by self + (-other) for unsigned types
         return self.tocsr().__sub__(other)
 
     def __rsub__(self, other):  # other - self
@@ -324,7 +324,7 @@ class spmatrix(object):
     def _mul_sparse_matrix(self, other):
         return self.tocsr()._mul_sparse_matrix(other)
 
-    def __rmul__(self, other): # other * self
+    def __rmul__(self, other):  # other * self
         if isscalarlike(other):
             return self.__mul__(other)
         else:
@@ -479,7 +479,7 @@ class spmatrix(object):
         row_selector = csr_matrix(([1], [[0], [i]]), shape=(1,m), dtype=self.dtype)
         return row_selector * self
 
-    #def __array__(self):
+    # def __array__(self):
     #    return self.toarray()
 
     def todense(self, order=None, out=None):
@@ -604,7 +604,7 @@ class spmatrix(object):
     def diagonal(self):
         """Returns the main diagonal of the matrix
         """
-        #TODO support k != 0
+        # TODO support k != 0
         return self.tocsr().diagonal()
 
     def setdiag(self, values, k=0):

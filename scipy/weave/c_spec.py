@@ -173,7 +173,7 @@ class common_base_converter(base_converter):
     def cleanup_code(self):
         if self.use_ref_count:
             code = 'Py_XDECREF(%(py_var)s);\n' % self.template_vars()
-            #code += 'printf("cleaning up %(py_var)s\\n");\n' % self.template_vars()
+            # code += 'printf("cleaning up %(py_var)s\\n");\n' % self.template_vars()
         else:
             code = ""
         return code
@@ -183,7 +183,7 @@ class common_base_converter(base_converter):
         return msg
 
     def __cmp__(self,other):
-        #only works for equal
+        # only works for equal
         result = -1
         try:
             result = cmp(self.name,other.name) or \
@@ -242,13 +242,13 @@ class unicode_converter(common_base_converter):
         self.type_name = 'unicode'
         self.check_func = 'PyUnicode_Check'
         # This isn't supported by gcc 2.95.3 -- MSVC works fine with it.
-        #self.c_type = 'std::wstring'
-        #self.to_c_return = "std::wstring(PyUnicode_AS_UNICODE(py_obj))"
+        # self.c_type = 'std::wstring'
+        # self.to_c_return = "std::wstring(PyUnicode_AS_UNICODE(py_obj))"
         self.c_type = 'Py_UNICODE*'
         self.return_type = self.c_type
         self.to_c_return = "PyUnicode_AS_UNICODE(py_obj)"
         self.matching_types = [types.UnicodeType]
-        #self.headers.append('<string>')
+        # self.headers.append('<string>')
 
     def declaration_code(self,templatize=0,inline=0):
         # since wstring doesn't seem to work everywhere, we need to provide
@@ -311,7 +311,7 @@ num_to_c_types[long]  = 'npy_longlong'
 #----------------------------------------------------------------------------
 # Numeric array Python numeric --> C type maps
 #----------------------------------------------------------------------------
-num_to_c_types['T'] = 'T' # for templates
+num_to_c_types['T'] = 'T'  # for templates
 num_to_c_types['G'] = 'std::complex<longdouble> '
 num_to_c_types['F'] = 'std::complex<float> '
 num_to_c_types['D'] = 'std::complex<double> '

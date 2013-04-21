@@ -117,7 +117,7 @@ class csr_matrix(_cs_matrix):
         from .lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
 
-        self.sort_indices() # lil_matrix needs sorted column indices
+        self.sort_indices()  # lil_matrix needs sorted column indices
 
         ptr,ind,dat = self.indptr,self.indices,self.data
         rows, data  = lil.rows, lil.data
@@ -231,7 +231,7 @@ class csr_matrix(_cs_matrix):
             if isintlike(row):
                 #[1,??]
                 if isintlike(col):
-                    return self._get_single_element(row, col) # [i,j]
+                    return self._get_single_element(row, col)  # [i,j]
                 elif isinstance(col, slice):
                     return self._get_row_slice(row, col)      # [i,1:2]
                 else:
@@ -267,8 +267,8 @@ class csr_matrix(_cs_matrix):
                         csr_sample_values(self.shape[0], self.shape[1],
                                           self.indptr, self.indices, self.data,
                                           num_samples, row, col, val)
-                        #val = []
-                        #for i,j in zip(row,col):
+                        # val = []
+                        # for i,j in zip(row,col):
                         #    val.append(self._get_single_element(i,j))
                         return np.asmatrix(val)
 
@@ -296,7 +296,7 @@ class csr_matrix(_cs_matrix):
         if not (0 <= row < M) or not (0 <= col < N):
             raise IndexError("index out of bounds")
 
-        #TODO make use of sorted indices (if present)
+        # TODO make use of sorted indices (if present)
 
         start = self.indptr[row]
         end   = self.indptr[row+1]

@@ -857,7 +857,7 @@ class TestSVD(TestCase):
                     u,s,vh = svd(a, full_matrices=full_matrices)
                     assert_array_almost_equal(dot(conj(transpose(u)),u),identity(u.shape[1]))
                     # This fails when [m,n]
-                    #assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),dtype=vh.dtype.char))
+                    # assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),dtype=vh.dtype.char))
                     sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
                     for i in range(len(s)):
                         sigma[i,i] = s[i]
@@ -1794,16 +1794,16 @@ class TestQZ(TestCase):
         assert_(all(diag(BB) >= 0))
 
     def test_qz_double_sort(self):
-        #from http://www.nag.com/lapack-ex/node119.html
-        #NOTE: These matrices may be ill-conditioned and lead to a
+        # from http://www.nag.com/lapack-ex/node119.html
+        # NOTE: These matrices may be ill-conditioned and lead to a
         # seg fault on certain python versions when compiled with
         # sse2 or sse3 older ATLAS/LAPACK binaries for windows
-        #A =   np.array([[3.9,  12.5, -34.5,  -0.5],
+        # A =   np.array([[3.9,  12.5, -34.5,  -0.5],
         #                [ 4.3,  21.5, -47.5,   7.5],
         #                [ 4.3,  21.5, -43.5,   3.5],
         #                [ 4.4,  26.0, -46.0,   6.0 ]])
 
-        #B = np.array([[ 1.0,   2.0,  -3.0,   1.0],
+        # B = np.array([[ 1.0,   2.0,  -3.0,   1.0],
         #              [1.0,   3.0,  -5.0,   4.0],
         #              [1.0,   3.0,  -4.0,   3.0],
         #              [1.0,   3.0,  -4.0,   4.0]])
@@ -1822,7 +1822,7 @@ class TestQZ(TestCase):
         assert_raises(ValueError, qz, A, B, sort=sort)
         if False:
             AA,BB,Q,Z,sdim = qz(A,B,sort=sort)
-            #assert_(sdim == 2)
+            # assert_(sdim == 2)
             assert_(sdim == 4)
             assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
             assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
@@ -1852,30 +1852,30 @@ class TestQZ(TestCase):
 
         # test absolute values bc the sign is ambiguous and might be platform
         # dependent
-        #assert_array_almost_equal(abs(AA), abs(np.array([
+        # assert_array_almost_equal(abs(AA), abs(np.array([
         #                [3.8009, -69.4505, 50.3135, -43.2884],
         #                [0.0000, 9.2033, -0.2001, 5.9881],
         #                [0.0000, 0.0000, 1.4279, 4.4453],
         #                [0.0000, 0.0000, 0.9019, -1.1962]])), 4)
-        #assert_array_almost_equal(abs(BB), abs(np.array([
+        # assert_array_almost_equal(abs(BB), abs(np.array([
         #                [1.9005, -10.2285, 0.8658, -5.2134],
         #                [0.0000,   2.3008, 0.7915,  0.4262],
         #                [0.0000,   0.0000, 0.8101,  0.0000],
         #                [0.0000,   0.0000, 0.0000, -0.2823]])), 4)
-        #assert_array_almost_equal(abs(Q), abs(np.array([
+        # assert_array_almost_equal(abs(Q), abs(np.array([
         #                [0.4642,  0.7886,  0.2915, -0.2786],
         #                [0.5002, -0.5986,  0.5638, -0.2713],
         #                [0.5002,  0.0154, -0.0107,  0.8657],
         #                [0.5331, -0.1395, -0.7727, -0.3151]])), 4)
-        #assert_array_almost_equal(dot(Q,Q.T), eye(4))
-        #assert_array_almost_equal(abs(Z), abs(np.array([
+        # assert_array_almost_equal(dot(Q,Q.T), eye(4))
+        # assert_array_almost_equal(abs(Z), abs(np.array([
         #                [0.9961, -0.0014,  0.0887, -0.0026],
         #                [0.0057, -0.0404, -0.0938, -0.9948],
         #                [0.0626,  0.7194, -0.6908,  0.0363],
         #                [0.0626, -0.6934, -0.7114,  0.0956]])), 4)
-        #assert_array_almost_equal(dot(Z,Z.T), eye(4))
+        # assert_array_almost_equal(dot(Z,Z.T), eye(4))
 
-    #def test_qz_complex_sort(self):
+    # def test_qz_complex_sort(self):
     #    cA = np.array([
     #   [-21.10+22.50*1j, 53.50+-50.50*1j, -34.50+127.50*1j, 7.50+  0.50*1j],
     #   [-0.46+ -7.78*1j, -3.50+-37.50*1j, -15.50+ 58.50*1j,-10.50+ -1.50*1j],
@@ -2005,22 +2005,22 @@ def test_lapack_misaligned():
     v = np.ones(3,dtype=float)
     LU, piv = lu_factor(S)
     for (func, args, kwargs) in [
-            (eig,(S,),dict(overwrite_a=True)), # crash
-            (eigvals,(S,),dict(overwrite_a=True)), # no crash
-            (lu,(S,),dict(overwrite_a=True)), # no crash
-            (lu_factor,(S,),dict(overwrite_a=True)), # no crash
+            (eig,(S,),dict(overwrite_a=True)),  # crash
+            (eigvals,(S,),dict(overwrite_a=True)),  # no crash
+            (lu,(S,),dict(overwrite_a=True)),  # no crash
+            (lu_factor,(S,),dict(overwrite_a=True)),  # no crash
             (lu_solve,((LU,piv),b),dict(overwrite_b=True)),
             (solve,(S,b),dict(overwrite_a=True,overwrite_b=True)),
-            (svd,(M,),dict(overwrite_a=True)), # no crash
-            (svd,(R,),dict(overwrite_a=True)), # no crash
-            (svd,(S,),dict(overwrite_a=True)), # crash
-            (svdvals,(S,),dict()), # no crash
-            (svdvals,(S,),dict(overwrite_a=True)), # crash
-            (cholesky,(M,),dict(overwrite_a=True)), # no crash
-            (qr,(S,),dict(overwrite_a=True)), # crash
-            (rq,(S,),dict(overwrite_a=True)), # crash
-            (hessenberg,(S,),dict(overwrite_a=True)), # crash
-            (schur,(S,),dict(overwrite_a=True)), # crash
+            (svd,(M,),dict(overwrite_a=True)),  # no crash
+            (svd,(R,),dict(overwrite_a=True)),  # no crash
+            (svd,(S,),dict(overwrite_a=True)),  # crash
+            (svdvals,(S,),dict()),  # no crash
+            (svdvals,(S,),dict(overwrite_a=True)),  # crash
+            (cholesky,(M,),dict(overwrite_a=True)),  # no crash
+            (qr,(S,),dict(overwrite_a=True)),  # crash
+            (rq,(S,),dict(overwrite_a=True)),  # crash
+            (hessenberg,(S,),dict(overwrite_a=True)),  # crash
+            (schur,(S,),dict(overwrite_a=True)),  # crash
             ]:
         yield check_lapack_misaligned, func, args, kwargs
 # not properly tested

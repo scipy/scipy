@@ -985,7 +985,7 @@ class BroydenFirst(GenericBroyden):
         return self.Gm.rsolve(f)
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
-        self._reduce() # reduce first to preserve secant condition
+        self._reduce()  # reduce first to preserve secant condition
 
         v = self.Gm.rmatvec(dx)
         c = dx - self.Gm.matvec(df)
@@ -1026,7 +1026,7 @@ class BroydenSecond(BroydenFirst):
     """
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
-        self._reduce() # reduce first to preserve secant condition
+        self._reduce()  # reduce first to preserve secant condition
 
         v = df
         c = dx - self.Gm.matvec(df)

@@ -270,8 +270,8 @@ class KDTree(object):
             return KDTree.leafnode(idx)
         else:
             data = self.data[idx]
-            #maxes = np.amax(data,axis=0)
-            #mins = np.amin(data,axis=0)
+            # maxes = np.amax(data,axis=0)
+            # mins = np.amin(data,axis=0)
             d = np.argmax(maxes-mins)
             maxval = maxes[d]
             minval = mins[d]
@@ -955,7 +955,7 @@ def distance_matrix(x,y,p=2,threshold=1000000):
     if m*n*k <= threshold:
         return minkowski_distance(x[:,np.newaxis,:],y[np.newaxis,:,:],p)
     else:
-        result = np.empty((m,n),dtype=np.float) # FIXME: figure out the best dtype
+        result = np.empty((m,n),dtype=np.float)  # FIXME: figure out the best dtype
         if m < n:
             for i in range(m):
                 result[i,:] = minkowski_distance(x[i],y,p)

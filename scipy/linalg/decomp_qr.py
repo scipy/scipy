@@ -136,7 +136,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     if pivoting:
         geqp3, = get_lapack_funcs(('geqp3',), (a1,))
         qr, jpvt, tau = safecall(geqp3, "geqp3", a1, overwrite_a=overwrite_a)
-        jpvt -= 1 # geqp3 returns a 1-based index array, so subtract 1
+        jpvt -= 1  # geqp3 returns a 1-based index array, so subtract 1
     else:
         geqrf, = get_lapack_funcs(('geqrf',), (a1,))
         qr, tau = safecall(geqrf, "geqrf", a1, lwork=lwork,
@@ -241,7 +241,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         if mode == "left":
             c = c.T
 
-    a = numpy.asarray(a) # chkfinite done in qr
+    a = numpy.asarray(a)  # chkfinite done in qr
     M, N = a.shape
     if not (mode == "left" and
                 (not overwrite_c and min(M, N) == c.shape[0] or

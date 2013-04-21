@@ -37,7 +37,7 @@ import scipy.stats as stats
 ##  good target for 1.0 status
 X = array([1,2,3,4,5,6,7,8,9],float)
 ZERO = array([0,0,0,0,0,0,0,0,0], float)
-#MISS=array([.,.,.,.,.,.,.,.,.], float)
+# MISS=array([.,.,.,.,.,.,.,.,.], float)
 BIG = array([99999991,99999992,99999993,99999994,99999995,99999996,99999997,99999998,99999999],float)
 LITTLE = array([0.99999991,0.99999992,0.99999993,0.99999994,0.99999995,0.99999996,0.99999997,0.99999998,0.99999999],float)
 HUGE = array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12],float)
@@ -707,7 +707,7 @@ class TestRegression(TestCase):
         y += np.sin(np.linspace(0, 20, 100))
 
         res = stats.linregress(x, y)
-        assert_almost_equal(res[4], 2.3957814497838803e-3) # 4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3)  # 4.3609875083149268e-3)
 
     def test_regress_simple_onearg_rows(self):
         """Regress a line with sinusoidal noise, with a single input of shape
@@ -719,7 +719,7 @@ class TestRegression(TestCase):
         rows = np.vstack((x, y))
 
         res = stats.linregress(rows)
-        assert_almost_equal(res[4], 2.3957814497838803e-3) # 4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3)  # 4.3609875083149268e-3)
 
     def test_regress_simple_onearg_cols(self):
         """Regress a line with sinusoidal noise, with a single input of shape
@@ -731,7 +731,7 @@ class TestRegression(TestCase):
         cols = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
 
         res = stats.linregress(cols)
-        assert_almost_equal(res[4], 2.3957814497838803e-3) # 4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3)  # 4.3609875083149268e-3)
 
     def test_regress_shape_error(self):
         """Check that a single input argument to linregress with wrong shape
@@ -771,12 +771,12 @@ class TestHistogram(TestCase):
 
     # sample arrays to test the histogram with
     low_values = np.array([0.2, 0.3, 0.4, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2],
-                          dtype=float) # 11 values
+                          dtype=float)  # 11 values
     high_range = np.array([2, 3, 4, 2, 21, 32, 78, 95, 65, 66, 66, 66, 66, 4],
-                          dtype=float) # 14 values
+                          dtype=float)  # 14 values
     low_range = np.array([2, 3, 3, 2, 3, 2.4, 2.1, 3.1, 2.9, 2.6, 2.7, 2.8, 2.2, 2.001],
-                         dtype=float) # 14 values
-    few_values = np.array([2.0, 3.0, -1.0, 0.0], dtype=float) # 4 values
+                         dtype=float)  # 14 values
+    few_values = np.array([2.0, 3.0, -1.0, 0.0], dtype=float)  # 4 values
 
     def test_simple(self):
         """ Tests that each of the tests works as expected with default params
@@ -1130,8 +1130,8 @@ class TestVariability(TestCase):
         """
         this is not in R, so used
         mean(testcase,axis=0)/(sqrt(var(testcase)*3/4)) """
-        #y = stats.signaltonoise(self.shoes[0])
-        #assert_approx_equal(y,4.5709967)
+        # y = stats.signaltonoise(self.shoes[0])
+        # assert_approx_equal(y,4.5709967)
         y = stats.signaltonoise(self.testcase)
         assert_approx_equal(y,2.236067977)
 
@@ -1140,8 +1140,8 @@ class TestVariability(TestCase):
         this is not in R, so used
         sqrt(var(testcase)*3/4)/sqrt(3)
         """
-        #y = stats.sem(self.shoes[0])
-        #assert_approx_equal(y,0.775177399)
+        # y = stats.sem(self.shoes[0])
+        # assert_approx_equal(y,0.775177399)
         y = stats.sem(self.testcase)
         assert_approx_equal(y,0.6454972244)
 
@@ -1402,7 +1402,7 @@ def test_percentileofscore():
                                                     4, kind=kind), \
                                                     30
 
-    #larger numbers
+    # larger numbers
     for (kind, result) in [('mean', 35.0),
                            ('strict', 30.0),
                            ('weak', 40.0)]:
@@ -1422,7 +1422,7 @@ def test_percentileofscore():
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
                    40, kind=kind), 30.0
 
-    #boundaries
+    # boundaries
     for (kind, result) in [('rank', 10.0),
                            ('mean', 5.0),
                            ('strict', 0.0),
@@ -1439,7 +1439,7 @@ def test_percentileofscore():
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
                    110, kind=kind), result
 
-    #out of bounds
+    # out of bounds
     for (kind, score, result) in [('rank', 200, 100.0),
                                   ('mean', 200, 100.0),
                                   ('mean', 0, 0.0)]:
@@ -1451,8 +1451,8 @@ def test_percentileofscore():
 def test_friedmanchisquare():
     # see ticket:113
     # verified with matlab and R
-    #From Demsar "Statistical Comparisons of Classifiers over Multiple Data Sets"
-    #2006, Xf=9.28 (no tie handling, tie corrected Xf >=9.28)
+    # From Demsar "Statistical Comparisons of Classifiers over Multiple Data Sets"
+    # 2006, Xf=9.28 (no tie handling, tie corrected Xf >=9.28)
     x1 = [array([0.763, 0.599, 0.954, 0.628, 0.882, 0.936, 0.661, 0.583,
                  0.775, 1.0, 0.94, 0.619, 0.972, 0.957]),
           array([0.768, 0.591, 0.971, 0.661, 0.888, 0.931, 0.668, 0.583,
@@ -1462,14 +1462,14 @@ def test_friedmanchisquare():
           array([0.798, 0.569, 0.967, 0.657, 0.898, 0.931, 0.685, 0.625,
                  0.875, 1.0, 0.962, 0.669, 0.975, 0.970])]
 
-    #From "Bioestadistica para las ciencias de la salud" Xf=18.95 p<0.001:
+    # From "Bioestadistica para las ciencias de la salud" Xf=18.95 p<0.001:
     x2 = [array([4,3,5,3,5,3,2,5,4,4,4,3]),
           array([2,2,1,2,3,1,2,3,2,1,1,3]),
           array([2,4,3,3,4,3,3,4,4,1,2,1]),
           array([3,5,4,3,4,4,3,3,3,4,4,4])]
 
-    #From Jerrorl H. Zar, "Biostatistical Analysis"(example 12.6), Xf=10.68, 0.005 < p < 0.01:
-    #Probability from this example is inexact using Chisquare aproximation of Friedman Chisquare.
+    # From Jerrorl H. Zar, "Biostatistical Analysis"(example 12.6), Xf=10.68, 0.005 < p < 0.01:
+    # Probability from this example is inexact using Chisquare aproximation of Friedman Chisquare.
     x3 = [array([7.0,9.9,8.5,5.1,10.3]),
           array([5.3,5.7,4.7,3.5,7.7]),
           array([4.9,7.6,5.5,2.8,8.4]),
@@ -1483,13 +1483,13 @@ def test_friedmanchisquare():
     # test using mstats
     assert_array_almost_equal(stats.mstats.friedmanchisquare(x1[0],x1[1],x1[2],x1[3]),(10.2283464566929, 0.0167215803284414))
     # the following fails
-    #assert_array_almost_equal(stats.mstats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),(18.9428571428571, 0.000280938375189499))
+    # assert_array_almost_equal(stats.mstats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),(18.9428571428571, 0.000280938375189499))
     assert_array_almost_equal(stats.mstats.friedmanchisquare(x3[0],x3[1],x3[2],x3[3]),(10.68, 0.0135882729582176))
     np.testing.assert_raises(ValueError,stats.mstats.friedmanchisquare,x3[0],x3[1])
 
 
 def test_kstest():
-    #from numpy.testing import assert_almost_equal
+    # from numpy.testing import assert_almost_equal
 
     # comparing with values from R
     x = np.linspace(-1,1,9)
@@ -1516,18 +1516,18 @@ def test_kstest():
     assert_almost_equal(np.array(stats.kstest(x,'norm', alternative='greater')),
                 np.array((0.0072115233216310994, 0.98531158590396228)), 12)
 
-    #missing: no test that uses *args
+    # missing: no test that uses *args
 
 
 def test_ks_2samp():
-    #exact small sample solution
+    # exact small sample solution
     data1 = np.array([1.0,2.0])
     data2 = np.array([1.0,2.0,3.0])
     assert_almost_equal(np.array(stats.ks_2samp(data1+0.01,data2)),
                 np.array((0.33333333333333337, 0.99062316386915694)))
     assert_almost_equal(np.array(stats.ks_2samp(data1-0.01,data2)),
                 np.array((0.66666666666666674, 0.42490954988801982)))
-    #these can also be verified graphically
+    # these can also be verified graphically
     assert_almost_equal(
         np.array(stats.ks_2samp(np.linspace(1,100,100),
                               np.linspace(1,100,100)+2+0.1)),
@@ -1536,7 +1536,7 @@ def test_ks_2samp():
         np.array(stats.ks_2samp(np.linspace(1,100,100),
                               np.linspace(1,100,100)+2-0.1)),
         np.array((0.020000000000000018, 0.99999999999999933)))
-    #these are just regression tests
+    # these are just regression tests
     assert_almost_equal(
         np.array(stats.ks_2samp(np.linspace(1,100,100),
                               np.linspace(1,100,110)+20.1)),
@@ -1548,7 +1548,7 @@ def test_ks_2samp():
 
 
 def test_ttest_rel():
-    #regression test
+    # regression test
     tr,pr = 0.81248591389165692, 0.41846234511362157
     tpr = ([tr,-tr],[pr,pr])
 
@@ -1564,7 +1564,7 @@ def test_ttest_rel():
     t,p = stats.ttest_rel(rvs1_2D, rvs2_2D, axis=1)
     assert_array_almost_equal([t,p],tpr)
 
-    #test on 3 dimensions
+    # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
     rvs2_3D = np.dstack([rvs2_2D,rvs2_2D,rvs2_2D])
     t,p = stats.ttest_rel(rvs1_3D, rvs2_3D, axis=1)
@@ -1579,12 +1579,12 @@ def test_ttest_rel():
 
     olderr = np.seterr(all='ignore')
     try:
-        #test zero division problem
+        # test zero division problem
         t,p = stats.ttest_rel([0,0,0],[1,1,1])
         assert_equal((np.abs(t),p), (np.inf, 0))
         assert_equal(stats.ttest_rel([0,0,0], [0,0,0]), (np.nan, np.nan))
 
-        #check that nan in input array result in nan output
+        # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
     finally:
@@ -1592,7 +1592,7 @@ def test_ttest_rel():
 
 
 def test_ttest_ind():
-    #regression test
+    # regression test
     tr = 1.0912746897927283
     pr = 0.27647818616351882
     tpr = ([tr,-tr],[pr,pr])
@@ -1609,7 +1609,7 @@ def test_ttest_ind():
     t,p = stats.ttest_ind(rvs1_2D, rvs2_2D, axis=1)
     assert_array_almost_equal([t,p],tpr)
 
-    #test on 3 dimensions
+    # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
     rvs2_3D = np.dstack([rvs2_2D,rvs2_2D,rvs2_2D])
     t,p = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=1)
@@ -1624,12 +1624,12 @@ def test_ttest_ind():
 
     olderr = np.seterr(all='ignore')
     try:
-        #test zero division problem
+        # test zero division problem
         t,p = stats.ttest_ind([0,0,0],[1,1,1])
         assert_equal((np.abs(t),p), (np.inf, 0))
         assert_equal(stats.ttest_ind([0,0,0], [0,0,0]), (np.nan, np.nan))
 
-        #check that nan in input array result in nan output
+        # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
     finally:
@@ -1652,7 +1652,7 @@ def test_ttest_ind_with_uneq_var():
     t, p = stats.ttest_ind(a, b, equal_var=False)
     assert_array_almost_equal([t,p], [tr, pr])
 
-    #regression test
+    # regression test
     tr = 1.0912746897927283
     tr_uneq_n = 0.66745638708050492
     pr = 0.27647831993021388
@@ -1674,7 +1674,7 @@ def test_ttest_ind_with_uneq_var():
     t,p = stats.ttest_ind(rvs1_2D, rvs2_2D, axis=1, equal_var=False)
     assert_array_almost_equal([t,p],tpr)
 
-    #test on 3 dimensions
+    # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
     rvs2_3D = np.dstack([rvs2_2D,rvs2_2D,rvs2_2D])
     t,p = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=1, equal_var=False)
@@ -1690,12 +1690,12 @@ def test_ttest_ind_with_uneq_var():
 
     olderr = np.seterr(all='ignore')
     try:
-        #test zero division problem
+        # test zero division problem
         t,p = stats.ttest_ind([0,0,0],[1,1,1], equal_var=False)
         assert_equal((np.abs(t),p), (np.inf, 0))
         assert_equal(stats.ttest_ind([0,0,0], [0,0,0], equal_var=False), (np.nan, np.nan))
 
-        #check that nan in input array result in nan output
+        # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2,2)), equal_var=False),
                      ([0, np.nan], [1,np.nan]))
@@ -1707,8 +1707,8 @@ def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
     rvn1 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
 
-    #check multidimensional array and correct axis handling
-    #deterministic rvn1 and rvn2 would be better as in test_ttest_rel
+    # check multidimensional array and correct axis handling
+    # deterministic rvn1 and rvn2 would be better as in test_ttest_rel
     t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n2,n3)),axis=0)
     t2,p2 = stats.ttest_1samp(rvn1[:,:,:], 1,axis=0)
     t3,p3 = stats.ttest_1samp(rvn1[:,0,0], 1)
@@ -1732,12 +1732,12 @@ def test_ttest_1samp_new():
 
     olderr = np.seterr(all='ignore')
     try:
-        #test zero division problem
+        # test zero division problem
         t,p = stats.ttest_1samp([0,0,0], 1)
         assert_equal((np.abs(t),p), (np.inf, 0))
         assert_equal(stats.ttest_1samp([0,0,0], 0), (np.nan, np.nan))
 
-        #check that nan in input array result in nan output
+        # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
         assert_equal(stats.ttest_1samp(anan, 0),([0, np.nan], [1,np.nan]))
     finally:
@@ -1756,14 +1756,14 @@ def test_describe():
     assert_equal(mm, mmc)
     assert_equal(m, mc)
     assert_equal(v, vc)
-    assert_array_almost_equal(sk, skc, decimal=13) # not sure about precision
+    assert_array_almost_equal(sk, skc, decimal=13)  # not sure about precision
     assert_array_almost_equal(kurt, kurtc, decimal=13)
     n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
     assert_equal(n, nc)
     assert_equal(mm, mmc)
     assert_equal(m, mc)
     assert_equal(v, vc)
-    assert_array_almost_equal(sk, skc, decimal=13) # not sure about precision
+    assert_array_almost_equal(sk, skc, decimal=13)  # not sure about precision
     assert_array_almost_equal(kurt, kurtc, decimal=13)
 
 
@@ -1850,7 +1850,7 @@ def mannwhitneyu():
         1., 2., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
         1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
         1.])
-    #p-value verified with matlab and R to 5 significant digits
+    # p-value verified with matlab and R to 5 significant digits
     assert_array_almost_equal(stats.stats.mannwhitneyu(x,y),
                     (16980.5, 2.8214327656317373e-005), decimal=12)
 
@@ -1866,8 +1866,8 @@ def test_pointbiserial():
 
 
 def test_obrientransform():
-    #this is a regression test to check np.var replacement
-    #I didn't separately verigy the numbers
+    # this is a regression test to check np.var replacement
+    # I didn't separately verigy the numbers
     x1 = np.arange(5)
     result = np.array(
       [[5.41666667,   1.04166667,  -0.41666667,   1.04166667,  5.41666667],
@@ -2034,7 +2034,7 @@ class GeoMeanTestCase:
     def test_1dlist0(self):
         ''' Test a 1d list with zero element'''
         a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
-        b = 0.0 # due to exp(-inf)=0
+        b = 0.0  # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
             self.do(a, b)
@@ -2044,7 +2044,7 @@ class GeoMeanTestCase:
     def test_1darray0(self):
         ''' Test a 1d array with zero element'''
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
-        b = 0.0 # due to exp(-inf)=0
+        b = 0.0  # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
             self.do(a, b)
@@ -2074,7 +2074,7 @@ class GeoMeanTestCase:
 
 class TestGeoMean(GeoMeanTestCase, TestCase):
     def do(self, a, b, axis=None, dtype=None):
-        #Note this doesn't test when axis is not specified
+        # Note this doesn't test when axis is not specified
         x = stats.gmean(a, axis=axis, dtype=dtype)
         assert_almost_equal(b, x)
         assert_equal(x.dtype, dtype)
@@ -2151,7 +2151,7 @@ class TestSigamClip(object):
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
         assert_equal(c.size, 4)
-        assert_equal(a.size, 36) # check original array unchanged
+        assert_equal(a.size, 36)  # check original array unchanged
 
     def test_sigmaclip3(self):
         a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))
