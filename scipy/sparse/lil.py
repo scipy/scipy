@@ -302,8 +302,9 @@ class lil_matrix(spmatrix, IndexMixin):
             raise ValueError("shape mismatch in assignment")
 
         # Set values
-        for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
-            self._insertat2(self.rows[int(ii)], self.data[int(ii)], int(jj), xx)
+        for ii, jj, xx in zip(i.tolist(), j.tolist(), x.tolist()):
+            for iii, jjj, xxx in zip(ii, jj, xx):
+                self._insertat2(self.rows[iii], self.data[iii], jjj, xxx)
 
     def _mul_scalar(self, other):
         if other == 0:
