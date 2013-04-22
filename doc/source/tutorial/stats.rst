@@ -103,7 +103,7 @@ The main public methods for continuous  RVs are:
 * moment: non-central moments of the distribution
 
 
-Lets take a normal RV as an example.
+Let's take a normal RV as an example.
 
     >>> norm.cdf(0)
     0.5
@@ -129,7 +129,8 @@ Other generally useful methods are supported too:
 To find the median of a distribution we can use the percent point
 function ``ppf``, which is the inverse of the ``cdf``:
 
-    >>> norm..ppf(0.5)
+    >>> norm.ppf(0.5)
+    0.0
 
 To generate a set of random variates: 
 
@@ -141,7 +142,7 @@ Don't think that ``norm.rvs(5)`` generates 5 variates:
     >>> norm.rvs(5)
     7.131624370075814
 
-This brings us, in fact, to topic of the next subsection.
+This brings us, in fact, to the topic of the next subsection.
 
 
 Shifting and Scaling
@@ -185,7 +186,7 @@ The uniform distribution is also interesting:
 Finally, recall from the previous paragraph that we are left with the
 problem of the meaning of ``norm.rvs(5)``. As it turns out, calling a
 distribution like this, the first argument, i.e., the 5, gets passed
-to set the ``loc`` parameter. Lets see:
+to set the ``loc`` parameter. Let's see:
 
     >>> np.mean(norm.rvs(5, size=500))
     4.983550784784704
@@ -215,7 +216,7 @@ requires the shape parameter :math:`n`. Observe that setting
 :math:`\lambda` can be obtained by setting the ``scale`` keyword to
 :math:`1/\lambda`.
 
-Lets check the number and name of the shape parameters of the gamma
+Let's check the number and name of the shape parameters of the gamma
 distribution. (We know from the above that this should be 1.)
 
     >>> from scipy.stats import gamma
@@ -438,7 +439,7 @@ information about the distribution. Thus, as a cautionary example:
     >>> quad(deterministic.pdf, -1e-1, 1e-1)
     (4.163336342344337e-13, 0.0)
 
-But this is not correct: the integral over this pdf should be 1. Lets make the
+But this is not correct: the integral over this pdf should be 1. Let's make the
 integration interval smaller: 
 
     >>> quad(deterministic.pdf, -1e-3, 1e-3) # warning removed
@@ -482,7 +483,7 @@ may be raised or the resulting numbers may be incorrect.
 
 **An Example**
 
-Lets do the work. First
+Let's do the work. First
 
     >>> npoints = 20   # number of integer support points of the distribution minus 1
     >>> npointsh = npoints / 2
@@ -512,7 +513,7 @@ common methods of discrete distributions.
 
 **Testing the Implementation**
 
-Lets generate a random sample and compare observed frequencies with
+Let's generate a random sample and compare observed frequencies with
 the probabilities.
 
     >>> n_sample = 500
