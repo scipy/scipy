@@ -11,16 +11,15 @@ Package Content
 .. autosummary::
    :toctree: generated/
 
-   odr -- Perform orthogonal distance regression
-
-   ODR           -- Gathers all info & manages the main fitting routine.
-   Data          -- Stores the data to fit.
+   Data          -- The data to fit.
+   RealData      -- Data with weights as actual std. dev.s and/or covariances.
    Model         -- Stores information about the function to be fit.
-   Output
-   RealData      -- Weights as actual std. dev.s and/or covariances.
+   ODR           -- Gathers all info & manages the main fitting routine.
+   Output        -- Result from the fit.
+   odr           -- Low-level function for ODR.
 
-   odr_error
-   odr_stop
+   odr_error     -- Error exception.
+   odr_stop      -- Stop exception.
 
 Usage information
 =================
@@ -50,21 +49,52 @@ output variables may be multi-dimensional.  Weights can be provided to
 account for different variances of the observations, and even
 covariances between dimensions of the variables.
 
-odr provides two interfaces: a single function, and a set of
-high-level classes that wrap that function; please refer to their
-docstrings for more information.  While the docstring of the function
-odr does not have a full explanation of its arguments, the classes do,
-and arguments of the same name usually have the same requirements.
-Furthermore, the user is urged to at least skim the `ODRPACK User's
-Guide <http://docs.scipy.org/doc/external/odrpack_guide.pdf>`_ -
-"Know Thy Algorithm."
+The `scipy.odr` package offers an object-oriented interface to
+ODRPACK, in addition to the low-level `odr` function.
 
-Use
----
+Additional background information about ODRPACK can be found in the
+`ODRPACK User's Guide
+<http://docs.scipy.org/doc/external/odrpack_guide.pdf>`_, reading
+which is recommended.
 
-See the docstrings of `odr.odrpack` and the functions and classes for
-usage instructions.  The ODRPACK User's Guide (linked above) is also
-quite helpful.
+Basic usage
+-----------
+
+1. Define the function you want to fit against.::
+
+       def f(B, x):
+           '''Linear function y = m*x + b'''
+           # B is a vector of the parameters.
+           # x is an array of the current x values.
+           # x is in the same format as the x passed to Data or RealData.
+           #
+           # Return an array in the same format as y passed to Data or RealData.
+           return B[0]*x + B[1]
+
+2. Create a Model.::
+
+       linear = Model(f)
+
+3. Create a Data or RealData instance.::
+
+       mydata = Data(x, y, wd=1./power(sx,2), we=1./power(sy,2))
+
+   or, when the actual covariances are known::
+
+       mydata = RealData(x, y, sx=sx, sy=sy)
+
+4. Instantiate ODR with your data, model and initial parameter estimate.::
+
+       myodr = ODR(mydata, linear, beta0=[1., 2.])
+
+5. Run the fit.::
+
+       myoutput = myodr.run()
+
+6. Examine output.::
+
+       myoutput.pprint()
+
 
 References
 ----------
@@ -83,6 +113,7 @@ from __future__ import division, print_function, absolute_import
 
 from .odrpack import *
 from .models import *
+from . import add_newdocs
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
