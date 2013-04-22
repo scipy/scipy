@@ -309,7 +309,7 @@ class lil_matrix(spmatrix):
             return self._get1(int(i), int(j))
 
         i, j = self._index_to_arrays(i, j)
-        if i.shape[0] == 0:
+        if i.size == 0:
             return lil_matrix((0,0), dtype=self.dtype)
         return self.__class__([[self._get1(iii, jjj) for iii, jjj in 
                                zip(ii, jj)] for ii, jj in 
