@@ -19,6 +19,7 @@ supported_dtypes = [np.typeDict[x] for x in supported_dtypes]
 
 _upcast_memo = {}
 
+
 def upcast(*args):
     """Returns the nearest supported sparse dtype for the
     combination of one or more types.
@@ -52,6 +53,7 @@ def upcast(*args):
 
     raise TypeError('no supported conversion for types: %r' % (args,))
 
+
 def upcast_char(*args):
     """Same as `upcast` but taking dtype.char as input (faster)."""
     t = _upcast_memo.get(args)
@@ -60,6 +62,7 @@ def upcast_char(*args):
     t = upcast(*map(np.dtype, args))
     _upcast_memo[args] = t
     return t
+
 
 def to_native(A):
     return np.asarray(A,dtype=A.dtype.newbyteorder('native'))
@@ -88,9 +91,11 @@ def getdtype(dtype, a=None, default=None):
 
     return newdtype
 
+
 def isscalarlike(x):
     """Is x either a scalar, an array scalar, or a 0-dim array?"""
     return np.isscalar(x) or (isdense(x) and x.ndim == 0)
+
 
 def isintlike(x):
     """Is x appropriate as an index into a sparse matrix? Returns True
@@ -106,6 +111,7 @@ def isintlike(x):
                 return False
         except TypeError:
             return False
+
 
 def isshape(x):
     """Is x a valid 2-tuple of dimensions?
@@ -126,9 +132,11 @@ def issequence(t):
     return isinstance(t, (list, tuple))\
            or (isinstance(t, np.ndarray) and (t.ndim == 1))
 
+
 def ismatrix(t):
-    return ((issequence(t) and issequence(t[0]) and np.isscalar(t[0][0])) 
+    return ((issequence(t) and issequence(t[0]) and np.isscalar(t[0][0]))
             or (isinstance(t, np.ndarray) and t.ndim == 2))
+
 
 def isdense(x):
     return isinstance(x, np.ndarray)

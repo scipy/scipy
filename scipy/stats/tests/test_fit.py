@@ -23,6 +23,7 @@ thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 #distcont = [['genextreme', (3.3184017469423535,)]]
 
+
 def _est_cont_fit():
     # this tests the closeness of the estimated parameters to the true
     # parameters with fit method of continuous distributions
@@ -35,7 +36,7 @@ def _est_cont_fit():
 def check_cont_fit(distname,arg):
     distfn = getattr(stats, distname)
     rvs = distfn.rvs(size=n_repl1,*arg)
-    est = distfn.fit(rvs)  #,*arg) # start with default values
+    est = distfn.fit(rvs)  # ,*arg) # start with default values
 
     truearg = np.hstack([arg,[0.0,1.0]])
     diff = est-truearg
@@ -53,7 +54,7 @@ def check_cont_fit(distname,arg):
 ##            txt = 'WARNING - diff too large with small sample'
 ##            print 'parameter diff =', diff - diffthreshold, txt
             rvs = np.concatenate([rvs,distfn.rvs(size=n_repl2-n_repl1,*arg)])
-            est = distfn.fit(rvs) #,*arg)
+            est = distfn.fit(rvs) # ,*arg)
             truearg = np.hstack([arg,[0.0,1.0]])
             diff = est-truearg
             if np.any((np.abs(diff) - diffthreshold) > 0.0):
@@ -61,7 +62,6 @@ def check_cont_fit(distname,arg):
                 txt += 'estimated: %s\n' % str(est)
                 txt += 'diff     : %s\n' % str(diff)
                 raise AssertionError('fit not very good in %s\n' % distfn.name + txt)
-
 
 
 if __name__ == "__main__":

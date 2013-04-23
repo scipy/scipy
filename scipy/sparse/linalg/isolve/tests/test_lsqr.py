@@ -25,6 +25,7 @@ tol = 1e-10
 show = False
 maxit = None
 
+
 def test_basic():
     svx = np.linalg.solve(G, b)
     X = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
@@ -43,21 +44,21 @@ if __name__ == "__main__":
     chio = X[8]
     mg = np.amax(G - G.T)
     if mg > 1e-14:
-        sym='No'
+        sym = 'No'
     else:
-        sym='Yes'
+        sym = 'Yes'
 
     print('LSQR')
     print("Is linear operator symmetric? " + sym)
     print("n: %3g  iterations:   %3g" % (n, k))
     print("Norms computed in %.2fs by LSQR" % (time() - tic))
-    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " %( chio, phio, psio))
+    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " % ( chio, phio, psio))
     print("Residual norms computed directly:")
-    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" %  (norm(xo),
+    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" % (norm(xo),
                                                           norm(G*xo - b),
                                                           norm(G.T*(G*xo-b))))
     print("Direct solution norms:")
-    print(" ||x||  %9.4e  ||r|| %9.4e " %  (norm(svx), norm(G*svx -b)))
+    print(" ||x||  %9.4e  ||r|| %9.4e " % (norm(svx), norm(G*svx - b)))
     print("")
     print(" || x_{direct} - x_{LSQR}|| %9.4e " % norm(svx-xo))
     print("")

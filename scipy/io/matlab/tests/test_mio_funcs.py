@@ -26,6 +26,7 @@ from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
 
 test_data_path = pjoin(dirname(__file__), 'data')
 
+
 def read_minimat_vars(rdr):
     rdr.initialize_read()
     mdict = {'__globals__': []}
@@ -42,6 +43,7 @@ def read_minimat_vars(rdr):
         if hdr.is_global:
             mdict['__globals__'].append(name)
     return mdict
+
 
 def read_workspace_vars(fname):
     fp = open(fname, 'rb')

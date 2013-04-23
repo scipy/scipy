@@ -2,9 +2,11 @@ from __future__ import division, print_function, absolute_import
 
 from os.path import join as pjoin, splitext, basename as pbasename
 
+
 def generate_interface_emitter(target, source, env):
     base = str(target[0])
     return (['%s.pyf' % base], source)
+
 
 def do_generate_fake_interface(target, source, env):
     """Generate a (fake) .pyf file from another pyf file (!)."""

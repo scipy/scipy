@@ -148,6 +148,7 @@ from . import calc_lwork
 # replaced with the available one. If none is available, exception
 # is raised at the first attempt to use the resources.
 
+
 @deprecate(old_name="scipy.lib.lapack", new_name="scipy.linalg.lapack")
 def _deprecated():
     pass
@@ -172,6 +173,7 @@ elif hasattr(flapack,'empty_module'):
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
 _inv_type_conv = {'s':'f','d':'d','c':'F','z':'D'}
 
+
 @deprecate
 def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
     """Return available LAPACK function objects with names.
@@ -181,7 +183,7 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
     is returned for column major storaged arrays with
     rowmajor argument set to False.
     """
-    force_clapack=0  #XXX: Don't set it true! The feature is unreliable
+    force_clapack = 0  # XXX: Don't set it true! The feature is unreliable
                      #     and may cause incorrect results.
                      #     See test_basic.test_solve.check_20Feb04_bug.
 

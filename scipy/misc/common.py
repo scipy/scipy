@@ -17,6 +17,7 @@ __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
 # XXX: the factorial functions could move to scipy.special, and the others
 # to numpy perhaps?
 
+
 def logsumexp(a, axis=None, b=None):
     """Compute the log of the sum of exponentials of input elements.
 
@@ -88,6 +89,7 @@ def logsumexp(a, axis=None, b=None):
     out += a_max
     return out
 
+
 def factorial(n,exact=0):
     """
     The factorial function, n! = special.gamma(n+1).
@@ -135,7 +137,7 @@ def factorial(n,exact=0):
         sv = special.errprint(0)
         vals = special.gamma(n+1)
         sv = special.errprint(sv)
-        return where(n>=0,vals,0)
+        return where(n >= 0,vals,0)
 
 
 def factorial2(n, exact=False):
@@ -195,6 +197,7 @@ def factorial2(n, exact=False):
         place(vals,cond2,special.gamma(nd2e+1) * pow(2.0,nd2e))
         return vals
 
+
 def factorialk(n,k,exact=1):
     """
     n(!!...!)  = multifactorial of order k
@@ -230,7 +233,7 @@ def factorialk(n,k,exact=1):
     if exact:
         if n < 1-k:
             return 0
-        if n<=0:
+        if n <= 0:
             return 1
         val = 1
         for j in xrange(n,0,-k):
@@ -293,6 +296,7 @@ def comb(N,k,exact=0):
         sv = special.errprint(sv)
         return where(cond, vals, 0.0)
 
+
 def central_diff_weights(Np, ndiv=1):
     """
     Return weights for an Np-point central derivative.
@@ -327,6 +331,7 @@ def central_diff_weights(Np, ndiv=1):
         X = hstack([X,x**k])
     w = product(arange(1,ndiv+1),axis=0)*linalg.inv(X)[ndiv]
     return w
+
 
 def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     """
@@ -370,7 +375,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
         raise ValueError("'order' (the number of points used to compute the derivative) "
                          "must be odd.")
     # pre-computed for n=1 and 2 and low-order for speed.
-    if n==1:
+    if n == 1:
         if order == 3:
             weights = array([-1,0,1])/2.0
         elif order == 5:
@@ -381,7 +386,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
             weights = array([3,-32,168,-672,0,672,-168,32,-3])/840.0
         else:
             weights = central_diff_weights(order,1)
-    elif n==2:
+    elif n == 2:
         if order == 3:
             weights = array([1,-2.0,1])
         elif order == 5:
@@ -399,6 +404,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     for k in range(order):
         val += weights[k]*func(x0+(k-ho)*dx,*args)
     return val / product((dx,)*n,axis=0)
+
 
 def pade(an, m):
     """
@@ -453,6 +459,7 @@ def pade(an, m):
     q = r_[1.0, pq[n+1:]]
     return poly1d(p[::-1]), poly1d(q[::-1])
 
+
 def lena():
     """
     Get classic image processing example image, Lena, at 8-bit grayscale
@@ -484,12 +491,14 @@ def lena():
     >>> plt.show()
 
     """
-    import pickle, os
+    import pickle
+    import os
     fname = os.path.join(os.path.dirname(__file__),'lena.dat')
     f = open(fname,'rb')
     lena = array(pickle.load(f))
     f.close()
     return lena
+
 
 def ascent():
     """
@@ -522,11 +531,13 @@ def ascent():
     >>> plt.show()
 
     """
-    import pickle, os
+    import pickle
+    import os
     fname = os.path.join(os.path.dirname(__file__),'ascent.dat')
     with open(fname, 'rb') as f:
         ascent = array(pickle.load(f))
     return ascent
+
 
 def face(gray=False):
     """
@@ -561,7 +572,8 @@ def face(gray=False):
     >>> plt.show()
 
     """
-    import bz2, os
+    import bz2
+    import os
     with open(os.path.join(os.path.dirname(__file__), 'face.dat'), 'rb') as f:
         rawdata = f.read()
     data = bz2.decompress(rawdata)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
+
 def configuration(parent_package='io',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('matlab', parent_package, top_path)

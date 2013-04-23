@@ -13,8 +13,10 @@ import warnings
 
 from scipy.lib.six.moves import xrange
 
+
 class AccuracyWarning(Warning):
     pass
+
 
 def fixed_quad(func,a,b,args=(),n=5):
     """
@@ -59,6 +61,7 @@ def fixed_quad(func,a,b,args=(),n=5):
                 "finite limits.")
     y = (b-a)*(x+1)/2.0 + a
     return (b-a)/2.0*sum(w*func(y,*args),0), None
+
 
 def vectorize1(func, args=(), vec_func=False):
     """Vectorize the call to a function.
@@ -105,6 +108,7 @@ def vectorize1(func, args=(), vec_func=False):
                 output[i] = func(x[i], *args)
             return output
     return vfunc
+
 
 def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
                vec_func=True):
@@ -170,10 +174,12 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
             AccuracyWarning)
     return val, err
 
+
 def tupleset(t, i, value):
     l = list(t)
     l[i] = value
     return tuple(l)
+
 
 def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     """
@@ -261,7 +267,7 @@ def _basic_simps(y,start,stop,x,dx,axis):
     slice2 = tupleset(all, axis, slice(start+2, stop+2, step))
 
     if x is None:  # Even spaced Simpson's rule.
-        result = add.reduce(dx/3.0* (y[slice0]+4*y[slice1]+y[slice2]),
+        result = add.reduce(dx/3.0 * (y[slice0]+4*y[slice1]+y[slice2]),
                                     axis)
     else:
         # Account for possibly different spacings.
@@ -274,8 +280,8 @@ def _basic_simps(y,start,stop,x,dx,axis):
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = h0 / h1
-        result = add.reduce(hsum/6.0*(y[slice0]*(2-1.0/h0divh1) + \
-                                              y[slice1]*hsum*hsum/hprod + \
+        result = add.reduce(hsum/6.0*(y[slice0]*(2-1.0/h0divh1) +
+                                              y[slice1]*hsum*hsum/hprod +
                                               y[slice2]*(2-h0divh1)),axis)
     return result
 
@@ -345,7 +351,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
             shapex[axis] = x.shape[0]
             saveshape = x.shape
             returnshape = 1
-            x=x.reshape(tuple(shapex))
+            x = x.reshape(tuple(shapex))
         elif len(x.shape) != len(y.shape):
             raise ValueError("If given, shape of x must be 1-d or the "
                     "same as y.")
@@ -384,6 +390,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     if returnshape:
         x = x.reshape(saveshape)
     return result
+
 
 def romb(y, dx=1.0, axis=-1, show=False):
     """
@@ -452,7 +459,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     if show:
         if not isscalar(R[(1,1)]):
-            print("*** Printing table only supported for integrals" + \
+            print("*** Printing table only supported for integrals" +
                   " of a single data set.")
         else:
             try:
@@ -475,8 +482,6 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     return R[(k,k)]
 
-
-
 # Romberg quadratures for numeric integration.
 #
 # Written by Scott M. Ransom <ransom@cfa.harvard.edu>
@@ -487,6 +492,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
 #
 # Adapted to scipy by Travis Oliphant <oliphant.travis@ieee.org>
 # last revision: Dec 2001
+
 
 def _difftrap(function, interval, numtraps):
     """
@@ -508,10 +514,11 @@ def _difftrap(function, interval, numtraps):
     else:
         numtosum = numtraps/2
         h = float(interval[1]-interval[0])/numtosum
-        lox = interval[0] + 0.5 * h;
+        lox = interval[0] + 0.5 * h
         points = lox + h * arange(0, numtosum)
         s = sum(function(points),0)
         return s
+
 
 def _romberg_diff(b, c, k):
     """
@@ -520,6 +527,7 @@ def _romberg_diff(b, c, k):
     """
     tmp = 4.0**k
     return (tmp * c - b)/(tmp - 1.0)
+
 
 def _printresmat(function, interval, resmat):
     # Print the Romberg result matrix.
@@ -536,6 +544,7 @@ def _printresmat(function, interval, resmat):
     print('')
     print('The final result is', resmat[i][j], end=' ')
     print('after', 2**(len(resmat)-1)+1, 'function evaluations.')
+
 
 def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
             divmax=10, vec_func=False):
@@ -710,6 +719,7 @@ _builtincoeffs = {
         1275983280000)
     }
 
+
 def newton_cotes(rn, equal=0):
     """
     Return weights and error coefficient for Newton-Cotes integration.
@@ -754,7 +764,7 @@ def newton_cotes(rn, equal=0):
         N = len(rn)-1
         if equal:
             rn = np.arange(N+1)
-        elif np.all(np.diff(rn)==1):
+        elif np.all(np.diff(rn) == 1):
             equal = 1
     except:
         N = rn
@@ -777,10 +787,10 @@ def newton_cotes(rn, equal=0):
     Cinv = 2*Cinv - Cinv*C*Cinv
     Cinv = 2*Cinv - Cinv*C*Cinv
     Cinv = Cinv.A
-    vec = 2.0/ (nvec[::2]+1)
+    vec = 2.0 / (nvec[::2]+1)
     ai = np.dot(Cinv[:,::2],vec) * N/2
 
-    if (N%2 == 0) and equal:
+    if (N % 2 == 0) and equal:
         BN = N/(N+3.)
         power = N+2
     else:

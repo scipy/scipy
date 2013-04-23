@@ -22,10 +22,14 @@ Am = csr_matrix(array([[-2,1,0,0,0,9],
                        [1,0,0,0,1,-2]]))
 b = array([1,2,3,4,5,6])
 count = [0]
+
+
 def matvec(v):
     count[0] += 1
     return Am*v
 A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
+
+
 def do_solve(**kw):
     count[0] = 0
     x0, flag = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=6, tol=1e-14, **kw)

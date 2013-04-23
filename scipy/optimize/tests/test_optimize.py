@@ -17,6 +17,7 @@ from numpy.testing import assert_raises, assert_allclose, \
 from scipy import optimize
 import numpy as np
 
+
 class TestOptimize(TestCase):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
@@ -32,7 +33,6 @@ class TestOptimize(TestCase):
         self.gradcalls = 0
         self.trace = []
 
-
     def func(self, x):
         self.funccalls += 1
         if self.funccalls > 6000:
@@ -43,14 +43,12 @@ class TestOptimize(TestCase):
         self.trace.append(x)
         return f
 
-
     def grad(self, x):
         self.gradcalls += 1
         log_pdot = np.dot(self.F, x)
         logZ = np.log(sum(np.exp(log_pdot)))
         p = np.exp(log_pdot - logZ)
         return np.dot(self.F.transpose(), p) - self.K
-
 
     def hess(self, x):
         log_pdot = np.dot(self.F, x)
@@ -59,10 +57,8 @@ class TestOptimize(TestCase):
         return np.dot(self.F.T,
                       np.dot(np.diag(p), self.F - np.dot(self.F.T, p)))
 
-
     def hessp(self, x, p):
         return np.dot(self.hess(x), p)
-
 
     def test_cg(self, use_wrapper=False):
         """ conjugate gradient optimization routine """
@@ -95,7 +91,6 @@ class TestOptimize(TestCase):
                         [[0, -0.5, 0.5],
                          [0, -5.05700028e-01, 4.95985862e-01]],
                         atol=1e-14, rtol=1e-7)
-
 
     def test_bfgs(self, use_wrapper=False):
         """ Broyden-Fletcher-Goldfarb-Shanno optimization routine """
@@ -170,7 +165,6 @@ class TestOptimize(TestCase):
             assert_(not np.isfinite(func(x)))
         finally:
             np.seterr(**olderr)
-
 
     def test_powell(self, use_wrapper=False):
         """ Powell (direction set) optimization routine
@@ -286,11 +280,11 @@ class TestOptimize(TestCase):
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
-                                       hess = self.hess,
+                                       hess=self.hess,
                                        args=(), options=opts)['x']
         else:
             retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
-                                       fhess = self.hess,
+                                       fhess=self.hess,
                                        args=(), maxiter=self.maxiter,
                                        full_output=False, disp=False,
                                        retall=False)
@@ -320,11 +314,11 @@ class TestOptimize(TestCase):
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
-                                       hessp = self.hessp,
+                                       hessp=self.hessp,
                                        args=(), options=opts)['x']
         else:
             retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
-                                       fhess_p = self.hessp,
+                                       fhess_p=self.hessp,
                                        args=(), maxiter=self.maxiter,
                                        full_output=False, disp=False,
                                        retall=False)
@@ -346,7 +340,6 @@ class TestOptimize(TestCase):
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
-
 
     def test_l_bfgs_b(self):
         """ limited-memory bound-constrained BFGS algorithm
@@ -501,6 +494,7 @@ class TestLBFGSBBounds(TestCase):
         assert_(res['success'], res['message'])
         assert_allclose(res.x, self.solution, atol=1e-6)
 
+
 class TestOptimizeScalar(TestCase):
     """Tests for scalar optimizers"""
     def setUp(self):
@@ -515,13 +509,13 @@ class TestOptimizeScalar(TestCase):
         x = optimize.brent(self.fun)
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x = optimize.brent(self.fun, brack = (-3, -2))
+        x = optimize.brent(self.fun, brack=(-3, -2))
         assert_allclose(x, self.solution, atol=1e-6)
 
         x = optimize.brent(self.fun, full_output=True)
         assert_allclose(x[0], self.solution, atol=1e-6)
 
-        x = optimize.brent(self.fun, brack = (-15, -1, 15))
+        x = optimize.brent(self.fun, brack=(-15, -1, 15))
         assert_allclose(x, self.solution, atol=1e-6)
 
     def test_golden(self):
@@ -529,13 +523,13 @@ class TestOptimizeScalar(TestCase):
         x = optimize.golden(self.fun)
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x = optimize.golden(self.fun, brack = (-3, -2))
+        x = optimize.golden(self.fun, brack=(-3, -2))
         assert_allclose(x, self.solution, atol=1e-6)
 
         x = optimize.golden(self.fun, full_output=True)
         assert_allclose(x[0], self.solution, atol=1e-6)
 
-        x = optimize.golden(self.fun, brack = (-15, -1, 15))
+        x = optimize.golden(self.fun, brack=(-15, -1, 15))
         assert_allclose(x, self.solution, atol=1e-6)
 
     def test_fminbound(self):
@@ -557,25 +551,24 @@ class TestOptimizeScalar(TestCase):
         x = optimize.fminbound(self.fun, 1, np.array(5))
         assert_allclose(x, self.solution, atol=1e-6)
 
-
     def test_minimize_scalar(self):
         # combine all tests above for the minimize_scalar wrapper
         x = optimize.minimize_scalar(self.fun).x
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x= optimize.minimize_scalar(self.fun, bracket = (-3, -2),
+        x = optimize.minimize_scalar(self.fun, bracket=(-3, -2),
                                     args=(1.5, ), method='Brent').x
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x= optimize.minimize_scalar(self.fun, method='Brent',
+        x = optimize.minimize_scalar(self.fun, method='Brent',
                                     args=(1.5,)).x
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x= optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
+        x = optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
                                     args=(1.5, ), method='Brent').x
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x = optimize.minimize_scalar(self.fun, bracket = (-3, -2),
+        x = optimize.minimize_scalar(self.fun, bracket=(-3, -2),
                                      args=(1.5, ), method='golden').x
         assert_allclose(x, self.solution, atol=1e-6)
 
@@ -591,11 +584,11 @@ class TestOptimizeScalar(TestCase):
                                      method='Bounded').x
         assert_allclose(x, 1, atol=1e-4)
 
-        x= optimize.minimize_scalar(self.fun, bounds=(1, 5), args=(1.5, ),
+        x = optimize.minimize_scalar(self.fun, bounds=(1, 5), args=(1.5, ),
                                     method='bounded').x
         assert_allclose(x, self.solution, atol=1e-6)
 
-        x= optimize.minimize_scalar(self.fun, bounds=(np.array([1]),
+        x = optimize.minimize_scalar(self.fun, bounds=(np.array([1]),
                                                       np.array([5])),
                                     args=(np.array([1.5]), ),
                                     method='bounded').x

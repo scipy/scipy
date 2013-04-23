@@ -902,6 +902,7 @@ def _aslinearoperator_with_dtype(m):
         m.dtype = (m * x).dtype
     return m
 
+
 class SpLuInv(LinearOperator):
     """
     SpLuInv:
@@ -921,6 +922,7 @@ class SpLuInv(LinearOperator):
                     + 1j * self.M_lu.solve(np.imag(x).astype(self.dtype)))
         else:
             return self.M_lu.solve(x.astype(self.dtype))
+
 
 class LuInv(LinearOperator):
     """
@@ -1009,6 +1011,7 @@ class IterOpInv(LinearOperator):
                              "%s did not converge (info = %i)."
                              % (self.ifunc.__name__, info))
         return b
+
 
 def get_inv_matvec(M, symmetric=False, tol=0):
     if isdense(M):

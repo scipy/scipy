@@ -21,6 +21,7 @@ REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
+
 class TestFlapackSimple(TestCase):
 
     def test_gebal(self):
@@ -31,7 +32,8 @@ class TestFlapackSimple(TestCase):
               [0,1,0,0]]
         for p in 'sdzc':
             f = getattr(flapack,p+'gebal',None)
-            if f is None: continue
+            if f is None:
+                continue
             ba,lo,hi,pivscale,info = f(a)
             assert_(not info,repr(info))
             assert_array_almost_equal(ba,a)
@@ -49,7 +51,8 @@ class TestFlapackSimple(TestCase):
              [ -27,  -9, -25]]
         for p in 'd':
             f = getattr(flapack,p+'gehrd',None)
-            if f is None: continue
+            if f is None:
+                continue
             ht,tau,info = f(a)
             assert_(not info,repr(info))
 
@@ -78,6 +81,7 @@ class TestFlapackSimple(TestCase):
             x, scale, info = trsyl(a1, b1, c1, isgn=-1)
             assert_array_almost_equal(np.dot(a1, x) - np.dot(x, b1), scale * c1, decimal=4)
 
+
 class TestLapack(TestCase):
 
     def test_flapack(self):
@@ -89,6 +93,7 @@ class TestLapack(TestCase):
         if hasattr(clapack,'empty_module'):
             #clapack module is empty
             pass
+
 
 class TestRegression(TestCase):
 

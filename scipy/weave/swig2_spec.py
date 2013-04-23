@@ -158,6 +158,7 @@ PyObject* %(type_name)s_to_py(void *obj)
 }
 """
 
+
 class swig2_converter(common_base_converter):
     """ A converter for SWIG >= 1.3 wrapped objects."""
     def __init__(self, class_name="undefined", pycobj=0, runtime_version=None):
@@ -248,7 +249,6 @@ class swig2_converter(common_base_converter):
             self.define_macros.append(("SWIG_COBJECT_PYTHON", None))
         elif self.pycobj == 2:
             self.define_macros.append(("SWIG_COBJECT_TYPES", None))
-
 
         if self.runtime_version is None:
             self.runtime_version = self._get_swig_runtime_version()

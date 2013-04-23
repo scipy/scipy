@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('io', parent_package, top_path,
-                           setup_name = 'setupscons.py')
+                           setup_name='setupscons.py')
 
     config.add_sconscript('SConstruct')
 

@@ -184,41 +184,41 @@ def _read_string_data(f):
 
 def _read_data(f, dtype):
     '''Read a variable with a specified data type'''
-    if dtype==1:
+    if dtype == 1:
         if _read_int32(f) != 1:
             raise Exception("Error occurred while reading byte variable")
         return _read_byte(f)
-    elif dtype==2:
+    elif dtype == 2:
         return _read_int16(f)
-    elif dtype==3:
+    elif dtype == 3:
         return _read_int32(f)
-    elif dtype==4:
+    elif dtype == 4:
         return _read_float32(f)
-    elif dtype==5:
+    elif dtype == 5:
         return _read_float64(f)
-    elif dtype==6:
+    elif dtype == 6:
         real = _read_float32(f)
         imag = _read_float32(f)
         return np.complex64(real + imag * 1j)
-    elif dtype==7:
+    elif dtype == 7:
         return _read_string_data(f)
-    elif dtype==8:
+    elif dtype == 8:
         raise Exception("Should not be here - please report this")
-    elif dtype==9:
+    elif dtype == 9:
         real = _read_float64(f)
         imag = _read_float64(f)
         return np.complex128(real + imag * 1j)
-    elif dtype==10:
+    elif dtype == 10:
         return Pointer(_read_int32(f))
-    elif dtype==11:
+    elif dtype == 11:
         return ObjectPointer(_read_int32(f))
-    elif dtype==12:
+    elif dtype == 12:
         return _read_uint16(f)
-    elif dtype==13:
+    elif dtype == 13:
         return _read_uint32(f)
-    elif dtype==14:
+    elif dtype == 14:
         return _read_int64(f)
-    elif dtype==15:
+    elif dtype == 15:
         return _read_uint64(f)
     else:
         raise Exception("Unknown IDL type: %i - please report this" % dtype)
@@ -252,11 +252,11 @@ def _read_structure(f, array_desc, struct_desc):
         for col in columns:
             dtype = col['typecode']
             if col['structure']:
-                structure[col['name']][i] = _read_structure(f, \
-                                      struct_desc['arrtable'][col['name']], \
+                structure[col['name']][i] = _read_structure(f,
+                                      struct_desc['arrtable'][col['name']],
                                       struct_desc['structtable'][col['name']])
             elif col['array']:
-                structure[col['name']][i] = _read_array(f, dtype, \
+                structure[col['name']][i] = _read_array(f, dtype,
                                       struct_desc['arrtable'][col['name']])
             else:
                 structure[col['name']][i] = _read_data(f, dtype)
@@ -285,14 +285,14 @@ def _read_array(f, typecode, array_desc):
                 raise Exception("Error occurred while reading byte array")
 
         # Read bytes as numpy array
-        array = np.fromstring(f.read(array_desc['nbytes']), \
+        array = np.fromstring(f.read(array_desc['nbytes']),
                                 dtype=DTYPE_DICT[typecode])
 
     elif typecode in [2, 12]:
 
         # These are 2 byte types, need to skip every two as they are not packed
 
-        array = np.fromstring(f.read(array_desc['nbytes']*2), \
+        array = np.fromstring(f.read(array_desc['nbytes']*2),
                                 dtype=DTYPE_DICT[typecode])[1::2]
 
     else:
@@ -351,10 +351,10 @@ def _read_record(f):
             raise Exception("VARSTART is not 7")
 
         if rectypedesc['structure']:
-            record['data'] = _read_structure(f, rectypedesc['array_desc'], \
+            record['data'] = _read_structure(f, rectypedesc['array_desc'],
                                           rectypedesc['struct_desc'])
         elif rectypedesc['array']:
-            record['data'] = _read_array(f, rectypedesc['typecode'], \
+            record['data'] = _read_array(f, rectypedesc['typecode'],
                                       rectypedesc['array_desc'])
         else:
             dtype = rectypedesc['typecode']
@@ -413,7 +413,7 @@ def _read_record(f):
 
     else:
 
-        raise Exception("record['rectype']=%s not implemented" % \
+        raise Exception("record['rectype']=%s not implemented" %
                                                             record['rectype'])
 
     f.seek(nextrec)
@@ -846,7 +846,7 @@ def readsav(file_name, idict=None, python_dict=False,
                 break
 
         print("-"*50)
-        print("Successfully read %i records of which:" % \
+        print("Successfully read %i records of which:" %
                                             (len(records)))
 
         # Create convenience list of record types

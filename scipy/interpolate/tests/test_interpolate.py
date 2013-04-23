@@ -72,11 +72,12 @@ class TestInterp2D(TestCase):
 
         b = interp2d(x, y, z, fill_value=np.nan)
         iz = b(ix, iy)
-        mx = (ix<0) | (ix>1)
-        my = (iy<0) | (iy>2)
+        mx = (ix < 0) | (ix > 1)
+        my = (iy < 0) | (iy > 2)
         assert_(np.isnan(iz[my,:]).all())
         assert_(np.isnan(iz[:,mx]).all())
         assert_(np.isfinite(iz[~my,:][:,~mx]).all())
+
 
 class TestInterp1D(object):
 
@@ -129,7 +130,6 @@ class TestInterp1D(object):
         assert_raises(ValueError, interp1d, self.x10, self.y1)
         assert_raises(ValueError, interp1d, self.x1, self.y1)
 
-
     def test_init(self):
         """ Check that the attributes are initialized appropriately by the
         constructor.
@@ -168,7 +168,6 @@ class TestInterp1D(object):
             interp1d(self.x10, self.y210).y,
             self.y210,
         )
-
 
     def test_linear(self):
         """ Check the actual implementation of linear interpolation.
@@ -376,6 +375,7 @@ class TestInterp1D(object):
         #yield self._nd_check_interp, 'zero'
         #yield self._nd_check_interp, 'zero'
         pass
+
 
 class TestLagrange(TestCase):
 

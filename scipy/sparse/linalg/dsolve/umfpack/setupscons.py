@@ -3,6 +3,7 @@
 # last change: 27.03.2006
 from __future__ import division, print_function, absolute_import
 
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
 

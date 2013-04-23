@@ -17,6 +17,7 @@ from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import expm
 from scipy.linalg import logm
 
+
 class TestExpM(TestCase):
     def test_zero(self):
         a = array([[0.,0],[0,0]])

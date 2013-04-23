@@ -33,6 +33,7 @@ else:
 _umfpack_skip = dec.skipif(not _have_umfpack,
                            'UMFPACK appears not to be compiled')
 
+
 class _DeprecationAccept:
     def setUp(self):
         self.mgr = WarningManager()
@@ -48,7 +49,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_solve_complex_without_umfpack(self):
         """Solve: single precision complex"""
-        linsolve.use_solver( useUmfpack = False )
+        linsolve.use_solver( useUmfpack=False )
         a = self.a.astype('F')
         b = self.b
         x = linsolve.spsolve(a, b)
@@ -56,10 +57,9 @@ class TestSolvers(_DeprecationAccept):
         #print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b, decimal=4)
 
-
     def test_solve_without_umfpack(self):
         """Solve: single precision"""
-        linsolve.use_solver( useUmfpack = False )
+        linsolve.use_solver( useUmfpack=False )
         a = self.a.astype('f')
         b = self.b
         x = linsolve.spsolve(a, b.astype('f'))
@@ -67,10 +67,9 @@ class TestSolvers(_DeprecationAccept):
         #print "Error: ", a*x-b
         assert_array_almost_equal(a*x, b, decimal=4)
 
-
     def test_solve_complex_umfpack(self):
         """Solve with UMFPACK: double precision complex"""
-        linsolve.use_solver( useUmfpack = True )
+        linsolve.use_solver( useUmfpack=True )
         a = self.a.astype('D')
         b = self.b
         x = linsolve.spsolve(a, b)
@@ -80,7 +79,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_solve_umfpack(self):
         """Solve with UMFPACK: double precision"""
-        linsolve.use_solver( useUmfpack = True )
+        linsolve.use_solver( useUmfpack=True )
         a = self.a.astype('d')
         b = self.b
         x = linsolve.spsolve(a, b)
@@ -90,7 +89,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_solve_sparse_rhs(self):
         """Solve with UMFPACK: double precision, sparse rhs"""
-        linsolve.use_solver( useUmfpack = True )
+        linsolve.use_solver( useUmfpack=True )
         a = self.a.astype('d')
         b = csc_matrix( self.b )
         x = linsolve.spsolve(a, b)
@@ -100,7 +99,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_factorized_umfpack(self):
         """Prefactorize (with UMFPACK) matrix for solving with multiple rhs"""
-        linsolve.use_solver( useUmfpack = True )
+        linsolve.use_solver( useUmfpack=True )
         a = self.a.astype('d')
         solve = linsolve.factorized( a )
 
@@ -111,7 +110,7 @@ class TestSolvers(_DeprecationAccept):
 
     def test_factorized_without_umfpack(self):
         """Prefactorize matrix for solving with multiple rhs"""
-        linsolve.use_solver( useUmfpack = False )
+        linsolve.use_solver( useUmfpack=False )
         a = self.a.astype('d')
         solve = linsolve.factorized( a )
 
@@ -129,6 +128,7 @@ class TestSolvers(_DeprecationAccept):
 
         _DeprecationAccept.setUp(self)
 
+
 class TestFactorization(_DeprecationAccept):
     """Tests factorizing a sparse linear system"""
 
@@ -144,7 +144,8 @@ class TestFactorization(_DeprecationAccept):
             L = L.todense()
             U = U.todense()
             A = A.todense()
-            if not do_recip: R = 1.0/R
+            if not do_recip:
+                R = 1.0/R
             R = matrix(diag(R))
             P = eye(A.shape[0])[P,:]
             Q = eye(A.shape[1])[:,Q]
@@ -163,16 +164,16 @@ class TestFactorization(_DeprecationAccept):
             L = L.todense()
             U = U.todense()
             A = A.todense()
-            if not do_recip: R = 1.0/R
+            if not do_recip:
+                R = 1.0/R
             R = matrix(diag(R))
             P = eye(A.shape[0])[P,:]
             Q = eye(A.shape[1])[:,Q]
 
             assert_array_almost_equal(P*R*A*Q,L*U)
 
-
     def setUp(self):
-        random.seed(0) #make tests repeatable
+        random.seed(0) # make tests repeatable
         self.real_matrices = []
         self.real_matrices.append(spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]],
                                           [0, 1], 5, 5) )
@@ -184,7 +185,7 @@ class TestFactorization(_DeprecationAccept):
         self.real_matrices.append(rand(5,4))
         self.real_matrices.append(rand(4,5))
 
-        self.real_matrices = [csc_matrix(x).astype('d') for x \
+        self.real_matrices = [csc_matrix(x).astype('d') for x
                 in self.real_matrices]
         self.complex_matrices = [x.astype(np.complex128)
                                  for x in self.real_matrices]

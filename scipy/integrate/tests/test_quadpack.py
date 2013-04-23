@@ -13,6 +13,7 @@ try:
 except ImportError:
     _ctypes_missing = True
 
+
 def assert_quad(value_and_err, tabledValue, errTol=1.5e-8):
     value, err = value_and_err
     assert_(abs(value-tabledValue) < err, (value, tabledValue, err))
@@ -59,6 +60,7 @@ class TestCtypesQuad(TestCase):
         slow = time.time() - start
         assert_(fast < 0.5*slow, (fast, slow))
 
+
 class TestQuad(TestCase):
     def test_typical(self):
         # 1) Typical function with two extra arguments:
@@ -77,7 +79,7 @@ class TestQuad(TestCase):
         def myfunc(x):
             if x > 0 and x < 2.5:
                 return sin(x)
-            elif x>= 2.5 and x <= 5.0:
+            elif x >= 2.5 and x <= 5.0:
                 return exp(-x)
             else:
                 return 0.0

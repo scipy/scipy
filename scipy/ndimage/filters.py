@@ -105,9 +105,10 @@ docdict = {
 
 docfiller = doccer.filldoc(docdict)
 
+
 @docfiller
-def correlate1d(input, weights, axis = -1, output = None, mode = "reflect",
-                cval = 0.0, origin = 0):
+def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
+                cval=0.0, origin=0):
     """Calculate a one-dimensional correlation along the given axis.
 
     The lines of the array along the given axis are correlated with the
@@ -144,8 +145,8 @@ def correlate1d(input, weights, axis = -1, output = None, mode = "reflect",
 
 
 @docfiller
-def convolve1d(input, weights, axis = -1, output = None, mode = "reflect",
-               cval = 0.0, origin = 0):
+def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
+               cval=0.0, origin=0):
     """Calculate a one-dimensional convolution along the given axis.
 
     The lines of the array along the given axis are convolved with the
@@ -176,8 +177,8 @@ def convolve1d(input, weights, axis = -1, output = None, mode = "reflect",
 
 
 @docfiller
-def gaussian_filter1d(input, sigma, axis = -1, order = 0, output = None,
-                      mode = "reflect", cval = 0.0):
+def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
+                      mode="reflect", cval=0.0):
     """One-dimensional Gaussian filter.
 
     Parameters
@@ -245,8 +246,8 @@ def gaussian_filter1d(input, sigma, axis = -1, order = 0, output = None,
 
 
 @docfiller
-def gaussian_filter(input, sigma, order = 0, output = None,
-                  mode = "reflect", cval = 0.0):
+def gaussian_filter(input, sigma, order=0, output=None,
+                  mode="reflect", cval=0.0):
     """Multidimensional Gaussian filter.
 
     Parameters
@@ -303,7 +304,7 @@ def gaussian_filter(input, sigma, order = 0, output = None,
 
 
 @docfiller
-def prewitt(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
+def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     """Calculate a Prewitt filter.
 
     Parameters
@@ -325,7 +326,7 @@ def prewitt(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
 
 
 @docfiller
-def sobel(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
+def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     """Calculate a Sobel filter.
 
     Parameters
@@ -347,9 +348,9 @@ def sobel(input, axis = -1, output = None, mode = "reflect", cval = 0.0):
 
 
 @docfiller
-def generic_laplace(input, derivative2, output = None, mode = "reflect",
-                    cval = 0.0,
-                    extra_arguments = (),
+def generic_laplace(input, derivative2, output=None, mode="reflect",
+                    cval=0.0,
+                    extra_arguments=(),
                     extra_keywords = None):
     """N-dimensional Laplace filter using a provided second derivative function
 
@@ -387,7 +388,7 @@ def generic_laplace(input, derivative2, output = None, mode = "reflect",
 
 
 @docfiller
-def laplace(input, output = None, mode = "reflect", cval = 0.0):
+def laplace(input, output=None, mode="reflect", cval=0.0):
     """N-dimensional Laplace filter based on approximate second derivatives.
 
     Parameters
@@ -403,8 +404,8 @@ def laplace(input, output = None, mode = "reflect", cval = 0.0):
 
 
 @docfiller
-def gaussian_laplace(input, sigma, output = None, mode = "reflect",
-                     cval = 0.0):
+def gaussian_laplace(input, sigma, output=None, mode="reflect",
+                     cval=0.0):
     """Multidimensional Laplace filter using gaussian second derivatives.
 
     Parameters
@@ -424,13 +425,13 @@ def gaussian_laplace(input, sigma, output = None, mode = "reflect",
         order[axis] = 2
         return gaussian_filter(input, sigma, order, output, mode, cval)
     return generic_laplace(input, derivative2, output, mode, cval,
-                           extra_arguments = (sigma,))
+                           extra_arguments=(sigma,))
 
 
 @docfiller
-def generic_gradient_magnitude(input, derivative, output = None,
-                mode = "reflect", cval = 0.0,
-                extra_arguments = (), extra_keywords = None):
+def generic_gradient_magnitude(input, derivative, output=None,
+                mode="reflect", cval=0.0,
+                extra_arguments=(), extra_keywords = None):
     """Gradient magnitude using a provided gradient function.
 
     Parameters
@@ -477,8 +478,8 @@ def generic_gradient_magnitude(input, derivative, output = None,
 
 
 @docfiller
-def gaussian_gradient_magnitude(input, sigma, output = None,
-                mode = "reflect", cval = 0.0):
+def gaussian_gradient_magnitude(input, sigma, output=None,
+                mode="reflect", cval=0.0):
     """Multidimensional gradient magnitude using Gaussian derivatives.
 
     Parameters
@@ -498,7 +499,7 @@ def gaussian_gradient_magnitude(input, sigma, output = None,
         order[axis] = 1
         return gaussian_filter(input, sigma, order, output, mode, cval)
     return generic_gradient_magnitude(input, derivative, output, mode,
-                            cval, extra_arguments = (sigma,))
+                            cval, extra_arguments=(sigma,))
 
 
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
@@ -529,8 +530,8 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
 
 
 @docfiller
-def correlate(input, weights, output = None, mode = 'reflect', cval = 0.0,
-              origin = 0):
+def correlate(input, weights, output=None, mode='reflect', cval=0.0,
+              origin=0):
     """
     Multi-dimensional correlation.
 
@@ -566,8 +567,8 @@ def correlate(input, weights, output = None, mode = 'reflect', cval = 0.0,
 
 
 @docfiller
-def convolve(input, weights, output = None, mode = 'reflect', cval = 0.0,
-             origin = 0):
+def convolve(input, weights, output=None, mode='reflect', cval=0.0,
+             origin=0):
     """
     Multidimensional convolution.
 
@@ -680,8 +681,8 @@ def convolve(input, weights, output = None, mode = 'reflect', cval = 0.0,
 
 
 @docfiller
-def uniform_filter1d(input, size, axis = -1, output = None,
-                     mode = "reflect", cval = 0.0, origin = 0):
+def uniform_filter1d(input, size, axis=-1, output=None,
+                     mode="reflect", cval=0.0, origin=0):
     """Calculate a one-dimensional uniform filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
@@ -714,8 +715,8 @@ def uniform_filter1d(input, size, axis = -1, output = None,
 
 
 @docfiller
-def uniform_filter(input, size = 3, output = None, mode = "reflect",
-                   cval = 0.0, origin = 0):
+def uniform_filter(input, size=3, output=None, mode="reflect",
+                   cval=0.0, origin=0):
     """Multi-dimensional uniform filter.
 
     Parameters
@@ -756,8 +757,8 @@ def uniform_filter(input, size = 3, output = None, mode = "reflect",
 
 
 @docfiller
-def minimum_filter1d(input, size, axis = -1, output = None,
-                     mode = "reflect", cval = 0.0, origin = 0):
+def minimum_filter1d(input, size, axis=-1, output=None,
+                     mode="reflect", cval=0.0, origin=0):
     """Calculate a one-dimensional minimum filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
@@ -790,8 +791,8 @@ def minimum_filter1d(input, size, axis = -1, output = None,
 
 
 @docfiller
-def maximum_filter1d(input, size, axis = -1, output = None,
-                     mode = "reflect", cval = 0.0, origin = 0):
+def maximum_filter1d(input, size, axis=-1, output=None,
+                     mode="reflect", cval=0.0, origin=0):
     """Calculate a one-dimensional maximum filter along the given axis.
 
     The lines of the array along the given axis are filtered with a
@@ -829,7 +830,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         if footprint is None:
             if size is None:
                 raise RuntimeError("no footprint provided")
-            separable= True
+            separable = True
         else:
             footprint = numpy.asarray(footprint)
             footprint = footprint.astype(bool)
@@ -888,8 +889,8 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
 
 
 @docfiller
-def minimum_filter(input, size = None, footprint = None, output = None,
-      mode = "reflect", cval = 0.0, origin = 0):
+def minimum_filter(input, size=None, footprint=None, output=None,
+      mode="reflect", cval=0.0, origin=0):
     """Calculates a multi-dimensional minimum filter.
 
     Parameters
@@ -906,8 +907,8 @@ def minimum_filter(input, size = None, footprint = None, output = None,
 
 
 @docfiller
-def maximum_filter(input, size = None, footprint = None, output = None,
-      mode = "reflect", cval = 0.0, origin = 0):
+def maximum_filter(input, size=None, footprint=None, output=None,
+      mode="reflect", cval=0.0, origin=0):
     """Calculates a multi-dimensional maximum filter.
 
     Parameters
@@ -924,8 +925,8 @@ def maximum_filter(input, size = None, footprint = None, output = None,
 
 
 @docfiller
-def _rank_filter(input, rank, size = None, footprint = None, output = None,
-     mode = "reflect", cval = 0.0, origin = 0, operation = 'rank'):
+def _rank_filter(input, rank, size=None, footprint=None, output=None,
+     mode="reflect", cval=0.0, origin=0, operation='rank'):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
@@ -960,7 +961,7 @@ def _rank_filter(input, rank, size = None, footprint = None, output = None,
             rank = int(float(filter_size) * percentile / 100.0)
     if rank < 0:
         rank += filter_size
-    if rank < 0  or rank >= filter_size:
+    if rank < 0 or rank >= filter_size:
         raise RuntimeError('rank not within filter footprint size')
     if rank == 0:
         return minimum_filter(input, None, footprint, output, mode, cval,
@@ -977,8 +978,8 @@ def _rank_filter(input, rank, size = None, footprint = None, output = None,
 
 
 @docfiller
-def rank_filter(input, rank, size = None, footprint = None, output = None,
-      mode = "reflect", cval = 0.0, origin = 0):
+def rank_filter(input, rank, size=None, footprint=None, output=None,
+      mode="reflect", cval=0.0, origin=0):
     """Calculates a multi-dimensional rank filter.
 
     Parameters
@@ -998,8 +999,8 @@ def rank_filter(input, rank, size = None, footprint = None, output = None,
 
 
 @docfiller
-def median_filter(input, size = None, footprint = None, output = None,
-                  mode = "reflect", cval = 0.0, origin = 0):
+def median_filter(input, size=None, footprint=None, output=None,
+                  mode="reflect", cval=0.0, origin=0):
     """
     Calculates a multidimensional median filter.
 
@@ -1023,8 +1024,8 @@ def median_filter(input, size = None, footprint = None, output = None,
 
 
 @docfiller
-def percentile_filter(input, percentile, size = None, footprint = None,
-                 output = None, mode = "reflect", cval = 0.0, origin = 0):
+def percentile_filter(input, percentile, size=None, footprint=None,
+                 output=None, mode="reflect", cval=0.0, origin=0):
     """Calculates a multi-dimensional percentile filter.
 
     Parameters
@@ -1044,9 +1045,9 @@ def percentile_filter(input, percentile, size = None, footprint = None,
 
 
 @docfiller
-def generic_filter1d(input, function, filter_size, axis = -1,
-                 output = None, mode = "reflect", cval = 0.0, origin = 0,
-                 extra_arguments = (), extra_keywords = None):
+def generic_filter1d(input, function, filter_size, axis=-1,
+                 output=None, mode="reflect", cval=0.0, origin=0,
+                 extra_arguments=(), extra_keywords = None):
     """Calculate a one-dimensional filter along the given axis.
 
     `generic_filter1d` iterates over the lines of the array, calling the
@@ -1090,9 +1091,9 @@ def generic_filter1d(input, function, filter_size, axis = -1,
 
 
 @docfiller
-def generic_filter(input, function, size = None, footprint = None,
-                   output = None, mode = "reflect", cval = 0.0, origin = 0,
-                   extra_arguments = (), extra_keywords = None):
+def generic_filter(input, function, size=None, footprint=None,
+                   output=None, mode="reflect", cval=0.0, origin=0,
+                   extra_arguments=(), extra_keywords = None):
     """Calculates a multi-dimensional filter using the given function.
 
     At each element the provided function is called. The input values

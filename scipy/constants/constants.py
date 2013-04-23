@@ -77,13 +77,13 @@ Rydberg = _cd('Rydberg constant')
 gram = 1e-3
 metric_ton = 1e3
 grain = 64.79891e-6
-lb = pound = 7000 * grain #avoirdupois
+lb = pound = 7000 * grain # avoirdupois
 oz = ounce = pound / 16
 stone = 14 * pound
 long_ton = 2240 * pound
 short_ton = 2000 * pound
 
-troy_ounce = 480 * grain #only for metals / gems
+troy_ounce = 480 * grain # only for metals / gems
 troy_pound = 12 * troy_ounce
 carat = 200e-6
 
@@ -111,7 +111,7 @@ foot = 12 * inch
 yard = 3 * foot
 mile = 1760 * yard
 mil = inch / 1000
-pt = point = inch / 72 #typography
+pt = point = inch / 72 # typography
 survey_foot = 1200.0 / 3937
 survey_mile = 5280 * survey_foot
 nautical_mile = 1852.0
@@ -134,23 +134,23 @@ acre = 43560 * foot**2
 
 #volume in meter**3
 litre = liter = 1e-3
-gallon = gallon_US = 231 * inch**3 #US
+gallon = gallon_US = 231 * inch**3 # US
 #pint = gallon_US / 8
 fluid_ounce = fluid_ounce_US = gallon_US / 128
-bbl = barrel = 42 * gallon_US #for oil
+bbl = barrel = 42 * gallon_US # for oil
 
-gallon_imp = 4.54609e-3 #uk
+gallon_imp = 4.54609e-3 # uk
 fluid_ounce_imp = gallon_imp / 160
 
 #speed in meter per second
 kmh = 1e3 / hour
 mph = mile / hour
-mach = speed_of_sound = 340.5 #approx value at 15 degrees in 1 atm. is this a common value?
+mach = speed_of_sound = 340.5 # approx value at 15 degrees in 1 atm. is this a common value?
 knot = nautical_mile / hour
 
 #temperature in kelvin
 zero_Celsius = 273.15
-degree_Fahrenheit = 1/1.8 #only for differences
+degree_Fahrenheit = 1/1.8 # only for differences
 
 #energy in joule
 eV = electron_volt = elementary_charge # * 1 Volt
@@ -171,6 +171,7 @@ lbf = pound_force = pound * g
 kgf = kilogram_force = g # * 1 kg
 
 #functions for conversions that are not linear
+
 
 def C2K(C):
     """
@@ -200,6 +201,7 @@ def C2K(C):
     """
     return _np.asanyarray(C) + zero_Celsius
 
+
 def K2C(K):
     """
     Convert Kelvin to Celsius
@@ -228,6 +230,7 @@ def K2C(K):
     """
     return _np.asanyarray(K) - zero_Celsius
 
+
 def F2C(F):
     """
     Convert Fahrenheit to Celsius
@@ -255,6 +258,7 @@ def F2C(F):
     """
     return (_np.asanyarray(F) - 32) / 1.8
 
+
 def C2F(C):
     """
     Convert Celsius to Fahrenheit
@@ -281,6 +285,7 @@ def C2F(C):
 
     """
     return 1.8 * _np.asanyarray(C) + 32
+
 
 def F2K(F):
     """
@@ -310,6 +315,7 @@ def F2K(F):
 
     """
     return C2K(F2C(_np.asanyarray(F)))
+
 
 def K2F(K):
     """
@@ -342,6 +348,7 @@ def K2F(K):
 
 #optics
 
+
 def lambda2nu(lambda_):
     """
     Convert wavelength to optical frequency
@@ -369,6 +376,7 @@ def lambda2nu(lambda_):
 
     """
     return _np.asanyarray(c) / lambda_
+
 
 def nu2lambda(nu):
     """

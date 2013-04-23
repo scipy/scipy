@@ -36,13 +36,13 @@ import scipy.stats as stats
 ##  Somewhat acceptable, since this is still beta software.  It would count as a
 ##  good target for 1.0 status
 X = array([1,2,3,4,5,6,7,8,9],float)
-ZERO= array([0,0,0,0,0,0,0,0,0], float)
+ZERO = array([0,0,0,0,0,0,0,0,0], float)
 #MISS=array([.,.,.,.,.,.,.,.,.], float)
-BIG=array([99999991,99999992,99999993,99999994,99999995,99999996,99999997,99999998,99999999],float)
-LITTLE=array([0.99999991,0.99999992,0.99999993,0.99999994,0.99999995,0.99999996,0.99999997,0.99999998,0.99999999],float)
-HUGE=array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12],float)
-TINY=array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12],float)
-ROUND=array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5],float)
+BIG = array([99999991,99999992,99999993,99999994,99999995,99999996,99999997,99999998,99999999],float)
+LITTLE = array([0.99999991,0.99999992,0.99999993,0.99999994,0.99999995,0.99999996,0.99999997,0.99999998,0.99999999],float)
+HUGE = array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12],float)
+TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12],float)
+ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5],float)
 X2 = X * X
 X3 = X2 * X
 X4 = X3 * X
@@ -51,6 +51,7 @@ X6 = X5 * X
 X7 = X6 * X
 X8 = X7 * X
 X9 = X8 * X
+
 
 class TestRound(TestCase):
     """ W.II. ROUND
@@ -95,18 +96,19 @@ class TestRound(TestCase):
 
     def test_rounding1(self):
         """ W.II.A.1. Y = INT(2.6*7 -0.2) (Y should be 18)"""
-        y = int(2.6*7 -0.2)
+        y = int(2.6*7 - 0.2)
         assert_equal(y, 18)
 
     def test_rounding2(self):
         """ W.II.A.2. Y = 2-INT(EXP(LOG(SQR(2)*SQR(2))))   (Y should be 0)"""
-        y=2-int(np.exp(np.log(np.sqrt(2.)*np.sqrt(2.))))
+        y = 2-int(np.exp(np.log(np.sqrt(2.)*np.sqrt(2.))))
         assert_equal(y,0)
 
     def test_rounding3(self):
         """ W.II.A.3. Y = INT(3-EXP(LOG(SQR(2)*SQR(2))))    (Y should be 1)"""
-        y=(int(round((3-np.exp(np.log(np.sqrt(2.0)*np.sqrt(2.0)))))))
+        y = (int(round((3-np.exp(np.log(np.sqrt(2.0)*np.sqrt(2.0)))))))
         assert_equal(y,1)
+
 
 class TestBasicStats(TestCase):
     """ W.II.C. Compute basic statistic on all the variables.
@@ -133,7 +135,6 @@ class TestBasicStats(TestCase):
         y = stats.tstd(X, (2, 8), (True, True))
         assert_approx_equal(y, 2.1602468994692865,
                             significant=TestBasicStats.dprec)
-
 
 
 class TestNanFunc(TestCase):
@@ -340,6 +341,7 @@ class TestCorrPearsonr(TestCase):
         r, prob = stats.pearsonr(a,b)
         assert_equal(r, -1.0)
         assert_equal(prob, 0.0)
+
 
 class TestFisherExact(TestCase):
     """Some tests to show that fisher_exact() works correctly.
@@ -581,6 +583,7 @@ class TestCorrSpearmanr(TestCase):
         r = y[0]
         assert_approx_equal(r,1.0)
 
+
 class TestCorrSpearmanrTies(TestCase):
     """Some tests of tie-handling by the spearmanr function."""
 
@@ -651,7 +654,7 @@ class TestRegression(TestCase):
         """
         y = stats.linregress(X,BIG)
         intercept = y[1]
-        r=y[2]
+        r = y[2]
         assert_almost_equal(intercept,99999990)
         assert_almost_equal(r,1.0)
 
@@ -666,7 +669,6 @@ class TestRegression(TestCase):
 ##     Scipy's stats.py does not seem to handle multiple linear regression
 ##     The datasets X1 . . X9 are at the top of the file.
 
-
     def test_regressXX(self):
         """ W.IV.B.  Regress X on X.
 
@@ -675,7 +677,7 @@ class TestRegression(TestCase):
         """
         y = stats.linregress(X,X)
         intercept = y[1]
-        r=y[2]
+        r = y[2]
         assert_almost_equal(intercept,0.0)
         assert_almost_equal(r,1.0)
 ##     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
@@ -694,7 +696,7 @@ class TestRegression(TestCase):
         """
         y = stats.linregress(X,ZERO)
         intercept = y[1]
-        r=y[2]
+        r = y[2]
         assert_almost_equal(intercept,0.0)
         assert_almost_equal(r,0.0)
 
@@ -705,7 +707,7 @@ class TestRegression(TestCase):
         y += np.sin(np.linspace(0, 20, 100))
 
         res = stats.linregress(x, y)
-        assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3) # 4.3609875083149268e-3)
 
     def test_regress_simple_onearg_rows(self):
         """Regress a line with sinusoidal noise, with a single input of shape
@@ -717,7 +719,7 @@ class TestRegression(TestCase):
         rows = np.vstack((x, y))
 
         res = stats.linregress(rows)
-        assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3) # 4.3609875083149268e-3)
 
     def test_regress_simple_onearg_cols(self):
         """Regress a line with sinusoidal noise, with a single input of shape
@@ -729,7 +731,7 @@ class TestRegression(TestCase):
         cols = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
 
         res = stats.linregress(cols)
-        assert_almost_equal(res[4], 2.3957814497838803e-3) #4.3609875083149268e-3)
+        assert_almost_equal(res[4], 2.3957814497838803e-3) # 4.3609875083149268e-3)
 
     def test_regress_shape_error(self):
         """Check that a single input argument to linregress with wrong shape
@@ -900,7 +902,7 @@ def test_cumfreq():
     assert_array_almost_equal(cumfreqs, np.array([ 3.,  4.,  5.,  6.]))
     cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4,
                                                       defaultreallimits=(1.5, 5))
-    assert_(extrapoints==3)
+    assert_(extrapoints == 3)
 
 
 def test_relfreq():
@@ -927,7 +929,7 @@ class TestGMean(TestCase):
 
     def test_1D_list(self):
         a = (1,2,3,4)
-        actual= stats.gmean(a)
+        actual = stats.gmean(a)
         desired = power(1*2*3*4,1./4.)
         assert_almost_equal(actual, desired,decimal=14)
 
@@ -936,7 +938,7 @@ class TestGMean(TestCase):
 
     def test_1D_array(self):
         a = array((1,2,3,4), float32)
-        actual= stats.gmean(a)
+        actual = stats.gmean(a)
         desired = power(1*2*3*4,1./4.)
         assert_almost_equal(actual, desired, decimal=7)
 
@@ -947,7 +949,7 @@ class TestGMean(TestCase):
         a = array(((1,2,3,4),
                    (1,2,3,4),
                    (1,2,3,4)))
-        actual= stats.gmean(a)
+        actual = stats.gmean(a)
         desired = array((1,2,3,4))
         assert_array_almost_equal(actual, desired, decimal=14)
 
@@ -958,7 +960,7 @@ class TestGMean(TestCase):
         a = array(((1,2,3,4),
                    (1,2,3,4),
                    (1,2,3,4)))
-        actual= stats.gmean(a, axis=1)
+        actual = stats.gmean(a, axis=1)
         v = power(1*2*3*4,1./4.)
         desired = array((v,v,v))
         assert_array_almost_equal(actual, desired, decimal=14)
@@ -968,19 +970,20 @@ class TestGMean(TestCase):
         actual = stats.gmean(a)
         assert_approx_equal(actual, 1e200, significant=14)
 
+
 class TestHMean(TestCase):
     def test_1D_list(self):
         a = (1,2,3,4)
-        actual= stats.hmean(a)
-        desired =  4. / (1./1 + 1./2 + 1./3 + 1./4)
+        actual = stats.hmean(a)
+        desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
         assert_almost_equal(actual, desired, decimal=14)
 
         desired1 = stats.hmean(array(a),axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
     def test_1D_array(self):
         a = array((1,2,3,4), float64)
-        actual= stats.hmean(a)
-        desired =  4. / (1./1 + 1./2 + 1./3 + 1./4)
+        actual = stats.hmean(a)
+        desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
         assert_almost_equal(actual, desired, decimal=14)
 
         desired1 = stats.hmean(a,axis=-1)
@@ -1309,6 +1312,7 @@ class TestMoments(TestCase):
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
 
+
 class TestThreshold(TestCase):
     def test_basic(self):
         a = [-1,2,3,4,5,-1,-2]
@@ -1321,6 +1325,8 @@ class TestThreshold(TestCase):
                            [0,2,3,4,0,0,0])
 
 # Hypothesis test tests
+
+
 class TestStudentTest(TestCase):
     X1 = np.array([-1, 0, 1])
     X2 = np.array([0, 1, 2])
@@ -1329,7 +1335,7 @@ class TestStudentTest(TestCase):
     T1_1 = -1.732051
     P1_1 = 0.2254033
     T1_2 = -3.464102
-    P1_2 =  0.0741799
+    P1_2 = 0.0741799
     T2_0 = 1.732051
     P2_0 = 0.2254033
     def test_onesample(self):
@@ -1407,7 +1413,6 @@ def test_percentileofscore():
               pcos([10, 20, 30, 40, 40, 40, 50, 60, 70, 80],
                    40, kind=kind), result
 
-
     for kind in ('rank', 'mean', 'strict', 'weak'):
         yield assert_equal, \
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
@@ -1466,7 +1471,6 @@ def test_friedmanchisquare():
           array([4.9,7.6,5.5,2.8,8.4]),
           array([8.8,8.9,8.1,3.3,9.1])]
 
-
     assert_array_almost_equal(stats.friedmanchisquare(x1[0],x1[1],x1[2],x1[3]),(10.2283464566929, 0.0167215803284414))
     assert_array_almost_equal(stats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),(18.9428571428571, 0.000280938375189499))
     assert_array_almost_equal(stats.friedmanchisquare(x3[0],x3[1],x3[2],x3[3]),(10.68, 0.0135882729582176))
@@ -1478,6 +1482,7 @@ def test_friedmanchisquare():
     #assert_array_almost_equal(stats.mstats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),(18.9428571428571, 0.000280938375189499))
     assert_array_almost_equal(stats.mstats.friedmanchisquare(x3[0],x3[1],x3[2],x3[3]),(10.68, 0.0135882729582176))
     np.testing.assert_raises(ValueError,stats.mstats.friedmanchisquare,x3[0],x3[1])
+
 
 def test_kstest():
     #from numpy.testing import assert_almost_equal
@@ -1501,10 +1506,10 @@ def test_kstest():
     assert_almost_equal( p, 0.089444888711820769, 15)
     assert_almost_equal( np.array(stats.kstest(x, 'norm', mode='asymp')),
                 np.array((0.12464329735846891, 0.089444888711820769)), 15)
-    assert_almost_equal( np.array(stats.kstest(x,'norm', alternative = 'less')),
+    assert_almost_equal( np.array(stats.kstest(x,'norm', alternative='less')),
                 np.array((0.12464329735846891, 0.040989164077641749)), 15)
     # this 'greater' test fails with precision of decimal=14
-    assert_almost_equal( np.array(stats.kstest(x,'norm', alternative = 'greater')),
+    assert_almost_equal( np.array(stats.kstest(x,'norm', alternative='greater')),
                 np.array((0.0072115233216310994, 0.98531158590396228)), 12)
 
     #missing: no test that uses *args
@@ -1536,6 +1541,7 @@ def test_ks_2samp():
         np.array(stats.ks_2samp(np.linspace(1,100,100),
                               np.linspace(1,100,110)+20-0.1)),
         np.array((0.20818181818181825, 0.017981441789762638)))
+
 
 def test_ttest_rel():
     #regression test
@@ -1625,6 +1631,7 @@ def test_ttest_ind():
     finally:
         np.seterr(**olderr)
 
+
 def test_ttest_ind_with_uneq_var():
 
     # check vs. R
@@ -1632,13 +1639,13 @@ def test_ttest_ind_with_uneq_var():
     b = (1.1, 2.9, 4.2)
     pr = 0.53619490753126731
     tr = -0.68649512735572582
-    t, p = stats.ttest_ind(a, b, equal_var = False)
+    t, p = stats.ttest_ind(a, b, equal_var=False)
     assert_array_almost_equal([t,p], [tr, pr])
 
     a = (1, 2, 3, 4)
     pr = 0.84354139131608286
     tr = -0.2108663315950719
-    t, p = stats.ttest_ind(a, b, equal_var = False)
+    t, p = stats.ttest_ind(a, b, equal_var=False)
     assert_array_almost_equal([t,p], [tr, pr])
 
     #regression test
@@ -1654,25 +1661,25 @@ def test_ttest_ind_with_uneq_var():
     rvs1_2D = np.array([rvs1, rvs2])
     rvs2_2D = np.array([rvs2, rvs1])
 
-    t,p = stats.ttest_ind(rvs1, rvs2, axis=0, equal_var = False)
+    t,p = stats.ttest_ind(rvs1, rvs2, axis=0, equal_var=False)
     assert_array_almost_equal([t,p],(tr,pr))
-    t,p = stats.ttest_ind(rvs1, rvs3, axis =0, equal_var = False)
+    t,p = stats.ttest_ind(rvs1, rvs3, axis=0, equal_var=False)
     assert_array_almost_equal([t,p], (tr_uneq_n, pr_uneq_n))
-    t,p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, equal_var = False)
+    t,p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, equal_var=False)
     assert_array_almost_equal([t,p],tpr)
-    t,p = stats.ttest_ind(rvs1_2D, rvs2_2D, axis=1, equal_var = False)
+    t,p = stats.ttest_ind(rvs1_2D, rvs2_2D, axis=1, equal_var=False)
     assert_array_almost_equal([t,p],tpr)
 
     #test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
     rvs2_3D = np.dstack([rvs2_2D,rvs2_2D,rvs2_2D])
-    t,p = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=1, equal_var = False)
+    t,p = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=1, equal_var=False)
     assert_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
     t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2),
-                                   axis=2, equal_var = False)
+                                   axis=2, equal_var=False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
@@ -1680,16 +1687,17 @@ def test_ttest_ind_with_uneq_var():
     olderr = np.seterr(all='ignore')
     try:
         #test zero division problem
-        t,p = stats.ttest_ind([0,0,0],[1,1,1], equal_var = False)
+        t,p = stats.ttest_ind([0,0,0],[1,1,1], equal_var=False)
         assert_equal((np.abs(t),p), (np.inf, 0))
-        assert_equal(stats.ttest_ind([0,0,0], [0,0,0], equal_var = False), (np.nan, np.nan))
+        assert_equal(stats.ttest_ind([0,0,0], [0,0,0], equal_var=False), (np.nan, np.nan))
 
         #check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
-        assert_equal(stats.ttest_ind(anan, np.zeros((2,2)), equal_var = False),
+        assert_equal(stats.ttest_ind(anan, np.zeros((2,2)), equal_var=False),
                      ([0, np.nan], [1,np.nan]))
     finally:
         np.seterr(**olderr)
+
 
 def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
@@ -1744,15 +1752,16 @@ def test_describe():
     assert_equal(mm, mmc)
     assert_equal(m, mc)
     assert_equal(v, vc)
-    assert_array_almost_equal(sk, skc, decimal=13) #not sure about precision
+    assert_array_almost_equal(sk, skc, decimal=13) # not sure about precision
     assert_array_almost_equal(kurt, kurtc, decimal=13)
     n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
     assert_equal(n, nc)
     assert_equal(mm, mmc)
     assert_equal(m, mc)
     assert_equal(v, vc)
-    assert_array_almost_equal(sk, skc, decimal=13) #not sure about precision
+    assert_array_almost_equal(sk, skc, decimal=13) # not sure about precision
     assert_array_almost_equal(kurt, kurtc, decimal=13)
+
 
 def test_normalitytests():
     # numbers verified with R: dagoTest in package fBasics
@@ -1798,6 +1807,7 @@ def test_skewtest_too_few_samples():
     x = np.arange(7.0)
     assert_raises(ValueError, stats.skewtest, x)
 
+
 def test_kurtosistest_too_few_samples():
     """Regression test for ticket #1425.
 
@@ -1805,6 +1815,7 @@ def test_kurtosistest_too_few_samples():
     """
     x = np.arange(4.0)
     assert_raises(ValueError, stats.kurtosistest, x)
+
 
 def mannwhitneyu():
     x = np.array([ 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
@@ -1840,7 +1851,6 @@ def mannwhitneyu():
                     (16980.5, 2.8214327656317373e-005), decimal=12)
 
 
-
 def test_pointbiserial():
     # copied from mstats tests removing nans
     x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
@@ -1864,22 +1874,22 @@ def test_obrientransform():
 class HarMeanTestCase:
     def test_1dlist(self):
         ''' Test a 1d list'''
-        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         b = 34.1417152147
         self.do(a, b)
     def test_1darray(self):
         ''' Test a 1d array'''
-        a=np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 34.1417152147
         self.do(a, b)
     def test_1dma(self):
         ''' Test a 1d masked array'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 34.1417152147
         self.do(a, b)
     def test_1dmavalue(self):
         ''' Test a 1d masked array with a masked value'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
                       mask=[0,0,0,0,0,0,0,0,0,1])
         b = 31.8137186141
         self.do(a, b)
@@ -1887,44 +1897,45 @@ class HarMeanTestCase:
     # Note the next tests use axis=None as default, not axis=0
     def test_2dlist(self):
         ''' Test a 2d list'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 38.6696271841
         self.do(a, b)
     def test_2darray(self):
         ''' Test a 2d array'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 38.6696271841
         self.do(np.array(a), b)
     def test_2dma(self):
         ''' Test a 2d masked array'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 38.6696271841
         self.do(np.ma.array(a), b)
     def test_2daxis0(self):
         ''' Test a 2d list with axis=0'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([ 22.88135593,  39.13043478,  52.90076336,  65.45454545])
         self.do(a, b, axis=0)
     def test_2daxis1(self):
         ''' Test a 2d list with axis=1'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([  19.2       ,   63.03939962,  103.80078637])
         self.do(a, b, axis=1)
     def test_2dmatrixdaxis0(self):
         ''' Test a 2d list with axis=0'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[ 22.88135593,  39.13043478,  52.90076336,  65.45454545]])
         self.do(np.matrix(a), b, axis=0)
     def test_2dmatrixaxis1(self):
         ''' Test a 2d list with axis=1'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[  19.2       ,   63.03939962,  103.80078637]]).T
         self.do(np.matrix(a), b, axis=1)
 ##    def test_dtype(self):
 ##        ''' Test a 1d list with a new dtype'''
-##        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+##        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 ##        b = 34.1417152147
 ##        self.do(a, b, dtype=np.float128)  # does not work on Win32
+
 
 class TestHarMean(HarMeanTestCase, TestCase):
     def do(self, a, b, axis=None, dtype=None):
@@ -1932,72 +1943,73 @@ class TestHarMean(HarMeanTestCase, TestCase):
         assert_almost_equal(b, x)
         assert_equal(x.dtype, dtype)
 
+
 class GeoMeanTestCase:
     def test_1dlist(self):
         ''' Test a 1d list'''
-        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         b = 45.2872868812
         self.do(a, b)
     def test_1darray(self):
         ''' Test a 1d array'''
-        a=np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 45.2872868812
         self.do(a, b)
     def test_1dma(self):
         ''' Test a 1d masked array'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
         b = 45.2872868812
         self.do(a, b)
     def test_1dmavalue(self):
         ''' Test a 1d masked array with a masked value'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0,0,0,0,0,0,0,0,0,1])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], mask=[0,0,0,0,0,0,0,0,0,1])
         b = 41.4716627439
         self.do(a, b)
 
     # Note the next tests use axis=None as default, not axis=0
     def test_2dlist(self):
         ''' Test a 2d list'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
         self.do(a, b)
     def test_2darray(self):
         ''' Test a 2d array'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
         self.do(np.array(a), b)
     def test_2dma(self):
         ''' Test a 2d masked array'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = 52.8885199
         self.do(np.ma.array(a), b)
     def test_2daxis0(self):
         ''' Test a 2d list with axis=0'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([35.56893304,  49.32424149,  61.3579244 ,  72.68482371])
         self.do(a, b, axis=0)
     def test_2daxis1(self):
         ''' Test a 2d list with axis=1'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.array([  22.13363839,   64.02171746,  104.40086817])
         self.do(a, b, axis=1)
     def test_2dmatrixdaxis0(self):
         ''' Test a 2d list with axis=0'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[35.56893304,  49.32424149,  61.3579244 ,  72.68482371]])
         self.do(np.matrix(a), b, axis=0)
     def test_2dmatrixaxis1(self):
         ''' Test a 2d list with axis=1'''
-        a=[[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         b = np.matrix([[  22.13363839,   64.02171746,  104.40086817]]).T
         self.do(np.matrix(a), b, axis=1)
 ##    def test_dtype(self):
 ##        ''' Test a 1d list with a new dtype'''
-##        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+##        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 ##        b = 45.2872868812
 ##        self.do(a, b, dtype=np.float128)  # does not exist on win32
     def test_1dlist0(self):
         ''' Test a 1d list with zero element'''
-        a=[10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
+        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 0]
         b = 0.0 # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
@@ -2007,7 +2019,7 @@ class GeoMeanTestCase:
 
     def test_1darray0(self):
         ''' Test a 1d array with zero element'''
-        a=np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         b = 0.0 # due to exp(-inf)=0
         olderr = np.seterr(all='ignore')
         try:
@@ -2017,7 +2029,7 @@ class GeoMeanTestCase:
 
     def test_1dma0(self):
         ''' Test a 1d masked array with zero element'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
         b = 41.4716627439
         olderr = np.seterr(all='ignore')
         try:
@@ -2027,13 +2039,14 @@ class GeoMeanTestCase:
 
     def test_1dmainf(self):
         ''' Test a 1d masked array with negative element'''
-        a=np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
         b = 41.4716627439
         olderr = np.seterr(all='ignore')
         try:
             self.do(a, b)
         finally:
             np.seterr(**olderr)
+
 
 class TestGeoMean(GeoMeanTestCase, TestCase):
     def do(self, a, b, axis=None, dtype=None):
@@ -2059,10 +2072,11 @@ def test_binomtest():
 
     for p, res in zip(pp,results):
         assert_approx_equal(stats.binom_test(x, n, p), res,
-                            significant=12, err_msg='fail forp=%f'%p)
+                            significant=12, err_msg='fail forp=%f' % p)
 
     assert_approx_equal(stats.binom_test(50,100,0.1), 5.8320387857343647e-024,
-                            significant=12, err_msg='fail forp=%f'%p)
+                            significant=12, err_msg='fail forp=%f' % p)
+
 
 class Test_Trim(object):
     # test trim functions
@@ -2096,10 +2110,10 @@ class Test_Trim(object):
 class TestSigamClip(object):
     def test_sigmaclip1(self):
         a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
-        fact = 4  #default
+        fact = 4  # default
         c, low, upp = stats.sigmaclip(a)
-        assert_(c.min()>low)
-        assert_(c.max()<upp)
+        assert_(c.min() > low)
+        assert_(c.max() < upp)
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
         assert_equal(c.size, a.size)
@@ -2108,19 +2122,19 @@ class TestSigamClip(object):
         a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
         fact = 1.5
         c, low, upp = stats.sigmaclip(a, fact, fact)
-        assert_(c.min()>low)
-        assert_(c.max()<upp)
+        assert_(c.min() > low)
+        assert_(c.max() < upp)
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
         assert_equal(c.size, 4)
-        assert_equal(a.size, 36) #check original array unchanged
+        assert_equal(a.size, 36) # check original array unchanged
 
     def test_sigmaclip3(self):
         a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))
         fact = 1.8
         c, low, upp = stats.sigmaclip(a, fact, fact)
-        assert_(c.min()>low)
-        assert_(c.max()<upp)
+        assert_(c.min() > low)
+        assert_(c.max() < upp)
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
         assert_equal(c, np.linspace(9.5,10.5,11))

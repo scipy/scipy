@@ -12,6 +12,7 @@ from scipy.optimize import zeros
 # Import testing parameters
 from scipy.optimize._tstutils import functions, fstrings
 
+
 class TestBasic(TestCase) :
     def run_check(self, method, name):
         a = .5

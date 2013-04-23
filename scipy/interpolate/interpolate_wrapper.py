@@ -6,8 +6,10 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from . import _interpolate # C extension.  Does all the real work.
 
-def atleast_1d_and_contiguous(ary, dtype = np.float64):
+
+def atleast_1d_and_contiguous(ary, dtype=np.float64):
     return np.atleast_1d( np.ascontiguousarray(ary, dtype) )
+
 
 def nearest(x, y, new_x):
     """
@@ -41,7 +43,6 @@ def nearest(x, y, new_x):
     return new_y
 
 
-
 def linear(x, y, new_x):
     """
     Linearly interpolates values in new_x based on the values in x and y
@@ -72,6 +73,7 @@ def linear(x, y, new_x):
 
     return new_y
 
+
 def logarithmic(x, y, new_x):
     """
     Linearly interpolates values in new_x based in the log space of y.
@@ -101,6 +103,7 @@ def logarithmic(x, y, new_x):
         _interpolate.loginterp_dddd(x, y, new_x, new_y)
 
     return new_y
+
 
 def block_average_above(x, y, new_x):
     """
@@ -141,6 +144,7 @@ def block_average_above(x, y, new_x):
         raise ValueError(msg)
 
     return new_y
+
 
 def block(x, y, new_x):
     """

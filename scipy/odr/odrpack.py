@@ -351,7 +351,6 @@ class RealData(Data):
         self.fix = _conv(fix)
         self.meta = meta
 
-
     def _sd2wt(self, sd):
         """ Convert standard deviation to weights.
         """
@@ -374,13 +373,11 @@ class RealData(Data):
 
             return weights
 
-
     def __getattr__(self, attr):
         lookup_tbl = {('wd', 'sx'):  (self._sd2wt, self.sx),
                       ('wd', 'covx'): (self._cov2wt, self.covx),
                       ('we', 'sy'):  (self._sd2wt, self.sy),
                       ('we', 'covy'): (self._cov2wt, self.covy)}
-
 
         if attr not in ('wd', 'we'):
             if attr in self.meta:
@@ -487,7 +484,6 @@ class Model(object):
         self.implicit = implicit
         self.meta = meta
 
-
     def set_meta(self, **kwds):
         """ Update the metadata dictionary with the keywords and data provided
         here.
@@ -498,7 +494,6 @@ class Model(object):
         """
 
         self.meta.update(kwds)
-
 
     def __getattr__(self, attr):
         """ Dispatch attribute access to the metadata.
@@ -568,7 +563,6 @@ class Output(object):
             # full output
             self.__dict__.update(output[3])
             self.stopreason = _report_error(self.info)
-
 
     def pprint(self):
         """ Pretty-print important results.
@@ -865,7 +859,6 @@ class ODR(object):
         else:
             self.work = numpy.zeros((lwork,), float)
 
-
     def set_job(self, fit_type=None, deriv=None, var_calc=None,
         del_init=None, restart=None):
         """
@@ -945,7 +938,6 @@ class ODR(object):
         self.job = (job_l[0]*10000 + job_l[1]*1000 +
                     job_l[2]*100 + job_l[3]*10 + job_l[4])
 
-
     def set_iprint(self, init=None, so_init=None,
         iter=None, so_iter=None, iter_step=None, final=None, so_final=None):
         """ Set the iprint parameter for the printing of computation reports.
@@ -1022,7 +1014,6 @@ class ODR(object):
 
         self.iprint = ip[0]*1000 + ip[1]*100 + ip[2]*10 + ip[3]
 
-
     def run(self):
         """ Run the fitting routine with all of the information given.
 
@@ -1067,7 +1058,6 @@ class ODR(object):
         self.output = Output(odr(*args, **kwds))
 
         return self.output
-
 
     def restart(self, iter=None):
         """ Restarts the run with iter more iterations.

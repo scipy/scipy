@@ -8,6 +8,7 @@ from numpy.testing import assert_, assert_equal, \
 import scipy.optimize.linesearch as ls
 import numpy as np
 
+
 def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
     """
     Check that strong Wolfe conditions apply
@@ -19,8 +20,9 @@ def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
     msg = "s = %s; phi(0) = %s; phi(s) = %s; phi'(0) = %s; phi'(s) = %s; %s" % (
         s, phi0, phi1, derphi0, derphi1, err_msg)
 
-    assert_(phi1 <= phi0 + c1*s*derphi0, "Wolfe 1 failed: "+ msg)
-    assert_(abs(derphi1) <= abs(c2*derphi0), "Wolfe 2 failed: "+ msg)
+    assert_(phi1 <= phi0 + c1*s*derphi0, "Wolfe 1 failed: " + msg)
+    assert_(abs(derphi1) <= abs(c2*derphi0), "Wolfe 2 failed: " + msg)
+
 
 def assert_armijo(s, phi, c1=1e-4, err_msg=""):
     """
@@ -31,12 +33,15 @@ def assert_armijo(s, phi, c1=1e-4, err_msg=""):
     msg = "s = %s; phi(0) = %s; phi(s) = %s; %s" % (s, phi0, phi1, err_msg)
     assert_(phi1 <= (1 - c1*s)*phi0, msg)
 
+
 def assert_line_wolfe(x, p, s, f, fprime, **kw):
     assert_wolfe(s, phi=lambda sp: f(x + p*sp),
                  derphi=lambda sp: np.dot(fprime(x + p*sp), p), **kw)
 
+
 def assert_line_armijo(x, p, s, f, **kw):
     assert_armijo(s, phi=lambda sp: f(x + p*sp), **kw)
+
 
 def assert_fp_equal(x, y, err_msg="", nulp=50):
     """Assert two arrays are equal, up to some floating-point rounding error"""
@@ -44,6 +49,7 @@ def assert_fp_equal(x, y, err_msg="", nulp=50):
         assert_array_almost_equal_nulp(x, y, nulp)
     except AssertionError as e:
         raise AssertionError("%s\n%s" % (e, err_msg))
+
 
 class TestLineSearch(object):
     # -- scalar functions; must have dphi(0.) < 0

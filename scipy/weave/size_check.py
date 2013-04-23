@@ -8,8 +8,11 @@ from numpy import ones, ndarray, array, asarray, concatenate, zeros, shape, \
 import sys
 
 numericTypes = (int, long, float, complex)
+
+
 def isnumeric(t):
     return isinstance(t, numericTypes)
+
 
 def time_it():
     import time
@@ -32,11 +35,12 @@ def time_it():
     print('time per call:', (t2 - t1)/N)
     print('passed:', passed)
 
+
 def check_expr(expr,local_vars,global_vars={}):
     """ Currently only checks expressions (not suites).
         Doesn't check that lhs = rhs. checked by compiled func though
     """
-    values ={}
+    values = {}
 
     #first handle the globals
     for var,val in global_vars.items():
@@ -63,6 +67,7 @@ def check_expr(expr,local_vars,global_vars={}):
 empty = array(())
 empty_slice = slice(None)
 
+
 def make_same_length(x,y):
     try:
         Nx = len(x)
@@ -84,6 +89,7 @@ def make_same_length(x,y):
         elif Ny > Nx:
             return concatenate((front,x)),asarray(y)
 
+
 def binary_op_size(xx,yy):
     """ This returns the resulting size from operating on xx, and yy
         with a binary operator.  It accounts for broadcasting, and
@@ -103,8 +109,9 @@ def binary_op_size(xx,yy):
             raise ValueError("frames are not aligned")
     return res
 
+
 class dummy_array(object):
-    def __init__(self,ary,ary_is_shape = 0,name=None):
+    def __init__(self,ary,ary_is_shape=0,name=None):
         self.name = name
         if ary_is_shape:
             self.shape = ary
@@ -131,23 +138,39 @@ class dummy_array(object):
             return 0
         return not alltrue(equal(self.shape,other.shape),axis=0)
 
-    def __add__(self,other): return self.binary_op(other)
-    def __radd__(self,other): return self.binary_op(other)
-    def __sub__(self,other): return self.binary_op(other)
-    def __rsub__(self,other): return self.binary_op(other)
-    def __mul__(self,other): return self.binary_op(other)
-    def __rmul__(self,other): return self.binary_op(other)
-    def __div__(self,other): return self.binary_op(other)
-    def __rdiv__(self,other): return self.binary_op(other)
-    def __mod__(self,other): return self.binary_op(other)
-    def __rmod__(self,other): return self.binary_op(other)
-    def __lshift__(self,other): return self.binary_op(other)
-    def __rshift__(self,other): return self.binary_op(other)
+    def __add__(self,other):
+        return self.binary_op(other)
+    def __radd__(self,other):
+        return self.binary_op(other)
+    def __sub__(self,other):
+        return self.binary_op(other)
+    def __rsub__(self,other):
+        return self.binary_op(other)
+    def __mul__(self,other):
+        return self.binary_op(other)
+    def __rmul__(self,other):
+        return self.binary_op(other)
+    def __div__(self,other):
+        return self.binary_op(other)
+    def __rdiv__(self,other):
+        return self.binary_op(other)
+    def __mod__(self,other):
+        return self.binary_op(other)
+    def __rmod__(self,other):
+        return self.binary_op(other)
+    def __lshift__(self,other):
+        return self.binary_op(other)
+    def __rshift__(self,other):
+        return self.binary_op(other)
     # unary ops
-    def __neg__(self,other): return self
-    def __pos__(self,other): return self
-    def __abs__(self,other): return self
-    def __invert__(self,other): return self
+    def __neg__(self,other):
+        return self
+    def __pos__(self,other):
+        return self
+    def __abs__(self,other):
+        return self
+    def __invert__(self,other):
+        return self
     # Not sure what to do with coersion ops.  Ignore for now.
     #
     # not currently supported by compiler.
@@ -164,7 +187,8 @@ class dummy_array(object):
     def __len__(self):
         return self.shape[0]
     def __getslice__(self,i,j):
-        i = max(i, 0); j = max(j, 0)
+        i = max(i, 0)
+        j = max(j, 0)
         return self.__getitem__((slice(i,j),))
     def __getitem__(self,indices):
         # ayeyaya this is a mess
@@ -193,29 +217,36 @@ class dummy_array(object):
                 #    end = end.value
                 #if hasattr(step,'value') and type(step.value) != ndarray:
                 #    step = step.value
-                if beg is None: beg = 0
-                if end == sys.maxint or  end is None:
+                if beg is None:
+                    beg = 0
+                if end == sys.maxint or end is None:
                     end = dim_len
                 if step is None:
                     step = 1
 
-                if beg < 0: beg += dim_len
-                if end < 0: end += dim_len
+                if beg < 0:
+                    beg += dim_len
+                if end < 0:
+                    end += dim_len
                 # the following is list like behavior,
                 # which isn't adhered to by arrays.
                 # FIX THIS ANOMOLY IN NUMERIC!
-                if beg < 0: beg = 0
-                if beg > dim_len: beg = dim_len
-                if end < 0: end = 0
-                if end > dim_len: end = dim_len
+                if beg < 0:
+                    beg = 0
+                if beg > dim_len:
+                    beg = dim_len
+                if end < 0:
+                    end = 0
+                if end > dim_len:
+                    end = dim_len
                 # This is rubbish.
-                if  beg == end:
+                if beg == end:
                     beg,end,step = 0,0,1
-                elif  beg >= dim_len and step > 0:
+                elif beg >= dim_len and step > 0:
                     beg,end,step = 0,0,1
                 #elif index.step > 0 and beg <= end:
                 elif step > 0 and beg <= end:
-                    pass #slc_len = abs(divide(end-beg-1,step)+1)
+                    pass # slc_len = abs(divide(end-beg-1,step)+1)
                 # handle [::-1] and [-1::-1] correctly
                 #elif index.step > 0 and beg > end:
                 elif step > 0 and beg > end:
@@ -234,8 +265,9 @@ class dummy_array(object):
                 slc_len = abs(divide(end-beg-1,step)+1)
                 new_dims.append(slc_len)
             else:
-                if index < 0: index += dim_len
-                if index >=0 and index < dim_len:
+                if index < 0:
+                    index += dim_len
+                if index >= 0 and index < dim_len:
                     #this reduces the array dimensions by one
                     pass
                 else:
@@ -249,8 +281,10 @@ class dummy_array(object):
         val = str((self.name, str(self.shape)))
         return val
 
+
 def unary(ary):
     return ary
+
 
 def not_implemented(ary):
     return ary
@@ -267,6 +301,7 @@ for func in unary_op:
 for func in unsupported:
     func = not_implemented
 
+
 def reduction(ary,axis=0):
     if axis < 0:
         axis += len(ary.shape)
@@ -278,5 +313,8 @@ def reduction(ary,axis=0):
 # functions currently not supported by compiler
 # reductions are gonna take some array reordering for the general case,
 # so this is gonna take some thought (probably some tree manipulation).
-def take(ary,axis=0): raise NotImplemented
+
+
+def take(ary,axis=0):
+    raise NotImplemented
 # and all the rest

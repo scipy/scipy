@@ -56,6 +56,7 @@ class TestAstToBlitzExpr(TestCase):
                   '-hy(_all,blitz::Range(1,_end),blitz::Range(_beg,Nhy(2)-1-1)));'
         self.generic_check(expr,desired)
 
+
 class TestBlitz(TestCase):
     """* These are long running tests...
 
@@ -72,7 +73,7 @@ class TestBlitz(TestCase):
         t1 = time.time()
         old_env = os.environ.get('PYTHONCOMPILED','')
         os.environ['PYTHONCOMPILED'] = mod_location
-        blitz_tools.blitz(expr,arg_dict,{},verbose=0) #,
+        blitz_tools.blitz(expr,arg_dict,{},verbose=0) # ,
                           #extra_compile_args = ['-O3','-malign-double','-funroll-loops'])
         os.environ['PYTHONCOMPILED'] = old_env
         t2 = time.time()
@@ -109,8 +110,10 @@ class TestBlitz(TestCase):
             for arg in arg_list:
                 arg_dict[arg] = random.normal(0,1,size).astype(typ)
                 # set imag part of complex values to non-zero value
-                try:     arg_dict[arg].imag = arg_dict[arg].real
-                except:  pass
+                try:
+                    arg_dict[arg].imag = arg_dict[arg].real
+                except:
+                    pass
             print('Run:', size,typ)
             standard,compiled = self.generic_check(expr,arg_dict,type,size,
                                                   mod_location)
@@ -118,7 +121,7 @@ class TestBlitz(TestCase):
                 speed_up = standard/compiled
             except:
                 speed_up = -1.
-            print("1st run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, " \
+            print("1st run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, "
                   "%3.4f" % (standard,compiled,speed_up))
             standard,compiled = self.generic_check(expr,arg_dict,type,size,
                                                   mod_location)
@@ -126,7 +129,7 @@ class TestBlitz(TestCase):
                 speed_up = standard/compiled
             except:
                 speed_up = -1.
-            print("2nd run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, " \
+            print("2nd run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, "
                   "%3.4f" % (standard,compiled,speed_up))
         cleanup_temp_dir(mod_location)
 

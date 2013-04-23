@@ -72,5 +72,3 @@ class TestExpit(TestCase):
                             0.79139147,  0.9022274 ,
                             0.95734875,  0.98201379])
         self.check_expit_out('f8', expected)
-
-

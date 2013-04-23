@@ -326,6 +326,7 @@ class TestPointerArray:
         assert_true(np.all(s.array8d == np.float32(4.)))
         assert_true(np.all(vect_id(s.array8d) == id(s.array8d[0,0,0,0,0,0,0,0])))
 
+
 class TestPointerStructures:
     '''Test that structures are correctly read in'''
 

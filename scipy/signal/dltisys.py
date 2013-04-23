@@ -271,4 +271,3 @@ def dstep(system, x0=None, t=None, n=None):
         tout = one_output[0]
 
     return tout, yout
-

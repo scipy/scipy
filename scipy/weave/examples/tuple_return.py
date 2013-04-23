@@ -4,12 +4,14 @@ import sys
 sys.path.insert(0,'..')
 import inline_tools
 
+
 def multi_return():
     return 1, '2nd'
 
+
 def c_multi_return():
 
-    code =  """
+    code = """
                 py::tuple results(2);
                 results[0] = 1;
                 results[1] = "2nd";

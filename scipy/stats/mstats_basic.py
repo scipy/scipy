@@ -64,6 +64,8 @@ Notes
     the corresponding value in y is masked.
 """
 #------------------------------------------------------------------------------
+
+
 def _chk_asarray(a, axis):
     if axis is None:
         a = ma.ravel(a)
@@ -72,6 +74,7 @@ def _chk_asarray(a, axis):
         a = ma.asanyarray(a)
         outaxis = axis
     return a, outaxis
+
 
 def _chk2_asarray(a, b, axis):
     if axis is None:
@@ -84,14 +87,16 @@ def _chk2_asarray(a, b, axis):
         outaxis = axis
     return a, b, outaxis
 
+
 def _chk_size(a,b):
     a = ma.asanyarray(a)
     b = ma.asanyarray(b)
     (na, nb) = (a.size, b.size)
     if na != nb:
-        raise ValueError("The size of the input array should match!"\
+        raise ValueError("The size of the input array should match!"
                          " (%s <> %s)" % (na,nb))
     return (a,b,na)
+
 
 def argstoarray(*args):
     """
@@ -129,7 +134,6 @@ def argstoarray(*args):
             output[k,:len(v)] = v
     output[np.logical_not(np.isfinite(output._data))] = masked
     return output
-
 
 
 #####--------------------------------------------------------------------------
@@ -242,7 +246,7 @@ def rankdata(data, axis=None, use_missing=False):
         #
         repeats = find_repeats(data.copy())
         for r in repeats[0]:
-            condition = (data==r).filled(False)
+            condition = (data == r).filled(False)
             rk[condition] = rk[condition].mean()
         return rk
     #
@@ -321,7 +325,6 @@ betai.__doc__ = stats.betai.__doc__
 def msign(x):
     """Returns the sign of x, or 0 if x is masked."""
     return ma.filled(np.sign(x), 0)
-
 
 
 def pearsonr(x,y):
@@ -499,9 +502,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     ry = ma.masked_equal(rankdata(y, use_missing=use_missing), 0)
     idx = rx.argsort()
     (rx, ry) = (rx[idx], ry[idx])
-    C = np.sum([((ry[i+1:]>ry[i]) * (rx[i+1:]>rx[i])).filled(0).sum()
+    C = np.sum([((ry[i+1:] > ry[i]) * (rx[i+1:] > rx[i])).filled(0).sum()
                 for i in range(len(ry)-1)], dtype=float)
-    D = np.sum([((ry[i+1:]<ry[i])*(rx[i+1:]>rx[i])).filled(0).sum()
+    D = np.sum([((ry[i+1:] < ry[i])*(rx[i+1:] > rx[i])).filled(0).sum()
                 for i in range(len(ry)-1)], dtype=float)
     if use_ties:
         xties = count_tied_groups(x)
@@ -555,7 +558,7 @@ Parameters
     #
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
-    corr_ties =  np.sum(v*k*(k-1) for (k,v) in iteritems(ties))
+    corr_ties = np.sum(v*k*(k-1) for (k,v) in iteritems(ties))
     denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
     #
     R = rankdata(x, axis=0, use_missing=True)
@@ -570,7 +573,7 @@ Parameters
         for k in range(j,m,1):
             K[j,k] = np.sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
                                for i in range(n))
-            covmat[j,k] = (K[j,k] +4*(R[:,j]*R[:,k]).sum() - \
+            covmat[j,k] = (K[j,k] + 4*(R[:,j]*R[:,k]).sum() -
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
             K[k,j] = K[j,k]
             covmat[k,j] = covmat[j,k]
@@ -778,14 +781,14 @@ ttest_ind.__doc__ = stats.ttest_ind.__doc__
 
 def ttest_rel(a,b,axis=None):
     a, b, axis = _chk2_asarray(a, b, axis)
-    if len(a)!=len(b):
+    if len(a) != len(b):
         raise ValueError('unequal length arrays')
     (x1, x2) = (a.mean(axis), b.mean(axis))
     (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
     n = a.count(axis)
     df = (n-1.0)
     d = (a-b).astype('d')
-    denom = ma.sqrt((n*ma.add.reduce(d*d,axis) - ma.add.reduce(d,axis)**2) /df)
+    denom = ma.sqrt((n*ma.add.reduce(d*d,axis) - ma.add.reduce(d,axis)**2) / df)
     #zerodivproblem = denom == 0
     t = ma.add.reduce(d, axis) / denom
     t = ma.filled(t, 1)
@@ -874,6 +877,8 @@ kruskalwallis.__doc__ = stats.kruskal.__doc__
 
 
 _kolmog2 = special.kolmogorov
+
+
 def _kolmog1(x,n):
     if x <= 0:
         return 0
@@ -913,7 +918,7 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
     n = (n1*n2/float(n1+n2))
     mix = ma.concatenate((data1.compressed(), data2.compressed()))
     mixsort = mix.argsort(kind='mergesort')
-    csum = np.where(mixsort<n1, 1./n1, -1./n2).cumsum()
+    csum = np.where(mixsort < n1, 1./n1, -1./n2).cumsum()
     # Check for ties
     if len(np.unique(mix)) < (n1+n2):
         csum = csum[np.r_[np.diff(mix[mixsort]).nonzero()[0],-1]]
@@ -929,7 +934,7 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
         d = csum.max()
         prob = np.exp(-2*n*d**2)
     else:
-        raise ValueError("Invalid value for the alternative hypothesis: "\
+        raise ValueError("Invalid value for the alternative hypothesis: "
                          "should be in 'two-sided', 'less' or 'greater'")
     return (d, prob)
 ks_2samp = ks_twosamp
@@ -1061,7 +1066,7 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
             if up_inclusive:
                 upidx = n - int(n*up_limit)
             else:
-                upidx = n- np.round(n*up_limit)
+                upidx = n - np.round(n*up_limit)
             a[idx[upidx:]] = masked
         return a
     #
@@ -1174,6 +1179,8 @@ def trimboth(data, proportiontocut=0.2, inclusive=(True,True), axis=None):
                  inclusive=inclusive, axis=axis)
 
 #..............................................................................
+
+
 def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
              axis=None):
     """
@@ -1215,6 +1222,7 @@ def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
     return trimr(data, limits=limits, axis=axis, inclusive=inclusive)
 
 trim1 = trimtail
+
 
 def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                  axis=None):
@@ -1315,7 +1323,7 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
             if up_inclusive:
                 upidx = n - int(n*up_limit)
             else:
-                upidx = n- np.round(n*up_limit)
+                upidx = n - np.round(n*up_limit)
             a[idx[upidx:]] = masked
         nsize = a.count()
         a[idx[:lowidx]] = a[idx[lowidx]]
@@ -1354,9 +1362,11 @@ def tmean(a, limits=None, inclusive=(True,True)):
     return trima(a, limits=limits, inclusive=inclusive).mean()
 tmean.__doc__ = stats.tmean.__doc__
 
+
 def tvar(a, limits=None, inclusive=(True,True)):
     return trima(a, limits=limits, inclusive=inclusive).var()
 tvar.__doc__ = stats.tvar.__doc__
+
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
@@ -1364,11 +1374,13 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     return ma.minimum.reduce(am, axis)
 tmin.__doc__  = stats.tmin.__doc__
 
+
 def tmax(a, upperlimit, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
 tmax.__doc__  = stats.tmax.__doc__
+
 
 def tsem(a, limits=None, inclusive=(True,True)):
     a = ma.asarray(a).ravel()
@@ -1426,7 +1438,7 @@ def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
             if up_include:
                 upidx = n - int(n*up_limit)
             else:
-                upidx = n- np.round(n*up_limit)
+                upidx = n - np.round(n*up_limit)
             a[idx[upidx:]] = a[idx[upidx-1]]
         return a
     # We gonna modify a: better make a copy
@@ -1583,6 +1595,8 @@ def describe(a, axis=0):
     return n, mm, m, v, sk, kurt
 
 #.............................................................................
+
+
 def stde_median(data, axis=None):
     """Returns the McKean-Schrader estimate of the standard error of the sample
 median along the given axis. masked values are discarded.
@@ -1615,6 +1629,7 @@ median along the given axis. masked values are discarded.
 #---- --- Normality Tests ---
 #####--------------------------------------------------------------------------
 
+
 def skewtest(a, axis=0):
     a, axis = _chk_asarray(a, axis)
     if axis is None:
@@ -1631,10 +1646,11 @@ def skewtest(a, axis=0):
     W2 = -1 + ma.sqrt(2*(beta2-1))
     delta = 1/ma.sqrt(0.5*ma.log(W2))
     alpha = ma.sqrt(2.0/(W2-1))
-    y = ma.where(y==0, 1, y)
+    y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
     return Z, (1.0 - stats.zprob(Z))*2
 skewtest.__doc__ = stats.skewtest.__doc__
+
 
 def kurtosistest(a, axis=0):
     a, axis = _chk_asarray(a, axis)
@@ -1644,12 +1660,12 @@ def kurtosistest(a, axis=0):
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
             np.min(n))
     b2 = kurtosis(a, axis, fisher=False)
-    E = 3.0*(n-1) /(n+1)
+    E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
     x = (b2-E)/ma.sqrt(varb2)
-    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5))/
+    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
                                                         (n*(n-2)*(n-3)))
-    A = 6.0 + 8.0/sqrtbeta1 *(2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
+    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
     term1 = 1 - 2./(9.0*A)
     denom = 1 + x*ma.sqrt(2/(A-4.0))
     denom[denom < 0] = masked
@@ -1797,7 +1813,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
         raise TypeError("Array should be 2D at most !")
     #
     if limit:
-        condition = (limit[0]<data) & (data<limit[1])
+        condition = (limit[0] < data) & (data < limit[1])
         data[~condition.filled(True)] = masked
     #
     p = np.array(prob, copy=False, ndmin=1)
@@ -1816,7 +1832,7 @@ def scoreatpercentile(data, per, limit=(), alphap=.4, betap=.4):
 
     """
     if (per < 0) or (per > 100.):
-        raise ValueError("The percentile should be between 0. and 100. !"\
+        raise ValueError("The percentile should be between 0. and 100. !"
                          " (got %s)" % per)
     return mquantiles(data, prob=[per/100.], alphap=alphap, betap=betap,
                       limit=limit, axis=0).squeeze()
@@ -1877,6 +1893,7 @@ meppf = plotting_positions
 #####--------------------------------------------------------------------------
 #---- --- Variability ---
 #####--------------------------------------------------------------------------
+
 
 def obrientransform(*args):
     """
@@ -1969,15 +1986,14 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     ER = ma.array(ER, copy=False, ndmin=2)
     EF = ma.array(EF, copy=False, ndmin=2)
     if ma.getmask(ER).any() or ma.getmask(EF).any():
-        raise NotImplementedError("Not implemented when the inputs "\
+        raise NotImplementedError("Not implemented when the inputs "
                                   "have missing data")
     lmbda = np.linalg.det(EF) / np.linalg.det(ER)
-    q = ma.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 -5) )
+    q = ma.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5) )
     q = ma.filled(q, 1)
     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
     return n_um / d_en
-
 
 
 def friedmanchisquare(*args):
@@ -2000,7 +2016,7 @@ def friedmanchisquare(*args):
     data = argstoarray(*args).astype(float)
     k = len(data)
     if k < 3:
-        raise ValueError("Less than 3 groups (%i): " % k +\
+        raise ValueError("Less than 3 groups (%i): " % k +
                          "the Friedman test is NOT appropriate.")
     ranked = ma.masked_values(rankdata(data, axis=0), 0)
     if ranked._mask is not nomask:

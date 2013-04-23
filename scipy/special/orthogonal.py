@@ -104,9 +104,11 @@ __all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
            'eval_sh_legendre', 'eval_sh_chebyt', 'eval_sh_chebyu',
            'eval_sh_jacobi', 'poch', 'binom']
 
+
 def poch(z, m):
     """Pochhammer symbol (z)_m = (z)(z+1)....(z+m-1) = gamma(z+m)/gamma(z)"""
     return _gam(z+m) / _gam(z)
+
 
 class orthopoly1d(np.poly1d):
     def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None, limits=None, monic=0,eval_func=None):
@@ -143,6 +145,7 @@ class orthopoly1d(np.poly1d):
             self.__dict__['_eval_func'] = lambda x: evf(x) * p
         self.__dict__['normcoef'] *= p
 
+
 def gen_roots_and_weights(n, an_func, sqrt_bn_func, mu):
     """[x,w] = gen_roots_and_weights(n,an_func,sqrt_bn_func,mu)
 
@@ -170,6 +173,8 @@ def gen_roots_and_weights(n, an_func, sqrt_bn_func, mu):
     return answer
 
 # Jacobi Polynomials 1               P^(alpha,beta)_n(x)
+
+
 def j_roots(n, alpha, beta, mu=0):
     """[x,w] = j_roots(n,alpha,beta)
 
@@ -187,11 +192,11 @@ def j_roots(n, alpha, beta, mu=0):
         (p,q) = (alpha,beta)
         # from recurrence relations
         sbn_J = lambda k: 2.0/(2.0*k+p+q)*sqrt((k+p)*(k+q)/(2*k+q+p+1)) * \
-                    (np.where(k==1,1.0,sqrt(k*(k+p+q)/(2.0*k+p+q-1))))
+                    (np.where(k == 1,1.0,sqrt(k*(k+p+q)/(2.0*k+p+q-1))))
         if any(p == q):  # XXX any or all???
             an_J = lambda k: 0.0*k
         else:
-            an_J = lambda k: np.where(k==0,(q-p)/(p+q+2.0),
+            an_J = lambda k: np.where(k == 0,(q-p)/(p+q+2.0),
                                    (q*q - p*p)/((2.0*k+p+q)*(2.0*k+p+q+2)))
         g = cephes.gamma
         mu0 = 2.0**(p+q+1)*g(p+1)*g(q+1)/(g(p+q+2))
@@ -204,6 +209,7 @@ def j_roots(n, alpha, beta, mu=0):
     else:
         return val
 
+
 def jacobi(n, alpha, beta, monic=0):
     """Returns the nth order Jacobi polynomial, P^(alpha,beta)_n(x)
     orthogonal over [-1,1] with weighting function
@@ -213,7 +219,7 @@ def jacobi(n, alpha, beta, monic=0):
         raise ValueError("n must be nonnegative.")
 
     wfunc = lambda x: (1-x)**alpha * (1+x)**beta
-    if n==0:
+    if n == 0:
         return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic,
                            eval_func=np.ones_like)
     x,w,mu = j_roots(n,alpha,beta,mu=1)
@@ -227,6 +233,8 @@ def jacobi(n, alpha, beta, monic=0):
     return p
 
 # Jacobi Polynomials shifted         G_n(p,q,x)
+
+
 def js_roots(n, p1, q1, mu=0):
     """[x,w] = js_roots(n,p,q)
 
@@ -242,17 +250,17 @@ def js_roots(n, p1, q1, mu=0):
 
     p,q = p1,q1
 
-    sbn_Js = lambda k: sqrt(np.where(k==1,q*(p-q+1.0)/(p+2.0), \
-                                  k*(k+q-1.0)*(k+p-1.0)*(k+p-q) \
+    sbn_Js = lambda k: sqrt(np.where(k == 1,q*(p-q+1.0)/(p+2.0),
+                                  k*(k+q-1.0)*(k+p-1.0)*(k+p-q)
                                   / ((2.0*k+p-2) * (2.0*k+p))))/(2*k+p-1.0)
-    an_Js = lambda k: np.where(k==0,q/(p+1.0),(2.0*k*(k+p)+q*(p-1.0)) / ((2.0*k+p+1.0)*(2*k+p-1.0)))
+    an_Js = lambda k: np.where(k == 0,q/(p+1.0),(2.0*k*(k+p)+q*(p-1.0)) / ((2.0*k+p+1.0)*(2*k+p-1.0)))
 
     # could also use definition
     #  Gn(p,q,x) = constant_n * P^(p-q,q-1)_n(2x-1)
     #  so roots of Gn(p,q,x) are (roots of P^(p-q,q-1)_n + 1) / 2.0
     g = _gam
     # integral of weight over interval
-    mu0 =  g(q)*g(p-q+1)/g(p+1)
+    mu0 = g(q)*g(p-q+1)/g(p+1)
     val = gen_roots_and_weights(n,an_Js,sbn_Js,mu0)
     if mu:
         return val + [mu0]
@@ -266,6 +274,7 @@ def js_roots(n, p1, q1, mu=0):
     #    [x,w] = j_roots(n,p-q,q-1,mu=0)
     #    return [(x+1)/2.0,w]
 
+
 def sh_jacobi(n, p, q, monic=0):
     """Returns the nth order Jacobi polynomial, G_n(p,q,x)
     orthogonal over [0,1] with weighting function
@@ -275,7 +284,7 @@ def sh_jacobi(n, p, q, monic=0):
         raise ValueError("n must be nonnegative.")
 
     wfunc = lambda x: (1.0-x)**(p-q) * (x)**(q-1.)
-    if n==0:
+    if n == 0:
         return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic,
                            eval_func=np.ones_like)
     n1 = n
@@ -289,6 +298,8 @@ def sh_jacobi(n, p, q, monic=0):
     return pp
 
 # Generalized Laguerre               L^(alpha)_n(x)
+
+
 def la_roots(n, alpha, mu=0):
     """[x,w] = la_roots(n,alpha)
 
@@ -311,6 +322,7 @@ def la_roots(n, alpha, mu=0):
     else:
         return val
 
+
 def genlaguerre(n, alpha, monic=0):
     """Returns the nth order generalized (associated) Laguerre polynomial,
     L^(alpha)_n(x), orthogonal over [0,inf) with weighting function
@@ -321,11 +333,14 @@ def genlaguerre(n, alpha, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = la_roots(n1,alpha,mu=1)
     wfunc = lambda x: exp(-x) * x**alpha
-    if n==0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = _gam(n+alpha+1)/_gam(n+1)
     kn = (-1)**n / _gam(n+1)
     p = orthopoly1d(x,w,hn,kn,wfunc,(0,inf),monic,
@@ -333,6 +348,8 @@ def genlaguerre(n, alpha, monic=0):
     return p
 
 # Laguerre                      L_n(x)
+
+
 def l_roots(n, mu=0):
     """[x,w] = l_roots(n)
 
@@ -342,6 +359,7 @@ def l_roots(n, mu=0):
     """
     return la_roots(n,0.0,mu=mu)
 
+
 def laguerre(n, monic=0):
     """Return the nth order Laguerre polynoimal, L_n(x), orthogonal over
     [0,inf) with weighting function exp(-x)
@@ -349,10 +367,13 @@ def laguerre(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = l_roots(n1,mu=1)
-    if n==0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = 1.0
     kn = (-1)**n / _gam(n+1)
     p = orthopoly1d(x,w,hn,kn,lambda x: exp(-x),(0,inf),monic,
@@ -380,6 +401,7 @@ def h_roots(n, mu=0):
     else:
         return val
 
+
 def hermite(n, monic=0):
     """Return the nth order Hermite polynomial, H_n(x), orthogonal over
     (-inf,inf) with weighting function exp(-x**2)
@@ -387,11 +409,14 @@ def hermite(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = h_roots(n1,mu=1)
     wfunc = lambda x: exp(-x*x)
-    if n==0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = 2**n * _gam(n+1)*sqrt(pi)
     kn = 2**n
     p = orthopoly1d(x,w,hn,kn,wfunc,(-inf,inf),monic,
@@ -399,6 +424,8 @@ def hermite(n, monic=0):
     return p
 
 # Hermite  2                         He_n(x)
+
+
 def he_roots(n, mu=0):
     """[x,w] = he_roots(n)
 
@@ -418,6 +445,7 @@ def he_roots(n, mu=0):
     else:
         return val
 
+
 def hermitenorm(n, monic=0):
     """Return the nth order normalized Hermite polynomial, He_n(x), orthogonal
     over (-inf,inf) with weighting function exp(-(x/2)**2)
@@ -425,11 +453,14 @@ def hermitenorm(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = he_roots(n1,mu=1)
     wfunc = lambda x: exp(-x*x/4.0)
-    if n==0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = sqrt(2*pi)*_gam(n+1)
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=wfunc,limits=(-inf,inf),monic=monic,
@@ -439,6 +470,8 @@ def hermitenorm(n, monic=0):
 ## The remainder of the polynomials can be derived from the ones above.
 
 # Ultraspherical (Gegenbauer)        C^(alpha)_n(x)
+
+
 def cg_roots(n, alpha, mu=0):
     """[x,w] = cg_roots(n,alpha)
 
@@ -447,6 +480,7 @@ def cg_roots(n, alpha, mu=0):
     over [-1,1] with weighting function (1-x**2)**(alpha-1/2) with alpha>-1/2.
     """
     return j_roots(n,alpha-0.5,alpha-0.5,mu=mu)
+
 
 def gegenbauer(n, alpha, monic=0):
     """Return the nth order Gegenbauer (ultraspherical) polynomial,
@@ -464,6 +498,8 @@ def gegenbauer(n, alpha, monic=0):
 
 # Chebyshev of the first kind: T_n(x)  = n! sqrt(pi) / _gam(n+1./2)* P^(-1/2,-1/2)_n(x)
 #  Computed anew.
+
+
 def t_roots(n, mu=0):
     """[x,w] = t_roots(n)
 
@@ -475,7 +511,7 @@ def t_roots(n, mu=0):
         raise ValueError("n must be positive.")
 
     # from recurrence relation
-    sbn_J = lambda k: np.where(k==1,sqrt(2)/2.0,0.5)
+    sbn_J = lambda k: np.where(k == 1,sqrt(2)/2.0,0.5)
     an_J = lambda k: 0.0*k
     g = cephes.gamma
     mu0 = pi
@@ -485,6 +521,7 @@ def t_roots(n, mu=0):
     else:
         return val
 
+
 def chebyt(n, monic=0):
     """Return nth order Chebyshev polynomial of first kind, Tn(x).  Orthogonal
     over [-1,1] with weight function (1-x**2)**(-1/2).
@@ -493,7 +530,7 @@ def chebyt(n, monic=0):
         raise ValueError("n must be nonnegative.")
 
     wfunc = lambda x: 1.0/sqrt(1-x*x)
-    if n==0:
+    if n == 0:
         return orthopoly1d([],[],pi,1.0,wfunc,(-1,1),monic,
                            lambda x: eval_chebyt(n,x))
     n1 = n
@@ -506,6 +543,8 @@ def chebyt(n, monic=0):
 
 # Chebyshev of the second kind
 #    U_n(x) = (n+1)! sqrt(pi) / (2*_gam(n+3./2)) * P^(1/2,1/2)_n(x)
+
+
 def u_roots(n, mu=0):
     """[x,w] = u_roots(n)
 
@@ -514,6 +553,7 @@ def u_roots(n, mu=0):
     over [-1,1] with weighting function (1-x**2)**1/2.
     """
     return j_roots(n,0.5,0.5,mu=mu)
+
 
 def chebyu(n, monic=0):
     """Return nth order Chebyshev polynomial of second kind, Un(x).  Orthogonal
@@ -527,6 +567,8 @@ def chebyu(n, monic=0):
     return base
 
 # Chebyshev of the first kind        C_n(x)
+
+
 def c_roots(n, mu=0):
     """[x,w] = c_roots(n)
 
@@ -541,6 +583,7 @@ def c_roots(n, mu=0):
         [x,w] = j_roots(n,-0.5,-0.5,mu=0)
         return [x*2,w]
 
+
 def chebyc(n, monic=0):
     """Return nth order Chebyshev polynomial of first kind, Cn(x).  Orthogonal
     over [-2,2] with weight function (1-(x/2)**2)**(-1/2).
@@ -548,11 +591,14 @@ def chebyc(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = c_roots(n1,mu=1)
-    if n==0: x,w = [],[]
-    hn = 4*pi * ((n==0)+1)
+    if n == 0:
+        x,w = [],[]
+    hn = 4*pi * ((n == 0)+1)
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0/sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
     if not monic:
@@ -561,6 +607,8 @@ def chebyc(n, monic=0):
     return p
 
 # Chebyshev of the second kind       S_n(x)
+
+
 def s_roots(n, mu=0):
     """[x,w] = s_roots(n)
 
@@ -575,6 +623,7 @@ def s_roots(n, mu=0):
         [x,w] = j_roots(n,0.5,0.5,mu=0)
         return [x*2,w]
 
+
 def chebys(n, monic=0):
     """Return nth order Chebyshev polynomial of second kind, Sn(x).  Orthogonal
     over [-2,2] with weight function (1-(x/)**2)**(1/2).
@@ -582,10 +631,13 @@ def chebys(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = s_roots(n1,mu=1)
-    if n==0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = pi
     kn = 1.0
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: sqrt(1-x*x/4.0),limits=(-2,2),monic=monic)
@@ -596,6 +648,8 @@ def chebys(n, monic=0):
     return p
 
 # Shifted Chebyshev of the first kind     T^*_n(x)
+
+
 def ts_roots(n, mu=0):
     """[x,w] = ts_roots(n)
 
@@ -604,6 +658,7 @@ def ts_roots(n, mu=0):
     over [0,1] with weighting function (x-x**2)**(-1/2).
     """
     return js_roots(n,0.0,0.5,mu=mu)
+
 
 def sh_chebyt(n, monic=0):
     """Return nth order shifted Chebyshev polynomial of first kind, Tn(x).
@@ -630,17 +685,21 @@ def us_roots(n, mu=0):
     """
     return js_roots(n,2.0,1.5,mu=mu)
 
+
 def sh_chebyu(n, monic=0):
     """Return nth order shifted Chebyshev polynomial of second kind, Un(x).
     Orthogonal over [0,1] with weight function (x-x**2)**(1/2).
     """
     base = sh_jacobi(n,2.0,1.5,monic=monic)
-    if monic: return base
+    if monic:
+        return base
     factor = 4**n
     base._scale(factor)
     return base
 
 # Legendre
+
+
 def p_roots(n, mu=0):
     """[x,w] = p_roots(n)
 
@@ -650,6 +709,7 @@ def p_roots(n, mu=0):
     """
     return j_roots(n,0.0,0.0,mu=mu)
 
+
 def legendre(n, monic=0):
     """Returns the nth order Legendre polynomial, P_n(x), orthogonal over
     [-1,1] with weight function 1.
@@ -657,10 +717,13 @@ def legendre(n, monic=0):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    if n==0: n1 = n+1
-    else: n1 = n
+    if n == 0:
+        n1 = n+1
+    else:
+        n1 = n
     x,w,mu0 = p_roots(n1,mu=1)
-    if n==0: x,w = [],[]
+    if n == 0:
+        x,w = [],[]
     hn = 2.0/(2*n+1)
     kn = _gam(2*n+1)/_gam(n+1)**2 / 2.0**n
     p = orthopoly1d(x,w,hn,kn,wfunc=lambda x: 1.0,limits=(-1,1),monic=monic,
@@ -668,6 +731,8 @@ def legendre(n, monic=0):
     return p
 
 # Shifted Legendre              P^*_n(x)
+
+
 def ps_roots(n, mu=0):
     """[x,w] = ps_roots(n)
 
@@ -677,6 +742,7 @@ def ps_roots(n, mu=0):
     """
     return js_roots(n,1.0,1.0,mu=mu)
 
+
 def sh_legendre(n, monic=0):
     """Returns the nth order shifted Legendre polynomial, P^*_n(x), orthogonal
     over [0,1] with weighting function 1.
@@ -685,8 +751,9 @@ def sh_legendre(n, monic=0):
         raise ValueError("n must be nonnegative.")
 
     wfunc = lambda x: 0.0*x + 1.0
-    if n==0: return orthopoly1d([],[],1.0,1.0,wfunc,(0,1),monic,
-                                lambda x: eval_sh_legendre(n,x))
+    if n == 0:
+        return orthopoly1d([],[],1.0,1.0,wfunc,(0,1),monic,
+                           lambda x: eval_sh_legendre(n,x))
     x,w,mu0 = ps_roots(n,mu=1)
     hn = 1.0/(2*n+1.0)
     kn = _gam(2*n+1)/_gam(n+1)**2

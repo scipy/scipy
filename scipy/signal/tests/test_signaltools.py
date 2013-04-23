@@ -73,6 +73,7 @@ class TestConvolve(_TestConvolve):
         d = array([57,61,63,57,45,36])
         assert_array_equal(c,d)
 
+
 class _TestConvolve2d(TestCase):
     def test_2d_arrays(self):
         a = [[1,2,3],[3,4,5]]
@@ -227,6 +228,7 @@ class TestFFTConvolve(TestCase):
         d = np.convolve(a, b, 'full')
         assert_(np.allclose(c, d, rtol=1e-10))
 
+
 class TestMedFilt(TestCase):
     def test_basic(self):
         f = [[50, 50, 50, 50, 50, 92, 18, 27, 65, 46],
@@ -281,13 +283,13 @@ class TestWiener(TestCase):
 
 class TestCSpline1DEval(TestCase):
     def test_basic(self):
-        y=array([1,2,3,4,3,2,1,2,3.0])
-        x=arange(len(y))
-        dx=x[1]-x[0]
+        y = array([1,2,3,4,3,2,1,2,3.0])
+        x = arange(len(y))
+        dx = x[1]-x[0]
         cj = signal.cspline1d(y)
 
-        x2=arange(len(y)*10.0)/10.0
-        y2=signal.cspline1d_eval(cj, x2, dx=dx,x0=x[0])
+        x2 = arange(len(y)*10.0)/10.0
+        y2 = signal.cspline1d_eval(cj, x2, dx=dx,x0=x[0])
 
         # make sure interpolated values are on knot points
         assert_array_almost_equal(y2[::10], y, decimal=5)
@@ -349,10 +351,10 @@ class _TestLinearFilter(TestCase):
         y_r2_a1 = np.array([[0, 2, 0], [6, -4, 6], [12, -10, 12],
                             [18, -16, 18]], dtype=self.dt)
 
-        y = lfilter(b, a, x, axis = 0)
+        y = lfilter(b, a, x, axis=0)
         assert_array_almost_equal(y_r2_a0, y)
 
-        y = lfilter(b, a, x, axis = 1)
+        y = lfilter(b, a, x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
     def test_rank2_init_cond_a1(self):
@@ -367,7 +369,7 @@ class _TestLinearFilter(TestCase):
         y_r2_a0_1 = np.array([[1, 1, 1], [7, -5, 7], [13, -11, 13],
                               [19, -17, 19]], dtype=self.dt)
         zf_r = np.array([-5, -17, -29, -41])[:, np.newaxis].astype(self.dt)
-        y, zf = lfilter(b, a, x, axis = 1, zi = np.ones((4, 1)))
+        y, zf = lfilter(b, a, x, axis=1, zi=np.ones((4, 1)))
         assert_array_almost_equal(y_r2_a0_1, y)
         assert_array_almost_equal(zf, zf_r)
 
@@ -383,7 +385,7 @@ class _TestLinearFilter(TestCase):
         y_r2_a0_0 = np.array([[1, 3, 5], [5, 3, 1], [1, 3, 5], [5 ,3 ,1]],
                              dtype=self.dt)
         zf_r = np.array([[-23, -23, -23]], dtype=self.dt)
-        y, zf = lfilter(b, a, x, axis = 0, zi = np.ones((1, 3)))
+        y, zf = lfilter(b, a, x, axis=0, zi=np.ones((1, 3)))
         assert_array_almost_equal(y_r2_a0_0, y)
         assert_array_almost_equal(zf, zf_r)
 
@@ -411,26 +413,34 @@ class _TestLinearFilter(TestCase):
         self.assertTrue(zf.dtype == self.dt)
         self.assertTrue(zf.size == 0)
 
+
 class TestLinearFilterFloat32(_TestLinearFilter):
     dt = np.float32
+
 
 class TestLinearFilterFloat64(_TestLinearFilter):
     dt = np.float64
 
+
 class TestLinearFilterFloatExtended(_TestLinearFilter):
     dt = np.longdouble
+
 
 class TestLinearFilterComplex64(_TestLinearFilter):
     dt = np.complex64
 
+
 class TestLinearFilterComplex128(_TestLinearFilter):
     dt = np.complex128
+
 
 class TestLinearFilterComplexxxiExtended28(_TestLinearFilter):
     dt = np.longcomplex
 
+
 class TestLinearFilterDecimal(_TestLinearFilter):
     dt = np.dtype(Decimal)
+
 
 class TestLinearFilterObject(_TestLinearFilter):
     dt = np.object_

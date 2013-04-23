@@ -7,7 +7,6 @@ __docformat__ = "restructuredtext en"
 __all__ = ['dok_matrix', 'isspmatrix_dok']
 
 
-
 import numpy as np
 
 from scipy.lib.six.moves import zip as izip, xrange
@@ -22,6 +21,7 @@ except ImportError:
     def _is_sequence(x):
         return (hasattr(x, '__len__') or hasattr(x, '__next__')
                 or hasattr(x, 'next'))
+
 
 class dok_matrix(spmatrix, dict):
     """
@@ -99,7 +99,7 @@ class dok_matrix(spmatrix, dict):
             except:
                 raise TypeError('invalid input format')
 
-            if len(arg1.shape)!=2:
+            if len(arg1.shape) != 2:
                 raise TypeError('expected rank <=2 dense array or matrix')
 
             from .coo import coo_matrix
@@ -128,7 +128,7 @@ class dok_matrix(spmatrix, dict):
             raise IndexError('index out of bounds')
         return dict.get(self, key, default)
 
-    def  __getitem__(self, key):
+    def __getitem__(self, key):
         """If key=(i,j) is a pair of integers, return the corresponding
         element.  If either i or j is a slice or sequence, return a new sparse
         matrix with just these elements.
@@ -137,7 +137,6 @@ class dok_matrix(spmatrix, dict):
             i, j = key
         except (ValueError, TypeError):
             raise TypeError('index must be a pair of integers or slices')
-
 
         # Bounds checking
         if isintlike(i):
@@ -187,7 +186,7 @@ class dok_matrix(spmatrix, dict):
                     # ** linear time in the number of non-zeros:
                     for (ii, jj) in self.keys():
                         if jj == j and ii >= first and ii <= last:
-                            dict.__setitem__(new, (ii-first, 0), \
+                            dict.__setitem__(new, (ii-first, 0),
                                              dict.__getitem__(self, (ii,jj)))
                 else:
                     ###################################
@@ -222,10 +221,9 @@ class dok_matrix(spmatrix, dict):
             # ** if there are many non-zeros
             for (ii, jj) in self.keys():
                 if ii == i and jj >= first and jj <= last:
-                    dict.__setitem__(new, (0, jj-first), \
+                    dict.__setitem__(new, (0, jj-first),
                                      dict.__getitem__(self, (ii,jj)))
             return new
-
 
     def __setitem__(self, key, value):
         try:
@@ -330,7 +328,6 @@ class dok_matrix(spmatrix, dict):
                         for element, val in izip(seq, value):
                             self[i, element] = val
 
-
     def __add__(self, other):
         # First check if argument is a scalar
         if isscalarlike(other):
@@ -411,7 +408,7 @@ class dok_matrix(spmatrix, dict):
     def _mul_multivector(self, other):
         #matrix * multivector
         M,N = self.shape
-        n_vecs = other.shape[1] #number of column vectors
+        n_vecs = other.shape[1] # number of column vectors
         result = np.zeros( (M,n_vecs), dtype=upcast(self.dtype,other.dtype) )
         for (i,j),v in iteritems(self):
             result[i,:] += v * other[j,:]
@@ -427,7 +424,6 @@ class dok_matrix(spmatrix, dict):
         else:
             return NotImplementedError
 
-
     def __truediv__(self, other):
         if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
@@ -438,7 +434,6 @@ class dok_matrix(spmatrix, dict):
             return new
         else:
             return self.tocsr() / other
-
 
     def __itruediv__(self, other):
         if isscalarlike(other):

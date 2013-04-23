@@ -233,7 +233,7 @@ class MatFile5Reader(MatFileReader):
         else:
             self._matrix_reader.set_stream(self.mat_stream)
         if not mdtype == miMATRIX:
-            raise TypeError('Expecting miMATRIX type here, got %d' %  mdtype)
+            raise TypeError('Expecting miMATRIX type here, got %d' % mdtype)
         header = self._matrix_reader.read_header()
         return header, next_pos
 
@@ -297,7 +297,7 @@ class MatFile5Reader(MatFileReader):
                 res = self.read_var_array(hdr, process)
             except MatReadError as err:
                 warnings.warn(
-                    'Unreadable variable "%s", because "%s"' % \
+                    'Unreadable variable "%s", because "%s"' %
                     (name, err),
                     Warning, stacklevel=2)
                 res = "Read error: %s" % err
@@ -334,6 +334,7 @@ class MatFile5Reader(MatFileReader):
 
             self.mat_stream.seek(next_position)
         return vars
+
 
 def varmats_from_mat(file_obj):
     """ Pull variables out of mat 5 file as a sequence of mat file objects
@@ -509,8 +510,8 @@ class VarWriter5(object):
 
     def __init__(self, file_writer):
         self.file_stream = file_writer.file_stream
-        self.unicode_strings=file_writer.unicode_strings
-        self.long_field_names=file_writer.long_field_names
+        self.unicode_strings = file_writer.unicode_strings
+        self.long_field_names = file_writer.long_field_names
         self.oned_as = file_writer.oned_as
         # These are used for top level writes, and unset after
         self._var_name = None
@@ -655,7 +656,7 @@ class VarWriter5(object):
             self.write_cells(narr)
         elif narr.dtype.kind in ('U', 'S'):
             if self.unicode_strings:
-                codec='UTF8'
+                codec = 'UTF8'
             else:
                 codec = 'ascii'
             self.write_char(narr, codec)
@@ -774,7 +775,7 @@ class VarWriter5(object):
                  % (max_length-1))
         self.write_element(np.array([length], dtype='i4'))
         self.write_element(
-            np.array(fieldnames, dtype='S%d'%(length)),
+            np.array(fieldnames, dtype='S%d' % (length)),
             mdtype=miINT8)
         A = np.atleast_2d(arr).flatten('F')
         for el in A:
@@ -832,11 +833,11 @@ class MatFile5Writer(object):
 
     def write_file_header(self):
         # write header
-        hdr =  np.zeros((), NDT_FILE_HDR)
-        hdr['description']='MATLAB 5.0 MAT-file Platform: %s, Created on: %s' \
+        hdr = np.zeros((), NDT_FILE_HDR)
+        hdr['description'] = 'MATLAB 5.0 MAT-file Platform: %s, Created on: %s' \
             % (os.name,time.asctime())
-        hdr['version']= 0x0100
-        hdr['endian_test']=np.ndarray(shape=(),
+        hdr['version'] = 0x0100
+        hdr['endian_test'] = np.ndarray(shape=(),
                                       dtype='S2',
                                       buffer=np.uint16(0x4d49))
         self.file_stream.write(hdr.tostring())

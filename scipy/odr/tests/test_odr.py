@@ -63,7 +63,6 @@ class TestODR(TestCase):
                   1.6827336938454476e-05]]),
         )
 
-
     # Implicit Example
 
     def implicit_fcn(self, B, x):
@@ -117,7 +116,6 @@ class TestODR(TestCase):
                   1.4528860663055824e-03,  -1.2692942951415293e-03,
                   2.0778813389755596e-03]]),
         )
-
 
     # Multi-variable Example
 
@@ -208,7 +206,6 @@ class TestODR(TestCase):
                [ 0.011281212888768 ,  0.0130726943624117,  0.1269490939468611,
                 -0.0140184391377962,  0.0316733013820852]]),
         )
-
 
     # Pearson's Data
     # K. Pearson, Philosophical Magazine, 2, 559 (1901)
@@ -308,7 +305,6 @@ class TestODR(TestCase):
                [ -3.1236953270424990e-05,   3.6133261832722601e-08,
                   2.7261220025171730e-08]]),
         )
-
 
     def test_ticket_1253(self):
         def linear(c, x):

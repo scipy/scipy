@@ -129,6 +129,7 @@ import_array();
 PyImport_ImportModule("numpy");
 """
 
+
 class array_converter(common_base_converter):
 
     def init_info(self):
@@ -156,7 +157,7 @@ class array_converter(common_base_converter):
         res['cap_name'] = self.name.upper()
         return res
 
-    def declaration_code(self,templatize = 0,inline=0):
+    def declaration_code(self,templatize=0,inline=0):
         res = self.template_vars(inline=inline)
         cap_name = self.name.upper()
         res['cap_name'] = cap_name
@@ -176,7 +177,7 @@ class array_converter(common_base_converter):
                'int D%(name)s = %(array_name)s->nd;\n' \
                '%(num_type)s* %(name)s = (%(num_type)s*) %(array_name)s->data;\n'
         code = code % res
-        self.__doundef=1
+        self.__doundef = 1
         return code
 
     def cleanup_code(self):

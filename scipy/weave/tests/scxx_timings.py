@@ -6,12 +6,14 @@ import time
 force = 0
 N = 1000000
 
+
 def list_append_scxx(a,Na):
     code = """
            for(int i = 0; i < Na;i++)
                a.append(i);
            """
     weave.inline(code,['a','Na'],force=force,verbose=2,compiler='gcc')
+
 
 def list_append_c(a,Na):
     code = """
@@ -29,9 +31,11 @@ def list_append_c(a,Na):
            """
     weave.inline(code,['a','Na'],force=force,compiler='gcc')
 
+
 def list_append_py(a,Na):
     for i in xrange(Na):
         a.append(i)
+
 
 def time_list_append(Na):
     """ Compare the list append method from scxx to using the Python API
@@ -67,12 +71,14 @@ def time_list_append(Na):
 #
 #----------------------------------------------------------------------------
 
+
 def list_copy_scxx(a,b):
     code = """
            for(int i = 0; i < a.length();i++)
                b[i] = a[i];
            """
     weave.inline(code,['a','b'],force=force,verbose=2,compiler='gcc')
+
 
 def list_copy_c(a,b):
     code = """
@@ -88,9 +94,11 @@ def list_copy_c(a,b):
            """
     weave.inline(code,['a','b'],force=force,compiler='gcc')
 
+
 def list_copy_py(a,b):
     for item in a:
         b[i] = item
+
 
 def time_list_copy(N):
     """ Compare the list append method from scxx to using the Python API

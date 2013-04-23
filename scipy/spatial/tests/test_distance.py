@@ -91,6 +91,7 @@ _ytdist = squareform(_tdist)
 
 eo = {}
 
+
 def load_testing_files():
     "Loading test data files for the scipy.spatial.distance tests."
     for fn in _filenames:
@@ -254,7 +255,6 @@ class TestCdist(TestCase):
             print((Y1-Y2).max())
         self.assertTrue(within_tol(Y1, Y2, eps))
 
-
     def test_cdist_wminkowski_random_p3d8(self):
         "Tests cdist(X, 'wminkowski') on random data. (p=3.8)"
         eps = 1e-07
@@ -294,7 +294,6 @@ class TestCdist(TestCase):
             print((Y1-Y2).max())
         self.assertTrue(within_tol(Y1, Y2, eps))
 
-
     def test_cdist_seuclidean_random(self):
         "Tests cdist(X, 'seuclidean') on random data."
         eps = 1e-07
@@ -306,7 +305,6 @@ class TestCdist(TestCase):
         if verbose > 2:
             print((Y1-Y2).max())
         self.assertTrue(within_tol(Y1, Y2, eps))
-
 
     def test_cdist_cosine_random(self):
         "Tests cdist(X, 'cosine') on random data."
@@ -1515,8 +1513,8 @@ class TestSquareForm(TestCase):
     def test_squareform_2by2_matrix(self):
         "Tests squareform on a 2x2 matrix."
         A = np.zeros((2,2))
-        A[0,1]=0.8
-        A[1,0]=0.8
+        A[0,1] = 0.8
+        A[1,0] = 0.8
         rA = squareform(np.array(A, dtype='double'))
         self.assertTrue(rA.shape == (1,))
         self.assertTrue(rA[0] == 0.8)
@@ -1909,5 +1907,5 @@ def test__validate_vector():
     assert_raises(ValueError, _validate_vector, x)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     run_module_suite()

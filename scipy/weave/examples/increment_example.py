@@ -9,6 +9,7 @@ import sys
 sys.path.insert(0,'..')
 import ext_tools
 
+
 def build_increment_ext():
     """ Build a simple extension with functions that increment numbers.
         The extension will be built in the local directory.

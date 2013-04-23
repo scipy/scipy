@@ -22,6 +22,7 @@ useUmfpack = True
 
 __all__ = [ 'use_solver', 'spsolve', 'splu', 'spilu', 'factorized' ]
 
+
 def use_solver( **kwargs ):
     """
     Valid keyword arguments with defaults (other ignored)::
@@ -130,7 +131,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         family = {'d' : 'di', 'D' : 'zi'}
         umf = umfpack.UmfpackContext(family[A.dtype.char])
         x = umf.linsolve(umfpack.UMFPACK_A, A, b,
-                         autoTranspose = True )
+                         autoTranspose=True )
 
     elif b_is_vector:
         if isspmatrix_csc(A):
@@ -219,11 +220,11 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
         warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
     A.sort_indices()
-    A = A.asfptype()  #upcast to a floating point format
+    A = A.asfptype()  # upcast to a floating point format
 
     M, N = A.shape
     if (M != N):
-        raise ValueError("can only factor square matrices") #is this true?
+        raise ValueError("can only factor square matrices") # is this true?
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
@@ -231,6 +232,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
         _options.update(options)
     return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
                           ilu=False, options=_options)
+
 
 def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
           diag_pivot_thresh=None, relax=None, panel_size=None, options=None):
@@ -283,11 +285,11 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
     A.sort_indices()
-    A = A.asfptype()  #upcast to a floating point format
+    A = A.asfptype()  # upcast to a floating point format
 
     M, N = A.shape
     if (M != N):
-        raise ValueError("can only factor square matrices") #is this true?
+        raise ValueError("can only factor square matrices") # is this true?
 
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,
@@ -297,6 +299,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         _options.update(options)
     return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
                           ilu=True, options=_options)
+
 
 def factorized( A ):
     """
@@ -336,7 +339,7 @@ def factorized( A ):
             warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
         A.sort_indices()
-        A = A.asfptype()  #upcast to a floating point format
+        A = A.asfptype()  # upcast to a floating point format
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
@@ -349,7 +352,7 @@ def factorized( A ):
         umf.numeric( A )
 
         def solve( b ):
-            return umf.solve( umfpack.UMFPACK_A, A, b, autoTranspose = True )
+            return umf.solve( umfpack.UMFPACK_A, A, b, autoTranspose=True )
 
         return solve
     else:

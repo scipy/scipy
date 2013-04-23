@@ -12,6 +12,7 @@ import os
 import numpy as np
 from optparse import OptionParser
 
+
 def main():
     p = OptionParser()
     options, args = p.parse_args()
@@ -39,6 +40,7 @@ def main():
             print("Failed to load", fn)
 
     savez_compress(outp, **data)
+
 
 def savez_compress(file, *args, **kwds):
     # Import is postponed to here since zipfile depends on gzip, an optional

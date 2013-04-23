@@ -124,7 +124,7 @@ class UnivariateSpline(object):
 
     """
 
-    def __init__(self, x, y, w=None, bbox = [None]*2, k=3, s=None):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -146,7 +146,7 @@ class UnivariateSpline(object):
         #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         data = dfitpack.fpcurf0(x,y,k,w=w,
                                 xb=bbox[0],xe=bbox[1],s=s)
-        if data[-1]==1:
+        if data[-1] == 1:
             # nest too small, setting to maximum bound
             data = self._reset_nest(data)
         self._data = data
@@ -156,22 +156,22 @@ class UnivariateSpline(object):
         data = self._data
         n,t,c,k,ier = data[7],data[8],data[9],data[5],data[-1]
         self._eval_args = t[:n],c[:n],k
-        if ier==0:
+        if ier == 0:
             # the spline returned has a residual sum of squares fp
             # such that abs(fp-s)/s <= tol with tol a relative
             # tolerance set to 0.001 by the program
             pass
-        elif ier==-1:
+        elif ier == -1:
             # the spline returned is an interpolating spline
             self._set_class(InterpolatedUnivariateSpline)
-        elif ier==-2:
+        elif ier == -2:
             # the spline returned is the weighted least-squares
             # polynomial of degree k. In this extreme case fp gives
             # the upper bound fp0 for the smoothing factor s.
             self._set_class(LSQUnivariateSpline)
         else:
             # error
-            if ier==1:
+            if ier == 1:
                 self._set_class(LSQUnivariateSpline)
             message = _curfit_messages.get(ier,'ier=%s' % (ier))
             warnings.warn(message)
@@ -205,13 +205,13 @@ class UnivariateSpline(object):
 
         """
         data = self._data
-        if data[6]==-1:
+        if data[6] == -1:
             warnings.warn('smoothing factor unchanged for'
                           'LSQ spline with fixed knots')
             return
         args = data[:6] + (s,) + data[7:]
         data = dfitpack.fpcurf1(*args)
-        if data[-1]==1:
+        if data[-1] == 1:
             # nest too small, setting to maximum bound
             data = self._reset_nest(data)
         self._data = data
@@ -269,7 +269,7 @@ class UnivariateSpline(object):
         Restriction: only cubic splines are supported by fitpack.
         """
         k = self._data[5]
-        if k==3:
+        if k == 3:
             z,m,ier = dfitpack.sproot(*self._eval_args[:2])
             if not ier == 0:
                 raise ValueError("Error code returned by spalde: %s" % ier)
@@ -333,7 +333,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     """
 
-    def __init__(self, x, y, w=None, bbox = [None]*2, k=3):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -410,13 +410,13 @@ class LSQUnivariateSpline(UnivariateSpline):
     >>> plt.plot(x, y, '.-')
     >>> plt.plot(xs, ys)
     >>> plt.show()
-    
+
     xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y
     with knots [-3,-1,0,1,3]
 
     """
 
-    def __init__(self, x, y, t, w=None, bbox = [None]*2, k=3):
+    def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -433,10 +433,12 @@ class LSQUnivariateSpline(UnivariateSpline):
           k=3        - degree of the univariate spline.
         """
         #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        xb=bbox[0]
-        xe=bbox[1]
-        if xb is None: xb = x[0]
-        if xe is None: xe = x[-1]
+        xb = bbox[0]
+        xe = bbox[1]
+        if xb is None:
+            xb = x[0]
+        if xe is None:
+            xe = x[-1]
         t = concatenate(([xb]*(k+1),t,[xe]*(k+1)))
         n = len(t)
         if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0,axis=0):
@@ -523,6 +525,7 @@ system (deficiency=%i). If deficiency is large, the results may be
 inaccurate. Deficiency may strongly depend on the value of eps."""
                     }
 
+
 class BivariateSpline(_BivariateSplineBase):
     """
     Base class for bivariate splines.
@@ -556,7 +559,7 @@ class BivariateSpline(_BivariateSplineBase):
         if (x.size == 0) and (y.size == 0):
             return array([])
 
-        if mth=='array':
+        if mth == 'array':
             tx,ty,c = self.tck[:3]
             kx,ky = self.degrees
             z,ier = dfitpack.bispev(tx,ty,c,kx,ky,x,y)
@@ -706,17 +709,17 @@ class LSQBivariateSpline(BivariateSpline):
         ty1[ky+1:ny-ky-1] = ty
 
         xb,xe,yb,ye = bbox
-        tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,\
-                                               xb,xe,yb,ye,\
+        tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,
+                                               xb,xe,yb,ye,
                                                kx,ky,eps,lwrk2=1)
-        if ier>10:
-            tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,\
-                                                   xb,xe,yb,ye,\
+        if ier > 10:
+            tx1,ty1,c,fp,ier = dfitpack.surfit_lsq(x,y,z,tx1,ty1,w,
+                                                   xb,xe,yb,ye,
                                                    kx,ky,eps,lwrk2=ier)
         if ier in [0,-1,-2]: # normal return
             pass
         else:
-            if ier<-2:
+            if ier < -2:
                 deficiency = (nx-kx-1)*(ny-ky-1)+ier
                 message = _surfit_messages.get(-3) % (deficiency)
             else:

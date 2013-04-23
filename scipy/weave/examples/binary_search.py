@@ -23,6 +23,7 @@ import scipy.weave.inline_tools as inline_tools
 from bisect import bisect_left as bisect
 import types
 
+
 def c_int_search(seq,t,chk=1):
     # do partial type checking in Python.
     # checking that list items are ints should happen in py_to_scalar<int>
@@ -58,7 +59,8 @@ def c_int_search(seq,t,chk=1):
            }
            """
     #return inline_tools.inline(code,['seq','t'],compiler='msvc')
-    return inline_tools.inline(code,['seq','t'],verbose = 2)
+    return inline_tools.inline(code,['seq','t'],verbose=2)
+
 
 def c_int_search_scxx(seq,t,chk=1):
     # do partial type checking in Python.
@@ -91,7 +93,7 @@ def c_int_search_scxx(seq,t,chk=1):
            }
            """
     #return inline_tools.inline(code,['seq','t'],compiler='msvc')
-    return inline_tools.inline(code,['seq','t'],verbose = 2)
+    return inline_tools.inline(code,['seq','t'],verbose=2)
 
 try:
     from numpy import *
@@ -122,13 +124,15 @@ try:
                }
                """
         #return inline_tools.inline(code,['seq','t'],compiler='msvc')
-        return inline_tools.inline(code,['seq','t'],verbose = 2,
+        return inline_tools.inline(code,['seq','t'],verbose=2,
                                    extra_compile_args=['-O2','-G6'])
 except:
     pass
 
+
 def py_int_search(seq, t):
-    min = 0; max = len(seq) - 1
+    min = 0
+    max = len(seq) - 1
     while 1:
         if max < min:
             return -1
@@ -142,8 +146,9 @@ def py_int_search(seq, t):
 
 import time
 
+
 def search_compare(a,n):
-    print('Binary search for %d items in %d length list of integers:'%(n,m))
+    print('Binary search for %d items in %d length list of integers:' % (n,m))
     t1 = time.time()
     for i in range(n):
         py_int_search(a,i)
@@ -156,7 +161,7 @@ def search_compare(a,n):
     for i in range(n):
         bisect(a,i)
     t2 = time.time()
-    bi = (t2-t1) +1e-20 # protect against div by zero
+    bi = (t2-t1) + 1e-20 # protect against div by zero
     print(' speed of bisect:', bi)
     print(' speed up: %3.2f' % (py/bi))
 
@@ -217,7 +222,7 @@ def search_compare(a,n):
 
 if __name__ == "__main__":
     # note bisect returns index+1 compared to other algorithms
-    m= 100000
+    m = 100000
     a = range(m)
     n = 50000
     search_compare(a,n)

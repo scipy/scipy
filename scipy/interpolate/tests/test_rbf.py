@@ -13,6 +13,7 @@ from scipy.interpolate.rbf import Rbf
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
              'cubic', 'quintic', 'thin-plate', 'linear')
 
+
 def check_rbf1d_interpolation(function):
     """Check that the Rbf function interpolates throught the nodes (1D)"""
     olderr = np.seterr(all="ignore")
@@ -25,6 +26,7 @@ def check_rbf1d_interpolation(function):
         assert_almost_equal(rbf(float(x[0])), y[0])
     finally:
         np.seterr(**olderr)
+
 
 def check_rbf2d_interpolation(function):
     """Check that the Rbf function interpolates throught the nodes (2D)"""
@@ -39,6 +41,7 @@ def check_rbf2d_interpolation(function):
         assert_array_almost_equal(z, zi)
     finally:
         np.seterr(**olderr)
+
 
 def check_rbf3d_interpolation(function):
     """Check that the Rbf function interpolates throught the nodes (3D)"""
@@ -55,11 +58,13 @@ def check_rbf3d_interpolation(function):
     finally:
         np.seterr(**olderr)
 
+
 def test_rbf_interpolation():
     for function in FUNCTIONS:
         yield check_rbf1d_interpolation, function
         yield check_rbf2d_interpolation, function
         yield check_rbf3d_interpolation, function
+
 
 def check_rbf1d_regularity(function, atol):
     """Check that the Rbf function approximates a smooth function well away
@@ -81,6 +86,7 @@ def check_rbf1d_regularity(function, atol):
     finally:
         np.seterr(**olderr)
 
+
 def test_rbf_regularity():
     tolerances = {
         'multiquadric': 0.05,
@@ -94,6 +100,7 @@ def test_rbf_regularity():
     for function in FUNCTIONS:
         yield check_rbf1d_regularity, function, tolerances.get(function, 1e-2)
 
+
 def test_default_construction():
     """Check that the Rbf class can be constructed with the default
     multiquadric basis function. Regression test for ticket #1228."""
@@ -103,6 +110,7 @@ def test_default_construction():
     yi = rbf(x)
     assert_array_almost_equal(y, yi)
 
+
 def test_function_is_callable():
     """Check that the Rbf class can be constructed with function=callable."""
     x = linspace(0,10,9)
@@ -111,6 +119,7 @@ def test_function_is_callable():
     rbf = Rbf(x, y, function=linfunc)
     yi = rbf(x)
     assert_array_almost_equal(y, yi)
+
 
 def test_two_arg_function_is_callable():
     """Check that the Rbf class can be constructed with a two argument
@@ -123,6 +132,7 @@ def test_two_arg_function_is_callable():
     rbf = Rbf(x, y, function=_func)
     yi = rbf(x)
     assert_array_almost_equal(y, yi)
+
 
 def test_rbf_epsilon_none():
     x = linspace(0, 10, 9)

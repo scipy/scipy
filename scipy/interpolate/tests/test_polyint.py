@@ -11,6 +11,7 @@ import scipy
 import numpy as np
 from scipy.interpolate import splrep, splev
 
+
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
     np.random.seed(1234)
 
@@ -33,12 +34,13 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
     # check also values
     if xi.size > 0 and deriv_shape is None:
         bs_shape = (y.shape[:axis] + ((1,)*len(x_shape)) + y.shape[axis:][1:])
-        yv = y[((slice(None,None,None),)*(axis%y.ndim))+(1,)].reshape(bs_shape)
+        yv = y[((slice(None,None,None),)*(axis % y.ndim))+(1,)].reshape(bs_shape)
 
         yi, y = np.broadcast_arrays(yi, yv)
         assert_allclose(yi, y)
 
 SHAPES = [(), (0,), (1,), (3,2,5)]
+
 
 def test_shapes():
     for ip in [KroghInterpolator, BarycentricInterpolator, pchip]:
@@ -46,6 +48,7 @@ def test_shapes():
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
                     yield check_shape, ip, s1, s2, None, axis
+
 
 def test_derivs_shapes():
     def krogh_derivs(x, y, axis=0):
@@ -58,6 +61,7 @@ def test_derivs_shapes():
                 yield check_shape, krogh_derivs, s1, s2, (3,), axis
                 yield check_shape, pchip_derivs, s1, s2, (4,), axis
 
+
 def test_deriv_shapes():
     def krogh_deriv(x, y, axis=0):
         return KroghInterpolator(x, y, axis).derivative
@@ -69,15 +73,18 @@ def test_deriv_shapes():
                 for axis in range(-len(s2), len(s2)):
                     yield check_shape, ip, s1, s2, (), axis
 
+
 def _check_complex(ip):
     x = [1, 2, 3, 4]
     y = [1, 2, 1j, 3]
     p = ip(x, y)
     assert_allclose(y, p(x))
 
+
 def test_complex():
     for ip in [KroghInterpolator, BarycentricInterpolator, pchip]:
         yield _check_complex, ip
+
 
 class CheckKrogh(TestCase):
     def setUp(self):
@@ -190,6 +197,7 @@ class CheckKrogh(TestCase):
         assert_almost_equal(P.derivative(self.test_xs,2),krogh_interpolate(self.xs,self.ys,self.test_xs,der=2))
         assert_almost_equal(P.derivatives(self.test_xs,2),krogh_interpolate(self.xs,self.ys,self.test_xs,der=[0,1]))
 
+
 class CheckTaylor(TestCase):
     def test_exponential(self):
         degree = 5
@@ -198,6 +206,7 @@ class CheckTaylor(TestCase):
             assert_almost_equal(p(0),1)
             p = p.deriv()
         assert_almost_equal(p(0),0)
+
 
 class CheckBarycentric(TestCase):
     def setUp(self):
@@ -256,6 +265,7 @@ class CheckBarycentric(TestCase):
     def test_wrapper(self):
         P = BarycentricInterpolator(self.xs,self.ys)
         assert_almost_equal(P(self.test_xs),barycentric_interpolate(self.xs,self.ys,self.test_xs))
+
 
 class CheckPiecewise(TestCase):
     def setUp(self):
@@ -352,5 +362,5 @@ class CheckPiecewise(TestCase):
         assert_almost_equal(P.derivatives(self.test_xs,2),piecewise_polynomial_interpolate(self.xi,self.yi,self.test_xs,der=[0,1]))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     run_module_suite()
