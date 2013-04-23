@@ -8,21 +8,7 @@ from distutils.dep_util import newer_group, newer
 from glob import glob
 from os.path import join
 
-def needs_cblas_wrapper(info):
-    """Returns true if needs c wrapper around cblas for calling from
-    fortran."""
-    r_accel = re.compile("Accelerate")
-    r_vec = re.compile("vecLib")
-    res = False
-    try:
-        tmpstr = info['extra_link_args']
-        for i in tmpstr:
-            if r_accel.search(i) or r_vec.search(i):
-                res = True
-    except KeyError:
-        pass
-
-    return res
+from scipy._build_utils import needs_g77_abi_wrapper
 
 tmpl_empty_cblas_pyf = '''
 python module cblas
@@ -53,7 +39,7 @@ def configuration(parent_package='',top_path=None):
     depends = [__file__, 'fblas_l?.pyf.src', 'fblas.pyf.src','fblaswrap.f.src',
                'fblaswrap_veclib_c.c.src']
     # fblas:
-    if needs_cblas_wrapper(blas_opt):
+    if needs_g77_abi_wrapper(blas_opt):
         sources = ['fblas.pyf.src', 'fblaswrap_veclib_c.c.src'],
     else:
         sources = ['fblas.pyf.src','fblaswrap.f.src']
