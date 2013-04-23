@@ -1229,7 +1229,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     Returns
     -------
     xopt : ndarray
-        Parameters which minimizer f, i.e. ``f(xopt) == fopt``.
+        Parameters which minimize f, i.e. ``f(xopt) == fopt``.
     fopt : float
         Value of the function at xopt, i.e. ``fopt = f(xopt)``.
     fcalls : int
