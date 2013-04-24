@@ -7,11 +7,10 @@ To run it in its simplest form::
 """
 from __future__ import division, print_function, absolute_import
 
+import numpy as np
+import scipy.optimize
 from numpy.testing import (TestCase, assert_, assert_equal, assert_allclose,
         run_module_suite)
-
-import numpy as np
-import scipy
 
 
 class Accumulator:
@@ -35,7 +34,7 @@ class TestTrustRegionSolvers(TestCase):
         # test the accuracy and the retall option
         x0 = [-1.2, 1.0]
         x_opt = [1.0, 1.0]
-        x_final, allvecs = fmin_dogleg(
+        x_final, allvecs = scipy.optimize.fmin_dogleg(
                 scipy.optimize.rosen,
                 x0,
                 scipy.optimize.rosen_der,
@@ -51,7 +50,7 @@ class TestTrustRegionSolvers(TestCase):
         # test the callback mechanism and the maxiter and retall options
         accumulator = Accumulator()
         maxiter = 5
-        xopt, allvecs = fmin_dogleg(
+        xopt, allvecs = scipy.optimize.fmin_dogleg(
                 scipy.optimize.rosen,
                 [-1.2, 1.0],
                 scipy.optimize.rosen_der,
@@ -77,9 +76,9 @@ class TestTrustRegionSolvers(TestCase):
         easy_guess = [2.0, 2.0]
         hard_guess = [-1.2, 1.0]
         for x0 in (easy_guess, hard_guess):
-            x_dogleg, allvecs_dogleg = fmin_dogleg(
+            x_dogleg, allvecs_dogleg = scipy.optimize.fmin_dogleg(
                     f, x0, fprime=g, fhess=h, gtol=1e-8, retall=True)
-            x_trust_ncg, allvecs_trust_ncg = fmin_trust_ncg(
+            x_trust_ncg, allvecs_trust_ncg = scipy.optimize.fmin_trust_ncg(
                     f, x0, fprime=g, fhess=h, gtol=1e-8, retall=True)
             x_ncg, allvecs_ncg = scipy.optimize.fmin_ncg(
                     f, x0, fprime=g, fhess=h, avextol=1e-8, retall=True)
@@ -93,7 +92,7 @@ class TestTrustRegionSolvers(TestCase):
         easy_guess = [2.0, 2.0]
         hard_guess = [-1.2, 1.0]
         for x0 in (easy_guess, hard_guess):
-            x_trust_ncg = fmin_trust_ncg(
+            x_trust_ncg = scipy.optimize.fmin_trust_ncg(
                     scipy.optimize.rosen,
                     x0,
                     fprime=scipy.optimize.rosen_der,
@@ -108,23 +107,23 @@ class TestTrustRegionSolvers(TestCase):
         x0 = [2.0, 2.0]
         x_opt = [1.0, 1.0]
         # by default the output should be the optimal x
-        out = fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8)
+        out = scipy.optimize.fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8)
         assert_allclose(out, x_opt)
         # this is also the case when both full_output=False and retall=False
-        out = fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
+        out = scipy.optimize.fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
                 full_output=False, retall=False)
         assert_allclose(out, x_opt)
         # check full_output=False and retall=True
-        out = fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
+        out = scipy.optimize.fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
                 full_output=False, retall=True)
         assert_equal(len(out), 2)
         assert_allclose(out[0], x_opt)
         # check full_output=True and retall=False
-        out = fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
+        out = scipy.optimize.fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
                 full_output=True, retall=False)
         assert_equal(len(out), 6)
         # check full_output=True and retall=True
-        out = fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
+        out = scipy.optimize.fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
                 full_output=True, retall=True)
         assert_equal(len(out), 7)
 
