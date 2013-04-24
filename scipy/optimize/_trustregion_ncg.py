@@ -7,7 +7,7 @@ import numpy as np
 import scipy.linalg
 from ._trustregion import _help_solve_subproblem, _minimize_trust_region
 
-__all__ = ['fmin_dogleg', 'fmin_trust_ncg']
+__all__ = ['fmin_trust_ncg']
 
 
 def fmin_trust_ncg(f, x0, fprime, fhess=None, fhessp=None, args=(),

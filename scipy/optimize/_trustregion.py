@@ -199,8 +199,7 @@ def _minimize_trust_region(
     while True:
 
         # Solve the sub-problem.
-        # This gives us the proposed step relative to the current position,
-        # the model function value at the proposed position,
+        # This gives us the proposed step relative to the current position
         # and it tells us whether the proposed step
         # has reached the trust region boundary or not.
         try:
