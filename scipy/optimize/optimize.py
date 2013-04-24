@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 # Minimization routines
 
 __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',
+           'fmin_dogleg', 'fmin_trust_ncg',
            'fminbound', 'brent', 'golden', 'bracket', 'rosen', 'rosen_der',
            'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
            'line_search', 'check_grad', 'Result', 'show_options',
@@ -34,6 +35,8 @@ from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    vectorize, asarray, sqrt, Inf, asfarray, isinf)
 from .linesearch import (line_search_BFGS, line_search_wolfe1,
                          line_search_wolfe2, line_search_wolfe2 as line_search)
+from ._trustregion_dogleg import fmin_dogleg
+from ._trustregion_ncg import fmin_trust_ncg
 
 
 # standard status messages of optimizers
