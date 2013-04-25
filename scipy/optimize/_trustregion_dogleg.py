@@ -7,9 +7,38 @@ from ._trustregion import _help_solve_subproblem, _minimize_trust_region
 
 __all__ = ['fmin_dogleg']
 
-
 # This function provides an interface
-# modeled on scipy.optimize.fmin_ncg().
+# modeled on scipy.optimize._minimize_newtoncg().
+#FIXME: I'm not sure which of the docstrings in this module
+# is the important one that should explain the dogleg algorithm.
+def _minimize_dogleg(
+        fun,
+        x0,
+        args=(),
+        jac=None,
+        hess=None,
+        **trust_region_options):
+    """
+    Minimization of scalar function of one or more variables using
+    the dog-leg trust-region algorithm.
+
+    This function is called by the `minimize` function.
+    It is not supposed to be called directly.
+    """
+    if jac is None:
+        raise ValueError('Jacobian is required for dogleg minimization')
+    if hess is None:
+        raise ValueError('Hessian is required for dogleg minimization')
+    return scipy.optimize._trustregion._minimize_trust_region(
+            fun, x0,
+            args=args,
+            jac=jac,
+            hess=hess,
+            solve_subproblem=_solve_subproblem_dogleg,
+            **trust_region_options)
+
+
+# NOTE: this function is going away...
 def fmin_dogleg(f, x0, fprime, fhess, args=(),
         initial_trust_radius=1.0,
         max_trust_radius=1000.0,
@@ -85,12 +114,6 @@ def fmin_dogleg(f, x0, fprime, fhess, args=(),
     minimize: Interface to minimization algorithms for multivariate
         functions.  See the 'dogleg' `method` in particular.
 
-    References
-    ----------
-    .. [1] Jorge Nocedal and Stephen Wright,
-           Numerical Optimization, second edition,
-           Springer-Verlag, 2006, page 73.
-
     """
     opts = {'initial_trust_radius': initial_trust_radius,
             'max_trust_radius': max_trust_radius,
@@ -120,7 +143,11 @@ def fmin_dogleg(f, x0, fprime, fhess, args=(),
 
 def _solve_subproblem_dogleg(m, trust_radius):
     """
-    The dogleg method.
+    Minimize a function using the dog-leg trust-region algorithm.
+
+    This algorithm requires function values and first and second derivatives.
+    It also performs a costly Hessian decomposition for most iterations,
+    and the Hessian is required to be positive definite.
 
     Parameters
     ----------
@@ -142,6 +169,13 @@ def _solve_subproblem_dogleg(m, trust_radius):
 
     This function is called by the `_minimize_trust_region` function.
     It is not supposed to be called directly.
+
+    References
+    ----------
+    .. [1] Jorge Nocedal and Stephen Wright,
+           Numerical Optimization, second edition,
+           Springer-Verlag, 2006, page 73.
+
     """
 
     # Compute the Newton point.

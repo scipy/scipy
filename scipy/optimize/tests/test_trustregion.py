@@ -31,38 +31,39 @@ class Accumulator:
 class TestTrustRegionSolvers(TestCase):
 
     def test_dogleg_accuracy(self):
-        # test the accuracy and the retall option
+        # test the accuracy and the return_all option
         x0 = [-1.2, 1.0]
         x_opt = [1.0, 1.0]
-        x_final, allvecs = scipy.optimize.fmin_dogleg(
+        r = scipy.optimize.minimize(
                 scipy.optimize.rosen,
                 x0,
-                scipy.optimize.rosen_der,
-                scipy.optimize.rosen_hess,
-                gtol=1e-8,
-                retall=True,
+                jac=scipy.optimize.rosen_der,
+                hess=scipy.optimize.rosen_hess,
+                tol=1e-8,
+                method='dogleg',
+                options={'return_all': True},
                 )
-        assert_allclose(x0, allvecs[0])
-        assert_allclose(x_final, allvecs[-1])
-        assert_allclose(x_final, x_opt)
+        assert_allclose(x0, r['allvecs'][0])
+        assert_allclose(r['x'], r['allvecs'][-1])
+        assert_allclose(r['x'], x_opt)
 
     def test_dogleg_callback(self):
-        # test the callback mechanism and the maxiter and retall options
+        # test the callback mechanism and the maxiter and return_all options
         accumulator = Accumulator()
         maxiter = 5
-        xopt, allvecs = scipy.optimize.fmin_dogleg(
+        r = scipy.optimize.minimize(
                 scipy.optimize.rosen,
                 [-1.2, 1.0],
-                scipy.optimize.rosen_der,
-                scipy.optimize.rosen_hess,
+                jac=scipy.optimize.rosen_der,
+                hess=scipy.optimize.rosen_hess,
                 callback=accumulator,
-                retall=True,
-                maxiter=maxiter,
+                method='dogleg',
+                options={'return_all': True, 'maxiter': maxiter},
                 )
         assert_equal(accumulator.count, maxiter)
-        assert_equal(len(allvecs), maxiter+1)
-        assert_allclose(xopt, allvecs[-1])
-        assert_allclose(sum(allvecs[1:]), accumulator.accum)
+        assert_equal(len(r['allvecs']), maxiter+1)
+        assert_allclose(r['x'], r['allvecs'][-1])
+        assert_allclose(sum(r['allvecs'][1:]), accumulator.accum)
 
     def test_solver_concordance(self):
         # Assert that dogleg uses fewer iterations than ncg on the Rosenbrock
@@ -76,56 +77,33 @@ class TestTrustRegionSolvers(TestCase):
         easy_guess = [2.0, 2.0]
         hard_guess = [-1.2, 1.0]
         for x0 in (easy_guess, hard_guess):
-            x_dogleg, allvecs_dogleg = scipy.optimize.fmin_dogleg(
-                    f, x0, fprime=g, fhess=h, gtol=1e-8, retall=True)
-            x_trust_ncg, allvecs_trust_ncg = scipy.optimize.fmin_trust_ncg(
-                    f, x0, fprime=g, fhess=h, gtol=1e-8, retall=True)
-            x_ncg, allvecs_ncg = scipy.optimize.fmin_ncg(
-                    f, x0, fprime=g, fhess=h, avextol=1e-8, retall=True)
-            assert_allclose(x_opt, x_dogleg)
-            assert_allclose(x_opt, x_trust_ncg)
-            assert_allclose(x_opt, x_ncg)
-            assert_(len(allvecs_dogleg) < len(allvecs_ncg))
+            r_dogleg = scipy.optimize.minimize(
+                    f, x0, jac=g, hess=h, tol=1e-8,
+                    method='dogleg', options={'return_all': True})
+            r_trust_ncg = scipy.optimize.minimize(
+                    f, x0, jac=g, hess=h, tol=1e-8,
+                    method='trust-ncg', options={'return_all': True})
+            r_ncg = scipy.optimize.minimize(
+                    f, x0, jac=g, hess=h, tol=1e-8,
+                    method='newton-cg', options={'return_all': True})
+            assert_allclose(x_opt, r_dogleg['x'])
+            assert_allclose(x_opt, r_trust_ncg['x'])
+            assert_allclose(x_opt, r_ncg['x'])
+            assert_(len(r_dogleg['allvecs']) < len(r_ncg['allvecs']))
 
     def test_trust_ncg_hessp(self):
         x_opt = [1.0, 1.0]
         easy_guess = [2.0, 2.0]
         hard_guess = [-1.2, 1.0]
         for x0 in (easy_guess, hard_guess):
-            x_trust_ncg = scipy.optimize.fmin_trust_ncg(
+            r = scipy.optimize.minimize(
                     scipy.optimize.rosen,
                     x0,
-                    fprime=scipy.optimize.rosen_der,
-                    fhessp=scipy.optimize.rosen_hess_prod,
-                    gtol=1e-8)
-            assert_allclose(x_opt, x_trust_ncg)
-
-    def test_dogleg_return_options(self):
-        f = scipy.optimize.rosen
-        g = scipy.optimize.rosen_der
-        h = scipy.optimize.rosen_hess
-        x0 = [2.0, 2.0]
-        x_opt = [1.0, 1.0]
-        # by default the output should be the optimal x
-        out = scipy.optimize.fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8)
-        assert_allclose(out, x_opt)
-        # this is also the case when both full_output=False and retall=False
-        out = scipy.optimize.fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
-                full_output=False, retall=False)
-        assert_allclose(out, x_opt)
-        # check full_output=False and retall=True
-        out = scipy.optimize.fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
-                full_output=False, retall=True)
-        assert_equal(len(out), 2)
-        assert_allclose(out[0], x_opt)
-        # check full_output=True and retall=False
-        out = scipy.optimize.fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
-                full_output=True, retall=False)
-        assert_equal(len(out), 6)
-        # check full_output=True and retall=True
-        out = scipy.optimize.fmin_dogleg(f, x0, fprime=g, fhess=h, gtol=1e-8,
-                full_output=True, retall=True)
-        assert_equal(len(out), 7)
+                    jac=scipy.optimize.rosen_der,
+                    hessp=scipy.optimize.rosen_hess_prod,
+                    tol=1e-8,
+                    method='trust-ncg')
+            assert_allclose(x_opt, r['x'])
 
 
 if __name__ == '__main__':

@@ -23,6 +23,8 @@ from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                       _minimize_bfgs, _minimize_newtoncg,
                       _minimize_scalar_brent, _minimize_scalar_bounded,
                       _minimize_scalar_golden, MemoizeJac)
+from ._trustregion_dogleg import _minimize_dogleg
+from ._trustregion_ncg import _minimize_trust_ncg
 from .anneal import _minimize_anneal
 
 # contrained minimization
@@ -62,9 +64,12 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             - 'TNC'
             - 'COBYLA'
             - 'SLSQP'
+            - 'dogleg'
+            - 'trust-ncg'
 
     jac : bool or callable, optional
-        Jacobian of objective function. Only for CG, BFGS, Newton-CG.
+        Jacobian of objective function. Only for CG, BFGS, Newton-CG,
+        dogleg, trust-ncg.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
         value of Jacobian along with the objective function. If False, the
         Jacobian will be estimated numerically.
@@ -72,7 +77,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         objective. In this case, it must accept the same arguments as `fun`.
     hess, hessp : callable, optional
         Hessian of objective function or Hessian of objective function
-        times an arbitrary vector p.  Only for Newton-CG.
+        times an arbitrary vector p.  Only for Newton-CG,
+        dogleg, trust-ncg.
         Only one of `hessp` or `hess` needs to be given.  If `hess` is
         provided, then `hessp` will be ignored.  If neither `hess` nor
         `hessp` is provided, then the hessian product will be approximated
@@ -163,6 +169,15 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     Method *Anneal* uses simulated annealing, which is a probabilistic
     metaheuristic algorithm for global optimization. It uses no derivative
     information from the function being optimized.
+
+    Method *dogleg* uses the dog-leg trust-region algorithm [5]_
+    for unconstrained minimization. This algorithm requires the gradient
+    and Hessian; furthermore the Hessian is required to be positive definite.
+
+    Method *trust-ncg* uses the Newton conjugate gradient trust-region
+    algorithm [5]_ for unconstrained minimization. This algorithm requires
+    the gradient and either the Hessian or a function that computes the
+    product of the Hessian with a given vector.
 
     **Constrained minimization**
 
@@ -293,11 +308,16 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         warn('Method %s does not use gradient information (jac).' % method,
              RuntimeWarning)
     # - hess
-    if meth != 'newton-cg' and hess is not None:
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg') and hess is not None:
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
+    # - hessp
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg') and hessp is not None:
+        warn('Method %s does not use Hessian-vector product '
+                'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg'] and
+    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+        'dogleg', 'trust-ncg'] and
         (bounds is not None or any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
@@ -334,7 +354,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         if meth in ['nelder-mead', 'powell', 'anneal', 'l-bfgs-b', 'tnc',
                     'slsqp']:
             options.setdefault('ftol', tol)
-        if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc']:
+        if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg', 'trust-ncg']:
             options.setdefault('gtol', tol)
         if meth in ['cobyla']:
             options.setdefault('tol', tol)
@@ -363,6 +383,12 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     elif meth == 'slsqp':
         return _minimize_slsqp(fun, x0, args, jac, bounds,
                                constraints, **options)
+    elif meth == 'dogleg':
+        return _minimize_dogleg(fun, x0, args, jac, hess,
+                callback=callback, **options)
+    elif meth == 'trust-ncg':
+        return _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
+                callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
