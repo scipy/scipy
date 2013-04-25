@@ -10,18 +10,6 @@ import scipy.optimize.optimize
 __all__ = []
 
 
-# This is a little better than scipy.optimize.optimize.wrap_function(),
-# especially for wrapping a function that takes more than one argument.
-def wrap_function(fn, args):
-    ncalls = [0]
-    if fn is None:
-        return ncalls, None
-    def function_wrapper(*wrapper_args):
-        ncalls[0] += 1
-        return fn(*(wrapper_args + args))
-    return ncalls, function_wrapper
-
-
 class LazyLocalQuadraticModel:
     """
     Lazily compute info about a function approximation.
@@ -175,10 +163,10 @@ def _minimize_trust_region(
     # Wrap the functions, for a couple reasons.
     # This tracks how many times they have been called
     # and it automatically passes the args.
-    nfun, fun = wrap_function(fun, args)
-    njac, jac = wrap_function(jac, args)
-    nhess, hess = wrap_function(hess, args)
-    nhessp, hessp = wrap_function(hessp, args)
+    nfun, fun = scipy.optimize.optimize.wrap_function(fun, args)
+    njac, jac = scipy.optimize.optimize.wrap_function(jac, args)
+    nhess, hess = scipy.optimize.optimize.wrap_function(hess, args)
+    nhessp, hessp = scipy.optimize.optimize.wrap_function(hessp, args)
 
     # limit the number of iterations
     if maxiter is None:
