@@ -169,7 +169,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     constrained minimization.
 
     Method *TNC* uses a truncated Newton algorithm [5]_, [8]_ to minimize a
-    function with variables subject to bounds. This algorithm is uses
+    function with variables subject to bounds. This algorithm uses
     gradient information; it is also called Newton Conjugate-Gradient. It
     differs from the *Newton-CG* method described above as it wraps a C
     implementation and allows each variable to be given upper and lower
