@@ -73,16 +73,15 @@ def _solve_subproblem_cg_steihaug(m, trust_radius, tolerance=None):
     """
 
     # get the norm of jacobian and define the origin
-    jac_norm = scipy.linalg.norm(m.jac())
     p_origin = np.zeros_like(m.jac())
 
     # define a default tolerance
     if tolerance is None:
-        tolerance = min(0.5, math.sqrt(jac_norm)) * jac_norm
+        tolerance = min(0.5, math.sqrt(m.jac_mag())) * m.jac_mag()
 
     # Stop the method if the search direction
     # is a direction of nonpositive curvature.
-    if jac_norm < tolerance:
+    if m.jac_mag() < tolerance:
         hits_boundary = False
         return p_origin, hits_boundary
 

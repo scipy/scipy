@@ -20,6 +20,7 @@ class LazyLocalQuadraticModel:
         self._f = None
         self._g = None
         self._h = None
+        self._g_mag = None
         self._cauchy_point = None
         self._newton_point = None
         self._fun = fun
@@ -55,6 +56,11 @@ class LazyLocalQuadraticModel:
             return self._hessp(self._x, p)
         else:
             return np.dot(self.hess(), p)
+
+    def jac_mag(self):
+        if self._g_mag is None:
+            self._g_mag = scipy.linalg.norm(self.jac())
+        return self._g_mag
 
     def cauchy_point(self):
         """
@@ -230,8 +236,7 @@ def _minimize_trust_region(
         k += 1
 
         # check if the gradient is small enough to stop
-        jac_norm = scipy.linalg.norm(m.jac())
-        if jac_norm < gtol:
+        if m.jac_mag() < gtol:
             warnflag = 0
             break
 
