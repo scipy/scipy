@@ -82,7 +82,7 @@ in `SciPy API`_.
 Once you think your code is ready for inclusion in SciPy, you can send a pull
 request (PR) on Github.  We won't go into the details of how to work with git
 here, this is described well in the `git workflow`_ section of the NumPy
-documentation and in the Github help pages.  When you send the PR for a new
+documentation and on the `Github help pages`_.  When you send the PR for a new
 feature, be sure to also mention this on the scipy-dev mailing list.  This can
 prompt interested people to help review your PR.  Assuming that you already got
 positive feedback before on the general idea of your code/feature, the purpose
@@ -213,40 +213,44 @@ anyway, without being required to.  See John Hunter's `BSD pitch`_.
 
 *How do I set up SciPy so I can edit files, run the tests and make commits?*
 
-The simplest method is setting up an in-place build.  To create your local git
-repo and do the in-place build::
+First fork a copy of the main Scipy repository in Github onto your own
+account and then create your local repository via::
 
-  $ git clone https://github.com/scipy/scipy.git scipy
-  $ cd scipy
-  $ python setup.py build_ext -i
+    $ git clone git@github.com:YOURUSERNAME/scipy.git scipy
+    $ cd scipy
+    $ git remote add upstream git://github.com/scipy/scipy.git
 
-Then you need to either set up a symlink in your site-packages or add this
-directory to your PYTHONPATH environment variable, so Python can find it.  Some
-IDEs (Spyder for example) have utilities to manage PYTHONPATH.  On Linux and OS
-X, you can for example edit your .bash_login file to automatically add this dir
-on startup of your terminal.  Add the line::
+To build Scipy and run tests etc., do one of::
 
-  export PYTHONPATH="$HOME/scipy:${PYTHONPATH}"
+    $ python runtests.py -q
+    $ python runtests.py -s optimize
+    $ python runtests.py -t scipy/special/tests/test_basic.py:test_xlogy
+    $ python runtests.py --ipython
 
-Alternatively, to set up the symlink, use (prefix only necessary if you want to
-use your local instead of global site-packages dir)::
+This builds Scipy first, so the first time it may take some time.  If
+you specify ``-n``, the tests are run against the version of Scipy (if
+any) found on PYTHONPATH.
 
-  $ python setupegg.py develop --prefix=${HOME}
- 
-To test that everything works, start the interpreter (not inside the scipy/
-source dir) and run the tests::
+You may want to set up an in-place build so that changes made to
+``.py`` files have effect without rebuild. First, run::
 
-  $ python
-  >>> import scipy as sp
-  >>> sp.test()
+    $ python setup.py build_ext -i
 
-Now editing a Python source file in SciPy allows you to immediately test and
-use your changes, by simply restarting the interpreter.
+Then you need to either set up a symlink in your site-packages or add
+this directory to your PYTHONPATH environment variable, so Python can
+find it.  Some IDEs (Spyder for example) have utilities to manage
+PYTHONPATH.  On Linux and OSX, you can run the command::
 
-Note that while the above procedure is the most straightforward way to get
-started, you may want to look into using Bento or numscons for faster and more
-flexible building, or virtualenv to maintain development environments for
-multiple Python versions.
+    $ export PYTHONPATH=$PWD
+
+To set the Python import path to point to the current directory.
+Now editing a Python source file in SciPy allows you to immediately
+test and use your changes (in ``.py`` files), by simply restarting the
+interpreter.
+
+Another good approach is to install Scipy normally in an isolated test
+environment using `virtualenv`_, and work from there (see the next
+question).
 
 
 *How do I set up a development version of SciPy in parallel to a released
@@ -300,6 +304,8 @@ please discuss those reasons first.
 .. _SciPy API: http://docs.scipy.org/doc/scipy/reference/api.html
 
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
+
+.. _Github help pages: https://help.github.com/articles/set-up-git/
 
 .. _maintainers: https://github.com/scipy/scipy/blob/master/doc/MAINTAINERS.rst.txt
 
