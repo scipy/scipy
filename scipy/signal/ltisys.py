@@ -892,16 +892,7 @@ def bode(system, w=None, n=100):
     >>> plt.show()
 
     """
-    if isinstance(system, lti):
-        sys = system
-    else:
-        sys = lti(*system)
-
-    if w is None:
-        worN = n
-    else:
-        worN = w
-    w, y = freqs(sys.num, sys.den, worN=worN)
+    w, y = freqresp(system, w=w, n=n)
 
     mag = 20.0 * numpy.log10(abs(y))
     phase = numpy.arctan2(y.imag, y.real) * 180.0 / numpy.pi
@@ -961,9 +952,17 @@ def freqresp(system, w=None, n=10000):
     else:
         sys = lti(*system)
 
+    if sys.inputs != 1 or sys.outputs != 1:
+        raise ValueError("freqresp() requires a SISO (single input, single "
+                         "output) system.")
+
     if w is not None:
         worN = w
     else:
         worN = n
 
-    return freqs(sys.num, sys.den, worN=worN)
+    # In the call to freqs(), sys.num.ravel() is used because there are
+    # cases where sys.num is a 2-D array with a single row.
+    w, h = freqs(sys.num.ravel(), sys.den, worN=worN)
+
+    return w, h
