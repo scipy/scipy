@@ -310,6 +310,18 @@ class Test_bode(object):
         system = lti([1], [1, 0, 100])
         w, mag, phase = bode(system, n=2)
 
+    def test_from_state_space(self):
+        # Ensure that bode works with a system that was created from the
+        # state space representation matrices A, B, C, D.  In this case,
+        # system.num will be a 2-D array with shape (1, n+1), where (n,n)
+        # is the shape of A.
+        A = np.array([[1.0, 2.0], [3.0, 4.0]])
+        B = np.array([[5.0], [6.0]])
+        C = np.array([[7.0, 8.0]])
+        D = np.array([[9.0]])
+        system = lti(A, B, C, D)
+        w, mag, phase = bode(system, n=2)
+
 
 class Test_freqresp(object):
     
@@ -378,6 +390,18 @@ class Test_freqresp(object):
         system = lti([1], [1, 0])
         w, H = freqresp(system, n=2)
         assert_equal(w[0], 0.01)  # a fail would give not-a-number
+
+    def test_from_state_space(self):
+        # Ensure that freqresp works with a system that was created from the
+        # state space representation matrices A, B, C, D.  In this case,
+        # system.num will be a 2-D array with shape (1, n+1), where (n,n) is
+        # the shape of A.
+        A = np.array([[1.0, 2.0], [3.0, 4.0]])
+        B = np.array([[5.0], [6.0]])
+        C = np.array([[7.0, 8.0]])
+        D = np.array([[9.0]])
+        system = lti(A, B, C, D)
+        w, mag, phase = bode(system, n=2)
 
 
 if __name__ == "__main__":
