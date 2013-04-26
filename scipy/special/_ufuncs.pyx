@@ -1365,7 +1365,7 @@ cdef extern from "_ufuncs_defs.h":
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_j1 "j1"(double) nogil
 cdef extern from "_ufuncs_defs.h":
-    cdef double _func_jv "jv"(double, double) nogil
+    cdef double _func_cbesj_wrap_real "cbesj_wrap_real"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cbesj_wrap "cbesj_wrap"(double, double complex) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1391,7 +1391,7 @@ cdef extern from "_ufuncs_defs.h":
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_kerp_wrap "kerp_wrap"(double) nogil
 cdef extern from "_ufuncs_defs.h":
-    cdef double _func_kn "kn"(int, double) nogil
+    cdef double _func_cbesk_wrap_real_int "cbesk_wrap_real_int"(int, double) nogil
 from _legacy cimport kn_unsafe as _func_kn_unsafe
 ctypedef double _proto_kn_unsafe_t(double, double) nogil
 cdef _proto_kn_unsafe_t *_proto_kn_unsafe_t_var = &_func_kn_unsafe
@@ -1598,7 +1598,7 @@ from _legacy cimport yn_unsafe as _func_yn_unsafe
 ctypedef double _proto_yn_unsafe_t(double, double) nogil
 cdef _proto_yn_unsafe_t *_proto_yn_unsafe_t_var = &_func_yn_unsafe
 cdef extern from "_ufuncs_defs.h":
-    cdef double _func_yv "yv"(double, double) nogil
+    cdef double _func_cbesy_wrap_real "cbesy_wrap_real"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cbesy_wrap "cbesy_wrap"(double, double complex) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -5129,11 +5129,11 @@ ufunc_jv_types[8] = <char>NPY_DOUBLE
 ufunc_jv_types[9] = <char>NPY_DOUBLE
 ufunc_jv_types[10] = <char>NPY_CDOUBLE
 ufunc_jv_types[11] = <char>NPY_CDOUBLE
-ufunc_jv_ptr[2*0] = <void*>_func_jv
+ufunc_jv_ptr[2*0] = <void*>_func_cbesj_wrap_real
 ufunc_jv_ptr[2*0+1] = <void*>(<char*>"jv")
 ufunc_jv_ptr[2*1] = <void*>_func_cbesj_wrap
 ufunc_jv_ptr[2*1+1] = <void*>(<char*>"jv")
-ufunc_jv_ptr[2*2] = <void*>_func_jv
+ufunc_jv_ptr[2*2] = <void*>_func_cbesj_wrap_real
 ufunc_jv_ptr[2*2+1] = <void*>(<char*>"jv")
 ufunc_jv_ptr[2*3] = <void*>_func_cbesj_wrap
 ufunc_jv_ptr[2*3+1] = <void*>(<char*>"jv")
@@ -5397,9 +5397,9 @@ ufunc_kn_types[8] = <char>NPY_FLOAT
 ufunc_kn_types[9] = <char>NPY_DOUBLE
 ufunc_kn_types[10] = <char>NPY_DOUBLE
 ufunc_kn_types[11] = <char>NPY_DOUBLE
-ufunc_kn_ptr[2*0] = <void*>_func_kn
+ufunc_kn_ptr[2*0] = <void*>_func_cbesk_wrap_real_int
 ufunc_kn_ptr[2*0+1] = <void*>(<char*>"kn")
-ufunc_kn_ptr[2*1] = <void*>_func_kn
+ufunc_kn_ptr[2*1] = <void*>_func_cbesk_wrap_real_int
 ufunc_kn_ptr[2*1+1] = <void*>(<char*>"kn")
 ufunc_kn_ptr[2*2] = <void*>_func_kn_unsafe
 ufunc_kn_ptr[2*2+1] = <void*>(<char*>"kn")
@@ -7681,11 +7681,11 @@ ufunc_yv_types[8] = <char>NPY_DOUBLE
 ufunc_yv_types[9] = <char>NPY_DOUBLE
 ufunc_yv_types[10] = <char>NPY_CDOUBLE
 ufunc_yv_types[11] = <char>NPY_CDOUBLE
-ufunc_yv_ptr[2*0] = <void*>_func_yv
+ufunc_yv_ptr[2*0] = <void*>_func_cbesy_wrap_real
 ufunc_yv_ptr[2*0+1] = <void*>(<char*>"yv")
 ufunc_yv_ptr[2*1] = <void*>_func_cbesy_wrap
 ufunc_yv_ptr[2*1+1] = <void*>(<char*>"yv")
-ufunc_yv_ptr[2*2] = <void*>_func_yv
+ufunc_yv_ptr[2*2] = <void*>_func_cbesy_wrap_real
 ufunc_yv_ptr[2*2+1] = <void*>(<char*>"yv")
 ufunc_yv_ptr[2*3] = <void*>_func_cbesy_wrap
 ufunc_yv_ptr[2*3+1] = <void*>(<char*>"yv")

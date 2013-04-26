@@ -26,6 +26,9 @@ cdef extern from "cephes.h":
     double smirnov(int n, double e) nogil
     double smirnovi(int n, double p) nogil
 
+cdef extern from "amos_wrappers.h":
+    double cbesk_wrap_real_int(int n, double z) nogil
+
 cdef extern from "Python.h":
     # Purposefully ignore the raised PyError --- assume the ufunc will collect it
     int PyErr_WarnEx_noerr "PyErr_WarnEx" (object, char *, int)
@@ -72,7 +75,7 @@ cdef inline double pdtri_unsafe(double k, double y) nogil:
     return pdtri(<int>k, y)
 cdef inline double kn_unsafe(double n, double x) nogil:
     _legacy_cast_check("kn", n, 0)
-    return kn(<int>n, x)
+    return cbesk_wrap_real_int(<int>n, x)
 cdef inline double yn_unsafe(double n, double x) nogil:
     _legacy_cast_check("yn", n, 0)
     return yn(<int>n, x)

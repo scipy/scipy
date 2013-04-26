@@ -104,6 +104,11 @@ double jv(double n, double x)
 	goto done;
     }
 
+    if (x == 0 && n < 0 && !nint) {
+        mtherr("Jv", OVERFLOW);
+        return NPY_INFINITY / gamma(n + 1);
+    }
+
     y = fabs(x);
 
     if (y * y < fabs(n + 1) * MACHEP) {
