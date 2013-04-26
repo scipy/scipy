@@ -7,13 +7,15 @@ import re
 import subprocess
 import time
 import textwrap
-import resource
 import tempfile
 import warnings
+
+from numpy.testing import dec
 
 import numpy as np
 from scipy.io import savemat, loadmat
 
+@dec.skipif(not sys.platform.startswith('linux'), "Memory benchmark works only on Linux")
 def bench_run():
     mem_info = get_mem_info()
     set_mem_rlimit(int(mem_info['memtotal'] * 0.7))
@@ -139,6 +141,7 @@ def set_mem_rlimit(max_mem):
     Set rlimit to 80% of total system memory, to avoid grinding halt
     because of swapping.
     """
+    import resource
     cur_limit = resource.getrlimit(resource.RLIMIT_AS)
     if cur_limit[0] > 0:
         max_mem = min(max_mem, cur_limit[0])
