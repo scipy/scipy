@@ -111,7 +111,7 @@ The previous section talked specifically about adding new functionality to
 SciPy.  A large part of that discussion also applies to maintenance of existing
 code.  Maintenance means fixing bugs, improving code quality or style,
 documenting existing functionality better, adding missing unit tests, keeping
-build scripts up-to-date, etc.  The SciPy `Trac`_ bug tracker contains all
+build scripts up-to-date, etc.  The SciPy `issue list`_ contains all
 reported bugs, build/documentation issues, etc.  Fixing issues described in
 Trac tickets helps improve the overall quality of SciPy, and is also a good way
 of getting familiar with the project.  You may also want to fix a bug because
@@ -281,15 +281,6 @@ Cython.  If there's specific reasons why C/C++/Fortran should be preferred,
 please discuss those reasons first.
 
 
-*There's overlap between Trac and Github, which do I use for what?*
-
-Trac_ is the bug tracker, Github_ the code repository.  Before the SciPy code
-repository moved to Github, the preferred way to contribute code was to create
-a patch and attach it to a Trac ticket.  The overhead of this approach is much
-larger than sending a PR on Github, so please don't do this anymore.  Use Trac
-for bug reports, Github for patches.
-
-
 .. _scikit-learn: http://scikit-learn.org
 
 .. _scikits-image: http://scikits-image.org/
@@ -312,7 +303,7 @@ for bug reports, Github for patches.
 
 .. _maintainers: https://github.com/scipy/scipy/blob/master/doc/MAINTAINERS.rst.txt
 
-.. _Trac: http://projects.scipy.org/scipy/timeline
+.. _issue list: https://github.com/scipy/scipy/issues
 
 .. _Github: https://github.com/scipy/scipy
 
