@@ -45,24 +45,6 @@ before the change is made.
 
 FAQ
 ---
-Q: How can I keep track of tickets for a (part of a) module?
-
-A: Each module can have a default owner in Trac, who automatically gets an
-email for each new ticket.  Trac can also generate feeds based on filters
-defined in the "Custom Query" tab (e.g. by component, status).  For example, to
-see all open tickets for scipy.optimize ordered by priority, use::
-
-       http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-       status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-       &component=scipy.optimize&order=priority
-
-Or access the RSS feed at::
-
-       http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-       status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-       &format=rss&component=scipy.optimize&order=priority
-
-
 Q: How can I keep track of pull requests (PRs) and comments on Github?
 
 A: Only people listed as committers get email notifications for new PRs. And
