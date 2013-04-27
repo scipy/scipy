@@ -10,6 +10,7 @@ from scipy.lib.six.moves import xrange
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
+from .dia import dia_matrix
 from . import sparsetools
 from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
      getdtype, isscalarlike, isintlike
@@ -244,14 +245,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         # Scalar multiplication.
         if isscalarlike(other):
             return self.__mul__(other)
-        # List or tuple vector.
-        if isinstance(other, tuple) or isinstance(other, list):
-            if len(other) == 1:
-                return self.__mul__(other) 
-            else:
-                return np.multiply(self.todense(), other)
         # Dense matrix or vector.
-        if isdense(other):
+        if (isdense(other) or isinstance(other, tuple) or 
+            isinstance(other, list)):
             return np.multiply(self.todense(), other)
         # Sparse matrix or vector. 
         if isspmatrix(other):
@@ -260,19 +256,20 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 return self._binopt(other, '_elmul_')
             # row vector
             elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
-                eye = np.eye(other.shape[1])
-                other = np.multiply(eye, other.todense())
-                other = self.__class__(other)
+                other = dia_matrix((other.toarray().ravel(), [0]), 
+                                    shape=self.shape)
                 return self._mul_sparse_matrix(other)
             # column vector
             elif other.shape[1] == 1 and self.shape[1] == other.shape[0]:
-                eye = np.eye(other.shape[0])
-                other = np.multiply(eye, other.todense())
-                other = self.__class__(other)
+                other = dia_matrix((other.toarray().ravel(), [0]), 
+                                    shape=self.shape)
                 return other._mul_sparse_matrix(self)
             # singl element
             elif other.shape == (1,1):
                 return self.__mul__(other.tocsc().data[0])
+            else:
+                raise ValueError("inconsistent shapes")
+            
 
     ###########################
     # Multiplication handlers #
