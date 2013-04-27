@@ -1,5 +1,4 @@
-"""Base class for sparse matrix formats using compressed storage
-"""
+"""Base class for sparse matrix formats using compressed storage."""
 from __future__ import division, print_function, absolute_import
 
 __all__ = []
@@ -17,7 +16,7 @@ from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin):
-    """base matrix class for compressed row and column oriented matrices"""
+    """Base matrix class for compressed row and column oriented matrices."""
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
@@ -239,51 +238,41 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
 
     def multiply(self, other):
-        """Point-wise multiplication by another matrix
+        """Point-wise multiplication by another matrix, vector, or
+        scalar.
         """
         # Scalar multiplication.
         if isscalarlike(other):
             return self.__mul__(other)
-        # Catch 1D and 2D arrays with single elments.
-        elif other.size == 1:
-            #  Small, might as well be dense.
-            if not isdense(other):
-                other = other.todense()
-            # 1D array with single element.
-            if other.ndim == 1:
-                return self.__mul__(other[0])
-            # 2D array with single element.
-            elif other.ndim == 2:
-                return self.__mul__(other[0,0])
-            # What could it be if not one of these?
-
-        # Row vector multiplication.
-        # Check if other shape is a 1D or 2D row array.
-        if other.ndim == 1:
-            # cast as 2D array
-            other = np.array([other])
-        if other.shape[0] == 1:
-            # Check that it is correct dimensions.
-            if other.shape[1] != self.shape[1]:
-                raise ValueError('inconsistent shapes')
-            # Can only support dense multiplication at the moment. 
-            if not isdense(other):
-                other = other.todense()
+        # List or tuple vector.
+        if isinstance(other, tuple) or isinstance(other, list):
+            if len(other) == 1:
+                return self.__mul__(other) 
             else:
-                # Cast other as diagonal matrix, then matrix multiply.
-                other = np.multiply(np.eye(other.shape[1]), other)
-                return np.dot(self.todense(), other)
-
-        # Element by element-wise matrix multiplication. 
-        elif other.shape != self.shape:
-            raise ValueError('inconsistent shapes')
-
+                return np.multiply(self.todense(), other)
+        # Dense matrix or vector.
         if isdense(other):
-            return np.multiply(self.todense(),other)
-        else:
-            other = self.__class__(other)
-            return self._binopt(other,'_elmul_')
-
+            return np.multiply(self.todense(), other)
+        # Sparse matrix or vector. 
+        if isspmatrix(other):
+            if self.shape == other.shape:
+                other = self.__class__(other)
+                return self._binopt(other, '_elmul_')
+            # row vector
+            elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
+                eye = np.eye(other.shape[1])
+                other = np.multiply(eye, other.todense())
+                other = self.__class__(other)
+                return self._mul_sparse_matrix(other)
+            # column vector
+            elif other.shape[1] == 1 and self.shape[1] == other.shape[0]:
+                eye = np.eye(other.shape[0])
+                other = np.multiply(eye, other.todense())
+                other = self.__class__(other)
+                return other._mul_sparse_matrix(self)
+            # singl element
+            elif other.shape == (1,1):
+                return self.__mul__(other.tocsc().data[0])
 
     ###########################
     # Multiplication handlers #

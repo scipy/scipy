@@ -413,23 +413,24 @@ class _TestCommon:
         B = array([[-9]])
         C = array([1,-1,0])
         D = array([[7,9,-9]])
-        E = array([[8,6,3],[-4,3,2],[6,6,6]])
+        E = array([[3],[2],[1]])
+        F = array([[8,6,3],[-4,3,2],[6,6,6]])
 
         # Rank 1 arrays can't be cast as spmatrices (A and C) so leave
         # them out.
         Bsp = self.spmatrix(B)
         Dsp = self.spmatrix(D)
         Esp = self.spmatrix(E)
+        Fsp = self.spmatrix(F)
         
-        assert_almost_equal( Esp.multiply(A).todense(),     E*A) #sparse/dense
-
-        assert_almost_equal( Esp.multiply(Bsp).todense(),   E*B) #sparse/sparse
-        assert_almost_equal( Esp.multiply(B).todense(),     E*B) #sparse/dense
-
-        assert_almost_equal( Esp.multiply(C),               E*C) #sparse/dense
-
-        assert_almost_equal( Esp.multiply(Dsp),             E*D) #sparse/sparse
-        assert_almost_equal( Esp.multiply(D),               E*D) #sparse/dense
+        assert_almost_equal( Fsp.multiply(A),                   F*A) #sparse/dense
+        assert_almost_equal( Fsp.multiply(Bsp).todense(),       F*B) #sparse/sparse
+        assert_almost_equal( Fsp.multiply(B),                   F*B) #sparse/dense
+        assert_almost_equal( Fsp.multiply(C),                   F*C) #sparse/dense
+        assert_almost_equal( Fsp.multiply(Dsp).todense(),       F*D) #sparse/sparse
+        assert_almost_equal( Fsp.multiply(D),                   F*D) #sparse/dense
+        assert_almost_equal( Fsp.multiply(E),                   F*E)
+        assert_almost_equal( Fsp.multiply(Esp).todense(),       F*E)
 
     def test_elementwise_divide(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
