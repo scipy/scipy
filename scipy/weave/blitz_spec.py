@@ -20,7 +20,7 @@ blitz_support_code =  \
 // declare them.
 
 int _beg = blitz::fromStart;
-int _end = blitz::toEnd;
+static int _end = blitz::toEnd;
 blitz::Range _all = blitz::Range::all();
 
 template<class T, int N>
