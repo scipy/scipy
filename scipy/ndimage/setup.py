@@ -4,6 +4,12 @@ from numpy.distutils.core import setup
 from numpy.distutils.misc_util import Configuration
 from numpy import get_include
 
+try:
+    from numpy.distutils.misc_util import get_info
+except ImportError:
+    raise ValueError("numpy >= 1.4 is required (detected %s from %s)" % \
+                     (numpy.__version__, numpy.__file__))
+
 def configuration(parent_package='', top_path=None):
 
     config = Configuration('ndimage', parent_package, top_path)
@@ -14,6 +20,7 @@ def configuration(parent_package='', top_path=None):
                  "src/ni_measure.c",
                  "src/ni_morphology.c","src/ni_support.c"],
         include_dirs=['src']+[get_include()],
+        extra_info=get_info('npymath'),
     )
 
     # Cython wants the .c and .pyx to have the underscore.

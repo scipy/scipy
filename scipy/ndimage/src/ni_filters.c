@@ -31,6 +31,8 @@
 
 #include "ni_support.h"
 #include "ni_filters.h"
+#include <numpy/halffloat.h>    // for npy_half_to_double() and
+                                //     npy_double_to_half()
 #include <stdlib.h>
 #include <math.h>
 
@@ -130,7 +132,7 @@ exit:
 }
 
 #define CASE_CORRELATE_POINT(_pi, _weights, _offsets, _filter_size, \
-                                                         _cvalue, _type, _res, _mv)             \
+                                                         _cvalue, _type, _res, _mv, _cast)             \
 case t ## _type:                                                    \
 {                                                                   \
     npy_intp _ii, _offset;                                            \
@@ -139,14 +141,14 @@ case t ## _type:                                                    \
         if (_offset == _mv)                                             \
             _res += _weights[_ii] * _cvalue;                              \
         else                                                            \
-            _res += _weights[_ii] * (double)*(_type*)(_pi + _offset);     \
+            _res += _weights[_ii] * (double) _cast(*(_type*)(_pi + _offset)); \
     }                                                                 \
 }                                                                   \
 break
 
-#define CASE_FILTER_OUT(_po, _tmp, _type) \
+#define CASE_FILTER_OUT(_po, _tmp, _type, _cast) \
 case t ## _type:                          \
-    *(_type*)_po = (_type)_tmp;             \
+    *(_type*)_po = _cast(_tmp);             \
     break
 
 int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
@@ -219,47 +221,51 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
         double tmp = 0.0;
         switch (input->descr->type_num) {
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Bool,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, UInt8,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, UInt16,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, UInt32,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
 #if HAS_UINT64
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, UInt64,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
 #endif
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Int8,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Int16,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Int32,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Int64,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
+            CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Float16,
+                                                     tmp, border_flag_value,
+                                                     npy_half_to_double);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Float32,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
             CASE_CORRELATE_POINT(pi, ww, oo, filter_size, cvalue, Float64,
-                                                     tmp, border_flag_value);
+                                                     tmp, border_flag_value,);
         default:
             PyErr_SetString(PyExc_RuntimeError, "array type not supported");
             goto exit;
         }
         switch (output->descr->type_num) {
-            CASE_FILTER_OUT(po, tmp, Bool);
-            CASE_FILTER_OUT(po, tmp, UInt8);
-            CASE_FILTER_OUT(po, tmp, UInt16);
-            CASE_FILTER_OUT(po, tmp, UInt32);
+            CASE_FILTER_OUT(po, tmp, Bool, (Bool));
+            CASE_FILTER_OUT(po, tmp, UInt8, (UInt8));
+            CASE_FILTER_OUT(po, tmp, UInt16, (UInt16));
+            CASE_FILTER_OUT(po, tmp, UInt32, (UInt32));
 #if HAS_UINT64
-            CASE_FILTER_OUT(po, tmp, UInt64);
+            CASE_FILTER_OUT(po, tmp, UInt64, (UInt64));
 #endif
-            CASE_FILTER_OUT(po, tmp, Int8);
-            CASE_FILTER_OUT(po, tmp, Int16);
-            CASE_FILTER_OUT(po, tmp, Int32);
-            CASE_FILTER_OUT(po, tmp, Int64);
-            CASE_FILTER_OUT(po, tmp, Float32);
-            CASE_FILTER_OUT(po, tmp, Float64);
+            CASE_FILTER_OUT(po, tmp, Int8, (Int8));
+            CASE_FILTER_OUT(po, tmp, Int16, (Int16));
+            CASE_FILTER_OUT(po, tmp, Int32, (Int32));
+            CASE_FILTER_OUT(po, tmp, Int64, (Int64));
+            CASE_FILTER_OUT(po, tmp, Float16, npy_double_to_half);
+            CASE_FILTER_OUT(po, tmp, Float32, (Float32));
+            CASE_FILTER_OUT(po, tmp, Float64, (Float64));
         default:
             PyErr_SetString(PyExc_RuntimeError, "array type not supported");
             goto exit;
@@ -510,6 +516,8 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
                                                         minimum, tmp, border_flag_value, ss);
             CASE_MIN_OR_MAX_POINT(pi, oo, filter_size, cvalue, Int64,
                                                         minimum, tmp, border_flag_value, ss);
+            CASE_MIN_OR_MAX_POINT(pi, oo, filter_size, cvalue, Float16,
+                                                        minimum, tmp, border_flag_value, ss);
             CASE_MIN_OR_MAX_POINT(pi, oo, filter_size, cvalue, Float32,
                                                         minimum, tmp, border_flag_value, ss);
             CASE_MIN_OR_MAX_POINT(pi, oo, filter_size, cvalue, Float64,
@@ -519,19 +527,20 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
             goto exit;
         }
         switch (output->descr->type_num) {
-            CASE_FILTER_OUT(po, tmp, Bool);
-            CASE_FILTER_OUT(po, tmp, UInt8);
-            CASE_FILTER_OUT(po, tmp, UInt16);
-            CASE_FILTER_OUT(po, tmp, UInt32);
+            CASE_FILTER_OUT(po, tmp, Bool, (Bool));
+            CASE_FILTER_OUT(po, tmp, UInt8, (UInt8));
+            CASE_FILTER_OUT(po, tmp, UInt16, (UInt16));
+            CASE_FILTER_OUT(po, tmp, UInt32, (UInt32));
 #if HAS_UINT64
-            CASE_FILTER_OUT(po, tmp, UInt64);
+            CASE_FILTER_OUT(po, tmp, UInt64, (UInt64));
 #endif
-            CASE_FILTER_OUT(po, tmp, Int8);
-            CASE_FILTER_OUT(po, tmp, Int16);
-            CASE_FILTER_OUT(po, tmp, Int32);
-            CASE_FILTER_OUT(po, tmp, Int64);
-            CASE_FILTER_OUT(po, tmp, Float32);
-            CASE_FILTER_OUT(po, tmp, Float64);
+            CASE_FILTER_OUT(po, tmp, Int8, (Int8));
+            CASE_FILTER_OUT(po, tmp, Int16, (Int16));
+            CASE_FILTER_OUT(po, tmp, Int32, (Int32));
+            CASE_FILTER_OUT(po, tmp, Int64, (Int64));
+            CASE_FILTER_OUT(po, tmp, Float16, npy_double_to_half);
+            CASE_FILTER_OUT(po, tmp, Float32, (Float32));
+            CASE_FILTER_OUT(po, tmp, Float64, (Float64));
         default:
             PyErr_SetString(PyExc_RuntimeError, "array type not supported");
             goto exit;
@@ -670,6 +679,8 @@ int NI_RankFilter(PyArrayObject* input, int rank,
                                             rank, buffer, tmp, border_flag_value);
             CASE_RANK_POINT(pi, oo, filter_size, cvalue, Int64,
                                             rank, buffer, tmp, border_flag_value);
+            CASE_RANK_POINT(pi, oo, filter_size, cvalue, Float16,
+                                            rank, buffer, tmp, border_flag_value);
             CASE_RANK_POINT(pi, oo, filter_size, cvalue, Float32,
                                             rank, buffer, tmp, border_flag_value);
             CASE_RANK_POINT(pi, oo, filter_size, cvalue, Float64,
@@ -679,19 +690,20 @@ int NI_RankFilter(PyArrayObject* input, int rank,
             goto exit;
         }
         switch (output->descr->type_num) {
-            CASE_FILTER_OUT(po, tmp, Bool);
-            CASE_FILTER_OUT(po, tmp, UInt8);
-            CASE_FILTER_OUT(po, tmp, UInt16);
-            CASE_FILTER_OUT(po, tmp, UInt32);
+            CASE_FILTER_OUT(po, tmp, Bool, (Bool));
+            CASE_FILTER_OUT(po, tmp, UInt8, (UInt8));
+            CASE_FILTER_OUT(po, tmp, UInt16, (UInt16));
+            CASE_FILTER_OUT(po, tmp, UInt32, (UInt32));
 #if HAS_UINT64
-            CASE_FILTER_OUT(po, tmp, UInt64);
+            CASE_FILTER_OUT(po, tmp, UInt64, (UInt64));
 #endif
-            CASE_FILTER_OUT(po, tmp, Int8);
-            CASE_FILTER_OUT(po, tmp, Int16);
-            CASE_FILTER_OUT(po, tmp, Int32);
-            CASE_FILTER_OUT(po, tmp, Int64);
-            CASE_FILTER_OUT(po, tmp, Float32);
-            CASE_FILTER_OUT(po, tmp, Float64);
+            CASE_FILTER_OUT(po, tmp, Int8, (Int8));
+            CASE_FILTER_OUT(po, tmp, Int16, (Int16));
+            CASE_FILTER_OUT(po, tmp, Int32, (Int32));
+            CASE_FILTER_OUT(po, tmp, Int64, (Int64));
+            CASE_FILTER_OUT(po, tmp, Float16, npy_double_to_half);
+            CASE_FILTER_OUT(po, tmp, Float32, (Float32));
+            CASE_FILTER_OUT(po, tmp, Float64, (Float64));
         default:
             PyErr_SetString(PyExc_RuntimeError, "array type not supported");
             goto exit;
@@ -854,6 +866,8 @@ int NI_GenericFilter(PyArrayObject* input,
                                                 tmp, border_flag_value, function, data, buffer);
             CASE_FILTER_POINT(pi, oo, filter_size, cvalue, Int64,
                                                 tmp, border_flag_value, function, data, buffer);
+            CASE_FILTER_POINT(pi, oo, filter_size, cvalue, Float16,
+                                                tmp, border_flag_value, function, data, buffer);
             CASE_FILTER_POINT(pi, oo, filter_size, cvalue, Float32,
                                                 tmp, border_flag_value, function, data, buffer);
             CASE_FILTER_POINT(pi, oo, filter_size, cvalue, Float64,
@@ -863,19 +877,20 @@ int NI_GenericFilter(PyArrayObject* input,
             goto exit;
         }
         switch (output->descr->type_num) {
-            CASE_FILTER_OUT(po, tmp, Bool);
-            CASE_FILTER_OUT(po, tmp, UInt8);
-            CASE_FILTER_OUT(po, tmp, UInt16);
-            CASE_FILTER_OUT(po, tmp, UInt32);
+            CASE_FILTER_OUT(po, tmp, Bool, (Bool));
+            CASE_FILTER_OUT(po, tmp, UInt8, (UInt8));
+            CASE_FILTER_OUT(po, tmp, UInt16, (UInt16));
+            CASE_FILTER_OUT(po, tmp, UInt32, (UInt32));
 #if HAS_UINT64
-            CASE_FILTER_OUT(po, tmp, UInt64);
+            CASE_FILTER_OUT(po, tmp, UInt64, (UInt64));
 #endif
-            CASE_FILTER_OUT(po, tmp, Int8);
-            CASE_FILTER_OUT(po, tmp, Int16);
-            CASE_FILTER_OUT(po, tmp, Int32);
-            CASE_FILTER_OUT(po, tmp, Int64);
-            CASE_FILTER_OUT(po, tmp, Float32);
-            CASE_FILTER_OUT(po, tmp, Float64);
+            CASE_FILTER_OUT(po, tmp, Int8, (Int8));
+            CASE_FILTER_OUT(po, tmp, Int16, (Int16));
+            CASE_FILTER_OUT(po, tmp, Int32, (Int32));
+            CASE_FILTER_OUT(po, tmp, Int64, (Int64));
+            CASE_FILTER_OUT(po, tmp, Float16, npy_double_to_half);
+            CASE_FILTER_OUT(po, tmp, Float32, (Float32));
+            CASE_FILTER_OUT(po, tmp, Float64, (Float64));
         default:
             PyErr_SetString(PyExc_RuntimeError, "array type not supported");
             goto exit;
