@@ -12,12 +12,12 @@ To run it in its simplest form::
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_raises, assert_allclose, \
-        assert_equal, assert_, TestCase, run_module_suite
+        assert_equal, assert_, TestCase, run_module_suite, dec
 
 from scipy import optimize
 import numpy as np
 
-class TestOptimize(TestCase):
+class TestOptimize(object):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
@@ -269,7 +269,8 @@ class TestOptimize(TestCase):
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
-        assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
+        assert_(self.gradcalls <= 20, self.gradcalls) # 0.13.0
+        #assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
         #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
@@ -463,6 +464,36 @@ class TestOptimize(TestCase):
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
 
+    def test_no_increase(self):
+        # Check that the solver doesn't return a value worse than the
+        # initial point.
+
+        def func(x):
+            return (x - 1)**2
+
+        def bad_grad(x):
+            # purposefully invalid gradient function, simulates a case
+            # where line searches start failing
+            return 2*(x - 1) * (-1) - 2
+
+        def check(method):
+            x0 = np.array([2.0])
+            f0 = func(x0)
+            jac = bad_grad
+            if method in ['nelder-mead', 'powell', 'anneal', 'cobyla']:
+                jac = None
+            sol = optimize.minimize(func, x0, jac=jac, method=method,
+                                    options=dict(maxiter=20))
+            assert_equal(func(sol.x), sol.fun)
+
+            dec.knownfailureif(method=='slsqp', "SLSQP returns slightly worse")(lambda: None)()
+            assert_(func(sol.x) <= f0)
+
+        for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
+                       'newton-cg', 'anneal', 'l-bfgs-b', 'tnc',
+                       'cobyla', 'slsqp']:
+            yield check, method
+
 
 class TestLBFGSBBounds(TestCase):
     """ Tests for L-BFGS-B with bounds """
@@ -612,6 +643,29 @@ class TestOptimizeScalar(TestCase):
         assert_allclose(x, self.solution, atol=1e-6)
 
 
+class TestNewtonCg(object):
+    def test_rosenbrock(self):
+        x0 = np.array([-1.2, 1.0])
+        sol = optimize.minimize(optimize.rosen, x0,
+                                jac=optimize.rosen_der,
+                                hess=optimize.rosen_hess,
+                                tol=1e-5,
+                                method='Newton-CG')
+        assert_(sol.success, sol.message)
+        assert_allclose(sol.x, np.array([1, 1]), rtol=1e-4)
+
+    def test_himmelblau(self):
+        x0 = np.array(himmelblau_x0)
+        sol = optimize.minimize(himmelblau,
+                                x0,
+                                jac=himmelblau_grad,
+                                hess=himmelblau_hess,
+                                method='Newton-CG',
+                                tol=1e-6)
+        assert_(sol.success, sol.message)
+        assert_allclose(sol.x, himmelblau_xopt, rtol=1e-4)
+        assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
+
 class TestRosen(TestCase):
 
     def test_hess(self):
@@ -622,6 +676,29 @@ class TestRosen(TestCase):
         dothp = np.dot(optimize.rosen_hess(x), p)
         assert_equal(hp, dothp)
 
+def himmelblau(p):
+    """
+    R^2 -> R^1 test function for optimization.  The function has four local
+    minima where himmelblau(xopt) == 0.
+    """
+    x, y = p
+    a = x*x + y - 11
+    b = x + y*y - 7
+    return a*a + b*b
+
+def himmelblau_grad(p):
+    x, y = p
+    return np.array([4*x**3 + 4*x*y - 42*x + 2*y**2 - 14,
+                     2*x**2 + 4*x*y + 4*y**3 - 26*y - 22])
+
+def himmelblau_hess(p):
+    x, y = p
+    return np.array([[12*x**2 + 4*y - 42, 4*x + 4*y],
+                     [4*x + 4*y, 4*x + 12*y**2 - 26]])
+
+himmelblau_x0 = [-0.27, -0.9]
+himmelblau_xopt = [3, 2]
+himmelblau_min = 0.0
 
 if __name__ == "__main__":
     run_module_suite()
