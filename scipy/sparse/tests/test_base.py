@@ -423,18 +423,36 @@ class _TestCommon:
         Dsp = self.spmatrix(D)
         Esp = self.spmatrix(E)
         Fsp = self.spmatrix(F)
-        
-        assert_almost_equal( Fsp.multiply(6).todense(),         F*6) #sparse/scalar
-        assert_almost_equal( Fsp.multiply(A),                   F*A) #sparse/dense
-        assert_almost_equal( Fsp.multiply(Bsp).todense(),       F*B) #sparse/sparse
-        assert_almost_equal( Fsp.multiply(B),                   F*B) #sparse/dense
-        assert_almost_equal( Fsp.multiply(C),                   F*C) #sparse/dense
-        assert_almost_equal( Fsp.multiply(Dsp).todense(),       F*D) #sparse/sparse
-        assert_almost_equal( Fsp.multiply(D),                   F*D) #sparse/dense
-        assert_almost_equal( Fsp.multiply(E),                   F*E) #sparse/dense
-        assert_almost_equal( Fsp.multiply(Esp).todense(),       F*E) #spares/sparse
-        assert_almost_equal( Fsp.multiply(G),                   F*G) #sparse/dense
 
+        matrices = [A, B, C, D, E, F, G]
+        spmatrices = [Bsp, Dsp, Esp, Fsp]
+        # sparse/sparse
+        for i in spmatrices:
+            for j in spmatrices:
+                try:
+                    dense_mult = np.multiply(i.todense(), j.todense())
+                except ValueError:
+                    assert_raises(ValueError, i.multiply, j)
+                    continue
+                sp_mult = i.multiply(j)
+                if isspmatrix(sp_mult):
+                    assert_almost_equal(sp_mult.todense(), dense_mult)
+                else:
+                    assert_almost_equal(sp_mult, dense_mult)
+        
+        # sparse/dense
+        for i in spmatrices:
+            for j in matrices:
+                try:
+                    dense_mult = np.multiply(i.todense(), j)
+                except ValueError:
+                    assert_raises(ValueError, i.multiply, j)
+                    continue
+                sp_mult = i.multiply(j)
+                if isspmatrix(sp_mult):
+                    assert_almost_equal(sp_mult.todense(), dense_mult)
+                else:
+                    assert_almost_equal(sp_mult, dense_mult)
 
     def test_elementwise_divide(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
