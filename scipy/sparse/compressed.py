@@ -249,25 +249,21 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         if (isdense(other) or isinstance(other, tuple) or 
             isinstance(other, list)):
             return np.multiply(self.todense(), other)
-        # Sparse matrix or vector. 
+        # Sparse matrix or vector.
         if isspmatrix(other):
             if self.shape == other.shape:
                 other = self.__class__(other)
                 return self._binopt(other, '_elmul_')
-            # singl element
+            # Single element.
             elif other.shape == (1,1):
                 return self.__mul__(other.tocsc().data[0])
             elif self.shape == (1,1):
                 return other.__mul__(self.tocsc().data[0])
-            # a row times a column
-            if self.shape[::-1] == other.shape:
-                if self.shape[1] == other.shape[0] == 1:
-                    return self._mul_sparse_matrix(other.tocsc())
-                elif self.shape[0] == other.shape[1] == 1:
-                    return other._mul_sparse_matrix(self.tocsc())
-                else:
-                    raise ValueError("inconsistent shapes")
-
+            # A row times a column.
+            elif self.shape[1] == other.shape[0] == 1:
+                return self._mul_sparse_matrix(other.tocsc())
+            elif self.shape[0] == other.shape[1] == 1:
+                return other._mul_sparse_matrix(self.tocsc())
             # Row vector times matrix. other is a row.
             elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 other = dia_matrix((other.toarray().ravel(), [0]), 
