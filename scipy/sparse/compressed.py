@@ -254,19 +254,40 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             if self.shape == other.shape:
                 other = self.__class__(other)
                 return self._binopt(other, '_elmul_')
-            # row vector
+            # singl element
+            elif other.shape == (1,1):
+                return self.__mul__(other.tocsc().data[0])
+            elif self.shape == (1,1):
+                return other.__mul__(self.tocsc().data[0])
+            # a row times a column
+            if self.shape[::-1] == other.shape:
+                if self.shape[1] == other.shape[0] == 1:
+                    return self._mul_sparse_matrix(other.tocsc())
+                elif self.shape[0] == other.shape[1] == 1:
+                    return other._mul_sparse_matrix(self.tocsc())
+                else:
+                    raise ValueError("inconsistent shapes")
+
+            # Row vector times matrix. other is a row.
             elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 other = dia_matrix((other.toarray().ravel(), [0]), 
                                     shape=self.shape)
                 return self._mul_sparse_matrix(other)
-            # column vector
-            elif other.shape[1] == 1 and self.shape[1] == other.shape[0]:
+            # self is a row.
+            elif self.shape[0] == 1 and self.shape[1] == other.shape[1]:
+                copy = dia_matrix((self.toarray().ravel(), [0]),
+                                    shape=other.shape)
+                return other._mul_sparse_matrix(copy)
+            # Column vector times matrix. other is a column.
+            elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 other = dia_matrix((other.toarray().ravel(), [0]), 
                                     shape=self.shape)
                 return other._mul_sparse_matrix(self)
-            # singl element
-            elif other.shape == (1,1):
-                return self.__mul__(other.tocsc().data[0])
+            # self is a column.
+            elif self.shape[1] == 1 and self.shape[0] == other.shape[0]:
+                copy = dia_matrix((self.toarray().ravel(), [0]),
+                                    shape=other.shape)
+                return copy._mul_sparse_matrix(other)
             else:
                 raise ValueError("inconsistent shapes")
             
