@@ -408,6 +408,51 @@ class _TestCommon:
         assert_almost_equal( Asp.multiply(Dsp).todense(), A*D) #sparse/sparse
         assert_almost_equal( Asp.multiply(D),             A*D) #sparse/dense
 
+    def test_elementwise_multiply_broadcast(self):
+        A = array([4])
+        B = array([[-9]])
+        C = array([1,-1,0])
+        D = array([[7,9,-9]])
+        E = array([[3],[2],[1]])
+        F = array([[8,6,3],[-4,3,2],[6,6,6]])
+        G = [1, 2, 3]
+
+        # Rank 1 arrays can't be cast as spmatrices (A and C) so leave
+        # them out.
+        Bsp = self.spmatrix(B)
+        Dsp = self.spmatrix(D)
+        Esp = self.spmatrix(E)
+        Fsp = self.spmatrix(F)
+
+        matrices = [A, B, C, D, E, F, G]
+        spmatrices = [Bsp, Dsp, Esp, Fsp]
+        # sparse/sparse
+        for i in spmatrices:
+            for j in spmatrices:
+                try:
+                    dense_mult = np.multiply(i.todense(), j.todense())
+                except ValueError:
+                    assert_raises(ValueError, i.multiply, j)
+                    continue
+                sp_mult = i.multiply(j)
+                if isspmatrix(sp_mult):
+                    assert_almost_equal(sp_mult.todense(), dense_mult)
+                else:
+                    assert_almost_equal(sp_mult, dense_mult)
+        
+        # sparse/dense
+        for i in spmatrices:
+            for j in matrices:
+                try:
+                    dense_mult = np.multiply(i.todense(), j)
+                except ValueError:
+                    assert_raises(ValueError, i.multiply, j)
+                    continue
+                sp_mult = i.multiply(j)
+                if isspmatrix(sp_mult):
+                    assert_almost_equal(sp_mult.todense(), dense_mult)
+                else:
+                    assert_almost_equal(sp_mult, dense_mult)
 
     def test_elementwise_divide(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
