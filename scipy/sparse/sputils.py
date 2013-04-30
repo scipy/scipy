@@ -123,7 +123,7 @@ def isshape(x):
 
 
 def issequence(t):
-    return isinstance(t, (list, tuple))\
+    return (isinstance(t, (list, tuple)) and np.isscalar(t[0]))\
            or (isinstance(t, np.ndarray) and (t.ndim == 1))
 
 def ismatrix(t):
