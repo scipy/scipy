@@ -14,13 +14,12 @@ from scipy.lib.six.moves import xrange
 
 from .sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix, csr_sample_values
-from .sputils import upcast, isintlike
-
+from .sputils import upcast, isintlike, IndexMixin
 
 from .compressed import _cs_matrix
 
 
-class csr_matrix(_cs_matrix):
+class csr_matrix(_cs_matrix, IndexMixin):
     """
     Compressed Sparse Row matrix
 
