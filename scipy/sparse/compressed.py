@@ -245,10 +245,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         # Scalar multiplication.
         if isscalarlike(other):
             return self.__mul__(other)
-        # Dense matrix or vector.
-        if (isdense(other) or isinstance(other, tuple) or 
-            isinstance(other, list)):
-            return np.multiply(self.todense(), other)
         # Sparse matrix or vector.
         if isspmatrix(other):
             if self.shape == other.shape:
@@ -286,7 +282,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 return copy._mul_sparse_matrix(other)
             else:
                 raise ValueError("inconsistent shapes")
-            
+        # Anything else.
+        return np.multiply(self.todense(), other)
 
     ###########################
     # Multiplication handlers #
