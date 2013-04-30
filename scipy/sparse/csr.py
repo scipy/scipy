@@ -223,66 +223,50 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
             return csr_matrix((data,indices,indptr), shape=shape)
 
-        if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
-
-            if isintlike(row):
-                #[1,??]
-                if isintlike(col):
-                    return self._get_single_element(row, col)  # [i,j]
-                elif isinstance(col, slice):
-                    return self._get_row_slice(row, col)      # [i,1:2]
-                else:
-                    P = extractor(col,self.shape[1]).T        # [i,[1,2]]
-                    return self[row,:]*P
-
-            elif isinstance(row, slice):
-                #[1:2,??]
-                if isintlike(col) or isinstance(col, slice):
-                    return self._get_submatrix(row, col)      # [1:2,j]
-                else:
-                    P = extractor(col,self.shape[1]).T        # [1:2,[1,2]]
-                    return self[row,:]*P
-
+        row, col = self._unpack_index(key)
+        if isintlike(row):
+            # [1,??]
+            if isintlike(col):
+                return self._get_single_element(row, col) # [i,j]
+            elif isinstance(col, slice):
+                return self._get_row_slice(row, col)      # [i,1:2]
             else:
-                #[[1,2],??] or [[[1],[2]],??]
-                if isintlike(col) or isinstance(col,slice):
-                    P = extractor(row, self.shape[0])        # [[1,2],j] or [[1,2],1:2]
-                    return (P*self)[:,col]
-
-                else:
-                    row = asindices(row)
-                    col = asindices(col)
-                    if len(row.shape) == 1:
-                        if len(row) != len(col):             # [[1,2],[1,2]]
-                            raise IndexError('number of row and column indices differ')
-
-                        check_bounds(row, self.shape[0])
-                        check_bounds(col, self.shape[1])
-
-                        num_samples = len(row)
-                        val = np.empty(num_samples, dtype=self.dtype)
-                        csr_sample_values(self.shape[0], self.shape[1],
-                                          self.indptr, self.indices, self.data,
-                                          num_samples, row, col, val)
-                        # val = []
-                        # for i,j in zip(row,col):
-                        #    val.append(self._get_single_element(i,j))
-                        return np.asmatrix(val)
-
-                    elif len(row.shape) == 2:
-                        row = np.ravel(row)                   # [[[1],[2]],[1,2]]
-                        P = extractor(row, self.shape[0])
-                        return (P*self)[:,col]
-
-                    else:
-                        raise NotImplementedError('unsupported indexing')
-
-        elif isintlike(key) or isinstance(key,slice):
-            return self[key,:]                                # [i] or [1:2]
+                P = extractor(col,self.shape[1]).T        # [i,[1,2]]
+                return self[row,:]*P
+        elif isinstance(row, slice):
+            # [1:2,??]
+            if isintlike(col) or isinstance(col, slice):
+                return self._get_submatrix(row, col)      # [1:2,j]
+            else:
+                P = extractor(col,self.shape[1]).T        # [1:2,[1,2]]
+                return self[row,:]*P
         else:
-            return self[asindices(key),:]                     # [[1,2]]
+            # [[1,2],??] or [[[1],[2]],??]
+            if isintlike(col) or isinstance(col,slice):
+                P = extractor(row, self.shape[0])         # [[1,2],j] or [[1,2],1:2]
+                return (P*self)[:,col]
+            else:
+                row = asindices(row)
+                col = asindices(col)
+                if len(row.shape) == 1:
+                    if len(row) != len(col):              # [[1,2],[1,2]]
+                        raise IndexError('number of row and column indices differ')
+
+                    check_bounds(row, self.shape[0])
+                    check_bounds(col, self.shape[1])
+
+                    num_samples = len(row)
+                    val = np.empty(num_samples, dtype=self.dtype)
+                    csr_sample_values(self.shape[0], self.shape[1],
+                                      self.indptr, self.indices, self.data,
+                                      num_samples, row, col, val)
+                    return np.asmatrix(val)
+                elif len(row.shape) == 2:
+                    row = np.ravel(row)                   # [[[1],[2]],[1,2]]
+                    P = extractor(row, self.shape[0])
+                    return (P*self)[:,col]
+                else:
+                    raise NotImplementedError('unsupported indexing')
 
     def _get_single_element(self,row,col):
         """Returns the single element self[row, col]
