@@ -223,16 +223,17 @@ class csr_matrix(_cs_matrix, IndexMixin):
             return csr_matrix((data,indices,indptr), shape=shape)
 
         row, col = self._unpack_index(key)
+        # First attempt to use original optimized methods
+        # Only if statements used 
         if isintlike(row):
             #[1,??]
             if isintlike(col):
                 return self._get_single_element(row, col) #[i,j]
             elif isinstance(col, slice):
                 return self._get_row_slice(row, col)      #[i,1:2]
-            else:
+            elif issequence(col):
                 P = extractor(col,self.shape[1]).T        #[i,[1,2]]
                 return self[row,:]*P
-
         elif isinstance(row, slice):
             #[1:2,??]
             if isintlike(col) or isinstance(col, slice):
