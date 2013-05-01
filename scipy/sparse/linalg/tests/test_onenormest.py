@@ -131,7 +131,9 @@ class TestOnenormest(TestCase):
         B = np.random.randn(k, n)
         fast_estimate = self._help_product_norm_fast(A, B)
         exact_value = self._help_product_norm_slow(A, B)
-        self.assert_(fast_estimate < exact_value < 3*fast_estimate)
+        self.assert_(
+                fast_estimate <= exact_value <= 3*fast_estimate,
+                'fast: %g\nexact:%g' % (fast_estimate, exact_value))
 
 
 if __name__ == '__main__':
