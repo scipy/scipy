@@ -1723,6 +1723,12 @@ class _TestFancyIndexing:
     def test_fancy_indexing_boolean(self):
         random.seed(1234)  # make runs repeatable
 
+        # CSR matrix returns matrix in some cases
+        def todense(a):
+            if isinstance(a, (np.matrix, np.ndarray)):
+                return a
+            return a.todense()        
+
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
 
@@ -1730,15 +1736,15 @@ class _TestFancyIndexing:
         J = np.array(np.random.randint(0, 2, size=10), dtype=bool)
         X = np.array(np.random.randint(0, 2, size=(5, 10)), dtype=bool)
 
-        assert_equal(A[I].todense(), B[I])
-        assert_equal(A[:,J].todense(), B[:, J])
-        assert_equal(A[X].todense(), B[X])
-        assert_equal(A[B > 9].todense(), B[B > 9])
+        assert_equal(todense(A[I]), B[I])
+        assert_equal(todense(A[:,J]), B[:, J])
+        assert_equal(todense(A[X]), B[X])
+        assert_equal(todense(A[B > 9]), B[B>9])
 
         I = np.array([True, False, True, True, False])
         J = np.array([False, True, True, False, True])
 
-        assert_equal(A[I, J].todense(), B[I, J])
+        assert_equal(todense(A[I, J]), B[I, J])
 
         Z = np.array(np.random.randint(0, 2, size=(5, 11)), dtype=bool)
         Y = np.array(np.random.randint(0, 2, size=(6, 10)), dtype=bool)
