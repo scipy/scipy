@@ -1087,8 +1087,8 @@ def test_ncx2_tails_ticket_955():
     assert_allclose(a, b, rtol=1e-3, atol=0)
 
 def test_foldnorm_ticket_1880():
-    # Parameter value c = 0 was not enabled
-    rv=foldnorm(0, scale=1)
+    # Parameter value c=0 was not enabled
+    rv = foldnorm(0, scale=1)
     assert_equal(rv.cdf(0),0)  # rv.cdf(0) previously resulted in: nan
 
 
