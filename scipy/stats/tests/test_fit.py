@@ -68,8 +68,10 @@ def check_cont_fit(distname,arg):
 
     for fit_size in fit_sizes:
         np.random.seed(1234)
-        rvs = distfn.rvs(size=fit_size, *arg)
-        est = distfn.fit(rvs)  # start with default values
+
+        with np.errstate(all='ignore'):
+            rvs = distfn.rvs(size=fit_size, *arg)
+            est = distfn.fit(rvs)  # start with default values
 
         diff = est - truearg
 
