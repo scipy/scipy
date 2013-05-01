@@ -223,6 +223,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
             return csr_matrix((data,indices,indptr), shape=shape)
 
         row, col = self._unpack_index(key)
+        # Check for Boolean data type, otherwise asindices() sees 0s and 1s
+        row, col = self._check_Boolean(row, col)
         # First attempt to use original optimized methods
         # Only if statements used 
         if isintlike(row):
