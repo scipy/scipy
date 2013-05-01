@@ -23,6 +23,12 @@ Matrix Operations
    inv -- compute the sparse matrix inverse
    expm -- compute the sparse matrix exponential
 
+Matrix norms
+------------
+
+   condest -- Estimate the 1-norm of a sparse matrix
+
+
 Solving linear problems
 -----------------------
 
@@ -83,7 +89,6 @@ Complete or incomplete LU factorizations
    splu -- Compute a LU decomposition for a sparse matrix
    spilu -- Compute an incomplete LU decomposition for a sparse matrix
 
-
 Exceptions
 ----------
 
@@ -102,6 +107,7 @@ from .dsolve import *
 from .interface import *
 from .eigen import *
 from .matfuncs import *
+from ._condest import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
