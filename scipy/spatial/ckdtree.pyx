@@ -1164,7 +1164,6 @@ cdef class cKDTree:
 
 
     @cython.boundscheck(False)
-    @cython.wraparound(False)
     def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
               np.float64_t p=2, np.float64_t distance_upper_bound=infinity):
         """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf)
@@ -1864,7 +1863,6 @@ cdef class cKDTree:
         return 0
 
     @cython.boundscheck(False)
-    @cython.wraparound(False)
     def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2.):
         """count_neighbors(self, other, r, p)
 
