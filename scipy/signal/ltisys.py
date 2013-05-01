@@ -864,9 +864,8 @@ def bode(system, w=None, n=100):
         calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`
-        frequencies are logarithmically spaced in the range from two orders of
-        magnitude before the minimum (slowest) pole to two orders of magnitude
-        after the maximum (fastest) pole.
+        frequencies are logarithmically spaced in an interval chosen to
+        include the influence of the poles and zeros of the system.
 
     Returns
     -------
@@ -919,9 +918,8 @@ def freqresp(system, w=None, n=10000):
         set will be calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`
-        frequencies are logarithmically spaced in the range from two orders of
-        magnitude before the minimum (slowest) pole to two orders of magnitude
-        after the maximum (fastest) pole.
+        frequencies are logarithmically spaced in an interval chosen to
+        include the influence of the poles and zeros of the system.
 
     Returns
     -------
