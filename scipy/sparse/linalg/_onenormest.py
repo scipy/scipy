@@ -7,11 +7,11 @@ import numpy as np
 import scipy.linalg
 import scipy.sparse.linalg
 
-__all__ = ['condest']
+__all__ = ['onenormest']
 
 
 
-def condest(A, t=2, itmax=5, compute_v=False, compute_w=False):
+def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     """
     Compute a lower bound of the 1-norm of a sparse matrix.
 
@@ -67,7 +67,7 @@ def condest(A, t=2, itmax=5, compute_v=False, compute_w=False):
            SIAM J. Matrix Anal. Appl. Vol. 31, No. 3, pp. 970-989.
 
     """
-    est, v, w, nmults, nresamples = _condest_core(A, A.T, t, itmax)
+    est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax)
     if compute_v or compute_w:
         result = (est,)
         if compute_v:
@@ -127,7 +127,7 @@ def norm_1d_inf(v):
     # this is faster than calling the numpy/scipy norm function
     return np.max(np.abs(v))
 
-def _condest_core(A, AT, t, itmax):
+def _onenormest_core(A, AT, t, itmax):
     """
     Compute a lower bound of the 1-norm of a sparse matrix.
 
