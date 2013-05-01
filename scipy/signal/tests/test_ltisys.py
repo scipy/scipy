@@ -80,11 +80,9 @@ class Test_lsim2(object):
         D = np.zeros((1,2))
 
         t = np.linspace(0, 10.0, 101)
-        warnings.simplefilter("ignore", BadCoefficients)
-        try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", BadCoefficients)
             tout, y, x = lsim2((A,B,C,D), T=t, X0=[1.0, 1.0])
-        finally:
-            del warnings.filters[0]
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
         expected_x1 = np.exp(-2.0*tout)
@@ -288,10 +286,7 @@ class Test_bode(object):
         """Test that bode() finds a reasonable frequency range."""
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         system = lti([1], [1, 1])
-        vals = linalg.eigvals(system.A)
-        minpole = min(abs(np.real(vals)))
-        maxpole = max(abs(np.real(vals)))
-        n = 10;
+        n = 10 
         # Expected range is from 0.01 to 10.
         expected_w = np.logspace(-2, 1, n)
         w, mag, phase = bode(system, n=n)
@@ -309,6 +304,25 @@ class Test_bode(object):
         # The test passes if bode doesn't raise an exception.
         system = lti([1], [1, 0, 100])
         w, mag, phase = bode(system, n=2)
+
+    def test_from_state_space(self):
+        # Ensure that bode works with a system that was created from the
+        # state space representation matrices A, B, C, D.  In this case,
+        # system.num will be a 2-D array with shape (1, n+1), where (n,n)
+        # is the shape of A.
+        # A Butterworth lowpass filter is used, so we know the exact
+        # frequency response.
+        a = np.array([1.0, 2.0, 2.0, 1.0])
+        A = linalg.companion(a).T
+        B = np.array([[0.0],[0.0],[1.0]])
+        C = np.array([[1.0, 0.0, 0.0]])
+        D = np.array([[0.0]])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", BadCoefficients)
+            system = lti(A, B, C, D)
+        w, mag, phase = bode(system, n=100)
+        expected_magnitude = 20 * np.log10(np.sqrt(1.0 / (1.0 + w**6)))
+        assert_almost_equal(mag, expected_magnitude)
 
 
 class Test_freqresp(object):
@@ -364,9 +378,6 @@ class Test_freqresp(object):
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         # Expected range is from 0.01 to 10.
         system = lti([1], [1, 1])
-        vals = linalg.eigvals(system.A)
-        minpole = min(abs(np.real(vals)))
-        maxpole = max(abs(np.real(vals)))
         n = 10
         expected_w = np.logspace(-2, 1, n)
         w, H = freqresp(system, n=n)
@@ -378,6 +389,25 @@ class Test_freqresp(object):
         system = lti([1], [1, 0])
         w, H = freqresp(system, n=2)
         assert_equal(w[0], 0.01)  # a fail would give not-a-number
+
+    def test_from_state_space(self):
+        # Ensure that freqresp works with a system that was created from the
+        # state space representation matrices A, B, C, D.  In this case,
+        # system.num will be a 2-D array with shape (1, n+1), where (n,n) is
+        # the shape of A.
+        # A Butterworth lowpass filter is used, so we know the exact
+        # frequency response.
+        a = np.array([1.0, 2.0, 2.0, 1.0])
+        A = linalg.companion(a).T
+        B = np.array([[0.0],[0.0],[1.0]])
+        C = np.array([[1.0, 0.0, 0.0]])
+        D = np.array([[0.0]])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", BadCoefficients)
+            system = lti(A, B, C, D)            
+        w, H = freqresp(system, n=100)
+        expected_magnitude = np.sqrt(1.0 / (1.0 + w**6))
+        assert_almost_equal(np.abs(H), expected_magnitude)
 
 
 if __name__ == "__main__":
