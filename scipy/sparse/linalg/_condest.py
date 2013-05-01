@@ -44,11 +44,6 @@ def condest(A, t=2, itmax=5, compute_v=False, compute_w=False):
         The vector Av which has relatively large 1-norm.
         It can be thought of as an output of the linear operator
         that is relatively large in norm compared to the input.
-    nmults : int, optional
-        The number of matrix products that were computed.
-    nresamples : int, optional
-        The number of times a parallel column was observed,
-        necessitating a re-randomization of the column.
 
     Notes
     -----
