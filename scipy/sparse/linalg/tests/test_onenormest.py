@@ -47,6 +47,7 @@ class TestOnenormest(TestCase):
     def test_onenormest_table_3_t_2(self):
         # This will take multiple seconds if your computer is slow like mine.
         # It is stochastic, so the tolerance could be too strict.
+        np.random.seed(1234)
         t = 2
         n = 100
         itmax = 5
@@ -125,6 +126,7 @@ class TestOnenormest(TestCase):
         # it could be easy to multiply this product by a small matrix,
         # but it could be annoying to look at all of
         # the entries of the product explicitly.
+        np.random.seed(1234)
         n = 6000
         k = 3
         A = np.random.randn(n, k)
