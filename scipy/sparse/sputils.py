@@ -175,7 +175,7 @@ class IndexMixin(object):
             i = i.nonzero()
         return i
 
-    def _index_to_arrays(self, i, j):
+    def _check_Boolean(self, i, j):
         if isinstance(i, np.ndarray) and i.dtype.kind == 'b':
             i = self._boolean_index_to_array(i)
             if len(i) == 2:
@@ -187,6 +187,10 @@ class IndexMixin(object):
             i = i[0]
         if isinstance(j, np.ndarray) and j.dtype.kind == 'b':
             j = self._boolean_index_to_array(j)[0]
+        return i, j
+
+    def _index_to_arrays(self, i, j):
+        i, j = self._check_Boolean(i, j)
 
         i_slice = isinstance(i, slice)
         if i_slice:
