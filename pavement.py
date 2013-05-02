@@ -644,5 +644,5 @@ def write_log():
 
 @task
 def write_release_and_log():
-    write_release_task(os.path.join(options.installers.releasedir, 'README.txt'))
+    write_release_task(os.path.join(options.installers.releasedir, 'README.rst'))
     write_log_task(os.path.join(options.installers.releasedir, 'Changelog'))
