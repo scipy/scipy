@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
-        assert_array_almost_equal, assert_allclose, assert_, TestCase
+        assert_array_almost_equal, assert_allclose, assert_, TestCase, \
+        assert_raises
 from numpy import array, diff, shape, asarray, pi, sin, cos, arange, dot, \
      ravel, sqrt, inf, round
 from scipy.interpolate.fitpack import splrep, splev, bisplrep, bisplev, \
@@ -140,11 +141,13 @@ class TestSmokeTests(TestCase):
               (f(None),repr(round(a,3)),repr(round(b,3))))
         for k in range(1,6):
             tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
-            roots = sproot(tck)
             if k == 3:
-                assert_allclose(roots, pi*array([1, 2, 3, 4]),
-                                rtol=1e-3)
-            put('  %d  : %s'%(k,repr(roots.tolist())))
+                roots = sproot(tck)
+                assert_allclose(splev(roots, tck), 0, atol=1e-10, rtol=1e-10)
+                assert_allclose(roots, pi*array([1, 2, 3, 4]), rtol=1e-3)
+                put('  %d  : %s'%(k,repr(roots.tolist())))
+            else:
+                assert_raises(ValueError, sproot, tck)
 
     def check_4(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
               ia=0,ib=2*pi,dx=0.2*pi):
