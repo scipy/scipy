@@ -622,10 +622,10 @@ def sproot(tck,mest=10):
     tck : tuple
         A tuple (t,c,k) containing the vector of knots,
         the B-spline coefficients, and the degree of the spline.
-        The number of knots must be >= 8.
+        The number of knots must be >= 8, and the degree must be 3.
         The knots must be a montonically increasing sequence.
     mest : int
-     An estimate of the number of zeros (Default is 10).
+        An estimate of the number of zeros (Default is 10).
 
     Returns
     -------
@@ -650,8 +650,8 @@ def sproot(tck,mest=10):
 
     """
     t,c,k=tck
-    if k==4: t=t[1:-1]
-    if k==5: t=t[2:-2]
+    if k != 3:
+        raise ValueError("sproot works only for cubic (k=3) splines")
     try:
         c[0][0]
         parametric = True
