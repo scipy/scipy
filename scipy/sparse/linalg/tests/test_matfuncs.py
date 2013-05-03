@@ -7,16 +7,19 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import math
+
 import numpy as np
 from numpy import array, eye, dot, sqrt, double, exp, random
 from numpy.testing import (TestCase, run_module_suite,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
-        assert_allclose)
+        assert_allclose, assert_)
 
+import scipy.linalg
 from scipy.sparse import csc_matrix
 from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import expm
-from scipy.sparse.linalg.matfuncs import expm_2009
+from scipy.sparse.linalg.matfuncs import expm_2009, _is_upper_triangular
 from scipy.linalg import logm
 
 
@@ -73,17 +76,26 @@ class TestExpM(TestCase):
             [-3.07408665108297e+25, 1.62463553675545e+17, 3.04699053651329e+25],
             [1.09189154376804e+17, -577057840.468934, -1.08226721572342e+17]])
 
-        # This is the correct answer, to not great precision.
+        # This is the correct answer.
         correct_solution = np.array([
-            [0.446849, 1.54044e-09, 0.462811],
-            [-5743070, -0.015283, -4526540],
-            [0.447723, 1.5427e-09, 0.463481]])
+            [0.446849468283175, 1.54044157383952e-09, 0.462811453558774],
+            [-5743067.77947947, -0.0152830038686819, -4526542.71278401],
+            [0.447722977849494, 1.54270484519591e-09, 0.463480648837651]])
 
         # Assert that the Higham 2005 expm gives the wrong answer.
         assert_allclose(expm(A), wrong_solution)
 
         # Assert that the Higham 2009 expm gives the correct answer.
-        assert_allclose(expm_2009(A), correct_solution, rtol=1e-4)
+        assert_allclose(expm_2009(A), correct_solution)
+
+    def test_expm_2009_random_upper_triangular(self):
+        random.seed(1234)
+        n = 10
+        nsamples = 20
+        for i in range(nsamples):
+            A = np.triu(np.random.randn(n, n))
+            assert_(_is_upper_triangular(A))
+            assert_allclose(expm_2009(A), expm(A))
 
 
 if __name__ == "__main__":

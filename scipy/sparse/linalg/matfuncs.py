@@ -181,10 +181,10 @@ def expm_2009(A):
     theta_13 = 4.25
     s = max(int(math.ceil(math.log(eta_5 / theta_13, 2))), 0)
     s = s + _ell(2**-s * A, 13)
-    A *= 2**-s
-    A2 *= 2**(-2*s)
-    A4 *= 2**(-4*s)
-    A6 *= 2**(-6*s)
+    A = A * 2**-s
+    A2 = A2 * 2**(-2*s)
+    A4 = A4 * 2**(-4*s)
+    A6 = A6 * 2**(-6*s)
     U, V = _pade13(A, ident, A2, A4, A6)
     X = _solve_P_Q(U, V)
     if _is_upper_triangular(A):
