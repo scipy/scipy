@@ -26,8 +26,10 @@ Matrix Operations
 Matrix norms
 ------------
 
-   onenormest -- Estimate the 1-norm of a sparse matrix
+.. autosummary::
+   :toctree: generated/
 
+   onenormest -- Estimate the 1-norm of a sparse matrix
 
 Solving linear problems
 -----------------------
