@@ -79,6 +79,9 @@ def test_write_roundtrip():
             if size == 1 and signed == 'i':
                 # signed 8-bit integer PCM is not allowed
                 continue
+            if size > 1 and signed == 'u':
+                # unsigned > 8-bit integer PCM is not allowed
+                continue
             if (size == 1 or size == 2) and signed == 'f':
                 # 8- or 16-bit float PCM is not expected
                 continue
