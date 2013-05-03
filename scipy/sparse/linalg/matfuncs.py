@@ -136,8 +136,34 @@ def expm(A):
 
 def expm_2009(A):
     """
-    Algorithm (6.1) which is a simplification of algorithm (5.1).
+    Compute the matrix exponential using Pade approximation.
+
+    Parameters
+    ----------
+    A : (M,M) array or sparse matrix
+        2D Array or Matrix (sparse or dense) to be exponentiated
+
+    Returns
+    -------
+    expA : (M,M) ndarray
+        Matrix exponential of `A`
+
+    Notes
+    -----
+    This is algorithm (6.1) which is a simplification of algorithm (5.1).
+
+    References
+    ----------
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2009)
+           "A New Scaling and Squaring Algorithm for th Matrix Exponential."
+           SIAM Journal on Matrix Analysis and Applications.
+           31 (3). pp. 970-989. ISSN 1095-7162
+
     """
+
+    #XXX This function intends to use a fast norm estimate,
+    #XXX but because the fast norm estimation code has not yet made its
+    #XXX way into scipy, we are using slow exact norm calculations.
 
     # Define the identity matrix depending on sparsity.
     if isspmatrix(A):
