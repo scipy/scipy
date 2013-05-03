@@ -240,10 +240,10 @@ class lil_matrix(spmatrix, IndexMixin):
         i, j = self._index_to_arrays(i, j)
         if i.size == 0:
             return lil_matrix((0,0), dtype=self.dtype)
-        return self.__class__([[self._get1(int(i[ii, jj]), 
-                                           int(j[ii, jj])) for jj in
-                                xrange(i.shape[1])] for ii in
-                               xrange(i.shape[0])])
+
+        return self.__class__([[self._get1(iii, jjj) for iii, jjj in
+                                zip(ii, jj)] for ii, jj in
+                               zip(i.tolist(), j.tolist())])
 
     def _insertat2(self, row, data, j, x):
         """ helper for __setitem__: insert a value in the given row/data at
