@@ -177,13 +177,17 @@ def write(filename, rate, data):
       (Nsamples, Nchannels).
 
     """
+    dkind = data.dtype.kind
+    if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and data.dtype.itemsize == 1)):
+        raise TypeError("Unsupported data type '%s'" % data.dtype)
+
     fid = open(filename, 'wb')
     fid.write(b'RIFF')
     fid.write(b'\x00\x00\x00\x00')
     fid.write(b'WAVE')
     # fmt chunk
     fid.write(b'fmt ')
-    if data.dtype.kind == 'f':
+    if dkind == 'f':
         comp = 3
     else:
         comp = 1
