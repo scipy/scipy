@@ -28,7 +28,7 @@ def _read_fmt_chunk(fid):
         fmt = '<'
     res = struct.unpack(fmt+'ihHIIHH',fid.read(20))
     size, comp, noc, rate, sbytes, ba, bits = res
-    if (comp != 1 or size > 16):
+    if ((comp != 1 and comp != 3) or size > 16):
         warnings.warn("Unfamiliar format bytes", WavFileWarning)
         if (size>16):
             fid.read(size-16)
@@ -36,7 +36,7 @@ def _read_fmt_chunk(fid):
 
 # assumes file pointer is immediately
 #   after the 'data' id
-def _read_data_chunk(fid, noc, bits, mmap=False):
+def _read_data_chunk(fid, comp, noc, bits, mmap=False):
     if _big_endian:
         fmt = '>i'
     else:
@@ -46,11 +46,15 @@ def _read_data_chunk(fid, noc, bits, mmap=False):
     bytes = bits//8
     if bits == 8:
         dtype = 'u1'
-    elif _big_endian:
-        dtype = '>i%d' % bytes
     else:
-        dtype = '<i%d' % bytes
-
+        if _big_endian:
+            dtype = '>'
+        else:
+            dtype = '<'
+        if comp == 1:
+            dtype += 'i%d' % bytes
+        else:
+            dtype += 'f%d' % bytes
     if not mmap:
         data = numpy.fromfile(fid, dtype=dtype, count=size//bytes)
     else:
@@ -132,13 +136,14 @@ def read(file, mmap=False):
     fsize = _read_riff_chunk(fid)
     noc = 1
     bits = 8
+    comp = 1
     while (fid.tell() < fsize):
         # read the next chunk
         chunk_id = fid.read(4)
         if chunk_id == b'fmt ':
             size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid)
         elif chunk_id == b'data':
-            data = _read_data_chunk(fid, noc, bits, mmap=mmap)
+            data = _read_data_chunk(fid, comp, noc, bits, mmap=mmap)
         elif chunk_id == b'LIST':
             # Someday this could be handled properly but for now skip it
             _skip_unknown_chunk(fid)
@@ -162,7 +167,7 @@ def write(filename, rate, data):
     rate : int
         The sample rate (in samples/sec).
     data : ndarray
-        A 1-D or 2-D numpy array of integer data-type.
+        A 1-D or 2-D numpy array of either integer or float data-type.
 
     Notes
     -----
@@ -178,6 +183,10 @@ def write(filename, rate, data):
     fid.write(b'WAVE')
     # fmt chunk
     fid.write(b'fmt ')
+    if data.dtype.kind == 'f':
+        comp = 3
+    else:
+        comp = 1
     if data.ndim == 1:
         noc = 1
     else:
@@ -185,7 +194,7 @@ def write(filename, rate, data):
     bits = data.dtype.itemsize * 8
     sbytes = rate*(bits // 8)*noc
     ba = noc * (bits // 8)
-    fid.write(struct.pack('<ihHIIHH', 16, 1, noc, rate, sbytes, ba, bits))
+    fid.write(struct.pack('<ihHIIHH', 16, comp, noc, rate, sbytes, ba, bits))
     # data chunk
     fid.write(b'data')
     fid.write(struct.pack('<i', data.nbytes))
