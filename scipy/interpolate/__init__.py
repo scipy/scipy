@@ -78,7 +78,7 @@ The above univariate spline classes have the following methods:
    UnivariateSpline.set_smoothing_factor
 
 
-Low-level interface to FITPACK functions:
+Functional interface to FITPACK functions:
 
 .. autosummary::
    :toctree: generated/
@@ -89,6 +89,8 @@ Low-level interface to FITPACK functions:
    splint
    sproot
    spalde
+   splder
+   splantider
    bisplrep
    bisplev
 
