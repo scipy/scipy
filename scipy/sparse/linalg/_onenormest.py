@@ -127,6 +127,112 @@ def norm_1d_inf(v):
     # this is faster than calling the numpy/scipy norm function
     return np.max(np.abs(v))
 
+def less_than_or_close(a, b):
+    return np.allclose(a, b) or (a < b)
+
+
+def _algorithm_2_2(A, AT, t):
+    """
+    This is Algorithm 2.2.
+
+    Parameters
+    ----------
+    A : ndarray or other linear operator
+        A linear operator that can produce matrix products.
+    AT : ndarray or other linear operator
+        The transpose of A.
+    t : int, optional
+        A positive parameter controlling the tradeoff between
+        accuracy versus time and memory usage.
+
+    Returns
+    -------
+    g : sequence
+        A non-negative decreasing vector
+        such that g[j] is a lower bound for the 1-norm
+        of the column of A of jth largest 1-norm.
+        The first entry of this vector is therefore a lower bound
+        on the 1-norm of the linear operator A.
+        This sequence has length t.
+    ind : sequence
+        The ith entry of ind is the index of the column A whose 1-norm
+        is given by g[i].
+        This sequence of indices has length t, and its entries are
+        chosen from range(n), possibly with repetition,
+        where n is the order of the operator A.
+
+    Notes
+    -----
+    This algorithm is mainly for testing.
+    It uses the 'ind' array in a way that is similar to
+    its usage in algorithm 2.4.  This algorithm 2.2 may be easier to test,
+    so it gives a chance of uncovering bugs related to indexing
+    which could have propagated less noticably to algorithm 2.4.
+    
+    """
+    A_linear_operator = scipy.sparse.linalg.aslinearoperator(A)
+    AT_linear_operator = scipy.sparse.linalg.aslinearoperator(AT)
+    n = A_linear_operator.shape[0]
+
+    # Initialize the X block with columns of unit 1-norm.
+    X = np.ones((n, t))
+    if t > 1:
+        X[:, 1:] = np.random.randint(0, 2, size=(n, t-1))*2 - 1
+    X /= float(n)
+
+    # Iteratively improve the lower bounds.
+    # Track extra things, to assert invariants for debugging.
+    g_prev = None
+    h_prev = None
+    k = 1
+    ind = range(t)
+    while True:
+        Y = A_linear_operator.matmat(X)
+        g = [norm_1d_1(Y[:, j]) for j in range(t)]
+        best_j = np.argmax(g)
+        g = sorted(g, reverse=True)
+        S = sign_round_up(Y)
+        Z = AT_linear_operator.matmat(S)
+        h = [norm_1d_inf(row) for row in Z]
+
+        # If this algorithm runs for fewer than two iterations,
+        # then its return values do not have the properties indicated
+        # in the description of the algorithm.
+        # In particular, the entries of g are not 1-norms of any
+        # column of A until the second iteration.
+        # Therefore we will require the algorithm to run for at least
+        # two iterations, even though this requirement is not stated
+        # in the description of the algorithm.
+        if k >= 2:
+            if less_than_or_close(max(h), np.dot(Z[:, best_j], X[:, best_j])):
+                break
+        h_i_pairs = zip(h, range(n))
+        h, ind = zip(*sorted(h_i_pairs, reverse=True)[:t])
+        for j in range(t):
+            X[:, j] = elementary_vector(n, ind[j])
+
+        # Check invariant (2.2).
+        if k >= 2:
+            if not less_than_or_close(g_prev[0], h_prev[0]):
+                raise Exception('invariant (2.2) is violated')
+            if not less_than_or_close(h_prev[0], g[0]):
+                raise Exception('invariant (2.2) is violated')
+
+        # Check invariant (2.3).
+        if k >= 3:
+            for j in range(t):
+                if not less_than_or_close(g[j], g_prev[j]):
+                    raise Exception('invariant (2.3) is violated')
+
+        # Update for the next iteration.
+        g_prev = g
+        h_prev = h
+        k += 1
+
+    # Return the lower bounds and the corresponding column indices.
+    return g, ind
+
+
 def _onenormest_core(A, AT, t, itmax):
     """
     Compute a lower bound of the 1-norm of a sparse matrix.
@@ -140,8 +246,6 @@ def _onenormest_core(A, AT, t, itmax):
     t : int, optional
         A positive parameter controlling the tradeoff between
         accuracy versus time and memory usage.
-        Larger values take longer and use more memory
-        but give more accurate output.
     itmax : int, optional
         Use at most this many iterations.
 
@@ -162,6 +266,10 @@ def _onenormest_core(A, AT, t, itmax):
     nresamples : int, optional
         The number of times a parallel column was observed,
         necessitating a re-randomization of the column.
+
+    Notes
+    -----
+    This is algorithm 2.4.
 
     """
     # This function is a more or less direct translation
@@ -202,7 +310,6 @@ def _onenormest_core(A, AT, t, itmax):
     # "indices of used unit vectors e_j"
     ind_hist = set()
     est_old = 0
-    ind = [0]*n
     S = np.zeros((n, t), dtype=float)
     k = 1
     while True:
@@ -212,9 +319,8 @@ def _onenormest_core(A, AT, t, itmax):
         est = np.max(mags)
         best_j = np.argmax(mags)
         if est > est_old or k == 2:
-            ind_best = ind[best_j]
-            # is this wrong in the paper?
-            #w = Y[:, ind_best]
+            if k >= 2:
+                ind_best = ind[best_j]
             w = Y[:, best_j]
         # (1)
         if k >= 2 and est <= est_old:
@@ -244,32 +350,19 @@ def _onenormest_core(A, AT, t, itmax):
             break
         # "Sort h so that h_first >= ... >= h_last
         # and re-order ind correspondingly."
-        h, ind = zip(*sorted(zip(h, range(n)), reverse=True))
+        h_i_pairs = zip(h, range(n))
+        h, ind = zip(*sorted(h_i_pairs, reverse=True))
         if t > 1:
             # (5)
-            # break if ind is contained in ind_hist
-            if set(ind) <= ind_hist:
+            # Break if the most promising t vectors have been visited already.
+            if set(ind[:t]) <= ind_hist:
                 break
-            # Replace the first t entries of ind
-            # by the first t indices in ind that are not in ind_hist.
-            # ...
-            # What if all but fewer than t entries of ind are in ind_hist?
-            # Is ind supposed to be a permutation?
-            # If so, then why is it initialized to all zeros?
-            unused_entries = []
-            for entry in ind:
-                if entry not in ind_hist:
-                    unused_entries.append(entry)
-                    if len(unused_entries) == t:
-                        break
-            if len(unused_entries) != t:
-                # This is a corner case that was not addressed in the paper
-                # and which I will treat like condition (5).
-                break
-            # If ind is supposed to be a permutation,
-            # which I cannot discern from the paper,
-            # then this should "swap" instead of "replace."
-            ind = unused_entries + list(ind[t:])
+            # Put the most promising unvisited vectors at the front of the list
+            # and put the visited vectors at the end of the list.
+            # Preserve the order of the indices induced by the ordering of h.
+            unused_entries = [i for i in ind if i not in ind_hist]
+            used_entries = [i for i in ind if i in ind_hist]
+            ind = unused_entries + used_entries
         for j in range(t):
             X[:, j] = elementary_vector(n, ind[j])
         ind_hist.update(ind[:t])

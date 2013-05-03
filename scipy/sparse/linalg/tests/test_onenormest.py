@@ -8,7 +8,7 @@ from numpy.testing import (assert_allclose, assert_equal, assert_,
         decorators, TestCase, run_module_suite)
 import scipy.linalg
 import scipy.sparse.linalg
-from scipy.sparse.linalg._onenormest import _onenormest_core
+from scipy.sparse.linalg._onenormest import _onenormest_core, _algorithm_2_2
 
 
 class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
@@ -84,6 +84,47 @@ class TestOnenormest(TestCase):
         assert_(3.5 < np.mean(nmult_list) < 4.5)
 
 
+    @decorators.slow
+    @decorators.skipif(True, 'this test is annoyingly slow')
+    def test_onenormest_table_4_t_7(self):
+        # This will take multiple seconds if your computer is slow like mine.
+        # It is stochastic, so the tolerance could be too strict.
+        np.random.seed(1234)
+        t = 7
+        n = 100
+        itmax = 5
+        nsamples = 5000
+        observed = []
+        expected = []
+        nmult_list = []
+        nresample_list = []
+        for i in range(nsamples):
+            A = np.random.randint(-1, 2, size=(n, n))
+            est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax)
+            observed.append(est)
+            expected.append(scipy.linalg.norm(A, 1))
+            nmult_list.append(nmults)
+            nresample_list.append(nresamples)
+        observed = np.array(observed, dtype=float)
+        expected = np.array(expected, dtype=float)
+        relative_errors = np.abs(observed - expected) / expected
+
+        # check the mean underestimation ratio
+        underestimation_ratio = observed / expected
+        assert_(0.90 < np.mean(underestimation_ratio) < 0.99)
+
+        # check the required column resamples
+        assert_equal(np.max(nresample_list), 0)
+
+        # check the proportion of norms computed exactly correctly
+        nexact = np.count_nonzero(relative_errors < 1e-14)
+        proportion_exact = nexact / float(nsamples)
+        assert_(0.15 < proportion_exact < 0.25)
+
+        # check the average number of matrix*vector multiplications
+        assert_(3.5 < np.mean(nmult_list) < 4.5)
+
+
     def test_onenormest_table_5_t_1(self):
         # "note that there is no randomness and hence only one estimate for t=1"
         t = 1
@@ -136,6 +177,28 @@ class TestOnenormest(TestCase):
         self.assert_(
                 fast_estimate <= exact_value <= 3*fast_estimate,
                 'fast: %g\nexact:%g' % (fast_estimate, exact_value))
+
+
+class TestAlgorithm_2_2(TestCase):
+    
+    def test_randn_inv(self):
+        np.random.seed(1234)
+        n = 20
+        nsamples = 100
+        for i in range(nsamples):
+
+            # Choose integer t uniformly between 1 and 3 inclusive.
+            t = np.random.randint(1, 4)
+
+            # Choose n uniformly between 10 and 40 inclusive.
+            n = np.random.randint(10, 41)
+
+            # Sample the inverse of a matrix with random normal entries.
+            A = scipy.linalg.inv(np.random.randn(n, n))
+
+            # Compute the 1-norm bounds.
+            g, ind = _algorithm_2_2(A, A.T, t)
+
 
 
 if __name__ == '__main__':
