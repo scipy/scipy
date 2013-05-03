@@ -174,9 +174,22 @@ class TestOnenormest(TestCase):
         B = np.random.randn(k, n)
         fast_estimate = self._help_product_norm_fast(A, B)
         exact_value = self._help_product_norm_slow(A, B)
-        self.assert_(
-                fast_estimate <= exact_value <= 3*fast_estimate,
+        assert_(fast_estimate <= exact_value <= 3*fast_estimate,
                 'fast: %g\nexact:%g' % (fast_estimate, exact_value))
+
+    def test_returns(self):
+        np.random.seed(1234)
+        A = scipy.sparse.rand(50, 50, 0.1)
+
+        s0 = scipy.linalg.norm(A.todense(), 1)
+        s1, v = scipy.sparse.linalg.onenormest(A, compute_v=True)
+        s2, w = scipy.sparse.linalg.onenormest(A, compute_w=True)
+        s3, v2, w2 = scipy.sparse.linalg.onenormest(A, compute_w=True, compute_v=True)
+
+        assert_allclose(s1, s0, rtol=1e-9)
+        assert_allclose(np.linalg.norm(A.dot(v), 1), s0*np.linalg.norm(v, 1), rtol=1e-9)
+        assert_allclose(A.dot(v), w, rtol=1e-9)
+
 
 
 class TestAlgorithm_2_2(TestCase):
