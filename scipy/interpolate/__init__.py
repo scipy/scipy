@@ -72,6 +72,8 @@ The above univariate spline classes have the following methods:
    UnivariateSpline.derivatives
    UnivariateSpline.integral
    UnivariateSpline.roots
+   UnivariateSpline.derivative
+   UnivariateSpline.antiderivative
    UnivariateSpline.get_coeffs
    UnivariateSpline.get_knots
    UnivariateSpline.get_residual
