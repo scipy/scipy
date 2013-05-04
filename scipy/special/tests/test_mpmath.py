@@ -370,7 +370,8 @@ class IntArg(object):
 
 class MpmathData(object):
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
-                 dps=None, prec=None, n=5000, rtol=1e-7, atol=1e-300):
+                 dps=None, prec=None, n=5000, rtol=1e-7, atol=1e-300,
+                 ignore_inf_sign=False):
         self.scipy_func = scipy_func
         self.mpmath_func = mpmath_func
         self.arg_spec = arg_spec
@@ -380,6 +381,7 @@ class MpmathData(object):
         self.rtol = rtol
         self.atol = atol
         self.is_complex = any([isinstance(arg, ComplexArg) for arg in self.arg_spec])
+        self.ignore_inf_sign = ignore_inf_sign
         if not name or name == '<lambda>':
             name = getattr(scipy_func, '__name__', None)
         if not name or name == '<lambda>':
@@ -433,7 +435,8 @@ class MpmathData(object):
                                       argarr,
                                       vectorized=False,
                                       rtol=self.rtol, atol=self.atol,
-                                      nan_ok=True)
+                                      nan_ok=True,
+                                      ignore_inf_sign=self.ignore_inf_sign)
                     break
                 except AssertionError:
                     if j >= len(dps_list)-1:
