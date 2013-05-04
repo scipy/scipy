@@ -34,5 +34,7 @@ Library:
         Sources: _odepackmodule.c
     Extension: vode
         Sources: vode.pyf
+    Extension: lsoda
+        Sources: lsoda.pyf
     Extension: _dop
         Sources: dop.pyf
