@@ -23,6 +23,10 @@ from bento.commands import hooks
 import waflib
 from waflib import Options
 
+# Importing setup.py needed to get version info
+import setup
+
+
 # FIXME: add this to numpy so that we can reuse it
 class CTemplateTask(waflib.Task.Task):
     color = 'BLUE'
@@ -184,6 +188,24 @@ def post_configure(context):
 
     _generate_cython()
 
+
+FULLVERSION, GIT_REVISION = setup.get_version_info()
+
+version_file_content = """\
+# THIS FILE IS GENERATED FROM SCIPY BSCRIPT
+short_version = '%(version)s'
+version = '%(version)s'
+full_version = '%(full_version)s'
+git_revision = '%(git_revision)s'
+release = %(isrelease)s
+
+if not release:
+    version = full_version
+""" % {'version': setup.VERSION,
+       'full_version' : FULLVERSION,
+       'git_revision' : GIT_REVISION,
+       'isrelease': str(setup.ISRELEASED)}
+
 @hooks.pre_build
 def pre_build(context):
     bld = context.waf_context
@@ -196,13 +218,10 @@ def show():
     pass
 """,
         always=True)
+
     bld(features="gen_pymodule",
         target="scipy/version.py",
-        content="""\
-version = '0.9.0'
-short_version = version
-is_released = True
-""",
+        content=version_file_content,
         always=True)
 
 @hooks.options
