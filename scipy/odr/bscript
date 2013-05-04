@@ -4,4 +4,4 @@ from bento.commands import hooks
 def pre_build(context):
     context.tweak_extension("__odrpack",
                           features="c fc pyext bento cshlib",
-                          use="odrpack FBLAS CLIB")
+                          use="odrpack BLAS CLIB")
