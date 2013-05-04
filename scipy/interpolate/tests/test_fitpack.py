@@ -5,7 +5,7 @@ from numpy.testing import assert_equal, assert_allclose, assert_, \
     TestCase, assert_raises, assert_array_almost_equal_nulp
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy.interpolate.fitpack import splrep, splev, bisplrep, bisplev, \
-     sproot, splprep, splint, spalde, splder, splantider
+     sproot, splprep, splint, spalde, splder, splantider, insert
 
 
 def norm2(x):
@@ -309,6 +309,20 @@ class TestSplder(object):
 
     def test_order0_diff(self):
         assert_raises(ValueError, splder, self.spl, 4)
+
+    def test_kink(self):
+        # Should refuse to differentiate splines with kinks
+
+        spl2 = insert(0.5, self.spl, m=2)
+        splder(spl2, 2) # Should work
+        assert_raises(ValueError, splder, spl2, 3)
+
+        spl2 = insert(0.5, self.spl, m=3)
+        splder(spl2, 1) # Should work
+        assert_raises(ValueError, splder, spl2, 2)
+
+        spl2 = insert(0.5, self.spl, m=4)
+        assert_raises(ValueError, splder, spl2, 1)
 
 
 def test_bisplrep_overflow():

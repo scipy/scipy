@@ -1165,19 +1165,23 @@ def splder(tck, n=1):
         raise ValueError(("Order of derivative (n = %r) must be <= "
                           "order of spline (k = %r)") % (n, tck[2]))
 
-    for j in range(n):
-        # See e.g. Schumaker, Spline Functions: Basic Theory, Chapter 5
+    with np.errstate(invalid='raise', divide='raise'):
+        try:
+            for j in range(n):
+                # See e.g. Schumaker, Spline Functions: Basic Theory, Chapter 5
 
-        # Compute the denominator in the differentiation formula.
-        dt = t[k+1:-1] - t[1:-k-1]
-        dt[dt == 0] = np.inf
-        # Compute the new coefficients
-        c = (c[1:-1-k] - c[:-2-k]) * k / dt
-        # Pad coefficient array to same size as knots (FITPACK convention)
-        c = np.r_[c, [0]*k]
-        # Adjust knots
-        t = t[1:-1]
-        k -= 1
+                # Compute the denominator in the differentiation formula.
+                dt = t[k+1:-1] - t[1:-k-1]
+                # Compute the new coefficients
+                c = (c[1:-1-k] - c[:-2-k]) * k / dt
+                # Pad coefficient array to same size as knots (FITPACK convention)
+                c = np.r_[c, [0]*k]
+                # Adjust knots
+                t = t[1:-1]
+                k -= 1
+        except FloatingPointError:
+            raise ValueError(("The spline has internal repeated knots "
+                              "and is not differentiable %d times") % n)
 
     return t, c, k
 
