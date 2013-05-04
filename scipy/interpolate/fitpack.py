@@ -1159,28 +1159,27 @@ def splder(tck, n=1):
     if n < 0:
         return splantider(tck, -n)
 
-    if n > tck[2]:
+    t, c, k = tck
+
+    if n > k:
         raise ValueError(("Order of derivative (n = %r) must be <= "
                           "order of spline (k = %r)") % (n, tck[2]))
 
     for j in range(n):
-        t, c, k = tck
-
         # See e.g. Schumaker, Spline Functions: Basic Theory, Chapter 5
 
         # Compute the denominator in the differentiation formula.
         dt = t[k+1:-1] - t[1:-k-1]
         dt[dt == 0] = np.inf
         # Compute the new coefficients
-        d = (c[1:-1-k] - c[:-2-k]) * k / dt
+        c = (c[1:-1-k] - c[:-2-k]) * k / dt
         # Pad coefficient array to same size as knots (FITPACK convention)
-        d = np.r_[d, [0]*k]
+        c = np.r_[c, [0]*k]
         # Adjust knots
-        t2 = t[1:-1]
-        # Done, return a new spline
-        tck = t2, d, k-1
+        t = t[1:-1]
+        k -= 1
 
-    return tck
+    return t, c, k
 
 def splantider(tck, n=1):
     """
@@ -1241,19 +1240,18 @@ def splantider(tck, n=1):
     if n < 0:
         return splder(tck, -n)
 
-    for j in range(n):
-        t, c, k = tck
+    t, c, k = tck
 
+    for j in range(n):
         # This is the inverse set of operations to splder.
 
         # Compute the multiplier in the antiderivative formula.
         dt = t[k+1:] - t[:-k-1]
         # Compute the new coefficients
-        d = np.cumsum(c[:-k-1] * dt) / (k + 1)
-        d = np.r_[0, d, [d[-1]]*(k+2)]
+        c = np.cumsum(c[:-k-1] * dt) / (k + 1)
+        c = np.r_[0, c, [c[-1]]*(k+2)]
         # New knots
-        t2 = np.r_[t[0], t, t[-1]]
-        # Done, return a new spline
-        tck = t2, d, k+1
+        t = np.r_[t[0], t, t[-1]]
+        k += 1
 
-    return tck
+    return t, c, k
