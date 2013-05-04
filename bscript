@@ -125,11 +125,14 @@ def _set_mangling_var(conf, u, du, case, f2pycompat=True):
     env.DEFINES.extend(macros)
 
 def _generate_cython():
+    print("Cythonizing sources")
     cwd = os.path.abspath(os.path.dirname(__file__))
-    subprocess.call([sys.executable,
-                     os.path.join(cwd, 'tools', 'cythonize.py'),
-                     'scipy'],
-                    cwd=cwd)
+    p = subprocess.call([sys.executable,
+                          os.path.join(cwd, 'tools', 'cythonize.py'),
+                          'scipy'],
+                         cwd=cwd)
+    if p != 0:
+        raise RuntimeError("Running cythonize failed!")
 
 @hooks.post_configure
 def post_configure(context):
@@ -179,11 +182,11 @@ def post_configure(context):
     npymath_info = get_pkg_info("npymath")
     conf.parse_flags(npymath_info.cflags() + " " + npymath_info.libs(), "NPYMATH")
 
+    _generate_cython()
+
 @hooks.pre_build
 def pre_build(context):
     bld = context.waf_context
-
-    _generate_cython()
 
     context.register_category("gen_pymodule")
     bld(features="gen_pymodule",
