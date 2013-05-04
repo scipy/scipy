@@ -725,10 +725,16 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(lambda a, b, x: mpmath.betainc(a, b, 0, x, regularized=True)),
                             [Arg(), Arg(), Arg()])
 
-    @knownfailure_overridable()
     def test_binom(self):
+        def binomial(n, k):
+            if abs(k) > 1e8*(abs(n) + 1):
+                # The binomial is rapidly oscillating in this region,
+                # and the function is numerically ill-defined. Don't
+                # compare values here.
+                return np.nan
+            return mpmath.binomial(n, k)
         assert_mpmath_equal(sc.binom,
-                            mpmath.binomial,
+                            binomial,
                             [Arg(), Arg()],
                             dps=400)
 
