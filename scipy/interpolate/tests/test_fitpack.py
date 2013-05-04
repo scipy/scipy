@@ -307,6 +307,10 @@ class TestSplder(object):
                 y2 = splev(x2, spl2) - splev(x1, spl2)
                 assert_allclose(y1, y2)
 
+    def test_order0_diff(self):
+        assert_raises(ValueError, splder, self.spl, 4)
+
+
 def test_bisplrep_overflow():
     a = np.linspace(0, 1, 620)
     b = np.linspace(0, 1, 620)

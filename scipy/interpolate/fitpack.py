@@ -1159,12 +1159,12 @@ def splder(tck, n=1):
     if n < 0:
         return splantider(tck, -n)
 
+    if n > tck[2]:
+        raise ValueError(("Order of derivative (n = %r) must be <= "
+                          "order of spline (k = %r)") % (n, tck[2]))
+
     for j in range(n):
         t, c, k = tck
-
-        if k <= 0:
-            # Derivative of a constant is zero
-            return t, zeros_like(c), k
 
         # See e.g. Schumaker, Spline Functions: Basic Theory, Chapter 5
 
