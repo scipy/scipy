@@ -4,8 +4,8 @@ import sys, os, re
 
 # Check Sphinx version
 import sphinx
-if sphinx.__version__ < "1.0.1":
-    raise RuntimeError("Sphinx 1.0.1 or newer required")
+if sphinx.__version__ < "1.1":
+    raise RuntimeError("Sphinx 1.1 or newer required")
 
 needs_sphinx = '1.1'
 
