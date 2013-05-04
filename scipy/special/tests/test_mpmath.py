@@ -655,7 +655,8 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(sc.iv,
                             _exception_to_nan(lambda v, z: mpmath.besseli(v, z, **HYPERKW)),
                             [Arg(-1e100, 1e100), Arg()],
-                            n=1000)
+                            n=1000,
+                            atol=1e-270)
 
     def test_besseli_complex(self):
         assert_mpmath_equal(lambda v, z: sc.iv(v.real, z),
@@ -701,6 +702,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(-1e100, 1e100), Arg()],
                             n=1000)
 
+    @knownfailure_overridable("sin(pi k) != sin_pi(k) at negative half-integer orders")
     def test_bessely_complex(self):
         assert_mpmath_equal(lambda v, z: sc.yv(v.real, z),
                             lambda v, z: _exception_to_nan(mpmath.bessely)(v, z, **HYPERKW),
