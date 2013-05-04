@@ -262,6 +262,8 @@ def test_beta():
     b = np.r_[np.logspace(-200, 200, 4),
               np.logspace(-10, 10, 4),
               np.logspace(-1, 1, 4),
+              np.arange(-10, 11, 1),
+              np.arange(-10, 11, 1) + 0.5,
               -1, -2.3, -3, -100.3, -10003.4]
     a = b
 
@@ -275,7 +277,8 @@ def test_beta():
                           lambda a, b: float(mpmath.beta(a, b)),
                           ab,
                           vectorized=False,
-                          rtol=1e-10)
+                          rtol=1e-10,
+                          ignore_inf_sign=True)
 
         assert_func_equal(
             sc.betaln,
@@ -703,12 +706,19 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(), ComplexArg()],
                             n=2000)
 
-    @knownfailure_overridable()
     def test_beta(self):
+        def beta(a, b):
+            if a < -1e12 or b < -1e12:
+                # Function is defined here only at integers, but due
+                # to loss of precision this is numerically
+                # ill-defined. Don't compare values here.
+                return np.nan
+            return mpmath.beta(a, b)
         assert_mpmath_equal(sc.beta,
-                            mpmath.beta,
+                            beta,
                             [Arg(), Arg()],
-                            dps=400)
+                            dps=400,
+                            ignore_inf_sign=True)
 
     def test_betainc(self):
         assert_mpmath_equal(sc.betainc,
