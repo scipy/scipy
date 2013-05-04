@@ -174,7 +174,7 @@ def post_configure(context):
     if not (conf.env.HAS_BLAS and conf.env.HAS_LAPACK):
         raise waflib.Errors.ConfigurationError("You need blas and lapack")
 
-    blas_lapack.check_cblas(context)
+    blas_lapack.check_blas_lapack(context)
 
     npymath_info = get_pkg_info("npymath")
     conf.parse_flags(npymath_info.cflags() + " " + npymath_info.libs(), "NPYMATH")
