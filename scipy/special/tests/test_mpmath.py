@@ -317,7 +317,8 @@ class Arg(object):
         n3 = max(2, n - n1 - n2)
 
         v1 = np.linspace(-1, 1, n1)
-        v2 = np.linspace(-10, 10, n2)
+        v2 = np.r_[np.linspace(-10, 10, max(0, n2-4)),
+                   -9, -5.5, 5.5, 9]
         if self.a >= 0 and self.b > 0:
             v3 = np.logspace(-30, np.log10(self.b), n3//2)
             v4 = np.logspace(-30, 5, n3//2)
