@@ -4,10 +4,10 @@ import sys, os, re
 
 # Check Sphinx version
 import sphinx
-if sphinx.__version__ < "1.0.1":
-    raise RuntimeError("Sphinx 1.0.1 or newer required")
+if sphinx.__version__ < "1.1":
+    raise RuntimeError("Sphinx 1.1 or newer required")
 
-needs_sphinx = '1.0'
+needs_sphinx = '1.1'
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -54,20 +54,11 @@ copyright = '2008-2009, The Scipy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
-#
 import scipy
-# The short X.Y version (including the .devXXXX suffix if present)
-version = re.sub(r'^(\d+\.\d+)\.\d+(.*)', r'\1\2', scipy.__version__)
-if 'dev' in version:
-    # retain the .dev suffix, but clean it up
-    version = re.sub(r'(\.dev\d*).*?$', r'\1', version)
-else:
-    # strip all other suffixes
-    version = re.sub(r'^(\d+\.\d+).*?$', r'\1', version)
-# The full version, including alpha/beta/rc tags.
+version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
-print "Scipy (VERSION %s) (RELEASE %s)" % (version, release)
+print "Scipy (VERSION %s)" % (version,)
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -104,63 +95,53 @@ pygments_style = 'sphinx'
 # HTML output
 # -----------------------------------------------------------------------------
 
-# The style sheet to use for HTML and HTML Help pages. A file of that name
-# must exist either in Sphinx' static/ path, or in one of the custom paths
-# given in html_static_path.
-html_style = 'scipy.css'
+themedir = os.path.join(os.pardir, 'scipy-sphinx-theme', '_theme')
+if os.path.isdir(themedir):
+    html_theme = 'scipy'
+    html_theme_path = [themedir]
 
-# The name for this set of Sphinx documents.  If None, it defaults to
-# "<project> v<release> documentation".
-html_title = "%s v%s Reference Guide (DRAFT)" % (project, version)
+    if 'scipyorg' in tags:
+        # Build for the scipy.org website
+        html_theme_options = {
+            "edit_link": True,
+            "sidebar": "right",
+            "scipy_org_logo": True,
+            "rootlinks": [("http://scipy.org/", "Scipy.org"),
+                          ("http://docs.scipy.org/", "Docs")]
+        }
+    else:
+        # Default build
+        html_theme_options = {
+            "edit_link": False,
+            "sidebar": "left",
+            "scipy_org_logo": False,
+            "rootlinks": []
+        }
+        html_logo = '_static/scipyshiny_small.png'
+        html_sidebars = {'index': 'indexsidebar.html'}
+else:
+    # Build without scipy.org sphinx theme present
+    if 'scipyorg' in tags:
+        raise RuntimeError("Get the scipy-sphinx-theme first, "
+                           "via git submodule init & update")
+    else:
+        html_style = 'scipy_fallback.css'
+        html_logo = '_static/scipyshiny_small.png'
+        html_sidebars = {'index': 'indexsidebar.html'}
 
-# The name of an image file (within the static path) to place at the top of
-# the sidebar.
-html_logo = '_static/scipyshiny_small.png'
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
+html_title = "%s v%s Reference Guide" % (project, version)
 html_static_path = ['_static']
-
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
 html_last_updated_fmt = '%b %d, %Y'
 
-# Correct index page
-#html_index = "index"
-
-# If true, SmartyPants will be used to convert quotes and dashes to
-# typographically correct entities.
-#html_use_smartypants = True
-
-# Custom sidebar templates, maps document names to template names.
-html_sidebars = {
-    'index': 'indexsidebar.html'
-}
-
-# Additional templates that should be rendered to pages, maps page names to
-# template names.
 html_additional_pages = {}
-
-# If false, no module index is generated.
 html_use_modindex = True
-
-# If true, the reST sources are included in the HTML build as _sources/<name>.
 html_copy_source = False
-
-# If true, an OpenSearch description file will be output, and all pages will
-# contain a <link> tag referring to it.  The value of this option must be the
-# base URL from which the finished HTML is served.
-#html_use_opensearch = ''
-
-# If nonempty, this is the file name suffix for HTML files (e.g. ".html").
 html_file_suffix = '.html'
 
-# Output file base name for HTML help builder.
 htmlhelp_basename = 'scipy'
 
-# Pngmath should try to align formulas properly
 pngmath_use_preview = True
+pngmath_dvipng_args = ['-gamma 1.5', '-D 96', '-bg Transparent']
 
 
 # -----------------------------------------------------------------------------
@@ -285,19 +266,21 @@ import scipy as sp
 np.random.seed(123)
 """
 plot_include_source = True
-plot_formats = [('png', 100), 'pdf']
+plot_formats = [('png', 96), 'pdf']
 plot_html_show_formats = False
 
 import math
 phi = (math.sqrt(5) + 1)/2
 
+font_size = 13*72/96.0  # 13 px
+
 plot_rcparams = {
-    'font.size': 8,
-    'axes.titlesize': 8,
-    'axes.labelsize': 8,
-    'xtick.labelsize': 8,
-    'ytick.labelsize': 8,
-    'legend.fontsize': 8,
+    'font.size': font_size,
+    'axes.titlesize': font_size,
+    'axes.labelsize': font_size,
+    'xtick.labelsize': font_size,
+    'ytick.labelsize': font_size,
+    'legend.fontsize': font_size,
     'figure.figsize': (3*phi, 3),
     'figure.subplot.bottom': 0.2,
     'figure.subplot.left': 0.2,

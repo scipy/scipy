@@ -1,7 +1,7 @@
 SciPy
 =====
 
-:Release: |version|
+:Release: |release|
 :Date: |today|
 
 SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
