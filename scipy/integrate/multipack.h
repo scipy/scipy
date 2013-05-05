@@ -107,7 +107,6 @@ static PyObject *multipack_python_jacobian=NULL;
 static PyObject *multipack_extra_arguments=NULL;    /* a tuple */
 static int multipack_jac_transpose=1;
 
-
 static PyArrayObject * my_make_numpy_array(PyObject *y0, int type, int mindim, int maxdim)
      /* This is just like PyArray_ContiguousFromObject except it handles
       * single numeric datatypes as 1-element, rank-1 arrays instead of as
@@ -148,7 +147,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   */
 
   PyArrayObject *sequence = NULL;
-  PyObject *arglist = NULL, *tmpobj = NULL;
+  PyObject *arglist = NULL;
   PyObject *arg1 = NULL, *str1 = NULL;
   PyObject *result = NULL;
   PyArrayObject *result_array = NULL;
@@ -174,14 +173,6 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
           arguments are in another passed variable.
    */
   if ((result = PyEval_CallObject(func, arglist))==NULL) {
-    PyErr_Print();
-    tmpobj = PyObject_GetAttrString(func, "__name__");
-    if (tmpobj == NULL) goto fail;
-    str1 = PyString_FromString("Error occurred while calling the Python function named ");
-    if (str1 == NULL) { Py_DECREF(tmpobj); goto fail;}
-    PyString_ConcatAndDel(&str1, tmpobj);
-    PyErr_SetString(error_obj, PyString_AsString(str1));
-    Py_DECREF(str1);
     goto fail;
   }
 
