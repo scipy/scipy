@@ -202,8 +202,8 @@ class TestExpmFrechet(TestCase):
     def test_problematic_matrix(self):
         # this test case uncovered a bug which has since been fixed
         A = np.array([
-                [ 1.50591997,  1.93537998],
-                [ 0.41203263,  0.23443516],
+                [1.50591997, 1.93537998],
+                [0.41203263, 0.23443516],
                 ], dtype=float)
         E = np.array([
                 [1.87864034, 2.07055038],

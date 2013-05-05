@@ -15,6 +15,7 @@ from numpy.testing import dec
 import numpy as np
 from scipy.io import savemat, loadmat
 
+
 @dec.skipif(not sys.platform.startswith('linux'), "Memory benchmark works only on Linux")
 def bench_run():
     mem_info = get_mem_info()
@@ -28,7 +29,7 @@ def bench_run():
     sizes = [1e6, 10e6, 100e6, 300e6, 500e6, 1000e6]
 
     print_table_row(['** loadmat benchmark'])
-    print_table_row(['size (MB)', 'compression', 'time (s)', 
+    print_table_row(['size (MB)', 'compression', 'time (s)',
                      'peak memory (MB)', 'mem factor'])
 
     for size in sizes:
@@ -52,12 +53,12 @@ def bench_run():
             """ % (f.name,)
             time, peak_mem = run_monitored(code)
 
-            print_table_row(["%.1f" % (size/1e6,), compressed, time, 
+            print_table_row(["%.1f" % (size/1e6,), compressed, time,
                              "%.1f" % (peak_mem/1e6,),
                              "%.2f x" % (peak_mem/size,)])
 
     print_table_row(['** savemat memory benchmark'])
-    print_table_row(['size (MB)', 'compression', 'time (s)', 
+    print_table_row(['size (MB)', 'compression', 'time (s)',
                      'peak memory (MB)', 'mem factor'])
 
     for size in sizes:
@@ -78,12 +79,14 @@ def bench_run():
                 print_table_row(["%.1f" % (size/1e6,), compressed, "FAIL"])
                 continue
 
-            print_table_row(["%.1f" % (size/1e6,), compressed, time, 
+            print_table_row(["%.1f" % (size/1e6,), compressed, time,
                              "%.1f" % (peak_mem/1e6,),
                              "%.2f x" % (peak_mem/size,)])
 
+
 def print_table_row(columns):
     print(" | ".join("%-20s" % x for x in columns))
+
 
 def run_monitored(code):
     """
@@ -111,11 +114,11 @@ def run_monitored(code):
         with open('/proc/%d/status' % process.pid, 'r') as f:
             procdata = f.read()
 
-        m = re.search('VmRSS:\s*(\d+)\s*kB', procdata, re.S|re.I)
+        m = re.search('VmRSS:\s*(\d+)\s*kB', procdata, re.S | re.I)
         if m is not None:
             memusage = float(m.group(1)) * 1e3
             peak_memusage = max(memusage, peak_memusage)
-        
+
         time.sleep(0.01)
 
     process.wait()
@@ -124,8 +127,9 @@ def run_monitored(code):
 
     if process.returncode != 0:
         raise AssertionError("Running failed:\n%s" % code)
-    
+
     return duration, peak_memusage
+
 
 def get_mem_info():
     """Get information about available memory"""
@@ -135,6 +139,7 @@ def get_mem_info():
             p = line.split()
             info[p[0].strip(':').lower()] = float(p[1]) * 1e3
     return info
+
 
 def set_mem_rlimit(max_mem):
     """

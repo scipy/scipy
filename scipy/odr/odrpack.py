@@ -46,6 +46,7 @@ __all__ = ['odr', 'odr_error', 'odr_stop', 'Data', 'RealData', 'Model',
 
 odr = __odrpack.odr
 
+
 class odr_error(Exception):
     """
     Exception indicating an error in fitting.
@@ -53,6 +54,7 @@ class odr_error(Exception):
     This is raised by `scipy.odr` if an error occurs during fitting.
     """
     pass
+
 
 class odr_stop(Exception):
     """
@@ -64,6 +66,7 @@ class odr_stop(Exception):
     pass
 
 __odrpack._set_exceptions(odr_error, odr_stop)
+
 
 def _conv(obj, dtype=None):
     """ Convert an object to the preferred form for input to the odr routine.

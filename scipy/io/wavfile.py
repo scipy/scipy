@@ -44,6 +44,7 @@ def _read_fmt_chunk(fid):
 
     return size, comp, noc, rate, sbytes, ba, bits
 
+
 # assumes file pointer is immediately
 #   after the 'data' id
 def _read_data_chunk(fid, comp, noc, bits, mmap=False):

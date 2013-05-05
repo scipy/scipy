@@ -184,6 +184,7 @@ class TestBlitz(TestCase):
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,complex128)
 
+
 @dec.slow
 def test_blitz_bug():
     """Assignment to arr[i:] used to fail inside blitz expressions."""

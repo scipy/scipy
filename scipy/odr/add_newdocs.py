@@ -28,4 +28,3 @@ add_newdoc('scipy.odr.__odrpack', '_set_exceptions',
     Internal function: set exception classes.
 
     """)
-

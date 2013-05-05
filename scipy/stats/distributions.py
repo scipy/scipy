@@ -1693,7 +1693,7 @@ class rv_continuous(rv_generic):
         return -sum(self._logpdf(x, *args),axis=0)
 
     def nnlf(self, theta, x):
-        ''' Return negative loglikelihood function, 
+        ''' Return negative loglikelihood function,
         i.e., - sum (log pdf(x, theta),axis=0)
            where theta are the parameters (including loc and scale)
         '''
@@ -1706,15 +1706,15 @@ class rv_continuous(rv_generic):
         if not self._argcheck(*args) or scale <= 0:
             return inf
         x = asarray((x-loc) / scale)
-        cond0 = (x <= self.a) | (self.b <= x )
+        cond0 = (x <= self.a) | (self.b <= x)
         if (any(cond0)):
             return inf
         else:
             N = len(x)
             return self._nnlf(x, *args) + N * log(scale)
-        
+
     def _penalized_nnlf(self, theta, x):
-        ''' Return negative loglikelihood function, 
+        ''' Return negative loglikelihood function,
         i.e., - sum (log pdf(x, theta),axis=0)
            where theta are the parameters (including loc and scale)
         '''
@@ -1899,7 +1899,7 @@ class rv_continuous(rv_generic):
         Lhat = muhat - Shat*mu
         if not np.isfinite(Lhat):
             Lhat = 0
-        if not (np.isfinite(Shat) and (0 < Shat)) :
+        if not (np.isfinite(Shat) and (0 < Shat)):
             Shat = 1
         return Lhat, Shat
 

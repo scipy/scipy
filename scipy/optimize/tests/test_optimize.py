@@ -17,6 +17,7 @@ from numpy.testing import assert_raises, assert_allclose, \
 from scipy import optimize
 import numpy as np
 
+
 class TestOptimize(object):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
@@ -479,7 +480,7 @@ class TestOptimize(object):
                                     options=dict(maxiter=20))
             assert_equal(func(sol.x), sol.fun)
 
-            dec.knownfailureif(method=='slsqp', "SLSQP returns slightly worse")(lambda: None)()
+            dec.knownfailureif(method == 'slsqp', "SLSQP returns slightly worse")(lambda: None)()
             assert_(func(sol.x) <= f0)
 
         for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
@@ -659,6 +660,7 @@ class TestNewtonCg(object):
         assert_allclose(sol.x, himmelblau_xopt, rtol=1e-4)
         assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
 
+
 class TestRosen(TestCase):
 
     def test_hess(self):
@@ -668,6 +670,7 @@ class TestRosen(TestCase):
         hp = optimize.rosen_hess_prod(x, p)
         dothp = np.dot(optimize.rosen_hess(x), p)
         assert_equal(hp, dothp)
+
 
 def himmelblau(p):
     """
@@ -679,10 +682,12 @@ def himmelblau(p):
     b = x + y*y - 7
     return a*a + b*b
 
+
 def himmelblau_grad(p):
     x, y = p
     return np.array([4*x**3 + 4*x*y - 42*x + 2*y**2 - 14,
                      2*x**2 + 4*x*y + 4*y**3 - 26*y - 22])
+
 
 def himmelblau_hess(p):
     x, y = p

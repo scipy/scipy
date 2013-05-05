@@ -12,7 +12,7 @@ from test_continuous_basic import distcont
 # this is not a proper statistical test for convergence, but only
 # verifies that the estimate and true values don't differ by too much
 
-fit_sizes = [1000, 5000] # sample sizes to try
+fit_sizes = [1000, 5000]  # sample sizes to try
 thresh_percent = 0.25  # percent of true parameters for fail cut-off
 thresh_min = 0.75  # minimum difference estimate - true to fail test
 
