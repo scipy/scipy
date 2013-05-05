@@ -4,7 +4,7 @@ from bento.commands import hooks
 def pre_build(context):
     default_builder = context.default_builder
 
-    context.tweak_extension("_superlu", use="superlu_src FLAPACK")
+    context.tweak_extension("_superlu", use="superlu_src LAPACK")
 
     def st_builder(extension):
         return default_builder(extension,

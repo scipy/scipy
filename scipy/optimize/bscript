@@ -4,7 +4,7 @@ from bento.commands import hooks
 def pre_build(context):
     features="c fc pyext bento cshlib"
     f2py_features = "c fc pyext bento cshlib f2py"
-    use = "minpack rootfind FLAPACK CLIB"
+    use = "minpack rootfind LAPACK CLIB"
 
     context.tweak_extension("_lbfgsb", features=f2py_features, use=use)
     context.tweak_extension("_cobyla", features=f2py_features, use=use)
