@@ -31,21 +31,25 @@ class Accumulator:
 
 class TestTrustRegionSolvers(TestCase):
 
+    def setUp(self):
+        self.x_opt = [1.0, 1.0]
+        self.easy_guess = [2.0, 2.0]
+        self.hard_guess = [-1.2, 1.0]
+
     def test_dogleg_accuracy(self):
         # test the accuracy and the return_all option
-        x0 = [-1.2, 1.0]
-        x_opt = [1.0, 1.0]
+        x0 = self.hard_guess
         r = minimize(rosen, x0, jac=rosen_der, hess=rosen_hess, tol=1e-8,
                      method='dogleg', options={'return_all': True},)
         assert_allclose(x0, r['allvecs'][0])
         assert_allclose(r['x'], r['allvecs'][-1])
-        assert_allclose(r['x'], x_opt)
+        assert_allclose(r['x'], self.x_opt)
 
     def test_dogleg_callback(self):
         # test the callback mechanism and the maxiter and return_all options
         accumulator = Accumulator()
         maxiter = 5
-        r = minimize(rosen, [-1.2, 1.0], jac=rosen_der, hess=rosen_hess,
+        r = minimize(rosen, self.hard_guess, jac=rosen_der, hess=rosen_hess,
                      callback=accumulator, method='dogleg',
                      options={'return_all': True, 'maxiter': maxiter},)
         assert_equal(accumulator.count, maxiter)
@@ -61,10 +65,7 @@ class TestTrustRegionSolvers(TestCase):
         f = rosen
         g = rosen_der
         h = rosen_hess
-        x_opt = [1.0, 1.0]
-        easy_guess = [2.0, 2.0]
-        hard_guess = [-1.2, 1.0]
-        for x0 in (easy_guess, hard_guess):
+        for x0 in (self.easy_guess, self.hard_guess):
             r_dogleg = minimize(f, x0, jac=g, hess=h, tol=1e-8,
                                 method='dogleg', options={'return_all': True})
             r_trust_ncg = minimize(f, x0, jac=g, hess=h, tol=1e-8,
@@ -72,19 +73,16 @@ class TestTrustRegionSolvers(TestCase):
                                    options={'return_all': True})
             r_ncg = minimize(f, x0, jac=g, hess=h, tol=1e-8,
                              method='newton-cg', options={'return_all': True})
-            assert_allclose(x_opt, r_dogleg['x'])
-            assert_allclose(x_opt, r_trust_ncg['x'])
-            assert_allclose(x_opt, r_ncg['x'])
+            assert_allclose(self.x_opt, r_dogleg['x'])
+            assert_allclose(self.x_opt, r_trust_ncg['x'])
+            assert_allclose(self.x_opt, r_ncg['x'])
             assert_(len(r_dogleg['allvecs']) < len(r_ncg['allvecs']))
 
     def test_trust_ncg_hessp(self):
-        x_opt = [1.0, 1.0]
-        easy_guess = [2.0, 2.0]
-        hard_guess = [-1.2, 1.0]
-        for x0 in (easy_guess, hard_guess):
+        for x0 in (self.easy_guess, self.hard_guess):
             r = minimize(rosen, x0, jac=rosen_der, hessp=rosen_hess_prod,
                          tol=1e-8, method='trust-ncg')
-            assert_allclose(x_opt, r['x'])
+            assert_allclose(self.x_opt, r['x'])
 
 
 if __name__ == '__main__':
