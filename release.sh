@@ -16,7 +16,7 @@ fi
 # bootstrap needed to ensure we build the docs from the right scipy version
 paver bootstrap
 source bootstrap/bin/activate
-python setupsconsegg.py install
+python setupegg.py install
 
 # we need to copy Sphinx extensions from the numpy source tree
 mkdir doc/sphinxext
