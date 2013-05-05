@@ -483,7 +483,7 @@ CXX library can be found at its `website`_. The basics are that the CXX
 provides C++ class equivalents for Python objects that simplify, or at least
 object orientify, working with Python objects in C/C++. For example,
 ``seq.length()`` returns the length of the list. A little more about CXX and
-its class methods, etc. is in the ** type conversions ** section.
+its class methods, etc. is in the `Type Conversions` section.
 
 .. note::
   CXX uses templates and therefore may be a little less portable than
@@ -1543,8 +1543,8 @@ really is::
 
 PythonWin has reassigned ``sys.stdout`` to a special object that implements
 the Python file interface. This works great in Python, but since the special
-object doesn't have a FILE* pointer underlying it, fprintf doesn't know what
-to do with it (well this will be the problem when instance conversion is
+object doesn't have a FILE* pointer underlying it, ``fprintf`` doesn't know
+what to do with it (well this will be the problem when instance conversion is
 implemented...).
 
 Callable, Instance, and Module Conversion
@@ -1596,12 +1596,12 @@ There is no cleanup code for callables, modules, or instances.
 Customizing Conversions
 -----------------------
 
-Converting from Python to C++ types is handled by xxx_specification classes.
-A type specification class actually serve in two related but different roles.
-The first is in determining whether a Python variable that needs to be
-converted should be represented by the given class. The second is as a code
-generator that generate C++ code needed to convert from Python to C++ types
-for a specific variable.
+Converting from Python to C++ types is handled by ``xxx_specification``
+classes.  A type specification class actually serve in two related but
+different roles.  The first is in determining whether a Python variable that
+needs to be converted should be represented by the given class. The second is
+as a code generator that generates C++ code needed to convert from Python to
+C++ types for a specific variable.
 
 When
 
@@ -2100,12 +2100,12 @@ In Blitz it is as follows::
 
 Here the range object works exactly like Python slice objects with the
 exception that the top index (3) is inclusive where as Python's (4) is
-exclusive. Other differences include the type declaraions in C++ and
+exclusive. Other differences include the type declarations in C++ and
 parentheses instead of brackets for indexing arrays. Currently,
 ``weave.blitz`` handles the inclusive/exclusive issue by subtracting one from
 upper indices during the translation. An alternative that is likely more
-robust/maintainable in the long run, is to write a PyRange class that behaves
-like Python's range. This is likely very easy.
+robust/maintainable in the long run is to write a ``PyRange`` class that
+behaves like Python's ``range``. This is likely very easy.
 
 The stock blitz also doesn't handle negative indices in ranges. The current
 implementation of the ``blitz()`` has a partial solution to this problem. It
@@ -2357,7 +2357,7 @@ creates an ``ext_module`` instance that is ready to have ``ext_function``
 instances added to it. ``ext_function`` instances are created much with a
 calling convention similar to ``weave.inline()``. The most common call
 includes a C/C++ code snippet and a list of the arguments for the function.
-The following
+The following::
 
             ext_code = "return_val = Py::new_reference_to(Py::Int(a+1));"
             func = ext_tools.ext_function('increment',ext_code,['a'])
