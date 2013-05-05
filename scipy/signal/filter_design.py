@@ -1073,8 +1073,8 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     The digital Bessel filter is generated using the bilinear
     transform, which does not preserve the phase response of the analog
     filter. As such, it is only approximately correct at frequencies
-    below about fs/4.  To get maximally flat group delay at higher 
-    frequencies, the analog Bessel filter must be transformed using 
+    below about fs/4.  To get maximally flat group delay at higher
+    frequencies, the analog Bessel filter must be transformed using
     phase-preserving techniques.
 
     For a given `Wn`, the lowpass and highpass filter have the same phase vs
@@ -2157,4 +2157,3 @@ band_dict = {'band': 'bandpass',
              'highpass': 'highpass',
              'h': 'highpass',
              }
-

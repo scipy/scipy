@@ -79,6 +79,7 @@ def bayes_mvs(data, alpha=0.90):
         raise ValueError("0 < alpha < 1 is required, but alpha=%s was given." % alpha)
     return tuple((x.mean(), x.interval(alpha)) for x in res)
 
+
 def mvsdist(data):
     """
     'Frozen' distributions for mean, variance, and standard deviation of data.
@@ -199,18 +200,19 @@ def kstat(data,n=2):
     N = len(data)
     for k in range(1,n+1):
         S[k] = sum(data**k,axis=0)
-    if n==1:
+    if n == 1:
         return S[1]*1.0/N
-    elif n==2:
+    elif n == 2:
         return (N*S[2]-S[1]**2.0)/(N*(N-1.0))
-    elif n==3:
+    elif n == 3:
         return (2*S[1]**3 - 3*N*S[1]*S[2]+N*N*S[3]) / (N*(N-1.0)*(N-2.0))
-    elif n==4:
-        return (-6*S[1]**4 + 12*N*S[1]**2 * S[2] - 3*N*(N-1.0)*S[2]**2 - \
+    elif n == 4:
+        return (-6*S[1]**4 + 12*N*S[1]**2 * S[2] - 3*N*(N-1.0)*S[2]**2 -
                 4*N*(N+1)*S[1]*S[3] + N*N*(N+1)*S[4]) / \
                 (N*(N-1.0)*(N-2.0)*(N-3.0))
     else:
         raise ValueError("Should not be here.")
+
 
 def kstatvar(data,n=2):
     """
@@ -325,7 +327,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     """
     N = len(x)
     Ui = zeros(N) * 1.0
-    Ui[-1] = 0.5**(1.0 /N)
+    Ui[-1] = 0.5**(1.0 / N)
     Ui[0] = 1 - Ui[-1]
     i = arange(2, N)
     Ui[1:-1] = (i - 0.3175) / (N + 0.365)
@@ -372,6 +374,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     else:
         return osm, osr
 
+
 def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     """Returns the shape parameter that maximizes the probability plot
     correlation coefficient for the given data to a one-parameter
@@ -380,7 +383,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     See also ppcc_plot
     """
     try:
-        ppf_func = eval('distributions.%s.ppf'%dist)
+        ppf_func = eval('distributions.%s.ppf' % dist)
     except AttributeError:
         raise ValueError("%s is not a valid distribution with a ppf." % dist)
     """
@@ -411,6 +414,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
         return 1-r
     return optimize.brent(tempfunc, brack=brack, args=(Ui, osr, ppf_func))
 
+
 def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
     """Returns (shape, ppcc), and optionally plots shape vs. ppcc
     (probability plot correlation coefficient) as a function of shape
@@ -421,7 +425,7 @@ def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
     """
     svals = r_[a:b:complex(N)]
     ppcc = svals*0.0
-    k=0
+    k = 0
     for sval in svals:
         r1,r2 = probplot(x,sval,dist=dist,fit=1)
         ppcc[k] = r2[-1]
@@ -429,9 +433,10 @@ def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
     if plot is not None:
         plot.plot(svals, ppcc, 'x')
         plot.title('(%s) PPCC Plot' % dist)
-        plot.xlabel('Prob Plot Corr. Coef.')#,deltay=-0.01)
-        plot.ylabel('Shape Values')#,deltax=-0.01)
+        plot.xlabel('Prob Plot Corr. Coef.')# ,deltay=-0.01)
+        plot.ylabel('Shape Values')# ,deltax=-0.01)
     return svals, ppcc
+
 
 def boxcox_llf(lmb, data):
     """The boxcox log-likelihood function.
@@ -442,6 +447,7 @@ def boxcox_llf(lmb, data):
     f = (lmb-1)*sum(log(data),axis=0)
     f -= N/2.0*log(sum((y-my)**2.0/N,axis=0))
     return f
+
 
 def _boxcox_conf_interval(x, lmax, alpha):
     # Need to find the lambda for which
@@ -455,7 +461,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     N = 0
     while (rootfunc(newlm,x,target) > 0.0) and (N < 500):
         newlm += 0.1
-        N +=1
+        N += 1
     if N == 500:
         raise RuntimeError("Could not find endpoint.")
     lmplus = optimize.brentq(rootfunc,lmax,newlm,args=(x,target))
@@ -463,11 +469,12 @@ def _boxcox_conf_interval(x, lmax, alpha):
     N = 0
     while (rootfunc(newlm,x,target) > 0.0) and (N < 500):
         newlm += 0.1
-        N +=1
+        N += 1
     if N == 500:
         raise RuntimeError("Could not find endpoint.")
     lmminus = optimize.brentq(rootfunc, newlm, lmax, args=(x,target))
     return lmminus, lmplus
+
 
 def boxcox(x,lmbda=None,alpha=None):
     """
@@ -504,7 +511,7 @@ def boxcox(x,lmbda=None,alpha=None):
     if any(x < 0):
         raise ValueError("Data must be positive.")
     if lmbda is not None:  # single transformation
-        lmbda = lmbda*(x==x)
+        lmbda = lmbda*(x == x)
         y = where(lmbda == 0, log(x), (x**lmbda - 1)/lmbda)
         return y
     # Otherwise find the lmbda that maximizes the log-likelihood function.
@@ -546,16 +553,17 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
     k = 0
     for sval in svals:
         #JP: this doesn't use sval, creates constant ppcc, and horizontal line
-        z = boxcox(x,sval)  #JP: this was missing
+        z = boxcox(x,sval)  # JP: this was missing
         r1,r2 = probplot(z,dist='norm',fit=1)
         ppcc[k] = r2[-1]
-        k +=1
+        k += 1
     if plot is not None:
         plot.plot(svals, ppcc, 'x')
         plot.title('Box-Cox Normality Plot')
         plot.xlabel('Prob Plot Corr. Coef.')
         plot.ylabel('Transformation parameter')
     return svals, ppcc
+
 
 def shapiro(x,a=None,reta=False):
     """
@@ -628,6 +636,8 @@ _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 #             on the Empirical Distribution Function.", Biometrika,
 #             Vol. 66, Issue 3, Dec. 1979, pp 591-595.
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
+
+
 def anderson(x,dist='norm'):
     """
     Anderson-Darling test for data coming from a particular distribution
@@ -719,7 +729,7 @@ def anderson(x,dist='norm'):
             val = [sum(1.0/(1+tmp2),axis=0)-0.5*N,
                    sum(tmp*(1.0-tmp2)/(1+tmp2),axis=0)+N]
             return array(val)
-        sol0=array([xbar,np.std(x, ddof=1, axis=0)])
+        sol0 = array([xbar,np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc,sol0,args=(x,N),xtol=1e-5)
         w = (y-sol[0])/sol[1]
         z = distributions.logistic.cdf(w)
@@ -798,8 +808,8 @@ def ansari(x,y):
     AB = sum(symrank[:n],axis=0)
     uxy = unique(xy)
     repeats = (len(uxy) != len(xy))
-    exact = ((m<55) and (n<55) and not repeats)
-    if repeats and ((m < 55)  or (n < 55)):
+    exact = ((m < 55) and (n < 55) and not repeats)
+    if repeats and ((m < 55) or (n < 55)):
         warnings.warn("Ties preclude use of exact statistic.")
     if exact:
         astart, a1, ifault = statlib.gscale(n,m)
@@ -836,6 +846,7 @@ def ansari(x,y):
     z = (AB - mnAB)/sqrt(varAB)
     pval = distributions.norm.sf(abs(z)) * 2.0
     return AB, pval
+
 
 def bartlett(*args):
     """
@@ -989,6 +1000,7 @@ def levene(*args,**kwds):
     pval = distributions.f.sf(W,k-1,Ntot-k) # 1 - cdf
     return W, pval
 
+
 @setastest(False)
 def binom_test(x,n=None,p=0.5):
     """
@@ -1048,6 +1060,7 @@ def binom_test(x,n=None,p=0.5):
 
     return min(1.0,pval)
 
+
 def _apply_func(x,g,func):
     # g is list of indices into x
     #  separating x into different groups
@@ -1057,6 +1070,7 @@ def _apply_func(x,g,func):
     for k in range(len(g)-1):
         output.append(func(x[g[k]:g[k+1]]))
     return asarray(output)
+
 
 def fligner(*args,**kwds):
     """
@@ -1226,8 +1240,10 @@ def oneway(*args,**kwds):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
     if 'equal_var' in kwds:
-        if kwds['equal_var']: evar = 1
-        else: evar = 0
+        if kwds['equal_var']:
+            evar = 1
+        else:
+            evar = 0
     else:
         evar = 0
 
@@ -1354,6 +1370,7 @@ def _hermnorm(N):
         plist[n] = plist[n-1].deriv() - poly1d([1,0])*plist[n-1]
     return plist
 
+
 def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
     if g4 is None:
         g4 = 3*g2*g2
@@ -1366,7 +1383,7 @@ def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
 
     # Add all of the terms to polynomial
     totp = p12[0] - (g1/6.0*p12[3]) + \
-           (g2/24.0*p12[4] +g1*g1/72.0*p12[6]) - \
+           (g2/24.0*p12[4] + g1*g1/72.0*p12[6]) - \
            (g3/120.0*p12[5] + g1*g2/144.0*p12[7] + g1**3.0/1296.0*p12[9]) + \
            (g4/720*p12[6] + (g2*g2/1152.0+g1*g3/720)*p12[8] +
             g1*g1*g2/1728.0*p12[10] + g1**4.0/31104.0*p12[12])
@@ -1376,6 +1393,7 @@ def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
         xn = (x-mu)/sig
         return totp(xn)*exp(-xn*xn/2.0)
     return thefunc
+
 
 def circmean(samples, high=2*pi, low=0, axis=None):
     """
@@ -1408,6 +1426,7 @@ def circmean(samples, high=2*pi, low=0, axis=None):
         res = res + 2*pi
     return res*(high-low)/2.0/pi + low
 
+
 def circvar(samples, high=2*pi, low=0, axis=None):
     """
     Compute the circular variance for samples assumed to be in a range
@@ -1439,6 +1458,7 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     res = np.mean(exp(1j*ang), axis=axis)
     R = abs(res)
     return ((high-low)/2.0/pi)**2 * 2 * log(1/R)
+
 
 def circstd(samples, high=2*pi, low=0, axis=None):
     """

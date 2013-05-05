@@ -12,8 +12,9 @@ import inline_tools
 
 from wxPython.wx import *
 
+
 class MyCanvas(wxScrolledWindow):
-    def __init__(self, parent, id = -1, size = wxDefaultSize):
+    def __init__(self, parent, id=-1, size=wxDefaultSize):
         wxScrolledWindow.__init__(self, parent, id, wxPoint(0, 0), size, wxSUNKEN_BORDER)
 
         self.lines = []
@@ -26,7 +27,6 @@ class MyCanvas(wxScrolledWindow):
         EVT_MOTION(self,    self.OnLeftButtonEvent)
 
         EVT_PAINT(self, self.OnPaint)
-
 
         self.SetCursor(wxStockCursor(wxCURSOR_PENCIL))
         #bmp = images.getTest2Bitmap()
@@ -42,12 +42,10 @@ class MyCanvas(wxScrolledWindow):
     def getHeight(self):
         return self.maxHeight
 
-
     def OnPaint(self, event):
         dc = wxPaintDC(self)
         self.PrepareDC(dc)
         self.DoDrawing2(dc)
-
 
     def DoDrawing(self, dc):
         dc.BeginDrawing()
@@ -96,9 +94,9 @@ class MyCanvas(wxScrolledWindow):
 
     def DoDrawing2(self, dc):
 
-        red = wxNamedColour("RED");
-        blue = wxNamedColour("BLUE");
-        grey_brush = wxLIGHT_GREY_BRUSH;
+        red = wxNamedColour("RED")
+        blue = wxNamedColour("BLUE")
+        grey_brush = wxLIGHT_GREY_BRUSH
         code = \
         """
         //#line 108 "wx_example.py"
@@ -148,13 +146,11 @@ class MyCanvas(wxScrolledWindow):
         self.DrawSavedLines(dc)
         dc.EndDrawing()
 
-
     def DrawSavedLines(self, dc):
         dc.SetPen(wxPen(wxNamedColour('MEDIUM FOREST GREEN'), 4))
         for line in self.lines:
             for coords in line:
                 apply(dc.DrawLine, coords)
-
 
     def SetXY(self, event):
         self.x, self.y = self.ConvertEventCoords(event)
@@ -190,8 +186,9 @@ class MyCanvas(wxScrolledWindow):
 #---------------------------------------------------------------------------
 # This example isn't currently used.
 
+
 class py_canvas(wx.wxWindow):
-    def __init__(self, parent, id = -1, pos=wx.wxPyDefaultPosition,
+    def __init__(self, parent, id=-1, pos=wx.wxPyDefaultPosition,
                  size=wx.wxPyDefaultSize, **attr):
         wx.wxWindow.__init__(self, parent, id, pos,size)
         #wx.EVT_PAINT(self,self.on_paint)
@@ -202,6 +199,7 @@ class py_canvas(wx.wxWindow):
                """
         inline_tools.inline(code,['self','background'],compiler='msvc')
 #----------------------------------------------------------------------------
+
 
 class MyFrame(wxFrame):
     def __init__(self, parent, ID, title, pos=wxDefaultPosition,
@@ -216,6 +214,7 @@ class MyFrame(wxFrame):
         #canvas = py_canvas(self,-1)
         canvas = MyCanvas(self,-1)
         canvas.Show(true)
+
 
 class MyApp(wxApp):
     def OnInit(self):

@@ -5,6 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 from os.path import join
 
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
 
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     setup(version=fftpack_version,
           description='fftpack - Discrete Fourier Transform package',
           author='Pearu Peterson',
-          author_email = 'pearu@cens.ioc.ee',
-          maintainer_email = 'scipy-dev@scipy.org',
-          license = 'SciPy License (BSD Style)',
+          author_email='pearu@cens.ioc.ee',
+          maintainer_email='scipy-dev@scipy.org',
+          license='SciPy License (BSD Style)',
           **configuration(top_path='').todict())

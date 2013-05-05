@@ -18,6 +18,7 @@ _coerce_rules = {('f','f'):'f', ('f','d'):'d', ('f','F'):'F',
                  ('D','f'):'D', ('D','d'):'D', ('D','F'):'D',
                  ('D','D'):'D'}
 
+
 def coerce(x,y):
     if x not in 'fdFD':
         x = 'd'
@@ -25,8 +26,10 @@ def coerce(x,y):
         y = 'd'
     return _coerce_rules[x,y]
 
+
 def id(x):
     return x
+
 
 def make_system(A, M, x0, b, xtype=None):
     """Make a linear system Ax=b
@@ -89,8 +92,8 @@ def make_system(A, M, x0, b, xtype=None):
             xtype = A.matvec(b).dtype.char
         xtype = coerce(xtype, b.dtype.char)
     else:
-        warn('Use of xtype argument is deprecated. '\
-                'Use LinearOperator( ... , dtype=xtype) instead.',\
+        warn('Use of xtype argument is deprecated. '
+                'Use LinearOperator( ... , dtype=xtype) instead.',
                 DeprecationWarning)
         if xtype == 0:
             xtype = b.dtype.char
@@ -98,7 +101,7 @@ def make_system(A, M, x0, b, xtype=None):
             if xtype not in 'fdFD':
                 raise ValueError("xtype must be 'f', 'd', 'F', or 'D'")
 
-    b = asarray(b,dtype=xtype) #make b the same type as x
+    b = asarray(b,dtype=xtype) # make b the same type as x
     b = b.ravel()
 
     if x0 is None:

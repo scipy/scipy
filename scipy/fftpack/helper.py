@@ -5,6 +5,7 @@ __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq']
 from numpy import arange
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
 
+
 def rfftfreq(n, d=1.0):
     """DFT sample frequencies (for usage with rfft, irfft).
 

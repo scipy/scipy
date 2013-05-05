@@ -19,11 +19,17 @@ from scipy.misc import doccer
 
 from . import byteordercodes as boc
 
-class MatReadError(Exception): pass
 
-class MatWriteError(Exception): pass
+class MatReadError(Exception):
+    pass
 
-class MatReadWarning(UserWarning): pass
+
+class MatWriteError(Exception):
+    pass
+
+
+class MatReadWarning(UserWarning):
+    pass
 
 doc_dict = \
     {'file_arg':

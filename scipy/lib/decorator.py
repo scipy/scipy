@@ -34,7 +34,9 @@ __version__ = '3.3.2'
 
 __all__ = ["decorator", "FunctionMaker", "partial"]
 
-import sys, re, inspect
+import sys
+import re
+import inspect
 
 from scipy.lib.six import exec_
 
@@ -72,6 +74,8 @@ else:
 DEF = re.compile('\s*def\s*([_\w][_\w\d]*)\s*\(')
 
 # basic functionality
+
+
 class FunctionMaker(object):
     """
     An object with the ability to create functions with a given signature.
@@ -179,7 +183,7 @@ class FunctionMaker(object):
         """
         if isinstance(obj, str): # "name(signature)"
             name, rest = obj.strip().split('(', 1)
-            signature = rest[:-1] #strip a right parens
+            signature = rest[:-1] # strip a right parens
             func = None
         else: # a function
             name = None
@@ -189,6 +193,7 @@ class FunctionMaker(object):
         ibody = '\n'.join('    ' + line for line in body.splitlines())
         return self.make('def %(name)s(%(signature)s):\n' + ibody,
                         evaldict, addsource, **attrs)
+
 
 def decorator(caller, func=None):
     """

@@ -11,6 +11,7 @@ __all__ = ['randwppf', 'randwcdf']
 # General purpose continuous
 ######################################
 
+
 def randwppf(ppf, args=(), size=None):
     """
     returns an array of randomly distributed integers of a distribution
@@ -24,6 +25,7 @@ def randwppf(ppf, args=(), size=None):
     """
     U = random_sample(size=size)
     return ppf(*(U,)+args)
+
 
 def randwcdf(cdf, mean=1.0, args=(), size=None):
     """

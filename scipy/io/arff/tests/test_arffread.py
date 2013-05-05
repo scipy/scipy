@@ -37,6 +37,7 @@ expect_missing = np.empty(3, [('yop', np.float), ('yap', np.float)])
 expect_missing['yop'] = expect_missing_raw[:, 0]
 expect_missing['yap'] = expect_missing_raw[:, 1]
 
+
 class DataTest(TestCase):
     def test1(self):
         """Parsing trivial file with nothing."""
@@ -70,6 +71,7 @@ class MissingDataTest(TestCase):
         data, meta = loadarff(missing)
         for i in ['yop', 'yap']:
             assert_array_almost_equal(data[i], expect_missing[i])
+
 
 class HeaderTest(TestCase):
     def test_type_parsing(self):

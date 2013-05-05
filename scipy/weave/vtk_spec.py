@@ -78,7 +78,7 @@ class vtk_converter(common_base_converter):
         hdr = self.class_name + ".h"
         # Remember that you need both the quotes!
         self.headers.extend(['"vtkPythonUtil.h"', '"vtkObject.h"',
-                             '"%s"'%hdr])
+                             '"%s"' % hdr])
         #self.include_dirs.extend(vtk_inc)
         #self.define_macros.append(('SOME_VARIABLE', '1'))
         #self.library_dirs.extend(vtk_lib)

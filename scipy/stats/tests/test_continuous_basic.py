@@ -37,19 +37,19 @@ distcont = [
     ['beta', (2.3098496451481823, 0.62687954300963677)],
     ['betaprime', (5, 6)],   # avoid unbound error in entropy with (100, 86)],
     ['bradford', (0.29891359763170633,)],
-    ['burr', (10.5, 4.3)],    #incorrect mean and var for(0.94839838075366045, 4.3820284068855795)],
+    ['burr', (10.5, 4.3)],    # incorrect mean and var for(0.94839838075366045, 4.3820284068855795)],
     ['cauchy', ()],
     ['chi', (78,)],
     ['chi2', (55,)],
     ['cosine', ()],
     ['dgamma', (1.1023326088288166,)],
     ['dweibull', (2.0685080649914673,)],
-    ['erlang', (20,)],    #correction numargs = 1
+    ['erlang', (20,)],    # correction numargs = 1
     ['expon', ()],
     ['exponpow', (2.697119160358469,)],
     ['exponweib', (2.8923945291034436, 1.9505288745913174)],
     ['f', (29, 18)],
-    ['fatiguelife', (29,)],   #correction numargs = 1
+    ['fatiguelife', (29,)],   # correction numargs = 1
     ['fisk', (3.0857548622253179,)],
     ['foldcauchy', (4.7164673455831894,)],
     ['foldnorm', (1.9521253373555869,)],
@@ -57,7 +57,7 @@ distcont = [
     ['frechet_r', (1.8928171603534227,)],
     ['gamma', (1.9932305483800778,)],
     ['gausshyper', (13.763771604130699, 3.1189636648681431,
-                    2.5145980350183019, 5.1811649903971615)],  #veryslow
+                    2.5145980350183019, 5.1811649903971615)],  # veryslow
     ['genexpon', (9.1325976465418908, 16.231956600590632, 3.2819552690843983)],
     ['genextreme', (-0.1,)],  # sample mean test fails for (3.3184017469423535,)],
     ['gengamma', (4.4162385429431925, 3.1193091679242761)],
@@ -77,7 +77,7 @@ distcont = [
     ['invweibull', (10.58,)], # sample mean test fails at(0.58847112119264788,)]
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
     ['johnsonsu', (2.554395574161155, 2.2482281679651965)],
-    ['ksone', (1000,)],  #replace 22 by 100 to avoid failing range, ticket 956
+    ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
     ['kstwobign', ()],
     ['laplace', ()],
     ['levy', ()],
@@ -158,6 +158,7 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
             'powerlognorm', 'johnsonsu', 'kstwobign']
 #distslow are sorted by speed (very slow to slow)
 
+
 def _silence_fp_errors(func):
     def wrap(*a, **kw):
         olderr = np.seterr(all='ignore')
@@ -167,6 +168,7 @@ def _silence_fp_errors(func):
             np.seterr(**olderr)
     wrap.__name__ = func.__name__
     return wrap
+
 
 @_silence_fp_errors
 def test_cont_basic():
@@ -201,11 +203,13 @@ def test_cont_basic():
             alpha = 0.01
             yield check_distribution_rvs, distname, arg, alpha, rvs
 
+
 @npt.dec.slow
 def test_cont_basic_slow():
     # same as above for slow distributions
     for distname, arg in distcont[:]:
-        if distname not in distslow: continue
+        if distname not in distslow:
+            continue
         distfn = getattr(stats, distname)
         np.random.seed(765456)
         sn = 1000
@@ -231,24 +235,26 @@ def test_cont_basic_slow():
             alpha = 0.01
             yield check_distribution_rvs, distname, arg, alpha, rvs
 
+
 @_silence_fp_errors
 def check_moment(distfn, arg, m, v, msg):
     m1  = distfn.moment(1,*arg)
     m2  = distfn.moment(2,*arg)
     if not np.isinf(m):
-        npt.assert_almost_equal(m1, m, decimal=10, err_msg= msg + \
+        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
                             ' - 1st moment')
     else:                     # or np.isnan(m1),
         npt.assert_(np.isinf(m1),
                msg + ' - 1st moment -infinite, m1=%s' % str(m1))
         #np.isnan(m1) temporary special treatment for loggamma
     if not np.isinf(v):
-        npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg= msg + \
+        npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg=msg +
                             ' - 2ndt moment')
-    else:                     #or np.isnan(m2),
+    else:                     # or np.isnan(m2),
         npt.assert_(np.isinf(m2),
                msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
         #np.isnan(m2) temporary special treatment for loggamma
+
 
 @_silence_fp_errors
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
@@ -261,6 +267,7 @@ def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
         check_sample_var(sv, sn, v)
 ##    check_sample_meanvar( sm, m, msg + 'sample mean test')
 ##    check_sample_meanvar( sv, v, msg + 'sample var test')
+
 
 def check_sample_mean(sm,v,n, popmean):
     """
@@ -275,12 +282,13 @@ Returns: t-value, two-tailed prob
 ##    v = np.var(a, ddof=1)
 ##    n = len(a)
     df = n-1
-    svar = ((n-1)*v) / float(df)    #looks redundant
+    svar = ((n-1)*v) / float(df)    # looks redundant
     t = (sm-popmean)/np.sqrt(svar*(1.0/n))
     prob = stats.betai(0.5*df,0.5,df/(df+t*t))
 
     #return t,prob
     npt.assert_(prob > 0.01, 'mean fail, t,prob = %f, %f, m,sm=%f,%f' % (t,prob,popmean,sm))
+
 
 def check_sample_var(sv,n, popvar):
     '''
@@ -299,29 +307,33 @@ def check_sample_skew_kurt(distfn, arg, ss, sk, msg):
     check_sample_meanvar( sk, kurt, msg + 'sample kurtosis test')
     check_sample_meanvar( ss, skew, msg + 'sample skew test')
 
+
 def check_sample_meanvar(sm,m,msg):
     if not np.isinf(m) and not np.isnan(m):
-        npt.assert_almost_equal(sm, m, decimal=DECIMAL, err_msg= msg + \
+        npt.assert_almost_equal(sm, m, decimal=DECIMAL, err_msg=msg +
                                 ' - finite moment')
 ##    else:
 ##        npt.assert_(abs(sm) > 10000), msg='infinite moment, sm = ' + str(sm))
+
 
 @_silence_fp_errors
 def check_cdf_ppf(distfn,arg,msg):
     values = [0.001, 0.5, 0.999]
     npt.assert_almost_equal(distfn.cdf(distfn.ppf(values, *arg), *arg),
-                            values, decimal=DECIMAL, err_msg= msg + \
+                            values, decimal=DECIMAL, err_msg=msg +
                             ' - cdf-ppf roundtrip')
+
 
 @_silence_fp_errors
 def check_sf_isf(distfn,arg,msg):
     npt.assert_almost_equal(distfn.sf(distfn.isf([0.1,0.5,0.9], *arg), *arg),
-                            [0.1,0.5,0.9], decimal=DECIMAL, err_msg= msg + \
+                            [0.1,0.5,0.9], decimal=DECIMAL, err_msg=msg +
                             ' - sf-isf roundtrip')
     npt.assert_almost_equal(distfn.cdf([0.1,0.9], *arg),
                             1.0-distfn.sf([0.1,0.9], *arg),
-                            decimal=DECIMAL, err_msg= msg + \
+                            decimal=DECIMAL, err_msg=msg +
                             ' - cdf-sf relationship')
+
 
 @_silence_fp_errors
 def check_pdf(distfn, arg, msg):
@@ -338,7 +350,8 @@ def check_pdf(distfn, arg, msg):
     #replace with better diff and better test (more points),
     #actually, this works pretty well
     npt.assert_almost_equal(pdfv, cdfdiff,
-                decimal=DECIMAL, err_msg= msg + ' - cdf-pdf relationship')
+                decimal=DECIMAL, err_msg=msg + ' - cdf-pdf relationship')
+
 
 @_silence_fp_errors
 def check_pdf_logpdf(distfn, args, msg):
@@ -351,6 +364,7 @@ def check_pdf_logpdf(distfn, args, msg):
     logpdf = logpdf[np.isfinite(logpdf)]
     npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg + " - logpdf-log(pdf) relationship")
 
+
 @_silence_fp_errors
 def check_sf_logsf(distfn, args, msg):
     # compares sf at several points with the log of the sf
@@ -361,6 +375,7 @@ def check_sf_logsf(distfn, args, msg):
     sf = sf[sf != 0]
     logsf = logsf[np.isfinite(logsf)]
     npt.assert_almost_equal(np.log(sf), logsf, decimal=7, err_msg=msg + " - logsf-log(sf) relationship")
+
 
 @_silence_fp_errors
 def check_cdf_logcdf(distfn, args, msg):

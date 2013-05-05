@@ -8,7 +8,7 @@
 from __future__ import absolute_import, print_function
 
 from weave import common_info
-from weave import  base_info
+from weave import base_info
 from weave.base_spec import base_converter
 
 cpp_support_template = \
@@ -52,11 +52,12 @@ std::string %(cpp_clean_struct)s_to_py( %(cpp_struct)s* cpp_ptr)
 
 """
 
+
 class cpp_namespace_converter(base_converter):
     _build_information = [common_info.swig_info()]
     def __init__(self,class_name=None):
         self.type_name = 'unknown cpp_object'
-        self.name =  'no name'
+        self.name = 'no name'
         if class_name:
             # customize support_code for whatever type I was handed.
             clean_name = class_name.replace('::','_')

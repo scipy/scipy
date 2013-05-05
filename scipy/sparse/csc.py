@@ -129,15 +129,14 @@ class csc_matrix(_cs_matrix):
         indices = np.empty(self.nnz, dtype=np.intc)
         data    = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-        csc_tocsr(M, N, \
-                 self.indptr, self.indices, self.data, \
+        csc_tocsr(M, N,
+                 self.indptr, self.indices, self.data,
                  indptr, indices, data)
 
         from .csr import csr_matrix
         A = csr_matrix((data, indices, indptr), shape=self.shape)
         A.has_sorted_indices = True
         return A
-
 
     def __getitem__(self, key):
         # use CSR to implement fancy indexing
@@ -165,9 +164,9 @@ class csc_matrix(_cs_matrix):
 
             return self.T[col,row].T
         elif isintlike(key) or isinstance(key,slice):
-            return self.T[:,key].T                              #[i] or [1:2]
+            return self.T[:,key].T                              # [i] or [1:2]
         else:
-            return self.T[:,key].T                              #[[1,2]]
+            return self.T[:,key].T                              # [[1,2]]
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)

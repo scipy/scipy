@@ -9,6 +9,7 @@ from scipy import optimize
 import numpy as np
 from math import pow
 
+
 class TestTnc(TestCase):
     """TNC non-linear optimization.
 
@@ -102,11 +103,11 @@ class TestTnc(TestCase):
 
     def g45(self, x):
         dif = [0] * 5
-        dif[0] =  - x[1] * x[2] * x[3] * x[4] / 120.0
-        dif[1] =  - x[0] * x[2] * x[3] * x[4] / 120.0
-        dif[2] =  - x[0] * x[1] * x[3] * x[4] / 120.0
-        dif[3] =  - x[0] * x[1] * x[2] * x[4] / 120.0
-        dif[4] =  - x[0] * x[1] * x[2] * x[3] / 120.0
+        dif[0] = - x[1] * x[2] * x[3] * x[4] / 120.0
+        dif[1] = - x[0] * x[2] * x[3] * x[4] / 120.0
+        dif[2] = - x[0] * x[1] * x[3] * x[4] / 120.0
+        dif[3] = - x[0] * x[1] * x[2] * x[4] / 120.0
+        dif[4] = - x[0] * x[1] * x[2] * x[3] / 120.0
         return dif
 
     def fg45(self, x):

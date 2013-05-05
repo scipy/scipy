@@ -305,6 +305,7 @@ def find_repeats(arr):
 ### NAN friendly functions
 ########
 
+
 def nanmean(x, axis=0):
     """
     Compute the mean over the given axis ignoring nans.
@@ -344,6 +345,7 @@ def nanmean(x, axis=0):
 
     x[np.isnan(x)] = 0
     return np.mean(x,axis)/factor
+
 
 def nanstd(x, axis=0, bias=False):
     """
@@ -406,6 +408,7 @@ def nanstd(x, axis=0, bias=False):
         m2c = m2 / (n - 1.)
     return np.sqrt(m2c)
 
+
 def _nanmedian(arr1d):  # This only works on 1d arrays
     """Private function for rank a arrays. Compute the median ignoring Nan.
 
@@ -424,6 +427,7 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
     if x.size == 0:
         return np.nan
     return np.median(x)
+
 
 def nanmedian(x, axis=0):
     """
@@ -529,16 +533,17 @@ def gmean(a, axis=0, dtype=None):
     arrays automatically mask any non-finite values.
 
     """
-    if not isinstance(a, np.ndarray): #if not an ndarray object attempt to convert it
-        log_a=np.log(np.array(a, dtype=dtype))
-    elif dtype: #Must change the default dtype allowing array type
+    if not isinstance(a, np.ndarray): # if not an ndarray object attempt to convert it
+        log_a = np.log(np.array(a, dtype=dtype))
+    elif dtype: # Must change the default dtype allowing array type
         if isinstance(a,np.ma.MaskedArray):
-            log_a=np.log(np.ma.asarray(a, dtype=dtype))
+            log_a = np.log(np.ma.asarray(a, dtype=dtype))
         else:
-            log_a=np.log(np.asarray(a, dtype=dtype))
+            log_a = np.log(np.asarray(a, dtype=dtype))
     else:
         log_a = np.log(a)
     return np.exp(log_a.mean(axis=axis))
+
 
 def hmean(a, axis=0, dtype=None):
     """
@@ -581,13 +586,13 @@ def hmean(a, axis=0, dtype=None):
 
     """
     if not isinstance(a, np.ndarray):
-        a=np.array(a, dtype=dtype)
-    if np.all(a >0): # Harmonic mean only defined if greater than zero
+        a = np.array(a, dtype=dtype)
+    if np.all(a > 0): # Harmonic mean only defined if greater than zero
         if isinstance(a, np.ma.MaskedArray):
             size = a.count(axis)
         else:
             if axis is None:
-                a=a.ravel()
+                a = a.ravel()
                 size = a.shape[0]
             else:
                 size = a.shape[axis]
@@ -707,6 +712,7 @@ def mode(a, axis=0):
         oldmostfreq = mostfrequent
     return mostfrequent, oldcounts
 
+
 def mask_to_limits(a, limits, inclusive):
     """Mask an array for values outside of given limits.
 
@@ -748,6 +754,7 @@ def mask_to_limits(a, limits, inclusive):
         raise ValueError("No array values within given limits")
     return am
 
+
 def tmean(a, limits=None, inclusive=(True, True)):
     """
     Compute the trimmed mean
@@ -788,11 +795,13 @@ def tmean(a, limits=None, inclusive=(True, True)):
     am = mask_to_limits(a.ravel(), limits, inclusive)
     return am.mean()
 
+
 def masked_var(am):
     m = am.mean()
     s = ma.add.reduce((am - m)**2)
     n = am.count() - 1.0
     return s / n
+
 
 def tvar(a, limits=None, inclusive=(True, True)):
     """
@@ -829,6 +838,7 @@ def tvar(a, limits=None, inclusive=(True, True)):
     am = mask_to_limits(a, limits, inclusive)
     return masked_var(am)
 
+
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     """
     Compute the trimmed minimum
@@ -861,6 +871,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     am = mask_to_limits(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
 
+
 def tmax(a, upperlimit, axis=0, inclusive=True):
     """
     Compute the trimmed maximum
@@ -891,6 +902,7 @@ def tmax(a, upperlimit, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
     am = mask_to_limits(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
+
 
 def tstd(a, limits=None, inclusive=(True, True)):
     """
@@ -1076,6 +1088,7 @@ def skew(a, axis=0, bias=True):
         return vals.item()
     return vals
 
+
 def kurtosis(a, axis=0, fisher=True, bias=True):
     """
     Computes the kurtosis (Fisher or Pearson) of a dataset.
@@ -1141,6 +1154,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     else:
         return vals
 
+
 def describe(a, axis=0):
     """
     Computes several descriptive statistics of the passed array.
@@ -1191,6 +1205,7 @@ def describe(a, axis=0):
 ########  NORMALITY TESTS  ##########
 #####################################
 
+
 def skewtest(a, axis=0):
     """
     Tests whether the skew is different from the normal distribution.
@@ -1236,6 +1251,7 @@ def skewtest(a, axis=0):
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha) ** 2 + 1))
     return Z, 2 * distributions.norm.sf(np.abs(Z))
 
+
 def kurtosistest(a, axis=0):
     """
     Tests whether a dataset has normal kurtosis
@@ -1275,14 +1291,14 @@ def kurtosistest(a, axis=0):
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
             int(n))
     b2 = kurtosis(a, axis, fisher=False)
-    E = 3.0*(n-1) /(n+1)
+    E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
     x = (b2-E)/np.sqrt(varb2)
-    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5))/
+    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
                                                        (n*(n-2)*(n-3)))
-    A = 6.0 + 8.0/sqrtbeta1 *(2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
-    term1 = 1 -2/(9.0*A)
-    denom = 1 +x*np.sqrt(2/(A-4.0))
+    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
+    term1 = 1 - 2/(9.0*A)
+    denom = 1 + x*np.sqrt(2/(A-4.0))
     denom = np.where(denom < 0, 99, denom)
     term2 = np.where(denom < 0, term1, np.power((1-2.0/A)/denom,1/3.0))
     Z = ( term1 - term2 ) / np.sqrt(2/(9.0*A))
@@ -1543,7 +1559,7 @@ def _compute_qth_percentile(sorted, per, interpolation_method, axis):
         elif interpolation_method == 'fraction':
             pass  # keep idx as fraction and interpolate
         else:
-            raise ValueError("interpolation_method can only be 'fraction', " \
+            raise ValueError("interpolation_method can only be 'fraction', "
                              "'lower' or 'higher'")
 
     i = int(idx)
@@ -1750,8 +1766,8 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     extrapoints = len([v for v in a
                        if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
-        warnings.warn("Points outside given histogram range = %s" \
-                      %extrapoints)
+        warnings.warn("Points outside given histogram range = %s"
+                      % extrapoints)
     return (hist, defaultlimits[0], binsize, extrapoints)
 
 
@@ -1975,7 +1991,7 @@ def sem(a, axis=0, ddof=1):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n) #JP check normalization
+    s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n) # JP check normalization
     return s
 
 
@@ -2140,7 +2156,6 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
     return a
 
 
-
 def sigmaclip(a, low=4., high=4.):
     """
     Iterative sigma-clipping of array elements.
@@ -2201,7 +2216,7 @@ def sigmaclip(a, low=4., high=4.):
         size = c.size
         critlower = c_mean - c_std*low
         critupper = c_mean + c_std*high
-        c = c[(c>critlower) & (c<critupper)]
+        c = c[(c > critlower) & (c < critupper)]
         delta = size-c.size
     return c, critlower, critupper
 
@@ -2278,6 +2293,7 @@ def trim1(a, proportiontocut, tail='right'):
         lowercut = int(proportiontocut*len(a))
         uppercut = len(a)
     return a[lowercut:uppercut]
+
 
 def trim_mean(a, proportiontocut):
     """
@@ -2877,7 +2893,7 @@ def kendalltau(x, y, initial_lexsort=True):
                 d = (offs + i) - (middle + k)
                 k += 1
             if d > 0:
-                exchcnt += d;
+                exchcnt += d
             i += 1
         perm[offs:offs+length] = temp[0:length]
         return exchcnt
@@ -3081,7 +3097,7 @@ def ttest_1samp(a, popmean, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    df= n - 1
+    df = n - 1
 
     d = np.mean(a, axis) - popmean
     v = np.var(a, axis, ddof=1)
@@ -3095,7 +3111,7 @@ def ttest_1samp(a, popmean, axis=0):
 
 def _ttest_finish(df,t):
     """Common code between all 3 t-test functions."""
-    prob = distributions.t.sf(np.abs(t), df) * 2 #use np.abs to get upper tail
+    prob = distributions.t.sf(np.abs(t), df) * 2 # use np.abs to get upper tail
     if t.ndim == 0:
         t = t[()]
 
@@ -3438,6 +3454,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
             else:
                 return D, distributions.ksone.sf(D,N)*2
 
+
 def chisquare(f_obs, f_exp=None, ddof=0):
     """
     Calculates a one-way chi square test.
@@ -3627,7 +3644,7 @@ def mannwhitneyu(x, y, use_continuity=True):
         z = abs((bigu-0.5-n1*n2/2.0) / sd)
     else:
         z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
-    return smallu, distributions.norm.sf(z)  #(1.0 - zprob(z))
+    return smallu, distributions.norm.sf(z)  # (1.0 - zprob(z))
 
 
 def ranksums(x, y):
@@ -3807,6 +3824,7 @@ def friedmanchisquare(*args):
 
 zprob = special.ndtr
 
+
 def chisqprob(chisq, df):
     """
     Probability value (1-tail) for the Chi^2 probability distribution.
@@ -3830,6 +3848,7 @@ def chisqprob(chisq, df):
 
 ksprob = special.kolmogorov
 fprob = special.fdtrc
+
 
 def betai(a, b, x):
     """
@@ -3864,6 +3883,7 @@ def betai(a, b, x):
 #####################################
 #######  ANOVA CALCULATIONS  #######
 #####################################
+
 
 def glm(data, para):
     """
@@ -3917,10 +3937,11 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     if (a-1)**2 + (b-1)**2 == 5:
         q = 1
     else:
-        q = np.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 -5) )
+        q = np.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5) )
     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
     return n_um / d_en
+
 
 def f_value(ER, EF, dfR, dfF):
     """
@@ -3948,7 +3969,6 @@ def f_value(ER, EF, dfR, dfF):
 
     """
     return ((ER-EF)/float(dfR-dfF) / (EF/float(dfF)))
-
 
 
 def f_value_multivariate(ER, EF, dfnum, dfden):

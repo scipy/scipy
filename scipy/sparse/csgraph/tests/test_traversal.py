@@ -13,7 +13,7 @@ def test_graph_breadth_first():
                         [ 0, 0, 7, 0, 1],
                         [ 0, 3, 0, 1, 0]])
     csgraph = csgraph_from_dense(csgraph, null_value=0)
-    
+
     bfirst = np.array([[ 0, 1, 2, 0, 0],
                        [ 0, 0, 0, 0, 3],
                        [ 0, 0, 0, 7, 0],
@@ -24,7 +24,7 @@ def test_graph_breadth_first():
         bfirst_test = breadth_first_tree(csgraph, 0, directed)
         assert_array_almost_equal(csgraph_to_dense(bfirst_test),
                                   bfirst)
-        
+
 
 def test_graph_depth_first():
     csgraph = np.array([[ 0, 1, 2, 0, 0],

@@ -134,11 +134,14 @@ __all__ = [
 # Utility functions
 #------------------------------------------------------------------------------
 
+
 class NoConvergence(Exception):
     pass
 
+
 def maxnorm(x):
     return np.absolute(x).max()
+
 
 def _as_inexact(x):
     """Return `x` as an array, of either floats or complex floats"""
@@ -147,11 +150,13 @@ def _as_inexact(x):
         return asarray(x, dtype=np.float_)
     return x
 
+
 def _array_like(x, x0):
     """Return ndarray `x` as same array subclass and shape as `x0`"""
     x = np.reshape(x, np.shape(x0))
     wrap = getattr(x0, '__array_wrap__', x.__array_wrap__)
     return wrap(x)
+
 
 def _safe_norm(v):
     if not np.isfinite(v).all():
@@ -213,9 +218,11 @@ _doc_parts = dict(
     """.strip()
 )
 
+
 def _set_doc(obj):
     if obj.__doc__:
         obj.__doc__ = obj.__doc__ % _doc_parts
+
 
 def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                  maxiter=None, f_tol=None, f_rtol=None, x_tol=None, x_rtol=None,
@@ -362,6 +369,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 
 _set_doc(nonlin_solve)
 
+
 def _nonlin_line_search(func, x, Fx, dx, search_type='armijo', rdiff=1e-8,
                         smin=1e-2):
     tmp_s = [0]
@@ -405,6 +413,7 @@ def _nonlin_line_search(func, x, Fx, dx, search_type='armijo', rdiff=1e-8,
     Fx_norm = norm(Fx)
 
     return s, x, Fx, Fx_norm
+
 
 class TerminationCondition(object):
     """
@@ -536,6 +545,7 @@ class Jacobian(object):
             # Call on the first point unless overridden
             self.update(self, x, F)
 
+
 class InverseJacobian(object):
     def __init__(self, jacobian):
         self.jacobian = jacobian
@@ -553,6 +563,7 @@ class InverseJacobian(object):
     @property
     def dtype(self):
         return self.jacobian.dtype
+
 
 def asjacobian(J):
     """
@@ -665,6 +676,7 @@ class GenericBroyden(Jacobian):
         self._update(x, f, dx, df, norm(dx), norm(df))
         self.last_f = f
         self.last_x = x
+
 
 class LowRankMatrix(object):
     r"""
@@ -883,6 +895,7 @@ _doc_parts['broyden_params'] = """
         Maximum rank for the Broyden matrix.
         Default is infinity (ie., no rank reduction).
     """.strip()
+
 
 class BroydenFirst(GenericBroyden):
     r"""
@@ -1156,6 +1169,7 @@ class Anderson(GenericBroyden):
 # Simple iterations
 #------------------------------------------------------------------------------
 
+
 class DiagBroyden(GenericBroyden):
     """
     Find a root of a function, using diagonal Broyden Jacobian approximation.
@@ -1202,6 +1216,7 @@ class DiagBroyden(GenericBroyden):
     def _update(self, x, f, dx, df, dx_norm, df_norm):
         self.d -= (df + self.d*dx)*dx/dx_norm**2
 
+
 class LinearMixing(GenericBroyden):
     """
     Find a root of a function, using a scalar Jacobian approximation.
@@ -1240,6 +1255,7 @@ class LinearMixing(GenericBroyden):
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
         pass
+
 
 class ExcitingMixing(GenericBroyden):
     """
@@ -1450,7 +1466,6 @@ class KrylovJacobian(Jacobian):
 
         self._update_diff_step()
 
-
         # Setup also the preconditioner, if possible
         if self.preconditioner is not None:
             if hasattr(self.preconditioner, 'setup'):
@@ -1509,4 +1524,3 @@ linearmixing = _nonlin_wrapper('linearmixing', LinearMixing)
 diagbroyden = _nonlin_wrapper('diagbroyden', DiagBroyden)
 excitingmixing = _nonlin_wrapper('excitingmixing', ExcitingMixing)
 newton_krylov = _nonlin_wrapper('newton_krylov', KrylovJacobian)
-

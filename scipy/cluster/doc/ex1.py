@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 from scipy import *
 from scipy.cluster import vq
 
+
 def cluster_data(data,cluster_cnt,iter=20,thresh=1e-5):
     """ Group data into a number of common clusters
 

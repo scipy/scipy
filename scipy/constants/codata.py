@@ -806,6 +806,7 @@ Wien wavelength displacement law constant              2.897 7721 e-3        0.0
 
 physical_constants = {}
 
+
 def parse_constants(d):
     constants = {}
     for line in d.split('\n'):
@@ -843,14 +844,17 @@ for k in _physical_constants_2006:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
 
+
 class ConstantWarning(DeprecationWarning):
     """Accessing a constant no longer in current CODATA data set"""
     pass
+
 
 def _check_obsolete(key):
     if key in _obsolete_constants and key not in _aliases:
         warnings.warn("Constant '%s' is not in current %s data set" % (
             key, _current_codata), ConstantWarning)
+
 
 def value(key) :
     """
@@ -881,6 +885,7 @@ def value(key) :
     _check_obsolete(key)
     return physical_constants[key][0]
 
+
 def unit(key) :
     """
     Unit in physical_constants indexed by key
@@ -909,6 +914,7 @@ def unit(key) :
     """
     _check_obsolete(key)
     return physical_constants[key][1]
+
 
 def precision(key) :
     """
@@ -939,6 +945,7 @@ def precision(key) :
     _check_obsolete(key)
     return physical_constants[key][2] / physical_constants[key][0]
 
+
 def find(sub=None, disp=False):
     """
     Return list of codata.physical_constant keys containing a given string.
@@ -966,7 +973,7 @@ def find(sub=None, disp=False):
     if sub is None:
         result = list(_current_constants.keys())
     else:
-        result = [key for key in _current_constants \
+        result = [key for key in _current_constants
                  if sub.lower() in key.lower()]
 
     result.sort()
@@ -986,7 +993,7 @@ exact_values = {
 'mag. constant': (mu0, 'N A^-2', 0.0),
 'electric constant': (epsilon0, 'F m^-1', 0.0),
 'characteristic impedance of vacuum': (sqrt(mu0/epsilon0), 'ohm', 0.0),
-'atomic unit of permittivity': (4*epsilon0*pi, 'F m^-1', 0.0), #is that the definition?
+'atomic unit of permittivity': (4*epsilon0*pi, 'F m^-1', 0.0), # is that the definition?
 'joule-kilogram relationship': (1/(c*c), 'kg', 0.0),
 'kilogram-joule relationship': (c*c, 'J', 0.0),
 'hertz-inverse meter relationship': (1/c, 'm^-1', 0.0)

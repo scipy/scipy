@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 
 import os
 
+
 def remove_whitespace(in_str):
     out = in_str.replace(" ","")
     out = out.replace("\t","")
@@ -16,6 +17,7 @@ from scipy.weave import catalog
 
 import glob
 
+
 def temp_catalog_files(prefix=''):
     # might need to add some more platform specific catalog file
     # suffixes to remove.  The .pag was recently added for SunOS
@@ -25,17 +27,19 @@ def temp_catalog_files(prefix=''):
 
 import tempfile
 
+
 def clear_temp_catalog():
     """ Remove any catalog from the temp dir
     """
     global backup_dir
-    backup_dir =tempfile.mktemp()
+    backup_dir = tempfile.mktemp()
     os.mkdir(backup_dir)
     for file in temp_catalog_files():
         move_file(file,backup_dir)
         #d,f = os.path.split(file)
         #backup = os.path.join(backup_dir,f)
         #os.rename(file,backup)
+
 
 def restore_temp_catalog():
     """ Remove any catalog from the temp dir
@@ -53,6 +57,7 @@ def restore_temp_catalog():
     os.rmdir(backup_dir)
     backup_dir = None
 
+
 def empty_temp_dir():
     """ Create a sub directory in the temp directory for use in tests
     """
@@ -64,6 +69,7 @@ def empty_temp_dir():
             os.mkdir(new_d)
             break
     return new_d
+
 
 def cleanup_temp_dir(d):
     """ Remove a directory created by empty_temp_dir
@@ -89,7 +95,9 @@ def cleanup_temp_dir(d):
 # a working version is available.
 from distutils.errors import DistutilsFileError
 import distutils.file_util
-def move_file (src, dst,
+
+
+def move_file(src, dst,
                verbose=0,
                dry_run=0):
 

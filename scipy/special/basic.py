@@ -34,9 +34,11 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta',
            'SpecialFunctionWarning']
 
+
 class SpecialFunctionWarning(Warning):
     pass
 warnings.simplefilter("always", category=SpecialFunctionWarning)
+
 
 def sinc(x):
     """Returns sin(pi*x)/(pi*x) at all points of array x.
@@ -48,7 +50,8 @@ def sinc(x):
     old_settings = seterr(all='ignore')
     s = sin(w) / w
     seterr(**old_settings)
-    return where(x==0, 1.0, s)
+    return where(x == 0, 1.0, s)
+
 
 def diric(x,n):
     """Returns the periodic sinc function, also called the Dirichlet function:
@@ -82,7 +85,6 @@ def diric(x,n):
     return y
 
 
-
 def jnjnp_zeros(nt):
     """Compute nt (<=1200) zeros of the Bessel functions Jn and Jn'
     and arange them in order of their magnitudes.
@@ -104,11 +106,12 @@ def jnjnp_zeros(nt):
     --------
     jn_zeros, jnp_zeros : to get separated arrays of zeros.
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt>1200):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt > 1200):
         raise ValueError("Number must be integer <= 1200.")
     nt = int(nt)
     n,m,t,zo = specfun.jdzo(nt)
     return zo[1:nt+1],n[:nt],m[:nt],t[:nt]
+
 
 def jnyn_zeros(n,nt):
     """Compute nt zeros of the Bessel functions Jn(x), Jn'(x), Yn(x), and
@@ -118,58 +121,69 @@ def jnyn_zeros(n,nt):
     """
     if not (isscalar(nt) and isscalar(n)):
         raise ValueError("Arguments must be scalars.")
-    if (floor(n)!=n) or (floor(nt)!=nt):
+    if (floor(n) != n) or (floor(nt) != nt):
         raise ValueError("Arguments must be integers.")
-    if (nt <=0):
+    if (nt <= 0):
         raise ValueError("nt > 0")
     return specfun.jyzo(abs(n),nt)
+
 
 def jn_zeros(n,nt):
     """Compute nt zeros of the Bessel function Jn(x).
     """
     return jnyn_zeros(n,nt)[0]
+
+
 def jnp_zeros(n,nt):
     """Compute nt zeros of the Bessel function Jn'(x).
     """
     return jnyn_zeros(n,nt)[1]
+
+
 def yn_zeros(n,nt):
     """Compute nt zeros of the Bessel function Yn(x).
     """
     return jnyn_zeros(n,nt)[2]
+
+
 def ynp_zeros(n,nt):
     """Compute nt zeros of the Bessel function Yn'(x).
     """
     return jnyn_zeros(n,nt)[3]
 
+
 def y0_zeros(nt,complex=0):
     """Returns nt (complex or real) zeros of Y0(z), z0, and the value
     of Y0'(z0) = -Y1(z0) at each zero.
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt <=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 0
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
 
+
 def y1_zeros(nt,complex=0):
     """Returns nt (complex or real) zeros of Y1(z), z1, and the value
     of Y1'(z1) = Y0(z1) at each zero.
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt <=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 1
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
 
+
 def y1p_zeros(nt,complex=0):
     """Returns nt (complex or real) zeros of Y1'(z), z1', and the value
     of Y1(z1') at each zero.
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt <=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 2
     kc = (complex != 1)
     return specfun.cyzo(nt,kf,kc)
+
 
 def bessel_diff_formula(v, z, n, L, phase):
     # from AMS55.
@@ -183,10 +197,11 @@ def bessel_diff_formula(v, z, n, L, phase):
         s += p*L(v-n + i*2, z)
     return s / (2.**n)
 
+
 def jvp(v,z,n=1):
     """Return the nth derivative of Jv(z) with respect to z.
     """
-    if not isinstance(n,int) or (n<0):
+    if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return jv(v,z)
@@ -194,10 +209,11 @@ def jvp(v,z,n=1):
         return bessel_diff_formula(v, z, n, jv, -1)
 #        return (jvp(v-1,z,n-1) - jvp(v+1,z,n-1))/2.0
 
+
 def yvp(v,z,n=1):
     """Return the nth derivative of Yv(z) with respect to z.
     """
-    if not isinstance(n,int) or (n<0):
+    if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return yv(v,z)
@@ -205,30 +221,33 @@ def yvp(v,z,n=1):
         return bessel_diff_formula(v, z, n, yv, -1)
 #        return (yvp(v-1,z,n-1) - yvp(v+1,z,n-1))/2.0
 
+
 def kvp(v,z,n=1):
     """Return the nth derivative of Kv(z) with respect to z.
     """
-    if not isinstance(n,int) or (n<0):
+    if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return kv(v,z)
     else:
         return (-1)**n * bessel_diff_formula(v, z, n, kv, 1)
 
+
 def ivp(v,z,n=1):
     """Return the nth derivative of Iv(z) with respect to z.
     """
-    if not isinstance(n,int) or (n<0):
+    if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return iv(v,z)
     else:
         return bessel_diff_formula(v, z, n, iv, 1)
 
+
 def h1vp(v,z,n=1):
     """Return the nth derivative of H1v(z) with respect to z.
     """
-    if not isinstance(n,int) or (n<0):
+    if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return hankel1(v,z)
@@ -236,10 +255,11 @@ def h1vp(v,z,n=1):
         return bessel_diff_formula(v, z, n, hankel1, -1)
 #        return (h1vp(v-1,z,n-1) - h1vp(v+1,z,n-1))/2.0
 
+
 def h2vp(v,z,n=1):
     """Return the nth derivative of H2v(z) with respect to z.
     """
-    if not isinstance(n,int) or (n<0):
+    if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if n == 0:
         return hankel2(v,z)
@@ -247,21 +267,25 @@ def h2vp(v,z,n=1):
         return bessel_diff_formula(v, z, n, hankel2, -1)
 #        return (h2vp(v-1,z,n-1) - h2vp(v+1,z,n-1))/2.0
 
+
 def sph_jn(n,z):
     """Compute the spherical Bessel function jn(z) and its derivative for
     all orders up to and including n.
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n!= floor(n)) or (n<0):
+    if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
         nm,jn,jnp = specfun.sphj(n1,z)
     return jn[:(n+1)], jnp[:(n+1)]
+
 
 def sph_yn(n,z):
     """Compute the spherical Bessel function yn(z) and its derivative for
@@ -269,15 +293,18 @@ def sph_yn(n,z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n!= floor(n)) or (n<0):
+    if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z) or less(z,0):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
         nm,yn,ynp = specfun.sphy(n1,z)
     return yn[:(n+1)], ynp[:(n+1)]
+
 
 def sph_jnyn(n,z):
     """Compute the spherical Bessel functions, jn(z) and yn(z) and their
@@ -285,10 +312,12 @@ def sph_jnyn(n,z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n!= floor(n)) or (n<0):
+    if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z) or less(z,0):
         nm,jn,jnp,yn,ynp = specfun.csphjy(n1,z)
     else:
@@ -296,21 +325,25 @@ def sph_jnyn(n,z):
         nm,jn,jnp = specfun.sphj(n1,z)
     return jn[:(n+1)],jnp[:(n+1)],yn[:(n+1)],ynp[:(n+1)]
 
+
 def sph_in(n,z):
     """Compute the spherical Bessel function in(z) and its derivative for
     all orders up to and including n.
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n!= floor(n)) or (n<0):
+    if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z):
         nm,In,Inp,kn,knp = specfun.csphik(n1,z)
     else:
         nm,In,Inp = specfun.sphi(n1,z)
     return In[:(n+1)], Inp[:(n+1)]
+
 
 def sph_kn(n,z):
     """Compute the spherical Bessel function kn(z) and its derivative for
@@ -318,15 +351,18 @@ def sph_kn(n,z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n!= floor(n)) or (n<0):
+    if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z) or less(z,0):
         nm,In,Inp,kn,knp = specfun.csphik(n1,z)
     else:
         nm,kn,knp = specfun.sphk(n1,z)
     return kn[:(n+1)], knp[:(n+1)]
+
 
 def sph_inkn(n,z):
     """Compute the spherical Bessel functions, in(z) and kn(z) and their
@@ -334,7 +370,7 @@ def sph_inkn(n,z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n!= floor(n)) or (n<0):
+    if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if iscomplex(z) or less(z,0):
         nm,In,Inp,kn,knp = specfun.csphik(n,z)
@@ -343,18 +379,22 @@ def sph_inkn(n,z):
         nm,kn,knp = specfun.sphk(n,z)
     return In,Inp,kn,knp
 
+
 def riccati_jn(n,x):
     """Compute the Ricatti-Bessel function of the first kind and its
     derivative for all orders up to and including n.
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    if (n!= floor(n)) or (n<0):
+    if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n == 0): n1 = 1
-    else: n1 = n
+    if (n == 0):
+        n1 = 1
+    else:
+        n1 = n
     nm,jn,jnp = specfun.rctj(n1,x)
     return jn[:(n+1)],jnp[:(n+1)]
+
 
 def riccati_yn(n,x):
     """Compute the Ricatti-Bessel function of the second kind and its
@@ -362,12 +402,15 @@ def riccati_yn(n,x):
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    if (n!= floor(n)) or (n<0):
+    if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n == 0): n1 = 1
-    else: n1 = n
+    if (n == 0):
+        n1 = 1
+    else:
+        n1 = n
     nm,jn,jnp = specfun.rcty(n1,x)
     return jn[:(n+1)],jnp[:(n+1)]
+
 
 def _sph_harmonic(m,n,theta,phi):
     """Compute spherical harmonics.
@@ -412,40 +455,47 @@ def _sph_harmonic(m,n,theta,phi):
 
 sph_harm = vectorize(_sph_harmonic,'D')
 
+
 def erfinv(y):
     return ndtri((y+1)/2.0)/sqrt(2)
+
 
 def erfcinv(y):
     return ndtri((2-y)/2.0)/sqrt(2)
 
+
 def erf_zeros(nt):
     """Compute nt complex zeros of the error function erf(z).
     """
-    if (floor(nt)!=nt) or (nt<=0) or not isscalar(nt):
+    if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.cerzo(nt)
+
 
 def fresnelc_zeros(nt):
     """Compute nt complex zeros of the cosine Fresnel integral C(z).
     """
-    if (floor(nt)!=nt) or (nt<=0) or not isscalar(nt):
+    if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(1,nt)
+
 
 def fresnels_zeros(nt):
     """Compute nt complex zeros of the sine Fresnel integral S(z).
     """
-    if (floor(nt)!=nt) or (nt<=0) or not isscalar(nt):
+    if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(2,nt)
+
 
 def fresnel_zeros(nt):
     """Compute nt complex zeros of the sine and cosine Fresnel integrals
     S(z) and C(z).
     """
-    if (floor(nt)!=nt) or (nt<=0) or not isscalar(nt):
+    if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(2,nt), specfun.fcszo(1,nt)
+
 
 def hyp0f1(v, z):
     r"""Confluent hypergeometric limit function 0F1.
@@ -482,10 +532,12 @@ def hyp0f1(v, z):
     den[z == 0] = 1
     return num / den
 
+
 def assoc_laguerre(x,n,k=0.0):
     return orthogonal.eval_genlaguerre(n, k, x)
 
 digamma = psi
+
 
 def polygamma(n, x):
     """Polygamma function which is the nth derivative of the digamma (psi)
@@ -517,6 +569,7 @@ def polygamma(n, x):
     fac2 = (-1.0)**(n+1) * gamma(n+1.0) * zeta(n+1,x)
     return where(n == 0, psi(x), fac2)
 
+
 def mathieu_even_coef(m,q):
     """Compute expansion coefficients for even Mathieu functions and
     modified Mathieu functions.
@@ -525,13 +578,13 @@ def mathieu_even_coef(m,q):
         raise ValueError("m and q must be scalars.")
     if (q < 0):
         raise ValueError("q >=0")
-    if (m != floor(m)) or (m<0):
+    if (m != floor(m)) or (m < 0):
         raise ValueError("m must be an integer >=0.")
 
     if (q <= 1):
         qm = 7.5+56.1*sqrt(q)-134.7*q+90.7*sqrt(q)*q
     else:
-        qm=17.0+3.1*sqrt(q)-.126*q+.0037*sqrt(q)*q
+        qm = 17.0+3.1*sqrt(q)-.126*q+.0037*sqrt(q)*q
     km = int(qm+0.5*m)
     if km > 251:
         print("Warning, too many predicted coefficients.")
@@ -544,6 +597,7 @@ def mathieu_even_coef(m,q):
     fc = specfun.fcoef(kd,m,q,a)
     return fc[:km]
 
+
 def mathieu_odd_coef(m,q):
     """Compute expansion coefficients for even Mathieu functions and
     modified Mathieu functions.
@@ -552,13 +606,13 @@ def mathieu_odd_coef(m,q):
         raise ValueError("m and q must be scalars.")
     if (q < 0):
         raise ValueError("q >=0")
-    if (m != floor(m)) or (m<=0):
+    if (m != floor(m)) or (m <= 0):
         raise ValueError("m must be an integer > 0")
 
     if (q <= 1):
         qm = 7.5+56.1*sqrt(q)-134.7*q+90.7*sqrt(q)*q
     else:
-        qm=17.0+3.1*sqrt(q)-.126*q+.0037*sqrt(q)*q
+        qm = 17.0+3.1*sqrt(q)-.126*q+.0037*sqrt(q)*q
     km = int(qm+0.5*m)
     if km > 251:
         print("Warning, too many predicted coefficients.")
@@ -596,9 +650,9 @@ def lpmn(m,n,z):
     Pmn_d_z : (m+1, n+1) array
        Derivatives for all orders 0..m and degrees 0..n
     """
-    if not isscalar(m) or (abs(m)>n):
+    if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
-    if not isscalar(n) or (n<0):
+    if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if not isscalar(z):
         raise ValueError("z must be scalar.")
@@ -606,7 +660,7 @@ def lpmn(m,n,z):
         mp = -m
         mf,nf = mgrid[0:mp+1,0:n+1]
         sv = errprint(0)
-        fixarr = where(mf>nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        fixarr = where(mf > nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
         sv = errprint(sv)
     else:
         mp = m
@@ -628,9 +682,9 @@ def lqmn(m,n,z):
 
     z can be complex.
     """
-    if not isscalar(m) or (m<0):
+    if not isscalar(m) or (m < 0):
         raise ValueError("m must be a non-negative integer.")
-    if not isscalar(n) or (n<0):
+    if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if not isscalar(z):
         raise ValueError("z must be scalar.")
@@ -651,22 +705,28 @@ def lqmn(m,n,z):
 def bernoulli(n):
     """Return an array of the Bernoulli numbers B0..Bn
     """
-    if not isscalar(n) or (n<0):
+    if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     n = int(n)
-    if (n < 2): n1 = 2
-    else: n1 = n
+    if (n < 2):
+        n1 = 2
+    else:
+        n1 = n
     return specfun.bernob(int(n1))[:(n+1)]
+
 
 def euler(n):
     """Return an array of the Euler numbers E0..En (inclusive)
     """
-    if not isscalar(n) or (n<0):
+    if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     n = int(n)
-    if (n < 2): n1 = 2
-    else:  n1 = n
+    if (n < 2):
+        n1 = 2
+    else:
+        n1 = n
     return specfun.eulerb(n1)[:(n+1)]
+
 
 def lpn(n,z):
     """Compute sequence of Legendre functions of the first kind (polynomials),
@@ -676,10 +736,12 @@ def lpn(n,z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n!= floor(n)) or (n<0):
+    if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z):
         pn,pd = specfun.clpn(n1,z)
     else:
@@ -688,21 +750,25 @@ def lpn(n,z):
 
 ## lpni
 
+
 def lqn(n,z):
     """Compute sequence of Legendre functions of the second kind,
     Qn(z) and derivatives for all degrees from 0 to n (inclusive).
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n!= floor(n)) or (n<0):
+    if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     if iscomplex(z):
         qn,qd = specfun.clqn(n1,z)
     else:
         qn,qd = specfun.lqnb(n1,z)
     return qn[:(n+1)],qd[:(n+1)]
+
 
 def ai_zeros(nt):
     """Compute the zeros of Airy Functions Ai(x) and Ai'(x), a and a'
@@ -716,9 +782,10 @@ def ai_zeros(nt):
     aip[l-1] -- Ai'(a[l-1])
     """
     kf = 1
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be a positive integer scalar.")
     return specfun.airyzo(nt,kf)
+
 
 def bi_zeros(nt):
     """Compute the zeros of Airy Functions Bi(x) and Bi'(x), b and b'
@@ -732,9 +799,10 @@ def bi_zeros(nt):
     bip[l-1] -- Bi'(b[l-1])
     """
     kf = 2
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be a positive integer scalar.")
     return specfun.airyzo(nt,kf)
+
 
 def lmbda(v,x):
     """Compute sequence of lambda functions with arbitrary order v
@@ -742,18 +810,21 @@ def lmbda(v,x):
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    if (v<0):
+    if (v < 0):
         raise ValueError("argument must be > 0.")
     n = int(v)
     v0 = v - n
-    if (n < 1): n1 = 1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     v1 = n1 + v0
-    if (v!=floor(v)):
+    if (v != floor(v)):
         vm, vl, dl = specfun.lamv(v1,x)
     else:
         vm, vl, dl = specfun.lamn(v1,x)
     return vl[:(n+1)], dl[:(n+1)]
+
 
 def pbdv_seq(v,x):
     """Compute sequence of parabolic cylinder functions Dv(x) and
@@ -763,11 +834,14 @@ def pbdv_seq(v,x):
         raise ValueError("arguments must be scalars.")
     n = int(v)
     v0 = v-n
-    if (n < 1): n1=1
-    else: n1 = n
+    if (n < 1):
+        n1 = 1
+    else:
+        n1 = n
     v1 = n1 + v0
     dv,dp,pdf,pdd = specfun.pbdv(v1,x)
     return dv[:n1+1],dp[:n1+1]
+
 
 def pbvv_seq(v,x):
     """Compute sequence of parabolic cylinder functions Dv(x) and
@@ -777,11 +851,14 @@ def pbvv_seq(v,x):
         raise ValueError("arguments must be scalars.")
     n = int(v)
     v0 = v-n
-    if (n <= 1): n1=1
-    else: n1 = n
+    if (n <= 1):
+        n1 = 1
+    else:
+        n1 = n
     v1 = n1 + v0
     dv,dp,pdf,pdd = specfun.pbvv(v1,x)
     return dv[:n1+1],dp[:n1+1]
+
 
 def pbdn_seq(n,z):
     """Compute sequence of parabolic cylinder functions Dn(z) and
@@ -789,7 +866,7 @@ def pbdn_seq(n,z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (floor(n)!=n):
+    if (floor(n) != n):
         raise ValueError("n must be an integer.")
     if (abs(n) <= 1):
         n1 = 1
@@ -798,61 +875,70 @@ def pbdn_seq(n,z):
     cpb,cpd = specfun.cpbdn(n1,z)
     return cpb[:n1+1],cpd[:n1+1]
 
+
 def ber_zeros(nt):
     """Compute nt zeros of the Kelvin function ber x
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,1)
+
 
 def bei_zeros(nt):
     """Compute nt zeros of the Kelvin function bei x
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,2)
+
 
 def ker_zeros(nt):
     """Compute nt zeros of the Kelvin function ker x
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,3)
+
 
 def kei_zeros(nt):
     """Compute nt zeros of the Kelvin function kei x
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,4)
+
 
 def berp_zeros(nt):
     """Compute nt zeros of the Kelvin function ber' x
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,5)
+
 
 def beip_zeros(nt):
     """Compute nt zeros of the Kelvin function bei' x
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,6)
+
 
 def kerp_zeros(nt):
     """Compute nt zeros of the Kelvin function ker' x
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,7)
+
 
 def keip_zeros(nt):
     """Compute nt zeros of the Kelvin function kei' x
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,8)
+
 
 def kelvin_zeros(nt):
     """Compute nt zeros of all the Kelvin functions returned in a
@@ -860,7 +946,7 @@ def kelvin_zeros(nt):
     The tuple containse the arrays of zeros of
     (ber, bei, ker, kei, ber', bei', ker', kei')
     """
-    if not isscalar(nt) or (floor(nt)!=nt) or (nt<=0):
+    if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
     return specfun.klvnzo(nt,1), \
            specfun.klvnzo(nt,2), \
@@ -871,6 +957,7 @@ def kelvin_zeros(nt):
            specfun.klvnzo(nt,7), \
            specfun.klvnzo(nt,8)
 
+
 def pro_cv_seq(m,n,c):
     """Compute a sequence of characteristic values for the prolate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
@@ -878,12 +965,13 @@ def pro_cv_seq(m,n,c):
     """
     if not (isscalar(m) and isscalar(n) and isscalar(c)):
         raise ValueError("Arguments must be scalars.")
-    if (n!=floor(n)) or (m!=floor(m)):
+    if (n != floor(n)) or (m != floor(m)):
         raise ValueError("Modes must be integers.")
     if (n-m > 199):
         raise ValueError("Difference between n and m is too large.")
     maxL = n-m+1
     return specfun.segv(m,n,c,1)[1][:maxL]
+
 
 def obl_cv_seq(m,n,c):
     """Compute a sequence of characteristic values for the oblate
@@ -892,12 +980,13 @@ def obl_cv_seq(m,n,c):
     """
     if not (isscalar(m) and isscalar(n) and isscalar(c)):
         raise ValueError("Arguments must be scalars.")
-    if (n!=floor(n)) or (m!=floor(m)):
+    if (n != floor(n)) or (m != floor(m)):
         raise ValueError("Modes must be integers.")
     if (n-m > 199):
         raise ValueError("Difference between n and m is too large.")
     maxL = n-m+1
     return specfun.segv(m,n,c,-1)[1][:maxL]
+
 
 def ellipk(m):
     """
@@ -923,6 +1012,7 @@ def ellipk(m):
 
     """
     return ellipkm1(1 - asarray(m))
+
 
 def agm(a,b):
     """Arithmetic, Geometric Mean

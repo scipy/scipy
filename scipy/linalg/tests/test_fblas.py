@@ -23,6 +23,8 @@ accuracy = 5
 
 # Since numpy.dot likely uses the same blas, use this routine
 # to check.
+
+
 def matrixmultiply(a, b):
     if len(b.shape) == 1:
         b_is_vector = True
@@ -43,6 +45,7 @@ def matrixmultiply(a, b):
 
 ##################################################
 ### Test blas ?axpy
+
 
 class BaseAxpy(object):
     ''' Mixin class for axpy tests '''
@@ -108,7 +111,9 @@ try:
         blas_func = fblas.saxpy
         dtype = float32
 except AttributeError:
-    class TestSaxpy: pass
+    class TestSaxpy:
+        pass
+
 
 class TestDaxpy(TestCase, BaseAxpy):
     blas_func = fblas.daxpy
@@ -119,7 +124,9 @@ try:
         blas_func = fblas.caxpy
         dtype = complex64
 except AttributeError:
-    class TestCaxpy: pass
+    class TestCaxpy:
+        pass
+
 
 class TestZaxpy(TestCase, BaseAxpy):
     blas_func = fblas.zaxpy
@@ -159,7 +166,9 @@ try:
         blas_func = fblas.sscal
         dtype = float32
 except AttributeError:
-    class TestSscal: pass
+    class TestSscal:
+        pass
+
 
 class TestDscal(TestCase, BaseScal):
     blas_func = fblas.dscal
@@ -170,7 +179,9 @@ try:
         blas_func = fblas.cscal
         dtype = complex64
 except AttributeError:
-    class TestCscal: pass
+    class TestCscal:
+        pass
+
 
 class TestZscal(TestCase, BaseScal):
     blas_func = fblas.zscal
@@ -239,7 +250,9 @@ try:
         blas_func = fblas.scopy
         dtype = float32
 except AttributeError:
-    class TestScopy: pass
+    class TestScopy:
+        pass
+
 
 class TestDcopy(TestCase, BaseCopy):
     blas_func = fblas.dcopy
@@ -250,7 +263,9 @@ try:
         blas_func = fblas.ccopy
         dtype = complex64
 except AttributeError:
-    class TestCcopy: pass
+    class TestCcopy:
+        pass
+
 
 class TestZcopy(TestCase, BaseCopy):
     blas_func = fblas.zcopy
@@ -324,7 +339,9 @@ try:
         blas_func = fblas.sswap
         dtype = float32
 except AttributeError:
-    class TestSswap: pass
+    class TestSswap:
+        pass
+
 
 class TestDswap(TestCase, BaseSwap):
     blas_func = fblas.dswap
@@ -335,7 +352,9 @@ try:
         blas_func = fblas.cswap
         dtype = complex64
 except AttributeError:
-    class TestCswap: pass
+    class TestCswap:
+        pass
+
 
 class TestZswap(TestCase, BaseSwap):
     blas_func = fblas.zswap
@@ -345,17 +364,18 @@ class TestZswap(TestCase, BaseSwap):
 ### Test blas ?gemv
 ### This will be a mess to test all cases.
 
+
 class BaseGemv(object):
     ''' Mixin class for gemv tests '''
 
     def get_data(self,x_stride=1,y_stride=1):
-        mult = array(1, dtype = self.dtype)
+        mult = array(1, dtype=self.dtype)
         if self.dtype in [complex64, complex128]:
-            mult = array(1+1j, dtype = self.dtype)
+            mult = array(1+1j, dtype=self.dtype)
         from numpy.random import normal, seed
         seed(1234)
-        alpha = array(1., dtype = self.dtype) * mult
-        beta = array(1.,dtype = self.dtype) * mult
+        alpha = array(1., dtype=self.dtype) * mult
+        beta = array(1.,dtype=self.dtype) * mult
         a = normal(0.,1.,(3,3)).astype(self.dtype) * mult
         x = arange(shape(a)[0]*x_stride,dtype=self.dtype) * mult
         y = arange(shape(a)[1]*y_stride,dtype=self.dtype) * mult
@@ -444,7 +464,9 @@ try:
         blas_func = fblas.sgemv
         dtype = float32
 except AttributeError:
-    class TestSgemv: pass
+    class TestSgemv:
+        pass
+
 
 class TestDgemv(TestCase, BaseGemv):
     blas_func = fblas.dgemv
@@ -455,7 +477,9 @@ try:
         blas_func = fblas.cgemv
         dtype = complex64
 except AttributeError:
-    class TestCgemv: pass
+    class TestCgemv:
+        pass
+
 
 class TestZgemv(TestCase, BaseGemv):
     blas_func = fblas.zgemv

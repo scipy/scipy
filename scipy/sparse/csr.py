@@ -19,6 +19,7 @@ from .sputils import upcast, isintlike
 
 from .compressed import _cs_matrix
 
+
 class csr_matrix(_cs_matrix):
     """
     Compressed Sparse Row matrix
@@ -116,7 +117,7 @@ class csr_matrix(_cs_matrix):
         from .lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
 
-        self.sort_indices() #lil_matrix needs sorted column indices
+        self.sort_indices() # lil_matrix needs sorted column indices
 
         ptr,ind,dat = self.indptr,self.indices,self.data
         rows, data  = lil.rows, lil.data
@@ -140,8 +141,8 @@ class csr_matrix(_cs_matrix):
         indices = np.empty(self.nnz, dtype=np.intc)
         data    = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-        csr_tocsc(self.shape[0], self.shape[1], \
-                  self.indptr, self.indices, self.data, \
+        csr_tocsc(self.shape[0], self.shape[1],
+                  self.indptr, self.indices, self.data,
                   indptr, indices, data)
 
         from .csc import csc_matrix
@@ -173,7 +174,7 @@ class csr_matrix(_cs_matrix):
             indices = np.empty(blks,       dtype=np.intc)
             data    = np.zeros((blks,R,C), dtype=self.dtype)
 
-            csr_tobsr(M, N, R, C, self.indptr, self.indices, self.data, \
+            csr_tobsr(M, N, R, C, self.indptr, self.indices, self.data,
                     indptr, indices, data.ravel() )
 
             return bsr_matrix((data,indices,indptr), shape=self.shape)
@@ -184,7 +185,6 @@ class csr_matrix(_cs_matrix):
         """swap the members of x if this is a column-oriented matrix
         """
         return (x[0],x[1])
-
 
     def __getitem__(self, key):
         def asindices(x):
@@ -223,7 +223,6 @@ class csr_matrix(_cs_matrix):
 
             return csr_matrix((data,indices,indptr), shape=shape)
 
-
         if isinstance(key, tuple):
             row = key[0]
             col = key[1]
@@ -231,32 +230,32 @@ class csr_matrix(_cs_matrix):
             if isintlike(row):
                 #[1,??]
                 if isintlike(col):
-                    return self._get_single_element(row, col) #[i,j]
+                    return self._get_single_element(row, col) # [i,j]
                 elif isinstance(col, slice):
-                    return self._get_row_slice(row, col)      #[i,1:2]
+                    return self._get_row_slice(row, col)      # [i,1:2]
                 else:
-                    P = extractor(col,self.shape[1]).T        #[i,[1,2]]
+                    P = extractor(col,self.shape[1]).T        # [i,[1,2]]
                     return self[row,:]*P
 
             elif isinstance(row, slice):
                 #[1:2,??]
                 if isintlike(col) or isinstance(col, slice):
-                    return self._get_submatrix(row, col)      #[1:2,j]
+                    return self._get_submatrix(row, col)      # [1:2,j]
                 else:
-                    P = extractor(col,self.shape[1]).T        #[1:2,[1,2]]
+                    P = extractor(col,self.shape[1]).T        # [1:2,[1,2]]
                     return self[row,:]*P
 
             else:
                 #[[1,2],??] or [[[1],[2]],??]
                 if isintlike(col) or isinstance(col,slice):
-                    P = extractor(row, self.shape[0])        #[[1,2],j] or [[1,2],1:2]
+                    P = extractor(row, self.shape[0])        # [[1,2],j] or [[1,2],1:2]
                     return (P*self)[:,col]
 
                 else:
                     row = asindices(row)
                     col = asindices(col)
                     if len(row.shape) == 1:
-                        if len(row) != len(col):             #[[1,2],[1,2]]
+                        if len(row) != len(col):             # [[1,2],[1,2]]
                             raise IndexError('number of row and column indices differ')
 
                         check_bounds(row, self.shape[0])
@@ -273,7 +272,7 @@ class csr_matrix(_cs_matrix):
                         return np.asmatrix(val)
 
                     elif len(row.shape) == 2:
-                        row = np.ravel(row)                   #[[[1],[2]],[1,2]]
+                        row = np.ravel(row)                   # [[[1],[2]],[1,2]]
                         P = extractor(row, self.shape[0])
                         return (P*self)[:,col]
 
@@ -281,10 +280,9 @@ class csr_matrix(_cs_matrix):
                         raise NotImplementedError('unsupported indexing')
 
         elif isintlike(key) or isinstance(key,slice):
-            return self[key,:]                                #[i] or [1:2]
+            return self[key,:]                                # [i] or [1:2]
         else:
-            return self[asindices(key),:]                     #[[1,2]]
-
+            return self[asindices(key),:]                     # [[1,2]]
 
     def _get_single_element(self,row,col):
         """Returns the single element self[row, col]
@@ -294,7 +292,7 @@ class csr_matrix(_cs_matrix):
             row += M
         if (col < 0):
             col += N
-        if not (0<=row<M) or not (0<=col<N):
+        if not (0 <= row < M) or not (0 <= col < N):
             raise IndexError("index out of bounds")
 
         #TODO make use of sorted indices (if present)
@@ -400,9 +398,9 @@ class csr_matrix(_cs_matrix):
                 raise TypeError('expected slice or scalar')
 
         def check_bounds( i0, i1, num ):
-            if not (0<=i0<num) or not (0<i1<=num) or not (i0<i1):
-                raise IndexError( \
-                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %\
+            if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 < i1):
+                raise IndexError(
+                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %
                       (i0, num, i1, num, i0, i1) )
 
         i0, i1 = process_slice( row_slice, M )
@@ -410,14 +408,13 @@ class csr_matrix(_cs_matrix):
         check_bounds( i0, i1, M )
         check_bounds( j0, j1, N )
 
-        indptr, indices, data = get_csr_submatrix( M, N, \
-                self.indptr, self.indices, self.data, \
+        indptr, indices, data = get_csr_submatrix( M, N,
+                self.indptr, self.indices, self.data,
                 int(i0), int(i1), int(j0), int(j1) )
 
-        shape =  (i1 - i0, j1 - j0)
+        shape = (i1 - i0, j1 - j0)
 
         return self.__class__( (data,indices,indptr), shape=shape )
-
 
 
 def isspmatrix_csr(x):

@@ -9,6 +9,7 @@ from scipy.linalg import cholesky, cholesky_banded, cho_solve_banded, \
 
 from scipy.linalg._testutils import assert_no_overwrite
 
+
 def random(size):
     return rand(*size)
 
@@ -167,6 +168,7 @@ class TestCholeskyBanded(TestCase):
         b = array([0.0, 0.5j, 3.8j, 3.8])
         x = cho_solve_banded((c, True), b)
         assert_array_almost_equal(x, [0.0, 0.0, 1.0j, 1.0])
+
 
 class TestOverwrite(object):
     def test_cholesky(self):

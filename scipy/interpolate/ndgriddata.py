@@ -18,6 +18,7 @@ __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
 # Nearest-neighbour interpolation
 #------------------------------------------------------------------------------
 
+
 class NearestNDInterpolator(NDInterpolatorBase):
     """
     NearestNDInterpolator(points, values)

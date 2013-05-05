@@ -37,6 +37,7 @@ This file is a translation of the following MATLAB implementation:
     http://www.stanford.edu/group/SOL/software/minres/matlab/
 """
 
+
 @set_docstring(header,
                Ainfo,
                footer)
@@ -55,19 +56,17 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
     if maxiter is None:
         maxiter = 5 * n
 
-
-    msg   =[' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
-            ' beta1 = 0.  The exact solution is  x = 0          ',   #  0
-            ' A solution to Ax = b was found, given rtol        ',   #  1
-            ' A least-squares solution was found, given rtol    ',   #  2
-            ' Reasonable accuracy achieved, given eps           ',   #  3
-            ' x has converged to an eigenvector                 ',   #  4
-            ' acond has exceeded 0.1/eps                        ',   #  5
-            ' The iteration limit was reached                   ',   #  6
-            ' A  does not define a symmetric matrix             ',   #  7
-            ' M  does not define a symmetric matrix             ',   #  8
-            ' M  does not define a pos-def preconditioner       ']   #  9
-
+    msg = [' beta2 = 0.  If M = I, b and x are eigenvectors    ',   # -1
+            ' beta1 = 0.  The exact solution is  x = 0          ',   # 0
+            ' A solution to Ax = b was found, given rtol        ',   # 1
+            ' A least-squares solution was found, given rtol    ',   # 2
+            ' Reasonable accuracy achieved, given eps           ',   # 3
+            ' x has converged to an eigenvector                 ',   # 4
+            ' acond has exceeded 0.1/eps                        ',   # 5
+            ' The iteration limit was reached                   ',   # 6
+            ' A  does not define a symmetric matrix             ',   # 7
+            ' M  does not define a symmetric matrix             ',   # 8
+            ' M  does not define a pos-def preconditioner       ']   # 9
 
     if show:
         print(first + 'Solution of symmetric Ax = b')
@@ -75,8 +74,12 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         print(first + 'itnlim =  %3g     rtol   =  %11.2e'   % (maxiter,tol))
         print()
 
-    istop = 0;   itn   = 0;   Anorm = 0;    Acond = 0;
-    rnorm = 0;   ynorm = 0;
+    istop = 0
+    itn   = 0
+    Anorm = 0
+    Acond = 0
+    rnorm = 0
+    ynorm = 0
 
     xtype = x.dtype
 
@@ -124,12 +127,19 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         if z > epsa:
             raise ValueError('non-symmetric preconditioner')
 
-
     # Initialize other quantities
-    oldb   = 0;          beta   = beta1;   dbar   = 0;       epsln  = 0;
-    qrnorm = beta1;      phibar = beta1;   rhs1   = beta1;
-    rhs2   = 0;          tnorm2 = 0;       ynorm2 = 0;
-    cs     = -1;         sn     = 0;
+    oldb   = 0
+    beta   = beta1
+    dbar   = 0
+    epsln  = 0
+    qrnorm = beta1
+    phibar = beta1
+    rhs1   = beta1
+    rhs2   = 0
+    tnorm2 = 0
+    ynorm2 = 0
+    cs     = -1
+    sn     = 0
     w      = zeros(n, dtype=xtype)
     w2     = zeros(n, dtype=xtype)
     r2     = r1
@@ -175,10 +185,10 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         #   [gbar k dbar k+1]   [sn -cs][alfak betak+1].
 
         oldeps = epsln
-        delta  = cs * dbar  +  sn * alfa   # delta1 = 0         deltak
-        gbar   = sn * dbar  -  cs * alfa   # gbar 1 = alfa1     gbar k
-        epsln  =               sn * beta   # epsln2 = 0         epslnk+1
-        dbar   =            -  cs * beta   # dbar 2 = beta2     dbar k+1
+        delta  = cs * dbar + sn * alfa   # delta1 = 0         deltak
+        gbar   = sn * dbar - cs * alfa   # gbar 1 = alfa1     gbar k
+        epsln  = sn * beta     # epsln2 = 0         epslnk+1
+        dbar   = - cs * beta   # dbar 2 = beta2     dbar k+1
         root   = norm([gbar, dbar])
         Arnorm = phibar * root
 
@@ -204,9 +214,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         gmax   = max(gmax, gamma)
         gmin   = min(gmin, gamma)
         z      = rhs1 / gamma
-        ynorm2 = z**2  +  ynorm2
-        rhs1   = rhs2 -  delta*z
-        rhs2   =      -  epsln*z
+        ynorm2 = z**2  + ynorm2
+        rhs1   = rhs2 - delta*z
+        rhs2   = - epsln*z
 
         # Estimate various norms and test for convergence.
 
@@ -217,12 +227,13 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         epsr   = Anorm * ynorm * tol
         diag   = gbar
 
-        if diag == 0: diag = epsa
+        if diag == 0:
+            diag = epsa
 
         qrnorm = phibar
         rnorm  = qrnorm
-        test1  = rnorm / (Anorm*ynorm)    #  ||r|| / (||A|| ||x||)
-        test2  = root  /  Anorm           # ||Ar|| / (||A|| ||r||)
+        test1  = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
+        test2  = root  / Anorm            # ||Ar|| / (||A|| ||r||)
 
         # Estimate  cond(A).
         # In this version we look at the diagonals of  R  in the
@@ -238,28 +249,43 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
         if istop == 0:
             t1 = 1 + test1      # These tests work if tol < eps
             t2 = 1 + test2
-            if t2    <= 1       : istop = 2
-            if t1    <= 1       : istop = 1
+            if t2    <= 1       :
+                istop = 2
+            if t1    <= 1       :
+                istop = 1
 
-            if itn   >= maxiter : istop = 6
-            if Acond >= 0.1/eps : istop = 4
-            if epsx  >= beta1   : istop = 3
+            if itn   >= maxiter :
+                istop = 6
+            if Acond >= 0.1/eps :
+                istop = 4
+            if epsx  >= beta1   :
+                istop = 3
             #if rnorm <= epsx   : istop = 2
             #if rnorm <= epsr   : istop = 1
-            if test2 <= tol     : istop = 2
-            if test1 <= tol     : istop = 1
+            if test2 <= tol     :
+                istop = 2
+            if test1 <= tol     :
+                istop = 1
 
         # See if it is time to print something.
 
         prnt = False
-        if n        <= 40         : prnt = True
-        if itn      <= 10         : prnt = True
-        if itn      >= maxiter-10 : prnt = True
-        if itn % 10 == 0          : prnt = True
-        if qrnorm   <= 10*epsx    : prnt = True
-        if qrnorm   <= 10*epsr    : prnt = True
-        if Acond    <= 1e-2/eps   : prnt = True
-        if istop  !=  0           : prnt = True
+        if n        <= 40         :
+            prnt = True
+        if itn      <= 10         :
+            prnt = True
+        if itn      >= maxiter-10 :
+            prnt = True
+        if itn % 10 == 0          :
+            prnt = True
+        if qrnorm   <= 10*epsx    :
+            prnt = True
+        if qrnorm   <= 10*epsr    :
+            prnt = True
+        if Acond    <= 1e-2/eps   :
+            prnt = True
+        if istop  != 0            :
+            prnt = True
 
         if show and prnt:
             str1 = '%6g %12.5e %10.3e'  % (itn, x[0], test1)
@@ -268,20 +294,21 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
             print(str1 + str2 + str3)
 
-            if itn % 10 == 0: print()
+            if itn % 10 == 0:
+                print()
 
         if callback is not None:
             callback(x)
 
-        if istop != 0: break #TODO check this
-
+        if istop != 0:
+            break # TODO check this
 
     if show:
         print()
         print(last + ' istop   =  %3g               itn   =%5g' % (istop,itn))
         print(last + ' Anorm   =  %12.4e      Acond =  %12.4e'  % (Anorm,Acond))
         print(last + ' rnorm   =  %12.4e      ynorm =  %12.4e'  % (rnorm,ynorm))
-        print(last + ' Arnorm  =  %12.4e'                       %  (Arnorm,))
+        print(last + ' Arnorm  =  %12.4e'                       % (Arnorm,))
         print(last + msg[istop+1])
 
     if istop == 6:

@@ -47,6 +47,8 @@ from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
 
 # Use future defaults to silence unwanted test warnings
 savemat_future = partial(savemat, oned_as='row')
+
+
 class MatFile5Reader_future(MatFile5Reader):
     def __init__(self, *args, **kwargs):
         sar = kwargs.get('struct_as_record')
@@ -56,6 +58,7 @@ class MatFile5Reader_future(MatFile5Reader):
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
+
 
 def mlarr(*args, **kwargs):
     ''' Convenience function to return matlab-compatible 2D array
@@ -273,11 +276,11 @@ def _check_level(label, expected, actual):
         assert_true(SP.issparse(actual))
         assert_array_almost_equal(actual.todense(),
                                   expected.todense(),
-                                  err_msg = label,
-                                  decimal = 5)
+                                  err_msg=label,
+                                  decimal=5)
         return
     # Check types are as expected
-    assert_true(types_compatible(expected, actual), \
+    assert_true(types_compatible(expected, actual),
            "Expected type %s, got %s at %s" %
                 (type(expected), type(actual), label))
     # A field in a record array may not be an ndarray
@@ -386,13 +389,13 @@ def test_round_trip():
 
 def test_gzip_simple():
     xdense = np.zeros((20,20))
-    xdense[2,3]=2.3
-    xdense[4,5]=4.5
+    xdense[2,3] = 2.3
+    xdense[4,5] = 4.5
     x = SP.csc_matrix(xdense)
 
     name = 'gzip_test'
     expected = {'x':x}
-    format='4'
+    format = '4'
 
     tmpdir = mkdtemp()
     try:
@@ -410,6 +413,7 @@ def test_gzip_simple():
     assert_array_almost_equal(actual['x'].todense(),
                               expected['x'].todense(),
                               err_msg=repr(actual))
+
 
 def test_multiple_open():
     # Ticket #1039, on Windows: check that files are not left open
@@ -439,11 +443,12 @@ def test_multiple_open():
     finally:
         shutil.rmtree(tmpdir)
 
+
 def test_mat73():
     # Check any hdf5 files raise an error
     filenames = glob(
         pjoin(test_data_path, 'testhdf5*.mat'))
-    assert_true(len(filenames)>0)
+    assert_true(len(filenames) > 0)
     for filename in filenames:
         fp = open(filename, 'rb')
         assert_raises(NotImplementedError,
@@ -514,8 +519,8 @@ def test_long_field_names_in_struct():
     fldname = 'a' * lim
     cell = np.ndarray((1,2),dtype=object)
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
-    cell[0,0]=st1
-    cell[0,1]=st1
+    cell[0,0] = st1
+    cell[0,1] = st1
     mat_stream = BytesIO()
     savemat_future(BytesIO(), {'longstruct': cell}, format='5',long_field_names=True)
     #
@@ -530,13 +535,13 @@ def test_cell_with_one_thing_in_it():
     # strings in it.  It works. Make a cell array that's 1 x 1 and put
     # a string in it. It should work but, in the old days, it didn't.
     cells = np.ndarray((1,2),dtype=object)
-    cells[0,0]='Hello'
-    cells[0,1]='World'
+    cells[0,0] = 'Hello'
+    cells[0,1] = 'World'
     mat_stream = BytesIO()
     savemat_future(BytesIO(), {'x': cells}, format='5')
 
     cells = np.ndarray((1,1),dtype=object)
-    cells[0,0]='Hello, world'
+    cells[0,0] = 'Hello, world'
     mat_stream = BytesIO()
     savemat_future(BytesIO(), {'x': cells}, format='5')
 
@@ -651,7 +656,7 @@ def test_compression():
     compressed_len = len(stream.getvalue())
     vals = loadmat(stream)
     yield assert_array_equal, vals['arr'], arr
-    yield assert_true, raw_len>compressed_len
+    yield assert_true, raw_len > compressed_len
     # Concatenate, test later
     arr2 = arr.copy()
     arr2[0,0] = 1
@@ -747,7 +752,8 @@ def test_recarray():
 
 
 def test_save_object():
-    class C(object): pass
+    class C(object):
+        pass
     c = C()
     c.field1 = 1
     c.field2 = 'a string'
@@ -794,7 +800,7 @@ def test_read_opts():
     rdr = MatFile5Reader_future(stream, chars_as_strings=False)
     carr = np.atleast_2d(np.array(list(arr.item()), dtype='U1'))
     assert_array_equal(rdr.get_variables()['a'], carr)
-    rdr.chars_as_strings=True
+    rdr.chars_as_strings = True
     assert_array_equal(rdr.get_variables()['a'], arr)
 
 
@@ -1029,7 +1035,8 @@ def test_varmats_from_mat():
                   ('mynum', mlarr(10)))
     # Dict like thing to give variables in defined order
     class C(object):
-        def items(self): return names_vars
+        def items(self):
+            return names_vars
     stream = BytesIO()
     savemat_future(stream, C())
     varmats = varmats_from_mat(stream)

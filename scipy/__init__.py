@@ -84,7 +84,7 @@ from numpy.lib.scimath import *
 majver, minver = [float(i) for i in _num.version.version.split('.')[:2]]
 if majver < 1 or (majver == 1 and minver < 5):
     import warnings
-    warnings.warn("Numpy 1.5.0 or above is recommended for this version of " \
+    warnings.warn("Numpy 1.5.0 or above is recommended for this version of "
                   "scipy (detected version %s)" % _num.version.version,
                   UserWarning)
 

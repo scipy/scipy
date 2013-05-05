@@ -14,6 +14,7 @@ from scipy.spatial import \
      delaunay_plot_2d, voronoi_plot_2d, convex_hull_plot_2d, \
      Delaunay, Voronoi, ConvexHull
 
+
 class TestPlotting:
     points = [(0,0), (0,1), (1,0), (1,1)]
 

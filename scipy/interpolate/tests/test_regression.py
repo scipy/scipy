@@ -4,6 +4,7 @@ import numpy as np
 import scipy.interpolate as interp
 from numpy.testing import assert_almost_equal, TestCase
 
+
 class TestRegression(TestCase):
     def test_spalde_scalar_input(self):
         """Ticket #629"""

@@ -22,6 +22,7 @@ def unique_mod(d,file_name):
     m = os.path.splitext(f)[0]
     return m
 
+
 def remove_whitespace(in_str):
     out = in_str.replace(" ","")
     out = out.replace("\t","")
@@ -82,9 +83,9 @@ class IntConverter(TestCase):
         code = "a=2;"
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1
+        b = 1
         test(b)
         try:
             b = 1.
@@ -109,9 +110,9 @@ class IntConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1
+        b = 1
         c = test(b)
 
         assert_( c == 3)
@@ -150,9 +151,9 @@ class FloatConverter(TestCase):
         code = "a=2.;"
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1.
+        b = 1.
         test(b)
         try:
             b = 1.
@@ -177,9 +178,9 @@ class FloatConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1.
+        b = 1.
         c = test(b)
         assert_( c == 3.)
 
@@ -217,9 +218,9 @@ class ComplexConverter(TestCase):
         code = "a=std::complex<double>(2.,2.);"
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1.+1j
+        b = 1.+1j
         test(b)
         try:
             b = 1.
@@ -244,9 +245,9 @@ class ComplexConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=1.+1j
+        b = 1.+1j
         c = test(b)
         assert_( c == 3.+3j)
 
@@ -305,7 +306,7 @@ class InstanceConverter(TestCase):
 
 class CallableConverter(TestCase):
 
-    compiler=''
+    compiler = ''
 
     @dec.slow
     def test_call_function(self):
@@ -385,10 +386,10 @@ class StringConverter(TestCase):
         code = 'a=std::string("hello");'
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
 
         exec('from ' + mod_name + ' import test')
-        b='bub'
+        b = 'bub'
         test(b)
         try:
             b = 1.
@@ -413,9 +414,9 @@ class StringConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b='bub'
+        b = 'bub'
         c = test(b)
         assert_( c == 'hello')
 
@@ -445,9 +446,9 @@ class ListConverter(TestCase):
         code = 'a=py::list();'
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=[1,2]
+        b = [1,2]
         test(b)
         try:
             b = 1.
@@ -473,9 +474,9 @@ class ListConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=[1,2]
+        b = [1,2]
         c = test(b)
         assert_( c == ['hello'])
 
@@ -484,7 +485,7 @@ class ListConverter(TestCase):
         mod_name = 'list_speed'+self.compiler
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
-        a = range(1000000);
+        a = range(1000000)
         code = """
                int v, sum = 0;
                for(int i = 0; i < a.len(); i++)
@@ -516,7 +517,7 @@ class ListConverter(TestCase):
                """
         no_checking = ext_tools.ext_function('no_checking',code,['a'])
         mod.add_function(no_checking)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import with_cxx, no_checking')
         import time
         t1 = time.time()
@@ -566,9 +567,9 @@ class TupleConverter(TestCase):
         code = 'a=py::tuple();'
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=(1,2)
+        b = (1,2)
         test(b)
         try:
             b = 1.
@@ -595,9 +596,9 @@ class TupleConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b=(1,2)
+        b = (1,2)
         c = test(b)
         assert_( c == ('hello',None))
 
@@ -610,7 +611,7 @@ class DictConverter(TestCase):
     # in all sub-classes, this base test class is found by the test
     # infrastructure and run. Therefore, we give it a default value
     # so that it can run on its own.
-    compiler=''
+    compiler = ''
 
     @dec.slow
     def test_type_match_bad(self):
@@ -633,9 +634,9 @@ class DictConverter(TestCase):
         code = 'a=py::dict();' # This just checks to make sure the type is correct
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
-        b={'y':2}
+        b = {'y':2}
         test(b)
         try:
             b = 1.
@@ -661,7 +662,7 @@ class DictConverter(TestCase):
                """
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
-        mod.compile(location = test_dir, compiler = self.compiler)
+        mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import test')
         b = {'z':2}
         c = test(b)
@@ -674,13 +675,13 @@ class DictConverter(TestCase):
     #         exec("class %s%s(%s):\n    compiler = '%s'"%(name,compiler,name,compiler))
 # for converter in
 for _n in dir():
-    if _n[-9:]=='Converter':
+    if _n[-9:] == 'Converter':
         if msvc_exists():
-            exec("class Test%sMsvc(%s):\n    compiler = 'msvc'"%(_n,_n))
+            exec("class Test%sMsvc(%s):\n    compiler = 'msvc'" % (_n,_n))
         else:
-            exec("class Test%sUnix(%s):\n    compiler = ''"%(_n,_n))
+            exec("class Test%sUnix(%s):\n    compiler = ''" % (_n,_n))
         if gcc_exists():
-            exec("class Test%sGcc(%s):\n    compiler = 'gcc'"%(_n,_n))
+            exec("class Test%sGcc(%s):\n    compiler = 'gcc'" % (_n,_n))
 
 # class TestMsvcIntConverter(TestIntConverter):
 #     compiler = 'msvc'
@@ -762,6 +763,7 @@ for _n in dir():
 # class TestGccInstanceConverter(TestInstanceConverter):
 #     compiler = 'gcc'
 
+
 def setup_location():
     import tempfile
     #test_dir = os.path.join(tempfile.gettempdir(),'test_files')
@@ -773,12 +775,14 @@ def setup_location():
 
 test_dir = setup_location()
 
+
 def teardown_location():
     import tempfile
     test_dir = os.path.join(tempfile.gettempdir(),'test_files')
     if sys.path[0] == test_dir:
         sys.path = sys.path[1:]
     return test_dir
+
 
 def remove_file(name):
     test_dir = os.path.abspath(name)

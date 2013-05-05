@@ -204,7 +204,7 @@ class Tokenizer(object):
                     self.curpos = m.end()
                     return Token(self.tokens[i], m.group(), self.curpos)
             else:
-                raise SyntaxError("Unknown character at position %d (%s)" \
+                raise SyntaxError("Unknown character at position %d (%s)"
                                   % (self.curpos, self.data[curpos]))
 
 
@@ -264,10 +264,10 @@ class FortranFormatParser(object):
 
     def _parse_format(self, tokens):
         if not tokens[0].type == "LPAR":
-            raise SyntaxError("Expected left parenthesis at position "\
+            raise SyntaxError("Expected left parenthesis at position "
                               "%d (got '%s')" % (0, tokens[0].value))
         elif not tokens[-1].type == "RPAR":
-            raise SyntaxError("Expected right parenthesis at position "\
+            raise SyntaxError("Expected right parenthesis at position "
                               "%d (got '%s')" % (len(tokens), tokens[-1].value))
 
         tokens = tokens[1:-1]
@@ -312,4 +312,3 @@ class FortranFormatParser(object):
         next = tokens.pop(0)
         self._expect(next, tp)
         return next
-

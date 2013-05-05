@@ -29,6 +29,7 @@ import warnings
 eps = np.finfo(float).eps
 feps = np.finfo(single).eps
 
+
 def expm(A, q=None):
     """
     Compute the matrix exponential using Pade approximation.
@@ -54,6 +55,7 @@ def expm(A, q=None):
         warnings.warn("argument q=... in scipy.linalg.expm is deprecated.")
     import scipy.sparse.linalg
     return scipy.sparse.linalg.expm(A)
+
 
 def expm2(A):
     """
@@ -82,6 +84,7 @@ def expm2(A):
         return r.real.astype(t)
     else:
         return r.astype(t)
+
 
 def expm3(A, q=20):
     """
@@ -116,6 +119,7 @@ def expm3(A, q=20):
 
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
 
+
 def toreal(arr, tol=None):
     """Return as real array if imaginary part is small.
 
@@ -135,6 +139,7 @@ def toreal(arr, tol=None):
        np.allclose(arr.imag, 0.0, atol=tol):
         arr = arr.real
     return arr
+
 
 def cosm(A):
     """
@@ -183,6 +188,7 @@ def sinm(A):
     else:
         return -0.5j*(expm(1j*A) - expm(-1j*A))
 
+
 def tanm(A):
     """
     Compute the matrix tangent.
@@ -205,6 +211,7 @@ def tanm(A):
         return toreal(solve(cosm(A), sinm(A)))
     else:
         return solve(cosm(A), sinm(A))
+
 
 def coshm(A):
     """
@@ -229,6 +236,7 @@ def coshm(A):
     else:
         return 0.5*(expm(A) + expm(-A))
 
+
 def sinhm(A):
     """
     Compute the hyperbolic matrix sine.
@@ -252,6 +260,7 @@ def sinhm(A):
     else:
         return 0.5*(expm(A) - expm(-A))
 
+
 def tanhm(A):
     """
     Compute the hyperbolic matrix tangent.
@@ -274,6 +283,7 @@ def tanhm(A):
         return toreal(solve(coshm(A), sinhm(A)))
     else:
         return solve(coshm(A), sinhm(A))
+
 
 def funm(A, func, disp=True):
     """
@@ -306,7 +316,7 @@ def funm(A, func, disp=True):
     """
     # Perform Shur decomposition (lapack ?gees)
     A = asarray(A)
-    if len(A.shape)!=2:
+    if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
     if A.dtype.char in ['F', 'D', 'G']:
         cmplx_type = 1
@@ -352,6 +362,7 @@ def funm(A, func, disp=True):
     else:
         return F, err
 
+
 def logm(A, disp=True):
     """
     Compute matrix logarithm.
@@ -392,7 +403,7 @@ def logm(A, disp=True):
             R = mat(orth(eye(N,dtype='d')+X+Y))
             F, dontcare = funm(R*A*R.H,log,disp=0)
             F = R.H*F*R
-            if (norm(imag(F),1)<=1000*errtol*norm(F,1)):
+            if (norm(imag(F),1) <= 1000*errtol*norm(F,1)):
                 F = mat(real(F))
             E = mat(expm(F))
             temp = mat(solve(E.T,(E-A).T))
@@ -404,6 +415,7 @@ def logm(A, disp=True):
         return F
     else:
         return F, errest
+
 
 def signm(a, disp=True):
     """
@@ -440,10 +452,10 @@ def signm(a, disp=True):
     """
     def rounded_sign(x):
         rx = real(x)
-        if rx.dtype.char=='f':
-            c =  1e3*feps*amax(x)
+        if rx.dtype.char == 'f':
+            c = 1e3*feps*amax(x)
         else:
-            c =  1e3*eps*amax(x)
+            c = 1e3*eps*amax(x)
         return sign( (absolute(rx) > c) * rx )
     result,errest = funm(a, rounded_sign, disp=0)
     errtol = {0:1e3*feps, 1:1e3*eps}[_array_precision[result.dtype.char]]
@@ -471,9 +483,9 @@ def signm(a, disp=True):
     for i in range(100):
         iS0 = inv(S0)
         S0 = 0.5*(S0 + iS0)
-        Pp=0.5*(dot(S0,S0)+S0)
+        Pp = 0.5*(dot(S0,S0)+S0)
         errest = norm(dot(Pp,Pp)-Pp,1)
-        if errest < errtol or prev_errest==errest:
+        if errest < errtol or prev_errest == errest:
             break
         prev_errest = errest
     if disp:
@@ -482,6 +494,7 @@ def signm(a, disp=True):
         return S0
     else:
         return S0, errest
+
 
 def sqrtm(A, disp=True):
     """
@@ -511,7 +524,7 @@ def sqrtm(A, disp=True):
 
     """
     A = asarray(A)
-    if len(A.shape)!=2:
+    if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
     T, Z = schur(A)
     T, Z = rsf2csf(T,Z)
@@ -530,7 +543,7 @@ def sqrtm(A, disp=True):
     X = (Z * R * Z.H)
 
     if disp:
-        nzeig = np.any(diag(T)==0)
+        nzeig = np.any(diag(T) == 0)
         if nzeig:
             print("Matrix is singular and may not have a square root.")
         return X.A

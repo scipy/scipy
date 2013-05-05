@@ -58,14 +58,14 @@ MSGS = {
 }
 
 INFEASIBLE   = -1 # Infeasible (low > up)
-LOCALMINIMUM =  0 # Local minima reach (|pg| ~= 0)
-FCONVERGED   =  1 # Converged (|f_n-f_(n-1)| ~= 0)
-XCONVERGED   =  2 # Converged (|x_n-x_(n-1)| ~= 0)
-MAXFUN       =  3 # Max. number of function evaluations reach
-LSFAIL       =  4 # Linear search failed
-CONSTANT     =  5 # All lower bounds are equal to the upper bounds
-NOPROGRESS   =  6 # Unable to progress
-USERABORT    =  7 # User requested end of minimization
+LOCALMINIMUM = 0  # Local minima reach (|pg| ~= 0)
+FCONVERGED   = 1  # Converged (|f_n-f_(n-1)| ~= 0)
+XCONVERGED   = 2  # Converged (|x_n-x_(n-1)| ~= 0)
+MAXFUN       = 3  # Max. number of function evaluations reach
+LSFAIL       = 4  # Linear search failed
+CONSTANT     = 5  # All lower bounds are equal to the upper bounds
+NOPROGRESS   = 6  # Unable to progress
+USERABORT    = 7  # User requested end of minimization
 
 RCSTRINGS = {
         INFEASIBLE   : "Infeasible (low > up)",
@@ -81,6 +81,7 @@ RCSTRINGS = {
 
 # Changes to interface made by Travis Oliphant, Apr. 2004 for inclusion in
 #  SciPy
+
 
 def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
              bounds=None, epsilon=1e-8, scale=None, offset=None,
@@ -263,6 +264,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
     return res['x'], res['nfev'], res['status']
 
+
 def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   eps=1e-8, scale=None, offset=None, mesg_num=None,
                   maxCGit=-1, maxiter=None, eta=-1, stepmx=0, accuracy=0,
@@ -411,7 +413,7 @@ if __name__ == '__main__':
             g = [0,0]
             g[0] = 2.0*x[0]
             g[1] = 3.0*pow(abs(x[1]),2.0)
-            if x[1]<0:
+            if x[1] < 0:
                 g[1] = -g[1]
             return f, g
 

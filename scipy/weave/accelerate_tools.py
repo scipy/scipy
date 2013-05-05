@@ -18,6 +18,7 @@ from numpy.testing import assert_
 
 from .bytecodecompiler import CXXCoder,Type_Descriptor,Function_Descriptor
 
+
 def CStr(s):
     "Hacky way to get legal C string from Python string"
     if s is None:
@@ -37,7 +38,7 @@ class Instance(Type_Descriptor):
         self.prototype  = prototype
 
     def check(self,s):
-        return "PyInstance_Check(%s)"%s
+        return "PyInstance_Check(%s)" % s
 
     def inbound(self,s):
         return s
@@ -48,40 +49,44 @@ class Instance(Type_Descriptor):
     def get_attribute(self,name):
         proto = getattr(self.prototype,name)
         T = lookup_type(proto)
-        code = 'tempPY = PyObject_GetAttrString(%%(rhs)s,"%s");\n'%name
+        code = 'tempPY = PyObject_GetAttrString(%%(rhs)s,"%s");\n' % name
         convert = T.inbound('tempPY')
-        code += '%%(lhsType)s %%(lhs)s = %s;\n'%convert
+        code += '%%(lhsType)s %%(lhs)s = %s;\n' % convert
         return T,code
 
     def set_attribute(self,name):
         proto = getattr(self.prototype,name)
         T = lookup_type(proto)
         convert,owned = T.outbound('%(rhs)s')
-        code = 'tempPY = %s;'%convert
+        code = 'tempPY = %s;' % convert
         if not owned:
             code += ' Py_INCREF(tempPY);'
-        code += ' PyObject_SetAttrString(%%(lhs)s,"%s",tempPY);'%name
+        code += ' PyObject_SetAttrString(%%(lhs)s,"%s",tempPY);' % name
         code += ' Py_DECREF(tempPY);\n'
         return T,code
 
 ##################################################################
 #                          CLASS BASIC                           #
 ##################################################################
+
+
 class Basic(Type_Descriptor):
     owned = 1
     def check(self,s):
-        return "%s(%s)"%(self.checker,s)
+        return "%s(%s)" % (self.checker,s)
     def inbound(self,s):
-        return "%s(%s)"%(self.inbounder,s)
+        return "%s(%s)" % (self.inbounder,s)
     def outbound(self,s):
-        return "%s(%s)"%(self.outbounder,s),self.owned
+        return "%s(%s)" % (self.outbounder,s),self.owned
+
 
 class Basic_Number(Basic):
     def literalizer(self,s):
         return str(s)
     def binop(self,symbol,a,b):
         assert_(symbol in ['+','-','*','/'], msg=symbol)
-        return '%s %s %s'%(a,symbol,b),self
+        return '%s %s %s' % (a,symbol,b),self
+
 
 class Integer(Basic_Number):
     cxxtype = "long"
@@ -89,11 +94,13 @@ class Integer(Basic_Number):
     inbounder = "PyInt_AsLong"
     outbounder = "PyInt_FromLong"
 
+
 class Double(Basic_Number):
     cxxtype = "double"
     checker = "PyFloat_Check"
     inbounder = "PyFloat_AsDouble"
     outbounder = "PyFloat_FromDouble"
+
 
 class String(Basic):
     cxxtype = "char*"
@@ -113,6 +120,7 @@ String = String()
 
 import numpy as np
 
+
 class Vector(Type_Descriptor):
     cxxtype = 'PyArrayObject*'
     refcount = 1
@@ -122,56 +130,63 @@ class Vector(Type_Descriptor):
     outbounder = "(PyObject*)"
     owned = 0 # Convertion is by casting!
 
-    prerequisites = Type_Descriptor.prerequisites+\
+    prerequisites = Type_Descriptor.prerequisites + \
                     ['#include "numpy/arrayobject.h"']
     dims = 1
     def check(self,s):
-        return "PyArray_Check(%s) && ((PyArrayObject*)%s)->nd == %d &&  ((PyArrayObject*)%s)->descr->type_num == %s"%(
+        return "PyArray_Check(%s) && ((PyArrayObject*)%s)->nd == %d &&  ((PyArrayObject*)%s)->descr->type_num == %s" % (
             s,s,self.dims,s,self.typecode)
 
     def inbound(self,s):
-        return "%s(%s)"%(self.inbounder,s)
+        return "%s(%s)" % (self.inbounder,s)
     def outbound(self,s):
-        return "%s(%s)"%(self.outbounder,s),self.owned
+        return "%s(%s)" % (self.outbounder,s),self.owned
 
     def getitem(self,A,v,t):
-        assert_(self.dims == len(v), msg='Expect dimension %d'%self.dims)
-        code = '*((%s*)(%s->data'%(self.cxxbase,A)
+        assert_(self.dims == len(v), msg='Expect dimension %d' % self.dims)
+        code = '*((%s*)(%s->data' % (self.cxxbase,A)
         for i in range(self.dims):
             # assert that ''t[i]'' is an integer
-            code += '+%s*%s->strides[%d]'%(v[i],A,i)
+            code += '+%s*%s->strides[%d]' % (v[i],A,i)
         code += '))'
         return code,self.pybase
     def setitem(self,A,v,t):
         return self.getitem(A,v,t)
 
+
 class matrix(Vector):
     dims = 2
+
 
 class IntegerVector(Vector):
     typecode = 'PyArray_INT'
     cxxbase = 'int'
     pybase = Integer
 
+
 class Integermatrix(matrix):
     typecode = 'PyArray_INT'
     cxxbase = 'int'
     pybase = Integer
+
 
 class LongVector(Vector):
     typecode = 'PyArray_LONG'
     cxxbase = 'long'
     pybase = Integer
 
+
 class Longmatrix(matrix):
     typecode = 'PyArray_LONG'
     cxxbase = 'long'
     pybase = Integer
 
+
 class DoubleVector(Vector):
     typecode = 'PyArray_DOUBLE'
     cxxbase = 'double'
     pybase = Double
+
 
 class Doublematrix(matrix):
     typecode = 'PyArray_DOUBLE'
@@ -253,7 +268,6 @@ functiondefs = {
     }
 
 
-
 ##################################################################
 #                      FUNCTION LOOKUP_TYPE                      #
 ##################################################################
@@ -272,6 +286,8 @@ def lookup_type(x):
 ##################################################################
 #                        class ACCELERATE                        #
 ##################################################################
+
+
 class accelerate(object):
 
     def __init__(self, function, *args, **kw):
@@ -306,7 +322,6 @@ class accelerate(object):
         # Figure out type info -- Do as tuple so its hashable
         signature = tuple( map(lookup_type,args) )
         return self.singleton(signature)
-
 
     def singleton(self,signature):
         identifier = self.identifier(signature)
@@ -345,10 +360,10 @@ class accelerate(object):
         # Build an MD5 checksum
         f = self.function
         co = f.func_code
-        identifier = str(signature)+\
-                     str(co.co_argcount)+\
-                     str(co.co_consts)+\
-                     str(co.co_varnames)+\
+        identifier = str(signature) + \
+                     str(co.co_argcount) + \
+                     str(co.co_consts) + \
+                     str(co.co_varnames) + \
                      co.co_code
         return 'F'+md5.md5(identifier).hexdigest()
 
@@ -390,7 +405,7 @@ class Python2CXX(CXXCoder):
         assert_(reduce(lambda x,y: x and y,
                       map(lambda x: isinstance(x,Type_Descriptor),
                           signature),
-                      1), msg='%s not all type objects'%signature)
+                      1), msg='%s not all type objects' % signature)
         self.arg_specs = []
         self.customize = weave.base_info.custom_info()
 
@@ -406,7 +421,7 @@ class Python2CXX(CXXCoder):
         return code
 
     def python_function_definition_code(self):
-        return '{ "%s", wrapper_%s, METH_VARARGS, %s },\n'%(
+        return '{ "%s", wrapper_%s, METH_VARARGS, %s },\n' % (
             self.name,
             self.name,
             CStr(self.function.__doc__))

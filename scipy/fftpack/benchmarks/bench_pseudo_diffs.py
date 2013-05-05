@@ -10,27 +10,30 @@ from numpy import arange, sin, cos, pi, exp, tanh, sign
 from numpy.testing import *
 from scipy.fftpack import diff, fft, ifft, tilbert, hilbert, shift, fftfreq
 
+
 def random(size):
     return rand(*size)
 
+
 def direct_diff(x,k=1,period=None):
     fx = fft(x)
-    n = len (fx)
+    n = len(fx)
     if period is None:
         period = 2*pi
     w = fftfreq(n)*2j*pi/period*n
-    if k<0:
+    if k < 0:
         w = 1 / w**k
         w[0] = 0.0
     else:
         w = w**k
-    if n>2000:
+    if n > 2000:
         w[250:n-250] = 0.0
     return ifft(w*fx).real
 
+
 def direct_tilbert(x,h=1,period=None):
     fx = fft(x)
-    n = len (fx)
+    n = len(fx)
     if period is None:
         period = 2*pi
     w = fftfreq(n)*h*2*pi/period*n
@@ -39,12 +42,14 @@ def direct_tilbert(x,h=1,period=None):
     w[0] = 0j
     return ifft(w*fx)
 
+
 def direct_hilbert(x):
     fx = fft(x)
-    n = len (fx)
+    n = len(fx)
     w = fftfreq(n)*n
     w = 1j*sign(w)
     return ifft(w*fx)
+
 
 def direct_shift(x,a,period=None):
     n = len(x)
@@ -73,8 +78,8 @@ class TestDiff(TestCase):
                             ]:
             print('%6s' % size, end=' ')
             sys.stdout.flush()
-            x = arange (size)*2*pi/size
-            if size<2000:
+            x = arange(size)*2*pi/size
+            if size < 2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
             else:
                 f = sin(x)*cos(4*x)
@@ -105,8 +110,8 @@ class TestTilbert(TestCase):
                             ]:
             print('%6s' % size, end=' ')
             sys.stdout.flush()
-            x = arange (size)*2*pi/size
-            if size<2000:
+            x = arange(size)*2*pi/size
+            if size < 2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
             else:
                 f = sin(x)*cos(4*x)
@@ -136,8 +141,8 @@ class TestHilbert(TestCase):
                             ]:
             print('%6s' % size, end=' ')
             sys.stdout.flush()
-            x = arange (size)*2*pi/size
-            if size<2000:
+            x = arange(size)*2*pi/size
+            if size < 2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
             else:
                 f = sin(x)*cos(4*x)
@@ -167,9 +172,9 @@ class TestShift(TestCase):
                             ]:
             print('%6s' % size, end=' ')
             sys.stdout.flush()
-            x = arange (size)*2*pi/size
+            x = arange(size)*2*pi/size
             a = 1
-            if size<2000:
+            if size < 2000:
                 f = sin(x)*cos(4*x)+exp(sin(3*x))
                 sf = sin(x+a)*cos(4*(x+a))+exp(sin(3*(x+a)))
             else:

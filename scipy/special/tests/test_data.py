@@ -20,43 +20,71 @@ DATASETS_BOOST = np.load(os.path.join(os.path.dirname(__file__),
 DATASETS_GSL = np.load(os.path.join(os.path.dirname(__file__),
                                     "data", "gsl.npz"))
 
+
 def data(func, dataname, *a, **kw):
     kw.setdefault('dataname', dataname)
     return FuncData(func, DATASETS_BOOST[dataname], *a, **kw)
+
 
 def data_gsl(func, dataname, *a, **kw):
     kw.setdefault('dataname', dataname)
     return FuncData(func, DATASETS_GSL[dataname], *a, **kw)
 
+
 def ellipk_(k):
     return ellipk(k*k)
+
+
 def ellipe_(k):
     return ellipe(k*k)
+
+
 def ellipeinc_(f, k):
     return ellipeinc(f, k*k)
+
+
 def ellipj_(k):
     return ellipj(k*k)
+
+
 def zeta_(x):
     return zeta(x, 1.)
+
+
 def assoc_legendre_p_boost_(nu, mu, x):
     # the boost test data is for integer orders only
     return lpmv(mu, nu.astype(int), x)
+
+
 def legendre_p_via_assoc_(nu, x):
     return lpmv(0, nu, x)
+
+
 def mathieu_ce_rad(m, q, x):
     return mathieu_cem(m, q, x*180/np.pi)[0]
+
+
 def mathieu_se_rad(m, q, x):
     return mathieu_sem(m, q, x*180/np.pi)[0]
+
+
 def mathieu_mc1_scaled(m, q, x):
     # GSL follows a different normalization.
     # We follow Abramowitz & Stegun, they apparently something else.
     return mathieu_modcem1(m, q, x)[0] * np.sqrt(np.pi/2)
+
+
 def mathieu_ms1_scaled(m, q, x):
     return mathieu_modsem1(m, q, x)[0] * np.sqrt(np.pi/2)
+
+
 def mathieu_mc2_scaled(m, q, x):
     return mathieu_modcem2(m, q, x)[0] * np.sqrt(np.pi/2)
+
+
 def mathieu_ms2_scaled(m, q, x):
     return mathieu_modsem2(m, q, x)[0] * np.sqrt(np.pi/2)
+
 
 def test_boost():
     TESTS = [
@@ -235,6 +263,7 @@ def test_boost():
     for test in TESTS:
         yield _test_factory, test
 
+
 def test_gsl():
     TESTS = [
         data_gsl(mathieu_a, 'mathieu_ab', (0, 1), 2, rtol=1e-13, atol=1e-13),
@@ -253,6 +282,7 @@ def test_gsl():
 
     for test in TESTS:
         yield _test_factory, test
+
 
 def _test_factory(test, dtype=np.double):
     """Boost test"""

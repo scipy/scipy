@@ -14,6 +14,7 @@ def chirp_linear(t, f0, f1, t1):
     f = f0 + (f1 - f0) * t / t1
     return f
 
+
 def chirp_quadratic(t, f0, f1, t1, vertex_zero=True):
     if vertex_zero:
         f = f0 + (f1 - f0) * t**2 / t1**2
@@ -21,9 +22,11 @@ def chirp_quadratic(t, f0, f1, t1, vertex_zero=True):
         f = f1 - (f1 - f0) * (t1 - t)**2 / t1**2
     return f
 
+
 def chirp_geometric(t, f0, f1, t1):
     f = f0 * (f1/f0)**(t/t1)
     return f
+
 
 def chirp_hyperbolic(t, f0, f1, t1):
     f = f0*f1*t1 / ((f0 - f1)*t + f1*t1)
@@ -217,6 +220,7 @@ class TestChirp(TestCase):
         int_result = waveforms.chirp(t, f0, t1, f1)
         err_msg = "Integer input 'f0=10, t1=3, f1=20' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
+
 
 class TestSweepPoly(TestCase):
 

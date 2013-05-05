@@ -58,6 +58,7 @@ class TestTri(TestCase):
                                           [1,0,0],
                                           [1,1,0]]))
 
+
 class TestTril(TestCase):
     def test_basic(self):
         a = (100*get_mat(5)).astype('l')

@@ -18,6 +18,7 @@ aliases = {'little': ('little', '<', 'l', 'le'),
            'native': ('native', '='),
            'swapped': ('swapped', 'S')}
 
+
 def to_numpy_code(code):
     """
     Convert various order codings to numpy format.

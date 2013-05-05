@@ -3,6 +3,7 @@
 # last change: 27.03.2006
 from __future__ import division, print_function, absolute_import
 
+
 def configuration(parent_package='',top_path=None):
     import numpy
     from numpy.distutils.misc_util import Configuration
@@ -11,7 +12,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration( 'umfpack', parent_package, top_path )
     config.add_data_dir('tests')
 
-    umf_info = get_info( 'umfpack', notfound_action = 1 )
+    umf_info = get_info( 'umfpack', notfound_action=1 )
 
     umfpack_i_file = config.paths('umfpack.i')[0]
     def umfpack_i(ext, build_dir):
@@ -24,8 +25,8 @@ def configuration(parent_package='',top_path=None):
     dict_append(build_info, **blas_info)
 
     config.add_extension( '__umfpack',
-                          sources = [umfpack_i],
-                          depends = ['umfpack.i'],
+                          sources=[umfpack_i],
+                          depends=['umfpack.i'],
                           **build_info)
 
     return config

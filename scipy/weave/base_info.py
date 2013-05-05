@@ -12,8 +12,9 @@ from __future__ import absolute_import, print_function
 
 import UserList
 
+
 class base_info(object):
-    _warnings =[]
+    _warnings = []
     _headers = []
     _include_dirs = []
     _libraries = []
@@ -60,9 +61,10 @@ class base_info(object):
     def extra_link_args(self):
         return self._extra_link_args
 
+
 class custom_info(base_info):
     def __init__(self):
-        self._warnings =[]
+        self._warnings = []
         self._headers = []
         self._include_dirs = []
         self._libraries = []
@@ -100,6 +102,7 @@ class custom_info(base_info):
     def add_extra_link_arg(self,link_arg):
         return self._extra_link_args.append(link_arg)
 
+
 class info_list(UserList.UserList):
     def get_unique_values(self,attribute):
         all_values = []
@@ -132,6 +135,7 @@ class info_list(UserList.UserList):
         return self.get_unique_values('support_code')
     def module_init_code(self):
         return self.get_unique_values('module_init_code')
+
 
 def unique_values(lst):
     all_values = []

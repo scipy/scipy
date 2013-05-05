@@ -43,6 +43,7 @@ class TestFortranFormatParser(TestCase):
         _test_invalid("(E4.)")
         _test_invalid("(E4.E3)")
 
+
 class TestIntFormat(TestCase):
     def test_to_fortran(self):
         f = [IntFormat(10), IntFormat(12, 10), IntFormat(12, 10, 3)]
@@ -58,6 +59,7 @@ class TestIntFormat(TestCase):
         for i, j in zip(f, r_f):
             assert_equal(IntFormat.from_number(i).__dict__, j.__dict__)
 
+
 class TestExpFormat(TestCase):
     def test_to_fortran(self):
         f = [ExpFormat(10, 5), ExpFormat(12, 10), ExpFormat(12, 10, min=3),
@@ -72,4 +74,3 @@ class TestExpFormat(TestCase):
         r_f = [ExpFormat(24, 16, repeat=3), ExpFormat(25, 16, repeat=3)]
         for i, j in zip(f, r_f):
             assert_equal(ExpFormat.from_number(i).__dict__, j.__dict__)
-

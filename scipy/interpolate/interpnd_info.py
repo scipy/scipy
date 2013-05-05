@@ -7,6 +7,7 @@ from __future__ import division, print_function, absolute_import
 
 from sympy import *
 
+
 def _estimate_gradients_2d_global():
 
     #

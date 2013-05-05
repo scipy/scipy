@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 from os.path import join
 
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
@@ -25,8 +26,6 @@ def configuration(parent_package='',top_path=None):
     # LAPACK routines?
     # Yes, someday...
 
-
-
     # Extensions
     # quadpack:
 
@@ -36,7 +35,6 @@ def configuration(parent_package='',top_path=None):
                          depends=['quadpack.h','__quadpack.h'])
     # odepack
     libs = ['odepack','linpack_lite','mach']
-
 
     # Remove libraries key from blas_opt
     if 'libraries' in blas_opt:    # key doesn't exist on OS X ...

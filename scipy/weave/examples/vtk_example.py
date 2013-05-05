@@ -63,7 +63,7 @@ def simple_test():
     a.SetOrigin(1.0, 1.0, 1.0)
     print("sys.getrefcount(a) = ", sys.getrefcount(a))
 
-    code=r"""
+    code = r"""
     printf("a->ClassName() == %s\n", a->GetClassName());
     printf("a->GetReferenceCount() == %d\n", a->GetReferenceCount());
     double *origin = a->GetOrigin();
@@ -107,8 +107,8 @@ def array_test():
     # Test the data to make certain that we have done it right.
     print("Checking data.")
     for i in range(v_arr.GetNumberOfTuples()):
-        val = (v_arr.GetValue(i) -arr[i] )
-        assert (val < 1e-6), "i = %d, val= %f"%(i, val)
+        val = (v_arr.GetValue(i) - arr[i] )
+        assert (val < 1e-6), "i = %d, val= %f" % (i, val)
     print("OK.")
 
 

@@ -91,6 +91,7 @@ from . import cblas
 
 from numpy import deprecate
 
+
 @deprecate(old_name="scipy.lib.blas", new_name="scipy.linalg.blas")
 def _deprecated():
     pass
@@ -144,7 +145,7 @@ def get_blas_funcs(names,arrays=(),debug=0):
         m1,m2 = cblas,fblas
     funcs = []
     for name in names:
-        if name=='ger' and dtypechar in 'FD':
+        if name == 'ger' and dtypechar in 'FD':
             name = 'gerc'
         elif name in ('dotc', 'dotu') and dtypechar in 'fd':
             name = 'dot'

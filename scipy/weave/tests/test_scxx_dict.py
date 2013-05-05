@@ -128,7 +128,6 @@ class TestDictGetItemOp(TestCase):
     def test_string(self):
         self.generic_get('return_val = a[std::string("b")];')
 
-
     @dec.slow
     def test_obj(self):
         code = """

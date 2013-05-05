@@ -8,12 +8,12 @@ from scipy.sparse import csr_matrix, csc_matrix, bsr_matrix
 from scipy.sparse.sparsetools import csr_scale_rows, csr_scale_columns, \
         bsr_scale_rows, bsr_scale_columns
 
+
 class TestSparseFunctions(TestCase):
     def test_scale_rows_and_cols(self):
         D = matrix([[1,0,0,2,3],
                     [0,4,0,5,0],
                     [0,0,6,7,0]])
-
 
         #TODO expose through function
         S = csr_matrix(D)
@@ -48,7 +48,6 @@ class TestSparseFunctions(TestCase):
         v = array([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15])
         bsr_scale_columns(3,5,2,3,S.indptr,S.indices,S.data,v)
         assert_equal(S.todense(), E*diag(v) )
-
 
     def test_estimate_blocksize(self):
         mats = []

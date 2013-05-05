@@ -11,6 +11,7 @@ import scipy.weave as weave
 # get/set attribute and call methods example
 #----------------------------------------------------------------------------
 
+
 class Foo(object):
     def __init__(self):
         self.val = 1

@@ -44,13 +44,17 @@ SMALL_PRIME_SIZES = [
 ]
 
 from numpy.random import rand
+
+
 def random(size):
     return rand(*size)
+
 
 def get_mat(n):
     data = arange(n)
     data = add.outer(data,data)
     return data
+
 
 def direct_dft(x):
     x = asarray(x)
@@ -61,6 +65,7 @@ def direct_dft(x):
         y[i] = dot(exp(i*w),x)
     return y
 
+
 def direct_idft(x):
     x = asarray(x)
     n = len(x)
@@ -70,17 +75,20 @@ def direct_idft(x):
         y[i] = dot(exp(i*w),x)/n
     return y
 
+
 def direct_dftn(x):
     x = asarray(x)
     for axis in range(len(x.shape)):
         x = fft(x,axis=axis)
     return x
 
+
 def direct_idftn(x):
     x = asarray(x)
     for axis in range(len(x.shape)):
         x = ifft(x,axis=axis)
     return x
+
 
 def direct_rdft(x):
     x = asarray(x)
@@ -91,11 +99,12 @@ def direct_rdft(x):
         y = dot(exp(i*w),x)
         if i:
             r[2*i-1] = y.real
-            if 2*i<n:
+            if 2*i < n:
                 r[2*i] = y.imag
         else:
             r[0] = y.real
     return r
+
 
 def direct_irdft(x):
     x = asarray(x)
@@ -103,14 +112,15 @@ def direct_irdft(x):
     x1 = zeros(n,dtype=cdouble)
     for i in range(n//2+1):
         if i:
-            if 2*i<n:
-                x1[i] = x[2*i-1] + 1j* x[2*i]
-                x1[n-i] = x[2*i-1] - 1j* x[2*i]
+            if 2*i < n:
+                x1[i] = x[2*i-1] + 1j*x[2*i]
+                x1[n-i] = x[2*i-1] - 1j*x[2*i]
             else:
                 x1[i] = x[2*i-1]
         else:
             x1[0] = x[0]
     return direct_idft(x1).real
+
 
 class _TestFFTBase(TestCase):
     def setUp(self):
@@ -119,13 +129,13 @@ class _TestFFTBase(TestCase):
         np.random.seed(1234)
 
     def test_definition(self):
-        x = np.array([1,2,3,4+1j,1,2,3,4+2j], dtype = self.cdt)
+        x = np.array([1,2,3,4+1j,1,2,3,4+2j], dtype=self.cdt)
         y = fft(x)
         self.assertTrue(y.dtype == self.cdt,
                 "Output dtype is %s, expected %s" % (y.dtype, self.cdt))
         y1 = direct_dft(x)
         assert_array_almost_equal(y,y1)
-        x = np.array([1,2,3,4+0j,5], dtype = self.cdt)
+        x = np.array([1,2,3,4+0j,5], dtype=self.cdt)
         assert_array_almost_equal(fft(x),direct_dft(x))
 
     def test_n_argument_real(self):
@@ -158,10 +168,12 @@ class _TestFFTBase(TestCase):
             y = fftpack.zrfft(x)
             assert_array_almost_equal(y,y2)
 
+
 class TestDoubleFFT(_TestFFTBase):
     def setUp(self):
         self.cdt = np.cdouble
         self.rdt = np.double
+
 
 class TestSingleFFT(_TestFFTBase):
     def setUp(self):
@@ -171,6 +183,7 @@ class TestSingleFFT(_TestFFTBase):
     @dec.knownfailureif(True, "single-precision FFT implementation is partially disabled, until accuracy issues with large prime powers are resolved")
     def test_notice(self):
         pass
+
 
 class _TestIFFTBase(TestCase):
     def setUp(self):
@@ -213,15 +226,15 @@ class _TestIFFTBase(TestCase):
     def test_random_complex(self):
         for size in [1,51,111,100,200,64,128,256,1024]:
             x = random([size]).astype(self.cdt)
-            x = random([size]).astype(self.cdt) +1j*x
+            x = random([size]).astype(self.cdt) + 1j*x
             y1 = ifft(fft(x))
             y2 = fft(ifft(x))
             self.assertTrue(y1.dtype == self.cdt,
                     "Output dtype is %s, expected %s" % (y1.dtype, self.cdt))
             self.assertTrue(y2.dtype == self.cdt,
                     "Output dtype is %s, expected %s" % (y2.dtype, self.cdt))
-            assert_array_almost_equal (y1, x)
-            assert_array_almost_equal (y2, x)
+            assert_array_almost_equal(y1, x)
+            assert_array_almost_equal(y2, x)
 
     def test_random_real(self):
         for size in [1,51,111,100,200,64,128,256,1024]:
@@ -232,8 +245,8 @@ class _TestIFFTBase(TestCase):
                     "Output dtype is %s, expected %s" % (y1.dtype, self.cdt))
             self.assertTrue(y2.dtype == self.cdt,
                     "Output dtype is %s, expected %s" % (y2.dtype, self.cdt))
-            assert_array_almost_equal (y1, x)
-            assert_array_almost_equal (y2, x)
+            assert_array_almost_equal(y1, x)
+            assert_array_almost_equal(y2, x)
 
     def test_size_accuracy(self):
         # Sanity check for the accuracy for prime and non-prime sized inputs
@@ -260,15 +273,18 @@ class _TestIFFTBase(TestCase):
             self.assertTrue(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
                             (size, self.rdt))
 
+
 class TestDoubleIFFT(_TestIFFTBase):
     def setUp(self):
         self.cdt = np.cdouble
         self.rdt = np.double
 
+
 class TestSingleIFFT(_TestIFFTBase):
     def setUp(self):
         self.cdt = np.complex64
         self.rdt = np.float32
+
 
 class _TestRFFTBase(TestCase):
     def setUp(self):
@@ -298,15 +314,18 @@ class _TestRFFTBase(TestCase):
             y = fftpack.drfft(x)
             assert_array_almost_equal(y,y1)
 
+
 class TestRFFTDouble(_TestRFFTBase):
     def setUp(self):
         self.cdt = np.cdouble
         self.rdt = np.double
 
+
 class TestRFFTSingle(_TestRFFTBase):
     def setUp(self):
         self.cdt = np.complex64
         self.rdt = np.float32
+
 
 class _TestIRFFTBase(TestCase):
     def setUp(self):
@@ -315,7 +334,7 @@ class _TestIRFFTBase(TestCase):
     def test_definition(self):
         x1 = [1,2,3,4,1,2,3,4]
         x1_1 = [1,2+3j,4+1j,2+3j,4,2-3j,4-1j,2-3j]
-        x2= [1,2,3,4,1,2,3,4,5]
+        x2 = [1,2,3,4,1,2,3,4,5]
         x2_1 = [1,2+3j,4+1j,2+3j,4+5j,4-5j,2-3j,4-1j,2-3j]
 
         def _test(x, xr):
@@ -353,9 +372,9 @@ class _TestIRFFTBase(TestCase):
                     "Output dtype is %s, expected %s" % (y1.dtype, self.rdt))
             self.assertTrue(y2.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y2.dtype, self.rdt))
-            assert_array_almost_equal (y1, x, decimal=self.ndec,
+            assert_array_almost_equal(y1, x, decimal=self.ndec,
                                        err_msg="size=%d" % size)
-            assert_array_almost_equal (y2, x, decimal=self.ndec,
+            assert_array_almost_equal(y2, x, decimal=self.ndec,
                                        err_msg="size=%d" % size)
 
     def test_size_accuracy(self):
@@ -377,17 +396,21 @@ class _TestIRFFTBase(TestCase):
 
 # self.ndec is bogus; we should have a assert_array_approx_equal for number of
 # significant digits
+
+
 class TestIRFFTDouble(_TestIRFFTBase):
     def setUp(self):
         self.cdt = np.cdouble
         self.rdt = np.double
         self.ndec = 14
 
+
 class TestIRFFTSingle(_TestIRFFTBase):
     def setUp(self):
         self.cdt = np.complex64
         self.rdt = np.float32
         self.ndec = 5
+
 
 class Testfft2(TestCase):
     def setUp(self):
@@ -401,6 +424,7 @@ class Testfft2(TestCase):
         y = fft2(x, shape=(8,8), axes=(-3,-2))
         y_r = numpy.fft.fftn(x, s=(8, 8), axes=(-3,  -2))
         assert_array_almost_equal(y, y_r)
+
 
 class TestFftnSingle(TestCase):
     def setUp(self):
@@ -433,6 +457,7 @@ class TestFftnSingle(TestCase):
 
             self.assertTrue(y1.dtype == np.complex64)
             assert_array_almost_equal_nulp(y1, y2, 2000)
+
 
 class TestFftn(TestCase):
     def setUp(self):
@@ -541,9 +566,9 @@ class TestFftn(TestCase):
         small_x = [[1,2,3],[4,5,6]]
         large_x1 = [[1,2,3,0],[4,5,6,0],[0,0,0,0],[0,0,0,0]]
         y = fftn(small_x,shape=(4,4))
-        assert_array_almost_equal (y,fftn(large_x1))
+        assert_array_almost_equal(y,fftn(large_x1))
         y = fftn(small_x,shape=(3,4))
-        assert_array_almost_equal (y,fftn(large_x1[:-1]))
+        assert_array_almost_equal(y,fftn(large_x1[:-1]))
 
     def test_shape_axes_argument(self):
         small_x = [[1,2,3],[4,5,6],[7,8,9]]
@@ -559,9 +584,9 @@ class TestFftn(TestCase):
         #for i in range(4):
         #    assert_array_almost_equal (y[:,i],fft(large_x1[:,i]))
         y = fftn(small_x,shape=(4,4),axes=(-2,-1))
-        assert_array_almost_equal (y,fftn(large_x1))
+        assert_array_almost_equal(y,fftn(large_x1))
         y = fftn(small_x,shape=(4,4),axes=(-1,-2))
-        assert_array_almost_equal (y,swapaxes(\
+        assert_array_almost_equal(y,swapaxes(
             fftn(swapaxes(large_x1,-1,-2)),-1,-2))
 
     def test_shape_axes_argument2(self):
@@ -609,15 +634,18 @@ class _TestIfftn(TestCase):
             assert_array_almost_equal_nulp(ifftn(fftn(x)),x,self.maxnlp)
             assert_array_almost_equal_nulp(fftn(ifftn(x)),x,self.maxnlp)
 
+
 class TestIfftnDouble(_TestIfftn):
     dtype = np.float64
     cdtype = np.complex128
     maxnlp = 2000
 
+
 class TestIfftnSingle(_TestIfftn):
     dtype = np.float32
     cdtype = np.complex64
     maxnlp = 3500
+
 
 class TestLongDoubleFailure(TestCase):
     def setUp(self):
@@ -634,7 +662,7 @@ class TestLongDoubleFailure(TestCase):
         for f in [fft, ifft]:
             try:
                 f(x)
-                raise AssertionError("Type %r not supported but does not fail" % \
+                raise AssertionError("Type %r not supported but does not fail" %
                                      np.longcomplex)
             except ValueError:
                 pass
@@ -649,11 +677,10 @@ class TestLongDoubleFailure(TestCase):
         for f in [fft, ifft]:
             try:
                 f(x)
-                raise AssertionError("Type %r not supported but does not fail" % \
+                raise AssertionError("Type %r not supported but does not fail" %
                                      np.longcomplex)
             except ValueError:
                 pass
-
 
 
 class FakeArray(object):
@@ -661,11 +688,13 @@ class FakeArray(object):
         self._data = data
         self.__array_interface__ = data.__array_interface__
 
+
 class FakeArray2(object):
     def __init__(self, data):
         self._data = data
     def __array__(self):
         return self._data
+
 
 class TestOverwrite(object):
     """

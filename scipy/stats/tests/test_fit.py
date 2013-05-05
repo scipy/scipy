@@ -51,9 +51,9 @@ def check_cont_fit(distname,arg):
     if distname in failing_fits:
         # Skip failing fits unless overridden
         xfail = True
-        try: 
+        try:
             xfail = not int(os.environ['SCIPY_XFAIL'])
-        except: 
+        except:
             pass
         if xfail:
             msg = "Fitting %s doesn't work reliably yet" % distname
@@ -88,6 +88,7 @@ def check_cont_fit(distname,arg):
         txt += 'estimated: %s\n' % str(est)
         txt += 'diff     : %s\n' % str(diff)
         raise AssertionError('fit not very good in %s\n' % distfn.name + txt)
+
 
 if __name__ == "__main__":
     import nose

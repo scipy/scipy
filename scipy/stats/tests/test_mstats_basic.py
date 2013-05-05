@@ -41,7 +41,7 @@ class TestMquantiles(TestCase):
 class TestGMean(TestCase):
     def test_1D(self):
         a = (1,2,3,4)
-        actual= mstats.gmean(a)
+        actual = mstats.gmean(a)
         desired = np.power(1*2*3*4,1./4.)
         assert_almost_equal(actual, desired,decimal=14)
 
@@ -50,7 +50,7 @@ class TestGMean(TestCase):
         assert_(not isinstance(desired1, ma.MaskedArray))
         #
         a = ma.array((1,2,3,4),mask=(0,0,0,1))
-        actual= mstats.gmean(a)
+        actual = mstats.gmean(a)
         desired = np.power(1*2*3,1./3.)
         assert_almost_equal(actual, desired,decimal=14)
 
@@ -60,14 +60,14 @@ class TestGMean(TestCase):
     def test_2D(self):
         a = ma.array(((1,2,3,4),(1,2,3,4),(1,2,3,4)),
                      mask=((0,0,0,0),(1,0,0,1),(0,1,1,0)))
-        actual= mstats.gmean(a)
+        actual = mstats.gmean(a)
         desired = np.array((1,2,3,4))
         assert_array_almost_equal(actual, desired, decimal=14)
         #
         desired1 = mstats.gmean(a,axis=0)
         assert_array_almost_equal(actual, desired1, decimal=14)
         #
-        actual= mstats.gmean(a, -1)
+        actual = mstats.gmean(a, -1)
         desired = ma.array((np.power(1*2*3*4,1./4.),
                             np.power(2*3,1./2.),
                             np.power(1*4,1./2.)))
@@ -77,14 +77,14 @@ class TestGMean(TestCase):
 class TestHMean(TestCase):
     def test_1D(self):
         a = (1,2,3,4)
-        actual= mstats.hmean(a)
-        desired =  4. / (1./1 + 1./2 + 1./3 + 1./4)
+        actual = mstats.hmean(a)
+        desired = 4. / (1./1 + 1./2 + 1./3 + 1./4)
         assert_almost_equal(actual, desired, decimal=14)
         desired1 = mstats.hmean(ma.array(a),axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
         #
         a = ma.array((1,2,3,4),mask=(0,0,0,1))
-        actual= mstats.hmean(a)
+        actual = mstats.hmean(a)
         desired = 3. / (1./1 + 1./2 + 1./3)
         assert_almost_equal(actual, desired,decimal=14)
         desired1 = mstats.hmean(a,axis=-1)
@@ -93,7 +93,7 @@ class TestHMean(TestCase):
     def test_2D(self):
         a = ma.array(((1,2,3,4),(1,2,3,4),(1,2,3,4)),
                      mask=((0,0,0,0),(1,0,0,1),(0,1,1,0)))
-        actual= mstats.hmean(a)
+        actual = mstats.hmean(a)
         desired = ma.array((1,2,3,4))
         assert_array_almost_equal(actual, desired, decimal=14)
         #
@@ -295,7 +295,7 @@ class TestMoments(TestCase):
            [ 0.67696689,  0.91878127,  0.09769044,  0.04645137,  0.37615733],
            [ 0.05903624,  0.29908861,  0.34088298,  0.66216337,  0.83160998],
            [ 0.64619526,  0.94894632,  0.27855892,  0.0706151 ,  0.39962917]]),
-    mask = np.array([[ True, False, False,  True, False],
+    mask=np.array([[ True, False, False,  True, False],
            [ True,  True,  True, False,  True],
            [False, False, False, False, False],
            [True, True, True, True, True],
@@ -371,8 +371,8 @@ class TestMoments(TestCase):
     def test_mode(self):
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
         a2 = np.reshape(a1, (3,5))
-        ma1 = ma.masked_where(ma.array(a1)>2,a1)
-        ma2 = ma.masked_where(a2>2, a2)
+        ma1 = ma.masked_where(ma.array(a1) > 2,a1)
+        ma2 = ma.masked_where(a2 > 2, a2)
         assert_equal(mstats.mode(a1, axis=None), (3,4))
         assert_equal(mstats.mode(ma1, axis=None), (0,3))
         assert_equal(mstats.mode(a2, axis=None), (3,4))
@@ -438,7 +438,7 @@ class TestVariability(TestCase):
         desired_unmaskedvals = ([-1.3416407864999, -0.44721359549996 ,
                                  0.44721359549996 , 1.3416407864999])
         assert_array_almost_equal(desired_unmaskedvals,
-                                  y.data[y.mask==False], decimal=12)
+                                  y.data[y.mask == False], decimal=12)
 
     def test_zscore(self):
         """

@@ -94,7 +94,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     A, B, C, D = map(_none_to_empty, (A, B, C, D))
     A, B, C, D = map(atleast_2d, (A, B, C, D))
 
-    if ((len(A.shape) > 2) or (len(B.shape) > 2) or \
+    if ((len(A.shape) > 2) or (len(B.shape) > 2) or
         (len(C.shape) > 2) or (len(D.shape) > 2)):
         raise ValueError("A, B, C, D arrays can be no larger than rank-2.")
 
@@ -244,8 +244,8 @@ class lti(object):
     Notes
     -----
     `lti` instances have all types of representations available; for example
-    after creating an instance s with ``(zeros, poles, gain)`` the transfer 
-    function representation (numerator, denominator) can be accessed as 
+    after creating an instance s with ``(zeros, poles, gain)`` the transfer
+    function representation (numerator, denominator) can be accessed as
     ``s.num`` and ``s.den``.
 
     """
@@ -923,8 +923,8 @@ def freqresp(system, w=None, n=10000):
             * 4 (A, B, C, D)
 
     w : array_like, optional
-        Array of frequencies (in rad/s). Magnitude and phase data is 
-        calculated for every value in this array. If not given a reasonable 
+        Array of frequencies (in rad/s). Magnitude and phase data is
+        calculated for every value in this array. If not given a reasonable
         set will be calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`
@@ -948,7 +948,7 @@ def freqresp(system, w=None, n=10000):
 
     >>> s1 = signal.lti([], [1, 1, 1], [5])
     # transfer function: H(s) = 5 / (s-1)^3
-    
+
     >>> w, H = signal.freqresp(s1)
 
     >>> plt.figure()

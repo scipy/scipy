@@ -35,6 +35,7 @@ from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,\
 
 from scipy.linalg._testutils import assert_no_overwrite
 
+
 def random(size):
     return rand(*size)
 
@@ -285,7 +286,6 @@ class TestSolve(TestCase):
             x = solve(a,b)
             assert_array_almost_equal(dot(a,x),b)
 
-
     def test_simple_sym(self):
         a = [[2,3],[3,5]]
         for lower in [0,1]:
@@ -328,7 +328,8 @@ class TestSolve(TestCase):
 
         n = 20
         a = random([n,n])
-        for i in range(n): a[i,i] = 20*(.1+a[i,i])
+        for i in range(n):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(4):
             b = random([n,3])
             x = solve(a,b)
@@ -337,7 +338,8 @@ class TestSolve(TestCase):
     def test_random_complex(self):
         n = 20
         a = random([n,n]) + 1j * random([n,n])
-        for i in range(n): a[i,i] = 20*(.1+a[i,i])
+        for i in range(n):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(2):
             b = random([n,3])
             x = solve(a,b)
@@ -418,7 +420,6 @@ class TestSolveTriangular(TestCase):
         assert_array_almost_equal(sol, [1, 0])
 
 
-
 class TestInv(TestCase):
     def setUp(self):
         np.random.seed(1234)
@@ -437,7 +438,8 @@ class TestInv(TestCase):
         n = 20
         for i in range(4):
             a = random([n,n])
-            for i in range(n): a[i,i] = 20*(.1+a[i,i])
+            for i in range(n):
+                a[i,i] = 20*(.1+a[i,i])
             a_inv = inv(a)
             assert_array_almost_equal(dot(a,a_inv),
                                       identity(n))
@@ -451,7 +453,8 @@ class TestInv(TestCase):
         n = 20
         for i in range(4):
             a = random([n,n])+2j*random([n,n])
-            for i in range(n): a[i,i] = 20*(.1+a[i,i])
+            for i in range(n):
+                a[i,i] = 20*(.1+a[i,i])
             a_inv = inv(a)
             assert_array_almost_equal(dot(a,a_inv),
                                       identity(n))
@@ -508,6 +511,7 @@ def direct_lstsq(a,b,cmplx=0):
     b1 = dot(at, b)
     return solve(a1, b1)
 
+
 class TestLstsq(TestCase):
     def setUp(self):
         np.random.seed(1234)
@@ -516,7 +520,8 @@ class TestLstsq(TestCase):
         #bug report: Nils Wagner
         n = 200
         a = random([n,2])
-        for i in range(2): a[i,i] = 20*(.1+a[i,i])
+        for i in range(2):
+            a[i,i] = 20*(.1+a[i,i])
         b = random([n,3])
         x = lstsq(a,b)[0]
         assert_array_almost_equal(x,direct_lstsq(a,b))
@@ -553,7 +558,8 @@ class TestLstsq(TestCase):
 
         n = 20
         a = random([n,n])
-        for i in range(n): a[i,i] = 20*(.1+a[i,i])
+        for i in range(n):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(4):
             b = random([n,3])
             x = lstsq(a,b)[0]
@@ -562,7 +568,8 @@ class TestLstsq(TestCase):
     def test_random_complex_exact(self):
         n = 20
         a = random([n,n]) + 1j * random([n,n])
-        for i in range(n): a[i,i] = 20*(.1+a[i,i])
+        for i in range(n):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(2):
             b = random([n,3])
             x = lstsq(a,b)[0]
@@ -572,7 +579,8 @@ class TestLstsq(TestCase):
         n = 20
         m = 15
         a = random([n,m])
-        for i in range(m): a[i,i] = 20*(.1+a[i,i])
+        for i in range(m):
+            a[i,i] = 20*(.1+a[i,i])
         for i in range(4):
             b = random([n,3])
             x,res,r,s = lstsq(a,b)
@@ -637,11 +645,12 @@ class TestPinv(TestCase):
         assert_array_almost_equal(a_pinv,a_pinv2)
 
     def test_check_finite(self):
-        a=array([[1,2,3],[4,5,6.],[7,8,10]])
+        a = array([[1,2,3],[4,5,6.],[7,8,10]])
         a_pinv = pinv(a, check_finite=False)
         assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
         a_pinv = pinv2(a, check_finite=False)
         assert_array_almost_equal(dot(a,a_pinv),[[1,0,0],[0,1,0],[0,0,1]])
+
 
 class TestPinvSymmetric(TestCase):
 
@@ -706,6 +715,7 @@ class TestNorm(object):
     def test_zero_norm(self):
         assert_equal(norm([1,0,3], 0), 2)
         assert_equal(norm([1,2,3], 0), 3)
+
 
 class TestOverwrite(object):
     def test_solve(self):

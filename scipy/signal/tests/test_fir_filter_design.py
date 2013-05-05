@@ -43,8 +43,8 @@ class TestFirwin(TestCase):
         for freq, expected in expected_response:
             actual = abs(np.sum(h*np.exp(-1.j*np.pi*m*freq)))
             mse = abs(actual-expected)**2
-            self.assertTrue(mse < tol, 'response not as expected, mse=%g > %g'\
-               %(mse, tol))
+            self.assertTrue(mse < tol, 'response not as expected, mse=%g > %g'
+               % (mse, tol))
 
     def test_response(self):
         N = 51
@@ -89,7 +89,7 @@ class TestFirwin(TestCase):
         f = w/np.pi
         passIndicator = np.zeros(len(w), bool)
         for left, right in bands:
-            passIndicator |= (f>=left) & (f<right)
+            passIndicator |= (f >= left) & (f < right)
         Hideal = np.where(passIndicator, 1, 0)
         mse = np.mean(abs(abs(H)-Hideal)**2)
         return mse
@@ -238,8 +238,6 @@ class TestFirWinMore(TestCase):
         assert_raises(ValueError, firwin, 40, [.25, 0.5])
 
 
-
-
 class TestFirwin2(TestCase):
 
     def test_invalid_args(self):
@@ -334,7 +332,6 @@ class TestFirwin2(TestCase):
         taps = firwin2(ntaps, freq, gain, window=None, antisymmetric=True)
         assert_array_almost_equal(taps[: ntaps // 2], -taps[ntaps // 2:][::-1])
 
-
         freqs, response = freqz(taps, worN=2048)
         assert_array_almost_equal(abs(response), freqs / np.pi, decimal=4)
 
@@ -351,7 +348,6 @@ class TestFirwin2(TestCase):
         freqs, response1 = freqz(taps, worN=2048)
         response2        = np.interp(freqs / np.pi, freq, gain)
         assert_array_almost_equal(abs(response1), response2, decimal=3)
-
 
     def test_nyq(self):
         taps1 = firwin2(80, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0])

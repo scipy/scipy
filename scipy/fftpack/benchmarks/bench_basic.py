@@ -12,8 +12,10 @@ import numpy.fft
 
 from numpy.random import rand
 
+
 def random(size):
     return rand(*size)
+
 
 def direct_dft(x):
     x = asarray(x)
@@ -23,6 +25,7 @@ def direct_dft(x):
     for i in range(n):
         y[i] = dot(exp(i*w),x)
     return y
+
 
 def direct_idft(x):
     x = asarray(x)
@@ -59,8 +62,10 @@ class TestFft(TestCase):
             for x in [random([size]).astype(double),
                       random([size]).astype(cdouble)+random([size]).astype(cdouble)*1j
                       ]:
-                if size > 500: y = fft(x)
-                else: y = direct_dft(x)
+                if size > 500:
+                    y = fft(x)
+                else:
+                    y = direct_dft(x)
                 assert_array_almost_equal(fft(x),y)
                 print('|%8.2f' % measure('fft(x)',repeat), end=' ')
                 sys.stdout.flush()
@@ -71,6 +76,7 @@ class TestFft(TestCase):
 
             print(' (secs for %s calls)' % (repeat))
         sys.stdout.flush()
+
 
 class TestIfft(TestCase):
 
@@ -97,8 +103,10 @@ class TestIfft(TestCase):
             for x in [random([size]).astype(double),
                       random([size]).astype(cdouble)+random([size]).astype(cdouble)*1j
                       ]:
-                if size > 500: y = ifft(x)
-                else: y = direct_idft(x)
+                if size > 500:
+                    y = ifft(x)
+                else:
+                    y = direct_idft(x)
                 assert_array_almost_equal(ifft(x),y)
                 print('|%8.2f' % measure('ifft(x)',repeat), end=' ')
                 sys.stdout.flush()
@@ -109,6 +117,7 @@ class TestIfft(TestCase):
 
             print(' (secs for %s calls)' % (repeat))
         sys.stdout.flush()
+
 
 class TestRfft(TestCase):
 
@@ -140,6 +149,7 @@ class TestRfft(TestCase):
             print(' (secs for %s calls)' % (repeat))
         sys.stdout.flush()
 
+
 class TestIrfft(TestCase):
 
     def bench_random(self):
@@ -166,7 +176,7 @@ class TestIrfft(TestCase):
             x1[0] = x[0]
             for i in range(1,size/2):
                 x1[i] = x[2*i-1] + 1j * x[2*i]
-            if not size%2:
+            if not size % 2:
                 x1[-1] = x[-1]
             y = irfft(x)
 
@@ -180,6 +190,7 @@ class TestIrfft(TestCase):
             print(' (secs for %s calls)' % (repeat))
 
         sys.stdout.flush()
+
 
 class TestFftn(TestCase):
 
@@ -196,7 +207,7 @@ class TestFftn(TestCase):
                             ((256,256),10),
                             ((512,512),3),
                             ]:
-            print('%9s' % ('%sx%s'%size), end=' ')
+            print('%9s' % ('%sx%s' % size), end=' ')
             sys.stdout.flush()
 
             for x in [random(size).astype(double),

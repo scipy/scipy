@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.ndimage import label
 
+
 def generate_test_vecs(infile, strelfile, resultfile):
     "test label with different structuring element neighborhoods"
     def bitimage(l):

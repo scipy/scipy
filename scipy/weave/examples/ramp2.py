@@ -12,10 +12,12 @@ import time
 from scipy.weave import ext_tools
 from numpy import *
 
+
 def Ramp(result, size, start, end):
     step = (end-start)/(size-1)
     for i in xrange(size):
         result[i] = start + step*i
+
 
 def build_ramp_ext():
     mod = ext_tools.ext_module('ramp_ext')
@@ -36,6 +38,7 @@ def build_ramp_ext():
     func = ext_tools.ext_function('Ramp',code,['result','start','end'])
     mod.add_function(func)
     mod.compile(compiler='gcc')
+
 
 def main():
     arr = [0]*10000
@@ -58,7 +61,7 @@ def main():
         ramp_ext.Ramp(arr, 0.0, 1.0)
     t2 = time.time()
     c_time = (t2 - t1)
-    print('compiled numeric (seconds, speed up):', c_time, (py_time*10000/200.)/ c_time)
+    print('compiled numeric (seconds, speed up):', c_time, (py_time*10000/200.) / c_time)
     print('arr[500]:', arr[500])
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 from os.path import join
 
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
@@ -23,12 +24,12 @@ def configuration(parent_package='',top_path=None):
                          libraries=['rootfind'])
 
     lapack = get_info('lapack_opt')
-    sources=['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
+    sources = ['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
     config.add_extension('_lbfgsb',
                          sources=[join('lbfgsb',x) for x in sources],
                          **lapack)
 
-    sources=['moduleTNC.c','tnc.c']
+    sources = ['moduleTNC.c','tnc.c']
     config.add_extension('moduleTNC',
                          sources=[join('tnc',x) for x in sources],
                          depends=[join('tnc','tnc.h')])
@@ -44,7 +45,7 @@ def configuration(parent_package='',top_path=None):
     sources = ['slsqp.pyf', 'slsqp_optmz.f']
     config.add_extension('_slsqp', sources=[join('slsqp', x) for x in sources])
 
-    config.add_extension('_nnls', sources=[join('nnls', x) \
+    config.add_extension('_nnls', sources=[join('nnls', x)
                                           for x in ["nnls.f","nnls.pyf"]])
 
     config.add_data_dir('tests')
