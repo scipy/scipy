@@ -23,7 +23,7 @@ References
 # Direct evaluation of polynomials
 #------------------------------------------------------------------------------
 cimport cython
-from libc.math cimport sqrt, exp, floor, fabs
+from libc.math cimport sqrt, exp, floor, fabs, log, sin, M_PI as pi
 
 from numpy cimport npy_cdouble
 from _complexstuff cimport nan, inf, number_t
@@ -32,6 +32,7 @@ cdef extern from "cephes.h":
     double Gamma(double x) nogil
     double lgam(double x) nogil
     double beta (double a, double b) nogil
+    double lbeta (double a, double b) nogil
     double hyp2f1_wrap "hyp2f1" (double a, double b, double c, double x) nogil 
 
 cdef extern from "specfun_wrappers.h":
@@ -66,7 +67,7 @@ cdef inline number_t hyp1f1(double a, double b, number_t z) nogil:
 
 @cython.cdivision(True)
 cdef inline double binom(double n, double k) nogil:
-    cdef double kx, nx, num, den
+    cdef double kx, nx, num, den, dk, sgn
     cdef int i
 
     if n < 0:
@@ -76,16 +77,19 @@ cdef inline double binom(double n, double k) nogil:
             return nan
 
     kx = floor(k)
-    if k == kx:
+    if k == kx and (fabs(n) > 1e-8 or n == 0):
         # Integer case: use multiplication formula for less rounding error
         # for cases where the result is an integer.
+        #
+        # This cannot be used for small nonzero n due to loss of
+        # precision.
 
         nx = floor(n)
         if nx == n and kx > nx/2 and nx > 0:
             # Reduce kx by symmetry
             kx = nx - kx
 
-        if kx >= 1 and kx < 20:
+        if kx >= 0 and kx < 20:
             num = 1.0
             den = 1.0
             for i in range(1, 1 + <int>kx):
@@ -97,7 +101,30 @@ cdef inline double binom(double n, double k) nogil:
             return num/den
 
     # general case:
-    return 1/beta(1 + n - k, 1 + k)/(n + 1)
+    if n >= 1e10*k and k > 0:
+        # avoid under/overflows in intermediate results
+        return exp(-lbeta(1 + n - k, 1 + k) - log(n + 1))
+    elif k > 1e8*fabs(n):
+        # avoid loss of precision
+        num = Gamma(1 + n) / fabs(k) + Gamma(1 + n) * n / (2*k**2) # + ...
+        num /= pi * fabs(k)**n
+        if k > 0:
+            kx = floor(k)
+            if <int>kx == kx:
+                dk = k - kx
+                sgn = 1 if (<int>kx) % 2 == 0 else -1
+            else:
+                dk = k
+                sgn = 1
+            return num * sin((dk-n)*pi) * sgn
+        else:
+            kx = floor(k)
+            if <int>kx == kx:
+                return 0
+            else:
+                return num * sin(k*pi)
+    else:
+        return 1/beta(1 + n - k, 1 + k)/(n + 1)
 
 #-----------------------------------------------------------------------------
 # Jacobi
