@@ -73,8 +73,8 @@ def process_pyx(fromfile, tofile):
             # There are ways of installing Cython that don't result in a cython
             # executable on the path, see gh-2397.
             r = subprocess.call([sys.executable, '-c',
-                                 'from Cython.Compiler.Main import '
-                                 'setuptools_main as main; main()'] + flags +
+                                 'import sys; from Cython.Compiler.Main import '
+                                 'setuptools_main as main; sys.exit(main())'] + flags +
                                  ["-o", tofile, fromfile])
             if r != 0:
                 raise Exception('Cython failed')
