@@ -26,8 +26,8 @@ from argparse import ArgumentParser, REMAINDER
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
-    parser.add_argument("--quieter", "-q", action="count", default=0,
-                        help="less verbosity")
+    parser.add_argument("--verbose", "-v", action="count", default=1,
+                        help="more verbosity")
     parser.add_argument("--no-build", "-n", action="store_true", default=False,
                         help="do not build Scipy (use system installed version)")
     parser.add_argument("--build-only", "-b", action="store_true", default=False,
@@ -110,7 +110,7 @@ def main(argv):
             sys.argv += ['-A', "not slow"]
         if args.doctests:
             sys.argv += ['--doctest-tests']
-        if args.quieter <= 1:
+        if args.verbose >= 2:
             sys.argv += ['-v']
         sys.argv += args.tests
         nose.main(sys.argv)
@@ -120,7 +120,7 @@ def main(argv):
         test = scipy.test
 
     result = test(args.mode,
-                  verbose=max(0, 2-args.quieter),
+                  verbose=args.verbose,
                   extra_argv=args.args,
                   doctests=args.doctests,
                   coverage=args.coverage)
