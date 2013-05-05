@@ -144,7 +144,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     if derphi0 is None:
         derphi0 = derphi(0.)
 
-    if old_phi0 is not None:
+    if old_phi0 is not None and derphi0 != 0:
         alpha1 = min(1.0, 1.01*2*(phi0 - old_phi0)/derphi0)
         if alpha1 < 0:
             alpha1 = 1.0
@@ -327,7 +327,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
         derphi0 = derphi(0.)
 
     alpha0 = 0
-    if old_phi0 is not None:
+    if old_phi0 is not None and derphi0 != 0:
         alpha1 = min(1.0, 1.01*2*(phi0 - old_phi0)/derphi0)
     else:
         alpha1 = 1.0
@@ -519,8 +519,9 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
             derphi_lo = derphi_aj
         i += 1
         if (i > maxiter):
-            a_star = a_j
-            val_star = phi_aj
+            # Failed to find a conforming step size
+            a_star = None
+            val_star = None
             valprime_star = None
             break
     return a_star, val_star, valprime_star

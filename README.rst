@@ -43,7 +43,7 @@ Currently SciPy consists of the following files and directories:
   THANKS.txt
     SciPy developers and contributors. Please keep it up to date!!
 
-  README.txt
+  README.rst
     SciPy structure (this document).
 
   setup.py
@@ -105,9 +105,6 @@ Web sites
 The user's site is here
     http://www.scipy.org/
 
-The developer's site is here
-    http://projects.scipy.org/scipy/wiki
-
 
 Mailing Lists
 -------------
@@ -119,11 +116,11 @@ Please see the developer's list here
 Bug reports
 -----------
 
-To search for bugs, please use the NIPY Bug Tracker at
-    http://projects.scipy.org/scipy/query
+To search for bugs, please use the Scipy Bug Tracker at
+    https://github.com/scipy/scipy/issues
 
-To report a bug, please use the NIPY Bug Tracker at
-    http://projects.scipy.org/scipy/newticket
+To report a bug, please use the Scipy Bug Tracker at
+    https://github.com/scipy/scipy/issues
 
 
 License information

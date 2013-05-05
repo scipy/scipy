@@ -408,6 +408,51 @@ class _TestCommon:
         assert_almost_equal( Asp.multiply(Dsp).todense(), A*D) #sparse/sparse
         assert_almost_equal( Asp.multiply(D),             A*D) #sparse/dense
 
+    def test_elementwise_multiply_broadcast(self):
+        A = array([4])
+        B = array([[-9]])
+        C = array([1,-1,0])
+        D = array([[7,9,-9]])
+        E = array([[3],[2],[1]])
+        F = array([[8,6,3],[-4,3,2],[6,6,6]])
+        G = [1, 2, 3]
+
+        # Rank 1 arrays can't be cast as spmatrices (A and C) so leave
+        # them out.
+        Bsp = self.spmatrix(B)
+        Dsp = self.spmatrix(D)
+        Esp = self.spmatrix(E)
+        Fsp = self.spmatrix(F)
+
+        matrices = [A, B, C, D, E, F, G]
+        spmatrices = [Bsp, Dsp, Esp, Fsp]
+        # sparse/sparse
+        for i in spmatrices:
+            for j in spmatrices:
+                try:
+                    dense_mult = np.multiply(i.todense(), j.todense())
+                except ValueError:
+                    assert_raises(ValueError, i.multiply, j)
+                    continue
+                sp_mult = i.multiply(j)
+                if isspmatrix(sp_mult):
+                    assert_almost_equal(sp_mult.todense(), dense_mult)
+                else:
+                    assert_almost_equal(sp_mult, dense_mult)
+        
+        # sparse/dense
+        for i in spmatrices:
+            for j in matrices:
+                try:
+                    dense_mult = np.multiply(i.todense(), j)
+                except ValueError:
+                    assert_raises(ValueError, i.multiply, j)
+                    continue
+                sp_mult = i.multiply(j)
+                if isspmatrix(sp_mult):
+                    assert_almost_equal(sp_mult.todense(), dense_mult)
+                else:
+                    assert_almost_equal(sp_mult, dense_mult)
 
     def test_elementwise_divide(self):
         expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
@@ -616,7 +661,6 @@ class _TestCommon:
         assert_array_equal(sum1, 2*self.dat)
         sum2 = 3*self.datsp - self.dat
         assert_array_equal(sum2, 2*self.dat)
-
 
     def test_copy(self):
         # Check whether the copy=True and copy=False keywords work
@@ -1884,11 +1928,19 @@ class TestDOK(sparse_test_class(slicing=False,
         # Dense ctor
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
         A = dok_matrix(b)
+        assert_equal(b.dtype, A.dtype)
         assert_equal(A.todense(), b)
 
         # Sparse ctor
         c = csr_matrix(b)
         assert_equal(A.todense(), c.todense())
+
+        data = [[0, 1, 2], [3, 0, 0]]
+        d = dok_matrix(data, dtype=np.float32)
+        assert_equal(d.dtype, np.float32)
+        da = d.toarray()
+        assert_equal(da.dtype, np.float32)
+        assert_array_equal(da, data)
 
     def test_resize(self):
         #A couple basic tests of the resize() method.
@@ -2123,6 +2175,11 @@ class TestCOO(sparse_test_class(getset=False,
     # COO does not have a __getitem__ to support iteration
     def test_iterator(self):
         pass
+
+    def test_todia_all_zeros(self):
+        zeros = [[0, 0]]
+        dia = coo_matrix(zeros).todia()
+        assert_array_equal(dia.A, zeros)
 
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
