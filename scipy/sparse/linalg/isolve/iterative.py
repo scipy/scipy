@@ -74,6 +74,7 @@ def set_docstring(header, Ainfo, footer=''):
         return fn
     return combine
 
+
 @decorator
 def non_reentrant(func, *a, **kw):
     d = func.__dict__
@@ -84,6 +85,7 @@ def non_reentrant(func, *a, **kw):
         return func(*a, **kw)
     finally:
         d['__entered'] = False
+
 
 @set_docstring('Use BIConjugate Gradient iteration to solve A x = b',
                'The real or complex N-by-N matrix of the linear system\n'
@@ -150,6 +152,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
 
     return postprocess(x), info
 
+
 @set_docstring('Use BIConjugate Gradient STABilized iteration to solve A x = b',
                'The real or complex N-by-N matrix of the linear system\n'
                '``A`` must represent a hermitian, positive definite matrix')
@@ -211,6 +214,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
 
     return postprocess(x), info
 
+
 @set_docstring('Use Conjugate Gradient iteration to solve A x = b',
                'The real or complex N-by-N matrix of the linear system\n'
                '``A`` must represent a hermitian, positive definite matrix')
@@ -263,7 +267,6 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
                 ftflag = False
             bnrm2, resid, info = stoptest(work[slice1], b, bnrm2, tol, info)
         ijob = 2
-
 
     if info > 0 and iter_ == maxiter and resid > tol:
         #info isn't set appropriately otherwise
@@ -329,6 +332,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
         info = iter_
 
     return postprocess(x), info
+
 
 @non_reentrant
 def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=None, callback=None, restrt=None):
@@ -461,7 +465,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
             work[slice2] += sclr1*matvec(x)
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
-            if not first_pass and old_ijob==3:
+            if not first_pass and old_ijob == 3:
                 resid_ready = True
 
             first_pass = False

@@ -50,6 +50,8 @@ def mminfo(source):
     return MMFile.info(source)
 
 #-------------------------------------------------------------------------------
+
+
 def mmread(source):
     """
     Reads the contents of a Matrix Market file 'filename' into a matrix.
@@ -70,6 +72,8 @@ def mmread(source):
     return MMFile().read(source)
 
 #-------------------------------------------------------------------------------
+
+
 def mmwrite(target, a, comment='', field=None, precision=None):
     """
     Writes the sparse or dense matrix A to a Matrix Market formatted file.
@@ -102,17 +106,23 @@ class MMFile (object):
       '_symmetry')
 
     @property
-    def rows(self): return self._rows
+    def rows(self):
+        return self._rows
     @property
-    def cols(self): return self._cols
+    def cols(self):
+        return self._cols
     @property
-    def entries(self): return self._entries
+    def entries(self):
+        return self._entries
     @property
-    def format(self): return self._format
+    def format(self):
+        return self._format
     @property
-    def field(self): return self._field
+    def field(self):
+        return self._field
     @property
-    def symmetry(self): return self._symmetry
+    def symmetry(self):
+        return self._symmetry
 
     @property
     def has_symmetry(self):
@@ -165,11 +175,13 @@ class MMFile (object):
 
     #---------------------------------------------------------------------------
     @staticmethod
-    def reader(): pass
+    def reader():
+        pass
 
     #---------------------------------------------------------------------------
     @staticmethod
-    def writer(): pass
+    def writer():
+        pass
 
     #---------------------------------------------------------------------------
     @classmethod
@@ -195,7 +207,8 @@ class MMFile (object):
                 format = self.FORMAT_COORDINATE
 
             # skip comments
-            while line.startswith(b'%'): line = source.readline()
+            while line.startswith(b'%'):
+                line = source.readline()
 
             line = line.split()
             if format == self.FORMAT_ARRAY:
@@ -211,7 +224,8 @@ class MMFile (object):
             return (rows, cols, entries, format, field, symmetry)
 
         finally:
-            if close_it: source.close()
+            if close_it:
+                source.close()
 
     #---------------------------------------------------------------------------
     @staticmethod
@@ -260,7 +274,7 @@ class MMFile (object):
     @staticmethod
     def _get_symmetry(a):
         m,n = a.shape
-        if m!=n:
+        if m != n:
             return MMFile.SYMMETRY_GENERAL
         issymm = 1
         isskew = 1
@@ -276,9 +290,12 @@ class MMFile (object):
                     isherm = 0
                 if not (issymm or isskew or isherm):
                     break
-        if issymm: return MMFile.SYMMETRY_SYMMETRIC
-        if isskew: return MMFile.SYMMETRY_SKEW_SYMMETRIC
-        if isherm: return MMFile.SYMMETRY_HERMITIAN
+        if issymm:
+            return MMFile.SYMMETRY_SYMMETRIC
+        if isskew:
+            return MMFile.SYMMETRY_SKEW_SYMMETRIC
+        if isherm:
+            return MMFile.SYMMETRY_HERMITIAN
         return MMFile.SYMMETRY_GENERAL
 
     #---------------------------------------------------------------------------
@@ -291,7 +308,8 @@ class MMFile (object):
         }.get(field, None)
 
     #---------------------------------------------------------------------------
-    def __init__(self, **kwargs): self._init_attrs(**kwargs)
+    def __init__(self, **kwargs):
+        self._init_attrs(**kwargs)
 
     #---------------------------------------------------------------------------
     def read(self, source):
@@ -302,7 +320,8 @@ class MMFile (object):
             return self._parse_body(stream)
 
         finally:
-            if close_it: stream.close()
+            if close_it:
+                stream.close()
 
     #---------------------------------------------------------------------------
     def write(self, target, a, comment='', field=None, precision=None):
@@ -312,8 +331,10 @@ class MMFile (object):
             self._write(stream, a, comment, field, precision)
 
         finally:
-            if close_it: stream.close()
-            else: stream.flush()
+            if close_it:
+                stream.close()
+            else:
+                stream.flush()
 
     #---------------------------------------------------------------------------
     def _init_attrs(self, **kwargs):
@@ -329,7 +350,8 @@ class MMFile (object):
             raise ValueError('found %s invalid keyword arguments, please only use %s' %
                                 (tuple(invalid_keys), public_attrs))
 
-        for attr in attrs: setattr(self, attr, kwargs.get(attr[1:], None))
+        for attr in attrs:
+            setattr(self, attr, kwargs.get(attr[1:], None))
 
     #---------------------------------------------------------------------------
     def _parse_header(self, stream):
@@ -369,14 +391,14 @@ class MMFile (object):
                 else:
                     aij = float(line)
                 a[i,j] = aij
-                if has_symmetry and i!=j:
+                if has_symmetry and i != j:
                     if is_skew:
                         a[j,i] = -aij
                     elif is_herm:
                         a[j,i] = conj(aij)
                     else:
                         a[j,i] = aij
-                if i<rows-1:
+                if i < rows-1:
                     i = i + 1
                 else:
                     j = j + 1
@@ -404,7 +426,7 @@ class MMFile (object):
                 else:
                     aij = float(l[2])
                 a[i,j] = aij
-                if has_symmetry and i!=j:
+                if has_symmetry and i != j:
                     if is_skew:
                         a[j,i] = -aij
                     elif is_herm:
@@ -449,11 +471,11 @@ class MMFile (object):
                 J = ascontiguousarray(flat_data[:,1], dtype='intc')
                 V = ascontiguousarray(flat_data[:,2], dtype='float')
 
-            I -= 1 #adjust indices (base 1 -> base 0)
+            I -= 1 # adjust indices (base 1 -> base 0)
             J -= 1
 
             if has_symmetry:
-                mask = (I != J)       #off diagonal mask
+                mask = (I != J)       # off diagonal mask
                 od_I = I[mask]
                 od_J = J[mask]
                 od_V = V[mask]
@@ -539,7 +561,6 @@ class MMFile (object):
         # write comments
         for line in comment.split('\n'):
             stream.write(asbytes('%%%s\n' % (line)))
-
 
         template = self._field_template(field, precision)
 

@@ -88,6 +88,7 @@ class TestFreqz(TestCase):
                       freqz, [1.0], worN=8, plot=lambda w, h: 1 / 0)
         freqz([1.0], worN=8, plot=plot)
 
+
 class TestNormalize(TestCase):
 
     def test_allclose(self):
@@ -96,7 +97,7 @@ class TestNormalize(TestCase):
         # Test to make sure the allclose call within signal.normalize does not
         # choose false positives. Then check against a known output from MATLAB
         # to make sure the fix doesn't break anything.
-    
+
         # These are the coefficients returned from
         #   `[b,a] = cheby1(8, 0.5, 0.048)'
         # in MATLAB. There are at least 15 significant figures in each
@@ -113,7 +114,7 @@ class TestNormalize(TestCase):
                              6.334127355102684e+01, -4.963358186631157e+01,
                              2.434862182949389e+01, -6.836925348604676e+00,
                              8.412934944449140e-01])
-        
+
         # This is the input to signal.normalize after passing through the
         # equivalent steps in signal.iirfilter as was done for MATLAB
         b_norm_in = np.array([1.5543135865293012e-06, 1.2434508692234413e-05,
@@ -126,9 +127,9 @@ class TestNormalize(TestCase):
                               4.5776121393762771e+06, -3.5869706138592605e+06,
                               1.7596511818472347e+06, -4.9409793515707983e+05,
                               6.0799461347219651e+04])
-        
+
         b_output, a_output = normalize(b_norm_in, a_norm_in)
-        
+
         # The test on b works for decimal=14 but the one for a does not. For
         # the sake of consistency, both of these are decimal=13. If something
         # breaks on another platform, it is probably fine to relax this lower.

@@ -4,6 +4,7 @@ import csv
 
 import numpy as np
 
+
 def parse_txt_data(filename):
     f = open(filename)
     try:
@@ -30,6 +31,7 @@ def parse_txt_data(filename):
         f.close()
 
     return np.array(data)
+
 
 def run_test(filename, funcs, args=[0]):
     nargs = len(args)
@@ -58,7 +60,7 @@ if __name__ == '__main__':
     from convert import DATA_DIR
     import os
 
-    data =[]
+    data = []
     for root, dirs, files in os.walk(DATA_DIR):
         for f in files:
             name = os.path.join(root, f)

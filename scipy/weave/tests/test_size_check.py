@@ -8,6 +8,7 @@ from scipy.weave.ast_tools import harvest_variables
 
 empty = np.array(())
 
+
 class TestMakeSameLength(TestCase):
 
     def generic_check(self,x,y,desired):
@@ -35,6 +36,7 @@ class TestMakeSameLength(TestCase):
         x,y = (1,2,3),(1,2)
         desired = np.array((1,2,3)), np.array((1,1,2))
         self.generic_check(x,y,desired)
+
 
 class TestBinaryOpSize(TestCase):
     def generic_check(self,x,y,desired):
@@ -95,6 +97,7 @@ class TestBinaryOpSize(TestCase):
         x,y = (5,5),(4,5)
         self.generic_error_check(x,y)
 
+
 class TestDummyArray(TestBinaryOpSize):
     def generic_check(self,x,y,desired):
         if type(x) is type(()):
@@ -111,6 +114,7 @@ class TestDummyArray(TestBinaryOpSize):
 
     def desired_type(self,val):
         return size_check.dummy_array(np.array(val),1)
+
 
 class TestDummyArrayIndexing(TestCase):
     def generic_check(self,ary,expr,desired):
@@ -149,8 +153,10 @@ class TestDummyArrayIndexing(TestCase):
     def test_1d_index_2(self):
         self.generic_1d_index('a[-4]')
     def test_1d_index_3(self):
-        try: self.generic_1d('a[12]')
-        except IndexError: pass
+        try:
+            self.generic_1d('a[12]')
+        except IndexError:
+            pass
     def test_1d_index_calculated(self):
         self.generic_1d_index('a[0+1]')
     def test_1d_0(self):
@@ -173,8 +179,10 @@ class TestDummyArrayIndexing(TestCase):
         self.generic_1d('a[1:-5]')
     def test_1d_9(self):
         # don't support zero length slicing at the moment.
-        try: self.generic_1d('a[-1:-5]')
-        except IndexError: pass
+        try:
+            self.generic_1d('a[-1:-5]')
+        except IndexError:
+            pass
     def test_1d_10(self):
         self.generic_1d('a[-5:-1]')
 
@@ -188,8 +196,10 @@ class TestDummyArrayIndexing(TestCase):
         self.generic_1d('a[1::-1]')
     def test_1d_stride_4(self):
         # don't support zero length slicing at the moment.
-        try: self.generic_1d('a[1:5:-1]')
-        except IndexError: pass
+        try:
+            self.generic_1d('a[1:5:-1]')
+        except IndexError:
+            pass
     def test_1d_stride_5(self):
         self.generic_1d('a[5:1:-1]')
     def test_1d_stride_6(self):
@@ -216,8 +226,9 @@ class TestDummyArrayIndexing(TestCase):
                 beg = random.choice(choices)
                 end = random.choice(choices)
                 step = random.choice(choices)
-                if step in ['0',0]: step = 'None'
-                self.generic_1d('a[%s:%s:%s]' %(beg,end,step))
+                if step in ['0',0]:
+                    step = 'None'
+                self.generic_1d('a[%s:%s:%s]' % (beg,end,step))
             except IndexError:
                 pass
 
@@ -240,9 +251,11 @@ class TestDummyArrayIndexing(TestCase):
                 beg2 = random.choice(choices)
                 end2 = random.choice(choices)
                 step2 = random.choice(choices)
-                if step in ['0',0]: step = 'None'
-                if step2 in ['0',0]: step2 = 'None'
-                expr = 'a[%s:%s:%s,%s:%s:%s]' %(beg,end,step,beg2,end2,step2)
+                if step in ['0',0]:
+                    step = 'None'
+                if step2 in ['0',0]:
+                    step2 = 'None'
+                expr = 'a[%s:%s:%s,%s:%s:%s]' % (beg,end,step,beg2,end2,step2)
                 self.generic_2d(expr)
             except IndexError:
                 pass
@@ -263,6 +276,7 @@ class TestDummyArrayIndexing(TestCase):
                 self.generic_3d(expr)
             except IndexError:
                 pass
+
 
 class TestReduction(TestCase):
     def test_1d_0(self):
@@ -298,6 +312,7 @@ class TestReduction(TestCase):
         except ValueError:
             pass
 
+
 class TestExpressions(TestCase):
     def generic_check(self,expr,desired,**kw):
         import parser
@@ -305,13 +320,13 @@ class TestExpressions(TestCase):
         args = harvest_variables(ast_list)
         loc = locals().update(kw)
         for var in args:
-            s='%s = size_check.dummy_array(%s)'% (var,var)
+            s = '%s = size_check.dummy_array(%s)' % (var,var)
             exec(s,loc)
         try:
             actual = eval(expr,locals()).shape
         except:
             actual = 'failed'
-        if actual is 'failed' and  desired is 'failed':
+        if actual is 'failed' and desired is 'failed':
             return
         try:
             assert_array_equal(actual,desired, expr)

@@ -13,6 +13,7 @@ from .data import _data_matrix
 from .sputils import isshape, upcast, upcast_char, getdtype
 from .sparsetools import dia_matvec
 
+
 class dia_matrix(_data_matrix):
     """Sparse matrix with DIAgonal storage
 
@@ -93,7 +94,7 @@ class dia_matrix(_data_matrix):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self.shape   = arg1   #spmatrix checks for errors here
+                self.shape   = arg1   # spmatrix checks for errors here
                 self.data    = np.zeros( (0,0), getdtype(dtype, default=float))
                 self.offsets = np.zeros( (0), dtype=np.intc)
             else:
@@ -113,14 +114,13 @@ class dia_matrix(_data_matrix):
             try:
                 arg1 = np.asarray(arg1)
             except:
-                raise ValueError("unrecognized form for" \
+                raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format)
             from .coo import coo_matrix
             A = coo_matrix(arg1, dtype=dtype).todia()
             self.data    = A.data
             self.offsets = A.offsets
             self.shape   = A.shape
-
 
         if dtype is not None:
             self.data = self.data.astype(dtype)
@@ -133,8 +133,8 @@ class dia_matrix(_data_matrix):
             raise ValueError('data array must have rank 2')
 
         if self.data.shape[0] != len(self.offsets):
-            raise ValueError('number of diagonals (%d) ' \
-                    'does not match the number of offsets (%d)' \
+            raise ValueError('number of diagonals (%d) '
+                    'does not match the number of offsets (%d)'
                     % (self.data.shape[0], len(self.offsets)))
 
         if len(np.unique(self.offsets)) != len(self.offsets):
@@ -145,7 +145,7 @@ class dia_matrix(_data_matrix):
         format = self.getformat()
         return "<%dx%d sparse matrix of type '%s'\n" \
                "\twith %d stored elements (%d diagonals) in %s format>" % \
-               ( self.shape +  (self.dtype.type, nnz, self.data.shape[0], \
+               ( self.shape + (self.dtype.type, nnz, self.data.shape[0],
                  _formats[format][1],) )
 
     def getnnz(self):

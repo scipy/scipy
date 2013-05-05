@@ -13,9 +13,16 @@ from scipy.lib.six.moves import xrange
 from .sputils import isdense, isscalarlike, isintlike
 
 
-class SparseWarning(Warning): pass
-class SparseFormatWarning(SparseWarning): pass
-class SparseEfficiencyWarning(SparseWarning): pass
+class SparseWarning(Warning):
+    pass
+
+
+class SparseFormatWarning(SparseWarning):
+    pass
+
+
+class SparseEfficiencyWarning(SparseWarning):
+    pass
 
 
 # The formats that we might potentially understand.
@@ -44,6 +51,7 @@ _formats = {'csc':[0, "Compressed Sparse Column"],
 
 MAXPRINT = 50
 
+
 class spmatrix(object):
     """ This class provides a base class for all sparse matrices.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
@@ -66,7 +74,7 @@ class spmatrix(object):
             raise ValueError("Only two-dimensional sparse arrays "
                                      "are supported.")
         try:
-            shape = int(shape[0]),int(shape[1]) #floats, other weirdness
+            shape = int(shape[0]),int(shape[1]) # floats, other weirdness
         except:
             raise TypeError('invalid shape')
 
@@ -250,7 +258,7 @@ class spmatrix(object):
                 return self._mul_vector(other)
             elif other.shape == (N, 1):
                 return self._mul_vector(other.ravel()).reshape(M, 1)
-            elif other.ndim == 2  and other.shape[0] == N:
+            elif other.ndim == 2 and other.shape[0] == N:
                 return self._mul_multivector(other)
 
         if isscalarlike(other):
@@ -383,7 +391,6 @@ class spmatrix(object):
         else:
             raise NotImplementedError
 
-
     def __getattr__(self, attr):
         if attr == 'A':
             return self.toarray()
@@ -419,7 +426,6 @@ class spmatrix(object):
     def _imag(self):
         return self.tocsr()._imag()
 
-
     def nonzero(self):
         """nonzero indices
 
@@ -439,7 +445,6 @@ class spmatrix(object):
         A = self.tocoo()
         nz_mask = A.data != 0
         return (A.row[nz_mask],A.col[nz_mask])
-
 
     def getcol(self, j):
         """Returns a copy of column j of the matrix, as an (m x 1) sparse
@@ -634,7 +639,7 @@ class spmatrix(object):
             return out
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
-        
+
 
 def isspmatrix(x):
     return isinstance(x, spmatrix)

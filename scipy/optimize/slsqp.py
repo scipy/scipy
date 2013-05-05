@@ -26,6 +26,7 @@ __docformat__ = "restructuredtext en"
 
 _epsilon = sqrt(finfo(float).eps)
 
+
 def approx_jacobian(x,func,epsilon,*args):
     """
     Approximate the Jacobian matrix of a callable function.
@@ -64,8 +65,8 @@ def approx_jacobian(x,func,epsilon,*args):
 
 
 def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
-                bounds = [], fprime = None, fprime_eqcons=None,
-                fprime_ieqcons=None, args = (), iter = 100, acc = 1.0E-6,
+                bounds=[], fprime=None, fprime_eqcons=None,
+                fprime_ieqcons=None, args=(), iter = 100, acc = 1.0E-6,
                 iprint = 1, disp = None, full_output = 0, epsilon = _epsilon ):
     """
     Minimize a function using Sequential Least SQuares Programming
@@ -201,6 +202,7 @@ def fmin_slsqp( func, x0 , eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
     else:
         return res['x']
 
+
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     constraints=(),
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
@@ -269,7 +271,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                          'jac' : cjac,
                          'args': con.get('args', ())}, )
 
-
     exit_modes = { -1 : "Gradient evaluation required (g & a)",
                     0 : "Optimization terminated successfully.",
                     1 : "Function evaluation required (f & c)",
@@ -282,7 +283,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     8 : "Positive directional derivative for linesearch",
                     9 : "Iteration limit exceeded" }
 
-
     # Wrap func
     feval, func = wrap_function(func, args)
 
@@ -294,7 +294,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Transform x0 into an array.
     x = asfarray(x0).flatten()
-
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
@@ -311,7 +310,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     n1 = n+1
     mineq = m - meq + n1 + n1
     len_w = (3*n1+m)*(n1+1)+(n1-meq+1)*(mineq+2) + 2*mineq+(n1+mineq)*(n1-meq) \
-            + 2*meq + n1 +(n+1)*n/2 + 2*m + 3*n + 3*n1 + 1
+            + 2*meq + n1 + (n+1)*n/2 + 2*m + 3*n + 3*n1 + 1
     len_jw = mineq
     w = zeros(len_w)
     jw = zeros(len_jw)
@@ -451,7 +450,7 @@ if __name__ == '__main__':
         return array([[1, 1]])
 
     # constraints dictionaries
-    cons=({'type': 'eq', 'fun' : feqcon, 'jac' : jeqcon, 'args': (1, )},
+    cons = ({'type': 'eq', 'fun' : feqcon, 'jac' : jeqcon, 'args': (1, )},
           {'type': 'ineq', 'fun' : fieqcon, 'jac' : jieqcon, 'args': (10,)})
 
     # Bounds constraint problem

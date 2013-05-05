@@ -9,6 +9,7 @@ from numpy.testing import TestCase, run_module_suite, assert_almost_equal, \
 
 import scipy.optimize
 
+
 class TestRegression(TestCase):
 
     def test_newton_x0_is_0(self):

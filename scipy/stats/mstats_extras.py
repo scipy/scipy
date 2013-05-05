@@ -103,6 +103,8 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     return ma.fix_invalid(result, copy=False)
 
 #..............................................................................
+
+
 def hdmedian(data, axis=-1, var=False):
     """
     Returns the Harrell-Davis estimate of the median along the given axis.
@@ -233,6 +235,8 @@ def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True),
     return np.array((tmean - tppf*tstde, tmean+tppf*tstde))
 
 #..............................................................................
+
+
 def mjci(data, prob=[0.25,0.5,0.75], axis=None):
     """
     Returns the Maritz-Jarrett estimators of the standard error of selected
@@ -277,6 +281,8 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         return ma.apply_along_axis(_mjci_1D, axis, data, p)
 
 #..............................................................................
+
+
 def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
     """
     Computes the alpha confidence interval for the selected quantiles of the
@@ -353,6 +359,8 @@ def median_cihs(data, alpha=0.05, axis=None):
     return result
 
 #..............................................................................
+
+
 def compare_medians_ms(group_1, group_2, axis=None):
     """
     Compares the medians from two independent groups along the given axis.

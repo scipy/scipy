@@ -40,12 +40,13 @@ for (int i = 0; i < bunches; i++)
 Polyline(hdc,(POINT*)p_data,left_over);
 """
 
+
 def polyline(dc,line,xoffset=0,yoffset=0):
     #------------------------------------------------------------------------
     # Make sure the array is the correct size/shape
     #------------------------------------------------------------------------
     shp = line.shape
-    assert(len(shp)==2 and shp[1] == 2)
+    assert(len(shp) == 2 and shp[1] == 2)
 
     #------------------------------------------------------------------------
     # Offset data if necessary
@@ -75,7 +76,6 @@ def polyline(dc,line,xoffset=0,yoffset=0):
                """
     weave.inline(code,['dc','line'])
 
-
     #------------------------------------------------------------------------
     # Find the maximum and minimum points in the drawing list and add
     # them to the bounding box.
@@ -89,6 +89,8 @@ def polyline(dc,line,xoffset=0,yoffset=0):
 # Define a new version of DrawLines that calls the optimized
 # version for numpy arrays when appropriate.
 #-----------------------------------------------------------------------------
+
+
 def NewDrawLines(dc,line):
     """
     """
@@ -109,7 +111,7 @@ if __name__ == '__main__':
     import time
 
     class Canvas(wxWindow):
-        def __init__(self, parent, id = -1, size = wxDefaultSize):
+        def __init__(self, parent, id=-1, size=wxDefaultSize):
             wxWindow.__init__(self, parent, id, wxPoint(0, 0), size,
                               wxSUNKEN_BORDER | wxWANTS_CHARS)
             self.calc_points()
@@ -142,8 +144,8 @@ if __name__ == '__main__':
             t1 = time.clock()
             offset = array((1,0))
             mod = array((w,0))
-            x = pt_copy[:,0];
-            ang = 2*pi/w;
+            x = pt_copy[:,0]
+            ang = 2*pi/w
 
             size = 1
             red_pen = wxPen('red',size)

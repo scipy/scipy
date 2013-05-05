@@ -9,7 +9,7 @@ as member variables of the `netcdf_file` and `netcdf_variable` objects.
 This module implements the Scientific.IO.NetCDF API to read and create
 NetCDF files. The same API is also used in the PyNIO and pynetcdf
 modules, allowing these modules to be used interchangeably when working
-with NetCDF files. 
+with NetCDF files.
 """
 
 from __future__ import division, print_function, absolute_import
@@ -110,7 +110,7 @@ class netcdf_file(object):
 
     Notes
     -----
-    The major advantage of this module over other modules is that it doesn't 
+    The major advantage of this module over other modules is that it doesn't
     require the code to be linked to the NetCDF libraries. This module is
     derived from `pupynere <https://bitbucket.org/robertodealmeida/pupynere/>`_.
 
@@ -119,11 +119,11 @@ class netcdf_file(object):
     details about NetCDF files can be found `here
     <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`_. There
     are three main sections to a NetCDF data structure:
-    
+
     1. Dimensions
     2. Variables
     3. Attributes
-    
+
     The dimensions section records the name and length of each dimension used
     by the variables. The variables would then indicate which dimensions it
     uses and any attributes such as data units, along with containing the data
@@ -132,23 +132,23 @@ class netcdf_file(object):
     that axes. Lastly, the attributes section would contain additional
     information such as the name of the file creator or the instrument used to
     collect the data.
-    
+
     When writing data to a NetCDF file, there is often the need to indicate the
     'record dimension'. A record dimension is the unbounded dimension for a
     variable. For example, a temperature variable may have dimensions of
     latitude, longitude and time. If one wants to add more temperature data to
     the NetCDF file as time progresses, then the temperature variable should
     have the time dimension flagged as the record dimension.
-    
+
     In addition, the NetCDF file header contains the position of the data in
     the file, so access can be done in an efficient manner without loading
     unnecessary data into memory. It uses the ``mmap`` module to create
     Numpy arrays mapped to the data on disk, for the same purpose.
-    
+
     Examples
     --------
     To create a NetCDF file:
-    
+
         >>> from scipy.io import netcdf
         >>> f = netcdf.netcdf_file('simple.nc', 'w')
         >>> f.history = 'Created for a test'
@@ -157,13 +157,13 @@ class netcdf_file(object):
         >>> time[:] = np.arange(10)
         >>> time.units = 'days since 2008-01-01'
         >>> f.close()
-    
+
     Note the assignment of ``range(10)`` to ``time[:]``.  Exposing the slice
     of the time variable allows for the data to be set in the object, rather
     than letting ``range(10)`` overwrite the ``time`` variable.
-    
+
     To read the NetCDF file we just created:
-    
+
         >>> from scipy.io import netcdf
         >>> f = netcdf.netcdf_file('simple.nc', 'r')
         >>> print(f.history)
@@ -303,7 +303,7 @@ class netcdf_file(object):
         if (typecode, size) not in REVERSE:
             raise ValueError("NetCDF 3 does not support type %s" % type)
 
-        data = empty(shape_, dtype=type.newbyteorder("B")) #convert to big endian always for NetCDF 3
+        data = empty(shape_, dtype=type.newbyteorder("B")) # convert to big endian always for NetCDF 3
         self.variables[name] = netcdf_variable(data, typecode, size, shape, dimensions)
         return self.variables[name]
 
@@ -470,7 +470,8 @@ class netcdf_file(object):
             except TypeError:
                 sample = values
             for class_, nc_type in types:
-                if isinstance(sample, class_): break
+                if isinstance(sample, class_):
+                    break
 
         typecode, size = TYPEMAP[nc_type]
         dtype_ = '>%s' % typecode
@@ -568,7 +569,8 @@ class netcdf_file(object):
                 # The netCDF "record size" is calculated as the sum of
                 # the vsize's of all the record variables.
                 self.__dict__['_recsize'] += vsize
-                if begin == 0: begin = begin_
+                if begin == 0:
+                    begin = begin_
                 dtypes['names'].append(name)
                 dtypes['formats'].append(str(shape[1:]) + dtype_)
 
@@ -658,7 +660,8 @@ class netcdf_file(object):
 
         if typecode is not 'c':
             values = fromstring(values, dtype='>%s' % typecode)
-            if values.shape == (1,): values = values[0]
+            if values.shape == (1,):
+                values = values[0]
         else:
             values = values.rstrip(b'\x00')
         return values

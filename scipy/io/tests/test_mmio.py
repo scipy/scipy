@@ -185,6 +185,7 @@ _symmetric_pattern_example = '''\
     5     4
 '''
 
+
 class TestMMIOCoordinate(TestCase):
     def test_read_general(self):
         """read a general matrix"""
@@ -272,7 +273,6 @@ class TestMMIOCoordinate(TestCase):
         a = b.todense()
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
-
 
     def test_real_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])

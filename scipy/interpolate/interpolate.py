@@ -55,7 +55,8 @@ def lagrange(x, w):
     for j in xrange(M):
         pt = poly1d(w[j])
         for k in xrange(M):
-            if k == j: continue
+            if k == j:
+                continue
             fac = x[j]-x[k]
             pt *= poly1d([1.0, -x[k]])/fac
         p += pt
@@ -341,7 +342,7 @@ class interp1d(_Interpolator1D):
             order = kind
             kind = 'spline'
         elif kind not in ('linear', 'nearest'):
-            raise NotImplementedError("%s is unsupported: Use fitpack "\
+            raise NotImplementedError("%s is unsupported: Use fitpack "
                                       "routines for other types." % kind)
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)
@@ -476,6 +477,7 @@ class interp1d(_Interpolator1D):
         out_of_bounds = logical_or(below_bounds, above_bounds)
         return out_of_bounds
 
+
 class ppform(object):
     """The ppform of the piecewise polynomials is given in terms of coefficients
     and breaks.  The polynomial in the ith interval is
@@ -579,13 +581,14 @@ def _setdiag(a, k, v):
 # Return the spline that minimizes the dis-continuity of the
 # "order-th" derivative; for order >= 2.
 
+
 def _find_smoothest2(xk, yk):
     N = len(xk) - 1
     Np1 = N + 1
     # find pseudo-inverse of B directly.
     Bd = np.empty((Np1, N))
     for k in range(-N,N):
-        if (k<0):
+        if (k < 0):
             l = np.arange(-k, Np1)
             v = (l+k+1)
             if ((k+1) % 2):
@@ -613,6 +616,7 @@ def _find_smoothest2(xk, yk):
     mk = dot(np.eye(Np1)-res1, _dot0(Bd,b))
     return mk
 
+
 def _get_spline2_Bb(xk, yk, kind, conds):
     Np1 = len(xk)
     dk = xk[1:]-xk[:-1]
@@ -632,6 +636,7 @@ def _get_spline2_Bb(xk, yk, kind, conds):
         return B, b, None, nlu
     else:
         raise NotImplementedError("quadratic %s is not available" % kind)
+
 
 def _get_spline3_Bb(xk, yk, kind, conds):
     # internal function to compute different tri-diagonal system
@@ -673,7 +678,6 @@ def _get_spline3_Bb(xk, yk, kind, conds):
             return mk
 
         return B, b, append_func, nlu
-
 
     elif kind in ['clamped', 'endslope', 'first', 'not-a-knot', 'runout',
                   'parabolic']:
@@ -743,6 +747,8 @@ def _get_spline3_Bb(xk, yk, kind, conds):
 # conds is a tuple of an array and a vector
 #  giving the left-hand and the right-hand side
 #  of the additional equations to add to B
+
+
 def _find_user(xk, yk, order, conds, B):
     lh = conds[0]
     rh = conds[1]
@@ -758,21 +764,28 @@ def _find_user(xk, yk, order, conds, B):
 
 # If conds is None, then use the not_a_knot condition
 #  at K-1 farthest separated points in the interval
+
+
 def _find_not_a_knot(xk, yk, order, conds, B):
     raise NotImplementedError
     return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then ensure zero-valued second
 #  derivative at K-1 farthest separated points
+
+
 def _find_natural(xk, yk, order, conds, B):
     raise NotImplementedError
     return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then ensure zero-valued first
 #  derivative at K-1 farthest separated points
+
+
 def _find_clamped(xk, yk, order, conds, B):
     raise NotImplementedError
     return _find_user(xk, yk, order, conds, B)
+
 
 def _find_fixed(xk, yk, order, conds, B):
     raise NotImplementedError
@@ -780,16 +793,22 @@ def _find_fixed(xk, yk, order, conds, B):
 
 # If conds is None, then use coefficient periodicity
 # If conds is 'function' then use function periodicity
+
+
 def _find_periodic(xk, yk, order, conds, B):
     raise NotImplementedError
     return _find_user(xk, yk, order, conds, B)
 
 # Doesn't use conds
+
+
 def _find_symmetric(xk, yk, order, conds, B):
     raise NotImplementedError
     return _find_user(xk, yk, order, conds, B)
 
 # conds is a dictionary with multiple values
+
+
 def _find_mixed(xk, yk, order, conds, B):
     raise NotImplementedError
     return _find_user(xk, yk, order, conds, B)

@@ -16,7 +16,6 @@ Run tests if sparse is not installed:
   python tests/test_sparse.py
 """
 
-import sys
 import warnings
 
 import numpy as np
@@ -129,7 +128,6 @@ class _TestCommon:
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
-
     def test_nonzero(self):
         A   = array([[1, 0, 1],[0, 1, 1],[ 0, 0, 1]])
         Asp = self.spmatrix(A)
@@ -138,7 +136,6 @@ class _TestCommon:
         Asp_nz = set( [tuple(ij) for ij in transpose(Asp.nonzero())] )
 
         assert_equal(A_nz, Asp_nz)
-
 
     def test_getrow(self):
         assert_array_equal(self.datsp.getrow(1).todense(), self.dat[1,:])
@@ -223,7 +220,6 @@ class _TestCommon:
         assert_array_equal(self.spmatrix(S).toarray(), D)
         S = self.spmatrix(D)
         assert_array_equal(self.spmatrix(S).toarray(), D)
-
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=np.ComplexWarning)
@@ -339,7 +335,6 @@ class _TestCommon:
         C = B.asfptype()
         assert_( B is C )
 
-
     def test_mul_scalar(self):
         assert_array_equal(self.dat*2,(self.datsp*2).todense())
         assert_array_equal(self.dat*17.3,(self.datsp*17.3).todense())
@@ -393,16 +388,16 @@ class _TestCommon:
         B = array([[0,7,0],[0,-4,0]])
         Asp = self.spmatrix(A)
         Bsp = self.spmatrix(B)
-        assert_almost_equal( Asp.multiply(Bsp).todense(), A*B) #sparse/sparse
-        assert_almost_equal( Asp.multiply(B),             A*B) #sparse/dense
+        assert_almost_equal( Asp.multiply(Bsp).todense(), A*B) # sparse/sparse
+        assert_almost_equal( Asp.multiply(B),             A*B) # sparse/dense
 
         # complex/complex
         C = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
         D = array([[5+2j,7-3j,-2+1j],[0-1j,-4+2j,9]])
         Csp = self.spmatrix(C)
         Dsp = self.spmatrix(D)
-        assert_almost_equal( Csp.multiply(Dsp).todense(), C*D) #sparse/sparse
-        assert_almost_equal( Csp.multiply(D),             C*D) #sparse/dense
+        assert_almost_equal( Csp.multiply(Dsp).todense(), C*D) # sparse/sparse
+        assert_almost_equal( Csp.multiply(D),             C*D) # sparse/dense
 
         # real/complex
         assert_almost_equal( Asp.multiply(Dsp).todense(), A*D) #sparse/sparse
@@ -439,7 +434,7 @@ class _TestCommon:
                     assert_almost_equal(sp_mult.todense(), dense_mult)
                 else:
                     assert_almost_equal(sp_mult, dense_mult)
-        
+
         # sparse/dense
         for i in spmatrices:
             for j in matrices:
@@ -483,7 +478,6 @@ class _TestCommon:
         #nonsquare matrix
         B = self.spmatrix(A[:3,:])
         self.assertRaises( Exception, B.__pow__, 1 )
-
 
     def test_rmatvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
@@ -588,7 +582,6 @@ class _TestCommon:
         assert_array_almost_equal(B.todense(), A.todense() * A.T.todense())
         assert_array_almost_equal(B.todense(), A.todense() * A.todense().T)
 
-
         # check dimension mismatch  2x2 times 3x2
         A = self.spmatrix( [[1,2],[3,4]] )
         B = self.spmatrix( [[1,2],[3,4],[5,6]] )
@@ -625,7 +618,6 @@ class _TestCommon:
             assert_equal(c.format,format)
             assert_array_equal(c.todense(), D)
 
-
     def test_tobsr(self):
         x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
         y = array([[0,1,2],[3,0,5]])
@@ -638,7 +630,6 @@ class _TestCommon:
                 for Y in [ 1, 2, 3, 4, 6, 12]:
                     assert_equal( fn(blocksize=(X,Y)).todense(), A)
 
-
     def test_transpose(self):
         a = self.datsp.transpose()
         b = self.dat.transpose()
@@ -646,7 +637,6 @@ class _TestCommon:
         assert_array_equal(a.transpose().todense(), self.dat)
 
         assert_array_equal( self.spmatrix((3,4)).T.todense(), zeros((4,3)) )
-
 
     def test_add_dense(self):
         # adding a dense matrix to a sparse matrix
@@ -684,7 +674,6 @@ class _TestCommon:
         assert_equal(toself().todense(), A.todense())
         assert_equal(toself(copy=True).todense(), A.todense())
         assert_equal(toself(copy=False).todense(), A.todense())
-
 
         # check whether the data is copied?
         # TODO: deal with non-indexable types somehow
@@ -808,7 +797,7 @@ class _TestSolve:
         # Test whether the lu_solve command segfaults, as reported by Nils
         # Wagner for a 64-bit machine, 02 March 2005 (EJS)
         n = 20
-        np.random.seed(0) #make tests repeatable
+        np.random.seed(0) # make tests repeatable
         A = zeros((n,n), dtype=complex)
         x = np.random.rand(n)
         y = np.random.rand(n-1)+1j*np.random.rand(n-1)
@@ -1071,16 +1060,17 @@ class _TestSlicingAssign:
         # The next commands should raise exceptions
         assert_raises(ValueError, A.__setitem__, (0, 0), list(range(100)))
         assert_raises(ValueError, A.__setitem__, (0, 0), arange(100))
-        assert_raises(ValueError, A.__setitem__, (0, slice(None)), 
+        assert_raises(ValueError, A.__setitem__, (0, slice(None)),
                       list(range(100)))
-        assert_raises(ValueError, A.__setitem__, (slice(None), 1), 
+        assert_raises(ValueError, A.__setitem__, (slice(None), 1),
                       list(range(100)))
         assert_raises(ValueError, A.__setitem__, (slice(None), 1), A.copy())
         assert_raises(ValueError, A.__setitem__,
                       ([[1, 2, 3], [0, 3, 4]], [1, 2, 3]), [1, 2, 3, 4])
         assert_raises(ValueError, A.__setitem__,
-                      ([[1, 2, 3], [0, 3, 4], [4, 1, 3]], 
+                      ([[1, 2, 3], [0, 3, 4], [4, 1, 3]],
                        [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
+
 
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
@@ -1100,7 +1090,7 @@ class _TestFancyIndexing:
             if isinstance(a, np.ndarray):
                 return a
             return a.todense()
-            
+
         # [i]
         assert_equal(A[[1,3]].todense(),  B[[1,3]])
 
@@ -1203,7 +1193,7 @@ class _TestFancyIndexing:
         assert_equal(A[I].todense(), B[I])
         assert_equal(A[:,J].todense(), B[:, J])
         assert_equal(A[X].todense(), B[X])
-        assert_equal(A[B>9].todense(), B[B>9])
+        assert_equal(A[B > 9].todense(), B[B > 9])
 
         I = np.array([True, False, True, True, False])
         J = np.array([False, True, True, False, True])
@@ -1216,6 +1206,7 @@ class _TestFancyIndexing:
         assert_raises(IndexError, A.__getitem__, Z)
         assert_raises(IndexError, A.__getitem__, Y)
         assert_raises(ValueError, A.__getitem__, (X, 1))
+
 
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
@@ -1232,8 +1223,8 @@ class _TestFancyIndexingAssign:
             B[i, j] = 1
             assert_array_almost_equal(A.todense(), B)
         # [1:2,1:2]
-        for i, j in [((2, 3, 4), slice(None, 10, 4)), 
-                     (np.arange(3), slice(5, -2)), 
+        for i, j in [((2, 3, 4), slice(None, 10, 4)),
+                     (np.arange(3), slice(5, -2)),
                      (slice(2, 5), slice(5, -2))]:
             _test_set_slice(i, j)
         for i, j in [(np.arange(3), np.arange(3)), ((0, 3, 4), (1, 2, 4))]:
@@ -1277,6 +1268,7 @@ class _TestFancyIndexingAssign:
         B[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
         assert_array_equal(A.todense(), B)
 
+
 class _TestFancyMultidim:
     def test_fancy_indexing_ndarray(self):
         sets = [
@@ -1310,6 +1302,7 @@ class _TestFancyMultidim:
             # This would generate 3-D arrays -- not supported
             assert_raises(IndexError, S.__getitem__, ([I, I], slice(None)))
             assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
+
 
 class _TestFancyMultidimAssign:
     def test_fancy_assign_ndarray(self):
@@ -1351,7 +1344,7 @@ class _TestFancyMultidimAssign:
             B[i, j] = 1
             assert_array_almost_equal(A.todense(), B)
         # [[[1, 2], [1, 2]], [1, 2]]
-        for i, j in [(np.array([[1, 2], [1, 3]]), [1, 3]), 
+        for i, j in [(np.array([[1, 2], [1, 3]]), [1, 3]),
                         (np.array([0, 4]), [[0, 3], [1, 2]]),
                         ([[1, 2, 3], [0, 2, 4]],  [[0, 4, 3], [4, 1, 2]])]:
             _test_set_slice(i, j)
@@ -1397,10 +1390,11 @@ class _TestFancyMultidimAssign:
 
         I_bad = [[ii + 5 for ii in i] for i in I]
         J_bad = [[jj + 7 for jj in j] for j in J]
-        
+
         C = [1, 2, 3, 4, 5, 6, 7]
         assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C)
         assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C)
+
 
 class _TestArithmetic:
     """
@@ -1452,8 +1446,8 @@ class _TestArithmetic:
 
                 assert_equal(S1.dtype,D1.dtype)
                 assert_array_equal(S1.todense(),D1)
-                assert_array_equal(Asp + B,D1)          #check sparse + dense
-                assert_array_equal(A + Bsp,D1)          #check dense + sparse
+                assert_array_equal(Asp + B,D1)          # check sparse + dense
+                assert_array_equal(A + Bsp,D1)          # check dense + sparse
 
                 #subtraction
                 D1 = A - B
@@ -1461,9 +1455,8 @@ class _TestArithmetic:
 
                 assert_equal(S1.dtype,D1.dtype)
                 assert_array_equal(S1.todense(),D1)
-                assert_array_equal(Asp - B,D1)          #check sparse - dense
-                assert_array_equal(A - Bsp,D1)          #check dense - sparse
-
+                assert_array_equal(Asp - B,D1)          # check sparse - dense
+                assert_array_equal(A - Bsp,D1)          # check dense - sparse
 
     def test_mu(self):
         self.__arith_init()
@@ -1561,6 +1554,7 @@ def _possibly_unimplemented(cls, require=True):
         return type(cls.__name__ + "NotImplemented",
                     cls.__bases__,
                     new_dict)
+
 
 def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                       fancy_indexing=True, fancy_assign=True,
@@ -1866,6 +1860,7 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
     def test_fancy_indexing_boolean(self):
         pass
 
+
 class TestDOK(sparse_test_class(slicing=False,
                                 slicing_assign=False,
                                 fancy_indexing=False,
@@ -1892,21 +1887,21 @@ class TestDOK(sparse_test_class(slicing=False,
     def test_convert(self):
         # Test provided by Andrew Straw.  Fails in SciPy <= r1477.
         (m, n) = (6, 7)
-        a=dok_matrix((m, n))
+        a = dok_matrix((m, n))
 
         # set a few elements, but none in the last column
-        a[2,1]=1
-        a[0,2]=2
-        a[3,1]=3
-        a[1,5]=4
-        a[4,3]=5
-        a[4,2]=6
+        a[2,1] = 1
+        a[0,2] = 2
+        a[3,1] = 3
+        a[1,5] = 4
+        a[4,3] = 5
+        a[4,2] = 6
 
         # assert that the last column is all zeros
         assert_array_equal( a.toarray()[:,n-1], zeros(m,) )
 
         # make sure it still works for CSC format
-        csc=a.tocsc()
+        csc = a.tocsc()
         assert_array_equal( csc.toarray()[:,n-1], zeros(m,) )
 
         # now test CSR
@@ -1917,7 +1912,7 @@ class TestDOK(sparse_test_class(slicing=False,
         assert_array_equal( b.toarray()[m-1,:], zeros(n,) )
 
         # make sure it still works for CSR format
-        csr=b.tocsr()
+        csr = b.tocsr()
         assert_array_equal( csr.toarray()[m-1,:], zeros(n,))
 
     def test_ctor(self):
@@ -1966,7 +1961,7 @@ class TestDOK(sparse_test_class(slicing=False,
         # Slice assignments were also affected.
         b = dok_matrix((3,3))
         b[:,0] = 0
-        assert_(len(b.keys())==0, "Unexpected entries in keys")
+        assert_(len(b.keys()) == 0, "Unexpected entries in keys")
 
     ##
     ## TODO: The DOK matrix currently returns invalid results rather
@@ -2012,6 +2007,7 @@ class TestDOK(sparse_test_class(slicing=False,
     @dec.knownfailureif(True, "known deficiency in DOK")
     def test_fancy_indexing_multidim_set(self):
         pass
+
 
 class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix
@@ -2062,7 +2058,7 @@ class TestLIL(sparse_test_class(minmax=False)):
 
             assert_array_equal(result.todense(), expected.todense())
 
-        # Ticket 1604. 
+        # Ticket 1604.
         A = lil_matrix((1,3), dtype=np.dtype('float64'))
         B = array([0.1,0.1,0.1])
         A[0,:] += B
@@ -2199,6 +2195,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     # DIA does not have a __getitem__ to support iteration
     def test_iterator(self):
         pass
+
 
 class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,

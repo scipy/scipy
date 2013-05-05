@@ -12,11 +12,14 @@ import copy
 import scipy.spatial.qhull as qhull
 from scipy.spatial import cKDTree as KDTree
 
+
 def sorted_tuple(x):
     return tuple(sorted(x))
 
+
 def sorted_unique_tuple(x):
     return tuple(np.unique(x))
+
 
 def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
     if isinstance(a, np.ndarray):
@@ -75,6 +78,7 @@ DATASETS = {
     'pathological-2': pathological_data_2
 }
 
+
 class Test_Qhull(object):
     def test_swapping(self):
         # Check that Qhull state swapping works
@@ -83,7 +87,7 @@ class Test_Qhull(object):
                          np.array([[0,0],[0,1],[1,0],[1,1.],[0.5,0.5]]),
                          b'Qz')
         xd = copy.deepcopy(x.get_voronoi_diagram())
-        
+
         y = qhull._Qhull(b'v',
                          np.array([[0,0],[0,1],[1,0],[1,2.]]),
                          b'Qz')
@@ -113,7 +117,7 @@ class Test_Qhull(object):
         assert_raises(RuntimeError, x.get_voronoi_diagram)
         y.close()
         assert_raises(RuntimeError, y.get_voronoi_diagram)
-        
+
 
 class TestUtilities(object):
     """
@@ -225,7 +229,7 @@ class TestUtilities(object):
 
         if unit_cube:
             # If in unit cube, no interior point should be marked out of hull
-            at_boundary =  (centroids <= unit_cube_tol).any(axis=1)
+            at_boundary = (centroids <= unit_cube_tol).any(axis=1)
             at_boundary |= (centroids >= 1 - unit_cube_tol).any(axis=1)
 
             ok = (j != -1) | at_boundary
@@ -473,7 +477,7 @@ class TestDelaunay(object):
             nmin = ndim + 2
 
             if name == 'some-points':
-                # since Qz is not allowed, use QJ 
+                # since Qz is not allowed, use QJ
                 opts = 'QJ Pp'
             elif name == 'pathological-1':
                 # include enough points so that we get different x-coordinates
@@ -509,6 +513,7 @@ class TestDelaunay(object):
         for name in sorted(DATASETS):
             for chunksize in 1, 4:
                 yield check, name, chunksize
+
 
 def assert_hulls_equal(points, facets_1, facets_2):
     # Check that two convex hulls constructed from the same point set
@@ -563,8 +568,7 @@ def assert_hulls_equal(points, facets_1, facets_2):
         return
 
     assert_equal(facets_1, facets_2)
-    
-    
+
 
 class TestConvexHull:
     def test_hull_consistency_tri(self):
@@ -591,7 +595,7 @@ class TestConvexHull:
                 # include enough points so that we get different x-coordinates
                 nmin = 12
             else:
-                nmin = ndim +2
+                nmin = ndim + 2
 
             obj = qhull.ConvexHull(points[:nmin], incremental=True)
             for j in xrange(nmin, len(points), chunksize):
@@ -622,11 +626,11 @@ class TestVoronoi:
         output = """
         2
         5 10 1
-        -10.101 -10.101 
-           0.5    0.5 
-           1.5    0.5 
-           0.5    1.5 
-           1.5    1.5 
+        -10.101 -10.101
+           0.5    0.5
+           1.5    0.5
+           0.5    1.5
+           1.5    1.5
         2 0 1
         3 3 0 1
         2 0 3
@@ -686,7 +690,7 @@ class TestVoronoi:
         p2.sort()
 
         assert_equal(p1, p2)
-    
+
     def test_ridges(self):
         # Check that the ridges computed by Voronoi indeed separate
         # the regions of nearest neighborhood, by comparing the result
@@ -722,9 +726,9 @@ class TestVoronoi:
         output = """
         2
         3 5 1
-        -10.101 -10.101 
-        0.6000000000000001    0.5 
-           0.5 0.6000000000000001 
+        -10.101 -10.101
+        0.6000000000000001    0.5
+           0.5 0.6000000000000001
         3 0 1 2
         2 0 1
         2 0 2
@@ -750,7 +754,7 @@ class TestVoronoi:
             nmin = ndim + 2
 
             if name == 'some-points':
-                # since Qz is not allowed, use QJ 
+                # since Qz is not allowed, use QJ
                 opts = 'QJ Pp'
             elif name == 'pathological-1':
                 # include enough points so that we get different x-coordinates

@@ -4,6 +4,7 @@ __all__ = ['imread']
 
 from numpy import array
 
+
 def imread(fname, flatten=False, mode=None):
     """
     Load an image from file.

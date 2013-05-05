@@ -28,8 +28,10 @@ from scipy.linalg import svd, hilbert
 # they generate here.
 _eigs_warn_msg = "Single-precision types in `eigs` and `eighs`"
 
+
 def setup_module():
     warnings.filterwarnings("ignore", message=_eigs_warn_msg)
+
 
 def teardown_module():
     warnings.filterwarnings("default", message=_eigs_warn_msg)
@@ -37,6 +39,7 @@ def teardown_module():
 
 # precision for tests
 _ndigits = {'f': 3, 'd': 11, 'F': 3, 'D': 11}
+
 
 def _get_test_tolerance(type_char, mattype=None):
     """
@@ -78,6 +81,7 @@ def _get_test_tolerance(type_char, mattype=None):
         rtol *= 5
 
     return tol, rtol, atol
+
 
 def generate_matrix(N, complex=False, hermitian=False,
                     pos_definite=False, sparse=False):
@@ -133,7 +137,7 @@ def argsort_which(eval, typ, k, which,
     if sigma is None:
         reval = np.round(eval, decimals=_ndigits[typ])
     else:
-        if mode is None or mode=='normal':
+        if mode is None or mode == 'normal':
             if OPpart is None:
                 reval = 1. / (eval - sigma)
             elif OPpart == 'r':
@@ -142,9 +146,9 @@ def argsort_which(eval, typ, k, which,
             elif OPpart == 'i':
                 reval = -0.5j * (1. / (eval - sigma)
                                  - 1. / (eval - np.conj(sigma)))
-        elif mode=='cayley':
+        elif mode == 'cayley':
             reval = (eval + sigma) / (eval - sigma)
-        elif mode=='buckling':
+        elif mode == 'buckling':
             reval = eval / (eval - sigma)
         else:
             raise ValueError("mode='%s' not recognized" % mode)
@@ -250,11 +254,13 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
 
     assert_allclose(LHS, RHS, rtol=rtol, atol=atol, err_msg=err)
 
+
 class DictWithRepr(dict):
     def __init__(self, name):
         self.name = name
     def __repr__(self):
         return "<%s>" % self.name
+
 
 class SymmetricParams:
     def __init__(self):
@@ -306,10 +312,11 @@ class SymmetricParams:
         self.real_test_cases = [SS, GS]
         self.complex_test_cases = [SH, GH]
 
+
 class NonSymmetricParams:
     def __init__(self):
         self.eigs = eigs
-        self.which = ['LM', 'LR', 'LI']#, 'SM', 'LR', 'SR', 'LI', 'SI']
+        self.which = ['LM', 'LR', 'LI']# , 'SM', 'LR', 'SR', 'LI', 'SI']
         self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
         self.sigmas_OPparts = {None : [None],
                                0.1 : ['r'],
@@ -366,7 +373,7 @@ def test_symmetric_modes():
                 for mattype in params.mattypes:
                     for (sigma, modes) in params.sigmas_modes.items():
                         for mode in modes:
-                            yield  (eval_evec, symmetric, D, typ, k, which,
+                            yield (eval_evec, symmetric, D, typ, k, which,
                                     None, sigma, mattype, None, mode)
 
 
@@ -377,10 +384,11 @@ def test_hermitian_modes():
     for D in params.complex_test_cases:
         for typ in 'FD':
             for which in params.which:
-                if which == 'BE': continue  # BE invalid for complex
+                if which == 'BE':
+                    continue  # BE invalid for complex
                 for mattype in params.mattypes:
                     for sigma in params.sigmas_modes:
-                        yield  (eval_evec, symmetric, D, typ, k, which,
+                        yield (eval_evec, symmetric, D, typ, k, which,
                                 None, sigma, mattype)
 
 
@@ -488,6 +496,7 @@ def test_eigen_bad_kwargs():
     # Test eigen on wrong keyword argument
     A = csc_matrix(np.zeros((2, 2)))
     assert_raises(ValueError, eigs, A, which='XX')
+
 
 def test_ticket_1459_arpack_crash():
     for dtype in [np.float32, np.float64]:

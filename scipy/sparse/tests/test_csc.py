@@ -4,6 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal, run_module_suite, assert_
 from scipy.sparse import csr_matrix, csc_matrix
 
+
 def test_csc_getrow():
     N = 10
     np.random.seed(0)

@@ -4,14 +4,13 @@ from scipy import *
 from iterative import *
 
 
-
 def test_fun(alpha, x, beta, y, A, n):
     # compute z = alpha*A*x + beta*y
     xx = x[:n]
     yy = y[:n]
     w = dot(A,xx)
     z = alpha*w+beta*yy
-    y[:n]=z
+    y[:n] = z
     return
 
 
@@ -22,20 +21,24 @@ def test_fun_t(alpha, x, beta, y, A, n):
     AA = conj(transpose(A))
     w = dot(AA,xx)
     z = alpha*w+beta*yy
-    y[:n]=z
+    y[:n] = z
     return
+
 
 def test_psolve(x,b,n):
     x[:n] = b[:n]
     return
 
+
 def test_psolve_t(x,b,n):
     x[:n] = b[:n]
     return
 
+
 def test_psolveq(x,b,which,n):
     x[:n] = b[:n]
     return
+
 
 def test_psolveq_t(x,b,which,n):
     x[:n] = b[:n]

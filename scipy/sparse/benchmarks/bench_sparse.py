@@ -36,13 +36,14 @@ def poisson2d(N,dtype='d',format=None):
 
     diags = empty((5,N**2),dtype=dtype)
 
-    diags[0]  =  4 #main diagonal
-    diags[1:] = -1 #all offdiagonals
+    diags[0]  = 4 # main diagonal
+    diags[1:] = -1 # all offdiagonals
 
-    diags[3,N-1::N] = 0  #first lower diagonal
-    diags[4,N::N]   = 0  #first upper diagonal
+    diags[3,N-1::N] = 0  # first lower diagonal
+    diags[4,N::N]   = 0  # first upper diagonal
 
     return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
+
 
 class BenchmarkSparse(TestCase):
     """Simple benchmarks for sparse matrix module"""
@@ -80,7 +81,7 @@ class BenchmarkSparse(TestCase):
                 x,y = vars[X],vars[Y]
                 for op in ['__add__','__sub__','multiply','__div__','__mul__']:
                     fn = getattr(x,op)
-                    fn(y) #warmup
+                    fn(y) # warmup
 
                     start = time.clock()
                     iter = 0
@@ -92,7 +93,6 @@ class BenchmarkSparse(TestCase):
                     msec_per_it = 1000*(end - start)/float(iter)
                     operation = (X + '.' + op + '(' + Y + ')').center(17)
                     print(fmt % (format,operation,msec_per_it))
-
 
     def bench_sort(self):
         """sort CSR column indices"""
@@ -158,7 +158,7 @@ class BenchmarkSparse(TestCase):
         for name,A in matrices:
             x = ones(A.shape[1],dtype=A.dtype)
 
-            y = A*x  #warmup
+            y = A*x  # warmup
 
             start = time.clock()
             iter = 0
@@ -183,7 +183,6 @@ class BenchmarkSparse(TestCase):
         matrices.append(('Poisson5pt', poisson2d(300,format='csc')))
         matrices.append(('Poisson5pt', poisson2d(300,format='bsr')))
 
-
         n_vecs = 10
 
         print()
@@ -197,7 +196,7 @@ class BenchmarkSparse(TestCase):
         for name,A in matrices:
             x = ones((A.shape[1],10),dtype=A.dtype)
 
-            y = A*x  #warmup
+            y = A*x  # warmup
 
             start = time.clock()
             iter = 0
@@ -213,7 +212,6 @@ class BenchmarkSparse(TestCase):
             MFLOPs = (2*n_vecs*A.nnz*iter/(end-start))/float(1e6)
 
             print(fmt % (A.format,name,shape,A.nnz,MFLOPs))
-
 
     def bench_construction(self):
         """build matrices by inserting single values"""
@@ -272,7 +270,7 @@ class BenchmarkSparse(TestCase):
                 except:
                     times.append(None)
                 else:
-                    x = fn() #warmup
+                    x = fn() # warmup
                     start = time.clock()
                     iter = 0
                     while time.clock() < start + 0.2:

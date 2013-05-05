@@ -26,6 +26,7 @@ from scipy.io.matlab.mio import loadmat
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
+
 def test_multiple_fieldnames():
     # Example provided by Dharhas Pothina
     # Extracted using mio5.varmats_from_mat

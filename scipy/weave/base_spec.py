@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+
 class base_converter(object):
     """
         Properties:
@@ -37,7 +38,7 @@ class base_converter(object):
         return self._build_information
     def type_spec(self,name,value):
         pass
-    def declaration_code(self,templatize = 0):
+    def declaration_code(self,templatize=0):
         return ""
     def local_dict_code(self):
         return ""
@@ -72,6 +73,7 @@ class base_converter(object):
 
 import UserList
 from . import base_info
+
 
 class arg_spec_list(UserList.UserList):
     def build_information(self):

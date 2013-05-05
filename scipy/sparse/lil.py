@@ -134,7 +134,7 @@ class lil_matrix(spmatrix):
             raise ValueError("Only two-dimensional sparse arrays "
                                      "are supported.")
         try:
-            shape = int(shape[0]),int(shape[1]) #floats, other weirdness
+            shape = int(shape[0]),int(shape[1]) # floats, other weirdness
         except:
             raise TypeError('invalid shape')
 
@@ -240,7 +240,7 @@ class lil_matrix(spmatrix):
             return index, slice(None)
 
     def _boolean_index_to_array(self, i):
-        if i.ndim<2:
+        if i.ndim < 2:
             i = i.nonzero()
         elif (i.shape[0] > self.shape[0] or i.shape[1] > self.shape[1] or
               i.ndim > 2):
@@ -252,7 +252,7 @@ class lil_matrix(spmatrix):
     def _index_to_arrays(self, i, j):
         if isinstance(i, np.ndarray) and i.dtype.kind == 'b':
             i = self._boolean_index_to_array(i)
-            if len(i)==2:
+            if len(i) == 2:
                 if isinstance(j, slice):
                     j = i[1]
 
@@ -284,7 +284,7 @@ class lil_matrix(spmatrix):
                 return i, j
         else:
             j = np.atleast_1d(j)
-            if i_slice and j.ndim>1:
+            if i_slice and j.ndim > 1:
                 raise IndexError('index returns 3-dim structure')
 
         i, j = np.broadcast_arrays(i, j)
@@ -312,14 +312,14 @@ class lil_matrix(spmatrix):
         if i.size == 0:
             return lil_matrix((0,0), dtype=self.dtype)
         return self.__class__([[self._get1(int(i[ii, jj]), int(j[ii, jj])) for jj in
-                                xrange(i.shape[1])] for ii in 
+                                xrange(i.shape[1])] for ii in
                                xrange(i.shape[0])])
 
     def _insertat2(self, row, data, j, x):
         """ helper for __setitem__: insert a value in the given row/data at
         column j. """
 
-        if j < 0: #handle negative column indices
+        if j < 0: # handle negative column indices
             j += self.shape[1]
 
         if j < 0 or j >= self.shape[1]:
@@ -375,7 +375,6 @@ class lil_matrix(spmatrix):
         # Set values
         for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
             self._insertat2(self.rows[int(ii)], self.data[int(ii)], int(jj), xx)
-
 
     def _mul_scalar(self, other):
         if other == 0:

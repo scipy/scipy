@@ -16,6 +16,7 @@ sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
 #TODO check whether format=XXX is respected
 
+
 class TestConstructUtils(TestCase):
     def test_spdiags(self):
         diags1 = array( [[ 1, 2, 3, 4, 5]] )
@@ -295,7 +296,6 @@ class TestConstructUtils(TestCase):
                            [3, 4, 6],
                            [0, 0, 7]])
         assert_equal( construct.bmat( [[A,B],[None,C]] ).todense(), expected )
-
 
         expected = matrix([[1, 2, 0],
                            [3, 4, 0],

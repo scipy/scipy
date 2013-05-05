@@ -41,8 +41,10 @@ import scipy.ndimage as ndimage
 
 eps = 1e-12
 
+
 def sumsq(a, b):
     return math.sqrt(((a - b)**2).sum())
+
 
 class TestNdimage:
 
@@ -518,7 +520,6 @@ class TestNdimage:
             t = ndimage.correlate1d(t, [1.0, 1.0, 1.0], 1)
             output = ndimage.prewitt(array, 0)
             assert_array_almost_equal(t, output)
-
 
     def test_prewitt02(self):
         "prewitt filter 2"
@@ -1069,7 +1070,6 @@ class TestNdimage:
                                                     footprint=footprint)
         assert_array_almost_equal(expected, output)
 
-
     def test_rank12(self):
         "rank filter 12"
         expected = [[3, 3, 2, 4, 4],
@@ -1214,7 +1214,6 @@ class TestNdimage:
                                          mode=mode, cval=0)
             assert_array_equal(output, expected_value)
 
-
     def test_extend05(self):
         "line extension 5"
         array = numpy.array([[1, 2, 3],
@@ -1231,7 +1230,6 @@ class TestNdimage:
                                        mode=mode, cval=0)
             assert_array_equal(output, expected_value)
 
-
     def test_extend06(self):
         "line extension 6"
         array = numpy.array([[1, 2, 3],
@@ -1247,7 +1245,6 @@ class TestNdimage:
             output = ndimage.correlate(array, weights,
                                        mode=mode, cval=0)
             assert_array_equal(output, expected_value)
-
 
     def test_extend07(self):
         "line extension 7"
@@ -1716,7 +1713,6 @@ class TestNdimage:
                                                       (6, 8), order=order)
             assert_array_almost_equal(out[::2, ::2], data)
 
-
     def test_geometric_transform22(self):
         "geometric transform 22"
         data = numpy.array([[1, 2, 3, 4],
@@ -2074,7 +2070,6 @@ class TestNdimage:
             assert_array_almost_equal(out, [[0, 0, 0, 0],
                                        [4, 1, 3, 2],
                                        [7, 6, 8, 5]])
-
 
     def test_shift08(self):
         "shift 8"
@@ -2483,7 +2478,7 @@ class TestNdimage:
                                   [ 0, 0, 0, 0, 0, 0, 0],
                                   [ 0, 0, 0, 0, 0, 0, 0]],
                                  numpy.int8)
-        out = numpy.zeros(shape, dtype = numpy.int16)
+        out = numpy.zeros(shape, dtype=numpy.int16)
         out = out.transpose()
         ndimage.watershed_ift(data, markers,
                                structure=[[1,1,1],
@@ -2866,8 +2861,8 @@ class TestNdimage:
                                                      return_indices=True)
         dts = []
         fts = []
-        dt = numpy.zeros(data.shape, dtype = numpy.int32)
-        ndimage.distance_transform_cdt(data, distances = dt)
+        dt = numpy.zeros(data.shape, dtype=numpy.int32)
+        ndimage.distance_transform_cdt(data, distances=dt)
         dts.append(dt)
         ft = ndimage.distance_transform_cdt(data,
                            return_distances=False, return_indices=True)
@@ -2882,7 +2877,7 @@ class TestNdimage:
         fts.append(ft)
         dt = numpy.zeros(data.shape, dtype=numpy.int32)
         ft = ndimage.distance_transform_cdt(data, distances=dt,
-                                                     return_indices = True)
+                                                     return_indices=True)
         dts.append(dt)
         fts.append(ft)
         ft = numpy.indices(data.shape, dtype=numpy.int32)
@@ -2995,7 +2990,6 @@ class TestNdimage:
                                                        sampling=[2, 2])
         assert_array_almost_equal(ref, out)
 
-
     def test_distance_transform_edt4(self):
         "euclidean distance transform 4"
         for type in self.types:
@@ -3016,7 +3010,7 @@ class TestNdimage:
 
     def test_distance_transform_edt5(self):
         "Ticket #954"
-        out = ndimage.distance_transform_edt(False) 
+        out = ndimage.distance_transform_edt(False)
         assert_array_almost_equal(out, [0.])
 
     def test_generate_structure01(self):
@@ -4453,7 +4447,6 @@ class TestNdimage:
                                                 footprint=footprint)
         assert_array_almost_equal(expected, output)
 
-
     def test_grey_opening02(self):
         "grey opening 2"
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -4525,7 +4518,7 @@ class TestNdimage:
         tmp2 = ndimage.grey_erosion(array, footprint=footprint,
                                               structure=structure)
         expected = tmp1 - tmp2
-        output =ndimage.morphological_gradient(array,
+        output = ndimage.morphological_gradient(array,
                                 footprint=footprint, structure=structure)
         assert_array_almost_equal(expected, output)
 

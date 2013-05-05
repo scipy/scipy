@@ -5,6 +5,7 @@ from numpy.testing import TestCase, assert_
 
 from scipy.weave import standard_array_spec
 
+
 def remove_whitespace(in_str):
     out = in_str.replace(" ","")
     out = out.replace("\t","")

@@ -10,6 +10,7 @@ import scipy.weave as weave
 from scipy.weave import converters
 import numpy
 
+
 def create_array():
     """Creates a simple 3D numpy array with unique values at each
     location in the matrix.

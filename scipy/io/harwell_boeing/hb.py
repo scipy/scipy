@@ -36,6 +36,7 @@ __all__ = ["MalformedHeader", "read_hb", "write", "HBInfo", "HBFile",
 class MalformedHeader(Exception):
     pass
 
+
 class LineOverflow(Warning):
     pass
 
@@ -98,7 +99,7 @@ class HBInfo(object):
             elif values.dtype.kind in np.typecodes["AllFloat"]:
                 tp = "real"
             else:
-                raise NotImplementedError("type %s for values not implemented" \
+                raise NotImplementedError("type %s for values not implemented"
                                           % values.dtype)
             mxtype = HBMatrixType(tp, "unsymmetric", "assembled")
         else:
@@ -160,7 +161,7 @@ class HBInfo(object):
         else:
             rhs_nlines = _expect_int(rhs_nlines)
         if not rhs_nlines == 0:
-            raise ValueError("Only files without right hand side supported for " \
+            raise ValueError("Only files without right hand side supported for "
                              "now.")
 
         # Third line
@@ -225,7 +226,6 @@ class HBInfo(object):
         if len(key) > 8:
             warnings.warn("key is > 8 characters (key is %s)" % key, LineOverflow)
 
-
         self.total_nlines = total_nlines
         self.pointer_nlines = pointer_nlines
         self.indices_nlines = indices_nlines
@@ -245,12 +245,12 @@ class HBInfo(object):
         values_format = parser.parse(values_format_str)
         if isinstance(values_format, ExpFormat):
             if not mxtype.value_type in ["real", "complex"]:
-                raise ValueError("Inconsistency between matrix type %s and " \
+                raise ValueError("Inconsistency between matrix type %s and "
                                  "value type %s" % (mxtype, values_format))
             values_dtype = np.float64
         elif isinstance(values_format, IntFormat):
             if not mxtype.value_type in ["integer"]:
-                raise ValueError("Inconsistency between matrix type %s and " \
+                raise ValueError("Inconsistency between matrix type %s and "
                                  "value type %s" % (mxtype, values_format))
             # XXX: fortran int -> dtype association ?
             values_dtype = np.int
@@ -310,7 +310,7 @@ def _expect_int(value, msg=None):
 
 def _read_hb_data(content, header):
     # XXX: look at a way to reduce memory here (big string creation)
-    ptr_string =  "".join([content.read(header.pointer_nbytes_full),
+    ptr_string = "".join([content.read(header.pointer_nbytes_full),
                            content.readline()])
     ptr = np.fromstring(ptr_string,
             dtype=np.int, sep=' ')
@@ -387,7 +387,7 @@ class HBMatrixType(object):
     @classmethod
     def from_fortran(cls, fmt):
         if not len(fmt) == 3:
-            raise ValueError("Fortran format for matrix type should be 3 " \
+            raise ValueError("Fortran format for matrix type should be 3 "
                              "characters long")
         try:
             value_type = cls._f2q_type[fmt[0]]
@@ -547,4 +547,3 @@ def hb_write(file, m, hb_info=None):
             fid.close()
     else:
         return _set_matrix(file)
-

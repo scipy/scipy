@@ -7,6 +7,7 @@ import sys
 from os.path import join
 from distutils.sysconfig import get_python_inc
 
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('special', parent_package, top_path)

@@ -23,6 +23,7 @@ TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 N_EG_ELS = 11 # number of elements for example variable
 VARTYPE_EG = 'b' # var type for example variable
 
+
 @contextmanager
 def make_simple(*args, **kwargs):
     f = netcdf_file(*args, **kwargs)
@@ -34,6 +35,7 @@ def make_simple(*args, **kwargs):
     f.flush()
     yield f
     f.close()
+
 
 def gen_for_simple(ncfileobj):
     ''' Generator for example fileobj tests '''
@@ -124,6 +126,7 @@ def test_read_example_data():
         with netcdf_file(fname, 'r', mmap=False) as f:
             pass
 
+
 def test_itemset_no_segfault_on_readonly():
     # Regression test for ticket #1202.
     # Open the test file in read-only mode.
@@ -133,6 +136,7 @@ def test_itemset_no_segfault_on_readonly():
 
     # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
     assert_raises(RuntimeError, time_var.assignValue, 42)
+
 
 def test_write_invalid_dtype():
     dtypes = ['int64', 'uint64']

@@ -19,6 +19,7 @@ from scipy.integrate import odeint, ode, complex_ode
 # Test ODE integrators
 #------------------------------------------------------------------------------
 
+
 class TestOdeint(TestCase):
     """
     Check integrate.odeint
@@ -31,8 +32,10 @@ class TestOdeint(TestCase):
     def test_odeint(self):
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.cmplx: continue
+            if problem.cmplx:
+                continue
             self._do_problem(problem)
+
 
 class TestOde(TestCase):
     """
@@ -61,7 +64,8 @@ class TestOde(TestCase):
         """Check the vode solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.cmplx: continue
+            if problem.cmplx:
+                continue
             if not problem.stiff:
                 self._do_problem(problem, 'vode', 'adams')
             self._do_problem(problem, 'vode', 'bdf')
@@ -78,25 +82,32 @@ class TestOde(TestCase):
         """Check the lsoda solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.cmplx: continue
+            if problem.cmplx:
+                continue
             self._do_problem(problem, 'lsoda')
 
     def test_dopri5(self):
         """Check the dopri5 solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.cmplx: continue
-            if problem.stiff: continue
-            if hasattr(problem, 'jac'): continue
+            if problem.cmplx:
+                continue
+            if problem.stiff:
+                continue
+            if hasattr(problem, 'jac'):
+                continue
             self._do_problem(problem, 'dopri5')
 
     def test_dop853(self):
         """Check the dop853 solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.cmplx: continue
-            if problem.stiff: continue
-            if hasattr(problem, 'jac'): continue
+            if problem.cmplx:
+                continue
+            if problem.stiff:
+                continue
+            if hasattr(problem, 'jac'):
+                continue
             self._do_problem(problem, 'dop853')
 
     def test_concurrent_fail(self):
@@ -148,6 +159,7 @@ class TestOde(TestCase):
                 assert_allclose(r.y, 0.3)
                 assert_allclose(r2.y, 0.2)
 
+
 class TestComplexOde(TestCase):
     """
     Check integrate.complex_ode
@@ -191,21 +203,26 @@ class TestComplexOde(TestCase):
         """Check the dopri5 solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.stiff: continue
-            if hasattr(problem, 'jac'): continue
+            if problem.stiff:
+                continue
+            if hasattr(problem, 'jac'):
+                continue
             self._do_problem(problem, 'dopri5')
 
     def test_dop853(self):
         """Check the dop853 solver"""
         for problem_cls in PROBLEMS:
             problem = problem_cls()
-            if problem.stiff: continue
-            if hasattr(problem, 'jac'): continue
+            if problem.stiff:
+                continue
+            if hasattr(problem, 'jac'):
+                continue
             self._do_problem(problem, 'dop853')
 
 #------------------------------------------------------------------------------
 # Test problems
 #------------------------------------------------------------------------------
+
 
 class ODE:
     """
@@ -218,6 +235,7 @@ class ODE:
 
     atol    = 1e-6
     rtol    = 1e-5
+
 
 class SimpleOscillator(ODE):
     r"""
@@ -243,6 +261,7 @@ class SimpleOscillator(ODE):
         u = self.z0[0]*cos(omega*t)+self.z0[1]*sin(omega*t)/omega
         return allclose(u, zs[:,0], atol=self.atol, rtol=self.rtol)
 
+
 class ComplexExp(ODE):
     r"""The equation :lm:`\dot u = i u`"""
     stop_t  = 1.23*pi
@@ -258,6 +277,7 @@ class ComplexExp(ODE):
     def verify(self, zs, t):
         u = self.z0 * exp(1j*t)
         return allclose(u, zs, atol=self.atol, rtol=self.rtol)
+
 
 class Pi(ODE):
     r"""Integrate 1/(t + 1j) from t=-10 to t=10"""
@@ -275,36 +295,44 @@ PROBLEMS = [SimpleOscillator, ComplexExp, Pi]
 
 #------------------------------------------------------------------------------
 
+
 def f(t, x):
     dxdt = [x[1], -x[0]]
     return dxdt
+
 
 def jac(t, x):
     j = array([[ 0.0, 1.0],
                [-1.0, 0.0]])
     return j
 
+
 def f1(t, x, omega):
     dxdt = [omega*x[1], -omega*x[0]]
     return dxdt
+
 
 def jac1(t, x, omega):
     j = array([[ 0.0, omega],
                [-omega, 0.0]])
     return j
 
+
 def f2(t, x, omega1, omega2):
     dxdt = [omega1*x[1], -omega2*x[0]]
     return dxdt
+
 
 def jac2(t, x, omega1, omega2):
     j = array([[ 0.0, omega1],
                [-omega2, 0.0]])
     return j
 
+
 def fv(t, x, omega):
     dxdt = [omega[0]*x[1], -omega[1]*x[0]]
     return dxdt
+
 
 def jacv(t, x, omega):
     j = array([[ 0.0, omega[0]],

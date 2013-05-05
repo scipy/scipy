@@ -27,6 +27,7 @@ except ImportError:
     except ImportError:
         mpmath = None
 
+
 def mpmath_check(min_ver):
     if mpmath is None:
         return dec.skipif(True, "mpmath is not installed")
@@ -65,6 +66,7 @@ def test_hyp2f1_strange_points():
     dataset = np.array(dataset, dtype=np.float_)
 
     FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
+
 
 @mpmath_check('0.13')
 def test_hyp2f1_real_some_points():
@@ -121,6 +123,7 @@ def test_hyp2f1_some_points_2():
 
     FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
+
 @mpmath_check('0.13')
 def test_hyp2f1_real_some():
     dataset = []
@@ -141,6 +144,7 @@ def test_hyp2f1_real_some():
                  ignore_inf_sign=True).check()
     finally:
         np.seterr(**olderr)
+
 
 @mpmath_check('0.12')
 @dec.slow
@@ -173,6 +177,7 @@ def test_hyp2f1_real_random():
 # erf (complex)
 #------------------------------------------------------------------------------
 
+
 @mpmath_check('0.14')
 def test_erf_complex():
     # need to increase mpmath precision for this test
@@ -189,7 +194,6 @@ def test_erf_complex():
                           vectorized=False, rtol=1e-13)
     finally:
         mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
-
 
 
 #------------------------------------------------------------------------------
@@ -389,7 +393,7 @@ class MpmathData(object):
         if not name or name == '<lambda>':
             name = getattr(scipy_func, '__name__', None)
         if not name or name == '<lambda>':
-            name =  getattr(mpmath_func, '__name__', None)
+            name = getattr(mpmath_func, '__name__', None)
         self.name = name
 
     def check(self):
@@ -454,12 +458,15 @@ class MpmathData(object):
         else:
             return "<MpmathData: %s>" % (self.name,)
 
+
 def assert_mpmath_equal(*a, **kw):
     d = MpmathData(*a, **kw)
     d.check()
 
+
 def nonfunctional_tooslow(func):
     return dec.skipif(True, "    Test not yet functional (too slow), needs more work.")(func)
+
 
 def knownfailure_overridable(msg=None):
     if not msg:
@@ -474,6 +481,7 @@ def knownfailure_overridable(msg=None):
             pass
         return dec.knownfailureif(True, msg)(func)
     return deco
+
 
 class _SystematicMeta(type):
     """
@@ -516,8 +524,10 @@ try:
 except ImportError:
     POSIX = False
 
+
 class _TimeoutError(Exception):
     pass
+
 
 def _time_limited(timeout=0.5, return_val=np.nan, use_sigalrm=True):
     """
@@ -569,6 +579,7 @@ def _time_limited(timeout=0.5, return_val=np.nan, use_sigalrm=True):
             return wrap
     return deco
 
+
 def _exception_to_nan(func):
     """Decorate function to return nan if it raises an exception"""
     def wrap(*a, **kw):
@@ -578,6 +589,7 @@ def _exception_to_nan(func):
             return np.nan
     return wrap
 
+
 def _inf_to_nan(func):
     """Decorate function to return nan if it returns inf"""
     def wrap(*a, **kw):
@@ -586,13 +598,14 @@ def _inf_to_nan(func):
             return np.nan
         return v
     return wrap
-    
+
 
 #------------------------------------------------------------------------------
 # Systematic tests
 #------------------------------------------------------------------------------
 
 HYPERKW = dict(maxprec=200, maxterms=200)
+
 
 class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_airyai(self):
@@ -675,7 +688,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             lambda v, z: mpmath.besselj(v, z, **HYPERKW),
                             [Arg(), ComplexArg()],
                             n=2000)
-
 
     def test_besselk(self):
         assert_mpmath_equal(sc.kv,

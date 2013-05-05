@@ -6,8 +6,9 @@ import inline_tools
 
 import time
 
+
 def print_compare(n):
-    print('Printing %d integers:'%n)
+    print('Printing %d integers:' % n)
     t1 = time.time()
     for i in range(n):
         print(i, end=' ')
@@ -23,6 +24,7 @@ def print_compare(n):
     print(' speed in python:', py)
     print(' speed in c:',(t2 - t1))
     print(' speed up: %3.2f' % (py/(t2-t1)))
+
 
 def cout_example(lst):
     # get it in cache

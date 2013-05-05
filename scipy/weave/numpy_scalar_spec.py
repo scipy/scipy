@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function
 import numpy
 from . import c_spec
 
+
 class numpy_complex_scalar_converter(c_spec.complex_converter):
     """ Handles conversion of all the NumPy complex types.
         This uses the same machinery as the standard python

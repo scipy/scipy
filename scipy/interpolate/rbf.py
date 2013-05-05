@@ -185,7 +185,7 @@ class Rbf(object):
         self.N = self.xi.shape[-1]
         self.di = asarray(args[-1]).flatten()
 
-        if not all([x.size==self.di.size for x in self.xi]):
+        if not all([x.size == self.di.size for x in self.xi]):
             raise ValueError("All arrays must be equal length.")
 
         self.norm = kwargs.pop('norm', self._euclidean_norm)

@@ -6,6 +6,7 @@ import numpy as np
 
 SZ = [2, 3, 4, 8, 12, 15, 16, 17, 32, 64, 128, 256, 512, 1024]
 
+
 def gen_data(dt):
     arrays = {}
 

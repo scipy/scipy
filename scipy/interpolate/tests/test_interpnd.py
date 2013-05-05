@@ -9,6 +9,7 @@ import scipy.spatial.qhull as qhull
 
 import pickle
 
+
 class TestLinearNDInterpolation(object):
     def test_smoketest(self):
         # Test at single points
@@ -105,6 +106,7 @@ class TestLinearNDInterpolation(object):
 
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
+
 class TestEstimateGradients2DGlobal(object):
     def test_smoketest(self):
         x = np.array([(0, 0), (0, 2),
@@ -127,6 +129,7 @@ class TestEstimateGradients2DGlobal(object):
             assert_equal(dz.shape, (6, 2))
             assert_allclose(dz, np.array(grad)[None,:] + 0*dz,
                             rtol=1e-5, atol=1e-5, err_msg="item %d" % j)
+
 
 class TestCloughTocher2DInterpolator(object):
 
@@ -223,7 +226,6 @@ class TestCloughTocher2DInterpolator(object):
         x = np.random.randn(30, 3)
         y = np.random.randn(30)
         assert_raises(ValueError, interpnd.CloughTocher2DInterpolator, x, y)
-
 
     def test_pickle(self):
         # Test at single points

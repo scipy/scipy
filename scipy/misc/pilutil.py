@@ -96,6 +96,7 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     bytedata[bytedata < 0] = 0
     return cast[uint8](bytedata) + cast[uint8](low)
 
+
 def imread(name,flatten=0):
     """
     Read an image file from a filename.
@@ -121,6 +122,7 @@ def imread(name,flatten=0):
 
     im = Image.open(name)
     return fromimage(im,flatten=flatten)
+
 
 def imsave(name, arr):
     """
@@ -158,6 +160,7 @@ def imsave(name, arr):
     im.save(name)
     return
 
+
 def fromimage(im, flatten=0):
     """
     Return a copy of a PIL image as a numpy array.
@@ -189,6 +192,7 @@ def fromimage(im, flatten=0):
 
 _errstr = "Mode is unknown or incompatible with input array shape."
 
+
 def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             mode=None, channel_axis=None):
     """Takes a numpy array and returns a PIL image.
@@ -215,7 +219,7 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     if iscomplexobj(data):
         raise ValueError("Cannot convert a complex-valued array.")
     shape = list(data.shape)
-    valid = len(shape)==2 or ((len(shape)==3) and \
+    valid = len(shape) == 2 or ((len(shape) == 3) and
                               ((3 in shape) or (4 in shape)))
     if not valid:
         raise ValueError("'arr' does not have a suitable array shape for any mode.")
@@ -281,9 +285,10 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
         strdata = transpose(bytedata,(1,2,0)).tostring()
         shape = (shape[2],shape[1])
     if mode is None:
-        if numch == 3: mode = 'RGB'
-        else: mode = 'RGBA'
-
+        if numch == 3:
+            mode = 'RGB'
+        else:
+            mode = 'RGBA'
 
     if mode not in ['RGB','RGBA','YCbCr','CMYK']:
         raise ValueError(_errstr)
@@ -298,6 +303,7 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     # Here we know data and mode is correct
     image = Image.fromstring(mode, shape, strdata)
     return image
+
 
 def imrotate(arr,angle,interp='bilinear'):
     """
@@ -328,6 +334,7 @@ def imrotate(arr,angle,interp='bilinear'):
     im = toimage(arr)
     im = im.rotate(angle,resample=func[interp])
     return fromimage(im)
+
 
 def imshow(arr):
     """
@@ -369,6 +376,7 @@ def imshow(arr):
     os.unlink(fname)
     if status != 0:
         raise RuntimeError('Could not execute image viewer.')
+
 
 def imresize(arr, size, interp='bilinear', mode=None):
     """
@@ -451,4 +459,3 @@ def imfilter(arr,ftype):
     if ftype not in _tdict:
         raise ValueError("Unknown filter type.")
     return fromimage(im.filter(_tdict[ftype]))
-

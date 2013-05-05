@@ -14,11 +14,10 @@ from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 set_printoptions(precision=3,linewidth=90)
 
 
-
 def ElasticRod(n):
     # Fixed-free elastic rod
     L = 1.0
-    le=L/n
+    le = L/n
     rho = 7.85e3
     S = 1.e-4
     E = 2.1e11
@@ -27,6 +26,7 @@ def ElasticRod(n):
     A = k*(diag(r_[2.*ones(n-1),1])-diag(ones(n-1),1)-diag(ones(n-1),-1))
     B = mass*(diag(r_[4.*ones(n-1),2])+diag(ones(n-1),1)+diag(ones(n-1),-1))
     return A,B
+
 
 def MikotaPair(n):
     # Mikota pair acts as a nice test since the eigenvalues
@@ -64,19 +64,23 @@ def compare_solutions(A,B,m):
     #ylabel(r'$\lambda_i$')
     #show()
 
+
 def test_Small():
     A,B = ElasticRod(10)
     compare_solutions(A,B,10)
     A,B = MikotaPair(10)
     compare_solutions(A,B,10)
 
+
 def test_ElasticRod():
     A,B = ElasticRod(100)
     compare_solutions(A,B,20)
 
+
 def test_MikotaPair():
     A,B = MikotaPair(100)
     compare_solutions(A,B,20)
+
 
 def test_trivial():
     n = 5

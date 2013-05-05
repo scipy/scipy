@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.cluster import vq
 
+
 def python_vq(all_data,code_book):
     import time
     t1 = time.time()
@@ -26,6 +27,7 @@ def python_vq(all_data,code_book):
 
     return codes1,dist1
 
+
 def read_data(name):
     f = open(name,'r')
     data = []
@@ -33,6 +35,7 @@ def read_data(name):
         data.append(list(map(float,string.split(line))))
     f.close()
     return array(data)
+
 
 def main():
     np.random.seed((1000,1000))

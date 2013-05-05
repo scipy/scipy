@@ -18,10 +18,12 @@ except ImportError:
 #    print _flinalg.__doc__
     has_column_major_storage = lambda a:0
 
+
 def has_column_major_storage(arr):
     return arr.flags['FORTRAN']
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'} # 'd' will be default for 'i',..
+
 
 def get_flinalg_funcs(names,arrays=(),debug=0):
     """Return optimal available _flinalg function objects with

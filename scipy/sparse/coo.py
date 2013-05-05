@@ -16,6 +16,7 @@ from .base import isspmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import upcast, upcast_char, to_native, isshape, getdtype, isintlike
 
+
 class coo_matrix(_data_matrix, _minmax_mixin):
     """
     A sparse matrix in COOrdinate format.
@@ -152,7 +153,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             # Initialize an empty matrix.
             if not isinstance(shape, tuple) or not isintlike(shape[0]):
                 raise TypeError('dimensions not understood')
-            warn('coo_matrix(None, shape=(M,N)) is deprecated, ' \
+            warn('coo_matrix(None, shape=(M,N)) is deprecated, '
                     'use coo_matrix( (M,N) ) instead', DeprecationWarning)
             self.shape = shape
             self.data = np.array([], getdtype(dtype, default=float))
@@ -207,10 +208,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
-            warn("row index array has non-integer dtype (%s)  " \
+            warn("row index array has non-integer dtype (%s)  "
                     % self.row.dtype.name )
         if self.col.dtype.kind != 'i':
-            warn("col index array has non-integer dtype (%s) " \
+            warn("col index array has non-integer dtype (%s) "
                     % self.col.dtype.name )
 
         # only support 32-bit ints for now
@@ -227,7 +228,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 raise ValueError('negative row index found')
             if self.col.min() < 0:
                 raise ValueError('negative column index found')
-
 
     def transpose(self, copy=False):
         M,N = self.shape
@@ -273,8 +273,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             indices = np.empty(self.nnz, dtype=np.intc)
             data    = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-            coo_tocsr(N, M, self.nnz, \
-                      self.col, self.row, self.data, \
+            coo_tocsr(N, M, self.nnz,
+                      self.col, self.row, self.data,
                       indptr, indices, data)
 
             A = csc_matrix((data, indices, indptr), shape=self.shape)
@@ -311,8 +311,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             indices = np.empty(self.nnz, dtype=np.intc)
             data    = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-            coo_tocsr(M, N, self.nnz, \
-                      self.row, self.col, self.data, \
+            coo_tocsr(M, N, self.nnz,
+                      self.row, self.col, self.data,
                       indptr, indices, data)
 
             A = csr_matrix((data, indices, indptr), shape=self.shape)
@@ -329,7 +329,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def todia(self):
         from .dia import dia_matrix
 
-        ks = self.col - self.row  #the diagonal for each nonzero
+        ks = self.col - self.row  # the diagonal for each nonzero
         diags = np.unique(ks)
 
         if len(diags) > 100:
@@ -355,7 +355,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         return dok
 
-
     # needed by _data_matrix
     def _with_data(self,data,copy=True):
         """Returns a matrix with the same sparsity structure as self,
@@ -363,10 +362,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         (i.e. .row and .col) are copied.
         """
         if copy:
-            return coo_matrix( (data, (self.row.copy(), self.col.copy()) ), \
+            return coo_matrix( (data, (self.row.copy(), self.col.copy()) ),
                                    shape=self.shape, dtype=data.dtype)
         else:
-            return coo_matrix( (data, (self.row, self.col) ), \
+            return coo_matrix( (data, (self.row, self.col) ),
                                    shape=self.shape, dtype=data.dtype)
 
     ###########################

@@ -7,21 +7,21 @@ from scipy.lib.six.moves import xrange
 
 from scipy import stats
 
-DECIMAL_meanvar = 0#1  # was 0
+DECIMAL_meanvar = 0# 1  # was 0
 
 distdiscrete = [
     ['bernoulli',(0.3,)],
     ['binom',    (5, 0.4)],
     ['boltzmann',(1.4, 19)],
-    ['dlaplace', (0.8,)], #0.5
+    ['dlaplace', (0.8,)], # 0.5
     ['geom',     (0.5,)],
     ['hypergeom',(30, 12, 6)],
-    ['hypergeom',(21,3,12)],  #numpy.random (3,18,12) numpy ticket:921
-    ['hypergeom',(21,18,11)],  #numpy.random (18,3,11) numpy ticket:921
+    ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
+    ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
     ['logser',   (0.6,)],  # reenabled, numpy ticket:921
     ['nbinom',   (5, 0.5)],
-    ['nbinom',   (0.4, 0.4)], #from tickets: 583
-    ['planck',   (0.51,)],   #4.1
+    ['nbinom',   (0.4, 0.4)], # from tickets: 583
+    ['planck',   (0.51,)],   # 4.1
     ['poisson',  (0.6,)],
     ['randint',  (7, 31)],
     ['skellam',  (15, 8)]]
@@ -58,7 +58,7 @@ def test_discrete_basic():
 
         # dlaplace doesn't fail, but generates lots of floating point warnings.
         # Should be checked.
-        if not distname in ['dlaplace']: #['logser']:  #known failure, fixed
+        if not distname in ['dlaplace']: # ['logser']:  #known failure, fixed
             alpha = 0.01
             yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                           distname + ' chisquare'
@@ -74,6 +74,7 @@ def test_discrete_extra():
               ' isf limit test'
         yield check_entropy, distfn, arg, distname + \
               ' entropy nan test'
+
 
 @npt.dec.skipif(True)
 def test_discrete_private():
@@ -95,20 +96,23 @@ def test_discrete_private():
 
 def check_sample_meanvar(sm,m,msg):
     if not np.isinf(m):
-        npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg + \
+        npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg +
                                 ' - finite moment')
     else:
         npt.assert_(sm > 10000, msg='infinite moment, sm = ' + str(sm))
 
+
 def check_sample_var(sm,m,msg):
-    npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg= msg + 'var')
+    npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg + 'var')
+
 
 def check_cdf_ppf(distfn,arg,msg):
     ppf05 = distfn.ppf(0.5,*arg)
     cdf05 = distfn.cdf(ppf05,*arg)
     npt.assert_almost_equal(distfn.ppf(cdf05-1e-6,*arg),ppf05,
                             err_msg=msg + 'ppf-cdf-median')
-    npt.assert_((distfn.ppf(cdf05+1e-4,*arg)>ppf05), msg + 'ppf-cdf-next')
+    npt.assert_((distfn.ppf(cdf05+1e-4,*arg) > ppf05), msg + 'ppf-cdf-next')
+
 
 def check_cdf_ppf2(distfn,arg,supp,msg):
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg),*arg),
@@ -123,7 +127,8 @@ def check_cdf_ppf_private(distfn,arg,msg):
     cdf05 = distfn.cdf(ppf05,*arg)
     npt.assert_almost_equal(distfn._ppf(cdf05-1e-6,*arg),ppf05,
                             err_msg=msg + '_ppf-cdf-median ')
-    npt.assert_((distfn._ppf(cdf05+1e-4,*arg)>ppf05), msg + '_ppf-cdf-next')
+    npt.assert_((distfn._ppf(cdf05+1e-4,*arg) > ppf05), msg + '_ppf-cdf-next')
+
 
 def check_ppf_ppf(distfn, arg):
     npt.assert_(distfn.ppf(0.5,*arg) < np.inf)
@@ -135,26 +140,30 @@ def check_ppf_ppf(distfn, arg):
     npt.assert_(ppf_s[0] == ppfs[0])
     npt.assert_(ppf_s[1] == ppfs[1])
 
+
 def check_pmf_cdf(distfn, arg, msg):
     startind = np.int(distfn._ppf(0.01,*arg)-1)
     index = list(range(startind,startind+10))
     cdfs = distfn.cdf(index,*arg)
-    npt.assert_almost_equal(cdfs, distfn.pmf(index, *arg).cumsum() + \
+    npt.assert_almost_equal(cdfs, distfn.pmf(index, *arg).cumsum() +
                             cdfs[0] - distfn.pmf(index[0],*arg),
-                            decimal=4, err_msg= msg + 'pmf-cdf')
+                            decimal=4, err_msg=msg + 'pmf-cdf')
+
 
 def check_generic_moment(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn.generic_moment(k,*arg), m, decimal=decim,
-                            err_msg= str(distfn) + ' generic moment test')
+                            err_msg=str(distfn) + ' generic moment test')
+
 
 def check_moment_frozen(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn(*arg).moment(k), m, decimal=decim,
-                            err_msg= str(distfn) + ' frozen moment test')
+                            err_msg=str(distfn) + ' frozen moment test')
+
 
 def check_oth(distfn, arg, msg):
     #checking other methods of distfn
     meanint = round(float(distfn.stats(*arg)[0])) # closest integer to mean
-    npt.assert_almost_equal(distfn.sf(meanint, *arg), 1 - \
+    npt.assert_almost_equal(distfn.sf(meanint, *arg), 1 -
                             distfn.cdf(meanint, *arg), decimal=8)
     median_sf = distfn.isf(0.5, *arg)
 
@@ -165,6 +174,7 @@ def check_oth(distfn, arg, msg):
 #next 3 functions copied from test_continous_extra
 #    adjusted
 
+
 def check_ppf_limits(distfn,arg,msg):
     below,low,upp,above = distfn.ppf([-1,0,1,2], *arg)
     #print distfn.name, distfn.a, low, distfn.b, upp
@@ -173,6 +183,7 @@ def check_ppf_limits(distfn,arg,msg):
     assert_equal_inf_nan(distfn.b,upp, msg + 'ppf upper bound')
     npt.assert_(np.isnan(below), msg + 'ppf out of bounds - below')
     npt.assert_(np.isnan(above), msg + 'ppf out of bounds - above')
+
 
 def check_isf_limits(distfn,arg,msg):
     below,low,upp,above = distfn.isf([-1,0,1,2], *arg)
@@ -183,14 +194,16 @@ def check_isf_limits(distfn,arg,msg):
     npt.assert_(np.isnan(below), msg + 'isf out of bounds - below')
     npt.assert_(np.isnan(above), msg + 'isf out of bounds - above')
 
+
 def assert_equal_inf_nan(v1,v2,msg):
     npt.assert_(not np.isnan(v1))
     if not np.isinf(v1):
-        npt.assert_almost_equal(v1, v2, decimal=10, err_msg = msg + \
+        npt.assert_almost_equal(v1, v2, decimal=10, err_msg=msg +
                                    ' - finite')
     else:
         npt.assert_(np.isinf(v2) or np.isnan(v2),
                msg + ' - infinite, v2=%s' % str(v2))
+
 
 def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
     k,s = distfn.stats(moment='ks',*arg)
@@ -242,7 +255,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     distmass = []
     for ii in distsupport:
         current = distfn.cdf(ii,*arg)
-        if  current - last >= wsupp-1e-14:
+        if current - last >= wsupp-1e-14:
             distsupp.append(ii)
             distmass.append(current - last)
             last = current

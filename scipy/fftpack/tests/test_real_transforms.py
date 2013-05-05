@@ -22,6 +22,7 @@ FFTWDATA_DOUBLE = np.load(join(dirname(__file__), 'fftw_double_ref.npz'))
 FFTWDATA_SINGLE = np.load(join(dirname(__file__), 'fftw_single_ref.npz'))
 FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
 
+
 def fftw_dct_ref(type, size, dt):
     x = np.linspace(0, size-1, size).astype(dt)
     if dt == np.double:
@@ -33,6 +34,7 @@ def fftw_dct_ref(type, size, dt):
     y = (data['dct_%d_%d' % (type, size)]).astype(dt)
     return x, y
 
+
 def fftw_dst_ref(type, size, dt):
     x = np.linspace(0, size-1, size).astype(dt)
     if dt == np.double:
@@ -43,6 +45,7 @@ def fftw_dst_ref(type, size, dt):
         raise ValueError()
     y = (data['dst_%d_%d' % (type, size)]).astype(dt)
     return x, y
+
 
 class _TestDCTBase(TestCase):
     def setUp(self):
@@ -78,6 +81,7 @@ class _TestDCTBase(TestCase):
                 assert_array_almost_equal(y[:,j], dct(x[:,j], type=self.type),
                         decimal=self.dec)
 
+
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
         """Test correspondance with matlab (orthornomal mode)."""
@@ -88,6 +92,7 @@ class _TestDCTIIBase(_TestDCTBase):
             self.assertTrue(y.dtype == self.rdt,
                     "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
             assert_array_almost_equal(y, yr, decimal=self.dec)
+
 
 class _TestDCTIIIBase(_TestDCTBase):
     def test_definition_ortho(self):
@@ -100,11 +105,13 @@ class _TestDCTIIIBase(_TestDCTBase):
                     "Output dtype is %s, expected %s" % (xi.dtype, self.rdt))
             assert_array_almost_equal(xi, x, decimal=self.dec)
 
+
 class TestDCTIDouble(_TestDCTBase):
     def setUp(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 1
+
 
 class TestDCTIFloat(_TestDCTBase):
     def setUp(self):
@@ -112,11 +119,13 @@ class TestDCTIFloat(_TestDCTBase):
         self.dec = 5
         self.type = 1
 
+
 class TestDCTIIDouble(_TestDCTIIBase):
     def setUp(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 2
+
 
 class TestDCTIIFloat(_TestDCTIIBase):
     def setUp(self):
@@ -124,17 +133,20 @@ class TestDCTIIFloat(_TestDCTIIBase):
         self.dec = 5
         self.type = 2
 
+
 class TestDCTIIIDouble(_TestDCTIIIBase):
     def setUp(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
 
+
 class TestDCTIIIFloat(_TestDCTIIIBase):
     def setUp(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 3
+
 
 class _TestIDCTBase(TestCase):
     def setUp(self):
@@ -159,11 +171,13 @@ class _TestIDCTBase(TestCase):
             assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=self.dec,
                     err_msg="Size %d failed" % i)
 
+
 class TestIDCTIDouble(_TestIDCTBase):
     def setUp(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 1
+
 
 class TestIDCTIFloat(_TestIDCTBase):
     def setUp(self):
@@ -171,11 +185,13 @@ class TestIDCTIFloat(_TestIDCTBase):
         self.dec = 4
         self.type = 1
 
+
 class TestIDCTIIDouble(_TestIDCTBase):
     def setUp(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 2
+
 
 class TestIDCTIIFloat(_TestIDCTBase):
     def setUp(self):
@@ -183,17 +199,20 @@ class TestIDCTIIFloat(_TestIDCTBase):
         self.dec = 5
         self.type = 2
 
+
 class TestIDCTIIIDouble(_TestIDCTBase):
     def setUp(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
 
+
 class TestIDCTIIIFloat(_TestIDCTBase):
     def setUp(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 3
+
 
 class _TestDSTBase(TestCase):
     def setUp(self):
@@ -221,11 +240,13 @@ class TestDSTIDouble(_TestDSTBase):
         self.dec = 14
         self.type = 1
 
+
 class TestDSTIFloat(_TestDSTBase):
     def setUp(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 1
+
 
 class TestDSTIIDouble(_TestDSTBase):
     def setUp(self):
@@ -233,17 +254,20 @@ class TestDSTIIDouble(_TestDSTBase):
         self.dec = 14
         self.type = 2
 
+
 class TestDSTIIFloat(_TestDSTBase):
     def setUp(self):
         self.rdt = np.float32
         self.dec = 6
         self.type = 2
 
+
 class TestDSTIIIDouble(_TestDSTBase):
     def setUp(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
+
 
 class TestDSTIIIFloat(_TestDSTBase):
     def setUp(self):
@@ -275,11 +299,13 @@ class _TestIDSTBase(TestCase):
             assert_array_almost_equal(x / np.max(x), xr / np.max(x), decimal=self.dec,
                     err_msg="Size %d failed" % i)
 
+
 class TestIDSTIDouble(_TestIDSTBase):
     def setUp(self):
         self.rdt = np.double
         self.dec = 12
         self.type = 1
+
 
 class TestIDSTIFloat(_TestIDSTBase):
     def setUp(self):
@@ -287,11 +313,13 @@ class TestIDSTIFloat(_TestIDSTBase):
         self.dec = 4
         self.type = 1
 
+
 class TestIDSTIIDouble(_TestIDSTBase):
     def setUp(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 2
+
 
 class TestIDSTIIFloat(_TestIDSTBase):
     def setUp(self):
@@ -299,11 +327,13 @@ class TestIDSTIIFloat(_TestIDSTBase):
         self.dec = 6
         self.type = 2
 
+
 class TestIDSTIIIDouble(_TestIDSTBase):
     def setUp(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
+
 
 class TestIDSTIIIFloat(_TestIDSTBase):
     def setUp(self):

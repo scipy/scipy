@@ -7,7 +7,8 @@ except ImportError:
     # Some python installations don't have zlib.
     pass
 
-import  pickle
+import pickle
+
 
 class DbfilenameShelf(Shelf):
     """Shelf implementation using the "anydbm" generic dbm interface.
@@ -38,6 +39,7 @@ class DbfilenameShelf(Shelf):
         except NameError:
             #zlib doesn't exist, leave it uncompressed.
             self.dict[key] = s
+
 
 def open(filename, flag='c'):
     """Open a persistent dictionary for reading and writing.

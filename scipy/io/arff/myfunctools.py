@@ -3,6 +3,7 @@
 # available (eg python < 2.5)
 from __future__ import division, print_function, absolute_import
 
+
 class partial:
     def __init__(self, fun, *args, **kwargs):
         self.fun = fun

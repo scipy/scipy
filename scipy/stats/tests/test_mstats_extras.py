@@ -54,6 +54,8 @@ class TestMisc(TestCase):
         assert_(np.isnan(_result).all())
 
 #..............................................................................
+
+
 class TestQuantiles(TestCase):
     #
     def __init__(self, *args, **kwargs):
