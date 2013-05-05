@@ -5,7 +5,8 @@ import math
 
 import numpy as np
 import scipy.linalg
-import scipy.optimize.optimize
+from .optimize import (_check_unknown_options, wrap_function, _status_message,
+                      Result)
 
 __all__ = []
 
@@ -126,7 +127,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     This function is called by the `minimize` function.
     It is not supposed to be called directly.
     """
-    scipy.optimize.optimize._check_unknown_options(unknown_options)
+    _check_unknown_options(unknown_options)
     if jac is None:
         raise ValueError('Jacobian is currently required for trust-region '
                          'methods')
@@ -152,10 +153,10 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     # Wrap the functions, for a couple reasons.
     # This tracks how many times they have been called
     # and it automatically passes the args.
-    nfun, fun = scipy.optimize.optimize.wrap_function(fun, args)
-    njac, jac = scipy.optimize.optimize.wrap_function(jac, args)
-    nhess, hess = scipy.optimize.optimize.wrap_function(hess, args)
-    nhessp, hessp = scipy.optimize.optimize.wrap_function(hessp, args)
+    nfun, fun = wrap_function(fun, args)
+    njac, jac = wrap_function(jac, args)
+    nhess, hess = wrap_function(hess, args)
+    nhessp, hessp = wrap_function(hessp, args)
 
     # limit the number of iterations
     if maxiter is None:
@@ -230,8 +231,8 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     # print some stuff if requested
     status_messages = (
-            scipy.optimize.optimize._status_message['success'],
-            scipy.optimize.optimize._status_message['maxiter'],
+            _status_message['success'],
+            _status_message['maxiter'],
             'A bad approximation caused failure to predict improvement.',
             'A linalg error occurred, such as a non-psd Hessian.',
             )
@@ -246,12 +247,9 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         print("         Gradient evaluations: %d" % njac[0])
         print("         Hessian evaluations: %d" % nhess[0])
 
-    result = scipy.optimize.optimize.Result(
-            x=x, success=(warnflag==0), status=warnflag,
-            fun=m(), jac=m.jac(),
-            nfev=nfun[0], njev=njac[0], nhev=nhess[0],
-            nit=k,
-            )
+    result = Result(x=x, success=(warnflag==0), status=warnflag, fun=m(),
+                    jac=m.jac(), nfev=nfun[0], njev=njac[0], nhev=nhess[0],
+                    nit=k)
 
     if hess is not None:
         result['hess'] = m.hess()
