@@ -5,7 +5,7 @@ def pre_build(context):
     default_builder = context.default_builder
 
     context.tweak_extension("flapack", features="c fc pyext bento cshlib f2py",
-                          use="FLAPACK")
+                          use="LAPACK")
 
     def clapack_builder(extension):
         kw = {"features": "c fc pyext bento cshlib f2py"}
@@ -18,4 +18,4 @@ def pre_build(context):
 
     context.tweak_extension("calc_lwork",
                           features="c fc pyext bento cshlib f2py f2py_fortran",
-                          use="FLAPACK CLIB")
+                          use="LAPACK CLIB")

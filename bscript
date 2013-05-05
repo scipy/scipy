@@ -23,6 +23,10 @@ from bento.commands import hooks
 import waflib
 from waflib import Options
 
+# Importing setup.py needed to get version info
+import setup
+
+
 # FIXME: add this to numpy so that we can reuse it
 class CTemplateTask(waflib.Task.Task):
     color = 'BLUE'
@@ -125,11 +129,14 @@ def _set_mangling_var(conf, u, du, case, f2pycompat=True):
     env.DEFINES.extend(macros)
 
 def _generate_cython():
+    print("Cythonizing sources")
     cwd = os.path.abspath(os.path.dirname(__file__))
-    subprocess.call([sys.executable,
-                     os.path.join(cwd, 'tools', 'cythonize.py'),
-                     'scipy'],
-                    cwd=cwd)
+    p = subprocess.call([sys.executable,
+                          os.path.join(cwd, 'tools', 'cythonize.py'),
+                          'scipy'],
+                         cwd=cwd)
+    if p != 0:
+        raise RuntimeError("Running cythonize failed!")
 
 @hooks.post_configure
 def post_configure(context):
@@ -174,16 +181,34 @@ def post_configure(context):
     if not (conf.env.HAS_BLAS and conf.env.HAS_LAPACK):
         raise waflib.Errors.ConfigurationError("You need blas and lapack")
 
-    blas_lapack.check_cblas(context)
+    blas_lapack.check_blas_lapack(context)
 
     npymath_info = get_pkg_info("npymath")
     conf.parse_flags(npymath_info.cflags() + " " + npymath_info.libs(), "NPYMATH")
 
+    _generate_cython()
+
+
+FULLVERSION, GIT_REVISION = setup.get_version_info()
+
+version_file_content = """\
+# THIS FILE IS GENERATED FROM SCIPY BSCRIPT
+short_version = '%(version)s'
+version = '%(version)s'
+full_version = '%(full_version)s'
+git_revision = '%(git_revision)s'
+release = %(isrelease)s
+
+if not release:
+    version = full_version
+""" % {'version': setup.VERSION,
+       'full_version' : FULLVERSION,
+       'git_revision' : GIT_REVISION,
+       'isrelease': str(setup.ISRELEASED)}
+
 @hooks.pre_build
 def pre_build(context):
     bld = context.waf_context
-
-    _generate_cython()
 
     context.register_category("gen_pymodule")
     bld(features="gen_pymodule",
@@ -193,13 +218,10 @@ def show():
     pass
 """,
         always=True)
+
     bld(features="gen_pymodule",
         target="scipy/version.py",
-        content="""\
-version = '0.9.0'
-short_version = version
-is_released = True
-""",
+        content=version_file_content,
         always=True)
 
 @hooks.options

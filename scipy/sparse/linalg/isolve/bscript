@@ -20,5 +20,5 @@ def pre_build(context):
         return default_builder(extension,
                                features="c pyext fc bento cshlib f2py",
                                source=sources,
-                               use="FLAPACK CLIB")
+                               use="LAPACK CLIB")
     context.register_builder("_iterative", builder)
