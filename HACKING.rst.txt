@@ -172,7 +172,7 @@ Checklist before submitting a PR
   - In case of larger additions, is there a tutorial or more extensive
     module-level description?
   - In case compiled code is added, is it integrated correctly via setup.py
-    (and preferably also Bento/Numscons configuration files)?
+    (and preferably also Bento configuration files - bento.info and bscript)?
   - If you are a first-time contributor, did you add yourself to THANKS.txt?
     Please note that this is perfectly normal and desirable - the aim is to
     give every single contributor credit, and if you don't add yourself it's
@@ -244,9 +244,9 @@ Now editing a Python source file in SciPy allows you to immediately test and
 use your changes, by simply restarting the interpreter.
 
 Note that while the above procedure is the most straightforward way to get
-started, you may want to look into using Bento or numscons for faster and more
-flexible building, or virtualenv to maintain development environments for
-multiple Python versions.
+started, you may want to look into using Bento for faster and more flexible
+building (see BENTO_BUILD.txt in the repo base dir), or virtualenv to maintain
+development environments for multiple Python versions.
 
 
 *How do I set up a development version of SciPy in parallel to a released
