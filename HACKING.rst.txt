@@ -222,9 +222,9 @@ account and then create your local repository via::
 
 To build Scipy and run tests etc., do one of::
 
-    $ python runtests.py -q
-    $ python runtests.py -s optimize
-    $ python runtests.py -t scipy/special/tests/test_basic.py:test_xlogy
+    $ python runtests.py -v
+    $ python runtests.py -v -s optimize
+    $ python runtests.py -v -t scipy/special/tests/test_basic.py:test_xlogy
     $ python runtests.py --ipython
 
 This builds Scipy first, so the first time it may take some time.  If
