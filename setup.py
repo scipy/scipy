@@ -200,7 +200,8 @@ def setup_package():
     )
 
     if len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or
-            sys.argv[1] in ('--help-commands', 'egg_info', '--version')):
+            sys.argv[1] in ('--help-commands', 'egg_info', '--version',
+                            'clean')):
         # For these actions, NumPy is not required.
         #
         # They are required to succeed without Numpy for example when

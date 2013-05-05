@@ -82,7 +82,7 @@ in `SciPy API`_.
 Once you think your code is ready for inclusion in SciPy, you can send a pull
 request (PR) on Github.  We won't go into the details of how to work with git
 here, this is described well in the `git workflow`_ section of the NumPy
-documentation and in the Github help pages.  When you send the PR for a new
+documentation and on the `Github help pages`_.  When you send the PR for a new
 feature, be sure to also mention this on the scipy-dev mailing list.  This can
 prompt interested people to help review your PR.  Assuming that you already got
 positive feedback before on the general idea of your code/feature, the purpose
@@ -111,9 +111,9 @@ The previous section talked specifically about adding new functionality to
 SciPy.  A large part of that discussion also applies to maintenance of existing
 code.  Maintenance means fixing bugs, improving code quality or style,
 documenting existing functionality better, adding missing unit tests, keeping
-build scripts up-to-date, etc.  The SciPy `Trac`_ bug tracker contains all
-reported bugs, build/documentation issues, etc.  Fixing issues described in
-Trac tickets helps improve the overall quality of SciPy, and is also a good way
+build scripts up-to-date, etc.  The SciPy `issue list`_ contains all
+reported bugs, build/documentation issues, etc.  Fixing issues
+helps improve the overall quality of SciPy, and is also a good way
 of getting familiar with the project.  You may also want to fix a bug because
 you ran into it and need the function in question to work correctly.
 
@@ -213,58 +213,69 @@ anyway, without being required to.  See John Hunter's `BSD pitch`_.
 
 *How do I set up SciPy so I can edit files, run the tests and make commits?*
 
-The simplest method is setting up an in-place build.  To create your local git
-repo and do the in-place build::
+First fork a copy of the main Scipy repository in Github onto your own
+account and then create your local repository via::
 
-  $ git clone https://github.com/scipy/scipy.git scipy
-  $ cd scipy
-  $ python setup.py build_ext -i
+    $ git clone git@github.com:YOURUSERNAME/scipy.git scipy
+    $ cd scipy
+    $ git remote add upstream git://github.com/scipy/scipy.git
 
-Then you need to either set up a symlink in your site-packages or add this
-directory to your PYTHONPATH environment variable, so Python can find it.  Some
-IDEs (Spyder for example) have utilities to manage PYTHONPATH.  On Linux and OS
-X, you can for example edit your .bash_login file to automatically add this dir
-on startup of your terminal.  Add the line::
+To build Scipy and run tests etc., do one of::
 
-  export PYTHONPATH="$HOME/scipy:${PYTHONPATH}"
+    $ python runtests.py -v
+    $ python runtests.py -v -s optimize
+    $ python runtests.py -v -t scipy/special/tests/test_basic.py:test_xlogy
+    $ python runtests.py --ipython
 
-Alternatively, to set up the symlink, use (prefix only necessary if you want to
-use your local instead of global site-packages dir)::
+This builds Scipy first, so the first time it may take some time.  If
+you specify ``-n``, the tests are run against the version of Scipy (if
+any) found on PYTHONPATH.
 
-  $ python setupegg.py develop --prefix=${HOME}
- 
-To test that everything works, start the interpreter (not inside the scipy/
-source dir) and run the tests::
+You may want to set up an in-place build so that changes made to
+``.py`` files have effect without rebuild. First, run::
 
-  $ python
-  >>> import scipy as sp
-  >>> sp.test()
+    $ python setup.py build_ext -i
 
-Now editing a Python source file in SciPy allows you to immediately test and
-use your changes, by simply restarting the interpreter.
+Then you need to either set up a symlink in your site-packages or add
+this directory to your PYTHONPATH environment variable, so Python can
+find it.  Some IDEs (Spyder for example) have utilities to manage
+PYTHONPATH.  On Linux and OSX, you can run the command::
 
-Note that while the above procedure is the most straightforward way to get
-started, you may want to look into using Bento or numscons for faster and more
-flexible building, or virtualenv to maintain development environments for
-multiple Python versions.
+    $ export PYTHONPATH=$PWD
+
+To set the Python import path to point to the current directory.
+Now editing a Python source file in SciPy allows you to immediately
+test and use your changes (in ``.py`` files), by simply restarting the
+interpreter.
+
+Another good approach is to install Scipy normally in an isolated test
+environment using `virtualenv`_, and work from there (see the next
+question).
 
 
 *How do I set up a development version of SciPy in parallel to a released
 version that I use to do my job/research?*
 
 One simple way to achieve this is to install the released version in
-site-packages, by using a binary installer or pip for example, and set up the
-development version with an in-place build in a virtualenv.  First install
-`virtualenv`_ and `virtualenvwrapper`_, then create your virtualenv (named
-scipy-dev here) with::
+site-packages, by using a binary installer or pip for example, and set
+up the development version in a virtualenv.  First install
+`virtualenv`_ (optionally use `virtualenvwrapper`_), then create your
+virtualenv (named scipy-dev here) with::
 
-  $ mkvirtualenv scipy-dev
+    $ virtualenv scipy-dev
 
 Now, whenever you want to switch to the virtual environment, you can use the
-command ``workon scipy-dev``, while the command ``deactivate`` exits from the
-virtual environment and brings back your previous shell.  With scipy-dev
-activated, follow the in-place build with the symlink install above to actually
-install your development version of SciPy.
+command ``source scipy-dev/bin/activate``, and ``deactivate`` to exit from the
+virtual environment and back to your previous shell.  With scipy-dev
+activated, install first Scipy's dependencies::
+
+    $ pip install Numpy Nose Cython
+
+After that, you can install a development version of Scipy, for example via::
+
+    $ python setup.py install
+
+The installation goes to the virtual environment.
 
 
 *Can I use a programming language other than Python to speed up my code?*
@@ -279,15 +290,6 @@ in SciPy is older, battle-tested code that was only wrapped in (but not
 specifically written for) Python/SciPy.  Therefore the basic advice is: use
 Cython.  If there's specific reasons why C/C++/Fortran should be preferred,
 please discuss those reasons first.
-
-
-*There's overlap between Trac and Github, which do I use for what?*
-
-Trac_ is the bug tracker, Github_ the code repository.  Before the SciPy code
-repository moved to Github, the preferred way to contribute code was to create
-a patch and attach it to a Trac ticket.  The overhead of this approach is much
-larger than sending a PR on Github, so please don't do this anymore.  Use Trac
-for bug reports, Github for patches.
 
 
 .. _scikit-learn: http://scikit-learn.org
@@ -310,9 +312,11 @@ for bug reports, Github for patches.
 
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
+.. _Github help pages: https://help.github.com/articles/set-up-git/
+
 .. _maintainers: https://github.com/scipy/scipy/blob/master/doc/MAINTAINERS.rst.txt
 
-.. _Trac: http://projects.scipy.org/scipy/timeline
+.. _issue list: https://github.com/scipy/scipy/issues
 
 .. _Github: https://github.com/scipy/scipy
 

@@ -70,6 +70,9 @@ extern int sgngam;
 #define ASYMP_FACTOR 1e6
 
 static double lbeta_asymp(double a, double b, int *sgn);
+static double lbeta_negint(int a, double b);
+static double beta_negint(int a, double b);
+double gammasgn(double x);
 
 double beta(a, b)
 double a, b;
@@ -80,13 +83,25 @@ double a, b;
     sign = 1;
 
     if (a <= 0.0) {
-	if (a == floor(a))
-	    goto over;
+	if (a == floor(a)) {
+            if (a == (int)a) {
+                return beta_negint((int)a, b);
+            }
+            else {
+                goto over;
+            }
+        }
     }
 
     if (b <= 0.0) {
-	if (b == floor(b))
-	    goto over;
+	if (b == floor(b)) {
+            if (b == (int)b) {
+                return beta_negint((int)b, a);
+            }
+            else {
+                goto over;
+            }
+        }
     }
 
     if (fabs(a) < fabs(b)) {
@@ -100,7 +115,7 @@ double a, b;
     }
 
     y = a + b;
-    if (fabs(y) > MAXGAM) {
+    if (fabs(y) > MAXGAM || fabs(a) > MAXGAM || fabs(b) > MAXGAM) {
 	y = lgam(y);
 	sign *= sgngam;		/* keep track of the sign */
 	y = lgam(b) - y;
@@ -143,13 +158,25 @@ double a, b;
     sign = 1;
 
     if (a <= 0.0) {
-	if (a == floor(a))
-	    goto over;
+	if (a == floor(a)) {
+            if (a == (int)a) {
+                return lbeta_negint((int)a, b);
+            }
+            else {
+                goto over;
+            }
+        }
     }
 
     if (b <= 0.0) {
-	if (b == floor(b))
-	    goto over;
+	if (b == floor(b)) {
+            if (b == (int)b) {
+                return lbeta_negint((int)b, a);
+            }
+            else {
+                goto over;
+            }
+        }
     }
 
     if (fabs(a) < fabs(b)) {
@@ -164,7 +191,7 @@ double a, b;
     }
 
     y = a + b;
-    if (fabs(y) > MAXGAM) {
+    if (fabs(y) > MAXGAM || fabs(a) > MAXGAM || fabs(b) > MAXGAM) {
 	y = lgam(y);
 	sign *= sgngam;		/* keep track of the sign */
 	y = lgam(b) - y;
@@ -217,4 +244,38 @@ static double lbeta_asymp(double a, double b, int *sgn)
     r += - b*b*(1-b)*(1-b)/(12*a*a*a);
 
     return r;
+}
+
+
+/*
+ * Special case for a negative integer argument
+ */
+
+static double beta_negint(int a, double b)
+{
+    int sgn;
+    if (b == (int)b && 1 - a - b > 0) {
+        sgn = ((int)b % 2 == 0) ? 1 : -1;
+        return sgn * beta(1 - a - b, b);
+    }
+    else {
+	mtherr("lbeta", OVERFLOW);
+        return sgn*NPY_INFINITY;
+    }
+}
+
+static double lbeta_negint(int a, double b)
+{
+    double r;
+    int sgn;
+    if (b == (int)b && 1 - a - b > 0) {
+        sgn = ((int)b % 2 == 0) ? 1 : -1;
+        r = lbeta(1 - a - b, b);
+        sgngam *= sgn;
+        return r;
+    }
+    else {
+	mtherr("lbeta", OVERFLOW);
+        return NPY_INFINITY;
+    }
 }

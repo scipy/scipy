@@ -32,10 +32,6 @@ the result tuple when the full_output argument is non-zero.
 #include "numpy/arrayobject.h"
 
 #if PY_VERSION_HEX >= 0x03000000
-    #define PyString_AsString PyBytes_AsString
-    #define PyString_FromString PyBytes_FromString
-    #define PyString_ConcatAndDel PyBytes_ConcatAndDel
-
     #define PyInt_AsLong PyLong_AsLong
 
     /* Return True only if the long fits in a C long */
@@ -164,7 +160,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   */
 
   PyArrayObject *sequence = NULL;
-  PyObject *arglist = NULL, *tmpobj = NULL;
+  PyObject *arglist = NULL;
   PyObject *arg1 = NULL, *str1 = NULL;
   PyObject *result = NULL;
   PyArrayObject *result_array = NULL;
@@ -190,14 +186,6 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
           arguments are in another passed variable.
    */
   if ((result = PyEval_CallObject(func, arglist))==NULL) {
-    PyErr_Print();
-    tmpobj = PyObject_GetAttrString(func, "func_name");
-    if (tmpobj == NULL) goto fail;
-    str1 = PyString_FromString("Error occurred while calling the Python function named ");
-    if (str1 == NULL) { Py_DECREF(tmpobj); goto fail;}
-    PyString_ConcatAndDel(&str1, tmpobj);
-    PyErr_SetString(error_obj, PyString_AsString(str1));
-    Py_DECREF(str1);
     goto fail;
   }
 

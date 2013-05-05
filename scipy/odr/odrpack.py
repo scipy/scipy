@@ -1,79 +1,6 @@
 """
 Python wrappers for Orthogonal Distance Regression (ODRPACK).
 
-Classes
-=======
-
-Data -- stores the data and weights to fit against
-
-RealData -- stores data with standard deviations and covariance matrices
-
-Model -- stores the model and its related information
-
-Output -- stores all of the output from an ODR run
-
-ODR -- collects all data and runs the fitting routine
-
-
-Exceptions
-==========
-`odr_error` :
-    error sometimes raised inside odr() and can be raised in the
-    fitting functions to tell ODRPACK to halt the procedure
-`odr_stop` :
-    error to raise in fitting functions to tell ODRPACK that the data or
-    parameters given are invalid
-
-Use
-===
-Basic use:
-
-1) Define the function you want to fit against.
-::
-
-  def f(B, x):
-      ''' Linear function y = m*x + b '''
-      return B[0]*x + B[1]
-
-      # B is a vector of the parameters.
-      # x is an array of the current x values.
-      # x is same format as the x passed to Data or RealData.
-
-      # Return an array in the same format as y passed to Data or RealData.
-
-2) Create a Model.
-::
-
-  linear = Model(f)
-
-3) Create a Data or RealData instance.
-::
-
-  mydata = Data(x, y, wd=1./power(sx,2), we=1./power(sy,2))
-
-or
-
-::
-
-  mydata = RealData(x, y, sx=sx, sy=sy)
-
-4) Instantiate ODR with your data, model and initial parameter estimate.
-::
-
-  myodr = ODR(mydata, linear, beta0=[1., 2.])
-
-5) Run the fit.
-::
-
-  myoutput = myodr.run()
-
-6) Examine output.
-::
-
-  myoutput.pprint()
-
-Read the docstrings and the accompanying tests for more advanced usage.
-
 Notes
 =====
 
@@ -117,11 +44,26 @@ from scipy.odr import __odrpack
 __all__ = ['odr', 'odr_error', 'odr_stop', 'Data', 'RealData', 'Model',
            'Output', 'ODR']
 
-
 odr = __odrpack.odr
-odr_error = __odrpack.odr_error
-odr_stop = __odrpack.odr_stop
 
+class odr_error(Exception):
+    """
+    Exception indicating an error in fitting.
+
+    This is raised by `scipy.odr` if an error occurs during fitting.
+    """
+    pass
+
+class odr_stop(Exception):
+    """
+    Exception stopping fitting.
+
+    You can raise this exception in your objective function to tell
+    `scipy.odr` to stop fitting.
+    """
+    pass
+
+__odrpack._set_exceptions(odr_error, odr_stop)
 
 def _conv(obj, dtype=None):
     """ Convert an object to the preferred form for input to the odr routine.
@@ -221,9 +163,7 @@ def _report_error(info):
 
 class Data(object):
     """
-    scipy.odr.Data(x, y=None, we=None, wd=None, fix=None, meta={})
-
-    The Data class stores the data to fit.
+    The data to fit.
 
     Parameters
     ----------
@@ -274,7 +214,7 @@ class Data(object):
         dimensions for all observations. A value of 0 fixes the observation,
         a value > 0 makes it free.
     meta : dict, optional
-        Freeform dictionary for metadata.
+        Free-form dictionary for metadata.
 
     Notes
     -----
@@ -311,15 +251,14 @@ class Data(object):
 
         Examples
         --------
-        data.set_meta(lab="Ph 7; Lab 26", title="Ag110 + Ag108 Decay")
+        >>> data.set_meta(lab="Ph 7; Lab 26", title="Ag110 + Ag108 Decay")
         """
 
         self.meta.update(kwds)
 
     def __getattr__(self, attr):
-        """ Dispatch aatribute access to the metadata dictionary.
+        """ Dispatch attribute access to the metadata dictionary.
         """
-
         if attr in self.meta:
             return self.meta[attr]
         else:
@@ -328,8 +267,8 @@ class Data(object):
 
 class RealData(Data):
     """
-    The RealData class stores the weightings as actual standard deviations
-    and/or covariances.
+    The data, with weightings as actual standard deviations and/or
+    covariances.
 
     Parameters
     ----------
@@ -355,20 +294,19 @@ class RealData(Data):
         `covy` is an array of covariance matrices and are converted to
         weights by performing a matrix inversion on each observation's
         covariance matrix.
-    fix : array_like
+    fix : array_like, optional
         The argument and member fix is the same as Data.fix and ODR.ifixx:
         It is an array of integers with the same shape as `x` that
         determines which input observations are treated as fixed. One can
         use a sequence of length m (the dimensionality of the input
         observations) to fix some dimensions for all observations. A value
         of 0 fixes the observation, a value > 0 makes it free.
-    meta : dict
-        Meta
+    meta : dict, optional
+        Free-form dictionary for metadata.
 
     Notes
     -----
-    The weights needed for ODRPACK are generated on-the-fly with
-    ``__getattr__`` trickery.
+    The weights `wd` and `we` are computed from provided values as follows:
 
     `sx` and `sy` are converted to weights by dividing 1.0 by their squares.
     For example, ``wd = 1./numpy.power(`sx`, 2)``.
@@ -498,34 +436,36 @@ class Model(object):
     return a NumPy array. The `estimate` object takes an instance of the
     Data class.
 
-    Here are the rules for the shapes of the argument and return arrays :
+    Here are the rules for the shapes of the argument and return
+    arrays of the callback functions:
 
-      x -- if the input data is single-dimensional, then x is rank-1
-        array; i.e. x = array([1, 2, 3, ...]); x.shape = (n,)
-        If the input data is multi-dimensional, then x is a rank-2 array;
-        i.e., x = array([[1, 2, ...], [2, 4, ...]]); x.shape = (m, n) In
-        all cases, it has the same shape as the input data array passed to
-        odr(). m is the dimensionality of the input data, n is the number
+    `x`
+        if the input data is single-dimensional, then `x` is rank-1
+        array; i.e. ``x = array([1, 2, 3, ...]); x.shape = (n,)``
+        If the input data is multi-dimensional, then `x` is a rank-2 array;
+        i.e., ``x = array([[1, 2, ...], [2, 4, ...]]); x.shape = (m, n)``.
+        In all cases, it has the same shape as the input data array passed to
+        `odr`. `m` is the dimensionality of the input data, `n` is the number
         of observations.
-
-      y -- if the response variable is single-dimensional, then y is a
-        rank-1 array, i.e., y = array([2, 4, ...]); y.shape = (n,)
-        If the response variable is multi-dimensional, then y is a rank-2
-        array, i.e.,  y = array([[2, 4, ...], [3, 6, ...]]); y.shape =
-        (q, n) where q is the dimensionality of the response variable.
-
-      beta -- rank-1 array of length p where p is the number of parameters;
-        i.e. beta = array([B_1, B_2, ..., B_p])
-
-      fjacb -- if the response variable is multi-dimensional, then the
-        return array's shape is (q, p, n) such that fjacb(x,beta)[l,k,i] =
-        @f_l(X,B)/@B_k evaluated at the i'th data point.  If q == 1, then
-        the return array is only rank-2 and with shape (p, n).
-
-      fjacd -- as with fjacb, only the return array's shape is (q, m, n)
-        such that fjacd(x,beta)[l,j,i] = @f_l(X,B)/@X_j at the i'th data
-        point.  If q == 1, then the return array's shape is (m, n). If
-        m == 1, the shape is (q, n). If m == q == 1, the shape is (n,).
+    `y`
+        if the response variable is single-dimensional, then `y` is a
+        rank-1 array, i.e., ``y = array([2, 4, ...]); y.shape = (n,)``.
+        If the response variable is multi-dimensional, then `y` is a rank-2
+        array, i.e., ``y = array([[2, 4, ...], [3, 6, ...]]); y.shape =
+        (q, n)`` where `q` is the dimensionality of the response variable.
+    `beta`
+        rank-1 array of length `p` where `p` is the number of parameters;
+        i.e. ``beta = array([B_1, B_2, ..., B_p])``
+    `fjacb`
+        if the response variable is multi-dimensional, then the
+        return array's shape is `(q, p, n)` such that ``fjacb(x,beta)[l,k,i] =
+        d f_l(X,B)/d B_k`` evaluated at the i'th data point.  If `q == 1`, then
+        the return array is only rank-2 and with shape `(p, n)`.
+    `fjacd`
+        as with fjacb, only the return array's shape is `(q, m, n)`
+        such that ``fjacd(x,beta)[l,j,i] = d f_l(X,B)/d X_j`` at the i'th data
+        point.  If `q == 1`, then the return array's shape is `(m, n)`. If
+        `m == 1`, the shape is (q, n). If `m == q == 1`, the shape is `(n,)`.
 
     """
 
@@ -569,9 +509,6 @@ class Output(object):
     """
     The Output class stores the output of an ODR run.
 
-    Takes one argument for initialization, the return value from the
-    function `odr`.
-
     Attributes
     ----------
     beta : ndarray
@@ -611,8 +548,9 @@ class Output(object):
 
     Notes
     -----
-    The attributes listed as "optional" above are only present if `odr` was run
-    with ``full_output=1``.
+    Takes one argument for initialization, the return value from the
+    function `odr`. The attributes listed as "optional" above are only
+    present if `odr` was run with ``full_output=1``.
 
     """
 
@@ -655,6 +593,9 @@ class ODR(object):
         instance of the Data class
     model : Model class instance
         instance of the Model class
+
+    Other Parameters
+    ----------------
     beta0 : array_like of rank-1
         a rank-1 sequence of initial parameter values. Optional if
         model provides an "estimate" function to estimate these values.
@@ -700,7 +641,7 @@ class ODR(object):
     partol : float, optional
         float specifying the tolerance for convergence based on the relative
         change in the estimated parameters. The default value is eps**(2/3) for
-        explicit models and eps**(1/3) for implicit models. partol must be less
+        explicit models and ``eps**(1/3)`` for implicit models. partol must be less
         than 1.
     maxit : int, optional
         integer specifying the maximum number of iterations to perform. For
@@ -708,16 +649,16 @@ class ODR(object):
         defaults to 50.  For restarts, maxit is the number of additional
         iterations to perform and defaults to 10.
     stpb : array_like, optional
-        sequence (len(stpb) == len(beta0)) of relative step sizes to compute
+        sequence (``len(stpb) == len(beta0)``) of relative step sizes to compute
         finite difference derivatives wrt the parameters.
     stpd : optional
-        array (stpd.shape == data.x.shape or stpd.shape == (m,)) of relative
+        array (``stpd.shape == data.x.shape`` or ``stpd.shape == (m,)``) of relative
         step sizes to compute finite difference derivatives wrt the input
         variable errors. If stpd is a rank-1 array with length m (the
         dimensionality of the input variable), then the values are broadcast to
         all observations.
     sclb : array_like, optional
-        sequence (len(stpb) == len(beta0)) of scaling factors for the
+        sequence (``len(stpb) == len(beta0)``) of scaling factors for the
         parameters.  The purpose of these scaling factors are to scale all of
         the parameters to around unity. Normally appropriate scaling factors
         are computed if this argument is not specified. Specify them yourself
@@ -733,8 +674,15 @@ class ODR(object):
     iwork : ndarray, optional
         array to hold the integer-valued working data for ODRPACK. When
         restarting, takes the value of self.output.iwork.
-    output : Output class instance
-        an instance if the Output class containing all of the returned
+
+    Attributes
+    ----------
+    data : Data
+        The data for this fit
+    model : Model
+        The model used in fit
+    output : Output
+        An instance if the Output class containing all of the returned
         data from an invocation of ODR.run() or ODR.restart()
 
     """

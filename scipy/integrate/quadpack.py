@@ -202,7 +202,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     wvar :
         variables for use with weighting functions.
     limlst :
-        Upper bound on the number of cylces (>=3) for use with a sinusoidal
+        Upper bound on the number of cycles (>=3) for use with a sinusoidal
         weighting and an infinite end-point.
     wopts :
         Optional input for reusing Chebyshev moments.
@@ -272,7 +272,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         explain = {1: "The maximum number of subdivisions (= limit) has been \n  achieved on this cycle.",
                    2: "The occurrence of roundoff error is detected and prevents\n  the tolerance imposed on this cycle from being achieved.",
                    3: "Extremely bad integrand behavior occurs at some points of\n  this cycle.",
-                   4: "The integral over this cycle does not converge (to within the required accuracy) due ot roundoff in the extrapolation procedure invoked on this cycle.  It is assumed that the result on this interval is the best which can be obtained.",
+                   4: "The integral over this cycle does not converge (to within the required accuracy) due to roundoff in the extrapolation procedure invoked on this cycle.  It is assumed that the result on this interval is the best which can be obtained.",
                    5: "The integral over this cycle is probably divergent or slowly convergent."}
 
     try:

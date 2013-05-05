@@ -93,6 +93,7 @@ Matrix Functions
    signm - Matrix sign
    sqrtm - Matrix square root
    funm - Evaluating an arbitrary matrix function
+   expm_frechet - Frechet derivative of the matrix exponential
 
 
 Matrix Equation Solvers

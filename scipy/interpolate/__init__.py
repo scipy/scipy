@@ -111,7 +111,9 @@ For unstructured data:
 
    BivariateSpline
    SmoothBivariateSpline
+   SmoothSphereBivariateSpline
    LSQBivariateSpline
+   LSQSphereBivariateSpline
 
 Low-level interface to FITPACK functions:
 

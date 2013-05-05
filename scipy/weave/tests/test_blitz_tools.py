@@ -6,9 +6,9 @@ import time
 from numpy import float32, float64, complex64, complex128, \
      zeros, random, array, sum, abs, allclose
 
-from numpy.testing import TestCase, dec, assert_equal, assert_
+from numpy.testing import TestCase, dec, assert_equal, assert_, assert_allclose
 
-from scipy.weave import blitz_tools
+from scipy.weave import blitz_tools, blitz
 from scipy.weave.ast_tools import harvest_variables
 from weave_test_utils import empty_temp_dir, cleanup_temp_dir, remove_whitespace
 
@@ -184,6 +184,22 @@ class TestBlitz(TestCase):
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,complex128)
 
+@dec.slow
+def test_blitz_bug():
+    """Assignment to arr[i:] used to fail inside blitz expressions."""
+    N = 4
+    expr_buggy = 'arr_blitz_buggy[{0}:] = arr[{0}:]'
+    expr_not_buggy = 'arr_blitz_not_buggy[{0}:{1}] = arr[{0}:]'
+    random.seed(7)
+    arr = random.randn(N)
+    sh = arr.shape[0]
+    for lim in [0, 1, 2]:
+        arr_blitz_buggy, arr_blitz_not_buggy, arr_np = zeros(N), zeros(N), zeros(N)
+        blitz(expr_buggy.format(lim))
+        blitz(expr_not_buggy.format(lim, 'sh'))
+        arr_np[lim:] = arr[lim:]
+        assert_allclose(arr_blitz_buggy, arr_np)
+        assert_allclose(arr_blitz_not_buggy, arr_np)
 
 if __name__ == "__main__":
     import nose
