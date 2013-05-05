@@ -2,10 +2,6 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import sys
-import re
-from distutils.dep_util import newer_group, newer
-from glob import glob
 from os.path import join
 
 from scipy._build_utils import needs_g77_abi_wrapper

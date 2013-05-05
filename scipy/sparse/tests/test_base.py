@@ -16,7 +16,6 @@ Run tests if sparse is not installed:
   python tests/test_sparse.py
 """
 
-import sys
 import warnings
 
 import numpy as np
