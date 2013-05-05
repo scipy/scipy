@@ -41,6 +41,12 @@ import subprocess
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
 
+# WindowsError is not defined on unix systems
+try:
+    WindowsError
+except NameError:
+    WindowsError = None
+
 #
 # Rules
 #
@@ -59,9 +65,19 @@ def process_pyx(fromfile, tofile):
         flags += ['--cplus']
 
     try:
-        r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile])
-        if r != 0:
-            raise Exception('Cython failed')
+        try:
+            r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile])
+            if r != 0:
+                raise Exception('Cython failed')
+        except OSError:
+            # There are ways of installing Cython that don't result in a cython
+            # executable on the path, see gh-2397.
+            r = subprocess.call([sys.executable, '-c',
+                                 'from Cython.Compiler.Main import '
+                                 'setuptools_main as main; main()'] + flags +
+                                 ["-o", tofile, fromfile])
+            if r != 0:
+                raise Exception('Cython failed')
     except OSError:
         raise OSError('Cython needs to be installed')
 
