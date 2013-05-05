@@ -269,9 +269,9 @@ command ``source scipy-dev/bin/activate``, and ``deactivate`` to exit from the
 virtual environment and back to your previous shell.  With scipy-dev
 activated, install first Scipy's dependencies::
 
-    $ easy_install Numpy Nose Cython
+    $ pip install Numpy Nose Cython
 
-After that, you can install a development version of Scipy, for example via
+After that, you can install a development version of Scipy, for example via::
 
     $ python setup.py install
 
