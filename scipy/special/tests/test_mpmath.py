@@ -262,6 +262,8 @@ def test_beta():
     b = np.r_[np.logspace(-200, 200, 4),
               np.logspace(-10, 10, 4),
               np.logspace(-1, 1, 4),
+              np.arange(-10, 11, 1),
+              np.arange(-10, 11, 1) + 0.5,
               -1, -2.3, -3, -100.3, -10003.4]
     a = b
 
@@ -275,7 +277,8 @@ def test_beta():
                           lambda a, b: float(mpmath.beta(a, b)),
                           ab,
                           vectorized=False,
-                          rtol=1e-10)
+                          rtol=1e-10,
+                          ignore_inf_sign=True)
 
         assert_func_equal(
             sc.betaln,
@@ -314,7 +317,8 @@ class Arg(object):
         n3 = max(2, n - n1 - n2)
 
         v1 = np.linspace(-1, 1, n1)
-        v2 = np.linspace(-10, 10, n2)
+        v2 = np.r_[np.linspace(-10, 10, max(0, n2-4)),
+                   -9, -5.5, 5.5, 9]
         if self.a >= 0 and self.b > 0:
             v3 = np.logspace(-30, np.log10(self.b), n3//2)
             v4 = np.logspace(-30, 5, n3//2)
@@ -370,7 +374,8 @@ class IntArg(object):
 
 class MpmathData(object):
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
-                 dps=None, prec=None, n=5000, rtol=1e-7, atol=1e-300):
+                 dps=None, prec=None, n=5000, rtol=1e-7, atol=1e-300,
+                 ignore_inf_sign=False):
         self.scipy_func = scipy_func
         self.mpmath_func = mpmath_func
         self.arg_spec = arg_spec
@@ -380,6 +385,7 @@ class MpmathData(object):
         self.rtol = rtol
         self.atol = atol
         self.is_complex = any([isinstance(arg, ComplexArg) for arg in self.arg_spec])
+        self.ignore_inf_sign = ignore_inf_sign
         if not name or name == '<lambda>':
             name = getattr(scipy_func, '__name__', None)
         if not name or name == '<lambda>':
@@ -433,7 +439,8 @@ class MpmathData(object):
                                       argarr,
                                       vectorized=False,
                                       rtol=self.rtol, atol=self.atol,
-                                      nan_ok=True)
+                                      nan_ok=True,
+                                      ignore_inf_sign=self.ignore_inf_sign)
                     break
                 except AssertionError:
                     if j >= len(dps_list)-1:
@@ -648,7 +655,8 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(sc.iv,
                             _exception_to_nan(lambda v, z: mpmath.besseli(v, z, **HYPERKW)),
                             [Arg(-1e100, 1e100), Arg()],
-                            n=1000)
+                            n=1000,
+                            atol=1e-270)
 
     def test_besseli_complex(self):
         assert_mpmath_equal(lambda v, z: sc.iv(v.real, z),
@@ -694,28 +702,42 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(-1e100, 1e100), Arg()],
                             n=1000)
 
+    @knownfailure_overridable("sin(pi k) != sin_pi(k) at negative half-integer orders")
     def test_bessely_complex(self):
         assert_mpmath_equal(lambda v, z: sc.yv(v.real, z),
                             lambda v, z: _exception_to_nan(mpmath.bessely)(v, z, **HYPERKW),
                             [Arg(), ComplexArg()],
                             n=2000)
 
-    @knownfailure_overridable()
     def test_beta(self):
+        def beta(a, b):
+            if a < -1e12 or b < -1e12:
+                # Function is defined here only at integers, but due
+                # to loss of precision this is numerically
+                # ill-defined. Don't compare values here.
+                return np.nan
+            return mpmath.beta(a, b)
         assert_mpmath_equal(sc.beta,
-                            mpmath.beta,
+                            beta,
                             [Arg(), Arg()],
-                            dps=400)
+                            dps=400,
+                            ignore_inf_sign=True)
 
     def test_betainc(self):
         assert_mpmath_equal(sc.betainc,
                             _exception_to_nan(lambda a, b, x: mpmath.betainc(a, b, 0, x, regularized=True)),
                             [Arg(), Arg(), Arg()])
 
-    @knownfailure_overridable()
     def test_binom(self):
+        def binomial(n, k):
+            if abs(k) > 1e8*(abs(n) + 1):
+                # The binomial is rapidly oscillating in this region,
+                # and the function is numerically ill-defined. Don't
+                # compare values here.
+                return np.nan
+            return mpmath.binomial(n, k)
         assert_mpmath_equal(sc.binom,
-                            mpmath.binomial,
+                            binomial,
                             [Arg(), Arg()],
                             dps=400)
 

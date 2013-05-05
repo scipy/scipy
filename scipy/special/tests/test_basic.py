@@ -70,7 +70,6 @@ class TestCephes(TestCase):
                           nk,
                           atol=1e-10, rtol=1e-10)
 
-    @dec.knownfailureif(True, "beta function overflow bug for a >> b")
     def test_binom_2(self):
         # Test branches in implementation
         np.random.seed(1234)

@@ -80,7 +80,7 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
                      result_columns=result_columns, result_func=result_func,
                      rtol=rtol, atol=atol, param_filter=param_filter,
                      knownfailure=knownfailure, nan_ok=nan_ok, vectorized=vectorized,
-                     ignore_inf_sign=False)
+                     ignore_inf_sign=ignore_inf_sign)
     fdata.check()
 
 class FuncData(object):
