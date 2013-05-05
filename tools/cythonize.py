@@ -69,32 +69,15 @@ def process_pyx(fromfile, tofile):
             r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile])
             if r != 0:
                 raise Exception('Cython failed')
-        except WindowsError:
-            # On Windows cython.exe may be missing if Cython was installed
-            # via distutils. Run the cython.py script instead.
-            r = subprocess.call([sys.executable,
-                                 os.path.join(os.path.dirname(sys.executable),
-                                 'Scripts', 'cython.py')] + flags +
-                                 ["-o", tofile, fromfile], shell=True)
+        except OSError:
+            # There are ways of installing Cython that don't result in a cython
+            # executable on the path, see gh-2397.
+            r = subprocess.call([sys.executable, '-c',
+                                 'from Cython.Compiler.Main import '
+                                 'setuptools_main as main; main()'] + flags +
+                                 ["-o", tofile, fromfile])
             if r != 0:
                 raise Exception('Cython failed')
-        except OSError:
-            # There are also other ways of installing Cython that don't result in a
-            # cython executable on the path, see gh-2397.  Try to use cython.py in
-            # site-packages.
-            cythonized = False
-            import site
-            for dirname in site.getsitepackages():
-                fname_cython = os.path.join(dirname, 'cython.py')
-                if os.path.exists(fname_cython):
-                    r = subprocess.call([sys.executable, fname_cython] + flags +
-                                        ["-o", tofile, fromfile], shell=True)
-                    if r != 0:
-                        raise Exception('Cython failed')
-                    cythonized = True
-                    break
-            if not cythonized:
-                raise OSError('Cython needs to be installed')
     except OSError:
         raise OSError('Cython needs to be installed')
 
