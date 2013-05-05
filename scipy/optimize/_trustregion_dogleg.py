@@ -7,13 +7,8 @@ from ._trustregion import _help_solve_subproblem, _minimize_trust_region
 
 __all__ = []
 
-def _minimize_dogleg(
-        fun,
-        x0,
-        args=(),
-        jac=None,
-        hess=None,
-        **trust_region_options):
+def _minimize_dogleg(fun, x0, args=(), jac=None, hess=None,
+                     **trust_region_options):
     """
     Minimization of scalar function of one or more variables using
     the dog-leg trust-region algorithm.
@@ -25,13 +20,9 @@ def _minimize_dogleg(
         raise ValueError('Jacobian is required for dogleg minimization')
     if hess is None:
         raise ValueError('Hessian is required for dogleg minimization')
-    return scipy.optimize._trustregion._minimize_trust_region(
-            fun, x0,
-            args=args,
-            jac=jac,
-            hess=hess,
-            solve_subproblem=_solve_subproblem_dogleg,
-            **trust_region_options)
+    return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
+                                  solve_subproblem=_solve_subproblem_dogleg,
+                                  **trust_region_options)
 
 
 def _solve_subproblem_dogleg(m, trust_radius):

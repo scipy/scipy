@@ -99,25 +99,11 @@ def _help_solve_subproblem(z, d, trust_radius):
     return ta, tb
 
 
-# This function provides an interface
-# modeled on scipy.optimize._minimize_newtoncg().
-def _minimize_trust_region(
-        fun,
-        x0,
-        args=(),
-        jac=None,
-        hess=None,
-        hessp=None,
-        solve_subproblem=None,
-        initial_trust_radius=1.0,
-        max_trust_radius=1000.0,
-        eta=0.15,
-        gtol=1e-4,
-        maxiter=None,
-        disp=False,
-        return_all=False,
-        callback=None,
-        **unknown_options):
+def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
+                           solve_subproblem=None, initial_trust_radius=1.0,
+                           max_trust_radius=1000.0, eta=0.15, gtol=1e-4,
+                           maxiter=None, disp=False, return_all=False,
+                           callback=None, **unknown_options):
     """
     Minimization of scalar function of one or more variables using a
     trust-region algorithm.
@@ -142,16 +128,14 @@ def _minimize_trust_region(
     """
     scipy.optimize.optimize._check_unknown_options(unknown_options)
     if jac is None:
-        raise ValueError(
-                'Jacobian is currently required for trust-region methods')
+        raise ValueError('Jacobian is currently required for trust-region '
+                         'methods')
     if hess is None and hessp is None:
-        raise ValueError(
-                'Either the Hessian or the Hessian-vector product '
-                'is currently required for trust-region methods')
+        raise ValueError('Either the Hessian or the Hessian-vector product '
+                         'is currently required for trust-region methods')
     if solve_subproblem is None:
-        raise ValueError(
-                'A subproblem solving strategy '
-                'is required for trust-region methods')
+        raise ValueError('A subproblem solving strategy is required for '
+                         'trust-region methods')
     if not (0 <= eta < 0.25):
         raise Exception('invalid acceptance stringency')
     if max_trust_radius <= 0:
@@ -159,9 +143,8 @@ def _minimize_trust_region(
     if initial_trust_radius <= 0:
         raise ValueError('the initial trust radius must be positive')
     if initial_trust_radius >= max_trust_radius:
-        raise ValueError(
-                'the initial trust radius '
-                'must be less than the max trust radius')
+        raise ValueError('the initial trust radius must be less than the '
+                         'max trust radius')
 
     # force the initial guess into a nice format
     x0 = np.asarray(x0).flatten()

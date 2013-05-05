@@ -9,14 +9,8 @@ from ._trustregion import _help_solve_subproblem, _minimize_trust_region
 
 __all__ = []
 
-def _minimize_trust_ncg(
-        fun,
-        x0,
-        args=(),
-        jac=None,
-        hess=None,
-        hessp=None,
-        **trust_region_options):
+def _minimize_trust_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
+                        **trust_region_options):
     """
     Minimization of scalar function of one or more variables using
     the Newton conjugate gradient trust-region algorithm.
@@ -25,20 +19,15 @@ def _minimize_trust_ncg(
     It is not supposed to be called directly.
     """
     if jac is None:
-        raise ValueError(
-                'Jacobian is required for Newton-CG trust-region minimization')
+        raise ValueError('Jacobian is required for Newton-CG trust-region '
+                         'minimization')
     if hess is None and hessp is None:
-        raise ValueError(
-                'Either the Hessian or the Hessian-vector product '
-                'is required for Newton-CG trust-region minimization')
-    return scipy.optimize._trustregion._minimize_trust_region(
-            fun, x0,
-            args=args,
-            jac=jac,
-            hess=hess,
-            hessp=hessp,
-            solve_subproblem=_solve_subproblem_cg_steihaug,
-            **trust_region_options)
+        raise ValueError('Either the Hessian or the Hessian-vector product '
+                         'is required for Newton-CG trust-region minimization')
+    return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
+                                  hessp=hessp,
+                                  solve_subproblem=_solve_subproblem_cg_steihaug,
+                                  **trust_region_options)
 
 
 def _solve_subproblem_cg_steihaug(m, trust_radius, tolerance=None):

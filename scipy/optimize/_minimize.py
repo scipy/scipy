@@ -385,10 +385,10 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
                                constraints, **options)
     elif meth == 'dogleg':
         return _minimize_dogleg(fun, x0, args, jac, hess,
-                callback=callback, **options)
+                                callback=callback, **options)
     elif meth == 'trust-ncg':
         return _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
-                callback=callback, **options)
+                                   callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
