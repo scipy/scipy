@@ -3487,9 +3487,9 @@ def chisquare(f_obs, f_exp=None, ddof=0):
     The default degrees of freedom, k-1, are for the case when no parameters
     of the distribution are estimated. If p parameters are estimated by
     efficient maximum likelihood then the correct degrees of freedom are
-    k-1-p. If the parameters are estimated in a different way, then then
-    the dof can be between k-1-p and k-1. However, it is also possible that
-    the asymptotic distributions is not a chisquare, in which case this
+    k-1-p. If the parameters are estimated in a different way, then the
+    dof can be between k-1-p and k-1. However, it is also possible that
+    the asymptotic distribution is not a chisquare, in which case this
     test is not appropriate.
 
     References
