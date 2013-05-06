@@ -1,6 +1,13 @@
 """Compute the action of the matrix exponential.
 """
 
+#XXX This function is useful in its present form, but the publication from
+#XXX which it was implemented offers further enhancements which
+#XXX have not yet been implemented
+#XXX 1) Implement balancing.
+#XXX 2) Implement evaluation at linspace time points using algorithm (5.2).
+
+
 import math
 import functools
 
@@ -99,13 +106,15 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
         raise ValueError('the matrices A and B have incompatible shapes')
+    if B.ndim not in (1, 2):
+        raise ValueError('expected B to be like a matrix or a vector')
     n = A.shape[0]
-    n0 = B.shape[1]
+    n0 = B.shape[-1]
     u_d = 2**-53
     tol = u_d
-    mu = np.trace(A) / float(n)
+    mu = _trace(A) / float(n)
     A = A - mu * np.identity(n)
-    A_1_norm = np.linalg.norm(A, 1)
+    A_1_norm = _exact_1_norm(A)
     if t*A_1_norm == 0:
         m_star, s = 0, 1
     else:
@@ -115,17 +124,45 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
     F = B
     eta = math.exp(t*mu / float(s))
     for i in range(s):
-        c1 = np.linalg.norm(B, np.inf)
+        c1 = _exact_inf_norm(B)
         for j in range(m_star):
-            B = t * np.dot(A, B) / float(s*(j+1))
-            c2 = np.linalg.norm(B, np.inf)
+            print(type(t))
+            print(type(s))
+            print(type(j))
+            print(type(A), type(B))
+            print()
+            coeff = t / float(s*(j+1))
+            B = coeff * np.dot(A, B)
+            c2 = _exact_inf_norm(B)
             F = F + B
-            if c1 + c2 <= tol * np.linalg.norm(F, np.inf):
+            if c1 + c2 <= tol * _exact_inf_norm(F):
                 break
             c1 = c2
         F = eta * F
         B = F
     return F
+
+
+def _exact_inf_norm(A):
+    #XXX change this when the inf-norm of a sparse matrix is available
+    if scipy.sparse.isspmatrix(A):
+        A = A.todense()
+    else:
+        return np.linalg.norm(A, np.inf)
+
+
+def _exact_1_norm(A):
+    #XXX change this when the 1-norm of a sparse matrix is available
+    if scipy.sparse.isspmatrix(A):
+        A = A.todense()
+    return np.linalg.norm(A, 1)
+
+
+def _trace(A):
+    #XXX change this when the trace of a sparse matrix is available
+    if scipy.sparse.isspmatrix(A):
+        A = A.todense()
+    return np.trace(A)
 
 
 # This table helps to compute bounds.
@@ -284,7 +321,7 @@ class LazyOperatorNormInfo:
         Compute the exact 1-norm.
         """
         if self._A_1_norm is None:
-            self._A_1_norm = np.linalg.norm(self._A, 1)
+            self._A_1_norm = _exact_1_norm(self._A)
         return self._A_1_norm
 
     def d(self, p):
