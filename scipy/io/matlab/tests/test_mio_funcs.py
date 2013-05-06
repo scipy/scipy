@@ -56,7 +56,7 @@ def read_workspace_vars(fname):
     # Guess byte order.
     mi = rdr.mat_stream.read(2)
     rdr.byte_order = mi == b'IM' and '<' or '>'
-    rdr.mat_stream.read(4) # presumably byte padding
+    rdr.mat_stream.read(4)  # presumably byte padding
     mdict = read_minimat_vars(rdr)
     fp.close()
     return mdict

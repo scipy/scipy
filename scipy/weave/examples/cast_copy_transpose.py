@@ -77,7 +77,7 @@ def _inplace_transpose(a_2d):
                         type_converters=cblitz,
                         compiler='gcc',
                         extra_compile_args=['-funroll-all-loops'],
-                        verbose=2 )
+                        verbose=2)
     return a_2d
     #assert(len(shape(a_2d)) == 2)
     #type = a_2d.typecode()

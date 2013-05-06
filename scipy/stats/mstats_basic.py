@@ -4,9 +4,9 @@ An extension of scipy.stats.stats to support masked arrays
 :author: Pierre GF Gerard-Marchant
 :contact: pierregm_at_uga_edu
 """
-#TODO : f_value_wilks_lambda looks botched... what are dfnum & dfden for ?
-#TODO : ttest_reel looks botched:  what are x1,x2,v1,v2 for ?
-#TODO : reimplement ksonesamp
+# TODO : f_value_wilks_lambda looks botched... what are dfnum & dfden for ?
+# TODO : ttest_reel looks botched:  what are x1,x2,v1,v2 for ?
+# TODO : reimplement ksonesamp
 
 from __future__ import division, print_function, absolute_import
 
@@ -50,11 +50,11 @@ import itertools
 import warnings
 
 
-#import scipy.stats as stats
+# import scipy.stats as stats
 from . import stats
 import scipy.special as special
 import scipy.misc as misc
-#import scipy.stats.futil as futil
+# import scipy.stats.futil as futil
 from . import futil
 
 genmissingvaldoc = """
@@ -661,8 +661,8 @@ def linregress(*args):
     else:
         r = Sxy / r_den
         if (r > 1.0):
-            r = 1.0 # from numerical error
-    #z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
+            r = 1.0  # from numerical error
+    # z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
     df = n-2
     t = r * ma.sqrt(df/(1.0-r*r))
     prob = betai(0.5*df,0.5,df/(df+t*t))
@@ -789,7 +789,7 @@ def ttest_rel(a,b,axis=None):
     df = (n-1.0)
     d = (a-b).astype('d')
     denom = ma.sqrt((n*ma.add.reduce(d*d,axis) - ma.add.reduce(d,axis)**2) / df)
-    #zerodivproblem = denom == 0
+    # zerodivproblem = denom == 0
     t = ma.add.reduce(d, axis) / denom
     t = ma.filled(t, 1)
     probs = betai(0.5*df,0.5,df/(df+t*t)).reshape(t.shape).squeeze()
@@ -1372,14 +1372,14 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
-tmin.__doc__  = stats.tmin.__doc__
+tmin.__doc__ = stats.tmin.__doc__
 
 
 def tmax(a, upperlimit, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
-tmax.__doc__  = stats.tmax.__doc__
+tmax.__doc__ = stats.tmax.__doc__
 
 
 def tsem(a, limits=None, inclusive=(True,True)):
@@ -1641,8 +1641,8 @@ def skewtest(a, axis=0):
         warnings.warn(
             "skewtest only valid for n>=8 ... continuing anyway, n=%i" %
             np.min(n))
-    y = b2 * ma.sqrt(((n+1)*(n+3)) / (6.0*(n-2)) )
-    beta2 = ( 3.0*(n*n+27*n-70)*(n+1)*(n+3) ) / ( (n-2.0)*(n+5)*(n+7)*(n+9) )
+    y = b2 * ma.sqrt(((n+1)*(n+3)) / (6.0*(n-2)))
+    beta2 = (3.0*(n*n+27*n-70)*(n+1)*(n+3)) / ((n-2.0)*(n+5)*(n+7)*(n+9))
     W2 = -1 + ma.sqrt(2*(beta2-1))
     delta = 1/ma.sqrt(0.5*ma.log(W2))
     alpha = ma.sqrt(2.0/(W2-1))
@@ -1670,7 +1670,7 @@ def kurtosistest(a, axis=0):
     denom = 1 + x*ma.sqrt(2/(A-4.0))
     denom[denom < 0] = masked
     term2 = ma.power((1-2.0/A)/denom,1/3.0)
-    Z = ( term1 - term2 ) / np.sqrt(2/(9.0*A))
+    Z = (term1 - term2) / np.sqrt(2/(9.0*A))
     return Z, (1.0-stats.zprob(Z))*2
 kurtosistest.__doc__ = stats.kurtosistest.__doc__
 
@@ -1989,7 +1989,7 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
         raise NotImplementedError("Not implemented when the inputs "
                                   "have missing data")
     lmbda = np.linalg.det(EF) / np.linalg.det(ER)
-    q = ma.sqrt( ((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5) )
+    q = ma.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5))
     q = ma.filled(q, 1)
     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)

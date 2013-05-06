@@ -42,5 +42,5 @@ def bench_run():
                 compression))
 
 
-if __name__ == '__main__' :
+if __name__ == '__main__':
     bench_run()

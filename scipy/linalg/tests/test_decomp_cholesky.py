@@ -114,13 +114,13 @@ class TestCholeskyBanded(TestCase):
 
     def test_upper_complex(self):
         # Hermitian positive definite banded matrix `a`
-        a = array([[4.0, 1.0,  0.0,  0.0],
-                    [1.0, 4.0,  0.5,  0.0],
-                    [0.0, 0.5,  4.0, -0.2j],
-                    [0.0, 0.0,  0.2j, 4.0]])
+        a = array([[4.0, 1.0, 0.0, 0.0],
+                    [1.0, 4.0, 0.5, 0.0],
+                    [0.0, 0.5, 4.0, -0.2j],
+                    [0.0, 0.0, 0.2j, 4.0]])
         # Banded storage form of `a`.
         ab = array([[-1.0, 1.0, 0.5, -0.2j],
-                     [4.0, 4.0, 4.0,  4.0]])
+                     [4.0, 4.0, 4.0, 4.0]])
         c = cholesky_banded(ab, lower=False)
         ufac = zeros_like(a)
         ufac[list(range(4)),list(range(4))] = c[-1]
@@ -152,12 +152,12 @@ class TestCholeskyBanded(TestCase):
 
     def test_lower_complex(self):
         # Hermitian positive definite banded matrix `a`
-        a = array([[4.0, 1.0,  0.0,  0.0],
-                    [1.0, 4.0,  0.5,  0.0],
-                    [0.0, 0.5,  4.0, -0.2j],
-                    [0.0, 0.0,  0.2j, 4.0]])
+        a = array([[4.0, 1.0, 0.0, 0.0],
+                    [1.0, 4.0, 0.5, 0.0],
+                    [0.0, 0.5, 4.0, -0.2j],
+                    [0.0, 0.0, 0.2j, 4.0]])
         # Banded storage form of `a`.
-        ab = array([[4.0, 4.0, 4.0,  4.0],
+        ab = array([[4.0, 4.0, 4.0, 4.0],
                     [1.0, 0.5, 0.2j, -1.0]])
         c = cholesky_banded(ab, lower=True)
         lfac = zeros_like(a)
@@ -173,14 +173,18 @@ class TestCholeskyBanded(TestCase):
 class TestOverwrite(object):
     def test_cholesky(self):
         assert_no_overwrite(cholesky, [(3,3)])
+
     def test_cho_factor(self):
         assert_no_overwrite(cho_factor, [(3,3)])
+
     def test_cho_solve(self):
         x = array([[2,-1,0], [-1,2,-1], [0,-1,2]])
         xcho = cho_factor(x)
         assert_no_overwrite(lambda b: cho_solve(xcho, b), [(3,)])
+
     def test_cholesky_banded(self):
         assert_no_overwrite(cholesky_banded, [(2,3)])
+
     def test_cho_solve_banded(self):
         x = array([[0, -1, -1], [2, 2, 2]])
         xcho = cholesky_banded(x)

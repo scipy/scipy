@@ -94,11 +94,11 @@ def ast_to_blitz_expr(ast_seq):
     # be included in the generated code.
     # These could all alternatively be done to the ast in
     # build_slice_atom()
-    expr = expr.replace('slice(_beg,_end)', '_all' )
-    expr = expr.replace('slice', 'blitz::Range' )
+    expr = expr.replace('slice(_beg,_end)', '_all')
+    expr = expr.replace('slice', 'blitz::Range')
     expr = expr.replace('[','(')
-    expr = expr.replace(']', ')' )
-    expr = expr.replace('_stp', '1' )
+    expr = expr.replace(']', ')')
+    expr = expr.replace('_stp', '1')
 
     # Instead of blitz::fromStart and blitz::toEnd.  This requires
     # the following in the generated code.

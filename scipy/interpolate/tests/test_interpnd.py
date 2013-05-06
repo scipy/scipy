@@ -116,10 +116,10 @@ class TestEstimateGradients2DGlobal(object):
         # Should be exact for linear functions, independent of triangulation
 
         funcs = [
-            (lambda x, y: 0*x + 1,            (0, 0)),
-            (lambda x, y: 0 + x,              (1, 0)),
-            (lambda x, y: -2 + y,             (0, 1)),
-            (lambda x, y: 3 + 3*x + 14.15*y,  (3, 14.15))
+            (lambda x, y: 0*x + 1, (0, 0)),
+            (lambda x, y: 0 + x, (1, 0)),
+            (lambda x, y: -2 + y, (0, 1)),
+            (lambda x, y: 3 + 3*x + 14.15*y, (3, 14.15))
         ]
 
         for j, (func, grad) in enumerate(funcs):
@@ -214,7 +214,7 @@ class TestCloughTocher2DInterpolator(object):
             lambda x, y: np.cos(2*np.pi*x)*np.sin(2*np.pi*y)
         ]
 
-        np.random.seed(4321) # use a different seed than the check!
+        np.random.seed(4321)  # use a different seed than the check!
         grid = np.r_[np.array([(0,0), (0,1), (1,0), (1,1)], dtype=float),
                      np.random.rand(30*30, 2)]
 

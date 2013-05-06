@@ -20,7 +20,7 @@ def build_fibonacci():
     """ Builds an extension module with fibonacci calculators.
     """
     mod = ext_tools.ext_module('fibonacci_ext')
-    a = 1 # this is effectively a type declaration
+    a = 1  # this is effectively a type declaration
 
     # recursive fibonacci in C
     fib_code = """
@@ -111,7 +111,7 @@ def recurse_compare(n):
     py = t2 - t1
     print(' speed in python:', t2 - t1)
 
-    #load into cache
+    # load into cache
     c_fib1(i)
     t1 = time.time()
     for i in range(n):
@@ -131,7 +131,7 @@ def loop_compare(m,n):
     py = (t2-t1)
     print(' speed in python:', (t2 - t1)/m)
 
-    #load into cache
+    # load into cache
     c_fib2(i)
     t1 = time.time()
     for i in range(m):

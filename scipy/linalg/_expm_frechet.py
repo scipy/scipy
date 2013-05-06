@@ -170,6 +170,7 @@ def _diff_pade3(A, E, ident):
     Lv = b[2]*M2
     return U, V, Lu, Lv
 
+
 def _diff_pade5(A, E, ident):
     b = (30240., 15120., 3360., 420., 30., 1.)
     A2 = A.dot(A)
@@ -182,6 +183,7 @@ def _diff_pade5(A, E, ident):
             E.dot(b[5]*A4 + b[3]*A2 + b[1]*ident))
     Lv = b[4]*M4 + b[2]*M2
     return U, V, Lu, Lv
+
 
 def _diff_pade7(A, E, ident):
     b = (17297280., 8648640., 1995840., 277200., 25200., 1512., 56., 1.)
@@ -197,6 +199,7 @@ def _diff_pade7(A, E, ident):
             E.dot(b[7]*A6 + b[5]*A4 + b[3]*A2 + b[1]*ident))
     Lv = b[6]*M6 + b[4]*M4 + b[2]*M2
     return U, V, Lu, Lv
+
 
 def _diff_pade9(A, E, ident):
     b = (17643225600., 8821612800., 2075673600., 302702400., 30270240.,
@@ -271,4 +274,3 @@ def expm_frechet_algo_64(A, E):
         L = np.dot(R, L) + np.dot(L, R)
         R = np.dot(R, R)
     return R, L
-

@@ -117,14 +117,14 @@ class csr_matrix(_cs_matrix):
         from .lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
 
-        self.sort_indices() # lil_matrix needs sorted column indices
+        self.sort_indices()  # lil_matrix needs sorted column indices
 
         ptr,ind,dat = self.indptr,self.indices,self.data
-        rows, data  = lil.rows, lil.data
+        rows, data = lil.rows, lil.data
 
         for n in xrange(self.shape[0]):
             start = ptr[n]
-            end   = ptr[n+1]
+            end = ptr[n+1]
             rows[n] = ind[start:end].tolist()
             data[n] = dat[start:end].tolist()
 
@@ -137,9 +137,9 @@ class csr_matrix(_cs_matrix):
             return self
 
     def tocsc(self):
-        indptr  = np.empty(self.shape[1] + 1, dtype=np.intc)
+        indptr = np.empty(self.shape[1] + 1, dtype=np.intc)
         indices = np.empty(self.nnz, dtype=np.intc)
-        data    = np.empty(self.nnz, dtype=upcast(self.dtype))
+        data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
         csr_tocsc(self.shape[0], self.shape[1],
                   self.indptr, self.indices, self.data,
@@ -159,7 +159,7 @@ class csr_matrix(_cs_matrix):
 
         elif blocksize == (1,1):
             arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)
-            return bsr_matrix(arg1, shape=self.shape, copy=copy )
+            return bsr_matrix(arg1, shape=self.shape, copy=copy)
 
         else:
             R,C = blocksize
@@ -170,12 +170,12 @@ class csr_matrix(_cs_matrix):
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 
-            indptr  = np.empty(M//R + 1,    dtype=np.intc)
-            indices = np.empty(blks,       dtype=np.intc)
-            data    = np.zeros((blks,R,C), dtype=self.dtype)
+            indptr = np.empty(M//R + 1, dtype=np.intc)
+            indices = np.empty(blks, dtype=np.intc)
+            data = np.zeros((blks,R,C), dtype=self.dtype)
 
             csr_tobsr(M, N, R, C, self.indptr, self.indices, self.data,
-                    indptr, indices, data.ravel() )
+                    indptr, indices, data.ravel())
 
             return bsr_matrix((data,indices,indptr), shape=self.shape)
 
@@ -194,6 +194,7 @@ class csr_matrix(_cs_matrix):
                 raise IndexError('invalid index')
             else:
                 return x
+
         def check_bounds(indices,N):
             max_indx = indices.max()
             if max_indx >= N:
@@ -217,9 +218,9 @@ class csr_matrix(_cs_matrix):
                 indices = indices.copy()
                 indices[indices < 0] += N
 
-            indptr  = np.arange(len(indices) + 1, dtype=np.intc)
-            data    = np.ones(len(indices), dtype=self.dtype)
-            shape   = (len(indices),N)
+            indptr = np.arange(len(indices) + 1, dtype=np.intc)
+            data = np.ones(len(indices), dtype=self.dtype)
+            shape = (len(indices),N)
 
             return csr_matrix((data,indices,indptr), shape=shape)
 
@@ -230,7 +231,7 @@ class csr_matrix(_cs_matrix):
             if isintlike(row):
                 #[1,??]
                 if isintlike(col):
-                    return self._get_single_element(row, col) # [i,j]
+                    return self._get_single_element(row, col)  # [i,j]
                 elif isinstance(col, slice):
                     return self._get_row_slice(row, col)      # [i,1:2]
                 else:
@@ -266,8 +267,8 @@ class csr_matrix(_cs_matrix):
                         csr_sample_values(self.shape[0], self.shape[1],
                                           self.indptr, self.indices, self.data,
                                           num_samples, row, col, val)
-                        #val = []
-                        #for i,j in zip(row,col):
+                        # val = []
+                        # for i,j in zip(row,col):
                         #    val.append(self._get_single_element(i,j))
                         return np.asmatrix(val)
 
@@ -295,10 +296,10 @@ class csr_matrix(_cs_matrix):
         if not (0 <= row < M) or not (0 <= col < N):
             raise IndexError("index out of bounds")
 
-        #TODO make use of sorted indices (if present)
+        # TODO make use of sorted indices (if present)
 
         start = self.indptr[row]
-        end   = self.indptr[row+1]
+        end = self.indptr[row+1]
         indxs = np.where(col == self.indices[start:end])[0]
 
         num_matches = len(indxs)
@@ -309,7 +310,7 @@ class csr_matrix(_cs_matrix):
         elif num_matches == 1:
             return self.data[start:end][indxs[0]]
         else:
-            raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col) )
+            raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col))
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
@@ -330,7 +331,7 @@ class csr_matrix(_cs_matrix):
             i += self.shape[0]
 
         if i < 0 or i >= self.shape[0]:
-            raise IndexError('index (%d) out of range' % i )
+            raise IndexError('index (%d) out of range' % i)
 
         start, stop, stride = cslice.indices(self.shape[1])
 
@@ -366,13 +367,13 @@ class csr_matrix(_cs_matrix):
 
         return row_slice
 
-    def _get_submatrix( self, row_slice, col_slice ):
+    def _get_submatrix(self, row_slice, col_slice):
         """Return a submatrix of this matrix (new matrix is created)."""
 
         M,N = self.shape
 
-        def process_slice( sl, num ):
-            if isinstance( sl, slice ):
+        def process_slice(sl, num):
+            if isinstance(sl, slice):
                 if sl.step not in (1, None):
                     raise ValueError('slicing with step != 1 not supported')
                 i0, i1 = sl.start, sl.stop
@@ -388,7 +389,7 @@ class csr_matrix(_cs_matrix):
 
                 return i0, i1
 
-            elif isintlike( sl ):
+            elif isintlike(sl):
                 if sl < 0:
                     sl += num
 
@@ -397,24 +398,24 @@ class csr_matrix(_cs_matrix):
             else:
                 raise TypeError('expected slice or scalar')
 
-        def check_bounds( i0, i1, num ):
+        def check_bounds(i0, i1, num):
             if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 < i1):
                 raise IndexError(
                       "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %
-                      (i0, num, i1, num, i0, i1) )
+                      (i0, num, i1, num, i0, i1))
 
-        i0, i1 = process_slice( row_slice, M )
-        j0, j1 = process_slice( col_slice, N )
-        check_bounds( i0, i1, M )
-        check_bounds( j0, j1, N )
+        i0, i1 = process_slice(row_slice, M)
+        j0, j1 = process_slice(col_slice, N)
+        check_bounds(i0, i1, M)
+        check_bounds(j0, j1, N)
 
-        indptr, indices, data = get_csr_submatrix( M, N,
+        indptr, indices, data = get_csr_submatrix(M, N,
                 self.indptr, self.indices, self.data,
-                int(i0), int(i1), int(j0), int(j1) )
+                int(i0), int(i1), int(j0), int(j1))
 
         shape = (i1 - i0, j1 - j0)
 
-        return self.__class__( (data,indices,indptr), shape=shape )
+        return self.__class__((data,indices,indptr), shape=shape)
 
 
 def isspmatrix_csr(x):

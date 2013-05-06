@@ -73,17 +73,17 @@ class vtk_converter(common_base_converter):
         self.type_name = self.class_name
         self.c_type = self.class_name + "*"
         self.return_type = self.c_type
-        self.to_c_return = None # not used
-        self.check_func = None # not used
+        self.to_c_return = None  # not used
+        self.check_func = None  # not used
         hdr = self.class_name + ".h"
         # Remember that you need both the quotes!
         self.headers.extend(['"vtkPythonUtil.h"', '"vtkObject.h"',
                              '"%s"' % hdr])
-        #self.include_dirs.extend(vtk_inc)
-        #self.define_macros.append(('SOME_VARIABLE', '1'))
-        #self.library_dirs.extend(vtk_lib)
+        # self.include_dirs.extend(vtk_inc)
+        # self.define_macros.append(('SOME_VARIABLE', '1'))
+        # self.library_dirs.extend(vtk_lib)
         self.libraries.extend(['vtkCommonPython', 'vtkCommon'])
-        #self.support_code.append(common_info.swig_support_code)
+        # self.support_code.append(common_info.swig_support_code)
 
     def type_match(self,value):
         is_match = 0
@@ -118,7 +118,7 @@ class vtk_converter(common_base_converter):
         return new_spec
 
     def __cmp__(self,other):
-        #only works for equal
+        # only works for equal
         res = -1
         try:
             res = cmp(self.name,other.name) or \

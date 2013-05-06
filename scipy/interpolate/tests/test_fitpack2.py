@@ -74,7 +74,7 @@ class TestUnivariateSpline(TestCase):
              6.07746770e+02, 4.26864807e+02, 4.89314737e+02, 6.88875973e+02,
              1.00000000e+12]
         spl = UnivariateSpline(x=x, y=y, w=w, s=None)
-        desired = array([ 0.35100374,  0.51715855,  0.87789547,  0.98719344])
+        desired = array([0.35100374, 0.51715855, 0.87789547, 0.98719344])
         assert_allclose(spl([0.1, 0.5, 0.9, 0.99]), desired, atol=5e-4)
 
 
@@ -196,7 +196,7 @@ class TestSmoothBivariateSpline(TestCase):
 
         lut2 = SmoothBivariateSpline(x, y, z, kx=2, ky=2, s=0)
         assert_almost_equal(lut2.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz,
-                            decimal=0) # the quadratures give 23.75 and 23.85
+                            decimal=0)  # the quadratures give 23.75 and 23.85
 
         tz = lut(tx[:-1], ty[:-1])
         trpz = .25*(diff(tx[:-1])[:,None]*diff(ty[:-1])[None,:]

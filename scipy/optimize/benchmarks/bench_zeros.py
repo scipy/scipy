@@ -21,10 +21,10 @@ class BenchZeros(TestCase):
 
         print('TESTING SPEED\n')
         print('times in seconds for %d iterations \n' % repeat)
-        for i in range(len(functions)) :
+        for i in range(len(functions)):
             print('function %s\n' % fstrings[i])
             func = functions[i]
-            for j in range(len(methods)) :
+            for j in range(len(methods)):
                 meth = methods[j]
                 try:
                     t = measure("meth(func,a,b)",repeat)
@@ -34,5 +34,5 @@ class BenchZeros(TestCase):
                     print('%s : %5.3f' % (mstrings[j],t))
             print('\n\n')
 
-if __name__ == '__main__' :
+if __name__ == '__main__':
     run_module_suite()

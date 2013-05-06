@@ -322,7 +322,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
 
     if np.isrealobj(x) and return_onesided:
         outshape = list(x.shape)
-        if nfft % 2 == 0: # even
+        if nfft % 2 == 0:  # even
             outshape[-1] = nfft // 2 + 1
             Pxx = np.empty(outshape, x.dtype)
             for k, ind in enumerate(indices):
@@ -341,7 +341,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
                     Pxx[..., (0,-1)] += xft[..., (0,-1)]**2 / (k+1.0)
                     Pxx[..., 1:-1] += (xft[..., 1:-1:2]**2 + xft[..., 2::2]**2) \
                                     / (k+1.0)
-        else: # odd
+        else:  # odd
             outshape[-1] = (nfft+1) // 2
             Pxx = np.empty(outshape, x.dtype)
             for k, ind in enumerate(indices):

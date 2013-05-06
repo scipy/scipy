@@ -46,6 +46,7 @@ def configuration(parent_package='',top_path=None):
                          depends=depends,
                          extra_info=blas_opt
                          )
+
     # cblas:
     def get_cblas_source(ext, build_dir):
         name = ext.name.split('.')[-1]

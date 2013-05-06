@@ -123,27 +123,27 @@ CLN = (token.COLON,':')
 CLN2 = (symbol.sliceop, (token.COLON, ':'))
 CLN2_STEP = (symbol.sliceop, (token.COLON, ':'),['step'])
 # [begin:end:step]
-slice_patterns.append((symbol.subscript, ['begin'],CLN,['end'], CLN2_STEP ))
+slice_patterns.append((symbol.subscript, ['begin'],CLN,['end'], CLN2_STEP))
 # [:end:step]
-slice_patterns.append((symbol.subscript,           CLN,['end'], CLN2_STEP ))
+slice_patterns.append((symbol.subscript, CLN,['end'], CLN2_STEP))
 # [begin::step]
-slice_patterns.append((symbol.subscript, ['begin'],CLN,          CLN2_STEP ))
+slice_patterns.append((symbol.subscript, ['begin'],CLN, CLN2_STEP))
 # [begin:end:]
-slice_patterns.append((symbol.subscript, ['begin'],CLN,['end'], CLN2      ))
+slice_patterns.append((symbol.subscript, ['begin'],CLN,['end'], CLN2))
 # [begin::]
-slice_patterns.append((symbol.subscript, ['begin'],CLN,          CLN2      ))
+slice_patterns.append((symbol.subscript, ['begin'],CLN, CLN2))
 # [:end:]
-slice_patterns.append((symbol.subscript,           CLN,['end'], CLN2,     ))
+slice_patterns.append((symbol.subscript, CLN,['end'], CLN2,))
 # [::step]
-slice_patterns.append((symbol.subscript,           CLN,          CLN2_STEP ))
+slice_patterns.append((symbol.subscript, CLN, CLN2_STEP))
 # [::]
-slice_patterns.append((symbol.subscript,           CLN,          CLN2      ))
+slice_patterns.append((symbol.subscript, CLN, CLN2))
 
 # begin:end variants
 slice_patterns.append((symbol.subscript, ['begin'],CLN,['end']))
-slice_patterns.append((symbol.subscript,           CLN,['end']))
+slice_patterns.append((symbol.subscript, CLN,['end']))
 slice_patterns.append((symbol.subscript, ['begin'],CLN))
-slice_patterns.append((symbol.subscript,           CLN))
+slice_patterns.append((symbol.subscript, CLN))
 
 # a[0] variant -- can't believe I left this out...
 slice_patterns.append((symbol.subscript,['single_index']))
@@ -155,5 +155,5 @@ indexed_array_pattern = \
                 (token.LSQB, '['),
                    ['subscript_list'],
                 (token.RSQB, ']')
-             )
-           )
+              )
+            )

@@ -69,7 +69,7 @@ class TestGriddata(object):
 
     def test_1d(self):
         x = np.array([1, 2.5, 3, 4.5, 5, 6])
-        y = np.array([1,   2, 0, 3.9, 2, 1])
+        y = np.array([1, 2, 0, 3.9, 2, 1])
 
         for method in ('nearest', 'linear', 'cubic'):
             assert_allclose(griddata(x, y, x, method=method), y,
@@ -81,7 +81,7 @@ class TestGriddata(object):
 
     def test_1d_unsorted(self):
         x = np.array([2.5, 1, 4.5, 5, 6, 3])
-        y = np.array([1,   2, 0, 3.9, 2, 1])
+        y = np.array([1, 2, 0, 3.9, 2, 1])
 
         for method in ('nearest', 'linear', 'cubic'):
             assert_allclose(griddata(x, y, x, method=method), y,

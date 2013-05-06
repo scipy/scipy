@@ -22,7 +22,7 @@ class ext_function_from_specs(object):
         pass
 
     def function_declaration_code(self):
-        code  = 'static PyObject* %s(PyObject*self, PyObject* args,' \
+        code = 'static PyObject* %s(PyObject*self, PyObject* args,' \
                 ' PyObject* kywds)\n{\n'
         return code % self.name
 
@@ -61,7 +61,7 @@ class ext_function_from_specs(object):
         if py_objects:
             declare_py_objects = 'PyObject ' + py_objects + ';\n'
             declare_py_objects += 'int ' + init_flags + ';\n'
-            init_values  = py_vars + ' = NULL;\n'
+            init_values = py_vars + ' = NULL;\n'
             init_values += init_flags_init + ' = 0;\n\n'
         else:
             declare_py_objects = ''
@@ -98,7 +98,7 @@ class ext_function_from_specs(object):
         arg_strings = []
         have_cleanup = filter(lambda x:x.cleanup_code(),self.arg_specs)
         for arg in have_cleanup:
-            code  = "if(%s)\n" % arg.init_flag()
+            code = "if(%s)\n" % arg.init_flag()
             code += "{\n"
             code += indent(arg.cleanup_code(),4)
             code += "}\n"
@@ -122,15 +122,15 @@ class ext_function_from_specs(object):
         dict_code = "if(py_local_dict)                                  \n"   \
                     "{                                                  \n"   \
                     "    py::dict local_dict = py::dict(py_local_dict); \n" + \
-                         local_dict_code                                    + \
+                         local_dict_code + \
                     "}                                                  \n"
 
         try_code = "try                              \n"   \
                       "{                                \n" + \
-                           decl_code                        + \
+                           decl_code + \
                       "    /*<function call here>*/     \n" + \
-                           function_code                    + \
-                           indent(dict_code,4)              + \
+                           function_code + \
+                           indent(dict_code,4) + \
                       "\n}                                \n"
         catch_code = "catch(...)                       \n"   \
                       "{                                \n" + \
@@ -139,7 +139,7 @@ class ext_function_from_specs(object):
                       "}                                \n"
 
         return_code = "    /*cleanup code*/                     \n" + \
-                           cleanup_code                             + \
+                           cleanup_code + \
                       '    if(!(PyObject*)return_val && !exception_occurred)\n'   \
                       '    {\n                                  \n'   \
                       '        return_val = Py_None;            \n'   \
@@ -147,10 +147,10 @@ class ext_function_from_specs(object):
                       '    return return_val.disown();           \n'           \
                       '}                                \n'
 
-        all_code = self.function_declaration_code()         + \
-                       indent(self.parse_tuple_code(),4)    + \
-                       indent(try_code,4)                   + \
-                       indent(catch_code,4)                 + \
+        all_code = self.function_declaration_code() + \
+                       indent(self.parse_tuple_code(),4) + \
+                       indent(try_code,4) + \
+                       indent(catch_code,4) + \
                        return_code
 
         return all_code
@@ -197,6 +197,7 @@ class ext_module(object):
 
     def add_function(self,func):
         self.functions.append(func)
+
     def module_code(self):
         code = '\n'.join([
             """\
@@ -453,8 +454,8 @@ def downcast(var_specs):
 
     # if arrays are present, but none of them are double precision,
     # make all numeric types float or complex(float)
-    if (    ('f' in numeric_types or 'F' in numeric_types) and
-        not ('d' in numeric_types or 'D' in numeric_types) ):
+    if (('f' in numeric_types or 'F' in numeric_types) and
+        not ('d' in numeric_types or 'D' in numeric_types)):
         for var in var_specs:
             if hasattr(var,'numeric_type'):
                 if issubclass(var.numeric_type, complex):

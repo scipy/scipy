@@ -167,7 +167,7 @@ class TestDictSetOperator(TestCase):
     def generic_overwrite(self,key,val):
         a = {}
         overwritten = 1
-        a[key] = overwritten # put an item in the dict to be overwritten
+        a[key] = overwritten  # put an item in the dict to be overwritten
         # call once to handle mysterious addition of one ref count
         # on first call to inline.
         before_overwritten = sys.getrefcount(overwritten)

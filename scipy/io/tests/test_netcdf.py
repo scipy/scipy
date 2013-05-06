@@ -20,8 +20,8 @@ from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
-N_EG_ELS = 11 # number of elements for example variable
-VARTYPE_EG = 'b' # var type for example variable
+N_EG_ELS = 11  # number of elements for example variable
+VARTYPE_EG = 'b'  # var type for example variable
 
 
 @contextmanager

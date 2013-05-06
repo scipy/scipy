@@ -361,8 +361,8 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                                'tolerance.',
                             2: 'The maximum number of iterations allowed '
                                'has been reached.'
-                           }[status]
-               }
+                            }[status]
+                }
         return _array_like(x, x0), info
     else:
         return _array_like(x, x0)
@@ -608,6 +608,7 @@ def asjacobian(J):
         class Jac(Jacobian):
             def update(self, x, F):
                 self.x = x
+
             def solve(self, v, tol=0):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
@@ -616,6 +617,7 @@ def asjacobian(J):
                     return spsolve(m, v)
                 else:
                     raise ValueError("Unknown matrix type")
+
             def matvec(self, v):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
@@ -624,6 +626,7 @@ def asjacobian(J):
                     return m*v
                 else:
                     raise ValueError("Unknown matrix type")
+
             def rsolve(self, v, tol=0):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
@@ -632,6 +635,7 @@ def asjacobian(J):
                     return spsolve(m.conj().T, v)
                 else:
                     raise ValueError("Unknown matrix type")
+
             def rmatvec(self, v):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
@@ -981,7 +985,7 @@ class BroydenFirst(GenericBroyden):
         return self.Gm.rsolve(f)
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
-        self._reduce() # reduce first to preserve secant condition
+        self._reduce()  # reduce first to preserve secant condition
 
         v = self.Gm.rmatvec(dx)
         c = dx - self.Gm.matvec(df)
@@ -1022,7 +1026,7 @@ class BroydenSecond(BroydenFirst):
     """
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
-        self._reduce() # reduce first to preserve secant condition
+        self._reduce()  # reduce first to preserve secant condition
 
         v = df
         c = dx - self.Gm.matvec(df)

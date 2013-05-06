@@ -493,10 +493,10 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         return tck
 
 
-def _ntlist(l): # return non-trivial list
+def _ntlist(l):  # return non-trivial list
     return l
-    #if len(l)>1: return l
-    #return l[0]
+    # if len(l)>1: return l
+    # return l[0]
 
 
 def splev(x, tck, der=0, ext=0):
@@ -558,7 +558,7 @@ def splev(x, tck, der=0, ext=0):
     except:
         parametric = False
     if parametric:
-        return list(map(lambda c, x=x, t=t, k=k, der=der : splev(x, [t,c,k], der, ext), c))
+        return list(map(lambda c, x=x, t=t, k=k, der=der: splev(x, [t,c,k], der, ext), c))
     else:
         if not (0 <= der <= k):
             raise ValueError("0<=der=%d<=k=%d must hold" % (der,k))
@@ -754,7 +754,7 @@ def spalde(x,tck):
             raise TypeError("Invalid input data. t(k)<=x<=t(n-k+1) must hold.")
         raise TypeError("Unknown error")
 
-#def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
+# def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 #           full_output=0,nest=None,per=0,quiet=1):
 
 _surfit_cache = {'tx': array([],float),'ty': array([],float),

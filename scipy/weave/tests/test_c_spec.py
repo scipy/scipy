@@ -6,7 +6,7 @@ import sys
 # Note: test_dir is global to this file.
 #       It is made by setup_location()
 
-#globals
+# globals
 global test_dir
 test_dir = ''
 
@@ -57,7 +57,7 @@ class IntConverter(TestCase):
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.int_converter()
-        assert_( not s.type_match('string') )
+        assert_(not s.type_match('string'))
 
     @dec.slow
     def test_type_match_int(self):
@@ -115,7 +115,7 @@ class IntConverter(TestCase):
         b = 1
         c = test(b)
 
-        assert_( c == 3)
+        assert_(c == 3)
 
 
 class FloatConverter(TestCase):
@@ -125,7 +125,7 @@ class FloatConverter(TestCase):
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.float_converter()
-        assert_( not s.type_match('string'))
+        assert_(not s.type_match('string'))
 
     @dec.slow
     def test_type_match_int(self):
@@ -182,7 +182,7 @@ class FloatConverter(TestCase):
         exec('from ' + mod_name + ' import test')
         b = 1.
         c = test(b)
-        assert_( c == 3.)
+        assert_(c == 3.)
 
 
 class ComplexConverter(TestCase):
@@ -192,7 +192,7 @@ class ComplexConverter(TestCase):
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.complex_converter()
-        assert_( not s.type_match('string') )
+        assert_(not s.type_match('string'))
 
     @dec.slow
     def test_type_match_int(self):
@@ -249,7 +249,7 @@ class ComplexConverter(TestCase):
         exec('from ' + mod_name + ' import test')
         b = 1.+1j
         c = test(b)
-        assert_( c == 3.+3j)
+        assert_(c == 3.+3j)
 
 
 #----------------------------------------------------------------------------
@@ -360,7 +360,7 @@ class StringConverter(TestCase):
     @dec.slow
     def test_type_match_string(self):
         s = c_spec.string_converter()
-        assert_( s.type_match('string') )
+        assert_(s.type_match('string'))
 
     @dec.slow
     def test_type_match_int(self):
@@ -418,7 +418,7 @@ class StringConverter(TestCase):
         exec('from ' + mod_name + ' import test')
         b = 'bub'
         c = test(b)
-        assert_( c == 'hello')
+        assert_(c == 'hello')
 
 
 class ListConverter(TestCase):
@@ -430,7 +430,7 @@ class ListConverter(TestCase):
         s = c_spec.list_converter()
         objs = [{},(),'',1,1.,1+1j]
         for i in objs:
-            assert_( not s.type_match(i) )
+            assert_(not s.type_match(i))
 
     @dec.slow
     def test_type_match_good(self):
@@ -478,7 +478,7 @@ class ListConverter(TestCase):
         exec('from ' + mod_name + ' import test')
         b = [1,2]
         c = test(b)
-        assert_( c == ['hello'])
+        assert_(c == ['hello'])
 
     @dec.slow
     def test_speed(self):
@@ -524,12 +524,12 @@ class ListConverter(TestCase):
         sum1 = with_cxx(a)
         t2 = time.time()
         print('speed test for list access')
-        print('compiler:',  self.compiler)
-        print('scxx:',  t2 - t1)
+        print('compiler:', self.compiler)
+        print('scxx:', t2 - t1)
         t1 = time.time()
         sum2 = no_checking(a)
         t2 = time.time()
-        print('C, no checking:',  t2 - t1)
+        print('C, no checking:', t2 - t1)
         sum3 = 0
         t1 = time.time()
         for i in a:
@@ -539,7 +539,7 @@ class ListConverter(TestCase):
                 sum3 -= i
         t2 = time.time()
         print('python:', t2 - t1)
-        assert_( sum1 == sum2 and sum1 == sum3)
+        assert_(sum1 == sum2 and sum1 == sum3)
 
 
 class TupleConverter(TestCase):
@@ -551,7 +551,7 @@ class TupleConverter(TestCase):
         s = c_spec.tuple_converter()
         objs = [{},[],'',1,1.,1+1j]
         for i in objs:
-            assert_( not s.type_match(i) )
+            assert_(not s.type_match(i))
 
     @dec.slow
     def test_type_match_good(self):
@@ -600,7 +600,7 @@ class TupleConverter(TestCase):
         exec('from ' + mod_name + ' import test')
         b = (1,2)
         c = test(b)
-        assert_( c == ('hello',None))
+        assert_(c == ('hello',None))
 
 
 class DictConverter(TestCase):
@@ -618,7 +618,7 @@ class DictConverter(TestCase):
         s = c_spec.dict_converter()
         objs = [[],(),'',1,1.,1+1j]
         for i in objs:
-            assert_( not s.type_match(i) )
+            assert_(not s.type_match(i))
 
     @dec.slow
     def test_type_match_good(self):
@@ -631,7 +631,7 @@ class DictConverter(TestCase):
         mod_name = unique_mod(test_dir,mod_name)
         mod = ext_tools.ext_module(mod_name)
         a = {'z':1}
-        code = 'a=py::dict();' # This just checks to make sure the type is correct
+        code = 'a=py::dict();'  # This just checks to make sure the type is correct
         test = ext_tools.ext_function('test',code,['a'])
         mod.add_function(test)
         mod.compile(location=test_dir, compiler=self.compiler)
@@ -666,7 +666,7 @@ class DictConverter(TestCase):
         exec('from ' + mod_name + ' import test')
         b = {'z':2}
         c = test(b)
-        assert_( c['hello'] == 5)
+        assert_(c['hello'] == 5)
 
 
 # for compiler in compilers:
@@ -766,7 +766,7 @@ for _n in dir():
 
 def setup_location():
     import tempfile
-    #test_dir = os.path.join(tempfile.gettempdir(),'test_files')
+    # test_dir = os.path.join(tempfile.gettempdir(),'test_files')
     test_dir = tempfile.mktemp()
     if not os.path.exists(test_dir):
         os.mkdir(test_dir)

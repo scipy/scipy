@@ -114,7 +114,7 @@ def expm(A):
         raise ValueError("invalid type: "+str(A.dtype))
 
     P = U + V  # p_m(A) : numerator
-    Q = -U + V # q_m(A) : denominator
+    Q = -U + V  # q_m(A) : denominator
 
     if Aissparse:
         from scipy.sparse.linalg import spsolve

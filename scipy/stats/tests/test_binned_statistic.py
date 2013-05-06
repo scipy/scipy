@@ -145,8 +145,8 @@ class TestBinnedStatistic(object):
         v = self.v[:20]
 
         count1, binx1, biny1, bc = binned_statistic_2d(x, y, v, 'count', bins=3)
-        bc2 = np.array([17, 11,  6, 16, 11, 17, 18, 17, 17,  7,  6, 18, 16,
-                        6, 11, 16,  6,  6, 11,  8])
+        bc2 = np.array([17, 11, 6, 16, 11, 17, 18, 17, 17, 7, 6, 18, 16,
+                        6, 11, 16, 6, 6, 11, 8])
 
         bcount = [(bc == i).sum() for i in np.unique(bc)]
 

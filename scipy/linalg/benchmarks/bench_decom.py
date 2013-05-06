@@ -19,9 +19,9 @@ def bench_random():
     print()
     print('           Finding matrix eigenvalues')
     print('      ==================================')
-    print('      |    contiguous     ')# '|   non-contiguous '
+    print('      |    contiguous     ')  # '|   non-contiguous '
     print('----------------------------------------------')
-    print(' size |  scipy  ')# '| core |  scipy  | core '
+    print(' size |  scipy  ')  # '| core |  scipy  | core '
 
     for size,repeat in [(20,150),(100,7),(200,2)]:
         repeat *= 1

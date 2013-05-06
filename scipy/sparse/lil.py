@@ -97,8 +97,8 @@ class lil_matrix(spmatrix):
 
             self.shape = A.shape
             self.dtype = A.dtype
-            self.rows  = A.rows
-            self.data  = A.data
+            self.rows = A.rows
+            self.data = A.data
         elif isinstance(arg1,tuple):
             if isshape(arg1):
                 if shape is not None:
@@ -113,7 +113,7 @@ class lil_matrix(spmatrix):
             else:
                 raise TypeError('unrecognized lil_matrix constructor usage')
         else:
-            #assume A is dense
+            # assume A is dense
             try:
                 A = np.asmatrix(arg1)
             except TypeError:
@@ -124,8 +124,8 @@ class lil_matrix(spmatrix):
 
                 self.shape = A.shape
                 self.dtype = A.dtype
-                self.rows  = A.rows
-                self.data  = A.data
+                self.rows = A.rows
+                self.data = A.data
 
     def set_shape(self,shape):
         shape = tuple(shape)
@@ -134,7 +134,7 @@ class lil_matrix(spmatrix):
             raise ValueError("Only two-dimensional sparse arrays "
                                      "are supported.")
         try:
-            shape = int(shape[0]),int(shape[1]) # floats, other weirdness
+            shape = int(shape[0]),int(shape[1])  # floats, other weirdness
         except:
             raise TypeError('invalid shape')
 
@@ -215,7 +215,7 @@ class lil_matrix(spmatrix):
         if j < 0 or j >= self.shape[1]:
             raise IndexError('column index out of bounds')
 
-        row  = self.rows[i]
+        row = self.rows[i]
         data = self.data[i]
 
         pos = bisect_left(row, j)
@@ -319,7 +319,7 @@ class lil_matrix(spmatrix):
         """ helper for __setitem__: insert a value in the given row/data at
         column j. """
 
-        if j < 0: # handle negative column indices
+        if j < 0:  # handle negative column indices
             j += self.shape[1]
 
         if j < 0 or j >= self.shape[1]:
@@ -435,7 +435,7 @@ class lil_matrix(spmatrix):
         """
 
         indptr = np.asarray([len(x) for x in self.rows], dtype=np.intc)
-        indptr = np.concatenate( (np.array([0], dtype=np.intc), np.cumsum(indptr)) )
+        indptr = np.concatenate((np.array([0], dtype=np.intc), np.cumsum(indptr)))
 
         nnz = indptr[-1]
 
@@ -458,5 +458,5 @@ class lil_matrix(spmatrix):
         return self.tocsr().tocsc()
 
 
-def isspmatrix_lil( x ):
+def isspmatrix_lil(x):
     return isinstance(x, lil_matrix)

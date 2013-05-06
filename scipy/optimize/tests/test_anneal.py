@@ -20,8 +20,8 @@ class TestAnneal(TestCase):
         first one is used since the second fails for the 'fast' schedule at
         least.
         """
-        self.fun = (lambda x: np.cos(14.5 * x - 0.3)  + (x + 0.2) * x,
-                    lambda x: np.cos(14.5 * x[0] - 0.3)  +
+        self.fun = (lambda x: np.cos(14.5 * x - 0.3) + (x + 0.2) * x,
+                    lambda x: np.cos(14.5 * x[0] - 0.3) +
                              (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0])
         self.x0 = (1.0, [1.0, 1.0])
         self.sol = (-0.195, np.array([-0.195, -0.1]))
@@ -38,14 +38,14 @@ class TestAnneal(TestCase):
 
     def anneal_schedule(self, schedule='fast', use_wrapper=False):
         """ Call anneal algorithm using specified schedule """
-        n = 0 # index of test function
+        n = 0  # index of test function
         if use_wrapper:
-            opts = {'upper'   : self.upper[n],
-                    'lower'   : self.lower[n],
-                    'ftol'    : 1e-3,
-                    'maxiter' : self.maxiter,
+            opts = {'upper': self.upper[n],
+                    'lower': self.lower[n],
+                    'ftol': 1e-3,
+                    'maxiter': self.maxiter,
                     'schedule': schedule,
-                    'disp'    : False}
+                    'disp': False}
             res = minimize(self.fun[n], self.x0[n], method='anneal',
                                options=opts)
             x, retval = res['x'], res['status']

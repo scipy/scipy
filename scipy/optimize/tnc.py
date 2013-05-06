@@ -41,42 +41,42 @@ from numpy import inf, array, zeros, asfarray
 __all__ = ['fmin_tnc']
 
 
-MSG_NONE = 0 # No messages
-MSG_ITER = 1 # One line per iteration
-MSG_INFO = 2 # Informational messages
-MSG_VERS = 4 # Version info
-MSG_EXIT = 8 # Exit reasons
+MSG_NONE = 0  # No messages
+MSG_ITER = 1  # One line per iteration
+MSG_INFO = 2  # Informational messages
+MSG_VERS = 4  # Version info
+MSG_EXIT = 8  # Exit reasons
 MSG_ALL = MSG_ITER + MSG_INFO + MSG_VERS + MSG_EXIT
 
 MSGS = {
-        MSG_NONE : "No messages",
-        MSG_ITER : "One line per iteration",
-        MSG_INFO : "Informational messages",
-        MSG_VERS : "Version info",
-        MSG_EXIT : "Exit reasons",
-        MSG_ALL  : "All messages"
+        MSG_NONE: "No messages",
+        MSG_ITER: "One line per iteration",
+        MSG_INFO: "Informational messages",
+        MSG_VERS: "Version info",
+        MSG_EXIT: "Exit reasons",
+        MSG_ALL: "All messages"
 }
 
-INFEASIBLE   = -1 # Infeasible (low > up)
+INFEASIBLE = -1  # Infeasible (low > up)
 LOCALMINIMUM = 0  # Local minima reach (|pg| ~= 0)
-FCONVERGED   = 1  # Converged (|f_n-f_(n-1)| ~= 0)
-XCONVERGED   = 2  # Converged (|x_n-x_(n-1)| ~= 0)
-MAXFUN       = 3  # Max. number of function evaluations reach
-LSFAIL       = 4  # Linear search failed
-CONSTANT     = 5  # All lower bounds are equal to the upper bounds
-NOPROGRESS   = 6  # Unable to progress
-USERABORT    = 7  # User requested end of minimization
+FCONVERGED = 1  # Converged (|f_n-f_(n-1)| ~= 0)
+XCONVERGED = 2  # Converged (|x_n-x_(n-1)| ~= 0)
+MAXFUN = 3  # Max. number of function evaluations reach
+LSFAIL = 4  # Linear search failed
+CONSTANT = 5  # All lower bounds are equal to the upper bounds
+NOPROGRESS = 6  # Unable to progress
+USERABORT = 7  # User requested end of minimization
 
 RCSTRINGS = {
-        INFEASIBLE   : "Infeasible (low > up)",
-        LOCALMINIMUM : "Local minima reach (|pg| ~= 0)",
-        FCONVERGED   : "Converged (|f_n-f_(n-1)| ~= 0)",
-        XCONVERGED   : "Converged (|x_n-x_(n-1)| ~= 0)",
-        MAXFUN       : "Max. number of function evaluations reach",
-        LSFAIL       : "Linear search failed",
-        CONSTANT     : "All lower bounds are equal to the upper bounds",
-        NOPROGRESS   : "Unable to progress",
-        USERABORT    : "User requested end of minimization"
+        INFEASIBLE: "Infeasible (low > up)",
+        LOCALMINIMUM: "Local minima reach (|pg| ~= 0)",
+        FCONVERGED: "Converged (|f_n-f_(n-1)| ~= 0)",
+        XCONVERGED: "Converged (|x_n-x_(n-1)| ~= 0)",
+        MAXFUN: "Max. number of function evaluations reach",
+        LSFAIL: "Linear search failed",
+        CONSTANT: "All lower bounds are equal to the upper bounds",
+        NOPROGRESS: "Unable to progress",
+        USERABORT: "User requested end of minimization"
 }
 
 # Changes to interface made by Travis Oliphant, Apr. 2004 for inclusion in
@@ -238,13 +238,13 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         fun = func
         jac = fprime
 
-    if disp is not None: # disp takes precedence over messages
+    if disp is not None:  # disp takes precedence over messages
         mesg_num = disp
     else:
         mesg_num = {0:MSG_NONE, 1:MSG_ITER, 2:MSG_INFO, 3:MSG_VERS,
                     4:MSG_EXIT, 5:MSG_ALL}.get(messages, MSG_ALL)
     # build options
-    opts = {'eps'  : epsilon,
+    opts = {'eps': epsilon,
             'scale': scale,
             'offset': offset,
             'mesg_num': mesg_num,
@@ -407,6 +407,7 @@ if __name__ == '__main__':
 
     def example():
         print("Example")
+
         # A function to minimize
         def function(x):
             f = pow(x[0],2.0)+pow(abs(x[1]),3.0)

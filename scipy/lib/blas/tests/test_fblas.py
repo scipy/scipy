@@ -15,7 +15,7 @@ from numpy.testing import assert_equal, assert_array_almost_equal, \
 from scipy.lib.six.moves import xrange
 from scipy.lib.blas import fblas
 
-#decimal accuracy to require between Python and LAPACK/BLAS calculations
+# decimal accuracy to require between Python and LAPACK/BLAS calculations
 accuracy = 5
 
 # Since numpy.dot likely uses the same blas, use this routine
@@ -89,7 +89,7 @@ class BaseAxpy(object):
         y = zeros(6,x.dtype)
         try:
             self.blas_func(x,y,n=4,incx=5)
-        except: # what kind of error should be caught?
+        except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
@@ -99,7 +99,7 @@ class BaseAxpy(object):
         y = zeros(6,x.dtype)
         try:
             self.blas_func(x,y,n=3,incy=5)
-        except: # what kind of error should be caught?
+        except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
@@ -155,7 +155,7 @@ class BaseScal(object):
         x = arange(12.,dtype=self.dtype)
         try:
             self.blas_func(2.,x,n=4,incx=5)
-        except: # what kind of error should be caught?
+        except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
@@ -223,7 +223,7 @@ class BaseCopy(object):
         y = zeros(6,x.dtype)
         try:
             self.blas_func(x,y,n=4,incx=5)
-        except: # what kind of error should be caught?
+        except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
@@ -233,12 +233,12 @@ class BaseCopy(object):
         y = zeros(6,x.dtype)
         try:
             self.blas_func(x,y,n=3,incy=5)
-        except: # what kind of error should be caught?
+        except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
 
-    #def test_y_bad_type(self):
+    # def test_y_bad_type(self):
     ##   Hmmm. Should this work?  What should be the output.
     #    x = arange(3.,dtype=self.dtype)
     #    y = zeros(shape(x))
@@ -320,7 +320,7 @@ class BaseSwap(object):
         y = zeros(6,x.dtype)
         try:
             self.blas_func(x,y,n=4,incx=5)
-        except: # what kind of error should be caught?
+        except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
@@ -330,7 +330,7 @@ class BaseSwap(object):
         y = zeros(6,x.dtype)
         try:
             self.blas_func(x,y,n=3,incy=5)
-        except: # what kind of error should be caught?
+        except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)

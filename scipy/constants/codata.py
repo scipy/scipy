@@ -856,7 +856,7 @@ def _check_obsolete(key):
             key, _current_codata), ConstantWarning)
 
 
-def value(key) :
+def value(key):
     """
     Value in physical_constants indexed by key
 
@@ -886,7 +886,7 @@ def value(key) :
     return physical_constants[key][0]
 
 
-def unit(key) :
+def unit(key):
     """
     Unit in physical_constants indexed by key
 
@@ -916,7 +916,7 @@ def unit(key) :
     return physical_constants[key][1]
 
 
-def precision(key) :
+def precision(key):
     """
     Relative precision in physical_constants indexed by key
 
@@ -993,7 +993,7 @@ exact_values = {
 'mag. constant': (mu0, 'N A^-2', 0.0),
 'electric constant': (epsilon0, 'F m^-1', 0.0),
 'characteristic impedance of vacuum': (sqrt(mu0/epsilon0), 'ohm', 0.0),
-'atomic unit of permittivity': (4*epsilon0*pi, 'F m^-1', 0.0), # is that the definition?
+'atomic unit of permittivity': (4*epsilon0*pi, 'F m^-1', 0.0),  # is that the definition?
 'joule-kilogram relationship': (1/(c*c), 'kg', 0.0),
 'kilogram-joule relationship': (c*c, 'J', 0.0),
 'hertz-inverse meter relationship': (1/c, 'm^-1', 0.0)

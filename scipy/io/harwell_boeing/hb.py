@@ -150,10 +150,10 @@ class HBInfo(object):
         if not len(line.rstrip()) >= 56:
             raise ValueError("Expected at least 56 characters for second line, "
                              "got: \n%s" % line)
-        total_nlines    = _expect_int(line[:14])
-        pointer_nlines  = _expect_int(line[14:28])
-        indices_nlines  = _expect_int(line[28:42])
-        values_nlines   = _expect_int(line[42:56])
+        total_nlines = _expect_int(line[:14])
+        pointer_nlines = _expect_int(line[14:28])
+        indices_nlines = _expect_int(line[28:42])
+        values_nlines = _expect_int(line[42:56])
 
         rhs_nlines = line[56:72].strip()
         if rhs_nlines == '':

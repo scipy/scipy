@@ -220,21 +220,21 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     for ii in range(2 * lw + 1):
         weights[ii] /= sum
     # implement first, second and third order derivatives:
-    if order == 1 : # first derivative
+    if order == 1:  # first derivative
         weights[lw] = 0.0
         for ii in range(1, lw + 1):
             x = float(ii)
             tmp = -x / sd * weights[lw + ii]
             weights[lw + ii] = -tmp
             weights[lw - ii] = tmp
-    elif order == 2: # second derivative
+    elif order == 2:  # second derivative
         weights[lw] *= -1.0 / sd
         for ii in range(1, lw + 1):
             x = float(ii)
             tmp = (x * x / sd - 1.0) * weights[lw + ii] / sd
             weights[lw + ii] = tmp
             weights[lw - ii] = tmp
-    elif order == 3: # third derivative
+    elif order == 3:  # third derivative
         weights[lw] = 0.0
         sd2 = sd * sd
         for ii in range(1, lw + 1):
@@ -420,6 +420,7 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
     %(cval)s
     """
     input = numpy.asarray(input)
+
     def derivative2(input, axis, output, mode, cval, sigma):
         order = [0] * input.ndim
         order[axis] = 2
@@ -494,6 +495,7 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     %(cval)s
     """
     input = numpy.asarray(input)
+
     def derivative(input, axis, output, mode, cval, sigma):
         order = [0] * input.ndim
         order[axis] = 1

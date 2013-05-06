@@ -83,7 +83,6 @@ class TestOnenormest(TestCase):
         # check the average number of matrix*vector multiplications
         assert_(3.5 < np.mean(nmult_list) < 4.5)
 
-
     @decorators.slow
     @decorators.skipif(True, 'this test is annoyingly slow')
     def test_onenormest_table_4_t_7(self):
@@ -124,7 +123,6 @@ class TestOnenormest(TestCase):
         # check the average number of matrix*vector multiplications
         assert_(3.5 < np.mean(nmult_list) < 4.5)
 
-
     def test_onenormest_table_5_t_1(self):
         # "note that there is no randomness and hence only one estimate for t=1"
         t = 1
@@ -145,7 +143,6 @@ class TestOnenormest(TestCase):
         # check the non-underscored version of onenormest
         est_plain = scipy.sparse.linalg.onenormest(B, t=t, itmax=itmax)
         assert_allclose(est, est_plain)
-
 
     def _help_product_norm_slow(self, A, B):
         # for profiling
@@ -191,9 +188,8 @@ class TestOnenormest(TestCase):
         assert_allclose(A.dot(v), w, rtol=1e-9)
 
 
-
 class TestAlgorithm_2_2(TestCase):
-    
+
     def test_randn_inv(self):
         np.random.seed(1234)
         n = 20
@@ -213,7 +209,5 @@ class TestAlgorithm_2_2(TestCase):
             g, ind = _algorithm_2_2(A, A.T, t)
 
 
-
 if __name__ == '__main__':
     run_module_suite()
-

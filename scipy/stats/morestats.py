@@ -27,7 +27,7 @@ __all__ = ['mvsdist',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'oneway', 'wilcoxon',
            'pdf_fromgamma', 'circmean', 'circvar', 'circstd',
-          ]
+           ]
 
 
 def bayes_mvs(data, alpha=0.90):
@@ -131,7 +131,7 @@ def mvsdist(data):
         raise ValueError("Need at least 2 data-points.")
     xbar = x.mean()
     C = x.var()
-    if (n > 1000): # gaussian approximations for large n
+    if (n > 1000):  # gaussian approximations for large n
         mdist = distributions.norm(loc=xbar, scale=math.sqrt(C/n))
         sdist = distributions.norm(loc=math.sqrt(C), scale=math.sqrt(C/(2.*n)))
         vdist = distributions.norm(loc=C, scale=math.sqrt(2.0/n)*C)
@@ -408,6 +408,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     #  and computes a linear regression (including the correlation)
     #  and returns 1-r so that a minimization function maximizes the
     #  correlation
+
     def tempfunc(shape, mi, yvals, func):
         xvals = func(mi, shape)
         r, prob = stats.pearsonr(xvals, yvals)
@@ -433,8 +434,8 @@ def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
     if plot is not None:
         plot.plot(svals, ppcc, 'x')
         plot.title('(%s) PPCC Plot' % dist)
-        plot.xlabel('Prob Plot Corr. Coef.')# ,deltay=-0.01)
-        plot.ylabel('Shape Values')# ,deltax=-0.01)
+        plot.xlabel('Prob Plot Corr. Coef.')  # ,deltay=-0.01)
+        plot.ylabel('Shape Values')  # ,deltax=-0.01)
     return svals, ppcc
 
 
@@ -454,6 +455,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     #  f(x,lmbda) >= f(x,lmax) - 0.5*chi^2_alpha;1
     fac = 0.5*distributions.chi2.ppf(1-alpha,1)
     target = boxcox_llf(lmax,x)-fac
+
     def rootfunc(lmbda,data,target):
         return boxcox_llf(lmbda,data) - target
     # Find positive endpont
@@ -514,6 +516,7 @@ def boxcox(x,lmbda=None,alpha=None):
         lmbda = lmbda*(x == x)
         y = where(lmbda == 0, log(x), (x**lmbda - 1)/lmbda)
         return y
+
     # Otherwise find the lmbda that maximizes the log-likelihood function.
     def tempfunc(lmb, data):  # function to minimize
         return -boxcox_llf(lmb,data)
@@ -539,10 +542,11 @@ def boxcox_normmax(x,brack=(-1.0,1.0)):
     #  and returns 1-r so that a minimization function maximizes the
     #  correlation
     xvals = distributions.norm.ppf(Ui)
+
     def tempfunc(lmbda, xvals, samps):
         y = boxcox(samps,lmbda)
         yvals = sort(y)
-        r, prob  = stats.pearsonr(xvals, yvals)
+        r, prob = stats.pearsonr(xvals, yvals)
         return 1-r
     return optimize.brent(tempfunc, brack=brack, args=(xvals, x))
 
@@ -552,7 +556,7 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
     ppcc = svals*0.0
     k = 0
     for sval in svals:
-        #JP: this doesn't use sval, creates constant ppcc, and horizontal line
+        # JP: this doesn't use sval, creates constant ppcc, and horizontal line
         z = boxcox(x,sval)  # JP: this was missing
         r1,r2 = probplot(z,dist='norm',fit=1)
         ppcc[k] = r2[-1]
@@ -628,7 +632,7 @@ def shapiro(x,a=None,reta=False):
 #             Some Comparisons", Journal of he American Statistical
 #             Association, Vol. 69, Issue 347, Sept. 1974, pp 730-737
 _Avals_norm = array([0.576, 0.656, 0.787, 0.918, 1.092])
-_Avals_expon  = array([0.922, 1.078, 1.341, 1.606, 1.957])
+_Avals_expon = array([0.922, 1.078, 1.341, 1.606, 1.957])
 # From Stephens, M A, "Goodness of Fit for the Extreme Value Distribution",
 #             Biometrika, Vol. 64, Issue 3, Dec. 1977, pp 583-588.
 _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
@@ -736,7 +740,7 @@ def anderson(x,dist='norm'):
         sig = array([25,10,5,2.5,1,0.5])
         critical = around(_Avals_logistic / (1.0+0.25/N),3)
     else:  # (dist == 'gumbel') or (dist == 'extreme1'):
-        #the following is incorrect, see ticket:1097
+        # the following is incorrect, see ticket:1097
 ##        def fixedsolve(th,xj,N):
 ##            val = stats.sum(xj)*1.0/N
 ##            tmp = exp(-xj/th)
@@ -839,7 +843,7 @@ def ansari(x,y):
     if repeats:   # adjust variance estimates
         # compute sum(tj * rj**2,axis=0)
         fac = sum(symrank**2,axis=0)
-        if N % 2: # N odd
+        if N % 2:  # N odd
             varAB = m*n*(16*N*fac-(N+1)**4)/(16.0 * N**2 * (N-1))
         else:  # N even
             varAB = m*n*(16*fac-N*(N+2)**2)/(16.0 * N * (N-1))
@@ -890,7 +894,7 @@ def bartlett(*args):
     numer = (Ntot*1.0-k)*log(spsq) - sum((Ni-1.0)*log(ssq),axis=0)
     denom = 1.0 + (1.0/(3*(k-1)))*((sum(1.0/(Ni-1.0),axis=0))-1.0/(Ntot-k))
     T = numer / denom
-    pval = distributions.chi2.sf(T,k-1) # 1 - cdf
+    pval = distributions.chi2.sf(T,k-1)  # 1 - cdf
     return T, pval
 
 
@@ -966,7 +970,7 @@ def levene(*args,**kwds):
         func = lambda x: np.median(x, axis=0)
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
-    else: # center == 'trimmed'
+    else:  # center == 'trimmed'
         args = tuple(stats.trimboth(arg, proportiontocut) for arg in args)
         func = lambda x: np.mean(x, axis=0)
 
@@ -997,7 +1001,7 @@ def levene(*args,**kwds):
     denom = (k-1.0)*dvar
 
     W = numer / denom
-    pval = distributions.f.sf(W,k-1,Ntot-k) # 1 - cdf
+    pval = distributions.f.sf(W,k-1,Ntot-k)  # 1 - cdf
     return W, pval
 
 
@@ -1139,7 +1143,7 @@ def fligner(*args,**kwds):
         func = lambda x: np.median(x, axis=0)
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
-    else: # center == 'trimmed'
+    else:  # center == 'trimmed'
         args = tuple(stats.trimboth(arg, proportiontocut) for arg in args)
         func = lambda x: np.mean(x, axis=0)
 
@@ -1162,7 +1166,7 @@ def fligner(*args,**kwds):
     anbar = np.mean(a, axis=0)
     varsq = np.var(a,axis=0, ddof=1)
     Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0,axis=0)/varsq
-    pval = distributions.chi2.sf(Xsq,k-1) # 1 - cdf
+    pval = distributions.chi2.sf(Xsq,k-1)  # 1 - cdf
     return Xsq, pval
 
 
@@ -1326,7 +1330,7 @@ def wilcoxon(x, y=None, zero_method="wilcox"):
         d = x-y
 
     if zero_method == "wilcox":
-        d = compress(not_equal(d, 0), d, axis=-1) # Keep all non-zero differences
+        d = compress(not_equal(d, 0), d, axis=-1)  # Keep all non-zero differences
 
     count = len(d)
     if (count < 10):
@@ -1389,6 +1393,7 @@ def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
             g1*g1*g2/1728.0*p12[10] + g1**4.0/31104.0*p12[12])
     # Final normalization
     totp = totp / sqrt(2*pi)/sig
+
     def thefunc(x):
         xn = (x-mu)/sig
         return totp(xn)*exp(-xn*xn/2.0)
@@ -1495,23 +1500,23 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     return ((high-low)/2.0/pi) * sqrt(-2*log(R))
 
 
-#Tests to include (from R) -- some of these already in stats.
+# Tests to include (from R) -- some of these already in stats.
 ########
-#X Ansari-Bradley
-#X Bartlett (and Levene)
-#X Binomial
-#Y Pearson's Chi-squared (stats.chisquare)
-#Y Association Between Paired samples (stats.pearsonr, stats.spearmanr)
+# X Ansari-Bradley
+# X Bartlett (and Levene)
+# X Binomial
+# Y Pearson's Chi-squared (stats.chisquare)
+# Y Association Between Paired samples (stats.pearsonr, stats.spearmanr)
 #                       stats.kendalltau) -- these need work though
 # Fisher's exact test
-#X Fligner-Killeen Test
-#Y Friedman Rank Sum (stats.friedmanchisquare?)
-#Y Kruskal-Wallis
-#Y Kolmogorov-Smirnov
+# X Fligner-Killeen Test
+# Y Friedman Rank Sum (stats.friedmanchisquare?)
+# Y Kruskal-Wallis
+# Y Kolmogorov-Smirnov
 # Cochran-Mantel-Haenszel Chi-Squared for Count
 # McNemar's Chi-squared for Count
-#X Mood Two-Sample
-#X Test For Equal Means in One-Way Layout (see stats.ttest also)
+# X Mood Two-Sample
+# X Test For Equal Means in One-Way Layout (see stats.ttest also)
 # Pairwise Comparisons of proportions
 # Pairwise t tests
 # Tabulate p values for pairwise comparisons
@@ -1521,6 +1526,6 @@ def circstd(samples, high=2*pi, low=0, axis=None):
 # Equal or Given Proportions
 # Trend in Proportions
 # Quade Test
-#Y Student's T Test
-#Y F Test to compare two variances
-#XY Wilcoxon Rank Sum and Signed Rank Tests
+# Y Student's T Test
+# Y F Test to compare two variances
+# XY Wilcoxon Rank Sum and Signed Rank Tests

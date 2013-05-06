@@ -15,6 +15,7 @@ class TestRoot(object):
         def func(z):
             x, y = z
             return np.array([x**3 - 1, y**3 - 1])
+
         def dfunc(z):
             x, y = z
             return np.array([[3*x**2, 0], [0, 3*y**2]])

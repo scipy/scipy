@@ -60,9 +60,9 @@ pathological_data_1 = np.array([
 ])
 
 pathological_data_2 = np.array([
-    [-1, -1                          ], [-1, 0], [-1, 1],
-    [ 0, -1                          ], [ 0, 0], [ 0, 1],
-    [ 1, -1 - np.finfo(np.float_).eps], [ 1, 0], [ 1, 1],
+    [-1, -1], [-1, 0], [-1, 1],
+    [0, -1], [0, 0], [0, 1],
+    [1, -1 - np.finfo(np.float_).eps], [1, 0], [1, 1],
 ])
 
 DATASETS = {
@@ -412,8 +412,8 @@ class TestDelaunay(object):
         assert_equal(tri.neighbors, [[-1, -1, 1], [-1, -1, 0]])
 
     def test_duplicate_points(self):
-        x  = np.array([0, 1, 0, 1], dtype=np.float64)
-        y  = np.array([0, 0, 1, 1], dtype=np.float64)
+        x = np.array([0, 1, 0, 1], dtype=np.float64)
+        y = np.array([0, 0, 1, 1], dtype=np.float64)
 
         xp = np.r_[x, x]
         yp = np.r_[y, y]
@@ -439,7 +439,7 @@ class TestDelaunay(object):
         # occur as vertices of the triangulation
 
         points = np.random.rand(10, 2)
-        points = np.r_[points, points] # duplicate input data
+        points = np.r_[points, points]  # duplicate input data
 
         tri = qhull.Delaunay(points, qhull_options="QJ Qbb Pp")
         assert_array_equal(np.unique(tri.simplices.ravel()),
@@ -448,7 +448,7 @@ class TestDelaunay(object):
     def test_coplanar(self):
         # Check that the coplanar point output option indeed works
         points = np.random.rand(10, 2)
-        points = np.r_[points, points] # duplicate input data
+        points = np.r_[points, points]  # duplicate input data
 
         tri = qhull.Delaunay(points)
 
@@ -463,7 +463,7 @@ class TestDelaunay(object):
         points = [(0, 0), (0, 1), (1, 0), (0.5, 0.5), (1.1, 1.1)]
         tri = qhull.Delaunay(points, furthest_site=True)
 
-        expected = np.array([(1, 4, 0), (2, 4, 0)]) # from Qhull
+        expected = np.array([(1, 4, 0), (2, 4, 0)])  # from Qhull
         assert_array_equal(tri.simplices, expected)
 
     def test_incremental(self):
@@ -663,7 +663,7 @@ class TestVoronoi:
         # Parse output
         output = [list(map(float, x.split())) for x in output.strip().splitlines()]
         nvertex = int(output[1][0])
-        vertices = list(map(tuple, output[3:2+nvertex])) # exclude inf
+        vertices = list(map(tuple, output[3:2+nvertex]))  # exclude inf
         nregion = int(output[1][1])
         regions = [[int(y)-1 for y in x[1:]]
                    for x in output[2+nvertex:2+nvertex+nregion]]

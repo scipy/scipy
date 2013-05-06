@@ -119,8 +119,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             if isshape(arg1):
                 M, N = arg1
                 self.shape = (M,N)
-                self.row  = np.array([], dtype=np.intc)
-                self.col  = np.array([], dtype=np.intc)
+                self.row = np.array([], dtype=np.intc)
+                self.col = np.array([], dtype=np.intc)
                 self.data = np.array([], getdtype(dtype, default=float))
             else:
                 try:
@@ -134,9 +134,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 except TypeError:
                     raise TypeError('invalid input format')
 
-                self.row  = np.array(ij[0], copy=copy, dtype=np.intc)
-                self.col  = np.array(ij[1], copy=copy, dtype=np.intc)
-                self.data = np.array(  obj, copy=copy)
+                self.row = np.array(ij[0], copy=copy, dtype=np.intc)
+                self.col = np.array(ij[1], copy=copy, dtype=np.intc)
+                self.data = np.array(obj, copy=copy)
 
                 if shape is None:
                     if len(self.row) == 0 or len(self.col) == 0:
@@ -157,20 +157,20 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     'use coo_matrix( (M,N) ) instead', DeprecationWarning)
             self.shape = shape
             self.data = np.array([], getdtype(dtype, default=float))
-            self.row  = np.array([], dtype=np.intc)
-            self.col  = np.array([], dtype=np.intc)
+            self.row = np.array([], dtype=np.intc)
+            self.col = np.array([], dtype=np.intc)
         else:
             if isspmatrix(arg1):
                 if isspmatrix_coo(arg1) and copy:
-                    self.row   = arg1.row.copy()
-                    self.col   = arg1.col.copy()
-                    self.data  = arg1.data.copy()
+                    self.row = arg1.row.copy()
+                    self.col = arg1.col.copy()
+                    self.data = arg1.data.copy()
                     self.shape = arg1.shape
                 else:
                     coo = arg1.tocoo()
-                    self.row   = coo.row
-                    self.col   = coo.col
-                    self.data  = coo.data
+                    self.row = coo.row
+                    self.col = coo.col
+                    self.data = coo.data
                     self.shape = coo.shape
             else:
                 #dense argument
@@ -184,7 +184,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
                 self.shape = M.shape
                 self.row, self.col = M.nonzero()
-                self.data  = M[self.row, self.col]
+                self.data = M[self.row, self.col]
 
         if dtype is not None:
             self.data = self.data.astype(dtype)
@@ -209,14 +209,14 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
             warn("row index array has non-integer dtype (%s)  "
-                    % self.row.dtype.name )
+                    % self.row.dtype.name)
         if self.col.dtype.kind != 'i':
             warn("col index array has non-integer dtype (%s) "
-                    % self.col.dtype.name )
+                    % self.col.dtype.name)
 
         # only support 32-bit ints for now
-        self.row  = np.asarray(self.row, dtype=np.intc)
-        self.col  = np.asarray(self.col, dtype=np.intc)
+        self.row = np.asarray(self.row, dtype=np.intc)
+        self.col = np.asarray(self.col, dtype=np.intc)
         self.data = to_native(self.data)
 
         if nnz > 0:
@@ -269,9 +269,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            indptr  = np.empty(N + 1,    dtype=np.intc)
+            indptr = np.empty(N + 1, dtype=np.intc)
             indices = np.empty(self.nnz, dtype=np.intc)
-            data    = np.empty(self.nnz, dtype=upcast(self.dtype))
+            data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
             coo_tocsr(N, M, self.nnz,
                       self.col, self.row, self.data,
@@ -307,9 +307,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            indptr  = np.empty(M + 1,    dtype=np.intc)
+            indptr = np.empty(M + 1, dtype=np.intc)
             indices = np.empty(self.nnz, dtype=np.intc)
-            data    = np.empty(self.nnz, dtype=upcast(self.dtype))
+            data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
             coo_tocsr(M, N, self.nnz,
                       self.row, self.col, self.data,
@@ -341,8 +341,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         if self.data.size == 0:
             data = np.zeros((0, 0), dtype=self.dtype)
         else:
-            data = np.zeros( (len(diags), self.col.max()+1), dtype=self.dtype)
-            data[ np.searchsorted(diags,ks), self.col ] = self.data
+            data = np.zeros((len(diags), self.col.max()+1), dtype=self.dtype)
+            data[np.searchsorted(diags,ks), self.col] = self.data
 
         return dia_matrix((data,diags), shape=self.shape)
 
@@ -351,7 +351,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         dok = dok_matrix((self.shape), dtype=self.dtype)
 
-        dok.update( izip(izip(self.row,self.col),self.data) )
+        dok.update(izip(izip(self.row,self.col),self.data))
 
         return dok
 
@@ -362,10 +362,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         (i.e. .row and .col) are copied.
         """
         if copy:
-            return coo_matrix( (data, (self.row.copy(), self.col.copy()) ),
+            return coo_matrix((data, (self.row.copy(), self.col.copy())),
                                    shape=self.shape, dtype=data.dtype)
         else:
-            return coo_matrix( (data, (self.row, self.col) ),
+            return coo_matrix((data, (self.row, self.col)),
                                    shape=self.shape, dtype=data.dtype)
 
     ###########################
@@ -374,14 +374,14 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def _mul_vector(self, other):
         #output array
-        result = np.zeros( self.shape[0], dtype=upcast_char(self.dtype.char,
-                                                            other.dtype.char) )
+        result = np.zeros(self.shape[0], dtype=upcast_char(self.dtype.char,
+                                                            other.dtype.char))
         coo_matvec(self.nnz, self.row, self.col, self.data, other, result)
         return result
 
     def _mul_multivector(self, other):
-        return np.hstack( [ self._mul_vector(col).reshape(-1,1) for col in other.T ] )
+        return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
 
 
-def isspmatrix_coo( x ):
+def isspmatrix_coo(x):
     return isinstance(x, coo_matrix)

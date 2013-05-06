@@ -15,7 +15,7 @@ def configuration(parent_package='', top_path=None):
                                   'correlate_nd.c.src'],
                          depends=['sigtools.h'],
                          include_dirs=['.']
-    )
+                         )
 
     config.add_extension('_spectral', sources=['_spectral.c'])
 

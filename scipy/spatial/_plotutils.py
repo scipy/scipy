@@ -149,11 +149,11 @@ def voronoi_plot_2d(vor, ax=None):
     for pointidx, simplex in zip(vor.ridge_points, vor.ridge_vertices):
         simplex = np.asarray(simplex)
         if np.any(simplex < 0):
-            i = simplex[simplex >= 0][0] # finite end Voronoi vertex
+            i = simplex[simplex >= 0][0]  # finite end Voronoi vertex
 
-            t = vor.points[pointidx[1]] - vor.points[pointidx[0]] # tangent
+            t = vor.points[pointidx[1]] - vor.points[pointidx[0]]  # tangent
             t /= np.linalg.norm(t)
-            n = np.array([-t[1], t[0]]) # normal
+            n = np.array([-t[1], t[0]])  # normal
 
             midpoint = vor.points[pointidx].mean(axis=0)
             direction = np.sign(np.dot(midpoint - center, n)) * n

@@ -17,7 +17,7 @@ def gen_data(dt):
     else:
         raise ValueError("unknown: %s" % dt)
     # Generate test data using FFTW for reference
-    for type in [1, 2, 3, 4,  5, 6, 7, 8]:
+    for type in [1, 2, 3, 4, 5, 6, 7, 8]:
         arrays[type] = {}
         for sz in SZ:
             a = Popen([pg, str(type), str(sz)], stdout=PIPE, stderr=STDOUT)

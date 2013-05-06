@@ -10,7 +10,6 @@ import scipy.sparse.linalg
 __all__ = ['onenormest']
 
 
-
 def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     """
     Compute a lower bound of the 1-norm of a sparse matrix.
@@ -80,14 +79,17 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     else:
         return est
 
+
 def sign_round_up(X):
     # differs from numpy sign in the way it handles entries that are zero
     return np.sign(np.sign(X) + 0.5)
+
 
 def elementary_vector(n, i):
     v = np.zeros(n, dtype=float)
     v[i] = 1
     return v
+
 
 def vectors_are_parallel(v, w):
     # Columns are considered parallel when they are equal or negative.
@@ -99,11 +101,13 @@ def vectors_are_parallel(v, w):
     n = v.shape[0]
     return np.dot(v, w) == n
 
+
 def every_col_of_X_is_parallel_to_a_col_of_Y(X, Y):
     for v in X.T:
         if not any(vectors_are_parallel(v, w) for w in Y.T):
             return False
     return True
+
 
 def column_needs_resampling(i, X, Y=None):
     # column i of X needs resampling if either
@@ -118,16 +122,20 @@ def column_needs_resampling(i, X, Y=None):
             return True
     return False
 
+
 def resample_column(i, X):
     X[:, i] = np.random.randint(0, 2, size=X.shape[0])*2 - 1
+
 
 def norm_1d_1(v):
     # this is faster than calling the numpy/scipy norm function
     return np.sum(np.abs(v))
 
+
 def norm_1d_inf(v):
     # this is faster than calling the numpy/scipy norm function
     return np.max(np.abs(v))
+
 
 def less_than_or_close(a, b):
     return np.allclose(a, b) or (a < b)
@@ -170,7 +178,7 @@ def _algorithm_2_2(A, AT, t):
     its usage in algorithm 2.4.  This algorithm 2.2 may be easier to test,
     so it gives a chance of uncovering bugs related to indexing
     which could have propagated less noticably to algorithm 2.4.
-    
+
     """
     A_linear_operator = scipy.sparse.linalg.aslinearoperator(A)
     AT_linear_operator = scipy.sparse.linalg.aslinearoperator(AT)
@@ -371,5 +379,3 @@ def _onenormest_core(A, AT, t, itmax):
         k += 1
     v = elementary_vector(n, ind_best)
     return est, v, w, nmults, nresamples
-
-

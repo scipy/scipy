@@ -14,13 +14,13 @@ from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
-#TODO add more comprehensive tests
-use_solver( useUmfpack=False )
+# TODO add more comprehensive tests
+use_solver(useUmfpack=False)
 
 
 class TestLinsolve(TestCase):
     def test_singular(self):
-        A = csc_matrix( (5,5), dtype='d' )
+        A = csc_matrix((5,5), dtype='d')
         b = array([1, 2, 3, 4, 5],dtype='d')
         x = spsolve(A, b, use_umfpack=False)
 
@@ -32,7 +32,7 @@ class TestLinsolve(TestCase):
         cond_A = norm(A.todense(),2) * norm(inv(A.todense()),2)
 
         for t in ['f','d','F','D']:
-            eps = finfo(t).eps # floating point epsilon
+            eps = finfo(t).eps  # floating point epsilon
             b = b.astype(t)
 
             for format in ['csc','csr']:
@@ -40,12 +40,12 @@ class TestLinsolve(TestCase):
 
                 x = spsolve(Asp,b)
 
-                assert_( norm(b - Asp*x) < 10 * cond_A * eps )
+                assert_(norm(b - Asp*x) < 10 * cond_A * eps)
 
     def test_bvector_smoketest(self):
-        Adense = matrix([[ 0.,  1.,  1.],
-                         [ 1.,  0.,  1.],
-                         [ 0.,  0.,  1.]])
+        Adense = matrix([[0., 1., 1.],
+                         [1., 0., 1.],
+                         [0., 0., 1.]])
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3)
@@ -55,9 +55,9 @@ class TestLinsolve(TestCase):
         assert_array_almost_equal(x, x2)
 
     def test_bmatrix_smoketest(self):
-        Adense = matrix([[ 0.,  1.,  1.],
-                         [ 1.,  0.,  1.],
-                         [ 0.,  0.,  1.]])
+        Adense = matrix([[0., 1., 1.],
+                         [1., 0., 1.],
+                         [0., 0., 1.]])
         As = csc_matrix(Adense)
         random.seed(1234)
         x = random.randn(3, 4)
@@ -83,8 +83,8 @@ class TestLinsolve(TestCase):
         sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
         M = sM.todense()
 
-        row  = array([0,0,1,1,0,0])
-        col  = array([0,2,1,1,0,0])
+        row = array([0,0,1,1,0,0])
+        col = array([0,2,1,1,0,0])
         data = array([1,1,1,1,1,1])
         sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
         N = sN.todense()
@@ -119,11 +119,11 @@ class TestSplu(object):
         assert_(abs(x - r).max() > 1e-5)
 
     def test_splu_nnz0(self):
-        A = csc_matrix( (5,5), dtype='d' )
+        A = csc_matrix((5,5), dtype='d')
         assert_raises(RuntimeError, splu, A)
 
     def test_spilu_nnz0(self):
-        A = csc_matrix( (5,5), dtype='d' )
+        A = csc_matrix((5,5), dtype='d')
         assert_raises(RuntimeError, spilu, A)
 
     def test_splu_basic(self):

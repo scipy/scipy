@@ -227,7 +227,7 @@ def _root_nonlin_solve(func, x0, args=(), jac=None,
                 'diagbroyden': nonlin.DiagBroyden,
                 'excitingmixing': nonlin.ExcitingMixing,
                 'krylov': nonlin.KrylovJacobian
-               }[_method]
+                }[_method]
 
     if args:
         if jac == True:

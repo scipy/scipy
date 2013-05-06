@@ -15,6 +15,7 @@ import os
 from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
                   ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
 from numpy.compat import asbytes, asstr
+from scipy.lib.six import string_types
 
 __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 
@@ -108,18 +109,23 @@ class MMFile (object):
     @property
     def rows(self):
         return self._rows
+
     @property
     def cols(self):
         return self._cols
+
     @property
     def entries(self):
         return self._entries
+
     @property
     def format(self):
         return self._format
+
     @property
     def field(self):
         return self._field
+
     @property
     def symmetry(self):
         return self._symmetry
@@ -142,7 +148,7 @@ class MMFile (object):
 
     # field values
     FIELD_INTEGER = 'integer'
-    FIELD_REAL    = 'real'
+    FIELD_REAL = 'real'
     FIELD_COMPLEX = 'complex'
     FIELD_PATTERN = 'pattern'
     FIELD_VALUES = (FIELD_INTEGER, FIELD_REAL, FIELD_COMPLEX, FIELD_PATTERN)
@@ -154,11 +160,11 @@ class MMFile (object):
                                 (field, self.FIELD_VALUES))
 
     # symmetry values
-    SYMMETRY_GENERAL        = 'general'
-    SYMMETRY_SYMMETRIC      = 'symmetric'
+    SYMMETRY_GENERAL = 'general'
+    SYMMETRY_SYMMETRIC = 'symmetric'
     SYMMETRY_SKEW_SYMMETRIC = 'skew-symmetric'
-    SYMMETRY_HERMITIAN      = 'hermitian'
-    SYMMETRY_VALUES = ( SYMMETRY_GENERAL,        SYMMETRY_SYMMETRIC,
+    SYMMETRY_HERMITIAN = 'hermitian'
+    SYMMETRY_VALUES = (SYMMETRY_GENERAL, SYMMETRY_SYMMETRIC,
                         SYMMETRY_SKEW_SYMMETRIC, SYMMETRY_HERMITIAN)
 
     @classmethod
@@ -169,7 +175,7 @@ class MMFile (object):
 
     DTYPES_BY_FIELD = {
       FIELD_INTEGER: 'i',
-      FIELD_REAL:    'd',
+      FIELD_REAL: 'd',
       FIELD_COMPLEX: 'D',
       FIELD_PATTERN: 'd'}
 
@@ -192,7 +198,7 @@ class MMFile (object):
 
             # read and validate header line
             line = source.readline()
-            mmid, matrix, format, field, symmetry  = \
+            mmid, matrix, format, field, symmetry = \
               [asstr(part.strip().lower()) for part in line.split()]
             if not mmid.startswith('%%matrixmarket'):
                 raise ValueError('source is not in Matrix Market format')
@@ -236,7 +242,7 @@ class MMFile (object):
         extensions).  Otherwise, just return source.
         """
         close_it = False
-        if type(filespec) is type(''):
+        if isinstance(filespec, string_types):
             close_it = True
 
             # open for reading
@@ -471,7 +477,7 @@ class MMFile (object):
                 J = ascontiguousarray(flat_data[:,1], dtype='intc')
                 V = ascontiguousarray(flat_data[:,2], dtype='float')
 
-            I -= 1 # adjust indices (base 1 -> base 0)
+            I -= 1  # adjust indices (base 1 -> base 0)
             J -= 1
 
             if has_symmetry:
@@ -606,7 +612,7 @@ class MMFile (object):
             if symm != self.SYMMETRY_GENERAL:
                 raise NotImplementedError('symmetric matrices not yet supported')
 
-            coo = a.tocoo() # convert to COOrdinate format
+            coo = a.tocoo()  # convert to COOrdinate format
 
             # write shape spec
             stream.write(asbytes('%i %i %i\n' % (rows, cols, coo.nnz)))
@@ -615,14 +621,14 @@ class MMFile (object):
 
             if field == self.FIELD_PATTERN:
                 IJV = vstack((coo.row, coo.col)).T
-            elif field in [ self.FIELD_INTEGER, self.FIELD_REAL ]:
+            elif field in [self.FIELD_INTEGER, self.FIELD_REAL]:
                 IJV = vstack((coo.row, coo.col, coo.data)).T
             elif field == self.FIELD_COMPLEX:
                 IJV = vstack((coo.row, coo.col, coo.data.real, coo.data.imag)).T
             else:
                 raise TypeError('Unknown field type %s' % field)
 
-            IJV[:,:2] += 1 # change base 0 -> base 1
+            IJV[:,:2] += 1  # change base 0 -> base 1
 
             savetxt(stream, IJV, fmt=fmt)
 

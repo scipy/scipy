@@ -124,7 +124,7 @@ class array_converter(standard_array_spec.array_converter):
 
     def __cmp__(self,other):
         #only works for equal
-        return ( cmp(self.name,other.name) or
+        return (cmp(self.name,other.name) or
                  cmp(self.var_type,other.var_type) or
                  cmp(self.dims, other.dims) or
-                 cmp(self.__class__, other.__class__) )
+                 cmp(self.__class__, other.__class__))

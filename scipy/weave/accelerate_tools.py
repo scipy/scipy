@@ -24,7 +24,7 @@ def CStr(s):
     if s is None:
         return '""'
     assert_(isinstance(s, str), msg="only None and string allowed")
-    r = repr('"'+s) # Better for embedded quotes
+    r = repr('"'+s)  # Better for embedded quotes
     return '"'+r[2:-1]+'"'
 
 
@@ -35,7 +35,7 @@ class Instance(Type_Descriptor):
     cxxtype = 'PyObject*'
 
     def __init__(self,prototype):
-        self.prototype  = prototype
+        self.prototype = prototype
 
     def check(self,s):
         return "PyInstance_Check(%s)" % s
@@ -72,10 +72,13 @@ class Instance(Type_Descriptor):
 
 class Basic(Type_Descriptor):
     owned = 1
+
     def check(self,s):
         return "%s(%s)" % (self.checker,s)
+
     def inbound(self,s):
         return "%s(%s)" % (self.inbounder,s)
+
     def outbound(self,s):
         return "%s(%s)" % (self.outbounder,s),self.owned
 
@@ -83,6 +86,7 @@ class Basic(Type_Descriptor):
 class Basic_Number(Basic):
     def literalizer(self,s):
         return str(s)
+
     def binop(self,symbol,a,b):
         assert_(symbol in ['+','-','*','/'], msg=symbol)
         return '%s %s %s' % (a,symbol,b),self
@@ -128,17 +132,19 @@ class Vector(Type_Descriptor):
     module_init_code = 'import_array();\n'
     inbounder = "(PyArrayObject*)"
     outbounder = "(PyObject*)"
-    owned = 0 # Convertion is by casting!
+    owned = 0  # Convertion is by casting!
 
     prerequisites = Type_Descriptor.prerequisites + \
                     ['#include "numpy/arrayobject.h"']
     dims = 1
+
     def check(self,s):
         return "PyArray_Check(%s) && ((PyArrayObject*)%s)->nd == %d &&  ((PyArrayObject*)%s)->descr->type_num == %s" % (
             s,s,self.dims,s,self.typecode)
 
     def inbound(self,s):
         return "%s(%s)" % (self.inbounder,s)
+
     def outbound(self,s):
         return "%s(%s)" % (self.outbounder,s),self.owned
 
@@ -150,6 +156,7 @@ class Vector(Type_Descriptor):
             code += '+%s*%s->strides[%d]' % (v[i],A,i)
         code += '))'
         return code,self.pybase
+
     def setitem(self,A,v,t):
         return self.getitem(A,v,t)
 
@@ -228,8 +235,8 @@ XRange = XRange()
 
 
 typedefs = {
-    int : Integer,
-    float : Double,
+    int: Integer,
+    float: Double,
     str: String,
     (np.ndarray,1,int): IntegerVector,
     (np.ndarray,2,int): Integermatrix,
@@ -237,7 +244,7 @@ typedefs = {
     (np.ndarray,2,np.long): Longmatrix,
     (np.ndarray,1,float): DoubleVector,
     (np.ndarray,2,float): Doublematrix,
-    XRangeType : XRange,
+    XRangeType: XRange,
     }
 
 import math
@@ -307,7 +314,7 @@ class accelerate(object):
             return self.__cache(*args)
         except TypeError:
             # Figure out type info -- Do as tuple so its hashable
-            signature = tuple( map(lookup_type,args) )
+            signature = tuple(map(lookup_type,args))
 
             # If we know the function, call it
             try:
@@ -320,7 +327,7 @@ class accelerate(object):
 
     def signature(self,*args):
         # Figure out type info -- Do as tuple so its hashable
-        signature = tuple( map(lookup_type,args) )
+        signature = tuple(map(lookup_type,args))
         return self.singleton(signature)
 
     def singleton(self,signature):
@@ -377,7 +384,7 @@ class accelerate(object):
                         (self.function.__name__,
                          self.function.func_code.co_argcount,
                          len(args)))
-        signature = tuple( map(lookup_type,args) )
+        signature = tuple(map(lookup_type,args))
         ident = self.function.__name__
         return self.accelerate(signature,ident).function_code()
 

@@ -73,8 +73,8 @@ class TestBlitz(TestCase):
         t1 = time.time()
         old_env = os.environ.get('PYTHONCOMPILED','')
         os.environ['PYTHONCOMPILED'] = mod_location
-        blitz_tools.blitz(expr,arg_dict,{},verbose=0) # ,
-                          #extra_compile_args = ['-O3','-malign-double','-funroll-loops'])
+        blitz_tools.blitz(expr,arg_dict,{},verbose=0)  # ,
+                          # extra_compile_args = ['-O3','-malign-double','-funroll-loops'])
         os.environ['PYTHONCOMPILED'] = old_env
         t2 = time.time()
         compiled = t2 - t1
@@ -101,7 +101,7 @@ class TestBlitz(TestCase):
         import parser
         ast = parser.suite(expr)
         arg_list = harvest_variables(ast.tolist())
-        #print arg_list
+        # print arg_list
         all_sizes = [(10,10), (50,50), (100,100), (500,500), (1000,1000)]
         print('\nExpression:', expr)
         for size in all_sizes:
@@ -133,7 +133,7 @@ class TestBlitz(TestCase):
                   "%3.4f" % (standard,compiled,speed_up))
         cleanup_temp_dir(mod_location)
 
-    #def test_simple_2d(self):
+    # def test_simple_2d(self):
     #    """ result = a + b"""
     #    expr = "result = a + b"
     #    self.generic_2d(expr)
@@ -183,6 +183,7 @@ class TestBlitz(TestCase):
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,complex128)
+
 
 @dec.slow
 def test_blitz_bug():

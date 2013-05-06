@@ -212,7 +212,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             for v in vs:
                 alpha = dot(v, v_new)
                 hcur.append(alpha)
-                v_new = axpy(v, v_new, v.shape[0], -alpha) # v_new -= alpha*v
+                v_new = axpy(v, v_new, v.shape[0], -alpha)  # v_new -= alpha*v
             hcur.append(norm2(v_new))
 
             if hcur[-1] == 0:
@@ -237,8 +237,8 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
                 continue
 
             # -- GMRES optimization problem
-            hess  = np.zeros((j+1, j), x.dtype)
-            e1    = np.zeros((j+1,), x.dtype)
+            hess = np.zeros((j+1, j), x.dtype)
+            e1 = np.zeros((j+1,), x.dtype)
             e1[0] = inner_res_0
             for q in xrange(j):
                 hess[:(q+2),q] = hs[q]
@@ -253,7 +253,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         # -- GMRES terminated: eval solution
         dx = ws[0]*y[0]
         for w, yc in zip(ws[1:], y[1:]):
-            dx = axpy(w, dx, dx.shape[0], yc) # dx += w*yc
+            dx = axpy(w, dx, dx.shape[0], yc)  # dx += w*yc
 
         # -- Store LGMRES augmentation vectors
         nx = norm2(dx)

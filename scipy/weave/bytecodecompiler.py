@@ -22,6 +22,7 @@ from numpy.testing import assert_
 class __Descriptor(object):
     prerequisites = []
     refcount = 0
+
     def __repr__(self):
         return self.__module__+'.'+self.__class__.__name__
 
@@ -46,7 +47,7 @@ class Function_Descriptor(__Descriptor):
         return
 
 
-haveArgument = 90 # Opcodes greater-equal to this have argument
+haveArgument = 90  # Opcodes greater-equal to this have argument
 byName = {
     'STOP_CODE': 0,
     'POP_TOP': 1,
@@ -244,23 +245,25 @@ class ByteCodeMeaning(object):
         next, opcode,argument = self.fetch(pc,code)
         goto = self.execute(next,opcode,argument)
         if goto == -1:
-            return None # Must be done
+            return None  # Must be done
         elif goto is None:
-            return next # Normal
+            return next  # Normal
         else:
             raise ValueError("Executing code failed.")
 
-    symbols = { 0: 'less', 1: 'lesseq', 2: 'equal', 3: 'notequal',
+    symbols = {0: 'less', 1: 'lesseq', 2: 'equal', 3: 'notequal',
                 4: 'greater', 5: 'greatereq', 6: 'in', 7: 'not in',
                 8: 'is', 9: 'is not', 10: 'exe match',
-                11 : 'bad',
-                }
+                11: 'bad',
+               }
+
     def cmp_op(self,opname):
         return self.symbols[opname]
 
     def STOP_CODE(self,pc):
         "Indicates end-of-code to the compiler, not used by the interpreter."
         raise NotImplementedError
+
     def POP_TOP(self,pc):
         "Removes the top-of-stack (TOS) item."
         raise NotImplementedError
@@ -303,7 +306,7 @@ class ByteCodeMeaning(object):
         "Implements TOS = ~TOS."
         raise NotImplementedError
 
-    #Binary operations remove the top of the stack (TOS) and the second top-most stack item (TOS1) from the stack. They perform the operation, and put the result back on the stack.
+    # Binary operations remove the top of the stack (TOS) and the second top-most stack item (TOS1) from the stack. They perform the operation, and put the result back on the stack.
 
     def BINARY_POWER(self,pc):
         "Implements TOS = TOS1 ** TOS."
@@ -353,7 +356,7 @@ class ByteCodeMeaning(object):
         "Implements TOS = TOS1 | TOS."
         raise NotImplementedError
 
-    #In-place operations are like binary operations, in that they remove TOS and TOS1, and push the result back on the stack, but the operation is done in-place when TOS1 supports it, and the resulting TOS may be (but does not have to be) the original TOS1.
+    # In-place operations are like binary operations, in that they remove TOS and TOS1, and push the result back on the stack, but the operation is done in-place when TOS1 supports it, and the resulting TOS may be (but does not have to be) the original TOS1.
 
     def INPLACE_POWER(self,pc):
         "Implements in-place TOS = TOS1 ** TOS."
@@ -399,7 +402,7 @@ class ByteCodeMeaning(object):
         "Implements in-place TOS = TOS1 | TOS."
         raise NotImplementedError
 
-    #The slice opcodes take up to three parameters.
+    # The slice opcodes take up to three parameters.
 
     def SLICE_0(self,pc):
         "Implements TOS = TOS[:]."
@@ -417,7 +420,7 @@ class ByteCodeMeaning(object):
         "Implements TOS = TOS2[TOS1:TOS]."
         raise NotImplementedError
 
-    #Slice assignment needs even an additional parameter. As any statement, they put nothing on the stack.
+    # Slice assignment needs even an additional parameter. As any statement, they put nothing on the stack.
 
     def STORE_SLICE_0(self,pc):
         "Implements TOS[:] = TOS1."
@@ -511,7 +514,7 @@ class ByteCodeMeaning(object):
         "Creates a new class object. TOS is the methods dictionary, TOS1 the tuple of the names of the base classes, and TOS2 the class name."
         raise NotImplementedError
 
-    #All of the following opcodes expect arguments. An argument is two bytes, with the more significant byte last.
+    # All of the following opcodes expect arguments. An argument is two bytes, with the more significant byte last.
 
     def STORE_NAME(self,pc,namei):
         "Implements name = TOS. namei is the index of name in the attribute co_names of the code object. The compiler tries to use STORE_LOCAL or STORE_GLOBAL if possible."
@@ -691,7 +694,7 @@ class CXXCoder(ByteCodeMeaning):
     #                    MEMBER TYPEDEF_BY_VALUE                     #
     ##################################################################
     def typedef_by_value(self,v):
-        raise NotImplementedError # VIRTUAL
+        raise NotImplementedError  # VIRTUAL
 
     ##################################################################
     #                        MEMBER __INIT__                         #
@@ -706,7 +709,7 @@ class CXXCoder(ByteCodeMeaning):
         self.function = function
         self.signature = signature
         self.codeobject = function.func_code
-        self.__uid = 0 # Builds temps
+        self.__uid = 0  # Builds temps
         self.__indent = 1
         return
 
@@ -725,9 +728,9 @@ class CXXCoder(ByteCodeMeaning):
     #                        MEMBER GENERATE                         #
     ##################################################################
     def generate(self):
-        self.forwards = {} # Actions on forward interprets
-        self.__body = '' # Body will be built
-        self.helpers = [] # headers and stuff
+        self.forwards = {}  # Actions on forward interprets
+        self.__body = ''  # Body will be built
+        self.helpers = []  # headers and stuff
 
         # -----------------------------------------------
         # OK, crack open the function object and build
@@ -838,8 +841,8 @@ class CXXCoder(ByteCodeMeaning):
 
             code += '  if ( !(%s) ) {\n' % \
                     T.check('py_'+self.codeobject.co_varnames[i])
-            #code += '    PyObject_Print(py_A,stdout,0); puts("");\n'
-            #code += '    printf("nd=%d typecode=%d\\n",((PyArrayObject*)py_A)->nd,((PyArrayObject*)py_A)->descr->type_num);\n'
+            # code += '    PyObject_Print(py_A,stdout,0); puts("");\n'
+            # code += '    printf("nd=%d typecode=%d\\n",((PyArrayObject*)py_A)->nd,((PyArrayObject*)py_A)->descr->type_num);\n'
             code += '    PyErr_SetString(PyExc_TypeError,"Bad type for arg %d (expected %s)");\n' % (
                 i+1,
                 T.__class__.__name__)
@@ -941,6 +944,7 @@ class CXXCoder(ByteCodeMeaning):
         assert_(isinstance(t, tuple))
         del self.types[-1]
         return v,t
+
     ##################################################################
     #                        MEMBER MULTIARG                         #
     ##################################################################
@@ -1029,15 +1033,20 @@ class CXXCoder(ByteCodeMeaning):
     ##################################################################
     def BINARY_ADD(self,pc):
         return self.binop(pc,'+')
+
     def BINARY_SUBTRACT(self,pc):
         return self.binop(pc,'-')
+
     def BINARY_MULTIPLY(self,pc):
         print('MULTIPLY',self.stack[-2],self.types[-2],'*',self.stack[-1],self.types[-1])
         return self.binop(pc,'*')
+
     def BINARY_DIVIDE(self,pc):
         return self.binop(pc,'/')
+
     def BINARY_MODULO(self,pc):
         return self.binop(pc,'%')
+
     def BINARY_SUBSCR(self,pc):
         if self.multiarg():
             v2,t2 = self.popTuple()
@@ -1066,7 +1075,7 @@ class CXXCoder(ByteCodeMeaning):
         return
 
     def COMPARE_OP(self,pc,opname):
-        symbol = self.cmp_op(opname) # convert numeric to name
+        symbol = self.cmp_op(opname)  # convert numeric to name
         return self.binop(pc,symbol)
 
     ##################################################################
@@ -1330,7 +1339,7 @@ class CXXCoder(ByteCodeMeaning):
         f,t = self.pop()
         signature = (f,tuple(types))
         descriptor = self.function_by_signature(signature)
-        #self.prerequisites += descriptor['prerequisite']+'\n'
+        # self.prerequisites += descriptor['prerequisite']+'\n'
 
         # Build a rhs
         rhs = descriptor.code % ','.join(args)
@@ -1381,7 +1390,7 @@ class CXXCoder(ByteCodeMeaning):
         v,t = self.pop()
         if hasattr(self,'rtype'):
             if t is None:
-                return # just the extra return
+                return  # just the extra return
             raise ValueError('multiple returns: (v=%s, t=%s)' % (v, t))
         self.rtype = t
         if t is None:
