@@ -15,14 +15,14 @@ def sakurai(n):
         A moment-based method for large-scale generalized eigenvalue problems
         Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004) """
 
-    A = sparse.eye( n, n )
+    A = sparse.eye(n, n)
     d0 = array(r_[5,6*ones(n-2),5])
     d1 = -4*ones(n)
     d2 = ones(n)
     B = sparse.spdiags([d2,d1,d0,d1,d2],[-2,-1,0,1,2],n,n)
 
     k = arange(1,n+1)
-    w_ex = sort(1./(16.*pow(cos(0.5*k*pi/(n+1)),4))) # exact eigenvalues
+    w_ex = sort(1./(16.*pow(cos(0.5*k*pi/(n+1)),4)))  # exact eigenvalues
 
     return A,B, w_ex
 
@@ -32,7 +32,7 @@ m = 3  # Blocksize
 # Large scale
 #
 n = 2500
-A,B, w_ex = sakurai(n) # Mikota pair
+A,B, w_ex = sakurai(n)  # Mikota pair
 X = rand(n,m)
 data = []
 tt = time.clock()

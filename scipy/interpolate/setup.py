@@ -11,7 +11,7 @@ def configuration(parent_package='',top_path=None):
 
     config.add_library('fitpack',
                        sources=[join('fitpack', '*.f')],
-                      )
+                       )
 
     config.add_extension('interpnd',
                          sources=['interpnd.c'])
@@ -20,12 +20,12 @@ def configuration(parent_package='',top_path=None):
                          sources=['src/_fitpackmodule.c'],
                          libraries=['fitpack'],
                          depends=['src/__fitpack.h','src/multipack.h']
-                        )
+                         )
 
     config.add_extension('dfitpack',
                          sources=['src/fitpack.pyf'],
                          libraries=['fitpack'],
-                        )
+                         )
 
     config.add_extension('_interpolate',
                          sources=['src/_interpolate.cpp'],

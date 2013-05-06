@@ -111,23 +111,29 @@ class Rbf(object):
     """
 
     def _euclidean_norm(self, x1, x2):
-        return sqrt( ((x1 - x2)**2).sum(axis=0) )
+        return sqrt(((x1 - x2)**2).sum(axis=0))
 
     def _h_multiquadric(self, r):
         return sqrt((1.0/self.epsilon*r)**2 + 1)
+
     def _h_inverse_multiquadric(self, r):
         return 1.0/sqrt((1.0/self.epsilon*r)**2 + 1)
+
     def _h_gaussian(self, r):
         return exp(-(1.0/self.epsilon*r)**2)
+
     def _h_linear(self, r):
         return r
+
     def _h_cubic(self, r):
         return r**3
+
     def _h_quintic(self, r):
         return r**5
+
     def _h_thin_plate(self, r):
         result = r**2 * log(r)
-        result[r == 0] = 0 # the spline is zero at zero
+        result[r == 0] = 0  # the spline is zero at zero
         return result
 
     # Setup self._function and do smoke test on initial r

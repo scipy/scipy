@@ -228,13 +228,13 @@ class ODE:
     """
     ODE problem
     """
-    stiff   = False
-    cmplx   = False
-    stop_t  = 1
-    z0      = []
+    stiff = False
+    cmplx = False
+    stop_t = 1
+    z0 = []
 
-    atol    = 1e-6
-    rtol    = 1e-5
+    atol = 1e-6
+    rtol = 1e-5
 
 
 class SimpleOscillator(ODE):
@@ -244,8 +244,8 @@ class SimpleOscillator(ODE):
     Solution::
         u(t) = u_0*cos(sqrt(k/m)*t)+\dot{u}_0*sin(sqrt(k/m)*t)/sqrt(k/m)
     """
-    stop_t  = 1 + 0.09
-    z0      = array([1.0, 0.1], float)
+    stop_t = 1 + 0.09
+    z0 = array([1.0, 0.1], float)
 
     k = 4.0
     m = 1.0
@@ -264,9 +264,9 @@ class SimpleOscillator(ODE):
 
 class ComplexExp(ODE):
     r"""The equation :lm:`\dot u = i u`"""
-    stop_t  = 1.23*pi
-    z0      = exp([1j,2j,3j,4j,5j])
-    cmplx   = True
+    stop_t = 1.23*pi
+    z0 = exp([1j,2j,3j,4j,5j])
+    cmplx = True
 
     def f(self, z, t):
         return 1j*z
@@ -281,12 +281,13 @@ class ComplexExp(ODE):
 
 class Pi(ODE):
     r"""Integrate 1/(t + 1j) from t=-10 to t=10"""
-    stop_t  = 20
-    z0      = [0]
-    cmplx   = True
+    stop_t = 20
+    z0 = [0]
+    cmplx = True
 
     def f(self, z, t):
         return array([1./(t - 10 + 1j)])
+
     def verify(self, zs, t):
         u = -2j*numpy.arctan(10)
         return allclose(u, zs[-1,:], atol=self.atol, rtol=self.rtol)
@@ -302,7 +303,7 @@ def f(t, x):
 
 
 def jac(t, x):
-    j = array([[ 0.0, 1.0],
+    j = array([[0.0, 1.0],
                [-1.0, 0.0]])
     return j
 
@@ -313,7 +314,7 @@ def f1(t, x, omega):
 
 
 def jac1(t, x, omega):
-    j = array([[ 0.0, omega],
+    j = array([[0.0, omega],
                [-omega, 0.0]])
     return j
 
@@ -324,7 +325,7 @@ def f2(t, x, omega1, omega2):
 
 
 def jac2(t, x, omega1, omega2):
-    j = array([[ 0.0, omega1],
+    j = array([[0.0, omega1],
                [-omega2, 0.0]])
     return j
 
@@ -335,7 +336,7 @@ def fv(t, x, omega):
 
 
 def jacv(t, x, omega):
-    j = array([[ 0.0, omega[0]],
+    j = array([[0.0, omega[0]],
                [-omega[1], 0.0]])
     return j
 

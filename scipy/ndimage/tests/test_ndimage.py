@@ -287,8 +287,8 @@ class TestNdimage:
 
     def test_correlate16(self):
         "correlation 16"
-        kernel = numpy.array([[0.5, 0  ],
-                                 [0,   0.5]])
+        kernel = numpy.array([[0.5, 0],
+                                 [0, 0.5]])
         for type1 in self.types:
             array = numpy.array([[1, 2, 3],
                                     [4, 5, 6]], type1)
@@ -698,6 +698,7 @@ class TestNdimage:
         array = numpy.array([[3, 2, 5, 1, 4],
                                 [5, 8, 3, 7, 1],
                                 [5, 6, 9, 3, 5]], numpy.float64)
+
         def derivative(input, axis, output, mode, cval, a, b):
             sigma = [a, b / 2.0]
             input = numpy.asarray(input)
@@ -1121,6 +1122,7 @@ class TestNdimage:
     def test_generic_filter1d01(self):
         "generic 1d filter 1"
         weights = numpy.array([1.1, 2.2, 3.3])
+
         def _filter_func(input, output, fltr, total):
             fltr = fltr / total
             for ii in range(input.shape[0] - 2):
@@ -1142,6 +1144,7 @@ class TestNdimage:
         filter_ = numpy.array([[1.0, 2.0], [3.0, 4.0]])
         footprint = numpy.array([[1, 0], [0, 1]])
         cf = numpy.array([1., 4.])
+
         def _filter_func(buffer, weights, total=1.0):
             weights = cf / total
             return (buffer * weights).sum()
@@ -1312,8 +1315,8 @@ class TestNdimage:
         data = numpy.array([1,2,3,4.])
         expected = {'constant': [1.5,2.5,3.5,-1,-1,-1,-1],
                     'wrap': [1.5,2.5,3.5,1.5,2.5,3.5,1.5],
-                    'mirror' : [1.5,2.5,3.5,3.5,2.5,1.5,1.5],
-                    'nearest' : [1.5,2.5,3.5,4,4,4,4]}
+                    'mirror': [1.5,2.5,3.5,3.5,2.5,1.5,1.5],
+                    'nearest': [1.5,2.5,3.5,4,4,4,4]}
 
         for mode in expected:
             assert_array_equal(expected[mode],
@@ -1330,8 +1333,8 @@ class TestNdimage:
         data = numpy.array([1,2,3,4])
         expected = {'constant': [-1,1,2,3],
                     'wrap': [3,1,2,3],
-                    'mirror' : [2,1,2,3],
-                    'nearest' : [1,1,2,3]}
+                    'mirror': [2,1,2,3],
+                    'nearest': [1,1,2,3]}
 
         for mode in expected:
             assert_array_equal(expected[mode],
@@ -1498,6 +1501,7 @@ class TestNdimage:
     def test_geometric_transform01(self):
         "geometric transform 1"
         data = numpy.array([1])
+
         def mapping(x):
             return x
         for order in range(0, 6):
@@ -1509,6 +1513,7 @@ class TestNdimage:
     def test_geometric_transform02(self):
         "geometric transform 2"
         data = numpy.ones([4])
+
         def mapping(x):
             return x
         for order in range(0, 6):
@@ -1519,6 +1524,7 @@ class TestNdimage:
     def test_geometric_transform03(self):
         "geometric transform 3"
         data = numpy.ones([4])
+
         def mapping(x):
             return (x[0] - 1,)
         for order in range(0, 6):
@@ -1529,6 +1535,7 @@ class TestNdimage:
     def test_geometric_transform04(self):
         "geometric transform 4"
         data = numpy.array([4, 1, 3, 2])
+
         def mapping(x):
             return (x[0] - 1,)
         for order in range(0, 6):
@@ -1541,6 +1548,7 @@ class TestNdimage:
         data = numpy.array([[1, 1, 1, 1],
                                [1, 1, 1, 1],
                                [1, 1, 1, 1]])
+
         def mapping(x):
             return (x[0], x[1] - 1)
         for order in range(0, 6):
@@ -1555,6 +1563,7 @@ class TestNdimage:
         data = numpy.array([[4, 1, 3, 2],
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
+
         def mapping(x):
             return (x[0], x[1] - 1)
         for order in range(0, 6):
@@ -1569,6 +1578,7 @@ class TestNdimage:
         data = numpy.array([[4, 1, 3, 2],
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
+
         def mapping(x):
             return (x[0] - 1, x[1])
         for order in range(0, 6):
@@ -1583,6 +1593,7 @@ class TestNdimage:
         data = numpy.array([[4, 1, 3, 2],
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
+
         def mapping(x):
             return (x[0] - 1, x[1] - 1)
         for order in range(0, 6):
@@ -1597,6 +1608,7 @@ class TestNdimage:
         data = numpy.array([[4, 1, 3, 2],
                                [7, 6, 8, 5],
                                [3, 5, 3, 6]])
+
         def mapping(x):
             return (x[0] - 1, x[1] - 1)
         for order in range(0, 6):
@@ -1614,6 +1626,7 @@ class TestNdimage:
     def test_geometric_transform13(self):
         "geometric transform 13"
         data = numpy.ones([2], numpy.float64)
+
         def mapping(x):
             return (x[0] // 2,)
         for order in range(0, 6):
@@ -1624,6 +1637,7 @@ class TestNdimage:
     def test_geometric_transform14(self):
         "geometric transform 14"
         data = [1, 5, 2, 6, 3, 7, 4, 4]
+
         def mapping(x):
             return (2 * x[0],)
         for order in range(0, 6):
@@ -1634,6 +1648,7 @@ class TestNdimage:
     def test_geometric_transform15(self):
         "geometric transform 15"
         data = [1, 2, 3, 4]
+
         def mapping(x):
             return (x[0] / 2,)
         for order in range(0, 6):
@@ -1646,6 +1661,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9.0, 10, 11, 12]]
+
         def mapping(x):
             return (x[0], x[1] * 2)
         for order in range(0, 6):
@@ -1658,6 +1674,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (x[0] * 2, x[1])
         for order in range(0, 6):
@@ -1670,6 +1687,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (x[0] * 2, x[1] * 2)
         for order in range(0, 6):
@@ -1682,6 +1700,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (x[0], x[1] / 2)
         for order in range(0, 6):
@@ -1694,6 +1713,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (x[0] / 2, x[1])
         for order in range(0, 6):
@@ -1706,6 +1726,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (x[0] / 2, x[1] / 2)
         for order in range(0, 6):
@@ -1718,13 +1739,15 @@ class TestNdimage:
         data = numpy.array([[1, 2, 3, 4],
                                [5, 6, 7, 8],
                                [9, 10, 11, 12]], numpy.float64)
+
         def mapping1(x):
             return (x[0] / 2, x[1] / 2)
+
         def mapping2(x):
             return (x[0] * 2, x[1] * 2)
         for order in range(0, 6):
             out = ndimage.geometric_transform(data, mapping1,
-                                              (6, 8),  order=order)
+                                              (6, 8), order=order)
             out = ndimage.geometric_transform(out, mapping2,
                                               (3, 4), order=order)
             assert_array_almost_equal(out, data)
@@ -1734,6 +1757,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x):
             return (1, x[0] * 2)
         for order in range(0, 6):
@@ -1747,6 +1771,7 @@ class TestNdimage:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+
         def mapping(x, a, b):
             return (a, x[0] * b)
         for order in range(0, 6):
@@ -1958,7 +1983,7 @@ class TestNdimage:
                 [9, 10, 11, 12]]
         for order in range(0, 6):
             out = ndimage.affine_transform(data, [[0.5, 0],
-                                                            [0,   1]], 0,
+                                                            [0, 1]], 0,
                                                      (6, 4), order=order)
             assert_array_almost_equal(out[::2, ...], data)
 
@@ -2293,25 +2318,25 @@ class TestNdimage:
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0]], numpy.uint8)
-        markers = numpy.array([[ -1, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 1, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0]],
+        markers = numpy.array([[-1, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 1, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0]],
                                  numpy.int8)
         out = ndimage.watershed_ift(data, markers,
                                      structure=[[1,1,1],
                                                 [1,1,1],
                                                 [1,1,1]])
         expected = [[-1, -1, -1, -1, -1, -1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
                     [-1, -1, -1, -1, -1, -1, -1],
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, expected)
@@ -2326,22 +2351,22 @@ class TestNdimage:
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0]], numpy.uint8)
-        markers = numpy.array([[ -1, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 1, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0]],
+        markers = numpy.array([[-1, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 1, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0]],
                                  numpy.int8)
         out = ndimage.watershed_ift(data, markers)
         expected = [[-1, -1, -1, -1, -1, -1, -1],
-                    [-1, -1,  1,  1,  1, -1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1, -1,  1,  1,  1, -1, -1],
+                    [-1, -1, 1, 1, 1, -1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, -1, 1, 1, 1, -1, -1],
                     [-1, -1, -1, -1, -1, -1, -1],
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, expected)
@@ -2355,21 +2380,21 @@ class TestNdimage:
                                [0, 1, 0, 1, 0, 1, 0],
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 0, 0, 0, 0, 0]], numpy.uint8)
-        markers = numpy.array([[ 0, 0, 0, 0, 0, 0, 0],
-                                  [ 0, 0, 0, 0, 0, 0, 0],
-                                  [ 0, 0, 0, 0, 0, 0, 0],
-                                  [ 0, 0, 2, 0, 3, 0, 0],
-                                  [ 0, 0, 0, 0, 0, 0, 0],
-                                  [ 0, 0, 0, 0, 0, 0, 0],
-                                  [ 0, 0, 0, 0, 0, 0, -1]],
+        markers = numpy.array([[0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 2, 0, 3, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, -1]],
                                  numpy.int8)
         out = ndimage.watershed_ift(data, markers)
         expected = [[-1, -1, -1, -1, -1, -1, -1],
-                    [-1, -1,  2, -1,  3, -1, -1],
-                    [-1,  2,  2,  3,  3,  3, -1],
-                    [-1,  2,  2,  3,  3,  3, -1],
-                    [-1,  2,  2,  3,  3,  3, -1],
-                    [-1, -1,  2, -1,  3, -1, -1],
+                    [-1, -1, 2, -1, 3, -1, -1],
+                    [-1, 2, 2, 3, 3, 3, -1],
+                    [-1, 2, 2, 3, 3, 3, -1],
+                    [-1, 2, 2, 3, 3, 3, -1],
+                    [-1, -1, 2, -1, 3, -1, -1],
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, expected)
 
@@ -2382,24 +2407,24 @@ class TestNdimage:
                                [0, 1, 0, 1, 0, 1, 0],
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 0, 0, 0, 0, 0]], numpy.uint8)
-        markers = numpy.array([[ 0, 0, 0, 0, 0, 0, 0],
-                               [ 0, 0, 0, 0, 0, 0, 0],
-                               [ 0, 0, 0, 0, 0, 0, 0],
-                               [ 0, 0, 2, 0, 3, 0, 0],
-                               [ 0, 0, 0, 0, 0, 0, 0],
-                               [ 0, 0, 0, 0, 0, 0, 0],
-                               [ 0, 0, 0, 0, 0, 0, -1]],
+        markers = numpy.array([[0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 2, 0, 3, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, -1]],
                               numpy.int8)
         out = ndimage.watershed_ift(data, markers,
                                     structure=[[1,1,1],
                                                [1,1,1],
                                                [1,1,1]])
         expected = [[-1, -1, -1, -1, -1, -1, -1],
-                    [-1,  2,  2,  3,  3,  3, -1],
-                    [-1,  2,  2,  3,  3,  3, -1],
-                    [-1,  2,  2,  3,  3,  3, -1],
-                    [-1,  2,  2,  3,  3,  3, -1],
-                    [-1,  2,  2,  3,  3,  3, -1],
+                    [-1, 2, 2, 3, 3, 3, -1],
+                    [-1, 2, 2, 3, 3, 3, -1],
+                    [-1, 2, 2, 3, 3, 3, -1],
+                    [-1, 2, 2, 3, 3, 3, -1],
+                    [-1, 2, 2, 3, 3, 3, -1],
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, expected)
 
@@ -2412,24 +2437,24 @@ class TestNdimage:
                             [0, 1, 0, 1, 0, 1, 0],
                             [0, 1, 1, 1, 1, 1, 0],
                             [0, 0, 0, 0, 0, 0, 0]], numpy.uint8)
-        markers = numpy.array([[ 0, 0, 0, 0, 0, 0, 0],
-                               [ 0, 0, 0, 0, 0, 0, 0],
-                               [ 0, 0, 0, 0, 0, 0, 0],
-                               [ 0, 0, 3, 0, 2, 0, 0],
-                               [ 0, 0, 0, 0, 0, 0, 0],
-                               [ 0, 0, 0, 0, 0, 0, 0],
-                               [ 0, 0, 0, 0, 0, 0, -1]],
+        markers = numpy.array([[0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 3, 0, 2, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0, -1]],
                               numpy.int8)
         out = ndimage.watershed_ift(data, markers,
                                     structure=[[1,1,1],
                                                [1,1,1],
                                                [1,1,1]])
         expected = [[-1, -1, -1, -1, -1, -1, -1],
-                    [-1,  3,  3,  2,  2,  2, -1],
-                    [-1,  3,  3,  2,  2,  2, -1],
-                    [-1,  3,  3,  2,  2,  2, -1],
-                    [-1,  3,  3,  2,  2,  2, -1],
-                    [-1,  3,  3,  2,  2,  2, -1],
+                    [-1, 3, 3, 2, 2, 2, -1],
+                    [-1, 3, 3, 2, 2, 2, -1],
+                    [-1, 3, 3, 2, 2, 2, -1],
+                    [-1, 3, 3, 2, 2, 2, -1],
+                    [-1, 3, 3, 2, 2, 2, -1],
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, expected)
 
@@ -2441,21 +2466,21 @@ class TestNdimage:
                                [0, 1, 1, 1, 1, 1, 0],
                                [0, 0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0, 0]], numpy.uint8)
-        markers = numpy.array([[ -1, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 1, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0],
-                                  [  0, 0, 0, 0, 0, 0, 0]],
+        markers = numpy.array([[-1, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 1, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0]],
                                  numpy.int8)
         out = ndimage.watershed_ift(data, markers,
                                               structure=[[1,1,1],
                                                          [1,1,1],
                                                          [1,1,1]])
-        expected = [[-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
+        expected = [[-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
                     [-1, -1, -1, -1, -1, -1, -1],
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, expected)
@@ -2472,11 +2497,11 @@ class TestNdimage:
                                     [0, 0, 0, 0, 0, 0, 0],
                                     [0, 0, 0, 0, 0, 0, 0]], numpy.uint8)
         markers = numpy.array([[-1, 0, 0, 0, 0, 0, 0],
-                                  [ 0, 0, 0, 1, 0, 0, 0],
-                                  [ 0, 0, 0, 0, 0, 0, 0],
-                                  [ 0, 0, 0, 0, 0, 0, 0],
-                                  [ 0, 0, 0, 0, 0, 0, 0],
-                                  [ 0, 0, 0, 0, 0, 0, 0]],
+                                  [0, 0, 0, 1, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, 0]],
                                  numpy.int8)
         out = numpy.zeros(shape, dtype=numpy.int16)
         out = out.transpose()
@@ -2485,10 +2510,10 @@ class TestNdimage:
                                           [1,1,1],
                                           [1,1,1]],
                                output=out)
-        expected = [[-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
-                    [-1,  1,  1,  1,  1,  1, -1],
+        expected = [[-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
+                    [-1, 1, 1, 1, 1, 1, -1],
                     [-1, -1, -1, -1, -1, -1, -1],
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, expected)
@@ -2695,15 +2720,15 @@ class TestNdimage:
                                    [0, 0, 0, 0, 0, 0, 0, 0, 0]], type)
         out, ft = ndimage.distance_transform_bf(data,
                      'euclidean', return_indices=True, sampling=[2, 2])
-        expected = [[0, 0, 0,  0,  0,  0, 0, 0, 0],
-                    [0, 0, 0,  0,  0,  0, 0, 0, 0],
-                    [0, 0, 0,  4,  4,  4, 0, 0, 0],
-                    [0, 0, 4,  8, 16,  8, 4, 0, 0],
+        expected = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 4, 4, 4, 0, 0, 0],
+                    [0, 0, 4, 8, 16, 8, 4, 0, 0],
                     [0, 0, 4, 16, 32, 16, 4, 0, 0],
-                    [0, 0, 4,  8, 16,  8, 4, 0, 0],
-                    [0, 0, 0,  4,  4,  4, 0, 0, 0],
-                    [0, 0, 0,  0,  0,  0, 0, 0, 0],
-                    [0, 0, 0,  0,  0,  0, 0, 0, 0]]
+                    [0, 0, 4, 8, 16, 8, 4, 0, 0],
+                    [0, 0, 0, 4, 4, 4, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0]]
         assert_array_almost_equal(out * out, expected)
 
         expected = [[[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -4431,9 +4456,9 @@ class TestNdimage:
         structure = [[1, 1, 1], [1, 1, 1]]
         output = ndimage.grey_dilation(array,
                              footprint=footprint, structure=structure)
-        assert_array_almost_equal([[8,  8, 10, 10, 6],
-                              [8, 10,  9, 10, 8],
-                              [9,  9,  9,  8, 8]], output)
+        assert_array_almost_equal([[8, 8, 10, 10, 6],
+                              [8, 10, 9, 10, 8],
+                              [9, 9, 9, 8, 8]], output)
 
     def test_grey_opening01(self):
         "grey opening 1"

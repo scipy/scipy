@@ -326,7 +326,7 @@ def funm(A, func, disp=True):
     T, Z = rsf2csf(T,Z)
     n,n = T.shape
     F = diag(func(diag(T)))  # apply function to diagonal elements
-    F = F.astype(T.dtype.char) # e.g. when F is real but T is complex
+    F = F.astype(T.dtype.char)  # e.g. when F is real but T is complex
 
     minden = abs(T[0,0])
 
@@ -456,7 +456,7 @@ def signm(a, disp=True):
             c = 1e3*feps*amax(x)
         else:
             c = 1e3*eps*amax(x)
-        return sign( (absolute(rx) > c) * rx )
+        return sign((absolute(rx) > c) * rx)
     result,errest = funm(a, rounded_sign, disp=0)
     errtol = {0:1e3*feps, 1:1e3*eps}[_array_precision[result.dtype.char]]
     if errest < errtol:
@@ -469,14 +469,14 @@ def signm(a, disp=True):
     # rather naive) iteration process:
 
     a = asarray(a)
-    #a = result # sometimes iteration converges faster but where??
+    # a = result # sometimes iteration converges faster but where??
 
     # Shifting to avoid zero eigenvalues. How to ensure that shifting does
     # not change the spectrum too much?
     vals = svd(a,compute_uv=0)
     max_sv = np.amax(vals)
-    #min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
-    #c = 0.5/min_nonzero_sv
+    # min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
+    # c = 0.5/min_nonzero_sv
     c = 0.5/max_sv
     S0 = a + c*np.identity(a.shape[0])
     prev_errest = errest

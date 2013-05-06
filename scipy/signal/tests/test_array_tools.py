@@ -46,14 +46,14 @@ class TestArrayTools(TestCase):
                       [9, 8, 7, 6, 5]])
 
         odd = odd_ext(a, 2, axis=1)
-        expected = np.array([[-1,  0, 1, 2, 3, 4, 5, 6, 7],
+        expected = np.array([[-1, 0, 1, 2, 3, 4, 5, 6, 7],
                              [11, 10, 9, 8, 7, 6, 5, 4, 3]])
         assert_array_equal(odd, expected)
 
         odd = odd_ext(a, 1, axis=0)
         expected = np.array([[-7, -4, -1, 2, 5],
-                             [ 1,  2,  3, 4, 5],
-                             [ 9,  8,  7, 6, 5],
+                             [1, 2, 3, 4, 5],
+                             [9, 8, 7, 6, 5],
                              [17, 14, 11, 8, 5]])
         assert_array_equal(odd, expected)
 
@@ -70,10 +70,10 @@ class TestArrayTools(TestCase):
         assert_array_equal(even, expected)
 
         even = even_ext(a, 1, axis=0)
-        expected = np.array([[ 9,  8,  7, 6, 5],
-                             [ 1,  2,  3, 4, 5],
-                             [ 9,  8,  7, 6, 5],
-                             [ 1,  2,  3, 4, 5]])
+        expected = np.array([[9, 8, 7, 6, 5],
+                             [1, 2, 3, 4, 5],
+                             [9, 8, 7, 6, 5],
+                             [1, 2, 3, 4, 5]])
         assert_array_equal(even, expected)
 
         assert_raises(ValueError, even_ext, a, 2, axis=0)
@@ -89,10 +89,10 @@ class TestArrayTools(TestCase):
         assert_array_equal(const, expected)
 
         const = const_ext(a, 1, axis=0)
-        expected = np.array([[ 1,  2,  3, 4, 5],
-                             [ 1,  2,  3, 4, 5],
-                             [ 9,  8,  7, 6, 5],
-                             [ 9,  8,  7, 6, 5]])
+        expected = np.array([[1, 2, 3, 4, 5],
+                             [1, 2, 3, 4, 5],
+                             [9, 8, 7, 6, 5],
+                             [9, 8, 7, 6, 5]])
         assert_array_equal(const, expected)
 
 

@@ -55,6 +55,7 @@ std::string %(cpp_clean_struct)s_to_py( %(cpp_struct)s* cpp_ptr)
 
 class cpp_namespace_converter(base_converter):
     _build_information = [common_info.swig_info()]
+
     def __init__(self,class_name=None):
         self.type_name = 'unknown cpp_object'
         self.name = 'no name'
@@ -68,7 +69,7 @@ class cpp_namespace_converter(base_converter):
             str_len = len(clean_name) + 20
             vals = {'cpp_struct': class_name,
                     'cpp_clean_struct': clean_name,
-                    'ptr_string_len': str_len }
+                    'ptr_string_len': str_len}
             specialized_support = cpp_support_template % vals
             custom = base_info.base_info()
             custom._support_code = [specialized_support]
@@ -105,6 +106,7 @@ class cpp_namespace_converter(base_converter):
     def __repr__(self):
         msg = "(%s:: name: %s)" % (self.type_name,self.name)
         return msg
+
     def __cmp__(self,other):
         #only works for equal
         return cmp(self.name,other.name) or \

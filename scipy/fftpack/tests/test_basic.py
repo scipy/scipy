@@ -422,7 +422,7 @@ class Testfft2(TestCase):
         # used
         x = numpy.ones((4,4,2))
         y = fft2(x, shape=(8,8), axes=(-3,-2))
-        y_r = numpy.fft.fftn(x, s=(8, 8), axes=(-3,  -2))
+        y_r = numpy.fft.fftn(x, s=(8, 8), axes=(-3, -2))
         assert_array_almost_equal(y, y_r)
 
 
@@ -473,7 +473,7 @@ class TestFftn(TestCase):
         assert_array_almost_equal(fftn(x),direct_dftn(x))
 
     def test_axes_argument(self):
-        #plane == ji_plane, x== kji_space
+        # plane == ji_plane, x== kji_space
         plane1 = [[1,2,3],[4,5,6],[7,8,9]]
         plane2 = [[10,11,12],[13,14,15],[16,17,18]]
         plane3 = [[19,20,21],[22,23,24],[25,26,27]]
@@ -499,67 +499,67 @@ class TestFftn(TestCase):
         kij_space = [ij_plane1,ij_plane2,ij_plane3]
         x = array([plane1,plane2,plane3])
 
-        assert_array_almost_equal(fftn(x),fftn(x,axes=(-3,-2,-1))) # kji_space
+        assert_array_almost_equal(fftn(x),fftn(x,axes=(-3,-2,-1)))  # kji_space
         assert_array_almost_equal(fftn(x),fftn(x,axes=(0,1,2)))
-        y = fftn(x,axes=(2,1,0)) # ijk_space
+        y = fftn(x,axes=(2,1,0))  # ijk_space
         assert_array_almost_equal(swapaxes(y,-1,-3),fftn(ijk_space))
-        y = fftn(x,axes=(2,0,1)) # ikj_space
+        y = fftn(x,axes=(2,0,1))  # ikj_space
         assert_array_almost_equal(swapaxes(swapaxes(y,-1,-3),
-                                                   -1,-2)
-                                  ,fftn(ikj_space))
-        y = fftn(x,axes=(1,2,0)) # jik_space
+                                                   -1,-2),
+                                  fftn(ikj_space))
+        y = fftn(x,axes=(1,2,0))  # jik_space
         assert_array_almost_equal(swapaxes(swapaxes(y,-1,-3),
-                                                   -3,-2)
-                                  ,fftn(jik_space))
-        y = fftn(x,axes=(1,0,2)) # jki_space
+                                                   -3,-2),
+                                  fftn(jik_space))
+        y = fftn(x,axes=(1,0,2))  # jki_space
         assert_array_almost_equal(swapaxes(y,-2,-3),fftn(jki_space))
-        y = fftn(x,axes=(0,2,1)) # kij_space
+        y = fftn(x,axes=(0,2,1))  # kij_space
         assert_array_almost_equal(swapaxes(y,-2,-1),
                                   fftn(kij_space))
 
-        y = fftn(x,axes=(-2,-1)) # ji_plane
+        y = fftn(x,axes=(-2,-1))  # ji_plane
         assert_array_almost_equal(fftn(plane1),y[0])
         assert_array_almost_equal(fftn(plane2),y[1])
         assert_array_almost_equal(fftn(plane3),y[2])
-        y = fftn(x,axes=(1,2)) # ji_plane
+        y = fftn(x,axes=(1,2))  # ji_plane
         assert_array_almost_equal(fftn(plane1),y[0])
         assert_array_almost_equal(fftn(plane2),y[1])
         assert_array_almost_equal(fftn(plane3),y[2])
-        y = fftn(x,axes=(-3,-2)) # kj_plane
+        y = fftn(x,axes=(-3,-2))  # kj_plane
         assert_array_almost_equal(fftn(x[:,:,0]),y[:,:,0])
         assert_array_almost_equal(fftn(x[:,:,1]),y[:,:,1])
         assert_array_almost_equal(fftn(x[:,:,2]),y[:,:,2])
-        y = fftn(x,axes=(-3,-1)) # ki_plane
+        y = fftn(x,axes=(-3,-1))  # ki_plane
         assert_array_almost_equal(fftn(x[:,0,:]),y[:,0,:])
         assert_array_almost_equal(fftn(x[:,1,:]),y[:,1,:])
         assert_array_almost_equal(fftn(x[:,2,:]),y[:,2,:])
-        y = fftn(x,axes=(-1,-2)) # ij_plane
+        y = fftn(x,axes=(-1,-2))  # ij_plane
         assert_array_almost_equal(fftn(ij_plane1),swapaxes(y[0],-2,-1))
         assert_array_almost_equal(fftn(ij_plane2),swapaxes(y[1],-2,-1))
         assert_array_almost_equal(fftn(ij_plane3),swapaxes(y[2],-2,-1))
-        y = fftn(x,axes=(-1,-3)) # ik_plane
+        y = fftn(x,axes=(-1,-3))  # ik_plane
         assert_array_almost_equal(fftn(ik_plane1),swapaxes(y[:,0,:],-1,-2))
         assert_array_almost_equal(fftn(ik_plane2),swapaxes(y[:,1,:],-1,-2))
         assert_array_almost_equal(fftn(ik_plane3),swapaxes(y[:,2,:],-1,-2))
-        y = fftn(x,axes=(-2,-3)) # jk_plane
+        y = fftn(x,axes=(-2,-3))  # jk_plane
         assert_array_almost_equal(fftn(jk_plane1),swapaxes(y[:,:,0],-1,-2))
         assert_array_almost_equal(fftn(jk_plane2),swapaxes(y[:,:,1],-1,-2))
         assert_array_almost_equal(fftn(jk_plane3),swapaxes(y[:,:,2],-1,-2))
 
-        y = fftn(x,axes=(-1,)) # i_line
+        y = fftn(x,axes=(-1,))  # i_line
         for i in range(3):
             for j in range(3):
                 assert_array_almost_equal(fft(x[i,j,:]),y[i,j,:])
-        y = fftn(x,axes=(-2,)) # j_line
+        y = fftn(x,axes=(-2,))  # j_line
         for i in range(3):
             for j in range(3):
                 assert_array_almost_equal(fft(x[i,:,j]),y[i,:,j])
-        y = fftn(x,axes=(0,)) # k_line
+        y = fftn(x,axes=(0,))  # k_line
         for i in range(3):
             for j in range(3):
                 assert_array_almost_equal(fft(x[:,i,j]),y[:,i,j])
 
-        y = fftn(x,axes=()) # point
+        y = fftn(x,axes=())  # point
         assert_array_almost_equal(y,x)
 
     def test_shape_argument(self):
@@ -577,11 +577,11 @@ class TestFftn(TestCase):
                                   [7,8,9,0],
                                   [0,0,0,0]])
         # Disable tests with shape and axes of different lengths
-        #y = fftn(small_x,shape=(4,4),axes=(-1,))
-        #for i in range(4):
+        # y = fftn(small_x,shape=(4,4),axes=(-1,))
+        # for i in range(4):
         #    assert_array_almost_equal (y[i],fft(large_x1[i]))
-        #y = fftn(small_x,shape=(4,4),axes=(-2,))
-        #for i in range(4):
+        # y = fftn(small_x,shape=(4,4),axes=(-2,))
+        # for i in range(4):
         #    assert_array_almost_equal (y[:,i],fft(large_x1[:,i]))
         y = fftn(small_x,shape=(4,4),axes=(-2,-1))
         assert_array_almost_equal(y,fftn(large_x1))
@@ -692,6 +692,7 @@ class FakeArray(object):
 class FakeArray2(object):
     def __init__(self, data):
         self._data = data
+
     def __array__(self):
         return self._data
 

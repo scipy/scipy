@@ -89,7 +89,7 @@ class TestTnc(TestCase):
                   2.0 * (1.0 - x[0])) * 1.0e-5
         dif[1] = (200.0 * (x[1] - pow(x[0], 2)) + 20.2 * (x[1] - 1.0) +
                   19.8 * (x[3] - 1.0)) * 1.0e-5
-        dif[2] = ( - 360.0 * x[2] * (x[3] - pow(x[2], 2)) -
+        dif[2] = (- 360.0 * x[2] * (x[3] - pow(x[2], 2)) -
                   2.0 * (1.0 - x[2])) * 1.0e-5
         dif[3] = (180.0 * (x[3] - pow(x[2], 2)) + 20.2 * (x[3] - 1.0) +
                   19.8 * (x[1] - 1.0)) * 1.0e-5
@@ -118,7 +118,7 @@ class TestTnc(TestCase):
     def test_minimize_tnc1(self):
         x0, bnds = [-2, 1], ([-np.inf, None], [-1.5, None])
         xopt = [1, 1]
-        iterx = [] # to test callback
+        iterx = []  # to test callback
 
         res = optimize.minimize(self.f1, x0, method='TNC', jac=self.g1,
                                 bounds=bnds, options=self.opts,
@@ -158,7 +158,7 @@ class TestTnc(TestCase):
         assert_allclose(self.f3(x), self.f3(xopt), atol=1e-8)
 
     def test_minimize_tnc4(self):
-        x0 ,bnds = [1.125, 0.125], [(1, None), (0, None)]
+        x0,bnds = [1.125, 0.125], [(1, None), (0, None)]
         xopt = [1, 0]
         x = optimize.minimize(self.f4, x0, method='TNC',
                               jac=self.g4, bounds=bnds,

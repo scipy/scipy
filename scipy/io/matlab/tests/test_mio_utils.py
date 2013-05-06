@@ -34,9 +34,9 @@ def test_squeeze_element():
 def test_chars_strings():
     # chars as strings
     strings = ['learn ', 'python', 'fast  ', 'here  ']
-    str_arr = np.array(strings, dtype='U6') # shape (4,)
+    str_arr = np.array(strings, dtype='U6')  # shape (4,)
     chars = [list(s) for s in strings]
-    char_arr = np.array(chars, dtype='U1') # shape (4,6)
+    char_arr = np.array(chars, dtype='U1')  # shape (4,6)
     assert_array_equal(chars_to_strings(char_arr), str_arr)
     ca2d = char_arr.reshape((2,2,6))
     sa2d = str_arr.reshape((2,2))
@@ -45,7 +45,7 @@ def test_chars_strings():
     sa3d = str_arr.reshape((1,2,2))
     assert_array_equal(chars_to_strings(ca3d), sa3d)
     # Fortran ordered arrays
-    char_arrf = np.array(chars, dtype='U1', order='F') # shape (4,6)
+    char_arrf = np.array(chars, dtype='U1', order='F')  # shape (4,6)
     assert_array_equal(chars_to_strings(char_arrf), str_arr)
     # empty array
     arr = np.array([['']], dtype='U1')

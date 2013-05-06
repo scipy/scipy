@@ -107,7 +107,7 @@ def array_test():
     # Test the data to make certain that we have done it right.
     print("Checking data.")
     for i in range(v_arr.GetNumberOfTuples()):
-        val = (v_arr.GetValue(i) - arr[i] )
+        val = (v_arr.GetValue(i) - arr[i])
         assert (val < 1e-6), "i = %d, val= %f" % (i, val)
     print("OK.")
 

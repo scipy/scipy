@@ -258,6 +258,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
 class DictWithRepr(dict):
     def __init__(self, name):
         self.name = name
+
     def __repr__(self):
         return "<%s>" % self.name
 
@@ -267,10 +268,10 @@ class SymmetricParams:
         self.eigs = eigsh
         self.which = ['LM', 'SM', 'LA', 'SA', 'BE']
         self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
-        self.sigmas_modes = {None : ['normal'],
-                             0.5 : ['normal', 'buckling', 'cayley']}
+        self.sigmas_modes = {None: ['normal'],
+                             0.5: ['normal', 'buckling', 'cayley']}
 
-        #generate matrices
+        # generate matrices
         # these should all be float32 so that the eigenvalues
         # are the same in float32 and float64
         N = 6
@@ -316,13 +317,13 @@ class SymmetricParams:
 class NonSymmetricParams:
     def __init__(self):
         self.eigs = eigs
-        self.which = ['LM', 'LR', 'LI']# , 'SM', 'LR', 'SR', 'LI', 'SI']
+        self.which = ['LM', 'LR', 'LI']  # , 'SM', 'LR', 'SR', 'LI', 'SI']
         self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
-        self.sigmas_OPparts = {None : [None],
-                               0.1 : ['r'],
-                               0.1 + 0.1j : ['r', 'i']}
+        self.sigmas_OPparts = {None: [None],
+                               0.1: ['r'],
+                               0.1 + 0.1j: ['r', 'i']}
 
-        #generate matrices
+        # generate matrices
         # these should all be float32 so that the eigenvalues
         # are the same in float32 and float64
         N = 6
@@ -521,8 +522,8 @@ def test_ticket_1459_arpack_crash():
 # sparse SVD tests
 
 def sorted_svd(m, k, which='LM'):
-    #Compute svd of a dense matrix m, and return singular vectors/values
-    #sorted.
+    # Compute svd of a dense matrix m, and return singular vectors/values
+    # sorted.
     if isspmatrix(m):
         m = m.todense()
     u, s, vh = svd(m)

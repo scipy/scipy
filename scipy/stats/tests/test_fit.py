@@ -12,8 +12,8 @@ from test_continuous_basic import distcont
 # this is not a proper statistical test for convergence, but only
 # verifies that the estimate and true values don't differ by too much
 
-fit_sizes = [1000, 5000] # sample sizes to try
-thresh_percent = 0.25 # percent of true parameters for fail cut-off
+fit_sizes = [1000, 5000]  # sample sizes to try
+thresh_percent = 0.25  # percent of true parameters for fail cut-off
 thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 failing_fits = [
@@ -84,7 +84,7 @@ def check_cont_fit(distname,arg):
             if np.all(np.abs(diff) <= diffthreshold):
                 break
     else:
-        txt  = 'parameter: %s\n' % str(truearg)
+        txt = 'parameter: %s\n' % str(truearg)
         txt += 'estimated: %s\n' % str(est)
         txt += 'diff     : %s\n' % str(diff)
         raise AssertionError('fit not very good in %s\n' % distfn.name + txt)
@@ -92,5 +92,5 @@ def check_cont_fit(distname,arg):
 
 if __name__ == "__main__":
     import nose
-    #nose.run(argv=['', __file__])
+    # nose.run(argv=['', __file__])
     nose.runmodule(argv=[__file__,'-s'], exit=False)

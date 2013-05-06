@@ -42,13 +42,13 @@ def check_expr(expr,local_vars,global_vars={}):
     """
     values = {}
 
-    #first handle the globals
+    # first handle the globals
     for var,val in global_vars.items():
         if isinstance(val, ndarray):
             values[var] = dummy_array(val,name=var)
         elif isnumeric(val):
             values[var] = val
-    #now handle the locals
+    # now handle the locals
     for var,val in local_vars.items():
         if isinstance(val, ndarray):
             values[var] = dummy_array(val,name=var)
@@ -115,13 +115,14 @@ class dummy_array(object):
         self.name = name
         if ary_is_shape:
             self.shape = ary
-            #self.shape = asarray(ary)
+            # self.shape = asarray(ary)
         else:
             try:
                 self.shape = shape(ary)
             except:
                 self.shape = empty
-        #self.value = ary
+        # self.value = ary
+
     def binary_op(self,other):
         try:
             x = other.shape
@@ -129,6 +130,7 @@ class dummy_array(object):
             x = empty
         new_shape = binary_op_size(self.shape,x)
         return dummy_array(new_shape,1)
+
     def __cmp__(self,other):
         # This isn't an exact compare, but does work for ==
         # cluge for Numeric
@@ -140,37 +142,53 @@ class dummy_array(object):
 
     def __add__(self,other):
         return self.binary_op(other)
+
     def __radd__(self,other):
         return self.binary_op(other)
+
     def __sub__(self,other):
         return self.binary_op(other)
+
     def __rsub__(self,other):
         return self.binary_op(other)
+
     def __mul__(self,other):
         return self.binary_op(other)
+
     def __rmul__(self,other):
         return self.binary_op(other)
+
     def __div__(self,other):
         return self.binary_op(other)
+
     def __rdiv__(self,other):
         return self.binary_op(other)
+
     def __mod__(self,other):
         return self.binary_op(other)
+
     def __rmod__(self,other):
         return self.binary_op(other)
+
     def __lshift__(self,other):
         return self.binary_op(other)
+
     def __rshift__(self,other):
         return self.binary_op(other)
+
     # unary ops
     def __neg__(self,other):
         return self
+
     def __pos__(self,other):
         return self
+
     def __abs__(self,other):
         return self
+
     def __invert__(self,other):
         return self
+
     # Not sure what to do with coersion ops.  Ignore for now.
     #
     # not currently supported by compiler.
@@ -182,17 +200,20 @@ class dummy_array(object):
     # __xor__
     # item access and slicing
     def __setitem__(self,indices,val):
-        #ignore for now
+        # ignore for now
         pass
+
     def __len__(self):
         return self.shape[0]
+
     def __getslice__(self,i,j):
         i = max(i, 0)
         j = max(j, 0)
         return self.__getitem__((slice(i,j),))
+
     def __getitem__(self,indices):
         # ayeyaya this is a mess
-        #print indices, type(indices), indices.shape
+        # print indices, type(indices), indices.shape
         if not isinstance(indices, tuple):
             indices = (indices,)
         if Ellipsis in indices:
@@ -205,17 +226,17 @@ class dummy_array(object):
             except IndexError:
                 raise IndexError("To many indices specified")
 
-            #if (type(index) is SliceType and index.start == index.stop == index.step):
+            # if (type(index) is SliceType and index.start == index.stop == index.step):
             if (index is empty_slice):
                 slc_len = dim_len
             elif isinstance(index, slice):
                 beg,end,step = index.start,index.stop,index.step
                 # handle if they are dummy arrays
-                #if hasattr(beg,'value') and type(beg.value) != ndarray:
+                # if hasattr(beg,'value') and type(beg.value) != ndarray:
                 #    beg = beg.value
-                #if hasattr(end,'value') and type(end.value) != ndarray:
+                # if hasattr(end,'value') and type(end.value) != ndarray:
                 #    end = end.value
-                #if hasattr(step,'value') and type(step.value) != ndarray:
+                # if hasattr(step,'value') and type(step.value) != ndarray:
                 #    step = step.value
                 if beg is None:
                     beg = 0
@@ -244,11 +265,11 @@ class dummy_array(object):
                     beg,end,step = 0,0,1
                 elif beg >= dim_len and step > 0:
                     beg,end,step = 0,0,1
-                #elif index.step > 0 and beg <= end:
+                # elif index.step > 0 and beg <= end:
                 elif step > 0 and beg <= end:
-                    pass # slc_len = abs(divide(end-beg-1,step)+1)
+                    pass  # slc_len = abs(divide(end-beg-1,step)+1)
                 # handle [::-1] and [-1::-1] correctly
-                #elif index.step > 0 and beg > end:
+                # elif index.step > 0 and beg > end:
                 elif step > 0 and beg > end:
                     beg,end,step = 0,0,1
                 elif(step < 0 and index.start is None and index.stop is None):
@@ -268,7 +289,7 @@ class dummy_array(object):
                 if index < 0:
                     index += dim_len
                 if index >= 0 and index < dim_len:
-                    #this reduces the array dimensions by one
+                    # this reduces the array dimensions by one
                     pass
                 else:
                     raise IndexError("Index out of range")
@@ -277,6 +298,7 @@ class dummy_array(object):
         if 0 in new_dims:
             raise IndexError("Zero length slices not currently supported")
         return dummy_array(new_dims,1)
+
     def __repr__(self):
         val = str((self.name, str(self.shape)))
         return val
@@ -289,7 +311,7 @@ def unary(ary):
 def not_implemented(ary):
     return ary
 
-#all imported from Numeric and need to be reassigned.
+# all imported from Numeric and need to be reassigned.
 unary_op = [arccos, arcsin, arctan, cos, cosh, sin, sinh,
             exp,ceil,floor,fabs,log,log10,sqrt]
 

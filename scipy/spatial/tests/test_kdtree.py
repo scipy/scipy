@@ -56,6 +56,7 @@ class ConsistencyTests:
             assert_almost_equal(near_d,distance(x,self.data[near_i],1))
             assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d,d))
         assert_equal(np.sum(distance(self.data,x,1) < d+eps),hits)
+
     def test_points_near_linf(self):
         x = self.x
         d = self.d
@@ -117,6 +118,7 @@ class test_small(ConsistencyTests):
         assert_array_equal(
                 self.kdtree.query((0,0,0.1), 1),
                 (0.1,0))
+
     def test_nearest_two(self):
         assert_array_equal(
                 self.kdtree.query((0,0,0.1), 2),
@@ -379,6 +381,7 @@ class two_trees_consistency:
         for i, l in enumerate(r):
             for j in l:
                 assert_(distance(self.data1[i],self.data2[j],self.p) <= self.d*(1.+self.eps))
+
     def test_found_all(self):
         r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
         for i, l in enumerate(r):
@@ -450,14 +453,19 @@ class test_rectangle:
 
     def test_min_inside(self):
         assert_almost_equal(self.rect.min_distance_point([0.5,0.5]),0)
+
     def test_min_one_side(self):
         assert_almost_equal(self.rect.min_distance_point([0.5,1.5]),0.5)
+
     def test_min_two_sides(self):
         assert_almost_equal(self.rect.min_distance_point([2,2]),np.sqrt(2))
+
     def test_max_inside(self):
         assert_almost_equal(self.rect.max_distance_point([0.5,0.5]),1/np.sqrt(2))
+
     def test_max_one_side(self):
         assert_almost_equal(self.rect.max_distance_point([0.5,1.5]),np.hypot(0.5,1.5))
+
     def test_max_two_sides(self):
         assert_almost_equal(self.rect.max_distance_point([2,2]),2*np.sqrt(2))
 
@@ -557,7 +565,7 @@ class test_sparse_distance_matrix:
             assert_(j in r[i])
 
     def test_zero_distance(self):
-        M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870
+        M = self.T1.sparse_distance_matrix(self.T1, self.r)  # raises an exception for bug 870
 
 
 class test_sparse_distance_matrix_compiled:
@@ -579,7 +587,7 @@ class test_sparse_distance_matrix_compiled:
             assert_(j in r[i])
 
     def test_zero_distance(self):
-        M = self.T1.sparse_distance_matrix(self.T1, self.r) # raises an exception for bug 870 (FIXME: Does it?)
+        M = self.T1.sparse_distance_matrix(self.T1, self.r)  # raises an exception for bug 870 (FIXME: Does it?)
 
 
 def test_distance_matrix():

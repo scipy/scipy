@@ -6,7 +6,7 @@ from scipy.weave import ext_tools, c_spec
 try:
     from scipy.weave.standard_array_spec import array_converter
 except ImportError:
-    pass # requires numpy.numerix
+    pass  # requires numpy.numerix
 
 from weave_test_utils import empty_temp_dir
 
@@ -15,7 +15,7 @@ build_dir = empty_temp_dir()
 
 class TestExtModule(TestCase):
 
-    #should really do some testing of where modules end up
+    # should really do some testing of where modules end up
 
     @dec.slow
     def test_simple(self):
@@ -105,7 +105,7 @@ class TestExtModule(TestCase):
 
 class TestExtFunction(TestCase):
 
-    #should really do some testing of where modules end up
+    # should really do some testing of where modules end up
 
     @dec.slow
     def test_simple(self):
@@ -135,7 +135,7 @@ class TestAssignVariableTypes(TestCase):
         c = 5
         arg_list = ['a','b','c']
         actual = ext_tools.assign_variable_types(arg_list,locals())
-        #desired = {'a':(Float32,1),'b':(Float32,1),'i':(Int32,0)}
+        # desired = {'a':(Float32,1),'b':(Float32,1),'i':(Int32,0)}
 
         ad = array_converter()
         ad.name, ad.var_type, ad.dims = 'a', Float32, 1

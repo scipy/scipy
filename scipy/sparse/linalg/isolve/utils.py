@@ -78,7 +78,7 @@ def make_system(A, M, x0, b, xtype=None):
         raise ValueError('A and b have incompatible dimensions')
 
     if b.dtype.char not in 'fdFD':
-        b = b.astype('d') # upcast non-FP types to double
+        b = b.astype('d')  # upcast non-FP types to double
 
     def postprocess(x):
         if isinstance(b,matrix):
@@ -101,7 +101,7 @@ def make_system(A, M, x0, b, xtype=None):
             if xtype not in 'fdFD':
                 raise ValueError("xtype must be 'f', 'd', 'F', or 'D'")
 
-    b = asarray(b,dtype=xtype) # make b the same type as x
+    b = asarray(b,dtype=xtype)  # make b the same type as x
     b = b.ravel()
 
     if x0 is None:

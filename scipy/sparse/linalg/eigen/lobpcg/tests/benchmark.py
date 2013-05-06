@@ -17,11 +17,11 @@ def test(n):
     return A,B
 
 
-def as2d( ar ):
+def as2d(ar):
     if ar.ndim == 2:
         return ar
-    else: # Assume 1!
-        aux = nm.array( ar, copy=False )
+    else:  # Assume 1!
+        aux = nm.array(ar, copy=False)
         aux.shape = (ar.shape[0], 1)
         return aux
 
@@ -31,14 +31,14 @@ def precond(x):
     return as2d(y)
 
 m = 10  # Blocksize
-N = array(([128,256,512,1024,2048])) # Increasing matrix size
+N = array(([128,256,512,1024,2048]))  # Increasing matrix size
 
 data1 = []
 data2 = []
 
 for n in N:
     print('******', n)
-    A,B = test(n) # Mikota pair
+    A,B = test(n)  # Mikota pair
     X = rand(n,m)
     X = linalg.orth(X)
 

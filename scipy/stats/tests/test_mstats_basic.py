@@ -20,19 +20,19 @@ class TestMquantiles(TestCase):
     """Regression tests for mstats module."""
     def test_mquantiles_limit_keyword(self):
         """Ticket #867"""
-        data = np.array([[   6.,    7.,    1.],
-                         [  47.,   15.,    2.],
-                         [  49.,   36.,    3.],
-                         [  15.,   39.,    4.],
-                         [  42.,   40., -999.],
-                         [  41.,   41., -999.],
-                         [   7., -999., -999.],
-                         [  39., -999., -999.],
-                         [  43., -999., -999.],
-                         [  40., -999., -999.],
-                         [  36., -999., -999.]])
+        data = np.array([[6., 7., 1.],
+                         [47., 15., 2.],
+                         [49., 36., 3.],
+                         [15., 39., 4.],
+                         [42., 40., -999.],
+                         [41., 41., -999.],
+                         [7., -999., -999.],
+                         [39., -999., -999.],
+                         [43., -999., -999.],
+                         [40., -999., -999.],
+                         [36., -999., -999.]])
         desired = [[19.2, 14.6, 1.45],
-                   [40.0, 37.5, 2.5 ],
+                   [40.0, 37.5, 2.5],
                    [42.8, 40.05, 3.55]]
         quants = mstats.mquantiles(data, axis=0, limit=(0, 50))
         assert_almost_equal(quants, desired)
@@ -48,7 +48,7 @@ class TestGMean(TestCase):
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
         assert_(not isinstance(desired1, ma.MaskedArray))
-        #
+
         a = ma.array((1,2,3,4),mask=(0,0,0,1))
         actual = mstats.gmean(a)
         desired = np.power(1*2*3,1./3.)
@@ -56,7 +56,7 @@ class TestGMean(TestCase):
 
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
-    #
+
     def test_2D(self):
         a = ma.array(((1,2,3,4),(1,2,3,4),(1,2,3,4)),
                      mask=((0,0,0,0),(1,0,0,1),(0,1,1,0)))
@@ -106,10 +106,10 @@ class TestHMean(TestCase):
 
 
 class TestRanking(TestCase):
-    #
+
     def __init__(self, *args, **kwargs):
         TestCase.__init__(self, *args, **kwargs)
-    #
+
     def test_ranking(self):
         x = ma.array([0,1,1,1,2,3,4,5,5,6,])
         assert_almost_equal(mstats.rankdata(x),[1,3,3,3,5,6,7,8.5,8.5,10])
@@ -126,7 +126,7 @@ class TestRanking(TestCase):
 
 
 class TestCorr(TestCase):
-    #
+
     def test_pearsonr(self):
         "Tests some computations of Pearson's r"
         x = ma.arange(10)
@@ -141,7 +141,7 @@ class TestCorr(TestCase):
             np.seterr(**olderr)
         assert_(pr[0] is masked)
         assert_(pr[1] is masked)
-    #
+
     def test_spearmanr(self):
         "Tests some computations of Spearman's rho"
         (x, y) = ([5.05,6.75,3.21,2.66],[1.65,2.64,2.64,6.95])
@@ -150,18 +150,18 @@ class TestCorr(TestCase):
         (x, y) = (ma.fix_invalid(x), ma.fix_invalid(y))
         assert_almost_equal(mstats.spearmanr(x,y)[0], -0.6324555)
         #
-        x = [ 2.0, 47.4, 42.0, 10.8, 60.1,  1.7, 64.0, 63.1,
-              1.0,  1.4,  7.9,  0.3,  3.9,  0.3,  6.7]
-        y = [22.6, 08.3, 44.4, 11.9, 24.6,  0.6,  5.7, 41.6,
-              0.0,  0.6,  6.7,  3.8,  1.0,  1.2,  1.4]
+        x = [2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1,
+              1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7]
+        y = [22.6, 08.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
+              0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4]
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
-        x = [ 2.0, 47.4, 42.0, 10.8, 60.1,  1.7, 64.0, 63.1,
-              1.0,  1.4,  7.9,  0.3,  3.9,  0.3,  6.7, np.nan]
-        y = [22.6, 08.3, 44.4, 11.9, 24.6,  0.6,  5.7, 41.6,
-              0.0,  0.6,  6.7,  3.8,  1.0,  1.2,  1.4, np.nan]
+        x = [2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1,
+              1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7, np.nan]
+        y = [22.6, 08.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
+              0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4, np.nan]
         (x, y) = (ma.fix_invalid(x), ma.fix_invalid(y))
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
-    #
+
     def test_kendalltau(self):
         "Tests some computations of Kendall's tau"
         x = ma.fix_invalid([5.05, 6.75, 3.21, 2.66,np.nan])
@@ -172,25 +172,25 @@ class TestCorr(TestCase):
         assert_almost_equal(np.asarray(mstats.kendalltau(x,z)),
                             [-0.5477226,0.2785987])
         #
-        x = ma.fix_invalid([ 0, 0, 0, 0,20,20, 0,60, 0,20,
+        x = ma.fix_invalid([0, 0, 0, 0,20,20, 0,60, 0,20,
                             10,10, 0,40, 0,20, 0, 0, 0, 0, 0, np.nan])
-        y = ma.fix_invalid([ 0,80,80,80,10,33,60, 0,67,27,
+        y = ma.fix_invalid([0,80,80,80,10,33,60, 0,67,27,
                             25,80,80,80,80,80,80, 0,10,45, np.nan, 0])
         result = mstats.kendalltau(x,y)
         assert_almost_equal(np.asarray(result), [-0.1585188, 0.4128009])
-    #
+
     def test_kendalltau_seasonal(self):
         "Tests the seasonal Kendall tau."
-        x = [[nan,nan,  4,  2, 16, 26,  5,  1,  5,  1,  2,  3,  1],
-             [  4,  3,  5,  3,  2,  7,  3,  1,  1,  2,  3,  5,  3],
-             [  3,  2,  5,  6, 18,  4,  9,  1,  1,nan,  1,  1,nan],
-             [nan,  6, 11,  4, 17,nan,  6,  1,  1,  2,  5,  1,  1]]
+        x = [[nan,nan, 4, 2, 16, 26, 5, 1, 5, 1, 2, 3, 1],
+             [4, 3, 5, 3, 2, 7, 3, 1, 1, 2, 3, 5, 3],
+             [3, 2, 5, 6, 18, 4, 9, 1, 1,nan, 1, 1,nan],
+             [nan, 6, 11, 4, 17,nan, 6, 1, 1, 2, 5, 1, 1]]
         x = ma.fix_invalid(x).T
         output = mstats.kendalltau_seasonal(x)
         assert_almost_equal(output['global p-value (indep)'], 0.008, 3)
         assert_almost_equal(output['seasonal p-value'].round(2),
                             [0.18,0.53,0.20,0.04])
-    #
+
     def test_pointbiserial(self):
         "Tests point biserial"
         x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
@@ -202,7 +202,7 @@ class TestCorr(TestCase):
 
 
 class TestTrimming(TestCase):
-    #
+
     def test_trim(self):
         "Tests trimming"
         a = ma.arange(10)
@@ -237,7 +237,7 @@ class TestTrimming(TestCase):
         assert_equal(trimx._mask.ravel(),[1]*20+[0]*70+[1]*20)
         trimx = mstats.trim(x.T,(0.1,0.2),relative=True,axis=-1)
         assert_equal(trimx.T._mask.ravel(),[1]*20+[0]*70+[1]*20)
-    #
+
     def test_trim_old(self):
         "Tests trimming."
         x = ma.arange(100)
@@ -251,25 +251,25 @@ class TestTrimming(TestCase):
         x.shape = (10,10)
         assert_equal(mstats.trimboth(x).count(), 60)
         assert_equal(mstats.trimtail(x).count(), 80)
-    #
+
     def test_trimmedmean(self):
         "Tests the trimmed mean."
-        data = ma.array([ 77, 87, 88,114,151,210,219,246,253,262,
+        data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(mstats.trimmed_mean(data,0.1), 343, 0)
         assert_almost_equal(mstats.trimmed_mean(data,(0.1,0.1)), 343, 0)
         assert_almost_equal(mstats.trimmed_mean(data,(0.2,0.2)), 283, 0)
-    #
+
     def test_trimmed_stde(self):
         "Tests the trimmed mean standard error."
-        data = ma.array([ 77, 87, 88,114,151,210,219,246,253,262,
+        data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(mstats.trimmed_stde(data,(0.2,0.2)), 56.13193, 5)
         assert_almost_equal(mstats.trimmed_stde(data,0.2), 56.13193, 5)
-    #
+
     def test_winsorization(self):
         "Tests the Winsorization of the data."
-        data = ma.array([ 77, 87, 88,114,151,210,219,246,253,262,
+        data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(mstats.winsorize(data,(0.2,0.2)).var(ddof=1),
                             21551.4, 1)
@@ -287,19 +287,19 @@ class TestMoments(TestCase):
     # http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
     # Note that both test cases came from here.
     testcase = [1,2,3,4]
-    testmathworks = ma.fix_invalid([1.165 , 0.6268, 0.0751, 0.3516, -0.6965,
+    testmathworks = ma.fix_invalid([1.165, 0.6268, 0.0751, 0.3516, -0.6965,
                                     np.nan])
     testcase_2d = ma.array(
-    np.array([[ 0.05245846,  0.50344235,  0.86589117,  0.36936353,  0.46961149],
-           [ 0.11574073,  0.31299969,  0.45925772,  0.72618805,  0.75194407],
-           [ 0.67696689,  0.91878127,  0.09769044,  0.04645137,  0.37615733],
-           [ 0.05903624,  0.29908861,  0.34088298,  0.66216337,  0.83160998],
-           [ 0.64619526,  0.94894632,  0.27855892,  0.0706151 ,  0.39962917]]),
-    mask=np.array([[ True, False, False,  True, False],
-           [ True,  True,  True, False,  True],
+    np.array([[0.05245846, 0.50344235, 0.86589117, 0.36936353, 0.46961149],
+           [0.11574073, 0.31299969, 0.45925772, 0.72618805, 0.75194407],
+           [0.67696689, 0.91878127, 0.09769044, 0.04645137, 0.37615733],
+           [0.05903624, 0.29908861, 0.34088298, 0.66216337, 0.83160998],
+           [0.64619526, 0.94894632, 0.27855892, 0.0706151, 0.39962917]]),
+    mask=np.array([[True, False, False, True, False],
+           [True, True, True, False, True],
            [False, False, False, False, False],
            [True, True, True, True, True],
-           [False, False,  True, False, False]], dtype=np.bool))
+           [False, False, True, False, False]], dtype=np.bool))
 
     def test_moment(self):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
@@ -345,9 +345,9 @@ class TestMoments(TestCase):
         assert_almost_equal(y,1.64)
 
         # test that kurtosis works on multidimensional masked arrays
-        correct_2d = ma.array(np.array([-1.5, -3., -1.47247052385,  0.,
+        correct_2d = ma.array(np.array([-1.5, -3., -1.47247052385, 0.,
                                         -1.26979517952]),
-                              mask=np.array([False, False, False,  True,
+                              mask=np.array([False, False, False, True,
                                              False], dtype=np.bool))
         assert_array_almost_equal(mstats.kurtosis(self.testcase_2d, 1),
                                   correct_2d)
@@ -355,8 +355,8 @@ class TestMoments(TestCase):
             assert_almost_equal(mstats.kurtosis(row), correct_2d[i])
 
         correct_2d_bias_corrected = ma.array(
-            np.array([-1.5, -3., -1.88988209538,  0., -0.5234638463918877]),
-            mask=np.array([False, False, False,  True, False], dtype=np.bool))
+            np.array([-1.5, -3., -1.88988209538, 0., -0.5234638463918877]),
+            mask=np.array([False, False, False, True, False], dtype=np.bool))
         assert_array_almost_equal(mstats.kurtosis(self.testcase_2d, 1,
                                                   bias=False),
                                   correct_2d_bias_corrected)
@@ -435,8 +435,8 @@ class TestVariability(TestCase):
         (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
         """
         y = mstats.zmap(self.testcase, self.testcase)
-        desired_unmaskedvals = ([-1.3416407864999, -0.44721359549996 ,
-                                 0.44721359549996 , 1.3416407864999])
+        desired_unmaskedvals = ([-1.3416407864999, -0.44721359549996,
+                                 0.44721359549996, 1.3416407864999])
         assert_array_almost_equal(desired_unmaskedvals,
                                   y.data[y.mask == False], decimal=12)
 
@@ -446,13 +446,13 @@ class TestVariability(TestCase):
         (testcase[i]-mean(testcase,axis=0))/sqrt(var(testcase)*3/4)
         """
         y = mstats.zscore(self.testcase)
-        desired = ma.fix_invalid([-1.3416407864999, -0.44721359549996 ,
-                                  0.44721359549996 , 1.3416407864999, np.nan])
+        desired = ma.fix_invalid([-1.3416407864999, -0.44721359549996,
+                                  0.44721359549996, 1.3416407864999, np.nan])
         assert_almost_equal(desired, y, decimal=12)
 
 
 class TestMisc(TestCase):
-    #
+
     def test_obrientransform(self):
         "Tests Obrien transform"
         args = [[5]*5+[6]*11+[7]*9+[8]*3+[9]*2+[10]*2,
@@ -461,23 +461,23 @@ class TestMisc(TestCase):
                   [10.4352]+2*[4.8599]+4*[1.3836]+9*[0.0061]+16*[0.7277]]
         assert_almost_equal(np.round(mstats.obrientransform(*args).T,4),
                             result,4)
-    #
+
     def test_kstwosamp(self):
         "Tests the Kolmogorov-Smirnov 2 samples test"
-        x = [[nan,nan,  4,  2, 16, 26,  5,  1,  5,  1,  2,  3,  1],
-             [  4,  3,  5,  3,  2,  7,  3,  1,  1,  2,  3,  5,  3],
-             [  3,  2,  5,  6, 18,  4,  9,  1,  1,nan,  1,  1,nan],
-             [nan,  6, 11,  4, 17,nan,  6,  1,  1,  2,  5,  1,  1]]
+        x = [[nan,nan, 4, 2, 16, 26, 5, 1, 5, 1, 2, 3, 1],
+             [4, 3, 5, 3, 2, 7, 3, 1, 1, 2, 3, 5, 3],
+             [3, 2, 5, 6, 18, 4, 9, 1, 1,nan, 1, 1,nan],
+             [nan, 6, 11, 4, 17,nan, 6, 1, 1, 2, 5, 1, 1]]
         x = ma.fix_invalid(x).T
         (winter,spring,summer,fall) = x.T
-        #
+
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring),4),
                             (0.1818,0.9892))
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'g'),4),
                             (0.1469,0.7734))
         assert_almost_equal(np.round(mstats.ks_twosamp(winter,spring,'l'),4),
                             (0.1818,0.6744))
-    #
+
     def test_friedmanchisq(self):
         "Tests the Friedman Chi-square test"
         # No missing values
@@ -488,10 +488,10 @@ class TestMisc(TestCase):
         assert_almost_equal(result[0], 10.4737, 4)
         assert_almost_equal(result[1], 0.005317, 6)
         # Missing values
-        x = [[nan,nan,  4,  2, 16, 26,  5,  1,  5,  1,  2,  3,  1],
-             [  4,  3,  5,  3,  2,  7,  3,  1,  1,  2,  3,  5,  3],
-             [  3,  2,  5,  6, 18,  4,  9,  1,  1,nan,  1,  1,nan],
-             [nan,  6, 11,  4, 17,nan,  6,  1,  1,  2,  5,  1,  1]]
+        x = [[nan,nan, 4, 2, 16, 26, 5, 1, 5, 1, 2, 3, 1],
+             [4, 3, 5, 3, 2, 7, 3, 1, 1, 2, 3, 5, 3],
+             [3, 2, 5, 6, 18, 4, 9, 1, 1,nan, 1, 1,nan],
+             [nan, 6, 11, 4, 17,nan, 6, 1, 1, 2, 5, 1, 1]]
         x = ma.fix_invalid(x)
         result = mstats.friedmanchisquare(*x)
         assert_almost_equal(result[0], 2.0156, 4)

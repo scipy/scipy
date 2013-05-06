@@ -141,7 +141,7 @@ class TestLineSearch(object):
             assert_fp_equal(phi1, phi(s), name)
             assert_wolfe(s, phi, derphi, err_msg=name)
 
-        assert_(c > 3) # check that the iterator really works...
+        assert_(c > 3)  # check that the iterator really works...
 
     def test_scalar_search_wolfe2(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
@@ -181,7 +181,7 @@ class TestLineSearch(object):
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
 
-        assert_(c > 3) # check that the iterator really works...
+        assert_(c > 3)  # check that the iterator really works...
 
     def test_line_search_wolfe2(self):
         c = 0
@@ -201,7 +201,7 @@ class TestLineSearch(object):
             if s < smax:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
-        assert_(c > 3) # check that the iterator really works...
+        assert_(c > 3)  # check that the iterator really works...
 
     def test_line_search_armijo(self):
         c = 0
@@ -222,6 +222,7 @@ class TestLineSearch(object):
         # Armijo should evaluate the function only once if the trial step
         # is already suitable
         count = [0]
+
         def phi(s):
             count[0] += 1
             return -s + 0.01*s**2

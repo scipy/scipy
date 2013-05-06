@@ -424,7 +424,7 @@ class interp1d(_Interpolator1D):
         x_new_indices = searchsorted(self.x_bds, x_new, side='left')
 
         # 3. Clip x_new_indices so that they are within the range of x indices.
-        x_new_indices = x_new_indices.clip(0,  len(self.x)-1).astype(intp)
+        x_new_indices = x_new_indices.clip(0, len(self.x)-1).astype(intp)
 
         # 4. Calculate the actual value for each entry in x_new.
         y_new = self._y[x_new_indices]

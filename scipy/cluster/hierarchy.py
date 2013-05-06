@@ -893,7 +893,7 @@ def to_tree(Z, rd=False):
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
                               'is used before it is formed. See row %d, '
                               'column 1') % fj)
-        nd = ClusterNode(i + n, d[fi], d[fj],  Z[i, 2])
+        nd = ClusterNode(i + n, d[fi], d[fj], Z[i, 2])
         #          ^ id   ^ left ^ right ^ dist
         if Z[i, 3] != nd.count:
             raise ValueError(('Corrupt matrix Z. The count Z[%d,3] is '

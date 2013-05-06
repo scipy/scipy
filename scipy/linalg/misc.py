@@ -6,7 +6,7 @@ from . import blas
 
 __all__ = ['LinAlgError', 'norm']
 
-_nrm2_prefix = {'f' : 's', 'F': 'sc', 'D': 'dz'}
+_nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
 
 
 def norm(a, ord=None):

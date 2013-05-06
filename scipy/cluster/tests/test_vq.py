@@ -25,19 +25,19 @@ except ImportError:
 DATAFILE1 = os.path.join(os.path.dirname(__file__), "data.txt")
 
 # Global data
-X   = np.array([[3.0, 3], [4, 3], [4, 2],
+X = np.array([[3.0, 3], [4, 3], [4, 2],
                [9, 2], [5, 1], [6, 2], [9, 4],
                [5, 2], [5, 4], [7, 4], [6, 5]])
 
-CODET1  = np.array([[3.0000, 3.0000],
+CODET1 = np.array([[3.0000, 3.0000],
                    [6.2000, 4.0000],
                    [5.8000, 1.8000]])
 
-CODET2  = np.array([[11.0/3, 8.0/3],
+CODET2 = np.array([[11.0/3, 8.0/3],
                    [6.7500, 4.2500],
                    [6.2500, 1.7500]])
 
-LABEL1  = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
+LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
 class TestVq(TestCase):
@@ -110,6 +110,7 @@ class TestKMean(TestCase):
         data[x.shape[0]:] = y
 
         res = kmeans(data, 2)
+
     def test_kmeans_simple(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
@@ -122,7 +123,7 @@ class TestKMean(TestCase):
         data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
         initk = np.array([[-1.8127404, -0.67128041],
-                         [ 2.04621601, 0.07401111],
+                         [2.04621601, 0.07401111],
                          [-2.31149087,-0.05160469]])
 
         res = kmeans(data, initk)

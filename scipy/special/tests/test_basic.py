@@ -1,11 +1,11 @@
-#this program corresponds to special.py
+# this program corresponds to special.py
 
 ### Means test is not done yet
-#E   Means test is giving error (E)
-#F   Means test is failing (F)
-#EF  Means test is giving error and Failing
+# E   Means test is giving error (E)
+# F   Means test is failing (F)
+# EF  Means test is giving error and Failing
 #!   Means test is segfaulting
-#8   Means test runs forever
+# 8   Means test runs forever
 
 ###  test_besselpoly
 ###  test_mathieu_a
@@ -46,8 +46,10 @@ from scipy.special._testutils import assert_tol_equal, with_special_errors, \
 class TestCephes(TestCase):
     def test_airy(self):
         cephes.airy(0)
+
     def test_airye(self):
         cephes.airye(0)
+
     def test_binom(self):
         n = np.array([0.264, 4, 5.2, 17])
         k = np.array([2, 0.4, 7, 3.3])
@@ -109,21 +111,28 @@ class TestCephes(TestCase):
 
     def test_bdtr(self):
         assert_equal(cephes.bdtr(1,1,0.5),1.0)
+
     def test_bdtri(self):
         assert_equal(cephes.bdtri(1,3,0.5),0.5)
+
     def test_bdtrc(self):
         assert_equal(cephes.bdtrc(1,3,0.5),0.5)
+
     def test_bdtrin(self):
         assert_equal(cephes.bdtrin(1,0,1),5.0)
+
     def test_bdtrik(self):
         cephes.bdtrik(1,3,0.5)
 
     def test_bei(self):
         assert_equal(cephes.bei(0),0.0)
+
     def test_beip(self):
         assert_equal(cephes.beip(0),0.0)
+
     def test_ber(self):
         assert_equal(cephes.ber(0),1.0)
+
     def test_berp(self):
         assert_equal(cephes.berp(0),0.0)
 
@@ -132,21 +141,28 @@ class TestCephes(TestCase):
 
     def test_beta(self):
         assert_equal(cephes.beta(1,1),1.0)
+
     def test_betainc(self):
         assert_equal(cephes.betainc(1,1,1),1.0)
+
     def test_betaln(self):
         assert_equal(cephes.betaln(1,1),0.0)
+
     def test_betaincinv(self):
         assert_equal(cephes.betaincinv(1,1,1),1.0)
+
     def test_beta_inf(self):
         assert_(np.isinf(special.beta(-1, 2)))
 
     def test_btdtr(self):
         assert_equal(cephes.btdtr(1,1,1),1.0)
+
     def test_btdtri(self):
         assert_equal(cephes.btdtri(1,1,1),1.0)
+
     def test_btdtria(self):
         assert_equal(cephes.btdtria(1,1,1),5.0)
+
     def test_btdtrib(self):
         assert_equal(cephes.btdtrib(1,1,1),5.0)
 
@@ -155,10 +171,13 @@ class TestCephes(TestCase):
 
     def test_chdtr(self):
         assert_equal(cephes.chdtr(1,0),0.0)
+
     def test_chdtrc(self):
         assert_equal(cephes.chdtrc(1,0),1.0)
+
     def test_chdtri(self):
         assert_equal(cephes.chdtri(1,1),0.0)
+
     def test_chdtriv(self):
         assert_equal(cephes.chdtriv(0,0),5.0)
 
@@ -166,19 +185,24 @@ class TestCephes(TestCase):
         assert_equal(cephes.chndtr(0,1,0),0.0)
         p = cephes.chndtr(np.linspace(20, 25, 5), 2, 1.07458615e+02)
         assert_allclose(p, [1.21805009e-09, 2.81979982e-09, 6.25652736e-09,
-                            1.33520017e-08,   2.74909967e-08],
+                            1.33520017e-08, 2.74909967e-08],
                         rtol=1e-6, atol=0)
+
     def test_chndtridf(self):
         assert_equal(cephes.chndtridf(0,0,1),5.0)
+
     def test_chndtrinc(self):
         assert_equal(cephes.chndtrinc(0,1,0),5.0)
+
     def test_chndtrix(self):
         assert_equal(cephes.chndtrix(0,1,0),0.0)
 
     def test_cosdg(self):
         assert_equal(cephes.cosdg(0),1.0)
+
     def test_cosm1(self):
         assert_equal(cephes.cosm1(0),0.0)
+
     def test_cotdg(self):
         assert_almost_equal(cephes.cotdg(45),1.0)
 
@@ -188,26 +212,34 @@ class TestCephes(TestCase):
 
     def test_ellipe(self):
         assert_equal(cephes.ellipe(1),1.0)
+
     def test_ellipeinc(self):
         assert_equal(cephes.ellipeinc(0,1),0.0)
+
     def test_ellipj(self):
         cephes.ellipj(0,1)
+
     def test_ellipk(self):
         assert_allclose(ellipk(0), pi/2)
+
     def test_ellipkinc(self):
         assert_equal(cephes.ellipkinc(0,0),0.0)
 
     def test_erf(self):
         assert_equal(cephes.erf(0),0.0)
+
     def test_erfc(self):
         assert_equal(cephes.erfc(0),1.0)
 
     def test_exp1(self):
         cephes.exp1(1)
+
     def test_expi(self):
         cephes.expi(1)
+
     def test_expn(self):
         cephes.expn(1,1)
+
     def test_exp1_reg(self):
         # Regression for #834
         a = cephes.exp1(-complex(19.9999990))
@@ -216,17 +248,21 @@ class TestCephes(TestCase):
 
     def test_exp10(self):
         assert_approx_equal(cephes.exp10(2),100.0)
+
     def test_exp2(self):
         assert_equal(cephes.exp2(2),4.0)
+
     def test_expm1(self):
         assert_equal(cephes.expm1(0),0.0)
 
     def test_fdtr(self):
         assert_equal(cephes.fdtr(1,1,0),0.0)
+
     def test_fdtrc(self):
         assert_equal(cephes.fdtrc(1,1,0),1.0)
+
     def test_fdtri(self):
-        #cephes.fdtri(1,1,0.5)  #BUG: gives NaN, should be 1
+        # cephes.fdtri(1,1,0.5)  #BUG: gives NaN, should be 1
         assert_allclose(cephes.fdtri(1, 1, [0.499, 0.501]),
                         array([0.9937365, 1.00630298]), rtol=1e-6)
 
@@ -238,36 +274,48 @@ class TestCephes(TestCase):
 
     def test_gamma(self):
         assert_equal(cephes.gamma(5),24.0)
+
     def test_gammainc(self):
         assert_equal(cephes.gammainc(5,0),0.0)
+
     def test_gammaincc(self):
         assert_equal(cephes.gammaincc(5,0),1.0)
+
     def test_gammainccinv(self):
         assert_equal(cephes.gammainccinv(5,1),0.0)
+
     def test_gammaln(self):
         cephes.gammaln(10)
+
     def test_gammasgn(self):
         vals = np.array([-4, -3.5, -2.3, 1, 4.2], np.float64)
         assert_array_equal(cephes.gammasgn(vals), np.sign(cephes.rgamma(vals)))
 
     def test_gdtr(self):
         assert_equal(cephes.gdtr(1,1,0),0.0)
+
     def test_gdtrc(self):
         assert_equal(cephes.gdtrc(1,1,0),1.0)
+
     def test_gdtria(self):
         assert_equal(cephes.gdtria(0,1,1),0.0)
+
     def test_gdtrib(self):
         cephes.gdtrib(1,0,1)
-        #assert_equal(cephes.gdtrib(1,0,1),5.0)
+        # assert_equal(cephes.gdtrib(1,0,1),5.0)
+
     def test_gdtrix(self):
         cephes.gdtrix(1,1,.1)
 
     def test_hankel1(self):
         cephes.hankel1(1,1)
+
     def test_hankel1e(self):
         cephes.hankel1e(1,1)
+
     def test_hankel2(self):
         cephes.hankel2(1,1)
+
     def test_hankel2e(self):
         cephes.hankel2e(1,1)
 
@@ -275,91 +323,125 @@ class TestCephes(TestCase):
         assert_approx_equal(cephes.hyp1f1(1,1,1), exp(1.0))
         assert_approx_equal(cephes.hyp1f1(3,4,-6), 0.026056422099537251095)
         cephes.hyp1f1(1,1,1)
+
     def test_hyp1f2(self):
         cephes.hyp1f2(1,1,1,1)
+
     def test_hyp2f0(self):
         cephes.hyp2f0(1,1,1,1)
+
     def test_hyp2f1(self):
         assert_equal(cephes.hyp2f1(1,1,1,0),1.0)
+
     def test_hyp3f0(self):
         assert_equal(cephes.hyp3f0(1,1,1,0),(1.0,0.0))
+
     def test_hyperu(self):
         assert_equal(cephes.hyperu(0,1,1),1.0)
 
     def test_i0(self):
         assert_equal(cephes.i0(0),1.0)
+
     def test_i0e(self):
         assert_equal(cephes.i0e(0),1.0)
+
     def test_i1(self):
         assert_equal(cephes.i1(0),0.0)
+
     def test_i1e(self):
         assert_equal(cephes.i1e(0),0.0)
 
     def test_it2i0k0(self):
         cephes.it2i0k0(1)
+
     def test_it2j0y0(self):
         cephes.it2j0y0(1)
+
     def test_it2struve0(self):
         cephes.it2struve0(1)
+
     def test_itairy(self):
         cephes.itairy(1)
+
     def test_iti0k0(self):
         assert_equal(cephes.iti0k0(0),(0.0,0.0))
+
     def test_itj0y0(self):
         assert_equal(cephes.itj0y0(0),(0.0,0.0))
+
     def test_itmodstruve0(self):
         assert_equal(cephes.itmodstruve0(0),0.0)
+
     def test_itstruve0(self):
         assert_equal(cephes.itstruve0(0),0.0)
+
     def test_iv(self):
         assert_equal(cephes.iv(1,0),0.0)
+
     def _check_ive(self):
         assert_equal(cephes.ive(1,0),0.0)
 
     def test_j0(self):
         assert_equal(cephes.j0(0),1.0)
+
     def test_j1(self):
         assert_equal(cephes.j1(0),0.0)
+
     def test_jn(self):
         assert_equal(cephes.jn(0,0),1.0)
+
     def test_jv(self):
         assert_equal(cephes.jv(0,0),1.0)
+
     def _check_jve(self):
         assert_equal(cephes.jve(0,0),1.0)
 
     def test_k0(self):
         cephes.k0(2)
+
     def test_k0e(self):
         cephes.k0e(2)
+
     def test_k1(self):
         cephes.k1(2)
+
     def test_k1e(self):
         cephes.k1e(2)
+
     def test_kei(self):
         cephes.kei(2)
+
     def test_keip(self):
         assert_equal(cephes.keip(0),0.0)
+
     def test_ker(self):
         cephes.ker(2)
+
     def test_kerp(self):
         cephes.kerp(2)
+
     def _check_kelvin(self):
         cephes.kelvin(2)
+
     def test_kn(self):
         cephes.kn(1,1)
 
     def test_kolmogi(self):
         assert_equal(cephes.kolmogi(1),0.0)
         assert_(np.isnan(cephes.kolmogi(np.nan)))
+
     def test_kolmogorov(self):
         assert_equal(cephes.kolmogorov(0),1.0)
 
     def _check_kv(self):
         cephes.kv(1,1)
+
     def _check_kve(self):
         cephes.kve(1,1)
+
     def test_log1p(self):
         assert_equal(cephes.log1p(0),0.0)
+
     def test_lpmv(self):
         assert_equal(cephes.lpmv(0,0,1),1.0)
 
@@ -377,13 +459,13 @@ class TestCephes(TestCase):
         def ce_smallq(m, q, z):
             z *= np.pi/180
             if m == 0:
-                return 2**(-0.5) * (1 - .5*q*cos(2*z)) # + O(q^2)
+                return 2**(-0.5) * (1 - .5*q*cos(2*z))  # + O(q^2)
             elif m == 1:
-                return cos(z) - q/8 * cos(3*z) # + O(q^2)
+                return cos(z) - q/8 * cos(3*z)  # + O(q^2)
             elif m == 2:
-                return cos(2*z) - q*(cos(4*z)/12 - 1/4) # + O(q^2)
+                return cos(2*z) - q*(cos(4*z)/12 - 1/4)  # + O(q^2)
             else:
-                return cos(m*z) - q*(cos((m+2)*z)/(4*(m+1)) - cos((m-2)*z)/(4*(m-1))) # + O(q^2)
+                return cos(m*z) - q*(cos((m+2)*z)/(4*(m+1)) - cos((m-2)*z)/(4*(m-1)))  # + O(q^2)
         m = np.arange(0, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
         assert_allclose(cephes.mathieu_cem(m[:,None], q[None,:], 0.123)[0],
@@ -398,11 +480,11 @@ class TestCephes(TestCase):
         def se_smallq(m, q, z):
             z *= np.pi/180
             if m == 1:
-                return sin(z) - q/8 * sin(3*z) # + O(q^2)
+                return sin(z) - q/8 * sin(3*z)  # + O(q^2)
             elif m == 2:
-                return sin(2*z) - q*sin(4*z)/12 # + O(q^2)
+                return sin(2*z) - q*sin(4*z)/12  # + O(q^2)
             else:
-                return sin(m*z) - q*(sin((m+2)*z)/(4*(m+1)) - sin((m-2)*z)/(4*(m-1))) # + O(q^2)
+                return sin(m*z) - q*(sin((m+2)*z)/(4*(m+1)) - sin((m-2)*z)/(4*(m-1)))  # + O(q^2)
         m = np.arange(1, 100)
         q = np.r_[0, np.logspace(-30, -9, 10)]
         assert_allclose(cephes.mathieu_sem(m[:,None], q[None,:], 0.123)[0],
@@ -465,39 +547,52 @@ class TestCephes(TestCase):
 
     def test_modfresnelm(self):
         cephes.modfresnelm(0)
+
     def test_modfresnelp(self):
         cephes.modfresnelp(0)
+
     def _check_modstruve(self):
         assert_equal(cephes.modstruve(1,0),0.0)
 
     def test_nbdtr(self):
         assert_equal(cephes.nbdtr(1,1,1),1.0)
+
     def test_nbdtrc(self):
         assert_equal(cephes.nbdtrc(1,1,1),0.0)
+
     def test_nbdtri(self):
         assert_equal(cephes.nbdtri(1,1,1),1.0)
+
     def __check_nbdtrik(self):
         cephes.nbdtrik(1,.4,.5)
+
     def test_nbdtrin(self):
         assert_equal(cephes.nbdtrin(1,0,0),5.0)
 
     def test_ncfdtr(self):
         assert_equal(cephes.ncfdtr(1,1,1,0),0.0)
+
     def test_ncfdtri(self):
         assert_equal(cephes.ncfdtri(1,1,1,0),0.0)
+
     def test_ncfdtridfd(self):
         cephes.ncfdtridfd(1,0.5,0,1)
+
     def __check_ncfdtridfn(self):
         cephes.ncfdtridfn(1,0.5,0,1)
+
     def __check_ncfdtrinc(self):
         cephes.ncfdtrinc(1,0.5,0,1)
 
     def test_nctdtr(self):
         assert_equal(cephes.nctdtr(1,0,0),0.5)
+
     def __check_nctdtridf(self):
         cephes.nctdtridf(1,0.5,0)
+
     def test_nctdtrinc(self):
         cephes.nctdtrinc(1,0,0)
+
     def test_nctdtrit(self):
         cephes.nctdtrit(.1,0.2,.5)
 
@@ -507,14 +602,17 @@ class TestCephes(TestCase):
 
     def test_ndtri(self):
         assert_equal(cephes.ndtri(0.5),0.0)
+
     def test_nrdtrimn(self):
         assert_approx_equal(cephes.nrdtrimn(0.5,1,1),1.0)
+
     def test_nrdtrisd(self):
         assert_tol_equal(cephes.nrdtrisd(0.5,0.5,0.5), 0.0,
                          atol=0, rtol=0)
 
     def test_obl_ang1(self):
         cephes.obl_ang1(1,1,1,0)
+
     def test_obl_ang1_cv(self):
         result = cephes.obl_ang1_cv(1,1,1,1,0)
         assert_almost_equal(result[0],1.0)
@@ -522,25 +620,34 @@ class TestCephes(TestCase):
 
     def _check_obl_cv(self):
         assert_equal(cephes.obl_cv(1,1,0),2.0)
+
     def test_obl_rad1(self):
         cephes.obl_rad1(1,1,1,0)
+
     def test_obl_rad1_cv(self):
         cephes.obl_rad1_cv(1,1,1,1,0)
+
     def test_obl_rad2(self):
         cephes.obl_rad2(1,1,1,0)
+
     def test_obl_rad2_cv(self):
         cephes.obl_rad2_cv(1,1,1,1,0)
 
     def test_pbdv(self):
         assert_equal(cephes.pbdv(1,0),(0.0,1.0))
+
     def test_pbvv(self):
         cephes.pbvv(1,0)
+
     def test_pbwa(self):
         cephes.pbwa(1,0)
+
     def test_pdtr(self):
         cephes.pdtr(0,1)
+
     def test_pdtrc(self):
         cephes.pdtrc(0,1)
+
     def test_pdtri(self):
         warn_ctx = WarningManager()
         warn_ctx.__enter__()
@@ -549,22 +656,29 @@ class TestCephes(TestCase):
             cephes.pdtri(0.5,0.5)
         finally:
             warn_ctx.__exit__()
+
     def test_pdtrik(self):
         cephes.pdtrik(0.5,1)
 
     def test_pro_ang1(self):
         cephes.pro_ang1(1,1,1,0)
+
     def test_pro_ang1_cv(self):
         assert_array_almost_equal(cephes.pro_ang1_cv(1,1,1,1,0),
                                   array((1.0,0.0)))
+
     def _check_pro_cv(self):
         assert_equal(cephes.pro_cv(1,1,0),2.0)
+
     def test_pro_rad1(self):
         cephes.pro_rad1(1,1,1,0.1)
+
     def test_pro_rad1_cv(self):
         cephes.pro_rad1_cv(1,1,1,1,0)
+
     def test_pro_rad2(self):
         cephes.pro_rad2(1,1,1,0)
+
     def test_pro_rad2_cv(self):
         cephes.pro_rad2_cv(1,1,1,1,0)
 
@@ -573,8 +687,10 @@ class TestCephes(TestCase):
 
     def test_radian(self):
         assert_equal(cephes.radian(0,0,0),0)
+
     def test_rgamma(self):
         assert_equal(cephes.rgamma(1),1.0)
+
     def test_round(self):
         assert_equal(cephes.round(3.4),3.0)
         assert_equal(cephes.round(-3.4),-3.0)
@@ -585,6 +701,7 @@ class TestCephes(TestCase):
 
     def test_shichi(self):
         cephes.shichi(1)
+
     def test_sici(self):
         cephes.sici(1)
 
@@ -598,9 +715,11 @@ class TestCephes(TestCase):
 
     def test_sindg(self):
         assert_equal(cephes.sindg(90),1.0)
+
     def test_smirnov(self):
         assert_equal(cephes.smirnov(1,.1),0.9)
         assert_(np.isnan(cephes.smirnov(1,np.nan)))
+
     def test_smirnovi(self):
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.4)),0.4)
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.6)),0.6)
@@ -608,37 +727,48 @@ class TestCephes(TestCase):
 
     def test_spence(self):
         assert_equal(cephes.spence(1),0.0)
+
     def test_stdtr(self):
         assert_equal(cephes.stdtr(1,0),0.5)
         assert_almost_equal(cephes.stdtr(1,1), 0.75)
         assert_almost_equal(cephes.stdtr(1,2), 0.852416382349)
+
     def test_stdtridf(self):
         cephes.stdtridf(0.7,1)
+
     def test_stdtrit(self):
         cephes.stdtrit(1,0.7)
+
     def test_struve(self):
         assert_equal(cephes.struve(0,0),0.0)
 
     def test_tandg(self):
         assert_equal(cephes.tandg(45),1.0)
+
     def test_tklmbda(self):
         assert_almost_equal(cephes.tklmbda(1,1),1.0)
 
     def test_y0(self):
         cephes.y0(1)
+
     def test_y1(self):
         cephes.y1(1)
+
     def test_yn(self):
         cephes.yn(1,1)
+
     def test_yv(self):
         cephes.yv(1,1)
+
     def _check_yve(self):
         cephes.yve(1,1)
 
     def test_zeta(self):
         cephes.zeta(2,2)
+
     def test_zetac(self):
         assert_equal(cephes.zetac(0),-1.5)
+
     def test_wofz(self):
         z = [complex(624.2,-0.26123), complex(-0.4,3.), complex(0.6,2.),
              complex(-1.,1.), complex(-1.,-9.), complex(-1.,9.),
@@ -646,7 +776,7 @@ class TestCephes(TestCase):
              complex(-53,30.1), complex(0.0,0.12345),
              complex(11,1), complex(-22,-2), complex(9,-28),
              complex(21,-33), complex(1e5,1e5), complex(1e14,1e14)
-        ]
+             ]
         w = [
             complex(-3.78270245518980507452677445620103199303131110e-7,
                     0.000903861276433172057331093754199933411710053155),
@@ -686,7 +816,7 @@ class TestCephes(TestCase):
 
 class TestAiry(TestCase):
     def test_airy(self):
-        #This tests the airy function to ensure 8 place accuracy in computation
+        # This tests the airy function to ensure 8 place accuracy in computation
 
         x = special.airy(.99)
         assert_array_almost_equal(x,array([0.13689066,-0.16050153,1.19815925,0.92046818]),8)
@@ -709,16 +839,16 @@ class TestAiry(TestCase):
         bi = special.bi_zeros(2)
         bia = (array([-1.17371322, -3.2710930]),
         array([-2.29443968, -4.07315509]),
-        array([-0.45494438,  0.39652284]),
-        array([ 0.60195789 , -0.76031014]))
+        array([-0.45494438, 0.39652284]),
+        array([0.60195789, -0.76031014]))
         assert_array_almost_equal(bi,bia,4)
 
     def test_ai_zeros(self):
         ai = special.ai_zeros(1)
         assert_array_almost_equal(ai,(array([-2.33810741]),
                                      array([-1.01879297]),
-                                     array([ 0.5357]),
-                                     array([ 0.7012])),4)
+                                     array([0.5357]),
+                                     array([0.7012])),4)
 
 
 class TestAssocLaguerre(TestCase):
@@ -738,19 +868,19 @@ class TestBesselpoly(TestCase):
 class TestKelvin(TestCase):
     def test_bei(self):
         mbei = special.bei(2)
-        assert_almost_equal(mbei, 0.9722916273066613,5)# this may not be exact
+        assert_almost_equal(mbei, 0.9722916273066613,5)  # this may not be exact
 
     def test_beip(self):
         mbeip = special.beip(2)
-        assert_almost_equal(mbeip,0.91701361338403631,5)# this may not be exact
+        assert_almost_equal(mbeip,0.91701361338403631,5)  # this may not be exact
 
     def test_ber(self):
         mber = special.ber(2)
-        assert_almost_equal(mber,0.75173418271380821,5)# this may not be exact
+        assert_almost_equal(mber,0.75173418271380821,5)  # this may not be exact
 
     def test_berp(self):
         mberp = special.berp(2)
-        assert_almost_equal(mberp,-0.49306712470943909,5)# this may not be exact
+        assert_almost_equal(mberp,-0.49306712470943909,5)  # this may not be exact
 
     def test_bei_zeros(self):
         bi = special.bi_zeros(5)
@@ -780,7 +910,7 @@ class TestKelvin(TestCase):
 
     def test_beip_zeros(self):
         bip = special.beip_zeros(5)
-        assert_array_almost_equal(bip,array([  3.772673304934953,
+        assert_array_almost_equal(bip,array([3.772673304934953,
                                                8.280987849760042,
                                                12.742147523633703,
                                                17.193431752512542,
@@ -827,7 +957,7 @@ class TestKelvin(TestCase):
 
     def test_kei_zeros(self):
         kei = special.kei_zeros(5)
-        assert_array_almost_equal(kei,array([  3.91467,
+        assert_array_almost_equal(kei,array([3.91467,
                                               8.34422,
                                               12.78256,
                                               17.22314,
@@ -835,7 +965,7 @@ class TestKelvin(TestCase):
 
     def test_keip_zeros(self):
         keip = special.keip_zeros(5)
-        assert_array_almost_equal(keip,array([  4.93181,
+        assert_array_almost_equal(keip,array([4.93181,
                                                 9.40405,
                                                 13.85827,
                                                 18.30717,
@@ -845,44 +975,44 @@ class TestKelvin(TestCase):
     def test_kelvin_zeros(self):
         tmp = special.kelvin_zeros(5)
         berz,beiz,kerz,keiz,berpz,beipz,kerpz,keipz = tmp
-        assert_array_almost_equal(berz,array([ 2.84892,
+        assert_array_almost_equal(berz,array([2.84892,
                                                7.23883,
                                                11.67396,
                                                16.11356,
                                                20.55463]),4)
-        assert_array_almost_equal(beiz,array([ 5.02622,
+        assert_array_almost_equal(beiz,array([5.02622,
                                                9.45541,
                                                13.89349,
                                                18.33398,
                                                22.77544]),4)
-        assert_array_almost_equal(kerz,array([ 1.71854,
+        assert_array_almost_equal(kerz,array([1.71854,
                                                6.12728,
                                                10.56294,
                                                15.00269,
                                                19.44382]),4)
-        assert_array_almost_equal(keiz,array([ 3.91467,
+        assert_array_almost_equal(keiz,array([3.91467,
                                                8.34422,
                                                12.78256,
                                                17.22314,
                                                21.66464]),4)
-        assert_array_almost_equal(berpz,array([ 6.03871,
+        assert_array_almost_equal(berpz,array([6.03871,
                                                 10.51364,
                                                 14.96844,
                                                 19.41758,
                                                 23.86430]),4)
-        assert_array_almost_equal(beipz,array([ 3.77267,
+        assert_array_almost_equal(beipz,array([3.77267,
                  # table from 1927 had 3.77320
                  #  but this is more accurate
                                                 8.28099,
                                                 12.74215,
                                                 17.19343,
                                                 21.64114]),4)
-        assert_array_almost_equal(kerpz,array([ 2.66584,
+        assert_array_almost_equal(kerpz,array([2.66584,
                                                 7.17212,
                                                 11.63218,
                                                 16.08312,
                                                 20.53068]),4)
-        assert_array_almost_equal(keipz,array([ 4.93181,
+        assert_array_almost_equal(keipz,array([4.93181,
                                                 9.40405,
                                                 13.85827,
                                                 18.30717,
@@ -890,7 +1020,7 @@ class TestKelvin(TestCase):
 
     def test_ker_zeros(self):
         ker = special.ker_zeros(5)
-        assert_array_almost_equal(ker,array([  1.71854,
+        assert_array_almost_equal(ker,array([1.71854,
                                                6.12728,
                                                10.56294,
                                                15.00269,
@@ -898,7 +1028,7 @@ class TestKelvin(TestCase):
 
     def test_kerp_zeros(self):
         kerp = special.kerp_zeros(5)
-        assert_array_almost_equal(kerp,array([  2.66584,
+        assert_array_almost_equal(kerp,array([2.66584,
                                                 7.17212,
                                                 11.63218,
                                                 16.08312,
@@ -1130,7 +1260,7 @@ class TestErf(TestCase):
             cephes.erfc,
             lambda z: 1 - cephes.erf(z),
             rtol=1e-12,
-            atol=1e-14 # <- the test function loses precision
+            atol=1e-14  # <- the test function loses precision
             )
 
     def test_erfcx_consistent(self):
@@ -1164,12 +1294,12 @@ class TestErf(TestCase):
 
     def test_errprint(self):
         a = special.errprint()
-        b = 1-a # a is the state 1-a inverts state
-        c = special.errprint(b) # returns last state 'a'
+        b = 1-a  # a is the state 1-a inverts state
+        c = special.errprint(b)  # returns last state 'a'
         assert_equal(a,c)
-        d = special.errprint(a) # returns to original state
-        assert_equal(d,b) # makes sure state was returned
-        #assert_equal(d,1-a)
+        d = special.errprint(a)  # returns to original state
+        assert_equal(d,b)  # makes sure state was returned
+        # assert_equal(d,1-a)
 
 
 class TestEuler(TestCase):
@@ -1241,13 +1371,13 @@ class TestFresnel(TestCase):
     def test_fresnel_zeros(self):
         szo, czo = special.fresnel_zeros(5)
         assert_array_almost_equal(szo,
-                                  array([ 2.0093+0.2885j,
+                                  array([2.0093+0.2885j,
                                           2.8335+0.2443j,
                                           3.4675+0.2185j,
                                           4.0026+0.2009j,
                                           4.4742+0.1877j]),3)
         assert_array_almost_equal(czo,
-                                  array([ 1.7437+0.3057j,
+                                  array([1.7437+0.3057j,
                                           2.6515+0.2529j,
                                           3.3204+0.2240j,
                                           3.8757+0.2047j,
@@ -1421,106 +1551,106 @@ class TestHyper(TestCase):
 
         # reference data obtained from mathematica [ a, b, x, m(a,b,x)]:
         # produced with test_hyp1f1.nb
-        ref_data = array([[ -8.38132975e+00,  -1.28436461e+01,  -2.91081397e+01,          1.04178330e+04],
-                          [  2.91076882e+00,  -6.35234333e+00,  -1.27083993e+01,          6.68132725e+00],
-                          [ -1.42938258e+01,   1.80869131e-01,   1.90038728e+01,          1.01385897e+05],
-                          [  5.84069088e+00,   1.33187908e+01,   2.91290106e+01,          1.59469411e+08],
-                          [ -2.70433202e+01,  -1.16274873e+01,  -2.89582384e+01,          1.39900152e+24],
-                          [  4.26344966e+00,  -2.32701773e+01,   1.91635759e+01,          6.13816915e+21],
-                          [  1.20514340e+01,  -3.40260240e+00,   7.26832235e+00,          1.17696112e+13],
-                          [  2.77372955e+01,  -1.99424687e+00,   3.61332246e+00,          3.07419615e+13],
-                          [  1.50310939e+01,  -2.91198675e+01,  -1.53581080e+01,         -3.79166033e+02],
-                          [  1.43995827e+01,   9.84311196e+00,   1.93204553e+01,          2.55836264e+10],
-                          [ -4.08759686e+00,   1.34437025e+01,  -1.42072843e+01,          1.70778449e+01],
-                          [  8.05595738e+00,  -1.31019838e+01,   1.52180721e+01,          3.06233294e+21],
-                          [  1.81815804e+01,  -1.42908793e+01,   9.57868793e+00,         -2.84771348e+20],
-                          [ -2.49671396e+01,   1.25082843e+01,  -1.71562286e+01,          2.36290426e+07],
-                          [  2.67277673e+01,   1.70315414e+01,   6.12701450e+00,          7.77917232e+03],
-                          [  2.49565476e+01,   2.91694684e+01,   6.29622660e+00,          2.35300027e+02],
-                          [  6.11924542e+00,  -1.59943768e+00,   9.57009289e+00,          1.32906326e+11],
-                          [ -1.47863653e+01,   2.41691301e+01,  -1.89981821e+01,          2.73064953e+03],
-                          [  2.24070483e+01,  -2.93647433e+00,   8.19281432e+00,         -6.42000372e+17],
-                          [  8.04042600e-01,   1.82710085e+01,  -1.97814534e+01,          5.48372441e-01],
-                          [  1.39590390e+01,   1.97318686e+01,   2.37606635e+00,          5.51923681e+00],
-                          [ -4.66640483e+00,  -2.00237930e+01,   7.40365095e+00,          4.50310752e+00],
-                          [  2.76821999e+01,  -6.36563968e+00,   1.11533984e+01,         -9.28725179e+23],
-                          [ -2.56764457e+01,   1.24544906e+00,   1.06407572e+01,          1.25922076e+01],
-                          [  3.20447808e+00,   1.30874383e+01,   2.26098014e+01,          2.03202059e+04],
-                          [ -1.24809647e+01,   4.15137113e+00,  -2.92265700e+01,          2.39621411e+08],
-                          [  2.14778108e+01,  -2.35162960e+00,  -1.13758664e+01,          4.46882152e-01],
-                          [ -9.85469168e+00,  -3.28157680e+00,   1.67447548e+01,         -1.07342390e+07],
-                          [  1.08122310e+01,  -2.47353236e+01,  -1.15622349e+01,         -2.91733796e+03],
-                          [ -2.67933347e+01,  -3.39100709e+00,   2.56006986e+01,         -5.29275382e+09],
-                          [ -8.60066776e+00,  -8.02200924e+00,   1.07231926e+01,          1.33548320e+06],
-                          [ -1.01724238e-01,  -1.18479709e+01,  -2.55407104e+01,          1.55436570e+00],
-                          [ -3.93356771e+00,   2.11106818e+01,  -2.57598485e+01,          2.13467840e+01],
-                          [  3.74750503e+00,   1.55687633e+01,  -2.92841720e+01,          1.43873509e-02],
-                          [  6.99726781e+00,   2.69855571e+01,  -1.63707771e+01,          3.08098673e-02],
-                          [ -2.31996011e+01,   3.47631054e+00,   9.75119815e-01,          1.79971073e-02],
-                          [  2.38951044e+01,  -2.91460190e+01,  -2.50774708e+00,          9.56934814e+00],
-                          [  1.52730825e+01,   5.77062507e+00,   1.21922003e+01,          1.32345307e+09],
-                          [  1.74673917e+01,   1.89723426e+01,   4.94903250e+00,          9.90859484e+01],
-                          [  1.88971241e+01,   2.86255413e+01,   5.52360109e-01,          1.44165360e+00],
-                          [  1.02002319e+01,  -1.66855152e+01,  -2.55426235e+01,          6.56481554e+02],
-                          [ -1.79474153e+01,   1.22210200e+01,  -1.84058212e+01,          8.24041812e+05],
-                          [ -1.36147103e+01,   1.32365492e+00,  -7.22375200e+00,          9.92446491e+05],
-                          [  7.57407832e+00,   2.59738234e+01,  -1.34139168e+01,          3.64037761e-02],
-                          [  2.21110169e+00,   1.28012666e+01,   1.62529102e+01,          1.33433085e+02],
-                          [ -2.64297569e+01,  -1.63176658e+01,  -1.11642006e+01,         -2.44797251e+13],
-                          [ -2.46622944e+01,  -3.02147372e+00,   8.29159315e+00,         -3.21799070e+05],
-                          [ -1.37215095e+01,  -1.96680183e+01,   2.91940118e+01,          3.21457520e+12],
-                          [ -5.45566105e+00,   2.81292086e+01,   1.72548215e-01,          9.66973000e-01],
-                          [ -1.55751298e+00,  -8.65703373e+00,   2.68622026e+01,         -3.17190834e+16],
-                          [  2.45393609e+01,  -2.70571903e+01,   1.96815505e+01,          1.80708004e+37],
-                          [  5.77482829e+00,   1.53203143e+01,   2.50534322e+01,          1.14304242e+06],
-                          [ -1.02626819e+01,   2.36887658e+01,  -2.32152102e+01,          7.28965646e+02],
-                          [ -1.30833446e+00,  -1.28310210e+01,   1.87275544e+01,         -9.33487904e+12],
-                          [  5.83024676e+00,  -1.49279672e+01,   2.44957538e+01,         -7.61083070e+27],
-                          [ -2.03130747e+01,   2.59641715e+01,  -2.06174328e+01,          4.54744859e+04],
-                          [  1.97684551e+01,  -2.21410519e+01,  -2.26728740e+01,          3.53113026e+06],
-                          [  2.73673444e+01,   2.64491725e+01,   1.57599882e+01,          1.07385118e+07],
-                          [  5.73287971e+00,   1.21111904e+01,   1.33080171e+01,          2.63220467e+03],
-                          [ -2.82751072e+01,   2.08605881e+01,   9.09838900e+00,         -6.60957033e-07],
-                          [  1.87270691e+01,  -1.74437016e+01,   1.52413599e+01,          6.59572851e+27],
-                          [  6.60681457e+00,  -2.69449855e+00,   9.78972047e+00,         -2.38587870e+12],
-                          [  1.20895561e+01,  -2.51355765e+01,   2.30096101e+01,          7.58739886e+32],
-                          [ -2.44682278e+01,   2.10673441e+01,  -1.36705538e+01,          4.54213550e+04],
-                          [ -4.50665152e+00,   3.72292059e+00,  -4.83403707e+00,          2.68938214e+01],
-                          [ -7.46540049e+00,  -1.08422222e+01,  -1.72203805e+01,         -2.09402162e+02],
-                          [ -2.00307551e+01,  -7.50604431e+00,  -2.78640020e+01,          4.15985444e+19],
-                          [  1.99890876e+01,   2.20677419e+01,  -2.51301778e+01,          1.23840297e-09],
-                          [  2.03183823e+01,  -7.66942559e+00,   2.10340070e+01,          1.46285095e+31],
-                          [ -2.90315825e+00,  -2.55785967e+01,  -9.58779316e+00,          2.65714264e-01],
-                          [  2.73960829e+01,  -1.80097203e+01,  -2.03070131e+00,          2.52908999e+02],
-                          [ -2.11708058e+01,  -2.70304032e+01,   2.48257944e+01,          3.09027527e+08],
-                          [  2.21959758e+01,   4.00258675e+00,  -1.62853977e+01,         -9.16280090e-09],
-                          [  1.61661840e+01,  -2.26845150e+01,   2.17226940e+01,         -8.24774394e+33],
-                          [ -3.35030306e+00,   1.32670581e+00,   9.39711214e+00,         -1.47303163e+01],
-                          [  7.23720726e+00,  -2.29763909e+01,   2.34709682e+01,         -9.20711735e+29],
-                          [  2.71013568e+01,   1.61951087e+01,  -7.11388906e-01,          2.98750911e-01],
-                          [  8.40057933e+00,  -7.49665220e+00,   2.95587388e+01,          6.59465635e+29],
-                          [ -1.51603423e+01,   1.94032322e+01,  -7.60044357e+00,          1.05186941e+02],
-                          [ -8.83788031e+00,  -2.72018313e+01,   1.88269907e+00,          1.81687019e+00],
-                          [ -1.87283712e+01,   5.87479570e+00,  -1.91210203e+01,          2.52235612e+08],
-                          [ -5.61338513e-01,   2.69490237e+01,   1.16660111e-01,          9.97567783e-01],
-                          [ -5.44354025e+00,  -1.26721408e+01,  -4.66831036e+00,          1.06660735e-01],
-                          [ -2.18846497e+00,   2.33299566e+01,   9.62564397e+00,          3.03842061e-01],
-                          [  6.65661299e+00,  -2.39048713e+01,   1.04191807e+01,          4.73700451e+13],
-                          [ -2.57298921e+01,  -2.60811296e+01,   2.74398110e+01,         -5.32566307e+11],
-                          [ -1.11431826e+01,  -1.59420160e+01,  -1.84880553e+01,         -1.01514747e+02],
-                          [  6.50301931e+00,   2.59859051e+01,  -2.33270137e+01,          1.22760500e-02],
-                          [ -1.94987891e+01,  -2.62123262e+01,   3.90323225e+00,          1.71658894e+01],
-                          [  7.26164601e+00,  -1.41469402e+01,   2.81499763e+01,         -2.50068329e+31],
-                          [ -1.52424040e+01,   2.99719005e+01,  -2.85753678e+01,          1.31906693e+04],
-                          [  5.24149291e+00,  -1.72807223e+01,   2.22129493e+01,          2.50748475e+25],
-                          [  3.63207230e-01,  -9.54120862e-02,  -2.83874044e+01,          9.43854939e-01],
-                          [ -2.11326457e+00,  -1.25707023e+01,   1.17172130e+00,          1.20812698e+00],
-                          [  2.48513582e+00,   1.03652647e+01,  -1.84625148e+01,          6.47910997e-02],
-                          [  2.65395942e+01,   2.74794672e+01,   1.29413428e+01,          2.89306132e+05],
-                          [ -9.49445460e+00,   1.59930921e+01,  -1.49596331e+01,          3.27574841e+02],
-                          [ -5.89173945e+00,   9.96742426e+00,   2.60318889e+01,         -3.15842908e-01],
-                          [ -1.15387239e+01,  -2.21433107e+01,  -2.17686413e+01,          1.56724718e-01],
-                          [ -5.30592244e+00,  -2.42752190e+01,   1.29734035e+00,          1.31985534e+00]])
+        ref_data = array([[-8.38132975e+00, -1.28436461e+01, -2.91081397e+01, 1.04178330e+04],
+                          [2.91076882e+00, -6.35234333e+00, -1.27083993e+01, 6.68132725e+00],
+                          [-1.42938258e+01, 1.80869131e-01, 1.90038728e+01, 1.01385897e+05],
+                          [5.84069088e+00, 1.33187908e+01, 2.91290106e+01, 1.59469411e+08],
+                          [-2.70433202e+01, -1.16274873e+01, -2.89582384e+01, 1.39900152e+24],
+                          [4.26344966e+00, -2.32701773e+01, 1.91635759e+01, 6.13816915e+21],
+                          [1.20514340e+01, -3.40260240e+00, 7.26832235e+00, 1.17696112e+13],
+                          [2.77372955e+01, -1.99424687e+00, 3.61332246e+00, 3.07419615e+13],
+                          [1.50310939e+01, -2.91198675e+01, -1.53581080e+01, -3.79166033e+02],
+                          [1.43995827e+01, 9.84311196e+00, 1.93204553e+01, 2.55836264e+10],
+                          [-4.08759686e+00, 1.34437025e+01, -1.42072843e+01, 1.70778449e+01],
+                          [8.05595738e+00, -1.31019838e+01, 1.52180721e+01, 3.06233294e+21],
+                          [1.81815804e+01, -1.42908793e+01, 9.57868793e+00, -2.84771348e+20],
+                          [-2.49671396e+01, 1.25082843e+01, -1.71562286e+01, 2.36290426e+07],
+                          [2.67277673e+01, 1.70315414e+01, 6.12701450e+00, 7.77917232e+03],
+                          [2.49565476e+01, 2.91694684e+01, 6.29622660e+00, 2.35300027e+02],
+                          [6.11924542e+00, -1.59943768e+00, 9.57009289e+00, 1.32906326e+11],
+                          [-1.47863653e+01, 2.41691301e+01, -1.89981821e+01, 2.73064953e+03],
+                          [2.24070483e+01, -2.93647433e+00, 8.19281432e+00, -6.42000372e+17],
+                          [8.04042600e-01, 1.82710085e+01, -1.97814534e+01, 5.48372441e-01],
+                          [1.39590390e+01, 1.97318686e+01, 2.37606635e+00, 5.51923681e+00],
+                          [-4.66640483e+00, -2.00237930e+01, 7.40365095e+00, 4.50310752e+00],
+                          [2.76821999e+01, -6.36563968e+00, 1.11533984e+01, -9.28725179e+23],
+                          [-2.56764457e+01, 1.24544906e+00, 1.06407572e+01, 1.25922076e+01],
+                          [3.20447808e+00, 1.30874383e+01, 2.26098014e+01, 2.03202059e+04],
+                          [-1.24809647e+01, 4.15137113e+00, -2.92265700e+01, 2.39621411e+08],
+                          [2.14778108e+01, -2.35162960e+00, -1.13758664e+01, 4.46882152e-01],
+                          [-9.85469168e+00, -3.28157680e+00, 1.67447548e+01, -1.07342390e+07],
+                          [1.08122310e+01, -2.47353236e+01, -1.15622349e+01, -2.91733796e+03],
+                          [-2.67933347e+01, -3.39100709e+00, 2.56006986e+01, -5.29275382e+09],
+                          [-8.60066776e+00, -8.02200924e+00, 1.07231926e+01, 1.33548320e+06],
+                          [-1.01724238e-01, -1.18479709e+01, -2.55407104e+01, 1.55436570e+00],
+                          [-3.93356771e+00, 2.11106818e+01, -2.57598485e+01, 2.13467840e+01],
+                          [3.74750503e+00, 1.55687633e+01, -2.92841720e+01, 1.43873509e-02],
+                          [6.99726781e+00, 2.69855571e+01, -1.63707771e+01, 3.08098673e-02],
+                          [-2.31996011e+01, 3.47631054e+00, 9.75119815e-01, 1.79971073e-02],
+                          [2.38951044e+01, -2.91460190e+01, -2.50774708e+00, 9.56934814e+00],
+                          [1.52730825e+01, 5.77062507e+00, 1.21922003e+01, 1.32345307e+09],
+                          [1.74673917e+01, 1.89723426e+01, 4.94903250e+00, 9.90859484e+01],
+                          [1.88971241e+01, 2.86255413e+01, 5.52360109e-01, 1.44165360e+00],
+                          [1.02002319e+01, -1.66855152e+01, -2.55426235e+01, 6.56481554e+02],
+                          [-1.79474153e+01, 1.22210200e+01, -1.84058212e+01, 8.24041812e+05],
+                          [-1.36147103e+01, 1.32365492e+00, -7.22375200e+00, 9.92446491e+05],
+                          [7.57407832e+00, 2.59738234e+01, -1.34139168e+01, 3.64037761e-02],
+                          [2.21110169e+00, 1.28012666e+01, 1.62529102e+01, 1.33433085e+02],
+                          [-2.64297569e+01, -1.63176658e+01, -1.11642006e+01, -2.44797251e+13],
+                          [-2.46622944e+01, -3.02147372e+00, 8.29159315e+00, -3.21799070e+05],
+                          [-1.37215095e+01, -1.96680183e+01, 2.91940118e+01, 3.21457520e+12],
+                          [-5.45566105e+00, 2.81292086e+01, 1.72548215e-01, 9.66973000e-01],
+                          [-1.55751298e+00, -8.65703373e+00, 2.68622026e+01, -3.17190834e+16],
+                          [2.45393609e+01, -2.70571903e+01, 1.96815505e+01, 1.80708004e+37],
+                          [5.77482829e+00, 1.53203143e+01, 2.50534322e+01, 1.14304242e+06],
+                          [-1.02626819e+01, 2.36887658e+01, -2.32152102e+01, 7.28965646e+02],
+                          [-1.30833446e+00, -1.28310210e+01, 1.87275544e+01, -9.33487904e+12],
+                          [5.83024676e+00, -1.49279672e+01, 2.44957538e+01, -7.61083070e+27],
+                          [-2.03130747e+01, 2.59641715e+01, -2.06174328e+01, 4.54744859e+04],
+                          [1.97684551e+01, -2.21410519e+01, -2.26728740e+01, 3.53113026e+06],
+                          [2.73673444e+01, 2.64491725e+01, 1.57599882e+01, 1.07385118e+07],
+                          [5.73287971e+00, 1.21111904e+01, 1.33080171e+01, 2.63220467e+03],
+                          [-2.82751072e+01, 2.08605881e+01, 9.09838900e+00, -6.60957033e-07],
+                          [1.87270691e+01, -1.74437016e+01, 1.52413599e+01, 6.59572851e+27],
+                          [6.60681457e+00, -2.69449855e+00, 9.78972047e+00, -2.38587870e+12],
+                          [1.20895561e+01, -2.51355765e+01, 2.30096101e+01, 7.58739886e+32],
+                          [-2.44682278e+01, 2.10673441e+01, -1.36705538e+01, 4.54213550e+04],
+                          [-4.50665152e+00, 3.72292059e+00, -4.83403707e+00, 2.68938214e+01],
+                          [-7.46540049e+00, -1.08422222e+01, -1.72203805e+01, -2.09402162e+02],
+                          [-2.00307551e+01, -7.50604431e+00, -2.78640020e+01, 4.15985444e+19],
+                          [1.99890876e+01, 2.20677419e+01, -2.51301778e+01, 1.23840297e-09],
+                          [2.03183823e+01, -7.66942559e+00, 2.10340070e+01, 1.46285095e+31],
+                          [-2.90315825e+00, -2.55785967e+01, -9.58779316e+00, 2.65714264e-01],
+                          [2.73960829e+01, -1.80097203e+01, -2.03070131e+00, 2.52908999e+02],
+                          [-2.11708058e+01, -2.70304032e+01, 2.48257944e+01, 3.09027527e+08],
+                          [2.21959758e+01, 4.00258675e+00, -1.62853977e+01, -9.16280090e-09],
+                          [1.61661840e+01, -2.26845150e+01, 2.17226940e+01, -8.24774394e+33],
+                          [-3.35030306e+00, 1.32670581e+00, 9.39711214e+00, -1.47303163e+01],
+                          [7.23720726e+00, -2.29763909e+01, 2.34709682e+01, -9.20711735e+29],
+                          [2.71013568e+01, 1.61951087e+01, -7.11388906e-01, 2.98750911e-01],
+                          [8.40057933e+00, -7.49665220e+00, 2.95587388e+01, 6.59465635e+29],
+                          [-1.51603423e+01, 1.94032322e+01, -7.60044357e+00, 1.05186941e+02],
+                          [-8.83788031e+00, -2.72018313e+01, 1.88269907e+00, 1.81687019e+00],
+                          [-1.87283712e+01, 5.87479570e+00, -1.91210203e+01, 2.52235612e+08],
+                          [-5.61338513e-01, 2.69490237e+01, 1.16660111e-01, 9.97567783e-01],
+                          [-5.44354025e+00, -1.26721408e+01, -4.66831036e+00, 1.06660735e-01],
+                          [-2.18846497e+00, 2.33299566e+01, 9.62564397e+00, 3.03842061e-01],
+                          [6.65661299e+00, -2.39048713e+01, 1.04191807e+01, 4.73700451e+13],
+                          [-2.57298921e+01, -2.60811296e+01, 2.74398110e+01, -5.32566307e+11],
+                          [-1.11431826e+01, -1.59420160e+01, -1.84880553e+01, -1.01514747e+02],
+                          [6.50301931e+00, 2.59859051e+01, -2.33270137e+01, 1.22760500e-02],
+                          [-1.94987891e+01, -2.62123262e+01, 3.90323225e+00, 1.71658894e+01],
+                          [7.26164601e+00, -1.41469402e+01, 2.81499763e+01, -2.50068329e+31],
+                          [-1.52424040e+01, 2.99719005e+01, -2.85753678e+01, 1.31906693e+04],
+                          [5.24149291e+00, -1.72807223e+01, 2.22129493e+01, 2.50748475e+25],
+                          [3.63207230e-01, -9.54120862e-02, -2.83874044e+01, 9.43854939e-01],
+                          [-2.11326457e+00, -1.25707023e+01, 1.17172130e+00, 1.20812698e+00],
+                          [2.48513582e+00, 1.03652647e+01, -1.84625148e+01, 6.47910997e-02],
+                          [2.65395942e+01, 2.74794672e+01, 1.29413428e+01, 2.89306132e+05],
+                          [-9.49445460e+00, 1.59930921e+01, -1.49596331e+01, 3.27574841e+02],
+                          [-5.89173945e+00, 9.96742426e+00, 2.60318889e+01, -3.15842908e-01],
+                          [-1.15387239e+01, -2.21433107e+01, -2.17686413e+01, 1.56724718e-01],
+                          [-5.30592244e+00, -2.42752190e+01, 1.29734035e+00, 1.31985534e+00]])
 
         for a,b,c,expected in ref_data:
             result = special.hyp1f1(a,b,c)
@@ -1556,7 +1686,7 @@ class TestHyper(TestCase):
                   [-6,3,1,0.95,0.0000810625],
                   [2,-5,1,0.95,-0.000029375],
                   # huge negative integers
-                  (10, -900,  10.5, 0.99, 1.91853705796607664803709475658e-24),
+                  (10, -900, 10.5, 0.99, 1.91853705796607664803709475658e-24),
                   (10, -900, -10.5, 0.99, 3.54279200040355710199058559155e-18),
                   ]
         for i, (a, b, c, x, v) in enumerate(values):
@@ -1615,7 +1745,7 @@ class TestBessel(TestCase):
                   [2./3, 1e-10, 0.1503423854873779e-6],
                   [3.1, 1e-10, 0.1711956265409013e-32],
                   [2./3, 4.0, -0.2325440850267039],
-                 ]
+                  ]
         for i, (v, x, y) in enumerate(values):
             yc = special.jv(v, x)
             assert_almost_equal(yc, y, 8, err_msg='test #%d' % i)
@@ -1634,12 +1764,12 @@ class TestBessel(TestCase):
     def test_jn_zeros(self):
         jn0 = special.jn_zeros(0,5)
         jn1 = special.jn_zeros(1,5)
-        assert_array_almost_equal(jn0,array([ 2.4048255577,
+        assert_array_almost_equal(jn0,array([2.4048255577,
                                               5.5200781103,
                                               8.6537279129,
                                               11.7915344391,
                                               14.9309177086]),4)
-        assert_array_almost_equal(jn1,array([ 3.83171,
+        assert_array_almost_equal(jn1,array([3.83171,
                                               7.01559,
                                               10.17347,
                                               13.32369,
@@ -1679,6 +1809,7 @@ class TestBessel(TestCase):
 
     def test_jnjnp_zeros(self):
         jn = special.jn
+
         def jnp(n, x):
             return (jn(n-1,x) - jn(n+1,x))/2
         for nt in range(1, 30):
@@ -1693,7 +1824,7 @@ class TestBessel(TestCase):
 
     def test_jnp_zeros(self):
         jnp = special.jnp_zeros(1,5)
-        assert_array_almost_equal(jnp, array([  1.84118,
+        assert_array_almost_equal(jnp, array([1.84118,
                                                 5.33144,
                                                 8.53632,
                                                 11.70600,
@@ -1703,22 +1834,22 @@ class TestBessel(TestCase):
 
     def test_jnyn_zeros(self):
         jnz = special.jnyn_zeros(1,5)
-        assert_array_almost_equal(jnz,(array([  3.83171,
+        assert_array_almost_equal(jnz,(array([3.83171,
                                                 7.01559,
                                                 10.17347,
                                                 13.32369,
                                                 16.47063]),
-                                       array([  1.84118,
+                                       array([1.84118,
                                                 5.33144,
                                                 8.53632,
                                                 11.70600,
                                                 14.86359]),
-                                       array([  2.19714,
+                                       array([2.19714,
                                                 5.42968,
                                                 8.59601,
                                                 11.74915,
                                                 14.89744]),
-                                       array([  3.68302,
+                                       array([3.68302,
                                                 6.94150,
                                                 10.12340,
                                                 13.28576,
@@ -1840,11 +1971,11 @@ class TestBessel(TestCase):
 
     def test_y1p_zeros(self):
         y1p = special.y1p_zeros(1,complex=1)
-        assert_array_almost_equal(y1p,(array([ 0.5768+0.904j]), array([-0.7635+0.5892j])),3)
+        assert_array_almost_equal(y1p,(array([0.5768+0.904j]), array([-0.7635+0.5892j])),3)
 
     def test_yn_zeros(self):
         an = special.yn_zeros(4,2)
-        assert_array_almost_equal(an,array([ 5.64515,  9.36162]),5)
+        assert_array_almost_equal(an,array([5.64515, 9.36162]),5)
         an = special.yn_zeros(443,5)
         assert_tol_equal(an, [450.13573091578090314, 463.05692376675001542,
                               472.80651546418663566, 481.27353184725625838,
@@ -1852,7 +1983,7 @@ class TestBessel(TestCase):
 
     def test_ynp_zeros(self):
         ao = special.ynp_zeros(0,2)
-        assert_array_almost_equal(ao,array([ 2.19714133, 5.42968104]),6)
+        assert_array_almost_equal(ao,array([2.19714133, 5.42968104]),6)
         ao = special.ynp_zeros(43,5)
         assert_tol_equal(special.yvp(43, ao), 0, atol=1e-15)
         ao = special.ynp_zeros(443,5)
@@ -1973,7 +2104,7 @@ class TestBessel(TestCase):
         assert_(dc[k] < 2e-7, (v[k], x[k], special.iv(v[k], x[k]), special.iv(v[k], x[k]+0j)))
 
     def test_kv_cephes_vs_amos(self):
-        #self.check_cephes_vs_amos(kv, kn, rtol=1e-9, atol=1e-305)
+        # self.check_cephes_vs_amos(kv, kn, rtol=1e-9, atol=1e-305)
         self.check_cephes_vs_amos(special.kv, special.kv, rtol=1e-9, atol=1e-305)
 
     def test_ticket_623(self):
@@ -1984,28 +2115,28 @@ class TestBessel(TestCase):
     def test_ticket_853(self):
         """Negative-order Bessels"""
         # cephes
-        assert_tol_equal(special.jv(-1,   1   ), -0.4400505857449335)
-        assert_tol_equal(special.jv(-2,   1   ), 0.1149034849319005)
-        assert_tol_equal(special.yv(-1,   1   ), 0.7812128213002887)
-        assert_tol_equal(special.yv(-2,   1   ), -1.650682606816255)
-        assert_tol_equal(special.iv(-1,   1   ), 0.5651591039924851)
-        assert_tol_equal(special.iv(-2,   1   ), 0.1357476697670383)
-        assert_tol_equal(special.kv(-1,   1   ), 0.6019072301972347)
-        assert_tol_equal(special.kv(-2,   1   ), 1.624838898635178)
-        assert_tol_equal(special.jv(-0.5, 1   ), 0.43109886801837607952)
-        assert_tol_equal(special.yv(-0.5, 1   ), 0.6713967071418031)
-        assert_tol_equal(special.iv(-0.5, 1   ), 1.231200214592967)
-        assert_tol_equal(special.kv(-0.5, 1   ), 0.4610685044478945)
+        assert_tol_equal(special.jv(-1, 1), -0.4400505857449335)
+        assert_tol_equal(special.jv(-2, 1), 0.1149034849319005)
+        assert_tol_equal(special.yv(-1, 1), 0.7812128213002887)
+        assert_tol_equal(special.yv(-2, 1), -1.650682606816255)
+        assert_tol_equal(special.iv(-1, 1), 0.5651591039924851)
+        assert_tol_equal(special.iv(-2, 1), 0.1357476697670383)
+        assert_tol_equal(special.kv(-1, 1), 0.6019072301972347)
+        assert_tol_equal(special.kv(-2, 1), 1.624838898635178)
+        assert_tol_equal(special.jv(-0.5, 1), 0.43109886801837607952)
+        assert_tol_equal(special.yv(-0.5, 1), 0.6713967071418031)
+        assert_tol_equal(special.iv(-0.5, 1), 1.231200214592967)
+        assert_tol_equal(special.kv(-0.5, 1), 0.4610685044478945)
         # amos
-        assert_tol_equal(special.jv(-1,   1+0j), -0.4400505857449335)
-        assert_tol_equal(special.jv(-2,   1+0j), 0.1149034849319005)
-        assert_tol_equal(special.yv(-1,   1+0j), 0.7812128213002887)
-        assert_tol_equal(special.yv(-2,   1+0j), -1.650682606816255)
+        assert_tol_equal(special.jv(-1, 1+0j), -0.4400505857449335)
+        assert_tol_equal(special.jv(-2, 1+0j), 0.1149034849319005)
+        assert_tol_equal(special.yv(-1, 1+0j), 0.7812128213002887)
+        assert_tol_equal(special.yv(-2, 1+0j), -1.650682606816255)
 
-        assert_tol_equal(special.iv(-1,   1+0j), 0.5651591039924851)
-        assert_tol_equal(special.iv(-2,   1+0j), 0.1357476697670383)
-        assert_tol_equal(special.kv(-1,   1+0j), 0.6019072301972347)
-        assert_tol_equal(special.kv(-2,   1+0j), 1.624838898635178)
+        assert_tol_equal(special.iv(-1, 1+0j), 0.5651591039924851)
+        assert_tol_equal(special.iv(-2, 1+0j), 0.1357476697670383)
+        assert_tol_equal(special.kv(-1, 1+0j), 0.6019072301972347)
+        assert_tol_equal(special.kv(-2, 1+0j), 1.624838898635178)
 
         assert_tol_equal(special.jv(-0.5, 1+0j), 0.43109886801837607952)
         assert_tol_equal(special.jv(-0.5, 1+1j), 0.2628946385649065-0.827050182040562j)
@@ -2083,7 +2214,7 @@ class TestBessel(TestCase):
                   [2.5, 0.2700464416],
                   [5.0, 0.1835408126],
                   [20.0, 0.0897803119],
-                 ]
+                  ]
         for i, (x, v) in enumerate(values):
             cv = special.i0(x) * exp(-x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
@@ -2101,7 +2232,7 @@ class TestBessel(TestCase):
                   [1.0, 0.2079104154],
                   [5.0, 0.1639722669],
                   [20.0, 0.0875062222],
-                 ]
+                  ]
         for i, (x, v) in enumerate(values):
             cv = special.i1(x) * exp(-x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
@@ -2207,31 +2338,31 @@ class TestLog1p(TestCase):
 class TestLegendreFunctions(TestCase):
     def test_clpmn(self):
         clp = special.specfun.clpmn(1, 1, 0.5, 0.3)
-        assert_array_almost_equal(clp,(array([[ 1.0000,
-                                                0.5+0.3j ],
-                                              [ 0.0000,
-                                                -0.9305815721+0.1611895232j ]]),
-                                       array([[ 0.0000,
-                                                1.0000 ],
-                                              [ 0.0000,
-                                                0.4674335183+0.4033449589j ]])),7)
+        assert_array_almost_equal(clp,(array([[1.0000,
+                                                0.5+0.3j],
+                                              [0.0000,
+                                                -0.9305815721+0.1611895232j]]),
+                                       array([[0.0000,
+                                                1.0000],
+                                              [0.0000,
+                                                0.4674335183+0.4033449589j]])),7)
 
     def test_lpmn(self):
         lp = special.lpmn(0,2,.5)
-        assert_array_almost_equal(lp,(array([       [ 1.00000 ,
+        assert_array_almost_equal(lp,(array([[1.00000,
                                                       0.50000,
                                                       -0.12500]]),
-                                      array([       [ 0.00000 ,
-                                                      1.00000 ,
+                                      array([[0.00000,
+                                                      1.00000,
                                                       1.50000]])),4)
 
     def test_lpn(self):
         lpnf = special.lpn(2,.5)
-        assert_array_almost_equal(lpnf,(array(      [ 1.00000 ,
+        assert_array_almost_equal(lpnf,(array([1.00000,
                                                         0.50000,
                                                         -0.12500]),
-                                      array(        [ 0.00000 ,
-                                                      1.00000 ,
+                                      array([0.00000,
+                                                      1.00000,
                                                       1.50000])),4)
 
     def test_lpmv(self):
@@ -2267,8 +2398,8 @@ class TestLegendreFunctions(TestCase):
 
     def test_lqn(self):
         lqf = special.lqn(2,.5)
-        assert_array_almost_equal(lqf,(array([ 0.5493, -0.7253, -0.8187]),
-                                       array([ 1.3333,  1.216 , -0.8427])),4)
+        assert_array_almost_equal(lqf,(array([0.5493, -0.7253, -0.8187]),
+                                       array([1.3333, 1.216, -0.8427])),4)
 
 
 class TestMathieu(TestCase):
@@ -2278,11 +2409,11 @@ class TestMathieu(TestCase):
 
     def test_mathieu_even_coef(self):
         mc = special.mathieu_even_coef(2,5)
-        #Q not defined broken and cannot figure out proper reporting order
+        # Q not defined broken and cannot figure out proper reporting order
 
     def test_mathieu_odd_coef(self):
         pass
-            #same problem as above
+            # same problem as above
 
 
 class TestFresnelIntegral(TestCase):
@@ -2297,7 +2428,7 @@ class TestFresnelIntegral(TestCase):
 class TestOblCvSeq(TestCase):
     def test_obl_cv_seq(self):
         obl = special.obl_cv_seq(0,3,1)
-        assert_array_almost_equal(obl,array([ -0.348602,
+        assert_array_almost_equal(obl,array([-0.348602,
                                               1.393206,
                                               5.486800,
                                               11.492120]),5)
@@ -2306,7 +2437,7 @@ class TestOblCvSeq(TestCase):
 class TestParabolicCylinder(TestCase):
     def test_pbdn_seq(self):
         pb = special.pbdn_seq(1,.1)
-        assert_array_almost_equal(pb,(array([ 0.9975,
+        assert_array_almost_equal(pb,(array([0.9975,
                                               0.0998]),
                                       array([-0.0499,
                                              0.9925])),4)
@@ -2377,7 +2508,7 @@ class TestPolygamma(TestCase):
 class TestProCvSeq(TestCase):
     def test_pro_cv_seq(self):
         prol = special.pro_cv_seq(0,3,1)
-        assert_array_almost_equal(prol,array([  0.319000,
+        assert_array_almost_equal(prol,array([0.319000,
                                                2.593084,
                                                6.533471,
                                                12.514462]),5)
@@ -2499,11 +2630,11 @@ class TestSpherical(TestCase):
     def test_sph_yn(self):
         sy1 = special.sph_yn(2,.2)[0][2]
         sy2 = special.sph_yn(0,.2)[0][0]
-        sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3 # correct derivative value
-        assert_almost_equal(sy1,-377.52483,5)# previous values in the system
+        sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3  # correct derivative value
+        assert_almost_equal(sy1,-377.52483,5)  # previous values in the system
         assert_almost_equal(sy2,-4.9003329,5)
         sy3 = special.sph_yn(1,.2)[1][1]
-        assert_almost_equal(sy3,sphpy,4) # compare correct derivative val. (correct =-system val).
+        assert_almost_equal(sy3,sphpy,4)  # compare correct derivative val. (correct =-system val).
 
 
 class TestStruve(object):

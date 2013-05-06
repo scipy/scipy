@@ -20,16 +20,16 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
 
 
 class TestMisc(TestCase):
-    #
+
     def __init__(self, *args, **kwargs):
         TestCase.__init__(self, *args, **kwargs)
-    #
+
     def test_mjci(self):
         "Tests the Marits-Jarrett estimator"
-        data = ma.array([ 77, 87, 88,114,151,210,219,246,253,262,
+        data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                           296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(ms.mjci(data),[55.76819,45.84028,198.87875],5)
-    #
+
     def test_trimmedmeanci(self):
         "Tests the confidence intervals of the trimmed mean."
         data = ma.array([545,555,558,572,575,576,578,580,
@@ -37,7 +37,7 @@ class TestMisc(TestCase):
         assert_almost_equal(ms.trimmed_mean(data,0.2), 596.2, 1)
         assert_equal(np.round(ms.trimmed_mean_ci(data,(0.2,0.2)),1),
                      [561.8, 630.6])
-    #
+
     def test_idealfourths(self):
         "Tests ideal-fourths"
         test = np.arange(100)
@@ -57,10 +57,10 @@ class TestMisc(TestCase):
 
 
 class TestQuantiles(TestCase):
-    #
+
     def __init__(self, *args, **kwargs):
         TestCase.__init__(self, *args, **kwargs)
-    #
+
     def test_hdquantiles(self):
         data = [0.706560797,0.727229578,0.990399276,0.927065621,0.158953014,
             0.887764025,0.239407086,0.349638551,0.972791145,0.149789972,

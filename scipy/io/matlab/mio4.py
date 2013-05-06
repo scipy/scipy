@@ -66,9 +66,9 @@ mxSPARSE_CLASS = 2
 order_codes = {
     0: '<',
     1: '>',
-    2: 'VAX D-float', # !
+    2: 'VAX D-float',  # !
     3: 'VAX G-float',
-    4: 'Cray', # !!
+    4: 'Cray',  # !!
     }
 
 mclass_info = {
@@ -112,16 +112,16 @@ class VarReader4(object):
         name = self.mat_stream.read(int(data['namlen'])).strip(b'\x00')
         if data['mopt'] < 0 or data['mopt'] > 5000:
             raise ValueError('Mat 4 mopt wrong format, byteswapping problem?')
-        M, rest = divmod(data['mopt'], 1000) # order code
+        M, rest = divmod(data['mopt'], 1000)  # order code
         if M not in (0, 1):
             warnings.warn("We do not support byte ordering '%s'; returned "
                           "data may be corrupt" % order_codes[M],
                           UserWarning)
-        O, rest = divmod(rest, 100) # unused, should be 0
+        O, rest = divmod(rest, 100)  # unused, should be 0
         if O != 0:
             raise ValueError('O in MOPT integer should be 0, wrong format?')
-        P, rest = divmod(rest, 10) # data type code e.g miDOUBLE (see above)
-        T = rest # matrix type code e.g. mxFULL_CLASS (see above)
+        P, rest = divmod(rest, 10)  # data type code e.g miDOUBLE (see above)
+        T = rest  # matrix type code e.g. mxFULL_CLASS (see above)
         dims = (data['mrows'], data['ncols'])
         is_complex = data['imagf'] == 1
         dtype = self.dtypes[P]
@@ -250,7 +250,7 @@ class VarReader4(object):
         res = self.read_sub_array(hdr)
         tmp = res[:-1,:]
         dims = res[-1,0:2]
-        I = np.ascontiguousarray(tmp[:,0],dtype='intc') # fixes byte order also
+        I = np.ascontiguousarray(tmp[:,0],dtype='intc')  # fixes byte order also
         J = np.ascontiguousarray(tmp[:,1],dtype='intc')
         I -= 1  # for 1-based indexing
         J -= 1
@@ -344,7 +344,7 @@ class MatFile4Reader(MatFileReader):
            position in stream of next variable
         '''
         hdr = self._matrix_reader.read_header()
-        n = reduce(lambda x, y: x*y, hdr.dims, 1) # fast product
+        n = reduce(lambda x, y: x*y, hdr.dims, 1)  # fast product
         remaining_bytes = hdr.dtype.itemsize * n
         if hdr.is_complex and not hdr.mclass == mxSPARSE_CLASS:
             remaining_bytes *= 2
@@ -459,7 +459,7 @@ class VarWriter4(object):
     def write_string(self, s):
         self.file_stream.write(s)
 
-    def write_header(self, name, shape, P=miDOUBLE,  T=mxFULL_CLASS, imagf=0):
+    def write_header(self, name, shape, P=miDOUBLE, T=mxFULL_CLASS, imagf=0):
         ''' Write header for given data options
 
         Parameters
@@ -566,12 +566,12 @@ class VarWriter4(object):
 
         See docstring for VarReader4.read_sparse_array
         '''
-        A = arr.tocoo() # convert to sparse COO format (ijv)
+        A = arr.tocoo()  # convert to sparse COO format (ijv)
         imagf = A.dtype.kind == 'c'
         ijv = np.zeros((A.nnz + 1, 3+imagf), dtype='f8')
         ijv[:-1,0] = A.row
         ijv[:-1,1] = A.col
-        ijv[:-1,0:2] += 1 # 1 based indexing
+        ijv[:-1,0:2] += 1  # 1 based indexing
         if imagf:
             ijv[:-1,2] = A.data.real
             ijv[:-1,3] = A.data.imag

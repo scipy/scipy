@@ -239,12 +239,16 @@ class KDTree(object):
         if sys.version_info[0] >= 3:
             def __lt__(self, other):
                 id(self) < id(other)
+
             def __gt__(self, other):
                 id(self) > id(other)
+
             def __le__(self, other):
                 id(self) <= id(other)
+
             def __ge__(self, other):
                 id(self) >= id(other)
+
             def __eq__(self, other):
                 id(self) == id(other)
 
@@ -266,8 +270,8 @@ class KDTree(object):
             return KDTree.leafnode(idx)
         else:
             data = self.data[idx]
-            #maxes = np.amax(data,axis=0)
-            #mins = np.amin(data,axis=0)
+            # maxes = np.amax(data,axis=0)
+            # mins = np.amin(data,axis=0)
             d = np.argmax(maxes-mins)
             maxval = maxes[d]
             minval = mins[d]
@@ -628,6 +632,7 @@ class KDTree(object):
 
         """
         results = [[] for i in range(self.n)]
+
         def traverse_checking(node1, rect1, node2, rect2):
             if rect1.min_distance_rectangle(rect2, p) > r/(1.+eps):
                 return
@@ -695,6 +700,7 @@ class KDTree(object):
 
         """
         results = set()
+
         def traverse_checking(node1, rect1, node2, rect2):
             if rect1.min_distance_rectangle(rect2, p) > r/(1.+eps):
                 return
@@ -949,7 +955,7 @@ def distance_matrix(x,y,p=2,threshold=1000000):
     if m*n*k <= threshold:
         return minkowski_distance(x[:,np.newaxis,:],y[np.newaxis,:,:],p)
     else:
-        result = np.empty((m,n),dtype=np.float) # FIXME: figure out the best dtype
+        result = np.empty((m,n),dtype=np.float)  # FIXME: figure out the best dtype
         if m < n:
             for i in range(m):
                 result[i,:] = minkowski_distance(x[i],y,p)

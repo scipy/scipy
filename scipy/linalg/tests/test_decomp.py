@@ -97,9 +97,9 @@ def random_rot(dim):
     For more information see
     http://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization"""
     H = eye(dim)
-    D = ones((dim, ))
+    D = ones((dim,))
     for n in range(1, dim):
-        x = normal(size=(dim-n+1, ))
+        x = normal(size=(dim-n+1,))
         D[n-1] = sign(x[0])
         x[0] -= D[n-1]*sqrt((x*x).sum())
         # Householder transformation
@@ -209,9 +209,9 @@ class TestEig(object):
         """Test singular pair"""
         # Example taken from
         # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
-        A = array(( [22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
+        A = array(([22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
             [27,31,26,21,15], [38,44,44,24,30]))
-        B = array(( [13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
+        B = array(([13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
             [16,25,27,14,23], [24,35,18,21,22]))
 
         olderr = np.seterr(all='ignore')
@@ -242,14 +242,14 @@ class TestEig(object):
         def matrices(omega):
             c1 = -9 + omega**2
             c2 = 2*omega
-            A = [[1, 0,  0,  0],
-                 [0, 1,  0,  0],
-                 [0, 0,  c1, 0],
-                 [0, 0,  0, c1]]
-            B = [[0, 0,  1,   0],
-                 [0, 0,  0,   1],
-                 [1, 0,  0, -c2],
-                 [0, 1, c2,   0]]
+            A = [[1, 0, 0, 0],
+                 [0, 1, 0, 0],
+                 [0, 0, c1, 0],
+                 [0, 0, 0, c1]]
+            B = [[0, 0, 1, 0],
+                 [0, 0, 0, 1],
+                 [1, 0, 0, -c2],
+                 [0, 1, c2, 0]]
             return A, B
 
         # With a buggy LAPACK, this can fail for different omega on different
@@ -302,29 +302,29 @@ class TestEigBanded(TestCase):
     def create_bandmat(self):
         """Create the full matrix `self.fullmat` and
            the corresponding band matrix `self.bandmat`."""
-        N  = 10
+        N = 10
         self.KL = 2   # number of subdiagonals (below the diagonal)
         self.KU = 2   # number of superdiagonals (above the diagonal)
 
         # symmetric band matrix
-        self.sym_mat = ( diag(1.0*ones(N))
+        self.sym_mat = (diag(1.0*ones(N))
                      + diag(-1.0*ones(N-1), -1) + diag(-1.0*ones(N-1), 1)
-                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
 
         # hermitian band matrix
-        self.herm_mat = ( diag(-1.0*ones(N))
+        self.herm_mat = (diag(-1.0*ones(N))
                      + 1j*diag(1.0*ones(N-1), -1) - 1j*diag(1.0*ones(N-1), 1)
-                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+                     + diag(-2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
 
         # general real band matrix
-        self.real_mat = ( diag(1.0*ones(N))
+        self.real_mat = (diag(1.0*ones(N))
                      + diag(-1.0*ones(N-1), -1) + diag(-3.0*ones(N-1), 1)
-                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
 
         # general complex band matrix
-        self.comp_mat = ( 1j*diag(1.0*ones(N))
+        self.comp_mat = (1j*diag(1.0*ones(N))
                      + diag(-1.0*ones(N-1), -1) + 1j*diag(-3.0*ones(N-1), 1)
-                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2) )
+                     + diag(2.0*ones(N-2), -2) + diag(-2.0*ones(N-2), 2))
 
         # Eigenvalues and -vectors from linalg.eig
         ew, ev = linalg.eig(self.sym_mat)
@@ -343,10 +343,10 @@ class TestEigBanded(TestCase):
         # (for use in dsbevd, dsbevx, zhbevd, zhbevx
         #  and their single precision versions)
         LDAB = self.KU + 1
-        self.bandmat_sym  = zeros((LDAB, N), dtype=float)
+        self.bandmat_sym = zeros((LDAB, N), dtype=float)
         self.bandmat_herm = zeros((LDAB, N), dtype=complex)
         for i in xrange(LDAB):
-            self.bandmat_sym[LDAB-i-1,i:N]  = diag(self.sym_mat, i)
+            self.bandmat_sym[LDAB-i-1,i:N] = diag(self.sym_mat, i)
             self.bandmat_herm[LDAB-i-1,i:N] = diag(self.herm_mat, i)
 
         # Extract bands from general real and complex band matrix
@@ -356,7 +356,7 @@ class TestEigBanded(TestCase):
         self.bandmat_real[2*self.KL,:] = diag(self.real_mat)     # diagonal
         for i in xrange(self.KL):
             # superdiagonals
-            self.bandmat_real[2*self.KL-1-i,i+1:N]   = diag(self.real_mat, i+1)
+            self.bandmat_real[2*self.KL-1-i,i+1:N] = diag(self.real_mat, i+1)
             # subdiagonals
             self.bandmat_real[2*self.KL+1+i,0:N-1-i] = diag(self.real_mat,-i-1)
 
@@ -364,7 +364,7 @@ class TestEigBanded(TestCase):
         self.bandmat_comp[2*self.KL,:] = diag(self.comp_mat)     # diagonal
         for i in xrange(self.KL):
             # superdiagonals
-            self.bandmat_comp[2*self.KL-1-i,i+1:N]   = diag(self.comp_mat, i+1)
+            self.bandmat_comp[2*self.KL-1-i,i+1:N] = diag(self.comp_mat, i+1)
             # subdiagonals
             self.bandmat_comp[2*self.KL+1+i,0:N-1-i] = diag(self.comp_mat,-i-1)
 
@@ -377,7 +377,7 @@ class TestEigBanded(TestCase):
     def test_dsbev(self):
         """Compare dsbev eigenvalues and eigenvectors with
            the result of linalg.eig."""
-        w, evec, info  = dsbev(self.bandmat_sym, compute_v=1)
+        w, evec, info = dsbev(self.bandmat_sym, compute_v=1)
         evec_ = evec[:,argsort(w)]
         assert_array_almost_equal(sort(w), self.w_sym_lin)
         assert_array_almost_equal(abs(evec_), abs(self.evec_sym_lin))
@@ -434,11 +434,11 @@ class TestEigBanded(TestCase):
         ind1 = 2
         ind2 = 6
         w_sym_ind = eigvals_banded(self.bandmat_sym,
-                                    select='i', select_range=(ind1, ind2) )
+                                    select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_sym_ind),
                                   self.w_sym_lin[ind1:ind2+1])
         w_herm_ind = eigvals_banded(self.bandmat_herm,
-                                    select='i', select_range=(ind1, ind2) )
+                                    select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_herm_ind),
                                   self.w_herm_lin[ind1:ind2+1])
 
@@ -446,14 +446,14 @@ class TestEigBanded(TestCase):
         v_lower = self.w_sym_lin[ind1] - 1.0e-5
         v_upper = self.w_sym_lin[ind2] + 1.0e-5
         w_sym_val = eigvals_banded(self.bandmat_sym,
-                                select='v', select_range=(v_lower, v_upper) )
+                                select='v', select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_sym_val),
                                   self.w_sym_lin[ind1:ind2+1])
 
         v_lower = self.w_herm_lin[ind1] - 1.0e-5
         v_upper = self.w_herm_lin[ind2] + 1.0e-5
         w_herm_val = eigvals_banded(self.bandmat_herm,
-                                select='v', select_range=(v_lower, v_upper) )
+                                select='v', select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_herm_val),
                                   self.w_herm_lin[ind1:ind2+1])
 
@@ -478,37 +478,37 @@ class TestEigBanded(TestCase):
         ind1 = 2
         ind2 = 6
         w_sym_ind, evec_sym_ind = eig_banded(self.bandmat_sym,
-                                    select='i', select_range=(ind1, ind2) )
+                                    select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_sym_ind),
                                   self.w_sym_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_sym_ind),
-                                  abs(self.evec_sym_lin[:,ind1:ind2+1]) )
+                                  abs(self.evec_sym_lin[:,ind1:ind2+1]))
 
         w_herm_ind, evec_herm_ind = eig_banded(self.bandmat_herm,
-                                    select='i', select_range=(ind1, ind2) )
+                                    select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_herm_ind),
                                   self.w_herm_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_herm_ind),
-                                  abs(self.evec_herm_lin[:,ind1:ind2+1]) )
+                                  abs(self.evec_herm_lin[:,ind1:ind2+1]))
 
         # extracting eigenvalues with respect to a value range
         v_lower = self.w_sym_lin[ind1] - 1.0e-5
         v_upper = self.w_sym_lin[ind2] + 1.0e-5
         w_sym_val, evec_sym_val = eig_banded(self.bandmat_sym,
-                                select='v', select_range=(v_lower, v_upper) )
+                                select='v', select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_sym_val),
                                   self.w_sym_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_sym_val),
-                                  abs(self.evec_sym_lin[:,ind1:ind2+1]) )
+                                  abs(self.evec_sym_lin[:,ind1:ind2+1]))
 
         v_lower = self.w_herm_lin[ind1] - 1.0e-5
         v_upper = self.w_herm_lin[ind2] + 1.0e-5
         w_herm_val, evec_herm_val = eig_banded(self.bandmat_herm,
-                                select='v', select_range=(v_lower, v_upper) )
+                                select='v', select_range=(v_lower, v_upper))
         assert_array_almost_equal(sort(w_herm_val),
                                   self.w_herm_lin[ind1:ind2+1])
         assert_array_almost_equal(abs(evec_herm_val),
-                                  abs(self.evec_herm_lin[:,ind1:ind2+1]) )
+                                  abs(self.evec_herm_lin[:,ind1:ind2+1]))
 
         w_sym, evec_sym = eig_banded(self.bandmat_sym, check_finite=False)
         evec_sym_ = evec_sym[:,argsort(w_sym.real)]
@@ -566,7 +566,7 @@ class TestEigBanded(TestCase):
 
 def test_eigh():
     DIM = 6
-    v = {'dim': (DIM, ),
+    v = {'dim': (DIM,),
          'dtype': ('f','d','F','D'),
          'overwrite': (True, False),
          'lower': (True, False),
@@ -857,7 +857,7 @@ class TestSVD(TestCase):
                     u,s,vh = svd(a, full_matrices=full_matrices)
                     assert_array_almost_equal(dot(conj(transpose(u)),u),identity(u.shape[1]))
                     # This fails when [m,n]
-                    #assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),dtype=vh.dtype.char))
+                    # assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),dtype=vh.dtype.char))
                     sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
                     for i in range(len(s)):
                         sigma[i,i] = s[i]
@@ -1673,8 +1673,8 @@ class TestHessenberg(TestCase):
 
     def test_simple(self):
         a = [[-149, -50,-154],
-             [ 537, 180, 546],
-             [ -27,  -9, -25]]
+             [537, 180, 546],
+             [-27, -9, -25]]
         h1 = [[-149.0000,42.2037,-156.3165],
               [-537.6783,152.5511,-554.9272],
               [0,0.0728, 2.4489]]
@@ -1684,8 +1684,8 @@ class TestHessenberg(TestCase):
 
     def test_simple_complex(self):
         a = [[-149, -50,-154],
-             [ 537, 180j, 546],
-             [ -27j,  -9, -25]]
+             [537, 180j, 546],
+             [-27j, -9, -25]]
         h,q = hessenberg(a,calc_q=1)
         h1 = dot(transp(conj(q)),dot(a,q))
         assert_array_almost_equal(h1,h)
@@ -1718,8 +1718,8 @@ class TestHessenberg(TestCase):
 
     def test_check_finite(self):
         a = [[-149, -50,-154],
-             [ 537, 180, 546],
-             [ -27,  -9, -25]]
+             [537, 180, 546],
+             [-27, -9, -25]]
         h1 = [[-149.0000,42.2037,-156.3165],
               [-537.6783,152.5511,-554.9272],
               [0,0.0728, 2.4489]]
@@ -1794,35 +1794,35 @@ class TestQZ(TestCase):
         assert_(all(diag(BB) >= 0))
 
     def test_qz_double_sort(self):
-        #from http://www.nag.com/lapack-ex/node119.html
-        #NOTE: These matrices may be ill-conditioned and lead to a
+        # from http://www.nag.com/lapack-ex/node119.html
+        # NOTE: These matrices may be ill-conditioned and lead to a
         # seg fault on certain python versions when compiled with
         # sse2 or sse3 older ATLAS/LAPACK binaries for windows
-        #A =   np.array([[3.9,  12.5, -34.5,  -0.5],
+        # A =   np.array([[3.9,  12.5, -34.5,  -0.5],
         #                [ 4.3,  21.5, -47.5,   7.5],
         #                [ 4.3,  21.5, -43.5,   3.5],
         #                [ 4.4,  26.0, -46.0,   6.0 ]])
 
-        #B = np.array([[ 1.0,   2.0,  -3.0,   1.0],
+        # B = np.array([[ 1.0,   2.0,  -3.0,   1.0],
         #              [1.0,   3.0,  -5.0,   4.0],
         #              [1.0,   3.0,  -4.0,   3.0],
         #              [1.0,   3.0,  -4.0,   4.0]])
-        A = np.array([[3.9,  12.5, -34.5,  2.5],
-                 [ 4.3,  21.5, -47.5,   7.5],
-                 [ 4.3,  1.5, -43.5,   3.5],
-                 [ 4.4,  6.0, -46.0,   6.0 ]])
+        A = np.array([[3.9, 12.5, -34.5, 2.5],
+                 [4.3, 21.5, -47.5, 7.5],
+                 [4.3, 1.5, -43.5, 3.5],
+                 [4.4, 6.0, -46.0, 6.0]])
 
-        B = np.array([[ 1.0,   1.0,  -3.0,   1.0],
-                      [1.0,   3.0,  -5.0,   4.4],
-                      [1.0,   2.0,  -4.0,   1.0],
-                      [1.2,   3.0,  -4.0,   4.0]])
+        B = np.array([[1.0, 1.0, -3.0, 1.0],
+                      [1.0, 3.0, -5.0, 4.4],
+                      [1.0, 2.0, -4.0, 1.0],
+                      [1.2, 3.0, -4.0, 4.0]])
 
-        sort = lambda ar,ai,beta : ai == 0
+        sort = lambda ar,ai,beta: ai == 0
 
         assert_raises(ValueError, qz, A, B, sort=sort)
         if False:
             AA,BB,Q,Z,sdim = qz(A,B,sort=sort)
-            #assert_(sdim == 2)
+            # assert_(sdim == 2)
             assert_(sdim == 4)
             assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
             assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
@@ -1830,52 +1830,52 @@ class TestQZ(TestCase):
             # test absolute values bc the sign is ambiguous and might be platform
             # dependent
             assert_array_almost_equal(np.abs(AA), np.abs(np.array(
-                            [[ 35.7864, -80.9061, -12.0629,  -9.498 ],
-                             [  0.    ,   2.7638,  -2.3505,   7.3256],
-                             [  0.    ,   0.    ,   0.6258,  -0.0398],
-                             [  0.    ,   0.    ,   0.    , -12.8217]])), 4)
+                            [[35.7864, -80.9061, -12.0629, -9.498],
+                             [0., 2.7638, -2.3505, 7.3256],
+                             [0., 0., 0.6258, -0.0398],
+                             [0., 0., 0., -12.8217]])), 4)
             assert_array_almost_equal(np.abs(BB), np.abs(np.array(
-                            [[ 4.5324, -8.7878,  3.2357, -3.5526],
-                             [ 0.    ,  1.4314, -2.1894,  0.9709],
-                             [ 0.    ,  0.    ,  1.3126, -0.3468],
-                             [ 0.    ,  0.    ,  0.    ,  0.559 ]])), 4)
+                            [[4.5324, -8.7878, 3.2357, -3.5526],
+                             [0., 1.4314, -2.1894, 0.9709],
+                             [0., 0., 1.3126, -0.3468],
+                             [0., 0., 0., 0.559]])), 4)
             assert_array_almost_equal(np.abs(Q), np.abs(np.array(
-                            [[-0.4193, -0.605 , -0.1894, -0.6498],
-                             [-0.5495,  0.6987,  0.2654, -0.3734],
-                             [-0.4973, -0.3682,  0.6194,  0.4832],
-                             [-0.5243,  0.1008, -0.7142,  0.4526]])), 4)
+                            [[-0.4193, -0.605, -0.1894, -0.6498],
+                             [-0.5495, 0.6987, 0.2654, -0.3734],
+                             [-0.4973, -0.3682, 0.6194, 0.4832],
+                             [-0.5243, 0.1008, -0.7142, 0.4526]])), 4)
             assert_array_almost_equal(np.abs(Z), np.abs(np.array(
-                            [[-0.9471, -0.2971, -0.1217,  0.0055],
-                             [-0.0367,  0.1209,  0.0358,  0.9913],
-                             [ 0.3171, -0.9041, -0.2547,  0.1312],
-                             [ 0.0346,  0.2824, -0.9587,  0.0014]])), 4)
+                            [[-0.9471, -0.2971, -0.1217, 0.0055],
+                             [-0.0367, 0.1209, 0.0358, 0.9913],
+                             [0.3171, -0.9041, -0.2547, 0.1312],
+                             [0.0346, 0.2824, -0.9587, 0.0014]])), 4)
 
         # test absolute values bc the sign is ambiguous and might be platform
         # dependent
-        #assert_array_almost_equal(abs(AA), abs(np.array([
+        # assert_array_almost_equal(abs(AA), abs(np.array([
         #                [3.8009, -69.4505, 50.3135, -43.2884],
         #                [0.0000, 9.2033, -0.2001, 5.9881],
         #                [0.0000, 0.0000, 1.4279, 4.4453],
         #                [0.0000, 0.0000, 0.9019, -1.1962]])), 4)
-        #assert_array_almost_equal(abs(BB), abs(np.array([
+        # assert_array_almost_equal(abs(BB), abs(np.array([
         #                [1.9005, -10.2285, 0.8658, -5.2134],
         #                [0.0000,   2.3008, 0.7915,  0.4262],
         #                [0.0000,   0.0000, 0.8101,  0.0000],
         #                [0.0000,   0.0000, 0.0000, -0.2823]])), 4)
-        #assert_array_almost_equal(abs(Q), abs(np.array([
+        # assert_array_almost_equal(abs(Q), abs(np.array([
         #                [0.4642,  0.7886,  0.2915, -0.2786],
         #                [0.5002, -0.5986,  0.5638, -0.2713],
         #                [0.5002,  0.0154, -0.0107,  0.8657],
         #                [0.5331, -0.1395, -0.7727, -0.3151]])), 4)
-        #assert_array_almost_equal(dot(Q,Q.T), eye(4))
-        #assert_array_almost_equal(abs(Z), abs(np.array([
+        # assert_array_almost_equal(dot(Q,Q.T), eye(4))
+        # assert_array_almost_equal(abs(Z), abs(np.array([
         #                [0.9961, -0.0014,  0.0887, -0.0026],
         #                [0.0057, -0.0404, -0.0938, -0.9948],
         #                [0.0626,  0.7194, -0.6908,  0.0363],
         #                [0.0626, -0.6934, -0.7114,  0.0956]])), 4)
-        #assert_array_almost_equal(dot(Z,Z.T), eye(4))
+        # assert_array_almost_equal(dot(Z,Z.T), eye(4))
 
-    #def test_qz_complex_sort(self):
+    # def test_qz_complex_sort(self):
     #    cA = np.array([
     #   [-21.10+22.50*1j, 53.50+-50.50*1j, -34.50+127.50*1j, 7.50+  0.50*1j],
     #   [-0.46+ -7.78*1j, -3.50+-37.50*1j, -15.50+ 58.50*1j,-10.50+ -1.50*1j],
@@ -2005,22 +2005,22 @@ def test_lapack_misaligned():
     v = np.ones(3,dtype=float)
     LU, piv = lu_factor(S)
     for (func, args, kwargs) in [
-            (eig,(S,),dict(overwrite_a=True)), # crash
-            (eigvals,(S,),dict(overwrite_a=True)), # no crash
-            (lu,(S,),dict(overwrite_a=True)), # no crash
-            (lu_factor,(S,),dict(overwrite_a=True)), # no crash
+            (eig,(S,),dict(overwrite_a=True)),  # crash
+            (eigvals,(S,),dict(overwrite_a=True)),  # no crash
+            (lu,(S,),dict(overwrite_a=True)),  # no crash
+            (lu_factor,(S,),dict(overwrite_a=True)),  # no crash
             (lu_solve,((LU,piv),b),dict(overwrite_b=True)),
             (solve,(S,b),dict(overwrite_a=True,overwrite_b=True)),
-            (svd,(M,),dict(overwrite_a=True)), # no crash
-            (svd,(R,),dict(overwrite_a=True)), # no crash
-            (svd,(S,),dict(overwrite_a=True)), # crash
-            (svdvals,(S,),dict()), # no crash
-            (svdvals,(S,),dict(overwrite_a=True)), # crash
-            (cholesky,(M,),dict(overwrite_a=True)), # no crash
-            (qr,(S,),dict(overwrite_a=True)), # crash
-            (rq,(S,),dict(overwrite_a=True)), # crash
-            (hessenberg,(S,),dict(overwrite_a=True)), # crash
-            (schur,(S,),dict(overwrite_a=True)), # crash
+            (svd,(M,),dict(overwrite_a=True)),  # no crash
+            (svd,(R,),dict(overwrite_a=True)),  # no crash
+            (svd,(S,),dict(overwrite_a=True)),  # crash
+            (svdvals,(S,),dict()),  # no crash
+            (svdvals,(S,),dict(overwrite_a=True)),  # crash
+            (cholesky,(M,),dict(overwrite_a=True)),  # no crash
+            (qr,(S,),dict(overwrite_a=True)),  # crash
+            (rq,(S,),dict(overwrite_a=True)),  # crash
+            (hessenberg,(S,),dict(overwrite_a=True)),  # crash
+            (schur,(S,),dict(overwrite_a=True)),  # crash
             ]:
         yield check_lapack_misaligned, func, args, kwargs
 # not properly tested
@@ -2031,38 +2031,53 @@ class TestOverwrite(object):
     def test_eig(self):
         assert_no_overwrite(eig, [(3,3)])
         assert_no_overwrite(eig, [(3,3), (3,3)])
+
     def test_eigh(self):
         assert_no_overwrite(eigh, [(3,3)])
         assert_no_overwrite(eigh, [(3,3), (3,3)])
+
     def test_eig_banded(self):
         assert_no_overwrite(eig_banded, [(3,2)])
+
     def test_eigvals(self):
         assert_no_overwrite(eigvals, [(3,3)])
+
     def test_eigvalsh(self):
         assert_no_overwrite(eigvalsh, [(3,3)])
+
     def test_eigvals_banded(self):
         assert_no_overwrite(eigvals_banded, [(3,2)])
+
     def test_hessenberg(self):
         assert_no_overwrite(hessenberg, [(3,3)])
+
     def test_lu_factor(self):
         assert_no_overwrite(lu_factor, [(3,3)])
+
     def test_lu_solve(self):
         x = np.array([[1,2,3], [4,5,6], [7,8,8]])
         xlu = lu_factor(x)
         assert_no_overwrite(lambda b: lu_solve(xlu, b), [(3,)])
+
     def test_lu(self):
         assert_no_overwrite(lu, [(3,3)])
+
     def test_qr(self):
         assert_no_overwrite(qr, [(3,3)])
+
     def test_rq(self):
         assert_no_overwrite(rq, [(3,3)])
+
     def test_schur(self):
         assert_no_overwrite(schur, [(3,3)])
+
     def test_schur_complex(self):
         assert_no_overwrite(lambda a: schur(a, 'complex'), [(3,3)],
                             dtypes=[np.float32, np.float64])
+
     def test_svd(self):
         assert_no_overwrite(svd, [(3,3)])
+
     def test_svdvals(self):
         assert_no_overwrite(svdvals, [(3,3)])
 

@@ -221,7 +221,7 @@ ZNEUPD_ERRORS = {0: "Normal exit.",
                       "indicates the user probably made an error in passing "
                       "data from ZNAUPD to ZNEUPD or that the data was "
                       "modified before entering ZNEUPD"
-}
+                 }
 
 CNEUPD_ERRORS = ZNEUPD_ERRORS.copy()
 CNEUPD_ERRORS[-14] = ("CNAUPD did not find any eigenvalues to sufficient "
@@ -727,7 +727,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
             self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\
                 self._arpack_solver(self.ido, self.bmat, self.which, self.k,
                                     self.tol, self.resid, self.v, self.iparam,
-                                    self.ipntr,  self.workd, self.workl,
+                                    self.ipntr, self.workd, self.workl,
                                     self.info)
         else:
             self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\

@@ -258,7 +258,7 @@ def solve_discrete_are(a, b, q, r):
     g = np.dot(np.dot(b, g), b.conj().transpose())
 
     try:
-        ait = inv(a).conj().transpose() # ait is "A inverse transpose"
+        ait = inv(a).conj().transpose()  # ait is "A inverse transpose"
     except LinAlgError:
         raise ValueError('Matrix A in the algebraic Riccati equation solver is ill-conditioned')
 

@@ -37,7 +37,7 @@ def _make_complex_eigvecs(w, vin, dtype):
     # - see LAPACK man page DGGEV at ALPHAI
     v = numpy.array(vin, dtype=dtype)
     m = (w.imag > 0)
-    m[:-1] |= (w.imag[1:] < 0) # workaround for LAPACK bug, cf. ticket #709
+    m[:-1] |= (w.imag[1:] < 0)  # workaround for LAPACK bug, cf. ticket #709
     for i in flatnonzero(m):
         v.imag[:,i] = vin[:,i+1]
         conj(v[:,i], v[:,i+1])
@@ -508,7 +508,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
             #        or by using calc_lwork.f ???
             # lwork = calc_lwork.hbevd(bevd.typecode, a1.shape[0], lower)
             internal_name = 'hbevd'
-        else: # a1.dtype.char in 'fd':
+        else:  # a1.dtype.char in 'fd':
             bevd, = get_lapack_funcs(('sbevd',), (a1,))
             # FIXME: implement this somewhen, for now go with builtin values
             #         see above
@@ -541,7 +541,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         if a1.dtype.char in 'GFD':
             bevx, = get_lapack_funcs(('hbevx',), (a1,))
             internal_name = 'hbevx'
-        else: # a1.dtype.char in 'gfd'
+        else:  # a1.dtype.char in 'gfd'
             bevx, = get_lapack_funcs(('sbevx',), (a1,))
             internal_name = 'sbevx'
         # il+1, iu+1: translate python indexing (0 ... N-1) into Fortran

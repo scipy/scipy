@@ -114,7 +114,7 @@ class TestZlibInputStream(object):
         SIZES = [0, 1, 10, block_size//2, block_size-1,
                  block_size, block_size+1, 2*block_size-1]
 
-        READ_SIZES = [block_size//2, block_size-1, 
+        READ_SIZES = [block_size//2, block_size-1,
                       block_size, block_size+1]
 
         def check(size, read_size):

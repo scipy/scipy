@@ -46,15 +46,15 @@ class NumpyComplexScalarConverter(TestCase):
 
     @dec.slow
     def test_type_match_string(self):
-        assert_( not self.converter.type_match('string') )
+        assert_(not self.converter.type_match('string'))
 
     @dec.slow
     def test_type_match_int(self):
-        assert_( not self.converter.type_match(5))
+        assert_(not self.converter.type_match(5))
 
     @dec.slow
     def test_type_match_float(self):
-        assert_( not self.converter.type_match(5.))
+        assert_(not self.converter.type_match(5.))
 
     @dec.slow
     def test_type_match_complex128(self):
@@ -100,13 +100,13 @@ class NumpyComplexScalarConverter(TestCase):
         exec('from ' + mod_name + ' import test')
         b = 1.+1j
         c = test(b)
-        assert_( c == 3.+3j)
+        assert_(c == 3.+3j)
 
     @dec.slow
     def test_inline(self):
         a = numpy.complex128(1+1j)
         result = inline_tools.inline("return_val=1.0/a;",['a'])
-        assert_( result == .5-.5j)
+        assert_(result == .5-.5j)
 
 # class TestMsvcNumpyComplexScalarConverter(
 #                   TestNumpyComplexScalarConverter):

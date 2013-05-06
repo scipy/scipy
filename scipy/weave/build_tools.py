@@ -43,7 +43,7 @@ old_init_posix = distutils.sysconfig._init_posix
 def _init_posix():
     old_init_posix()
     ld = distutils.sysconfig._config_vars['LDSHARED']
-    #distutils.sysconfig._config_vars['LDSHARED'] = ld.replace('gcc','g++')
+    # distutils.sysconfig._config_vars['LDSHARED'] = ld.replace('gcc','g++')
     # FreeBSD names gcc as cc, so the above find and replace doesn't work.
     # So, assume first entry in ld is the name of the linker -- gcc or cc or
     # whatever.  This is a sane assumption, correct?
@@ -283,7 +283,7 @@ def build_extension(module_path,compiler_name='',build_dir=None,
             print('finished compiling (sec): ', t2 - t1)
         success = 1
         configure_python_path(build_dir)
-    except SyntaxError: # TypeError:
+    except SyntaxError:  # TypeError:
         success = 0
 
     # restore argv after our trick...
@@ -312,10 +312,10 @@ def restore_sys_argv():
 
 
 def configure_python_path(build_dir):
-    #make sure the module lives in a directory on the python path.
+    # make sure the module lives in a directory on the python path.
     python_paths = [os.path.abspath(x) for x in sys.path]
     if os.path.abspath(build_dir) not in python_paths:
-        #print "warning: build directory was not part of python path."\
+        # print "warning: build directory was not part of python path."\
         #      " It has been appended to the path."
         sys.path.append(os.path.abspath(build_dir))
 
@@ -375,11 +375,11 @@ def msvc_exists():
         p = subprocess.Popen(['cl'], shell=True, stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT)
         str_result = p.stdout.read()
-        #print str_result
+        # print str_result
         if 'Microsoft' in str_result:
             result = 1
     except:
-        #assume we're ok if devstudio exists
+        # assume we're ok if devstudio exists
         import distutils.msvccompiler
         try:
             cc = distutils.msvccompiler.MSVCCompiler()
@@ -430,7 +430,7 @@ def configure_build_dir(build_dir=None):
         build_dir = None
 
     if build_dir is None:
-        #default to building in the home directory of the given module.
+        # default to building in the home directory of the given module.
         build_dir = os.curdir
         # if it doesn't work use the current directory.  This should always
         # be writable.
@@ -501,7 +501,7 @@ if sys.platform == 'win32':
             # **changes: eric jones 4/11/01
             # 2. increased optimization and turned off all warnings
             # 3. also added --driver-name g++
-            #self.set_executables(compiler='gcc -mno-cygwin -O2 -w',
+            # self.set_executables(compiler='gcc -mno-cygwin -O2 -w',
             #                     compiler_so='gcc -mno-cygwin -mdll -O2 -w',
             #                     linker_exe='gcc -mno-cygwin',
             #                     linker_so='%s --driver-name g++ -mno-cygwin -mdll -static %s'
@@ -538,7 +538,7 @@ if sys.platform == 'win32':
                  libraries,
                  library_dirs,
                  runtime_library_dirs,
-                 export_symbols=None, # export_symbols, we do this in our def-file
+                 export_symbols=None,  # export_symbols, we do this in our def-file
                  debug=0,
                  extra_preargs=None,
                  extra_postargs=None,
@@ -553,7 +553,7 @@ if sys.platform == 'win32':
                                libraries,
                                library_dirs,
                                runtime_library_dirs,
-                               None, # export_symbols, we do this in our def-file
+                               None,  # export_symbols, we do this in our def-file
                                debug,
                                extra_preargs,
                                extra_postargs,
@@ -568,7 +568,7 @@ if sys.platform == 'win32':
                                libraries,
                                library_dirs,
                                runtime_library_dirs,
-                               None, # export_symbols, we do this in our def-file
+                               None,  # export_symbols, we do this in our def-file
                                debug,
                                extra_preargs,
                                extra_postargs,
@@ -578,8 +578,8 @@ if sys.platform == 'win32':
     # On windows platforms, we want to default to mingw32 (gcc)
     # because msvc can't build blitz stuff.
     # We should also check the version of gcc available...
-    #distutils.ccompiler._default_compilers['nt'] = 'mingw32'
-    #distutils.ccompiler._default_compilers = (('nt', 'mingw32'))
+    # distutils.ccompiler._default_compilers['nt'] = 'mingw32'
+    # distutils.ccompiler._default_compilers = (('nt', 'mingw32'))
     # reset the Mingw32 compiler in distutils to the one defined above
     distutils.cygwinccompiler.Mingw32CCompiler = Mingw32CCompiler
 
@@ -597,10 +597,10 @@ if sys.platform == 'win32':
         """ Build the import libraries for Mingw32-gcc on Windows
         """
         from numpy.distutils import lib2def
-        #libfile, deffile = parse_cmd()
-        #if deffile is None:
+        # libfile, deffile = parse_cmd()
+        # if deffile is None:
         #    deffile = sys.stdout
-        #else:
+        # else:
         #    deffile = open(deffile, 'w')
         lib_name = "python%d%d.lib" % tuple(sys.version_info[:2])
         lib_file = os.path.join(sys.prefix,'libs',lib_name)
@@ -620,6 +620,6 @@ if sys.platform == 'win32':
         # for now, fail silently
         if not success:
             print('WARNING: failed to build import library for gcc. Linking will fail.')
-        #if not success:
+        # if not success:
         #    msg = "Couldn't find import library, and failed to build it."
         #    raise DistutilsPlatformError, msg

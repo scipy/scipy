@@ -280,8 +280,10 @@ def iteritems(d):
 if PY3:
     def b(s):
         return s.encode("latin-1")
+
     def u(s):
         return s
+
     if sys.version_info[1] <= 1:
         def int2byte(i):
             return bytes((i,))
@@ -294,6 +296,7 @@ if PY3:
 else:
     def b(s):
         return s
+
     def u(s):
         return unicode(s, "unicode_escape")
     int2byte = chr
@@ -337,6 +340,7 @@ else:
         fp = kwargs.pop("file", sys.stdout)
         if fp is None:
             return
+
         def write(data):
             if not isinstance(data, basestring):
                 data = str(data)

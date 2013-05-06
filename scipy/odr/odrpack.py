@@ -46,6 +46,7 @@ __all__ = ['odr', 'odr_error', 'odr_stop', 'Data', 'RealData', 'Model',
 
 odr = __odrpack.odr
 
+
 class odr_error(Exception):
     """
     Exception indicating an error in fitting.
@@ -53,6 +54,7 @@ class odr_error(Exception):
     This is raised by `scipy.odr` if an error occurs during fitting.
     """
     pass
+
 
 class odr_stop(Exception):
     """
@@ -64,6 +66,7 @@ class odr_stop(Exception):
     pass
 
 __odrpack._set_exceptions(odr_error, odr_stop)
+
 
 def _conv(obj, dtype=None):
     """ Convert an object to the preferred form for input to the odr routine.
@@ -374,9 +377,9 @@ class RealData(Data):
             return weights
 
     def __getattr__(self, attr):
-        lookup_tbl = {('wd', 'sx'):  (self._sd2wt, self.sx),
+        lookup_tbl = {('wd', 'sx'): (self._sd2wt, self.sx),
                       ('wd', 'covx'): (self._cov2wt, self.covx),
-                      ('we', 'sy'):  (self._sd2wt, self.sy),
+                      ('we', 'sy'): (self._sd2wt, self.sy),
                       ('we', 'covy'): (self._cov2wt, self.covy)}
 
         if attr not in ('wd', 'we'):
@@ -974,13 +977,13 @@ class ODR(object):
 
         # make a list to convert iprint digits to/from argument inputs
         #                   rptfile, stdout
-        ip2arg = [[0, 0], # none,  none
-                  [1, 0], # short, none
-                  [2, 0], # long,  none
-                  [1, 1], # short, short
-                  [2, 1], # long,  short
-                  [1, 2], # short, long
-                  [2, 2]] # long,  long
+        ip2arg = [[0, 0],  # none,  none
+                  [1, 0],  # short, none
+                  [2, 0],  # long,  none
+                  [1, 1],  # short, short
+                  [2, 1],  # long,  short
+                  [1, 2],  # short, long
+                  [2, 2]]  # long,  long
 
         if (self.rptfile is None and
             (so_init is not None or

@@ -67,6 +67,7 @@ def diff(x,order=1,period=None, _cache=_cache):
         if len(_cache) > 20:
             while _cache:
                 _cache.popitem()
+
         def kernel(k,order=order,c=c):
             if k:
                 return pow(c*k,order)
@@ -176,6 +177,7 @@ def itilbert(x,h,period=None, _cache=_cache):
         if len(_cache) > 20:
             while _cache:
                 _cache.popitem()
+
         def kernel(k,h=h):
             if k:
                 return -tanh(h*k)
@@ -233,6 +235,7 @@ def hilbert(x, _cache=_cache):
         if len(_cache) > 20:
             while _cache:
                 _cache.popitem()
+
         def kernel(k):
             if k > 0:
                 return 1.0
@@ -306,6 +309,7 @@ def cs_diff(x, a, b, period=None, _cache=_cache):
         if len(_cache) > 20:
             while _cache:
                 _cache.popitem()
+
         def kernel(k,a=a,b=b):
             if k:
                 return -cosh(a*k)/sinh(b*k)
@@ -359,6 +363,7 @@ def sc_diff(x, a, b, period=None, _cache=_cache):
         if len(_cache) > 20:
             while _cache:
                 _cache.popitem()
+
         def kernel(k,a=a,b=b):
             if k:
                 return sinh(a*k)/cosh(b*k)
@@ -411,6 +416,7 @@ def ss_diff(x, a, b, period=None, _cache=_cache):
         if len(_cache) > 20:
             while _cache:
                 _cache.popitem()
+
         def kernel(k,a=a,b=b):
             if k:
                 return sinh(a*k)/sinh(b*k)
@@ -467,6 +473,7 @@ def cc_diff(x, a, b, period=None, _cache=_cache):
         if len(_cache) > 20:
             while _cache:
                 _cache.popitem()
+
         def kernel(k,a=a,b=b):
             return cosh(a*k)/cosh(b*k)
         omega = convolve.init_convolution_kernel(n,kernel)
@@ -508,8 +515,10 @@ def shift(x, a, period=None, _cache=_cache):
         if len(_cache) > 20:
             while _cache:
                 _cache.popitem()
+
         def kernel_real(k,a=a):
             return cos(a*k)
+
         def kernel_imag(k,a=a):
             return sin(a*k)
         omega_real = convolve.init_convolution_kernel(n,kernel_real,d=0,

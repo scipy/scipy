@@ -12,5 +12,5 @@ class TestRegression(TestCase):
         y = x**3
         tck = interp.splrep(x, y, k=3, t=[5])
         res = interp.spalde(np.float64(1), tck)
-        des = np.array([ 1.,  3.,  6.,  6.])
+        des = np.array([1., 3., 6., 6.])
         assert_almost_equal(res, des)

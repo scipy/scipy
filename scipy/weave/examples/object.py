@@ -15,6 +15,7 @@ import scipy.weave as weave
 class Foo(object):
     def __init__(self):
         self.val = 1
+
     def inc(self,amount):
         self.val += amount
         return self.val

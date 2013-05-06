@@ -38,7 +38,7 @@ from .linesearch import (line_search_BFGS, line_search_wolfe1,
 
 # standard status messages of optimizers
 _status_message = {'success': 'Optimization terminated successfully.',
-                   'maxfev':  'Maximum number of function evaluations has '
+                   'maxfev': 'Maximum number of function evaluations has '
                               'been exceeded.',
                    'maxiter': 'Maximum number of iterations has been '
                               'exceeded.',
@@ -658,8 +658,10 @@ def approx_fhess_p(x0, p, fprime, epsilon, *args):
     f1 = fprime(*((x0,) + args))
     return (f2 - f1) / epsilon
 
+
 class _LineSearchError(RuntimeError):
     pass
+
 
 def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
                          **kwargs):
@@ -680,13 +682,14 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
     if ret[0] is None:
         # line search failed: try different one.
-        ret  = line_search_wolfe2(f, fprime, xk, pk, gfk,
-                                  old_fval, old_old_fval)
+        ret = line_search_wolfe2(f, fprime, xk, pk, gfk,
+                                 old_fval, old_old_fval)
 
     if ret[0] is None:
         raise _LineSearchError()
 
     return ret
+
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,

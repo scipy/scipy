@@ -53,6 +53,7 @@ def test_shapes():
 def test_derivs_shapes():
     def krogh_derivs(x, y, axis=0):
         return KroghInterpolator(x, y, axis).derivatives
+
     def pchip_derivs(x, y, axis=0):
         return pchip(x, y, axis).derivatives
     for s1 in SHAPES:
@@ -65,6 +66,7 @@ def test_derivs_shapes():
 def test_deriv_shapes():
     def krogh_deriv(x, y, axis=0):
         return KroghInterpolator(x, y, axis).derivative
+
     def pchip_deriv(x, y, axis=0):
         return pchip(x, y, axis).derivative
     for ip in [krogh_deriv, pchip_deriv]:

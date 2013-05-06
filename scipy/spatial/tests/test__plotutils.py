@@ -25,7 +25,7 @@ class TestPlotting:
         obj = Delaunay(self.points)
         s_before = obj.simplices.copy()
         r = delaunay_plot_2d(obj, ax=fig.gca())
-        assert_array_equal(obj.simplices, s_before) # shouldn't modify
+        assert_array_equal(obj.simplices, s_before)  # shouldn't modify
         assert_(r is fig)
         delaunay_plot_2d(obj, ax=fig.gca())
 

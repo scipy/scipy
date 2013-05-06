@@ -43,7 +43,7 @@ def test():
     """
     a = swig2_ext.A()
     b = swig2_ext.foo()  # This will be an APtr instance.
-    b.thisown = 1 # Prevent memory leaks.
+    b.thisown = 1  # Prevent memory leaks.
     code = """a->f();
               b->f();
               """

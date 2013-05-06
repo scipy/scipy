@@ -17,6 +17,7 @@ from numpy.testing import assert_raises, assert_allclose, \
 from scipy import optimize
 import numpy as np
 
+
 class TestOptimize(object):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
@@ -200,11 +201,11 @@ class TestOptimize(object):
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[34:39],
-                        [[ 0.72949016, -0.44156936,  0.47100962],
-                         [ 0.72949016, -0.44156936,  0.48052496],
-                         [ 1.45898031, -0.88313872,  0.95153458],
-                         [ 0.72949016, -0.44156936,  0.47576729],
-                         [ 1.72949016, -0.44156936,  0.47576729]],
+                        [[0.72949016, -0.44156936, 0.47100962],
+                         [0.72949016, -0.44156936, 0.48052496],
+                         [1.45898031, -0.88313872, 0.95153458],
+                         [0.72949016, -0.44156936, 0.47576729],
+                         [1.72949016, -0.44156936, 0.47576729]],
                         atol=1e-14, rtol=1e-7)
 
     def test_neldermead(self, use_wrapper=False):
@@ -235,8 +236,8 @@ class TestOptimize(object):
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[76:78],
-                        [[0.1928968 , -0.62780447,  0.35166118],
-                         [0.19572515, -0.63648426,  0.35838135]],
+                        [[0.1928968, -0.62780447, 0.35166118],
+                         [0.19572515, -0.63648426, 0.35838135]],
                         atol=1e-14, rtol=1e-7)
 
     def test_ncg(self, use_wrapper=False):
@@ -262,7 +263,7 @@ class TestOptimize(object):
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
-        assert_(self.gradcalls <= 20, self.gradcalls) # 0.13.0
+        assert_(self.gradcalls <= 20, self.gradcalls)  # 0.13.0
         #assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
         #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
         #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
@@ -297,9 +298,9 @@ class TestOptimize(object):
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
-        assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
-        #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
-        #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
+        assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
+        # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
+        # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[3:5],
@@ -331,9 +332,9 @@ class TestOptimize(object):
         # Ensure that function call counts are 'known good'; these are from
         # Scipy 0.7.0. Don't allow them to increase.
         assert_(self.funccalls == 7, self.funccalls)
-        assert_(self.gradcalls <= 18, self.gradcalls) # 0.9.0
-        #assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
-        #assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
+        assert_(self.gradcalls <= 18, self.gradcalls)  # 0.9.0
+        # assert_(self.gradcalls == 18, self.gradcalls) # 0.8.0
+        # assert_(self.gradcalls == 22, self.gradcalls) # 0.7.0
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[3:5],
@@ -360,8 +361,8 @@ class TestOptimize(object):
 
         # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[3:5],
-                        [[0.        , -0.52489628,  0.48753042],
-                         [0.        , -0.52489628,  0.48753042]],
+                        [[0., -0.52489628, 0.48753042],
+                         [0., -0.52489628, 0.48753042]],
                         atol=1e-14, rtol=1e-7)
 
     def test_l_bfgs_b_numjac(self):
@@ -438,6 +439,7 @@ class TestOptimize(object):
         def func(z):
             x, y = z
             return x**2*y**2 + x**4 + 1
+
         def dfunc(z):
             x, y = z
             return np.array([2*x*y**2 + 4*x**3, 2*x**2*y])
@@ -478,7 +480,7 @@ class TestOptimize(object):
                                     options=dict(maxiter=20))
             assert_equal(func(sol.x), sol.fun)
 
-            dec.knownfailureif(method=='slsqp', "SLSQP returns slightly worse")(lambda: None)()
+            dec.knownfailureif(method == 'slsqp', "SLSQP returns slightly worse")(lambda: None)()
             assert_(func(sol.x) <= f0)
 
         for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
@@ -658,6 +660,7 @@ class TestNewtonCg(object):
         assert_allclose(sol.x, himmelblau_xopt, rtol=1e-4)
         assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
 
+
 class TestRosen(TestCase):
 
     def test_hess(self):
@@ -667,6 +670,7 @@ class TestRosen(TestCase):
         hp = optimize.rosen_hess_prod(x, p)
         dothp = np.dot(optimize.rosen_hess(x), p)
         assert_equal(hp, dothp)
+
 
 def himmelblau(p):
     """
@@ -678,10 +682,12 @@ def himmelblau(p):
     b = x + y*y - 7
     return a*a + b*b
 
+
 def himmelblau_grad(p):
     x, y = p
     return np.array([4*x**3 + 4*x*y - 42*x + 2*y**2 - 14,
                      2*x**2 + 4*x*y + 4*y**3 - 26*y - 22])
+
 
 def himmelblau_hess(p):
     x, y = p

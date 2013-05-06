@@ -30,6 +30,7 @@ class TestRegression(TestCase):
         class SomeError(Exception):
             pass
         counter = [0]
+
         def func(x):
             counter[0] += 1
             if counter[0] < 3:
