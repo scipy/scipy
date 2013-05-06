@@ -15,6 +15,7 @@ import os
 from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
                   ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
 from numpy.compat import asbytes, asstr
+from scipy.lib.six import string_types
 
 __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 
@@ -241,7 +242,7 @@ class MMFile (object):
         extensions).  Otherwise, just return source.
         """
         close_it = False
-        if isinstance(filespec, basestring):
+        if isinstance(filespec, string_types):
             close_it = True
 
             # open for reading

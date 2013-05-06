@@ -4,6 +4,7 @@ import math
 import numpy as np
 from scipy.misc import comb
 from scipy.lib.six.moves import xrange
+from scipy.lib.six import string_types
 
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
@@ -60,7 +61,7 @@ def tri(N, M=None, k=0, dtype=None):
     """
     if M is None:
         M = N
-    if isinstance(M, basestring):
+    if isinstance(M, string_types):
         #pearu: any objections to remove this feature?
         #       As tri(N,'d') is equivalent to tri(N,dtype='d')
         dtype = M
