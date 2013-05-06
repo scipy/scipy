@@ -15,6 +15,119 @@ from scipy.sparse.linalg import LinearOperator
 __all__ = ['expm_action']
 
 
+def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
+    """
+    Compute the action of the matrix exponential of A on B.
+
+    Parameters
+    ----------
+    A : transposable linear operator
+        The operator whose exponential is of interest.
+    B : ndarray
+        The matrix to be multiplied by the matrix exponential of A.
+    start : scalar, optional
+        The starting time point of the sequence.
+    stop : scalar, optional
+        The end time point of the sequence, unless `endpoint` is set to False.
+        In that case, the sequence consists of all but the last of ``num + 1``
+        evenly spaced time points, so that `stop` is excluded.
+        Note that the step size changes when `endpoint` is False.
+    num : int, optional
+        Number of time points to use.
+    endpoint : bool, optional
+        If True, `stop` is the last time point.  Otherwise, it is not included.
+
+    Returns
+    -------
+    expm_A_B : ndarray
+         The result of the action :math:`e^A B`.
+
+    Notes
+    -----
+    The optional arguments defining the sequence of evenly spaced time points
+    are compatible with the arguments of `numpy.linspace`.
+
+    References
+    ----------
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2011)
+           "Computing the Action of the Matrix Exponential,
+           with an Application to Exponential Integrators."
+           SIAM Journal on Scientific Computing,
+           33 (2). pp. 488-511. ISSN 1064-8275
+           http://eprints.ma.man.ac.uk/1591/
+
+    .. [2] Nicholas J. Higham and Awad H. Al-Mohy (2010)
+           "Computing Matrix Functions."
+           Acta Numerica,
+           19. 159-208. ISSN 0962-4929
+           http://eprints.ma.man.ac.uk/1451/
+
+    """
+    if any(arg is not None for arg in (start, stop, num, endpoint)):
+        raise NotImplementedError
+    return _expm_action_simple(A, B)
+
+
+def _expm_action_simple(A, B, t=1.0, balance=False):
+    """
+    Compute the action of the matrix exponential at a single time point.
+
+    Parameters
+    ----------
+    A : transposable linear operator
+        The operator whose exponential is of interest.
+    B : ndarray
+        The matrix to be multiplied by the matrix exponential of A.
+    t : float
+        A time point.
+    balance : bool
+        Indicates whether or not to apply balancing.
+
+    Returns
+    -------
+    F : ndarray
+        :math:`e^{t A} B`
+
+    Notes
+    -----
+    This is algorithm (3.2) in Al-Mohy and Higham (2011).
+
+    """
+    if balance:
+        raise NotImplementedError
+    if A.ndim != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected A to be like a square matrix')
+    if A.shape[1] != B.shape[0]:
+        raise ValueError('the matrices A and B have incompatible shapes')
+    n = A.shape[0]
+    n0 = B.shape[1]
+    u_d = 2**-53
+    tol = u_d
+    mu = np.trace(A) / float(n)
+    A = A - mu * np.identity(n)
+    A_1_norm = np.linalg.norm(A, 1)
+    if t*A_1_norm == 0:
+        m_star, s = 0, 1
+    else:
+        ell = 2
+        norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
+        m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
+    F = B
+    eta = math.exp(t*mu / float(s))
+    for i in range(s):
+        c1 = np.linalg.norm(B, np.inf)
+        for j in range(m_star):
+            B = t * np.dot(A, B) / float(s*(j+1))
+            c2 = np.linalg.norm(B, np.inf)
+            F = F + B
+            if c1 + c2 <= tol * np.linalg.norm(F, np.inf):
+                break
+            c1 = c2
+        F = eta * F
+        B = F
+    return F
+
+
 # This table helps to compute bounds.
 # They seem to have been difficult to calculate, involving symbolic
 # manipulation of equations, followed by numerical root finding.
@@ -188,119 +301,6 @@ class LazyOperatorNormInfo:
         Lazily compute max(d(p), d(p+1)).
         """
         return max(self.d(p), self.d(p+1))
-
-
-def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
-    """
-    Compute the action of the matrix exponential of A on B.
-
-    Parameters
-    ----------
-    A : transposable linear operator
-        The operator whose exponential is of interest.
-    B : ndarray
-        The matrix to be multiplied by the matrix exponential of A.
-    start : scalar, optional
-        The starting time point of the sequence.
-    stop : scalar, optional
-        The end time point of the sequence, unless `endpoint` is set to False.
-        In that case, the sequence consists of all but the last of ``num + 1``
-        evenly spaced time points, so that `stop` is excluded.
-        Note that the step size changes when `endpoint` is False.
-    num : int, optional
-        Number of time points to use.
-    endpoint : bool, optional
-        If True, `stop` is the last time point.  Otherwise, it is not included.
-
-    Returns
-    -------
-    expm_A_B : ndarray
-         The result of the action :math:`e^A B`.
-
-    Notes
-    -----
-    The optional arguments defining the sequence of evenly spaced time points
-    are compatible with the arguments of `numpy.linspace`.
-
-    References
-    ----------
-    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2011)
-           "Computing the Action of the Matrix Exponential,
-           with an Application to Exponential Integrators."
-           SIAM Journal on Scientific Computing,
-           33 (2). pp. 488-511. ISSN 1064-8275
-           http://eprints.ma.man.ac.uk/1591/
-
-    .. [2] Nicholas J. Higham and Awad H. Al-Mohy (2010)
-           "Computing Matrix Functions."
-           Acta Numerica,
-           19. 159-208. ISSN 0962-4929
-           http://eprints.ma.man.ac.uk/1451/
-
-    """
-    if any(arg is not None for arg in (start, stop, num, endpoint)):
-        raise NotImplementedError
-    return _expm_action_simple(A, B)
-
-
-def _expm_action_simple(A, B, t=1.0, balance=False):
-    """
-    Compute the action of the matrix exponential at a single time point.
-
-    Parameters
-    ----------
-    A : transposable linear operator
-        The operator whose exponential is of interest.
-    B : ndarray
-        The matrix to be multiplied by the matrix exponential of A.
-    t : float
-        A time point.
-    balance : bool
-        Indicates whether or not to apply balancing.
-
-    Returns
-    -------
-    F : ndarray
-        :math:`e^{t A} B`
-
-    Notes
-    -----
-    This is algorithm (3.2) in Al-Mohy and Higham (2011).
-
-    """
-    if balance:
-        raise NotImplementedError
-    if A.ndim != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected A to be like a square matrix')
-    if A.shape[1] != B.shape[0]:
-        raise ValueError('the matrices A and B have incompatible shapes')
-    n = A.shape[0]
-    n0 = B.shape[1]
-    u_d = 2**-53
-    tol = u_d
-    mu = np.trace(A) / float(n)
-    A = A - mu * np.identity(n)
-    A_1_norm = np.linalg.norm(A, 1)
-    if t*A_1_norm == 0:
-        m_star, s = 0, 1
-    else:
-        ell = 2
-        norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
-        m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
-    F = B
-    eta = math.exp(t*mu / float(s))
-    for i in range(s):
-        c1 = np.linalg.norm(B, np.inf)
-        for j in range(m_star):
-            B = t * np.dot(A, B) / float(s*(j+1))
-            c2 = np.linalg.norm(B, np.inf)
-            F = F + B
-            if c1 + c2 <= tol * np.linalg.norm(F, np.inf):
-                break
-            c1 = c2
-        F = eta * F
-        B = F
-    return F
 
 
 def _compute_cost_div_m(m, p, norm_info):
