@@ -102,11 +102,13 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
     """
     if balance:
         raise NotImplementedError
-    if A.ndim != 2 or A.shape[0] != A.shape[1]:
+    # Use len(shape) instead of ndim because it is implemented for a wider
+    # variety of objects.
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
         raise ValueError('the matrices A and B have incompatible shapes')
-    if B.ndim not in (1, 2):
+    if len(B.shape) not in (1, 2):
         raise ValueError('expected B to be like a matrix or a vector')
     n = A.shape[0]
     n0 = B.shape[-1]
@@ -126,13 +128,13 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
     for i in range(s):
         c1 = _exact_inf_norm(B)
         for j in range(m_star):
-            print(type(t))
-            print(type(s))
-            print(type(j))
-            print(type(A), type(B))
-            print()
+            #print(type(t))
+            #print(type(s))
+            #print(type(j))
+            #print(type(A), type(B))
+            #print()
             coeff = t / float(s*(j+1))
-            B = coeff * np.dot(A, B)
+            B = coeff * np.dot(scipy.sparse.linalg.aslinearoperator(A), B)
             c2 = _exact_inf_norm(B)
             F = F + B
             if c1 + c2 <= tol * _exact_inf_norm(F):
@@ -146,7 +148,7 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
 def _exact_inf_norm(A):
     #XXX change this when the inf-norm of a sparse matrix is available
     if scipy.sparse.isspmatrix(A):
-        A = A.todense()
+        A = np.array(A.todense())
     else:
         return np.linalg.norm(A, np.inf)
 
@@ -154,14 +156,14 @@ def _exact_inf_norm(A):
 def _exact_1_norm(A):
     #XXX change this when the 1-norm of a sparse matrix is available
     if scipy.sparse.isspmatrix(A):
-        A = A.todense()
+        A = np.array(A.todense())
     return np.linalg.norm(A, 1)
 
 
 def _trace(A):
     #XXX change this when the trace of a sparse matrix is available
     if scipy.sparse.isspmatrix(A):
-        A = A.todense()
+        A = np.array(A.todense())
     return np.trace(A)
 
 

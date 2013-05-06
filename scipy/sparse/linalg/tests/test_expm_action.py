@@ -94,7 +94,7 @@ class TestExpmAction(TestCase):
         for i in range(nsamples):
             A = scipy.sparse.rand(n, n, density=0.05)
             B_sparse = scipy.sparse.rand(n, k, density=0.4)
-            B_dense = B_sparse.todense()
+            B_dense = np.array(B_sparse.todense())
             for B in (B_sparse, B_dense):
                 observed = _expm_action.expm_action(A, B)
                 expected = np.dot(scipy.linalg.expm(A), B)
