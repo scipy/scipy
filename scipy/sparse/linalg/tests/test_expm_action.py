@@ -15,7 +15,10 @@ def less_than_or_close(a, b):
     return np.allclose(a, b) or (a < b)
 
 
-class TestExpmAction(TestCase):
+class TestExpmActionSimple(TestCase):
+    """
+    These tests do not consider the case of multiple time steps in one call.
+    """
 
     def test_theta_monotonicity(self):
         pairs = sorted(_expm_action._theta.items())
@@ -98,6 +101,10 @@ class TestExpmAction(TestCase):
             observed = _expm_action.expm_action(A, B)
             expected = scipy.linalg.expm(A).dot(B)
             assert_allclose(observed, expected)
+
+
+class TestExpmActionInterval(TestCase):
+    pass
 
 
 if __name__ == '__main__':

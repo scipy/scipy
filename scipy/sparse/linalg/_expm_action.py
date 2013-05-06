@@ -11,14 +11,45 @@
 import math
 
 import numpy as np
-import numpy.linalg
 
-import scipy.misc
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg import LinearOperator
 
 __all__ = ['expm_action']
+
+
+def _exact_inf_norm(A):
+    # A compatibility function which should eventually disappear.
+    if scipy.sparse.isspmatrix(A):
+        return max(abs(A).sum(axis=1).flat)
+    else:
+        return np.linalg.norm(A, np.inf)
+
+
+def _exact_1_norm(A):
+    # A compatibility function which should eventually disappear.
+    if scipy.sparse.isspmatrix(A):
+        return max(abs(A).sum(axis=0).flat)
+    else:
+        return np.linalg.norm(A, 1)
+
+
+def _trace(A):
+    # A compatibility function which should eventually disappear.
+    if scipy.sparse.isspmatrix(A):
+        return A.diagonal().sum()
+    else:
+        return np.trace(A)
+
+
+def _ident_like(A):
+    # A compatibility function which should eventually disappear.
+    if scipy.sparse.isspmatrix(A):
+        return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
+                dtype=A.dtype, format=A.format)
+    else:
+        return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
 def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
@@ -140,34 +171,6 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
         F = eta * F
         B = F
     return F
-
-
-def _exact_inf_norm(A):
-    if scipy.sparse.isspmatrix(A):
-        return max(abs(A).sum(axis=1).flat)
-    else:
-        return np.linalg.norm(A, np.inf)
-
-
-def _exact_1_norm(A):
-    if scipy.sparse.isspmatrix(A):
-        return max(abs(A).sum(axis=0).flat)
-    else:
-        return np.linalg.norm(A, 1)
-
-
-def _trace(A):
-    if scipy.sparse.isspmatrix(A):
-        return A.diagonal().sum()
-    else:
-        return np.trace(A)
-
-def _ident_like(A):
-    if scipy.sparse.isspmatrix(A):
-        return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
-                dtype=A.dtype, format=A.format)
-    else:
-        return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
 # This table helps to compute bounds.
