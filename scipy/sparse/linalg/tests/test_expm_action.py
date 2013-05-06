@@ -1,3 +1,7 @@
+"""Test functions for the sparse.linalg._expm_action module
+"""
+
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (TestCase, run_module_suite, assert_allclose,
@@ -13,6 +17,11 @@ def less_than_or_close(a, b):
 
 class TestExpmAction(TestCase):
 
+    def test_theta_monotonicity(self):
+        pairs = sorted(_expm_action._theta.items())
+        for (m_a, theta_a), (m_b, theta_b) in zip(pairs[:-1], pairs[1:]):
+            assert_(theta_a < theta_b)
+
     def test_p_max_default(self):
         m_max = 55
         expected_p_max = 8
@@ -26,7 +35,6 @@ class TestExpmAction(TestCase):
             p_too_big = p_max + 1
             assert_(p_too_big*(p_too_big - 1) > m_max + 1)
 
-    @decorators.slow
     def test_onenormest_matrix_power(self):
         np.random.seed(1234)
         n = 40
@@ -42,6 +50,18 @@ class TestExpmAction(TestCase):
                 exact = np.linalg.norm(M, 1)
                 assert_(less_than_or_close(estimated, exact))
                 assert_(less_than_or_close(exact, 3*estimated))
+
+    def test_expm_action(self):
+        np.random.seed(1234)
+        n = 40
+        k = 3
+        nsamples = 10
+        for i in range(nsamples):
+            A = scipy.linalg.inv(np.random.randn(n, n))
+            B = np.random.randn(n, k)
+            observed = _expm_action.expm_action(A, B)
+            expected = np.dot(scipy.linalg.expm(A), B)
+            assert_allclose(observed, expected)
 
 
 if __name__ == '__main__':

@@ -22,7 +22,7 @@ _theta = {
         # The first 30 values are from table A.3 of Computing Matrix Functions.
         1: 2.29e-16,
         2: 2.58e-8,
-        3: 1.39e-8,
+        3: 1.39e-5,
         4: 3.40e-4,
         5: 2.40e-3,
         6: 9.07e-3,
@@ -62,7 +62,7 @@ _theta = {
         }
 
 
-class MatrixPowerOperator(scipy.sparse.linalg.LinearOperator):
+class MatrixPowerOperator(LinearOperator):
 
     def __init__(self, A, p):
         if A.ndim != 2 or A.shape[0] != A.shape[1]:
@@ -94,7 +94,8 @@ class MatrixPowerOperator(scipy.sparse.linalg.LinearOperator):
         return MatrixPowerOperator(self._A.T, self._p)
 
 
-def _onenormest_matrix_power(A, p):
+def _onenormest_matrix_power(A, p,
+        t=2, itmax=5, compute_v=False, compute_w=False):
     """
     Efficiently estimate the 1-norm of A^p.
 
@@ -104,11 +105,31 @@ def _onenormest_matrix_power(A, p):
         Matrix whose 1-norm of a power is to be computed.
     p : int
         Non-negative integer power.
+    t : int, optional
+        A positive parameter controlling the tradeoff between
+        accuracy versus time and memory usage.
+        Larger values take longer and use more memory
+        but give more accurate output.
+    itmax : int, optional
+        Use at most this many iterations.
+    compute_v : bool, optional
+        Request a norm-maximizing linear operator input vector if True.
+    compute_w : bool, optional
+        Request a norm-maximizing linear operator output vector if True.
 
     Returns
     -------
-    An estimate of the 1-norm of the matrix power.
-    
+    est : float
+        An underestimate of the 1-norm of the sparse matrix.
+    v : ndarray, optional
+        The vector such that ||Av||_1 == est*||v||_1.
+        It can be thought of as an input to the linear operator
+        that gives an output with particularly large norm.
+    w : ndarray, optional
+        The vector Av which has relatively large 1-norm.
+        It can be thought of as an output of the linear operator
+        that is relatively large in norm compared to the input.
+
     """
     #XXX Eventually turn this into an API function in the  _onenormest module,
     #XXX and remove its underscore, but wait until expm_action goes into scipy.
@@ -119,29 +140,47 @@ class LazyOperatorNormInfo:
     """
     Information about an operator is lazily computed.
 
+    The information includes the exact 1-norm of the operator,
+    in addition to estimates of 1-norms of powers of the operator.
     This uses the notation of Computing the Action (2011).
+    This class is specialized enough to probably not be of general interest
+    outside of this module.
+
     """
-    def __init__(A):
+    def __init__(self, A, A_1_norm=None, ell=2):
+        """
+        Provide the operator and some norm-related information.
+
+        Parameters
+        ----------
+        A : linear operator
+            The operator of interest.
+        A_1_norm : float, optional
+            The exact 1-norm of A.
+        ell : int, optional
+            A technical parameter controlling norm estimation quality.
+
+        """
         self._A = A
+        self._A_1_norm = A_1_norm
+        self._ell = ell
         self._d = {}
-        self._A_1_norm = None
 
     def onenorm(self):
         """
         Compute the exact 1-norm.
         """
-        #XXX use functools.lru_cache when it becomes available
         if self._A_1_norm is None:
             self._A_1_norm = np.linalg.norm(self._A, 1)
         return self._A_1_norm
 
     def d(self, p):
         """
-        Lazily estimate d_p(A) ~= || A^p ||^(1/p) where ||.|| is 1-norm.
+        Lazily estimate d_p(A) ~= || A^p ||^(1/p) where ||.|| is the 1-norm.
         """
-        #XXX use functools.lru_cache when it becomes available
         if p not in self._d:
-            self._d[p] = _onenormest_matrix_power(self._A, p) ** (1.0 / p)
+            est = _onenormest_matrix_power(self._A, p, self._ell)
+            self._d[p] = est ** (1.0 / p)
         return self._d[p]
 
     def alpha(self, p):
@@ -199,7 +238,9 @@ def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
            http://eprints.ma.man.ac.uk/1451/
 
     """
-    pass
+    if any(arg is not None for arg in (start, stop, num, endpoint)):
+        raise NotImplementedError
+    return _expm_action_simple(A, B)
 
 
 def _expm_action_simple(A, B, t=1.0, balance=False):
@@ -243,13 +284,15 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
     if t*A_1_norm == 0:
         m_star, s = 0, 1
     else:
-        m_star, s = _fragment_3_1(t*A, t*A_1_norm, n0, tol)
+        ell = 2
+        norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
+        m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
     F = B
     eta = math.exp(t*mu / float(s))
     for i in range(s):
         c1 = np.linalg.norm(B, np.inf)
         for j in range(m_star):
-            B = t * np.dot(A, B) / float((s+1)*(j+1))
+            B = t * np.dot(A, B) / float(s*(j+1))
             c2 = np.linalg.norm(B, np.inf)
             F = F + B
             if c1 + c2 <= tol * np.linalg.norm(F, np.inf):
@@ -260,53 +303,21 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
     return F
 
 
-def _compute_d(A, p):
-    """
-    Compute d_p estimates of roots of norms of A.
-
-    This implementation is naive.
-
-    Parameters
-    ----------
-    A : linear operator
-        Estimate roots of norms of powers of this operator.
-    p : int
-        The matrix power of the linear operator.
-
-    """
-    return _normest_matrix_power(A, p) ** (1.0 / k)
-
-
-def _compute_alpha(A, p):
+def _compute_cost_div_m(m, p, norm_info):
     """
     A helper function for computing bounds.
 
-    This implementation is naive.
-
-    Parameters
-    ----------
-    A : linear operator
-        Estimate roots of norms of powers of this operator.
-    p : int
-        The matrix power of the linear operator.
-
-    """
-    return max(_compute_d(A, p), _compute_d(A, p+1))
-
-
-def _compute_cost_div_m(A, m):
-    """
-    A helper function for computing bounds.
-
-    This is a naive implementation of equation (3.10).
+    This is equation (3.10).
     It measures cost in terms of the number of required matrix products.
 
     Parameters
     ----------
-    A : linear operator
-        Estimate roots of norms of powers of this operator.
     m : int
         A valid key of _theta.
+    p : int
+        A matrix power.
+    norm_info : LazyOperatorNormInfo
+        Information about 1-norms of related operators.
 
     Returns
     -------
@@ -314,30 +325,7 @@ def _compute_cost_div_m(A, m):
         Required number of matrix products divided by m.
 
     """
-    return max(int(math.ceil(_compute_alpha(A, p) / _theta[m])), 1)
-
-
-def _compute_cost(A, m):
-    """
-    A helper function for computing bounds.
-
-    This is a naive implementation of equation (3.10).
-    It measures cost in terms of the number of required matrix products.
-
-    Parameters
-    ----------
-    A : linear operator
-        Estimate roots of norms of powers of this operator.
-    m : int
-        A valid key of _theta.
-
-    Returns
-    -------
-    cost : int
-        Required number of matrix products.
-
-    """
-    return m * _compute_cost_div_m(A, m)
+    return int(math.ceil(norm_info.alpha(p) / _theta[m]))
 
 
 def _compute_p_max(m_max):
@@ -358,16 +346,14 @@ def _compute_p_max(m_max):
     return max(p for p in range(p_low, p_high+1) if p*(p-1) <= m_max + 1)
 
 
-def _fragment_3_1(A, A_1_norm, n0, tol, m_max=55, p_max=8, ell=2):
+def _fragment_3_1(norm_info, n0, tol, m_max=55, ell=2):
     """
     A helper function for the _expm_action_* functions.
 
     Parameters
     ----------
-    A : transposable linear operator
-        Linear operator for which to compute the matrix exponential.
-    A_1_norm : float
-        The precomputed 1-norm of A.
+    norm_info : LazyOperatorNormInfo
+        Information about norms of certain linear operators of interest.
     n0 : int
         Number of columns in the _expm_action_* B matrix.
     tol : float
@@ -382,15 +368,15 @@ def _fragment_3_1(A, A_1_norm, n0, tol, m_max=55, p_max=8, ell=2):
 
     Returns
     -------
-    m_star : int
+    best_m : int
         Related to bounds for error control.
-    s : int
+    best_s : int
         Amount of scaling.
 
     Notes
     -----
     This is code fragment (3.1) in Al-Mohy and Higham (2011).
-    The discussion of default values for m_max, p_max, and ell
+    The discussion of default values for m_max and ell
     is given between the definitions of equation (3.11)
     and the definition of equation (3.12).
 
@@ -399,9 +385,9 @@ def _fragment_3_1(A, A_1_norm, n0, tol, m_max=55, p_max=8, ell=2):
         raise ValueError('expected ell to be a positive integer')
     best_m = None
     best_s = None
-    if _condition_3_13(A_1_norm, n0, m_max, ell):
+    if _condition_3_13(norm_info.onenorm(), n0, m_max, ell):
         for m, theta in _theta.items():
-            s = int(math.ceil(A_1_norm / theta))
+            s = int(math.ceil(norm_info.onenorm() / theta))
             if best_m is None or m * s < best_m * best_s:
                 best_m = m
                 best_s = s
@@ -409,10 +395,12 @@ def _fragment_3_1(A, A_1_norm, n0, tol, m_max=55, p_max=8, ell=2):
         # Equation (3.11).
         for p in range(2, _compute_p_max(m_max) + 1):
             for m in range(p*(p-1)-1, m_max+1):
-                if best_m is None or m * s < best_m * best_s:
-                    best_m = m
-                    best_s = s
-        best_s = max(_compute_cost_div_m(best_m), 1)
+                if m in _theta:
+                    s = _compute_cost_div_m(m, p, norm_info)
+                    if best_m is None or m * s < best_m * best_s:
+                        best_m = m
+                        best_s = s
+        best_s = max(best_s, 1)
     return best_m, best_s
 
 
@@ -448,6 +436,6 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
     a = 2 * ell * p_max * (p_max + 3)
 
     # Evaluate the condition (3.13).
-    b = theta[m_max] / float(n0 * m_max)
+    b = _theta[m_max] / float(n0 * m_max)
     return A_1_norm <= a * b
 
