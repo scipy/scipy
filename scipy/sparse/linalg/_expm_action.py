@@ -100,9 +100,10 @@ def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
            http://eprints.ma.man.ac.uk/1451/
 
     """
-    if any(arg is not None for arg in (start, stop, num, endpoint)):
-        raise NotImplementedError
-    return _expm_action_simple(A, B)
+    if all(arg is None for arg in (start, stop, num, endpoint)):
+        return _expm_action_simple(A, B)
+    else:
+        return _expm_action_interval(A, B, start, stop, num, endpoint)
 
 
 def _expm_action_simple(A, B, t=1.0, balance=False):
@@ -132,16 +133,12 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
     """
     if balance:
         raise NotImplementedError
-    # Use len(shape) instead of ndim because it is implemented for a wider
-    # variety of objects.
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
         raise ValueError('the matrices A and B have incompatible shapes')
     if len(B.shape) not in (1, 2):
         raise ValueError('expected B to be like a matrix or a vector')
-    if scipy.sparse.isspmatrix(A):
-        pass
     ident = _ident_like(A)
     n = A.shape[0]
     n0 = B.shape[-1]
@@ -156,6 +153,17 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
         ell = 2
         norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
+    return _expm_action_simple_core(A, B, t, mu, m_star, s, tol, balance)
+
+def _expm_action_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
+    """
+    A helper function.
+    """
+    if balance:
+        raise NotImplementedError
+    if tol is None:
+        u_d = 2 ** -53
+        tol = u_d
     F = B
     eta = math.exp(t*mu / float(s))
     for i in range(s):
@@ -171,7 +179,6 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
         F = eta * F
         B = F
     return F
-
 
 # This table helps to compute bounds.
 # They seem to have been difficult to calculate, involving symbolic
@@ -483,4 +490,109 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
     # Evaluate the condition (3.13).
     b = _theta[m_max] / float(n0 * m_max)
     return A_1_norm <= a * b
+
+
+def _expm_action_interval(A, B, start=None, stop=None,
+        num=None, endpoint=None, balance=False):
+    """
+    Compute the action of the matrix exponential at multiple time points.
+
+    Parameters
+    ----------
+    A : transposable linear operator
+        The operator whose exponential is of interest.
+    B : ndarray
+        The matrix to be multiplied by the matrix exponential of A.
+    balance : bool
+        Indicates whether or not to apply balancing.
+
+    Returns
+    -------
+    F : ndarray
+        :math:`e^{t A} B`
+
+    Notes
+    -----
+    This is algorithm (5.2) in Al-Mohy and Higham (2011).
+
+    """
+    if balance:
+        raise NotImplementedError
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected A to be like a square matrix')
+    if A.shape[1] != B.shape[0]:
+        raise ValueError('the matrices A and B have incompatible shapes')
+    if len(B.shape) not in (1, 2):
+        raise ValueError('expected B to be like a matrix or a vector')
+    ident = _ident_like(A)
+    n = A.shape[0]
+    n0 = B.shape[-1]
+    u_d = 2**-53
+    tol = u_d
+    mu = _trace(A) / float(n)
+    samples, step = np.linspace(start, stop,
+            num=num, endpoint=endpoint, retstep=True)
+    nsamples = len(samples)
+    if nsamples < 2:
+        raise ValueError('at least two time points are required')
+
+    # Use the notation from the publication.
+    q = nsamples - 1
+    h = step
+    t_0 = samples[0]
+    t_q = samples[q]
+
+    # Define the output ndarray.
+    # Use an ndim=3 shape, such that the last two indices
+    # are the ones that may be involved in level 3 BLAS operations.
+    X = np.empty((nsamples, n, n0), dtype=float)
+    ell = 2
+    t = t_q - t_0
+    A_next = A - mu * ident
+    A_next_1_norm = _exact_1_norm(A_next)
+    norm_info = LazyOperatorNormInfo(
+            t*A_next, A_1_norm=t*A_next_1_norm, ell=ell)
+    m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
+    X[0] = _expm_action_simple_core(A, B, t_0, mu, m_star, s)
+
+    # If the number of time steps is short compared to the number
+    # of requested scalings, then this is not so complicated.
+    if q <= s:
+        for k in range(q):
+            X[k+1] = _expm_action_simple_core(A, X[k], h, mu, m_star, s)
+        return X
+
+    A = A_next
+    d = q // s
+    j = q // d
+    r = q - d*j
+    d_tilde = d
+    # XXX recompute m_star?  I don't follow the paper...
+    K = np.empty((m_star, n, n0), dtype=float)
+    Z = X[0]
+    for i in range(1, j+2):
+        if i > j:
+            d_tilde = r
+        K[0] = Z
+        m_hat = 0
+        for k in range(d_tilde):
+            F = Z
+            c1 = _exact_inf_norm(Z)
+            for p in range(m_star):
+
+                # Form a block of K if it is not already formed.
+                if p+1 > m_hat:
+                    K[p+1] = (h / float(p+1)) * A.dot(K[p])
+
+                F = F + (k ** (p+1)) * K[p]
+                c2 = (k ** (p+1)) * _exact_inf_norm(K[p+1])
+                if c1 + c2 <= tol * _exact_inf_norm(F):
+                    break
+                c1 = c2
+            m_hat = max(m_hat, p+1)
+            X[k+(i-1)*d] = math.exp(k*h*mu) * F
+        if i <= j:
+            Z = X[i*d]
+    return X
+
 

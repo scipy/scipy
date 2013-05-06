@@ -104,7 +104,20 @@ class TestExpmActionSimple(TestCase):
 
 
 class TestExpmActionInterval(TestCase):
-    pass
+
+    def test_expm_action_interval_shape(self):
+        np.random.seed(1234)
+        start = 0.1
+        stop = 3.2
+        num = 10
+        endpoint = True
+        n = 5
+        k = 2
+        A = np.random.randn(n, n)
+        B = np.random.randn(n, k)
+        X = _expm_action.expm_action(A, B,
+                start=start, stop=stop, num=num, endpoint=endpoint)
+        assert_equal(X.shape, (num, n, k))
 
 
 if __name__ == '__main__':
