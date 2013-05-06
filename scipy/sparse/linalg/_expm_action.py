@@ -9,8 +9,8 @@ import numpy.linalg
 
 import scipy.misc
 import scipy.linalg
-import scipy.optimize
 import scipy.sparse.linalg
+from scipy.sparse.linalg import LinearOperator
 
 __all__ = ['expm_action']
 
@@ -60,6 +60,95 @@ _theta = {
         50 : 8.5,
         55 : 9.9,
         }
+
+
+class MatrixPowerOperator(scipy.sparse.linalg.LinearOperator):
+
+    def __init__(self, A, p):
+        if A.ndim != 2 or A.shape[0] != A.shape[1]:
+            raise ValueError('expected A to be like a square matrix')
+        if p < 0:
+            raise ValueError('expected p to be a non-negative integer')
+        self._A = A
+        self._p = p
+        self.ndim = A.ndim
+        self.shape = A.shape
+
+    def matvec(self, x):
+        for i in range(self._p):
+            x = np.dot(self._A, x)
+        return x
+
+    def rmatvec(self, x):
+        for i in range(self._p):
+            x = np.dot(x, self._A)
+        return x
+
+    def matmat(self, X):
+        for i in range(self._p):
+            X = np.dot(self._A, X)
+        return X
+    
+    @property
+    def T(self):
+        return MatrixPowerOperator(self._A.T, self._p)
+
+
+def _onenormest_matrix_power(A, p):
+    """
+    Efficiently estimate the 1-norm of A^p.
+
+    Parameters
+    ----------
+    A : ndarray
+        Matrix whose 1-norm of a power is to be computed.
+    p : int
+        Non-negative integer power.
+
+    Returns
+    -------
+    An estimate of the 1-norm of the matrix power.
+    
+    """
+    #XXX Eventually turn this into an API function in the  _onenormest module,
+    #XXX and remove its underscore, but wait until expm_action goes into scipy.
+    return scipy.sparse.linalg.onenormest(MatrixPowerOperator(A, p))
+    
+
+class LazyOperatorNormInfo:
+    """
+    Information about an operator is lazily computed.
+
+    This uses the notation of Computing the Action (2011).
+    """
+    def __init__(A):
+        self._A = A
+        self._d = {}
+        self._A_1_norm = None
+
+    def onenorm(self):
+        """
+        Compute the exact 1-norm.
+        """
+        #XXX use functools.lru_cache when it becomes available
+        if self._A_1_norm is None:
+            self._A_1_norm = np.linalg.norm(self._A, 1)
+        return self._A_1_norm
+
+    def d(self, p):
+        """
+        Lazily estimate d_p(A) ~= || A^p ||^(1/p) where ||.|| is 1-norm.
+        """
+        #XXX use functools.lru_cache when it becomes available
+        if p not in self._d:
+            self._d[p] = _onenormest_matrix_power(self._A, p) ** (1.0 / p)
+        return self._d[p]
+
+    def alpha(self, p):
+        """
+        Lazily compute max(d(p), d(p+1)).
+        """
+        return max(self.d(p), self.d(p+1))
 
 
 def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
@@ -171,6 +260,104 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
     return F
 
 
+def _compute_d(A, p):
+    """
+    Compute d_p estimates of roots of norms of A.
+
+    This implementation is naive.
+
+    Parameters
+    ----------
+    A : linear operator
+        Estimate roots of norms of powers of this operator.
+    p : int
+        The matrix power of the linear operator.
+
+    """
+    return _normest_matrix_power(A, p) ** (1.0 / k)
+
+
+def _compute_alpha(A, p):
+    """
+    A helper function for computing bounds.
+
+    This implementation is naive.
+
+    Parameters
+    ----------
+    A : linear operator
+        Estimate roots of norms of powers of this operator.
+    p : int
+        The matrix power of the linear operator.
+
+    """
+    return max(_compute_d(A, p), _compute_d(A, p+1))
+
+
+def _compute_cost_div_m(A, m):
+    """
+    A helper function for computing bounds.
+
+    This is a naive implementation of equation (3.10).
+    It measures cost in terms of the number of required matrix products.
+
+    Parameters
+    ----------
+    A : linear operator
+        Estimate roots of norms of powers of this operator.
+    m : int
+        A valid key of _theta.
+
+    Returns
+    -------
+    cost_div_m : int
+        Required number of matrix products divided by m.
+
+    """
+    return max(int(math.ceil(_compute_alpha(A, p) / _theta[m])), 1)
+
+
+def _compute_cost(A, m):
+    """
+    A helper function for computing bounds.
+
+    This is a naive implementation of equation (3.10).
+    It measures cost in terms of the number of required matrix products.
+
+    Parameters
+    ----------
+    A : linear operator
+        Estimate roots of norms of powers of this operator.
+    m : int
+        A valid key of _theta.
+
+    Returns
+    -------
+    cost : int
+        Required number of matrix products.
+
+    """
+    return m * _compute_cost_div_m(A, m)
+
+
+def _compute_p_max(m_max):
+    """
+    Compute the largest positive integer p such that p*(p-1) <= m_max + 1.
+
+    Do this in a slightly dumb way, but safe and not too slow.
+
+    Parameters
+    ----------
+    m_max : int
+        A count related to bounds.
+
+    """
+    sqrt_m_max = math.sqrt(m_max)
+    p_low = int(math.floor(sqrt_m_max))
+    p_high = int(math.ceil(sqrt_m_max + 1))
+    return max(p for p in range(p_low, p_high+1) if p*(p-1) <= m_max + 1)
+
+
 def _fragment_3_1(A, A_1_norm, n0, tol, m_max=55, p_max=8, ell=2):
     """
     A helper function for the _expm_action_* functions.
@@ -188,8 +375,6 @@ def _fragment_3_1(A, A_1_norm, n0, tol, m_max=55, p_max=8, ell=2):
         :math:`2^{-24}` for single precision or
         :math:`2^{-53}` for double precision.
     m_max : int
-        A value related to a bound.
-    p_max : int
         A value related to a bound.
     ell : int
         The number of columns used in the 1-norm approximation.
@@ -212,14 +397,26 @@ def _fragment_3_1(A, A_1_norm, n0, tol, m_max=55, p_max=8, ell=2):
     """
     if ell < 1:
         raise ValueError('expected ell to be a positive integer')
-    if _condition_3_13(A_1_norm, n0, m_max, p_max, ell):
-        argmin()
-        m_star = np.argmin(what)
-        s = foo
-    m_star, s = foo
+    best_m = None
+    best_s = None
+    if _condition_3_13(A_1_norm, n0, m_max, ell):
+        for m, theta in _theta.items():
+            s = int(math.ceil(A_1_norm / theta))
+            if best_m is None or m * s < best_m * best_s:
+                best_m = m
+                best_s = s
+    else:
+        # Equation (3.11).
+        for p in range(2, _compute_p_max(m_max) + 1):
+            for m in range(p*(p-1)-1, m_max+1):
+                if best_m is None or m * s < best_m * best_s:
+                    best_m = m
+                    best_s = s
+        best_s = max(_compute_cost_div_m(best_m), 1)
+    return best_m, best_s
 
 
-def _condition_3_13(A_1_norm, n0, m_max, p_max, ell):
+def _condition_3_13(A_1_norm, n0, m_max, ell):
     """
     A helper function for the _expm_action_* functions.
 
@@ -230,8 +427,6 @@ def _condition_3_13(A_1_norm, n0, m_max, p_max, ell):
     n0 : int
         Number of columns in the _expm_action_* B matrix.
     m_max : int
-        A value related to a bound.
-    p_max : int
         A value related to a bound.
     ell : int
         The number of columns used in the 1-norm approximation.
@@ -249,6 +444,7 @@ def _condition_3_13(A_1_norm, n0, m_max, p_max, ell):
     """
 
     # This is the rhs of equation (3.12).
+    p_max = _compute_p_max(m_max)
     a = 2 * ell * p_max * (p_max + 3)
 
     # Evaluate the condition (3.13).
