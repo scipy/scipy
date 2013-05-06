@@ -22,6 +22,7 @@ Matrix Operations
 
    inv -- compute the sparse matrix inverse
    expm -- compute the sparse matrix exponential
+   expm_action -- compute the product of a matrix exponential and a matrix
 
 Matrix norms
 ------------
@@ -110,6 +111,7 @@ from .interface import *
 from .eigen import *
 from .matfuncs import *
 from ._onenormest import *
+from ._expm_action import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester

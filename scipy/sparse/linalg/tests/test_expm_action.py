@@ -88,17 +88,16 @@ class TestExpmAction(TestCase):
                 assert_allclose(observed, expected)
 
     def test_sparse_expm_action(self):
+        np.random.seed(1234)
         n = 40
         k = 3
         nsamples = 10
         for i in range(nsamples):
             A = scipy.sparse.rand(n, n, density=0.05)
-            B_sparse = scipy.sparse.rand(n, k, density=0.4)
-            B_dense = np.array(B_sparse.todense())
-            for B in (B_sparse, B_dense):
-                observed = _expm_action.expm_action(A, B)
-                expected = np.dot(scipy.linalg.expm(A), B)
-                assert_allclose(observed, expected)
+            B = np.random.randn(n, k)
+            observed = _expm_action.expm_action(A, B)
+            expected = scipy.linalg.expm(A).dot(B)
+            assert_allclose(observed, expected)
 
 
 if __name__ == '__main__':

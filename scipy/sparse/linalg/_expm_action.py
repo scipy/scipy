@@ -9,7 +9,6 @@
 
 
 import math
-import functools
 
 import numpy as np
 import numpy.linalg
@@ -110,12 +109,15 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
         raise ValueError('the matrices A and B have incompatible shapes')
     if len(B.shape) not in (1, 2):
         raise ValueError('expected B to be like a matrix or a vector')
+    if scipy.sparse.isspmatrix(A):
+        pass
+    ident = _ident_like(A)
     n = A.shape[0]
     n0 = B.shape[-1]
     u_d = 2**-53
     tol = u_d
     mu = _trace(A) / float(n)
-    A = A - mu * np.identity(n)
+    A = A - mu * ident
     A_1_norm = _exact_1_norm(A)
     if t*A_1_norm == 0:
         m_star, s = 0, 1
@@ -128,13 +130,8 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
     for i in range(s):
         c1 = _exact_inf_norm(B)
         for j in range(m_star):
-            #print(type(t))
-            #print(type(s))
-            #print(type(j))
-            #print(type(A), type(B))
-            #print()
             coeff = t / float(s*(j+1))
-            B = coeff * np.dot(scipy.sparse.linalg.aslinearoperator(A), B)
+            B = coeff * A.dot(B)
             c2 = _exact_inf_norm(B)
             F = F + B
             if c1 + c2 <= tol * _exact_inf_norm(F):
@@ -146,25 +143,31 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
 
 
 def _exact_inf_norm(A):
-    #XXX change this when the inf-norm of a sparse matrix is available
     if scipy.sparse.isspmatrix(A):
-        A = np.array(A.todense())
+        return max(abs(A).sum(axis=1).flat)
     else:
         return np.linalg.norm(A, np.inf)
 
 
 def _exact_1_norm(A):
-    #XXX change this when the 1-norm of a sparse matrix is available
     if scipy.sparse.isspmatrix(A):
-        A = np.array(A.todense())
-    return np.linalg.norm(A, 1)
+        return max(abs(A).sum(axis=0).flat)
+    else:
+        return np.linalg.norm(A, 1)
 
 
 def _trace(A):
-    #XXX change this when the trace of a sparse matrix is available
     if scipy.sparse.isspmatrix(A):
-        A = np.array(A.todense())
-    return np.trace(A)
+        return A.diagonal().sum()
+    else:
+        return np.trace(A)
+
+def _ident_like(A):
+    if scipy.sparse.isspmatrix(A):
+        return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
+                dtype=A.dtype, format=A.format)
+    else:
+        return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
 # This table helps to compute bounds.
