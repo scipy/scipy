@@ -260,7 +260,7 @@ static double beta_negint(int a, double b)
     }
     else {
 	mtherr("lbeta", OVERFLOW);
-        return sgn*NPY_INFINITY;
+        return NPY_INFINITY;
     }
 }
 
