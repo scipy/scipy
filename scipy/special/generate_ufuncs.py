@@ -150,7 +150,7 @@ ellipj -- ellpj: dd*dddd->*i                               -- cephes.h
 expn -- expn: id->d, expn_unsafe: dd->d                    -- cephes.h, _legacy.pxd
 exp1 -- exp1_wrap: d->d, cexp1_wrap: D->D                  -- specfun_wrappers.h
 expi -- expi_wrap: d->d, cexpi_wrap: D->D                  -- specfun_wrappers.h
-kn -- kn: id->d, kn_unsafe: dd->d                          -- cephes.h, _legacy.pxd
+kn -- cbesk_wrap_real_int: id->d, kn_unsafe: dd->d         -- cephes.h, _legacy.pxd
 pdtrc -- pdtrc: id->d, pdtrc_unsafe: dd->d                 -- cephes.h, _legacy.pxd
 pdtr -- pdtr: id->d, pdtr_unsafe: dd->d                    -- cephes.h, _legacy.pxd
 pdtri -- pdtri: id->d, pdtri_unsafe: dd->d                 -- cephes.h, _legacy.pxd
@@ -171,9 +171,9 @@ j0 -- j0: d->d                                             -- cephes.h
 y0 -- y0: d->d                                             -- cephes.h
 j1 -- j1: d->d                                             -- cephes.h
 y1 -- y1: d->d                                             -- cephes.h
-jv -- jv: dd->d, cbesj_wrap: dD->D                         -- cephes.h, amos_wrappers.h
+jv -- cbesj_wrap_real: dd->d, cbesj_wrap: dD->D            -- amos_wrappers.h
 jve -- cbesj_wrap_e_real: dd->d, cbesj_wrap_e: dD->D       -- amos_wrappers.h
-yv -- yv: dd->d, cbesy_wrap: dD->D                         -- cephes.h, amos_wrappers.h
+yv -- cbesy_wrap_real: dd->d, cbesy_wrap: dD->D            -- amos_wrappers.h
 yve -- cbesy_wrap_e_real: dd->d, cbesy_wrap_e: dD->D       -- amos_wrappers.h
 k0 -- k0: d->d                                             -- cephes.h
 k0e -- k0e: d->d                                           -- cephes.h

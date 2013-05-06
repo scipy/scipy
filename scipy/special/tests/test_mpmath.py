@@ -316,28 +316,28 @@ class Arg(object):
 
     def values(self, n):
         """Return an array containing approximatively `n` numbers."""
-        n1 = max(3, int(0.4*n))
-        n2 = max(3, int(0.3*n))
-        n3 = max(2, n - n1 - n2)
+        n1 = max(2, int(0.4*n))
+        n2 = max(2, int(0.2*n))
+        n3 = max(8, n - n1 - n2)
 
         v1 = np.linspace(-1, 1, n1)
         v2 = np.r_[np.linspace(-10, 10, max(0, n2-4)),
                    -9, -5.5, 5.5, 9]
         if self.a >= 0 and self.b > 0:
             v3 = np.logspace(-30, np.log10(self.b), n3//2)
-            v4 = np.logspace(-30, 5, n3//2)
+            v4 = np.logspace(1, 5, 1 + n3//2)
         elif self.a < 0 and self.b > 0:
             v3 = np.r_[
                 np.logspace(-30, np.log10(self.b), n3//4),
                 -np.logspace(-30, np.log10(-self.a), n3//4)
                 ]
             v4 = np.r_[
-                np.logspace(-30, 5, n3//4),
-                -np.logspace(-30, 5, n3//4)
+                np.logspace(1, 5, 1 + n3//4),
+                -np.logspace(1, 5, 1 + n3//4)
                 ]
         elif self.b < 0:
             v3 = -np.logspace(-30, np.log10(-self.b), n3//2)
-            v3 = -np.logspace(-30, 5, n3//2)
+            v4 = -np.logspace(1, 5, 1 + n3//2)
         else:
             v3 = []
             v4 = []
@@ -390,6 +390,7 @@ class MpmathData(object):
         self.n = n
         self.rtol = rtol
         self.atol = atol
+        self.ignore_inf_sign = ignore_inf_sign
         self.is_complex = any([isinstance(arg, ComplexArg) for arg in self.arg_spec])
         self.ignore_inf_sign = ignore_inf_sign
         if not name or name == '<lambda>':
@@ -401,12 +402,15 @@ class MpmathData(object):
     def check(self):
         np.random.seed(1234)
 
-        # Generate values for the arguments
         num_args = len(self.arg_spec)
-        m = int(self.n**(1./num_args)) + 1
+
+        # Generate values for the arguments
+        ms = np.asarray([1.5 if isinstance(arg, ComplexArg) else 1.0
+                         for arg in self.arg_spec])
+        ms = (self.n**(ms/sum(ms))).astype(int) + 1
 
         argvals = []
-        for arg in self.arg_spec:
+        for arg, m in zip(self.arg_spec, ms):
             argvals.append(arg.values(m))
 
         argarr = np.array(np.broadcast_arrays(*np.ix_(*argvals))).reshape(num_args, -1).T
@@ -446,8 +450,8 @@ class MpmathData(object):
                                       argarr,
                                       vectorized=False,
                                       rtol=self.rtol, atol=self.atol,
-                                      nan_ok=True,
-                                      ignore_inf_sign=self.ignore_inf_sign)
+                                      ignore_inf_sign=self.ignore_inf_sign,
+                                      nan_ok=True)
                     break
                 except AssertionError:
                     if j >= len(dps_list)-1:
@@ -511,12 +515,20 @@ class _SystematicMeta(type):
 #------------------------------------------------------------------------------
 
 def _trace_args(func):
+    def tofloat(x):
+        if isinstance(x, mpmath.mpc):
+            return complex(x)
+        else:
+            return float(x)
     def wrap(*a, **kw):
-        sys.stderr.write("%r %r: " % (a, kw))
+        sys.stderr.write("%r: " % (tuple(map(tofloat, a)),))
         sys.stderr.flush()
-        r = func(*a, **kw)
-        sys.stderr.write("-> %r\n" % r)
-        sys.stderr.flush()
+        try:
+            r = func(*a, **kw)
+            sys.stderr.write("-> %r" % r)
+        finally:
+            sys.stderr.write("\n")
+            sys.stderr.flush()
         return r
     return wrap
 
@@ -671,59 +683,92 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_besseli(self):
         assert_mpmath_equal(sc.iv,
                             _exception_to_nan(lambda v, z: mpmath.besseli(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg()],
-                            n=1000,
-                            atol=1e-270)
+                            [Arg(-1e100, 1e100), Arg()])
 
     def test_besseli_complex(self):
         assert_mpmath_equal(lambda v, z: sc.iv(v.real, z),
                             _exception_to_nan(lambda v, z: mpmath.besseli(v, z, **HYPERKW)),
                             [Arg(-1e100, 1e100), ComplexArg()])
 
-    @knownfailure_overridable("Cephes jv at large arguments (absolute tolerance OK, relative not, Trac #1740)")
     def test_besselj(self):
         assert_mpmath_equal(sc.jv,
                             _exception_to_nan(lambda v, z: mpmath.besselj(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg()],
-                            n=1000)
+                            [Arg(-1e100, 1e100), Arg(-1e8, 1e8)],
+                            ignore_inf_sign=True)
 
     def test_besselj_complex(self):
         assert_mpmath_equal(lambda v, z: sc.jv(v.real, z),
-                            lambda v, z: mpmath.besselj(v, z, **HYPERKW),
-                            [Arg(), ComplexArg()],
-                            n=2000)
+                            _exception_to_nan(lambda v, z: mpmath.besselj(v, z, **HYPERKW)),
+                            [Arg(), ComplexArg()])
 
     def test_besselk(self):
+        def mpbesselk(v, x):
+            r = float(mpmath.besselk(v, x, **HYPERKW))
+            if abs(r) > 1e305:
+                # overflowing to inf a bit earlier is OK
+                r = np.inf * np.sign(r)
+            if abs(v) == abs(x) and abs(r) == np.inf and abs(x) > 1:
+                # wrong result (kv(x,x) -> 0 for x > 1),
+                # try with higher dps
+                old_dps = mpmath.mp.dps
+                mpmath.mp.dps = 200
+                try:
+                    r = float(mpmath.besselk(v, x, **HYPERKW))
+                finally:
+                    mpmath.mp.dps = old_dps
+            return r
         assert_mpmath_equal(sc.kv,
-                            _exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg()],
-                            n=1000)
+                            _exception_to_nan(mpbesselk),
+                            [Arg(-1e100, 1e100), Arg()])
 
-    @knownfailure_overridable("spurious inf at large arguments")
     def test_besselk_int(self):
         assert_mpmath_equal(sc.kn,
                             _exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
-                            [IntArg(), Arg()],
-                            n=1000)
+                            [IntArg(-1000, 1000), Arg()])
 
     def test_besselk_complex(self):
         assert_mpmath_equal(lambda v, z: sc.kv(v.real, z),
                             _exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
                             [Arg(-1e100, 1e100), ComplexArg()])
 
-    @knownfailure_overridable()
     def test_bessely(self):
+        def mpbessely(v, x):
+            r = float(mpmath.bessely(v, x, **HYPERKW))
+            if abs(r) > 1e305:
+                # overflowing to inf a bit earlier is OK
+                r = np.inf * np.sign(r)
+            if abs(r) == 0 and x == 0:
+                # invalid result from mpmath, point x=0 is a divergence
+                return np.nan
+            return r
         assert_mpmath_equal(sc.yv,
-                            _exception_to_nan(lambda v, z: mpmath.bessely(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg()],
-                            n=1000)
+                            _exception_to_nan(mpbessely),
+                            [Arg(-1e100, 1e100), Arg(-1e8, 1e8)],
+                            n=5000)
 
     @knownfailure_overridable("sin(pi k) != sin_pi(k) at negative half-integer orders")
     def test_bessely_complex(self):
+        def mpbessely(v, x):
+            r = complex(mpmath.bessely(v, x, **HYPERKW))
+            if abs(r) > 1e305:
+                # overflowing to inf a bit earlier is OK
+                r = np.inf * np.sign(r)
+            return r
         assert_mpmath_equal(lambda v, z: sc.yv(v.real, z),
-                            lambda v, z: _exception_to_nan(mpmath.bessely)(v, z, **HYPERKW),
+                            _exception_to_nan(mpbessely),
                             [Arg(), ComplexArg()],
-                            n=2000)
+                            n=15000)
+
+    def test_bessely_int(self):
+        def mpbessely(v, x):
+            r = float(mpmath.bessely(v, x))
+            if abs(r) == 0 and x == 0:
+                # invalid result from mpmath, point x=0 is a divergence
+                return np.nan
+            return r
+        assert_mpmath_equal(lambda v, z: sc.yn(int(v), z),
+                            _exception_to_nan(mpbessely),
+                            [IntArg(-1000, 1000), Arg(-1e8, 1e8)])
 
     def test_beta(self):
         def beta(a, b):
@@ -979,6 +1024,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(lambda v, x: mpmath.hankel2(v, x, **HYPERKW)),
                             [Arg(-1e20, 1e20), Arg()])
 
+    @knownfailure_overridable("issues at intermediately large orders")
     def test_hermite(self):
         assert_mpmath_equal(lambda n, x: sc.eval_hermite(int(n), x),
                             _exception_to_nan(mpmath.hermite),
@@ -1024,16 +1070,17 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(), Arg(), Arg(), Arg()],
                             n=20000)
 
+    @knownfailure_overridable()
     def test_hyp2f0(self):
-        def hyp2f0(a, b, c, x):
-            v, err = sc.hyp2f0(a, b, c, x)
+        def hyp2f0(a, b, x):
+            v, err = sc.hyp2f0(a, b, x, 1)
             if abs(err) > max(1, abs(v)) * 1e-7:
                 return np.nan
             return v
         assert_mpmath_equal(hyp2f0,
-                            _exception_to_nan(lambda a, b, c, x: mpmath.hyp2f0(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()],
-                            n=10000)
+                            lambda a, b, x: _time_limited(0.1)(_exception_to_nan(_trace_args(mpmath.hyp2f0)))(
+                                a, b, x, **HYPERKW),
+                            [Arg(), Arg(), Arg()])
 
     @knownfailure_overridable("spurious inf (or inf with wrong sign) for some argument values")
     def test_hyp2f1(self):
@@ -1055,17 +1102,23 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(lambda a, b, x: mpmath.hyperu(a, b, x, **HYPERKW)),
                             [Arg(), Arg(), Arg()])
 
-    @knownfailure_overridable("issues at large arguments")
     def test_j0(self):
+        # The Bessel function at large arguments is j0(x) ~ cos(x + phi)/sqrt(x)
+        # and at large arguments the phase of the cosine loses precision.
+        #
+        # This is numerically expected behavior, so we compare only up to
+        # 1e8 = 1e15 * 1e-7
         assert_mpmath_equal(sc.j0,
                             mpmath.j0,
-                            [Arg()])
+                            [Arg(-1e8, 1e8)],
+                            rtol=1e-7)
 
-    @knownfailure_overridable("issues at large arguments")
     def test_j1(self):
+        # See comment in test_j0
         assert_mpmath_equal(sc.j1,
                             mpmath.j1,
-                            [Arg()])
+                            [Arg(-1e8, 1e8)],
+                            rtol=1e-7)
 
     @knownfailure_overridable()
     def test_jacobi(self):
@@ -1254,8 +1307,9 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(spherharm,
                             mpmath.spherharm,
                             [IntArg(0, 100), IntArg(0, 100),
-                             Arg(a=0, b=2*pi), Arg(a=0, b=pi)],
-                            atol=1e-13, n=6000)
+                             Arg(a=0, b=pi), Arg(a=0, b=2*pi)],
+                            atol=1e-8, n=6000,
+                            dps=150)
 
     @knownfailure_overridable("problems at extremely large arguments (absolute tolerance OK, relative not)")
     def test_struve(self):

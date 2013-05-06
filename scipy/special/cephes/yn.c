@@ -81,7 +81,7 @@ double x;
     /* test for overflow */
     if (x == 0.0) {
 	mtherr("yn", SING);
-	return -NPY_INFINITY;
+	return -NPY_INFINITY * sign;
     }
     else if (x < 0.0) {
 	mtherr("yn", DOMAIN);

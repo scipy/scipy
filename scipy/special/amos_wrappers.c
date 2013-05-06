@@ -69,12 +69,35 @@ void set_nan_if_no_computation_done(npy_cdouble *v, int ierr) {
   }
 }
 
+static double sin_pi(double x)
+{
+    if (floor(x) == x && fabs(x) < 1e14) {
+        /* Return 0 when at exact zero, as long as the floating point number is
+         * small enough to distinguish integer points from other points.
+         */
+        return 0;
+    }
+    return sin(M_PI * x);
+}
+
+static double cos_pi(double x)
+{
+    double x05 = x + 0.5;
+    if (floor(x05) == x05 && fabs(x) < 1e14) {
+        /* Return 0 when at exact zero, as long as the floating point number is
+         * small enough to distinguish integer points from other points.
+         */
+        return 0;
+    }
+    return cos(M_PI * x);
+}
+
 static npy_cdouble
 rotate(npy_cdouble z, double v)
 {
     npy_cdouble w;
-    double c = cos(v * NPY_PI);
-    double s = sin(v * NPY_PI);
+    double c = cos_pi(v);
+    double s = sin_pi(v);
     w.real = z.real*c - z.imag*s;
     w.imag = z.real*s + z.imag*c;
     return w;
@@ -84,8 +107,8 @@ static npy_cdouble
 rotate_jy(npy_cdouble j, npy_cdouble y, double v)
 {
     npy_cdouble w;
-    double c = cos(v * NPY_PI);
-    double s = sin(v * NPY_PI);
+    double c = cos_pi(v);
+    double s = sin_pi(v);
     w.real = j.real * c - y.real * s;
     w.imag = j.imag * c - y.imag * s;
     return w;
@@ -157,6 +180,15 @@ int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi
   int kode = 1;
   int nz;
 
+  ai->real = NPY_NAN;
+  ai->imag = NPY_NAN;
+  bi->real = NPY_NAN;
+  bi->imag = NPY_NAN;
+  aip->real = NPY_NAN;
+  aip->imag = NPY_NAN;
+  bip->real = NPY_NAN;
+  bip->imag = NPY_NAN;
+
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
   DO_SFERR("airy:", ai);
   nz = 0;
@@ -176,6 +208,15 @@ int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *
   int id = 0;
   int kode = 2;        /* Exponential scaling */
   int nz, ierr;
+
+  ai->real = NPY_NAN;
+  ai->imag = NPY_NAN;
+  bi->real = NPY_NAN;
+  bi->imag = NPY_NAN;
+  aip->real = NPY_NAN;
+  aip->imag = NPY_NAN;
+  bip->real = NPY_NAN;
+  bip->imag = NPY_NAN;
 
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
   DO_SFERR("airye:", ai);
@@ -198,6 +239,15 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   int nz, ierr;
   npy_cdouble cz, cai, caip, cbi, cbip;
 
+  cai.real = NPY_NAN;
+  cai.imag = NPY_NAN;
+  cbi.real = NPY_NAN;
+  cbi.imag = NPY_NAN;
+  caip.real = NPY_NAN;
+  caip.imag = NPY_NAN;
+  cbip.real = NPY_NAN;
+  cbip.imag = NPY_NAN;
+  
   cz.real = z;
   cz.imag = 0;
 
@@ -234,6 +284,11 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
   int sign = 1;
   int nz, ierr;
   npy_cdouble cy, cy_k;
+
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+  cy_k.real = NPY_NAN;
+  cy_k.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -274,6 +329,11 @@ npy_cdouble cbesi_wrap_e( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy, cy_k;
 
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+  cy_k.real = NPY_NAN;
+  cy_k.imag = NPY_NAN;
+
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -310,13 +370,18 @@ double cbesi_wrap_e_real(double v, double z) {
     return cy.real;
   }
 }
-  
+
 npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
   int nz, ierr;
   int sign = 1;
   npy_cdouble cy_j, cy_y, cwork;
+
+  cy_j.real = NPY_NAN;
+  cy_j.imag = NPY_NAN;
+  cy_y.real = NPY_NAN;
+  cy_y.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -341,12 +406,38 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   return cy_j;
 }
 
+double cephes_jv(double v, double x);
+
+double cbesj_wrap_real(double v, double x)
+{
+    npy_cdouble z, r;
+
+    if (x < 0 && v != (int)v) {
+        sf_error("yv", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
+    }
+
+    z.real = x;
+    z.imag = 0;
+    r = cbesj_wrap(v, z);
+    if (r.real != r.real) {
+        /* AMOS returned NaN, possibly due to overflow */
+        return cephes_jv(v, x);
+    }
+    return r.real;
+}
+
 npy_cdouble cbesj_wrap_e( double v, npy_cdouble z) {
   int n = 1;
   int kode = 2;
   int nz, ierr;
   int sign = 1;
   npy_cdouble cy_j, cy_y, cwork;
+
+  cy_j.real = NPY_NAN;
+  cy_j.imag = NPY_NAN;
+  cy_y.real = NPY_NAN;
+  cy_y.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -383,18 +474,32 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy_y, cy_j, cwork;
 
+  cy_j.real = NPY_NAN;
+  cy_j.imag = NPY_NAN;
+  cy_y.real = NPY_NAN;
+  cy_y.imag = NPY_NAN;
+
   if (v < 0) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
-  DO_SFERR("yv:", &cy_y);
-  if (ierr == 2) {
-    if (z.real >= 0 && z.imag == 0) {
+
+  if (z.real == 0 && z.imag == 0) {
       /* overflow */
-      cy_y.real = NPY_INFINITY;
+      cy_y.real = -NPY_INFINITY;
       cy_y.imag = 0;
-    }
+      sf_error("yv", SF_ERROR_OVERFLOW, NULL);
+  }
+  else {
+      F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
+      DO_SFERR("yv:", &cy_y);
+      if (ierr == 2) {
+          if (z.real >= 0 && z.imag == 0) {
+              /* overflow */
+              cy_y.real = -NPY_INFINITY;
+              cy_y.imag = 0;
+          }
+      }
   }
 
   if (sign == -1) {
@@ -407,12 +512,38 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   return cy_y;
 }
 
+double cephes_yv(double v, double x);
+
+double cbesy_wrap_real(double v, double x)
+{
+    npy_cdouble z, r;
+
+    if (x < 0.0) {
+        sf_error("yv", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
+    }
+
+    z.real = x;
+    z.imag = 0;
+    r = cbesy_wrap(v, z);
+    if (r.real != r.real) {
+        /* AMOS returned NaN, possibly due to overflow */
+        return cephes_yv(v, x);
+    }
+    return r.real;
+}
+
 npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
   int n = 1;
   int kode = 2;
   int nz, ierr;
   int sign = 1;
   npy_cdouble cy_y, cy_j, cwork;
+
+  cy_j.real = NPY_NAN;
+  cy_j.imag = NPY_NAN;
+  cy_y.real = NPY_NAN;
+  cy_y.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -456,6 +587,9 @@ npy_cdouble cbesk_wrap( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy;
 
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+
   if (v < 0) {
     /* K_v == K_{-v} even for non-integer v */
     v = -v;
@@ -479,6 +613,9 @@ npy_cdouble cbesk_wrap_e( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy;
 
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+
   if (v < 0) {
     /* K_v == K_{-v} even for non-integer v */
     v = -v;
@@ -500,12 +637,25 @@ double cbesk_wrap_real( double v, double z) {
   npy_cdouble cy, w;
   if (z < 0) {
     return NPY_NAN;
-  } else {
+  }
+  else if (z > 710 * (1 + fabs(v))) {
+      /* Underflow. See uniform expansion http://dlmf.nist.gov/10.41
+       * This condition is not a strict bound (it can underflow earlier),
+       * rather, we are here working around a restriction in AMOS.
+       */
+      return 0;
+  }
+  else {
     w.real = z;
     w.imag = 0;
     cy = cbesk_wrap(v, w);
     return cy.real;
   }
+}
+
+double cbesk_wrap_real_int(int n, double z)
+{
+    return cbesk_wrap_real(n, z);
 }
 
 double cbesk_wrap_e_real( double v, double z) {
@@ -528,6 +678,9 @@ npy_cdouble cbesh_wrap1( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -547,6 +700,9 @@ npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z) {
   int nz, ierr;
   int sign = 1;
   npy_cdouble cy;
+
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
@@ -568,6 +724,9 @@ npy_cdouble cbesh_wrap2( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
+
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -587,6 +746,9 @@ npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z) {
   int nz, ierr;
   int sign = 1;
   npy_cdouble cy;
+
+  cy.real = NPY_NAN;
+  cy.imag = NPY_NAN;
 
   if (v < 0) {
     v = -v;
