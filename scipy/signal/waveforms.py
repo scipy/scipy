@@ -122,6 +122,7 @@ def square(t, duty=0.5):
 
     A pulse-width modulated sine wave:
 
+    >>> plt.figure()
     >>> sig = np.sin(2 * np.pi * t)
     >>> pwm = signal.square(2 * np.pi * 30 * t, duty=(sig + 1)/2)
     >>> plt.subplot(2, 1, 1)
