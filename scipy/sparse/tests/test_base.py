@@ -1621,6 +1621,8 @@ class _TestFancyIndexing:
         A = self.spmatrix(np.zeros([5, 5]))
         assert_raises((IndexError, ValueError, TypeError), A.__getitem__, "foo")
         assert_raises((IndexError, ValueError, TypeError), A.__getitem__, (2, "foo"))
+        assert_raises((IndexError, ValueError), A.__getitem__, 
+                      ([1, 2, 3], [1, 2, 3, 4]))
 
     def test_fancy_indexing(self):
         B = asmatrix(arange(50).reshape(5,10))
