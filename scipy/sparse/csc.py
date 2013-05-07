@@ -11,12 +11,12 @@ import numpy as np
 from scipy.lib.six.moves import xrange
 
 from .sparsetools import csc_tocsr
-from .sputils import upcast, isintlike
+from .sputils import upcast, isintlike, IndexMixin
 
 from .compressed import _cs_matrix
 
 
-class csc_matrix(_cs_matrix):
+class csc_matrix(_cs_matrix, IndexMixin):
     """
     Compressed Sparse Column matrix
 
@@ -141,8 +141,7 @@ class csc_matrix(_cs_matrix):
     def __getitem__(self, key):
         # use CSR to implement fancy indexing
         if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
+            row, col = self._unpack_index(key)
 
             if isintlike(row) or isinstance(row, slice):
                 return self.T[col,row].T
