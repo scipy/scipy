@@ -19,7 +19,8 @@ import scipy.linalg
 from scipy.sparse import csc_matrix
 from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import expm
-from scipy.sparse.linalg.matfuncs import expm_2009, _is_upper_triangular
+from scipy.sparse.linalg.matfuncs import (expm_2009, _is_upper_triangular,
+        MatrixPowerOperator, ProductOperator)
 from scipy.linalg import logm
 
 
@@ -96,6 +97,31 @@ class TestExpM(TestCase):
             A = np.triu(np.random.randn(n, n))
             assert_(_is_upper_triangular(A))
             assert_allclose(expm_2009(A), expm(A))
+
+    def test_product_operator(self):
+        random.seed(1234)
+        n = 5
+        k = 2
+        nsamples = 10
+        for i in range(nsamples):
+            A = np.random.randn(n, n)
+            B = np.random.randn(n, n)
+            C = np.random.randn(n, n)
+            D = np.random.randn(n, k)
+            op = ProductOperator(A, B, C)
+            assert_allclose(op.matmat(D), A.dot(B).dot(C).dot(D))
+
+    def test_matrix_power_operator(self):
+        random.seed(1234)
+        n = 5
+        k = 2
+        p = 3
+        nsamples = 10
+        for i in range(nsamples):
+            A = np.random.randn(n, n)
+            B = np.random.randn(n, k)
+            op = MatrixPowerOperator(A, p)
+            assert_allclose(op.matmat(B), np.linalg.matrix_power(A, p).dot(B))
 
 
 if __name__ == "__main__":
