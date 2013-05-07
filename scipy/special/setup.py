@@ -30,7 +30,7 @@ def configuration(parent_package='',top_path=None):
     inc_dirs = [get_python_inc()]
     if inc_dirs[0] != get_python_inc(plat_specific=1):
         inc_dirs.append(get_python_inc(plat_specific=1))
-    inc_dirs.append(get_numpy_include_dirs())
+    inc_dirs.insert(0, get_numpy_include_dirs())
 
     # C libraries
     config.add_library('sc_c_misc',sources=[join('c_misc','*.c')],
