@@ -391,7 +391,10 @@ class MpmathData(object):
         self.rtol = rtol
         self.atol = atol
         self.ignore_inf_sign = ignore_inf_sign
-        self.is_complex = any([isinstance(arg, ComplexArg) for arg in self.arg_spec])
+        if isinstance(self.arg_spec, np.ndarray):
+            self.is_complex = np.issubdtype(self.arg_spec.dtype, np.complexfloating)
+        else:
+            self.is_complex = any([isinstance(arg, ComplexArg) for arg in self.arg_spec])
         self.ignore_inf_sign = ignore_inf_sign
         if not name or name == '<lambda>':
             name = getattr(scipy_func, '__name__', None)
@@ -402,18 +405,20 @@ class MpmathData(object):
     def check(self):
         np.random.seed(1234)
 
-        num_args = len(self.arg_spec)
-
         # Generate values for the arguments
-        ms = np.asarray([1.5 if isinstance(arg, ComplexArg) else 1.0
-                         for arg in self.arg_spec])
-        ms = (self.n**(ms/sum(ms))).astype(int) + 1
+        if isinstance(self.arg_spec, np.ndarray):
+            argarr = self.arg_spec.copy()
+        else:
+            num_args = len(self.arg_spec)
+            ms = np.asarray([1.5 if isinstance(arg, ComplexArg) else 1.0
+                             for arg in self.arg_spec])
+            ms = (self.n**(ms/sum(ms))).astype(int) + 1
 
-        argvals = []
-        for arg, m in zip(self.arg_spec, ms):
-            argvals.append(arg.values(m))
+            argvals = []
+            for arg, m in zip(self.arg_spec, ms):
+                argvals.append(arg.values(m))
 
-        argarr = np.array(np.broadcast_arrays(*np.ix_(*argvals))).reshape(num_args, -1).T
+            argarr = np.array(np.broadcast_arrays(*np.ix_(*argvals))).reshape(num_args, -1).T
 
         # Check
         old_dps, old_prec = mpmath.mp.dps, mpmath.mp.prec
@@ -625,9 +630,14 @@ HYPERKW = dict(maxprec=200, maxterms=200)
 
 class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_airyai(self):
+        # oscillating function, limit range
         assert_mpmath_equal(lambda z: sc.airy(z)[0],
                             mpmath.airyai,
-                            [Arg()])
+                            [Arg(-1e8, 1e8)],
+                            rtol=1e-6)
+        assert_mpmath_equal(lambda z: sc.airy(z)[0],
+                            mpmath.airyai,
+                            [Arg(-1e3, 1e3)])
 
     def test_airyai_complex(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[0],
@@ -635,9 +645,14 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [ComplexArg()])
 
     def test_airyai_prime(self):
+        # oscillating function, limit range
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
-                            [Arg()])
+                            [Arg(-1e8, 1e8)], 
+                            rtol=1e-6)
+        assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
+                            mpmath.airyai(z, derivative=1),
+                            [Arg(-1e3, 1e3)])
 
     def test_airyai_prime_complex(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
@@ -645,9 +660,14 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [ComplexArg()])
 
     def test_airybi(self):
+        # oscillating function, limit range
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),
-                            [Arg()])
+                            [Arg(-1e8, 1e8)], 
+                            rtol=1e-6)
+        assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
+                            mpmath.airybi(z),
+                            [Arg(-1e3, 1e3)])
 
     def test_airybi_complex(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
@@ -655,9 +675,14 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [ComplexArg()])
 
     def test_airybi_prime(self):
+        # oscillating function, limit range
         assert_mpmath_equal(lambda z: sc.airy(z)[3], lambda z:
                             mpmath.airybi(z, derivative=1),
-                            [Arg()])
+                            [Arg(-1e8, 1e8)],
+                            rtol=1e-6)
+        assert_mpmath_equal(lambda z: sc.airy(z)[3], lambda z:
+                            mpmath.airybi(z, derivative=1),
+                            [Arg(-1e3, 1e3)])
 
     def test_airybi_prime_complex(self):
         assert_mpmath_equal(lambda z: sc.airy(z)[3], lambda z:
@@ -683,7 +708,8 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_besseli(self):
         assert_mpmath_equal(sc.iv,
                             _exception_to_nan(lambda v, z: mpmath.besseli(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg()])
+                            [Arg(-1e100, 1e100), Arg()],
+                            atol=1e-270)
 
     def test_besseli_complex(self):
         assert_mpmath_equal(lambda v, z: sc.iv(v.real, z),
@@ -746,7 +772,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(-1e100, 1e100), Arg(-1e8, 1e8)],
                             n=5000)
 
-    @knownfailure_overridable("sin(pi k) != sin_pi(k) at negative half-integer orders")
     def test_bessely_complex(self):
         def mpbessely(v, x):
             r = complex(mpmath.bessely(v, x, **HYPERKW))
@@ -771,18 +796,35 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [IntArg(-1000, 1000), Arg(-1e8, 1e8)])
 
     def test_beta(self):
-        def beta(a, b):
+        bad_points = []
+
+        def beta(a, b, nonzero=False):
             if a < -1e12 or b < -1e12:
                 # Function is defined here only at integers, but due
                 # to loss of precision this is numerically
                 # ill-defined. Don't compare values here.
                 return np.nan
+            if (a < 0 or b < 0) and (abs(float(a + b)) % 1) == 0:
+                # close to a zero of the function: mpmath and scipy
+                # will not round here the same, so the test needs to be
+                # run with an absolute tolerance
+                if nonzero:
+                    bad_points.append((float(a), float(b)))
+                    return np.nan
             return mpmath.beta(a, b)
+
         assert_mpmath_equal(sc.beta,
-                            beta,
+                            lambda a, b: beta(a, b, nonzero=True),
                             [Arg(), Arg()],
                             dps=400,
                             ignore_inf_sign=True)
+
+        assert_mpmath_equal(sc.beta,
+                            beta,
+                            np.array(bad_points),
+                            dps=400,
+                            ignore_inf_sign=True,
+                            atol=1e-14)
 
     def test_betainc(self):
         assert_mpmath_equal(sc.betainc,
@@ -790,17 +832,33 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(), Arg(), Arg()])
 
     def test_binom(self):
-        def binomial(n, k):
+        bad_points = []
+
+        def binomial(n, k, nonzero=False):
             if abs(k) > 1e8*(abs(n) + 1):
                 # The binomial is rapidly oscillating in this region,
                 # and the function is numerically ill-defined. Don't
                 # compare values here.
                 return np.nan
+            if n < k and abs(float(n-k) - np.round(float(n-k))) < 1e-15:
+                # close to a zero of the function: mpmath and scipy
+                # will not round here the same, so the test needs to be
+                # run with an absolute tolerance
+                if nonzero:
+                    bad_points.append((float(n), float(k)))
+                    return np.nan
             return mpmath.binomial(n, k)
+
         assert_mpmath_equal(sc.binom,
-                            binomial,
+                            lambda n, k: binomial(n, k, nonzero=True),
                             [Arg(), Arg()],
                             dps=400)
+
+        assert_mpmath_equal(sc.binom,
+                            binomial,
+                            np.array(bad_points),
+                            dps=400,
+                            atol=1e-14)
 
     @knownfailure_overridable("issues at negative orders")
     def test_chebyt_int(self):
