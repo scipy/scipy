@@ -266,10 +266,6 @@ class csr_matrix(_cs_matrix, IndexMixin):
                                       self.indptr, self.indices, self.data,
                                       num_samples, row, col, val)
                     return np.asmatrix(val)
-                elif row.ndim == 2 and row.shape[0] == 1:
-                    row = np.ravel(row)                   # [[[1],[2]],[1,2]]
-                    P = extractor(row, self.shape[0])
-                    return (P*self)[:,col]
 
         # If all else fails, try elementwise
         row, col = self._index_to_arrays(row, col)
