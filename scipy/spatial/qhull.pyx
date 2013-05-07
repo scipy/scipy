@@ -1579,7 +1579,7 @@ class Delaunay(_QhullUser):
     Attributes
     ----------
     points : ndarray of double, shape (npoints, ndim)
-        Points in the triangulation.
+        Coordinates of input points.
     simplices : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of the points forming the simplices in the triangulation.
     neighbors : ndarray of ints, shape (nsimplex, ndim+1)
@@ -2069,7 +2069,7 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
 
 class ConvexHull(_QhullUser):
     """
-    ConvexHull(points, furthest_site=False, qhull_options=None)
+    ConvexHull(points, incremental=False, qhull_options=None)
 
     Convex hulls in N dimensions.
 
@@ -2090,7 +2090,7 @@ class ConvexHull(_QhullUser):
     Attributes
     ----------
     points : ndarray of double, shape (npoints, ndim)
-        Points in the convex hull.
+        Coordinates of input points.
     simplices : ndarray of ints, shape (nfacet, ndim)
         Indices of points forming the simplical facets of the convex hull.
     neighbors : ndarray of ints, shape (nfacet, ndim)
@@ -2196,7 +2196,7 @@ class Voronoi(_QhullUser):
     Attributes
     ----------
     points : ndarray of double, shape (npoints, ndim)
-        Points used for constructing the Voronoi diagram.
+        Coordinates of input points.
     vertices : ndarray of double, shape (nvertices, ndim)
         Coordinates of the Voronoi vertices.
     ridge_points : ndarray of ints, shape (nridges, 2)
