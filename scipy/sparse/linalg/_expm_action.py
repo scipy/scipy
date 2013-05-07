@@ -553,13 +553,15 @@ def _expm_action_interval(A, B, start=None, stop=None,
     # Use an ndim=3 shape, such that the last two indices
     # are the ones that may be involved in level 3 BLAS operations.
     X = np.empty((nsamples, n, n0), dtype=float)
-    ell = 2
     t = t_q - t_0
     A = A - mu * ident
     A_1_norm = _exact_1_norm(A)
-    norm_info = LazyOperatorNormInfo(
-            t*A, A_1_norm=t*A_1_norm, ell=ell)
-    m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
+    if t*A_1_norm == 0:
+        m_star, s = 0, 1
+    else:
+        ell = 2
+        norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
+        m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
 
     # Compute the expm action up to the initial time point.
     X[0] = _expm_action_simple_core(A, B, t_0, mu, m_star, s)

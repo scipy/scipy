@@ -117,13 +117,30 @@ class TestExpmActionSimple(TestCase):
 
 class TestExpmActionInterval(TestCase):
 
-    def test_expm_action_status_0(self):
+    def test_expm_action_interval_matrix(self):
+        np.random.seed(1234)
+        start = 0.1
+        stop = 3.2
+        endpoint = True
+        for num in (14, 13, 2):
+            for n in (1, 2, 5, 20, 40):
+                for k in (1, 2):
+                    A = np.random.randn(n, n)
+                    B = np.random.randn(n, k)
+                    X = _expm_action.expm_action(A, B,
+                            start=start, stop=stop, num=num, endpoint=endpoint)
+                    samples = np.linspace(start=start, stop=stop,
+                            num=num, endpoint=endpoint)
+                    for solution, t in zip(X, samples):
+                        assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
+
+    def test_expm_action_interval_status_0(self):
         self._help_test_specific_expm_interval_status(0)
 
-    def test_expm_action_status_1(self):
+    def test_expm_action_interval_status_1(self):
         self._help_test_specific_expm_interval_status(1)
 
-    def test_expm_action_status_2(self):
+    def test_expm_action_interval_status_2(self):
         self._help_test_specific_expm_interval_status(2)
 
     def _help_test_specific_expm_interval_status(self, target_status):
