@@ -797,13 +797,41 @@ def ttest_rel(a,b,axis=None):
 ttest_rel.__doc__ = stats.ttest_rel.__doc__
 
 
-def chisquare(f_obs, f_exp=None):
+def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
+
     f_obs = ma.asarray(f_obs)
+
+    num_obs = f_obs.count(axis=axis)
+    if axis is not None:
+        reduced_shape = list(f_obs.shape)
+        reduced_shape[axis] = 1
+    else:
+        reduced_shape = (1,)
+
     if f_exp is None:
-        f_exp = ma.array([f_obs.mean(axis=0)] * len(f_obs))
-    f_exp = f_exp.astype(float)
-    chisq = ma.add.reduce((f_obs-f_exp)**2 / f_exp)
-    return chisq, stats.chisqprob(chisq, f_obs.count(0)-1)
+        # To avoid spurious warnings, we use num_obs_nz to calculate the mean.
+        # It replaces zeros in num_obs with 1.
+        num_obs_nz = np.maximum(num_obs, 1)
+        f_exp = np.atleast_1d(f_obs.sum(axis=axis) / num_obs_nz)
+        f_exp.shape = reduced_shape
+    else:
+        f_exp = np.asanyarray(f_exp, dtype=np.float64)
+        if f_exp.ndim > f_obs.ndim and axis >= 0:
+            # When f_obs and f_exp are broadcast in np.add.reduce (below),
+            # the result will have more dimensions than f_obs.ndim.  The
+            # `axis` argument refers to the axis *of f_obs*, so to preserve
+            # that meaning, we change `axis` to its equivalent negative value.
+            # This ensures that, for example,
+            #     chisquare([2,2,3], f_exp=[[2,2,3], [1,2,4]])
+            # (where the default axis=0 is used) does the Right Thing.
+            axis = -f_obs.ndim + axis
+
+    ddof = ma.asanyarray(ddof)
+
+    chisq = ma.add.reduce((f_obs - f_exp)**2 / f_exp, axis=axis)
+    p = stats.chisqprob(chisq, num_obs - 1 - ddof)
+    return chisq, p
+
 chisquare.__doc__ = stats.chisquare.__doc__
 
 
