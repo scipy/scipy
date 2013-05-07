@@ -72,12 +72,25 @@ def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
     Returns
     -------
     expm_A_B : ndarray
-         The result of the action :math:`e^A B`.
+         The result of the action :math:`e^{t_k A} B`.
 
     Notes
     -----
     The optional arguments defining the sequence of evenly spaced time points
     are compatible with the arguments of `numpy.linspace`.
+
+    The output ndarray shape is somewhat complicated so I explain it here.
+    The ndim of the output could be either 1, 2, or 3.
+    It would be 1 if you are computing the expm action on a single vector
+    at a single time point.
+    It would be 2 if you are computing the expm action on a vector
+    at multiple time points, or if you are computing the expm action
+    on a matrix at a single time point.
+    It would be 3 if you want the action on a matrix with multiple
+    columns at multiple time points.
+    If multiple time points are requested, expm_A_B[0] will always
+    be the action of the expm at the first time point,
+    regardless of whether the action is on a vector or a matrix.
 
     References
     ----------
@@ -502,8 +515,21 @@ def _expm_action_interval(A, B, start=None, stop=None,
         The operator whose exponential is of interest.
     B : ndarray
         The matrix to be multiplied by the matrix exponential of A.
+    start : scalar, optional
+        The starting time point of the sequence.
+    stop : scalar, optional
+        The end time point of the sequence, unless `endpoint` is set to False.
+        In that case, the sequence consists of all but the last of ``num + 1``
+        evenly spaced time points, so that `stop` is excluded.
+        Note that the step size changes when `endpoint` is False.
+    num : int, optional
+        Number of time points to use.
+    endpoint : bool, optional
+        If True, `stop` is the last time point.  Otherwise, it is not included.
     balance : bool
         Indicates whether or not to apply balancing.
+    status_only : bool
+        A flag that is set to True for some debugging and testing operations.
 
     Returns
     -------
