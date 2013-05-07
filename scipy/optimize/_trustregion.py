@@ -249,7 +249,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     result = Result(x=x, success=(warnflag==0), status=warnflag, fun=m(),
                     jac=m.jac(), nfev=nfun[0], njev=njac[0], nhev=nhess[0],
-                    nit=k)
+                    nit=k, message=status_messages[warnflag])
 
     if hess is not None:
         result['hess'] = m.hess()
