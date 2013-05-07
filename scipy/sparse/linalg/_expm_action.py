@@ -1,12 +1,7 @@
 """Compute the action of the matrix exponential.
 """
 
-#XXX This function is useful in its present form, but the publication from
-#XXX which it was implemented offers further enhancements which
-#XXX have not yet been implemented
-#XXX 1) Implement balancing.
-#XXX 2) Implement evaluation at linspace time points using algorithm (5.2).
-
+from __future__ import division, print_function, absolute_import
 
 import math
 
@@ -241,17 +236,17 @@ class MatrixPowerOperator(LinearOperator):
 
     def matvec(self, x):
         for i in range(self._p):
-            x = np.dot(self._A, x)
+            x = self._A.dot(x)
         return x
 
     def rmatvec(self, x):
         for i in range(self._p):
-            x = np.dot(x, self._A)
+            x = x.dot(self._A)
         return x
 
     def matmat(self, X):
         for i in range(self._p):
-            X = np.dot(self._A, X)
+            X= self._A.dot(X)
         return X
     
     @property
@@ -509,11 +504,14 @@ def _expm_action_interval(A, B, start=None, stop=None,
     Returns
     -------
     F : ndarray
-        :math:`e^{t A} B`
+        :math:`e^{t_k A} B`
 
     Notes
     -----
     This is algorithm (5.2) in Al-Mohy and Higham (2011).
+
+    There seems to be a typo, where line 15 of the algorithm should be
+    moved to line 6.5 (between lines 6 and 7).
 
     """
     if balance:
@@ -530,13 +528,19 @@ def _expm_action_interval(A, B, start=None, stop=None,
     u_d = 2**-53
     tol = u_d
     mu = _trace(A) / float(n)
-    samples, step = np.linspace(start, stop,
-            num=num, endpoint=endpoint, retstep=True)
+
+    # Get the linspace samples, attempting to preserve the linspace defaults.
+    linspace_kwargs = {'retstep' : True}
+    if num is not None:
+        linspace_kwargs['num'] = num
+    if endpoint is not None:
+        linspace_kwargs['endpoint'] = endpoint
+    samples, step = np.linspace(start, stop, **linspace_kwargs)
+
+    # Convert the linspace output to the notation used by the publication.
     nsamples = len(samples)
     if nsamples < 2:
         raise ValueError('at least two time points are required')
-
-    # Use the notation from the publication.
     q = nsamples - 1
     h = step
     t_0 = samples[0]
@@ -553,6 +557,11 @@ def _expm_action_interval(A, B, start=None, stop=None,
     norm_info = LazyOperatorNormInfo(
             t*A_next, A_1_norm=t*A_next_1_norm, ell=ell)
     m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
+
+    #XXX
+    A = A_next
+    A_1_norm = A_next_1_norm
+
     X[0] = _expm_action_simple_core(A, B, t_0, mu, m_star, s)
 
     # If the number of time steps is short compared to the number
@@ -560,39 +569,54 @@ def _expm_action_interval(A, B, start=None, stop=None,
     if q <= s:
         for k in range(q):
             X[k+1] = _expm_action_simple_core(A, X[k], h, mu, m_star, s)
+        #raise Exception('large rescale')
         return X
 
-    A = A_next
+    #XXX
+    #A = A_next
     d = q // s
     j = q // d
     r = q - d*j
     d_tilde = d
     # XXX recompute m_star?  I don't follow the paper...
-    K = np.empty((m_star, n, n0), dtype=float)
-    Z = X[0]
+
+    # XXX this is experimental
+    # XXX do this more efficiently...
+    norm_info_prime = LazyOperatorNormInfo(
+            d*A, A_1_norm=d*A_1_norm, ell=ell)
+    m_star_prime, s_prime = _fragment_3_1(norm_info_prime, n0, tol, ell=ell)
+    # update m_star
+    m_star = m_star_prime
+
+    # Build K dynamically, instead of pre-allocating an ndarray.
+    K = []
+    Z = np.array(X[0])
     for i in range(1, j+2):
         if i > j:
             d_tilde = r
-        K[0] = Z
-        m_hat = 0
+        K.append(np.array(Z))
+        m_hat = -1
         for k in range(d_tilde):
-            F = Z
+            F = np.array(Z)
             c1 = _exact_inf_norm(Z)
             for p in range(m_star):
 
                 # Form a block of K if it is not already formed.
-                if p+1 > m_hat:
-                    K[p+1] = (h / float(p+1)) * A.dot(K[p])
+                if len(K) == p+1:
+                    K_new = (h / float(p+1)) * A.dot(K[-1])
+                    K.append(K_new)
 
-                F = F + (k ** (p+1)) * K[p]
-                c2 = (k ** (p+1)) * _exact_inf_norm(K[p+1])
+                coeff = float(pow(k+1, p+1))
+                F = F + coeff * K[p+1]
+                inf_norm_K_p_1 = _exact_inf_norm(K[p+1])
+                c2 = coeff * inf_norm_K_p_1
                 if c1 + c2 <= tol * _exact_inf_norm(F):
                     break
                 c1 = c2
-            m_hat = max(m_hat, p+1)
-            X[k+(i-1)*d] = math.exp(k*h*mu) * F
+            m_hat = max(m_hat, p)
+            X[k+(i-1)*d] = math.exp((k+1)*h*mu) * F
         if i <= j:
-            Z = X[i*d]
+            Z = np.array(X[i*d])
     return X
 
 

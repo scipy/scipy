@@ -90,6 +90,17 @@ class TestExpmActionSimple(TestCase):
                 expected = np.dot(scipy.linalg.expm(t*A), B)
                 assert_allclose(observed, expected)
 
+    def test_scaled_expm_action_single_timepoint(self):
+        np.random.seed(1234)
+        t = 0.1
+        n = 5
+        k = 2
+        A = np.random.randn(n, n)
+        B = np.random.randn(n, k)
+        observed = _expm_action._expm_action_simple(A, B, t=t)
+        expected = scipy.linalg.expm(t*A).dot(B)
+        assert_allclose(observed, expected)
+
     def test_sparse_expm_action(self):
         np.random.seed(1234)
         n = 40
@@ -101,6 +112,7 @@ class TestExpmActionSimple(TestCase):
             observed = _expm_action.expm_action(A, B)
             expected = scipy.linalg.expm(A).dot(B)
             assert_allclose(observed, expected)
+
 
 
 class TestExpmActionInterval(TestCase):
@@ -118,6 +130,43 @@ class TestExpmActionInterval(TestCase):
         X = _expm_action.expm_action(A, B,
                 start=start, stop=stop, num=num, endpoint=endpoint)
         assert_equal(X.shape, (num, n, k))
+
+    def test_expm_action_short_interval(self):
+        np.random.seed(1234)
+        start = 0.1
+        stop = 3.2
+        num = 2
+        endpoint = True
+        n = 5
+        k = 2
+        nsamples = 15
+        for i in range(nsamples):
+            A = scipy.linalg.inv(np.random.randn(n, n))
+            B = np.random.randn(n, k)
+            X = _expm_action.expm_action(A, B,
+                    start=start, stop=stop, num=num, endpoint=endpoint)
+            samples = np.linspace(start, stop, num, endpoint)
+            for sample_index, t in enumerate(samples):
+                expected = scipy.linalg.expm(t*A).dot(B)
+                assert_allclose(X[sample_index], expected)
+
+    def test_expm_action_long_interval(self):
+        np.random.seed(1234)
+        start = 0.1
+        stop = 3.2
+        num = 40
+        endpoint = True
+        n = 5
+        k = 2
+        nsamples = 15
+        for i in range(nsamples):
+            A = scipy.linalg.inv(np.random.randn(n, n))
+            B = np.random.randn(n, k)
+            X = _expm_action.expm_action(A, B,
+                    start=start, stop=stop, num=num, endpoint=endpoint)
+            samples = np.linspace(start, stop, num, endpoint)
+            for sample_index, t in enumerate(samples):
+                assert_allclose(X[sample_index], scipy.linalg.expm(t*A).dot(B))
 
 
 if __name__ == '__main__':
