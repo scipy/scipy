@@ -122,7 +122,6 @@ def expm(A):
     Q = -U + V  # q_m(A) : denominator
 
     if Aissparse:
-        from scipy.sparse.linalg import spsolve
         R = spsolve(Q, P)
     else:
         R = solve(Q,P)
