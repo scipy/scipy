@@ -150,23 +150,29 @@ class TestExpmActionInterval(TestCase):
                 expected = scipy.linalg.expm(t*A).dot(B)
                 assert_allclose(X[sample_index], expected)
 
-    def test_expm_action_long_interval(self):
+    def test_expm_action_status_1(self):
         np.random.seed(1234)
         start = 0.1
         stop = 3.2
-        num = 40
+        num = 19
         endpoint = True
         n = 5
         k = 2
-        nsamples = 15
+        nsamples = 30
         for i in range(nsamples):
-            A = scipy.linalg.inv(np.random.randn(n, n))
+            A = np.random.randn(n, n)
             B = np.random.randn(n, k)
-            X = _expm_action.expm_action(A, B,
+            X, status = _expm_action._expm_action_interval(A, B,
                     start=start, stop=stop, num=num, endpoint=endpoint)
-            samples = np.linspace(start, stop, num, endpoint)
-            for sample_index, t in enumerate(samples):
-                assert_allclose(X[sample_index], scipy.linalg.expm(t*A).dot(B))
+            if status == 1:
+                samples = np.linspace(start, stop, num, endpoint)
+                for sample_index, t in enumerate(samples):
+                    assert_allclose(
+                            X[sample_index],
+                            scipy.linalg.expm(t*A).dot(B))
+                break
+        if status != 1:
+            raise Exception('failed to find a status-1 expm interval')
 
 
 if __name__ == '__main__':

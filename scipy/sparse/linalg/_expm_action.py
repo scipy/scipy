@@ -96,9 +96,10 @@ def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
 
     """
     if all(arg is None for arg in (start, stop, num, endpoint)):
-        return _expm_action_simple(A, B)
+        X =  _expm_action_simple(A, B)
     else:
-        return _expm_action_interval(A, B, start, stop, num, endpoint)
+        X, status = _expm_action_interval(A, B, start, stop, num, endpoint)
+    return X
 
 
 def _expm_action_simple(A, B, t=1.0, balance=False):
@@ -505,6 +506,8 @@ def _expm_action_interval(A, B, start=None, stop=None,
     -------
     F : ndarray
         :math:`e^{t_k A} B`
+    status : int
+        An integer status for testing and debugging.
 
     Notes
     -----
@@ -558,65 +561,55 @@ def _expm_action_interval(A, B, start=None, stop=None,
             t*A_next, A_1_norm=t*A_next_1_norm, ell=ell)
     m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
 
-    #XXX
+    # This appears to fix a typo in the publication.
     A = A_next
     A_1_norm = A_next_1_norm
 
+    # Compute the expm action up to the initial time point.
     X[0] = _expm_action_simple_core(A, B, t_0, mu, m_star, s)
 
-    # If the number of time steps is short compared to the number
-    # of requested scalings, then this is not so complicated.
+    # Compute the expm action at the rest of the time points.
     if q <= s:
-        for k in range(q):
-            X[k+1] = _expm_action_simple_core(A, X[k], h, mu, m_star, s)
-        #raise Exception('large rescale')
-        return X
+        return _expm_action_interval_core_0(A, X, h, mu, m_star, s, q)
+    elif q > s and not (q % s):
+        return _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol)
+    else:
+        return None, 2
 
-    #XXX
-    #A = A_next
+
+def _expm_action_interval_core_0(A, X, h, mu, m_star, s, q):
+    """
+    A helper function, for the case q <= s.
+    """
+    for k in range(q):
+        X[k+1] = _expm_action_simple_core(A, X[k], h, mu, m_star, s)
+    return X, 0
+
+
+def _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol):
+    """
+    A helper function, for the case q > s and q % s == 0.
+    """
     d = q // s
-    j = q // d
-    r = q - d*j
-    d_tilde = d
-    # XXX recompute m_star?  I don't follow the paper...
-
-    # XXX this is experimental
-    # XXX do this more efficiently...
-    norm_info_prime = LazyOperatorNormInfo(
-            d*A, A_1_norm=d*A_1_norm, ell=ell)
-    m_star_prime, s_prime = _fragment_3_1(norm_info_prime, n0, tol, ell=ell)
-    # update m_star
-    m_star = m_star_prime
-
-    # Build K dynamically, instead of pre-allocating an ndarray.
-    K = []
-    Z = np.array(X[0])
-    for i in range(1, j+2):
-        if i > j:
-            d_tilde = r
-        K.append(np.array(Z))
-        m_hat = -1
-        for k in range(d_tilde):
-            F = np.array(Z)
-            c1 = _exact_inf_norm(Z)
-            for p in range(m_star):
-
-                # Form a block of K if it is not already formed.
-                if len(K) == p+1:
-                    K_new = (h / float(p+1)) * A.dot(K[-1])
-                    K.append(K_new)
-
-                coeff = float(pow(k+1, p+1))
-                F = F + coeff * K[p+1]
-                inf_norm_K_p_1 = _exact_inf_norm(K[p+1])
+    n, n0 = X.shape[1], X.shape[2]
+    K = np.empty((m_star + 1, n, n0), dtype=float)
+    for i in range(s):
+        Z = np.array(X[i*d])
+        # Precompute K in a way that is very inefficient.
+        K[0] = Z
+        for p in range(1, m_star+1):
+            K[p] = h * A.dot(K[p-1]) / float(p)
+        for k in range(1, d+1):
+            F = K[0]
+            c1 = _exact_inf_norm(F)
+            for p in range(1, m_star+1):
+                coeff = float(pow(k, p))
+                F = F + coeff * K[p]
+                inf_norm_K_p_1 = _exact_inf_norm(K[p])
                 c2 = coeff * inf_norm_K_p_1
                 if c1 + c2 <= tol * _exact_inf_norm(F):
                     break
                 c1 = c2
-            m_hat = max(m_hat, p)
-            X[k+(i-1)*d] = math.exp((k+1)*h*mu) * F
-        if i <= j:
-            Z = np.array(X[i*d])
-    return X
-
+            X[k + i*d] = math.exp(k*h*mu) * F
+    return X, 1
 
