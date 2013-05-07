@@ -10,6 +10,7 @@ from __future__ import division, print_function, absolute_import
 import math
 
 import numpy as np
+from numpy.linalg import matrix_power
 from numpy import array, eye, dot, sqrt, double, exp, random
 from numpy.testing import (TestCase, run_module_suite,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
@@ -110,6 +111,7 @@ class TestExpM(TestCase):
             D = np.random.randn(n, k)
             op = ProductOperator(A, B, C)
             assert_allclose(op.matmat(D), A.dot(B).dot(C).dot(D))
+            assert_allclose(op.T.matmat(D), (A.dot(B).dot(C)).T.dot(D))
 
     def test_matrix_power_operator(self):
         random.seed(1234)
@@ -121,7 +123,8 @@ class TestExpM(TestCase):
             A = np.random.randn(n, n)
             B = np.random.randn(n, k)
             op = MatrixPowerOperator(A, p)
-            assert_allclose(op.matmat(B), np.linalg.matrix_power(A, p).dot(B))
+            assert_allclose(op.matmat(B), matrix_power(A, p).dot(B))
+            assert_allclose(op.T.matmat(B), matrix_power(A, p).T.dot(B))
 
 
 if __name__ == "__main__":
