@@ -117,20 +117,6 @@ class TestExpmActionSimple(TestCase):
 
 class TestExpmActionInterval(TestCase):
 
-    def test_expm_action_interval_shape(self):
-        np.random.seed(1234)
-        start = 0.1
-        stop = 3.2
-        num = 10
-        endpoint = True
-        n = 5
-        k = 2
-        A = np.random.randn(n, n)
-        B = np.random.randn(n, k)
-        X = _expm_action.expm_action(A, B,
-                start=start, stop=stop, num=num, endpoint=endpoint)
-        assert_equal(X.shape, (num, n, k))
-
     def test_expm_action_status_0(self):
         self._help_test_specific_expm_interval_status(0)
 
@@ -148,20 +134,25 @@ class TestExpmActionInterval(TestCase):
         endpoint = True
         n = 5
         k = 2
-        nsamples = 10
-        for num in [14, 13, 2] * nsamples:
+        nrepeats = 10
+        nsuccesses = 0
+        for num in [14, 13, 2] * nrepeats:
             A = np.random.randn(n, n)
             B = np.random.randn(n, k)
-            X, status = _expm_action._expm_action_interval(A, B,
-                    start=start, stop=stop, num=num, endpoint=endpoint)
+            status = _expm_action._expm_action_interval(A, B,
+                    start=start, stop=stop, num=num, endpoint=endpoint,
+                    status_only=True)
             if status == target_status:
-                samples = np.linspace(start, stop, num, endpoint)
-                for sample_index, t in enumerate(samples):
-                    assert_allclose(
-                            X[sample_index],
-                            scipy.linalg.expm(t*A).dot(B))
-                break
-        if status != target_status:
+                X, status = _expm_action._expm_action_interval(A, B,
+                        start=start, stop=stop, num=num, endpoint=endpoint,
+                        status_only=False)
+                assert_equal(X.shape, (num, n, k))
+                samples = np.linspace(start=start, stop=stop,
+                        num=num, endpoint=endpoint)
+                for solution, t in zip(X, samples):
+                    assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
+                nsuccesses += 1
+        if not nsuccesses:
             msg = 'failed to find a status-' + str(target_status) + ' interval'
             raise Exception(msg)
 

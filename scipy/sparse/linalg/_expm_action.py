@@ -489,7 +489,7 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
 
 
 def _expm_action_interval(A, B, start=None, stop=None,
-        num=None, endpoint=None, balance=False):
+        num=None, endpoint=None, balance=False, status_only=False):
     """
     Compute the action of the matrix exponential at multiple time points.
 
@@ -555,26 +555,31 @@ def _expm_action_interval(A, B, start=None, stop=None,
     X = np.empty((nsamples, n, n0), dtype=float)
     ell = 2
     t = t_q - t_0
-    A_next = A - mu * ident
-    A_next_1_norm = _exact_1_norm(A_next)
+    A = A - mu * ident
+    A_1_norm = _exact_1_norm(A)
     norm_info = LazyOperatorNormInfo(
-            t*A_next, A_1_norm=t*A_next_1_norm, ell=ell)
+            t*A, A_1_norm=t*A_1_norm, ell=ell)
     m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
-
-    # This appears to fix a typo in the publication.
-    A = A_next
-    A_1_norm = A_next_1_norm
 
     # Compute the expm action up to the initial time point.
     X[0] = _expm_action_simple_core(A, B, t_0, mu, m_star, s)
 
     # Compute the expm action at the rest of the time points.
     if q <= s:
-        return _expm_action_interval_core_0(A, X, h, mu, m_star, s, q)
+        if status_only:
+            return 0
+        else:
+            return _expm_action_interval_core_0(A, X, h, mu, m_star, s, q)
     elif q > s and not (q % s):
-        return _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol)
+        if status_only:
+            return 1
+        else:
+            return _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol)
     elif q > s and (q % s):
-        return _expm_action_interval_core_2(A, X, h, mu, m_star, s, q, tol)
+        if status_only:
+            return 2
+        else:
+            return _expm_action_interval_core_2(A, X, h, mu, m_star, s, q, tol)
     else:
         raise Exception('internal error')
 
@@ -636,8 +641,9 @@ def _expm_action_interval_core_2(A, X, h, mu, m_star, s, q, tol):
             F = K[0]
             c1 = _exact_inf_norm(F)
             for p in range(1, m_star+1):
-                if p > high_p:
+                if p == high_p + 1:
                     K[p] = h * A.dot(K[p-1]) / float(p)
+                    high_p = p
                 coeff = float(pow(k, p))
                 F = F + coeff * K[p]
                 inf_norm_K_p_1 = _exact_inf_norm(K[p])
