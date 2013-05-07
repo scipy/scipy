@@ -2738,6 +2738,21 @@ def show_options(solver, method=None):
         maxiter : int
             Maximum number of iterations.
 
+    * dogleg options:
+        initial_trust_radius : float
+            Initial trust-region radius.
+        max_trust_radius : float
+            Maximum value of the trust-region radius. No steps that are longer
+            than this value will be proposed.
+        eta : float
+            Trust region related acceptance stringency for proposed steps.
+        gtol : float
+            Gradient norm must be less than `gtol` before successful
+            termination.
+
+    * trust-ncg options:
+        see dogleg options.
+
     ** root options
 
     * hybrd options:

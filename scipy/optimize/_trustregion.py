@@ -39,21 +39,21 @@ class BaseQuadraticSubproblem(object):
 
     @property
     def fun(self):
-        """Value of objective function at current iterate."""
+        """Value of objective function at current iteration."""
         if self._f is None:
             self._f = self._fun(self._x)
         return self._f
 
     @property
     def jac(self):
-        """Value of jacobian of objective function at current iterate."""
+        """Value of jacobian of objective function at current iteration."""
         if self._g is None:
             self._g = self._jac(self._x)
         return self._g
 
     @property
     def hess(self):
-        """Value of hessian of objective function at current iterate."""
+        """Value of hessian of objective function at current iteration."""
         if self._h is None:
             self._h = self._hess(self._x)
         return self._h
@@ -66,7 +66,7 @@ class BaseQuadraticSubproblem(object):
 
     @property
     def jac_mag(self):
-        """Magniture of jacobian of objective function at current iterate."""
+        """Magniture of jacobian of objective function at current iteration."""
         if self._g_mag is None:
             self._g_mag = scipy.linalg.norm(self.jac)
         return self._g_mag
