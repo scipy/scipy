@@ -21,7 +21,7 @@ import numpy as np
 import scipy.linalg
 import scipy.special
 from scipy.linalg.misc import norm
-from scipy.linalg.basic import solve, inv
+from scipy.linalg.basic import solve
 
 import scipy.sparse
 import scipy.sparse.linalg
