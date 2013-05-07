@@ -13,10 +13,10 @@ from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
 from . import sparsetools
 from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
-     getdtype, isscalarlike, isintlike
+     getdtype, isscalarlike, isintlike, IndexMixin
 
 
-class _cs_matrix(_data_matrix, _minmax_mixin):
+class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     """base matrix class for compressed row and column oriented matrices"""
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
@@ -460,68 +460,84 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
 
         return self.__class__( (data,indices,indptr), shape=shape )
 
+    def __setitem__(self, index, x):
+        # Process arrays from IndexMixin
+        i, j = self._unpack_index(index)
+        i, j = self._index_to_arrays(i, j)
 
-    def __setitem__(self, key, val):
-        if isinstance(key, tuple):
-            row,col = key
-            if not (isscalarlike(row) and isscalarlike(col)):
-                raise NotImplementedError("Fancy indexing in assignment not "
-                                          "supported for csr matrices.")
-            M, N = self.shape
-            if (row < 0):
-                row += M
-            if (col < 0):
-                col += N
-            if not (0<=row<M) or not (0<=col<N):
-                raise IndexError("index out of bounds")
+        if isspmatrix(x):
+            x = x.toarray()
 
-            major_index, minor_index = self._swap((row,col))
+        # Make x and i into the same shape
+        x = np.asarray(x, dtype=self.dtype)
+        x, _ = np.broadcast_arrays(x, i)
 
-            start = self.indptr[major_index]
-            end   = self.indptr[major_index+1]
-            indxs = np.where(minor_index == self.indices[start:end])[0]
+        if x.shape != i.shape:
+            raise ValueError("shape mismatch in assignment")
 
-            num_matches = len(indxs)
+        # Set values
+        for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
+            self._set_one(ii, jj, xx)
 
 
-            if not np.isscalar(val):
-                raise ValueError('setting an array element with a sequence')
+    def _set_one(self, row, col, val):
+        """ Set one value at a time """
+        if not (isscalarlike(row) and isscalarlike(col)):
+            raise NotImplementedError("Fancy indexing in assignment not "
+                                      "supported for csr matrices.")
+        M, N = self.shape
+        if (row < 0):
+            row += M
+        if (col < 0):
+            col += N
+        if not (0<=row<M) or not (0<=col<N):
+            raise IndexError("index out of bounds")
 
-            val = self.dtype.type(val)
+        major_index, minor_index = self._swap((row,col))
 
-            if num_matches == 0:
-                #entry not already present
-                warn('changing the sparsity structure of a %s_matrix is expensive. ' \
-                        'lil_matrix is more efficient.' % self.format, \
-                        SparseEfficiencyWarning)
+        start = self.indptr[major_index]
+        end   = self.indptr[major_index+1]
+        indxs = np.where(minor_index == self.indices[start:end])[0]
 
-                if self.has_sorted_indices:
-                    # preserve sorted order
-                    newindx = start + self.indices[start:end].searchsorted(minor_index)
-                else:
-                    newindx = start
+        num_matches = len(indxs)
 
-                val         = np.array([val],         dtype=self.data.dtype)
-                minor_index = np.array([minor_index], dtype=self.indices.dtype)
 
-                self.data    = np.concatenate((self.data[:newindx],    val,         self.data[newindx:]))
-                self.indices = np.concatenate((self.indices[:newindx], minor_index, self.indices[newindx:]))
-                self.indptr  = self.indptr.copy()
+        if not np.isscalar(val):
+            raise ValueError('setting an array element with a sequence')
 
-                self.indptr[major_index+1:] += 1
+        val = self.dtype.type(val)
 
-            elif num_matches == 1:
-                #entry appears exactly once
-                self.data[start:end][indxs[0]] = val
+        if num_matches == 0:
+            #entry not already present
+            warn('changing the sparsity structure of a %s_matrix is expensive. ' \
+                     'lil_matrix is more efficient.' % self.format, \
+                     SparseEfficiencyWarning)
+
+            if self.has_sorted_indices:
+                # preserve sorted order
+                newindx = start + self.indices[start:end].searchsorted(minor_index)
             else:
-                #entry appears more than once
-                raise ValueError('nonzero entry (%d,%d) occurs more than once'
-                                % (row,col))
+                newindx = start
+                
+            val = np.array([val], dtype=self.data.dtype)
+            minor_index = np.array([minor_index], dtype=self.indices.dtype)
+            self.data = np.concatenate((self.data[:newindx], val,
+                                        self.data[newindx:]))
+            self.indices = np.concatenate((self.indices[:newindx], 
+                                           minor_index, 
+                                               self.indices[newindx:]))
+            self.indptr = self.indptr.copy()
+            self.indptr[major_index+1:] += 1
 
-            self.check_format(full_check=True)
+        elif num_matches == 1:
+                #entry appears exactly once
+            self.data[start:end][indxs[0]] = val
         else:
-            # We should allow slices here!
-            raise IndexError("invalid index")
+            #entry appears more than once
+            raise ValueError('nonzero entry (%d,%d) occurs more than once'
+                             % (row,col))
+
+        self.check_format(full_check=True)
 
     ######################
     # Conversion methods #
