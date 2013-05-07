@@ -1,4 +1,4 @@
-"""Test functions for the sparse.linalg._expm_action module
+"""Test functions for the sparse.linalg._expm_multiply module
 """
 
 from __future__ import division, print_function, absolute_import
@@ -8,7 +8,9 @@ from numpy.testing import (TestCase, run_module_suite, assert_allclose,
         assert_, assert_equal, decorators)
 
 import scipy.linalg
-from scipy.sparse.linalg import _expm_action
+from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
+        _onenormest_matrix_power, expm_action, _expm_action_simple,
+        _expm_action_interval)
 
 
 def less_than_or_close(a, b):
@@ -21,19 +23,19 @@ class TestExpmActionSimple(TestCase):
     """
 
     def test_theta_monotonicity(self):
-        pairs = sorted(_expm_action._theta.items())
+        pairs = sorted(_theta.items())
         for (m_a, theta_a), (m_b, theta_b) in zip(pairs[:-1], pairs[1:]):
             assert_(theta_a < theta_b)
 
     def test_p_max_default(self):
         m_max = 55
         expected_p_max = 8
-        observed_p_max = _expm_action._compute_p_max(m_max)
+        observed_p_max = _compute_p_max(m_max)
         assert_equal(observed_p_max, expected_p_max)
 
     def test_p_max_range(self):
         for m_max in range(1, 55+1):
-            p_max = _expm_action._compute_p_max(m_max)
+            p_max = _compute_p_max(m_max)
             assert_(p_max*(p_max - 1) <= m_max + 1)
             p_too_big = p_max + 1
             assert_(p_too_big*(p_too_big - 1) > m_max + 1)
@@ -49,7 +51,7 @@ class TestExpmActionSimple(TestCase):
                     M = np.identity(n)
                 else:
                     M = np.dot(M, A)
-                estimated = _expm_action._onenormest_matrix_power(A, p)
+                estimated = _onenormest_matrix_power(A, p)
                 exact = np.linalg.norm(M, 1)
                 assert_(less_than_or_close(estimated, exact))
                 assert_(less_than_or_close(exact, 3*estimated))
@@ -62,7 +64,7 @@ class TestExpmActionSimple(TestCase):
         for i in range(nsamples):
             A = scipy.linalg.inv(np.random.randn(n, n))
             B = np.random.randn(n, k)
-            observed = _expm_action.expm_action(A, B)
+            observed = expm_action(A, B)
             expected = np.dot(scipy.linalg.expm(A), B)
             assert_allclose(observed, expected)
 
@@ -73,7 +75,7 @@ class TestExpmActionSimple(TestCase):
         for i in range(nsamples):
             A = scipy.linalg.inv(np.random.randn(n, n))
             v = np.random.randn(n)
-            observed = _expm_action.expm_action(A, v)
+            observed = expm_action(A, v)
             expected = np.dot(scipy.linalg.expm(A), v)
             assert_allclose(observed, expected)
 
@@ -86,7 +88,7 @@ class TestExpmActionSimple(TestCase):
             for t in (0.2, 1.0, 1.5):
                 A = scipy.linalg.inv(np.random.randn(n, n))
                 B = np.random.randn(n, k)
-                observed = _expm_action._expm_action_simple(A, B, t=t)
+                observed = _expm_action_simple(A, B, t=t)
                 expected = np.dot(scipy.linalg.expm(t*A), B)
                 assert_allclose(observed, expected)
 
@@ -97,7 +99,7 @@ class TestExpmActionSimple(TestCase):
         k = 2
         A = np.random.randn(n, n)
         B = np.random.randn(n, k)
-        observed = _expm_action._expm_action_simple(A, B, t=t)
+        observed = _expm_action_simple(A, B, t=t)
         expected = scipy.linalg.expm(t*A).dot(B)
         assert_allclose(observed, expected)
 
@@ -109,7 +111,7 @@ class TestExpmActionSimple(TestCase):
         for i in range(nsamples):
             A = scipy.sparse.rand(n, n, density=0.05)
             B = np.random.randn(n, k)
-            observed = _expm_action.expm_action(A, B)
+            observed = expm_action(A, B)
             expected = scipy.linalg.expm(A).dot(B)
             assert_allclose(observed, expected)
 
@@ -129,7 +131,7 @@ class TestExpmActionInterval(TestCase):
             B = np.random.randn(n, k)
             v = np.random.randn(n)
             for target in (B, v):
-                X = _expm_action.expm_action(A, target,
+                X = expm_action(A, target,
                         start=start, stop=stop, num=num, endpoint=endpoint)
                 samples = np.linspace(start=start, stop=stop,
                         num=num, endpoint=endpoint)
@@ -146,7 +148,7 @@ class TestExpmActionInterval(TestCase):
             for n in (1, 2, 5, 20, 40):
                 A = scipy.linalg.inv(np.random.randn(n, n))
                 v = np.random.randn(n)
-                X = _expm_action.expm_action(A, v,
+                X = expm_action(A, v,
                         start=start, stop=stop, num=num, endpoint=endpoint)
                 samples = np.linspace(start=start, stop=stop,
                         num=num, endpoint=endpoint)
@@ -163,7 +165,7 @@ class TestExpmActionInterval(TestCase):
                 for k in (1, 2):
                     A = scipy.linalg.inv(np.random.randn(n, n))
                     B = np.random.randn(n, k)
-                    X = _expm_action.expm_action(A, B,
+                    X = expm_action(A, B,
                             start=start, stop=stop, num=num, endpoint=endpoint)
                     samples = np.linspace(start=start, stop=stop,
                             num=num, endpoint=endpoint)
@@ -192,11 +194,11 @@ class TestExpmActionInterval(TestCase):
         for num in [14, 13, 2] * nrepeats:
             A = np.random.randn(n, n)
             B = np.random.randn(n, k)
-            status = _expm_action._expm_action_interval(A, B,
+            status = _expm_action_interval(A, B,
                     start=start, stop=stop, num=num, endpoint=endpoint,
                     status_only=True)
             if status == target_status:
-                X, status = _expm_action._expm_action_interval(A, B,
+                X, status = _expm_action_interval(A, B,
                         start=start, stop=stop, num=num, endpoint=endpoint,
                         status_only=False)
                 assert_equal(X.shape, (num, n, k))
