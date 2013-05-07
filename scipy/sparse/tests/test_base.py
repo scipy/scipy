@@ -1570,8 +1570,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 # Matrix class based tests
 #------------------------------------------------------------------------------
 
-class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False)):
-    #                            fancy_multidim_indexing=False)):
+class TestCSR(sparse_test_class()):
     spmatrix = csr_matrix
 
     def test_constructor1(self):
@@ -1698,16 +1697,6 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False)):
         if isspmatrix(SIJ):
             SIJ = SIJ.todense()
         assert_equal(SIJ, D[I,J])
-
-    """
-    @dec.knownfailureif(True, "CSR not implemented")
-    def test_slicing_3(self):
-        pass
-
-    @dec.knownfailureif(True, "CSR not implemented")
-    def test_fancy_indexing_boolean(self):
-        pass
-    """
 
 class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
