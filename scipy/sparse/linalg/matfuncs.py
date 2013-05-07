@@ -24,10 +24,11 @@ from scipy.linalg.misc import norm
 from scipy.linalg.basic import solve, inv
 
 import scipy.sparse
+import scipy.sparse.linalg
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import spsolve
-
+from scipy.sparse.linalg import LinearOperator
 
 def inv(A):
     """
@@ -133,6 +134,202 @@ def expm(A):
     return R
 
 
+
+def _exact_1_norm(A):
+    # A compatibility function which should eventually disappear.
+    # This is copypasted from expm_action.
+    if scipy.sparse.isspmatrix(A):
+        return max(abs(A).sum(axis=0).flat)
+    else:
+        return np.linalg.norm(A, 1)
+
+def _ident_like(A):
+    # A compatibility function which should eventually disappear.
+    # This is copypasted from expm_action.
+    if scipy.sparse.isspmatrix(A):
+        return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
+                dtype=A.dtype, format=A.format)
+    else:
+        return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
+
+def _count_nonzero(A):
+    # A compatibility function which should eventually disappear.
+    #XXX There should be a better way to do this when A is sparse
+    #XXX in the traditional sense.
+    if isspmatrix(A):
+        return np.count_nonzero(A.todense())
+    else:
+        return np.count_nonzero(A)
+
+def _is_upper_triangular(A):
+    # This function could possibly be of wider interest.
+    if isspmatrix(A):
+        return _count_nonzero(scipy.sparse.tril(A, -1)) == 0
+    else:
+        return _count_nonzero(np.tril(A, -1)) == 0
+
+
+class MatrixPowerOperator(LinearOperator):
+
+    def __init__(self, A, p):
+        if A.ndim != 2 or A.shape[0] != A.shape[1]:
+            raise ValueError('expected A to be like a square matrix')
+        if p < 0:
+            raise ValueError('expected p to be a non-negative integer')
+        self._A = A
+        self._p = p
+        self.ndim = A.ndim
+        self.shape = A.shape
+
+    def matvec(self, x):
+        for i in range(self._p):
+            x = self._A.dot(x)
+        return x
+
+    def rmatvec(self, x):
+        for i in range(self._p):
+            x = x.dot(self._A)
+        return x
+
+    def matmat(self, X):
+        for i in range(self._p):
+            X= self._A.dot(X)
+        return X
+    
+    @property
+    def T(self):
+        return MatrixPowerOperator(self._A.T, self._p)
+
+
+class ProductOperator(LinearOperator):
+    """
+    For now, this is limited to products of multiple square matrices.
+    """
+
+    def __init__(self, *args):
+        for A in args:
+            if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+                raise ValueError(
+                        'For now, the ProductOperator implementation is '
+                        'limited to the product of multiple square matrices.')
+        if args:
+            n = args[0].shape[0]
+            for A in args:
+                for d in A.shape:
+                    if d != n:
+                        raise ValueError(
+                                'The square matrices of the ProductOperator '
+                                'must all have the same shape.')
+            self.shape = (n, n)
+            self.ndim = len(self.shape)
+        self._operator_sequence = args
+
+    def matvec(self, x):
+        for A in reversed(self._operator_sequence):
+            x = A.dot(x)
+        return x
+
+    def rmatvec(self, x):
+        for A in self._operator_sequence:
+            x = x.dot(A)
+        return x
+
+    def matmat(self, X):
+        for A in reversed(self._operator_sequence):
+            X = A.dot(X)
+        return X
+    
+    @property
+    def T(self):
+        T_args = [A.T for A in reversed(self._operator_sequence)]
+        return ProductOperator(*T_args)
+
+
+def _onenormest_matrix_power(A, p,
+        t=2, itmax=5, compute_v=False, compute_w=False):
+    """
+    Efficiently estimate the 1-norm of A^p.
+
+    Parameters
+    ----------
+    A : ndarray
+        Matrix whose 1-norm of a power is to be computed.
+    p : int
+        Non-negative integer power.
+    t : int, optional
+        A positive parameter controlling the tradeoff between
+        accuracy versus time and memory usage.
+        Larger values take longer and use more memory
+        but give more accurate output.
+    itmax : int, optional
+        Use at most this many iterations.
+    compute_v : bool, optional
+        Request a norm-maximizing linear operator input vector if True.
+    compute_w : bool, optional
+        Request a norm-maximizing linear operator output vector if True.
+
+    Returns
+    -------
+    est : float
+        An underestimate of the 1-norm of the sparse matrix.
+    v : ndarray, optional
+        The vector such that ||Av||_1 == est*||v||_1.
+        It can be thought of as an input to the linear operator
+        that gives an output with particularly large norm.
+    w : ndarray, optional
+        The vector Av which has relatively large 1-norm.
+        It can be thought of as an output of the linear operator
+        that is relatively large in norm compared to the input.
+
+    """
+    #XXX Eventually turn this into an API function in the _onenormest module,
+    #XXX and remove its underscore,
+    #XXX but wait until expm_action and expm_2009 go into scipy.
+    return scipy.sparse.linalg.onenormest(MatrixPowerOperator(A, p))
+
+
+def _onenormest_product(operator_seq,
+        t=2, itmax=5, compute_v=False, compute_w=False):
+    """
+    Efficiently estimate the 1-norm of the matrix product of the args.
+
+    Parameters
+    ----------
+    operator_seq : linear operator sequence
+        Matrices whose 1-norm of product is to be computed.
+    t : int, optional
+        A positive parameter controlling the tradeoff between
+        accuracy versus time and memory usage.
+        Larger values take longer and use more memory
+        but give more accurate output.
+    itmax : int, optional
+        Use at most this many iterations.
+    compute_v : bool, optional
+        Request a norm-maximizing linear operator input vector if True.
+    compute_w : bool, optional
+        Request a norm-maximizing linear operator output vector if True.
+
+    Returns
+    -------
+    est : float
+        An underestimate of the 1-norm of the sparse matrix.
+    v : ndarray, optional
+        The vector such that ||Av||_1 == est*||v||_1.
+        It can be thought of as an input to the linear operator
+        that gives an output with particularly large norm.
+    w : ndarray, optional
+        The vector Av which has relatively large 1-norm.
+        It can be thought of as an output of the linear operator
+        that is relatively large in norm compared to the input.
+
+    """
+    #XXX Eventually turn this into an API function in the _onenormest module,
+    #XXX and remove its underscore,
+    #XXX but wait until expm_2009 goes into scipy.
+    return scipy.sparse.linalg.onenormest(ProductOperator(*operator_seq))
+
+
+
 def expm_2009(A):
     """
     Compute the matrix exponential using Pade approximation.
@@ -160,28 +357,20 @@ def expm_2009(A):
 
     """
 
-    #XXX This function intends to use a fast norm estimate,
-    #XXX but because the fast norm estimation code has not yet made its
-    #XXX way into scipy, we are using slow exact norm calculations.
-
     # Define the identity matrix depending on sparsity.
-    if isspmatrix(A):
-        ident = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
-    else:
-        A = asarray(A)
-        ident = eye(A.shape[0], A.shape[1], dtype=A.dtype)
+    ident = _ident_like(A)
 
     # Try Pade order 3.
     A2 = A.dot(A)
-    d6 = _onenorm_of_power(A2, 3)**(1/6.)
-    eta_1 = max(_onenorm_of_power(A2, 2) **(1/4.), d6)
+    d6 = _onenormest_matrix_power(A2, 3)**(1/6.)
+    eta_1 = max(_onenormest_matrix_power(A2, 2) **(1/4.), d6)
     if eta_1 < 1.495585217958292e-002 and _ell(A, 3) == 0:
         U, V = _pade3(A, ident, A2)
         return _solve_P_Q(U, V)
 
     # Try Pade order 5.
     A4 = A2.dot(A2)
-    d4 = scipy.linalg.norm(A4, 1)**(1/4.)
+    d4 = _exact_1_norm(A4)**(1/4.)
     eta_2 = max(d4, d6)
     if eta_2 < 2.539398330063230e-001 and _ell(A, 5) == 0:
         U, V = _pade5(A, ident, A2, A4)
@@ -189,8 +378,8 @@ def expm_2009(A):
 
     # Try Pade orders 7 and 9.
     A6 = A2.dot(A4)
-    d6 = scipy.linalg.norm(A6, 1)**(1/6.)
-    d8 = _onenorm_of_power(A4, 2)**(1/8.)
+    d6 = _exact_1_norm(A6)**(1/6.)
+    d8 = _onenormest_matrix_power(A4, 2)**(1/8.)
     eta_3 = max(d6, d8)
     if eta_3 < 9.504178996162932e-001 and _ell(A, 7) == 0:
         U, V = _pade7(A, ident, A2, A4, A6)
@@ -200,7 +389,7 @@ def expm_2009(A):
         return _solve_P_Q(U, V)
 
     # Use Pade order 13.
-    d10 = _onenorm_of_product(A4, A6)**(1/10.)
+    d10 = _onenormest_product((A4, A6))**(1/10.)
     eta_4 = max(d8, d10)
     eta_5 = min(eta_3, eta_4)
     theta_13 = 4.25
@@ -220,21 +409,6 @@ def expm_2009(A):
         for i in range(s):
             X = X.dot(X)
     return X
-
-
-def _is_upper_triangular(A):
-    """
-    A helper function for expm_2009.
-    """
-    if isspmatrix(A):
-        return _sparse_count_nonzero(scipy.sparse.tril(A, -1)) == 0
-    else:
-        return np.count_nonzero(np.tril(A, -1)) == 0
-
-
-def _sparse_count_nonzero(A):
-    # XXX this is obviously not the right way to do this...
-    return np.count_nonzero(A.todense())
 
 
 def _solve_P_Q(U, V):
@@ -372,97 +546,9 @@ def _ell(A, m):
     # It is the "unit roundoff" of IEEE double precision arithmetic.
     u = 2**-53
 
-    # This should be computed using an estimate,
-    # but for now we are computing it exactly and inefficiently.
-    est = _onenorm_of_power(abs(A), power)
-
-    alpha = abs(c) * est / scipy.linalg.norm(A, 1)
+    est = _onenormest_matrix_power(abs(A), power)
+    alpha = abs(c) * est / _exact_1_norm(A)
     return max(int(math.ceil(math.log(alpha/u, 2) / (2 * m))), 0)
-
-
-def _wrapped_onenorm(A):
-    """
-    Compute the 1-norm of a linear operator.
-
-    Parameters
-    ----------
-    A : linear operator
-        Linear operator whose 1-norm is requested.
-
-    Returns
-    -------
-    value : float
-        The 1-norm of the linear operator.
-
-    Notes
-    -----
-    It would be nice if this function did not have to exist.
-
-    """
-    if isspmatrix(A):
-        return max(abs(A).sum(axis=0).flat)
-    else:
-        return scipy.linalg.norm(asarray(A), 1)
-
-
-def _onenorm_of_product(*args):
-    """
-    Compute the 1-norm of a product of linear operators.
-
-    Parameters
-    ----------
-    args : sequence of linear operators
-        This is the sequence of operators whose 1-norm of product
-        is to be computed.
-
-    Returns
-    -------
-    value : float
-        The 1-norm of the product of the operators.
-
-    Notes
-    -----
-    This function is inexcusably inefficient for anything but testing.
-    It is a placeholder for a more efficient 1-norm estimation function.
-
-    """
-    if not args:
-        return 1.0
-    M_product = args[0]
-    for M in args[1:]:
-        M_product = M_product.dot(M)
-    return _wrapped_onenorm(M_product)
-
-
-def _onenorm_of_power(M, power):
-    """
-    Compute the 1-norm of a power of a linear operator.
-
-    Parameters
-    ----------
-    M : linear operator
-        The linear operator whose 1-norm of a power is to be computed.
-    power : nonnegative int
-        The requested power of the linear operator.
-
-    Returns
-    -------
-    value : float
-        The 1-norm of the power of the operator.
-
-    Notes
-    -----
-    This function is extremely inefficient.
-    It is a placeholder for a more efficient 1-norm estimation function.
-
-    """
-    if not power:
-        return 1.0
-    if int(power) != power or power < 1:
-        raise ValueError('expected a nonnegative integer power')
-    M_power = np.linalg.matrix_power(M, power)
-    return _wrapped_onenorm(M_power)
-
 
 
 # Implementation of Pade approximations of various degree
