@@ -44,7 +44,7 @@ def main(argv):
                         help="Submodule whose tests to run (cluster, constants, ...)")
     parser.add_argument("--pythonpath", "-p", default=None,
                         help="Paths to prepend to PYTHONPATH")
-    parser.add_argument("--tests", "-t", default=[], nargs='*',
+    parser.add_argument("--tests", "-t", action='append',
                         help="Specify tests to run")
     parser.add_argument("--python", action="store_true",
                         help="Start a Python shell with PYTHONPATH set")
@@ -104,17 +104,12 @@ def main(argv):
             print("Cannot run tests for %s" % modname)
             sys.exit(2)
     elif args.tests:
-        import nose
-        sys.argv = ['nosetests', '--exe']
-        if args.mode == "fast":
-            sys.argv += ['-A', "not slow"]
-        if args.doctests:
-            sys.argv += ['--doctest-tests']
-        if args.verbose >= 2:
-            sys.argv += ['-v']
-        sys.argv += args.tests
-        nose.main(sys.argv)
-        sys.exit(0)
+        def test(*a, **kw):
+            extra_argv = kw.pop('extra_argv', ())
+            extra_argv = extra_argv + args.tests[1:]
+            kw['extra_argv'] = extra_argv
+            from numpy.testing import Tester
+            return Tester(args.tests[0]).test(*a, **kw)
     else:
         import scipy
         test = scipy.test
