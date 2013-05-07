@@ -131,48 +131,39 @@ class TestExpmActionInterval(TestCase):
                 start=start, stop=stop, num=num, endpoint=endpoint)
         assert_equal(X.shape, (num, n, k))
 
-    def test_expm_action_short_interval(self):
-        np.random.seed(1234)
-        start = 0.1
-        stop = 3.2
-        num = 2
-        endpoint = True
-        n = 5
-        k = 2
-        nsamples = 15
-        for i in range(nsamples):
-            A = scipy.linalg.inv(np.random.randn(n, n))
-            B = np.random.randn(n, k)
-            X = _expm_action.expm_action(A, B,
-                    start=start, stop=stop, num=num, endpoint=endpoint)
-            samples = np.linspace(start, stop, num, endpoint)
-            for sample_index, t in enumerate(samples):
-                expected = scipy.linalg.expm(t*A).dot(B)
-                assert_allclose(X[sample_index], expected)
+    def test_expm_action_status_0(self):
+        self._help_test_specific_expm_interval_status(0)
 
     def test_expm_action_status_1(self):
+        self._help_test_specific_expm_interval_status(1)
+
+    def test_expm_action_status_2(self):
+        self._help_test_specific_expm_interval_status(2)
+
+    def _help_test_specific_expm_interval_status(self, target_status):
         np.random.seed(1234)
         start = 0.1
         stop = 3.2
-        num = 19
+        num = 13
         endpoint = True
         n = 5
         k = 2
-        nsamples = 30
-        for i in range(nsamples):
+        nsamples = 10
+        for num in [14, 13, 2] * nsamples:
             A = np.random.randn(n, n)
             B = np.random.randn(n, k)
             X, status = _expm_action._expm_action_interval(A, B,
                     start=start, stop=stop, num=num, endpoint=endpoint)
-            if status == 1:
+            if status == target_status:
                 samples = np.linspace(start, stop, num, endpoint)
                 for sample_index, t in enumerate(samples):
                     assert_allclose(
                             X[sample_index],
                             scipy.linalg.expm(t*A).dot(B))
                 break
-        if status != 1:
-            raise Exception('failed to find a status-1 expm interval')
+        if status != target_status:
+            msg = 'failed to find a status-' + str(target_status) + ' interval'
+            raise Exception(msg)
 
 
 if __name__ == '__main__':

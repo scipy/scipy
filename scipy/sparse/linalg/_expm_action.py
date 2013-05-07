@@ -573,8 +573,10 @@ def _expm_action_interval(A, B, start=None, stop=None,
         return _expm_action_interval_core_0(A, X, h, mu, m_star, s, q)
     elif q > s and not (q % s):
         return _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol)
+    elif q > s and (q % s):
+        return _expm_action_interval_core_2(A, X, h, mu, m_star, s, q, tol)
     else:
-        return None, 2
+        raise Exception('internal error')
 
 
 def _expm_action_interval_core_0(A, X, h, mu, m_star, s, q):
@@ -594,15 +596,15 @@ def _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol):
     n, n0 = X.shape[1], X.shape[2]
     K = np.empty((m_star + 1, n, n0), dtype=float)
     for i in range(s):
-        Z = np.array(X[i*d])
-        # Precompute K in a way that is very inefficient.
+        Z = X[i*d]
         K[0] = Z
-        for p in range(1, m_star+1):
-            K[p] = h * A.dot(K[p-1]) / float(p)
+        high_p = 0
         for k in range(1, d+1):
             F = K[0]
             c1 = _exact_inf_norm(F)
             for p in range(1, m_star+1):
+                if p > high_p:
+                    K[p] = h * A.dot(K[p-1]) / float(p)
                 coeff = float(pow(k, p))
                 F = F + coeff * K[p]
                 inf_norm_K_p_1 = _exact_inf_norm(K[p])
@@ -612,4 +614,37 @@ def _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol):
                 c1 = c2
             X[k + i*d] = math.exp(k*h*mu) * F
     return X, 1
+
+def _expm_action_interval_core_2(A, X, h, mu, m_star, s, q, tol):
+    """
+    A helper function, for the case q > s and q % s > 0.
+    """
+    d = q // s
+    j = q // d
+    r = q - d * j
+    n, n0 = X.shape[1], X.shape[2]
+    K = np.empty((m_star + 1, n, n0), dtype=float)
+    for i in range(j + 1):
+        Z = X[i*d]
+        K[0] = Z
+        high_p = 0
+        if i < j:
+            effective_d = d
+        else:
+            effective_d = r
+        for k in range(1, effective_d+1):
+            F = K[0]
+            c1 = _exact_inf_norm(F)
+            for p in range(1, m_star+1):
+                if p > high_p:
+                    K[p] = h * A.dot(K[p-1]) / float(p)
+                coeff = float(pow(k, p))
+                F = F + coeff * K[p]
+                inf_norm_K_p_1 = _exact_inf_norm(K[p])
+                c2 = coeff * inf_norm_K_p_1
+                if c1 + c2 <= tol * _exact_inf_norm(F):
+                    break
+                c1 = c2
+            X[k + i*d] = math.exp(k*h*mu) * F
+    return X, 2
 
