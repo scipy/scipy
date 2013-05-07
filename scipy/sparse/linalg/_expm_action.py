@@ -56,7 +56,7 @@ def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
     A : transposable linear operator
         The operator whose exponential is of interest.
     B : ndarray
-        The matrix to be multiplied by the matrix exponential of A.
+        The matrix or vector to be multiplied by the matrix exponential of A.
     start : scalar, optional
         The starting time point of the sequence.
     stop : scalar, optional
@@ -133,11 +133,14 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
         raise ValueError('the matrices A and B have incompatible shapes')
-    if len(B.shape) not in (1, 2):
-        raise ValueError('expected B to be like a matrix or a vector')
     ident = _ident_like(A)
     n = A.shape[0]
-    n0 = B.shape[-1]
+    if len(B.shape) == 1:
+        n0 = 1
+    elif len(B.shape) == 2:
+        n0 = B.shape[1]
+    else:
+        raise ValueError('expected B to be like a matrix or a vector')
     u_d = 2**-53
     tol = u_d
     mu = _trace(A) / float(n)
@@ -523,11 +526,14 @@ def _expm_action_interval(A, B, start=None, stop=None,
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
         raise ValueError('the matrices A and B have incompatible shapes')
-    if len(B.shape) not in (1, 2):
-        raise ValueError('expected B to be like a matrix or a vector')
     ident = _ident_like(A)
     n = A.shape[0]
-    n0 = B.shape[-1]
+    if len(B.shape) == 1:
+        n0 = 1
+    elif len(B.shape) == 2:
+        n0 = B.shape[1]
+    else:
+        raise ValueError('expected B to be like a matrix or a vector')
     u_d = 2**-53
     tol = u_d
     mu = _trace(A) / float(n)
@@ -552,7 +558,8 @@ def _expm_action_interval(A, B, start=None, stop=None,
     # Define the output ndarray.
     # Use an ndim=3 shape, such that the last two indices
     # are the ones that may be involved in level 3 BLAS operations.
-    X = np.empty((nsamples, n, n0), dtype=float)
+    X_shape = (nsamples,) + B.shape
+    X = np.empty(X_shape, dtype=float)
     t = t_q - t_0
     A = A - mu * ident
     A_1_norm = _exact_1_norm(A)
@@ -600,8 +607,9 @@ def _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol):
     A helper function, for the case q > s and q % s == 0.
     """
     d = q // s
-    n, n0 = X.shape[1], X.shape[2]
-    K = np.empty((m_star + 1, n, n0), dtype=float)
+    input_shape = X.shape[1:]
+    K_shape = (m_star + 1, ) + input_shape
+    K = np.empty(K_shape, dtype=float)
     for i in range(s):
         Z = X[i*d]
         K[0] = Z
@@ -629,8 +637,9 @@ def _expm_action_interval_core_2(A, X, h, mu, m_star, s, q, tol):
     d = q // s
     j = q // d
     r = q - d * j
-    n, n0 = X.shape[1], X.shape[2]
-    K = np.empty((m_star + 1, n, n0), dtype=float)
+    input_shape = X.shape[1:]
+    K_shape = (m_star + 1, ) + input_shape
+    K = np.empty(K_shape, dtype=float)
     for i in range(j + 1):
         Z = X[i*d]
         K[0] = Z
