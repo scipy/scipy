@@ -11,7 +11,7 @@ import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg import LinearOperator
 
-__all__ = ['expm_action']
+__all__ = ['expm_multiply']
 
 
 def _exact_inf_norm(A):
@@ -47,7 +47,7 @@ def _ident_like(A):
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
-def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
+def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
     """
     Compute the action of the matrix exponential of A on B.
 
@@ -109,13 +109,13 @@ def expm_action(A, B, start=None, stop=None, num=None, endpoint=None):
 
     """
     if all(arg is None for arg in (start, stop, num, endpoint)):
-        X =  _expm_action_simple(A, B)
+        X =  _expm_multiply_simple(A, B)
     else:
-        X, status = _expm_action_interval(A, B, start, stop, num, endpoint)
+        X, status = _expm_multiply_interval(A, B, start, stop, num, endpoint)
     return X
 
 
-def _expm_action_simple(A, B, t=1.0, balance=False):
+def _expm_multiply_simple(A, B, t=1.0, balance=False):
     """
     Compute the action of the matrix exponential at a single time point.
 
@@ -165,9 +165,9 @@ def _expm_action_simple(A, B, t=1.0, balance=False):
         ell = 2
         norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
-    return _expm_action_simple_core(A, B, t, mu, m_star, s, tol, balance)
+    return _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol, balance)
 
-def _expm_action_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
+def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
     """
     A helper function.
     """
@@ -309,7 +309,8 @@ def _onenormest_matrix_power(A, p,
 
     """
     #XXX Eventually turn this into an API function in the  _onenormest module,
-    #XXX and remove its underscore, but wait until expm_action goes into scipy.
+    #XXX and remove its underscore,
+    #XXX but wait until expm_multiply goes into scipy.
     return scipy.sparse.linalg.onenormest(MatrixPowerOperator(A, p))
     
 
@@ -412,14 +413,14 @@ def _compute_p_max(m_max):
 
 def _fragment_3_1(norm_info, n0, tol, m_max=55, ell=2):
     """
-    A helper function for the _expm_action_* functions.
+    A helper function for the _expm_multiply_* functions.
 
     Parameters
     ----------
     norm_info : LazyOperatorNormInfo
         Information about norms of certain linear operators of interest.
     n0 : int
-        Number of columns in the _expm_action_* B matrix.
+        Number of columns in the _expm_multiply_* B matrix.
     tol : float
         Expected to be
         :math:`2^{-24}` for single precision or
@@ -470,14 +471,14 @@ def _fragment_3_1(norm_info, n0, tol, m_max=55, ell=2):
 
 def _condition_3_13(A_1_norm, n0, m_max, ell):
     """
-    A helper function for the _expm_action_* functions.
+    A helper function for the _expm_multiply_* functions.
 
     Parameters
     ----------
     A_1_norm : float
         The precomputed 1-norm of A.
     n0 : int
-        Number of columns in the _expm_action_* B matrix.
+        Number of columns in the _expm_multiply_* B matrix.
     m_max : int
         A value related to a bound.
     ell : int
@@ -504,7 +505,7 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
     return A_1_norm <= a * b
 
 
-def _expm_action_interval(A, B, start=None, stop=None,
+def _expm_multiply_interval(A, B, start=None, stop=None,
         num=None, endpoint=None, balance=False, status_only=False):
     """
     Compute the action of the matrix exponential at multiple time points.
@@ -597,38 +598,41 @@ def _expm_action_interval(A, B, start=None, stop=None,
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
 
     # Compute the expm action up to the initial time point.
-    X[0] = _expm_action_simple_core(A, B, t_0, mu, m_star, s)
+    X[0] = _expm_multiply_simple_core(A, B, t_0, mu, m_star, s)
 
     # Compute the expm action at the rest of the time points.
     if q <= s:
         if status_only:
             return 0
         else:
-            return _expm_action_interval_core_0(A, X, h, mu, m_star, s, q)
+            return _expm_multiply_interval_core_0(A, X,
+                    h, mu, m_star, s, q)
     elif q > s and not (q % s):
         if status_only:
             return 1
         else:
-            return _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol)
+            return _expm_multiply_interval_core_1(A, X,
+                    h, mu, m_star, s, q, tol)
     elif q > s and (q % s):
         if status_only:
             return 2
         else:
-            return _expm_action_interval_core_2(A, X, h, mu, m_star, s, q, tol)
+            return _expm_multiply_interval_core_2(A, X,
+                    h, mu, m_star, s, q, tol)
     else:
         raise Exception('internal error')
 
 
-def _expm_action_interval_core_0(A, X, h, mu, m_star, s, q):
+def _expm_multiply_interval_core_0(A, X, h, mu, m_star, s, q):
     """
     A helper function, for the case q <= s.
     """
     for k in range(q):
-        X[k+1] = _expm_action_simple_core(A, X[k], h, mu, m_star, s)
+        X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s)
     return X, 0
 
 
-def _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol):
+def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
     """
     A helper function, for the case q > s and q % s == 0.
     """
@@ -656,7 +660,7 @@ def _expm_action_interval_core_1(A, X, h, mu, m_star, s, q, tol):
             X[k + i*d] = math.exp(k*h*mu) * F
     return X, 1
 
-def _expm_action_interval_core_2(A, X, h, mu, m_star, s, q, tol):
+def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
     """
     A helper function, for the case q > s and q % s > 0.
     """

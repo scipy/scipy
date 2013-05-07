@@ -9,8 +9,8 @@ from numpy.testing import (TestCase, run_module_suite, assert_allclose,
 
 import scipy.linalg
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
-        _onenormest_matrix_power, expm_action, _expm_action_simple,
-        _expm_action_interval)
+        _onenormest_matrix_power, expm_multiply, _expm_multiply_simple,
+        _expm_multiply_interval)
 
 
 def less_than_or_close(a, b):
@@ -56,7 +56,7 @@ class TestExpmActionSimple(TestCase):
                 assert_(less_than_or_close(estimated, exact))
                 assert_(less_than_or_close(exact, 3*estimated))
 
-    def test_expm_action(self):
+    def test_expm_multiply(self):
         np.random.seed(1234)
         n = 40
         k = 3
@@ -64,22 +64,22 @@ class TestExpmActionSimple(TestCase):
         for i in range(nsamples):
             A = scipy.linalg.inv(np.random.randn(n, n))
             B = np.random.randn(n, k)
-            observed = expm_action(A, B)
+            observed = expm_multiply(A, B)
             expected = np.dot(scipy.linalg.expm(A), B)
             assert_allclose(observed, expected)
 
-    def test_matrix_vector_action(self):
+    def test_matrix_vector_multiply(self):
         np.random.seed(1234)
         n = 40
         nsamples = 10
         for i in range(nsamples):
             A = scipy.linalg.inv(np.random.randn(n, n))
             v = np.random.randn(n)
-            observed = expm_action(A, v)
+            observed = expm_multiply(A, v)
             expected = np.dot(scipy.linalg.expm(A), v)
             assert_allclose(observed, expected)
 
-    def test_scaled_expm_action(self):
+    def test_scaled_expm_multiply(self):
         np.random.seed(1234)
         n = 40
         k = 3
@@ -88,22 +88,22 @@ class TestExpmActionSimple(TestCase):
             for t in (0.2, 1.0, 1.5):
                 A = scipy.linalg.inv(np.random.randn(n, n))
                 B = np.random.randn(n, k)
-                observed = _expm_action_simple(A, B, t=t)
+                observed = _expm_multiply_simple(A, B, t=t)
                 expected = np.dot(scipy.linalg.expm(t*A), B)
                 assert_allclose(observed, expected)
 
-    def test_scaled_expm_action_single_timepoint(self):
+    def test_scaled_expm_multiply_single_timepoint(self):
         np.random.seed(1234)
         t = 0.1
         n = 5
         k = 2
         A = np.random.randn(n, n)
         B = np.random.randn(n, k)
-        observed = _expm_action_simple(A, B, t=t)
+        observed = _expm_multiply_simple(A, B, t=t)
         expected = scipy.linalg.expm(t*A).dot(B)
         assert_allclose(observed, expected)
 
-    def test_sparse_expm_action(self):
+    def test_sparse_expm_multiply(self):
         np.random.seed(1234)
         n = 40
         k = 3
@@ -111,7 +111,7 @@ class TestExpmActionSimple(TestCase):
         for i in range(nsamples):
             A = scipy.sparse.rand(n, n, density=0.05)
             B = np.random.randn(n, k)
-            observed = expm_action(A, B)
+            observed = expm_multiply(A, B)
             expected = scipy.linalg.expm(A).dot(B)
             assert_allclose(observed, expected)
 
@@ -119,7 +119,7 @@ class TestExpmActionSimple(TestCase):
 
 class TestExpmActionInterval(TestCase):
 
-    def test_sparse_expm_action_interval(self):
+    def test_sparse_expm_multiply_interval(self):
         np.random.seed(1234)
         start = 0.1
         stop = 3.2
@@ -131,7 +131,7 @@ class TestExpmActionInterval(TestCase):
             B = np.random.randn(n, k)
             v = np.random.randn(n)
             for target in (B, v):
-                X = expm_action(A, target,
+                X = expm_multiply(A, target,
                         start=start, stop=stop, num=num, endpoint=endpoint)
                 samples = np.linspace(start=start, stop=stop,
                         num=num, endpoint=endpoint)
@@ -139,7 +139,7 @@ class TestExpmActionInterval(TestCase):
                     assert_allclose(solution,
                             scipy.linalg.expm(t*A).dot(target))
 
-    def test_expm_action_interval_vector(self):
+    def test_expm_multiply_interval_vector(self):
         np.random.seed(1234)
         start = 0.1
         stop = 3.2
@@ -148,14 +148,14 @@ class TestExpmActionInterval(TestCase):
             for n in (1, 2, 5, 20, 40):
                 A = scipy.linalg.inv(np.random.randn(n, n))
                 v = np.random.randn(n)
-                X = expm_action(A, v,
+                X = expm_multiply(A, v,
                         start=start, stop=stop, num=num, endpoint=endpoint)
                 samples = np.linspace(start=start, stop=stop,
                         num=num, endpoint=endpoint)
                 for solution, t in zip(X, samples):
                     assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
 
-    def test_expm_action_interval_matrix(self):
+    def test_expm_multiply_interval_matrix(self):
         np.random.seed(1234)
         start = 0.1
         stop = 3.2
@@ -165,20 +165,20 @@ class TestExpmActionInterval(TestCase):
                 for k in (1, 2):
                     A = scipy.linalg.inv(np.random.randn(n, n))
                     B = np.random.randn(n, k)
-                    X = expm_action(A, B,
+                    X = expm_multiply(A, B,
                             start=start, stop=stop, num=num, endpoint=endpoint)
                     samples = np.linspace(start=start, stop=stop,
                             num=num, endpoint=endpoint)
                     for solution, t in zip(X, samples):
                         assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
 
-    def test_expm_action_interval_status_0(self):
+    def test_expm_multiply_interval_status_0(self):
         self._help_test_specific_expm_interval_status(0)
 
-    def test_expm_action_interval_status_1(self):
+    def test_expm_multiply_interval_status_1(self):
         self._help_test_specific_expm_interval_status(1)
 
-    def test_expm_action_interval_status_2(self):
+    def test_expm_multiply_interval_status_2(self):
         self._help_test_specific_expm_interval_status(2)
 
     def _help_test_specific_expm_interval_status(self, target_status):
@@ -194,11 +194,11 @@ class TestExpmActionInterval(TestCase):
         for num in [14, 13, 2] * nrepeats:
             A = np.random.randn(n, n)
             B = np.random.randn(n, k)
-            status = _expm_action_interval(A, B,
+            status = _expm_multiply_interval(A, B,
                     start=start, stop=stop, num=num, endpoint=endpoint,
                     status_only=True)
             if status == target_status:
-                X, status = _expm_action_interval(A, B,
+                X, status = _expm_multiply_interval(A, B,
                         start=start, stop=stop, num=num, endpoint=endpoint,
                         status_only=False)
                 assert_equal(X.shape, (num, n, k))
