@@ -117,6 +117,26 @@ class TestExpmActionSimple(TestCase):
 
 class TestExpmActionInterval(TestCase):
 
+    def test_sparse_expm_action_interval(self):
+        np.random.seed(1234)
+        start = 0.1
+        stop = 3.2
+        n = 40
+        k = 3
+        endpoint = True
+        for num in (14, 13, 2):
+            A = scipy.sparse.rand(n, n, density=0.05)
+            B = np.random.randn(n, k)
+            v = np.random.randn(n)
+            for target in (B, v):
+                X = _expm_action.expm_action(A, target,
+                        start=start, stop=stop, num=num, endpoint=endpoint)
+                samples = np.linspace(start=start, stop=stop,
+                        num=num, endpoint=endpoint)
+                for solution, t in zip(X, samples):
+                    assert_allclose(solution,
+                            scipy.linalg.expm(t*A).dot(target))
+
     def test_expm_action_interval_vector(self):
         np.random.seed(1234)
         start = 0.1
