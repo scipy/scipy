@@ -793,7 +793,7 @@ def hilbert(x, N=None, axis=-1):
 
     Notes
     -----
-    The analytic signal :math:`x_a(t)` of signal :math:`x(t)` is::
+    The analytic signal :math:`x_a(t)` of signal :math:`x(t)` is:
 
     .. math:: x_a = F^{-1}(F(x) 2U) = x + i y
 
