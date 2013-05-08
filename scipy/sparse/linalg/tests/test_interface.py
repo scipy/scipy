@@ -153,6 +153,11 @@ class TestProductAndPowerOperators(TestCase):
         assert_allclose(M_explicit.T.dot(D), M_implicit_T.matmat(D))
         assert_allclose(M_explicit.T.dot(v), M_implicit_T.matvec(v))
 
+        # check compatibility with the matrix linear operator
+        matrix_operator = interface.MatrixLinearOperator(M_explicit)
+        assert_allclose(matrix_operator.matmat(D), M_implicit.matmat(D))
+        assert_allclose(matrix_operator.matvec(v), M_implicit.matvec(v))
+
     def test_matrix_power_operator(self):
         np.random.seed(1234)
         n = 4
@@ -173,5 +178,10 @@ class TestProductAndPowerOperators(TestCase):
             assert_allclose(M_explicit.dot(v), M_implicit.matvec(v))
             assert_allclose(M_explicit.T.dot(B), M_implicit_T.matmat(B))
             assert_allclose(M_explicit.T.dot(v), M_implicit_T.matvec(v))
+
+            # check compatibility with the matrix linear operator
+            matrix_operator = interface.MatrixLinearOperator(M_explicit)
+            assert_allclose(matrix_operator.matmat(B), M_implicit.matmat(B))
+            assert_allclose(matrix_operator.matvec(v), M_implicit.matvec(v))
 
 
