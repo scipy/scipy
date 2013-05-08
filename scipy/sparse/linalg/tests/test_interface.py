@@ -36,17 +36,23 @@ class TestLinearOperator(TestCase):
             assert_equal(A.matvec(np.array([[1],[2],[3]])), [[14],[32]])
             assert_equal(A * np.array([1,2,3]), [14,32])
             assert_equal(A * np.array([[1],[2],[3]]), [[14],[32]])
+            assert_equal(A.dot(np.array([1,2,3])), [14,32])
+            assert_equal(A.dot(np.array([[1],[2],[3]])), [[14],[32]])
 
             assert_equal(A.matvec(np.matrix([[1],[2],[3]])), [[14],[32]])
             assert_equal(A * np.matrix([[1],[2],[3]]), [[14],[32]])
+            assert_equal(A.dot(np.matrix([[1],[2],[3]])), [[14],[32]])
 
             assert_(isinstance(A.matvec(np.array([1,2,3])), np.ndarray))
             assert_(isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray))
             assert_(isinstance(A * np.array([1,2,3]), np.ndarray))
             assert_(isinstance(A * np.array([[1],[2],[3]]), np.ndarray))
+            assert_(isinstance(A.dot(np.array([1,2,3])), np.ndarray))
+            assert_(isinstance(A.dot(np.array([[1],[2],[3]])), np.ndarray))
 
             assert_(isinstance(A.matvec(np.matrix([[1],[2],[3]])), np.ndarray))
             assert_(isinstance(A * np.matrix([[1],[2],[3]]), np.ndarray))
+            assert_(isinstance(A.dot(np.matrix([[1],[2],[3]])), np.ndarray))
 
             assert_raises(ValueError, A.matvec, np.array([1,2]))
             assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
@@ -100,9 +106,25 @@ class TestAsLinearOperator(TestCase):
             assert_equal(A.rmatvec(np.array([1,2])), [9,12,15])
             assert_equal(A.rmatvec(np.array([[1],[2]])), [[9],[12],[15]])
 
-            assert_equal(A.matmat(np.array([[1,4],[2,5],[3,6]])), [[14,32],[32,77]])
+            assert_equal(
+                    A.matmat(np.array([[1,4],[2,5],[3,6]])),
+                    [[14,32],[32,77]])
 
             assert_equal(A * np.array([[1,4],[2,5],[3,6]]), [[14,32],[32,77]])
 
             if hasattr(M,'dtype'):
                 assert_equal(A.dtype, M.dtype)
+
+    def test_dot(self):
+
+        for M in self.cases:
+            A = interface.aslinearoperator(M)
+            M,N = A.shape
+
+            assert_equal(A.dot(np.array([1,2,3])), [14,32])
+            assert_equal(A.dot(np.array([[1],[2],[3]])), [[14],[32]])
+
+            assert_equal(
+                    A.dot(np.array([[1,4],[2,5],[3,6]])),
+                    [[14,32],[32,77]])
+
