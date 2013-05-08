@@ -7,7 +7,6 @@ from numpy import finfo, sign, sqrt
 
 _iter = 100
 _xtol = 1e-12
-# not actually used at the moment
 _rtol = finfo(float).eps * 2
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth']
@@ -183,6 +182,10 @@ def bisect(f, a, b, args=(),
         The routine converges when a root is known to lie within `xtol` of the
         value return. Should be >= 0.  The routine modifies this to take into
         account the relative precision of doubles.
+    rtol : number, optional
+        The routine converges when a root is known to lie within `rtol` times
+        the value returned of the value returned. Should be >= 0. Defaults to
+        ``np.finfo(float).eps * 2``.
     maxiter : number, optional
         if convergence is not achieved in `maxiter` iterations, and error is
         raised.  Must be >= 0.
@@ -213,7 +216,7 @@ def bisect(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
-    r = _zeros._bisect(f,a,b,xtol,maxiter,args,full_output,disp)
+    r = _zeros._bisect(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
 
 
@@ -236,6 +239,10 @@ def ridder(f, a, b, args=(),
         The routine converges when a root is known to lie within xtol of the
         value return. Should be >= 0.  The routine modifies this to take into
         account the relative precision of doubles.
+    rtol : number, optional
+        The routine converges when a root is known to lie within `rtol` times
+        the value returned of the value returned. Should be >= 0. Defaults to
+        ``np.finfo(float).eps * 2``.
     maxiter : number, optional
         if convergence is not achieved in maxiter iterations, and error is
         raised.  Must be >= 0.
@@ -283,7 +290,7 @@ def ridder(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
-    r = _zeros._ridder(f,a,b,xtol,maxiter,args,full_output,disp)
+    r = _zeros._ridder(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
 
 
@@ -326,6 +333,10 @@ def brentq(f, a, b, args=(),
         The routine converges when a root is known to lie within xtol of the
         value return. Should be >= 0.  The routine modifies this to take into
         account the relative precision of doubles.
+    rtol : number, optional
+        The routine converges when a root is known to lie within `rtol` times
+        the value returned of the value returned. Should be >= 0. Defaults to
+        ``np.finfo(float).eps * 2``.
     maxiter : number, optional
         if convergence is not achieved in maxiter iterations, and error is
         raised.  Must be >= 0.
@@ -387,7 +398,7 @@ def brentq(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
-    r = _zeros._brentq(f,a,b,xtol,maxiter,args,full_output,disp)
+    r = _zeros._brentq(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
 
 
@@ -417,6 +428,10 @@ def brenth(f, a, b, args=(),
         The routine converges when a root is known to lie within xtol of the
         value return. Should be >= 0.  The routine modifies this to take into
         account the relative precision of doubles.
+    rtol : number, optional
+        The routine converges when a root is known to lie within `rtol` times
+        the value returned of the value returned. Should be >= 0. Defaults to
+        ``np.finfo(float).eps * 2``.
     maxiter : number, optional
         if convergence is not achieved in maxiter iterations, and error is
         raised.  Must be >= 0.
@@ -460,5 +475,5 @@ def brenth(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
-    r = _zeros._brenth(f,a, b, xtol, maxiter, args, full_output, disp)
+    r = _zeros._brenth(f,a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
