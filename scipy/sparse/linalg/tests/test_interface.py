@@ -3,8 +3,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import TestCase, assert_, assert_equal, \
-        assert_raises
+from numpy.testing import (TestCase, assert_, assert_equal,
+        assert_raises, assert_allclose)
 
 import numpy as np
 import scipy.sparse as sparse
@@ -127,4 +127,42 @@ class TestAsLinearOperator(TestCase):
             assert_equal(
                     A.dot(np.array([[1,4],[2,5],[3,6]])),
                     [[14,32],[32,77]])
+
+
+class TestProductAndPowerOperators(TestCase):
+
+    def test_matrix_product_operator(self):
+        np.random.seed(1234)
+        na, nb, nc = 14, 20, 16
+        k = 2
+        A = np.random.randn(na, nb)
+        B = np.random.randn(nb, nc)
+        C = np.random.randn(nc, na)
+        D = np.random.randn(na, k)
+        v = np.random.randn(na)
+        M_explicit = A.dot(B).dot(C)
+        M_implicit = interface.MatrixProductOperator(A, B, C)
+        M_implicit_T = interface.MatrixProductOperator(C.T, B.T, A.T)
+        M_op = interface._ProductOp(A, B, C)
+        for target in (D, v):
+            assert_allclose(M_explicit.dot(target), M_implicit.dot(target))
+            assert_allclose(M_implicit.dot(target), M_op.dot(target))
+            assert_allclose(M_implicit_T.dot(target), M_op.T.dot(target))
+
+    def test_matrix_power_operator(self):
+        np.random.seed(1234)
+        n = 4
+        k = 2
+        A = np.random.randn(n, n)
+        B = np.random.randn(n, k)
+        v = np.random.randn(n)
+        for p in range(1, 4):
+            M_explicit = np.linalg.matrix_power(A, p)
+            M_implicit = interface.MatrixPowerOperator(A, p)
+            M_implicit_T = interface.MatrixPowerOperator(A.T, p)
+            M_op = interface._PowerOp(A, p)
+            for target in (B, v):
+                assert_allclose(M_explicit.dot(target), M_implicit.dot(target))
+                assert_allclose(M_implicit.dot(target), M_op.dot(target))
+                assert_allclose(M_implicit_T.dot(target), M_op.T.dot(target))
 
