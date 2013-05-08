@@ -268,17 +268,16 @@ def aslinearoperator(A):
     elif isspmatrix(A):
         return MatrixLinearOperator(A)
 
+    elif hasattr(A, 'shape') and hasattr(A, 'matvec'):
+        rmatvec = None
+        dtype = None
+
+        if hasattr(A, 'rmatvec'):
+            rmatvec = A.rmatvec
+        if hasattr(A, 'dtype'):
+            dtype = A.dtype
+        return LinearOperator(A.shape, A.matvec,
+                              rmatvec=rmatvec, dtype=dtype)
+
     else:
-        if hasattr(A, 'shape') and hasattr(A, 'matvec'):
-            rmatvec = None
-            dtype = None
-
-            if hasattr(A, 'rmatvec'):
-                rmatvec = A.rmatvec
-            if hasattr(A, 'dtype'):
-                dtype = A.dtype
-            return LinearOperator(A.shape, A.matvec,
-                                  rmatvec=rmatvec, dtype=dtype)
-
-        else:
-            raise TypeError('type not understood')
+        raise TypeError('type not understood')
