@@ -188,6 +188,10 @@ class LinearOperator:
         else:
             raise ValueError('expected rank-1 or rank-2 array or matrix')
 
+    def dot(self, other):
+        # modeled after scipy.sparse.base.dot
+        return self * other
+
     def __repr__(self):
         M,N = self.shape
         if hasattr(self,'dtype'):
