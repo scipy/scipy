@@ -216,6 +216,8 @@ def bisect(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if rtol < _rtol:
+        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     r = _zeros._bisect(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
 
@@ -290,6 +292,8 @@ def ridder(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if rtol < _rtol:
+        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     r = _zeros._ridder(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
 
@@ -398,6 +402,8 @@ def brentq(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if rtol < _rtol:
+        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     r = _zeros._brentq(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
     return results_c(full_output, r)
 
@@ -475,5 +481,7 @@ def brenth(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if rtol < _rtol:
+        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     r = _zeros._brenth(f,a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
