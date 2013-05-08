@@ -148,6 +148,10 @@ class TestProductAndPowerOperators(TestCase):
             assert_allclose(M_explicit.dot(target), M_implicit.dot(target))
             assert_allclose(M_implicit.dot(target), M_op.dot(target))
             assert_allclose(M_implicit_T.dot(target), M_op.T.dot(target))
+        assert_allclose(M_explicit.dot(D), M_implicit.matmat(D))
+        assert_allclose(M_explicit.dot(v), M_implicit.matvec(v))
+        assert_allclose(M_explicit.T.dot(D), M_implicit_T.matmat(D))
+        assert_allclose(M_explicit.T.dot(v), M_implicit_T.matvec(v))
 
     def test_matrix_power_operator(self):
         np.random.seed(1234)
@@ -165,4 +169,9 @@ class TestProductAndPowerOperators(TestCase):
                 assert_allclose(M_explicit.dot(target), M_implicit.dot(target))
                 assert_allclose(M_implicit.dot(target), M_op.dot(target))
                 assert_allclose(M_implicit_T.dot(target), M_op.T.dot(target))
+            assert_allclose(M_explicit.dot(B), M_implicit.matmat(B))
+            assert_allclose(M_explicit.dot(v), M_implicit.matvec(v))
+            assert_allclose(M_explicit.T.dot(B), M_implicit_T.matmat(B))
+            assert_allclose(M_explicit.T.dot(v), M_implicit_T.matvec(v))
+
 
