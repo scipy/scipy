@@ -103,6 +103,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     dimensional problems when such an interval has been found.
 
     """
+    if xtol <= 0:
+        raise ValueError("xtol too small (%g <= 0)" % xtol)
     if fprime is not None:
         # Newton-Rapheson method
         # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
@@ -216,6 +218,8 @@ def bisect(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if xtol <= 0:
+        raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     r = _zeros._bisect(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
@@ -292,6 +296,8 @@ def ridder(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if xtol <= 0:
+        raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     r = _zeros._ridder(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
@@ -402,6 +408,8 @@ def brentq(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if xtol <= 0:
+        raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     r = _zeros._brentq(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
@@ -481,6 +489,8 @@ def brenth(f, a, b, args=(),
     """
     if not isinstance(args, tuple):
         args = (args,)
+    if xtol <= 0:
+        raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     r = _zeros._brenth(f,a, b, xtol, rtol, maxiter, args, full_output, disp)
