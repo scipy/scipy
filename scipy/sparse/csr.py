@@ -225,7 +225,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
         row, col = self._unpack_index(key)
 
-        # Check for Boolean data type, otherwise asindices() sees 0s and 1s
+        # Convert Boolean data type, otherwise asindices() sees 0s and 1s
         row, col = self._check_Boolean(row, col)
 
         # First attempt to use original row optimized methods
@@ -241,7 +241,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
         elif isinstance(row, slice):
             # [1:2,??]
             if isintlike(col) or (isinstance(col, slice) and 
-                                  col.step and row.step in (1, None)):
+                                  col.step in (1, None) and 
+                                  row.step in (1, None)):
                 return self._get_submatrix(row, col)      # [1:2,j]
             elif issequence(col):
                 P = extractor(col,self.shape[1]).T        # [1:2,[1,2]]
