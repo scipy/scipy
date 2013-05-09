@@ -29,12 +29,22 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
 __version__ = "$Revision$"[10:-1]
 from . import _fitpack
 from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
-     dot, sin, cos, pi, arange, empty, int32, asarray
+     dot, sin, cos, pi, arange, empty, iinfo, int32, asarray
 myasarray = atleast_1d
 
 # Try to replace _fitpack interface with
 #  f2py-generated version
 from . import dfitpack
+
+
+def _int32_overflow(x):
+    """ Cast the value to an int32 and raise an OverflowError if the value
+    cannot fit.
+    """
+    if x > iinfo(int32).max:
+        raise OverflowError('%r cannot fit into an int32' % x)
+    return int32(x)
+
 
 _iermess = {0:["""\
     The spline has a residual sum of squares fp such that abs(fp-s)/s<=0.001""",None],
@@ -909,8 +919,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     if bx > by:
         b1,b2 = by,by+u-kx
     try:
-        lwrk1 = int32(u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1)
-        lwrk2 = int32(u*v*(b2+1)+b2)
+        lwrk1 = _int32_overflow(u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1)
+        lwrk2 = _int32_overflow(u*v*(b2+1)+b2)
     except OverflowError:
         raise OverflowError("Too many data points to interpolate")
     tx,ty,c,o = _fitpack._surfit(x,y,z,w,xb,xe,yb,ye,kx,ky,task,s,eps,
