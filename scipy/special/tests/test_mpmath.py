@@ -902,11 +902,11 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.ci,
                             [Arg()])
 
-    @knownfailure_overridable("Bad relative accuracy <eps-close to the pole at z=0")
     def test_digamma(self):
         assert_mpmath_equal(sc.digamma,
                             _exception_to_nan(mpmath.digamma),
-                            [Arg()])
+                            [Arg()],
+                            dps=50)
 
     @knownfailure_overridable()
     def test_digamma_complex(self):
