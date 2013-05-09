@@ -4498,7 +4498,7 @@ class nct_gen(rv_continuous):
 
     """
     def _argcheck(self, df, nc):
-        return (df > 0)
+        return (df > 0) & (nc == nc)
     def _rvs(self, df, nc):
         return norm.rvs(loc=nc,size=self._size)*sqrt(df) / sqrt(chi2.rvs(df,size=self._size))
     def _pdf(self, x, df, nc):
