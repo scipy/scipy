@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_, \
     TestCase, assert_raises
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
@@ -257,6 +258,12 @@ class TestSplev(TestCase):
         z = splev(1, tck)
         assert_equal(z.shape, ())
 
+def test_bisplrep_overflow():
+    a = np.linspace(0, 1, 620)
+    b = np.linspace(0, 1, 620)
+    x, y = np.meshgrid(a, b)
+    z = np.random.rand(*x.shape)
+    assert_raises(OverflowError, bisplrep, x.ravel(), y.ravel(), z.ravel(), s=0)
 
 if __name__ == "__main__":
     __put_prints = True
