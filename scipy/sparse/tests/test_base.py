@@ -1753,7 +1753,7 @@ class _TestFancyIndexing:
 
         assert_raises(IndexError, A.__getitem__, Z)
         assert_raises(IndexError, A.__getitem__, Y)
-        assert_raises(ValueError, A.__getitem__, (X, 1))
+        assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))
 
 
 class _TestFancyIndexingAssign:
