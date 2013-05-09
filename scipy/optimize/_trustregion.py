@@ -6,17 +6,22 @@ import math
 import numpy as np
 import scipy.linalg
 from .optimize import (_check_unknown_options, wrap_function, _status_message,
-                      Result)
+                       Result)
 
 __all__ = []
 
 
-class LazyLocalQuadraticModel:
+class BaseQuadraticSubproblem(object):
     """
-    Lazily compute info about a function approximation.
+    Base/abstract class defining the quadratic model for trust-region
+    minimization. Child classes must implement the ``solve`` method.
+
+    Values of the objective function, jacobian and hessian (if provided) at
+    the current iterate ``x`` are evaluated on demand and then stored as
+    attributes ``fun``, ``jac``, ``hess``.
     """
 
-    def __init__(self, x, fun=None, jac=None, hess=None, hessp=None):
+    def __init__(self, x, fun, jac, hess=None, hessp=None):
         self._x = x
         self._f = None
         self._g = None
@@ -29,25 +34,26 @@ class LazyLocalQuadraticModel:
         self._hess = hess
         self._hessp = hessp
 
-    def __call__(self, p=None):
-        if p is None:
-            return self.fun()
-        return (
-                self.fun() +
-                np.dot(self.jac(), p) +
-                0.5*np.dot(p, self.hessp(p)))
+    def __call__(self, p):
+        return self.fun + np.dot(self.jac, p) + 0.5 * np.dot(p, self.hessp(p))
 
+    @property
     def fun(self):
+        """Value of objective function at current iteration."""
         if self._f is None:
             self._f = self._fun(self._x)
         return self._f
 
+    @property
     def jac(self):
+        """Value of jacobian of objective function at current iteration."""
         if self._g is None:
             self._g = self._jac(self._x)
         return self._g
 
+    @property
     def hess(self):
+        """Value of hessian of objective function at current iteration."""
         if self._h is None:
             self._h = self._hess(self._x)
         return self._h
@@ -56,52 +62,35 @@ class LazyLocalQuadraticModel:
         if self._hessp is not None:
             return self._hessp(self._x, p)
         else:
-            return np.dot(self.hess(), p)
+            return np.dot(self.hess, p)
 
+    @property
     def jac_mag(self):
+        """Magniture of jacobian of objective function at current iteration."""
         if self._g_mag is None:
-            self._g_mag = scipy.linalg.norm(self.jac())
+            self._g_mag = scipy.linalg.norm(self.jac)
         return self._g_mag
 
-    def cauchy_point(self):
+    def get_boundaries_intersections(self, z, d, trust_radius):
         """
-        The Cauchy point is minimal along the direction of steepest descent.
+        Solve the scalar quadratic equation ||z + t d|| == trust_radius.
+        This is like a line-sphere intersection.
+        Return the two values of t, sorted from low to high.
         """
-        if self._cauchy_point is None:
-            g = self.jac()
-            Bg = self.hessp(g)
-            self._cauchy_point = -(np.dot(g, g) / np.dot(g, Bg)) * g
-        return self._cauchy_point
+        a = np.dot(d, d)
+        b = 2 * np.dot(z, d)
+        c = np.dot(z, z) - trust_radius**2
+        sqrt_discriminant = math.sqrt(b*b - 4*a*c)
+        ta = (-b - sqrt_discriminant) / (2*a)
+        tb = (-b + sqrt_discriminant) / (2*a)
+        return ta, tb
 
-    def newton_point(self):
-        """
-        The Newton point is a global minimum of the approximate function.
-        """
-        if self._newton_point is None:
-            g = self.jac()
-            B = self.hess()
-            cho_info = scipy.linalg.cho_factor(B)
-            self._newton_point = -scipy.linalg.cho_solve(cho_info, g)
-        return self._newton_point
-
-
-def _help_solve_subproblem(z, d, trust_radius):
-    """
-    Solve the scalar quadratic equation ||z + t d|| == trust_radius.
-    This is like a line-sphere intersection.
-    Return the two values of t, sorted from low to high.
-    """
-    a = np.dot(d, d)
-    b = 2 * np.dot(z, d)
-    c = np.dot(z, z) - trust_radius**2
-    sqrt_discriminant = math.sqrt(b*b - 4*a*c)
-    ta = (-b - sqrt_discriminant) / (2*a)
-    tb = (-b + sqrt_discriminant) / (2*a)
-    return ta, tb
-
+    def solve(self, trust_radius):
+        raise NotImplementedError('The solve method should be implemented by '
+                                  'the child class')
 
 def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
-                           solve_subproblem=None, initial_trust_radius=1.0,
+                           subproblem=None, initial_trust_radius=1.0,
                            max_trust_radius=1000.0, eta=0.15, gtol=1e-4,
                            maxiter=None, disp=False, return_all=False,
                            callback=None, **unknown_options):
@@ -134,7 +123,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     if hess is None and hessp is None:
         raise ValueError('Either the Hessian or the Hessian-vector product '
                          'is currently required for trust-region methods')
-    if solve_subproblem is None:
+    if subproblem is None:
         raise ValueError('A subproblem solving strategy is required for '
                          'trust-region methods')
     if not (0 <= eta < 0.25):
@@ -170,7 +159,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     x = x0
     if return_all:
         allvecs = [x]
-    m = LazyLocalQuadraticModel(x, fun, jac, hess, hessp)
+    m = subproblem(x, fun, jac, hess, hessp)
     k = 0
 
     # search for the function min
@@ -181,7 +170,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # and it tells us whether the proposed step
         # has reached the trust region boundary or not.
         try:
-            p, hits_boundary = solve_subproblem(m, trust_radius)
+            p, hits_boundary = m.solve(trust_radius)
         except np.linalg.linalg.LinAlgError as e:
             warnflag = 3
             break
@@ -191,11 +180,11 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         # define the local approximation at the proposed point
         x_proposed = x + p
-        m_proposed = LazyLocalQuadraticModel(x_proposed, fun, jac, hess, hessp)
+        m_proposed = subproblem(x_proposed, fun, jac, hess, hessp)
 
         # evaluate the ratio defined in equation (4.4)
-        actual_reduction = m() - m_proposed()
-        predicted_reduction = m() - predicted_value
+        actual_reduction = m.fun - m_proposed.fun
+        predicted_reduction = m.fun - predicted_value
         if predicted_reduction <= 0:
             warnflag = 2
             break
@@ -220,7 +209,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         k += 1
 
         # check if the gradient is small enough to stop
-        if m.jac_mag() < gtol:
+        if m.jac_mag < gtol:
             warnflag = 0
             break
 
@@ -247,12 +236,12 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         print("         Gradient evaluations: %d" % njac[0])
         print("         Hessian evaluations: %d" % nhess[0])
 
-    result = Result(x=x, success=(warnflag==0), status=warnflag, fun=m(),
-                    jac=m.jac(), nfev=nfun[0], njev=njac[0], nhev=nhess[0],
+    result = Result(x=x, success=(warnflag==0), status=warnflag, fun=m.fun,
+                    jac=m.jac, nfev=nfun[0], njev=njac[0], nhev=nhess[0],
                     nit=k, message=status_messages[warnflag])
 
     if hess is not None:
-        result['hess'] = m.hess()
+        result['hess'] = m.hess
 
     if return_all:
         result['allvecs'] = allvecs
