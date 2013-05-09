@@ -27,8 +27,8 @@ Travis Vaught for numerous contributions to annual conference and community
     web-site and the initial work on stats module clean up.
 Jeff Whitaker for Mac OS X support.
 David Cournapeau for bug-fixes, refactoring of fftpack and cluster,
-    implementing the numscons build, building Windows binaries and
-    adding single precision FFT.
+    implementing the numscons and Bento build support, building Windows
+    binaries and adding single precision FFT.
 Damian Eads for hierarchical clustering, dendrogram plotting,
     distance functions in spatial package, vq documentation.
 Anne Archibald for kd-trees and nearest neighbor in scipy.spatial.
