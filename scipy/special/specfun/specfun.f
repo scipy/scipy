@@ -5578,9 +5578,20 @@ C       Output:  EI --- Ei(x)
 C       ============================================
 C
         IMPLICIT NONE
-        DOUBLE COMPLEX Z, CEI
+        DOUBLE COMPLEX Z, CEI, IMF
+        DOUBLE PRECISION PI
+        PI=3.141592653589793D0
         CALL E1Z(-Z, CEI)
-        CEI = -CEI + (CDLOG(Z) - CDLOG(1D0/Z))/2D0 - CDLOG(-Z)
+        CEI = -CEI
+        IF (DIMAG(Z).GT.0) THEN
+           CEI = CEI + (0d0,1d0)*PI
+        ELSE IF (DIMAG(Z).LT.0) THEN
+           CEI = CEI - (0d0,1d0)*PI
+        ELSE IF (DIMAG(Z).EQ.0) THEN
+           IF (DBLE(Z).GT.0) THEN
+              CEI = CEI - (0d0,1d0)*PI
+           ENDIF
+        ENDIF
         RETURN
         END
 
@@ -9181,7 +9192,13 @@ C
               CE1=CE1+CR
               IF (CDABS(CR).LE.CDABS(CE1)*1.0D-15) GO TO 15
 10         CONTINUE
-15         CE1=-EL-CDLOG(Z)+Z*CE1
+15         CONTINUE
+           IF (X.LE.0.0.AND.DIMAG(Z).EQ.0.0) THEN
+C             Careful on the branch cut -- avoid signed zeros
+              CE1=-EL-CDLOG(-Z)+Z*CE1-PI*(0.0D0,1.0D0)
+           ELSE
+              CE1=-EL-CDLOG(Z)+Z*CE1
+           ENDIF
         ELSE
            CT0=(0.0D0,0.0D0)
            DO 20 K=120,1,-1
