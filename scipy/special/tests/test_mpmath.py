@@ -316,7 +316,7 @@ class Arg(object):
 
     def values(self, n):
         """Return an array containing approximatively `n` numbers."""
-        n1 = max(2, int(0.4*n))
+        n1 = max(2, int(0.3*n))
         n2 = max(2, int(0.2*n))
         n3 = max(8, n - n1 - n2)
 
@@ -324,19 +324,27 @@ class Arg(object):
         v2 = np.r_[np.linspace(-10, 10, max(0, n2-4)),
                    -9, -5.5, 5.5, 9]
         if self.a >= 0 and self.b > 0:
-            v3 = np.logspace(-30, np.log10(self.b), n3//2)
+            v3 = np.r_[
+                np.logspace(-30, -1, 2 + n3//4),
+                np.logspace(5, np.log10(self.b), 1 + n3//4),
+                ]
             v4 = np.logspace(1, 5, 1 + n3//2)
         elif self.a < 0 and self.b > 0:
             v3 = np.r_[
-                np.logspace(-30, np.log10(self.b), n3//4),
-                -np.logspace(-30, np.log10(-self.a), n3//4)
+                np.logspace(-30, -1, 2 + n3//8),
+                np.logspace(5, np.log10(self.b), 1 + n3//8),
+                -np.logspace(-30, -1, 2 + n3//8),
+                -np.logspace(5, np.log10(-self.a), 1 + n3//8)
                 ]
             v4 = np.r_[
                 np.logspace(1, 5, 1 + n3//4),
                 -np.logspace(1, 5, 1 + n3//4)
                 ]
         elif self.b < 0:
-            v3 = -np.logspace(-30, np.log10(-self.b), n3//2)
+            v3 = np.r_[
+                -np.logspace(-30, -1, 2 + n3//4),
+                -np.logspace(5, np.log10(-self.b), 1 + n3//4),
+                ]
             v4 = -np.logspace(1, 5, 1 + n3//2)
         else:
             v3 = []
@@ -634,7 +642,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(lambda z: sc.airy(z)[0],
                             mpmath.airyai,
                             [Arg(-1e8, 1e8)],
-                            rtol=1e-6)
+                            rtol=1e-5)
         assert_mpmath_equal(lambda z: sc.airy(z)[0],
                             mpmath.airyai,
                             [Arg(-1e3, 1e3)])
@@ -649,7 +657,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
                             [Arg(-1e8, 1e8)], 
-                            rtol=1e-6)
+                            rtol=1e-5)
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
                             [Arg(-1e3, 1e3)])
@@ -664,7 +672,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),
                             [Arg(-1e8, 1e8)], 
-                            rtol=1e-6)
+                            rtol=1e-5)
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),
                             [Arg(-1e3, 1e3)])
@@ -679,7 +687,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(lambda z: sc.airy(z)[3], lambda z:
                             mpmath.airybi(z, derivative=1),
                             [Arg(-1e8, 1e8)],
-                            rtol=1e-6)
+                            rtol=1e-5)
         assert_mpmath_equal(lambda z: sc.airy(z)[3], lambda z:
                             mpmath.airybi(z, derivative=1),
                             [Arg(-1e3, 1e3)])
@@ -719,8 +727,15 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_besselj(self):
         assert_mpmath_equal(sc.jv,
                             _exception_to_nan(lambda v, z: mpmath.besselj(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg(-1e8, 1e8)],
+                            [Arg(-1e100, 1e100), Arg(-1e3, 1e3)],
                             ignore_inf_sign=True)
+
+        # loss of precision at large arguments due to oscillation
+        assert_mpmath_equal(sc.jv,
+                            _exception_to_nan(lambda v, z: mpmath.besselj(v, z, **HYPERKW)),
+                            [Arg(-1e100, 1e100), Arg(-1e8, 1e8)],
+                            ignore_inf_sign=True,
+                            rtol=1e-5)
 
     def test_besselj_complex(self):
         assert_mpmath_equal(lambda v, z: sc.jv(v.real, z),
@@ -828,7 +843,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
     def test_betainc(self):
         assert_mpmath_equal(sc.betainc,
-                            _exception_to_nan(lambda a, b, x: mpmath.betainc(a, b, 0, x, regularized=True)),
+                            _time_limited()(_exception_to_nan(lambda a, b, x: mpmath.betainc(a, b, 0, x, regularized=True))),
                             [Arg(), Arg(), Arg()])
 
     def test_binom(self):
@@ -1080,18 +1095,18 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                 # possibly spurious zero
                 r = mpmath.gegenbauer(n, a + mpmath.mpf('1e-50'), x)
 
-            if abs(r) > 1e300:
+            if abs(r) > 1e270:
                 return np.inf
             return r
         def sc_gegenbauer(n, a, x):
             r = sc.eval_gegenbauer(int(n), a, x)
-            if abs(r) > 1e300:
+            if abs(r) > 1e270:
                 return np.inf
             return r
         assert_mpmath_equal(sc_gegenbauer,
                             _exception_to_nan(gegenbauer),
                             [IntArg(0, 100), Arg(), Arg()],
-                            n=20000, dps=100,
+                            n=40000, dps=100,
                             ignore_inf_sign=True)
 
     @knownfailure_overridable()
@@ -1203,15 +1218,21 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         # 1e8 = 1e15 * 1e-7
         assert_mpmath_equal(sc.j0,
                             mpmath.j0,
+                            [Arg(-1e3, 1e3)])
+        assert_mpmath_equal(sc.j0,
+                            mpmath.j0,
                             [Arg(-1e8, 1e8)],
-                            rtol=1e-7)
+                            rtol=1e-5)
 
     def test_j1(self):
         # See comment in test_j0
         assert_mpmath_equal(sc.j1,
                             mpmath.j1,
+                            [Arg(-1e3, 1e3)])
+        assert_mpmath_equal(sc.j1,
+                            mpmath.j1,
                             [Arg(-1e8, 1e8)],
-                            rtol=1e-7)
+                            rtol=1e-5)
 
     @knownfailure_overridable()
     def test_jacobi(self):
