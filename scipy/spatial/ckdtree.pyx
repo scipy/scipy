@@ -1208,7 +1208,7 @@ cdef class cKDTree:
         cdef np.ndarray[np.float64_t, ndim=2] xx
         cdef np.intp_t c, n, i, j
         x = np.asarray(x).astype(np.float64)
-        if np.shape(x)[-1] != self.m:
+        if np.shape(x)[len(x.shape) - 1] != self.m:
             raise ValueError("x must consist of vectors of length %d but has"
                              "shape %s" % (int(self.m), np.shape(x)))
         if p < 1:
@@ -1218,7 +1218,7 @@ cdef class cKDTree:
             x = x[np.newaxis,:]
         else:
             single = False
-        retshape = np.shape(x)[:-1]
+        retshape = np.shape(x)[:len(x.shape) - 1]
         n = <np.intp_t> np.prod(retshape)
         xx = np.reshape(x,(n,self.m))
         xx = np.ascontiguousarray(xx,dtype=np.float64)
