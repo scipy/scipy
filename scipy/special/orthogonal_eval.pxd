@@ -194,7 +194,7 @@ cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) nogil:
 @cython.cdivision(True)
 cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
     cdef long kk
-    cdef int a, b
+    cdef long a, b
     cdef double p, d
     cdef double k
 
@@ -206,6 +206,27 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
         return 2*alpha*x
     elif alpha == 0.0:
         return eval_gegenbauer(n, alpha, x)
+    elif fabs(x) < 1e-5:
+        # Power series rather than recurrence due to loss of precision
+        # http://functions.wolfram.com/Polynomials/GegenbauerC3/02/
+        a = n//2
+
+        d = 1 if a % 2 == 0 else -1
+        d /= beta(alpha, 1 + a)
+        if n == 2*a:
+            d /= (a + alpha)
+        else:
+            d *= 2*x
+
+        p = 0
+        for kk in range(a+1):
+            p += d
+            d *= -4*x**2 * (a - k) * (-a + alpha + k + n) / (
+                (n + 1 - 2*a + 2*k) * (n + 2 - 2*a + 2*k))
+            if fabs(d) == 1e-20*fabs(p):
+                # converged
+                break
+        return p
     else:
         d = x - 1
         p = x 

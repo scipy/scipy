@@ -1065,20 +1065,34 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.gegenbauer),
                             [Arg(-1e3, 1e3), Arg(), Arg()])
 
-    @knownfailure_overridable("loss of precision at |x| <~ eps")
     def test_gegenbauer_int(self):
         def gegenbauer(n, a, x):
             if abs(a) > 1e100:
                 return np.nan
             if n == 0:
-                return 1.0
+                r = 1.0
             elif n == 1:
-                return 2*a*x
-            return mpmath.gegenbauer(n, a, x)
-        assert_mpmath_equal(lambda n, a, x: sc.eval_gegenbauer(int(n), a, x),
+                r = 2*a*x
+            else:
+                r = mpmath.gegenbauer(n, a, x)
+
+            if float(r) == 0 and n <= 1-a and a < -1 and float(a) == int(float(a)):
+                # possibly spurious zero
+                r = mpmath.gegenbauer(n, a + mpmath.mpf('1e-50'), x)
+
+            if abs(r) > 1e300:
+                return np.inf
+            return r
+        def sc_gegenbauer(n, a, x):
+            r = sc.eval_gegenbauer(int(n), a, x)
+            if abs(r) > 1e300:
+                return np.inf
+            return r
+        assert_mpmath_equal(sc_gegenbauer,
                             _exception_to_nan(gegenbauer),
                             [IntArg(0, 100), Arg(), Arg()],
-                            n=20000, dps=100)
+                            n=20000, dps=100,
+                            ignore_inf_sign=True)
 
     @knownfailure_overridable()
     def test_gegenbauer_complex(self):
