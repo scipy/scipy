@@ -181,7 +181,6 @@ class IndexMixin(object):
             if len(i) == 2:
                 if isinstance(j, slice):
                     j = i[1]
-
                 else:
                     raise ValueError('too many indices for array')
             i = i[0]
