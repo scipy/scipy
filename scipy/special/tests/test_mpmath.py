@@ -361,6 +361,13 @@ class Arg(object):
         return np.unique(v)
 
 
+class FixedArg(object):
+    def __init__(self, values):
+        self._values = np.asarray(values)
+    def values(self, n):
+        return self._values
+
+
 class ComplexArg(object):
     def __init__(self, a=complex(-np.inf, -np.inf), b=complex(np.inf, np.inf)):
         self.real = Arg(a.real, b.real)
@@ -1109,6 +1116,13 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             n=40000, dps=100,
                             ignore_inf_sign=True)
 
+        # Check the small-x expansion
+        assert_mpmath_equal(sc_gegenbauer,
+                            _exception_to_nan(gegenbauer),
+                            [IntArg(0, 100), Arg(), FixedArg(np.logspace(-30, -4, 30))],
+                            dps=100,
+                            ignore_inf_sign=True)
+
     @knownfailure_overridable()
     def test_gegenbauer_complex(self):
         assert_mpmath_equal(lambda n, a, x: sc.eval_gegenbauer(int(n), a.real, x),
@@ -1295,6 +1309,11 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             lambda n, x: _exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
                             [IntArg(), Arg()], 
                             n=20000)
+
+        # Check the small-x expansion
+        assert_mpmath_equal(lambda n, x: sc.eval_legendre(int(n), x),
+                            lambda n, x: _exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
+                            [IntArg(), FixedArg(np.logspace(-30, -4, 20))])
 
     @knownfailure_overridable("wrong function at |z| > 1 (Trac #1877)")
     def test_legenp(self):
