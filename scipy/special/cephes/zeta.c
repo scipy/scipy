@@ -111,69 +111,51 @@ double x, q;
 	    goto domerr;	/* because q^-x not defined */
     }
 
-    /* Euler-Maclaurin summation formula */
-    /*
-     * if( x < 25.0 )
+    /* Asymptotic expansion
+     * http://dlmf.nist.gov/25.11#E43
      */
-    {
-	/* Permit negative q but continue sum until n+q > +9 .
-	 * This case should be handled by a reflection formula.
-	 * If q<0 and x is an integer, there is a relation to
-	 * the polyGamma function.
-	 */
-	s = pow(q, -x);
-	a = q;
-	i = 0;
-	b = 0.0;
-	while ((i < 9) || (a <= 9.0)) {
-	    i += 1;
-	    a += 1.0;
-	    b = pow(a, -x);
-	    s += b;
-	    if (fabs(b / s) < MACHEP)
-		goto done;
-	}
-
-	w = a;
-	s += b * w / (x - 1.0);
-	s -= 0.5 * b;
-	a = 1.0;
-	k = 0.0;
-	for (i = 0; i < 12; i++) {
-	    a *= x + k;
-	    b /= w;
-	    t = a * b / A[i];
-	    s = s + t;
-	    t = fabs(t / s);
-	    if (t < MACHEP)
-		goto done;
-	    k += 1.0;
-	    a *= x + k;
-	    b /= w;
-	    k += 1.0;
-	}
-      done:
-	return (s);
+    if (q > 1e8) {
+        return (1/(x - 1) + 1/(2*q)) * pow(q, 1 - x);
     }
 
-
-
-    /* Basic sum of inverse powers */
-    /*
-     * pseres:
-     * 
-     * s = pow( q, -x );
-     * a = q;
-     * do
-     * {
-     * a += 2.0;
-     * b = pow( a, -x );
-     * s += b;
-     * }
-     * while( b/s > MACHEP );
-     * 
-     * b = pow( 2.0, -x );
-     * s = (s + b)/(1.0-b);
-     * return(s);
+    /* Euler-Maclaurin summation formula */
+    
+    /* Permit negative q but continue sum until n+q > +9 .
+     * This case should be handled by a reflection formula.
+     * If q<0 and x is an integer, there is a relation to
+     * the polyGamma function.
      */
+    s = pow(q, -x);
+    a = q;
+    i = 0;
+    b = 0.0;
+    while ((i < 9) || (a <= 9.0)) {
+        i += 1;
+        a += 1.0;
+        b = pow(a, -x);
+        s += b;
+        if (fabs(b / s) < MACHEP)
+            goto done;
+    }
+    
+    w = a;
+    s += b * w / (x - 1.0);
+    s -= 0.5 * b;
+    a = 1.0;
+    k = 0.0;
+    for (i = 0; i < 12; i++) {
+        a *= x + k;
+        b /= w;
+        t = a * b / A[i];
+        s = s + t;
+        t = fabs(t / s);
+        if (t < MACHEP)
+            goto done;
+        k += 1.0;
+        a *= x + k;
+        b /= w;
+        k += 1.0;
+    }
+done:
+    return (s);
 }

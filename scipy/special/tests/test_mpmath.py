@@ -1376,9 +1376,8 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(-1e30, 1e30), Arg()],
                             n=2000)
 
-    @knownfailure_overridable("accuracy problems at extremely large arguments (absolute tolerance OK, relative not)")
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,
                             _exception_to_nan(mpmath.zeta),
-                            [Arg(a=1, inclusive_a=False),
-                             Arg(a=0, inclusive_a=False)], n=1000)
+                            [Arg(a=1, b=1e10, inclusive_a=False),
+                             Arg(a=0, inclusive_a=False)])
