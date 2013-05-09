@@ -1698,8 +1698,7 @@ class TestCSR(sparse_test_class()):
             SIJ = SIJ.todense()
         assert_equal(SIJ, D[I,J])
 
-class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
-                                fancy_multidim_indexing=False)):
+class TestCSC(sparse_test_class(fancy_multidim_indexing=False)):
     spmatrix = csc_matrix
 
     def test_constructor1(self):
@@ -1807,7 +1806,7 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
     ##
     ## TODO: CSC fails the following tests by producing invalid results
     ##
-
+    """
     @dec.knownfailureif(True, "CSC bug")
     def test_fancy_indexing_ndarray(self):
         pass
@@ -1819,6 +1818,7 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
     @dec.knownfailureif(True, "CSC not implemented")
     def test_fancy_indexing_boolean(self):
         pass
+    """
 
 class TestDOK(sparse_test_class(slicing=False,
                                 slicing_assign=False,
