@@ -143,29 +143,16 @@ class csc_matrix(_cs_matrix, IndexMixin):
         if isinstance(key, tuple):
             row, col = self._unpack_index(key)
 
-            if isintlike(row) or isinstance(row, slice):
+            if (isintlike(row) or isinstance(row, slice) or isintlike(col) or 
+                isinstance(col,slice)):
                 return self.T[col,row].T
             else:
-                #[[1,2],??] or [[[1],[2]],??]
-                if isintlike(col) or isinstance(col,slice):
-                    return self.T[col,row].T
-                else:
-                    row = np.asarray(row, dtype=np.intc)
-                    col = np.asarray(col, dtype=np.intc)
-                    if len(row.shape) == 1:
-                        return self.T[col,row]
-                    elif len(row.shape) == 2:
-                        row = row.reshape(-1)
-                        col = col.reshape(-1,1)
-                        return self.T[col,row].T
-                    else:
-                        raise NotImplementedError('unsupported indexing')
-
-            return self.T[col,row].T
-        elif isintlike(key) or isinstance(key,slice):
-            return self.T[:,key].T                              # [i] or [1:2]
+                return self.T[col,row]
+        elif isinstance(key, np.ndarray) and key.dtype.kind == 'b':
+            row, col = self._check_Boolean(key, slice(None))
+            return self[row, col]
         else:
-            return self.T[:,key].T                              # [[1,2]]
+            return self.T[:,key].T                              # [i] or [1:2]
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
