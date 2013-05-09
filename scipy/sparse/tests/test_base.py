@@ -1468,7 +1468,7 @@ class _TestSlicing:
         A = self.spmatrix(B)
 
         s_ = np.s_
-        slices = [s_[:2], s_[1:2], s_[3:], s_[3::2],
+        slices = [s_[:2], s_[1:2], s_[3:], s_[3::2], s_[1:5:1],
                   s_[8:3:-1], s_[4::-2], s_[:5:-1],
                   0, 1, s_[:], s_[1:5], -1, -2, -5,
                   array(-1), np.int8(-3)]
