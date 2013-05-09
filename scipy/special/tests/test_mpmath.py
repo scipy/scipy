@@ -1269,12 +1269,11 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.legendre,
                             [Arg(), Arg()])
 
-    @knownfailure_overridable("loss of precision at |x| <~ eps")
     def test_legendre_int(self):
         assert_mpmath_equal(lambda n, x: sc.eval_legendre(int(n), x),
                             lambda n, x: _exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
                             [IntArg(), Arg()], 
-                            n=20000, dps=50)
+                            n=20000)
 
     @knownfailure_overridable("wrong function at |z| > 1 (Trac #1877)")
     def test_legenp(self):

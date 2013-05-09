@@ -371,7 +371,7 @@ cdef inline number_t eval_legendre(double n, number_t x) nogil:
 
 @cython.cdivision(True)
 cdef inline double eval_legendre_l(long n, double x) nogil:
-    cdef long kk
+    cdef long kk, a
     cdef double p, d
     cdef double k
 
@@ -383,6 +383,26 @@ cdef inline double eval_legendre_l(long n, double x) nogil:
         return 1.0
     elif n == 1:
         return x
+    elif fabs(x) < 1e-5:
+        # Power series rather than recurrence due to loss of precision
+        # http://functions.wolfram.com/Polynomials/LegendreP/02/
+        a = n//2
+
+        d = 1 if a % 2 == 0 else -1
+        if n == 2*a:
+            d *= -2 / beta(a + 1, -0.5)
+        else:
+            d *= 2 * x / beta(a + 1, 0.5)
+
+        p = 0
+        for kk in range(a+1):
+            p += d
+            d *= -2 * x**2 * (a - k) * (2*n + 1 - 2*a + 2*k) / (
+                (n + 1 - 2*a + 2*k) * (n + 2 - 2*a + 2*k))
+            if fabs(d) == 1e-20*fabs(p):
+                # converged
+                break
+        return p
     else:
         d = x - 1
         p = x 
