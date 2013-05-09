@@ -707,12 +707,12 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_bei(self):
         assert_mpmath_equal(sc.bei,
                             _exception_to_nan(lambda z: mpmath.bei(0, z, **HYPERKW)),
-                            [Arg(-1e30, 1e30)])
+                            [Arg(-1e3, 1e3)])
 
     def test_ber(self):
         assert_mpmath_equal(sc.ber,
                             _exception_to_nan(lambda z: mpmath.ber(0, z, **HYPERKW)),
-                            [Arg(-1e30, 1e30)])
+                            [Arg(-1e3, 1e3)])
 
     def test_bernoulli(self):
         assert_mpmath_equal(lambda n: sc.bernoulli(int(n))[int(n)],
