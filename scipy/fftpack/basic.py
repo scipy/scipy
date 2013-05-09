@@ -204,22 +204,25 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
 
     Notes
     -----
-    The packing of the result is "standard": If A = fft(a, n), then A[0]
-    contains the zero-frequency term, A[1:n/2+1] contains the
-    positive-frequency terms, and A[n/2+1:] contains the negative-frequency
+    The packing of the result is "standard": If ``A = fft(a, n)``, then
+    ``A[0]`` contains the zero-frequency term, ``A[1:n/2]`` contains the
+    positive-frequency terms, and ``A[n/2:]`` contains the negative-frequency
     terms, in order of decreasingly negative frequency. So for an 8-point
-    transform, the frequencies of the result are [ 0, 1, 2, 3, 4, -3, -2, -1].
+    transform, the frequencies of the result are [0, 1, 2, 3, -4, -3, -2, -1].
+    To rearrange the fft output so that the zero-frequency component is
+    centered, like [-4, -3, -2, -1,  0,  1,  2,  3], use `fftshift`.
 
-    For n even, A[n/2] contains the sum of the positive and negative-frequency
-    terms. For n even and x real, A[n/2] will always be real.
+    For `n` even, ``A[n/2]`` contains the sum of the positive and
+    negative-frequency terms.  For `n` even and `x` real, ``A[n/2]`` will
+    always be real.
 
-    This is most efficient for n a power of two.
+    This function is most efficient when `n` is a power of two.
 
     Examples
     --------
     >>> from scipy.fftpack import fft, ifft
     >>> x = np.arange(5)
-    >>> np.allclose(fft(ifft(x)), x, atol=1e-15)  #within numerical accuracy.
+    >>> np.allclose(fft(ifft(x)), x, atol=1e-15)  # within numerical accuracy.
     True
 
     """
