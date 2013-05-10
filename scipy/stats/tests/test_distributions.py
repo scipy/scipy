@@ -3,9 +3,10 @@
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_array_equal, assert_almost_equal, assert_array_almost_equal, \
-    assert_allclose, assert_, assert_raises, rand, dec
+from numpy.testing import (TestCase, run_module_suite, assert_equal,
+    assert_array_equal, assert_array_less, assert_almost_equal,
+    assert_array_almost_equal, assert_allclose, assert_, assert_raises,
+    rand, dec)
 from numpy.testing.utils import WarningManager
 from nose import SkipTest
 
@@ -1118,6 +1119,10 @@ def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
     assert_equal(rv.cdf(0), 0)  # rv.cdf(0) previously resulted in: nan
+
+def test_gh_2477():
+    y = stats.truncnorm.rvs(10, 11, 0, 1, size=10)
+    assert_array_less(y, 0)
 
 
 if __name__ == "__main__":

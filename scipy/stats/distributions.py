@@ -16,6 +16,7 @@ from scipy import special
 from scipy import optimize
 from scipy import integrate
 from scipy.special import gammaln as gamln
+import scipy.special
 
 import inspect
 from numpy import all, where, arange, putmask, \
@@ -2075,6 +2076,7 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 # by other distributions.
 _norm_pdf_C = math.sqrt(2*pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
+_recip_sqrt_2 = 1 / math.sqrt(2)
 
 
 def _norm_pdf(x):
@@ -2086,8 +2088,9 @@ def _norm_logpdf(x):
 
 
 def _norm_cdf(x):
-    return special.ndtr(x)
-
+    #return special.ndtr(x)
+    #return 0.5*(1.0 + special.erf(z/_sqrt_2))
+    return 0.5*special.erfc(-x*_recip_sqrt_2)
 
 def _norm_logcdf(x):
     return special.log_ndtr(x)
