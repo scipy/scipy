@@ -309,7 +309,8 @@ class UmfpackContext(Struct):
         self.control[UMFPACK_PRL] = 3
 
     def __del__(self):
-        self.free()
+        if _um is not None:
+            self.free()
 
     ##
     # 30.11.2005, c
