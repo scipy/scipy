@@ -2,22 +2,36 @@
 """
 runtests.py [OPTIONS] [-- ARGS]
 
-Run Scipy tests, building Scipy first.
+Run tests, building the project first.
 
 Examples::
 
     $ python runtests.py
-    $ python runtests.py -s optimize
-    $ python runtests.py -t scipy/special/tests/test_basic.py:test_xlogy
+    $ python runtests.py -s {SAMPLE_SUBMODULE}
+    $ python runtests.py -t {SAMPLE_TEST}
     $ python runtests.py --ipython
 
 """
 
+#
+# This is a generic test runner script for projects using Numpy's test
+# framework. Change the following values to adapt to your project:
+#
+
+PROJECT_MODULE = "scipy"
+PROJECT_ROOT_FILES = ['scipy', 'LICENSE.txt', 'setup.py']
+SAMPLE_TEST = "scipy/special/tests/test_basic.py:test_xlogy"
+SAMPLE_SUBMODULE = "optimize"
+
+# ---------------------------------------------------------------------
+
+__doc__ = __doc__.format(**globals())
+
 import sys
 import os
 
-# In case we are run from the source directory, we don't want to import scipy
-# from there, we want to import the installed version:
+# In case we are run from the source directory, we don't want to import the
+# project from there:
 sys.path.pop(0)
 
 import shutil
@@ -29,13 +43,13 @@ def main(argv):
     parser.add_argument("--verbose", "-v", action="count", default=1,
                         help="more verbosity")
     parser.add_argument("--no-build", "-n", action="store_true", default=False,
-                        help="do not build Scipy (use system installed version)")
+                        help="do not build the project (use system installed version)")
     parser.add_argument("--build-only", "-b", action="store_true", default=False,
                         help="just build, do not run any tests")
     parser.add_argument("--doctests", action="store_true", default=False,
                         help="Run doctests in module")
     parser.add_argument("--coverage", action="store_true", default=False,
-                        help=("report coverage of Scipy code. HTML output goes "
+                        help=("report coverage of project code. HTML output goes "
                               "under build/coverage"))
     parser.add_argument("--mode", "-m", default="fast",
                         help="'fast', 'full', or something that could be "
@@ -63,7 +77,7 @@ def main(argv):
             sys.path.insert(0, p)
 
     if not args.no_build:
-        site_dir = build_scipy(args)
+        site_dir = build_project(args)
         sys.path.insert(0, site_dir)
         os.environ['PYTHONPATH'] = site_dir
 
@@ -96,7 +110,7 @@ def main(argv):
     if args.build_only:
         sys.exit(0)
     elif args.submodule:
-        modname = 'scipy.' + args.submodule
+        modname = PROJECT_MODULE + '.' + args.submodule
         try:
             __import__(modname)
             test = sys.modules[modname].test
@@ -111,8 +125,8 @@ def main(argv):
             from numpy.testing import Tester
             return Tester(args.tests[0]).test(*a, **kw)
     else:
-        import scipy
-        test = scipy.test
+        __import__(PROJECT_MODULE)
+        test = sys.modules[PROJECT_MODULE].test
 
     result = test(args.mode,
                   verbose=args.verbose,
@@ -125,9 +139,9 @@ def main(argv):
     else:
         sys.exit(1)
 
-def build_scipy(args):
+def build_project(args):
     """
-    Build a dev version of Scipy.
+    Build a dev version of the project.
 
     Returns
     -------
@@ -138,10 +152,10 @@ def build_scipy(args):
 
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
     root_ok = [os.path.exists(os.path.join(root_dir, fn))
-               for fn in ['HACKING.rst.txt', 'scipy']]
+               for fn in PROJECT_ROOT_FILES]
     if not all(root_ok):
-        print("To use the -b option, run the scipy/runtests.py in "
-              "Scipy's git checkout or unpacked source")
+        print("To build the project, run runtests.py in "
+              "git checkout or unpacked source")
         sys.exit(1)
 
     dst_dir = os.path.join(root_dir, 'build', 'testenv')
@@ -163,7 +177,8 @@ def build_scipy(args):
 
     print("Building, see build.log...")
     with open('build.log', 'w') as log:
-        ret = subprocess.call(cmd, env=env, stdout=log, stderr=log)
+        ret = subprocess.call(cmd, env=env, stdout=log, stderr=log,
+                              cwd=root_dir)
 
     if ret == 0:
         print("Build OK")
