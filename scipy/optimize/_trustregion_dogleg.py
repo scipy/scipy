@@ -95,7 +95,6 @@ class DoglegSubproblem(BaseQuadraticSubproblem):
         # then return the point where the path intersects the boundary.
         p_u_norm = scipy.linalg.norm(p_u)
         if p_u_norm >= trust_radius:
-            # XXX check this in literature
             p_boundary = p_u * (trust_radius / p_u_norm)
             hits_boundary = True
             return p_boundary, hits_boundary

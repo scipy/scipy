@@ -30,9 +30,7 @@ def _minimize_trust_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
 class CGSteihaugSubproblem(BaseQuadraticSubproblem):
     """Quadratic subproblem solved by a conjugate gradient method"""
-    def solve(self, trust_radius, tolerance=None):
-        # XXX how is the `tolerance` parameter supposed to be defined by the
-        # caller?
+    def solve(self, trust_radius):
         """
         Solve the subproblem using a conjugate gradient method.
 
@@ -40,8 +38,6 @@ class CGSteihaugSubproblem(BaseQuadraticSubproblem):
         ----------
         trust_radius : float
             We are allowed to wander only this far away from the origin.
-        tolerance : float, optional
-            Solve the sub-problem with this much tolerance.
 
         Returns
         -------
@@ -62,8 +58,7 @@ class CGSteihaugSubproblem(BaseQuadraticSubproblem):
         p_origin = np.zeros_like(self.jac)
 
         # define a default tolerance
-        if tolerance is None:
-            tolerance = min(0.5, math.sqrt(self.jac_mag)) * self.jac_mag
+        tolerance = min(0.5, math.sqrt(self.jac_mag)) * self.jac_mag
 
         # Stop the method if the search direction
         # is a direction of nonpositive curvature.
