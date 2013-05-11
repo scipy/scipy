@@ -271,10 +271,12 @@ def rosen_hess_prod(x, p):
 
 def wrap_function(function, args):
     ncalls = [0]
+    if function is None:
+        return ncalls, None
 
-    def function_wrapper(x):
+    def function_wrapper(*wrapper_args):
         ncalls[0] += 1
-        return function(x, *args)
+        return function(*(wrapper_args + args))
 
     return ncalls, function_wrapper
 
@@ -2735,6 +2737,21 @@ def show_options(solver, method=None):
             Step size used for numerical approximation of the jacobian.
         maxiter : int
             Maximum number of iterations.
+
+    * dogleg options:
+        initial_trust_radius : float
+            Initial trust-region radius.
+        max_trust_radius : float
+            Maximum value of the trust-region radius. No steps that are longer
+            than this value will be proposed.
+        eta : float
+            Trust region related acceptance stringency for proposed steps.
+        gtol : float
+            Gradient norm must be less than `gtol` before successful
+            termination.
+
+    * trust-ncg options:
+        see dogleg options.
 
     ** root options
 
