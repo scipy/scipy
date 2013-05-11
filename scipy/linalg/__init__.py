@@ -80,9 +80,7 @@ Matrix Functions
 .. autosummary::
    :toctree: generated/
 
-   expm - Matrix exponential using Pade approximation
-   expm2 - Matrix exponential using eigenvalue decomposition
-   expm3 - Matrix exponential using Taylor-series expansion
+   expm - Matrix exponential using Pade approximation with squaring and scaling
    logm - Matrix logarithm
    cosm - Matrix cosine
    sinm - Matrix sine
