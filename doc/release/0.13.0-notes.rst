@@ -21,6 +21,15 @@ This release requires Python 2.6, 2.7 or 3.1-3.3 and NumPy 1.5.1 or greater.
 New features
 ============
 
+``scipy.optimize`` improvements
+-------------------------------
+
+Trust-region unconstrained minimization algorithms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The ``minimize`` function gained two trust-region solvers for unconstrained
+minimization: ``dogleg`` and ``trust-ncg``. These provide an alternative to
+traditional line search algorithms already present in ``scipy.optimize``.
+
 
 Deprecated features
 ===================
