@@ -5597,7 +5597,9 @@ class truncnorm_gen(rv_continuous):
         return (_norm_cdf(x) - self._na) / self._delta
 
     def _ppf(self, q, a, b):
-        return norm._ppf(q*self._nb + self._na*(1.0-q))
+        #return norm._ppf(q*self._nb + self._na*(1.0-q))
+        #return norm._ppf(q*self._nb - q*self.n_a + self._na)
+        return norm._ppf(self._na + q*(self._nb - self.n_a))
 
     def _stats(self, a, b):
         nA, nB = self._na, self._nb
