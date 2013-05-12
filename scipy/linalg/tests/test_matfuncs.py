@@ -17,7 +17,7 @@ from numpy.testing import (TestCase, run_module_suite,
         assert_allclose, decorators)
 
 import scipy.linalg
-from scipy.linalg import signm, logm, sqrtm, expm, expm_frechet
+from scipy.linalg import signm, logm, sqrtm, expm_frechet
 from scipy.linalg.matfuncs import expm2, expm3
 import scipy.linalg._expm_frechet
 
