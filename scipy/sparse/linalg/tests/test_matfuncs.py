@@ -7,6 +7,8 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import math
+
 import numpy as np
 from numpy import array, eye, dot, sqrt, double, exp, random
 from numpy.linalg import matrix_power
@@ -16,8 +18,9 @@ from numpy.testing import (TestCase, run_module_suite,
 
 from scipy.sparse import csc_matrix
 from scipy.sparse.construct import eye as speye
-from scipy.sparse.linalg.matfuncs import expm_2005, expm_2009
-from scipy.sparse.linalg.matfuncs import ProductOperator, MatrixPowerOperator
+from scipy.sparse.linalg.matfuncs import (expm_2005, expm_2009,
+        ProductOperator, MatrixPowerOperator,
+        _is_upper_triangular)
 from scipy.linalg import logm
 import scipy.sparse
 import scipy.sparse.linalg

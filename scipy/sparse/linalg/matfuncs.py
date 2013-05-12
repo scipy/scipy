@@ -12,10 +12,13 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['expm', 'inv']
 
+import math
+
 from numpy import asarray, dot, eye, ceil, log2
 from numpy import matrix as mat
 import numpy as np
 
+import scipy.misc
 from scipy.linalg.misc import norm
 from scipy.linalg.basic import solve, inv
 
