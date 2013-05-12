@@ -636,5 +636,5 @@ def _pade13(A, ident, A2=None, A4=None, A6=None):
     return U,V
 
 # define the default expm function
-expm = expm_2005
+expm = expm_2009
 
