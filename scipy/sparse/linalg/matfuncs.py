@@ -23,6 +23,8 @@ from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg import spsolve
 
+import scipy.sparse
+import scipy.sparse.linalg
 from scipy.sparse.linalg.interface import LinearOperator
 
 
