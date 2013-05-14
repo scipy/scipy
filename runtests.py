@@ -88,7 +88,7 @@ def main(argv):
 
     if args.ipython:
         import IPython
-        IPython.embed()
+        IPython.embed(user_ns={})
         sys.exit(0)
 
     if args.shell:
