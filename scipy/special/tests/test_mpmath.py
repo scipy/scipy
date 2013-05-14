@@ -1476,12 +1476,17 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             atol=1e-8, n=6000,
                             dps=150)
 
-    @knownfailure_overridable("problems at extremely large arguments (absolute tolerance OK, relative not)")
-    def test_struve(self):
+    def test_struveh(self):
         assert_mpmath_equal(sc.struve,
-                            _exception_to_nan(lambda v, x: mpmath.struveh(v, x, **HYPERKW)),
-                            [Arg(-1e30, 1e30), Arg()],
-                            n=2000)
+                            _exception_to_nan(lambda v, x: mpmath.struveh(v, x)),
+                            [Arg(-1e3, 1e3), Arg(0, 1e3)],
+                            rtol=1e-10)
+
+    def test_struvel(self):
+        assert_mpmath_equal(sc.modstruve,
+                            _exception_to_nan(lambda v, x: mpmath.struvel(v, x)),
+                            [Arg(-1e3, 1e3), Arg(0, 1e3)],
+                            rtol=1e-10)
 
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,

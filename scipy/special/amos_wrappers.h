@@ -31,6 +31,7 @@ npy_cdouble cbesi_wrap_e( double v, npy_cdouble z);
 double cbesi_wrap_e_real( double v, double z);
 npy_cdouble cbesj_wrap( double v, npy_cdouble z);
 npy_cdouble cbesj_wrap_e( double v, npy_cdouble z);
+double cbesj_wrap_real(double v, double z);
 double cbesj_wrap_e_real( double v, double z);
 npy_cdouble cbesy_wrap( double v, npy_cdouble z);
 double cbesy_wrap_real(double v, double x);

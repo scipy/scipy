@@ -201,8 +201,11 @@ expm1 -- expm1: d->d                                       -- cephes.h
 cosm1 -- cosm1: d->d                                       -- cephes.h
 spence -- spence: d->d                                     -- cephes.h
 zetac -- zetac: d->d                                       -- cephes.h
-struve -- struve_wrap: dd->d                               -- specfun_wrappers.h
-modstruve -- modstruve_wrap: dd->d                         -- specfun_wrappers.h
+struve -- struve_h: dd->d                                  -- misc.h
+modstruve -- struve_l: dd->d                               -- misc.h
+_struve_power_series -- struve_power_series:  ddi*d->d     -- misc.h
+_struve_asymp_large_z -- struve_asymp_large_z: ddi*d->d    -- misc.h
+_struve_bessel_series -- struve_bessel_series: ddi*d->d    -- misc.h
 itstruve0 -- itstruve0_wrap: d->d                          -- specfun_wrappers.h
 it2struve0 -- it2struve0_wrap: d->d                        -- specfun_wrappers.h
 itmodstruve0 -- itmodstruve0_wrap: d->d                    -- specfun_wrappers.h
