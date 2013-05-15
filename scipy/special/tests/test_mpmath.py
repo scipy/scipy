@@ -364,6 +364,7 @@ class Arg(object):
 class FixedArg(object):
     def __init__(self, values):
         self._values = np.asarray(values)
+
     def values(self, n):
         return self._values
 
@@ -540,6 +541,7 @@ def _trace_args(func):
             return complex(x)
         else:
             return float(x)
+
     def wrap(*a, **kw):
         sys.stderr.write("%r: " % (tuple(map(tofloat, a)),))
         sys.stderr.flush()
@@ -663,7 +665,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         # oscillating function, limit range
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
-                            [Arg(-1e8, 1e8)], 
+                            [Arg(-1e8, 1e8)],
                             rtol=1e-5)
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
@@ -678,7 +680,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         # oscillating function, limit range
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),
-                            [Arg(-1e8, 1e8)], 
+                            [Arg(-1e8, 1e8)],
                             rtol=1e-5)
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),
@@ -948,7 +950,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         # Check cross-over reqion
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
-                            (np.linspace(-50, 50, 171)[:,None] 
+                            (np.linspace(-50, 50, 171)[:,None]
                              + np.r_[0, np.logspace(-3, 2, 61),
                                        -np.logspace(-3, 2, 11)]*1j
                              ).ravel(),
@@ -1113,6 +1115,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
             if abs(r) > 1e270:
                 return np.inf
             return r
+
         def sc_gegenbauer(n, a, x):
             r = sc.eval_gegenbauer(int(n), a, x)
             # Differing overflow thresholds in scipy vs. mpmath
@@ -1318,7 +1321,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_legendre_int(self):
         assert_mpmath_equal(lambda n, x: sc.eval_legendre(int(n), x),
                             lambda n, x: _exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
-                            [IntArg(), Arg()], 
+                            [IntArg(), Arg()],
                             n=20000)
 
         # Check the small-x expansion

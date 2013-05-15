@@ -65,6 +65,7 @@ if __name__ == "__main__":
     print(" || x_{direct} - x_{LSQR}|| %9.4e " % norm(svx-xo))
     print("")
 
+
 def test_gh_2466():
     row = np.array([0, 0])
     col = np.array([0, 1])
@@ -72,4 +73,3 @@ def test_gh_2466():
     A = scipy.sparse.coo_matrix((val, (row, col)), shape=(1, 2))
     b = np.asarray([4])
     lsqr(A, b)
-

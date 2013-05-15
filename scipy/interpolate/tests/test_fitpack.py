@@ -164,12 +164,12 @@ class TestSmokeTests(TestCase):
         put("  k  :     Roots of s(x) approx %s  x in [%s,%s]:" %
               (f(None),repr(round(a,3)),repr(round(b,3))))
         for k in range(1,6):
-            tck=splrep(x,v,s=s,per=per,k=k,xe=xe)
+            tck = splrep(x, v, s=s, per=per, k=k, xe=xe)
             if k == 3:
                 roots = sproot(tck)
                 assert_allclose(splev(roots, tck), 0, atol=1e-10, rtol=1e-10)
                 assert_allclose(roots, pi*array([1, 2, 3, 4]), rtol=1e-3)
-                put('  %d  : %s'%(k,repr(roots.tolist())))
+                put('  %d  : %s' % (k, repr(roots.tolist())))
             else:
                 assert_raises(ValueError, sproot, tck)
 
@@ -257,6 +257,7 @@ class TestSplev(TestCase):
         assert_equal(z.shape, (1,))
         z = splev(1, tck)
         assert_equal(z.shape, ())
+
 
 def test_bisplrep_overflow():
     a = np.linspace(0, 1, 620)

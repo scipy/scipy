@@ -1117,6 +1117,7 @@ def test_hypergeom_interval_1802():
     assert_equal(stats.hypergeom.ppf(0.02, 100, 100, 8), 8)
     assert_equal(stats.hypergeom.ppf(1, 100, 100, 8), 8)
 
+
 def test_distribution_too_many_args():
     # Check that a TypeError is raised when too many args are given to a method
     # Regression test for ticket 1815.
