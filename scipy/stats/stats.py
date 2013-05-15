@@ -3306,8 +3306,7 @@ def ttest_rel(a, b, axis=0):
     return t, prob
 
 
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx',
-           **kwds):
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     """
     Perform the Kolmogorov-Smirnov test for goodness of fit.
 
