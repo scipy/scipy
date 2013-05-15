@@ -116,7 +116,6 @@ class TestExpmActionSimple(TestCase):
             assert_allclose(observed, expected)
 
 
-
 class TestExpmActionInterval(TestCase):
 
     def test_sparse_expm_multiply_interval(self):
@@ -214,4 +213,3 @@ class TestExpmActionInterval(TestCase):
 
 if __name__ == '__main__':
     run_module_suite()
-

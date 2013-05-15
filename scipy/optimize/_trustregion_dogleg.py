@@ -7,6 +7,7 @@ from ._trustregion import (_minimize_trust_region, BaseQuadraticSubproblem)
 
 __all__ = []
 
+
 def _minimize_dogleg(fun, x0, args=(), jac=None, hess=None,
                      **trust_region_options):
     """
@@ -23,6 +24,7 @@ def _minimize_dogleg(fun, x0, args=(), jac=None, hess=None,
     return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
                                   subproblem=DoglegSubproblem,
                                   **trust_region_options)
+
 
 class DoglegSubproblem(BaseQuadraticSubproblem):
     """Quadratic subproblem solved by the dogleg method"""

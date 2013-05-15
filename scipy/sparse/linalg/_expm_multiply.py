@@ -109,7 +109,7 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
 
     """
     if all(arg is None for arg in (start, stop, num, endpoint)):
-        X =  _expm_multiply_simple(A, B)
+        X = _expm_multiply_simple(A, B)
     else:
         X, status = _expm_multiply_interval(A, B, start, stop, num, endpoint)
     return X
@@ -166,6 +166,7 @@ def _expm_multiply_simple(A, B, t=1.0, balance=False):
         norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
     return _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol, balance)
+
 
 def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
     """
@@ -231,11 +232,11 @@ _theta = {
         30: 3.54,
         # The rest are from table 3.1 of
         # Computing the Action of the Matrix Exponential.
-        35 : 4.7,
-        40 : 6.0,
-        45 : 7.2,
-        50 : 8.5,
-        55 : 9.9,
+        35: 4.7,
+        40: 6.0,
+        45: 7.2,
+        50: 8.5,
+        55: 9.9,
         }
 
 
@@ -263,9 +264,9 @@ class MatrixPowerOperator(LinearOperator):
 
     def matmat(self, X):
         for i in range(self._p):
-            X= self._A.dot(X)
+            X = self._A.dot(X)
         return X
-    
+
     @property
     def T(self):
         return MatrixPowerOperator(self._A.T, self._p)
@@ -312,7 +313,7 @@ def _onenormest_matrix_power(A, p,
     #XXX and remove its underscore,
     #XXX but wait until expm_multiply goes into scipy.
     return scipy.sparse.linalg.onenormest(MatrixPowerOperator(A, p))
-    
+
 
 class LazyOperatorNormInfo:
     """
@@ -489,7 +490,7 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
     -------
     value : bool
         Indicates whether or not the condition has been met.
-        
+
     Notes
     -----
     This is condition (3.13) in Al-Mohy and Higham (2011).
@@ -566,7 +567,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     mu = _trace(A) / float(n)
 
     # Get the linspace samples, attempting to preserve the linspace defaults.
-    linspace_kwargs = {'retstep' : True}
+    linspace_kwargs = {'retstep': True}
     if num is not None:
         linspace_kwargs['num'] = num
     if endpoint is not None:
@@ -660,6 +661,7 @@ def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
             X[k + i*d] = math.exp(k*h*mu) * F
     return X, 1
 
+
 def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
     """
     A helper function, for the case q > s and q % s > 0.
@@ -694,4 +696,3 @@ def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
                 c1 = c2
             X[k + i*d] = math.exp(k*h*mu) * F
     return X, 2
-

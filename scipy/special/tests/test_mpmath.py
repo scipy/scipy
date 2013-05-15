@@ -525,6 +525,7 @@ def _trace_args(func):
             return complex(x)
         else:
             return float(x)
+
     def wrap(*a, **kw):
         sys.stderr.write("%r: " % (tuple(map(tofloat, a)),))
         sys.stderr.flush()
@@ -648,7 +649,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         # oscillating function, limit range
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
-                            [Arg(-1e8, 1e8)], 
+                            [Arg(-1e8, 1e8)],
                             rtol=1e-6)
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
@@ -663,7 +664,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         # oscillating function, limit range
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),
-                            [Arg(-1e8, 1e8)], 
+                            [Arg(-1e8, 1e8)],
                             rtol=1e-6)
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),

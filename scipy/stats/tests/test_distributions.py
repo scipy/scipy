@@ -1069,6 +1069,7 @@ def test_hypergeom_interval_1802():
     assert_equal(stats.hypergeom.ppf(0.02, 100, 100, 8), 8)
     assert_equal(stats.hypergeom.ppf(1, 100, 100, 8), 8)
 
+
 def test_distribution_too_many_args():
     # Check that a TypeError is raised when too many args are given to a method
     # Regression test for ticket 1815.
@@ -1113,6 +1114,7 @@ def test_ncx2_tails_ticket_955():
     a = stats.ncx2.cdf(np.arange(20, 25, 0.2), 2, 1.07458615e+02)
     b = stats.ncx2.veccdf(np.arange(20, 25, 0.2), 2, 1.07458615e+02)
     assert_allclose(a, b, rtol=1e-3, atol=0)
+
 
 def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
