@@ -10,6 +10,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import scipy.linalg
 
+
 def bench_sqrtm():
     np.random.seed(1234)
     print()
@@ -54,4 +55,3 @@ def bench_sqrtm():
             # Check that the results are the same for all block sizes.
             assert_allclose(B_1, B_32)
             assert_allclose(B_1, B_64)
-

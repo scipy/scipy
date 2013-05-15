@@ -77,6 +77,7 @@ def logm(A, disp=True):
     else:
         return F, errest
 
+
 def expm(A, q=None):
     """
     Compute the matrix exponential using Pade approximation.
@@ -487,4 +488,3 @@ def signm(a, disp=True):
         return S0
     else:
         return S0, errest
-

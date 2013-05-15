@@ -88,7 +88,7 @@ class TestUnivariateSpline(TestCase):
         assert_allclose(spl(0.3), spl2(0.3))
 
         spl2 = spl.antiderivative(1)
-        assert_allclose(spl2(0.6) - spl2(0.2), 
+        assert_allclose(spl2(0.6) - spl2(0.2),
                         spl.integral(0.2, 0.6))
 
 

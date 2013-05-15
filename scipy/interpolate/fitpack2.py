@@ -371,7 +371,7 @@ class UnivariateSpline(object):
         >>> ispl(np.pi/2) - ispl(0)
         2.2572053588768486
 
-        This is indeed an approximation to the complete elliptic integral 
+        This is indeed an approximation to the complete elliptic integral
         :math:`K(m) = \\int_0^{\\pi/2} [1 - m\\sin^2 x]^{-1/2} dx`:
 
         >>> from scipy.special import ellipk
@@ -381,6 +381,7 @@ class UnivariateSpline(object):
         """
         tck = fitpack.splantider(self._eval_args, n)
         return UnivariateSpline._from_tck(tck)
+
 
 class InterpolatedUnivariateSpline(UnivariateSpline):
     """
