@@ -4,7 +4,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
+__all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
            'expm_frechet']
 
