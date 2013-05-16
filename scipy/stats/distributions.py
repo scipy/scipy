@@ -16,7 +16,6 @@ from scipy import special
 from scipy import optimize
 from scipy import integrate
 from scipy.special import gammaln as gamln
-import scipy.special
 
 import inspect
 from numpy import all, where, arange, putmask, \
@@ -2076,28 +2075,30 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 # by other distributions.
 _norm_pdf_C = math.sqrt(2*pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
-_recip_sqrt_2 = 1 / math.sqrt(2)
-
 
 def _norm_pdf(x):
     return exp(-x**2/2.0) / _norm_pdf_C
 
-
 def _norm_logpdf(x):
     return -x**2 / 2.0 - _norm_pdf_logC
 
-
 def _norm_cdf(x):
-    #return special.ndtr(x)
-    #return 0.5*(1.0 + special.erf(z/_sqrt_2))
-    return 0.5*special.erfc(-x*_recip_sqrt_2)
+    return special.ndtr(x)
 
 def _norm_logcdf(x):
     return special.log_ndtr(x)
 
-
 def _norm_ppf(q):
     return special.ndtri(q)
+
+def _norm_sf(x):
+    return special.ndtr(-x)
+
+def _norm_logsf(x):
+    return special.log_ndtr(-x)
+
+def _norm_isf(q):
+    return -special.ndtri(q)
 
 
 class norm_gen(rv_continuous):
@@ -2133,16 +2134,16 @@ class norm_gen(rv_continuous):
         return _norm_logcdf(x)
 
     def _sf(self, x):
-        return _norm_cdf(-x)
+        return _norm_sf(x)
 
     def _logsf(self, x):
-        return _norm_logcdf(-x)
+        return _norm_logsf(x)
 
     def _ppf(self,q):
         return _norm_ppf(q)
 
     def _isf(self,q):
-        return -_norm_ppf(q)
+        return _norm_isf(q)
 
     def _stats(self):
         return 0.0, 1.0, 0.0, 0.0
@@ -5581,7 +5582,12 @@ class truncnorm_gen(rv_continuous):
         self.b = b
         self._nb = _norm_cdf(b)
         self._na = _norm_cdf(a)
-        self._delta = self._nb - self._na
+        self._sb = _norm_sf(b)
+        self._sa = _norm_sf(a)
+        if self.a > 0:
+            self._delta = -(self._sb - self._sa)
+        else:
+            self._delta = self._nb - self._na
         self._logdelta = log(self._delta)
         return (a != b)
 
@@ -5597,9 +5603,10 @@ class truncnorm_gen(rv_continuous):
         return (_norm_cdf(x) - self._na) / self._delta
 
     def _ppf(self, q, a, b):
-        #return norm._ppf(q*self._nb + self._na*(1.0-q))
-        #return norm._ppf(q*self._nb - q*self.n_a + self._na)
-        return norm._ppf(self._na + q*(self._nb - self.n_a))
+        if self.a > 0:
+            return _norm_isf(q*self._sb + self._sa*(1.0-q))
+        else:
+            return _norm_ppf(q*self._nb + self._na*(1.0-q))
 
     def _stats(self, a, b):
         nA, nB = self._na, self._nb
