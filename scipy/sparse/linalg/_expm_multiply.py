@@ -3,8 +3,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
-
 import numpy as np
 
 import scipy.linalg
@@ -177,7 +175,7 @@ def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
         u_d = 2 ** -53
         tol = u_d
     F = B
-    eta = math.exp(t*mu / float(s))
+    eta = np.exp(t*mu / float(s))
     for i in range(s):
         c1 = _exact_inf_norm(B)
         for j in range(m_star):
@@ -390,7 +388,7 @@ def _compute_cost_div_m(m, p, norm_info):
         Required number of matrix products divided by m.
 
     """
-    return int(math.ceil(norm_info.alpha(p) / _theta[m]))
+    return int(np.ceil(norm_info.alpha(p) / _theta[m]))
 
 
 def _compute_p_max(m_max):
@@ -405,9 +403,9 @@ def _compute_p_max(m_max):
         A count related to bounds.
 
     """
-    sqrt_m_max = math.sqrt(m_max)
-    p_low = int(math.floor(sqrt_m_max))
-    p_high = int(math.ceil(sqrt_m_max + 1))
+    sqrt_m_max = np.sqrt(m_max)
+    p_low = int(np.floor(sqrt_m_max))
+    p_high = int(np.ceil(sqrt_m_max + 1))
     return max(p for p in range(p_low, p_high+1) if p*(p-1) <= m_max + 1)
 
 
@@ -452,7 +450,7 @@ def _fragment_3_1(norm_info, n0, tol, m_max=55, ell=2):
     best_s = None
     if _condition_3_13(norm_info.onenorm(), n0, m_max, ell):
         for m, theta in _theta.items():
-            s = int(math.ceil(norm_info.onenorm() / theta))
+            s = int(np.ceil(norm_info.onenorm() / theta))
             if best_m is None or m * s < best_m * best_s:
                 best_m = m
                 best_s = s
@@ -657,7 +655,7 @@ def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
                 if c1 + c2 <= tol * _exact_inf_norm(F):
                     break
                 c1 = c2
-            X[k + i*d] = math.exp(k*h*mu) * F
+            X[k + i*d] = np.exp(k*h*mu) * F
     return X, 1
 
 def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
@@ -692,6 +690,6 @@ def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
                 if c1 + c2 <= tol * _exact_inf_norm(F):
                     break
                 c1 = c2
-            X[k + i*d] = math.exp(k*h*mu) * F
+            X[k + i*d] = np.exp(k*h*mu) * F
     return X, 2
 
