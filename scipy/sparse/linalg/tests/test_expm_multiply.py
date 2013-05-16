@@ -115,6 +115,16 @@ class TestExpmActionSimple(TestCase):
             expected = scipy.linalg.expm(A).dot(B)
             assert_allclose(observed, expected)
 
+    def test_complex(self):
+        A = np.array([
+            [1j, 1j],
+            [0, 1j]], dtype=complex)
+        B = np.array([1j, 1j])
+        observed = expm_multiply(A, B)
+        expected = np.array([
+            1j * np.exp(1j) + 1j * (1j*np.cos(1) - np.sin(1)),
+            1j * np.exp(1j)], dtype=complex)
+        assert_allclose(observed, expected)
 
 
 class TestExpmActionInterval(TestCase):
