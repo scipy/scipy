@@ -94,7 +94,6 @@ Matrix Functions
    sqrtm - Matrix square root
    funm - Evaluating an arbitrary matrix function
    expm_frechet - Frechet derivative of the matrix exponential
-   expm_multiply - Product of a matrix exponential and a matrix
 
 
 Matrix Equation Solvers
@@ -160,7 +159,6 @@ from .blas import *
 from .lapack import *
 from .special_matrices import *
 from ._solvers import *
-from scipy.sparse.linalg import expm_multiply
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
