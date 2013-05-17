@@ -18,6 +18,8 @@ import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_array_almost_equal
 
+from nose.tools import raises
+
 from scipy.linalg import _fblas as fblas, get_blas_funcs
 
 try:
@@ -277,6 +279,49 @@ class TestFBLAS3Simple(TestCase):
                 continue
             assert_array_almost_equal(f(3j,[3-4j],[-4]),[[-48-36j]])
             assert_array_almost_equal(f(3j,[3-4j],[-4],3,[5j]),[-48-21j])
+
+
+class TestBLAS3Symm(TestCase):
+
+    def setUp(self):
+        self.a = np.array([[1., 2.],
+                           [0., 1.]])
+        self.b = np.array([[1., 0.,  3.],
+                           [0., -1., 2.]])
+        self.c = np.ones((2,3))
+        self.t = np.array([[2., -1., 8.],
+                           [3.,  0., 9.]])
+
+    def _get_func(self, ps='sdzc'):
+        for p in ps:
+            f = getattr(fblas, p+'symm', None)
+            if f is None:
+                continue 
+            yield f   
+
+    def test_symm(self):
+        for f in self._get_func('sd'):
+            res = f(a=self.a, b=self.b, c=self.c, alpha=1., beta=1.)
+            assert_array_almost_equal(res, self.t)
+
+            res = f(a=self.a.T, b=self.b, lower=1, c=self.c, alpha=1., beta=1.)
+            assert_array_almost_equal(res, self.t)
+
+            res = f(a=self.a, b=self.b.T, side=1, c=self.c.T, alpha=1., beta=1.)
+            assert_array_almost_equal(res, self.t.T)
+
+    @raises(AssertionError)
+    def test_symm_wrong_uplo(self):
+        for f in self._get_func('d'):
+            res = f(a=self.a, b=self.b, lower=1, c=self.c, alpha=1., beta=1.)
+            assert_array_almost_equal(res, self.t.T)
+
+    #FIXME: @raises( WHAT EXACTLY? )
+    @raises(Exception)
+    def test_summ_wrong_side(self):
+        for f in self._get_func('d'):
+            res = f(a=self.a, b=self.b, side=1, c=self.c, alpha=1., beta=1.)
+            
 
 if __name__ == "__main__":
     run_module_suite()

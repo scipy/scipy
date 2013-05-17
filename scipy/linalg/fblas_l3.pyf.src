@@ -47,3 +47,42 @@ subroutine <prefix>gemm(m,n,k,alpha,a,b,beta,c,trans_a,trans_b,lda,ka,ldb,kb)
 
 
 end subroutine <prefix>gemm
+
+
+
+
+subroutine <prefix>symm(m, n, alpha, a, b, beta, c, side, lower, lda, ka, ldb, kb)
+  ! Computes a scalar-matrix-matrix product and adds the result to a
+  ! scalar-matrix product, where one of the matrices is symmetric.
+  !
+  ! c = symm(alpha,a,b,beta=0,c=0,side=0,lower=0,overwrite_c=0)
+  ! Calculate C <- alpha * A * B + beta * C, or
+  !           C <- alpha * B * A + beta * C
+
+  callstatement (*f2py_func)((side?"R":"L"), &
+       (lower?"L":"U"),&m,&n,&alpha,a,&lda,b,&ldb,&beta,c,&m)
+  callprotoargument char*,char*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*, &
+       int*,<ctype>*,<ctype>*,int*
+
+  integer optional, intent(in),check(side==0||side==1) :: side = 0
+  integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
+
+  <ftype> intent(in) :: alpha
+  <ftype> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2>
+
+  <ftype> dimension(lda,ka),intent(in) :: a
+  <ftype> dimension(ldb,kb),intent(in) :: b
+  <ftype> dimension(m,n),intent(in,out,copy),depend(m,n), optional &
+          check(shape(c,0)==m && shape(c,1)==n) :: c
+
+  integer depend(a), intent(hide) :: lda=shape(a,0)
+  integer depend(a), intent(hide) :: ka = shape(a,1)
+  integer depend(b), intent(hide) :: ldb = shape(b,0)
+  integer depend(b), intent(hide) :: kb = shape(b, 1)
+
+  integer, depend(side, a, lda, b, ldb), intent(hide) :: m= (side ? ldb : lda)
+  integer, depend(side, a, lda, b, ldb), intent(hide), &
+        check(side? kb==lda : ka==ldb) :: n = (side ? ka : kb)
+
+
+end subroutine <prefix>symm
