@@ -380,6 +380,8 @@ class MatFile4Reader(MatFileReader):
         '''
         if isinstance(variable_names, string_types):
             variable_names = [variable_names]
+        elif variable_names is not None:
+            variable_names = list(variable_names)
         self.mat_stream.seek(0)
         # set up variable reader
         self.initialize_read()
