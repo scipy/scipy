@@ -171,9 +171,15 @@ class VarReader4(object):
         num_bytes = dt.itemsize
         for d in dims:
             num_bytes *= d
+        buffer = self.mat_stream.read(int(num_bytes))
+        if len(buffer) != num_bytes:
+            raise ValueError("Not enough bytes to read matrix '%s'; is this "
+                             "a badly-formed file? Consider listing matrices "
+                             "with `whosmat` and loading named matrices with "
+                             "`variable_names` kwarg to `loadmat`" % hdr.name)
         arr = np.ndarray(shape=dims,
                          dtype=dt,
-                         buffer=self.mat_stream.read(int(num_bytes)),
+                         buffer=buffer,
                          order='F')
         if copy:
             arr = arr.copy()
