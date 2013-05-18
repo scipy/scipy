@@ -281,6 +281,8 @@ class TestFBLAS3Simple(TestCase):
             assert_array_almost_equal(f(3j,[3-4j],[-4],3,[5j]),[-48-21j])
 
 
+
+
 class TestBLAS3Symm(TestCase):
 
     def setUp(self):
@@ -294,10 +296,10 @@ class TestBLAS3Symm(TestCase):
 
     def _get_func(self, ps='sdzc'):
         for p in ps:
-            f = getattr(fblas, p+'symm', None)
+            f = getattr(fblas, p+"symm", None)
             if f is None:
                 continue 
-            yield f   
+            yield f  
 
     def test_symm(self):
         for f in self._get_func('sd'):
@@ -321,7 +323,48 @@ class TestBLAS3Symm(TestCase):
     def test_summ_wrong_side(self):
         for f in self._get_func('d'):
             res = f(a=self.a, b=self.b, side=1, c=self.c, alpha=1., beta=1.)
-            
+
+
+class TestBLAS3Syrk(TestCase):
+    def setUp(self):
+        self.a = np.array([[1.,  0.],
+                           [0., -2.],
+                           [2.,  3.]])
+        self.t = np.array([[1.,  0.,  2.],
+                           [0.,  4., -6.],
+                           [2., -6., 13.]])
+        self.tt = np.array([[5., 6.],
+                            [6., 13.]])
+
+    def _get_func(self, ps='sdzc'):
+        for p in ps:
+            f = getattr(fblas, p+"syrk", None)
+            if f is None:
+                continue 
+            yield f 
+
+    def test_syrk(self):
+        for f in self._get_func():
+            c = f(a=self.a, alpha=1.) 
+            assert_array_almost_equal(np.triu(c), np.triu(self.t))
+
+            c = f(a=self.a, alpha=1., lower=1)
+            assert_array_almost_equal(np.tril(c), np.tril(self.t))
+
+            c0 = np.ones(self.t.shape)
+            c = f(a=self.a, alpha=1., beta=1., c=c0)
+            assert_array_almost_equal(np.triu(c), np.triu(self.t+c0))
+
+            c = f(a=self.a, alpha=1., trans=1)
+            assert_array_almost_equal(np.triu(c), np.triu(self.tt))
+
+    #prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress? 
+    @raises(Exception)
+    def test_summ_wrong_c(self):
+        for f in self._get_func('d'):
+            res = f(a=self.a, c=np.ones((5, 8)), alpha=1., beta=1.)
+
+
 
 if __name__ == "__main__":
     run_module_suite()

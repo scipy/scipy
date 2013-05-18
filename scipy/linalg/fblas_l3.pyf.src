@@ -86,3 +86,41 @@ subroutine <prefix>symm(m, n, alpha, a, b, beta, c, side, lower, lda, ka, ldb, k
 
 
 end subroutine <prefix>symm
+
+
+
+subroutine <prefix>syrk(n,k,alpha,a,beta,c,trans,lower,lda,ka)
+  ! Computes a scalar-matrix-matrix product and adds the result to a
+  ! scalar-matrix product.
+  !
+  ! c = gemm(alpha,a,b,beta=0,c=0,trans_a=0,trans_b=0,overwrite_c=0)
+  ! Calculate C <- alpha * op(A) * op(B) + beta * C
+
+  callstatement (*f2py_func)((lower?"L":"U"), &
+        (trans?(trans==2?"C":"T"):"N"), &n,&k,&alpha,a,&lda,&beta,c,&n)
+  callprotoargument char*,char*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*, &
+        <ctype>*,int*
+
+  integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
+  integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
+
+  <ftype> intent(in) :: alpha
+  <ftype> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2>
+
+  <ftype> dimension(lda,ka),intent(in) :: a
+  <ftype> dimension(n,n),intent(in,out,copy),depend(n),optional :: c
+  check(shape(c,0)==n && shape(c,1)==n) :: c
+
+  integer depend(a),intent(hide) :: lda = shape(a,0)
+  integer depend(a),intent(hide) :: ka = shape(a,1)
+
+  integer depend(a, trans, ka, lda), intent(hide) :: n = (trans ? ka : lda)
+  integer depend(a, trans, ka, lda), intent(hide) :: k = (trans ? lda : ka)
+
+
+
+end subroutine <prefix>syrk
+
+
+
+
