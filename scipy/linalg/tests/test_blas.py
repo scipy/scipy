@@ -281,6 +281,13 @@ class TestFBLAS3Simple(TestCase):
             assert_array_almost_equal(f(3j,[3-4j],[-4],3,[5j]),[-48-21j])
 
 
+def _get_func(func, ps='sdzc'):
+    """Just a helper: return a specified BLAS function w/typecode."""
+    for p in ps:
+        f = getattr(fblas, p+func, None)
+        if f is None:
+            continue 
+        yield f  
 
 
 class TestBLAS3Symm(TestCase):
@@ -293,16 +300,11 @@ class TestBLAS3Symm(TestCase):
         self.c = np.ones((2,3))
         self.t = np.array([[2., -1., 8.],
                            [3.,  0., 9.]])
-
-    def _get_func(self, ps='sdzc'):
-        for p in ps:
-            f = getattr(fblas, p+"symm", None)
-            if f is None:
-                continue 
-            yield f  
+        self.sigma_y = np.array([[0., -1.j],
+                                 [1.j, 0.]]) 
 
     def test_symm(self):
-        for f in self._get_func('sd'):
+        for f in _get_func('symm'):
             res = f(a=self.a, b=self.b, c=self.c, alpha=1., beta=1.)
             assert_array_almost_equal(res, self.t)
 
@@ -314,14 +316,13 @@ class TestBLAS3Symm(TestCase):
 
     @raises(AssertionError)
     def test_symm_wrong_uplo(self):
-        for f in self._get_func('d'):
+        for f in _get_func('symm', 'd'):
             res = f(a=self.a, b=self.b, lower=1, c=self.c, alpha=1., beta=1.)
             assert_array_almost_equal(res, self.t.T)
 
-    #FIXME: @raises( WHAT EXACTLY? )
     @raises(Exception)
     def test_summ_wrong_side(self):
-        for f in self._get_func('d'):
+        for f in _get_func('symm', 'd'):
             res = f(a=self.a, b=self.b, side=1, c=self.c, alpha=1., beta=1.)
 
 
@@ -336,15 +337,9 @@ class TestBLAS3Syrk(TestCase):
         self.tt = np.array([[5., 6.],
                             [6., 13.]])
 
-    def _get_func(self, ps='sdzc'):
-        for p in ps:
-            f = getattr(fblas, p+"syrk", None)
-            if f is None:
-                continue 
-            yield f 
 
     def test_syrk(self):
-        for f in self._get_func():
+        for f in _get_func('syrk'):
             c = f(a=self.a, alpha=1.) 
             assert_array_almost_equal(np.triu(c), np.triu(self.t))
 
@@ -359,11 +354,11 @@ class TestBLAS3Syrk(TestCase):
             assert_array_almost_equal(np.triu(c), np.triu(self.tt))
 
     #prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress? 
+    # FIXME: how to catch the _fblas.error? 
     @raises(Exception)
     def test_syrk_wrong_c(self):
-        for f in self._get_func('d'):
+        for f in _get_func('syrk', 'd'):
             res = f(a=self.a, c=np.ones((5, 8)), alpha=1., beta=1.)
-
 
 
 class TestBLAS3Syr2k(TestCase):
@@ -380,15 +375,8 @@ class TestBLAS3Syr2k(TestCase):
         self.tt = np.array([[0., 1.],
                             [1., 6]])
 
-    def _get_func(self, ps='sdzc'):
-        for p in ps:
-            f = getattr(fblas, p+"syr2k", None)
-            if f is None:
-                continue 
-            yield f 
-
     def test_syr2k(self):
-        for f in self._get_func():
+        for f in _get_func('syr2k'):
             c = f(a=self.a, b=self.b, alpha=1.) 
             assert_array_almost_equal(np.triu(c), np.triu(self.t))
 
@@ -402,14 +390,50 @@ class TestBLAS3Syr2k(TestCase):
             c = f(a=self.a, b=self.b, alpha=1., trans=1)
             assert_array_almost_equal(np.triu(c), np.triu(self.tt))
 
-    #prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress? 
+    #prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress?
     @raises(Exception)
     def test_syr2k_wrong_c(self):
-        for f in self._get_func('d'):
-            res = f(a=self.a, c=np.ones((5, 8)), alpha=1., beta=1.)
+        for f in _get_func('syr2k','d'):
+            res = f(a=self.a, b=self.b, c=np.ones((15, 8)), alpha=1., beta=1.)
 
 
+class TestSyHe(TestCase):
+    """Quick and simple tests for (zc)-symm, syrk, syr2k."""
+    def setUp(self):
+        self.sigma_y = np.array([[0., -1.j],
+                                 [1.j, 0.]]) 
 
+    def test_symm_zc(self):
+         for f in _get_func('symm', 'zc'):
+            #NB: a is symmetric w/upper diag of ONLY 
+            res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), np.diag([1, -1])) 
+
+    def test_hemm_zc(self):
+         for f in _get_func('hemm', 'zc'):
+            #NB: a is hermitian w/upper diag of ONLY 
+            res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), np.diag([1, 1]))
+
+    def test_syrk_zr(self):
+        for f in _get_func('syrk', 'zc'):
+            res = f(a=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), np.diag([-1, -1]))
+
+    def test_herk_zr(self):
+        for f in _get_func('herk', 'zc'):
+            res = f(a=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), np.diag([1, 1]))
+
+    def test_syr2k_zr(self):
+        for f in _get_func('syr2k', 'zc'):
+            res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), 2.*np.diag([-1, -1]))
+
+    def test_her2k_zr(self):
+        for f in _get_func('her2k', 'zc'):
+            res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), 2.*np.diag([1, 1]))
 
 
 if __name__ == "__main__":
