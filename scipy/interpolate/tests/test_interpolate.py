@@ -8,6 +8,8 @@ import numpy as np
 
 from scipy.interpolate import interp1d, interp2d, lagrange
 
+from scipy.misc import check_refs_for
+
 
 class TestInterp2D(TestCase):
     def test_interp2d(self):
@@ -375,6 +377,15 @@ class TestInterp1D(object):
         #yield self._nd_check_interp, 'zero'
         #yield self._nd_check_interp, 'zero'
         pass
+
+    def test_circular_refs(self):
+        # Test interp1d can be automatically garbage collected
+        x = np.linspace(0, 1)
+        y = np.linspace(0, 1)
+        # Confirm interp can be released from memory after use
+        with check_refs_for(interp1d, x, y) as interp:
+            new_y = interp([0.1, 0.2])
+            del interp
 
 
 class TestLagrange(TestCase):
