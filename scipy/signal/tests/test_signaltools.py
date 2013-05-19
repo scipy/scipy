@@ -2,13 +2,14 @@ from __future__ import division, print_function, absolute_import
 
 from decimal import Decimal
 
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_almost_equal, assert_array_equal, assert_array_almost_equal, \
-    assert_raises, assert_
+from numpy.testing import (TestCase, run_module_suite, assert_equal,
+    assert_almost_equal, assert_array_equal, assert_array_almost_equal,
+    assert_raises, assert_allclose, assert_)
 
 import scipy.signal as signal
-from scipy.signal import correlate, convolve, convolve2d, fftconvolve, \
-     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk
+from scipy.signal import (correlate, convolve, convolve2d, fftconvolve,
+     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
+     invres)
 
 
 from numpy import array, arange
@@ -686,7 +687,7 @@ class TestFiltFilt(TestCase):
         assert_array_equal(y0, np.swapaxes(y2, 0, 2))
 
 
-class TestDecimate:
+class TestDecimate(TestCase):
 
     def test_basic(self):
         x = np.arange(6)
@@ -800,6 +801,52 @@ class TestHilbert2(object):
         assert_raises(ValueError, hilbert2, x, N=0)
         assert_raises(ValueError, hilbert2, x, N=(2,0))
         assert_raises(ValueError, hilbert2, x, N=(2,))
+
+
+class TestPartialFractionExpansion(TestCase):
+
+    def test_invres_distinct_roots(self):
+        # This test was inspired by github issue 2496.
+        r = [3/10, -1/6, -2/15]
+        p = [0, -2, -5]
+        k = []
+        a_expected = [1, 3]
+        b_expected = [1, 7, 10, 0]
+        a_observed, b_observed = invres(r, p, k)
+        assert_allclose(a_observed, a_expected)
+        assert_allclose(b_observed, b_expected)
+        rtypes = ('avg', 'mean', 'min', 'minimum', 'max', 'maximum')
+
+        # With the default tolerance, the rtype does not matter
+        # for this example.
+        for rtype in rtypes:
+            a_observed, b_observed = invres(r, p, k, rtype=rtype)
+            assert_allclose(a_observed, a_expected)
+            assert_allclose(b_observed, b_expected)
+
+        # With unrealistically large tolerances, repeated roots may be inferred
+        # and the rtype comes into play.
+        ridiculous_tolerance = 1e10
+        for rtype in rtypes:
+            a, b = invres(r, p, k, tol=ridiculous_tolerance, rtype=rtype)
+
+    def test_invres_repeated_roots(self):
+        r = [3/20, -7/36, -1/6, 2/45]
+        p = [0, -2, -2, -5]
+        k = []
+        a_expected = [1, 3]
+        b_expected = [1, 9, 24, 20, 0]
+        rtypes = ('avg', 'mean', 'min', 'minimum', 'max', 'maximum')
+        for rtype in rtypes:
+            a_observed, b_observed = invres(r, p, k, rtype=rtype)
+            assert_allclose(a_observed, a_expected)
+            assert_allclose(b_observed, b_expected)
+
+    def test_invres_bad_rtype(self):
+        r = [3/20, -7/36, -1/6, 2/45]
+        p = [0, -2, -2, -5]
+        k = []
+        assert_raises(ValueError, invres, r, p, k, rtype='median')
 
 
 if __name__ == "__main__":
