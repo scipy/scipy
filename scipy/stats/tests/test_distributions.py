@@ -4,9 +4,8 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
-    assert_array_equal, assert_array_less,
-    assert_almost_equal, assert_array_almost_equal, assert_allclose,
-    assert_, assert_raises, rand, dec)
+    assert_array_equal, assert_almost_equal, assert_array_almost_equal,
+    assert_allclose, assert_, assert_raises, rand, dec)
 from numpy.testing.utils import WarningManager
 from nose import SkipTest
 
@@ -229,6 +228,29 @@ class TestTruncnorm(TestCase):
                                    loc=[3]*7, scale=2)
         expected = np.array([np.nan, 5, 4.99943581, 3, 1.00056419, 1, np.nan])
         assert_array_almost_equal(vals, expected)
+
+    def test_gh_2477_small_values(self):
+        # Check a case that worked in the original issue.
+        low, high = -11, -10
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
+        # Check a case that failed in the original issue.
+        low, high = 10, 11
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
+
+    def test_gh_2477_large_values(self):
+        # Check a case that fails because of extreme tailness.
+        raise SkipTest('truncnorm rvs is know to fail at extreme tails')
+        low, high = 100, 101
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
+
+    def test_gh_1489_trac_962_rvs(self):
+        # Check the original example.
+        low, high = 10, 15
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
 
 
 class TestHypergeom(TestCase):
@@ -1120,28 +1142,6 @@ def test_foldnorm_zero():
     rv = stats.foldnorm(0, scale=1)
     assert_equal(rv.cdf(0), 0)  # rv.cdf(0) previously resulted in: nan
 
-def test_gh_2477_small_values():
-    # Check a case that worked in the original issue.
-    low, high = -11, -10
-    x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
-    assert_(low < x.min() < x.max() < high)
-    # Check a case that failed in the original issue.
-    low, high = 10, 11
-    x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
-    assert_(low < x.min() < x.max() < high)
-
-def test_gh_2477_large_values():
-    # Check a case that fails because of extreme tailness.
-    raise SkipTest('truncnorm rvs is know to fail at extreme tails')
-    low, high = 100, 101
-    x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
-    assert_(low < x.min() < x.max() < high)
-
-def test_gh_1489_trac_962_rvs():
-    # Check the original example.
-    low, high = 10, 15
-    x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
-    assert_(low < x.min() < x.max() < high)
 
 if __name__ == "__main__":
     run_module_suite()
