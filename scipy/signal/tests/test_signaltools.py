@@ -702,7 +702,7 @@ class TestDecimate(TestCase):
         assert_equal(d1.shape, (10, 5))
 
 
-class TestHilbert(TestCase):
+class TestHilbert(object):
 
     def test_bad_args(self):
         x = np.array([1.0+0.0j])
@@ -806,7 +806,6 @@ class TestHilbert2(object):
 class TestPartialFractionExpansion(TestCase):
 
     def test_invres_distinct_roots(self):
-
         # This test was inspired by github issue 2496.
         r = [3/10, -1/6, -2/15]
         p = [0, -2, -5]
@@ -816,7 +815,7 @@ class TestPartialFractionExpansion(TestCase):
         a_observed, b_observed = invres(r, p, k)
         assert_allclose(a_observed, a_expected)
         assert_allclose(b_observed, b_expected)
-        rtypes = ('avg', 'min', 'minimum', 'max', 'maximum')
+        rtypes = ('avg', 'mean', 'min', 'minimum', 'max', 'maximum')
 
         # With the default tolerance, the rtype does not matter
         # for this example.
@@ -837,11 +836,17 @@ class TestPartialFractionExpansion(TestCase):
         k = []
         a_expected = [1, 3]
         b_expected = [1, 9, 24, 20, 0]
-        rtypes = ('avg', 'min', 'minimum', 'max', 'maximum')
+        rtypes = ('avg', 'mean', 'min', 'minimum', 'max', 'maximum')
         for rtype in rtypes:
             a_observed, b_observed = invres(r, p, k, rtype=rtype)
             assert_allclose(a_observed, a_expected)
             assert_allclose(b_observed, b_expected)
+
+    def test_invres_bad_rtype(self):
+        r = [3/20, -7/36, -1/6, 2/45]
+        p = [0, -2, -2, -5]
+        k = []
+        assert_raises(ValueError, invres, r, p, k, rtype='median')
 
 
 if __name__ == "__main__":

@@ -952,6 +952,9 @@ def unique_roots(p, tol=1e-3, rtype='min'):
         comproot = np.min
     elif rtype in ['avg', 'mean']:
         comproot = np.mean
+    else:
+        raise ValueError("`rtype` must be one of "
+                         "{'max', 'maximum', 'min', 'minimum', 'avg', 'mean'}")
     p = asarray(p) * 1.0
     tol = abs(tol)
     p, indx = cmplx_sort(p)
