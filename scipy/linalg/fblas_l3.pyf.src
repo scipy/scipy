@@ -90,12 +90,11 @@ end subroutine <prefix>symm
 
 
 subroutine <prefix>syrk(n,k,alpha,a,beta,c,trans,lower,lda,ka)
-  ! Computes a scalar-matrix-matrix product and adds the result to a
-  ! scalar-matrix product.
+  !  performs one of the symmetric rank k operations
+  !     C := alpha*A*A**T + beta*C,  or   C := alpha*A**T*A + beta*C,
   !
-  ! c = gemm(alpha,a,b,beta=0,c=0,trans_a=0,trans_b=0,overwrite_c=0)
-  ! Calculate C <- alpha * op(A) * op(B) + beta * C
-
+  ! c = syrk(alpha,a,beta=0,c=0,trans=0,lower=0,overwrite_c=0)
+  ! 
   callstatement (*f2py_func)((lower?"L":"U"), &
         (trans?(trans==2?"C":"T"):"N"), &n,&k,&alpha,a,&lda,&beta,c,&n)
   callprotoargument char*,char*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*, &
@@ -117,10 +116,39 @@ subroutine <prefix>syrk(n,k,alpha,a,beta,c,trans,lower,lda,ka)
   integer depend(a, trans, ka, lda), intent(hide) :: n = (trans ? ka : lda)
   integer depend(a, trans, ka, lda), intent(hide) :: k = (trans ? lda : ka)
 
-
-
 end subroutine <prefix>syrk
 
 
+subroutine <prefix>syr2k(n,k,alpha,a,b,beta,c,trans,lower,lda,ka, ldb, kb)
+  !  performs one of the symmetric rank k operations
+  !     C := alpha*A*A**T + beta*C,  or   C := alpha*A**T*A + beta*C,
+  !
+  ! c = syrk(alpha,a,beta=0,c=0,trans=0,lower=0,overwrite_c=0)
+  ! 
+  callstatement (*f2py_func)((lower?"L":"U"), &
+        (trans?(trans==2?"C":"T"):"N"), &n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&n)
+  callprotoargument char*,char*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*, &
+        <ctype>*, <ctype>*,int*
 
+  integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
+  integer optional,intent(in),check(trans>=0 && trans <=2) :: trans = 0
+
+  <ftype> intent(in) :: alpha
+  <ftype> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2>
+
+  <ftype> dimension(lda, ka), intent(in) :: a
+  <ftype> dimension(ldb, kb), intent(in) :: b
+  <ftype> dimension(n,n),intent(in,out,copy),depend(n),optional :: c
+  check(shape(c,0)==n && shape(c,1)==n) :: c
+
+  integer depend(a),intent(hide) :: lda = shape(a,0)
+  integer depend(a),intent(hide) :: ka = shape(a,1)
+  integer depend(b),intent(hide) :: ldb = shape(b,0)
+  integer depend(b),intent(hide) :: kb = shape(b,1)
+
+  integer depend(a, trans, ka, lda), intent(hide) :: n = (trans ? ka : lda)
+  integer depend(a, b, trans, ka, lda, kb, ldb), intent(hide), &
+        check(trans ? lda==ldb: ka==kb) :: k = (trans ? lda : ka)
+
+end subroutine <prefix>syr2k
 

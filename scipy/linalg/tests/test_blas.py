@@ -360,9 +360,55 @@ class TestBLAS3Syrk(TestCase):
 
     #prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress? 
     @raises(Exception)
-    def test_summ_wrong_c(self):
+    def test_syrk_wrong_c(self):
         for f in self._get_func('d'):
             res = f(a=self.a, c=np.ones((5, 8)), alpha=1., beta=1.)
+
+
+
+class TestBLAS3Syr2k(TestCase):
+    def setUp(self):
+        self.a = np.array([[1.,  0.],
+                           [0., -2.],
+                           [2.,  3.]])
+        self.b = np.array([[0.,  1.],
+                           [1., 0.],
+                           [0,  1.]])
+        self.t = np.array([[0., -1.,  3.],
+                           [-1., 0.,  0.],
+                           [3.,  0., 6.]])
+        self.tt = np.array([[0., 1.],
+                            [1., 6]])
+
+    def _get_func(self, ps='sdzc'):
+        for p in ps:
+            f = getattr(fblas, p+"syr2k", None)
+            if f is None:
+                continue 
+            yield f 
+
+    def test_syr2k(self):
+        for f in self._get_func():
+            c = f(a=self.a, b=self.b, alpha=1.) 
+            assert_array_almost_equal(np.triu(c), np.triu(self.t))
+
+            c = f(a=self.a, b=self.b, alpha=1., lower=1)
+            assert_array_almost_equal(np.tril(c), np.tril(self.t))
+
+            c0 = np.ones(self.t.shape)
+            c = f(a=self.a, b=self.b, alpha=1., beta=1., c=c0)
+            assert_array_almost_equal(np.triu(c), np.triu(self.t+c0))
+
+            c = f(a=self.a, b=self.b, alpha=1., trans=1)
+            assert_array_almost_equal(np.triu(c), np.triu(self.tt))
+
+    #prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress? 
+    @raises(Exception)
+    def test_syr2k_wrong_c(self):
+        for f in self._get_func('d'):
+            res = f(a=self.a, c=np.ones((5, 8)), alpha=1., beta=1.)
+
+
 
 
 
