@@ -58,89 +58,6 @@ def inv(A):
     Ainv = spsolve(A, I)
     return Ainv
 
-
-
-def expm_2005(A):
-    """
-    Compute the matrix exponential using Pade approximation.
-
-    .. versionadded:: 0.12.0
-
-    Parameters
-    ----------
-    A : (M,M) array or sparse matrix
-        2D Array or Matrix (sparse or dense) to be exponentiated
-
-    Returns
-    -------
-    expA : (M,M) ndarray
-        Matrix exponential of `A`
-
-    References
-    ----------
-    N. J. Higham,
-    "The Scaling and Squaring Method for the Matrix Exponential Revisited",
-    SIAM. J. Matrix Anal. & Appl. 26, 1179 (2005).
-
-    """
-    n_squarings = 0
-    Aissparse = isspmatrix(A)
-
-    if Aissparse:
-        A_L1 = max(abs(A).sum(axis=0).flat)
-        ident = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
-    else:
-        A = asarray(A)
-        A_L1 = norm(A,1)
-        ident = eye(A.shape[0], A.shape[1], dtype=A.dtype)
-
-    if A.dtype == 'float64' or A.dtype == 'complex128':
-        if A_L1 < 1.495585217958292e-002:
-            U,V = _pade3(A, ident)
-        elif A_L1 < 2.539398330063230e-001:
-            U,V = _pade5(A, ident)
-        elif A_L1 < 9.504178996162932e-001:
-            U,V = _pade7(A, ident)
-        elif A_L1 < 2.097847961257068e+000:
-            U,V = _pade9(A, ident)
-        else:
-            maxnorm = 5.371920351148152
-            n_squarings = max(0, int(ceil(log2(A_L1 / maxnorm))))
-            A = A / 2**n_squarings
-            U,V = _pade13(A, ident)
-    elif A.dtype == 'float32' or A.dtype == 'complex64':
-        if A_L1 < 4.258730016922831e-001:
-            U,V = _pade3(A, ident)
-        elif A_L1 < 1.880152677804762e+000:
-            U,V = _pade5(A, ident)
-        else:
-            maxnorm = 3.925724783138660
-            n_squarings = max(0, int(ceil(log2(A_L1 / maxnorm))))
-            A = A / 2**n_squarings
-            U,V = _pade7(A, ident)
-    else:
-        raise ValueError("invalid type: "+str(A.dtype))
-
-    P = U + V  # p_m(A) : numerator
-    Q = -U + V  # q_m(A) : denominator
-
-    if Aissparse:
-        from scipy.sparse.linalg import spsolve
-        R = spsolve(Q, P)
-    else:
-        R = solve(Q,P)
-
-    # squaring step to undo scaling
-    for i in range(n_squarings):
-        R = R.dot(R)
-
-    return R
-
-# implementation of Pade approximations of various degree using the algorithm presented in [Higham 2005]
-# These should apply to both dense and sparse matricies.
-# ident is the identity matrix, which matches A in being sparse or dense.
-
-
 def _exact_1_norm(A):
     # A compatibility function which should eventually disappear.
     # This is copypasted from expm_action.
@@ -342,9 +259,11 @@ def _onenormest_product(operator_seq,
 
 
 
-def expm_2009(A):
+def expm(A):
     """
     Compute the matrix exponential using Pade approximation.
+
+    .. versionadded:: 0.12.0
 
     Parameters
     ----------
@@ -578,6 +497,7 @@ def _ell(A, m):
 # using the algorithm presented in [Higham 2005].
 # These should apply to both dense and sparse matricies.
 # ident is the identity matrix, which matches A in being sparse or dense.
+
 def _pade3(A, ident, A2=None):
     b = (120., 60., 12., 1.)
     if A2 is None:
@@ -635,6 +555,3 @@ def _pade13(A, ident, A2=None, A4=None, A6=None):
     U = A.dot(A6.dot(b[13]*A6 + b[11]*A4 + b[9]*A2) + b[7]*A6 + b[5]*A4 + b[3]*A2 + b[1]*ident)
     V = A6.dot(b[12]*A6 + b[10]*A4 + b[8]*A2) + b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*ident
     return U,V
-
-# Define the default expm.
-expm = expm_2009

@@ -18,7 +18,7 @@ from numpy.testing import (TestCase, run_module_suite,
 
 from scipy.sparse import csc_matrix
 from scipy.sparse.construct import eye as speye
-from scipy.sparse.linalg.matfuncs import (expm_2005, expm_2009,
+from scipy.sparse.linalg.matfuncs import (expm,
         ProductOperator, MatrixPowerOperator,
         _is_upper_triangular)
 from scipy.linalg import logm
@@ -29,13 +29,11 @@ import scipy.sparse.linalg
 class TestExpM(TestCase):
     def test_zero(self):
         a = array([[0.,0],[0,0]])
-        for expm in (expm_2005, expm_2009):
-            assert_array_almost_equal(expm(a),[[1,0],[0,1]])
+        assert_array_almost_equal(expm(a),[[1,0],[0,1]])
 
     def test_zero_sparse(self):
         a = csc_matrix([[0.,0],[0,0]])
-        for expm in (expm_2005, expm_2009):
-            assert_array_almost_equal(expm(a).toarray(),[[1,0],[0,1]])
+        assert_array_almost_equal(expm(a).toarray(),[[1,0],[0,1]])
 
     def test_bidiagonal_sparse(self):
         A = csc_matrix([
@@ -48,26 +46,23 @@ class TestExpM(TestCase):
             [e1, 3*e1, 15*(e2 - 2*e1)],
             [0, e1, 5*(e2 - e1)],
             [0, 0, e2]], dtype=float)
-        for expm in (expm_2005, expm_2009):
-            observed = expm(A).toarray()
-            assert_array_almost_equal(observed, expected)
+        observed = expm(A).toarray()
+        assert_array_almost_equal(observed, expected)
 
     def test_padecases_dtype_float(self):
-        for expm in (expm_2005, expm_2009):
-            for dtype in [np.float32, np.float64]:
-                for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
-                    A = scale * eye(3, dtype=dtype)
-                    observed = expm(A)
-                    expected = exp(scale) * eye(3, dtype=dtype)
-                    assert_array_almost_equal_nulp(observed, expected, nulp=100)
+        for dtype in [np.float32, np.float64]:
+            for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
+                A = scale * eye(3, dtype=dtype)
+                observed = expm(A)
+                expected = exp(scale) * eye(3, dtype=dtype)
+                assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
     def test_padecases_dtype_complex(self):
-        for expm in (expm_2005, expm_2009):
-            for dtype in [np.complex64, np.complex128]:
-                for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
-                    a = scale * eye(3, dtype=dtype)
-                    e = exp(scale) * eye(3, dtype=dtype)
-                    assert_array_almost_equal_nulp(expm(a), e, nulp=100)
+        for dtype in [np.complex64, np.complex128]:
+            for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
+                a = scale * eye(3, dtype=dtype)
+                e = exp(scale) * eye(3, dtype=dtype)
+                assert_array_almost_equal_nulp(expm(a), e, nulp=100)
 
     def test_padecases_dtype_sparse_float(self):
         # float32 and complex64 lead to errors in spsolve/UMFpack
@@ -75,8 +70,7 @@ class TestExpM(TestCase):
         for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
             a = scale * speye(3, 3, dtype=dtype, format='csc')
             e = exp(scale) * eye(3, dtype=dtype)
-            for expm in (expm_2005, expm_2009):
-                assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
+            assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 
     def test_padecases_dtype_sparse_complex(self):
         # float32 and complex64 lead to errors in spsolve/UMFpack
@@ -84,8 +78,7 @@ class TestExpM(TestCase):
         for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
             a = scale * speye(3, 3, dtype=dtype, format='csc')
             e = exp(scale) * eye(3, dtype=dtype)
-            for expm in (expm_2005, expm_2009):
-                assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
+            assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 
     def test_logm_consistency(self):
         random.seed(1234)
@@ -96,8 +89,7 @@ class TestExpM(TestCase):
                     A = (eye(n) + random.rand(n, n) * scale).astype(dtype)
                     if np.iscomplexobj(A):
                         A = A + 1j * random.rand(n, n) * scale
-                    for expm in (expm_2005, expm_2009):
-                        assert_array_almost_equal(expm(logm(A)), A)
+                    assert_array_almost_equal(expm(logm(A)), A)
 
 
     def test_overscaling_example(self):
@@ -122,20 +114,9 @@ class TestExpM(TestCase):
             [-5743067.77947947, -0.0152830038686819, -4526542.71278401],
             [0.447722977849494, 1.54270484519591e-09, 0.463480648837651]])
 
-        # Assert that the Higham 2005 expm gives the wrong answer.
-        assert_allclose(expm_2005(A), wrong_solution)
-
+        # Higham 2005 expm would give the wrong answer.
         # Assert that the Higham 2009 expm gives the correct answer.
-        assert_allclose(expm_2009(A), correct_solution)
-
-    def test_expm_2009_random_upper_triangular(self):
-        random.seed(1234)
-        n = 10
-        nsamples = 20
-        for i in range(nsamples):
-            A = np.triu(np.random.randn(n, n))
-            assert_(_is_upper_triangular(A))
-            assert_allclose(expm_2009(A), expm_2005(A))
+        assert_allclose(expm(A), correct_solution)
 
 
 class TestOperators(TestCase):
