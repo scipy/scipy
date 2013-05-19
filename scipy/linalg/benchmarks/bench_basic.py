@@ -32,7 +32,7 @@ class TestSolve(TestCase):
                 a[i,i] = 10*(.1+a[i,i])
             b = random([size])
 
-            print('| %6.2f ' % measure('solve(a,b)',repeat), end=' ')
+            print('| %6.2f ' % measure('linalg.solve(a,b)',repeat), end=' ')
             sys.stdout.flush()
 
             print('| %6.2f ' % measure('basic_solve(a,b)',repeat), end=' ')
@@ -41,7 +41,7 @@ class TestSolve(TestCase):
             a = a[-1::-1,-1::-1]  # turn into a non-contiguous array
             assert_(not a.flags['CONTIGUOUS'])
 
-            print('| %6.2f ' % measure('solve(a,b)',repeat), end=' ')
+            print('| %6.2f ' % measure('linalg.solve(a,b)',repeat), end=' ')
             sys.stdout.flush()
 
             print('| %6.2f ' % measure('basic_solve(a,b)',repeat), end=' ')
@@ -71,7 +71,7 @@ class TestInv(TestCase):
             for i in range(size):
                 a[i,i] = 10*(.1+a[i,i])
 
-            print('| %6.2f ' % measure('inv(a)',repeat), end=' ')
+            print('| %6.2f ' % measure('linalg.inv(a)',repeat), end=' ')
             sys.stdout.flush()
 
             print('| %6.2f ' % measure('basic_inv(a)',repeat), end=' ')
@@ -80,7 +80,7 @@ class TestInv(TestCase):
             a = a[-1::-1,-1::-1]  # turn into a non-contiguous array
             assert_(not a.flags['CONTIGUOUS'])
 
-            print('| %6.2f ' % measure('inv(a)',repeat), end=' ')
+            print('| %6.2f ' % measure('linalg.inv(a)',repeat), end=' ')
             sys.stdout.flush()
 
             print('| %6.2f ' % measure('basic_inv(a)',repeat), end=' ')
@@ -107,7 +107,7 @@ class TestDet(TestCase):
 
             a = random([size,size])
 
-            print('| %6.2f ' % measure('det(a)',repeat), end=' ')
+            print('| %6.2f ' % measure('linalg.det(a)',repeat), end=' ')
             sys.stdout.flush()
 
             print('| %6.2f ' % measure('basic_det(a)',repeat), end=' ')
@@ -116,7 +116,7 @@ class TestDet(TestCase):
             a = a[-1::-1,-1::-1]  # turn into a non-contiguous array
             assert_(not a.flags['CONTIGUOUS'])
 
-            print('| %6.2f ' % measure('det(a)',repeat), end=' ')
+            print('| %6.2f ' % measure('linalg.det(a)',repeat), end=' ')
             sys.stdout.flush()
 
             print('| %6.2f ' % measure('basic_det(a)',repeat), end=' ')

@@ -30,7 +30,7 @@ def bench_random():
 
         a = random([size,size])
 
-        print('| %6.2f ' % measure('eigvals(a)',repeat), end=' ')
+        print('| %6.2f ' % measure('linalg.eigvals(a)',repeat), end=' ')
         sys.stdout.flush()
 
         print('   (secs for %s calls)' % (repeat))
