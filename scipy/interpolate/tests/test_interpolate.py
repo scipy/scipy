@@ -8,7 +8,7 @@ import numpy as np
 
 from scipy.interpolate import interp1d, interp2d, lagrange
 
-from scipy.misc import check_refs_for
+from scipy.lib._gcutils import assert_deallocated
 
 
 class TestInterp2D(TestCase):
@@ -383,7 +383,7 @@ class TestInterp1D(object):
         x = np.linspace(0, 1)
         y = np.linspace(0, 1)
         # Confirm interp can be released from memory after use
-        with check_refs_for(interp1d, x, y) as interp:
+        with assert_deallocated(interp1d, x, y) as interp:
             new_y = interp([0.1, 0.2])
             del interp
 

@@ -1,8 +1,8 @@
-""" Test for check_refs_for context manager and gc utilities
+""" Test for assert_deallocated context manager and gc utilities
 """
 import gc
 
-from scipy.misc.gcutils import set_gc_state, gc_state, check_refs_for, ReferenceError
+from scipy.lib._gcutils import set_gc_state, gc_state, assert_deallocated, ReferenceError
 
 from nose.tools import assert_equal, raises
 
@@ -43,7 +43,7 @@ def test_gc_state():
             gc.enable()
 
 
-def test_check_refs_for():
+def test_assert_deallocated():
     # Ordinary use
     class C(object):
         def __init__(self, arg0, arg1, name='myname'):
@@ -51,38 +51,38 @@ def test_check_refs_for():
     for gc_current in (True, False):
         with gc_state(gc_current):
             # We are deleting from with-block context, so that's OK
-            with check_refs_for(C, 0, 2, 'another name') as c:
+            with assert_deallocated(C, 0, 2, 'another name') as c:
                 assert_equal(c.name, 'another name')
                 del c
             # Or not using the thing in with-block context, also OK
-            with check_refs_for(C, 0, 2, name='third name'):
+            with assert_deallocated(C, 0, 2, name='third name'):
                 pass
             assert_equal(gc.isenabled(), gc_current)
 
 
 @raises(ReferenceError)
-def test_check_refs_for_nodel():
+def test_assert_deallocated_nodel():
     class C(object): pass
     # Need to delete after using if in with-block context
-    with check_refs_for(C) as c:
+    with assert_deallocated(C) as c:
         pass
 
 
 @raises(ReferenceError)
-def test_check_refs_for_circular():
+def test_assert_deallocated_circular():
     class C(object):
         def __init__(self):
             self._circular = self
     # Circular reference, no automatic garbage collection
-    with check_refs_for(C) as c:
+    with assert_deallocated(C) as c:
         del c
 
 
 @raises(ReferenceError)
-def test_check_refs_for_circular2():
+def test_assert_deallocated_circular2():
     class C(object):
         def __init__(self):
             self._circular = self
     # Still circular reference, no automatic garbage collection
-    with check_refs_for(C):
+    with assert_deallocated(C):
         pass

@@ -1,13 +1,22 @@
-""" Module for testing automatic garbage collection of objects
+"""
+Module for testing automatic garbage collection of objects
+
+.. autosummary::
+   :toctree: generated/
+
+   set_gc_state - enable or disable garbage collection
+   gc_state - context manager for given state of garbage collector
+   assert_deallocated - context manager to check for circular references on object
+
 """
 import weakref
 import gc
 
 from contextlib import contextmanager
 
-__all__ = ['set_gc_state', 'gc_state', 'check_refs_for']
+__all__ = ['set_gc_state', 'gc_state', 'assert_deallocated']
 
-class ReferenceError(Exception):
+class ReferenceError(AssertionError):
     pass
 
 
@@ -44,8 +53,12 @@ def gc_state(state):
 
 
 @contextmanager
-def check_refs_for(func, *args, **kwargs):
-    """ Context manager to check for remaining references after deletion
+def assert_deallocated(func, *args, **kwargs):
+    """Context manager to check that object is deallocated
+
+    This is useful for checking that an object can be freed directly by
+    reference counting, without requiring gc to break reference cycles.
+    GC is disabled inside the context manager.
 
     Parameters
     ----------
@@ -59,14 +72,14 @@ def check_refs_for(func, *args, **kwargs):
     Examples
     --------
     >>> class C(object): pass
-    >>> with check_refs_for(C) as c:
+    >>> with assert_deallocated(C) as c:
     ...     # do something
     ...     del c
 
     >>> class C(object):
     ...     def __init__(self):
     ...         self._circular = self # Make circular reference
-    >>> with check_refs_for(C) as c: #doctest: +IGNORE_EXCEPTION_DETAIL
+    >>> with assert_deallocated(C) as c: #doctest: +IGNORE_EXCEPTION_DETAIL
     ...     # do something
     ...     del c
     Traceback (most recent call last):
@@ -80,3 +93,4 @@ def check_refs_for(func, *args, **kwargs):
         del obj
         if ref() != None:
             raise ReferenceError("Remaining reference(s) to object")
+
