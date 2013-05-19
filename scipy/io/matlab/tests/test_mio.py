@@ -592,7 +592,8 @@ def test_save_dict():
     ab_exp = np.array([[(1, 2)]], dtype=[('a', object), ('b', object)])
     ba_exp = np.array([[(2, 1)]], dtype=[('b', object), ('a', object)])
     for dict_type, is_ordered in dict_types:
-        d = dict_type(a=1, b=2)
+        # Initialize with tuples to keep order for OrderedDict
+        d = dict_type([('a', 1), ('b', 2)])
         stream = BytesIO()
         savemat_future(stream, {'dict': d})
         stream.seek(0)
