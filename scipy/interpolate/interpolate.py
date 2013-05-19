@@ -363,19 +363,23 @@ class interp1d(_Interpolator1D):
         self.y = y
         y = self._reshape_yi(y)
 
+        # Adjust to interpolation kind; store reference to *unbound*
+        # interpolation methods, in order to avoid circular references to self
+        # stored in the bound instance methods, and therefore delayed garbage
+        # collection.  See: http://docs.python.org/2/reference/datamodel.html
         if kind in ('linear', 'nearest'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
             minval = 2
-            if kind == 'linear':
-                self._call = self._call_linear
-            elif kind == 'nearest':
+            if kind == 'nearest':
                 self.x_bds = (x[1:] + x[:-1]) / 2.0
-                self._call = self._call_nearest
+                self._call = self.__class__._call_nearest
+            else:
+                self._call = self.__class__._call_linear
         else:
             minval = order + 1
-            self._call = self._call_spline
             self._spline = splmake(x, y, order=order)
+            self._call = self.__class__._call_spline
 
         if len(x) < minval:
             raise ValueError("x and y arrays must have at "
@@ -440,7 +444,7 @@ class interp1d(_Interpolator1D):
         #    The behavior is set by the bounds_error variable.
         x_new = asarray(x_new)
         out_of_bounds = self._check_bounds(x_new)
-        y_new = self._call(x_new)
+        y_new = self._call(self, x_new)
         if len(y_new) > 0:
             y_new[out_of_bounds] = self.fill_value
         return y_new
