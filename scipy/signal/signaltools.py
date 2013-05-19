@@ -773,14 +773,14 @@ def deconvolve(signal, divisor):
 
 def hilbert(x, N=None, axis=-1):
     """
-    Compute the analytic signal.
+    Compute the analytic signal, using the Hilbert transform.
 
     The transformation is done along the last axis by default.
 
     Parameters
     ----------
     x : array_like
-        Signal data
+        Signal data.  Must be real.
     N : int, optional
         Number of Fourier components.  Default: ``x.shape[axis]``
     axis : int, optional
@@ -793,12 +793,17 @@ def hilbert(x, N=None, axis=-1):
 
     Notes
     -----
-    The analytic signal `x_a(t)` of `x(t)` is::
+    The analytic signal `x_a(t)` of signal `x(t)` is:
 
-        x_a = F^{-1}(F(x) 2U) = x + i y
+    .. math:: x_a = F^{-1}(F(x) 2U) = x + i y
 
-    where ``F`` is the Fourier transform, ``U`` the unit step function,
-    and ``y`` the Hilbert transform of ``x``. [1]_
+    where `F` is the Fourier transform, `U` the unit step function,
+    and `y` the Hilbert transform of `x`. [1]_
+    
+    In other words, the negative half of the frequency spectrum is zeroed 
+    out, turning the real-valued signal into a complex signal.  The Hilbert 
+    transformed signal can be obtained from ``np.imag(hilbert(x))``, and the 
+    original signal from ``np.real(hilbert(x))``.
 
     `axis` argument is new in scipy 0.8.0.
 
