@@ -88,13 +88,8 @@ class TestExpM(TestCase):
                 assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 
     def test_logm_consistency(self):
-        #XXX This does not test precisions like you think it does.
-        #XXX Sometimes logm returns a high precision matrix
-        #XXX even when its input matrix is low precision.
-        #XXX Therefore the subsequent expm is high precision,
-        #XXX even within a test that is supposed to test low precision expm.
         random.seed(1234)
-        for dtype in [np.float32, np.float64, np.complex64, np.complex128]:
+        for dtype in [np.float64, np.complex128]:
             for n in range(1, 10):
                 for scale in [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2]:
                     # make logm(A) be of a given scale
@@ -103,6 +98,7 @@ class TestExpM(TestCase):
                         A = A + 1j * random.rand(n, n) * scale
                     for expm in (expm_2005, expm_2009):
                         assert_array_almost_equal(expm(logm(A)), A)
+
 
     def test_overscaling_example(self):
         # See the blog post

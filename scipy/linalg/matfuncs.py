@@ -390,21 +390,14 @@ def logm(A, disp=True):
     """
     # Compute using general funm but then use better error estimator and
     #   make one step in improving estimate using a rotation matrix.
-    #
-    # XXX Using expm_2005 for bug-compatibility with the funm/expm_2005 tests.
-    # XXX In its current form, this function (funm) will sometimes return
-    # XXX a float64 numpy.matrix and sometimes return a float32 ndarray
-    # XXX when a float32 ndarray is provided as input.
-    # XXX This behavior should be changed sometime in the future.
-    #
-    from scipy.sparse.linalg.matfuncs import expm_2005
+    from scipy.sparse.linalg.matfuncs import expm
     A = mat(asarray(A))
     F, errest = funm(A,log,disp=0)
     errtol = 1000*eps
     # Only iterate if estimate of error is too large.
     if errest >= errtol:
         # Use better approximation of error
-        errest = norm(expm_2005(F)-A,1) / norm(A,1)
+        errest = norm(expm(F)-A,1) / norm(A,1)
         if not isfinite(errest) or errest >= errtol:
             N,N = A.shape
             X,Y = ogrid[1:N+1,1:N+1]
@@ -413,10 +406,10 @@ def logm(A, disp=True):
             F = R.H*F*R
             if (norm(imag(F),1) <= 1000*errtol*norm(F,1)):
                 F = mat(real(F))
-            E = mat(expm_2005(F))
+            E = mat(expm(F))
             temp = mat(solve(E.T,(E-A).T))
             F = F - temp.T
-            errest = norm(expm_2005(F)-A,1) / norm(A,1)
+            errest = norm(expm(F)-A,1) / norm(A,1)
     if disp:
         if not isfinite(errest) or errest >= errtol:
             print("Result may be inaccurate, approximate err =", errest)

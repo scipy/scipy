@@ -59,6 +59,7 @@ def inv(A):
     return Ainv
 
 
+
 def expm_2005(A):
     """
     Compute the matrix exponential using Pade approximation.
@@ -635,6 +636,5 @@ def _pade13(A, ident, A2=None, A4=None, A6=None):
     V = A6.dot(b[12]*A6 + b[10]*A4 + b[8]*A2) + b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*ident
     return U,V
 
-# define the default expm function
+# Define the default expm.
 expm = expm_2009
-
