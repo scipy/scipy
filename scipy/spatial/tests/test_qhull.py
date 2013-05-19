@@ -582,6 +582,12 @@ class TestConvexHull:
 
             assert_hulls_equal(points, tri.convex_hull, hull.simplices)
 
+            # Check that the hull extremes are as expected
+            if points.shape[1] == 2:
+                assert_equal(np.unique(hull.simplices), np.sort(hull.vertices))
+            else:
+                assert_equal(np.unique(hull.simplices), hull.vertices)
+
         for name in sorted(DATASETS):
             yield check, name
 
@@ -613,6 +619,20 @@ class TestConvexHull:
         for name in sorted(DATASETS):
             for chunksize in 1, 4:
                 yield check, name, chunksize
+
+
+    def test_vertices_2d(self):
+        # The vertices should be in counterclockwise order in 2-D
+        np.random.seed(1234)
+        points = np.random.rand(30, 2)
+
+        hull = qhull.ConvexHull(points)
+        assert_equal(np.unique(hull.simplices), np.sort(hull.vertices))
+
+        # Check counterclockwiseness
+        x, y = hull.points[hull.vertices].T
+        angle = np.arctan2(y - y.mean(), x - x.mean())
+        assert_(np.all(np.diff(np.unwrap(angle)) > 0))
 
 
 class TestVoronoi:

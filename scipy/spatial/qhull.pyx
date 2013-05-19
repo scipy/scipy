@@ -72,6 +72,7 @@ cdef extern from "qhull/src/libqhull.h":
         flagT simplicial
         flagT flipped
         flagT upperdelaunay
+        flagT toporient
         unsigned visitid
 
     ctypedef struct vertexT:
@@ -116,6 +117,8 @@ cdef extern from "qhull/src/libqhull.h":
         realT DISTround
         jmp_buf errexit
         setT *other_points
+        unsigned int visit_id
+        unsigned int vertex_visit
 
     extern qhT *qh_qh
     extern int qh_PRINToff
@@ -212,7 +215,8 @@ cdef class _Qhull:
     cdef public bytes mode_option
     cdef public object furthest_site
 
-    cdef int numpoints, ndim, _is_delaunay
+    cdef readonly int ndim
+    cdef int numpoints, _is_delaunay
     cdef np.ndarray _ridge_points
 
     cdef list _ridge_vertices
@@ -763,6 +767,82 @@ cdef class _Qhull:
 
         return voronoi_vertices, self._ridge_points, self._ridge_vertices, \
                regions, point_region
+
+    @cython.final
+    def get_extremes_2d(_Qhull self):
+        if self._is_delaunay:
+            raise ValueError("Cannot compute for Delaunay")
+
+        _qhull_lock.acquire()
+        try:
+            self._activate()
+            return self._get_extremes_2d()
+        finally:
+            _qhull_lock.release()
+
+    @cython.final
+    @cython.boundscheck(False)
+    @cython.cdivision(True)
+    cdef _get_extremes_2d(_Qhull self):
+        """
+        Compute the extremal points in a 2-D convex hull, i.e. the
+        vertices of the convex hull, ordered counterclockwise.
+
+        See qhull/io.c:qh_printextremes_2d
+
+        """
+        cdef facetT *facet, *startfacet, *nextfacet
+        cdef vertexT *vertexA, *vertexB
+        cdef int[:] extremes
+        cdef int nextremes
+
+        nextremes = 0
+        extremes_arr = np.zeros(100, dtype=np.intc)
+        extremes = extremes_arr
+
+        qh_qh.visit_id += 1
+        qh_qh.vertex_visit += 1
+
+        facet = qh_qh.facet_list
+        startfacet = facet
+        while facet:
+            if facet.visitid == qh_qh.visit_id:
+                raise QhullError("Qhull internal error: loop in facet list")
+
+            if facet.toporient:
+                vertexA = <vertexT*>facet.vertices.e[0].p
+                vertexB = <vertexT*>facet.vertices.e[1].p
+                nextfacet = <facetT*>facet.neighbors.e[0].p
+            else:
+                vertexB = <vertexT*>facet.vertices.e[0].p
+                vertexA = <vertexT*>facet.vertices.e[1].p
+                nextfacet = <facetT*>facet.neighbors.e[1].p
+
+            if nextremes + 2 >= extremes.shape[0]:
+                extremes = None
+                extremes_arr.resize(2*extremes_arr.shape[0]+1)
+                extremes = extremes_arr
+
+            if vertexA.visitid != qh_qh.vertex_visit:
+                vertexA.visitid = qh_qh.vertex_visit
+                extremes[nextremes] = qh_pointid(vertexA.point)
+                nextremes += 1
+
+            if vertexB.visitid != qh_qh.vertex_visit:
+                vertexB.visitid = qh_qh.vertex_visit
+                extremes[nextremes] = qh_pointid(vertexB.point)
+                nextremes += 1
+
+            facet.visitid = qh_qh.visit_id
+            facet = nextfacet
+
+            if facet == startfacet:
+                break
+
+        extremes = None
+        extremes_arr.resize(nextremes)
+        return extremes_arr
+
 
 cdef void _visit_voronoi(void *ptr, vertexT *vertex, vertexT *vertexA,
                          setT *centers, boolT unbounded):
@@ -1579,7 +1659,7 @@ class Delaunay(_QhullUser):
     Attributes
     ----------
     points : ndarray of double, shape (npoints, ndim)
-        Points in the triangulation.
+        Coordinates of input points.
     simplices : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of the points forming the simplices in the triangulation.
     neighbors : ndarray of ints, shape (nsimplex, ndim+1)
@@ -2069,7 +2149,7 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
 
 class ConvexHull(_QhullUser):
     """
-    ConvexHull(points, furthest_site=False, qhull_options=None)
+    ConvexHull(points, incremental=False, qhull_options=None)
 
     Convex hulls in N dimensions.
 
@@ -2090,7 +2170,11 @@ class ConvexHull(_QhullUser):
     Attributes
     ----------
     points : ndarray of double, shape (npoints, ndim)
-        Points in the convex hull.
+        Coordinates of input points.
+    vertices : ndarray of ints, shape (nvertices,)
+        Indices of points forming the vertices of the convex hull.
+        For 2-D convex hulls, the vertices are in counterclockwise order.
+        For other dimensions, they are in input order.
     simplices : ndarray of ints, shape (nfacet, ndim)
         Indices of points forming the simplical facets of the convex hull.
     neighbors : ndarray of ints, shape (nfacet, ndim)
@@ -2133,6 +2217,12 @@ class ConvexHull(_QhullUser):
     >>> plt.plot(points[:,0], points[:,1], 'o')
     >>> for simplex in hull.simplices:
     >>>     plt.plot(points[simplex,0], points[simplex,1], 'k-')
+
+    We could also have directly used the vertices of the hull, which
+    for 2-D are guaranteed to be in counterclockwise order:
+
+    >>> plt.plot(points[hull.vertices,0], points[hull.vertices,1], 'r--', lw=2)
+    >>> plt.plot(points[hull.vertices[0],0], points[hull.vertices[0],1], 'ro')
     >>> plt.show()
 
     References
@@ -2162,9 +2252,20 @@ class ConvexHull(_QhullUser):
         self.simplices, self.neighbors, self.equations, self.coplanar = \
                        qhull.get_simplex_facet_array()
 
+        if qhull.ndim == 2:
+            self._vertices = qhull.get_extremes_2d()
+        else:
+            self._vertices = None
+
         self.nsimplex = self.simplices.shape[0]
 
         _QhullUser._update(self, qhull)
+
+    @property
+    def vertices(self):
+        if self._vertices is None:
+            self._vertices = np.unique(self.simplices)
+        return self._vertices
 
 
 #------------------------------------------------------------------------------
@@ -2196,7 +2297,7 @@ class Voronoi(_QhullUser):
     Attributes
     ----------
     points : ndarray of double, shape (npoints, ndim)
-        Points used for constructing the Voronoi diagram.
+        Coordinates of input points.
     vertices : ndarray of double, shape (nvertices, ndim)
         Coordinates of the Voronoi vertices.
     ridge_points : ndarray of ints, shape (nridges, 2)
