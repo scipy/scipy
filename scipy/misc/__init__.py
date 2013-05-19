@@ -34,6 +34,9 @@ systems that don't have PIL installed.
    pade - Pade approximation to function as the ratio of two polynomials
    toimage - Takes a numpy array and returns a PIL image
    who - Print the Numpy arrays in the given dictionary
+   set_gc_state - enable or disable garbage collection
+   gc_state - context manager for given state of garbage collector
+   check_refs_for - context manager to check for circular references on object
 
 """
 
@@ -64,6 +67,10 @@ except ImportError:
 from . import common
 __all__ += common.__all__
 del common
+
+from . import gcutils
+__all__ += gcutils.__all__
+from .gcutils import set_gc_state, gc_state, check_refs_for
 
 from numpy.testing import Tester
 test = Tester().test
