@@ -870,6 +870,23 @@ class TestExpect(TestCase):
         assert_almost_equal(prob_lb, 1, decimal=14)
 
 
+class TestNct(TestCase):
+    def test_nc_parameter(self):
+        # Parameter values c<=0 were not enabled (gh-2402).
+        # For negative values c and for c=0 results of rv.cdf(0) below were nan
+        rv = stats.nct(5, 0)
+        assert_equal(rv.cdf(0), 0.5)
+        rv = stats.nct(5, -1)
+        assert_almost_equal(rv.cdf(0), 0.841344746069, decimal=10)
+
+    def test_broadcasting(self):
+        res = stats.nct.pdf(5, np.arange(4,7)[:,None], np.linspace(0.1, 1, 4))
+        expected = array([[ 0.00321886,  0.00557466,  0.00918418,  0.01442997],
+                          [ 0.00217142,  0.00395366,  0.00683888,  0.01126276],
+                          [ 0.00153078,  0.00291093,  0.00525206,  0.00900815]])
+        assert_allclose(res, expected, rtol=1e-5)
+
+
 def test_regression_ticket_1316():
     # The following was raising an exception, because _construct_default_doc()
     # did not handle the default keyword extradoc=None.  See ticket #1316.
@@ -1136,6 +1153,7 @@ def test_ncx2_tails_ticket_955():
     a = stats.ncx2.cdf(np.arange(20, 25, 0.2), 2, 1.07458615e+02)
     b = stats.ncx2.veccdf(np.arange(20, 25, 0.2), 2, 1.07458615e+02)
     assert_allclose(a, b, rtol=1e-3, atol=0)
+
 
 def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
