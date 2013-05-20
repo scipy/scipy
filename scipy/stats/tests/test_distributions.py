@@ -34,7 +34,7 @@ def kolmogorov_check(diststr, args=(), N=20, significance=0.01):
 dists = ['uniform','norm','lognorm','expon','beta',
          'powerlaw','bradford','burr','fisk','cauchy','halfcauchy',
          'foldcauchy','gamma','gengamma','loggamma',
-         'alpha','anglit','arcsine','betaprime','erlang',
+         'alpha','anglit','arcsine','betaprime',
          'dgamma','exponweib','exponpow','frechet_l','frechet_r',
          'gilbrat','f','ncf','chi2','chi','nakagami','genpareto',
          'genextreme','genhalflogistic','pareto','lomax','halfnorm',
@@ -66,9 +66,8 @@ def test_all_distributions():
         alpha = 0.01
         if dist == 'fatiguelife':
             alpha = 0.001
-        if dist == 'erlang':
-            args = (4,)+tuple(rand(2))
-        elif dist == 'frechet':
+
+        if dist == 'frechet':
             args = tuple(2*rand(1))+(0,)+tuple(2*rand(2))
         elif dist == 'triang':
             args = tuple(rand(nargs))
@@ -82,6 +81,7 @@ def test_all_distributions():
             args = tuple(1.0+rand(nargs))
         else:
             args = tuple(1.0+rand(nargs))
+
         yield check_distribution, dist, args, alpha
 
 
@@ -610,7 +610,7 @@ class TestFitMethod(object):
             # Only check the length of the return
             # FIXME: should check the actual results to see if we are 'close'
             #   to what was created --- but what is 'close' enough
-            if dist in ['erlang', 'frechet']:
+            if dist == 'frechet':
                 assert_(len(vals) == len(args))
                 assert_(len(vals2) == len(args))
             else:
@@ -624,8 +624,8 @@ class TestFitMethod(object):
     def test_fix_fit(self):
         def check(func, dist, args, alpha):
             # Not sure why 'ncf', and 'beta' are failing
-            # erlang and frechet have different len(args) than distfunc.numargs
-            if dist in self.skip + ['erlang', 'frechet']:
+            # frechet has different len(args) than distfunc.numargs
+            if dist in self.skip + ['frechet']:
                 raise SkipTest("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
             with np.errstate(all='ignore'):

@@ -44,7 +44,7 @@ distcont = [
     ['cosine', ()],
     ['dgamma', (1.1023326088288166,)],
     ['dweibull', (2.0685080649914673,)],
-    ['erlang', (20,)],    # correction numargs = 1
+    ['erlang', (10,)],
     ['expon', ()],
     ['exponpow', (2.697119160358469,)],
     ['exponweib', (2.8923945291034436, 1.9505288745913174)],
@@ -126,7 +126,6 @@ distcont = [
 
 # for testing only specific functions
 # distcont = [
-##    ['erlang', (20,)],    #correction numargs = 1
 ##    ['fatiguelife', (29,)],   #correction numargs = 1
 ##    ['loggamma', (0.41411931826052117,)]]
 

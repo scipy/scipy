@@ -19,7 +19,7 @@ from scipy.special import gammaln as gamln
 
 import inspect
 from numpy import all, where, arange, putmask, \
-     ravel, take, ones, sum, shape, product, repeat, reshape, \
+     ravel, take, ones, sum, shape, product, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
      arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1
 from numpy import atleast_1d, polyval, ceil, place, extract, \
@@ -2788,60 +2788,7 @@ class dweibull_gen(rv_continuous):
 dweibull = dweibull_gen(name='dweibull', shapes='c')
 
 
-## ERLANG
-##
-## Special case of the Gamma distribution with shape parameter an integer.
-##
-class erlang_gen(rv_continuous):
-    """An Erlang continuous random variable.
-
-    %(before_notes)s
-
-    See Also
-    --------
-    gamma
-
-    Notes
-    -----
-    The Erlang distribution is a special case of the Gamma
-    distribution, with the shape parameter ``a`` an integer. Refer to
-    the ``gamma`` distribution for further examples.
-
-    """
-    def _rvs(self, a):
-        return gamma.rvs(a, size=self._size)
-
-    def _arg_check(self, a):
-        return (a > 0) & (floor(a) == a)
-
-    def _pdf(self, x, a):
-        Px = (x)**(a-1.0)*exp(-x)/special.gamma(a)
-        return Px
-
-    def _logpdf(self, x, a):
-        return (a-1.0)*log(x) - x - gamln(a)
-
-    def _cdf(self, x, a):
-        return special.gdtr(1.0,a,x)
-
-    def _sf(self, x, a):
-        return special.gdtrc(1.0,a,x)
-
-    def _ppf(self, q, a):
-        return special.gdtrix(1.0, a, q)
-
-    def _stats(self, a):
-        a = a*1.0
-        return a, a, 2/sqrt(a), 6/a
-
-    def _entropy(self, a):
-        return special.psi(a)*(1-a) + 1 + gamln(a)
-erlang = erlang_gen(a=0.0, name='erlang', shapes='a')
-
-
 ## Exponential (gamma distributed with a=1.0, loc=loc and scale=scale)
-## scale == 1.0 / lambda
-
 class expon_gen(rv_continuous):
     """An exponential continuous random variable.
 
@@ -3538,6 +3485,9 @@ class gamma_gen(rv_continuous):
     def _cdf(self, x, a):
         return special.gammainc(a, x)
 
+    def _sf(self, x, a):
+        return special.gammaincc(a, x)
+
     def _ppf(self, q, a):
         return special.gammaincinv(a,q)
 
@@ -3569,6 +3519,28 @@ class gamma_gen(rv_continuous):
         else:
             return super(gamma_gen, self).fit(data, *args, **kwds)
 gamma = gamma_gen(a=0.0, name='gamma', shapes='a')
+
+
+# Erlang
+class erlang_gen(gamma_gen):
+    """An Erlang continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    gamma
+
+    Notes
+    -----
+    The Erlang distribution is a special case of the Gamma distribution, with
+    the shape parameter ``a`` an integer.  Note that this restriction is not
+    enforced by `erlang`.
+
+    Refer to `gamma` for examples.
+
+    """
+erlang = erlang_gen(a=0.0, name='erlang', shapes='a')
 
 
 # Generalized Gamma
