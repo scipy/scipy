@@ -236,6 +236,77 @@ class IdentityOperator(LinearOperator):
         return x
 
 
+class _ProductOp:
+    """Compute the action of a product of multiple matrices.
+
+    The assumption is that the action of the product of multiple matrices
+    can be computed more efficiently than explicitly computing the
+    matrix that corresponds to this linear operator.
+    For example if A and B are large and C is narrow,
+    then it would be more efficient to compute
+    _ProductOp(A, B).dot(C) = A.dot(B.dot(C))
+    than to compute (A.dot(B)).dot(C).
+
+    It is compatible with aslinearoperator()
+    because .shape and .dot() are implemented.
+
+    """
+    def __init__(self, *args):
+        if len(args) < 1:
+            raise ValueError('at least one operator is required')
+        for A in args:
+            if len(A.shape) != 2:
+                raise ValueError('operators must have len(shape) == 2')
+        self.shape = (args[0].shape[0], args[-1].shape[-1])
+        self.ndim = len(self.shape)
+        self._multiplicands = args
+
+    def dot(self, other):
+        for A in reversed(self._multiplicands):
+            other = A.dot(other)
+        return other
+
+    @property
+    def T(self):
+        T_args = [A.T for A in reversed(self._multiplicands)]
+        return _ProductOp(*T_args)
+
+def MatrixProductOperator(*args):
+    return aslinearoperator(_ProductOp(*args))
+
+
+class _PowerOp:
+    """Compute the action of the power of a matrix.
+
+    The motivation and interface is similar to that of _ProductOp.
+
+    It is compatible with aslinearoperator()
+    because .shape and .dot() are implemented.
+
+    """
+    def __init__(self, A, p):
+        if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+            raise ValueError('expected A to be like a square matrix')
+        if p < 0 or p != round(p):
+            raise ValueError('expected p to be a small non-negative integer')
+        self.shape = A.shape
+        self.ndim = A.ndim
+        self._A = A
+        self._p = p
+
+    def dot(self, other):
+        for i in range(self._p):
+            other = self._A.dot(other)
+        return other
+
+    @property
+    def T(self):
+        return _PowerOp(self._A.T, self._p)
+
+def MatrixPowerOperator(A, p):
+    return aslinearoperator(_PowerOp(A, p))
+
+
 def aslinearoperator(A):
     """Return A as a LinearOperator.
 
@@ -245,6 +316,7 @@ def aslinearoperator(A):
      - sparse matrix (e.g. csr_matrix, lil_matrix, etc.)
      - LinearOperator
      - An object with .shape and .matvec attributes
+     - An object with .shape and .dot attributes
 
     See the LinearOperator documentation for additonal information.
 
@@ -268,17 +340,30 @@ def aslinearoperator(A):
     elif isspmatrix(A):
         return MatrixLinearOperator(A)
 
+    elif hasattr(A, 'shape') and hasattr(A, 'matvec'):
+        rmatvec = None
+        dtype = None
+
+        if hasattr(A, 'rmatvec'):
+            rmatvec = A.rmatvec
+        if hasattr(A, 'dtype'):
+            dtype = A.dtype
+        return LinearOperator(A.shape, A.matvec,
+                              rmatvec=rmatvec, dtype=dtype)
+
+    elif hasattr(A, 'shape') and hasattr(A, 'dot'):
+        shape = A.shape
+        matvec = A.dot
+        matmat = A.dot
+        rmatvec = None
+        dtype = None
+
+        if hasattr(A, 'rmatvec'):
+            rmatvec = A.rmatvec
+        if hasattr(A, 'dtype'):
+            dtype = A.dtype
+        return LinearOperator(shape, matvec,
+                              rmatvec=rmatvec, matmat=matmat, dtype=dtype)
+
     else:
-        if hasattr(A, 'shape') and hasattr(A, 'matvec'):
-            rmatvec = None
-            dtype = None
-
-            if hasattr(A, 'rmatvec'):
-                rmatvec = A.rmatvec
-            if hasattr(A, 'dtype'):
-                dtype = A.dtype
-            return LinearOperator(A.shape, A.matvec,
-                                  rmatvec=rmatvec, dtype=dtype)
-
-        else:
-            raise TypeError('type not understood')
+        raise TypeError('type not understood')
