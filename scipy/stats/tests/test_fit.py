@@ -20,7 +20,6 @@ failing_fits = [
         'burr',
         'chi',
         'chi2',
-        'erlang',
         'gausshyper',
         'genexpon',
         'gengamma',
