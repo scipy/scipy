@@ -23,6 +23,9 @@ except ImportError:
     import ImageFilter
 
 
+if not hasattr(Image, 'frombytes'):
+    Image.frombytes = Image.fromstring
+
 __all__ = ['fromimage','toimage','imsave','imread','bytescale',
            'imrotate','imresize','imshow','imfilter']
 
@@ -227,11 +230,11 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
         shape = (shape[1],shape[0])  # columns show up first
         if mode == 'F':
             data32 = data.astype(numpy.float32)
-            image = Image.fromstring(mode,shape,data32.tostring())
+            image = Image.frombytes(mode,shape,data32.tostring())
             return image
         if mode in [None, 'L', 'P']:
             bytedata = bytescale(data,high=high,low=low,cmin=cmin,cmax=cmax)
-            image = Image.fromstring('L',shape,bytedata.tostring())
+            image = Image.frombytes('L',shape,bytedata.tostring())
             if pal is not None:
                 image.putpalette(asarray(pal,dtype=uint8).tostring())
                 # Becomes a mode='P' automagically.
@@ -242,7 +245,7 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             return image
         if mode == '1':  # high input gives threshold for 1
             bytedata = (data > high)
-            image = Image.fromstring('1',shape,bytedata.tostring())
+            image = Image.frombytes('1',shape,bytedata.tostring())
             return image
         if cmin is None:
             cmin = amin(ravel(data))
@@ -251,7 +254,7 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
         data = (data*1.0 - cmin)*(high-low)/(cmax-cmin) + low
         if mode == 'I':
             data32 = data.astype(numpy.uint32)
-            image = Image.fromstring(mode,shape,data32.tostring())
+            image = Image.frombytes(mode,shape,data32.tostring())
         else:
             raise ValueError(_errstr)
         return image
@@ -301,7 +304,7 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             raise ValueError("Invalid array shape for mode.")
 
     # Here we know data and mode is correct
-    image = Image.fromstring(mode, shape, strdata)
+    image = Image.frombytes(mode, shape, strdata)
     return image
 
 
