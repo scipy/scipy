@@ -1,4 +1,5 @@
 # Author: Travis Oliphant 2001
+# Author: Nathan Woods 2013 (nquad &c)
 from __future__ import division, print_function, absolute_import
 
 from . import _quadpack
@@ -494,6 +495,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     return dblquad(_infunc2,a,b,gfun,hfun,(func,qfun,rfun,args),epsabs=epsabs,epsrel=epsrel)
 
 def nquad(func,ranges,args=(),opts=[]):
+    # Author: Nathan Woods 2013
     """
 Integration over multiple variables.
 
