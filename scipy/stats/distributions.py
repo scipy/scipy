@@ -11,6 +11,7 @@ from scipy.lib.six import callable, string_types, get_method_function
 from scipy.lib.six import exec_
 
 from scipy.misc import comb, derivative
+from scipy.misc.doccer import inherit_docstring_from
 from scipy import special
 from scipy import optimize
 from scipy import integrate
@@ -1866,7 +1867,6 @@ class rv_continuous(rv_generic):
         penalty applied for samples outside of range of the distribution. The
         returned answer is not guaranteed to be the globally optimal MLE, it
         may only be locally optimal, or the optimization may fail altogether.
-
         """
         Narg = len(args)
         if Narg > self.numargs:
@@ -2192,6 +2192,38 @@ class norm_gen(rv_continuous):
 
     def _entropy(self):
         return 0.5*(log(2*pi)+1)
+
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, **kwds):
+        """%(super)s
+        This function (norm_gen.fit) uses explicit formulas for the maximum
+        likelihood estimation of the parameters, so the `optimizer` argument
+        is ignored.
+        """
+        floc = kwds.get('floc', None)
+        fscale = kwds.get('fscale', None)
+
+        if floc is not None and fscale is not None:
+            # This check is for consistency with `rv_continuous.fit`.
+            # Without this check, this function would just return the
+            # parameters that were given.
+            raise ValueError("All parameters fixed. There is nothing to "
+                             "optimize.")
+
+        data = np.asarray(data)
+
+        if floc is None:
+            loc = data.mean()
+        else:
+            loc = floc
+
+        if fscale is None:
+            scale = np.sqrt(((data - loc)**2).mean())
+        else:
+            scale = fscale
+
+        return loc, scale
+
 norm = norm_gen(name='norm')
 
 
@@ -2297,6 +2329,68 @@ class arcsine_gen(rv_continuous):
 arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
 
 
+class FitDataError(ValueError):
+    # This exception is raised by, for example, beta_gen.fit when both floc
+    # and fscale  are fixed and there are values in the data not in the open
+    # interval (floc, floc+fscale).
+    def __init__(self, distr, lower, upper):
+        self.args = ("Invalid values in `data`.  Maximum likelihood "
+                      "estimation with {distr!r} requires that {lower!r} < x "
+                      "< {upper!r} for each x in `data`.".format(distr=distr,
+                      lower=lower, upper=upper),)
+
+
+class FitSolverError(RuntimeError):
+    # This exception is raised by, for example, beta_gen.fit when
+    # optimize.fsolve returns with ier != 1.
+    def __init__(self, mesg):
+        emsg = "Solver for the MLE equations failed to converge: "
+        emsg += mesg.replace('\n', '')
+        self.args = (emsg,)
+
+
+def _sumlog(data, loc, scale, check_upper=False):
+    # A utililty function used in beta_gen.fit.
+    # Sum the logs of the data.  The data must be strictly positive, and if
+    # check_upper is True, the data must be strictly less than 1.
+    # `loc` and `scale` are only used in the exception that is
+    # raised if any data is out of bounds.
+
+    if check_upper and np.any(data > 1):
+        raise FitDataError("beta", lower=loc, upper=loc + scale)
+
+    # Ensure that any 0 or negative values raise an exception.
+    with np.errstate(divide='raise', invalid='raise'):
+        try:
+            s = np.log(data).sum()
+        except FloatingPointError:
+            raise FitDataError("beta", lower=loc, upper=loc + scale)
+    return s
+
+
+def _beta_mle_a(a, b, n, s1):
+    # The zeros of this function give the MLE for `a`, with
+    # `b`, `n` and `s1` given.  `s1` is the sum of the logs of
+    # the data. `n` is the number of data points.
+    psiab = special.psi(a + b)
+    func = s1 - n * (-psiab + special.psi(a))
+    return func
+
+
+def _beta_mle_ab(theta, n, s1, s2):
+    # Zeros of this function are critical points of
+    # the maximum likelihood function.  Solving this system
+    # for theta (which contains a and b) gives the MLE for a and b
+    # given `n`, `s1` and `s2`.  `s1` is the sum of the logs of the data,
+    # and `s2` is the sum of the logs of 1 - data.  `n` is the number
+    # of data points.
+    a, b = theta
+    psiab = special.psi(a + b)
+    func = [s1 - n * (-psiab + special.psi(a)),
+            s2 - n * (-psiab + special.psi(b))]
+    return func
+
+
 class beta_gen(rv_continuous):
     """A beta continuous random variable.
 
@@ -2353,20 +2447,94 @@ class beta_gen(rv_continuous):
         a, b = optimize.fsolve(func, (1.0, 1.0))
         return super(beta_gen, self)._fitstart(data, args=(a,b))
 
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
+        """%(super)s
+        In the special case where both `floc` and `fscale` are given, a
+        `ValueError` is raised if any value `x` in `data` does not satisfy
+        `floc < x < floc + fscale`.
+        """
+        # Override rv_continuous.fit, so we can more efficiently handle the
+        # case where floc and fscale are given.
+
+        f0 = kwds.get('f0', None)
+        f1 = kwds.get('f1', None)
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
-        if floc is not None and fscale is not None:
-            # special case
-            data = (ravel(data)-floc)/fscale
-            xbar = data.mean()
-            v = data.var(ddof=0)
-            fac = xbar*(1-xbar)/v - 1
-            a = xbar * fac
-            b = (1-xbar) * fac
-            return a, b, floc, fscale
-        else:  # do general fit
+
+        if floc is None or fscale is None:
+            # do general fit
             return super(beta_gen, self).fit(data, *args, **kwds)
+
+        # Special case: loc and scale are constrained, so we are fitting
+        # just the shape parameters.  This can be done much more efficiently
+        # than the method used in `rv_continuous.fit`.  (See the subsection
+        # "Two unknown parameters" in the section "Maximum likelihood" of
+        # the Wikipedia article on the Beta distribution for the formulas.)
+
+        # Normalize the data to the interval [0,1].
+        data = (ravel(data) - floc) / fscale
+        xbar = data.mean()
+
+        if f0 is not None or f1 is not None:
+            # One of the shape parameters is fixed.
+
+            if f0 is not None:
+                # The shape parameter a is fixed, so swap the parameters
+                # and flip the data.  We always solve for `a`.  The result
+                # will be swapped back before returning.
+                b = f0
+                data = 1 - data
+                xbar = 1 - xbar
+            else:
+                b = f1
+
+            # Sum the logs of data.  A FitDataError exception is raised if any
+            # value in data is not between 0 and 1 (exclusive).
+            s1 = _sumlog(data, floc, fscale, check_upper=True)
+
+            # Initial guess for a.  Use the formula for the mean of the beta
+            # distribution, E[x] = a / (a + b), to generate a reasonable
+            # starting point based on the mean of the data and the given
+            # value of b.
+            a = b * xbar / (1 - xbar)
+
+            # Compute the MLE for `a` by solving _beta_mle_a.
+            theta, info, ier, mesg = optimize.fsolve(_beta_mle_a, a,
+                args=(b, len(data), s1), full_output=True)
+            if ier != 1:
+                raise FitSolverError(mesg=mesg)
+            a = theta[0]
+
+            if f0 is not None:
+                # The shape parameter a was fixed, so swap back the
+                # parameters.
+                a, b = b, a
+
+        else:
+            # Neither of the shape parameters is fixed.
+
+            # Compute the sums of the logs of data and 1-data. This will raise
+            # a FitDataError exception if any value in data is not in the
+            # interval (0, 1).
+            s1 = _sumlog(data, floc, fscale, check_upper=True)
+            s2 = _sumlog(1 - data, floc, fscale)
+
+            # Use the "method of moments" to estimate the initial
+            # guess for a and b.
+            fac = xbar * (1 - xbar) / data.var(ddof=0) - 1
+            a = xbar * fac
+            b = (1 - xbar) * fac
+
+            # Compute the MLE for a and b by solving _beta_mle_ab.
+            theta, info, ier, mesg = optimize.fsolve(_beta_mle_ab, [a, b],
+                args=(len(data), s1, s2), full_output=True)
+            if ier != 1:
+                raise FitSolverError(mesg=mesg)
+            a, b = theta
+
+        return a, b, floc, fscale
+
 beta = beta_gen(a=0.0, b=1.0, name='beta')
 
 
@@ -3411,6 +3579,42 @@ class genextreme_gen(rv_continuous):
 genextreme = genextreme_gen(name='genextreme')
 
 
+def _digammainv(y):
+    # Inverse of the digamma function (real positive arguments only).
+    # This function is used in the `fit` method of `gamma_gen`.
+    # The function uses either optimize.fsolve or optimize.newton
+    # to solve `digamma(x) - y = 0`.  There is probably room for
+    # improvement, but currently it works over a wide range of y:
+    #    >>> y = 64*np.random.randn(1000000)
+    #    >>> y.min(), y.max()
+    #    (-311.43592651416662, 351.77388222276869)
+    #    x = [_digammainv(t) for t in y]
+    #    np.abs(digamma(x) - y).max()
+    #    1.1368683772161603e-13
+    #
+    _em = 0.5772156649015328606065120
+    func = lambda x: special.digamma(x) - y
+    if y > -0.125:
+        x0 = exp(y) + 0.5
+        if y < 10:
+            # Some experimentation shows that newton reliably converges
+            # must faster than fsolve in this y range.  For larger y,
+            # newton sometimes fails to converge.
+            value = optimize.newton(func, x0, tol=1e-10)
+            return value
+    elif y > -3:
+        x0 = exp(y/2.332) + 0.08661
+    else:
+        x0 = 1.0 / (-y - _em)
+
+    value, info, ier, mesg = optimize.fsolve(func, x0, xtol=1e-11,
+                                             full_output=True)
+    if ier != 1:
+        raise RuntimeError("_digammainv: fsolve failed, y = %r" % y)
+
+    return value[0]
+
+
 ## Gamma (Use MATLAB and MATHEMATICA (b=theta=scale, a=alpha=shape) definition)
 
 ## gamma(a, loc, scale)  with a an integer is the Erlang distribution
@@ -3475,26 +3679,77 @@ class gamma_gen(rv_continuous):
         return special.psi(a)*(1-a) + 1 + gamln(a)
 
     def _fitstart(self, data):
-        a = 4 / _skew(data)**2
+        # The skewness of the gamma distribution is `4 / sqrt(a)`.
+        # We invert that to estimate the shape `a` using the skewness
+        # of the data.  The formula is regularized with 1e-8 in the
+        # denominator to allow for degenerate data where the skewness
+        # is close to 0.
+        a = 4 / (1e-8 + _skew(data)**2)
         return super(gamma_gen, self)._fitstart(data, args=(a,))
 
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
+        f0 = kwds.get('f0', None)
         floc = kwds.get('floc', None)
-        if floc == 0:
-            xbar = ravel(data).mean()
-            logx_bar = ravel(log(data)).mean()
-            s = log(xbar) - logx_bar
+        fscale = kwds.get('fscale', None)
 
-            def func(a):
-                return log(a) - special.digamma(a) - s
-            aest = (3-s + math.sqrt((s-3)**2 + 24*s)) / (12*s)
-            xa = aest*(1-0.4)
-            xb = aest*(1+0.4)
-            a = optimize.brentq(func, xa, xb, disp=0)
-            scale = xbar / a
-            return a, floc, scale
-        else:
+        if floc is None:
+            # loc is not fixed.  Use the default fit method.
             return super(gamma_gen, self).fit(data, *args, **kwds)
+
+        # Special case: loc is fixed.
+
+        if f0 is not None and fscale is not None:
+            # This check is for consistency with `rv_continuous.fit`.
+            # Without this check, this function would just return the
+            # parameters that were given.
+            raise ValueError("All parameters fixed. There is nothing to "
+                             "optimize.")
+
+        # Fixed location is handled by shifting the data.
+        data = np.asarray(data)
+        if np.any(data <= floc):
+            raise FitDataError("gamma", lower=floc, upper=np.inf)
+        if floc != 0:
+            # Don't do the subtraction in-place, because `data` might be a
+            # view of the input array.
+            data = data - floc
+        xbar = data.mean()
+
+        # Three cases to handle:
+        # * shape and scale both free
+        # * shape fixed, scale free
+        # * shape free, scale fixed
+
+        if fscale is None:
+            # scale is free
+            if f0 is not None:
+                # shape is fixed
+                a = f0
+            else:
+                # shape and scale are both free.
+                # The MLE for the shape parameter `a` is the solution to:
+                # log(a) - special.digamma(a) - log(xbar) + log(data.mean) = 0
+                s = log(xbar) - log(data).mean()
+                func = lambda a: log(a) - special.digamma(a) - s
+                aest = (3-s + math.sqrt((s-3)**2 + 24*s)) / (12*s)
+                xa = aest*(1-0.4)
+                xb = aest*(1+0.4)
+                a = optimize.brentq(func, xa, xb, disp=0)
+
+            # The MLE for the scale parameter is just the data mean
+            # divided by the shape parameter.
+            scale = xbar / a
+        else:
+            # scale is fixed, shape is free
+            # The MLE for the shape parameter `a` is the solution to:
+            # special.digamma(a) - log(data).mean() + log(fscale) = 0
+            c = log(data).mean() - log(fscale)
+            a = _digammainv(c)
+            scale = fscale
+
+        return a, floc, scale
+
 gamma = gamma_gen(a=0.0, name='gamma')
 
 
@@ -7656,4 +7911,3 @@ class skellam_gen(rv_discrete):
         g2 = 1 / var
         return mean, var, g1, g2
 skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam')
-
