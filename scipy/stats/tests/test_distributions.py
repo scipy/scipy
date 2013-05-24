@@ -1099,6 +1099,14 @@ def test_nct_ticket_1883():
     rv = nct(5, -1)
     assert_almost_equal(rv.cdf(0), 0.841344746069, decimal=10)
 
-
+def text_var_ticket_1882():
+    # Computation of the variance of a non-central t-distribution resulted 
+    # in a TyoeError: ufunc 'isinf' not supported for the input types,
+    # and the inputs could not be safely coerced to any supported types 
+    # according to the casting rule 'safe'
+    rv = nct(4, 0)
+    assert_equal(rv.var(), 2.0)
+    
+    
 if __name__ == "__main__":
     run_module_suite()
