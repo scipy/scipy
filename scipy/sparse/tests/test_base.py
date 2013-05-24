@@ -1,7 +1,10 @@
 #
 # Authors: Travis Oliphant, Ed Schofield, Robert Cimrman, Nathan Bell, and others
 
-""" Test functions for sparse matrices
+""" Test functions for sparse matrices. Each class in the "Matrix class
+based tests" section become subclasses of the classes in the "Generic
+tests" section. This is done by the functions in the "Tailored base
+class for generic tests" section.
 
 """
 
