@@ -1,0 +1,36 @@
+# After changing this file, check it on:
+#   http://lint.travis-ci.org/
+language: python
+python:
+  - 2.6
+  - 3.3
+matrix:
+  include:
+    - python: 2.7
+      env: TESTMODE=full
+before_install:
+  - uname -a
+  - free -m
+  - df -h
+  - ulimit -a
+  - mkdir builds
+  - pushd builds
+  - pip install nose
+  - pip install numpy
+  - pip install Cython
+  # mpmath for scipy.special tests
+  - pip install mpmath
+  # For Python 2.6 we also need argparse
+  - pip install argparse
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
+  - python -V
+  - popd
+script:
+  - python runtests.py -g -m $TESTMODE
+env:
+  - TESTMODE=fast
+notifications:
+  # Perhaps we should have status emails sent to the mailing list, but
+  # let's wait to see what people think before turning that on.
+  email: false
