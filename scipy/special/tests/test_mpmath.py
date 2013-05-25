@@ -1088,9 +1088,15 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(-1e3, 1e3), Arg(), Arg()])
 
     def test_gegenbauer_int(self):
+        # Redefine functions to deal with numerical + mpmath issues
         def gegenbauer(n, a, x):
+            # Avoid overflow at large `a` (mpmath would need an even larger
+            # dps to handle this correctly, so just skip this region)
             if abs(a) > 1e100:
                 return np.nan
+
+            # Deal with n=0, n=1 correctly; mpmath 0.17 doesn't do these
+            # always correctly
             if n == 0:
                 r = 1.0
             elif n == 1:
@@ -1098,15 +1104,18 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
             else:
                 r = mpmath.gegenbauer(n, a, x)
 
+            # Mpmath 0.17 gives wrong results (spurious zero) in some cases, so
+            # compute the value by perturbing the result
             if float(r) == 0 and n <= 1-a and a < -1 and float(a) == int(float(a)):
-                # possibly spurious zero
                 r = mpmath.gegenbauer(n, a + mpmath.mpf('1e-50'), x)
 
+            # Differing overflow thresholds in scipy vs. mpmath
             if abs(r) > 1e270:
                 return np.inf
             return r
         def sc_gegenbauer(n, a, x):
             r = sc.eval_gegenbauer(int(n), a, x)
+            # Differing overflow thresholds in scipy vs. mpmath
             if abs(r) > 1e270:
                 return np.inf
             return r
@@ -1258,7 +1267,9 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [IntArg(), Arg(), Arg(), Arg()])
 
     def test_jacobi_int(self):
+        # Redefine functions to deal with numerical + mpmath issues
         def jacobi(n, a, b, x):
+            # Mpmath does not handle n=0 case always correctly
             if n == 0:
                 return 1.0
             return mpmath.jacobi(n, a, b, x)
