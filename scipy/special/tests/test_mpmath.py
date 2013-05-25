@@ -921,9 +921,10 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg()])
 
     def test_e1_complex(self):
+        # E_1 oscillates as Im[z] -> +- inf, so limit range
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
-                            [ComplexArg()],
+                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
                             rtol=1e-11)
 
         # Check cross-over reqion
@@ -946,9 +947,10 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             rtol=1e-11)
 
     def test_ei_complex(self):
+        # Ei oscillates as Im[z] -> +- inf, so limit range
         assert_mpmath_equal(sc.expi,
                             mpmath.ei,
-                            [ComplexArg()],
+                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
                             rtol=1e-9)
 
     def test_ellipe(self):
