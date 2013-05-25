@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -21,7 +22,8 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('special')
     config.add_subpackage('stats')
     config.add_subpackage('ndimage')
-    config.add_subpackage('weave')
+    if sys.version_info[0] < 3:
+        config.add_subpackage('weave')
     config.add_subpackage('_build_utils')
     config.make_config_py()
     return config
