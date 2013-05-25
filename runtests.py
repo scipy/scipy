@@ -68,6 +68,8 @@ def main(argv):
                         help="Start Unix shell with PYTHONPATH set")
     parser.add_argument("--debug", "-g", action="store_true",
                         help="Debug build")
+    parser.add_argument("--show-build-log", action="store_true",
+                        help="Show build output rather than using a log file")
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose")
     args = parser.parse_args(argv)
@@ -175,17 +177,21 @@ def build_project(args):
 
     cmd += ['install', '--prefix=' + dst_dir]
 
-    print("Building, see build.log...")
-    with open('build.log', 'w') as log:
-        ret = subprocess.call(cmd, env=env, stdout=log, stderr=log,
-                              cwd=root_dir)
+    if args.show_build_log:
+        ret = subprocess.call(cmd, env=env, cwd=root_dir)
+    else:
+        print("Building, see build.log...")
+        with open('build.log', 'w') as log:
+            ret = subprocess.call(cmd, env=env, stdout=log, stderr=log,
+                                  cwd=root_dir)
 
     if ret == 0:
         print("Build OK")
     else:
-        with open('build.log', 'r') as f:
-            print(f.read())
-        print("Build failed!")
+        if not args.show_build_log:
+            with open('build.log', 'r') as f:
+                print(f.read())
+            print("Build failed!")
         sys.exit(1)
 
     from distutils.sysconfig import get_python_lib
