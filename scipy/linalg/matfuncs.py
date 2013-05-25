@@ -390,6 +390,7 @@ def logm(A, disp=True):
     """
     # Compute using general funm but then use better error estimator and
     #   make one step in improving estimate using a rotation matrix.
+    from scipy.sparse.linalg.matfuncs import expm
     A = mat(asarray(A))
     F, errest = funm(A,log,disp=0)
     errtol = 1000*eps
