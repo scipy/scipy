@@ -4,6 +4,7 @@ Module to read / write Fortran unformatted sequential files.
 This is in the spirit of code written by Neil Martinsen-Burrell and Joe Zuntz.
 
 """
+from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
@@ -148,7 +149,7 @@ class FortranFile(object):
         firstSize = self._read_size()
         if firstSize % dtype.itemsize != 0:
             raise ValueError('Size obtained is not a multiple of the dtype given.')
-        data = np.fromfile(self._fp, dtype=dtype, count=int(firstSize / dtype.itemsize))
+        data = np.fromfile(self._fp, dtype=dtype, count=firstSize//dtype.itemsize)
         secondSize = self._read_size()
         if firstSize != secondSize:
             raise IOError('Sizes do not agree in the header and footer for this record - check header dtype')
