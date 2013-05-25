@@ -1,6 +1,8 @@
 """
 Module to read / write Fortran unformatted sequential files.
 
+This is in the spirit of code written by Neil Martinsen-Burrell and Joe Zuntz.
+
 """
 
 import warnings
@@ -12,6 +14,17 @@ class FortranFile(object):
     """
     A file object for unformatted sequential files from Fortran code.
 
+    Parameters
+    ----------
+    filename: file or str
+        Open file object or filename.
+    mode : {'r', 'w'}, optional
+        Read-write mode, default is 'r'.
+    header_dtype : data-type
+        Data type of the header. Size and endiness must match the input/output file.
+
+    Notes
+    -----
     These files are broken up into records of unspecified types. The size of
     each record is given at the start (although the size of this header is not
     standard) and the data is written onto disk without any formatting. Fortran
@@ -23,6 +36,7 @@ class FortranFile(object):
     for records which are greater than 2GB with a 4-byte header.
 
     An example of an unformatted sequential file in Fortran would be written as::
+
         OPEN(1, FILE=myfilename, FORM='unformatted')
 
         WRITE(1) myvariable
@@ -31,22 +45,8 @@ class FortranFile(object):
     compiler and the endianness of the machine, caution is advised. Files from
     gfortran 4.8.0 and gfortran 4.1.2 on x86_64 are known to work.
 
-    This is in the spirit of code written by Neil Martinsen-Burrell and Joe Zuntz.
-
-    As Joe Zuntz states, "Like all Fortran-later language interoperability code
-    documentation should, this docstring ends with an exhortation to please stop
-    using fortran." If you are the creator of the code generating these files,
-    consider using direct-access files or files from the newer Stream I/O, which
-    are easily read by numpy.fromfile.
-
-    Parameters
-    ----------
-    filename: file or str
-        Open file object or filename.
-    mode : {'r', 'w'}, optional
-        Read-write mode, default is 'r'.
-    header_dtype : data-type
-        Data type of the header. Size and endiness must match the input/output file.
+    Consider using Fortran direct-access files or files from the newer Stream
+    I/O, which can be easily read by `numpy.fromfile`.
 
     Examples
     --------
