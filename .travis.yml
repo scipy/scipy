@@ -27,7 +27,7 @@ before_install:
   - python -V
   - popd
 script:
-  - python runtests.py --show-build-log -g -v -m $TESTMODE
+  - python runtests.py -g -m $TESTMODE
 env:
   - TESTMODE=fast
 notifications:
