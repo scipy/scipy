@@ -39,6 +39,14 @@ Matrix Market files
    mmread - Read matrix from Matrix Market formatted file
    mmwrite - Write matrix to Matrix Market formatted file
 
+Unformatted Fortran files
+===============================
+
+.. autosummary::
+   :toctree: generated/
+
+   FortranFile - A file object for unformatted sequential Fortran files
+
 Wav sound files (:mod:`scipy.io.wavfile`)
 =========================================
 
@@ -70,7 +78,6 @@ Netcdf (:mod:`scipy.io.netcdf`)
 
    netcdf_file - A file object for NetCDF data
    netcdf_variable - A data object for the netcdf module
-
 """
 from __future__ import division, print_function, absolute_import
 
@@ -79,6 +86,9 @@ from .matlab import loadmat, savemat, whosmat, byteordercodes
 
 # netCDF file support
 from .netcdf import netcdf_file, netcdf_variable
+
+# Fortran file support
+from ._fortran import FortranFile
 
 from .mmio import mminfo, mmread, mmwrite
 from .idl import readsav
