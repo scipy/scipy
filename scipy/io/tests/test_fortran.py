@@ -17,7 +17,7 @@ from scipy.io import FortranFile
 
 def test_fortranfiles_read():
     for filename in iglob(path.join(DATA_PATH, "fortran-*-*x*x*.dat")):
-        m = re.search('fortran-([^-]+)-(\d+)x(\d+)x(\d+).dat', filename)
+        m = re.search('fortran-([^-]+)-(\d+)x(\d+)x(\d+).dat', filename, re.I)
         if not m:
             raise RuntimeError("Couldn't match %s filename to regex" % filename)
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
@@ -35,7 +35,7 @@ def test_fortranfiles_read():
 
 def test_fortranfiles_write():
     for filename in iglob(path.join(DATA_PATH, "fortran-*-*x*x*.dat")):
-        m = re.search('fortran-([^-]+)-(\d+)x(\d+)x(\d+).dat', filename)
+        m = re.search('fortran-([^-]+)-(\d+)x(\d+)x(\d+).dat', filename, re.I)
         if not m:
             raise RuntimeError("Couldn't match %s filename to regex" % filename)
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
@@ -47,22 +47,17 @@ def test_fortranfiles_write():
                 for i in range(dims[0]):
                     data[i,j,k] = counter
                     counter += 1
+        tmpdir = tempfile.mkdtemp()
         try:
-            tmpdir = tempfile.mkdtemp()
             testFile = path.join(tmpdir,path.basename(filename))
             f = FortranFile(testFile, 'w','<u4')
             f.write_record(data)
             f.close()
             originalfile = open(filename, 'rb')
             newfile = open(testFile, 'rb')
-            assert_equal(originalfile.read(), newfile.read())
-        except:
-            shutil.rmtree(tmpdir)
-            f.close()
+            assert_equal(originalfile.read(), newfile.read(), 
+                         err_msg=filename)
             originalfile.close()
             newfile.close()
-            raise
-        shutil.rmtree(tmpdir)
-        f.close()
-        originalfile.close()
-        newfile.close()
+        finally:
+            shutil.rmtree(tmpdir)
