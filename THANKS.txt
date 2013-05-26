@@ -115,7 +115,9 @@ Eric Moore for orthogonal polynomial recurrences in scipy.special.
 Jacob Stevenson for the basinhopping optimization algorithm
 Daniel Smith for sparse matrix functionality improvements
 Gustav Larsson for a bug fix in convolve2d.
-
+Alex Griffing for expm 2009, expm_multiply, expm_frechet,
+    trust region optimization methods, and sparse matrix onenormest
+    implementations, plus bugfixes.
 
 Institutions
 ------------

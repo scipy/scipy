@@ -4,7 +4,7 @@ This module is deprecated -- use scipy.linalg.lapack instead
 from __future__ import division, print_function, absolute_import
 
 try:
-    from _clapack import *
+    from ._clapack import *
 except ImportError:
     empty_module = True
 import numpy as _np

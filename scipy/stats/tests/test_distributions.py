@@ -3,9 +3,9 @@
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_array_equal, assert_almost_equal, assert_array_almost_equal, \
-    assert_allclose, assert_, assert_raises, rand, dec
+from numpy.testing import (TestCase, run_module_suite, assert_equal,
+    assert_array_equal, assert_almost_equal, assert_array_almost_equal,
+    assert_allclose, assert_, assert_raises, rand, dec)
 from numpy.testing.utils import WarningManager
 from nose import SkipTest
 
@@ -228,6 +228,29 @@ class TestTruncnorm(TestCase):
                                    loc=[3]*7, scale=2)
         expected = np.array([np.nan, 5, 4.99943581, 3, 1.00056419, 1, np.nan])
         assert_array_almost_equal(vals, expected)
+
+    def test_gh_2477_small_values(self):
+        # Check a case that worked in the original issue.
+        low, high = -11, -10
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
+        # Check a case that failed in the original issue.
+        low, high = 10, 11
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
+
+    def test_gh_2477_large_values(self):
+        # Check a case that fails because of extreme tailness.
+        raise SkipTest('truncnorm rvs is know to fail at extreme tails')
+        low, high = 100, 101
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
+
+    def test_gh_1489_trac_962_rvs(self):
+        # Check the original example.
+        low, high = 10, 15
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        assert_(low < x.min() < x.max() < high)
 
 
 class TestHypergeom(TestCase):
@@ -845,6 +868,23 @@ class TestExpect(TestCase):
         prob_lb = stats.poisson.expect(lambda x: 1, args=(2,), lb=2,
                                        conditional=True)
         assert_almost_equal(prob_lb, 1, decimal=14)
+
+
+class TestNct(TestCase):
+    def test_nc_parameter(self):
+        # Parameter values c<=0 were not enabled (gh-2402).
+        # For negative values c and for c=0 results of rv.cdf(0) below were nan
+        rv = stats.nct(5, 0)
+        assert_equal(rv.cdf(0), 0.5)
+        rv = stats.nct(5, -1)
+        assert_almost_equal(rv.cdf(0), 0.841344746069, decimal=10)
+
+    def test_broadcasting(self):
+        res = stats.nct.pdf(5, np.arange(4,7)[:,None], np.linspace(0.1, 1, 4))
+        expected = array([[ 0.00321886,  0.00557466,  0.00918418,  0.01442997],
+                          [ 0.00217142,  0.00395366,  0.00683888,  0.01126276],
+                          [ 0.00153078,  0.00291093,  0.00525206,  0.00900815]])
+        assert_allclose(res, expected, rtol=1e-5)
 
 
 def test_regression_ticket_1316():

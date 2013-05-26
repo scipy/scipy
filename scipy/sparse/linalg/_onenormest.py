@@ -6,6 +6,8 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.linalg
 import scipy.sparse.linalg
+from scipy.sparse.linalg import aslinearoperator
+
 
 __all__ = ['onenormest']
 
@@ -68,7 +70,32 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
            SIAM J. Matrix Anal. Appl. Vol. 31, No. 3, pp. 970-989.
 
     """
-    est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax)
+
+    # Check the input.
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected the operator to act like a square matrix')
+
+    # If the operator size is small compared to t,
+    # then it is easier to compute the exact norm.
+    # Otherwise estimate the norm.
+    n = A.shape[1]
+    if t >= n:
+        A_explicit = np.asarray(aslinearoperator(A).matmat(np.identity(n)))
+        if A_explicit.shape != (n, n):
+            raise Exception('internal error: ',
+                    'unexpected shape ' + str(A_explicit.shape))
+        col_abs_sums = abs(A_explicit).sum(axis=0)
+        if col_abs_sums.shape != (n, ):
+            raise Exception('internal error: ',
+                    'unexpected shape ' + str(col_abs_sums.shape))
+        argmax_j = np.argmax(col_abs_sums)
+        v = elementary_vector(n, argmax_j)
+        w = A_explicit[:, argmax_j]
+        est = col_abs_sums[argmax_j]
+    else:
+        est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax)
+
+    # Report the norm estimate along with some certificates of the estimate.
     if compute_v or compute_w:
         result = (est,)
         if compute_v:
@@ -95,7 +122,6 @@ def vectors_are_parallel(v, w):
     # Columns are considered parallel when they are equal or negative.
     # Entries are required to be in {-1, 1},
     # which guarantees that the magnitudes of the vectors are identical.
-    #return np.array_equal(v, w) or np.array_equal(v, -w)
     if v.ndim != 1 or v.shape != w.shape:
         raise ValueError('expected conformant vectors with entries in {-1,1}')
     n = v.shape[0]
@@ -180,8 +206,8 @@ def _algorithm_2_2(A, AT, t):
     which could have propagated less noticably to algorithm 2.4.
 
     """
-    A_linear_operator = scipy.sparse.linalg.aslinearoperator(A)
-    AT_linear_operator = scipy.sparse.linalg.aslinearoperator(AT)
+    A_linear_operator = aslinearoperator(A)
+    AT_linear_operator = aslinearoperator(AT)
     n = A_linear_operator.shape[0]
 
     # Initialize the X block with columns of unit 1-norm.
@@ -197,12 +223,12 @@ def _algorithm_2_2(A, AT, t):
     k = 1
     ind = range(t)
     while True:
-        Y = A_linear_operator.matmat(X)
+        Y = np.asarray(A_linear_operator.matmat(X))
         g = [norm_1d_1(Y[:, j]) for j in range(t)]
         best_j = np.argmax(g)
         g = sorted(g, reverse=True)
         S = sign_round_up(Y)
-        Z = AT_linear_operator.matmat(S)
+        Z = np.asarray(AT_linear_operator.matmat(S))
         h = [norm_1d_inf(row) for row in Z]
 
         # If this algorithm runs for fewer than two iterations,
@@ -284,8 +310,8 @@ def _onenormest_core(A, AT, t, itmax):
     """
     # This function is a more or less direct translation
     # of Algorithm 2.4 from the Higham and Tisseur (2000) paper.
-    A_linear_operator = scipy.sparse.linalg.aslinearoperator(A)
-    AT_linear_operator = scipy.sparse.linalg.aslinearoperator(AT)
+    A_linear_operator = aslinearoperator(A)
+    AT_linear_operator = aslinearoperator(AT)
     if itmax < 2:
         raise ValueError('at least two iterations are required')
     if t < 1:
@@ -323,7 +349,7 @@ def _onenormest_core(A, AT, t, itmax):
     S = np.zeros((n, t), dtype=float)
     k = 1
     while True:
-        Y = A_linear_operator.matmat(X)
+        Y = np.asarray(A_linear_operator.matmat(X))
         nmults += 1
         mags = [norm_1d_1(Y[:, j]) for j in range(t)]
         est = np.max(mags)
@@ -352,7 +378,7 @@ def _onenormest_core(A, AT, t, itmax):
                     resample_column(i, S)
                     nresamples += 1
         # (3)
-        Z = AT_linear_operator.matmat(S)
+        Z = np.asarray(AT_linear_operator.matmat(S))
         nmults += 1
         h = [norm_1d_inf(row) for row in Z]
         # (4)

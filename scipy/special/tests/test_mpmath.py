@@ -903,11 +903,11 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.ci,
                             [Arg()])
 
-    @knownfailure_overridable("Bad relative accuracy <eps-close to the pole at z=0")
     def test_digamma(self):
         assert_mpmath_equal(sc.digamma,
                             _exception_to_nan(mpmath.digamma),
-                            [Arg()])
+                            [Arg()],
+                            dps=50)
 
     @knownfailure_overridable()
     def test_digamma_complex(self):
@@ -921,22 +921,38 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.e1,
                             [Arg()])
 
-    @knownfailure_overridable("issues at very large arguments near imaginary axis (absolute tolerance OK, relative tolerance not)")
     def test_e1_complex(self):
+        # E_1 oscillates as Im[z] -> +- inf, so limit range
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
-                            [ComplexArg()])
+                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
+                            rtol=1e-11)
+
+        # Check cross-over reqion
+        assert_mpmath_equal(sc.exp1,
+                            mpmath.e1,
+                            (np.linspace(-50, 50, 171)[:,None] 
+                             + np.r_[0, np.logspace(-3, 2, 61),
+                                       -np.logspace(-3, 2, 11)]*1j
+                             ).ravel(),
+                            rtol=1e-11)
+        assert_mpmath_equal(sc.exp1,
+                            mpmath.e1,
+                            (np.linspace(-50, -35, 10000) + 0j),
+                            rtol=1e-11)
 
     def test_ei(self):
         assert_mpmath_equal(sc.expi,
                             mpmath.ei,
-                            [Arg()])
+                            [Arg()],
+                            rtol=1e-11)
 
-    @knownfailure_overridable("picks the wrong branch of logarithm at real axis (Trac #1442)")
     def test_ei_complex(self):
+        # Ei oscillates as Im[z] -> +- inf, so limit range
         assert_mpmath_equal(sc.expi,
                             mpmath.ei,
-                            [ComplexArg()])
+                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
+                            rtol=1e-9)
 
     def test_ellipe(self):
         assert_mpmath_equal(sc.ellipe,
@@ -1377,9 +1393,8 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(-1e30, 1e30), Arg()],
                             n=2000)
 
-    @knownfailure_overridable("accuracy problems at extremely large arguments (absolute tolerance OK, relative not)")
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,
                             _exception_to_nan(mpmath.zeta),
-                            [Arg(a=1, inclusive_a=False),
-                             Arg(a=0, inclusive_a=False)], n=1000)
+                            [Arg(a=1, b=1e10, inclusive_a=False),
+                             Arg(a=0, inclusive_a=False)])

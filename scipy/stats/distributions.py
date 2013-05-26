@@ -2076,25 +2076,29 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 _norm_pdf_C = math.sqrt(2*pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
 
-
 def _norm_pdf(x):
     return exp(-x**2/2.0) / _norm_pdf_C
-
 
 def _norm_logpdf(x):
     return -x**2 / 2.0 - _norm_pdf_logC
 
-
 def _norm_cdf(x):
     return special.ndtr(x)
-
 
 def _norm_logcdf(x):
     return special.log_ndtr(x)
 
-
 def _norm_ppf(q):
     return special.ndtri(q)
+
+def _norm_sf(x):
+    return special.ndtr(-x)
+
+def _norm_logsf(x):
+    return special.log_ndtr(-x)
+
+def _norm_isf(q):
+    return -special.ndtri(q)
 
 
 class norm_gen(rv_continuous):
@@ -2130,16 +2134,16 @@ class norm_gen(rv_continuous):
         return _norm_logcdf(x)
 
     def _sf(self, x):
-        return _norm_cdf(-x)
+        return _norm_sf(x)
 
     def _logsf(self, x):
-        return _norm_logcdf(-x)
+        return _norm_logsf(x)
 
     def _ppf(self,q):
         return _norm_ppf(q)
 
     def _isf(self,q):
-        return -_norm_ppf(q)
+        return _norm_isf(q)
 
     def _stats(self):
         return 0.0, 1.0, 0.0, 0.0
@@ -4833,11 +4837,14 @@ class nct_gen(rv_continuous):
         nct.pdf(x, df, nc) = ----------------------------------------------------
                              2**df*exp(nc**2/2) * (df+x**2)**(df/2) * gamma(df/2)
 
-    for ``df > 0``, ``nc > 0``.
+    for ``df > 0``.
 
     %(example)s
 
     """
+    def _argcheck(self, df, nc):
+        return (df > 0) & (nc == nc)
+
     def _rvs(self, df, nc):
         return norm.rvs(loc=nc,size=self._size)*sqrt(df) / sqrt(chi2.rvs(df,size=self._size))
 
@@ -5578,7 +5585,12 @@ class truncnorm_gen(rv_continuous):
         self.b = b
         self._nb = _norm_cdf(b)
         self._na = _norm_cdf(a)
-        self._delta = self._nb - self._na
+        self._sb = _norm_sf(b)
+        self._sa = _norm_sf(a)
+        if self.a > 0:
+            self._delta = -(self._sb - self._sa)
+        else:
+            self._delta = self._nb - self._na
         self._logdelta = log(self._delta)
         return (a != b)
 
@@ -5594,7 +5606,10 @@ class truncnorm_gen(rv_continuous):
         return (_norm_cdf(x) - self._na) / self._delta
 
     def _ppf(self, q, a, b):
-        return norm._ppf(q*self._nb + self._na*(1.0-q))
+        if self.a > 0:
+            return _norm_isf(q*self._sb + self._sa*(1.0-q))
+        else:
+            return _norm_ppf(q*self._nb + self._na*(1.0-q))
 
     def _stats(self, a, b):
         nA, nB = self._na, self._nb

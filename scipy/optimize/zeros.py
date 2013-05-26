@@ -103,8 +103,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     dimensional problems when such an interval has been found.
 
     """
-    if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+    if tol <= 0:
+        raise ValueError("tol too small (%g <= 0)" % tol)
     if fprime is not None:
         # Newton-Rapheson method
         # Multiply by 1.0 to convert to floating point.  We don't use float(x0)

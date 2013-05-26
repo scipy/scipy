@@ -74,8 +74,6 @@ follow the following conventions:
     ``configuration(parent_package='',top_path=None)`` function.  
     See below for more details.
 
-  + a file ``info.py``. See below more details.
-
 * Directory ``xxx/`` may contain 
 
   + a directory ``tests/`` that contains files ``test_<name>.py``

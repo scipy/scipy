@@ -277,7 +277,7 @@ def ricker(points, a):
     Parameters
     ----------
     points : int
-        Number of points in `vector`. Default is ``10 * a``.
+        Number of points in `vector`.
         Will be centered around 0.
     a : scalar
         Width parameter of the wavelet.

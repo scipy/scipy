@@ -3,7 +3,7 @@ This module is deprecated -- use scipy.linalg.lapack instead
 """
 from __future__ import division, print_function, absolute_import
 
-from _flapack import *
+from ._flapack import *
 import numpy as _np
 
 
