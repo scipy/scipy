@@ -620,7 +620,6 @@ class TestConvexHull:
             for chunksize in 1, 4:
                 yield check, name, chunksize
 
-
     def test_vertices_2d(self):
         # The vertices should be in counterclockwise order in 2-D
         np.random.seed(1234)

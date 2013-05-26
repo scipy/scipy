@@ -58,6 +58,7 @@ def inv(A):
     Ainv = spsolve(A, I)
     return Ainv
 
+
 def _exact_1_norm(A):
     # A compatibility function which should eventually disappear.
     # This is copypasted from expm_action.
@@ -65,6 +66,7 @@ def _exact_1_norm(A):
         return max(abs(A).sum(axis=0).flat)
     else:
         return np.linalg.norm(A, 1)
+
 
 def _ident_like(A):
     # A compatibility function which should eventually disappear.
@@ -75,6 +77,7 @@ def _ident_like(A):
     else:
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
+
 def _count_nonzero(A):
     # A compatibility function which should eventually disappear.
     #XXX There should be a better way to do this when A is sparse
@@ -83,6 +86,7 @@ def _count_nonzero(A):
         return np.count_nonzero(A.toarray())
     else:
         return np.count_nonzero(A)
+
 
 def _is_upper_triangular(A):
     # This function could possibly be of wider interest.
@@ -124,7 +128,7 @@ class MatrixPowerOperator(LinearOperator):
         for i in range(self._p):
             X = self._A.dot(X)
         return X
-    
+
     @property
     def T(self):
         return MatrixPowerOperator(self._A.T, self._p)
@@ -167,7 +171,7 @@ class ProductOperator(LinearOperator):
         for A in reversed(self._operator_sequence):
             X = A.dot(X)
         return X
-    
+
     @property
     def T(self):
         T_args = [A.T for A in reversed(self._operator_sequence)]
@@ -258,7 +262,6 @@ def _onenormest_product(operator_seq,
     return scipy.sparse.linalg.onenormest(ProductOperator(*operator_seq))
 
 
-
 def expm(A):
     """
     Compute the matrix exponential using Pade approximation.
@@ -294,7 +297,7 @@ def expm(A):
     # Try Pade order 3.
     A2 = A.dot(A)
     d6 = _onenormest_matrix_power(A2, 3)**(1/6.)
-    eta_1 = max(_onenormest_matrix_power(A2, 2) **(1/4.), d6)
+    eta_1 = max(_onenormest_matrix_power(A2, 2)**(1/4.), d6)
     if eta_1 < 1.495585217958292e-002 and _ell(A, 3) == 0:
         U, V = _pade3(A, ident, A2)
         return _solve_P_Q(U, V)
@@ -438,7 +441,7 @@ def _fragment_2_1(X, T, s):
             X[k, k] = exp_diag[k]
 
         # Replace (first) superdiagonal of X by explicit formula
-        # for superdiagonal of exp(2^-i T) from Eq (10.42) of 
+        # for superdiagonal of exp(2^-i T) from Eq (10.42) of
         # the author's 2008 textbook
         # Functions of Matrices: Theory and Computation.
         # XXX Can this chunk be vectorized?
@@ -506,6 +509,7 @@ def _pade3(A, ident, A2=None):
     V = b[2]*A2 + b[0]*ident
     return U,V
 
+
 def _pade5(A, ident, A2=None, A4=None):
     b = (30240., 15120., 3360., 420., 30., 1.)
     if A2 is None:
@@ -515,6 +519,7 @@ def _pade5(A, ident, A2=None, A4=None):
     U = A.dot(b[5]*A4 + b[3]*A2 + b[1]*ident)
     V = b[4]*A4 + b[2]*A2 + b[0]*ident
     return U,V
+
 
 def _pade7(A, ident, A2=None, A4=None, A6=None):
     b = (17297280., 8648640., 1995840., 277200., 25200., 1512., 56., 1.)
@@ -527,6 +532,7 @@ def _pade7(A, ident, A2=None, A4=None, A6=None):
     U = A.dot(b[7]*A6 + b[5]*A4 + b[3]*A2 + b[1]*ident)
     V = b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*ident
     return U,V
+
 
 def _pade9(A, ident, A2=None, A4=None, A6=None):
     b = (17643225600., 8821612800., 2075673600., 302702400., 30270240.,
@@ -541,6 +547,7 @@ def _pade9(A, ident, A2=None, A4=None, A6=None):
     U = A.dot(b[9]*A8 + b[7]*A6 + b[5]*A4 + b[3]*A2 + b[1]*ident)
     V = b[8]*A8 + b[6]*A6 + b[4]*A4 + b[2]*A2 + b[0]*ident
     return U,V
+
 
 def _pade13(A, ident, A2=None, A4=None, A6=None):
     b = (64764752532480000., 32382376266240000., 7771770303897600.,

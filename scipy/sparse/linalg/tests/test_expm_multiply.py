@@ -126,6 +126,7 @@ class TestExpmActionSimple(TestCase):
             1j * np.exp(1j)], dtype=complex)
         assert_allclose(observed, expected)
 
+
 class TestExpmActionInterval(TestCase):
 
     def test_sparse_expm_multiply_interval(self):
