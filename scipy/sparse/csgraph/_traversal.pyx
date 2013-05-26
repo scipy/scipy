@@ -588,6 +588,9 @@ cdef int _connected_components_directed(
 
     Uses an iterative version of the algorithm described here:
     http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
+
+    For more details of the memory optimisations used see here:
+    http://www.timl.id.au/?p=327
     """
     cdef int v, w, index, low_v, low_w, label, j
     cdef int SS_head, root, stack_head, f, b
