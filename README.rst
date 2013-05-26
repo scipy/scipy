@@ -1,9 +1,10 @@
-=================================================
-Developing SciPy
-=================================================
+.. image:: https://travis-ci.org/scipy/scipy.png?branch=master
 
-.. Contents::
+=====
+SciPy
+=====
 
+.. contents::
 
 What is SciPy?
 --------------
@@ -25,106 +26,67 @@ manipulate numbers on a computer and display or publish the results, give
 SciPy a try!
 
 
-SciPy structure
----------------
+Installation
+------------
 
-SciPy aims at being a robust and efficient "super-package" of a number
-of modules, each of a non-trivial size and complexity.  In order for
-"SciPy integration" to work flawlessly, all SciPy modules must follow
-certain rules that are described in this document. Hopefully this
-document will be helpful for SciPy contributors and developers as a
-basic reference about the structure of the SciPy package.
-
-Currently SciPy consists of the following files and directories:
-
-  INSTALL.txt
-    SciPy prerequisites, installation, testing, and troubleshooting.
-
-  THANKS.txt
-    SciPy developers and contributors. Please keep it up to date!!
-
-  README.rst
-    SciPy structure (this document).
-
-  setup.py
-    Script for building and installing SciPy.
-
-  MANIFEST.in
-    Additions to distutils-generated SciPy tar-balls.  Its usage is
-    deprecated.
-
-  scipy/
-    Contains SciPy __init__.py and the directories of SciPy modules.
-
-SciPy modules
-+++++++++++++
-
-In the following, a *SciPy module* is defined as a Python package, say
-xxx, that is located in the scipy/ directory.  All SciPy modules should
-follow the following conventions:
-
-* Ideally, each SciPy module should be as self-contained as possible.
-  That is, it should have minimal dependencies on other packages or
-  modules.  Even dependencies on other SciPy modules should be kept to a
-  minimum.  A dependency on NumPy is of course assumed.
-
-* Directory ``xxx/`` must contain 
-
-  + a file ``setup.py`` that defines
-    ``configuration(parent_package='',top_path=None)`` function.  
-    See below for more details.
-
-* Directory ``xxx/`` may contain 
-
-  + a directory ``tests/`` that contains files ``test_<name>.py``
-    corresponding to modules ``xxx/<name>{.py,.so,/}``.  See below for
-    more details.
-
-  + a file ``MANIFEST.in`` that may contain only ``include setup.py`` line.
-    DO NOT specify sources in MANIFEST.in, you must specify all sources
-    in setup.py file. Otherwise released SciPy tarballs will miss these sources.
-
-  + a directory ``docs/`` for documentation.
-
-For details, read:
-
-  https://github.com/numpy/numpy/blob/master/doc/DISTUTILS.rst.txt
+For installation instructions, see ``INSTALL.txt``.
 
 
 Documentation
 -------------
 
-The documentation site is here
+Scipy documentation is available on the web:
+
     http://docs.scipy.org
+
+How to generate the HTML documentation, see ``doc/README.txt``.
+
 
 Web sites
 ---------
 
-The user's site is here
+The user's site is:
+
     http://www.scipy.org/
 
 
 Mailing Lists
 -------------
 
-Please see the developer's list here
+Please see the developer's list here:
+
     http://projects.scipy.org/mailman/listinfo/scipy-dev
+
+
+Latest source code
+------------------
+
+The latest development version of Scipy's sources are always available at:
+
+    https://github.com/scipy/scipy
+
+They can be downloaded as a zip file or using the Git client.
 
 
 Bug reports
 -----------
 
-To search for bugs, please use the Scipy Bug Tracker at
+To search for bugs or report them, please use the Scipy Bug Tracker at:
+
     https://github.com/scipy/scipy/issues
 
-To report a bug, please use the Scipy Bug Tracker at
-    https://github.com/scipy/scipy/issues
+
+Developer information
+---------------------
+
+If you would like to take part in SciPy development, take a look
+at ``HACKING.rst.txt``.
 
 
 License information
 -------------------
 
-See the file "LICENSE" for information on the history of this
+See the file ``LICENSE.txt`` for information on the history of this
 software, terms & conditions for usage, and a DISCLAIMER OF ALL
 WARRANTIES.
 

@@ -1,5 +1,0 @@
-The latest code for this project can be obtained from:
-
-    http://github.com/scipy/scipy
-
-either downloaded as a package or using the Git client.

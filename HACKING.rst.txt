@@ -1,3 +1,4 @@
+=====================
 Contributing to SciPy
 =====================
 
@@ -15,7 +16,7 @@ community and are experienced Python coders may want to jump straight to the
 
 
 Contributing new code
----------------------
+=====================
 
 If you have been working with the scientific Python toolstack for a while, you
 probably have some code lying around of which you think "this could be useful
@@ -111,7 +112,7 @@ in question can decide the issue.
 
 
 Contributing by helping maintain existing code
-----------------------------------------------
+==============================================
 
 The previous section talked specifically about adding new functionality to
 SciPy.  A large part of that discussion also applies to maintenance of existing
@@ -135,7 +136,7 @@ review process.
 
 
 Other ways to contribute
-------------------------
+========================
 
 There are many ways to contribute other than contributing code.  Participating
 in discussions on the scipy-user and scipy-dev *mailing lists* is a contribution
@@ -162,7 +163,7 @@ this type of code (snippets, examples, plotting code, etc.).
 
 
 Recommended development setup
------------------------------
+=============================
 
 Since Scipy contains parts written in C, C++, and Fortran that need to be
 compiled before use, make sure you have the necessary compilers and Python
@@ -214,11 +215,60 @@ Another good approach is to install Scipy normally in an isolated test
 environment using `virtualenv`_, and work from there (see FAQ below).
 
 
+SciPy structure
+===============
+
+All SciPy modules should follow the following conventions. In the
+following, a *SciPy module* is defined as a Python package, say
+``yyy``, that is located in the scipy/ directory.
+
+* Ideally, each SciPy module should be as self-contained as possible.
+  That is, it should have minimal dependencies on other packages or
+  modules.  Even dependencies on other SciPy modules should be kept to
+  a minimum.  A dependency on NumPy is of course assumed.
+
+* Directory ``yyy/`` contains:
+
+  - A file ``setup.py`` that defines
+    ``configuration(parent_package='',top_path=None)`` function
+    for `numpy.distutils`.
+
+  - A directory ``tests/`` that contains files ``test_<name>.py``
+    corresponding to modules ``yyy/<name>{.py,.so,/}``.
+
+  - A directory ``benchmarks/`` that contains files ``bench_<name>.py``
+    corresponding to modules ``yyy/<name>{.py,.so,/}``.
+
+* Private modules should be prefixed with an underscore ``_``,
+  for instance ``yyy/_somemodule.py``.
+
+* User-visible functions should have good documentation following
+  the Numpy documentation style, see `how to document`_
+
+* The ``__init__.py`` of the module should contain the main reference
+  documentation in its docstring. This is connected to the Sphinx
+  documentation under ``doc/`` via Sphinx's automodule directive.
+
+  The reference documentation should first give a categorized list of
+  the contents of the module using ``autosummary::`` directives, and
+  after that explain points essential for understanding the use of the
+  module.
+
+  Tutorial-style documentation with extensive examples should be
+  separate, and put under ``doc/source/tutorial/``
+
+See the existing Scipy submodules for guidance.
+
+For further details on Numpy distutils, see:
+
+  https://github.com/numpy/numpy/blob/master/doc/DISTUTILS.rst.txt
+
+
 Useful links, FAQ, checklist
-----------------------------
+============================
 
 Checklist before submitting a PR
-````````````````````````````````
+--------------------------------
 
   - Are there unit tests with good code coverage?
   - Do all public function have docstrings including examples?
@@ -240,7 +290,7 @@ Checklist before submitting a PR
 
 
 Useful SciPy documents
-``````````````````````
+----------------------
 
   - The `how to document`_ guidelines
   - NumPy/SciPy `testing guidelines`_
@@ -250,7 +300,7 @@ Useful SciPy documents
 
 
 FAQ
-```
+---
 
 *I based my code on existing Matlab/R/... code I found online, is this OK?*
 
@@ -262,6 +312,7 @@ Therefore if you copied existing code with such a license or made a direct
 translation to Python of it, your code can't be included.  See also `license
 compatibility`_.
 
+
 *Why is SciPy under the BSD license and not, say, the GPL?*
 
 Like Python, SciPy uses a "permissive" open source license, which allows 
@@ -269,6 +320,7 @@ proprietary re-use. While this allows companies to use and modify the software
 without giving anything back, it is felt that the larger user base results in 
 more contributions overall, and companies often publish their modifications 
 anyway, without being required to.  See John Hunter's `BSD pitch`_.
+
 
 *How do I set up a development version of SciPy in parallel to a released
 version that I use to do my job/research?*
