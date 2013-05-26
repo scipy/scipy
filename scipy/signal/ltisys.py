@@ -331,10 +331,10 @@ class lti(object):
             self.__dict__[attr] = val
 
     def __repr__(self):
-        # Canonical representation using state-space to preserve numerical 
+        # Canonical representation using state-space to preserve numerical
         # precision and any MIMO information
         return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
-            self.__class__.__name__, 
+            self.__class__.__name__,
             repr(self.A),
             repr(self.B),
             repr(self.C),

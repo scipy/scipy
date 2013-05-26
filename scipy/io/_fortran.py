@@ -11,6 +11,7 @@ import numpy as np
 
 __all__ = ['FortranFile']
 
+
 class FortranFile(object):
     """
     A file object for unformatted sequential files from Fortran code.
@@ -90,7 +91,7 @@ class FortranFile(object):
         else:
             self._fp = open(filename, '%sb' % mode)
 
-        self._header_dtype=header_dtype
+        self._header_dtype = header_dtype
 
     def _read_size(self):
         return np.fromfile(self._fp, dtype=self._header_dtype, count=1)

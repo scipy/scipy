@@ -91,7 +91,6 @@ class TestExpM(TestCase):
                         A = A + 1j * random.rand(n, n) * scale
                     assert_array_almost_equal(expm(logm(A)), A)
 
-
     def test_overscaling_example(self):
         # See the blog post
         # http://blogs.mathworks.com/cleve/2012/07/23/a-balancing-act-for-the-matrix-exponential/

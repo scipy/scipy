@@ -16,6 +16,7 @@ from contextlib import contextmanager
 
 __all__ = ['set_gc_state', 'gc_state', 'assert_deallocated']
 
+
 class ReferenceError(AssertionError):
     pass
 
@@ -91,6 +92,5 @@ def assert_deallocated(func, *args, **kwargs):
         ref = weakref.ref(obj)
         yield obj
         del obj
-        if ref() != None:
+        if ref() is not None:
             raise ReferenceError("Remaining reference(s) to object")
-

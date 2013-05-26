@@ -10,6 +10,7 @@ from numpy import linalg as nl
 from scipy import linalg as sl
 from numpy.testing import measure, rand, assert_
 
+
 def random(size):
     return rand(*size)
 
@@ -45,7 +46,6 @@ def bench_eigvals():
 
         print('| %6.2f ' % measure('numpy_eigvals(a)',repeat), end=' ')
         sys.stdout.flush()
-
 
         print('   (secs for %s calls)' % (repeat))
 
@@ -83,4 +83,3 @@ def bench_svd():
         sys.stdout.flush()
 
         print('   (secs for %s calls)' % (repeat))
-

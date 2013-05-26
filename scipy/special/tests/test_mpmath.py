@@ -931,7 +931,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         # Check cross-over reqion
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
-                            (np.linspace(-50, 50, 171)[:,None] 
+                            (np.linspace(-50, 50, 171)[:,None]
                              + np.r_[0, np.logspace(-3, 2, 61),
                                        -np.logspace(-3, 2, 11)]*1j
                              ).ravel(),

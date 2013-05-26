@@ -2076,26 +2076,34 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 _norm_pdf_C = math.sqrt(2*pi)
 _norm_pdf_logC = math.log(_norm_pdf_C)
 
+
 def _norm_pdf(x):
     return exp(-x**2/2.0) / _norm_pdf_C
+
 
 def _norm_logpdf(x):
     return -x**2 / 2.0 - _norm_pdf_logC
 
+
 def _norm_cdf(x):
     return special.ndtr(x)
+
 
 def _norm_logcdf(x):
     return special.log_ndtr(x)
 
+
 def _norm_ppf(q):
     return special.ndtri(q)
+
 
 def _norm_sf(x):
     return special.ndtr(-x)
 
+
 def _norm_logsf(x):
     return special.log_ndtr(-x)
+
 
 def _norm_isf(q):
     return -special.ndtri(q)
