@@ -54,6 +54,12 @@ def connected_components(csgraph, directed=True, connection='weak',
         The number of connected components.
     labels: ndarray
         The length-N array of labels of the connected components.
+
+    References
+    ----------
+    .. [1] D. J. Pearce, "An Improved Algorithm for Finding the Strongly
+           Connected Components of a Directed Graph", Technical Report, 2005
+
     """
     if connection.lower() not in ['weak', 'strong']:
         raise ValueError("connection must be 'weak' or 'strong'")
@@ -588,6 +594,9 @@ cdef int _connected_components_directed(
 
     Uses an iterative version of the algorithm described here:
     http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
+
+    For more details of the memory optimisations used see here:
+    http://www.timl.id.au/?p=327
     """
     cdef int v, w, index, low_v, low_w, label, j
     cdef int SS_head, root, stack_head, f, b
