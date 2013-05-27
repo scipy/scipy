@@ -57,7 +57,8 @@ def connected_components(csgraph, directed=True, connection='weak',
 
     References
     ----------
-    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
+    .. [1] D. J. Pearce, "An Improved Algorithm for Finding the Strongly
+           Connected Components of a Directed Graph", Technical Report, 2005
 
     """
     if connection.lower() not in ['weak', 'strong']:
