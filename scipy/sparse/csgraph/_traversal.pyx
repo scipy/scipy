@@ -54,6 +54,11 @@ def connected_components(csgraph, directed=True, connection='weak',
         The number of connected components.
     labels: ndarray
         The length-N array of labels of the connected components.
+
+    References
+    ----------
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1707
+
     """
     if connection.lower() not in ['weak', 'strong']:
         raise ValueError("connection must be 'weak' or 'strong'")
