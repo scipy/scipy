@@ -52,6 +52,27 @@ typedef enum {
     NI_EXTEND_DEFAULT = NI_EXTEND_MIRROR
 } NI_ExtendMode;
 
+
+/******************************************************************/
+/* Misc */
+/******************************************************************/
+
+/* compile time branch prediction hints */
+#ifdef __GNUC__
+  /* Test for GCC > 2.95 */
+  #if __GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95))
+    #define NI_LIKELY(x)   __builtin_expect(!!(x), 1)
+    #define NI_UNLIKELY(x) __builtin_expect(!!(x), 0)
+  #else /* __GNUC__ > 2 ... */
+    #define NI_LIKELY(x)   (x)
+    #define NI_UNLIKELY(x) (x)
+  #endif /* __GNUC__ > 2 ... */
+#else /* __GNUC__ */
+  #define NI_LIKELY(x)   (x)
+  #define NI_UNLIKELY(x) (x)
+#endif /* __GNUC__ */
+
+
 /******************************************************************/
 /* Data types */
 /******************************************************************/

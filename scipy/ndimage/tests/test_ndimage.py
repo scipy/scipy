@@ -1806,6 +1806,27 @@ class TestNdimage:
                                                      order=order)
             assert_array_almost_equal(out1, out2)
 
+    def test_map_coordinates03(self):
+        "map coordinates non continuous"
+        data = numpy.array([[4, 1, 3, 2],
+                               [7, 6, 8, 5],
+                               [3, 5, 3, 6]], order='F')
+        idx = numpy.indices(data.shape) - 1
+        out = ndimage.map_coordinates(data, idx)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                   [0, 4, 1, 3],
+                                   [0, 7, 6, 8]])
+        assert_array_almost_equal(out, ndimage.shift(data, (1, 1)))
+        idx = numpy.indices(data[::2].shape) - 1
+        out = ndimage.map_coordinates(data[::2], idx)
+        assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                   [0, 4, 1, 3]])
+        assert_array_almost_equal(out, ndimage.shift(data[::2], (1, 1)))
+        idx = numpy.indices(data[:,::2].shape) - 1
+        out = ndimage.map_coordinates(data[:,::2], idx)
+        assert_array_almost_equal(out, [[0, 0], [0, 4], [0, 7]])
+        assert_array_almost_equal(out, ndimage.shift(data[:,::2], (1, 1)))
+
     def test_affine_transform01(self):
         "affine_transform 1"
         data = numpy.array([1])

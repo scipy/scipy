@@ -354,7 +354,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     char *po, *pi, *pc = NULL;
     npy_intp **edge_offsets = NULL, **data_offsets = NULL, filter_size;
     npy_intp ftmp[MAXDIM], *fcoordinates = NULL, *foffsets = NULL;
-    npy_intp cstride = 0, kk, hh, ll, jj, *idxs = NULL;
+    npy_intp cstride = 0, kk, hh, ll, jj;
     npy_intp size;
     double **splvals = NULL, icoor[MAXDIM];
     npy_intp idimensions[MAXDIM], istrides[MAXDIM];
@@ -416,11 +416,6 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     filter_size = 1;
     for(jj = 0; jj < irank; jj++)
         filter_size *= order + 1;
-    idxs = (npy_intp*)malloc(filter_size * sizeof(idxs));
-    if (!idxs) {
-        PyErr_NoMemory();
-        goto exit;
-    }
 
     /* initialize output iterator: */
     if (!NI_InitPointIterator(output, &io))
@@ -554,9 +549,13 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
         if (!constant) {
             npy_intp *ff = fcoordinates;
+            const int type_num = NI_NormalizeType(input->descr->type_num);
+            t = 0.0;
             for(hh = 0; hh < filter_size; hh++) {
+                double coeff = 0.0;
                 int idx = 0;
-                if (edge) {
+
+                if (NI_UNLIKELY(edge)) {
                     for(ll = 0; ll < irank; ll++) {
                         if (edge_offsets[ll])
                             idx += edge_offsets[ll][ff[ll]];
@@ -567,29 +566,20 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                     idx = foffsets[hh];
                 }
                 idx += offset;
-                idxs[hh] = idx;
-                ff += irank;
-            }
-        }
-        if (!constant) {
-            npy_intp *ff = fcoordinates;
-            t = 0.0;
-            for(hh = 0; hh < filter_size; hh++) {
-                double coeff = 0.0;
-                switch (NI_NormalizeType(input->descr->type_num)) {
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Bool);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt8);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt16);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt32);
+                switch (type_num) {
+                    CASE_INTERP_COEFF(coeff, pi, idx, Bool);
+                    CASE_INTERP_COEFF(coeff, pi, idx, UInt8);
+                    CASE_INTERP_COEFF(coeff, pi, idx, UInt16);
+                    CASE_INTERP_COEFF(coeff, pi, idx, UInt32);
 #if HAS_UINT64
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt64);
+                    CASE_INTERP_COEFF(coeff, pi, idx, UInt64);
 #endif
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int8);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int16);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int32);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int64);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float32);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float64);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Int8);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Int16);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Int32);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Int64);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Float32);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Float64);
                 default:
                     PyErr_SetString(PyExc_RuntimeError,
                                                     "data type not supported");
@@ -652,8 +642,6 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         free(foffsets);
     if (fcoordinates)
         free(fcoordinates);
-    if (idxs)
-        free(idxs);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -665,7 +653,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     npy_intp **zeros = NULL, **offsets = NULL, ***edge_offsets = NULL;
     npy_intp ftmp[MAXDIM], *fcoordinates = NULL, *foffsets = NULL;
     npy_intp jj, hh, kk, filter_size, odimensions[MAXDIM];
-    npy_intp idimensions[MAXDIM], istrides[MAXDIM], *idxs = NULL;
+    npy_intp idimensions[MAXDIM], istrides[MAXDIM];
     npy_intp size;
     double ***splvals = NULL;
     NI_Iterator io;
@@ -793,11 +781,6 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     filter_size = 1;
     for(jj = 0; jj < rank; jj++)
         filter_size *= order + 1;
-    idxs = (npy_intp*)malloc(filter_size * sizeof(idxs));
-    if (!idxs) {
-        PyErr_NoMemory();
-        goto exit;
-    }
 
     if (!NI_InitPointIterator(output, &io))
         goto exit;
@@ -851,9 +834,13 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 
         if (!zero) {
             npy_intp *ff = fcoordinates;
+            const int type_num = NI_NormalizeType(input->descr->type_num);
+            t = 0.0;
             for(hh = 0; hh < filter_size; hh++) {
                 int idx = 0;
-                if (edge) {
+                double coeff = 0.0;
+
+                if (NI_UNLIKELY(edge)) {
                         /* use precalculated edge offsets: */
                     for(jj = 0; jj < rank; jj++) {
                         if (edge_offsets[jj][io.coordinates[jj]])
@@ -866,29 +853,20 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                     /* use normal offsets: */
                     idx += oo + foffsets[hh];
                 }
-                idxs[hh] = idx;
-                ff += rank;
-            }
-        }
-        if (!zero) {
-            npy_intp *ff = fcoordinates;
-            t = 0.0;
-            for(hh = 0; hh < filter_size; hh++) {
-                double coeff = 0.0;
-                switch (NI_NormalizeType(input->descr->type_num)) {
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Bool);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt8);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt16);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt32);
+                switch (type_num) {
+                    CASE_INTERP_COEFF(coeff, pi, idx, Bool);
+                    CASE_INTERP_COEFF(coeff, pi, idx, UInt8);
+                    CASE_INTERP_COEFF(coeff, pi, idx, UInt16);
+                    CASE_INTERP_COEFF(coeff, pi, idx, UInt32);
 #if HAS_UINT64
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], UInt64);
+                    CASE_INTERP_COEFF(coeff, pi, idx, UInt64);
 #endif
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int8);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int16);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int32);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Int64);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float32);
-                    CASE_INTERP_COEFF(coeff, pi, idxs[hh], Float64);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Int8);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Int16);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Int32);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Int64);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Float32);
+                    CASE_INTERP_COEFF(coeff, pi, idx, Float64);
                 default:
                     PyErr_SetString(PyExc_RuntimeError,
                                                     "data type not supported");
@@ -969,7 +947,5 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         free(foffsets);
     if (fcoordinates)
         free(fcoordinates);
-    if (idxs)
-        free(idxs);
     return PyErr_Occurred() ? 0 : 1;
 }
