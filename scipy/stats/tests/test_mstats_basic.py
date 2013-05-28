@@ -657,6 +657,13 @@ def test_chisquare_masked_arrays():
     assert_array_equal(chisq, expected_chisq)
     assert_array_almost_equal(p, stats.chisqprob(expected_chisq, mobs.T.count(axis=1) - 1))
 
+    # When axis=None, the two values should have type np.float64.
+    chisq, p = mstats.chisquare([1,2,3], axis=None)
+    assert_(isinstance(chisq, np.float64))
+    assert_(isinstance(p, np.float64))
+    assert_equal(chisq, 1.0)
+    assert_almost_equal(p, stats.chisqprob(1.0, 2))
+
 
 if __name__ == "__main__":
     run_module_suite()
