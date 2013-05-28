@@ -3474,8 +3474,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
         Adjustment to the degrees of freedom for the p-value.  The default
         is one less than the number of data elements.
     axis : int or None, optional
-        The axis of `f_obs` along which to apply the test.  If axis is None,
-        all values in `f_obs` are treated as a single data set.  Default is 0.
+        The axis of the broadcast result of `f_obs` and `f_exp` along which to
+        apply the test.  If axis is None, all values in `f_obs` are treated
+        as a single data set.  Default is 0.
 
     Returns
     -------
@@ -3542,49 +3543,49 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     >>> chisquare([16, 18, 16, 14, 12, 12], ddof=[0,1,2])
     (2.0, array([ 0.84914504,  0.73575888,  0.5724067 ]))
 
-    `f_obs` and `f_exp` are also broadcast.  In the following, `f_exp` has
-    shape (2, 6).
+    `f_obs` and `f_exp` are also broadcast.  In the following, `f_obs` has
+    shape (6,) and `f_exp` has shape (2, 6), so the result of broadcasting
+    `f_obs` and `f_exp` has shape (2, 6).  To compute the desired chi-squared
+    statistics, we use `axis=1`:
 
     >>> chisquare([16, 18, 16, 14, 12, 12],
-    ...           f_exp=[[16, 16, 16, 16, 16, 8], [8, 20, 20, 16, 12, 12]])
+    ...           f_exp=[[16, 16, 16, 16, 16, 8], [8, 20, 20, 16, 12, 12]],
+    ...           axis=1)
     (array([ 3.5 ,  9.25]), array([ 0.62338763,  0.09949846]))
 
     """
+
     f_obs = asarray(f_obs)
-    if axis is not None:
-        num_obs = f_obs.shape[axis]
-        reduced_shape = list(f_obs.shape)
-        reduced_shape[axis] = 1
-    else:
-        num_obs = f_obs.size
-        reduced_shape = (1,)
 
-    if f_exp is None:
-        if num_obs == 0:
-            f_exp = f_obs
-        else:
-            # The `keepdims` argument is not available in older versions
-            # of numpy, otherwise we could use the following line.
-            #   f_exp = np.mean(f_obs, axis=axis, keepdims=True)
-            # and we wouldn't need `reduced_shape`.
+    if f_exp is not None:
+        f_exp = asarray(f_exp)
+    else:
+        # Compute the equivalent of
+        #   f_exp = f_obs.mean(axis=axis, keepdims=True)
+        # Older versions of numpy do not have the 'keepdims' argument, so
+        # we have to do a little work to achieve the same result.
+        # Ignore 'invalid' errors so the edge case of data sets with length 0
+        # is handled without spurious warnings.
+        with np.errstate(invalid='ignore'):
             f_exp = np.atleast_1d(f_obs.mean(axis=axis))
+        if axis is not None:
+            reduced_shape = list(f_obs.shape)
+            reduced_shape[axis] = 1
             f_exp.shape = reduced_shape
+
+    # `w` is the array of terms that are summed along `axis` to create
+    # the chi-squared statistic.
+    w = (f_obs - f_exp)**2 / f_exp
+    chisq = np.add.reduce(w, axis=axis)
+
+    # Compute the corresponding p values.
+    if axis is None:
+        num_obs = w.size
     else:
-        f_exp = np.asfarray(f_exp)
-        if f_exp.ndim > f_obs.ndim and axis >= 0:
-            # When f_obs and f_exp are broadcast in np.add.reduce (below),
-            # the result will have more dimensions than f_obs.ndim.  The
-            # `axis` argument refers to the axis *of f_obs*, so to preserve
-            # that meaning, we change `axis` to its equivalent negative value.
-            # This ensures that, for example,
-            #     chisquare([2,2,3], f_exp=[[2,2,3], [1,2,4]])
-            # (where the default axis=0 is used) does the Right Thing.
-            axis = -f_obs.ndim + axis
-
+        num_obs = w.shape[axis]
     ddof = asarray(ddof)
-
-    chisq = np.add.reduce((f_obs - f_exp)**2 / f_exp, axis=axis)
     p = chisqprob(chisq, num_obs - 1 - ddof)
+
     return chisq, p
 
 

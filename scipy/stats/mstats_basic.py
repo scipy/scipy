@@ -801,35 +801,39 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     f_obs = ma.asarray(f_obs)
 
-    num_obs = f_obs.count(axis=axis)
-    if axis is not None:
-        reduced_shape = list(f_obs.shape)
-        reduced_shape[axis] = 1
+    if f_exp is not None:
+        f_exp = ma.asanyarray(f_exp)
     else:
-        reduced_shape = (1,)
+        # Compute the equivalent of
+        #   f_exp = f_obs.mean(axis=axis, keepdims=True)
+        # Older versions of numpy do not have the 'keepdims' argument, so
+        # we have to do a little work to achieve the same result.
+        # Ignore 'invalid' errors so the edge case of data sets with length 0
+        # is handled without spurious warnings.
+        with np.errstate(invalid='ignore'):
+            f_exp = np.atleast_1d(f_obs.mean(axis=axis))
+        if axis is not None:
+            reduced_shape = list(f_obs.shape)
+            reduced_shape[axis] = 1
+            f_exp.shape = reduced_shape
 
-    if f_exp is None:
-        # To avoid spurious warnings, we use num_obs_nz to calculate the mean.
-        # It replaces zeros in num_obs with 1.
-        num_obs_nz = np.maximum(num_obs, 1)
-        f_exp = np.atleast_1d(f_obs.sum(axis=axis) / num_obs_nz)
-        f_exp.shape = reduced_shape
-    else:
-        f_exp = np.asanyarray(f_exp, dtype=np.float64)
-        if f_exp.ndim > f_obs.ndim and axis >= 0:
-            # When f_obs and f_exp are broadcast in np.add.reduce (below),
-            # the result will have more dimensions than f_obs.ndim.  The
-            # `axis` argument refers to the axis *of f_obs*, so to preserve
-            # that meaning, we change `axis` to its equivalent negative value.
-            # This ensures that, for example,
-            #     chisquare([2,2,3], f_exp=[[2,2,3], [1,2,4]])
-            # (where the default axis=0 is used) does the Right Thing.
-            axis = -f_obs.ndim + axis
+    # `w` is the array of terms that are summed along `axis` to create
+    # the chi-squared statistic.
+    w = (f_obs - f_exp)**2 / f_exp
+    chisq = ma.add.reduce(w, axis=axis)
 
+    # Compute the corresponding p values.
+    # Masked elements are ignored, so the data sets may have different
+    # lengths.  Use the `count` method to get the number of elements in
+    # each data set.
+    num_obs = w.count(axis=axis)
+    if isinstance(num_obs, np.ndarray) and num_obs.ndim == 0:
+        # In some cases, the `count` method returns a scalar array (e.g.
+        # np.array(3)), but we want a plain integer.
+        num_obs = int(num_obs)
     ddof = ma.asanyarray(ddof)
-
-    chisq = ma.add.reduce((f_obs - f_exp)**2 / f_exp, axis=axis)
     p = stats.chisqprob(chisq, num_obs - 1 - ddof)
+
     return chisq, p
 
 chisquare.__doc__ = stats.chisquare.__doc__

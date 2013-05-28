@@ -1455,9 +1455,11 @@ def check_chisquare(f_obs, f_exp, ddof, axis, expected_chi2):
         num_obs = f_obs.size
     else:
         if axis == 'no':
-            num_obs = f_obs.shape[0]
+            use_axis = 0
         else:
-            num_obs = f_obs.shape[axis]
+            use_axis = axis
+        b = np.broadcast(f_obs, f_exp)
+        num_obs = b.shape[use_axis]
 
     if axis == 'no':
         chi2, p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof)
@@ -1539,7 +1541,7 @@ def test_chisquare():
              expected_chi2=[4.0]),
         Case(f_obs=data2db.T, f_exp=None, ddof=0, axis=None,
              expected_chi2=[4.0]),
-        Case(f_obs=[1,2,3,2], f_exp=[[2, 2, 3, 1],[2, 2, 2, 2]], ddof=0, axis=0,
+        Case(f_obs=[1,2,3,2], f_exp=[[2, 2, 3, 1],[2, 2, 2, 2]], ddof=0, axis=1,
              expected_chi2=[1.5, 1.0]),
     ]
 
