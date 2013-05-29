@@ -148,7 +148,7 @@ cdef inline double eval_jacobi_l(long n, double alpha, double beta, double x) no
     cdef double k, t
 
     if n < 0:
-        return 0.0
+        return eval_jacobi(n, alpha, beta, x)
     elif n == 0:
         return 1.0
     elif n == 1:
@@ -194,6 +194,7 @@ cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) nogil:
 @cython.cdivision(True)
 cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
     cdef long kk
+    cdef long a, b
     cdef double p, d
     cdef double k
 
@@ -205,6 +206,27 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
         return 2*alpha*x
     elif alpha == 0.0:
         return eval_gegenbauer(n, alpha, x)
+    elif fabs(x) < 1e-5:
+        # Power series rather than recurrence due to loss of precision
+        # http://functions.wolfram.com/Polynomials/GegenbauerC3/02/
+        a = n//2
+
+        d = 1 if a % 2 == 0 else -1
+        d /= beta(alpha, 1 + a)
+        if n == 2*a:
+            d /= (a + alpha)
+        else:
+            d *= 2*x
+
+        p = 0
+        for kk in range(a+1):
+            p += d
+            d *= -4*x**2 * (a - k) * (-a + alpha + k + n) / (
+                (n + 1 - 2*a + 2*k) * (n + 2 - 2*a + 2*k))
+            if fabs(d) == 1e-20*fabs(p):
+                # converged
+                break
+        return p
     else:
         d = x - 1
         p = x 
@@ -212,7 +234,12 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
             k = kk+1.0
             d = (2*(k+alpha)/(k+2*alpha))*(x-1)*p + (k/(k+2*alpha)) * d
             p = d + p
-        return binom(n+2*alpha-1, n)*p
+
+        if fabs(alpha/n) < 1e-8:
+            # avoid loss of precision
+            return 2*alpha/n * p
+        else:
+            return binom(n+2*alpha-1, n)*p
 
 #-----------------------------------------------------------------------------
 # Chebyshev 1st kind (T)
@@ -233,6 +260,10 @@ cdef inline double eval_chebyt_l(long k, double x) nogil:
     # Use Chebyshev T recurrence directly, see [MH]
     cdef long m
     cdef double b2, b1, b0
+
+    if k < 0:
+        # symmetry
+        k = -k
 
     b2 = 0
     b1 = -1
@@ -261,7 +292,17 @@ cdef inline number_t eval_chebyu(double n, number_t x) nogil:
 
 cdef inline double eval_chebyu_l(long k, double x) nogil:
     cdef long m
+    cdef int sign
     cdef double b2, b1, b0
+
+    if k == -1:
+        return 0
+    elif k < -1:
+        # symmetry
+        k = -k - 2
+        sign = -1
+    else:
+        sign = 1
 
     b2 = 0
     b1 = -1
@@ -271,7 +312,7 @@ cdef inline double eval_chebyu_l(long k, double x) nogil:
         b2 = b1
         b1 = b0
         b0 = x*b1 - b2
-    return b0 
+    return b0 * sign
 
 #-----------------------------------------------------------------------------
 # Chebyshev S
@@ -330,16 +371,38 @@ cdef inline number_t eval_legendre(double n, number_t x) nogil:
 
 @cython.cdivision(True)
 cdef inline double eval_legendre_l(long n, double x) nogil:
-    cdef long kk
+    cdef long kk, a
     cdef double p, d
     cdef double k
 
     if n < 0:
-        return 0.0
-    elif n == 0:
+        # symmetry
+        n = -n - 1
+
+    if n == 0:
         return 1.0
     elif n == 1:
         return x
+    elif fabs(x) < 1e-5:
+        # Power series rather than recurrence due to loss of precision
+        # http://functions.wolfram.com/Polynomials/LegendreP/02/
+        a = n//2
+
+        d = 1 if a % 2 == 0 else -1
+        if n == 2*a:
+            d *= -2 / beta(a + 1, -0.5)
+        else:
+            d *= 2 * x / beta(a + 1, 0.5)
+
+        p = 0
+        for kk in range(a+1):
+            p += d
+            d *= -2 * x**2 * (a - k) * (2*n + 1 - 2*a + 2*k) / (
+                (n + 1 - 2*a + 2*k) * (n + 2 - 2*a + 2*k))
+            if fabs(d) == 1e-20*fabs(p):
+                # converged
+                break
+        return p
     else:
         d = x - 1
         p = x 

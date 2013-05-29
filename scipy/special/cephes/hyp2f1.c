@@ -92,6 +92,8 @@
 
 #define ETHRESH 1.0e-12
 
+#define MAX_ITERATIONS 10000
+
 extern double MACHEP;
 
 static double hyt2f1(double a, double b, double c, double x, double *loss);
@@ -387,7 +389,7 @@ double *loss;
 		p *= s * (a + t + d1) / (t + 1.0);
 		p *= (b + t + d1) / (t + 1.0 + e);
 		t += 1.0;
-		if (t > 10000) {	/* should never happen */
+		if (t > MAX_ITERATIONS) {	/* should never happen */
 		    mtherr("hyp2f1", TOOMANY);
 		    *loss = 1.0;
 		    return NPY_NAN;
@@ -504,7 +506,7 @@ double *loss;			/* estimates loss of significance */
 	if (k > umax)
 	    umax = k;
 	k = m;
-	if (++i > 10000) {	/* should never happen */
+	if (++i > MAX_ITERATIONS) {	/* should never happen */
 	    *loss = 1.0;
 	    return (s);
 	}
@@ -546,6 +548,13 @@ static double hyp2f1ra(double a, double b, double c, double x,
     *loss = 0;
 
     assert(da != 0);
+
+    if (fabs(da) > MAX_ITERATIONS) {
+        /* Too expensive to compute this value, so give up */
+        mtherr("hyp2f1", TLOSS);
+        *loss = 1.0;
+        return NPY_NAN;
+    }
 
     if (da < 0) {
 	/* Recurse down */
