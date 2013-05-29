@@ -316,7 +316,7 @@ class Arg(object):
 
     def values(self, n):
         """Return an array containing approximatively `n` numbers."""
-        n1 = max(2, int(0.4*n))
+        n1 = max(2, int(0.3*n))
         n2 = max(2, int(0.2*n))
         n3 = max(8, n - n1 - n2)
 
@@ -324,19 +324,27 @@ class Arg(object):
         v2 = np.r_[np.linspace(-10, 10, max(0, n2-4)),
                    -9, -5.5, 5.5, 9]
         if self.a >= 0 and self.b > 0:
-            v3 = np.logspace(-30, np.log10(self.b), n3//2)
+            v3 = np.r_[
+                np.logspace(-30, -1, 2 + n3//4),
+                np.logspace(5, np.log10(self.b), 1 + n3//4),
+                ]
             v4 = np.logspace(1, 5, 1 + n3//2)
         elif self.a < 0 and self.b > 0:
             v3 = np.r_[
-                np.logspace(-30, np.log10(self.b), n3//4),
-                -np.logspace(-30, np.log10(-self.a), n3//4)
+                np.logspace(-30, -1, 2 + n3//8),
+                np.logspace(5, np.log10(self.b), 1 + n3//8),
+                -np.logspace(-30, -1, 2 + n3//8),
+                -np.logspace(5, np.log10(-self.a), 1 + n3//8)
                 ]
             v4 = np.r_[
                 np.logspace(1, 5, 1 + n3//4),
                 -np.logspace(1, 5, 1 + n3//4)
                 ]
         elif self.b < 0:
-            v3 = -np.logspace(-30, np.log10(-self.b), n3//2)
+            v3 = np.r_[
+                -np.logspace(-30, -1, 2 + n3//4),
+                -np.logspace(5, np.log10(-self.b), 1 + n3//4),
+                ]
             v4 = -np.logspace(1, 5, 1 + n3//2)
         else:
             v3 = []
@@ -351,6 +359,13 @@ class Arg(object):
         else:
             v = v[v < self.b]
         return np.unique(v)
+
+
+class FixedArg(object):
+    def __init__(self, values):
+        self._values = np.asarray(values)
+    def values(self, n):
+        return self._values
 
 
 class ComplexArg(object):
@@ -634,7 +649,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(lambda z: sc.airy(z)[0],
                             mpmath.airyai,
                             [Arg(-1e8, 1e8)],
-                            rtol=1e-6)
+                            rtol=1e-5)
         assert_mpmath_equal(lambda z: sc.airy(z)[0],
                             mpmath.airyai,
                             [Arg(-1e3, 1e3)])
@@ -649,7 +664,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
                             [Arg(-1e8, 1e8)], 
-                            rtol=1e-6)
+                            rtol=1e-5)
         assert_mpmath_equal(lambda z: sc.airy(z)[1], lambda z:
                             mpmath.airyai(z, derivative=1),
                             [Arg(-1e3, 1e3)])
@@ -664,7 +679,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),
                             [Arg(-1e8, 1e8)], 
-                            rtol=1e-6)
+                            rtol=1e-5)
         assert_mpmath_equal(lambda z: sc.airy(z)[2], lambda z:
                             mpmath.airybi(z),
                             [Arg(-1e3, 1e3)])
@@ -679,7 +694,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(lambda z: sc.airy(z)[3], lambda z:
                             mpmath.airybi(z, derivative=1),
                             [Arg(-1e8, 1e8)],
-                            rtol=1e-6)
+                            rtol=1e-5)
         assert_mpmath_equal(lambda z: sc.airy(z)[3], lambda z:
                             mpmath.airybi(z, derivative=1),
                             [Arg(-1e3, 1e3)])
@@ -692,12 +707,12 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_bei(self):
         assert_mpmath_equal(sc.bei,
                             _exception_to_nan(lambda z: mpmath.bei(0, z, **HYPERKW)),
-                            [Arg(-1e30, 1e30)])
+                            [Arg(-1e3, 1e3)])
 
     def test_ber(self):
         assert_mpmath_equal(sc.ber,
                             _exception_to_nan(lambda z: mpmath.ber(0, z, **HYPERKW)),
-                            [Arg(-1e30, 1e30)])
+                            [Arg(-1e3, 1e3)])
 
     def test_bernoulli(self):
         assert_mpmath_equal(lambda n: sc.bernoulli(int(n))[int(n)],
@@ -719,8 +734,15 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_besselj(self):
         assert_mpmath_equal(sc.jv,
                             _exception_to_nan(lambda v, z: mpmath.besselj(v, z, **HYPERKW)),
-                            [Arg(-1e100, 1e100), Arg(-1e8, 1e8)],
+                            [Arg(-1e100, 1e100), Arg(-1e3, 1e3)],
                             ignore_inf_sign=True)
+
+        # loss of precision at large arguments due to oscillation
+        assert_mpmath_equal(sc.jv,
+                            _exception_to_nan(lambda v, z: mpmath.besselj(v, z, **HYPERKW)),
+                            [Arg(-1e100, 1e100), Arg(-1e8, 1e8)],
+                            ignore_inf_sign=True,
+                            rtol=1e-5)
 
     def test_besselj_complex(self):
         assert_mpmath_equal(lambda v, z: sc.jv(v.real, z),
@@ -828,7 +850,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
     def test_betainc(self):
         assert_mpmath_equal(sc.betainc,
-                            _exception_to_nan(lambda a, b, x: mpmath.betainc(a, b, 0, x, regularized=True)),
+                            _time_limited()(_exception_to_nan(lambda a, b, x: mpmath.betainc(a, b, 0, x, regularized=True))),
                             [Arg(), Arg(), Arg()])
 
     def test_binom(self):
@@ -860,31 +882,27 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             dps=400,
                             atol=1e-14)
 
-    @knownfailure_overridable("issues at negative orders")
     def test_chebyt_int(self):
         assert_mpmath_equal(lambda n, x: sc.eval_chebyt(int(n), x),
                             _exception_to_nan(lambda n, x: mpmath.chebyt(n, x, **HYPERKW)),
-                            [IntArg(), Arg()],
-                            n=2000)
+                            [IntArg(), Arg()], dps=50)
 
-    @dec.knownfailureif(True, "test causes a segmentation fault")
+    @knownfailure_overridable("some cases in hyp2f1 not fully accurate")
     def test_chebyt(self):
         assert_mpmath_equal(sc.eval_chebyt,
-                            _exception_to_nan(lambda n, x: mpmath.chebyt(n, x, **HYPERKW)),
-                            [Arg(), Arg()],
-                            n=2000)
+                            lambda n, x: _time_limited()(_exception_to_nan(mpmath.chebyt))(n, x, **HYPERKW),
+                            [Arg(-101, 101), Arg()], n=10000)
 
-    @knownfailure_overridable("issues at negative orders and at eps-small arguments")
     def test_chebyu_int(self):
-        assert_mpmath_equal(sc.eval_chebyu,
+        assert_mpmath_equal(lambda n, x: sc.eval_chebyu(int(n), x),
                             _exception_to_nan(lambda n, x: mpmath.chebyu(n, x, **HYPERKW)),
-                            [IntArg(), Arg()], n=2000)
+                            [IntArg(), Arg()], dps=50)
 
-    @dec.knownfailureif(True, "test causes a segmentation fault")
+    @knownfailure_overridable("some cases in hyp2f1 not fully accurate")
     def test_chebyu(self):
         assert_mpmath_equal(sc.eval_chebyu,
-                            _exception_to_nan(lambda n, x: mpmath.chebyu(n, x, **HYPERKW)),
-                            [Arg(), Arg()], n=2000)
+                            lambda n, x: _time_limited()(_exception_to_nan(mpmath.chebyu))(n, x, **HYPERKW),
+                            [Arg(-101, 101), Arg()])
 
     @knownfailure_overridable("overflows to inf somewhat too early at large arguments")
     def test_chi(self):
@@ -1069,11 +1087,50 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.gegenbauer),
                             [Arg(-1e3, 1e3), Arg(), Arg()])
 
-    @knownfailure_overridable()
     def test_gegenbauer_int(self):
-        assert_mpmath_equal(lambda n, a, x: sc.eval_gegenbauer(int(n), a, x),
-                            _exception_to_nan(mpmath.gegenbauer),
-                            [IntArg(0, 100), Arg(), Arg()])
+        # Redefine functions to deal with numerical + mpmath issues
+        def gegenbauer(n, a, x):
+            # Avoid overflow at large `a` (mpmath would need an even larger
+            # dps to handle this correctly, so just skip this region)
+            if abs(a) > 1e100:
+                return np.nan
+
+            # Deal with n=0, n=1 correctly; mpmath 0.17 doesn't do these
+            # always correctly
+            if n == 0:
+                r = 1.0
+            elif n == 1:
+                r = 2*a*x
+            else:
+                r = mpmath.gegenbauer(n, a, x)
+
+            # Mpmath 0.17 gives wrong results (spurious zero) in some cases, so
+            # compute the value by perturbing the result
+            if float(r) == 0 and n <= 1-a and a < -1 and float(a) == int(float(a)):
+                r = mpmath.gegenbauer(n, a + mpmath.mpf('1e-50'), x)
+
+            # Differing overflow thresholds in scipy vs. mpmath
+            if abs(r) > 1e270:
+                return np.inf
+            return r
+        def sc_gegenbauer(n, a, x):
+            r = sc.eval_gegenbauer(int(n), a, x)
+            # Differing overflow thresholds in scipy vs. mpmath
+            if abs(r) > 1e270:
+                return np.inf
+            return r
+        assert_mpmath_equal(sc_gegenbauer,
+                            _exception_to_nan(gegenbauer),
+                            [IntArg(0, 100), Arg(), Arg()],
+                            n=40000, dps=100,
+                            ignore_inf_sign=True)
+
+        # Check the small-x expansion
+        assert_mpmath_equal(sc_gegenbauer,
+                            _exception_to_nan(gegenbauer),
+                            [IntArg(0, 100), Arg(), FixedArg(np.logspace(-30, -4, 30))],
+                            dps=100,
+                            ignore_inf_sign=True)
 
     @knownfailure_overridable()
     def test_gegenbauer_complex(self):
@@ -1184,15 +1241,21 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         # 1e8 = 1e15 * 1e-7
         assert_mpmath_equal(sc.j0,
                             mpmath.j0,
+                            [Arg(-1e3, 1e3)])
+        assert_mpmath_equal(sc.j0,
+                            mpmath.j0,
                             [Arg(-1e8, 1e8)],
-                            rtol=1e-7)
+                            rtol=1e-5)
 
     def test_j1(self):
         # See comment in test_j0
         assert_mpmath_equal(sc.j1,
                             mpmath.j1,
+                            [Arg(-1e3, 1e3)])
+        assert_mpmath_equal(sc.j1,
+                            mpmath.j1,
                             [Arg(-1e8, 1e8)],
-                            rtol=1e-7)
+                            rtol=1e-5)
 
     @knownfailure_overridable()
     def test_jacobi(self):
@@ -1202,6 +1265,18 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(lambda n, b, c, x: sc.eval_jacobi(int(n), b, c, x),
                             _exception_to_nan(lambda a, b, c, x: mpmath.jacobi(a, b, c, x, **HYPERKW)),
                             [IntArg(), Arg(), Arg(), Arg()])
+
+    def test_jacobi_int(self):
+        # Redefine functions to deal with numerical + mpmath issues
+        def jacobi(n, a, b, x):
+            # Mpmath does not handle n=0 case always correctly
+            if n == 0:
+                return 1.0
+            return mpmath.jacobi(n, a, b, x)
+        assert_mpmath_equal(lambda n, a, b, x: sc.eval_jacobi(int(n), a, b, x),
+                            lambda n, a, b, x: _exception_to_nan(jacobi)(n, a, b, x, **HYPERKW),
+                            [IntArg(), Arg(), Arg(), Arg()],
+                            n=20000, dps=50)
 
     def test_kei(self):
         def kei(x):
@@ -1220,12 +1295,14 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
     @nonfunctional_tooslow
     def test_laguerre(self):
-        assert_mpmath_equal(sc.eval_laguerre,
-                            mpmath.laguerre,
-                            [Arg(), Arg(), Arg()])
-        assert_mpmath_equal(sc.eval_laguerre,
-                            mpmath.laguerre,
-                            [IntArg(), Arg(), Arg()])
+        assert_mpmath_equal(_trace_args(sc.eval_laguerre),
+                            lambda n, x: _exception_to_nan(mpmath.laguerre)(n, x, **HYPERKW),
+                            [Arg(), Arg()])
+
+    def test_laguerre_int(self):
+        assert_mpmath_equal(lambda n, x: sc.eval_laguerre(int(n), x),
+                            lambda n, x: _exception_to_nan(mpmath.laguerre)(n, x, **HYPERKW),
+                            [IntArg(), Arg()], n=20000)
 
     def test_lambertw(self):
         assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k)),
@@ -1237,9 +1314,17 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(sc.eval_legendre,
                             mpmath.legendre,
                             [Arg(), Arg()])
-        assert_mpmath_equal(sc.eval_legendre,
-                            mpmath.legendre,
-                            [IntArg(), Arg()])
+
+    def test_legendre_int(self):
+        assert_mpmath_equal(lambda n, x: sc.eval_legendre(int(n), x),
+                            lambda n, x: _exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
+                            [IntArg(), Arg()], 
+                            n=20000)
+
+        # Check the small-x expansion
+        assert_mpmath_equal(lambda n, x: sc.eval_legendre(int(n), x),
+                            lambda n, x: _exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
+                            [IntArg(), FixedArg(np.logspace(-30, -4, 20))])
 
     @knownfailure_overridable("wrong function at |z| > 1 (Trac #1877)")
     def test_legenp(self):
