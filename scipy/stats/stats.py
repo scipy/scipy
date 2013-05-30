@@ -3500,12 +3500,18 @@ def chisquare(f_obs, f_exp=None, ddof=0):
     """
     f_obs = asarray(f_obs)
     k = len(f_obs)
-    if f_exp is None:
-        f_exp = array([np.sum(f_obs,axis=0)/float(k)] * len(f_obs),float)
 
-    f_exp = f_exp.astype(float)
-    chisq = np.add.reduce((f_obs-f_exp)**2 / f_exp)
-    return chisq, chisqprob(chisq, k-1-ddof)
+    if f_exp is None:
+        f_exp = np.sum(f_obs, axis=0, dtype=float)
+        f_exp /= k
+    else:
+        f_exp = asarray(f_exp, dtype=float)
+
+    chisq = f_obs - f_exp
+    chisq **= 2
+    chisq /= f_exp
+    chisq = chisq.sum(axis=0)
+    return chisq, chisqprob(chisq, k - 1 - ddof)
 
 
 def ks_2samp(data1, data2):
