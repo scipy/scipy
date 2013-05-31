@@ -539,6 +539,15 @@ def check_chisquare(f_obs, f_exp, ddof, axis, expected_chi2):
     expected_p = stats.chisqprob(expected_chi2, num_obs - 1 - ddof)
     assert_array_equal(p, expected_p)
 
+    # Also compare to stats.chisquare
+    if axis == 'no':
+        stats_chisq, stats_p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof)
+    else:
+        stats_chisq, stats_p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof,
+                                               axis=axis)
+    assert_array_almost_equal(chi2, stats_chisq)
+    assert_array_almost_equal(p, stats_p)
+
 
 def test_chisquare():
     # The data sets here are chosen so that the chi2 statistic

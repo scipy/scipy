@@ -812,8 +812,11 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
         Expected frequencies in each category.  By default the categories are
         assumed to be equally likely.
     ddof : int, optional
-        Adjustment to the degrees of freedom for the p-value.  The default
-        is one less than the number of data elements.
+        "Delta degrees of freedom": adjustment to the degrees of freedom
+        for the p-value.  The p-value is computed using a chi-squared
+        distribution with ``k - 1 - ddof`` degrees of freedom, where `k`
+        is the number of observed frequencies.  The default value of `ddof`
+        is 0.
     axis : int or None, optional
         The axis of the broadcast result of `f_obs` and `f_exp` along which to
         apply the test.  If axis is None, all values in `f_obs` are treated
@@ -822,9 +825,11 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     Returns
     -------
     chisq : float or np.ma.masked_array
-        The chisquare test statistic.
+        The chisquare test statistic.  The value is a float if `axis` is
+        None or `f_obs` and `f_exp` are 1-D.
     p : float or np.ma.masked_array
-        The p-value of the test.
+        The p-value of the test.  The value is a float if `ddof` and the
+        return value `chisq` are scalars.
 
     Notes
     -----
@@ -872,7 +877,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
            fill_value = 1e+20)
     )
 
-    By setting `axis=None`, the test is applied to all data in the array,
+    By setting ``axis=None``, the test is applied to all data in the array,
     which is equivalent to applying the test to the flattened array.
 
     >>> chisquare(obs, axis=None)
@@ -894,7 +899,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     `f_obs` and `f_exp` are also broadcast.  In the following, `f_obs` has
     shape (6,) and `f_exp` has shape (2, 6), so the result of broadcasting
     `f_obs` and `f_exp` has shape (2, 6).  To compute the desired chi-squared
-    statistics, we use `axis=1`:
+    statistics, we use ``axis=1``:
 
     >>> chisquare([16, 18, 16, 14, 12, 12],
     ...           f_exp=[[16, 16, 16, 16, 16, 8], [8, 20, 20, 16, 12, 12]],
