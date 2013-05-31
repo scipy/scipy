@@ -9,6 +9,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
+from collections import namedtuple
 
 from numpy.testing import TestCase, assert_, assert_equal, \
     assert_almost_equal, assert_array_almost_equal, assert_array_equal, \
@@ -1446,6 +1447,129 @@ def test_percentileofscore():
         yield assert_equal, \
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
                    score, kind=kind), result
+
+
+def check_chisquare(f_obs, f_exp, ddof, axis, expected_chi2):
+    f_obs = np.asarray(f_obs)
+    if axis is None:
+        num_obs = f_obs.size
+    else:
+        if axis == 'no':
+            use_axis = 0
+        else:
+            use_axis = axis
+        b = np.broadcast(f_obs, f_exp)
+        num_obs = b.shape[use_axis]
+
+    if axis == 'no':
+        chi2, p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof)
+    else:
+        chi2, p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof, axis=axis)
+    assert_array_equal(chi2, expected_chi2)
+
+    ddof = np.asarray(ddof)
+    expected_p = stats.chisqprob(expected_chi2, num_obs - 1 - ddof)
+    assert_array_equal(p, expected_p)
+
+
+def test_chisquare():
+    # The data sets here are chosen so that the chi2 statistic
+    # can be calculated exactly, so a test for equality (rather than
+    # being numerically close) can be used.
+    Case = namedtuple('Case', ['f_obs', 'f_exp', 'ddof', 'axis',
+                                'expected_chi2'])
+    empty = np.array([[],[],[]])
+    data2da = np.array([[1, 4],
+                        [2, 8],
+                        [3, 12],
+                        [2, 8]])
+    data2db = np.array([[1, 2, 3, 2],
+                        [3, 2, 3, 0]])
+
+    # These cases use the default axis=0.
+    cases0 = [
+        # simple case, 1 data set:
+        Case(f_obs=[1,2,3,2], f_exp=None, ddof=0, axis=0,
+             expected_chi2=1.0),
+        # two simple data sets
+        Case(f_obs=data2da, f_exp=None, ddof=0, axis=0,
+             expected_chi2=[1.0, 4.0]),
+        # Edge case: one data set with length 0.
+        Case(f_obs=[], ddof=0, f_exp=None, axis=0, expected_chi2=0.0),
+        # Edge case: no data sets (data has shape (3,0)).
+        Case(f_obs=empty, f_exp=None, ddof=0, axis=0, expected_chi2=[]),
+        # Edge case: data has shape (0, 3) (3 data sets,
+        # but each has length 0).
+        Case(f_obs=empty.T, f_exp=None, ddof=0, axis=0,
+             expected_chi2=[0.0, 0.0, 0.0]),
+        # simple case, with scalar f_exp.
+        Case(f_obs=[1, 2, 3, 2], f_exp=2, ddof=0, axis=0,
+             expected_chi2=1.0),
+        # simple case with vector f_exp (uniform).
+        Case(f_obs=[1, 2, 3, 2], f_exp=[2, 2, 2, 2], ddof=0, axis=0,
+             expected_chi2=1.0),
+        # simple case with vector f_exp equal to f_obs.
+        Case(f_obs=[1, 2, 3, 2], f_exp=[1, 2, 3, 2], ddof=0, axis=0,
+             expected_chi2=0.0),
+        # 2-D data
+        Case(f_obs=data2db.T, f_exp=None, ddof=0, axis=0,
+             expected_chi2=[1.0, 3.0]),
+        Case(f_obs=data2db.T, f_exp=None, ddof=1, axis=0,
+             expected_chi2=[1.0, 3.0]),
+        # 2-D data, 1-D ddof
+        Case(f_obs=data2db.T, f_exp=None, ddof=[0,1], axis=0,
+             expected_chi2=[1.0, 3.0]),
+    ]
+    # All the cases in `cases0` have axis=0, which is the default value
+    # for the chisquare function.  Here we check each case twice, once
+    # in which the argument is not passed to chisquare (indicated by
+    # using the value 'no' in the call to check_chisquare), and again
+    # with the axis argument explicitly set to 0.
+    for case in cases0:
+        yield (check_chisquare, case.f_obs, case.f_exp, case.ddof, 'no',
+               case.expected_chi2)
+    for case in cases0:
+        yield (check_chisquare, case.f_obs, case.f_exp, case.ddof, 0,
+               case.expected_chi2)
+
+    # A few more cases, testing axis != 0 and basic broadcasting of
+    # f_obs and f_exp.
+    cases1 = [
+        Case(f_obs=data2da.T, f_exp=None, ddof=0, axis=1,
+             expected_chi2=[1.0, 4.0]),
+        Case(f_obs=data2db, f_exp=None, ddof=0, axis=None,
+             expected_chi2=[4.0]),
+        Case(f_obs=data2db.T, f_exp=None, ddof=0, axis=None,
+             expected_chi2=[4.0]),
+        Case(f_obs=[1,2,3,2], f_exp=[[2, 2, 3, 1],[2, 2, 2, 2]], ddof=0, axis=1,
+             expected_chi2=[1.5, 1.0]),
+    ]
+
+    for case in cases1:
+        yield (check_chisquare, case.f_obs, case.f_exp, case.ddof, case.axis,
+               case.expected_chi2)
+
+
+def test_chisquare_ddof_broadcasting():
+    # Test that ddof broadcasts correctly.
+
+    # obs has shape (4, 2).  We'll use the default axis=0, so chi2
+    # will have shape (2,).
+    obs = np.array([[1, 2, 3, 2], [3, 2, 2, 5]]).T
+
+    # ddof has shape (2, 1).  This is broadcast with chi2, so p will
+    # have shape (2,2).
+    ddof = np.array([[0], [1]])
+
+    chi2, p = stats.chisquare(obs, ddof=ddof)
+    assert_array_equal(chi2, [1.0, 2.0])
+
+    chi20, p0 = stats.chisquare(obs, ddof=ddof[0,0])
+    assert_array_equal(chi20, [1.0, 2.0])
+
+    chi21, p1 = stats.chisquare(obs, ddof=ddof[1,0])
+    assert_array_equal(chi21, [1.0, 2.0])
+    assert_array_equal(p, np.vstack((p0, p1)))
 
 
 def test_friedmanchisquare():

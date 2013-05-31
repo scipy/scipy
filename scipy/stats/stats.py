@@ -3455,7 +3455,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
                 return D, distributions.ksone.sf(D,N)*2
 
 
-def chisquare(f_obs, f_exp=None, ddof=0):
+def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     """
     Calculates a one-way chi square test.
 
@@ -3465,19 +3465,29 @@ def chisquare(f_obs, f_exp=None, ddof=0):
     Parameters
     ----------
     f_obs : array
-        observed frequencies in each category
+        Observed frequencies in each category.
     f_exp : array, optional
-        expected frequencies in each category.  By default the categories are
+        Expected frequencies in each category.  By default the categories are
         assumed to be equally likely.
     ddof : int, optional
-        adjustment to the degrees of freedom for the p-value
+        "Delta degrees of freedom": adjustment to the degrees of freedom
+        for the p-value.  The p-value is computed using a chi-squared
+        distribution with ``k - 1 - ddof`` degrees of freedom, where `k`
+        is the number of observed frequencies.  The default value of `ddof`
+        is 0.
+    axis : int or None, optional
+        The axis of the broadcast result of `f_obs` and `f_exp` along which to
+        apply the test.  If axis is None, all values in `f_obs` are treated
+        as a single data set.  Default is 0.
 
     Returns
     -------
-    chisquare statistic : float
-        The chisquare test statistic
-    p : float
-        The p-value of the test.
+    chisq : float or ndarray
+        The chisquare test statistic.  The value is a float if `axis` is
+        None or `f_obs` and `f_exp` are 1-D.
+    p : float or ndarray
+        The p-value of the test.  The value is a float if `ddof` and the
+        return value `chisq` are scalars.
 
     Notes
     -----
@@ -3497,15 +3507,90 @@ def chisquare(f_obs, f_exp=None, ddof=0):
     .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
            Statistics". Chapter 8. http://faculty.vassar.edu/lowry/ch8pt1.html
 
-    """
-    f_obs = asarray(f_obs)
-    k = len(f_obs)
-    if f_exp is None:
-        f_exp = array([np.sum(f_obs,axis=0)/float(k)] * len(f_obs),float)
+    Examples
+    --------
+    When just `f_obs` is given, it is assumed that the expected frequencies
+    are uniform and given by the mean of the observed frequencies.
 
-    f_exp = f_exp.astype(float)
-    chisq = np.add.reduce((f_obs-f_exp)**2 / f_exp)
-    return chisq, chisqprob(chisq, k-1-ddof)
+    >>> chisquare([16, 18, 16, 14, 12, 12])
+    (2.0, 0.84914503608460956)
+
+    With `f_exp` the expected frequencies can be given.
+
+    >>> chisquare([16, 18, 16, 14, 12, 12], f_exp=[16, 16, 16, 16, 16, 8])
+    (3.5, 0.62338762774958223)
+
+    When `f_obs` is 2-D, by default the test is applied to each column.
+
+    >>> obs = np.array([[16, 18, 16, 14, 12, 12], [32, 24, 16, 28, 20, 24]]).T
+    >>> obs.shape
+    (6, 2)
+    >>> chisquare(obs)
+    (array([ 2.        ,  6.66666667]), array([ 0.84914504,  0.24663415]))
+
+    By setting ``axis=None``, the test is applied to all data in the array,
+    which is equivalent to applying the test to the flattened array.
+
+    >>> chisquare(obs, axis=None)
+    (23.31034482758621, 0.015975692534127565)
+    >>> chisquare(obs.ravel())
+    (23.31034482758621, 0.015975692534127565)
+
+    `ddof` is the change to make to the default degrees of freedom.
+
+    >>> chisquare([16, 18, 16, 14, 12, 12], ddof=1)
+    (2.0, 0.73575888234288467)
+
+    The calculation of the p-values is done by broadcasting the
+    chi-squared statistic with `ddof`.
+
+    >>> chisquare([16, 18, 16, 14, 12, 12], ddof=[0,1,2])
+    (2.0, array([ 0.84914504,  0.73575888,  0.5724067 ]))
+
+    `f_obs` and `f_exp` are also broadcast.  In the following, `f_obs` has
+    shape (6,) and `f_exp` has shape (2, 6), so the result of broadcasting
+    `f_obs` and `f_exp` has shape (2, 6).  To compute the desired chi-squared
+    statistics, we use ``axis=1``:
+
+    >>> chisquare([16, 18, 16, 14, 12, 12],
+    ...           f_exp=[[16, 16, 16, 16, 16, 8], [8, 20, 20, 16, 12, 12]],
+    ...           axis=1)
+    (array([ 3.5 ,  9.25]), array([ 0.62338763,  0.09949846]))
+
+    """
+
+    f_obs = asarray(f_obs)
+
+    if f_exp is not None:
+        f_exp = asarray(f_exp)
+    else:
+        # Compute the equivalent of
+        #   f_exp = f_obs.mean(axis=axis, keepdims=True)
+        # Older versions of numpy do not have the 'keepdims' argument, so
+        # we have to do a little work to achieve the same result.
+        # Ignore 'invalid' errors so the edge case of data sets with length 0
+        # is handled without spurious warnings.
+        with np.errstate(invalid='ignore'):
+            f_exp = np.atleast_1d(f_obs.mean(axis=axis))
+        if axis is not None:
+            reduced_shape = list(f_obs.shape)
+            reduced_shape[axis] = 1
+            f_exp.shape = reduced_shape
+
+    # `w` is the array of terms that are summed along `axis` to create
+    # the chi-squared statistic.
+    w = (f_obs - f_exp)**2 / f_exp
+    chisq = np.add.reduce(w, axis=axis)
+
+    # Compute the corresponding p values.
+    if axis is None:
+        num_obs = w.size
+    else:
+        num_obs = w.shape[axis]
+    ddof = asarray(ddof)
+    p = chisqprob(chisq, num_obs - 1 - ddof)
+
+    return chisq, p
 
 
 def ks_2samp(data1, data2):
