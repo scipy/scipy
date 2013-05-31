@@ -3,7 +3,7 @@ Tests for the stats.mstats module (support for maskd arrays)
 """
 from __future__ import division, print_function, absolute_import
 
-
+from collections import namedtuple
 import numpy as np
 from numpy import nan
 import numpy.ma as ma
@@ -12,8 +12,9 @@ from numpy.ma import masked, nomask
 import scipy.stats.mstats as mstats
 from scipy import stats
 from numpy.testing import TestCase, run_module_suite
-from numpy.ma.testutils import assert_equal, assert_almost_equal, \
-    assert_array_almost_equal, assert_array_almost_equal_nulp, assert_
+from numpy.ma.testutils import (assert_equal, assert_almost_equal,
+    assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
+    assert_array_equal)
 
 
 class TestMquantiles(TestCase):
@@ -513,6 +514,164 @@ def test_plotting_positions():
     """Regression test for #1256"""
     pos = mstats.plotting_positions(np.arange(3), 0, 0)
     assert_array_almost_equal(pos.data, np.array([0.25, 0.5, 0.75]))
+
+
+def check_chisquare(f_obs, f_exp, ddof, axis, expected_chi2):
+    # Use this only for arrays that have no masked values.
+    f_obs = np.asarray(f_obs)
+    if axis is None:
+        num_obs = f_obs.size
+    else:
+        if axis == 'no':
+            use_axis = 0
+        else:
+            use_axis = axis
+        b = np.broadcast(f_obs, f_exp)
+        num_obs = b.shape[use_axis]
+
+    if axis == 'no':
+        chi2, p = mstats.chisquare(f_obs, f_exp=f_exp, ddof=ddof)
+    else:
+        chi2, p = mstats.chisquare(f_obs, f_exp=f_exp, ddof=ddof, axis=axis)
+    assert_array_equal(chi2, expected_chi2)
+
+    ddof = np.asarray(ddof)
+    expected_p = stats.chisqprob(expected_chi2, num_obs - 1 - ddof)
+    assert_array_equal(p, expected_p)
+
+    # Also compare to stats.chisquare
+    if axis == 'no':
+        stats_chisq, stats_p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof)
+    else:
+        stats_chisq, stats_p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof,
+                                               axis=axis)
+    assert_array_almost_equal(chi2, stats_chisq)
+    assert_array_almost_equal(p, stats_p)
+
+
+def test_chisquare():
+    # The data sets here are chosen so that the chi2 statistic
+    # can be calculated exactly, so a test for equality (rather than
+    # being numerically close) can be used.
+    Case = namedtuple('Case', ['f_obs', 'f_exp', 'ddof', 'axis',
+                                'expected_chi2'])
+    empty = np.array([[],[],[]])
+    data2da = np.array([[1, 4],
+                        [2, 8],
+                        [3, 12],
+                        [2, 8]])
+    data2db = np.array([[1, 2, 3, 2],
+                        [3, 2, 3, 0]])
+
+    # These cases use the default axis=0.
+    cases0 = [
+        # simple case, 1 data set:
+        Case(f_obs=[1,2,3,2], f_exp=None, ddof=0, axis=0,
+             expected_chi2=1.0),
+        # two simple data sets
+        Case(f_obs=data2da, f_exp=None, ddof=0, axis=0,
+             expected_chi2=[1.0, 4.0]),
+        # Edge case: one data set with length 0.
+        Case(f_obs=[], ddof=0, f_exp=None, axis=0, expected_chi2=0.0),
+        # Edge case: no data sets (data has shape (3,0)).
+        Case(f_obs=empty, f_exp=None, ddof=0, axis=0, expected_chi2=[]),
+        # Edge case: data has shape (0, 3) (3 data sets,
+        # but each has length 0).
+        Case(f_obs=empty.T, f_exp=None, ddof=0, axis=0,
+             expected_chi2=[0.0, 0.0, 0.0]),
+        # simple case, with scalar f_exp.
+        Case(f_obs=[1, 2, 3, 2], f_exp=2, ddof=0, axis=0,
+             expected_chi2=1.0),
+        # simple case with vector f_exp (uniform).
+        Case(f_obs=[1, 2, 3, 2], f_exp=[2, 2, 2, 2], ddof=0, axis=0,
+             expected_chi2=1.0),
+        # simple case with vector f_exp equal to f_obs.
+        Case(f_obs=[1, 2, 3, 2], f_exp=[1, 2, 3, 2], ddof=0, axis=0,
+             expected_chi2=0.0),
+        # 2-D data
+        Case(f_obs=data2db.T, f_exp=None, ddof=0, axis=0,
+             expected_chi2=[1.0, 3.0]),
+        Case(f_obs=data2db.T, f_exp=None, ddof=1, axis=0,
+             expected_chi2=[1.0, 3.0]),
+        # 2-D data, 1-D ddof
+        Case(f_obs=data2db.T, f_exp=None, ddof=[0,1], axis=0,
+             expected_chi2=[1.0, 3.0]),
+    ]
+    # All the cases in `cases0` have axis=0, which is the default value
+    # for the chisquare function.  Here we check each case twice, once
+    # in which the argument is not passed to chisquare (indicated by
+    # using the value 'no' in the call to check_chisquare), and again
+    # with the axis argument explicitly set to 0.
+    for case in cases0:
+        yield (check_chisquare, case.f_obs, case.f_exp, case.ddof, 'no',
+               case.expected_chi2)
+    for case in cases0:
+        yield (check_chisquare, case.f_obs, case.f_exp, case.ddof, 0,
+               case.expected_chi2)
+
+    # A few more cases, testing axis != 0 and basic broadcasting of
+    # f_obs and f_exp.
+    cases1 = [
+        Case(f_obs=data2da.T, f_exp=None, ddof=0, axis=1,
+             expected_chi2=[1.0, 4.0]),
+        Case(f_obs=data2db, f_exp=None, ddof=0, axis=None,
+             expected_chi2=[4.0]),
+        Case(f_obs=data2db.T, f_exp=None, ddof=0, axis=None,
+             expected_chi2=[4.0]),
+        Case(f_obs=[1,2,3,2], f_exp=[[1],[2]], ddof=0, axis=1,
+             expected_chi2=[6.0, 1.0]),
+    ]
+
+    for case in cases1:
+        yield (check_chisquare, case.f_obs, case.f_exp, case.ddof, case.axis,
+               case.expected_chi2)
+
+
+def test_chisquare_ddof_broadcasting():
+    # Test that ddof broadcasts correctly.
+
+    # obs has shape (4, 2).  We'll use the default axis=0, so chi2
+    # will have shape (2,).
+    obs = np.array([[1, 2, 3, 2], [3, 2, 2, 5]]).T
+
+    # ddof has shape (2, 1).  This is broadcast with chi2, so p will
+    # have shape (2,2).
+    ddof = np.array([[0], [1]])
+
+    chi2, p = mstats.chisquare(obs, ddof=ddof)
+    assert_array_equal(chi2, [1.0, 2.0])
+
+    chi20, p0 = mstats.chisquare(obs, ddof=ddof[0,0])
+    assert_array_equal(chi20, [1.0, 2.0])
+
+    chi21, p1 = mstats.chisquare(obs, ddof=ddof[1,0])
+    assert_array_equal(chi21, [1.0, 2.0])
+    assert_array_equal(p, np.vstack((p0, p1)))
+
+
+def test_chisquare_masked_arrays():
+    # The other tests were taken from the tests for stats.chisquare, so
+    # they don't test the function with masked arrays.  Here masked arrays
+    # are tested.
+    obs = np.array([[8, 8, 16, 32, -1], [-1, -1, 3, 4, 5]]).T
+    mask = np.array([[0, 0, 0, 0, 1], [1, 1, 0, 0, 0]]).T
+    mobs = ma.masked_array(obs, mask)
+    expected_chisq = np.array([24.0, 0.5])
+
+    chisq, p = mstats.chisquare(mobs)
+    assert_array_equal(chisq, expected_chisq)
+    assert_array_almost_equal(p, stats.chisqprob(expected_chisq, mobs.count(axis=0) - 1))
+
+    chisq, p = mstats.chisquare(mobs.T, axis=1)
+    assert_array_equal(chisq, expected_chisq)
+    assert_array_almost_equal(p, stats.chisqprob(expected_chisq, mobs.T.count(axis=1) - 1))
+
+    # When axis=None, the two values should have type np.float64.
+    chisq, p = mstats.chisquare([1,2,3], axis=None)
+    assert_(isinstance(chisq, np.float64))
+    assert_(isinstance(p, np.float64))
+    assert_equal(chisq, 1.0)
+    assert_almost_equal(p, stats.chisqprob(1.0, 2))
 
 
 if __name__ == "__main__":
