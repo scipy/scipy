@@ -276,6 +276,10 @@ class _TestCommon:
         dense_dot_dense = self.dat * b
         check2 = self.datsp.todense() * b
         assert_array_equal(dense_dot_dense, check2)
+        # Check bool data works.
+        spbool = self.spmatrix(self.dat, dtype=bool)
+        matbool = self.dat.astype(bool)
+        assert_array_equal(spbool.todense(), matbool)
 
     def test_toarray(self):
         # Check C-contiguous (default).
@@ -310,6 +314,10 @@ class _TestCommon:
         dense_dot_dense = dot(dat, b)
         check2 = dot(self.datsp.toarray(), b)
         assert_array_equal(dense_dot_dense, check2)
+        # Check bool data works.
+        spbool = self.spmatrix(self.dat, dtype=bool)
+        arrbool = dat.astype(bool)
+        assert_array_equal(spbool.toarray(), arrbool)
 
     def test_astype(self):
         D = array([[1.0 + 3j, 0, 0],
