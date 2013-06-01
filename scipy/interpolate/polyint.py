@@ -693,7 +693,7 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
         self.xi = [xi[0]]
         self.yi = [self._reshape_yi(yi0)]
         self.n = 1
-        self.r = np.prod(self._y_extra_shape)
+        self.r = np.prod(self._y_extra_shape, dtype=np.int)
 
         self.direction = direction
         self.orders = []

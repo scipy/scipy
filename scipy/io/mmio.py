@@ -108,11 +108,11 @@ class MMFile (object):
 
     @property
     def rows(self):
-        return self._rows
+        return int(self._rows)
 
     @property
     def cols(self):
-        return self._cols
+        return int(self._cols)
 
     @property
     def entries(self):
@@ -368,8 +368,8 @@ class MMFile (object):
 
     #---------------------------------------------------------------------------
     def _parse_body(self, stream):
-        rows, cols, entries, format, field, symm = \
-          (self.rows, self.cols, self.entries, self.format, self.field, self.symmetry)
+        rows, cols, entries, format, field, symm = (self.rows, self.cols,
+            self.entries, self.format, self.field, self.symmetry)
 
         try:
             from scipy.sparse import coo_matrix
@@ -385,7 +385,7 @@ class MMFile (object):
         is_pattern = field == self.FIELD_PATTERN
 
         if format == self.FORMAT_ARRAY:
-            a = zeros((rows,cols),dtype=dtype)
+            a = zeros((rows,cols), dtype=dtype)
             line = 1
             i,j = 0,0
             while line:
