@@ -408,6 +408,9 @@ def wiener(im, mysize=None, noise=None):
     if mysize is None:
         mysize = [3] * len(im.shape)
     mysize = asarray(mysize)
+    if len(mysize.shape) == 0:
+        mysize = [mysize.item()] * len(im.shape)
+    mysize = asarray(mysize)
 
     # Estimate the local mean
     lMean = correlate(im, ones(mysize), 'same') / product(mysize, axis=0)
