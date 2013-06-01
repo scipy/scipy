@@ -364,9 +364,8 @@ def medfilt(volume, kernel_size=None):
     if kernel_size is None:
         kernel_size = [3] * len(volume.shape)
     kernel_size = asarray(kernel_size)
-    if len(kernel_size.shape) == 0:
-        kernel_size = [kernel_size.item()] * len(volume.shape)
-    kernel_size = asarray(kernel_size)
+    if kernel_size.shape == ():
+        kernel_size = np.repeat(kernel_size.item(), volume.ndim)
 
     for k in range(len(volume.shape)):
         if (kernel_size[k] % 2) != 1:
@@ -408,9 +407,8 @@ def wiener(im, mysize=None, noise=None):
     if mysize is None:
         mysize = [3] * len(im.shape)
     mysize = asarray(mysize)
-    if len(mysize.shape) == 0:
-        mysize = [mysize.item()] * len(im.shape)
-    mysize = asarray(mysize)
+    if mysize.shape == ():
+        mysize = np.repeat(mysize.item(), im.ndim)
 
     # Estimate the local mean
     lMean = correlate(im, ones(mysize), 'same') / product(mysize, axis=0)
@@ -582,9 +580,8 @@ def medfilt2d(input, kernel_size=3):
     if kernel_size is None:
         kernel_size = [3] * 2
     kernel_size = asarray(kernel_size)
-    if len(kernel_size.shape) == 0:
-        kernel_size = [kernel_size.item()] * 2
-    kernel_size = asarray(kernel_size)
+    if kernel_size.shape == ():
+        kernel_size = np.repeat(kernel_size.item(), 2)
 
     for size in kernel_size:
         if (size % 2) != 1:
