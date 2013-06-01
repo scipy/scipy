@@ -19,8 +19,7 @@ def bench_sqrtm():
     print('                 |    size   |                    | (seconds)')
     print('--------------------------------------------------------------')
     fmt = ' %15s |   %6d  | %18s | %6.2f '
-    # 1024 was slower than most people would want to wait, on my computer.
-    for n in (16, 64, 256):
+    for n in (64, 256):
         for dtype in (np.float64, np.complex128):
 
             # Sample a random matrix.
@@ -45,6 +44,14 @@ def bench_sqrtm():
             nseconds = time.clock() - tm
             print(fmt % (A.shape, blocksize, A.dtype, nseconds))
 
-            # Check the results for the two block sizes.
+            # bigger block size
+            blocksize = 64
+            tm = time.clock()
+            B_64, info = scipy.linalg.sqrtm(A, disp=False, blocksize=blocksize)
+            nseconds = time.clock() - tm
+            print(fmt % (A.shape, blocksize, A.dtype, nseconds))
+
+            # Check that the results are the same for all block sizes.
             assert_allclose(B_1, B_32)
+            assert_allclose(B_1, B_64)
 

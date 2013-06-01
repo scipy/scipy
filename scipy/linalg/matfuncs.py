@@ -569,8 +569,8 @@ def sqrtm(A, disp=True, blocksize=1):
         for j in range(start, stop):
             for i in range(j-1, start-1, -1):
                 s = 0
-                for k in range(i+1, j):
-                    s = s + R[i,k]*R[k,j]
+                if j - i > 1:
+                    s = R[i, i+1:j].dot(R[i+1:j, j])
                 R[i,j] = (T[i,j] - s)/(R[i,i] + R[j,j])
 
     # This is a between-block analog of the default method.
@@ -579,11 +579,9 @@ def sqrtm(A, disp=True, blocksize=1):
         for i in range(j-1, -1, -1):
             istart, istop = start_stop_pairs[i]
             S = T[istart:istop, jstart:jstop]
-            for k in range(i+1, j):
-                kstart, kstop = start_stop_pairs[k]
-                Rik = R[istart:istop, kstart:kstop]
-                Rkj = R[kstart:kstop, jstart:jstop]
-                S = S - Rik.dot(Rkj)
+            if j - i > 1:
+                S = S - R[istart:istop, istop:jstart].dot(
+                        R[istop:jstart, jstart:jstop])
 
             # Invoke LAPACK.
             # For more details, see the solve_sylvester implemention
