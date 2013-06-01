@@ -1598,7 +1598,7 @@ class TestNumObsY(TestCase):
         return num_obs_y(self.make_y(n)) == n
 
     def make_y(self, n):
-        return np.random.rand((n*(n-1)/2))
+        return np.random.rand((n * (n - 1) // 2))
 
 
 class TestNumObsDM(TestCase):
@@ -1807,7 +1807,7 @@ class TestIsValidY(TestCase):
         return is_valid_y(y, throw=True)
 
     def correct_n_by_n(self, n):
-        y = np.random.rand(n*(n-1)/2)
+        y = np.random.rand(n * (n - 1) // 2)
         return y
 
 

@@ -2002,7 +2002,7 @@ class Delaunay(_QhullUser):
             raise ValueError("wrong dimensionality in xi")
 
         xi_shape = xi.shape
-        xi = xi.reshape(np.prod(xi.shape[:-1]), xi.shape[-1])
+        xi = xi.reshape(int(np.prod(xi.shape[:-1])), xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
 
         start = 0
@@ -2053,7 +2053,7 @@ class Delaunay(_QhullUser):
                              "triangulation")
 
         xi_shape = xi.shape
-        xi = xi.reshape(np.prod(xi.shape[:-1]), xi.shape[-1])
+        xi = xi.reshape(int(np.prod(xi.shape[:-1])), xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
 
         _get_delaunay_info(&info, self, 0, 0)
