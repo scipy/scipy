@@ -538,69 +538,60 @@ def sqrtm(A, disp=True, blocksize=1):
     T, Z = rsf2csf(T,Z)
     n,n = T.shape
     R = np.zeros((n,n),T.dtype.char)
+    
+    # Take square roots of the diagonal of the triangular matrix.
+    R[np.diag_indices(n)] = np.sqrt(np.diag(T))
 
     # Compute the number of blocks to use.
     # If this number is not interesting, then use the default method.
     nblocks = n // blocksize
-    uninteresting_nblocks = (0, 1, n)
+    if nblocks in (0, 1, n):
+        nblocks = 1
 
-    if nblocks in uninteresting_nblocks:
-        for j in range(n):
-            R[j,j] = sqrt(T[j,j])
-            for i in range(j-1,-1,-1):
+    # Compute the smaller of the two sizes of blocks that
+    # we will actually use, and compute the number of large blocks.
+    bsmall, nlarge = divmod(n, nblocks)
+    blarge = bsmall + 1
+    nsmall = nblocks - nlarge
+    if nsmall * bsmall + nlarge * blarge != n:
+        raise Exception('internal inconsistency')
+
+    # Define the index range covered by each block.
+    start_stop_pairs = []
+    start = 0
+    for count, size in ((nsmall, bsmall), (nlarge, blarge)):
+        for i in range(count):
+            start_stop_pairs.append((start, start + size))
+            start += size
+
+    # This is a within-block analog of the default method.
+    for start, stop in start_stop_pairs:
+        for j in range(start, stop):
+            for i in range(j-1, start-1, -1):
                 s = 0
-                for k in range(i+1,j):
+                for k in range(i+1, j):
                     s = s + R[i,k]*R[k,j]
                 R[i,j] = (T[i,j] - s)/(R[i,i] + R[j,j])
-    else:
 
-        # Compute the smaller of the two sizes of blocks that
-        # we will actually use, and compute the number of large blocks.
-        bsmall, nlarge = divmod(n, nblocks)
-        blarge = bsmall + 1
-        nsmall = nblocks - nlarge
-        if nsmall * bsmall + nlarge * blarge != n:
-            raise Exception('internal inconsistency')
+    # This is a between-block analog of the default method.
+    for j in range(nblocks):
+        jstart, jstop = start_stop_pairs[j]
+        for i in range(j-1, -1, -1):
+            istart, istop = start_stop_pairs[i]
+            S = T[istart:istop, jstart:jstop]
+            for k in range(i+1, j):
+                kstart, kstop = start_stop_pairs[k]
+                Rik = R[istart:istop, kstart:kstop]
+                Rkj = R[kstart:kstop, jstart:jstop]
+                S = S - Rik.dot(Rkj)
 
-        # Define the index range covered by each block.
-        start_stop_pairs = []
-        start = 0
-        for count, size in ((nsmall, bsmall), (nlarge, blarge)):
-            for i in range(count):
-                start_stop_pairs.append((start, start + size))
-                start += size
-        
-        # Take square roots of the diagonal of the triangular matrix.
-        R[np.diag_indices(n)] = np.sqrt(np.diag(T))
-
-        # This is a within-block analog of the default method.
-        for start, stop in start_stop_pairs:
-            for j in range(start, stop):
-                for i in range(j-1, start-1, -1):
-                    s = 0
-                    for k in range(i+1, j):
-                        s = s + R[i,k]*R[k,j]
-                    R[i,j] = (T[i,j] - s)/(R[i,i] + R[j,j])
-
-        # This is a between-block analog of the default method.
-        for j in range(nblocks):
-            jstart, jstop = start_stop_pairs[j]
-            for i in range(j-1, -1, -1):
-                istart, istop = start_stop_pairs[i]
-                S = T[istart:istop, jstart:jstop]
-                for k in range(i+1, j):
-                    kstart, kstop = start_stop_pairs[k]
-                    Rik = R[istart:istop, kstart:kstop]
-                    Rkj = R[kstart:kstop, jstart:jstop]
-                    S = S - Rik.dot(Rkj)
-
-                # Invoke LAPACK.
-                # For more details, see the solve_sylvester implemention
-                # and the fortran ztrsyl docs.
-                Rii = R[istart:istop, istart:istop]
-                Rjj = R[jstart:jstop, jstart:jstop]
-                x, scale, info = ztrsyl(Rii, Rjj, S)
-                R[istart:istop, jstart:jstop] = x * scale
+            # Invoke LAPACK.
+            # For more details, see the solve_sylvester implemention
+            # and the fortran ztrsyl docs.
+            Rii = R[istart:istop, istart:istop]
+            Rjj = R[jstart:jstop, jstart:jstop]
+            x, scale, info = ztrsyl(Rii, Rjj, S)
+            R[istart:istop, jstart:jstop] = x * scale
 
     R, Z = all_mat(R,Z)
     X = (Z * R * Z.H)
