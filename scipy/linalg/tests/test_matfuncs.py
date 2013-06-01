@@ -94,8 +94,23 @@ class TestSqrtM(TestCase):
                     [0,0,se,0],
                     [0,0,0,1]])
         assert_array_almost_equal(dot(sa,sa),a)
+        # Check default sqrtm.
         esa = sqrtm(a, disp=False)[0]
         assert_array_almost_equal(dot(esa,esa),a)
+        # Check sqrtm with 2x2 blocks.
+        esa = sqrtm(a, disp=False, blocksize=2)[0]
+        assert_array_almost_equal(dot(esa,esa),a)
+
+    def test_blocksizes(self):
+        # Make sure I do not goof up the blocksizes when they do not divide n.
+        np.random.seed(1234)
+        for n in range(1, 8):
+            A = np.random.rand(n, n) + 1j*np.random.randn(n, n)
+            A_sqrtm_default, info = sqrtm(A, disp=False)
+            assert_allclose(A, np.linalg.matrix_power(A_sqrtm_default, 2))
+            for blocksize in range(1, 10):
+                A_sqrtm_new, info = sqrtm(A, blocksize=blocksize, disp=False)
+                assert_allclose(A_sqrtm_default, A_sqrtm_new)
 
 
 class TestExpM(TestCase):
