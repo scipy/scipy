@@ -2002,7 +2002,7 @@ class Delaunay(_QhullUser):
             raise ValueError("wrong dimensionality in xi")
 
         xi_shape = xi.shape
-        xi = xi.reshape(int(np.prod(xi.shape[:-1])), xi.shape[-1])
+        xi = xi.reshape(-1, xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
 
         start = 0
