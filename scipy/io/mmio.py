@@ -108,11 +108,11 @@ class MMFile (object):
 
     @property
     def rows(self):
-        return int(self._rows)
+        return self._rows
 
     @property
     def cols(self):
-        return int(self._cols)
+        return self._cols
 
     @property
     def entries(self):
@@ -220,12 +220,12 @@ class MMFile (object):
             if format == self.FORMAT_ARRAY:
                 if not len(line) == 2:
                     raise ValueError("Header line not of length 2: " + line)
-                rows,cols = map(float, line)
-                entries = rows*cols
+                rows, cols = map(int, line)
+                entries = rows * cols
             else:
                 if not len(line) == 3:
                     raise ValueError("Header line not of length 3: " + line)
-                rows, cols, entries = map(float, line)
+                rows, cols, entries = map(int, line)
 
             return (rows, cols, entries, format, field, symmetry)
 

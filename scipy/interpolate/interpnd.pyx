@@ -131,7 +131,7 @@ class NDInterpolatorBase(object):
         xi = _ndim_coords_from_arrays(args)
         xi = self._check_call_shape(xi)
         shape = xi.shape
-        xi = xi.reshape(np.prod(shape[:-1], dtype=np.int), shape[-1])
+        xi = xi.reshape(-1, shape[-1])
         xi = np.ascontiguousarray(xi, dtype=np.double)
 
         if self.is_complex:

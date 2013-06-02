@@ -963,7 +963,7 @@ def cophenet(Z, Y=None):
     Zs = Z.shape
     n = Zs[0] + 1
 
-    zz = np.zeros((n * (n - 1) // 2,), dtype=np.double)
+    zz = np.zeros((n * (n - 1)) // 2, dtype=np.double)
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
     Z = _convert_to_double(Z)

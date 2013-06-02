@@ -8,8 +8,8 @@ from numpy import arange, allclose, ones, isnan
 import numpy as np
 
 # functionality to be tested
-from scipy.interpolate.interpolate_wrapper import \
-        linear, logarithmic, block_average_above, nearest
+from scipy.interpolate.interpolate_wrapper import (linear, logarithmic,
+    block_average_above, nearest)
 
 
 class Test(unittest.TestCase):
@@ -39,7 +39,7 @@ class Test(unittest.TestCase):
         x = arange(N, dtype=np.float)
         y = arange(N, dtype=np.float)
 
-        new_x = arange(N / 2) * 2
+        new_x = arange(N // 2) * 2
         new_y = block_average_above(x, y, new_x)
         self.assertAllclose(new_y[:5], [0.0, 0.5, 2.5, 4.5, 6.5])
 

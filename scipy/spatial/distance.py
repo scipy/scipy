@@ -1173,7 +1173,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         raise ValueError('A 2-dimensional array must be passed.')
 
     m, n = s
-    dm = np.zeros((m * (m - 1) // 2,), dtype=np.double)
+    dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
 
     wmink_names = ['wminkowski', 'wmi', 'wm', 'wpnorm']
     if w is None and (metric == wminkowski or metric in wmink_names):
@@ -1479,7 +1479,7 @@ def squareform(X, force="no", checks=True):
             return np.array([], dtype=np.double)
 
         # Create a vector.
-        v = np.zeros(((d * (d - 1) // 2),), dtype=np.double)
+        v = np.zeros((d * (d - 1)) // 2, dtype=np.double)
 
         # Since the C code does not support striding using strides.
         # The dimensions are used instead.
