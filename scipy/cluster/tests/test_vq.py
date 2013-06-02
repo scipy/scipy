@@ -43,19 +43,16 @@ LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 class TestVq(TestCase):
     def test_py_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        code = initc.copy()
         label1 = py_vq(X, initc)[0]
         assert_array_equal(label1, LABEL1)
 
     def test_py_vq2(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        code = initc.copy()
         label1 = py_vq2(X, initc)[0]
         assert_array_equal(label1, LABEL1)
 
     def test_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        code = initc.copy()
         if TESTC:
             label1, dist = _vq.vq(X, initc)
             assert_array_equal(label1, LABEL1)
@@ -67,7 +64,6 @@ class TestVq(TestCase):
     #    """Test special rank 1 vq algo, python implementation."""
     #    data = X[:, 0]
     #    initc = data[:3]
-    #    code = initc.copy()
     #    a, b = _py_vq_1d(data, initc)
     #    ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
     #    assert_array_equal(a, ta)
@@ -77,7 +73,6 @@ class TestVq(TestCase):
         """Test special rank 1 vq algo, python implementation."""
         data = X[:, 0]
         initc = data[:3]
-        code = initc.copy()
         if TESTC:
             a, b = _vq.vq(data, initc)
             ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
@@ -98,7 +93,7 @@ class TestKMean(TestCase):
         # Generate a data set with large values, and run kmeans on it to
         # (regression for 1077).
         d = 300
-        n = 1e2
+        n = 100
 
         m1 = np.random.randn(d)
         m2 = np.random.randn(d)
@@ -109,7 +104,7 @@ class TestKMean(TestCase):
         data[:x.shape[0]] = x
         data[x.shape[0]:] = y
 
-        res = kmeans(data, 2)
+        kmeans(data, 2)
 
     def test_kmeans_simple(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
