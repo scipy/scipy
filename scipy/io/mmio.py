@@ -220,12 +220,12 @@ class MMFile (object):
             if format == self.FORMAT_ARRAY:
                 if not len(line) == 2:
                     raise ValueError("Header line not of length 2: " + line)
-                rows,cols = map(float, line)
-                entries = rows*cols
+                rows, cols = map(int, line)
+                entries = rows * cols
             else:
                 if not len(line) == 3:
                     raise ValueError("Header line not of length 3: " + line)
-                rows, cols, entries = map(float, line)
+                rows, cols, entries = map(int, line)
 
             return (rows, cols, entries, format, field, symmetry)
 
@@ -368,8 +368,8 @@ class MMFile (object):
 
     #---------------------------------------------------------------------------
     def _parse_body(self, stream):
-        rows, cols, entries, format, field, symm = \
-          (self.rows, self.cols, self.entries, self.format, self.field, self.symmetry)
+        rows, cols, entries, format, field, symm = (self.rows, self.cols,
+            self.entries, self.format, self.field, self.symmetry)
 
         try:
             from scipy.sparse import coo_matrix
@@ -385,7 +385,7 @@ class MMFile (object):
         is_pattern = field == self.FIELD_PATTERN
 
         if format == self.FORMAT_ARRAY:
-            a = zeros((rows,cols),dtype=dtype)
+            a = zeros((rows,cols), dtype=dtype)
             line = 1
             i,j = 0,0
             while line:

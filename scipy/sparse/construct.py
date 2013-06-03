@@ -668,7 +668,7 @@ greater than %d - this is not supported on this machine
         random_state = np.random.RandomState(random_state)
 
     def _gen_unique_rand(rng, _gk):
-        ind = rng.rand(_gk)
+        ind = rng.rand(int(_gk))
         return np.unique(np.floor(ind * mn))[:k]
 
     ind = _gen_unique_rand(random_state, gk)

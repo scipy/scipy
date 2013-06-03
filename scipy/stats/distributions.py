@@ -1594,9 +1594,9 @@ class rv_continuous(rv_generic):
                     if mu is None:
                         mu = self._munp(1.0,*goodargs)
                     mu2 = mu2p - mu*mu
-                if np.isinf(mu):
-                    # if mean is inf then var is also inf
-                    mu2 = np.inf
+                    if np.isinf(mu):
+                        #if mean is inf then var is also inf
+                        mu2 = np.inf
                 out0 = default.copy()
                 place(out0,cond,mu2*scale*scale)
                 output.append(out0)

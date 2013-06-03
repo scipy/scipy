@@ -1173,7 +1173,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         raise ValueError('A 2-dimensional array must be passed.')
 
     m, n = s
-    dm = np.zeros((m * (m - 1) / 2,), dtype=np.double)
+    dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
 
     wmink_names = ['wminkowski', 'wmi', 'wm', 'wpnorm']
     if w is None and (metric == wminkowski or metric in wmink_names):
@@ -1381,13 +1381,6 @@ def squareform(X, force="no", checks=True):
     ----------
     X : ndarray
         Either a condensed or redundant distance matrix.
-
-    Returns
-    -------
-    Y : ndarray
-        If a condensed distance matrix is passed, a redundant one is
-        returned, or if a redundant one is passed, a condensed distance
-        matrix is returned.
     force : str, optional
         As with MATLAB(TM), if force is equal to 'tovector' or 'tomatrix',
         the input will be treated as a distance matrix or distance vector
@@ -1398,6 +1391,13 @@ def squareform(X, force="no", checks=True):
         ``X - X.T1`` is small and ``diag(X)`` is close to zero.
         These values are ignored any way so they do not disrupt the
         squareform transformation.
+
+    Returns
+    -------
+    Y : ndarray
+        If a condensed distance matrix is passed, a redundant one is
+        returned, or if a redundant one is passed, a condensed distance
+        matrix is returned.
 
     Notes
     -----
@@ -1479,7 +1479,7 @@ def squareform(X, force="no", checks=True):
             return np.array([], dtype=np.double)
 
         # Create a vector.
-        v = np.zeros(((d * (d - 1) / 2),), dtype=np.double)
+        v = np.zeros((d * (d - 1)) // 2, dtype=np.double)
 
         # Since the C code does not support striding using strides.
         # The dimensions are used instead.
