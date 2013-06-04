@@ -6,6 +6,7 @@
 #include "stdio.h"
 #include <numpy/arrayobject.h>
 #include "complex_ops.h"
+#include "bool_ops.h"
 
 
 /* The following code originally appeared in
@@ -531,6 +532,7 @@ NPY_TYPECHECK(type, typecode)
 %enddef
 
 
+INSTANTIATE_TYPEMAPS(npy_bool_wrapper,        NPY_BOOL       )
 INSTANTIATE_TYPEMAPS(char,                    NPY_CHAR       )
 INSTANTIATE_TYPEMAPS(unsigned char,           NPY_UBYTE      )
 INSTANTIATE_TYPEMAPS(signed char,             NPY_BYTE       )
