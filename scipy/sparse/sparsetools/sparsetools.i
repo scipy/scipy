@@ -10,6 +10,7 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "complex_ops.h"
+#include "bool_ops.h"
 /*#include "sparsetools.h"*/
 %}
 
@@ -146,6 +147,7 @@ T_INPLACE_ARRAY2( ctype )
  */
 DECLARE_INDEX_TYPE( int       )
 
+DECLARE_DATA_TYPE( npy_bool_wrapper        )
 DECLARE_DATA_TYPE( signed char             )
 DECLARE_DATA_TYPE( unsigned char           )
 DECLARE_DATA_TYPE( short                   )
@@ -173,6 +175,7 @@ DECLARE_DATA_TYPE( npy_clongdouble_wrapper )
 
 %define INSTANTIATE_ALL( f_name )
 /* 32-bit indices */
+%template(f_name)   f_name<int, npy_bool_wrapper>;
 %template(f_name)   f_name<int,signed char>;
 %template(f_name)   f_name<int,unsigned char>;
 %template(f_name)   f_name<int,short>;
