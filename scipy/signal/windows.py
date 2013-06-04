@@ -8,7 +8,7 @@ from scipy.fftpack import fft
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'hann', 'get_window']
+           'slepian', 'cos',  'hann', 'get_window']
 
 
 def boxcar(M, sym=True):
@@ -1275,6 +1275,23 @@ def slepian(M, width, sym=True):
     return w
 
 
+def cos(M):
+    r"""Return a window with a simple cosine shape.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1.
+    """
+    return np.sin(np.pi / M * (np.arange(0, M) + .5))
+
+
 def get_window(window, Nx, fftbins=True):
     """
     Return a window.
@@ -1384,6 +1401,8 @@ def get_window(window, Nx, fftbins=True):
             winfunc = boxcar
         elif winstr in ['slepian', 'slep', 'optimal', 'dpss', 'dss']:
             winfunc = slepian
+        elif winstr in ['cos', 'coswin', 'halfcos', 'sin', 'sinwin', 'halfsin']:
+            winfunc = cos
         elif winstr in ['chebwin', 'cheb']:
             winfunc = chebwin
         else:
