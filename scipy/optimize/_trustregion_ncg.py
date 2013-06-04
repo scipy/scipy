@@ -9,6 +9,7 @@ from ._trustregion import (_minimize_trust_region, BaseQuadraticSubproblem)
 
 __all__ = []
 
+
 def _minimize_trust_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                         **trust_region_options):
     """
@@ -27,6 +28,7 @@ def _minimize_trust_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
                                   hessp=hessp, subproblem=CGSteihaugSubproblem,
                                   **trust_region_options)
+
 
 class CGSteihaugSubproblem(BaseQuadraticSubproblem):
     """Quadratic subproblem solved by a conjugate gradient method"""

@@ -78,4 +78,3 @@ class BenchmarkExpmMultiply(TestCase):
 
 if __name__ == '__main__':
     Tester().bench()
-

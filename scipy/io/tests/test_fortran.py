@@ -15,6 +15,7 @@ import re
 
 from scipy.io import FortranFile
 
+
 def test_fortranfiles_read():
     for filename in iglob(path.join(DATA_PATH, "fortran-*-*x*x*.dat")):
         m = re.search('fortran-([^-]+)-(\d+)x(\d+)x(\d+).dat', filename, re.I)
@@ -32,6 +33,7 @@ def test_fortranfiles_read():
                 for i in range(dims[0]):
                     assert_equal(counter, data[i,j,k])
                     counter += 1
+
 
 def test_fortranfiles_write():
     for filename in iglob(path.join(DATA_PATH, "fortran-*-*x*x*.dat")):
@@ -55,7 +57,7 @@ def test_fortranfiles_write():
             f.close()
             originalfile = open(filename, 'rb')
             newfile = open(testFile, 'rb')
-            assert_equal(originalfile.read(), newfile.read(), 
+            assert_equal(originalfile.read(), newfile.read(),
                          err_msg=filename)
             originalfile.close()
             newfile.close()

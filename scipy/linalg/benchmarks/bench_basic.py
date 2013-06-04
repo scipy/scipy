@@ -5,6 +5,7 @@ from numpy.testing import measure, rand, assert_, TestCase
 import numpy.linalg as nl
 import scipy.linalg as sl
 
+
 def random(size):
     return rand(*size)
 

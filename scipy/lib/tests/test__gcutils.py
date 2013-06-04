@@ -6,6 +6,7 @@ from scipy.lib._gcutils import set_gc_state, gc_state, assert_deallocated, Refer
 
 from nose.tools import assert_equal, raises
 
+
 def test_set_gc_state():
     gc_status = gc.isenabled()
     try:
@@ -62,7 +63,8 @@ def test_assert_deallocated():
 
 @raises(ReferenceError)
 def test_assert_deallocated_nodel():
-    class C(object): pass
+    class C(object):
+        pass
     # Need to delete after using if in with-block context
     with assert_deallocated(C) as c:
         pass

@@ -881,9 +881,9 @@ class TestNct(TestCase):
 
     def test_broadcasting(self):
         res = stats.nct.pdf(5, np.arange(4,7)[:,None], np.linspace(0.1, 1, 4))
-        expected = array([[ 0.00321886,  0.00557466,  0.00918418,  0.01442997],
-                          [ 0.00217142,  0.00395366,  0.00683888,  0.01126276],
-                          [ 0.00153078,  0.00291093,  0.00525206,  0.00900815]])
+        expected = array([[0.00321886, 0.00557466, 0.00918418, 0.01442997],
+                          [0.00217142, 0.00395366, 0.00683888, 0.01126276],
+                          [0.00153078, 0.00291093, 0.00525206, 0.00900815]])
         assert_allclose(res, expected, rtol=1e-5)
 
     def text_variance_gh_issue_2401():
@@ -1116,6 +1116,7 @@ def test_hypergeom_interval_1802():
     # degenerate case .a == .b
     assert_equal(stats.hypergeom.ppf(0.02, 100, 100, 8), 8)
     assert_equal(stats.hypergeom.ppf(1, 100, 100, 8), 8)
+
 
 def test_distribution_too_many_args():
     # Check that a TypeError is raised when too many args are given to a method

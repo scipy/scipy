@@ -127,4 +127,3 @@ class TestAsLinearOperator(TestCase):
             assert_equal(
                     A.dot(np.array([[1,4],[2,5],[3,6]])),
                     [[14,32],[32,77]])
-

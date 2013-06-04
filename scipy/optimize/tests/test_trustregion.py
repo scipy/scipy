@@ -21,6 +21,7 @@ class Accumulator:
     def __init__(self):
         self.count = 0
         self.accum = None
+
     def __call__(self, x):
         self.count += 1
         if self.accum is None:
@@ -87,4 +88,3 @@ class TestTrustRegionSolvers(TestCase):
 
 if __name__ == '__main__':
     run_module_suite()
-

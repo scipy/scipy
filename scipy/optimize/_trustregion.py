@@ -89,6 +89,7 @@ class BaseQuadraticSubproblem(object):
         raise NotImplementedError('The solve method should be implemented by '
                                   'the child class')
 
+
 def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
                            subproblem=None, initial_trust_radius=1.0,
                            max_trust_radius=1000.0, eta=0.15, gtol=1e-4,
@@ -236,7 +237,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         print("         Gradient evaluations: %d" % njac[0])
         print("         Hessian evaluations: %d" % nhess[0])
 
-    result = Result(x=x, success=(warnflag==0), status=warnflag, fun=m.fun,
+    result = Result(x=x, success=(warnflag == 0), status=warnflag, fun=m.fun,
                     jac=m.jac, nfev=nfun[0], njev=njac[0], nhev=nhess[0],
                     nit=k, message=status_messages[warnflag])
 
@@ -247,4 +248,3 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         result['allvecs'] = allvecs
 
     return result
-
