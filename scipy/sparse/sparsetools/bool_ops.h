@@ -6,7 +6,6 @@
  */
 
 #include <numpy/arrayobject.h>
-#include <iostream>
 
 typedef npy_int8 npy_bool_wrapper;
 
