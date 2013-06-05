@@ -3522,6 +3522,7 @@ gamma = gamma_gen(a=0.0, name='gamma', shapes='a')
 
 
 # Erlang
+
 class erlang_gen(gamma_gen):
     """An Erlang continuous random variable.
 
@@ -3534,12 +3535,48 @@ class erlang_gen(gamma_gen):
     Notes
     -----
     The Erlang distribution is a special case of the Gamma distribution, with
-    the shape parameter ``a`` an integer.  Note that this restriction is not
-    enforced by `erlang`.
+    the shape parameter `a` an integer.  Note that this restriction is not
+    enforced by `erlang`. It will, however, generate a warning the first time
+    a non-integer value is used for the shape parameter.
 
     Refer to `gamma` for examples.
 
     """
+
+    def _argcheck(self, a):
+        allint = np.all(np.floor(a) == a)
+        allpos = np.all(a > 0) 
+        if not allint:
+            # An Erlang distribution shouldn't really have a non-integer
+            # shape parameter, so warn the user.
+            warnings.warn('The shape parameter of the erlang distribution '
+                'has been given a non-integer value %r.' % (a,),
+                RuntimeWarning)
+        return allpos
+
+    def _fitstart(self, data):
+        # Override gamma_gen_fitstart so that an integer initial value is
+        # used.  (Also regularize the division, to avoid issues when
+        # _skew(data) is 0 or close to 0.)
+        a = int(4.0 / (1e-8 + _skew(data)**2))
+        return super(gamma_gen, self)._fitstart(data, args=(a,))
+
+    # Trivial override of the fit method, so we can monkey-patch its
+    # docstring.
+    def fit(self, data, *args, **kwds):
+        return super(erlang_gen, self).fit(data, *args, **kwds)
+
+    fit.__doc__ = (rv_continuous.fit.__doc__ +
+        """
+        Notes
+        -----
+        The Erlang distribution is generally defined to have integer values
+        for the shape parameter.  This is not enforced by the `erlang` class.
+        When fitting the distribution, it will generally return a non-integer
+        value for the shape parameter.  By using the keyword argument
+        `f0=<integer>`, the fit method can be constrained to fit the data to
+        a specifc integer shape parameter. 
+        """)
 erlang = erlang_gen(a=0.0, name='erlang', shapes='a')
 
 
