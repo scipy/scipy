@@ -72,13 +72,15 @@ The above univariate spline classes have the following methods:
    UnivariateSpline.derivatives
    UnivariateSpline.integral
    UnivariateSpline.roots
+   UnivariateSpline.derivative
+   UnivariateSpline.antiderivative
    UnivariateSpline.get_coeffs
    UnivariateSpline.get_knots
    UnivariateSpline.get_residual
    UnivariateSpline.set_smoothing_factor
 
 
-Low-level interface to FITPACK functions:
+Functional interface to FITPACK functions:
 
 .. autosummary::
    :toctree: generated/
@@ -89,6 +91,8 @@ Low-level interface to FITPACK functions:
    splint
    sproot
    spalde
+   splder
+   splantider
    bisplrep
    bisplev
 
