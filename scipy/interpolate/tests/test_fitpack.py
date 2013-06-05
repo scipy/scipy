@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_, \
-    TestCase, assert_raises, assert_array_almost_equal_nulp
+    TestCase, assert_raises
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy.interpolate.fitpack import splrep, splev, bisplrep, bisplev, \
      sproot, splprep, splint, spalde, splder, splantider, insert
@@ -266,7 +266,7 @@ class TestSplder(object):
         self.spl = splrep(x, y)
 
         # double check that knots are non-uniform
-        assert np.diff(self.spl[0]).ptp() > 0
+        assert_(np.diff(self.spl[0]).ptp() > 0)
 
     def test_inverse(self):
         # Check that antiderivative + derivative is identity.
@@ -291,7 +291,7 @@ class TestSplder(object):
             dy = splev(xx, self.spl, n)
             spl2 = splder(self.spl, n)
             dy2 = splev(xx, spl2)
-            assert_array_almost_equal_nulp(dy, dy2, nulp=100)
+            assert_allclose(dy, dy2)
 
     def test_splantider_vs_splint(self):
         # Check antiderivative vs. FITPACK
