@@ -58,6 +58,7 @@ class _TestCommon:
     """test common functionality shared by all sparse formats"""
 
     def __init__(self):
+        self.supported_dtypes = supported_dtypes
         # Cannonical data.
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
@@ -66,7 +67,7 @@ class _TestCommon:
         # dtype.
         self.dat_dtypes = {}
         self.datsp_dtypes = {}
-        for dtype in supported_dtypes:
+        for dtype in self.supported_dtypes:
             self.dat_dtypes[dtype] = self.dat.astype(dtype)
             self.datsp_dtypes[dtype] = self.spmatrix(self.dat.astype(dtype))
 
@@ -170,9 +171,8 @@ class _TestCommon:
             assert_array_equal(dat.sum(axis=None), datsp.sum(axis=None))
             assert_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
             assert_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
-        for dat, datsp in zip(self.dat_dtypes.values(),
-                              self.datsp_dtypes.values()):
-            yield check, dat, datsp
+        for dtype in self.supported_dtypes:
+            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_mean(self):
         def check(dat, datsp):
@@ -181,9 +181,8 @@ class _TestCommon:
             assert_array_equal(dat.mean(axis=None), datsp.mean(axis=None))
             assert_almost_equal(dat.mean(axis=0), datsp.mean(axis=0))
             assert_almost_equal(dat.mean(axis=1), datsp.mean(axis=1))
-        for dat, datsp in zip(self.dat_dtypes.values(),
-                              self.datsp_dtypes.values()):
-            yield check, dat, datsp
+        for dtype in self.supported_dtypes:
+            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_expm(self):
         M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
