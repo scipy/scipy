@@ -152,6 +152,17 @@ class UnivariateSpline(object):
         self._data = data
         self._reset_class()
 
+    @classmethod
+    def _from_tck(cls, tck):
+        """Construct a spline object from given tck"""
+        self = cls.__new__(cls)
+        t, c, k = tck
+        self._eval_args = tck
+        #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
+        self._data = (None,None,None,None,None,k,None,len(t),t,
+                      c,None,None,None,None)
+        return self
+
     def _reset_class(self):
         data = self._data
         n,t,c,k,ier = data[7],data[8],data[9],data[5],data[-1]
@@ -277,6 +288,99 @@ class UnivariateSpline(object):
         raise NotImplementedError('finding roots unsupported for '
                                     'non-cubic splines')
 
+    def derivative(self, n=1):
+        """
+        Construct a new spline representing the derivative of this spline.
+
+        .. versionadded:: 0.13.0
+
+        Parameters
+        ----------
+        n : int, optional
+            Order of derivative to evaluate. Default: 1
+
+        Returns
+        -------
+        spline : UnivariateSpline
+            Spline of order k2=k-n representing the derivative of this
+            spline.
+
+        See Also
+        --------
+        splder, antiderivative
+
+        Examples
+        --------
+        This can be used for finding maxima of a curve:
+
+        >>> from scipy.interpolate import UnivariateSpline
+        >>> x = np.linspace(0, 10, 70)
+        >>> y = np.sin(x)
+        >>> spl = UnivariateSpline(x, y, k=4, s=0)
+
+        Now, differentiate the spline and find the zeros of the
+        derivative. (NB: `sproot` only works for order 3 splines, so we
+        fit an order 4 spline):
+
+        >>> spl.derivative().roots() / np.pi
+        array([ 0.50000001,  1.5       ,  2.49999998])
+
+        This agrees well with roots :math:`\pi/2 + n\pi` of `cos(x) = sin'(x)`.
+
+        """
+        tck = fitpack.splder(self._eval_args, n)
+        return UnivariateSpline._from_tck(tck)
+
+    def antiderivative(self, n=1):
+        """
+        Construct a new spline representing the antiderivative of this spline.
+
+        .. versionadded:: 0.13.0
+
+        Parameters
+        ----------
+        n : int, optional
+            Order of antiderivative to evaluate. Default: 1
+
+        Returns
+        -------
+        spline : UnivariateSpline
+            Spline of order k2=k+n representing the antiderivative of this
+            spline.
+
+        See Also
+        --------
+        splantider, derivative
+
+        Examples
+        --------
+        >>> from scipy.interpolate import UnivariateSpline
+        >>> x = np.linspace(0, np.pi/2, 70)
+        >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
+        >>> spl = UnivariateSpline(x, y, s=0)
+
+        The derivative is the inverse operation of the antiderivative,
+        although some floating point error accumulates:
+
+        >>> spl(1.7), spl.antiderivative().derivative()(1.7)
+        (array(2.1565429877197317), array(2.1565429877201865))
+
+        Antiderivative can be used to evaluate definite integrals:
+
+        >>> ispl = spl.antiderivative()
+        >>> ispl(np.pi/2) - ispl(0)
+        2.2572053588768486
+
+        This is indeed an approximation to the complete elliptic integral 
+        :math:`K(m) = \\int_0^{\\pi/2} [1 - m\\sin^2 x]^{-1/2} dx`:
+
+        >>> from scipy.special import ellipk
+        >>> ellipk(0.8)
+        2.2572053268208538
+
+        """
+        tck = fitpack.splantider(self._eval_args, n)
+        return UnivariateSpline._from_tck(tck)
 
 class InterpolatedUnivariateSpline(UnivariateSpline):
     """
