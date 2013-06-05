@@ -58,8 +58,23 @@ class _TestCommon:
     """test common functionality shared by all sparse formats"""
 
     def __init__(self):
+        # Cannonical data.
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
+
+        # Some sparse and dense matrices with data for every supported
+        # dtype.
+        self.dat_dtypes = {}
+        self.datsp_dtypes = {}
+        for dtype in supported_dtypes:
+            self.dat_dtypes[dtype] = self.dat.astype(dtype)
+            self.datsp_dtypes[dtype] = self.spmatrix(self.dat.astype(dtype))
+
+        # Check that the original data is equivalent to the
+        # corresponding dat_dtypes & datsp_dtypes.
+        assert_equal(self.dat, self.dat_dtypes[np.float64])
+        assert_equal(self.datsp.todense(),
+                     self.datsp_dtypes[np.float64].todense())
 
     def test_empty(self):
         # create empty matrices
@@ -149,18 +164,26 @@ class _TestCommon:
         assert_array_equal(self.datsp.getcol(-1).todense(), self.dat[:,-1])
 
     def test_sum(self):
-        # Does the matrix's .sum(axis=...) method work?
-        assert_array_equal(self.dat.sum(), self.datsp.sum())
-        assert_array_equal(self.dat.sum(axis=None), self.datsp.sum(axis=None))
-        assert_array_equal(self.dat.sum(axis=0), self.datsp.sum(axis=0))
-        assert_array_equal(self.dat.sum(axis=1), self.datsp.sum(axis=1))
+        def check(dat, datsp):
+            # Does the matrix's .sum(axis=...) method work?
+            assert_array_equal(dat.sum(), datsp.sum())
+            assert_array_equal(dat.sum(axis=None), datsp.sum(axis=None))
+            assert_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
+            assert_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
+        for dat, datsp in zip(self.dat_dtypes.values(),
+                              self.datsp_dtypes.values()):
+            yield check, dat, datsp
 
     def test_mean(self):
-        # Does the matrix's .mean(axis=...) method work?
-        assert_array_equal(self.dat.mean(), self.datsp.mean())
-        assert_array_equal(self.dat.mean(axis=None), self.datsp.mean(axis=None))
-        assert_array_equal(self.dat.mean(axis=0), self.datsp.mean(axis=0))
-        assert_array_equal(self.dat.mean(axis=1), self.datsp.mean(axis=1))
+        def check(dat, datsp):
+            # Does the matrix's .mean(axis=...) method work?
+            assert_array_equal(dat.mean(), datsp.mean())
+            assert_array_equal(dat.mean(axis=None), datsp.mean(axis=None))
+            assert_almost_equal(dat.mean(axis=0), datsp.mean(axis=0))
+            assert_almost_equal(dat.mean(axis=1), datsp.mean(axis=1))
+        for dat, datsp in zip(self.dat_dtypes.values(),
+                              self.datsp_dtypes.values()):
+            yield check, dat, datsp
 
     def test_expm(self):
         M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
