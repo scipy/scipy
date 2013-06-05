@@ -302,7 +302,7 @@ class UnivariateSpline(object):
         Returns
         -------
         spline : UnivariateSpline
-            Spline of order k2=max(0,k-1) representing the derivative of this
+            Spline of order k2=k-n representing the derivative of this
             spline.
 
         See Also
@@ -345,7 +345,7 @@ class UnivariateSpline(object):
         Returns
         -------
         spline : UnivariateSpline
-            Spline of order k2=k+1 representing the antiderivative of this
+            Spline of order k2=k+n representing the antiderivative of this
             spline.
 
         See Also

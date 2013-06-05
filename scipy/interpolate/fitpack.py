@@ -1128,8 +1128,8 @@ def splder(tck, n=1):
 
     Returns
     -------
-    tck_ader : tuple of (t2, c2, k2)
-        Spline of order k2 = max(0, k-1) representing the derivative
+    tck_der : tuple of (t2, c2, k2)
+        Spline of order k2=k-n representing the derivative
         of the input spline.
 
     See Also
@@ -1153,7 +1153,8 @@ def splder(tck, n=1):
     >>> sproot(dspl) / np.pi
     array([ 0.50000001,  1.5       ,  2.49999998])
 
-    This agrees well with roots :math:`\pi/2 + n\pi` of `cos(x) = sin'(x)`.
+    This agrees well with roots :math:`\pi/2 + n\pi` of
+    :math:`\cos(x) = \sin'(x)`.
 
     """
     if n < 0:
@@ -1201,7 +1202,7 @@ def splantider(tck, n=1):
     Returns
     -------
     tck_ader : tuple of (t2, c2, k2)
-        Spline of order k2=k+1 representing the antiderivative of the input
+        Spline of order k2=k+n representing the antiderivative of the input
         spline.
 
     See Also
@@ -1211,12 +1212,12 @@ def splantider(tck, n=1):
     Notes
     -----
     The `splder` function is the inverse operation of this function.
-    Namely, `splder(splantider(tck))` is identical to `spl`, modulo
+    Namely, ``splder(splantider(tck))`` is identical to `tck`, modulo
     rounding error.
 
     Examples
     --------
-    >>> from scipy.interpolate import splrep, splder, splantider
+    >>> from scipy.interpolate import splrep, splder, splantider, splev
     >>> x = np.linspace(0, np.pi/2, 70)
     >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
     >>> spl = splrep(x, y)
