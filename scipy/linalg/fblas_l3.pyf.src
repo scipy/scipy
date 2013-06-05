@@ -82,8 +82,8 @@ subroutine <prefix6><sy,\0,\0,\0,he,he>mm(m, n, alpha, a, b, beta, c, side, lowe
   integer depend(b), intent(hide) :: ldb = shape(b,0)
   integer depend(b), intent(hide) :: kb = shape(b, 1)
 
-  integer, depend(side, a, lda, b, ldb), intent(hide) :: m= (side ? ldb : lda)
-  integer, depend(side, a, lda, b, ldb), intent(hide), &
+  integer depend(side, a, lda, b, ldb), intent(hide) :: m= (side ? ldb : lda)
+  integer depend(side, a, lda, ka, b, ldb, kb), intent(hide), &
         check(side? kb==lda : ka==ldb) :: n = (side ? ka : kb)
 
 end subroutine <prefix6><sy,\0,\0,\0,he,he>mm
