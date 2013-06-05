@@ -564,7 +564,7 @@ class spmatrix(object):
     def copy(self):
         return self.__class__(self,copy=True)
 
-    def sum(self, axis=None):
+    def sum(self, axis=None, dtype=None):
         """Sum the matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
         """
@@ -574,13 +574,13 @@ class spmatrix(object):
         m, n = self.shape
         if axis == 0:
             # sum over columns
-            return np.asmatrix(np.ones((1, m), dtype=self.dtype)) * self
+            return np.asmatrix(np.ones((1, m), dtype=dtype)) * self
         elif axis == 1:
             # sum over rows
-            return self * np.asmatrix(np.ones((n, 1), dtype=self.dtype))
+            return self * np.asmatrix(np.ones((n, 1), dtype=dtype))
         elif axis is None:
             # sum over rows and columns
-            return (self * np.asmatrix(np.ones((n, 1), dtype=self.dtype))).sum()
+            return (self * np.asmatrix(np.ones((n, 1), dtype=dtype))).sum()
         else:
             raise ValueError("axis out of bounds")
 
