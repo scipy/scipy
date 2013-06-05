@@ -3,13 +3,13 @@
 !
 ! Author: Pearu Peterson
 ! Created: April 2002
-! Modified: Fabian Pedregosa, 2011
+! Modified: Fabian Pedregosa, 2011; Evgeni Burovski, 2013
 !
 ! Implemented:
-!   gemm
+!   gemm, symm, hemm, syrk, herk, syr2k, her2k
 !
 ! Not Implemented:
-!   symm, hemm, syrk, herk, syr2k, her2k, trmm, trsm
+!   trmm, trsm
 !
 
 

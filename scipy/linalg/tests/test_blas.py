@@ -16,9 +16,7 @@ import math
 
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_almost_equal, assert_array_almost_equal
-
-from nose.tools import raises
+    assert_almost_equal, assert_array_almost_equal, assert_raises
 
 from scipy.linalg import _fblas as fblas, get_blas_funcs
 
@@ -300,8 +298,6 @@ class TestBLAS3Symm(TestCase):
         self.c = np.ones((2,3))
         self.t = np.array([[2., -1., 8.],
                            [3.,  0., 9.]])
-        self.sigma_y = np.array([[0., -1.j],
-                                 [1.j, 0.]]) 
 
     def test_symm(self):
         for f in _get_func('symm'):
@@ -314,16 +310,28 @@ class TestBLAS3Symm(TestCase):
             res = f(a=self.a, b=self.b.T, side=1, c=self.c.T, alpha=1., beta=1.)
             assert_array_almost_equal(res, self.t.T)
 
-    @raises(AssertionError)
-    def test_symm_wrong_uplo(self):
-        for f in _get_func('symm', 'd'):
-            res = f(a=self.a, b=self.b, lower=1, c=self.c, alpha=1., beta=1.)
-            assert_array_almost_equal(res, self.t.T)
-
-    @raises(Exception)
     def test_summ_wrong_side(self):
-        for f in _get_func('symm', 'd'):
-            res = f(a=self.a, b=self.b, side=1, c=self.c, alpha=1., beta=1.)
+        f = getattr(fblas, 'dsymm', None)
+        if f is not None:
+            assert_raises(Exception, f, **{'a': self.a, 'b': self.b, 'alpha':1, 
+                    'side': 1} )
+            # `side=1` means C <- B*A, hence shapes of A and B are to be 
+            #  compatible. Otherwise, f2py exception is raised
+
+
+    def test_symm_wrong_uplo(self):
+        """SYMM only considers the upper/lower part of A. Hence setting 
+        wrong value for `lower` (default is lower=0, meaning upper triangle)
+        gives a wrong result. 
+        """
+        f = getattr(fblas,'dsymm',None)
+        if f is not None:
+            res = f(a=self.a, b=self.b, c=self.c, alpha=1., beta=1.)
+            assert np.allclose(res, self.t)
+
+            res = f(a=self.a, b=self.b, lower=1, c=self.c, alpha=1., beta=1.)
+            assert not np.allclose(res, self.t)  
+
 
 
 class TestBLAS3Syrk(TestCase):
@@ -336,7 +344,6 @@ class TestBLAS3Syrk(TestCase):
                            [2., -6., 13.]])
         self.tt = np.array([[5., 6.],
                             [6., 13.]])
-
 
     def test_syrk(self):
         for f in _get_func('syrk'):
@@ -355,10 +362,12 @@ class TestBLAS3Syrk(TestCase):
 
     #prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress? 
     # FIXME: how to catch the _fblas.error? 
-    @raises(Exception)
     def test_syrk_wrong_c(self):
-        for f in _get_func('syrk', 'd'):
-            res = f(a=self.a, c=np.ones((5, 8)), alpha=1., beta=1.)
+        f = getattr(fblas, 'dsyrk', None)
+        if f is not None:
+            assert_raises(Exception, f, **{'a': self.a, 'alpha': 1., 
+                    'c': np.ones((5, 8))})
+        # if C is supplied, it must have compatible dimensions
 
 
 class TestBLAS3Syr2k(TestCase):
@@ -391,10 +400,12 @@ class TestBLAS3Syr2k(TestCase):
             assert_array_almost_equal(np.triu(c), np.triu(self.tt))
 
     #prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress?
-    @raises(Exception)
     def test_syr2k_wrong_c(self):
-        for f in _get_func('syr2k','d'):
-            res = f(a=self.a, b=self.b, c=np.ones((15, 8)), alpha=1., beta=1.)
+        f = getattr(fblas, 'dsyr2k', None)
+        if f is not None:
+            assert_raises(Exception, f, **{'a': self.a, 'b': self.b, 'alpha': 1., 
+                    'c': np.zeros((15, 8))})
+        # if C is supplied, it must have compatible dimensions
 
 
 class TestSyHe(TestCase):
