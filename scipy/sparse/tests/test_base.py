@@ -30,7 +30,7 @@ from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
 import random
 from numpy.testing import assert_raises, assert_equal, assert_array_equal, \
         assert_array_almost_equal, assert_almost_equal, assert_, \
-        dec, TestCase, run_module_suite
+        dec, run_module_suite
 
 import scipy.linalg
 
@@ -57,7 +57,7 @@ warnings.simplefilter('ignore', ComplexWarning)
 class _TestCommon:
     """test common functionality shared by all sparse formats"""
 
-    def setUp(self):
+    def __init__(self):
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
 
@@ -484,11 +484,11 @@ class _TestCommon:
 
         # invalid exponents
         for exponent in [-1, 2.2, 1 + 3j]:
-            self.assertRaises(Exception, B.__pow__, exponent)
+            assert_raises(Exception, B.__pow__, exponent)
 
         # nonsquare matrix
         B = self.spmatrix(A[:3,:])
-        self.assertRaises(Exception, B.__pow__, 1)
+        assert_raises(Exception, B.__pow__, 1)
 
     def test_rmatvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
@@ -1593,8 +1593,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                                      fancy_indexing and fancy_multidim_indexing),
              _possibly_unimplemented(_TestFancyMultidimAssign,
                                      fancy_multidim_assign and fancy_assign),
-             _possibly_unimplemented(_TestMinMax, minmax),
-             TestCase)
+             _possibly_unimplemented(_TestMinMax, minmax))
 
     # check that test names do not clash
     names = {}
