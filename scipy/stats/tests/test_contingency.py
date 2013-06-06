@@ -1,9 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import run_module_suite, assert_equal, assert_array_equal, \
-         assert_array_almost_equal, assert_approx_equal, assert_raises
-
+from numpy.testing import (run_module_suite, assert_equal, assert_array_equal,
+         assert_array_almost_equal, assert_approx_equal, assert_raises,
+         assert_allclose)
+from scipy.special import xlogy
 from scipy.stats.contingency import margins, expected_freq, chi2_contingency
 
 
@@ -52,7 +53,8 @@ def test_expected_freq():
 
 
 def test_chi2_contingency_trivial():
-    """Some very simple tests for chi2_contingency."""
+    # Some very simple tests for chi2_contingency.
+
     # A trivial case
     obs = np.array([[1, 2], [1, 2]])
     chi2, p, dof, expected = chi2_contingency(obs, correction=False)
@@ -71,7 +73,7 @@ def test_chi2_contingency_trivial():
 
 
 def test_chi2_contingency_R():
-    """Some test cases that were computed independently, using R."""
+    # Some test cases that were computed independently, using R.
 
     Rcode = \
     """
@@ -165,14 +167,32 @@ def test_chi2_contingency_R():
     assert_equal(dof, 11)
 
 
+def test_chi2_contingency_g():
+    c = np.array([[15, 60], [15, 90]])
+    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood', correction=False)
+    assert_allclose(g, 2*xlogy(c, c/e).sum())
+
+    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood', correction=True)
+    c_corr = c + np.array([[-0.5, 0.5], [0.5, -0.5]])
+    assert_allclose(g, 2*xlogy(c_corr, c_corr/e).sum())
+
+    c = np.array([[10, 12, 10], [12, 10, 10]])
+    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood')
+    assert_allclose(g, 2*xlogy(c, c/e).sum())
+
+
 def test_chi2_contingency_bad_args():
+    # Test that "bad" inputs raise a ValueError.
+
     # Negative value in the array of observed frequencies.
     obs = np.array([[-1, 10], [1, 2]])
     assert_raises(ValueError, chi2_contingency, obs)
+
     # The zeros in this will result in zeros in the array
     # of expected frequencies.
     obs = np.array([[0, 1], [0, 1]])
     assert_raises(ValueError, chi2_contingency, obs)
+
     # A degenerate case: `observed` has size 0.
     obs = np.empty((0, 8))
     assert_raises(ValueError, chi2_contingency, obs)

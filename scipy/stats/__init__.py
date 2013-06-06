@@ -246,6 +246,7 @@ which work for masked arrays.
    ttest_rel
    kstest
    chisquare
+   power_divergence
    ks_2samp
    mannwhitneyu
    tiecorrect

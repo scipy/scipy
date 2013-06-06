@@ -1,13 +1,13 @@
 """Some functions for working with contingency tables (i.e. cross tabulations).
 """
 
-# Author: Warren Weckesser, Enthought, Inc.
 
 from __future__ import division, print_function, absolute_import
 
+from functools import reduce
 import numpy as np
 from scipy import special
-from functools import reduce
+from .stats import power_divergence
 
 
 __all__ = ['margins', 'expected_freq', 'chi2_contingency']
@@ -108,7 +108,7 @@ def expected_freq(observed):
     return expected
 
 
-def chi2_contingency(observed, correction=True):
+def chi2_contingency(observed, correction=True, lambda_=None):
     """Chi-square test of independence of variables in a contingency table.
 
     This function computes the chi-square statistic and p-value for the
@@ -129,16 +129,18 @@ def chi2_contingency(observed, correction=True):
         case, the table is often described as an "R x C table".
     correction : bool, optional
         If True, *and* the degrees of freedom is 1, apply Yates' correction
-        for continuity.
+        for continuity.  The effect of the correction is to adjust each
+        observed value by 0.5 towards the corresponding expected value.
+    lambda_ : float or str, optional.
+        By default, the statistic computed in this test is Pearson's
+        chi-squared statistic [2]_.  `lambda_` allows a statistic from the
+        Cressie-Read power divergence family [3]_ to be used instead.  See
+        `power_divergence` for details.
 
     Returns
     -------
     chi2 : float
-        The chi-square test statistic.  Without the Yates' correction, this
-        is the sum of the squares of the observed values minus the expected
-        values, divided by the expected values.  With Yates' correction,
-        0.5 is subtracted from the squared differences before dividing by
-        the expected values.
+        The test statistic.
     p : float
         The p-value of the test
     dof : int
@@ -151,6 +153,7 @@ def chi2_contingency(observed, correction=True):
     contingency.expected_freq
     fisher_exact
     chisquare
+    power_divergence
 
     Notes
     -----
@@ -180,9 +183,16 @@ def chi2_contingency(observed, correction=True):
         (chi2, p) == stats.chisquare(obs.ravel(), f_exp=ex.ravel(),
                                      ddof=obs.size - 1 - dof)
 
+    The `lambda_` argument was added in version 0.13.0 of scipy.
+
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Contingency_table
+    .. [1] "Contingency table", http://en.wikipedia.org/wiki/Contingency_table
+    .. [2] "Pearson's chi-squared test",
+           http://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
+    .. [3] Cressie, N. and Read, T. R. C., "Multinomial Goodness-of-Fit
+           Tests", J. Royal Stat. Soc. Series B, Vol. 46, No. 3 (1984),
+           pp. 440-464.
 
     Examples
     --------
@@ -195,6 +205,13 @@ def chi2_contingency(observed, correction=True):
      2,
      array([[ 12.,  12.,  16.],
             [ 18.,  18.,  24.]]))
+
+    Perform the test using the log-likelihood ratio (i.e. the "G-test")
+    instead of Pearson's chi-squared statistic.
+
+    >>> g, p, dof, expctd = chi2_contingency(obs, lambda_="log-likelihood")
+    >>> g, p
+    (2.7688587616781319, 0.25046668010954165)
 
     A four-way example (2 x 2 x 2 x 2):
 
@@ -245,11 +262,11 @@ def chi2_contingency(observed, correction=True):
         p = 1.0
     else:
         if dof == 1 and correction:
-            # Use Yates' correction for continuity.
-            chi2 = ((np.abs(observed - expected) - 0.5) ** 2 / expected).sum()
-        else:
-            # Regular chi-square--no correction.
-            chi2 = ((observed - expected) ** 2 / expected).sum()
-        p = special.chdtrc(dof, chi2)
+            # Adjust `observed` according to Yates' correction for continuity.
+            observed = observed + 0.5 * np.sign(expected - observed)
+
+        chi2, p = power_divergence(observed, expected,
+                                   ddof=observed.size - 1 - dof, axis=None,
+                                   lambda_=lambda_)
 
     return chi2, p, dof, expected
