@@ -3553,7 +3553,7 @@ class erlang_gen(gamma_gen):
 
     def _argcheck(self, a):
         allint = np.all(np.floor(a) == a)
-        allpos = np.all(a > 0) 
+        allpos = np.all(a > 0)
         if not allint:
             # An Erlang distribution shouldn't really have a non-integer
             # shape parameter, so warn the user.
@@ -3583,7 +3583,7 @@ class erlang_gen(gamma_gen):
         When fitting the distribution, it will generally return a non-integer
         value for the shape parameter.  By using the keyword argument
         `f0=<integer>`, the fit method can be constrained to fit the data to
-        a specifc integer shape parameter. 
+        a specific integer shape parameter.
         """)
 erlang = erlang_gen(a=0.0, name='erlang', shapes='a')
 
@@ -4572,12 +4572,12 @@ class maxwell_gen(rv_continuous):
     Notes
     -----
     A special case of a `chi` distribution,  with ``df = 3``, ``loc = 0.0``,
-    and given ``scale = 1.0 / sqrt(a)``, where a is the parameter used in
-    the Mathworld description [1]_.
+    and given ``scale = a``, where ``a`` is the parameter used in the
+    Mathworld description [1]_.
 
     The probability density function for `maxwell` is::
 
-        maxwell.pdf(x, a) = sqrt(2/pi)x**2 * exp(-x**2/2)
+        maxwell.pdf(x) = sqrt(2/pi)x**2 * exp(-x**2/2)
 
     for ``x > 0``.
 
