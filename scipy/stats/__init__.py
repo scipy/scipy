@@ -188,6 +188,9 @@ which work for masked arrays.
    tmax              --
    tstd              --
    tsem              --
+   nanmean           -- Mean, ignoring NaN values
+   nanstd            -- Standard deviation, ignoring NaN values
+   nanmedian         -- Median, ignoring NaN values
    variation         -- Coefficient of variation
 
 .. autosummary::
