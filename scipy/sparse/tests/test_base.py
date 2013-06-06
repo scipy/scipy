@@ -374,26 +374,49 @@ class _TestCommon:
         assert_(B is C)
 
     def test_mul_scalar(self):
-        assert_array_equal(self.dat*2,(self.datsp*2).todense())
-        assert_array_equal(self.dat*17.3,(self.datsp*17.3).todense())
+        def check(dat, datsp):
+            assert_array_equal(dat*2,(datsp*2).todense())
+            assert_array_equal(dat*17.3,(datsp*17.3).todense())
+
+        for dtype in self.supported_dtypes:
+            # TODO show somehow in testing that int data case is
+            # skipped.
+            if dtype == np.typeDict['int']:
+                continue
+            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_rmul_scalar(self):
-        assert_array_equal(2*self.dat,(2*self.datsp).todense())
-        assert_array_equal(17.3*self.dat,(17.3*self.datsp).todense())
+        def check(dat, datsp):
+            assert_array_equal(2*self.dat,(2*self.datsp).todense())
+            assert_array_equal(17.3*self.dat,(17.3*self.datsp).todense())
+        
+        for dtype in self.supported_dtypes:
+            # TODO show int is skipped.
+            if dtype == np.typeDict['int']:
+                continue
+            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_add(self):
-        a = self.dat.copy()
-        a[0,2] = 2.0
-        b = self.datsp
-        c = b + a
-        assert_array_equal(c,[[2,0,2,4],[6,0,2,0],[0,4,0,0]])
+        def check(dat, datsp):
+            a = dat.copy()
+            a[0,2] = 2.0
+            b = datsp
+            c = b + a
+            assert_array_equal(c, b.todense() + a)
+
+        for dtype in self.supported_dtypes:
+            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_radd(self):
-        a = self.dat.copy()
-        a[0,2] = 2.0
-        b = self.datsp
-        c = a + b
-        assert_array_equal(c,[[2,0,2,4],[6,0,2,0],[0,4,0,0]])
+        def check(dat, datsp):
+            a = self.dat.copy()
+            a[0,2] = 2.0
+            b = self.datsp
+            c = a + b
+            assert_array_equal(c, a + b.todense())
+
+        for dtype in self.supported_dtypes:
+            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_sub(self):
         assert_array_equal((self.datsp - self.datsp).todense(),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
