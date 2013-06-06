@@ -56,9 +56,9 @@ warnings.simplefilter('ignore', ComplexWarning)
 # TODO test has_sorted_indices
 class _TestCommon:
     """test common functionality shared by all sparse formats"""
+    supported_dtypes = supported_dtypes
 
     def __init__(self):
-        self.supported_dtypes = supported_dtypes
         # Cannonical data.
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
@@ -1639,6 +1639,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csr_matrix
+    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
 
     def test_constructor1(self):
         b = matrix([[0,4,0],
@@ -1777,6 +1778,7 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
 class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csc_matrix
+    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
 
     def test_constructor1(self):
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
@@ -1903,6 +1905,7 @@ class TestDOK(sparse_test_class(slicing=False,
                                 fancy_assign=False,
                                 minmax=False)):
     spmatrix = dok_matrix
+    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
 
     def test_mult(self):
         A = dok_matrix((10,10))
@@ -2047,6 +2050,7 @@ class TestDOK(sparse_test_class(slicing=False,
 
 class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix
+    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
 
     def test_dot(self):
         A = matrix(zeros((10,10)))
@@ -2159,6 +2163,7 @@ class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spmatrix = coo_matrix
+    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
 
     def test_constructor1(self):
         # unsorted triplet format
@@ -2219,6 +2224,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                                 fancy_indexing=False, fancy_assign=False,
                                 minmax=False)):
     spmatrix = dia_matrix
+    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
 
     def test_constructor1(self):
         D = matrix([[1, 0, 3, 0],
@@ -2238,6 +2244,7 @@ class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spmatrix = bsr_matrix
+    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
 
     def test_constructor1(self):
         # check native BSR format constructor
