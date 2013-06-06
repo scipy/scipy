@@ -379,20 +379,29 @@ class _TestCommon:
             assert_array_equal(dat*17.3,(datsp*17.3).todense())
 
         for dtype in self.supported_dtypes:
-            # TODO show somehow in testing that int data case is
-            # skipped.
-            if dtype == np.typeDict['int']:
+            if (dtype == np.typeDict['int']) and (
+                    (self.__class__.__name__ == "TestLIL") or 
+                    (self.__class__.__name__ == "TestDOK")):
+                yield dec.knownfailureif(
+                        True, 
+                        "LIL and DOK type's __mul__ method has problems with int data."
+                        )(check)
                 continue
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_rmul_scalar(self):
         def check(dat, datsp):
-            assert_array_equal(2*self.dat,(2*self.datsp).todense())
-            assert_array_equal(17.3*self.dat,(17.3*self.datsp).todense())
+            assert_array_equal(2*dat,(2*datsp).todense())
+            assert_array_equal(17.3*dat,(17.3*datsp).todense())
         
         for dtype in self.supported_dtypes:
-            # TODO show int is skipped.
-            if dtype == np.typeDict['int']:
+            if (dtype == np.typeDict['int']) and (
+                    (self.__class__.__name__ == "TestLIL") or 
+                    (self.__class__.__name__ == "TestDOK")):
+                yield dec.knownfailureif(
+                        True, 
+                        "LIL and DOK type's __rmul__ method has problems with int data."
+                        )(check)
                 continue
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
