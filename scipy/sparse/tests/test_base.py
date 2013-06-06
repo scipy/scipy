@@ -198,10 +198,13 @@ class _TestCommon:
         assert_array_almost_equal((sNexp - Nexp), zeros((3, 3)))
 
     def test_inv(self):
-        M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
-        sM = self.spmatrix(M, shape=(3,3), dtype=float)
-        sMinv = inv(sM)
-        assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
+        def check(dtype):
+            M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], dtype)
+            sM = self.spmatrix(M, shape=(3,3), dtype=dtype)
+            sMinv = inv(sM)
+            assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
+        for dtype in [ float, bool ]:
+            yield check, dtype
 
     def test_from_array(self):
         A = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
@@ -350,6 +353,8 @@ class _TestCommon:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=np.ComplexWarning)
 
+            # Note this is global supported_dtypes imported from 
+            # sputils, not self.suppoted_dtypes.
             for x in supported_dtypes:
                 assert_equal(S.astype(x).dtype, D.astype(x).dtype)  # correct type
                 assert_equal(S.astype(x).toarray(), D.astype(x))        # correct values
@@ -1467,6 +1472,8 @@ class _TestArithmetic:
         assert_array_equal((self.__Asp+self.__Bsp).todense(),self.__A+self.__B)
 
         # check conversions
+        # Note this is global supported_dtypes imported from sputils, 
+        # not self.suppoted_dtypes.
         for x in supported_dtypes:
             A = self.__A.astype(x)
             Asp = self.spmatrix(A)
@@ -1501,6 +1508,8 @@ class _TestArithmetic:
         # basic tests
         assert_array_equal((self.__Asp*self.__Bsp.T).todense(),self.__A*self.__B.T)
 
+        # Note this is global supported_dtypes imported from sputils, 
+        # not self.suppoted_dtypes.
         for x in supported_dtypes:
             A = self.__A.astype(x)
             Asp = self.spmatrix(A)
@@ -1639,7 +1648,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csr_matrix
-    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
+    supported_dtypes = [ np.typeDict[x] for x in [ 'bool', 'int', 'float' ] ]
 
     def test_constructor1(self):
         b = matrix([[0,4,0],
@@ -1778,7 +1787,7 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
 class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csc_matrix
-    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
+    supported_dtypes = [ np.typeDict[x] for x in [ 'bool', 'int', 'float' ] ]
 
     def test_constructor1(self):
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
