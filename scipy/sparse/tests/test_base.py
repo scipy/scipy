@@ -366,7 +366,10 @@ class _TestCommon:
         assert_(B is C)
 
     def test_mul_scalar(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             assert_array_equal(dat*2,(datsp*2).todense())
             assert_array_equal(dat*17.3,(datsp*17.3).todense())
 
@@ -375,12 +378,13 @@ class _TestCommon:
                     (self.__class__ == TestLIL or
                      self.__class__ == TestDOK))
             msg = "LIL and DOK type's __mul__ method has problems with int data."
-            yield (dec.knownfailureif(fails, msg)(check),
-                   self.dat_dtypes[dtype],
-                   self.datsp_dtypes[dtype])
+            yield dec.knownfailureif(fails, msg)(check), dtype
 
     def test_rmul_scalar(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             assert_array_equal(2*dat,(2*datsp).todense())
             assert_array_equal(17.3*dat,(17.3*datsp).todense())
 
@@ -389,12 +393,13 @@ class _TestCommon:
                     (self.__class__ == TestLIL or
                      self.__class__ == TestDOK))
             msg = "LIL and DOK type's __rmul__ method has problems with int data."
-            yield (dec.knownfailureif(fails, msg)(check),
-                   self.dat_dtypes[dtype],
-                   self.datsp_dtypes[dtype])
+            yield dec.knownfailureif(fails, msg)(check), dtype
 
     def test_add(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             a = dat.copy()
             a[0,2] = 2.0
             b = datsp
@@ -402,10 +407,13 @@ class _TestCommon:
             assert_array_equal(c, b.todense() + a)
 
         for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            yield check, dtype
 
     def test_radd(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             a = self.dat.copy()
             a[0,2] = 2.0
             b = self.datsp
@@ -413,10 +421,13 @@ class _TestCommon:
             assert_array_equal(c, a + b.todense())
 
         for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            yield check, dtype
 
     def test_sub(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             assert_array_equal((datsp - datsp).todense(),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
 
             A = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
@@ -424,10 +435,13 @@ class _TestCommon:
             assert_array_equal((A - datsp).todense(),A.todense() - dat)
 
         for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            yield check, dtype
 
     def test_rsub(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             assert_array_equal((dat - datsp),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
             assert_array_equal((datsp - dat),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
 
@@ -438,10 +452,13 @@ class _TestCommon:
             assert_array_equal(datsp - A.todense(),dat - A.todense())
 
         for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            yield check, dtype
 
     def test_add0(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             # Adding 0 to a sparse matrix
             assert_array_equal((datsp + 0).todense(), dat)
             # use sum (which takes 0 as a starting value)
@@ -450,7 +467,7 @@ class _TestCommon:
             assert_almost_equal(sumS.todense(), sumD)
 
         for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            yield check, dtype
 
     def test_elementwise_multiply(self):
         # real/real
@@ -701,7 +718,10 @@ class _TestCommon:
                     assert_equal(fn(blocksize=(X,Y)).todense(), A)
 
     def test_transpose(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             a = datsp.transpose()
             b = dat.transpose()
             assert_array_equal(a.todense(), b)
@@ -710,10 +730,13 @@ class _TestCommon:
             assert_array_equal(self.spmatrix((3,4)).T.todense(), zeros((4,3)))
 
         for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            yield check, dtype
 
     def test_add_dense(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             # adding a dense matrix to a sparse matrix
             sum1 = dat + datsp
             assert_array_equal(sum1, dat + dat)
@@ -721,11 +744,14 @@ class _TestCommon:
             assert_array_equal(sum2, dat + dat)
 
         for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            yield check, dtype
 
     def test_sub_dense(self):
         # subtracting a dense matrix to/from a sparse matrix
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             # Behavior is different for bool.
             if dat.dtype == bool:
                 sum1 = dat - datsp
@@ -741,7 +767,7 @@ class _TestCommon:
                 assert_array_equal(sum2, dat + dat)
 
         for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            yield check, dtype
 
     def test_copy(self):
         # Check whether the copy=True and copy=False keywords work
@@ -804,7 +830,10 @@ class _TestCommon:
 
 class _TestInplaceArithmetic:
     def test_imul_scalar(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             a = datsp.copy()
             a *= 2
             b = dat.copy()
@@ -818,10 +847,13 @@ class _TestInplaceArithmetic:
             assert_array_equal(b, a.todense())
 
         for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            yield check, dtype
 
     def test_idiv_scalar(self):
-        def check(dat, datsp):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
             a = datsp.copy()
             a /= 2
             b = dat.copy()
@@ -835,7 +867,7 @@ class _TestInplaceArithmetic:
             assert_array_equal(b, a.todense())
 
         for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            yield check, dtype
 
 
 class _TestGetSet:
