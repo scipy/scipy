@@ -379,15 +379,13 @@ class _TestCommon:
             assert_array_equal(dat*17.3,(datsp*17.3).todense())
 
         for dtype in self.supported_dtypes:
-            if (dtype == np.typeDict['int']) and (
-                    (self.__class__.__name__ == "TestLIL") or
-                    (self.__class__.__name__ == "TestDOK")):
-                yield dec.knownfailureif(
-                        True,
-                        "LIL and DOK type's __mul__ method has problems with int data."
-                        )(check)
-                continue
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            fails = ((dtype == np.typeDict['int']) and 
+                    (self.__class__ == TestLIL or
+                     self.__class__ == TestDOK))
+            msg = "LIL and DOK type's __mul__ method has problems with int data."
+            yield (dec.knownfailureif(fails, msg)(check),
+                   self.dat_dtypes[dtype],
+                   self.datsp_dtypes[dtype])
 
     def test_rmul_scalar(self):
         def check(dat, datsp):
@@ -395,15 +393,13 @@ class _TestCommon:
             assert_array_equal(17.3*dat,(17.3*datsp).todense())
 
         for dtype in self.supported_dtypes:
-            if (dtype == np.typeDict['int']) and (
-                    (self.__class__.__name__ == "TestLIL") or
-                    (self.__class__.__name__ == "TestDOK")):
-                yield dec.knownfailureif(
-                        True,
-                        "LIL and DOK type's __rmul__ method has problems with int data."
-                        )(check)
-                continue
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+            fails = ((dtype == np.typeDict['int']) and 
+                    (self.__class__ == TestLIL or
+                     self.__class__ == TestDOK))
+            msg = "LIL and DOK type's __rmul__ method has problems with int data."
+            yield (dec.knownfailureif(fails, msg)(check),
+                   self.dat_dtypes[dtype],
+                   self.datsp_dtypes[dtype])
 
     def test_add(self):
         def check(dat, datsp):
