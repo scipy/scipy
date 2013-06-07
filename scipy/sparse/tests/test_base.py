@@ -56,7 +56,7 @@ warnings.simplefilter('ignore', ComplexWarning)
 # TODO test has_sorted_indices
 class _TestCommon:
     """test common functionality shared by all sparse formats"""
-    supported_dtypes = supported_dtypes
+    checked_dtypes = supported_dtypes
 
     def __init__(self):
         # Cannonical data.
@@ -67,7 +67,7 @@ class _TestCommon:
         # dtype.
         self.dat_dtypes = {}
         self.datsp_dtypes = {}
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             self.dat_dtypes[dtype] = self.dat.astype(dtype)
             self.datsp_dtypes[dtype] = self.spmatrix(self.dat.astype(dtype))
 
@@ -171,7 +171,7 @@ class _TestCommon:
             assert_array_equal(dat.sum(axis=None), datsp.sum(axis=None))
             assert_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
             assert_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_mean(self):
@@ -181,7 +181,7 @@ class _TestCommon:
             assert_array_equal(dat.mean(axis=None), datsp.mean(axis=None))
             assert_almost_equal(dat.mean(axis=0), datsp.mean(axis=0))
             assert_almost_equal(dat.mean(axis=1), datsp.mean(axis=1))
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_expm(self):
@@ -353,8 +353,6 @@ class _TestCommon:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=np.ComplexWarning)
 
-            # Note this is global supported_dtypes imported from
-            # sputils, not self.suppoted_dtypes.
             for x in supported_dtypes:
                 assert_equal(S.astype(x).dtype, D.astype(x).dtype)  # correct type
                 assert_equal(S.astype(x).toarray(), D.astype(x))        # correct values
@@ -378,7 +376,7 @@ class _TestCommon:
             assert_array_equal(dat*2,(datsp*2).todense())
             assert_array_equal(dat*17.3,(datsp*17.3).todense())
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             fails = ((dtype == np.typeDict['int']) and 
                     (self.__class__ == TestLIL or
                      self.__class__ == TestDOK))
@@ -392,7 +390,7 @@ class _TestCommon:
             assert_array_equal(2*dat,(2*datsp).todense())
             assert_array_equal(17.3*dat,(17.3*datsp).todense())
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             fails = ((dtype == np.typeDict['int']) and 
                     (self.__class__ == TestLIL or
                      self.__class__ == TestDOK))
@@ -409,7 +407,7 @@ class _TestCommon:
             c = b + a
             assert_array_equal(c, b.todense() + a)
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_radd(self):
@@ -420,7 +418,7 @@ class _TestCommon:
             c = a + b
             assert_array_equal(c, a + b.todense())
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_sub(self):
@@ -431,7 +429,7 @@ class _TestCommon:
             assert_array_equal((datsp - A).todense(),dat - A.todense())
             assert_array_equal((A - datsp).todense(),A.todense() - dat)
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_rsub(self):
@@ -445,7 +443,7 @@ class _TestCommon:
             assert_array_equal(A.todense() - datsp,A.todense() - dat)
             assert_array_equal(datsp - A.todense(),dat - A.todense())
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_add0(self):
@@ -457,7 +455,7 @@ class _TestCommon:
             sumD = sum([k * dat for k in range(1, 3)])
             assert_almost_equal(sumS.todense(), sumD)
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_elementwise_multiply(self):
@@ -717,7 +715,7 @@ class _TestCommon:
 
             assert_array_equal(self.spmatrix((3,4)).T.todense(), zeros((4,3)))
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_add_dense(self):
@@ -728,7 +726,7 @@ class _TestCommon:
             sum2 = datsp + dat
             assert_array_equal(sum2, dat + dat)
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_sub_dense(self):
@@ -748,7 +746,7 @@ class _TestCommon:
                 sum2 = (datsp + datsp + datsp) - dat
                 assert_array_equal(sum2, dat + dat)
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_copy(self):
@@ -825,7 +823,7 @@ class _TestInplaceArithmetic:
             b *= 17.3
             assert_array_equal(b, a.todense())
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
     def test_idiv_scalar(self):
@@ -842,7 +840,7 @@ class _TestInplaceArithmetic:
             b /= 17.3
             assert_array_equal(b, a.todense())
 
-        for dtype in self.supported_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
 
 
@@ -1549,8 +1547,6 @@ class _TestArithmetic:
         assert_array_equal((self.__Asp+self.__Bsp).todense(),self.__A+self.__B)
 
         # check conversions
-        # Note this is global supported_dtypes imported from sputils,
-        # not self.suppoted_dtypes.
         for x in supported_dtypes:
             A = self.__A.astype(x)
             Asp = self.spmatrix(A)
@@ -1585,8 +1581,6 @@ class _TestArithmetic:
         # basic tests
         assert_array_equal((self.__Asp*self.__Bsp.T).todense(),self.__A*self.__B.T)
 
-        # Note this is global supported_dtypes imported from sputils,
-        # not self.suppoted_dtypes.
         for x in supported_dtypes:
             A = self.__A.astype(x)
             Asp = self.spmatrix(A)
@@ -1725,7 +1719,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csr_matrix
-    supported_dtypes = [np.typeDict[x] for x in ['bool', 'int', 'float']]
+    checked_dtypes = [np.typeDict[x] for x in ['bool', 'int', 'float']]
 
     def test_constructor1(self):
         b = matrix([[0,4,0],
@@ -1864,7 +1858,7 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
 class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csc_matrix
-    supported_dtypes = [np.typeDict[x] for x in ['bool', 'int', 'float']]
+    checked_dtypes = [np.typeDict[x] for x in ['bool', 'int', 'float']]
 
     def test_constructor1(self):
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
@@ -1991,7 +1985,7 @@ class TestDOK(sparse_test_class(slicing=False,
                                 fancy_assign=False,
                                 minmax=False)):
     spmatrix = dok_matrix
-    supported_dtypes = [np.typeDict[x] for x in ['int', 'float']]
+    checked_dtypes = [np.typeDict[x] for x in ['int', 'float']]
 
     def test_mult(self):
         A = dok_matrix((10,10))
@@ -2136,7 +2130,7 @@ class TestDOK(sparse_test_class(slicing=False,
 
 class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix
-    supported_dtypes = [np.typeDict[x] for x in ['int', 'float']]
+    checked_dtypes = [np.typeDict[x] for x in ['int', 'float']]
 
     def test_dot(self):
         A = matrix(zeros((10,10)))
@@ -2249,7 +2243,7 @@ class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spmatrix = coo_matrix
-    supported_dtypes = [np.typeDict[x] for x in ['int', 'float']]
+    checked_dtypes = [np.typeDict[x] for x in ['int', 'float']]
 
     def test_constructor1(self):
         # unsorted triplet format
@@ -2310,7 +2304,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                                 fancy_indexing=False, fancy_assign=False,
                                 minmax=False)):
     spmatrix = dia_matrix
-    supported_dtypes = [np.typeDict[x] for x in ['int', 'float']]
+    checked_dtypes = [np.typeDict[x] for x in ['int', 'float']]
 
     def test_constructor1(self):
         D = matrix([[1, 0, 3, 0],
@@ -2330,7 +2324,7 @@ class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spmatrix = bsr_matrix
-    supported_dtypes = [np.typeDict[x] for x in ['int', 'float']]
+    checked_dtypes = [np.typeDict[x] for x in ['int', 'float']]
 
     def test_constructor1(self):
         # check native BSR format constructor
