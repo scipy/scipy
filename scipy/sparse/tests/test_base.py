@@ -165,24 +165,18 @@ class _TestCommon:
         assert_array_equal(self.datsp.getcol(-1).todense(), self.dat[:,-1])
 
     def test_sum(self):
-        def check(dat, datsp):
-            # Does the matrix's .sum(axis=...) method work?
-            assert_array_equal(dat.sum(), datsp.sum())
-            assert_array_equal(dat.sum(axis=None), datsp.sum(axis=None))
-            assert_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
-            assert_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
-        for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+        # Does the matrix's .sum(axis=...) method work?
+        assert_array_equal(self.dat.sum(), self.datsp.sum())
+        assert_array_equal(self.dat.sum(axis=None), self.datsp.sum(axis=None))
+        assert_almost_equal(self.dat.sum(axis=0), self.datsp.sum(axis=0))
+        assert_almost_equal(self.dat.sum(axis=1), self.datsp.sum(axis=1))
 
     def test_mean(self):
-        def check(dat, datsp):
-            # Does the matrix's .mean(axis=...) method work?
-            assert_array_equal(dat.mean(), datsp.mean())
-            assert_array_equal(dat.mean(axis=None), datsp.mean(axis=None))
-            assert_almost_equal(dat.mean(axis=0), datsp.mean(axis=0))
-            assert_almost_equal(dat.mean(axis=1), datsp.mean(axis=1))
-        for dtype in self.checked_dtypes:
-            yield check, self.dat_dtypes[dtype], self.datsp_dtypes[dtype]
+        # Does the matrix's .mean(axis=...) method work?
+        assert_array_equal(self.dat.mean(), self.datsp.mean())
+        assert_array_equal(self.dat.mean(axis=None), self.datsp.mean(axis=None))
+        assert_almost_equal(self.dat.mean(axis=0), self.datsp.mean(axis=0))
+        assert_almost_equal(self.dat.mean(axis=1), self.datsp.mean(axis=1))
 
     def test_expm(self):
         M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
