@@ -1713,7 +1713,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csr_matrix
-    checked_dtypes = [np.typeDict[x] for x in ['bool', 'int', 'float']]
+    checked_dtypes = [np.bool_, np.int_, np.float_]
 
     def test_constructor1(self):
         b = matrix([[0,4,0],
@@ -1852,7 +1852,7 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
 class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csc_matrix
-    checked_dtypes = [np.typeDict[x] for x in ['bool', 'int', 'float']]
+    checked_dtypes = [np.bool_, np.int_, np.float_]
 
     def test_constructor1(self):
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
