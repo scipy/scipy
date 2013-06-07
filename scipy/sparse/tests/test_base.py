@@ -203,7 +203,7 @@ class _TestCommon:
             sM = self.spmatrix(M, shape=(3,3), dtype=dtype)
             sMinv = inv(sM)
             assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
-        for dtype in [ float, bool ]:
+        for dtype in [float, bool]:
             yield check, dtype
 
     def test_from_array(self):
@@ -353,7 +353,7 @@ class _TestCommon:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=np.ComplexWarning)
 
-            # Note this is global supported_dtypes imported from 
+            # Note this is global supported_dtypes imported from
             # sputils, not self.suppoted_dtypes.
             for x in supported_dtypes:
                 assert_equal(S.astype(x).dtype, D.astype(x).dtype)  # correct type
@@ -380,10 +380,10 @@ class _TestCommon:
 
         for dtype in self.supported_dtypes:
             if (dtype == np.typeDict['int']) and (
-                    (self.__class__.__name__ == "TestLIL") or 
+                    (self.__class__.__name__ == "TestLIL") or
                     (self.__class__.__name__ == "TestDOK")):
                 yield dec.knownfailureif(
-                        True, 
+                        True,
                         "LIL and DOK type's __mul__ method has problems with int data."
                         )(check)
                 continue
@@ -393,13 +393,13 @@ class _TestCommon:
         def check(dat, datsp):
             assert_array_equal(2*dat,(2*datsp).todense())
             assert_array_equal(17.3*dat,(17.3*datsp).todense())
-        
+
         for dtype in self.supported_dtypes:
             if (dtype == np.typeDict['int']) and (
-                    (self.__class__.__name__ == "TestLIL") or 
+                    (self.__class__.__name__ == "TestLIL") or
                     (self.__class__.__name__ == "TestDOK")):
                 yield dec.knownfailureif(
-                        True, 
+                        True,
                         "LIL and DOK type's __rmul__ method has problems with int data."
                         )(check)
                 continue
@@ -1553,7 +1553,7 @@ class _TestArithmetic:
         assert_array_equal((self.__Asp+self.__Bsp).todense(),self.__A+self.__B)
 
         # check conversions
-        # Note this is global supported_dtypes imported from sputils, 
+        # Note this is global supported_dtypes imported from sputils,
         # not self.suppoted_dtypes.
         for x in supported_dtypes:
             A = self.__A.astype(x)
@@ -1589,7 +1589,7 @@ class _TestArithmetic:
         # basic tests
         assert_array_equal((self.__Asp*self.__Bsp.T).todense(),self.__A*self.__B.T)
 
-        # Note this is global supported_dtypes imported from sputils, 
+        # Note this is global supported_dtypes imported from sputils,
         # not self.suppoted_dtypes.
         for x in supported_dtypes:
             A = self.__A.astype(x)
@@ -1729,7 +1729,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csr_matrix
-    supported_dtypes = [ np.typeDict[x] for x in [ 'bool', 'int', 'float' ] ]
+    supported_dtypes = [np.typeDict[x] for x in ['bool', 'int', 'float']]
 
     def test_constructor1(self):
         b = matrix([[0,4,0],
@@ -1868,7 +1868,7 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
 class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csc_matrix
-    supported_dtypes = [ np.typeDict[x] for x in [ 'bool', 'int', 'float' ] ]
+    supported_dtypes = [np.typeDict[x] for x in ['bool', 'int', 'float']]
 
     def test_constructor1(self):
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
@@ -1995,7 +1995,7 @@ class TestDOK(sparse_test_class(slicing=False,
                                 fancy_assign=False,
                                 minmax=False)):
     spmatrix = dok_matrix
-    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
+    supported_dtypes = [np.typeDict[x] for x in ['int', 'float']]
 
     def test_mult(self):
         A = dok_matrix((10,10))
@@ -2140,7 +2140,7 @@ class TestDOK(sparse_test_class(slicing=False,
 
 class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix
-    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
+    supported_dtypes = [np.typeDict[x] for x in ['int', 'float']]
 
     def test_dot(self):
         A = matrix(zeros((10,10)))
@@ -2253,7 +2253,7 @@ class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spmatrix = coo_matrix
-    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
+    supported_dtypes = [np.typeDict[x] for x in ['int', 'float']]
 
     def test_constructor1(self):
         # unsorted triplet format
@@ -2314,7 +2314,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                                 fancy_indexing=False, fancy_assign=False,
                                 minmax=False)):
     spmatrix = dia_matrix
-    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
+    supported_dtypes = [np.typeDict[x] for x in ['int', 'float']]
 
     def test_constructor1(self):
         D = matrix([[1, 0, 3, 0],
@@ -2334,7 +2334,7 @@ class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spmatrix = bsr_matrix
-    supported_dtypes = [ np.typeDict[x] for x in [ 'int', 'float' ] ]
+    supported_dtypes = [np.typeDict[x] for x in ['int', 'float']]
 
     def test_constructor1(self):
         # check native BSR format constructor
