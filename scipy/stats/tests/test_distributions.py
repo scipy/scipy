@@ -311,7 +311,8 @@ class TestLoggamma(TestCase):
             ]).reshape(-1, 5)
         for c, mean, var, skew, kurt in table:
             computed = stats.loggamma.stats(c, moments='msvk')
-            assert_array_almost_equal(computed, [mean, var, skew, kurt], decimal=4)
+            assert_array_almost_equal(computed, [mean, var, skew, kurt],
+                                      decimal=4)
 
 
 class TestLogser(TestCase):
