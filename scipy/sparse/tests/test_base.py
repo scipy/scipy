@@ -166,28 +166,40 @@ class _TestCommon:
 
     def test_sum(self):
         def check(dtype):
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            
+            dat = np.matrix([[0, 1, 2],
+                            [3, -4, 5],
+                            [-6, 7, 9]], dtype=dtype)
+            datsp = self.spmatrix(dat, dtype=dtype)
+
             # Does the matrix's .sum(axis=...) method work?
-            assert_array_equal(dat.sum(), datsp.sum())
-            assert_array_equal(dat.sum(axis=None), datsp.sum(axis=None))
-            assert_array_equal(dat.sum(axis=0), datsp.sum(axis=0))
-            assert_array_equal(dat.sum(axis=1), datsp.sum(axis=1))
+            assert_array_almost_equal(dat.sum(), datsp.sum())
+            assert_equal(dat.sum().dtype, datsp.sum().dtype)
+            assert_array_almost_equal(dat.sum(axis=None), datsp.sum(axis=None))
+            assert_equal(dat.sum(axis=None).dtype, datsp.sum(axis=None).dtype)
+            assert_array_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
+            assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
+            assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
+            assert_equal(dat.sum(axis=1).dtype, datsp.sum(axis=1).dtype)
 
         for dtype in self.checked_dtypes:
             yield check, dtype
 
     def test_mean(self):
         def check(dtype):
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
+            dat = np.matrix([[0, 1, 2],
+                            [3, -4, 5],
+                            [-6, 7, 9]], dtype=dtype)
+            datsp = self.spmatrix(dat, dtype=dtype)
 
             # Does the matrix's .mean(axis=...) method work?
-            assert_array_equal(dat.mean(), datsp.mean())
-            assert_array_equal(dat.mean(axis=None), datsp.mean(axis=None))
-            assert_array_equal(dat.mean(axis=0), datsp.mean(axis=0))
-            assert_array_equal(dat.mean(axis=1), datsp.mean(axis=1))
+            assert_array_almost_equal(dat.mean(), datsp.mean())
+            assert_equal(dat.mean().dtype, datsp.mean().dtype)
+            assert_array_almost_equal(dat.mean(axis=None), datsp.mean(axis=None))
+            assert_equal(dat.mean(axis=None).dtype, datsp.mean(axis=None).dtype)
+            assert_array_almost_equal(dat.mean(axis=0), datsp.mean(axis=0))
+            assert_equal(dat.mean(axis=0).dtype, datsp.mean(axis=0).dtype)
+            assert_array_almost_equal(dat.mean(axis=1), datsp.mean(axis=1))
+            assert_equal(dat.mean(axis=1).dtype, datsp.mean(axis=1).dtype)
 
         for dtype in self.checked_dtypes:
             yield check, dtype
@@ -388,7 +400,7 @@ class _TestCommon:
             assert_array_equal(dat*17.3,(datsp*17.3).todense())
 
         for dtype in self.checked_dtypes:
-            fails = ((dtype == np.typeDict['int']) and 
+            fails = ((dtype == np.typeDict['int']) and
                     (self.__class__ == TestLIL or
                      self.__class__ == TestDOK))
             msg = "LIL and DOK type's __mul__ method has problems with int data."
@@ -403,7 +415,7 @@ class _TestCommon:
             assert_array_equal(17.3*dat,(17.3*datsp).todense())
 
         for dtype in self.checked_dtypes:
-            fails = ((dtype == np.typeDict['int']) and 
+            fails = ((dtype == np.typeDict['int']) and
                     (self.__class__ == TestLIL or
                      self.__class__ == TestDOK))
             msg = "LIL and DOK type's __rmul__ method has problems with int data."
@@ -1759,7 +1771,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csr_matrix
-    checked_dtypes = [np.bool_, np.int_, np.float_]
+    checked_dtypes = [np.bool_, np.int_, np.float_, np.complex_]
 
     def test_constructor1(self):
         b = matrix([[0,4,0],
@@ -1898,7 +1910,7 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
 class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
                                 fancy_multidim_indexing=False)):
     spmatrix = csc_matrix
-    checked_dtypes = [np.bool_, np.int_, np.float_]
+    checked_dtypes = [np.bool_, np.int_, np.float_, np.complex_]
 
     def test_constructor1(self):
         b = matrix([[1,0,0,0],[0,0,1,0],[0,2,0,3]],'d')
@@ -2025,7 +2037,7 @@ class TestDOK(sparse_test_class(slicing=False,
                                 fancy_assign=False,
                                 minmax=False)):
     spmatrix = dok_matrix
-    checked_dtypes = [np.typeDict[x] for x in ['int', 'float']]
+    checked_dtypes = [np.int_, np.float_, np.complex_]
 
     def test_mult(self):
         A = dok_matrix((10,10))
@@ -2170,7 +2182,7 @@ class TestDOK(sparse_test_class(slicing=False,
 
 class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix
-    checked_dtypes = [np.typeDict[x] for x in ['int', 'float']]
+    checked_dtypes = [np.int_, np.float_, np.complex_]
 
     def test_dot(self):
         A = matrix(zeros((10,10)))
@@ -2283,7 +2295,7 @@ class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spmatrix = coo_matrix
-    checked_dtypes = [np.typeDict[x] for x in ['int', 'float']]
+    checked_dtypes = [np.int_, np.float_, np.complex_]
 
     def test_constructor1(self):
         # unsorted triplet format
@@ -2344,7 +2356,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                                 fancy_indexing=False, fancy_assign=False,
                                 minmax=False)):
     spmatrix = dia_matrix
-    checked_dtypes = [np.typeDict[x] for x in ['int', 'float']]
+    checked_dtypes = [np.int_, np.float_, np.complex_]
 
     def test_constructor1(self):
         D = matrix([[1, 0, 3, 0],
@@ -2364,7 +2376,7 @@ class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False)):
     spmatrix = bsr_matrix
-    checked_dtypes = [np.typeDict[x] for x in ['int', 'float']]
+    checked_dtypes = [np.int_, np.float_, np.complex_]
 
     def test_constructor1(self):
         # check native BSR format constructor
