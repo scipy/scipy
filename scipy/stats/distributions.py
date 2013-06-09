@@ -794,17 +794,14 @@ class rv_continuous(rv_generic):
     Parameters
     ----------
     momtype : int, optional
-        The type of generic moment calculation to use: 0 for pdf, 1 (default) for ppf.
+        The type of generic moment calculation to use: 0 for pdf, 1 (default)
+        for ppf.
     a : float, optional
         Lower bound of the support of the distribution, default is minus
         infinity.
     b : float, optional
         Upper bound of the support of the distribution, default is plus
         infinity.
-    xa : float, optional
-        DEPRECATED
-    xb : float, optional
-        DEPRECATED
     xtol : float, optional
         The tolerance for fixed point calculation for generic ppf.
     badvalue : object, optional
@@ -987,8 +984,8 @@ class rv_continuous(rv_generic):
 
     """
 
-    def __init__(self, momtype=1, a=None, b=None, xa=None, xb=None,
-                 xtol=1e-14, badvalue=None, name=None, longname=None,
+    def __init__(self, momtype=1, a=None, b=None, xtol=1e-14,
+                 badvalue=None, name=None, longname=None,
                  shapes=None, extradoc=None):
 
         rv_generic.__init__(self)
@@ -1005,14 +1002,6 @@ class rv_continuous(rv_generic):
             self.a = -inf
         if b is None:
             self.b = inf
-        if xa is not None:
-            warnings.warn("The `xa` parameter is deprecated and will be "
-                          "removed in scipy 0.12", DeprecationWarning)
-        if xb is not None:
-            warnings.warn("The `xb` parameter is deprecated and will be "
-                          "removed in scipy 0.12", DeprecationWarning)
-        self.xa = xa
-        self.xb = xb
         self.xtol = xtol
         self._size = 1
         self.m = 0.0
