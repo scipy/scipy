@@ -584,7 +584,7 @@ class rv_generic(object):
 
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
-    def rvs(self,*args,**kwds):
+    def rvs(self, *args, **kwds):
         """
         Random variates of given type.
 
@@ -612,7 +612,7 @@ class rv_generic(object):
 
         args, loc, scale, size = self._fix_loc_scale_kwarg3(args, loc, scale,
                                                             size)
-        cond = logical_and(self._argcheck(*args),(scale >= 0))
+        cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not all(cond):
             raise ValueError("Domain error in arguments.")
 
@@ -4535,22 +4535,23 @@ class gilbrat_gen(lognorm_gen):
 
     """
     def _rvs(self):
+        # needed to get at self._size
         return lognorm_gen._rvs(self, 1.0)
 
     def _pdf(self, x):
-        return lognorm_gen._pdf(self, x, 1.0)
+        return lognorm._pdf(x, 1.0)
 
     def _logpdf(self, x):
-        return lognorm_gen._logpdf(self, x, 1.0)
+        return lognorm._logpdf(x, 1.0)
 
     def _cdf(self, x):
-        return lognorm_gen._cdf(self, x, 1.0)
+        return lognorm._cdf(x, 1.0)
 
     def _ppf(self, q):
-        return lognorm_gen._ppf(self, q, 1.0)
+        return lognorm._ppf(q, 1.0)
 
     def _stats(self):
-        return lognorm_gen._stats(self, 1.0)
+        return lognorm._stats(1.0)
 
     def _entropy(self):
         return 0.5*log(2*pi) + 0.5

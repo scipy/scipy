@@ -176,7 +176,7 @@ def test_cont_basic():
         distfn = getattr(stats, distname)
         np.random.seed(765456)
         sn = 1000
-        rvs = distfn.rvs(size=sn,*arg)
+        rvs = distfn.rvs(size=sn, *arg)
         sm = rvs.mean()
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
