@@ -310,6 +310,68 @@ class TestLogser(TestCase):
         assert_(val.dtype.char in typecodes['AllInteger'])
 
 
+class TestPareto(TestCase):
+    def test_stats(self):
+        # Check the stats() method with some simple values. Also check
+        # that the calculations do not trigger RuntimeWarnings.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+
+            m, v, s, k = stats.pareto.stats(0.5, moments='mvsk')
+            assert_equal(m, np.inf)
+            assert_equal(v, np.inf)
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(1.0, moments='mvsk')
+            assert_equal(m, np.inf)
+            assert_equal(v, np.inf)
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(1.5, moments='mvsk')
+            assert_equal(m, 3.0)
+            assert_equal(v, np.inf)
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(2.0, moments='mvsk')
+            assert_equal(m, 2.0)
+            assert_equal(v, np.inf)
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(2.5, moments='mvsk')
+            assert_allclose(m, 2.5 / 1.5)
+            assert_allclose(v, 2.5 / (1.5*1.5*0.5))
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(3.0, moments='mvsk')
+            assert_allclose(m, 1.5)
+            assert_allclose(v, 0.75)
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(3.5, moments='mvsk')
+            assert_allclose(m, 3.5 / 2.5)
+            assert_allclose(v, 3.5 / (2.5*2.5*1.5))
+            assert_allclose(s, (2*4.5/0.5)*np.sqrt(1.5/3.5))
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(4.0, moments='mvsk')
+            assert_allclose(m, 4.0 / 3.0)
+            assert_allclose(v, 4.0 / 18.0)
+            assert_allclose(s, 2*(1+4.0)/(4.0-3) * np.sqrt((4.0-2)/4.0))
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(4.5, moments='mvsk')
+            assert_allclose(m, 4.5 / 3.5)
+            assert_allclose(v, 4.5 / (3.5*3.5*2.5))
+            assert_allclose(s, (2*5.5/1.5) * np.sqrt(2.5/4.5))
+            assert_allclose(k, 6*(4.5**3 + 4.5**2 - 6*4.5 - 2)/(4.5*1.5*0.5))
+
+
 class TestPearson3(TestCase):
     def test_rvs(self):
         vals = stats.pearson3.rvs(0.1, size=(2, 50))
