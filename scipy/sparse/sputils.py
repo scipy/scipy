@@ -9,10 +9,10 @@ __all__ = ['upcast','getdtype','isscalarlike','isintlike',
 import numpy as np
 
 # keep this list syncronized with sparsetools
-#supported_dtypes = ['int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',
+#supported_dtypes = ['bool', 'int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',
 #        'int64', 'uint64', 'float32', 'float64',
 #        'complex64', 'complex128']
-supported_dtypes = ['int8','uint8','short','ushort','intc','uintc',
+supported_dtypes = ['bool', 'int8','uint8','short','ushort','intc','uintc',
         'longlong','ulonglong','single','double','longdouble',
         'csingle','cdouble','clongdouble']
 supported_dtypes = [np.typeDict[x] for x in supported_dtypes]
@@ -32,7 +32,7 @@ def upcast(*args):
     >>> upcast('int32')
     <type 'numpy.int32'>
     >>> upcast('bool')
-    <type 'numpy.int8'>
+    <type 'numpy.bool_'>
     >>> upcast('int32','float32')
     <type 'numpy.float64'>
     >>> upcast('bool',complex,float)
