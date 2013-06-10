@@ -6904,21 +6904,14 @@ class rv_discrete(rv_generic):
         else:
             mu = int(self.stats(*args, **{'moments':'m'}))
             val = self.pmf(mu,*args)
-            if (val == 0.0):
-                ent = 0.0
-            else:
-                ent = -val*log(val)
+            ent = -special.xlogy(val, val)
             k = 1
             term = 1.0
             while (abs(term) > eps):
                 val = self.pmf(mu+k,*args)
-                if val == 0.0:
-                    term = 0.0
-                else:
-                    term = -val * log(val)
+                term = -special.xlogy(val, val)
                 val = self.pmf(mu-k,*args)
-                if val != 0.0:
-                    term -= val*log(val)
+                term -= special.xlogy(val, val)
                 k += 1
                 ent += term
             return ent
@@ -7111,10 +7104,10 @@ class binom_gen(rv_discrete):
         return mu, var, g1, g2
 
     def _entropy(self, n, p):
-        k = r_[0:n+1]
-        vals = self._pmf(k,n,p)
-        lvals = where(vals == 0,0.0,log(vals))
-        return -sum(vals*lvals,axis=0)
+        k = r_[0:n + 1]
+        vals = self._pmf(k, n, p)
+        h = -sum(special.xlogy(vals, vals), axis=0)
+        return h
 binom = binom_gen(name='binom',shapes="n, p")
 
 # Bernoulli distribution
@@ -7164,7 +7157,8 @@ class bernoulli_gen(binom_gen):
         return binom._stats(1, pr)
 
     def _entropy(self, pr):
-        return -pr*log(pr)-(1-pr)*log(1-pr)
+        h = -special.xlogy(pr, pr) - special.xlogy(1 - pr, 1 - pr)
+        return h
 bernoulli = bernoulli_gen(b=1,name='bernoulli',shapes="p")
 
 # Negative binomial
@@ -7377,10 +7371,10 @@ class hypergeom_gen(rv_discrete):
         return mu, var, g1, g2
 
     def _entropy(self, M, n, N):
-        k = r_[N-(M-n):min(n,N)+1]
-        vals = self.pmf(k,M,n,N)
-        lvals = where(vals == 0.0,0.0,log(vals))
-        return -sum(vals*lvals,axis=0)
+        k = r_[N - (M - n):min(n, N) + 1]
+        vals = self.pmf(k, M, n, N)
+        h = -sum(special.xlogy(vals, vals), axis=0)
+        return h
 
     def _sf(self, k, M, n, N):
         """More precise calculation, 1 - cdf doesn't cut it."""

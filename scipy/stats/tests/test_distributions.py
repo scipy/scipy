@@ -14,6 +14,7 @@ import numpy as np
 from numpy import typecodes, array
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
+from scipy.special import xlogy
 import warnings
 
 
@@ -154,6 +155,22 @@ class TestBinom(TestCase):
         assert_allclose(vals1, 1.0, rtol=1e-15, atol=0)
         assert_allclose(vals2, 1.0, rtol=1e-15, atol=0)
 
+    def test_entropy(self):
+        # Basic entropy tests.
+        b = stats.binom(2, 0.5)
+        expected_p = np.array([0.25, 0.5, 0.25])
+        expected_h = -sum(xlogy(expected_p, expected_p))
+        h = b.entropy()
+        assert_allclose(h, expected_h)
+
+        b = stats.binom(2, 0.0)
+        h = b.entropy()
+        assert_equal(h, 0.0)
+
+        b = stats.binom(2, 1.0)
+        h = b.entropy()
+        assert_equal(h, 0.0)
+
 
 class TestBernoulli(TestCase):
     def test_rvs(self):
@@ -166,6 +183,21 @@ class TestBernoulli(TestCase):
         val = stats.bernoulli(0.75).rvs(3)
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
+
+    def test_entropy(self):
+        # Simple tests of entropy.
+        b = stats.bernoulli(0.25)
+        expected_h = -0.25*np.log(0.25) - 0.75*np.log(0.75)
+        h = b.entropy()
+        assert_allclose(h, expected_h)
+
+        b = stats.bernoulli(0.0)
+        h = b.entropy()
+        assert_equal(h, 0.0)
+
+        b = stats.bernoulli(1.0)
+        h = b.entropy()
+        assert_equal(h, 0.0)
 
 
 class TestNBinom(TestCase):
@@ -295,6 +327,18 @@ class TestHypergeom(TestCase):
         res2 = stats.hypergeom.sf(quantiles, oranges + pears, oranges, 4.2e4)
         expected2 = [1, 0.1237904, 6.511452e-34, 3.277667e-69]
         assert_allclose(res2, expected2, atol=0, rtol=5e-7)
+
+    def test_entropy(self):
+        # Simple tests of entropy.
+        hg = stats.hypergeom(4, 1, 1)
+        h = hg.entropy()
+        expected_p = np.array([0.75, 0.25])
+        expected_h = -np.sum(xlogy(expected_p, expected_p))
+        assert_allclose(h, expected_h)
+
+        hg = stats.hypergeom(1, 1, 1)
+        h = hg.entropy()
+        assert_equal(h, 0.0)
 
 
 class TestLoggamma(TestCase):
@@ -480,6 +524,18 @@ class TestRvDiscrete(TestCase):
 
         x = r.rvs()
         assert_(isinstance(x, int))
+
+    def test_entropy(self):
+        # Basic tests of entropy.
+        pvals = np.array([0.25, 0.45, 0.3])
+        p = stats.rv_discrete(values=([0, 1, 2], pvals))
+        expected_h = -sum(xlogy(pvals, pvals))
+        h = p.entropy()
+        assert_allclose(h, expected_h)
+
+        p = stats.rv_discrete(values=([0, 1, 2], [1.0, 0, 0]))
+        h = p.entropy()
+        assert_equal(h, 0.0)
 
 
 class TestExpon(TestCase):
