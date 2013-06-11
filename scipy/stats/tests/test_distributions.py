@@ -297,6 +297,24 @@ class TestHypergeom(TestCase):
         assert_allclose(res2, expected2, atol=0, rtol=5e-7)
 
 
+class TestLoggamma(TestCase):
+
+    def test_stats(self):
+        # The following precomputed values are from the table in section 2.2
+        # of "A Statistical Study of Log-Gamma Distribution", by Ping Shing
+        # Chan (thesis, McMaster University, 1993).
+        table = np.array([
+                # c,      mean,     var,      skew,    exc. kurt.
+                 0.5,   -1.9635,   4.9348,  -1.5351,   4.0000,
+                 1.0,   -0.5772,   1.6449,  -1.1395,   2.4000,
+                12.0,    2.4427,   0.0869,  -0.2946,   0.1735,
+            ]).reshape(-1, 5)
+        for c, mean, var, skew, kurt in table:
+            computed = stats.loggamma.stats(c, moments='msvk')
+            assert_array_almost_equal(computed, [mean, var, skew, kurt],
+                                      decimal=4)
+
+
 class TestLogser(TestCase):
     def test_rvs(self):
         vals = stats.logser.rvs(0.75, size=(2, 50))
