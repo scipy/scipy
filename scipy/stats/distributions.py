@@ -4956,7 +4956,7 @@ class pareto_gen(rv_continuous):
             mask = b > 3
             bt = extract(mask,b)
             g1 = valarray(shape(b), value=nan)
-            vals = 2*(bt+1.0)*sqrt(b-2.0)/((b-3.0)*sqrt(b))
+            vals = 2 * (bt + 1.0) * sqrt(bt - 2.0) / ((bt - 3.0) * sqrt(bt))
             place(g1, mask, vals)
         if 'k' in moments:
             mask = b > 4
