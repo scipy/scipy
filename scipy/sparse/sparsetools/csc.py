@@ -266,6 +266,56 @@ def csc_matvecs(*args):
     """
   return _csc.csc_matvecs(*args)
 
+def csc_ne_csc(*args):
+  """
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, npy_bool_wrapper const [] Ax, 
+        int const [] Bp, int const [] Bi, npy_bool_wrapper const [] Bx, 
+        int [] Cp, int [] Ci, npy_bool_wrapper [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, signed char const [] Ax, 
+        int const [] Bp, int const [] Bi, signed char const [] Bx, int [] Cp, 
+        int [] Ci, signed char [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, unsigned char const [] Ax, 
+        int const [] Bp, int const [] Bi, unsigned char const [] Bx, 
+        int [] Cp, int [] Ci, unsigned char [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, short const [] Ax, 
+        int const [] Bp, int const [] Bi, short const [] Bx, int [] Cp, int [] Ci, 
+        short [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, unsigned short const [] Ax, 
+        int const [] Bp, int const [] Bi, unsigned short const [] Bx, 
+        int [] Cp, int [] Ci, unsigned short [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, int const [] Ax, 
+        int const [] Bp, int const [] Bi, int const [] Bx, int [] Cp, int [] Ci, 
+        int [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, unsigned int const [] Ax, 
+        int const [] Bp, int const [] Bi, unsigned int const [] Bx, int [] Cp, 
+        int [] Ci, unsigned int [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, long long const [] Ax, 
+        int const [] Bp, int const [] Bi, long long const [] Bx, int [] Cp, 
+        int [] Ci, long long [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, unsigned long long const [] Ax, 
+        int const [] Bp, int const [] Bi, unsigned long long const [] Bx, 
+        int [] Cp, int [] Ci, unsigned long long [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, float const [] Ax, 
+        int const [] Bp, int const [] Bi, float const [] Bx, int [] Cp, int [] Ci, 
+        float [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, double const [] Ax, 
+        int const [] Bp, int const [] Bi, double const [] Bx, int [] Cp, int [] Ci, 
+        double [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, long double const [] Ax, 
+        int const [] Bp, int const [] Bi, long double const [] Bx, int [] Cp, 
+        int [] Ci, long double [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, npy_cfloat_wrapper const [] Ax, 
+        int const [] Bp, int const [] Bi, npy_cfloat_wrapper const [] Bx, 
+        int [] Cp, int [] Ci, npy_cfloat_wrapper [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, npy_cdouble_wrapper const [] Ax, 
+        int const [] Bp, int const [] Bi, npy_cdouble_wrapper const [] Bx, 
+        int [] Cp, int [] Ci, npy_cdouble_wrapper [] Cx)
+    csc_ne_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, npy_clongdouble_wrapper const [] Ax, 
+        int const [] Bp, int const [] Bi, npy_clongdouble_wrapper const [] Bx, 
+        int [] Cp, int [] Ci, npy_clongdouble_wrapper [] Cx)
+    """
+  return _csc.csc_ne_csc(*args)
+
 def csc_elmul_csc(*args):
   """
     csc_elmul_csc(int const n_row, int const n_col, int const [] Ap, int const [] Ai, npy_bool_wrapper const [] Ax, 
