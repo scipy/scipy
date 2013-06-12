@@ -859,6 +859,15 @@ void csr_binop_csr(const I n_row,
 
 /* element-wise binary operations*/
 template <class I, class T>
+void csr_ne_csr(const I n_row, const I n_col, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
+}
+
+template <class I, class T>
 void csr_elmul_csr(const I n_row, const I n_col, 
                    const I Ap[], const I Aj[], const T Ax[],
                    const I Bp[], const I Bj[], const T Bx[],

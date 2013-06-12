@@ -140,6 +140,15 @@ void csc_matmat_pass2(const I n_row,
 
 
 
+template <class I, class T>
+void csc_ne_csc(const I n_row, const I n_col, 
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],       T Cx[])
+{
+    csr_ne_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
+
 
 template <class I, class T>
 void csc_elmul_csc(const I n_row, const I n_col, 
