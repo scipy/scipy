@@ -226,6 +226,12 @@ class spmatrix(object):
     def dot(self, other):
         return self * other
 
+    def __eq__(self, other):
+        return self.tocsr().__eq__(other)
+
+    def __ne__(self, other):
+        return self.tocsr().__ne__(other)
+
     def __abs__(self):
         return abs(self.tocsr())
 

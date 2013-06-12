@@ -165,6 +165,73 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         #    assert(self.has_sorted_indices())
         # TODO check for duplicates?
 
+    #######################
+    # Boolean comparisons #
+    #######################
+
+    def __eq__(self, other):
+        # Scalar other.
+        if isscalarlike(other):
+            other_arr = self.copy()
+            other_arr.data[:] = other
+            res = self._binopt(other_arr,'_ne_').astype(bool)
+            if other == 0:
+                warn("Comparing a sparse matrix with 0 using == is inefficient"
+                        ", try using != instead.")
+                all_true = self.__class__(np.ones(self.shape).astype(bool))
+                return all_true - res
+            else:
+                self_as_bool = self.astype(bool)
+                return self_as_bool - res
+        # Dense other.
+        elif isdense(other):
+            return self.todense() == other
+        # Sparse other.
+        elif isspmatrix(other):
+            warn("Comparing sparse matrices using == is inefficient, try using"
+                    " != instead.")
+            #TODO sparse broadcasting
+            if self.shape != other.shape:
+                return False
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            res = self._binopt(other,'_ne_').astype(bool)
+            all_true = self.__class__(np.ones(self.shape).astype(bool))
+            return all_true - res
+        else:
+            return False
+
+    def __ne__(self, other):
+        # Scalar other.
+        if isscalarlike(other):
+            if other != 0:
+                warn("Comparing a sparse matrix with a nonzero scalar using !="
+                     " is inefficient, try using == instead.")
+                all_true = self.__class__(np.ones(self.shape).astype(bool))
+                res = (self == other)
+                return all_true - res
+            else:
+                other_arr = self.copy()
+                other_arr.data[:] = other
+                return self._binopt(other_arr,'_ne_').astype(bool)
+        # Dense other.
+        elif isdense(other):
+            return self.todense() != other
+        # Sparse other.
+        elif isspmatrix(other):
+            #TODO sparse broadcasting
+            if self.shape != other.shape:
+                return True
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            return self._binopt(other,'_ne_').astype(bool)
+        else:
+            return True
+
+    #################################
+    # Arithmatic operator overrides #
+    #################################
+
     def __add__(self,other):
         # First check if argument is a scalar
         if isscalarlike(other):
