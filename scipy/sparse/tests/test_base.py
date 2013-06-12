@@ -77,6 +77,70 @@ class _TestCommon:
         assert_equal(self.datsp.todense(),
                      self.datsp_dtypes[np.float64].todense())
 
+    def test_eq(self):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+            dat2 = dat.copy()
+            dat2[:,0] = 0
+            datsp2 = self.spmatrix(dat2)
+            datbsr = bsr_matrix(dat)
+            datcsr = csr_matrix(dat)
+            datcsc = csc_matrix(dat)
+            datlil = lil_matrix(dat)
+
+            # sparse/sparse
+            assert_array_equal(dat == dat2, (datsp == datsp2).todense())
+            # mix sparse types
+            assert_array_equal(dat == dat2, (datbsr == datsp2).todense())
+            assert_array_equal(dat == dat2, (datcsr == datsp2).todense())
+            assert_array_equal(dat == dat2, (datcsc == datsp2).todense())
+            assert_array_equal(dat == dat2, (datlil == datsp2).todense())
+            # sparse/dense
+            assert_array_equal(dat == datsp2, datsp2 == dat)
+            # sparse/scalar
+            assert_array_equal(dat == 0, (datsp == 0).todense())
+            assert_array_equal(dat == 1, (datsp == 1).todense())
+
+        for dtype in self.checked_dtypes:
+            fails = not (self.__class__ == TestBSR or
+                         self.__class__ == TestCSC or
+                         self.__class__ == TestCSR)
+            msg = "Bool cjmparisons only implemented for CSC and CSR."
+            yield dec.skipif(fails, msg)(check), dtype
+
+    def test_ne(self):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+            dat2 = dat.copy()
+            dat2[:,0] = 0
+            datsp2 = self.spmatrix(dat2)
+            datbsr = bsr_matrix(dat)
+            datcsc = csc_matrix(dat)
+            datcsr = csr_matrix(dat)
+            datlil = lil_matrix(dat)
+
+            # sparse/sparse
+            assert_array_equal(dat != dat2, (datsp != datsp2).todense())
+            # mix sparse types
+            assert_array_equal(dat != dat2, (datbsr != datsp2).todense())
+            assert_array_equal(dat != dat2, (datcsc != datsp2).todense())
+            assert_array_equal(dat != dat2, (datcsr != datsp2).todense())
+            assert_array_equal(dat != dat2, (datlil != datsp2).todense())
+            # sparse/dense
+            assert_array_equal(dat != datsp2, datsp2 != dat)
+            # sparse/scalar
+            assert_array_equal(dat != 0, (datsp != 0).todense())
+            assert_array_equal(dat != 1, (datsp != 1).todense())
+
+        for dtype in self.checked_dtypes:
+            fails = not (self.__class__ == TestBSR or
+                         self.__class__ == TestCSC or
+                         self.__class__ == TestCSR)
+            msg = "Bool comparisons only implemented for CSC and CSR."
+            yield dec.skipif(fails, msg)(check), dtype
+
     def test_empty(self):
         # create empty matrices
         assert_equal(self.spmatrix((3,3)).todense(), np.zeros((3,3)))
@@ -374,7 +438,7 @@ class _TestCommon:
             assert_array_equal(dat*17.3,(datsp*17.3).todense())
 
         for dtype in self.checked_dtypes:
-            fails = ((dtype == np.typeDict['int']) and 
+            fails = ((dtype == np.typeDict['int']) and
                     (self.__class__ == TestLIL or
                      self.__class__ == TestDOK))
             msg = "LIL and DOK type's __mul__ method has problems with int data."
@@ -389,7 +453,7 @@ class _TestCommon:
             assert_array_equal(17.3*dat,(17.3*datsp).todense())
 
         for dtype in self.checked_dtypes:
-            fails = ((dtype == np.typeDict['int']) and 
+            fails = ((dtype == np.typeDict['int']) and
                     (self.__class__ == TestLIL or
                      self.__class__ == TestDOK))
             msg = "LIL and DOK type's __rmul__ method has problems with int data."
