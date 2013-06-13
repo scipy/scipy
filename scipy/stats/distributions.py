@@ -18,14 +18,13 @@ from scipy import integrate
 from scipy.special import gammaln as gamln
 
 import inspect
-from numpy import all, where, arange, putmask, \
-     ravel, take, ones, sum, shape, product, reshape, \
-     zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1
-from numpy import atleast_1d, polyval, ceil, place, extract, \
-     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf, \
-     NINF, empty
-import numpy
+from numpy import (all, where, arange, putmask, 
+     ravel, take, ones, sum, shape, product, reshape, 
+     zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, 
+     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1)
+from numpy import (atleast_1d, polyval, ceil, place, extract, 
+     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf, 
+     NINF, empty)
 import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
@@ -56,7 +55,7 @@ __all__ = [
            'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
           ]
 
-floatinfo = numpy.finfo(float)
+floatinfo = np.finfo(float)
 
 gam = special.gamma
 random = mtrand.random_sample
@@ -619,7 +618,7 @@ class rv_generic(object):
         # self._size is total size of all output values
         self._size = product(size, axis=0)
         if self._size is not None and self._size > 1:
-            size = numpy.array(size, ndmin=1)
+            size = np.array(size, ndmin=1)
 
         if np.all(scale == 0):
             return loc*ones(size, 'd')
@@ -632,7 +631,7 @@ class rv_generic(object):
 
         # Cast to int if discrete
         if discrete:
-            if numpy.isscalar(vals):
+            if np.isscalar(vals):
                 vals = int(vals)
             else:
                 vals = vals.astype(int)
@@ -4510,7 +4509,7 @@ class lognorm_gen(rv_continuous):
         mu = sqrt(p)
         mu2 = p*(p-1)
         g1 = sqrt((p-1))*(2+p)
-        g2 = numpy.polyval([1,2,3,0,-6.0],p)
+        g2 = polyval([1,2,3,0,-6.0],p)
         return mu, mu2, g1, g2
 
     def _entropy(self, s):
@@ -5722,8 +5721,6 @@ uniform = uniform_gen(a=0.0, b=1.0, name='uniform')
 # if x is not in range or loc is not in range it assumes they are angles
 #   and converts them to [-pi, pi] equivalents.
 
-eps = numpy.finfo(float).eps
-
 
 class vonmises_gen(rv_continuous):
     """A Von Mises continuous random variable.
@@ -6246,7 +6243,7 @@ class rv_discrete(rv_generic):
             self.a = self.xk[0]
             self.b = self.xk[-1]
             self.P = make_dict(self.xk, self.pk)
-            self.qvals = numpy.cumsum(self.pk,axis=0)
+            self.qvals = np.cumsum(self.pk,axis=0)
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
             self._ppf = instancemethod(sgf(_drv_ppf,otypes='d'),
@@ -6910,6 +6907,7 @@ class rv_discrete(rv_generic):
                 ent = -val*log(val)
             k = 1
             term = 1.0
+            eps = np.finfo(float).eps
             while (abs(term) > eps):
                 val = self.pmf(mu+k,*args)
                 if val == 0.0:
@@ -7276,7 +7274,7 @@ class geom_gen(rv_discrete):
         qr = 1.0-p
         var = qr / p / p
         g1 = (2.0-p) / sqrt(qr)
-        g2 = numpy.polyval([1,-6,6],p)/(1.0-p)
+        g2 = polyval([1,-6,6],p)/(1.0-p)
         return mu, var, g1, g2
 geom = geom_gen(a=1,name='geom', longname="A geometric",
                 shapes="p")
@@ -7809,7 +7807,7 @@ class skellam_gen(rv_discrete):
     """
     def _rvs(self, mu1, mu2):
         n = self._size
-        return np.random.poisson(mu1, n)-np.random.poisson(mu2, n)
+        return mtrand.poisson(mu1, n) - mtrand.poisson(mu2, n)
 
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0, ncx2.pdf(2*mu2, 2*(1-x), 2*mu1)*2,
