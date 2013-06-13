@@ -7046,8 +7046,7 @@ class rv_discrete(rv_generic):
                 pos -= self.inc
                 count += 1
         if count > maxcount:
-            # fixme: replace with proper warning
-            print('sum did not converge')
+            warnings.warn('expect(): sum did not converge', RuntimeWarning)
         return tot/invfac
 
 
