@@ -99,7 +99,9 @@ def main(argv):
         os.execv(shell, [shell])
         sys.exit(1)
 
-    extra_argv = args.args
+    extra_argv = args.args[:]
+    if extra_argv and extra_argv[0] == '--':
+        extra_argv = extra_argv[1:]
 
     if args.coverage:
         dst_dir = os.path.join('build', 'coverage')
@@ -132,7 +134,7 @@ def main(argv):
 
     result = test(args.mode,
                   verbose=args.verbose,
-                  extra_argv=args.args,
+                  extra_argv=extra_argv,
                   doctests=args.doctests,
                   coverage=args.coverage)
 
