@@ -343,6 +343,15 @@ class TestCorrPearsonr(TestCase):
         assert_equal(r, -1.0)
         assert_equal(prob, 0.0)
 
+    def test_basic(self):
+        # A basic test, with a correlation coefficient
+        # that is not 1 or -1.
+        a = array([-1, 0, 1])
+        b = array([0, 0, 3])
+        r, prob = stats.pearsonr(a, b)
+        assert_approx_equal(r, np.sqrt(3)/2)
+        assert_approx_equal(prob, 1.0/3)
+
 
 class TestFisherExact(TestCase):
     """Some tests to show that fisher_exact() works correctly.
