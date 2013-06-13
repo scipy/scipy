@@ -4520,7 +4520,7 @@ lognorm = lognorm_gen(a=0.0, name='lognorm', shapes='s')
 
 # Gibrat's distribution is just lognormal with s=1
 
-class gilbrat_gen(lognorm_gen):
+class gilbrat_gen(rv_continuous):
     """A Gilbrat continuous random variable.
 
     %(before_notes)s
@@ -4535,8 +4535,7 @@ class gilbrat_gen(lognorm_gen):
 
     """
     def _rvs(self):
-        # needed to get at self._size
-        return lognorm_gen._rvs(self, 1.0)
+        return exp(norm.rvs(size=self._size))
 
     def _pdf(self, x):
         return lognorm._pdf(x, 1.0)
