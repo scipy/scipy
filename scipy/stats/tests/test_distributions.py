@@ -466,12 +466,22 @@ class TestDLaplace(TestCase):
         dl = stats.dlaplace(a)
         m, v, s, k = dl.stats('mvsk')
 
-        N=27
+        N=37
         xx = np.arange(-N, N+1)
         pp =  dl.pmf(xx)
         m2, m4 = np.sum(pp*xx**2), np.sum(pp*xx**4)
-        assert_allclose(v, m2)
-        assert_allclose(k, m4/m2**2 -3.)
+        assert_allclose((m, v, s, k), (0., m2, 0., m4/m2**2 - 3.),
+                atol=1e-14, rtol=1e-8)
+#        assert_allclose(v, m2)
+#        assert_allclose(k, m4/m2**2 -3.)
+
+    def test_stats2(self):
+        a = np.log(2.)
+        dl = stats.dlaplace(a)
+        m, v, s, k = dl.stats('mvsk')
+        assert_allclose((m, s), (0.,0.))
+        assert_allclose(v, 4.)
+        assert_allclose(k, 3.25)
 
 
 def test_rvgeneric_std():

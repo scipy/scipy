@@ -7766,7 +7766,7 @@ class dlaplace_gen(rv_discrete):
         ea = exp(a)
         mu2 = 2.*ea/(ea-1.)**2
         mu4 = 2.*ea*(ea**2+10.*ea+1.) / (ea-1.)**4
-        return 0., mu2, 0., mu4/mu2**2 -3. 
+        return 0., mu2, 0., mu4/mu2**2 - 3. 
 
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))
