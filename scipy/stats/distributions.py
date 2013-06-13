@@ -7762,18 +7762,11 @@ class dlaplace_gen(rv_discrete):
         temp = self._cdf(vals1, a)
         return where(temp >= q, vals1, vals)
 
-    def _stats_skip(self, a):
-        # variance mu2 does not aggree with sample variance,
-        #   nor with direct calculation using pmf
-        # remove for now because generic calculation works
-        #   except it does not show nice zeros for mean and skew(?)
-        ea = exp(-a)
-        e2a = exp(-2*a)
-        e3a = exp(-3*a)
-        e4a = exp(-4*a)
-        mu2 = 2 * (e2a + ea) / (1-ea)**3.0
-        mu4 = 2 * (e4a + 11*e3a + 11*e2a + ea) / (1-ea)**5.0
-        return 0.0, mu2, 0.0, mu4 / mu2**2.0 - 3
+    def _stats(self, a):
+        ea = exp(a)
+        mu2 = 2.*ea/(ea-1.)**2
+        mu4 = 2.*ea*(ea**2+10.*ea+1.) / (ea-1.)**4
+        return 0., mu2, 0., mu4/mu2**2 -3. 
 
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))
