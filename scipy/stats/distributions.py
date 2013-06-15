@@ -6,7 +6,6 @@
 #
 from __future__ import division, print_function, absolute_import
 
-import math
 import warnings
 
 from scipy.lib.six import callable, string_types, text_type, get_method_function
@@ -2062,8 +2061,8 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 # loc = mu, scale = std
 # Keep these implementations out of the class definition so they can be reused
 # by other distributions.
-_norm_pdf_C = math.sqrt(2*pi)
-_norm_pdf_logC = math.log(_norm_pdf_C)
+_norm_pdf_C = sqrt(2*pi)
+_norm_pdf_logC = log(_norm_pdf_C)
 
 
 def _norm_pdf(x):
@@ -3507,7 +3506,7 @@ class gamma_gen(rv_continuous):
 
             def func(a):
                 return log(a) - special.digamma(a) - s
-            aest = (3-s + math.sqrt((s-3)**2 + 24*s)) / (12*s)
+            aest = (3-s + sqrt((s-3)**2 + 24*s)) / (12*s)
             xa = aest*(1-0.4)
             xb = aest*(1+0.4)
             a = optimize.brentq(func, xa, xb, disp=0)
