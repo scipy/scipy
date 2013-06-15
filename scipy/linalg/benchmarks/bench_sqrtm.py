@@ -30,8 +30,8 @@ def bench_sqrtm():
             if dtype == np.complex128:
                 A = A + 1j*np.random.rand(n, n)
 
-            # trivial blocksize
-            blocksize = 1
+            # blocksize that corresponds to the block-free implementation
+            blocksize = n
             tm = time.clock()
             B_1, info = scipy.linalg.sqrtm(A, disp=False, blocksize=blocksize)
             nseconds = time.clock() - tm

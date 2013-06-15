@@ -497,7 +497,7 @@ def signm(a, disp=True):
         return S0, errest
 
 
-def sqrtm(A, disp=True, blocksize=1):
+def sqrtm(A, disp=True, blocksize=64):
     """
     Matrix square root.
 
@@ -510,7 +510,7 @@ def sqrtm(A, disp=True, blocksize=1):
         instead of returning estimated error. (Default: True)
     blocksize : integer, optional
         If the blocksize is not degenerate with respect to the
-        size of the input array, then use a blocked algorithm. (Default: 1)
+        size of the input array, then use a blocked algorithm. (Default: 64)
 
     Returns
     -------
@@ -542,11 +542,8 @@ def sqrtm(A, disp=True, blocksize=1):
     # Take square roots of the diagonal of the triangular matrix.
     R[np.diag_indices(n)] = np.sqrt(np.diag(T))
 
-    # Compute the number of blocks to use.
-    # If this number is not interesting, then use the default method.
-    nblocks = n // blocksize
-    if nblocks in (0, 1, n):
-        nblocks = 1
+    # Compute the number of blocks to use; use at least one block.
+    nblocks = max(n // blocksize, 1)
 
     # Compute the smaller of the two sizes of blocks that
     # we will actually use, and compute the number of large blocks.
@@ -564,7 +561,7 @@ def sqrtm(A, disp=True, blocksize=1):
             start_stop_pairs.append((start, start + size))
             start += size
 
-    # This is a within-block analog of the default method.
+    # Within-block interactions.
     for start, stop in start_stop_pairs:
         for j in range(start, stop):
             for i in range(j-1, start-1, -1):
@@ -573,7 +570,7 @@ def sqrtm(A, disp=True, blocksize=1):
                     s = R[i, i+1:j].dot(R[i+1:j, j])
                 R[i,j] = (T[i,j] - s)/(R[i,i] + R[j,j])
 
-    # This is a between-block analog of the default method.
+    # Between-block interactions.
     for j in range(nblocks):
         jstart, jstop = start_stop_pairs[j]
         for i in range(j-1, -1, -1):

@@ -93,9 +93,10 @@ class TestSqrtM(TestCase):
                     [0,se,0,0],
                     [0,0,se,0],
                     [0,0,0,1]])
+        n = a.shape[0]
         assert_array_almost_equal(dot(sa,sa),a)
         # Check default sqrtm.
-        esa = sqrtm(a, disp=False)[0]
+        esa = sqrtm(a, disp=False, blocksize=n)[0]
         assert_array_almost_equal(dot(esa,esa),a)
         # Check sqrtm with 2x2 blocks.
         esa = sqrtm(a, disp=False, blocksize=2)[0]
@@ -106,10 +107,10 @@ class TestSqrtM(TestCase):
         np.random.seed(1234)
         for n in range(1, 8):
             A = np.random.rand(n, n) + 1j*np.random.randn(n, n)
-            A_sqrtm_default, info = sqrtm(A, disp=False)
+            A_sqrtm_default, info = sqrtm(A, disp=False, blocksize=n)
             assert_allclose(A, np.linalg.matrix_power(A_sqrtm_default, 2))
             for blocksize in range(1, 10):
-                A_sqrtm_new, info = sqrtm(A, blocksize=blocksize, disp=False)
+                A_sqrtm_new, info = sqrtm(A, disp=False, blocksize=blocksize)
                 assert_allclose(A_sqrtm_default, A_sqrtm_new)
 
 
