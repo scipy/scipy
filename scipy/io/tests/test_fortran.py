@@ -1,19 +1,18 @@
 ''' Tests for fortran sequential files '''
 
-import os
 import tempfile
 import shutil
 from os import path
-import warnings
-
-DATA_PATH = path.join(path.dirname(__file__), 'data')
-
-from numpy.testing import assert_equal
-import numpy as np
 from glob import iglob
 import re
 
+from numpy.testing import assert_equal
+import numpy as np
+
 from scipy.io import FortranFile
+
+
+DATA_PATH = path.join(path.dirname(__file__), 'data')
 
 
 def test_fortranfiles_read():
@@ -24,7 +23,7 @@ def test_fortranfiles_read():
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
 
         f = FortranFile(filename, 'r', '<u4')
-        data = f.read_record(dtype=m.group(1)).reshape(dims)
+        data = f.read_record(dtype=m.group(1).replace('s', '<')).reshape(dims)
         f.close()
 
         counter = 0
@@ -43,7 +42,7 @@ def test_fortranfiles_write():
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
 
         counter = 0
-        data = np.zeros(dims, dtype=m.group(1))
+        data = np.zeros(dims, dtype=m.group(1).replace('s', '<'))
         for k in range(dims[2]):
             for j in range(dims[1]):
                 for i in range(dims[0]):
