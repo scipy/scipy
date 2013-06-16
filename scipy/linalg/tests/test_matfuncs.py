@@ -79,6 +79,14 @@ class TestLogM(TestCase):
         logm(m, disp=False)
         #XXX: what would be the correct result?
 
+    def test_al_mohy_higham_2012_experiment_1(self):
+        A = np.array([
+            [3.2346e-1, 3e4, 3e4, 3e4],
+            [0, 3.0089e-1, 3e4, 3e4],
+            [0, 0, 3.221e-1, 3e4],
+            [0, 0, 0, 3.0744e-1]], dtype=float)
+        logm(A, disp=False)
+
 
 class TestSqrtM(TestCase):
     def test_bad(self):

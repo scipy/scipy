@@ -418,6 +418,139 @@ def logm(A, disp=True):
         return F, errest
 
 
+def logm_new(A):
+    """
+    Compute matrix logarithm.
+
+    The matrix logarithm is the inverse of
+    expm: expm(logm(`A`)) == `A`
+
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix whose logarithm to evaluate
+
+    Returns
+    -------
+    logm : (N, N) ndarray
+        Matrix logarithm of `A`
+
+    References
+    ----------
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2012)
+           "Improved Inverse Scaling and Squaring Algorithms
+           for the Matrix Logarithm."
+           SIAM Journal on Scientific Computing, 34 (4). C152-C169.
+           ISSN 1095-7197
+
+    .. [2] 
+    """
+    A = asarray(A)
+    if len(A.shape) != 2:
+        raise ValueError("Non-matrix input to matrix function.")
+    T, Z = schur(A)
+    T, Z = rsf2csf(T,Z)
+    T0 = T
+
+    # Define bounds given in Table (2.1).
+    theta = (None,
+            1.59e-5, 2.31e-3, 1.94e-2, 6.21e-2,
+            1.28e-1, 2.06e-1, 2.88e-1, 3.67e-1,
+            4.39e-1, 5.03e-1, 5.60e-1, 6.09e-1,
+            6.52e-1, 6.89e-1, 7.21e-1, 7.49e-1)
+
+    # Find s0, the smallest s such that the spectral radius
+    # of a certain diagonal matrix is at most theta[7].
+    s0 = 0
+    tmp_diag = np.diag(T)
+    while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
+        tmp_diag = np.sqrt(tmp_diag)
+        s0 += 1
+
+    # Take matrix square roots of T.
+    for i in range(s0):
+        T = _sqrtm_triu(T)
+
+    # Flow control in this section is a little odd.
+    # This is because I am translating an algorithm (4.1)
+    # which has GOTOs in the publication.
+    s = s0
+    k = 0
+    d2 = onenormest_m1_power(T, 2) ** (1/2)
+    d3 = onenormest_m1_power(T, 3) ** (1/3)
+    a2 = max(d2, d3)
+    m = None
+    for i in (1, 2):
+        if a2 <= theta[i]:
+            m = i
+    while m is None:
+        if s > s0:
+            d3 = onenormest_m1_power(T, 3) ** (1/3)
+        d4 = onenormest_m1_power(T, 4) ** (1/4)
+        a3 = max(d3, d4)
+        if a3 <= theta[7]:
+            j1 = min(i for i in (3, 4, 5, 6, 7) if a3 <= theta[i])
+            if j1 <= 6:
+                m = j1
+                break
+            elif a3 / 2 <= theta[5] and k < 2:
+                k += 1
+                T = _sqrtm_triu(T)
+                s += 1
+                continue
+        d5 = onenormest_m1_power(T, 5) ** (1/5)
+        a4 = max(d4, d5)
+        eta = min(a3, a4)
+        for i in (6, 7):
+            if eta <= theta[i]:
+                m = i
+                break
+        if m is not None:
+            break
+        T = _sqrtm_triu(T)
+        s += 1
+
+    #TODO line 35
+    # Replace diag(T - I) by diag(T0)^(1/(2^s)) using [1, Alg. 2] and recompute
+    # the first superdiagonal of T using [18, eq. (5, 6)] applied to T0.
+
+    #TODO line 36
+    # Evaluate U = 2**s r_m(T - I) using the partial fraction expansion (1.1).
+
+    # Over-write diagonal entries of U.
+    U[np.diag_indices(n)] = np.log(np.diag(T0))
+
+    # Over-write superdiagonal entries of U,
+    # using equation (11.28) of [2].
+    # This indexing of this code should be renovated
+    # when newer np.diagonal() becomes available.
+    for i in range(n-1):
+        l1 = T0[i, i]
+        l2 = T0[i+1, i+1]
+        t12 = T0[i, i+1]
+        if l1 == l2:
+            f12 = t12 / l1
+        elif abs(l1) < abs(l2) / 2 or abs(l2) < abs(l1) / 2:
+            f12 = t12 * (np.log(l2) - np.log(l1)) / (l2 - l1)
+        else:
+            z = (l2 - l1) / (l2 + l1)
+            ua = _scalar_unwinding_number(np.log(l2) - np.log(l1))
+            ub = _scalar_unwinding_number(np.log(1+z) - np.log(1-z))
+            f12 = t12 * (2*np.atanh(z) + 2*np.pi*1j*(ua + ub)) / (l2 - l1)
+        U[i, i+1] = f12
+
+    U, Z = all_mat(U, Z)
+    X = (Z * U * Z.H)
+    return X.A
+
+
+def _scalar_unwinding_number(z):
+    """
+    [2] (11.2)
+    """
+    return (z - np.log(np.exp(z))) / (2 * np.pi * 1j)
+
+
 def signm(a, disp=True):
     """
     Matrix sign function.
@@ -497,17 +630,16 @@ def signm(a, disp=True):
         return S0, errest
 
 
-def sqrtm(A, disp=True, blocksize=64):
+def _sqrtm_triu(T, blocksize=64):
     """
-    Matrix square root.
+    Matrix square root of an upper triangular matrix.
+
+    This is a helper function for `sqrtm` and `logm`.
 
     Parameters
     ----------
-    A : (N, N) array_like
+    T : (N, N) array_like upper triangular
         Matrix whose square root to evaluate
-    disp : bool, optional
-        Print warning if error in the result is estimated large
-        instead of returning estimated error. (Default: True)
     blocksize : integer, optional
         If the blocksize is not degenerate with respect to the
         size of the input array, then use a blocked algorithm. (Default: 64)
@@ -515,12 +647,7 @@ def sqrtm(A, disp=True, blocksize=64):
     Returns
     -------
     sqrtm : (N, N) ndarray
-        Value of the sqrt function at `A`
-
-    errest : float
-        (if disp == False)
-
-        Frobenius norm of the estimated error, ||err||_F / ||A||_F
+        Value of the sqrt function at `T`
 
     References
     ----------
@@ -529,15 +656,8 @@ def sqrtm(A, disp=True, blocksize=64):
            Lecture Notes in Computer Science, 7782. pp. 171-182.
 
     """
-    A = asarray(A)
-    if len(A.shape) != 2:
-        raise ValueError("Non-matrix input to matrix function.")
-    if blocksize < 1:
-        raise ValueError("The blocksize should be at least 1.")
-    T, Z = schur(A)
-    T, Z = rsf2csf(T,Z)
-    n,n = T.shape
-    R = np.zeros((n,n),T.dtype.char)
+    n, n = T.shape
+    R = np.zeros((n,n), T.dtype.char)
     
     # Take square roots of the diagonal of the triangular matrix.
     R[np.diag_indices(n)] = np.sqrt(np.diag(T))
@@ -587,7 +707,51 @@ def sqrtm(A, disp=True, blocksize=64):
             Rjj = R[jstart:jstop, jstart:jstop]
             x, scale, info = ztrsyl(Rii, Rjj, S)
             R[istart:istop, jstart:jstop] = x * scale
+    
+    # Return the matrix square root.
+    return R
 
+
+def sqrtm(A, disp=True, blocksize=64):
+    """
+    Matrix square root.
+
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix whose square root to evaluate
+    disp : bool, optional
+        Print warning if error in the result is estimated large
+        instead of returning estimated error. (Default: True)
+    blocksize : integer, optional
+        If the blocksize is not degenerate with respect to the
+        size of the input array, then use a blocked algorithm. (Default: 64)
+
+    Returns
+    -------
+    sqrtm : (N, N) ndarray
+        Value of the sqrt function at `A`
+
+    errest : float
+        (if disp == False)
+
+        Frobenius norm of the estimated error, ||err||_F / ||A||_F
+
+    References
+    ----------
+    .. [1] Edvin Deadman, Nicholas J. Higham, Rui Ralha (2013)
+           "Blocked Schur Algorithms for Computing the Matrix Square Root,
+           Lecture Notes in Computer Science, 7782. pp. 171-182.
+
+    """
+    A = asarray(A)
+    if len(A.shape) != 2:
+        raise ValueError("Non-matrix input to matrix function.")
+    if blocksize < 1:
+        raise ValueError("The blocksize should be at least 1.")
+    T, Z = schur(A)
+    T, Z = rsf2csf(T,Z)
+    R = _sqrtm_triu(T, blocksize=blocksize)
     R, Z = all_mat(R,Z)
     X = (Z * R * Z.H)
 
