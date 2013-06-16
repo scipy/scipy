@@ -504,6 +504,26 @@ class TestDLaplace(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_stats(self):
+        # compare the explicit formulas w/ direct summation using pmf
+        a = 1.
+        dl = stats.dlaplace(a)
+        m, v, s, k = dl.stats('mvsk')
+
+        N=37
+        xx = np.arange(-N, N+1)
+        pp =  dl.pmf(xx)
+        m2, m4 = np.sum(pp*xx**2), np.sum(pp*xx**4)
+        assert_equal((m, s), (0,0))
+        assert_allclose((v, k), (m2, m4/m2**2 - 3.), atol=1e-14, rtol=1e-8)
+
+    def test_stats2(self):
+        a = np.log(2.)
+        dl = stats.dlaplace(a)
+        m, v, s, k = dl.stats('mvsk')
+        assert_equal((m, s), (0.,0.))
+        assert_allclose((v, k), (4., 3.25))
+
 
 def test_rvgeneric_std():
     # Regression test for #1191
