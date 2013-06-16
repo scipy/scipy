@@ -6160,7 +6160,7 @@ class rv_discrete(rv_generic):
 
     To create a new discrete distribution, we would do the following::
 
-        class poisson_gen(rv_continuous):
+        class poisson_gen(rv_discrete):
             #"Poisson distribution"
             def _pmf(self, k, mu):
                 ...
