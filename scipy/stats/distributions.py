@@ -6,7 +6,6 @@
 #
 from __future__ import division, print_function, absolute_import
 
-import math
 import warnings
 
 from scipy.lib.six import callable, string_types, text_type, get_method_function
@@ -18,14 +17,14 @@ from scipy import integrate
 from scipy.special import gammaln as gamln
 
 import inspect
-from numpy import all, where, arange, putmask, \
-     ravel, take, ones, sum, shape, product, reshape, \
-     zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1
-from numpy import atleast_1d, polyval, ceil, place, extract, \
-     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf, \
-     NINF, empty
-import numpy
+from numpy import (all, where, arange, putmask, 
+     ravel, take, ones, sum, shape, product, reshape, 
+     zeros, floor, logical_and, log, sqrt, exp, power, arctanh, tan, sin,
+     arcsin, arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1)
+from numpy import (atleast_1d, polyval, ceil, place, extract, 
+     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, 
+     isinf, isnan, isneginf, isposinf, isfinite, 
+     NINF, empty)
 import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
@@ -56,7 +55,7 @@ __all__ = [
            'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
           ]
 
-floatinfo = numpy.finfo(float)
+floatinfo = np.finfo(float)
 
 gam = special.gamma
 random = mtrand.random_sample
@@ -619,9 +618,9 @@ class rv_generic(object):
         # self._size is total size of all output values
         self._size = product(size, axis=0)
         if self._size is not None and self._size > 1:
-            size = numpy.array(size, ndmin=1)
+            size = np.array(size, ndmin=1)
 
-        if np.all(scale == 0):
+        if all(scale == 0):
             return loc*ones(size, 'd')
 
         vals = self._rvs(*args)
@@ -632,7 +631,7 @@ class rv_generic(object):
 
         # Cast to int if discrete
         if discrete:
-            if numpy.isscalar(vals):
+            if np.isscalar(vals):
                 vals = int(vals)
             else:
                 vals = vals.astype(int)
@@ -1083,9 +1082,9 @@ class rv_continuous(rv_generic):
 
     def _ppf_single_call(self, q, *args):
         left = right = None
-        if self.a > -np.inf:
+        if self.a > -inf:
             left = self.a
-        if self.b < np.inf:
+        if self.b < inf:
             right = self.b
 
         factor = 10.
@@ -1206,7 +1205,7 @@ class rv_continuous(rv_generic):
         cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        putmask(output,(1-cond0)+np.isnan(x),self.badvalue)
+        putmask(output,(1-cond0) + isnan(x),self.badvalue)
         if any(cond):
             goodargs = argsreduce(cond, *((x,)+args+(scale,)))
             scale, goodargs = goodargs[-1], goodargs[:-1]
@@ -1249,7 +1248,7 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        putmask(output,(1-cond0)+np.isnan(x),self.badvalue)
+        putmask(output,(1-cond0) + isnan(x),self.badvalue)
         if any(cond):
             goodargs = argsreduce(cond, *((x,)+args+(scale,)))
             scale, goodargs = goodargs[-1], goodargs[:-1]
@@ -1290,7 +1289,7 @@ class rv_continuous(rv_generic):
         cond2 = (x >= self.b) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0)+np.isnan(x),self.badvalue)
+        place(output,(1-cond0) + isnan(x),self.badvalue)
         place(output,cond2,1.0)
         if any(cond):  # call only if at least 1 entry
             goodargs = argsreduce(cond, *((x,)+args))
@@ -1332,7 +1331,7 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0)*(cond1 == cond1)+np.isnan(x),self.badvalue)
+        place(output,(1-cond0)*(cond1 == cond1) + isnan(x),self.badvalue)
         place(output,cond2,0.0)
         if any(cond):  # call only if at least 1 entry
             goodargs = argsreduce(cond, *((x,)+args))
@@ -1373,7 +1372,7 @@ class rv_continuous(rv_generic):
         cond2 = cond0 & (x <= self.a)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0)+np.isnan(x),self.badvalue)
+        place(output,(1-cond0) + isnan(x),self.badvalue)
         place(output,cond2,1.0)
         if any(cond):
             goodargs = argsreduce(cond, *((x,)+args))
@@ -1418,7 +1417,7 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0)+np.isnan(x),self.badvalue)
+        place(output,(1-cond0) + isnan(x),self.badvalue)
         place(output,cond2,0.0)
         if any(cond):
             goodargs = argsreduce(cond, *((x,)+args))
@@ -1562,7 +1561,7 @@ class rv_continuous(rv_generic):
         if g1 is None:
             mu3 = None
         else:
-            mu3 = g1*np.power(mu2,1.5)  # (mu2**1.5) breaks down for nan and inf
+            mu3 = g1*power(mu2,1.5)  # (mu2**1.5) breaks down for nan and inf
         default = valarray(shape(cond), self.badvalue)
         output = []
 
@@ -1583,9 +1582,9 @@ class rv_continuous(rv_generic):
                     if mu is None:
                         mu = self._munp(1.0,*goodargs)
                     mu2 = mu2p - mu*mu
-                    if np.isinf(mu):
+                    if isinf(mu):
                         #if mean is inf then var is also inf
-                        mu2 = np.inf
+                        mu2 = inf
                 out0 = default.copy()
                 place(out0,cond,mu2*scale*scale)
                 output.append(out0)
@@ -1719,7 +1718,7 @@ class rv_continuous(rv_generic):
 
         loginf = log(floatinfo.machar.xmax)
 
-        if np.isneginf(self.a).all() and np.isinf(self.b).all():
+        if isneginf(self.a).all() and isinf(self.b).all():
             Nbad = 0
         else:
             cond0 = (x <= self.a) | (self.b <= x)
@@ -1886,9 +1885,9 @@ class rv_continuous(rv_generic):
         mu2hat = tmp.var()
         Shat = sqrt(mu2hat / mu2)
         Lhat = muhat - Shat*mu
-        if not np.isfinite(Lhat):
+        if not isfinite(Lhat):
             Lhat = 0
-        if not (np.isfinite(Shat) and (0 < Shat)):
+        if not (isfinite(Shat) and (0 < Shat)):
             Shat = 1
         return Lhat, Shat
 
@@ -1923,15 +1922,15 @@ class rv_continuous(rv_generic):
             return special.xlogy(val, val)
 
         entr = -integrate.quad(integ,self.a,self.b)[0]
-        if not np.isnan(entr):
+        if not isnan(entr):
             return entr
         else:  # try with different limits if integration problems
             low,upp = self.ppf([0.001,0.999],*args)
-            if np.isinf(self.b):
+            if isinf(self.b):
                 upper = upp
             else:
                 upper = self.b
-            if np.isinf(self.a):
+            if isinf(self.a):
                 lower = low
             else:
                 lower = self.a
@@ -2062,8 +2061,8 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 # loc = mu, scale = std
 # Keep these implementations out of the class definition so they can be reused
 # by other distributions.
-_norm_pdf_C = math.sqrt(2*pi)
-_norm_pdf_logC = math.log(_norm_pdf_C)
+_norm_pdf_C = sqrt(2*pi)
+_norm_pdf_logC = log(_norm_pdf_C)
 
 
 def _norm_pdf(x):
@@ -2282,7 +2281,7 @@ class beta_gen(rv_continuous):
         return mtrand.beta(a,b,self._size)
 
     def _pdf(self, x, a, b):
-        return np.exp(self._logpdf(x, a, b))
+        return exp(self._logpdf(x, a, b))
 
     def _logpdf(self, x, a, b):
         lPx = special.xlog1py(b-1.0, -x) + special.xlogy(a-1.0, x)
@@ -2358,7 +2357,7 @@ class betaprime_gen(rv_continuous):
         return (u1 / u2)
 
     def _pdf(self, x, a, b):
-        return np.exp(self._logpdf(x, a, b))
+        return exp(self._logpdf(x, a, b))
 
     def _logpdf(self, x, a, b):
         return special.xlogy(a-1.0, x) - special.xlog1py(a+b, x) - special.betaln(a,b)
@@ -3271,7 +3270,7 @@ class genpareto_gen(rv_continuous):
         return Px
 
     def _logpdf(self, x, c):
-        return (-1.0-1.0/c) * np.log1p(c*x)
+        return (-1.0-1.0/c) * log1p(c*x)
 
     def _cdf(self, x, c):
         return 1.0 - pow(1+c*x,asarray(-1.0/c))
@@ -3329,7 +3328,7 @@ class genexpon_gen(rv_continuous):
         return -expm1((-a-b)*x + b*(-expm1(-c*x))/c)
 
     def _logpdf(self, x, a, b, c):
-        return np.log(a+b*(-expm1(-c*x))) + (-a-b)*x+b*(-expm1(-c*x))/c
+        return log(a+b*(-expm1(-c*x))) + (-a-b)*x+b*(-expm1(-c*x))/c
 genexpon = genexpon_gen(a=0.0, name='genexpon', shapes='a, b, c')
 
 
@@ -3507,7 +3506,7 @@ class gamma_gen(rv_continuous):
 
             def func(a):
                 return log(a) - special.digamma(a) - s
-            aest = (3-s + math.sqrt((s-3)**2 + 24*s)) / (12*s)
+            aest = (3-s + sqrt((s-3)**2 + 24*s)) / (12*s)
             xa = aest*(1-0.4)
             xb = aest*(1+0.4)
             a = optimize.brentq(func, xa, xb, disp=0)
@@ -3541,8 +3540,8 @@ class erlang_gen(gamma_gen):
     """
 
     def _argcheck(self, a):
-        allint = np.all(np.floor(a) == a)
-        allpos = np.all(a > 0)
+        allint = all(floor(a) == a)
+        allpos = all(a > 0)
         if not allint:
             # An Erlang distribution shouldn't really have a non-integer
             # shape parameter, so warn the user.
@@ -3817,7 +3816,7 @@ class halfcauchy_gen(rv_continuous):
         return 2.0/pi/(1.0+x*x)
 
     def _logpdf(self, x):
-        return np.log(2.0/pi) - np.log1p(x*x)
+        return log(2.0/pi) - log1p(x*x)
 
     def _cdf(self, x):
         return 2.0/pi*arctan(x)
@@ -3902,7 +3901,7 @@ class halfnorm_gen(rv_continuous):
         return sqrt(2.0/pi)*exp(-x*x/2.0)
 
     def _logpdf(self, x):
-        return 0.5 * np.log(2.0/pi) - x*x/2.0
+        return 0.5 * log(2.0/pi) - x*x/2.0
 
     def _cdf(self, x):
         return special.ndtr(x)*2-1.0
@@ -4497,7 +4496,7 @@ class lognorm_gen(rv_continuous):
         return exp(self._logpdf(x, s))
 
     def _logpdf(self, x, s):
-        return -log(x)**2 / (2*s**2) + np.where(x == 0, 0, - log(s*x*sqrt(2*pi)))
+        return -log(x)**2 / (2*s**2) + where(x == 0, 0, - log(s*x*sqrt(2*pi)))
 
     def _cdf(self, x, s):
         return norm.cdf(log(x)/s)
@@ -4510,7 +4509,7 @@ class lognorm_gen(rv_continuous):
         mu = sqrt(p)
         mu2 = p*(p-1)
         g1 = sqrt((p-1))*(2+p)
-        g2 = numpy.polyval([1,2,3,0,-6.0],p)
+        g2 = polyval([1,2,3,0,-6.0],p)
         return mu, mu2, g1, g2
 
     def _entropy(self, s):
@@ -4697,11 +4696,11 @@ class ncx2_gen(rv_continuous):
 
     def _logpdf(self, x, df, nc):
         a = asarray(df/2.0)
-        fac = -nc/2.0 - x/2.0 + (a-1)*np.log(x) - a*np.log(2) - special.gammaln(a)
-        return fac + np.nan_to_num(np.log(special.hyp0f1(a, nc * x/4.0)))
+        fac = -nc/2.0 - x/2.0 + (a-1)*log(x) - a*log(2) - special.gammaln(a)
+        return fac + np.nan_to_num(log(special.hyp0f1(a, nc * x/4.0)))
 
     def _pdf(self, x, df, nc):
-        return np.exp(self._logpdf(x, df, nc))
+        return exp(self._logpdf(x, df, nc))
 
     def _cdf(self, x, df, nc):
         return special.chndtr(x,df,nc)
@@ -5086,7 +5085,7 @@ class pearson3_gen(rv_continuous):
         # arguments.  The skew argument for pearson3 can be zero (which I want
         # to handle inside pearson3._pdf) or negative.  So just return True
         # for all skew args.
-        return np.ones(np.shape(skew), dtype=bool)
+        return ones(shape(skew), dtype=bool)
 
     def _stats(self, skew):
         ans, x, transx, skew, mask, invmask, beta, alpha, zeta = self._preprocess([1], skew)
@@ -5101,10 +5100,10 @@ class pearson3_gen(rv_continuous):
         # overflow/underflow problems
         ans = exp(self._logpdf(x, skew))
         if ans.ndim == 0:
-            if np.isnan(ans):
+            if isnan(ans):
                 return 0.0
             return ans
-        ans[np.isnan(ans)] = 0.0
+        ans[isnan(ans)] = 0.0
         return ans
 
     def _logpdf(self, x, skew):
@@ -5118,7 +5117,7 @@ class pearson3_gen(rv_continuous):
         # - gamln(alpha)                              - gamln(a)
         ans, x, transx, skew, mask, invmask, beta, alpha, zeta = self._preprocess(x, skew)
 
-        ans[mask] = np.log(_norm_pdf(x[mask]))
+        ans[mask] = log(_norm_pdf(x[mask]))
         ans[invmask] = log(abs(beta)) + gamma._logpdf(transx, alpha)
         return ans
 
@@ -5278,7 +5277,7 @@ class rdist_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        return np.power((1.0-x*x),c/2.0-1) / special.beta(0.5,c/2.0)
+        return power((1.0-x*x),c/2.0-1) / special.beta(0.5,c/2.0)
 
     def _cdf_skip(self, x, c):
         # error inspecial.hyp2f1 for some values see tickets 758, 759
@@ -5323,7 +5322,7 @@ class rayleigh_gen(rv_continuous):
 
     def _stats(self):
         val = 4-pi
-        return np.sqrt(pi/2), val/2, 2*(pi-3)*sqrt(pi)/val**1.5, \
+        return sqrt(pi/2), val/2, 2*(pi-3)*sqrt(pi)/val**1.5, \
                6*pi/val-16/val**2
 
     def _entropy(self):
@@ -5657,7 +5656,7 @@ class tukeylambda_gen(rv_continuous):
     """
     def _argcheck(self, lam):
         # lam in RR.
-        return np.ones(np.shape(lam), dtype=bool)
+        return ones(shape(lam), dtype=bool)
 
     def _pdf(self, x, lam):
         Fx = asarray(special.tklmbda(x,lam))
@@ -5721,8 +5720,6 @@ uniform = uniform_gen(a=0.0, b=1.0, name='uniform')
 
 # if x is not in range or loc is not in range it assumes they are angles
 #   and converts them to [-pi, pi] equivalents.
-
-eps = numpy.finfo(float).eps
 
 
 class vonmises_gen(rv_continuous):
@@ -5949,7 +5946,7 @@ def _drv2_moment(self, n, *args):
 
     while (pos <= self.b) and ((pos <= ulimit) or
                                (diff > self.moment_tol)):
-        diff = np.power(pos, n) * self.pmf(pos,*args)
+        diff = power(pos, n) * self.pmf(pos,*args)
         # use pmf because _pmf does not check support in randint
         #     and there might be problems ? with correct self.a, self.b at this stage
         tot += diff
@@ -5961,7 +5958,7 @@ def _drv2_moment(self, n, *args):
         pos = -self.inc
         while (pos >= self.a) and ((pos >= llimit) or
                                    (diff > self.moment_tol)):
-            diff = np.power(pos, n) * self.pmf(pos,*args)
+            diff = power(pos, n) * self.pmf(pos,*args)
             # using pmf instead of _pmf, see above
             tot += diff
             pos -= self.inc
@@ -6163,7 +6160,7 @@ class rv_discrete(rv_generic):
 
     To create a new discrete distribution, we would do the following::
 
-        class poisson_gen(rv_continuous):
+        class poisson_gen(rv_discrete):
             #"Poisson distribution"
             def _pmf(self, k, mu):
                 ...
@@ -6246,7 +6243,7 @@ class rv_discrete(rv_generic):
             self.a = self.xk[0]
             self.b = self.xk[-1]
             self.P = make_dict(self.xk, self.pk)
-            self.qvals = numpy.cumsum(self.pk,axis=0)
+            self.qvals = np.cumsum(self.pk,axis=0)
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
             self._ppf = instancemethod(sgf(_drv_ppf,otypes='d'),
@@ -6427,7 +6424,7 @@ class rv_discrete(rv_generic):
         cond1 = (k >= self.a) & (k <= self.b) & self._nonzero(k,*args)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0) + np.isnan(k),self.badvalue)
+        place(output,(1-cond0) + isnan(k),self.badvalue)
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
             place(output,cond,self._pmf(*goodargs))
@@ -6465,7 +6462,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0) + np.isnan(k),self.badvalue)
+        place(output,(1-cond0) + isnan(k),self.badvalue)
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
             place(output,cond,self._logpmf(*goodargs))
@@ -6503,7 +6500,7 @@ class rv_discrete(rv_generic):
         cond2 = (k >= self.b)
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0) + np.isnan(k),self.badvalue)
+        place(output,(1-cond0) + isnan(k),self.badvalue)
         place(output,cond2*(cond0 == cond0), 1.0)
 
         if any(cond):
@@ -6544,7 +6541,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0) + np.isnan(k),self.badvalue)
+        place(output,(1-cond0) + isnan(k),self.badvalue)
         place(output,cond2*(cond0 == cond0), 0.0)
 
         if any(cond):
@@ -6584,7 +6581,7 @@ class rv_discrete(rv_generic):
         cond2 = (k < self.a) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond),'d')
-        place(output,(1-cond0) + np.isnan(k),self.badvalue)
+        place(output,(1-cond0) + isnan(k),self.badvalue)
         place(output,cond2,1.0)
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
@@ -6627,7 +6624,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = empty(shape(cond),'d')
         output.fill(NINF)
-        place(output,(1-cond0) + np.isnan(k),self.badvalue)
+        place(output,(1-cond0) + isnan(k),self.badvalue)
         place(output,cond2,0.0)
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
@@ -6907,6 +6904,7 @@ class rv_discrete(rv_generic):
             ent = -special.xlogy(val, val)
             k = 1
             term = 1.0
+            eps = np.finfo(float).eps
             while (abs(term) > eps):
                 val = self.pmf(mu+k,*args)
                 term = -special.xlogy(val, val)
@@ -7003,7 +7001,7 @@ class rv_discrete(rv_generic):
         else:
             ub = ub - loc   # convert bound for standardized distribution
         if conditional:
-            if np.isposinf(ub)[()]:
+            if isposinf(ub)[()]:
                 # work around bug: stats.poisson.sf(stats.poisson.b, 2) is nan
                 invfac = 1 - self.cdf(lb-1,*args)
             else:
@@ -7015,7 +7013,7 @@ class rv_discrete(rv_generic):
         low, upp = self._ppf(0.001, *args), self._ppf(0.999, *args)
         low = max(min(-suppnmin, low), lb)
         upp = min(max(suppnmin, upp), ub)
-        supp = np.arange(low, upp+1, self.inc)  # check limits
+        supp = arange(low, upp+1, self.inc)  # check limits
         # print 'low, upp', low, upp
         tot = np.sum(fun(supp))
         diff = 1e100
@@ -7205,7 +7203,7 @@ class nbinom_gen(rv_discrete):
 
     def _ppf(self, q, n, p):
         vals = ceil(special.nbdtrik(q,n,p))
-        vals1 = (vals-1).clip(0.0, np.inf)
+        vals1 = (vals-1).clip(0.0, inf)
         temp = self._cdf(vals1,n,p)
         return where(temp >= q, vals1, vals)
 
@@ -7270,7 +7268,7 @@ class geom_gen(rv_discrete):
         qr = 1.0-p
         var = qr / p / p
         g1 = (2.0-p) / sqrt(qr)
-        g2 = numpy.polyval([1,-6,6],p)/(1.0-p)
+        g2 = polyval([1,-6,6],p)/(1.0-p)
         return mu, var, g1, g2
 geom = geom_gen(a=1,name='geom', longname="A geometric",
                 shapes="p")
@@ -7384,9 +7382,9 @@ class hypergeom_gen(rv_discrete):
         for quant, tot, good, draw in zip(k, M, n, N):
             # Manual integration over probability mass function. More accurate
             # than integrate.quad.
-            k2 = np.arange(quant + 1, draw + 1)
+            k2 = arange(quant + 1, draw + 1)
             res.append(np.sum(self._pmf(k2, tot, good, draw)))
-        return np.asarray(res)
+        return asarray(res)
 
 hypergeom = hypergeom_gen(name='hypergeom', shapes="M, n, N")
 
@@ -7535,7 +7533,7 @@ class planck_gen(rv_discrete):
 
     def _ppf(self, q, lambda_):
         vals = ceil(-1.0/lambda_ * log1p(-q)-1)
-        vals1 = (vals-1).clip(self.a, np.inf)
+        vals1 = (vals-1).clip(self.a, inf)
         temp = self._cdf(vals1, lambda_)
         return where(temp >= q, vals1, vals)
 
@@ -7583,7 +7581,7 @@ class boltzmann_gen(rv_discrete):
     def _ppf(self, q, lambda_, N):
         qnew = q*(1-exp(-lambda_*N))
         vals = ceil(-1.0/lambda_ * log(1-qnew)-1)
-        vals1 = (vals-1).clip(0.0, np.inf)
+        vals1 = (vals-1).clip(0.0, inf)
         temp = self._cdf(vals1, lambda_, N)
         return where(temp >= q, vals1, vals)
 
@@ -7796,17 +7794,17 @@ class skellam_gen(rv_discrete):
     """
     def _rvs(self, mu1, mu2):
         n = self._size
-        return np.random.poisson(mu1, n)-np.random.poisson(mu2, n)
+        return mtrand.poisson(mu1, n) - mtrand.poisson(mu2, n)
 
     def _pmf(self, x, mu1, mu2):
-        px = np.where(x < 0, ncx2.pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+        px = where(x < 0, ncx2.pdf(2*mu2, 2*(1-x), 2*mu1)*2,
                          ncx2.pdf(2*mu1, 2*(x+1), 2*mu2)*2)
         # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
-        x = np.floor(x)
-        px = np.where(x < 0, ncx2.cdf(2*mu2, -2*x, 2*mu1),
+        x = floor(x)
+        px = where(x < 0, ncx2.cdf(2*mu2, -2*x, 2*mu1),
                          1-ncx2.cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
@@ -7819,8 +7817,8 @@ class skellam_gen(rv_discrete):
     def _stats(self, mu1, mu2):
         mean = mu1 - mu2
         var = mu1 + mu2
-        g1 = mean / np.sqrt((var)**3)
+        g1 = mean / sqrt((var)**3)
         g2 = 1 / var
         return mean, var, g1, g2
-skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam',
+skellam = skellam_gen(a=-inf, name="skellam", longname='A Skellam',
                       shapes="mu1,mu2")
