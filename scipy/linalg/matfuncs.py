@@ -443,7 +443,15 @@ def logm_new(A):
            SIAM Journal on Scientific Computing, 34 (4). C152-C169.
            ISSN 1095-7197
 
-    .. [2] 
+    .. [2] Nicholas J. Higham (2008)
+           "Functions of Matrices: Theory and Computation"
+           ISBN 978-0-898716-46-7
+
+    .. [3] Nicholas J. Higham and Lijing lin (2011)
+           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
+           SIAM Journal on Matrix Analysis and Applications,
+           32 (3). pp. 1056-1078. ISSN 0895-4798
+
     """
     A = asarray(A)
     if len(A.shape) != 2:
@@ -511,8 +519,11 @@ def logm_new(A):
         s += 1
 
     #TODO line 35
-    # Replace diag(T - I) by diag(T0)^(1/(2^s)) using [1, Alg. 2] and recompute
-    # the first superdiagonal of T using [18, eq. (5, 6)] applied to T0.
+    #NOTE I am starting to think that fractional matrix powers 
+    #NOTE should be implemented before implementing the matrix logarithm.
+    # Replace diag(T - I) by diag(T0)^(1/(2^s)) - 1
+    # using [1, Alg. 2] and recompute the first superdiagonal of T
+    # using [18 (my [3]), eq. (5, 6)] applied to T0.
 
     #TODO line 36
     # Evaluate U = 2**s r_m(T - I) using the partial fraction expansion (1.1).
@@ -546,7 +557,26 @@ def logm_new(A):
 
 def _scalar_unwinding_number(z):
     """
-    [2] (11.2)
+    Compute the scalar unwinding number.
+
+    Uses equation (11.2) in [1].
+
+    Parameters
+    ----------
+    z : complex
+        A complex number.
+
+    Returns
+    -------
+    unwinding_number : complex
+        The scalar unwinding number of z.
+
+    References
+    ----------
+    .. [1] Nicholas J. Higham (2008)
+           "Functions of Matrices: Theory and Computation"
+           ISBN 978-0-898716-46-7
+
     """
     return (z - np.log(np.exp(z))) / (2 * np.pi * 1j)
 
