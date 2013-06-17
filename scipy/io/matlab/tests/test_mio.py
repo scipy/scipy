@@ -108,8 +108,7 @@ case_table4.append(
 case_table4.append(
     {'name': 'multi',
      'classes': {'theta': 'double', 'a': 'double'},
-     'expected': {'theta': theta,
-                  'a': A},
+     'expected': {'theta': theta, 'a': A},
      })
 case_table4.append(
     {'name': 'minus',
@@ -381,9 +380,10 @@ def test_whos():
 # generator for round trip tests
 def test_round_trip():
     for case in case_table4 + case_table5_rt:
+        case_table4_names = [case['name'] for case in case_table4]
         name = case['name'] + '_round_trip'
         expected = case['expected']
-        for format in (case in case_table4 and ['4', '5'] or ['5']):
+        for format in (['4', '5'] if case['name'] in case_table4_names else ['5']):
             yield _rt_check_case, name, expected, format
 
 
