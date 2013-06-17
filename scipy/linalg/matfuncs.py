@@ -364,6 +364,179 @@ def funm(A, func, disp=True):
         return F, err
 
 
+def _almost_diagonal(M, abstol=1e-13):
+    M_abs_off_diagonal = np.absolute(M - np.diag(np.diag(M)))
+    return np.max(M_abs_off_diagonal) < abstol
+
+
+def _inverse_squaring_helper(T0, theta):
+    """
+    A helper function for inverse scaling and squaring for Pade approximation.
+
+    Parameters
+    ----------
+    T0 : (N, N) array_like upper triangular
+        Matrix involved in inverse scaling and squaring.
+    theta : indexable
+        The values theta[1] .. theta[7] must be available.
+        They represent bounds related to Pade approximation, and they depend
+        on the matrix function which is being computed.
+        For example, different values of theta are required for
+        matrix logarithm than for matrix fractional power.
+
+    Returns
+    -------
+    T : (N, N) array_like upper triangular
+        Composition of zero or more matrix square roots of T0.
+    s : non-negative integer
+        Number of square roots taken.
+    m : positive integer
+        The degree of the Pade approximation.
+
+    Notes
+    -----
+    This subroutine appears as a chunk of lines within
+    a couple of published algorithms; for example it appears
+    as lines 4--35 in algorithm (3.1) of [1], and
+    as lines 3--34 in algorithm (4.1) of [2].
+
+    References
+    ----------
+    .. [1] Nicholas J. Higham and Lijing Lin (2013)
+           "An Improved Schur-Pade Algorithm for Fractional Powers
+           of a Matrix and their Frechet Derivatives."
+
+    .. [2] Awad H. Al-Mohy and Nicholas J. Higham (2012)
+           "Improved Inverse Scaling and Squaring Algorithms
+           for the Matrix Logarithm."
+           SIAM Journal on Scientific Computing, 34 (4). C152-C169.
+           ISSN 1095-7197
+
+    """
+    T = T0
+
+    # Find s0, the smallest s such that the spectral radius
+    # of a certain diagonal matrix is at most theta[7].
+    s0 = 0
+    tmp_diag = np.diag(T)
+    while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
+        tmp_diag = np.sqrt(tmp_diag)
+        s0 += 1
+
+    # Take matrix square roots of T.
+    for i in range(s0):
+        T = _sqrtm_triu(T)
+
+    # Flow control in this section is a little odd.
+    # This is because I am translating algorithm descriptions
+    # which have GOTOs in the publication.
+    s = s0
+    k = 0
+    d2 = onenormest_m1_power(T, 2) ** (1/2)
+    d3 = onenormest_m1_power(T, 3) ** (1/3)
+    a2 = max(d2, d3)
+    m = None
+    for i in (1, 2):
+        if a2 <= theta[i]:
+            m = i
+            break
+    while m is None:
+        if s > s0:
+            d3 = onenormest_m1_power(T, 3) ** (1/3)
+        d4 = onenormest_m1_power(T, 4) ** (1/4)
+        a3 = max(d3, d4)
+        if a3 <= theta[7]:
+            j1 = min(i for i in (3, 4, 5, 6, 7) if a3 <= theta[i])
+            if j1 <= 6:
+                m = j1
+                break
+            elif a3 / 2 <= theta[5] and k < 2:
+                k += 1
+                T = _sqrtm_triu(T)
+                s += 1
+                continue
+        d5 = onenormest_m1_power(T, 5) ** (1/5)
+        a4 = max(d4, d5)
+        eta = min(a3, a4)
+        for i in (6, 7):
+            if eta <= theta[i]:
+                m = i
+                break
+        if m is not None:
+            break
+        T = _sqrtm_triu(T)
+        s += 1
+
+    # Return the root matrix, the number of square roots, and the Pade degree.
+    return T, s, m
+
+
+def fractional_power(A, t):
+    """
+    Compute a fractional power of a matrix.
+
+    This uses algorithm (3.1) of [1].
+
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix whose fractional power to evaluate.
+    t : float
+        Fractional power between -1 and 1 exclusive.
+
+    Returns
+    -------
+    fractional_power : (N, N) array_like
+        The fractional power of the matrix.
+
+    References
+    ----------
+    .. [1] Nicholas J. Higham and Lijing Lin (2013)
+           "An Improved Schur-Pade Algorithm for Fractional Powers
+           of a Matrix and their Frechet Derivatives."
+
+    """
+    A = asarray(A)
+    if len(A.shape) != 2:
+        raise ValueError("Non-matrix input to matrix function.")
+    T, Z = schur(A)
+    T, Z = rsf2csf(T,Z)
+    m_to_theta = {
+            1 : 1.51e-5,
+            2 : 2.24e-3,
+            3 : 1.88e-2,
+            4 : 6.04e-2,
+            5 : 1.24e-1,
+            6 : 2.00e-1,
+            7 : 2.79e-1,
+            #8 : 3.55e-1,
+            #9 : 4.25e-1,
+            #10 : 4.87e-1,
+            #11 : 5.42e-1,
+            #12 : 5.90e-1,
+            #13 : 6.32e-1,
+            #14 : 6.69e-1,
+            #15 : 7.00e-1,
+            #16 : 7.28e-1,
+            #32 : 9.15e-1,
+            #64 : 9.76e-1,
+            }
+    if _almost_diagonal(T):
+        U = np.diag(np.diag(T) ** t)
+        U, Z = all_mat(U, Z)
+        X = (Z * U * Z.H)
+        return X.A
+    else:
+        T0 = T
+        T, s, m = _inverse_squaring_helper(T, theta)
+
+
+    U, Z = all_mat(U, Z)
+    X = (Z * U * Z.H)
+    return X.A
+
+
+
 def logm(A, disp=True):
     """
     Compute matrix logarithm.
@@ -467,56 +640,7 @@ def logm_new(A):
             4.39e-1, 5.03e-1, 5.60e-1, 6.09e-1,
             6.52e-1, 6.89e-1, 7.21e-1, 7.49e-1)
 
-    # Find s0, the smallest s such that the spectral radius
-    # of a certain diagonal matrix is at most theta[7].
-    s0 = 0
-    tmp_diag = np.diag(T)
-    while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
-        tmp_diag = np.sqrt(tmp_diag)
-        s0 += 1
-
-    # Take matrix square roots of T.
-    for i in range(s0):
-        T = _sqrtm_triu(T)
-
-    # Flow control in this section is a little odd.
-    # This is because I am translating an algorithm (4.1)
-    # which has GOTOs in the publication.
-    s = s0
-    k = 0
-    d2 = onenormest_m1_power(T, 2) ** (1/2)
-    d3 = onenormest_m1_power(T, 3) ** (1/3)
-    a2 = max(d2, d3)
-    m = None
-    for i in (1, 2):
-        if a2 <= theta[i]:
-            m = i
-    while m is None:
-        if s > s0:
-            d3 = onenormest_m1_power(T, 3) ** (1/3)
-        d4 = onenormest_m1_power(T, 4) ** (1/4)
-        a3 = max(d3, d4)
-        if a3 <= theta[7]:
-            j1 = min(i for i in (3, 4, 5, 6, 7) if a3 <= theta[i])
-            if j1 <= 6:
-                m = j1
-                break
-            elif a3 / 2 <= theta[5] and k < 2:
-                k += 1
-                T = _sqrtm_triu(T)
-                s += 1
-                continue
-        d5 = onenormest_m1_power(T, 5) ** (1/5)
-        a4 = max(d4, d5)
-        eta = min(a3, a4)
-        for i in (6, 7):
-            if eta <= theta[i]:
-                m = i
-                break
-        if m is not None:
-            break
-        T = _sqrtm_triu(T)
-        s += 1
+    T, s, m = _inverse_squaring_helper(T, theta)
 
     #TODO line 35
     #NOTE I am starting to think that fractional matrix powers 
@@ -528,48 +652,88 @@ def logm_new(A):
     #TODO line 36
     # Evaluate U = 2**s r_m(T - I) using the partial fraction expansion (1.1).
 
-    # Over-write diagonal entries of U.
+    # Recompute diagonal entries of U.
     U[np.diag_indices(n)] = np.log(np.diag(T0))
 
-    # Over-write superdiagonal entries of U,
-    # using equation (11.28) of [2].
+    # Recompute superdiagonal entries of U.
     # This indexing of this code should be renovated
     # when newer np.diagonal() becomes available.
     for i in range(n-1):
         l1 = T0[i, i]
         l2 = T0[i+1, i+1]
         t12 = T0[i, i+1]
-        if l1 == l2:
-            f12 = t12 / l1
-        elif abs(l1) < abs(l2) / 2 or abs(l2) < abs(l1) / 2:
-            f12 = t12 * (np.log(l2) - np.log(l1)) / (l2 - l1)
-        else:
-            z = (l2 - l1) / (l2 + l1)
-            ua = _scalar_unwinding_number(np.log(l2) - np.log(l1))
-            ub = _scalar_unwinding_number(np.log(1+z) - np.log(1-z))
-            f12 = t12 * (2*np.atanh(z) + 2*np.pi*1j*(ua + ub)) / (l2 - l1)
-        U[i, i+1] = f12
+        U[i, i+1] = _logm_superdiag_entry(l1, l2, t12)
 
     U, Z = all_mat(U, Z)
     X = (Z * U * Z.H)
     return X.A
 
 
-def _scalar_unwinding_number(z):
+def _fractional_power_superdiag_entry(l1, l2, t12, p):
     """
-    Compute the scalar unwinding number.
+    Compute a superdiagonal entry of a matrix fractional power.
 
-    Uses equation (11.2) in [1].
+    This is Eq. (5.6) in [1].
 
     Parameters
     ----------
-    z : complex
-        A complex number.
+    l1 : complex
+        A diagonal entry of the matrix.
+    l2 : complex
+        A diagonal entry of the matrix.
+    t12 : complex
+        A superdiagonal entry of the matrix.
+    p : float
+        A fractional power.
 
     Returns
     -------
-    unwinding_number : complex
-        The scalar unwinding number of z.
+    f12 : complex
+        A superdiagonal entry of the matrix fractional power.
+
+    References
+    ----------
+    .. [1] Nicholas J. Higham and Lijing lin (2011)
+           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
+           SIAM Journal on Matrix Analysis and Applications,
+           32 (3). pp. 1056-1078. ISSN 0895-4798
+
+    """
+    if l1 == l2:
+        return t12 * p * l1**(p-1)
+    elif abs(l1) < abs(l2) / 2 or abs(l2) < abs(l1) / 2:
+        return t12 * ((l2**p) - (l1**p)) / (l2 - l1)
+    else:
+        # This is Eq. (5.5) in [1].
+        z = (l2 - l1) / (l2 + l1)
+        log_l1 = np.log(l1)
+        log_l2 = np.log(l2)
+        atanh_z = np.atanh(z)
+        tmp_a = t12 * np.exp((p/2)*(log_l2 + log_l1))
+        tmp_b = p * (atanh_z + np.pi * 1j * _unwindk(log_l2 - log_l1))
+        tmp_c = 2 * np.sinh(tmp_b) / (l2 - l1)
+        return tmp_a * tmp_c
+
+
+def _logm_superdiag_entry(l1, l2, t12):
+    """
+    Compute a superdiagonal entry of a matrix logarithm.
+
+    This is Eq. (11.28) in [1].
+
+    Parameters
+    ----------
+    l1 : complex
+        A diagonal entry of the matrix.
+    l2 : complex
+        A diagonal entry of the matrix.
+    t12 : complex
+        A superdiagonal entry of the matrix.
+
+    Returns
+    -------
+    f12 : complex
+        A superdiagonal entry of the matrix logarithm.
 
     References
     ----------
@@ -578,7 +742,54 @@ def _scalar_unwinding_number(z):
            ISBN 978-0-898716-46-7
 
     """
-    return (z - np.log(np.exp(z))) / (2 * np.pi * 1j)
+    if l1 == l2:
+        return t12 / l1
+    elif abs(l1) < abs(l2) / 2 or abs(l2) < abs(l1) / 2:
+        return t12 * (np.log(l2) - np.log(l1)) / (l2 - l1)
+    else:
+        z = (l2 - l1) / (l2 + l1)
+        ua = _unwindk(np.log(l2) - np.log(l1))
+        ub = _unwindk(np.log(1+z) - np.log(1-z))
+        return t12 * (2*np.atanh(z) + 2*np.pi*1j*(ua + ub)) / (l2 - l1)
+
+
+def _unwindk(z):
+    """
+    Compute the scalar unwinding number.
+
+    Uses Eq. (5.3) in [1], and should be equal to (z - log(exp(z)) / (2 pi i).
+    Note that this definition differs in sign from the original definition
+    in equations (5, 6) in [2].  The sign convention is justified in [3].
+
+    Parameters
+    ----------
+    z : complex
+        A complex number.
+
+    Returns
+    -------
+    unwinding_number : integer
+        The scalar unwinding number of z.
+
+    References
+    ----------
+    .. [1] Nicholas J. Higham and Lijing lin (2011)
+           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
+           SIAM Journal on Matrix Analysis and Applications,
+           32 (3). pp. 1056-1078. ISSN 0895-4798
+
+    .. [2] Robert M. Corless and David J. Jeffrey,
+           "The unwinding number." Newsletter ACM SIGSAM Bulletin
+           Volume 30, Issue 2, June 1996, Pages 28-35.
+
+    .. [3] Russell Bradford and Robert M. Corless and James H. Davenport and
+           David J. Jeffrey and Stephen M. Watt,
+           "Reasoning about the elementary functions of complex analysis"
+           Annals of Mathematics and Artificial Intelligence,
+           36: 303-318, 2002.
+
+    """
+    return int(np.ceil((z.imag - np.pi) / (2*np.pi)))
 
 
 def signm(a, disp=True):
