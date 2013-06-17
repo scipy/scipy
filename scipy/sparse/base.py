@@ -176,12 +176,13 @@ class spmatrix(object):
 
         return out
 
-    if sys.version_info[0] >= 3:
-        def __bool__(self):  # Simple -- other ideas?
-            return self.getnnz() > 0
-    else:
-        def __nonzero__(self):  # Simple -- other ideas?
-            return self.getnnz() > 0
+    def __bool__(self):  # Simple -- other ideas?
+        if self.shape == (1, 1):
+            return True if self.nnz == 1 else False
+        else:
+            raise ValueError("The truth value of an array with more than one "
+                             "element is ambiguous. Use a.any() or a.all().")
+    __nonzero__ = __bool__
 
     # What should len(sparse) return? For consistency with dense matrices,
     # perhaps it should be the number of rows?  But for some uses the number of
