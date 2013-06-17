@@ -9,6 +9,8 @@ from numpy.testing import (TestCase, run_module_suite, assert_equal,
 from numpy.testing.utils import WarningManager
 from nose import SkipTest
 
+import operator
+
 import numpy
 import numpy as np
 from numpy import typecodes, array
@@ -16,6 +18,153 @@ import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
 from scipy.special import xlogy
 import warnings
+
+
+### tests for _parse_args related stuff
+
+class TestParseFuncs(TestCase):
+    """Make sure _parse is a bound method of a distribution."""
+    def _check_parse_args(self, distr):
+        from scipy.lib.six import _meth_self 
+        im_self = lambda f: getattr(f, _meth_self)
+
+        ## cf. http://stackoverflow.com/questions/53225
+        assert im_self(distr._parse_args) is distr
+        assert im_self(distr._parse_args_stats) is distr
+        assert im_self(distr._parse_args_rvs) is distr
+
+    def test_parse_args(self):
+        # One continous, one discrete
+        r = stats.rv_discrete(name='sample', values=([1, 2, 3], [0,0,1]))
+        for distr in [stats.norm, stats.planck, r]:
+            self._check_parse_args(distr)
+
+
+class TestNamedArgs(TestCase):
+    """Test named arguments in disributions."""
+    def test_named(self):
+        attrs = ['pdf', 'logpdf', 'cdf', 'logcdf', 'sf', 'logsf', 'ppf', 'isf'] 
+        meths = [operator.attrgetter(attr) for attr in attrs]
+
+        # continuous, one shape parameter
+        t = stats.t
+        for func in [meth(t) for meth in meths]:
+            assert_equal( func(3., 2.), func(3., df=2.) )
+            assert_equal( func(3., df=2., loc=1.), func(3., 2., 1.))
+
+        # continuous, two shape parameters 
+        g = stats.gengamma
+        for func in [meth(g) for meth in meths]:
+            assert_equal( func(1., 2., 3), func(1., a=2., c=3.) )
+            assert_equal( func(1., 2., 3.), func(1., 2., c=3.))
+            assert_equal( func(1., 2., 3., 4), func(1., 2., loc=4., c=3.))
+
+        ##### discrete distributions
+        
+        # one shape parameter
+        attrs = ['pmf', 'logpmf', 'cdf', 'logcdf', 'sf', 'logsf', 'ppf', 'isf']
+        meths = [operator.attrgetter(attr) for attr in attrs]
+
+        p = stats.poisson
+        for func in [meth(p) for meth in meths]:
+            assert_equal( func(3., 2.), func(3., mu=2.) )
+            assert_equal( func(3., 2., 1.), func(3., mu=2., loc=1.))
+            assert_raises(TypeError, func, 3., 2., 1., dict(scale=3) )
+
+        # two shape parameters
+        b = stats.binom
+        for func in [meth(b) for meth in meths]:
+            assert_equal( func(3, 2, 0.1), func(3, n=2, p=0.1) )
+            assert_equal( func(3, 2, 0.1), func(3, 2, p=0.1) )  # n=2, positional
+            assert_equal( func(3, 2, 0.1, -1), func(3, n=2, p=0.1, loc=-1))
+            assert_raises(TypeError, func, 3, dict(n=2, p=0.1, scale=3) )
+
+        # discrete distribution w/ values is not broken
+        r = stats.rv_discrete(name='sample', values=([0, 1, 2], [0.2, 0.1, 0.7]))
+        assert_allclose(r.pmf(1), 0.1)
+        assert_allclose(r.pmf(5, loc=4), 0.1)
+        assert_raises(TypeError, r.pmf, 1, dict(scale=42))
+
+    def test_frozen(self):
+        """Test freezing w/named parameters."""
+        # continous, one shape param
+        t = stats.t
+        assert_equal( t(2.).pdf(1.), t(df=2).pdf(1.) )
+        assert_equal( t(2., loc=3.).pdf(1.), t(2., 3).pdf(1.))
+
+        # continuous, two shape param
+        g = stats.gengamma
+        assert_equal(g(2., 3.).pdf(1.), g(2., c=3.).pdf(1.))
+        assert_equal(g(2., 3.).pdf(1.), g(a=2., c=3.).pdf(1.))
+
+        # discrete, one shape param
+        p = stats.poisson
+        assert_equal( p(2.).pmf(1.), p(mu=2).pmf(1.) )
+        assert_equal( p(2., loc=3.).pmf(1.), p(2., 3).pmf(1.))
+
+        # discrete, two shape param
+        b = stats.binom
+        assert_equal( b(2, 1).pmf(3), b(n=2, p=1).pmf(3) )
+        assert_equal( b(2, 1).pmf(3), b(2, p=1).pmf(3))
+
+
+    def test_unknown_kwargs(self):
+        """Catch typos in named args."""
+        assert_raises(TypeError, stats.t.pdf, 1., f=42)
+        assert_raises(TypeError, stats.gengamma.pdf, 1., 2., C=42)
+        assert_raises( TypeError, stats.planck.pmf, 3, 2, lamba=42)
+
+    def test_stats(self):
+        # allow moments as either positional or keyword args 
+        # continuous
+        t = stats.t
+        assert_equal(t.stats(3), t.stats(df=3))
+        assert_equal(t(3).stats('mvsk'), t.stats(df=3, moments='mvsk'))
+
+        # discrete
+        b = stats.binom
+        assert_equal(b.stats(8, .3), b.stats(8, p=.3))
+        assert_equal(b(8, .3,).stats('mvsk'), 
+                     b.stats(n=8, p=.3, moments='mvsk'))
+
+    def test_rvs_args(self):
+        # docstring for rvs states size is keyword-only, but
+        #     https://github.com/scipy/scipy/pull/400
+        #     allows it to be positional as well. 
+        t = stats.t
+        assert np.isscalar( t.rvs(1) )  # df=1, size=None
+        assert t.rvs(1, size=1).shape == (1,)  # df=1, size=1 => array 
+        assert_raises(TypeError, t.rvs, 1, 2, 3, 4, 5)
+
+        np.random.seed(42)
+        r1 = t.rvs(1, 2, 3, 4)  # df=1, loc=2, scale=3, size = 4
+        assert r1.shape == (4, )
+
+        np.random.seed(42)
+        r2 = t.rvs(1, 2, 3, size=4)
+        assert_array_equal(r1, r2)
+
+        np.random.seed(42)
+        r3 = t.rvs(df=1, loc=2, scale=3, size=4)
+        assert_array_equal(r1, r3)        
+
+        # discrete, two shape parameters
+        b = stats.binom
+        np.random.seed(42)
+        r1 = b.rvs(3, 0.4, size=4)
+        
+        np.random.seed(42)
+        r2 = b.rvs(n=3, p=0.4, size=4)
+        assert_array_equal(r1, r2)
+
+        # discrete distribution w/ values is not broken:
+        r = stats.rv_discrete(name='sample', values=([0, 1, 2], [0.2, 0.1, 0.7]))
+        np.random.seed(42)
+        r1 = r.rvs(size=10)
+
+        np.random.seed(42)
+        r2 = r.rvs(10, size=10)   # loc=10
+        assert_equal(r1 + 10, r2)
 
 
 def kolmogorov_check(diststr, args=(), N=20, significance=0.01):

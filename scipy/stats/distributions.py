@@ -8,6 +8,7 @@ import math
 import warnings
 
 from scipy.lib.six import callable, string_types, text_type, get_method_function
+from scipy.lib.six import exec_
 
 from scipy.misc import comb, derivative
 from scipy import special
@@ -73,7 +74,7 @@ except ImportError:
 
 
 # These are the docstring parts used for substitution in specific
-# distribution docstrings.
+# distribution docstrings
 
 docheaders = {'methods':"""\nMethods\n-------\n""",
               'parameters':"""\nParameters\n---------\n""",
@@ -529,11 +530,68 @@ def argsreduce(cond, *args):
     return [extract(cond, arr1 * expand_arr) for arr1 in newargs]
 
 
+
+parse_arg_template =\
+"""
+def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
+    return (%(shape_arg_str)s), %(locscale_out)s
+
+def _parse_args_rvs(self, %(shape_arg_str)s %(locscale_in)s, size=None):
+    return (%(shape_arg_str)s), %(locscale_out)s, size
+
+def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
+    return (%(shape_arg_str)s), %(locscale_out)s, moments
+"""
+
+
 class rv_generic(object):
     """Class which encapsulates common functionality between rv_discrete
     and rv_continuous.
 
     """
+    def _construct_argparser(self, names_to_inspect, locscale_in, locscale_out):
+        """Construct the parser for the shape arguments.
+
+        Works by inspecting the call signatures of `names_to_inspect`
+        and constructing the argument-parsing functions dynamically.
+        Modifies the calling clas.
+        Is supposed to be called in __init__ of a class for each distribution.
+        """
+
+        # find out the call signatures (_pdf, _cdf etc), deduce shape arguments
+        shapes_list = []
+        for name in names_to_inspect:
+            # look for names in instance methods, then global namespace
+            # the latter is needed for rv_discrete with explicit `values`
+            try:
+                meth = get_method_function(getattr(self, name))
+            except:
+                meth = globals()[name]
+            shapes_args = inspect.getargspec(meth)
+            shapes_list.append(shapes_args.args)
+        shapes = max(shapes_list, key = lambda x: len(x))
+        shapes = shapes[2:]  # remove self, x,
+        shapes =', '.join(shapes) + ', ' if shapes else ''  # NB: not None
+
+        # have the arguments, construct the method from template
+        dct = dict(shape_arg_str=shapes,
+                   locscale_in=locscale_in,
+                   locscale_out=locscale_out,
+        )
+        ns = {}
+        exec_(parse_arg_template % dct, ns)
+        for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
+            setattr(self.__class__, name, ns[name])
+
+        # NB: these are not tested:
+        ## subclassing w/ *args/**kwargs -- need to handle?
+        ## what about defaults: def _pdf(self, x, a=1): pass
+
+        ## technically, can return `shapes` and `numargs` here:
+        ## setting `numargs` relies on `inspect` anyway, so it's just code dup.
+
+
+    #### these are not called in this version
     def _fix_loc_scale(self, args, loc, scale=1):
         """Parse args/kwargs input to other methods."""
         args, loc, scale, kwarg3 = self._fix_loc_scale_kwarg3(args, loc, scale,
@@ -604,13 +662,18 @@ class rv_generic(object):
             Random variates of given `size`.
 
         """
-        kwd_names = ['loc', 'scale', 'size', 'discrete']
-        loc, scale, size, discrete = map(kwds.get, kwd_names,
-                                         [None]*len(kwd_names))
-
-        args, loc, scale, size = self._fix_loc_scale_kwarg3(args, loc, scale,
-                                                            size)
-        cond = logical_and(self._argcheck(*args), (scale >= 0))
+        try:
+            discrete = kwds.pop('discrete', None)
+        except:
+            pass
+        args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
+#        kwd_names = ['loc', 'scale', 'size', 'discrete']
+#        loc, scale, size, discrete = map(kwds.get, kwd_names,
+#                                         [None]*len(kwd_names))
+#
+#        args, loc, scale, size = self._fix_loc_scale_kwarg3(args, loc, scale,
+#                                                            size)
+        cond = logical_and(self._argcheck(*args),(scale >= 0))
         if not all(cond):
             raise ValueError("Domain error in arguments.")
 
@@ -1043,6 +1106,14 @@ class rv_continuous(rv_generic):
         else:
             self._construct_doc()
 
+        ## This only works for old-style classes...
+        # self.__class__.__doc__ = self.__doc__
+
+        self._construct_argparser(names_to_inspect=['_pdf', '_cdf'],
+                                  locscale_in='loc=0, scale=1',
+                                  locscale_out='loc, scale')
+
+
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the default template."""
         if longname is None:
@@ -1192,8 +1263,10 @@ class rv_continuous(rv_generic):
             Probability density function evaluated at x
 
         """
-        loc,scale = map(kwds.get,['loc','scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+##        loc,scale = map(kwds.get,['loc','scale'])
+##        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale = self._parse_args(*args, **kwds)
+
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = asarray((x-loc)*1.0/scale)
@@ -1234,8 +1307,8 @@ class rv_continuous(rv_generic):
             Log of the probability density function evaluated at x
 
         """
-        loc,scale = map(kwds.get,['loc','scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale = self._parse_args(*args, **kwds)
+
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = asarray((x-loc)*1.0/scale)
@@ -1275,8 +1348,8 @@ class rv_continuous(rv_generic):
             Cumulative distribution function evaluated at `x`
 
         """
-        loc,scale = map(kwds.get,['loc','scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale = self._parse_args(*args, **kwds)
+
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
@@ -1316,8 +1389,8 @@ class rv_continuous(rv_generic):
             Log of the cumulative distribution function evaluated at x
 
         """
-        loc,scale = map(kwds.get,['loc','scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale = self._parse_args(*args, **kwds)
+
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
@@ -1358,8 +1431,8 @@ class rv_continuous(rv_generic):
             Survival function evaluated at x
 
         """
-        loc,scale = map(kwds.get,['loc','scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale = self._parse_args(*args, **kwds)
+
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
@@ -1402,8 +1475,8 @@ class rv_continuous(rv_generic):
             Log of the survival function evaluated at `x`.
 
         """
-        loc,scale = map(kwds.get,['loc','scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale = self._parse_args(*args, **kwds)
+
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
@@ -1444,8 +1517,8 @@ class rv_continuous(rv_generic):
             quantile corresponding to the lower tail probability q.
 
         """
-        loc, scale = map(kwds.get,['loc', 'scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale = self._parse_args(*args, **kwds)
+
         q, loc, scale = map(asarray,(q, loc, scale))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
@@ -1490,8 +1563,8 @@ class rv_continuous(rv_generic):
             Quantile corresponding to the upper tail probability q.
 
         """
-        loc, scale = map(kwds.get,['loc', 'scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale = self._parse_args(*args, **kwds)
+
         q, loc, scale = map(asarray,(q, loc, scale))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
@@ -1541,9 +1614,10 @@ class rv_continuous(rv_generic):
             of requested moments.
 
         """
-        loc,scale,moments = map(kwds.get,['loc','scale','moments'])
-        args, loc, scale, moments = self._fix_loc_scale_kwarg3(args, loc,
-                                                    scale, moments, 'mv')
+        args, loc, scale, moments = self._parse_args_stats(*args, **kwds)
+        #loc,scale,moments = map(kwds.get,['loc','scale','moments'])
+        #args, loc, scale, moments = self._fix_loc_scale_kwarg3(args, loc,
+        #                                            scale, moments, 'mv')
 
         loc, scale = map(asarray, (loc, scale))
         args = tuple(map(asarray, args))
@@ -1947,8 +2021,8 @@ class rv_continuous(rv_generic):
             Scale parameter (default=1).
 
         """
-        loc,scale = map(kwds.get,['loc','scale'])
-        args, loc, scale = self._fix_loc_scale(args, loc, scale)
+        args, loc, scale = self._parse_args(*args, **kwds)
+
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
         output = zeros(shape(cond0),'d')
@@ -6097,12 +6171,20 @@ class rv_discrete(rv_generic):
             self.moment_gen = instancemethod(_drv_moment_gen,
                                              self, rv_discrete)
             self.numargs = 0
+
+            self._construct_argparser(names_to_inspect=['_drv_pmf'],
+                                  locscale_in='loc=0',
+                                  locscale_out='loc, 1')  # scale=1 for discrete RVs
         else:
             cdf_signature = inspect.getargspec(get_method_function(self._cdf))
             numargs1 = len(cdf_signature[0]) - 2
             pmf_signature = inspect.getargspec(get_method_function(self._pmf))
             numargs2 = len(pmf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
+
+            self._construct_argparser(names_to_inspect=['_pmf', '_cdf'],
+                                  locscale_in='loc=0',
+                                  locscale_out='loc, 1')  # scale=1 for discrete RVs
 
             # nin correction needs to be after we know numargs
             # correct nin for generic moment vectorization
@@ -6134,6 +6216,7 @@ class rv_discrete(rv_generic):
 
         ## This only works for old-style classes...
         # self.__class__.__doc__ = self.__doc__
+
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the rv_discrete template."""
@@ -6254,8 +6337,10 @@ class rv_discrete(rv_generic):
             Probability mass function evaluated at k
 
         """
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
+#        loc = kwds.get('loc')
+#        args, loc = self._fix_loc(args, loc)
+        args, loc, _ = self._parse_args(*args, **kwds)
+
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
@@ -6291,8 +6376,8 @@ class rv_discrete(rv_generic):
             Log of the probability mass function evaluated at k.
 
         """
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
+        args, loc, _ = self._parse_args(*args, **kwds)
+
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
@@ -6329,8 +6414,8 @@ class rv_discrete(rv_generic):
             Cumulative distribution function evaluated at `k`.
 
         """
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
+        args, loc, _ = self._parse_args(*args, **kwds)
+
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
@@ -6369,8 +6454,8 @@ class rv_discrete(rv_generic):
             Log of the cumulative distribution function evaluated at k.
 
         """
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
+        args, loc, _ = self._parse_args(*args, **kwds)
+
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
@@ -6410,8 +6495,8 @@ class rv_discrete(rv_generic):
             Survival function evaluated at k.
 
         """
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
+        args, loc, _ = self._parse_args(*args, **kwds)
+
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray(k-loc)
@@ -6452,8 +6537,8 @@ class rv_discrete(rv_generic):
             Survival function evaluated at `k`.
 
         """
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
+        args, loc, _ = self._parse_args(*args, **kwds)
+
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray(k-loc)
@@ -6494,8 +6579,8 @@ class rv_discrete(rv_generic):
             Quantile corresponding to the lower tail probability, q.
 
         """
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
+        args, loc, _ = self._parse_args(*args, **kwds)
+
         q,loc = map(asarray,(q,loc))
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
@@ -6535,8 +6620,8 @@ class rv_discrete(rv_generic):
             Quantile corresponding to the upper tail probability, q.
 
         """
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
+        args, loc, _ = self._parse_args(*args, **kwds)
+
         q,loc = map(asarray,(q,loc))
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
@@ -6587,22 +6672,11 @@ class rv_discrete(rv_generic):
             of requested moments.
 
         """
-        loc, moments = map(kwds.get,['loc','moments'])
-        N = len(args)
-        if N > self.numargs:
-            if N == self.numargs + 1 and loc is None:  # loc is given without keyword
-                loc = args[-1]
-            elif N == self.numargs + 2 and moments is None:  # loc, scale, and moments
-                loc, moments = args[-2:]
-            else:
-                raise TypeError("Too many input arguments.")
-
-            args = args[:self.numargs]
-
-        if loc is None:
-            loc = 0.0
-        if moments is None:
-            moments = 'mv'
+        try:
+            kwds["moments"] = kwds.pop("moment") # test suite is full of these; a feature?
+        except:
+            pass
+        args, loc, _, moments = self._parse_args_stats(*args, **kwds)
 
         loc = asarray(loc)
         args = tuple(map(asarray,args))
@@ -6747,8 +6821,7 @@ class rv_discrete(rv_generic):
             return ent
 
     def entropy(self, *args, **kwds):
-        loc = kwds.get('loc')
-        args, loc = self._fix_loc(args, loc)
+        args, loc, _ = self._parse_args(*args, **kwds)
         loc = asarray(loc)
         args = list(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
