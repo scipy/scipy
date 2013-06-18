@@ -1204,6 +1204,10 @@ def mood(x,y):
     null hypothesis is that s = 1.
 
     """
+
+    x = np.array(x).flatten()
+    y = np.array(y).flatten()
+
     n = len(x)
     m = len(y)
     xy = r_[x,y]
