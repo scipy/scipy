@@ -77,6 +77,19 @@ class _TestCommon:
         assert_equal(self.datsp.todense(),
                      self.datsp_dtypes[np.float64].todense())
 
+    def test_bool(self):
+        def check(dtype):
+            datsp = self.datsp_dtypes[dtype]
+
+            assert_raises(ValueError, bool, datsp)
+            assert_(self.spmatrix([1]))
+            assert_(not self.spmatrix([0]))
+        for dtype in self.checked_dtypes:
+            fails = self.__class__ == TestDOK
+            msg = "Cannot create a rank <= 2 DOK matrix."
+            yield dec.skipif(fails, msg)(check), dtype
+
+
     def test_eq(self):
         def check(dtype):
             dat = self.dat_dtypes[dtype]
@@ -106,7 +119,7 @@ class _TestCommon:
             fails = not (self.__class__ == TestBSR or
                          self.__class__ == TestCSC or
                          self.__class__ == TestCSR)
-            msg = "Bool cjmparisons only implemented for CSC and CSR."
+            msg = "Bool comparisons only implemented for CSC and CSR."
             yield dec.skipif(fails, msg)(check), dtype
 
     def test_ne(self):
