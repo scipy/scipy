@@ -104,9 +104,9 @@ def _unwindk(z):
     """
     Compute the scalar unwinding number.
 
-    Uses Eq. (5.3) in [1], and should be equal to (z - log(exp(z)) / (2 pi i).
+    Uses Eq. (5.3) in [1]_, and should be equal to (z - log(exp(z)) / (2 pi i).
     Note that this definition differs in sign from the original definition
-    in equations (5, 6) in [2].  The sign convention is justified in [3].
+    in equations (5, 6) in [2]_.  The sign convention is justified in [3]_.
 
     Parameters
     ----------
@@ -143,7 +143,7 @@ def _briggs_helper_function(a, k):
     """
     Computes r = a^(1 / (2^k)) - 1.
 
-    This is algorithm (2) of [1].
+    This is algorithm (2) of [1]_.
     The purpose is to avoid a danger of subtractive cancellation.
     For more computational efficiency it should probably be cythonized.
 
@@ -199,7 +199,7 @@ def _fractional_power_superdiag_entry(l1, l2, t12, p):
     """
     Compute a superdiagonal entry of a fractional matrix power.
 
-    This is Eq. (5.6) in [1].
+    This is Eq. (5.6) in [1]_.
 
     Parameters
     ----------
@@ -245,7 +245,7 @@ def _logm_superdiag_entry(l1, l2, t12):
     """
     Compute a superdiagonal entry of a matrix logarithm.
 
-    This is Eq. (11.28) in [1].
+    This is Eq. (11.28) in [1]_.
 
     Parameters
     ----------
@@ -307,9 +307,9 @@ def _inverse_squaring_helper(T0, theta):
     -----
     This subroutine appears as a chunk of lines within
     a couple of published algorithms; for example it appears
-    as lines 4--35 in algorithm (3.1) of [1], and
-    as lines 3--34 in algorithm (4.1) of [2].
-    The instances of 'goto line 38' in algorithm (3.1) of [1]
+    as lines 4--35 in algorithm (3.1) of [1]_, and
+    as lines 3--34 in algorithm (4.1) of [2]_.
+    The instances of 'goto line 38' in algorithm (3.1) of [1]_
     probably mean 'goto line 36' and have been intepreted accordingly.
 
     References
@@ -429,7 +429,7 @@ def _fractional_power_pade(R, t, m):
 
     Evaluate the degree-m Pade approximation of R
     to the fractional matrix power t using the continued fraction
-    in bottom-up fashion using algorithm (4.1) in [1].
+    in bottom-up fashion using algorithm (4.1) in [1]_.
 
     Parameters
     ----------
@@ -475,8 +475,8 @@ def _remainder_matrix_power(A, t):
     """
     Compute the fractional power of a matrix, for fractions -1 < t < 1.
 
-    This uses algorithm (3.1) of [1].
-    The Pade approximation itself uses algorithm (4.1) of [2].
+    This uses algorithm (3.1) of [1]_.
+    The Pade approximation itself uses algorithm (4.1) of [2]_.
 
     Parameters
     ----------
@@ -565,7 +565,7 @@ def fractional_matrix_power(A, p):
     """
     Compute the fractional power of a matrix.
 
-    Proceeds according to the discussion in section (6) of [1].
+    Proceeds according to the discussion in section (6) of [1]_.
 
     Parameters
     ----------
