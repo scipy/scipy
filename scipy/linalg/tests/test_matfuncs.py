@@ -110,12 +110,8 @@ class TestLogM(TestCase):
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
                 W = np.linalg.eigvals(M)
-                # We cannot take logm when an eigenvalue is real and negative.
-                if any(w.real == w and w < 0 for w in W):
-                    assert_raises(ValueError, logm, M)
-                else:
-                    M_round_trip = expm(logm(M))
-                    assert_allclose(M_round_trip, M)
+                M_round_trip = expm(logm(M))
+                assert_allclose(M_round_trip, M)
 
     def test_round_trip_random_complex(self):
         np.random.seed(1234)

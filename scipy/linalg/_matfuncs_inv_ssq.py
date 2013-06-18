@@ -4,6 +4,8 @@ Matrix functions that use Pade approximation with inverse scaling and squaring.
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 
 from scipy.linalg._matfuncs_sqrtm import _sqrtm_triu
@@ -172,7 +174,7 @@ def _briggs_helper_function(a, k):
 
     """
     if (a.real == a) and (a <= 0):
-        raise ValueError("expected a complex number 'a' not belonging "
+        warnings.warn("expected a complex number 'a' not belonging "
                 "to the closed negative real axis")
     if k < 0 or int(k) != k:
         raise ValueError('expected a nonnegative integer k')
