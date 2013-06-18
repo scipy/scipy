@@ -411,6 +411,8 @@ def _inverse_squaring_helper(T0, theta):
             R[j, j+1] = f12
 
     # Return the T-I matrix, the number of square roots, and the Pade degree.
+    if not np.array_equal(R, np.triu(R)):
+        raise Exception('internal inconsistency')
     return R, s, m
 
 
@@ -477,7 +479,10 @@ def _fractional_power_pade(R, t, m):
     for j in range(2*m - 1, 0, -1):
         rhs = R * _fractional_power_pade_constant(j, t)
         Y = solve(ident + Y, rhs)
-    return ident + Y
+    U = ident + Y
+    if not np.array_equal(U, np.triu(U)):
+        raise Exception('internal inconsistency')
+    return U
 
 
 def _remainder_matrix_power_triu(T, t):
@@ -554,6 +559,8 @@ def _remainder_matrix_power_triu(T, t):
                         t12 = T0[j, j+1]
                         f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
                         U[j, j+1] = f12
+    if not np.array_equal(U, np.triu(U)):
+        raise Exception('internal inconsistency')
     return U
 
 
@@ -732,6 +739,8 @@ def _logm_triu(T):
             U[i, i+1] = _logm_superdiag_entry(l1, l2, t12)
 
     # Return the logm of the upper triangular matrix.
+    if not np.array_equal(U, np.triu(U)):
+        raise Exception('internal inconsistency')
     return U
 
 
