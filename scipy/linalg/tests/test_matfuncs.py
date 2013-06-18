@@ -18,7 +18,7 @@ from numpy.testing import (TestCase, run_module_suite,
 
 import scipy.linalg
 from scipy.linalg import funm, signm, logm, sqrtm, expm, expm_frechet
-from scipy.linalg import logm_new, fractional_matrix_power
+from scipy.linalg import fractional_matrix_power
 from scipy.linalg.matfuncs import expm2, expm3
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
@@ -89,12 +89,12 @@ class TestLogM(TestCase):
             [0, 0, 0, 3.0744e-1]], dtype=float)
         return A
 
-    def test_al_mohy_higham_2012_experiment_1_logm_new(self):
-        # The new logm completes the round trip successfully.
+    def test_al_mohy_higham_2012_experiment_1_logm(self):
+        # The logm completes the round trip successfully.
         A = self._get_al_mohy_higham_2012_experiment_1()
-        A_logm_new = logm_new(A)
-        A_logm_new_round_trip = expm(A_logm_new)
-        assert_allclose(A_logm_new_round_trip, A, rtol=1e-5)
+        A_logm = logm(A)
+        A_round_trip = expm(A_logm)
+        assert_allclose(A_round_trip, A, rtol=1e-5)
 
     def test_al_mohy_higham_2012_experiment_1_funm_log(self):
         # The raw funm with np.log does not complete the round trip.
@@ -103,13 +103,7 @@ class TestLogM(TestCase):
         A_funm_log_round_trip = expm(A_funm_log)
         assert_(not np.allclose(A_funm_log_round_trip, A, rtol=1e-5))
 
-    def test_al_mohy_higham_2012_experiment_1_logm(self):
-        # The current logm notices that the raw funm solution
-        # has large backward error, but its correction fails.
-        A = self._get_al_mohy_higham_2012_experiment_1()
-        assert_raises(ValueError, logm, A, disp=False)
-
-    def test_round_trip_random_float_logm_new(self):
+    def test_round_trip_random_float(self):
         np.random.seed(1234)
         for n in range(2, 6):
             M_unscaled = np.random.randn(n, n)
@@ -118,18 +112,18 @@ class TestLogM(TestCase):
                 W = np.linalg.eigvals(M)
                 # We cannot take logm when an eigenvalue is real and negative.
                 if any(w.real == w and w < 0 for w in W):
-                    assert_raises(ValueError(logm_new, M))
+                    assert_raises(ValueError(logm, M))
                 else:
-                    M_round_trip = expm(logm_new(M))
+                    M_round_trip = expm(logm(M))
                     assert_allclose(M_round_trip, M)
 
-    def test_round_trip_random_complex_logm_new(self):
+    def test_round_trip_random_complex(self):
         np.random.seed(1234)
         for n in range(2, 6):
             M_unscaled = np.random.randn(n, n) + 1j * np.random.randn(n, n)
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
-                M_round_trip = expm(logm_new(M))
+                M_round_trip = expm(logm(M))
                 assert_allclose(M_round_trip, M)
 
 

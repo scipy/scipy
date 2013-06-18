@@ -14,7 +14,7 @@ from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import onenormest
 
 
-__all__ = ['logm_new', 'fractional_matrix_power']
+__all__ = ['logm', 'fractional_matrix_power']
 
 
 #TODO renovate or move this class when scipy operators are more mature
@@ -595,7 +595,7 @@ def fractional_matrix_power(A, p):
     return Q.dot(R)
 
 
-def logm_new(A):
+def logm(A):
     """
     Compute matrix logarithm.
 
