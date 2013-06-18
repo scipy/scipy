@@ -517,7 +517,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         indptr = np.empty_like(self.indptr)
         indices = np.empty(max_bnnz, dtype=np.intc)
 
-        if op == '_ne_':
+        bool_ops = ['_ne_', '_lt_', '_gt_', '_le_', '_ge_']
+        if op in bool_ops:
             data = np.empty(R*C*max_bnnz, dtype=np.bool_)
         else:
             data = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
