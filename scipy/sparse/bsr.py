@@ -264,7 +264,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
     def getnnz(self):
         R,C = self.blocksize
-        return self.indptr[-1] * R * C
+        return int(self.indptr[-1] * R * C)
     nnz = property(fget=getnnz)
 
     def __repr__(self):

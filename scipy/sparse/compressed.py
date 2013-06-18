@@ -84,7 +84,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         self.check_format(full_check=False)
 
     def getnnz(self):
-        return self.indptr[-1]
+        return int(self.indptr[-1])
     nnz = property(fget=getnnz)
 
     def _set_self(self, other, copy=False):
