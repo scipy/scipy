@@ -308,6 +308,8 @@ def _inverse_squaring_helper(T0, theta):
     a couple of published algorithms; for example it appears
     as lines 4--35 in algorithm (3.1) of [1], and
     as lines 3--34 in algorithm (4.1) of [2].
+    The instances of 'goto line 38' in algorithm (3.1) of [1]
+    probably mean 'goto line 36' and have been intepreted accordingly.
 
     References
     ----------
@@ -630,8 +632,9 @@ def logm_new(A):
 
     """
     A = np.asarray(A)
-    if len(A.shape) != 2:
-        raise ValueError("Non-matrix input to matrix function.")
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected a square matrix')
+    n, n = A.shape
     T, Z = schur(A)
     T, Z = rsf2csf(T,Z)
     T0 = T
@@ -643,17 +646,38 @@ def logm_new(A):
             4.39e-1, 5.03e-1, 5.60e-1, 6.09e-1,
             6.52e-1, 6.89e-1, 7.21e-1, 7.49e-1)
 
-    T, s, m = _inverse_squaring_helper(T, theta)
+    T, s, m = _inverse_squaring_helper(T0, theta)
+    R = T - np.identity(n)
 
-    #TODO line 35
-    #NOTE I am starting to think that fractional matrix powers 
-    #NOTE should be implemented before implementing the matrix logarithm.
-    # Replace diag(T - I) by diag(T0)^(1/(2^s)) - 1
-    # using [1, Alg. 2] and recompute the first superdiagonal of T
-    # using [18 (my [3]), eq. (5, 6)] applied to T0.
+    # Replace the diagonal and first superdiagonal of T0^(1/(2^s)) - I
+    # using formulas that have less subtractive cancellation.
+    for j in range(n):
+        a = T0[j, j]
+        r = _briggs_helper_function(a, s)
+        R[j, j] = r
+    p = np.exp2(-s)
+    for j in range(n-1):
+        l1 = T0[j, j]
+        l2 = T0[j+1, j+1]
+        t12 = T0[j, j+1]
+        f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
+        R[j, j+1] = f12
 
-    #TODO line 36
     # Evaluate U = 2**s r_m(T - I) using the partial fraction expansion (1.1).
+    # This requires the nodes and weights
+    # corresponding to degree-m Gauss-Legendre quadrature.
+    # These quadrature arrays need to be transformed from the [-1, 1] interval
+    # to the [0, 1] interval.
+    nodes, weights = np.polynomial.legendre.leggauss(m)
+    if nodes.shape != (m,) or weights.shape != (m,):
+        raise Exception('internal error')
+    nodes = 0.5 + 0.5 * nodes
+    weights = 0.5 * weights
+    ident = np.identity(n)
+    U = np.zeros_like(R)
+    for alpha, beta in zip(weights, nodes):
+        U += solve(ident + beta*R, alpha*R)
+    U *= np.exp2(s)
 
     # Recompute diagonal entries of U.
     U[np.diag_indices(n)] = np.log(np.diag(T0))
