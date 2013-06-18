@@ -18,7 +18,9 @@ from numpy.testing import (TestCase, run_module_suite,
 
 import scipy.linalg
 from scipy.linalg import signm, logm, sqrtm, expm, expm_frechet
+from scipy.linalg import logm_new, fractional_matrix_power
 from scipy.linalg.matfuncs import expm2, expm3
+from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
 
 
@@ -120,6 +122,45 @@ class TestSqrtM(TestCase):
             for blocksize in range(1, 10):
                 A_sqrtm_new, info = sqrtm(A, disp=False, blocksize=blocksize)
                 assert_allclose(A_sqrtm_default, A_sqrtm_new)
+
+
+class TestFractionalMatrixPower(TestCase):
+    def test_fractional_matrix_power_round_trip(self):
+        np.random.seed(1234)
+        for p in range(1, 5):
+            for n in range(1, 5):
+                M_unscaled = np.random.randn(n, n) + 1j * np.random.randn(n, n)
+                for scale in np.logspace(-4, 4, 9):
+                    M = M_unscaled * scale
+                    M_root = fractional_matrix_power(M, 1/p)
+                    M_round_trip = np.linalg.matrix_power(M_root, p)
+                    assert_allclose(M, M_round_trip)
+
+    def test_larger_abs_fractional_matrix_powers(self):
+        np.random.seed(1234)
+        for n in (2, 3, 5):
+            for i in range(10):
+                M = np.random.randn(n, n) + 1j * np.random.randn(n, n)
+                M_one_fifth = fractional_matrix_power(M, 0.2)
+                # Test the round trip.
+                M_round_trip = np.linalg.matrix_power(M_one_fifth, 5)
+                assert_allclose(M, M_round_trip)
+                # Test a large abs fractional power.
+                X = fractional_matrix_power(M, -5.4)
+                Y = np.linalg.matrix_power(M_one_fifth, -27)
+                assert_allclose(X, Y)
+                # Test another large abs fractional power.
+                X = fractional_matrix_power(M, 3.8)
+                Y = np.linalg.matrix_power(M_one_fifth, 19)
+                assert_allclose(X, Y)
+
+    def test_briggs_helper_function(self):
+        np.random.seed(1234)
+        for a in np.random.randn(10) + 1j * np.random.randn(10):
+            for k in range(5):
+                x_observed = _matfuncs_inv_ssq._briggs_helper_function(a, k)
+                x_expected = a ** np.exp2(-k) - 1
+                assert_allclose(x_observed, x_expected)
 
 
 class TestExpM(TestCase):
