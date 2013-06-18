@@ -295,8 +295,8 @@ def _inverse_squaring_helper(T0, theta):
 
     Returns
     -------
-    T : (N, N) array_like upper triangular
-        Composition of zero or more matrix square roots of T0.
+    R : (N, N) array_like upper triangular
+        Composition of zero or more matrix square roots of T0, minus I.
     s : non-negative integer
         Number of square roots taken.
     m : positive integer
@@ -324,6 +324,9 @@ def _inverse_squaring_helper(T0, theta):
            ISSN 1095-7197
 
     """
+    if len(T0.shape) != 2 or T0.shape[0] != T0.shape[1]:
+        raise ValueError('expected an upper triangular square matrix')
+    n, n = T0.shape
     T = T0
 
     # Find s0, the smallest s such that the spectral radius
@@ -378,8 +381,27 @@ def _inverse_squaring_helper(T0, theta):
         T = _sqrtm_triu(T)
         s += 1
 
-    # Return the root matrix, the number of square roots, and the Pade degree.
-    return T, s, m
+    # The subtraction of the identity is redundant here,
+    # because the diagonal will be replaced for improved numerical accuracy,
+    # but this formulation should help clarify the meaning of R.
+    R = T - np.identity(n)
+
+    # Replace the diagonal and first superdiagonal of T0^(1/(2^s)) - I
+    # using formulas that have less subtractive cancellation.
+    for j in range(n):
+        a = T0[j, j]
+        r = _briggs_helper_function(a, s)
+        R[j, j] = r
+    p = np.exp2(-s)
+    for j in range(n-1):
+        l1 = T0[j, j]
+        l2 = T0[j+1, j+1]
+        t12 = T0[j, j+1]
+        f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
+        R[j, j+1] = f12
+
+    # Return the T-I matrix, the number of square roots, and the Pade degree.
+    return R, s, m
 
 
 def _fractional_power_pade_constant(i, t):
@@ -512,25 +534,12 @@ def _remainder_matrix_power(A, t):
     if _almost_diagonal(T0):
         U = np.diag(T0_diag ** t)
     else:
-        T, s, m = _inverse_squaring_helper(T0, m_to_theta)
-        R = np.identity(n) - T
-
-        # Replace the diagonal and first superdiagonal of I - T0^(1/(2^s))
-        # using formulas that have less subtractive cancellation.
-        for j in range(n):
-            a = T0[j, j]
-            r = _briggs_helper_function(a, s)
-            R[j, j] = -r
-        p = np.exp2(-s)
-        for j in range(n-1):
-            l1 = T0[j, j]
-            l2 = T0[j+1, j+1]
-            t12 = T0[j, j+1]
-            f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
-            R[j, j+1] = -f12
+        R, s, m = _inverse_squaring_helper(T0, m_to_theta)
 
         # Evaluate the Pade approximation.
-        U = _fractional_power_pade(R, t, m)
+        # Note that this function expects the negative of the matrix
+        # returned by the inverse squaring helper.
+        U = _fractional_power_pade(-R, t, m)
 
         # Undo the inverse scaling and squaring.
         for i in range(s, -1, -1):
@@ -646,22 +655,7 @@ def logm_new(A):
             4.39e-1, 5.03e-1, 5.60e-1, 6.09e-1,
             6.52e-1, 6.89e-1, 7.21e-1, 7.49e-1)
 
-    T, s, m = _inverse_squaring_helper(T0, theta)
-    R = T - np.identity(n)
-
-    # Replace the diagonal and first superdiagonal of T0^(1/(2^s)) - I
-    # using formulas that have less subtractive cancellation.
-    for j in range(n):
-        a = T0[j, j]
-        r = _briggs_helper_function(a, s)
-        R[j, j] = r
-    p = np.exp2(-s)
-    for j in range(n-1):
-        l1 = T0[j, j]
-        l2 = T0[j+1, j+1]
-        t12 = T0[j, j+1]
-        f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
-        R[j, j+1] = f12
+    R, s, m = _inverse_squaring_helper(T0, theta)
 
     # Evaluate U = 2**s r_m(T - I) using the partial fraction expansion (1.1).
     # This requires the nodes and weights
