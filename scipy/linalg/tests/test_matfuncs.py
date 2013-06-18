@@ -112,7 +112,7 @@ class TestLogM(TestCase):
                 W = np.linalg.eigvals(M)
                 # We cannot take logm when an eigenvalue is real and negative.
                 if any(w.real == w and w < 0 for w in W):
-                    assert_raises(ValueError(logm, M))
+                    assert_raises(ValueError, logm, M)
                 else:
                     M_round_trip = expm(logm(M))
                     assert_allclose(M_round_trip, M)
