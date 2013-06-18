@@ -199,7 +199,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         if np.rank(self.data) != 1 or np.rank(self.row) != 1 or np.rank(self.col) != 1:
             raise ValueError('row, column, and data arrays must have rank 1')
 
-        return nnz
+        return int(nnz)
     nnz = property(fget=getnnz)
 
     def _check(self):
