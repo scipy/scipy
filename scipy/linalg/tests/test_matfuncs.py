@@ -9,6 +9,7 @@
 from __future__ import division, print_function, absolute_import
 
 import random
+import warnings
 
 import numpy as np
 from numpy import array, identity, dot, sqrt, double
@@ -94,6 +95,12 @@ class TestLogM(TestCase):
         A = self._get_al_mohy_higham_2012_experiment_1()
         A_logm = logm(A)
         A_round_trip = expm(A_logm)
+        warnings.warn('A: ' + str(A))
+        warnings.warn('A.dtype: ' + str( A.dtype))
+        warnings.warn('A_logm: ' + str( A_logm))
+        warnings.warn('A_logm.dtype: ' + str( A_logm.dtype))
+        warnings.warn('A_round_trip: ' + str( A_round_trip))
+        warnings.warn('A_round_trip.dtype: ' + str( A_round_trip.dtype))
         assert_allclose(A_round_trip, A, rtol=1e-5)
 
     def test_al_mohy_higham_2012_experiment_1_funm_log(self):
