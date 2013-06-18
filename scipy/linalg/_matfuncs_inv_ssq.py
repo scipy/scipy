@@ -11,7 +11,7 @@ import numpy as np
 from scipy.linalg._matfuncs_sqrtm import _sqrtm_triu
 from scipy.linalg.decomp_schur import schur, rsf2csf
 from scipy.linalg.special_matrices import all_mat
-from scipy.linalg import solve
+from scipy.linalg import solve_triangular
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import onenormest
 
@@ -478,7 +478,7 @@ def _fractional_power_pade(R, t, m):
     Y = R * _fractional_power_pade_constant(2*m, t)
     for j in range(2*m - 1, 0, -1):
         rhs = R * _fractional_power_pade_constant(j, t)
-        Y = solve(ident + Y, rhs)
+        Y = solve_triangular(ident + Y, rhs)
     U = ident + Y
     if not np.array_equal(U, np.triu(U)):
         raise Exception('internal inconsistency')
@@ -717,7 +717,7 @@ def _logm_triu(T):
     ident = np.identity(n)
     U = np.zeros_like(R)
     for alpha, beta in zip(weights, nodes):
-        U += solve(ident + beta*R, alpha*R)
+        U += solve_triangular(ident + beta*R, alpha*R)
     U *= np.exp2(s)
 
     # Skip this step if the principal branch
