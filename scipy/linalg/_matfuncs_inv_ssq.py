@@ -91,7 +91,8 @@ def _onenormest_m1_power(A, p,
         that is relatively large in norm compared to the input.
 
     """
-    return onenormest(_MatrixM1PowerOperator(A, p))
+    return onenormest(_MatrixM1PowerOperator(A, p),
+            t=t, itmax=itmax, compute_v=compute_v, compute_w=compute_w)
 
 
 def _almost_diagonal(M, abstol=1e-13):
