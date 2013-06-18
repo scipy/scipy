@@ -9,7 +9,6 @@
 from __future__ import division, print_function, absolute_import
 
 import random
-import warnings
 
 import numpy as np
 from numpy import array, identity, dot, sqrt, double
@@ -93,40 +92,47 @@ class TestLogM(TestCase):
     def test_al_mohy_higham_2012_experiment_1_logm(self):
         # The logm completes the round trip successfully.
         A = self._get_al_mohy_higham_2012_experiment_1()
-        A_logm = logm(A)
+        A_logm, info = logm(A, disp=False)
         A_round_trip = expm(A_logm)
-        warnings.warn('A: ' + str(A))
-        warnings.warn('A.dtype: ' + str( A.dtype))
-        warnings.warn('A_logm: ' + str( A_logm))
-        warnings.warn('A_logm.dtype: ' + str( A_logm.dtype))
-        warnings.warn('A_round_trip: ' + str( A_round_trip))
-        warnings.warn('A_round_trip.dtype: ' + str( A_round_trip.dtype))
         assert_allclose(A_round_trip, A, rtol=1e-5)
 
     def test_al_mohy_higham_2012_experiment_1_funm_log(self):
         # The raw funm with np.log does not complete the round trip.
         A = self._get_al_mohy_higham_2012_experiment_1()
-        A_funm_log = funm(A, np.log)
+        A_funm_log, info = funm(A, np.log, disp=False)
         A_funm_log_round_trip = expm(A_funm_log)
         assert_(not np.allclose(A_funm_log_round_trip, A, rtol=1e-5))
 
     def test_round_trip_random_float(self):
         np.random.seed(1234)
-        for n in range(2, 6):
+        for n in range(1, 6):
             M_unscaled = np.random.randn(n, n)
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
+
+                # Eigenvalues are related to the branch cut.
                 W = np.linalg.eigvals(M)
-                M_round_trip = expm(logm(M))
-                assert_allclose(M_round_trip, M)
+                #err_msg = 'M:{0} eivals:{1} M_logm:{2}'.format(M, W, M_logm)
+                err_msg = 'M:{0} eivals:{1}'.format(M, W)
+
+                # Check sqrtm round trip because it is used within logm.
+                M_sqrtm, info = sqrtm(M, disp=False)
+                M_sqrtm_round_trip = M_sqrtm.dot(M_sqrtm)
+                assert_allclose(M_sqrtm_round_trip, M)
+
+                # Check logm round trip.
+                M_logm, info = logm(M, disp=False)
+                M_logm_round_trip = expm(M_logm)
+                assert_allclose(M_logm_round_trip, M, err_msg=err_msg)
 
     def test_round_trip_random_complex(self):
         np.random.seed(1234)
-        for n in range(2, 6):
+        for n in range(1, 6):
             M_unscaled = np.random.randn(n, n) + 1j * np.random.randn(n, n)
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
-                M_round_trip = expm(logm(M))
+                M_logm, info = logm(M, disp=False)
+                M_round_trip = expm(M_logm)
                 assert_allclose(M_round_trip, M)
 
 
@@ -165,7 +171,7 @@ class TestSqrtM(TestCase):
 
 
 class TestFractionalMatrixPower(TestCase):
-    def test_fractional_matrix_power_round_trip(self):
+    def test_round_trip_random_complex(self):
         np.random.seed(1234)
         for p in range(1, 5):
             for n in range(1, 5):
@@ -174,7 +180,22 @@ class TestFractionalMatrixPower(TestCase):
                     M = M_unscaled * scale
                     M_root = fractional_matrix_power(M, 1/p)
                     M_round_trip = np.linalg.matrix_power(M_root, p)
-                    assert_allclose(M, M_round_trip)
+                    assert_allclose(M_round_trip, M)
+
+    def test_round_trip_random_float(self):
+        # This test is more annoying because it can hit the branch cut;
+        # this happens when the matrix has an eigenvalue
+        # with no imaginary component and with a real negative component,
+        # and it means that the principal branch does not exist.
+        np.random.seed(1234)
+        for p in range(1, 5):
+            for n in range(1, 5):
+                M_unscaled = np.random.randn(n, n)
+                for scale in np.logspace(-4, 4, 9):
+                    M = M_unscaled * scale
+                    M_root = fractional_matrix_power(M, 1/p)
+                    M_round_trip = np.linalg.matrix_power(M_root, p)
+                    assert_allclose(M_round_trip, M)
 
     def test_larger_abs_fractional_matrix_powers(self):
         np.random.seed(1234)

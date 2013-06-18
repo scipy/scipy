@@ -72,7 +72,7 @@ def logm(A, disp=True):
     errest = norm(expm(F)-A,1) / norm(A,1)
     if disp:
         if not isfinite(errest) or errest >= errtol:
-            print("Result may be inaccurate, approximate err =", errest)
+            print("logm result may be inaccurate, approximate err =", errest)
         return F
     else:
         return F, errest
@@ -404,7 +404,7 @@ def funm(A, func, disp=True):
         err = Inf
     if disp:
         if err > 1000*tol:
-            print("Result may be inaccurate, approximate err =", err)
+            print("funm result may be inaccurate, approximate err =", err)
         return F
     else:
         return F, err
@@ -483,7 +483,7 @@ def signm(a, disp=True):
         prev_errest = errest
     if disp:
         if not isfinite(errest) or errest >= errtol:
-            print("Result may be inaccurate, approximate err =", errest)
+            print("signm result may be inaccurate, approximate err =", errest)
         return S0
     else:
         return S0, errest

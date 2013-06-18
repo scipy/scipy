@@ -97,9 +97,12 @@ def _onenormest_m1_power(A, p,
             t=t, itmax=itmax, compute_v=compute_v, compute_w=compute_w)
 
 
-def _almost_diagonal(M, abstol=1e-13):
-    M_abs_off_diagonal = np.absolute(M - np.diag(np.diag(M)))
-    return np.max(M_abs_off_diagonal) < abstol
+def _exactly_diagonal(A):
+    return np.count_nonzero(A - np.diag(np.diag(A))) == 0
+
+
+def _exactly_upper_triangular(A):
+    return np.count_nonzero(np.tril(A, -1)) == 0
 
 
 def _unwindk(z):
@@ -152,7 +155,7 @@ def _briggs_helper_function(a, k):
     Parameters
     ----------
     a : complex
-        A complex number not belonging to the closed negative real axis.
+        A complex number preferably belonging to the closed negative real axis.
     k : integer
         A nonnegative integer.
 
@@ -165,6 +168,8 @@ def _briggs_helper_function(a, k):
     -----
     The algorithm as written in the publication does not handle k=0 or k=1
     correctly, so these are special-cased in this implementation.
+    This function is intended to not allow `a` to belong to the closed
+    negative real axis, but this is constraint is relaxed.
 
     References
     ----------
@@ -173,9 +178,6 @@ def _briggs_helper_function(a, k):
            Numerical Algorithms, 59 : 393--402.
 
     """
-    if (a.real == a) and (a <= 0):
-        warnings.warn("expected a complex number 'a' not belonging "
-                "to the closed negative real axis")
     if k < 0 or int(k) != k:
         raise ValueError('expected a nonnegative integer k')
     if k == 0:
@@ -391,17 +393,22 @@ def _inverse_squaring_helper(T0, theta):
 
     # Replace the diagonal and first superdiagonal of T0^(1/(2^s)) - I
     # using formulas that have less subtractive cancellation.
-    for j in range(n):
-        a = T0[j, j]
-        r = _briggs_helper_function(a, s)
-        R[j, j] = r
-    p = np.exp2(-s)
-    for j in range(n-1):
-        l1 = T0[j, j]
-        l2 = T0[j+1, j+1]
-        t12 = T0[j, j+1]
-        f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
-        R[j, j+1] = f12
+    # Skip this step if the principal branch
+    # does not exist at T0; this happens when a diagonal entry of T0
+    # is negative with imaginary part 0.
+    has_principal_branch = all(x.real > 0 or x.imag != 0 for x in np.diag(T0))
+    if has_principal_branch:
+        for j in range(n):
+            a = T0[j, j]
+            r = _briggs_helper_function(a, s)
+            R[j, j] = r
+        p = np.exp2(-s)
+        for j in range(n-1):
+            l1 = T0[j, j]
+            l2 = T0[j+1, j+1]
+            t12 = T0[j, j+1]
+            f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
+            R[j, j+1] = f12
 
     # Return the T-I matrix, the number of square roots, and the Pade degree.
     return R, s, m
@@ -473,6 +480,83 @@ def _fractional_power_pade(R, t, m):
     return ident + Y
 
 
+def _remainder_matrix_power_triu(T, t):
+    """
+    Compute a fractional power of an upper triangular matrix.
+    
+    The fractional power is restricted to fractions -1 < t < 1.
+    This uses algorithm (3.1) of [1]_.
+    The Pade approximation itself uses algorithm (4.1) of [2]_.
+
+    Parameters
+    ----------
+    T : (N, N) array_like
+        Upper triangular matrix whose fractional power to evaluate.
+    t : float
+        Fractional power between -1 and 1 exclusive.
+
+    Returns
+    -------
+    X : (N, N) array_like
+        The fractional power of the matrix.
+
+    References
+    ----------
+    .. [1] Nicholas J. Higham and Lijing Lin (2013)
+           "An Improved Schur-Pade Algorithm for Fractional Powers
+           of a Matrix and their Frechet Derivatives."
+
+    .. [2] Nicholas J. Higham and Lijing lin (2011)
+           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
+           SIAM Journal on Matrix Analysis and Applications,
+           32 (3). pp. 1056-1078. ISSN 0895-4798
+
+    """
+    m_to_theta = {
+            1 : 1.51e-5,
+            2 : 2.24e-3,
+            3 : 1.88e-2,
+            4 : 6.04e-2,
+            5 : 1.24e-1,
+            6 : 2.00e-1,
+            7 : 2.79e-1,
+            }
+    n, n = T.shape
+    T0 = T
+    T0_diag = np.diag(T0)
+    if _exactly_diagonal(T0):
+        U = np.diag(T0_diag ** t)
+    else:
+        R, s, m = _inverse_squaring_helper(T0, m_to_theta)
+
+        # Evaluate the Pade approximation.
+        # Note that this function expects the negative of the matrix
+        # returned by the inverse squaring helper.
+        U = _fractional_power_pade(-R, t, m)
+
+        # Undo the inverse scaling and squaring.
+        # Be less clever about this
+        # if the principal branch does not exist at T0;
+        # this happens when a diagonal entry of T0
+        # is negative with imaginary part 0.
+        eivals = np.diag(T0)
+        has_principal_branch = all(x.real > 0 or x.imag != 0 for x in eivals)
+        for i in range(s, -1, -1):
+            if i < s:
+                U = U.dot(U)
+            else:
+                if has_principal_branch:
+                    p = t * np.exp2(-i)
+                    U[np.diag_indices(n)] = T0_diag ** p
+                    for j in range(n-1):
+                        l1 = T0[j, j]
+                        l2 = T0[j+1, j+1]
+                        t12 = T0[j, j+1]
+                        f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
+                        U[j, j+1] = f12
+    return U
+
+
 def _remainder_matrix_power(A, t):
     """
     Compute the fractional power of a matrix, for fractions -1 < t < 1.
@@ -505,51 +589,17 @@ def _remainder_matrix_power(A, t):
 
     """
     A = np.asarray(A)
-    if len(A.shape) != 2:
-        raise ValueError("Non-matrix input to matrix function.")
-    if A.shape[0] != A.shape[1]:
-        raise ValueError("Non-square matrix input to matrix function.")
-    n, n = A.shape
-    T, Z = schur(A)
-    T, Z = rsf2csf(T,Z)
-    m_to_theta = {
-            1 : 1.51e-5,
-            2 : 2.24e-3,
-            3 : 1.88e-2,
-            4 : 6.04e-2,
-            5 : 1.24e-1,
-            6 : 2.00e-1,
-            7 : 2.79e-1,
-            }
-    T0 = T
-    T0_diag = np.diag(T0)
-    if _almost_diagonal(T0):
-        U = np.diag(T0_diag ** t)
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected a square matrix')
+    if _exactly_upper_triangular(A):
+        return _remainder_matrix_power_triu(A.astype(complex), t)
     else:
-        R, s, m = _inverse_squaring_helper(T0, m_to_theta)
-
-        # Evaluate the Pade approximation.
-        # Note that this function expects the negative of the matrix
-        # returned by the inverse squaring helper.
-        U = _fractional_power_pade(-R, t, m)
-
-        # Undo the inverse scaling and squaring.
-        for i in range(s, -1, -1):
-            if i < s:
-                U = U.dot(U)
-            else:
-                p = t * np.exp2(-i)
-                U[np.diag_indices(n)] = T0_diag ** p
-                for j in range(n-1):
-                    l1 = T0[j, j]
-                    l2 = T0[j+1, j+1]
-                    t12 = T0[j, j+1]
-                    f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
-                    U[j, j+1] = f12
-
-    U, Z = all_mat(U, Z)
-    X = (Z * U * Z.H)
-    return X.A
+        T, Z = schur(A)
+        T, Z = rsf2csf(T,Z)
+        U = _remainder_matrix_power_triu(T, t)
+        U, Z = all_mat(U, Z)
+        X = (Z * U * Z.H)
+        return X.A
 
 
 def fractional_matrix_power(A, p):
@@ -597,6 +647,94 @@ def fractional_matrix_power(A, p):
     return Q.dot(R)
 
 
+def _logm_triu(T):
+    """
+    Compute matrix logarithm of an upper triangular matrix.
+
+    The matrix logarithm is the inverse of
+    expm: expm(logm(`T`)) == `T`
+
+    Parameters
+    ----------
+    T : (N, N) array_like
+        Upper triangular matrix whose logarithm to evaluate
+
+    Returns
+    -------
+    logm : (N, N) ndarray
+        Matrix logarithm of `T`
+
+    References
+    ----------
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2012)
+           "Improved Inverse Scaling and Squaring Algorithms
+           for the Matrix Logarithm."
+           SIAM Journal on Scientific Computing, 34 (4). C152-C169.
+           ISSN 1095-7197
+
+    .. [2] Nicholas J. Higham (2008)
+           "Functions of Matrices: Theory and Computation"
+           ISBN 978-0-898716-46-7
+
+    .. [3] Nicholas J. Higham and Lijing lin (2011)
+           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
+           SIAM Journal on Matrix Analysis and Applications,
+           32 (3). pp. 1056-1078. ISSN 0895-4798
+
+    """
+    T = np.asarray(T)
+    if len(T.shape) != 2 or T.shape[0] != T.shape[1]:
+        raise ValueError('expected an upper triangular square matrix')
+    n, n = T.shape
+    T0 = T
+
+    # Define bounds given in Table (2.1).
+    theta = (None,
+            1.59e-5, 2.31e-3, 1.94e-2, 6.21e-2,
+            1.28e-1, 2.06e-1, 2.88e-1, 3.67e-1,
+            4.39e-1, 5.03e-1, 5.60e-1, 6.09e-1,
+            6.52e-1, 6.89e-1, 7.21e-1, 7.49e-1)
+
+    R, s, m = _inverse_squaring_helper(T0, theta)
+
+    # Evaluate U = 2**s r_m(T - I) using the partial fraction expansion (1.1).
+    # This requires the nodes and weights
+    # corresponding to degree-m Gauss-Legendre quadrature.
+    # These quadrature arrays need to be transformed from the [-1, 1] interval
+    # to the [0, 1] interval.
+    nodes, weights = np.polynomial.legendre.leggauss(m)
+    if nodes.shape != (m,) or weights.shape != (m,):
+        raise Exception('internal error')
+    nodes = 0.5 + 0.5 * nodes
+    weights = 0.5 * weights
+    ident = np.identity(n)
+    U = np.zeros_like(R)
+    for alpha, beta in zip(weights, nodes):
+        U += solve(ident + beta*R, alpha*R)
+    U *= np.exp2(s)
+
+    # Skip this step if the principal branch
+    # does not exist at T0; this happens when a diagonal entry of T0
+    # is negative with imaginary part 0.
+    has_principal_branch = all(x.real > 0 or x.imag != 0 for x in np.diag(T0))
+    if has_principal_branch:
+
+        # Recompute diagonal entries of U.
+        U[np.diag_indices(n)] = np.log(np.diag(T0))
+
+        # Recompute superdiagonal entries of U.
+        # This indexing of this code should be renovated
+        # when newer np.diagonal() becomes available.
+        for i in range(n-1):
+            l1 = T0[i, i]
+            l2 = T0[i+1, i+1]
+            t12 = T0[i, i+1]
+            U[i, i+1] = _logm_superdiag_entry(l1, l2, t12)
+
+    # Return the logm of the upper triangular matrix.
+    return U
+
+
 def logm(A):
     """
     Compute matrix logarithm.
@@ -635,49 +773,13 @@ def logm(A):
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
-    n, n = A.shape
-    T, Z = schur(A)
-    T, Z = rsf2csf(T,Z)
-    T0 = T
-
-    # Define bounds given in Table (2.1).
-    theta = (None,
-            1.59e-5, 2.31e-3, 1.94e-2, 6.21e-2,
-            1.28e-1, 2.06e-1, 2.88e-1, 3.67e-1,
-            4.39e-1, 5.03e-1, 5.60e-1, 6.09e-1,
-            6.52e-1, 6.89e-1, 7.21e-1, 7.49e-1)
-
-    R, s, m = _inverse_squaring_helper(T0, theta)
-
-    # Evaluate U = 2**s r_m(T - I) using the partial fraction expansion (1.1).
-    # This requires the nodes and weights
-    # corresponding to degree-m Gauss-Legendre quadrature.
-    # These quadrature arrays need to be transformed from the [-1, 1] interval
-    # to the [0, 1] interval.
-    nodes, weights = np.polynomial.legendre.leggauss(m)
-    if nodes.shape != (m,) or weights.shape != (m,):
-        raise Exception('internal error')
-    nodes = 0.5 + 0.5 * nodes
-    weights = 0.5 * weights
-    ident = np.identity(n)
-    U = np.zeros_like(R)
-    for alpha, beta in zip(weights, nodes):
-        U += solve(ident + beta*R, alpha*R)
-    U *= np.exp2(s)
-
-    # Recompute diagonal entries of U.
-    U[np.diag_indices(n)] = np.log(np.diag(T0))
-
-    # Recompute superdiagonal entries of U.
-    # This indexing of this code should be renovated
-    # when newer np.diagonal() becomes available.
-    for i in range(n-1):
-        l1 = T0[i, i]
-        l2 = T0[i+1, i+1]
-        t12 = T0[i, i+1]
-        U[i, i+1] = _logm_superdiag_entry(l1, l2, t12)
-
-    U, Z = all_mat(U, Z)
-    X = (Z * U * Z.H)
-    return X.A
+    if _exactly_upper_triangular(A):
+        return _logm_triu(A.astype(complex))
+    else:
+        T, Z = schur(A)
+        T, Z = rsf2csf(T,Z)
+        U = _logm_triu(T)
+        U, Z = all_mat(U, Z)
+        X = (Z * U * Z.H)
+        return X.A
 
