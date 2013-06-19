@@ -95,7 +95,6 @@ class TestLogM(TestCase):
         A = self._get_al_mohy_higham_2012_experiment_1()
         A_logm, info = logm(A, disp=False)
         A_round_trip = expm(A_logm)
-        np.set_printoptions(precision=17)
         assert_allclose(A_round_trip, A, rtol=1e-5, atol=1e-14)
 
     def test_al_mohy_higham_2012_experiment_1_funm_log(self):
