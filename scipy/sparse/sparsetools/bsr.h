@@ -594,6 +594,15 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
 
 /* element-wise binary operations */
 template <class I, class T>
+void bsr_ne_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
+}
+
+template <class I, class T>
 void bsr_elmul_bsr(const I n_row, const I n_col, const I R, const I C, 
                    const I Ap[], const I Aj[], const T Ax[],
                    const I Bp[], const I Bj[], const T Bx[],
