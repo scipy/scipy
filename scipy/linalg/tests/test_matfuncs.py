@@ -91,17 +91,20 @@ class TestLogM(TestCase):
 
     def test_al_mohy_higham_2012_experiment_1_logm(self):
         # The logm completes the round trip successfully.
+        # Note that the expm leg of the round trip is badly conditioned.
         A = self._get_al_mohy_higham_2012_experiment_1()
         A_logm, info = logm(A, disp=False)
         A_round_trip = expm(A_logm)
-        assert_allclose(A_round_trip, A, rtol=1e-5)
+        np.set_printoptions(precision=17)
+        assert_allclose(A_round_trip, A, rtol=1e-5, atol=1e-14)
 
     def test_al_mohy_higham_2012_experiment_1_funm_log(self):
         # The raw funm with np.log does not complete the round trip.
+        # Note that the expm leg of the round trip is badly conditioned.
         A = self._get_al_mohy_higham_2012_experiment_1()
         A_funm_log, info = funm(A, np.log, disp=False)
-        A_funm_log_round_trip = expm(A_funm_log)
-        assert_(not np.allclose(A_funm_log_round_trip, A, rtol=1e-5))
+        A_round_trip = expm(A_funm_log)
+        assert_(not np.allclose(A_round_trip, A, rtol=1e-5, atol=1e-14))
 
     def test_round_trip_random_float(self):
         np.random.seed(1234)

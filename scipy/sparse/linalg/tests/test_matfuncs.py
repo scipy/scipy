@@ -117,6 +117,41 @@ class TestExpM(TestCase):
         # Assert that the Higham 2009 expm gives the correct answer.
         assert_allclose(expm(A), correct_solution)
 
+    def test_triangularity_perturbation(self):
+        # Experiment (1) of
+        # Awad H. Al-Mohy and Nicholas J. Higham (2012)
+        # Improved Inverse Scaling and Squaring Algorithms
+        # for the Matrix Logarithm.
+        A = np.array([
+            [3.2346e-1, 3e4, 3e4, 3e4],
+            [0, 3.0089e-1, 3e4, 3e4],
+            [0, 0, 3.221e-1, 3e4],
+            [0, 0, 0, 3.0744e-1]],
+            dtype=float)
+        A_logm = np.array([
+            [ -1.12867982029050462e+00,  9.61418377142025565e+04,
+                -4.52485573953179264e+09,  2.92496941103871812e+14],
+            [  0.00000000000000000e+00, -1.20101052953082288e+00,
+                9.63469687211303099e+04, -4.68104828911105442e+09],
+            [  0.00000000000000000e+00,  0.00000000000000000e+00,
+                -1.13289322264498393e+00,  9.53249183094775653e+04],
+            [  0.00000000000000000e+00,  0.00000000000000000e+00,
+                0.00000000000000000e+00, -1.17947533272554850e+00]],
+            dtype=float)
+        assert_allclose(expm(A_logm), A, rtol=1e-4)
+
+        # Perturb the upper triangular matrix by tiny amounts,
+        # so that it becomes technically not upper triangular.
+        random.seed(1234)
+        tiny = 1e-17
+        n = 4
+        A_logm_perturbed = A_logm.copy()
+        A_logm_perturbed[1, 0] = tiny
+        A_expm_logm_perturbed = expm(A_logm_perturbed)
+        rtol = 1e-4
+        atol = 100 * tiny
+        assert_(not np.allclose(A_expm_logm_perturbed, A, rtol=rtol, atol=atol))
+
 
 class TestOperators(TestCase):
 
