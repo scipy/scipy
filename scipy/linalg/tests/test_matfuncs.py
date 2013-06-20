@@ -238,6 +238,31 @@ class TestFractionalMatrixPower(TestCase):
                 Y = np.linalg.matrix_power(M_one_fifth, 19)
                 assert_allclose(X, Y)
 
+    def test_random_matrices_and_powers(self):
+        # Each independent iteration of this fuzz test picks random parameters.
+        # It tries to hit some edge cases.
+        np.random.seed(1234)
+        nsamples = 20
+        for i in range(nsamples):
+            # Sample a matrix size and a random real power.
+            n = random.randrange(1, 5)
+            p = np.random.randn()
+
+            # Sample a random real or complex matrix.
+            matrix_scale = np.exp(random.randrange(-4, 5))
+            A = np.random.randn(n, n)
+            if random.choice((True, False)):
+                A = A + 1j * np.random.randn(n, n)
+            A = A * matrix_scale
+
+            # Check a couple of analytically equivalent ways
+            # to compute the fractional matrix power.
+            # These can be compared because they both use the principal branch.
+            A_power = fractional_matrix_power(A, p)
+            A_logm, info = logm(A, disp=False)
+            A_power_expm_logm = expm(A_logm * p)
+            assert_allclose(A_power, A_power_expm_logm)
+
     def test_al_mohy_higham_2012_experiment_1(self):
         # Fractional powers of a tricky upper triangular matrix.
         A = _get_al_mohy_higham_2012_experiment_1()
