@@ -192,6 +192,32 @@ class TestSqrtM(TestCase):
         assert_allclose(A_round_trip, A, rtol=1e-5)
         assert_allclose(np.tril(A_round_trip), np.tril(A))
 
+    def test_strict_upper_triangular(self):
+        # This matrix has no square root.
+        A = np.array([
+            [0, 3, 0, 0],
+            [0, 0, 3, 0],
+            [0, 0, 0, 3],
+            [0, 0, 0, 0]], dtype=float)
+        A_sqrtm, info = sqrtm(A, disp=False)
+        assert_array_equal(A_sqrtm, np.zeros_like(A))
+
+    def test_weird_matrix(self):
+        # The square root of matrix B exists.
+        A = np.array([
+            [0, 0, 1],
+            [0, 0, 0],
+            [0, 1, 0]], dtype=float)
+        B = np.array([
+            [0, 1, 0],
+            [0, 0, 0],
+            [0, 0, 0]], dtype=float)
+        assert_array_equal(B, A.dot(A))
+
+        # But scipy sqrtm is not clever enough to find it.
+        B_sqrtm, info = sqrtm(B, disp=False)
+        assert_array_equal(B_sqrtm, np.zeros_like(B))
+
 
 class TestFractionalMatrixPower(TestCase):
     def test_round_trip_random_complex(self):

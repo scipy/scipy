@@ -8,7 +8,7 @@ import warnings
 
 import numpy as np
 
-from scipy.linalg._matfuncs_sqrtm import _sqrtm_triu
+from scipy.linalg._matfuncs_sqrtm import SqrtmError, _sqrtm_triu
 from scipy.linalg.decomp_schur import schur, rsf2csf
 from scipy.linalg.special_matrices import all_mat
 from scipy.linalg import solve_triangular
@@ -649,8 +649,11 @@ def fractional_matrix_power(A, p):
         a = int(np.ceil(p))
         b = p2
     Q = np.linalg.matrix_power(A, a)
-    R = _remainder_matrix_power(A, b)
-    return Q.dot(R)
+    try:
+        R = _remainder_matrix_power(A, b)
+        return Q.dot(R)
+    except SqrtmError as e:
+        return np.zeros_like(A)
 
 
 def _logm_triu(T):
@@ -781,13 +784,16 @@ def logm(A):
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
-    if _exactly_upper_triangular(A):
-        return _logm_triu(A.astype(complex))
-    else:
-        T, Z = schur(A)
-        T, Z = rsf2csf(T,Z)
-        U = _logm_triu(T)
-        U, Z = all_mat(U, Z)
-        X = (Z * U * Z.H)
-        return X.A
+    try:
+        if _exactly_upper_triangular(A):
+            return _logm_triu(A.astype(complex))
+        else:
+            T, Z = schur(A)
+            T, Z = rsf2csf(T,Z)
+            U = _logm_triu(T)
+            U, Z = all_mat(U, Z)
+            X = (Z * U * Z.H)
+            return X.A
+    except SqrtmError as e:
+        return np.zeros_like(A).astype(complex)
 

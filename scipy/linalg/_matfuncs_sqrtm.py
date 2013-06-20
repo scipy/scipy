@@ -18,6 +18,10 @@ from .special_matrices import all_mat
 from .decomp_schur import schur, rsf2csf
 
 
+class SqrtmError(Exception):
+    pass
+
+
 def _sqrtm_triu(T, blocksize=64):
     """
     Matrix square root of an upper triangular matrix.
@@ -76,7 +80,10 @@ def _sqrtm_triu(T, blocksize=64):
                 s = 0
                 if j - i > 1:
                     s = R[i, i+1:j].dot(R[i+1:j, j])
-                R[i,j] = (T[i,j] - s)/(R[i,i] + R[j,j])
+                denom = R[i, i] + R[j, j]
+                if not denom:
+                    raise SqrtmError('failed to find the matrix square root')
+                R[i,j] = (T[i,j] - s) / denom
 
     # Between-block interactions.
     for j in range(nblocks):
@@ -137,16 +144,23 @@ def sqrtm(A, disp=True, blocksize=64):
         raise ValueError("Non-matrix input to matrix function.")
     if blocksize < 1:
         raise ValueError("The blocksize should be at least 1.")
-    T, Z = schur(A)
-    T, Z = rsf2csf(T,Z)
-    R = _sqrtm_triu(T, blocksize=blocksize)
-    R, Z = all_mat(R,Z)
-    X = (Z * R * Z.H)
+    failflag = False
+    try:
+        T, Z = schur(A)
+        T, Z = rsf2csf(T,Z)
+        R = _sqrtm_triu(T, blocksize=blocksize)
+        R, Z = all_mat(R,Z)
+        X = (Z * R * Z.H)
+    except SqrtmError as e:
+        failflag = True
+        X = np.matrix(np.zeros_like(A))
 
     if disp:
         nzeig = np.any(np.diag(T) == 0)
         if nzeig:
             print("Matrix is singular and may not have a square root.")
+        elif failflag:
+            print("Failed to find a square root.")
         return X.A
     else:
         arg2 = norm(X*X - A,'fro')**2 / norm(A,'fro')
