@@ -445,7 +445,7 @@ def _fractional_power_pade(R, t, m):
     Parameters
     ----------
     R : (N, N) array_like
-        Matrix whose fractional power to evaluate.
+        Upper triangular matrix whose fractional power to evaluate.
     t : float
         Fractional power between -1 and 1 exclusive.
     m : positive integer
@@ -455,6 +455,7 @@ def _fractional_power_pade(R, t, m):
     -------
     U : (N, N) array_like
         The degree-m Pade approximation of R to the fractional power t.
+        This matrix will be upper triangular.
 
     References
     ----------
@@ -464,15 +465,13 @@ def _fractional_power_pade(R, t, m):
            32 (3). pp. 1056-1078. ISSN 0895-4798
 
     """
-    if m < 1:
+    if m < 1 or int(m) != m:
         raise ValueError('expected a positive integer m')
     if not (-1 < t < 1):
         raise ValueError('expected -1 < t < 1')
     R = np.asarray(R)
-    if len(R.shape) != 2:
-        raise ValueError("Non-matrix input to matrix function.")
-    if R.shape[0] != R.shape[1]:
-        raise ValueError("Non-square matrix input to matrix function.")
+    if len(R.shape) != 2 or R.shape[0] != R.shape[1]:
+        raise ValueError('expected an upper triangular square matrix')
     n, n = R.shape
     ident = np.identity(n)
     Y = R * _fractional_power_pade_constant(2*m, t)

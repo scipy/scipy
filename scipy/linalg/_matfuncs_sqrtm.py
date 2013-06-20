@@ -144,7 +144,7 @@ def sqrtm(A, disp=True, blocksize=64):
     X = (Z * R * Z.H)
 
     if disp:
-        nzeig = np.any(diag(T) == 0)
+        nzeig = np.any(np.diag(T) == 0)
         if nzeig:
             print("Matrix is singular and may not have a square root.")
         return X.A

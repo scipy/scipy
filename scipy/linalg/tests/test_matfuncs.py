@@ -13,6 +13,7 @@ import random
 import numpy as np
 from numpy import array, identity, dot, sqrt, double
 from numpy.testing import (TestCase, run_module_suite,
+        assert_array_equal,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
         assert_allclose, assert_, assert_raises, decorators)
 
@@ -22,6 +23,27 @@ from scipy.linalg import fractional_matrix_power
 from scipy.linalg.matfuncs import expm2, expm3
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
+
+
+def _get_al_mohy_higham_2012_experiment_1():
+    """
+    Return the test matrix from Experiment (1) of [1]_.
+
+    References
+    ----------
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2012)
+           "Improved Inverse Scaling and Squaring Algorithms
+           for the Matrix Logarithm."
+           SIAM Journal on Scientific Computing, 34 (4). C152-C169.
+           ISSN 1095-7197
+
+    """
+    A = np.array([
+        [3.2346e-1, 3e4, 3e4, 3e4],
+        [0, 3.0089e-1, 3e4, 3e4],
+        [0, 0, 3.2210e-1, 3e4],
+        [0, 0, 0, 3.0744e-1]], dtype=float)
+    return A
 
 
 class TestSignM(TestCase):
@@ -81,18 +103,10 @@ class TestLogM(TestCase):
         logm(m, disp=False)
         #XXX: what would be the correct result?
 
-    def _get_al_mohy_higham_2012_experiment_1(self):
-        A = np.array([
-            [3.2346e-1, 3e4, 3e4, 3e4],
-            [0, 3.0089e-1, 3e4, 3e4],
-            [0, 0, 3.221e-1, 3e4],
-            [0, 0, 0, 3.0744e-1]], dtype=float)
-        return A
-
     def test_al_mohy_higham_2012_experiment_1_logm(self):
         # The logm completes the round trip successfully.
         # Note that the expm leg of the round trip is badly conditioned.
-        A = self._get_al_mohy_higham_2012_experiment_1()
+        A = _get_al_mohy_higham_2012_experiment_1()
         A_logm, info = logm(A, disp=False)
         A_round_trip = expm(A_logm)
         assert_allclose(A_round_trip, A, rtol=1e-5, atol=1e-14)
@@ -100,7 +114,7 @@ class TestLogM(TestCase):
     def test_al_mohy_higham_2012_experiment_1_funm_log(self):
         # The raw funm with np.log does not complete the round trip.
         # Note that the expm leg of the round trip is badly conditioned.
-        A = self._get_al_mohy_higham_2012_experiment_1()
+        A = _get_al_mohy_higham_2012_experiment_1()
         A_funm_log, info = funm(A, np.log, disp=False)
         A_round_trip = expm(A_funm_log)
         assert_(not np.allclose(A_round_trip, A, rtol=1e-5, atol=1e-14))
@@ -114,7 +128,6 @@ class TestLogM(TestCase):
 
                 # Eigenvalues are related to the branch cut.
                 W = np.linalg.eigvals(M)
-                #err_msg = 'M:{0} eivals:{1} M_logm:{2}'.format(M, W, M_logm)
                 err_msg = 'M:{0} eivals:{1}'.format(M, W)
 
                 # Check sqrtm round trip because it is used within logm.
@@ -171,6 +184,14 @@ class TestSqrtM(TestCase):
                 A_sqrtm_new, info = sqrtm(A, disp=False, blocksize=blocksize)
                 assert_allclose(A_sqrtm_default, A_sqrtm_new)
 
+    def test_al_mohy_higham_2012_experiment_1(self):
+        # Matrix square root of a tricky upper triangular matrix.
+        A = _get_al_mohy_higham_2012_experiment_1()
+        A_sqrtm, info = sqrtm(A, disp=False)
+        A_round_trip = A_sqrtm.dot(A_sqrtm)
+        assert_allclose(A_round_trip, A, rtol=1e-5)
+        assert_allclose(np.tril(A_round_trip), np.tril(A))
+
 
 class TestFractionalMatrixPower(TestCase):
     def test_round_trip_random_complex(self):
@@ -216,6 +237,26 @@ class TestFractionalMatrixPower(TestCase):
                 X = fractional_matrix_power(M, 3.8)
                 Y = np.linalg.matrix_power(M_one_fifth, 19)
                 assert_allclose(X, Y)
+
+    def test_al_mohy_higham_2012_experiment_1(self):
+        # Fractional powers of a tricky upper triangular matrix.
+        A = _get_al_mohy_higham_2012_experiment_1()
+
+        # Test remainder matrix power.
+        A_funm_sqrt, info = funm(A, np.sqrt, disp=False)
+        A_sqrtm, info = sqrtm(A, disp=False)
+        A_rem_power = _matfuncs_inv_ssq._remainder_matrix_power(A, 0.5)
+        A_power = fractional_matrix_power(A, 0.5)
+        assert_array_equal(A_rem_power, A_power)
+        assert_allclose(A_sqrtm, A_power)
+        assert_allclose(A_sqrtm, A_funm_sqrt)
+
+        # Test more fractional powers.
+        for p in (1/2, 5/3):
+            A_power = fractional_matrix_power(A, p)
+            A_round_trip = fractional_matrix_power(A_power, 1/p)
+            assert_allclose(A_round_trip, A, rtol=1e-2)
+            assert_allclose(np.tril(A_round_trip, 1), np.tril(A, 1))
 
     def test_briggs_helper_function(self):
         np.random.seed(1234)
