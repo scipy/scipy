@@ -150,6 +150,57 @@ class TestLogM(TestCase):
                 M_round_trip = expm(M_logm)
                 assert_allclose(M_round_trip, M)
 
+    def test_logm_type_preservation_and_conversion(self):
+        # The logm matrix function should preserve the type of a matrix
+        # whose eigenvalues are negative with zero imaginary part.
+        # Test this preservation for variously structured matrices.
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, 1]],
+                [[1, 0], [1, 1]],
+                [[2, 1], [1, 1]],
+                [[2, 3], [1, 2]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(not any(w.imag or w.real < 0 for w in W))
+
+            # check float type preservation
+            A = np.array(matrix_as_list, dtype=float)
+            A_logm, info = logm(A, disp=False)
+            assert_(A_logm.dtype.char not in complex_dtype_chars)
+
+            # check complex type preservation
+            A = np.array(matrix_as_list, dtype=complex)
+            A_logm, info = logm(A, disp=False)
+            assert_(A_logm.dtype.char in complex_dtype_chars)
+
+            # check float->complex type conversion for the matrix negation
+            A = -np.array(matrix_as_list, dtype=float)
+            A_logm, info = logm(A, disp=False)
+            assert_(A_logm.dtype.char in complex_dtype_chars)
+
+    def test_logm_type_conversion_mixed_sign_or_complex_spectrum(self):
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, -1]],
+                [[0, 1], [1, 0]],
+                [[0, 1, 0], [0, 0, 1], [1, 0, 0]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(any(w.imag or w.real < 0 for w in W))
+
+            # check complex->complex
+            A = np.array(matrix_as_list, dtype=complex)
+            A_logm, info = logm(A, disp=False)
+            assert_(A_logm.dtype.char in complex_dtype_chars)
+
+            # check float->complex
+            A = np.array(matrix_as_list, dtype=float)
+            A_logm, info = logm(A, disp=False)
+            assert_(A_logm.dtype.char in complex_dtype_chars)
+
 
 class TestSqrtM(TestCase):
     def test_bad(self):
@@ -187,7 +238,7 @@ class TestSqrtM(TestCase):
 
             # check that the spectrum has the expected properties
             W = scipy.linalg.eigvals(matrix_as_list)
-            assert_(not any(w.imag or w < 0 for w in W))
+            assert_(not any(w.imag or w.real < 0 for w in W))
 
             # check float type preservation
             A = np.array(matrix_as_list, dtype=float)
@@ -204,19 +255,26 @@ class TestSqrtM(TestCase):
             A_sqrtm, info = sqrtm(A, disp=False)
             assert_(A_sqrtm.dtype.char in complex_dtype_chars)
 
-    def test_sqrtm_type_conversion_mixed_sign_spectrum(self):
+    def test_sqrtm_type_conversion_mixed_sign_or_complex_spectrum(self):
         complex_dtype_chars = ('F', 'D', 'G')
-        matrix_as_list = [[1, 0], [0, -1]]
+        for matrix_as_list in (
+                [[1, 0], [0, -1]],
+                [[0, 1], [1, 0]],
+                [[0, 1, 0], [0, 0, 1], [1, 0, 0]]):
 
-        # check complex->complex
-        A = np.array(matrix_as_list, dtype=complex)
-        A_sqrtm, info = sqrtm(A, disp=False)
-        assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(any(w.imag or w.real < 0 for w in W))
 
-        # check float->complex
-        A = np.array(matrix_as_list, dtype=float)
-        A_sqrtm, info = sqrtm(A, disp=False)
-        assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+            # check complex->complex
+            A = np.array(matrix_as_list, dtype=complex)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+
+            # check float->complex
+            A = np.array(matrix_as_list, dtype=float)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(A_sqrtm.dtype.char in complex_dtype_chars)
 
     def test_blocksizes(self):
         # Make sure I do not goof up the blocksizes when they do not divide n.

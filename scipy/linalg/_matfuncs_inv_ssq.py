@@ -19,6 +19,24 @@ from scipy.sparse.linalg import onenormest
 __all__ = ['logm', 'fractional_matrix_power']
 
 
+class LogmError(Exception):
+    pass
+
+
+def _hacked_leggauss(m):
+    # remove this if/when it is fixed in numpy
+    if m == 1:
+        nodes = np.array([0], dtype=float)
+        weights = np.array([2], dtype=float)
+    else:
+        nodes, weights = np.polynomial.legendre.leggauss(m)
+    return nodes, weights
+
+
+def _has_complex_dtype_char(A):
+    return A.dtype.char in ('F', 'D', 'G')
+
+
 #TODO renovate or move this class when scipy operators are more mature
 class _MatrixM1PowerOperator(LinearOperator):
     """
@@ -95,14 +113,6 @@ def _onenormest_m1_power(A, p,
     """
     return onenormest(_MatrixM1PowerOperator(A, p),
             t=t, itmax=itmax, compute_v=compute_v, compute_w=compute_w)
-
-
-def _exactly_diagonal(A):
-    return np.count_nonzero(A - np.diag(np.diag(A))) == 0
-
-
-def _exactly_upper_triangular(A):
-    return np.count_nonzero(np.tril(A, -1)) == 0
 
 
 def _unwindk(z):
@@ -221,6 +231,11 @@ def _fractional_power_superdiag_entry(l1, l2, t12, p):
     f12 : complex
         A superdiagonal entry of the fractional matrix power.
 
+    Notes
+    -----
+    Some amount of care has been taken to return a real number
+    if all of the inputs are real.
+
     References
     ----------
     .. [1] Nicholas J. Higham and Lijing lin (2011)
@@ -230,9 +245,9 @@ def _fractional_power_superdiag_entry(l1, l2, t12, p):
 
     """
     if l1 == l2:
-        return t12 * p * l1**(p-1)
+        f12 = t12 * p * l1**(p-1)
     elif abs(l1) < abs(l2) / 2 or abs(l2) < abs(l1) / 2:
-        return t12 * ((l2**p) - (l1**p)) / (l2 - l1)
+        f12 = t12 * ((l2**p) - (l1**p)) / (l2 - l1)
     else:
         # This is Eq. (5.5) in [1].
         z = (l2 - l1) / (l2 + l1)
@@ -240,9 +255,14 @@ def _fractional_power_superdiag_entry(l1, l2, t12, p):
         log_l2 = np.log(l2)
         arctanh_z = np.arctanh(z)
         tmp_a = t12 * np.exp((p/2)*(log_l2 + log_l1))
-        tmp_b = p * (arctanh_z + np.pi * 1j * _unwindk(log_l2 - log_l1))
+        tmp_u = _unwindk(log_l2 - log_l1)
+        if tmp_u:
+            tmp_b = p * (arctanh_z + np.pi * 1j * tmp_u)
+        else:
+            tmp_b = p * arctanh_z
         tmp_c = 2 * np.sinh(tmp_b) / (l2 - l1)
-        return tmp_a * tmp_c
+        f12 = tmp_a * tmp_c
+    return f12
 
 
 def _logm_superdiag_entry(l1, l2, t12):
@@ -265,6 +285,11 @@ def _logm_superdiag_entry(l1, l2, t12):
     f12 : complex
         A superdiagonal entry of the matrix logarithm.
 
+    Notes
+    -----
+    Some amount of care has been taken to return a real number
+    if all of the inputs are real.
+
     References
     ----------
     .. [1] Nicholas J. Higham (2008)
@@ -273,14 +298,19 @@ def _logm_superdiag_entry(l1, l2, t12):
 
     """
     if l1 == l2:
-        return t12 / l1
+        f12 = t12 / l1
     elif abs(l1) < abs(l2) / 2 or abs(l2) < abs(l1) / 2:
-        return t12 * (np.log(l2) - np.log(l1)) / (l2 - l1)
+        f12 = t12 * (np.log(l2) - np.log(l1)) / (l2 - l1)
     else:
         z = (l2 - l1) / (l2 + l1)
         ua = _unwindk(np.log(l2) - np.log(l1))
         ub = _unwindk(np.log(1+z) - np.log(1-z))
-        return t12 * (2*np.arctanh(z) + 2*np.pi*1j*(ua + ub)) / (l2 - l1)
+        u = ua + ub
+        if u:
+            f12 = t12 * (2*np.arctanh(z) + 2*np.pi*1j*(ua + ub)) / (l2 - l1)
+        else:
+            f12 = t12 * 2 * np.arctanh(z) / (l2 - l1)
+    return f12
 
 
 def _inverse_squaring_helper(T0, theta):
@@ -528,7 +558,7 @@ def _remainder_matrix_power_triu(T, t):
     n, n = T.shape
     T0 = T
     T0_diag = np.diag(T0)
-    if _exactly_diagonal(T0):
+    if np.array_equal(T0, np.diag(T0_diag)):
         U = np.diag(T0_diag ** t)
     else:
         R, s, m = _inverse_squaring_helper(T0, m_to_theta)
@@ -597,7 +627,7 @@ def _remainder_matrix_power(A, t):
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
-    if _exactly_upper_triangular(A):
+    if np.array_equal(A, np.triu(A)):
         return _remainder_matrix_power_triu(A.astype(complex), t)
     else:
         T, Z = schur(A)
@@ -695,7 +725,15 @@ def _logm_triu(T):
     if len(T.shape) != 2 or T.shape[0] != T.shape[1]:
         raise ValueError('expected an upper triangular square matrix')
     n, n = T.shape
-    T0 = T
+
+    # Construct T0 with the appropriate type,
+    # depending on the dtype and the spectrum of T.
+    T_diag = np.diag(T)
+    keep_it_real = (not _has_complex_dtype_char(T)) and (np.min(T_diag) >= 0)
+    if keep_it_real:
+        T0 = T
+    else:
+        T0 = T.astype(complex)
 
     # Define bounds given in Table (2.1).
     theta = (None,
@@ -711,7 +749,7 @@ def _logm_triu(T):
     # corresponding to degree-m Gauss-Legendre quadrature.
     # These quadrature arrays need to be transformed from the [-1, 1] interval
     # to the [0, 1] interval.
-    nodes, weights = np.polynomial.legendre.leggauss(m)
+    nodes, weights = _hacked_leggauss(m)
     if nodes.shape != (m,) or weights.shape != (m,):
         raise Exception('internal error')
     nodes = 0.5 + 0.5 * nodes
@@ -784,16 +822,29 @@ def logm(A):
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
+    n, n = A.shape
+    keep_it_real = not _has_complex_dtype_char(A)
     try:
-        if _exactly_upper_triangular(A):
-            return _logm_triu(A.astype(complex))
+        if np.array_equal(A, np.triu(A)):
+            A_diag = np.diag(A)
+            if np.count_nonzero(A_diag) != n:
+                raise LogmError('cannot find logm of a singular matrix')
+            if np.min(A_diag) < 0:
+                A = A.astype(complex)
+            return _logm_triu(A)
         else:
-            T, Z = schur(A)
-            T, Z = rsf2csf(T,Z)
+            if keep_it_real:
+                T, Z = schur(A)
+                if not np.array_equal(T, np.triu(T)):
+                    T, Z = rsf2csf(T,Z)
+            else:
+                T, Z = schur(A, output='complex')
+            if np.count_nonzero(np.diag(T)) != n:
+                raise LogmError('cannot find logm of a singular matrix')
             U = _logm_triu(T)
             U, Z = all_mat(U, Z)
             X = (Z * U * Z.H)
             return X.A
-    except SqrtmError as e:
-        return np.zeros_like(A).astype(complex)
+    except (SqrtmError, LogmError) as e:
+        return np.zeros_like(A)
 

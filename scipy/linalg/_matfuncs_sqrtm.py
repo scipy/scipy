@@ -53,18 +53,13 @@ def _sqrtm_triu(T, blocksize=64):
 
     """
     T_diag = np.diag(T)
-    n, n = T.shape
     keep_it_real = (not _has_complex_dtype_char(T)) and (np.min(T_diag) >= 0)
-    if keep_it_real:
-        R = np.zeros_like(T)
-    else:
-        R = np.zeros((n, n), dtype=complex)
+    if not keep_it_real:
         T_diag = T_diag.astype(complex)
-    
-    # Take square roots of the diagonal of the triangular matrix.
-    R[np.diag_indices(n)] = np.sqrt(T_diag)
+    R = np.diag(np.sqrt(T_diag))
 
     # Compute the number of blocks to use; use at least one block.
+    n, n = T.shape
     nblocks = max(n // blocksize, 1)
 
     # Compute the smaller of the two sizes of blocks that
