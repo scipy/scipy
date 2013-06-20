@@ -1233,6 +1233,70 @@ def mood(x,y):
     return z, pval
 
 
+def mood_nd(x, y, axis=0):
+    """
+    Perform Mood's test for equal scale parameters.  (generalization to the nd case)
+
+    Mood's two-sample test for scale parameters is a non-parametric
+    test for the null hypothesis that two samples are drawn from the
+    same distribution with the same scale parameter.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Arrays of sample data.
+
+    Returns
+    -------
+    z : float
+        The z-score for the hypothesis test.
+    p-value : float
+        The p-value for the hypothesis test.
+
+    See Also
+    --------
+    fligner : A non-parametric test for the equality of k variances
+    ansari : A non-parametric test for the equality of 2 variances
+    bartlett : A parametric test for equality of k variances in normal samples
+    levene : A parametric test for equality of k variances
+
+    Notes
+    -----
+    The data are assumed to be drawn from probability distributions f(x) and
+    f(x/s)/s respectively, for some probability density function f.  The
+    null hypothesis is that s = 1.
+
+    """
+
+    x = np.array(x)
+    y = np.array(y)
+
+    n = x.shape[axis]
+    m = y.shape[axis]
+    xy = r_[x, y]
+    N = m+n
+    if N < 3:
+        raise ValueError("Not enough observations.")
+    ranks = stats.rankdata(xy)
+    Ri = ranks[:n]
+    M = sum((Ri - (N+1.0)/2)**2,axis=0)
+    # Approx stat.
+    mnM = n*(N*N-1.0)/12
+    varM = m*n*(N+1.0)*(N+2)*(N-2)/180
+    z = (M-mnM)/sqrt(varM)
+
+    # Numerically better than p = norm.cdf(x); p = min(p, 1 - p)
+    if z > 0:
+        pval = distributions.norm.sf(z)
+    else:
+        pval = distributions.norm.cdf(z)
+
+    # Account for two-sidedness
+    pval *= 2.
+    return z, pval
+
+
+
 def oneway(*args,**kwds):
     """Test for equal means in two or more samples from the
     normal distribution.
