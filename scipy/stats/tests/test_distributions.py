@@ -1240,14 +1240,29 @@ def test_regression_ticket_1421():
 
 
 def test_nan_arguments_ticket_835():
-    assert_(np.isnan(stats.t.logcdf(np.nan)))
-    assert_(np.isnan(stats.t.cdf(np.nan)))
-    assert_(np.isnan(stats.t.logsf(np.nan)))
-    assert_(np.isnan(stats.t.sf(np.nan)))
-    assert_(np.isnan(stats.t.pdf(np.nan)))
-    assert_(np.isnan(stats.t.logpdf(np.nan)))
-    assert_(np.isnan(stats.t.ppf(np.nan)))
-    assert_(np.isnan(stats.t.isf(np.nan)))
+    # are nans not overpropagated? This test asserts the following behavior:
+    #>>> stats.t.pdf(np.nan)
+    #nan
+    #>>> stats.t.pdf(1)
+    #Traceback (most recent call last):
+    # ...
+    #place(output,cond,self._pdf(*goodargs) / scale)
+    #TypeError: _pdf() takes exactly 3 arguments (2 given)
+    #
+    # which does not match what R requires:
+    #> dt(NaN)
+    #Error in dt(NaN) : argument "df" is missing, with no default
+    #
+    # Hence am changing the test to use the correct number of arguments 
+    #
+    assert_(np.isnan(stats.t.logcdf(1, np.nan)))
+    assert_(np.isnan(stats.t.cdf(1, np.nan)))
+    assert_(np.isnan(stats.t.logsf(1, np.nan)))
+    assert_(np.isnan(stats.t.sf(1, np.nan)))
+    assert_(np.isnan(stats.t.pdf(1, np.nan)))
+    assert_(np.isnan(stats.t.logpdf(1, np.nan)))
+    assert_(np.isnan(stats.t.ppf(1, np.nan)))
+    assert_(np.isnan(stats.t.isf(1, np.nan)))
 
     assert_(np.isnan(stats.bernoulli.logcdf(np.nan, 0.5)))
     assert_(np.isnan(stats.bernoulli.cdf(np.nan, 0.5)))
