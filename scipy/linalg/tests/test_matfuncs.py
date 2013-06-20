@@ -152,7 +152,7 @@ class TestLogM(TestCase):
 
     def test_logm_type_preservation_and_conversion(self):
         # The logm matrix function should preserve the type of a matrix
-        # whose eigenvalues are negative with zero imaginary part.
+        # whose eigenvalues are positive with zero imaginary part.
         # Test this preservation for variously structured matrices.
         complex_dtype_chars = ('F', 'D', 'G')
         for matrix_as_list in (
@@ -419,6 +419,87 @@ class TestFractionalMatrixPower(TestCase):
                 x_observed = _matfuncs_inv_ssq._briggs_helper_function(a, k)
                 x_expected = a ** np.exp2(-k) - 1
                 assert_allclose(x_observed, x_expected)
+
+    def test_type_preservation_and_conversion(self):
+        # The fractional_matrix_power matrix function should preserve
+        # the type of a matrix whose eigenvalues
+        # are positive with zero imaginary part.
+        # Test this preservation for variously structured matrices.
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, 1]],
+                [[1, 0], [1, 1]],
+                [[2, 1], [1, 1]],
+                [[2, 3], [1, 2]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(not any(w.imag or w.real < 0 for w in W))
+
+            # Check various positive and negative powers
+            # with absolute values bigger and smaller than 1.
+            for p in (-2.4, -0.9, 0.2, 3.3):
+
+                # check float type preservation
+                A = np.array(matrix_as_list, dtype=float)
+                A_power = fractional_matrix_power(A, p)
+                assert_(A_power.dtype.char not in complex_dtype_chars)
+
+                # check complex type preservation
+                A = np.array(matrix_as_list, dtype=complex)
+                A_power = fractional_matrix_power(A, p)
+                assert_(A_power.dtype.char in complex_dtype_chars)
+
+                # check float->complex for the matrix negation
+                A = -np.array(matrix_as_list, dtype=float)
+                A_power = fractional_matrix_power(A, p)
+                assert_(A_power.dtype.char in complex_dtype_chars)
+
+    def test_type_conversion_mixed_sign_or_complex_spectrum(self):
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, -1]],
+                [[0, 1], [1, 0]],
+                [[0, 1, 0], [0, 0, 1], [1, 0, 0]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(any(w.imag or w.real < 0 for w in W))
+
+            # Check various positive and negative powers
+            # with absolute values bigger and smaller than 1.
+            for p in (-2.4, -0.9, 0.2, 3.3):
+
+                # check complex->complex
+                A = np.array(matrix_as_list, dtype=complex)
+                A_power = fractional_matrix_power(A, p)
+                assert_(A_power.dtype.char in complex_dtype_chars)
+
+                # check float->complex
+                A = np.array(matrix_as_list, dtype=float)
+                A_power = fractional_matrix_power(A, p)
+                assert_(A_power.dtype.char in complex_dtype_chars)
+
+    def test_singular(self):
+        # Negative fractional powers do not work with singular matrices.
+        # Neither do non-integer fractional powers,
+        # because the scaling and squaring cannot deal with it.
+        for matrix_as_list in (
+                [[0, 0], [0, 0]],
+                [[1, 1], [1, 1]],
+                [[1, 2], [3, 6]],
+                [[0, 0, 0], [0, 1, 1], [0, -1, 1]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(np.count_nonzero(W) < len(W))
+
+            # check fractional powers both for float and for complex types
+            for newtype in (float, complex):
+                A = np.array(matrix_as_list, dtype=newtype)
+                for p in (-0.7, -0.9, -2.4, -1.3, 0.2, 3.3):
+                    A_power = fractional_matrix_power(A, p)
+                    assert_allclose(A_power, np.zeros_like(A_power))
 
 
 class TestExpM(TestCase):

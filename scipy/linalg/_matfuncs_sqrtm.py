@@ -18,7 +18,7 @@ from .special_matrices import all_mat
 from .decomp_schur import schur, rsf2csf
 
 
-class SqrtmError(Exception):
+class SqrtmError(np.linalg.LinAlgError):
     pass
 
 

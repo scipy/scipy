@@ -11,7 +11,7 @@ import numpy as np
 from scipy.linalg._matfuncs_sqrtm import SqrtmError, _sqrtm_triu
 from scipy.linalg.decomp_schur import schur, rsf2csf
 from scipy.linalg.special_matrices import all_mat
-from scipy.linalg import solve_triangular
+from scipy.linalg import svd, solve_triangular
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import onenormest
 
@@ -19,7 +19,11 @@ from scipy.sparse.linalg import onenormest
 __all__ = ['logm', 'fractional_matrix_power']
 
 
-class LogmError(Exception):
+class LogmError(np.linalg.LinAlgError):
+    pass
+
+
+class FractionalMatrixPowerError(np.linalg.LinAlgError):
     pass
 
 
@@ -366,6 +370,8 @@ def _inverse_squaring_helper(T0, theta):
 
     # Find s0, the smallest s such that the spectral radius
     # of a certain diagonal matrix is at most theta[7].
+    # Note that because theta[7] < 1,
+    # this search will not terminate if any diagonal entry of T is zero.
     s0 = 0
     tmp_diag = np.diag(T)
     while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
@@ -627,15 +633,44 @@ def _remainder_matrix_power(A, t):
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
+    n, n = A.shape
+
+    # Triangularize the matrix if necessary,
+    # attempting to preserve dtype if possible.
     if np.array_equal(A, np.triu(A)):
-        return _remainder_matrix_power_triu(A.astype(complex), t)
+        Z = None
+        T = A
     else:
-        T, Z = schur(A)
-        T, Z = rsf2csf(T,Z)
-        U = _remainder_matrix_power_triu(T, t)
+        if not _has_complex_dtype_char(A):
+            T, Z = schur(A)
+            if not np.array_equal(T, np.triu(T)):
+                T, Z = rsf2csf(T, Z)
+        else:
+            T, Z = schur(A, output='complex')
+
+    # Zeros on the diagonal of the triangular matrix are forbidden,
+    # because the inverse scaling and squaring cannot deal with it.
+    T_diag = np.diag(T)
+    if np.count_nonzero(T_diag) != n:
+        raise FractionalMatrixPowerError(
+                'cannot use inverse scaling and squaring to find '
+                'the fractional matrix power of a singular matrix')
+
+    # If the triangular matrix is real and has a negative
+    # entry on the diagonal, then force the matrix to be complex.
+    if not _has_complex_dtype_char(T):
+        if np.min(T_diag) < 0:
+            T = T.astype(complex)
+
+    # Get the fractional power of the triangular matrix,
+    # and de-triangularize it if necessary.
+    U = _remainder_matrix_power_triu(T, t)
+    if Z is not None:
         U, Z = all_mat(U, Z)
         X = (Z * U * Z.H)
         return X.A
+    else:
+        return U
 
 
 def fractional_matrix_power(A, p):
@@ -669,21 +704,27 @@ def fractional_matrix_power(A, p):
         raise ValueError('expected a square matrix')
     if p == int(p):
         return np.linalg.matrix_power(A, int(p))
+    # Compute singular values.
+    s = svd(A, compute_uv=False)
+    # Scaling and squaring cannot deal with a singular matrix.
+    if not s[-1]:
+        return np.zeros_like(A)
+    # Compute the condition number relative to matrix inversion.
+    k2 = s[0] / s[-1]
     p1 = p - np.floor(p)
     p2 = p - np.ceil(p)
-    k2 = np.linalg.cond(A)
     if p1 * k2 ** (1 - p1) <= -p2 * k2:
         a = int(np.floor(p))
         b = p1
     else:
         a = int(np.ceil(p))
         b = p2
-    Q = np.linalg.matrix_power(A, a)
     try:
         R = _remainder_matrix_power(A, b)
-        return Q.dot(R)
-    except SqrtmError as e:
+        Q = np.linalg.matrix_power(A, a)
+    except np.linalg.LinAlgError as e:
         return np.zeros_like(A)
+    return Q.dot(R)
 
 
 def _logm_triu(T):
