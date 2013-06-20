@@ -13,13 +13,17 @@ import numpy as np
 
 # Local imports
 from .misc import norm
-from .lapack import ztrsyl
+from .lapack import ztrsyl, dtrsyl
 from .special_matrices import all_mat
 from .decomp_schur import schur, rsf2csf
 
 
 class SqrtmError(Exception):
     pass
+
+
+def _has_complex_dtype_char(A):
+    return A.dtype.char in ('F', 'D', 'G')
 
 
 def _sqrtm_triu(T, blocksize=64):
@@ -48,11 +52,17 @@ def _sqrtm_triu(T, blocksize=64):
            Lecture Notes in Computer Science, 7782. pp. 171-182.
 
     """
+    T_diag = np.diag(T)
     n, n = T.shape
-    R = np.zeros((n,n), T.dtype.char)
+    keep_it_real = (not _has_complex_dtype_char(T)) and (np.min(T_diag) >= 0)
+    if keep_it_real:
+        R = np.zeros_like(T)
+    else:
+        R = np.zeros((n, n), dtype=complex)
+        T_diag = T_diag.astype(complex)
     
     # Take square roots of the diagonal of the triangular matrix.
-    R[np.diag_indices(n)] = np.sqrt(np.diag(T))
+    R[np.diag_indices(n)] = np.sqrt(T_diag)
 
     # Compute the number of blocks to use; use at least one block.
     nblocks = max(n // blocksize, 1)
@@ -97,10 +107,13 @@ def _sqrtm_triu(T, blocksize=64):
 
             # Invoke LAPACK.
             # For more details, see the solve_sylvester implemention
-            # and the fortran ztrsyl docs.
+            # and the fortran dtrsyl and ztrsyl docs.
             Rii = R[istart:istop, istart:istop]
             Rjj = R[jstart:jstop, jstart:jstop]
-            x, scale, info = ztrsyl(Rii, Rjj, S)
+            if keep_it_real:
+                x, scale, info = dtrsyl(Rii, Rjj, S)
+            else:
+                x, scale, info = ztrsyl(Rii, Rjj, S)
             R[istart:istop, jstart:jstop] = x * scale
     
     # Return the matrix square root.
@@ -144,10 +157,15 @@ def sqrtm(A, disp=True, blocksize=64):
         raise ValueError("Non-matrix input to matrix function.")
     if blocksize < 1:
         raise ValueError("The blocksize should be at least 1.")
+    keep_it_real = not _has_complex_dtype_char(A)
+    if keep_it_real:
+        T, Z = schur(A)
+        if not np.array_equal(T, np.triu(T)):
+            T, Z = rsf2csf(T,Z)
+    else:
+        T, Z = schur(A, output='complex')
     failflag = False
     try:
-        T, Z = schur(A)
-        T, Z = rsf2csf(T,Z)
         R = _sqrtm_triu(T, blocksize=blocksize)
         R, Z = all_mat(R,Z)
         X = (Z * R * Z.H)

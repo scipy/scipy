@@ -173,6 +173,51 @@ class TestSqrtM(TestCase):
         esa = sqrtm(a, disp=False, blocksize=2)[0]
         assert_array_almost_equal(dot(esa,esa),a)
 
+    def test_sqrtm_type_preservation_and_conversion(self):
+        # The sqrtm matrix function should preserve the type of a matrix
+        # whose eigenvalues are nonnegative with zero imaginary part.
+        # Test this preservation for variously structured matrices.
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, 1]],
+                [[1, 0], [1, 1]],
+                [[2, 1], [1, 1]],
+                [[2, 3], [1, 2]],
+                [[1, 1], [1, 1]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(not any(w.imag or w < 0 for w in W))
+
+            # check float type preservation
+            A = np.array(matrix_as_list, dtype=float)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(A_sqrtm.dtype.char not in complex_dtype_chars)
+
+            # check complex type preservation
+            A = np.array(matrix_as_list, dtype=complex)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+
+            # check float->complex type conversion for the matrix negation
+            A = -np.array(matrix_as_list, dtype=float)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+
+    def test_sqrtm_type_conversion_mixed_sign_spectrum(self):
+        complex_dtype_chars = ('F', 'D', 'G')
+        matrix_as_list = [[1, 0], [0, -1]]
+
+        # check complex->complex
+        A = np.array(matrix_as_list, dtype=complex)
+        A_sqrtm, info = sqrtm(A, disp=False)
+        assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+
+        # check float->complex
+        A = np.array(matrix_as_list, dtype=float)
+        A_sqrtm, info = sqrtm(A, disp=False)
+        assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+
     def test_blocksizes(self):
         # Make sure I do not goof up the blocksizes when they do not divide n.
         np.random.seed(1234)
