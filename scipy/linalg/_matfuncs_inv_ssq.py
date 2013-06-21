@@ -11,7 +11,8 @@ import numpy as np
 from scipy.linalg._matfuncs_sqrtm import SqrtmError, _sqrtm_triu
 from scipy.linalg.decomp_schur import schur, rsf2csf
 from scipy.linalg.special_matrices import all_mat
-from scipy.linalg import svd, solve_triangular
+from scipy.linalg.matfuncs import funm
+from scipy.linalg import svdvals, solve_triangular
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import onenormest
 
@@ -705,26 +706,39 @@ def fractional_matrix_power(A, p):
     if p == int(p):
         return np.linalg.matrix_power(A, int(p))
     # Compute singular values.
-    s = svd(A, compute_uv=False)
-    # Scaling and squaring cannot deal with a singular matrix.
-    if not s[-1]:
+    s = svdvals(A)
+    # Inverse scaling and squaring cannot deal with a singular matrix,
+    # because the process of repeatedly taking square roots
+    # would not converge to the identity matrix.
+    if s[-1]:
+        # Compute the condition number relative to matrix inversion,
+        # and use this to decide between floor(p) and ceil(p).
+        k2 = s[0] / s[-1]
+        p1 = p - np.floor(p)
+        p2 = p - np.ceil(p)
+        if p1 * k2 ** (1 - p1) <= -p2 * k2:
+            a = int(np.floor(p))
+            b = p1
+        else:
+            a = int(np.ceil(p))
+            b = p2
+        try:
+            R = _remainder_matrix_power(A, b)
+            Q = np.linalg.matrix_power(A, a)
+            return Q.dot(R)
+        except np.linalg.LinAlgError as e:
+            pass
+    # If p is negative then we are going to give up.
+    # If p is non-negative then we can fall back to generic funm.
+    if p < 0:
         return np.zeros_like(A)
-    # Compute the condition number relative to matrix inversion.
-    k2 = s[0] / s[-1]
-    p1 = p - np.floor(p)
-    p2 = p - np.ceil(p)
-    if p1 * k2 ** (1 - p1) <= -p2 * k2:
+    else:
+        p1 = p - np.floor(p)
         a = int(np.floor(p))
         b = p1
-    else:
-        a = int(np.ceil(p))
-        b = p2
-    try:
-        R = _remainder_matrix_power(A, b)
+        R, info = funm(A, lambda x : pow(x, b), disp=False)
         Q = np.linalg.matrix_power(A, a)
-    except np.linalg.LinAlgError as e:
-        return np.zeros_like(A)
-    return Q.dot(R)
+        return Q.dot(R)
 
 
 def _logm_triu(T):

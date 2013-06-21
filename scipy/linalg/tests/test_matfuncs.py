@@ -497,9 +497,13 @@ class TestFractionalMatrixPower(TestCase):
             # check fractional powers both for float and for complex types
             for newtype in (float, complex):
                 A = np.array(matrix_as_list, dtype=newtype)
-                for p in (-0.7, -0.9, -2.4, -1.3, 0.2, 3.3):
+                for p in (-0.7, -0.9, -2.4, -1.3):
                     A_power = fractional_matrix_power(A, p)
                     assert_allclose(A_power, np.zeros_like(A_power))
+                for p in (0.2, 1.43):
+                    A_power = fractional_matrix_power(A, p)
+                    A_round_trip = fractional_matrix_power(A_power, 1/p)
+                    assert_allclose(A_round_trip, A)
 
 
 class TestExpM(TestCase):
