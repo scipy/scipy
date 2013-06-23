@@ -200,3 +200,22 @@ DECLARE_DATA_TYPE( npy_clongdouble_wrapper )
 /* 64-bit indices would go here */
 %enddef
 
+%define INSTANTIATE_BOOL_OUT( f_name )
+/* 32-bit indices */
+%template(f_name)   f_name<int,npy_bool_wrapper,        npy_bool_wrapper>;
+%template(f_name)   f_name<int,signed char,             npy_bool_wrapper>;
+%template(f_name)   f_name<int,unsigned char,           npy_bool_wrapper>;
+%template(f_name)   f_name<int,short,                   npy_bool_wrapper>;
+%template(f_name)   f_name<int,unsigned short,          npy_bool_wrapper>;
+%template(f_name)   f_name<int,int,                     npy_bool_wrapper>;
+%template(f_name)   f_name<int,unsigned int,            npy_bool_wrapper>;
+%template(f_name)   f_name<int,long long,               npy_bool_wrapper>;
+%template(f_name)   f_name<int,unsigned long long,      npy_bool_wrapper>;
+%template(f_name)   f_name<int,float,                   npy_bool_wrapper>;
+%template(f_name)   f_name<int,double,                  npy_bool_wrapper>;
+%template(f_name)   f_name<int,long double,             npy_bool_wrapper>;
+%template(f_name)   f_name<int,npy_cfloat_wrapper,      npy_bool_wrapper>;
+%template(f_name)   f_name<int,npy_cdouble_wrapper,     npy_bool_wrapper>;
+%template(f_name)   f_name<int,npy_clongdouble_wrapper, npy_bool_wrapper>;
+/* 64-bit indices would go here */
+%enddef

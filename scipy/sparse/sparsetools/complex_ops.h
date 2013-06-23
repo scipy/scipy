@@ -18,6 +18,13 @@ class complex_wrapper : public npy_type {
             npy_type::real = r;
             npy_type::imag = i;
         }
+        operator bool() const {
+            if (npy_type::real == 0 && npy_type::imag == 0) {
+                return false;
+            } else {
+                return true;
+            }
+        }
         complex_wrapper operator-() const {
           return complex_wrapper(-npy_type::real,-npy_type::imag);
         }
