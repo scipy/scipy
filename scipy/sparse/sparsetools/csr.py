@@ -381,56 +381,6 @@ def csr_matvecs(*args):
     """
   return _csr.csr_matvecs(*args)
 
-def csr_ne_csr(*args):
-  """
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, npy_bool_wrapper const [] Ax, 
-        int const [] Bp, int const [] Bj, npy_bool_wrapper const [] Bx, 
-        int [] Cp, int [] Cj, npy_bool_wrapper [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, signed char const [] Ax, 
-        int const [] Bp, int const [] Bj, signed char const [] Bx, int [] Cp, 
-        int [] Cj, signed char [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, unsigned char const [] Ax, 
-        int const [] Bp, int const [] Bj, unsigned char const [] Bx, 
-        int [] Cp, int [] Cj, unsigned char [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, short const [] Ax, 
-        int const [] Bp, int const [] Bj, short const [] Bx, int [] Cp, int [] Cj, 
-        short [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, unsigned short const [] Ax, 
-        int const [] Bp, int const [] Bj, unsigned short const [] Bx, 
-        int [] Cp, int [] Cj, unsigned short [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, int const [] Ax, 
-        int const [] Bp, int const [] Bj, int const [] Bx, int [] Cp, int [] Cj, 
-        int [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, unsigned int const [] Ax, 
-        int const [] Bp, int const [] Bj, unsigned int const [] Bx, int [] Cp, 
-        int [] Cj, unsigned int [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, long long const [] Ax, 
-        int const [] Bp, int const [] Bj, long long const [] Bx, int [] Cp, 
-        int [] Cj, long long [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, unsigned long long const [] Ax, 
-        int const [] Bp, int const [] Bj, unsigned long long const [] Bx, 
-        int [] Cp, int [] Cj, unsigned long long [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, float const [] Ax, 
-        int const [] Bp, int const [] Bj, float const [] Bx, int [] Cp, int [] Cj, 
-        float [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, double const [] Ax, 
-        int const [] Bp, int const [] Bj, double const [] Bx, int [] Cp, int [] Cj, 
-        double [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, long double const [] Ax, 
-        int const [] Bp, int const [] Bj, long double const [] Bx, int [] Cp, 
-        int [] Cj, long double [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, npy_cfloat_wrapper const [] Ax, 
-        int const [] Bp, int const [] Bj, npy_cfloat_wrapper const [] Bx, 
-        int [] Cp, int [] Cj, npy_cfloat_wrapper [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, npy_cdouble_wrapper const [] Ax, 
-        int const [] Bp, int const [] Bj, npy_cdouble_wrapper const [] Bx, 
-        int [] Cp, int [] Cj, npy_cdouble_wrapper [] Cx)
-    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, npy_clongdouble_wrapper const [] Ax, 
-        int const [] Bp, int const [] Bj, npy_clongdouble_wrapper const [] Bx, 
-        int [] Cp, int [] Cj, npy_clongdouble_wrapper [] Cx)
-    """
-  return _csr.csr_ne_csr(*args)
-
 def csr_elmul_csr(*args):
   """
     csr_elmul_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, npy_bool_wrapper const [] Ax, 
@@ -762,6 +712,56 @@ def csr_sample_values(*args):
         npy_clongdouble_wrapper [] Bx)
     """
   return _csr.csr_sample_values(*args)
+
+def csr_ne_csr(*args):
+  """
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, npy_bool_wrapper const [] Ax, 
+        int const [] Bp, int const [] Bj, npy_bool_wrapper const [] Bx, 
+        int [] Cp, int [] Cj, npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, signed char const [] Ax, 
+        int const [] Bp, int const [] Bj, signed char const [] Bx, int [] Cp, 
+        int [] Cj, npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, unsigned char const [] Ax, 
+        int const [] Bp, int const [] Bj, unsigned char const [] Bx, 
+        int [] Cp, int [] Cj, npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, short const [] Ax, 
+        int const [] Bp, int const [] Bj, short const [] Bx, int [] Cp, int [] Cj, 
+        npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, unsigned short const [] Ax, 
+        int const [] Bp, int const [] Bj, unsigned short const [] Bx, 
+        int [] Cp, int [] Cj, npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, int const [] Ax, 
+        int const [] Bp, int const [] Bj, int const [] Bx, int [] Cp, int [] Cj, 
+        npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, unsigned int const [] Ax, 
+        int const [] Bp, int const [] Bj, unsigned int const [] Bx, int [] Cp, 
+        int [] Cj, npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, long long const [] Ax, 
+        int const [] Bp, int const [] Bj, long long const [] Bx, int [] Cp, 
+        int [] Cj, npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, unsigned long long const [] Ax, 
+        int const [] Bp, int const [] Bj, unsigned long long const [] Bx, 
+        int [] Cp, int [] Cj, npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, float const [] Ax, 
+        int const [] Bp, int const [] Bj, float const [] Bx, int [] Cp, int [] Cj, 
+        npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, double const [] Ax, 
+        int const [] Bp, int const [] Bj, double const [] Bx, int [] Cp, int [] Cj, 
+        npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, long double const [] Ax, 
+        int const [] Bp, int const [] Bj, long double const [] Bx, int [] Cp, 
+        int [] Cj, npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, npy_cfloat_wrapper const [] Ax, 
+        int const [] Bp, int const [] Bj, npy_cfloat_wrapper const [] Bx, 
+        int [] Cp, int [] Cj, npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, npy_cdouble_wrapper const [] Ax, 
+        int const [] Bp, int const [] Bj, npy_cdouble_wrapper const [] Bx, 
+        int [] Cp, int [] Cj, npy_bool_wrapper [] Cx)
+    csr_ne_csr(int const n_row, int const n_col, int const [] Ap, int const [] Aj, npy_clongdouble_wrapper const [] Ax, 
+        int const [] Bp, int const [] Bj, npy_clongdouble_wrapper const [] Bx, 
+        int [] Cp, int [] Cj, npy_bool_wrapper [] Cx)
+    """
+  return _csr.csr_ne_csr(*args)
 # This file is compatible with both classic and new-style classes.
 
 
