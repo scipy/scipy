@@ -663,9 +663,9 @@ class rv_generic(object):
 
         """
         try:
-            discrete = kwds.pop('discrete', None)
-        except:
-            pass
+            discrete = kwds.pop('discrete')
+        except KeyError:
+            discrete = None
         args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
 #        kwd_names = ['loc', 'scale', 'size', 'discrete']
 #        loc, scale, size, discrete = map(kwds.get, kwd_names,
