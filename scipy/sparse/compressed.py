@@ -174,11 +174,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         if isscalarlike(other):
             other_arr = self.copy()
             other_arr.data[:] = other
-            res = self._binopt(other_arr,'_ne_').astype(bool)
+            res = self._binopt(other_arr,'_ne_')
             if other == 0:
                 warn("Comparing a sparse matrix with 0 using == is inefficient"
                         ", try using != instead.")
-                all_true = self.__class__(np.ones(self.shape).astype(bool))
+                all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
                 return all_true - res
             else:
                 self_as_bool = self.astype(bool)
@@ -195,8 +195,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 return False
             elif self.format != other.format:
                 other = other.asformat(self.format)
-            res = self._binopt(other,'_ne_').astype(bool)
-            all_true = self.__class__(np.ones(self.shape).astype(bool))
+            res = self._binopt(other,'_ne_')
+            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
             return all_true - res
         else:
             return False
@@ -207,13 +207,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             if other != 0:
                 warn("Comparing a sparse matrix with a nonzero scalar using !="
                      " is inefficient, try using == instead.")
-                all_true = self.__class__(np.ones(self.shape).astype(bool))
+                all_true = self.__class__(np.ones(self.shape), dtype=np.bool_)
                 res = (self == other)
                 return all_true - res
             else:
                 other_arr = self.copy()
                 other_arr.data[:] = other
-                return self._binopt(other_arr,'_ne_').astype(bool)
+                return self._binopt(other_arr,'_ne_')
         # Dense other.
         elif isdense(other):
             return self.todense() != other
@@ -224,7 +224,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                 return True
             elif self.format != other.format:
                 other = other.asformat(self.format)
-            return self._binopt(other,'_ne_').astype(bool)
+            return self._binopt(other,'_ne_')
         else:
             return True
 
@@ -753,7 +753,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                                    shape=self.shape,dtype=data.dtype)
 
     def _binopt(self, other, op):
-        """apply the binary operation fn to two sparse matrices"""
+        """apply the binary operation fn to two sparse matrices."""
         other = self.__class__(other)
 
         # e.g. csr_plus_csr, csr_minus_csr, etc.
@@ -762,7 +762,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         maxnnz = self.nnz + other.nnz
         indptr = np.empty_like(self.indptr)
         indices = np.empty(maxnnz, dtype=np.intc)
-        data = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
+
+        if op == '_ne_':
+            data = np.empty(maxnnz, dtype=np.bool_)
+        else:
+            data = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(self.shape[0], self.shape[1],
                 self.indptr, self.indices, self.data,
