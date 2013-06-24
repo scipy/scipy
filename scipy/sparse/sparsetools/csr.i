@@ -9,7 +9,6 @@
 
 %include "csr.h" 
 
-
 INSTANTIATE_INDEX(expandptr)
 INSTANTIATE_INDEX(csr_matmat_pass1)
 INSTANTIATE_INDEX(csr_count_blocks)
@@ -23,7 +22,6 @@ INSTANTIATE_ALL(csr_tobsr)
 INSTANTIATE_ALL(csr_matmat_pass2)
 INSTANTIATE_ALL(csr_matvec)
 INSTANTIATE_ALL(csr_matvecs)
-INSTANTIATE_ALL(csr_ne_csr)
 INSTANTIATE_ALL(csr_elmul_csr)
 INSTANTIATE_ALL(csr_eldiv_csr)
 INSTANTIATE_ALL(csr_plus_csr)
@@ -34,3 +32,4 @@ INSTANTIATE_ALL(csr_sum_duplicates)
 INSTANTIATE_ALL(get_csr_submatrix)
 INSTANTIATE_ALL(csr_sample_values)
 
+INSTANTIATE_BOOL_OUT(csr_ne_csr)
