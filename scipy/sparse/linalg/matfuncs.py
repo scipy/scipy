@@ -20,7 +20,7 @@ import numpy as np
 
 import scipy.misc
 from scipy.linalg.misc import norm
-from scipy.linalg.basic import solve, inv
+from scipy.linalg.basic import solve, solve_triangular, inv
 
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
@@ -29,6 +29,8 @@ from scipy.sparse.linalg import spsolve
 import scipy.sparse
 import scipy.sparse.linalg
 from scipy.sparse.linalg.interface import LinearOperator
+
+UPPER_TRIANGULAR = 'upper_triangular'
 
 
 def inv(A):
@@ -285,11 +287,13 @@ def expm(A):
     References
     ----------
     .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2009)
-           "A New Scaling and Squaring Algorithm for th Matrix Exponential."
+           "A New Scaling and Squaring Algorithm for the Matrix Exponential."
            SIAM Journal on Matrix Analysis and Applications.
            31 (3). pp. 970-989. ISSN 1095-7162
 
     """
+    # Detect upper triangularity.
+    structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
 
     # Define the identity matrix depending on sparsity.
     ident = _ident_like(A)
@@ -300,7 +304,7 @@ def expm(A):
     eta_1 = max(_onenormest_matrix_power(A2, 2)**(1/4.), d6)
     if eta_1 < 1.495585217958292e-002 and _ell(A, 3) == 0:
         U, V = _pade3(A, ident, A2)
-        return _solve_P_Q(U, V)
+        return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade order 5.
     A4 = A2.dot(A2)
@@ -308,7 +312,7 @@ def expm(A):
     eta_2 = max(d4, d6)
     if eta_2 < 2.539398330063230e-001 and _ell(A, 5) == 0:
         U, V = _pade5(A, ident, A2, A4)
-        return _solve_P_Q(U, V)
+        return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade orders 7 and 9.
     A6 = A2.dot(A4)
@@ -317,10 +321,10 @@ def expm(A):
     eta_3 = max(d6, d8)
     if eta_3 < 9.504178996162932e-001 and _ell(A, 7) == 0:
         U, V = _pade7(A, ident, A2, A4, A6)
-        return _solve_P_Q(U, V)
+        return _solve_P_Q(U, V, structure=structure)
     if eta_3 < 2.097847961257068e+000 and _ell(A, 9) == 0:
         U, V = _pade9(A, ident, A2, A4, A6)
-        return _solve_P_Q(U, V)
+        return _solve_P_Q(U, V, structure=structure)
 
     # Use Pade order 13.
     d10 = _onenormest_product((A4, A6))**(1/10.)
@@ -334,8 +338,8 @@ def expm(A):
     B4 = A4 * 2**(-4*s)
     B6 = A6 * 2**(-6*s)
     U, V = _pade13(B, ident, B2, B4, B6)
-    X = _solve_P_Q(U, V)
-    if _is_upper_triangular(A):
+    X = _solve_P_Q(U, V, structure=structure)
+    if structure == UPPER_TRIANGULAR:
         # Invoke Code Fragment 2.1.
         X = _fragment_2_1(X, A, s)
     else:
@@ -345,17 +349,36 @@ def expm(A):
     return X
 
 
-def _solve_P_Q(U, V):
+def _solve_P_Q(U, V, structure=None):
     """
     A helper function for expm_2009.
+
+    Parameters
+    ----------
+    U : ndarray
+        Pade numerator.
+    V : ndarray
+        Pade denominator.
+    structure : str, optional
+        A string describing the structure of both matrices `U` and `V`.
+        Only `upper_triangular` is currently supported.
+
+    Notes
+    -----
+    The `structure` argument is inspired by similar args
+    for theano and cvxopt functions.
+
     """
     P = U + V
     Q = -U + V
     if isspmatrix(U):
-        R = spsolve(Q, P)
+        return spsolve(Q, P)
+    elif structure is None:
+        return solve(Q, P)
+    elif structure == UPPER_TRIANGULAR:
+        return solve_triangular(Q, P)
     else:
-        R = solve(Q, P)
-    return R
+        raise ValueError('unsupported matrix structure: ' + str(structure))
 
 
 def _sinch(x):
@@ -416,26 +439,33 @@ def _eq_10_42(lam_1, lam_2, t_12):
 def _fragment_2_1(X, T, s):
     """
     A helper function for expm_2009.
-    Note that X is modified in-place,
-    but this modification is not the same as the returned value of the function.
+
+    Notes
+    -----
+    The argument X is modified in-place, but this modification is not the same
+    as the returned value of the function.
+    This function also takes pains to do things in ways that are compatible
+    with sparse matrices, for example by avoiding fancy indexing
+    and by using methods of the matrices whenever possible instead of
+    using functions of the numpy or scipy libraries themselves.
+
     """
     # Form X = r_m(2^-s T)
     # Replace diag(X) by exp(2^-s diag(T)).
     n = X.shape[0]
     diag_T = T.diagonal().copy()
 
-    # XXX Can this chunk be vectorized?
+    # Replace diag(X) by exp(2^-s diag(T)).
     scale = 2 ** -s
     exp_diag = np.exp(scale * diag_T)
     for k in range(n):
         X[k, k] = exp_diag[k]
 
     for i in range(s-1, -1, -1):
-        scale = 2 ** -i
         X = X.dot(X)
 
         # Replace diag(X) by exp(2^-i diag(T)).
-        # XXX Can this chunk be vectorized?
+        scale = 2 ** -i
         exp_diag = np.exp(scale * diag_T)
         for k in range(n):
             X[k, k] = exp_diag[k]
@@ -444,7 +474,6 @@ def _fragment_2_1(X, T, s):
         # for superdiagonal of exp(2^-i T) from Eq (10.42) of
         # the author's 2008 textbook
         # Functions of Matrices: Theory and Computation.
-        # XXX Can this chunk be vectorized?
         for k in range(n-1):
             lam_1 = scale * diag_T[k]
             lam_2 = scale * diag_T[k+1]

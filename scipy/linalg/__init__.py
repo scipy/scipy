@@ -94,6 +94,7 @@ Matrix Functions
    sqrtm - Matrix square root
    funm - Evaluating an arbitrary matrix function
    expm_frechet - Frechet derivative of the matrix exponential
+   fractional_matrix_power - Fractional matrix power
 
 
 Matrix Equation Solvers
