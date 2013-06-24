@@ -323,7 +323,7 @@ class TestSqrtM(TestCase):
             [0, 0, 0, 3],
             [0, 0, 0, 0]], dtype=float)
         A_sqrtm, info = sqrtm(A, disp=False)
-        assert_array_equal(A_sqrtm, np.zeros_like(A))
+        assert_(np.isnan(A_sqrtm).all())
 
     def test_weird_matrix(self):
         # The square root of matrix B exists.
@@ -339,7 +339,7 @@ class TestSqrtM(TestCase):
 
         # But scipy sqrtm is not clever enough to find it.
         B_sqrtm, info = sqrtm(B, disp=False)
-        assert_array_equal(B_sqrtm, np.zeros_like(B))
+        assert_(np.isnan(B_sqrtm).all())
 
     def test_disp(self):
         from io import StringIO
@@ -527,7 +527,7 @@ class TestFractionalMatrixPower(TestCase):
                 A = np.array(matrix_as_list, dtype=newtype)
                 for p in (-0.7, -0.9, -2.4, -1.3):
                     A_power = fractional_matrix_power(A, p)
-                    assert_allclose(A_power, np.zeros_like(A_power))
+                    assert_(np.isnan(A_power).all())
                 for p in (0.2, 1.43):
                     A_power = fractional_matrix_power(A, p)
                     A_round_trip = fractional_matrix_power(A_power, 1/p)

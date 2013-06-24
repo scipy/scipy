@@ -166,7 +166,8 @@ def sqrtm(A, disp=True, blocksize=64):
         X = (Z * R * Z.H)
     except SqrtmError as e:
         failflag = True
-        X = np.matrix(np.zeros_like(A))
+        X = np.matrix(np.empty_like(A))
+        X.fill(np.nan)
 
     if disp:
         nzeig = np.any(np.diag(T) == 0)
@@ -176,6 +177,11 @@ def sqrtm(A, disp=True, blocksize=64):
             print("Failed to find a square root.")
         return X.A
     else:
-        arg2 = norm(X*X - A,'fro')**2 / norm(A,'fro')
+        try:
+            arg2 = norm(X*X - A,'fro')**2 / norm(A,'fro')
+        except ValueError:
+            # NaNs in matrix
+            arg2 = np.inf
+
         return X.A, arg2
 

@@ -731,7 +731,9 @@ def fractional_matrix_power(A, p):
     # If p is negative then we are going to give up.
     # If p is non-negative then we can fall back to generic funm.
     if p < 0:
-        return np.zeros_like(A)
+        X = np.empty_like(A)
+        X.fill(np.nan)
+        return X
     else:
         p1 = p - np.floor(p)
         a = int(np.floor(p))
@@ -901,5 +903,6 @@ def logm(A):
             X = (Z * U * Z.H)
             return X.A
     except (SqrtmError, LogmError) as e:
-        return np.zeros_like(A)
-
+        X = np.empty_like(A)
+        X.fill(np.nan)
+        return X
