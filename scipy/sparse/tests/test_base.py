@@ -937,17 +937,20 @@ class _TestInplaceArithmetic:
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
 
-            a = datsp.copy()
-            a *= 2
-            b = dat.copy()
-            b *= 2
-            assert_array_equal(b, a.todense())
+            # Avoid implicit casting.
+            if np.can_cast(type(2), dtype, casting='same_kind'):
+                a = datsp.copy()
+                a *= 2
+                b = dat.copy()
+                b *= 2
+                assert_array_equal(b, a.todense())
 
-            a = datsp.copy()
-            a *= 17.3
-            b = dat.copy()
-            b *= 17.3
-            assert_array_equal(b, a.todense())
+            if np.can_cast(type(17.3), dtype, casting='same_kind'):
+                a = datsp.copy()
+                a *= 17.3
+                b = dat.copy()
+                b *= 17.3
+                assert_array_equal(b, a.todense())
 
         for dtype in self.checked_dtypes:
             yield check, dtype
@@ -957,21 +960,25 @@ class _TestInplaceArithmetic:
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
 
-            a = datsp.copy()
-            a /= 2
-            b = dat.copy()
-            b /= 2
-            assert_array_equal(b, a.todense())
+            if np.can_cast(type(2), dtype, casting='same_kind'):
+                a = datsp.copy()
+                a /= 2
+                b = dat.copy()
+                b /= 2
+                assert_array_equal(b, a.todense())
 
-            a = datsp.copy()
-            a /= 17.3
-            b = dat.copy()
-            b /= 17.3
-            assert_array_equal(b, a.todense())
+            if np.can_cast(type(17.3), dtype, casting='same_kind'):
+                a = datsp.copy()
+                a /= 17.3
+                b = dat.copy()
+                b /= 17.3
+                assert_array_equal(b, a.todense())
 
         for dtype in self.checked_dtypes:
-            yield check, dtype
-
+            # /= should only be used with float dtypes to avoid implicit
+            # casting.
+            if not np.can_cast(dtype, np.int_):
+                yield check, dtype
 
 class _TestGetSet:
     def test_getelement(self):
