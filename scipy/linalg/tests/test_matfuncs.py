@@ -13,13 +13,37 @@ import random
 import numpy as np
 from numpy import array, identity, dot, sqrt, double
 from numpy.testing import (TestCase, run_module_suite,
+        assert_array_equal,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
-        assert_allclose, decorators)
+        assert_allclose, assert_, assert_raises, decorators)
 
 import scipy.linalg
-from scipy.linalg import signm, logm, sqrtm, expm, expm_frechet
+from scipy.linalg import funm, signm, logm, sqrtm, expm, expm_frechet
+from scipy.linalg import fractional_matrix_power
 from scipy.linalg.matfuncs import expm2, expm3
+from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
+
+
+def _get_al_mohy_higham_2012_experiment_1():
+    """
+    Return the test matrix from Experiment (1) of [1]_.
+
+    References
+    ----------
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2012)
+           "Improved Inverse Scaling and Squaring Algorithms
+           for the Matrix Logarithm."
+           SIAM Journal on Scientific Computing, 34 (4). C152-C169.
+           ISSN 1095-7197
+
+    """
+    A = np.array([
+        [3.2346e-1, 3e4, 3e4, 3e4],
+        [0, 3.0089e-1, 3e4, 3e4],
+        [0, 0, 3.2210e-1, 3e4],
+        [0, 0, 0, 3.0744e-1]], dtype=float)
+    return A
 
 
 class TestSignM(TestCase):
@@ -79,6 +103,104 @@ class TestLogM(TestCase):
         logm(m, disp=False)
         #XXX: what would be the correct result?
 
+    def test_al_mohy_higham_2012_experiment_1_logm(self):
+        # The logm completes the round trip successfully.
+        # Note that the expm leg of the round trip is badly conditioned.
+        A = _get_al_mohy_higham_2012_experiment_1()
+        A_logm, info = logm(A, disp=False)
+        A_round_trip = expm(A_logm)
+        assert_allclose(A_round_trip, A, rtol=1e-5, atol=1e-14)
+
+    def test_al_mohy_higham_2012_experiment_1_funm_log(self):
+        # The raw funm with np.log does not complete the round trip.
+        # Note that the expm leg of the round trip is badly conditioned.
+        A = _get_al_mohy_higham_2012_experiment_1()
+        A_funm_log, info = funm(A, np.log, disp=False)
+        A_round_trip = expm(A_funm_log)
+        assert_(not np.allclose(A_round_trip, A, rtol=1e-5, atol=1e-14))
+
+    def test_round_trip_random_float(self):
+        np.random.seed(1234)
+        for n in range(1, 6):
+            M_unscaled = np.random.randn(n, n)
+            for scale in np.logspace(-4, 4, 9):
+                M = M_unscaled * scale
+
+                # Eigenvalues are related to the branch cut.
+                W = np.linalg.eigvals(M)
+                err_msg = 'M:{0} eivals:{1}'.format(M, W)
+
+                # Check sqrtm round trip because it is used within logm.
+                M_sqrtm, info = sqrtm(M, disp=False)
+                M_sqrtm_round_trip = M_sqrtm.dot(M_sqrtm)
+                assert_allclose(M_sqrtm_round_trip, M)
+
+                # Check logm round trip.
+                M_logm, info = logm(M, disp=False)
+                M_logm_round_trip = expm(M_logm)
+                assert_allclose(M_logm_round_trip, M, err_msg=err_msg)
+
+    def test_round_trip_random_complex(self):
+        np.random.seed(1234)
+        for n in range(1, 6):
+            M_unscaled = np.random.randn(n, n) + 1j * np.random.randn(n, n)
+            for scale in np.logspace(-4, 4, 9):
+                M = M_unscaled * scale
+                M_logm, info = logm(M, disp=False)
+                M_round_trip = expm(M_logm)
+                assert_allclose(M_round_trip, M)
+
+    def test_logm_type_preservation_and_conversion(self):
+        # The logm matrix function should preserve the type of a matrix
+        # whose eigenvalues are positive with zero imaginary part.
+        # Test this preservation for variously structured matrices.
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, 1]],
+                [[1, 0], [1, 1]],
+                [[2, 1], [1, 1]],
+                [[2, 3], [1, 2]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(not any(w.imag or w.real < 0 for w in W))
+
+            # check float type preservation
+            A = np.array(matrix_as_list, dtype=float)
+            A_logm, info = logm(A, disp=False)
+            assert_(A_logm.dtype.char not in complex_dtype_chars)
+
+            # check complex type preservation
+            A = np.array(matrix_as_list, dtype=complex)
+            A_logm, info = logm(A, disp=False)
+            assert_(A_logm.dtype.char in complex_dtype_chars)
+
+            # check float->complex type conversion for the matrix negation
+            A = -np.array(matrix_as_list, dtype=float)
+            A_logm, info = logm(A, disp=False)
+            assert_(A_logm.dtype.char in complex_dtype_chars)
+
+    def test_logm_type_conversion_mixed_sign_or_complex_spectrum(self):
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, -1]],
+                [[0, 1], [1, 0]],
+                [[0, 1, 0], [0, 0, 1], [1, 0, 0]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(any(w.imag or w.real < 0 for w in W))
+
+            # check complex->complex
+            A = np.array(matrix_as_list, dtype=complex)
+            A_logm, info = logm(A, disp=False)
+            assert_(A_logm.dtype.char in complex_dtype_chars)
+
+            # check float->complex
+            A = np.array(matrix_as_list, dtype=float)
+            A_logm, info = logm(A, disp=False)
+            assert_(A_logm.dtype.char in complex_dtype_chars)
+
 
 class TestSqrtM(TestCase):
     def test_bad(self):
@@ -102,6 +224,58 @@ class TestSqrtM(TestCase):
         esa = sqrtm(a, disp=False, blocksize=2)[0]
         assert_array_almost_equal(dot(esa,esa),a)
 
+    def test_sqrtm_type_preservation_and_conversion(self):
+        # The sqrtm matrix function should preserve the type of a matrix
+        # whose eigenvalues are nonnegative with zero imaginary part.
+        # Test this preservation for variously structured matrices.
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, 1]],
+                [[1, 0], [1, 1]],
+                [[2, 1], [1, 1]],
+                [[2, 3], [1, 2]],
+                [[1, 1], [1, 1]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(not any(w.imag or w.real < 0 for w in W))
+
+            # check float type preservation
+            A = np.array(matrix_as_list, dtype=float)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(A_sqrtm.dtype.char not in complex_dtype_chars)
+
+            # check complex type preservation
+            A = np.array(matrix_as_list, dtype=complex)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+
+            # check float->complex type conversion for the matrix negation
+            A = -np.array(matrix_as_list, dtype=float)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+
+    def test_sqrtm_type_conversion_mixed_sign_or_complex_spectrum(self):
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, -1]],
+                [[0, 1], [1, 0]],
+                [[0, 1, 0], [0, 0, 1], [1, 0, 0]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(any(w.imag or w.real < 0 for w in W))
+
+            # check complex->complex
+            A = np.array(matrix_as_list, dtype=complex)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+
+            # check float->complex
+            A = np.array(matrix_as_list, dtype=float)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(A_sqrtm.dtype.char in complex_dtype_chars)
+
     def test_blocksizes(self):
         # Make sure I do not goof up the blocksizes when they do not divide n.
         np.random.seed(1234)
@@ -112,6 +286,224 @@ class TestSqrtM(TestCase):
             for blocksize in range(1, 10):
                 A_sqrtm_new, info = sqrtm(A, disp=False, blocksize=blocksize)
                 assert_allclose(A_sqrtm_default, A_sqrtm_new)
+
+    def test_al_mohy_higham_2012_experiment_1(self):
+        # Matrix square root of a tricky upper triangular matrix.
+        A = _get_al_mohy_higham_2012_experiment_1()
+        A_sqrtm, info = sqrtm(A, disp=False)
+        A_round_trip = A_sqrtm.dot(A_sqrtm)
+        assert_allclose(A_round_trip, A, rtol=1e-5)
+        assert_allclose(np.tril(A_round_trip), np.tril(A))
+
+    def test_strict_upper_triangular(self):
+        # This matrix has no square root.
+        A = np.array([
+            [0, 3, 0, 0],
+            [0, 0, 3, 0],
+            [0, 0, 0, 3],
+            [0, 0, 0, 0]], dtype=float)
+        A_sqrtm, info = sqrtm(A, disp=False)
+        assert_array_equal(A_sqrtm, np.zeros_like(A))
+
+    def test_weird_matrix(self):
+        # The square root of matrix B exists.
+        A = np.array([
+            [0, 0, 1],
+            [0, 0, 0],
+            [0, 1, 0]], dtype=float)
+        B = np.array([
+            [0, 1, 0],
+            [0, 0, 0],
+            [0, 0, 0]], dtype=float)
+        assert_array_equal(B, A.dot(A))
+
+        # But scipy sqrtm is not clever enough to find it.
+        B_sqrtm, info = sqrtm(B, disp=False)
+        assert_array_equal(B_sqrtm, np.zeros_like(B))
+
+
+class TestFractionalMatrixPower(TestCase):
+    def test_round_trip_random_complex(self):
+        np.random.seed(1234)
+        for p in range(1, 5):
+            for n in range(1, 5):
+                M_unscaled = np.random.randn(n, n) + 1j * np.random.randn(n, n)
+                for scale in np.logspace(-4, 4, 9):
+                    M = M_unscaled * scale
+                    M_root = fractional_matrix_power(M, 1/p)
+                    M_round_trip = np.linalg.matrix_power(M_root, p)
+                    assert_allclose(M_round_trip, M)
+
+    def test_round_trip_random_float(self):
+        # This test is more annoying because it can hit the branch cut;
+        # this happens when the matrix has an eigenvalue
+        # with no imaginary component and with a real negative component,
+        # and it means that the principal branch does not exist.
+        np.random.seed(1234)
+        for p in range(1, 5):
+            for n in range(1, 5):
+                M_unscaled = np.random.randn(n, n)
+                for scale in np.logspace(-4, 4, 9):
+                    M = M_unscaled * scale
+                    M_root = fractional_matrix_power(M, 1/p)
+                    M_round_trip = np.linalg.matrix_power(M_root, p)
+                    assert_allclose(M_round_trip, M)
+
+    def test_larger_abs_fractional_matrix_powers(self):
+        np.random.seed(1234)
+        for n in (2, 3, 5):
+            for i in range(10):
+                M = np.random.randn(n, n) + 1j * np.random.randn(n, n)
+                M_one_fifth = fractional_matrix_power(M, 0.2)
+                # Test the round trip.
+                M_round_trip = np.linalg.matrix_power(M_one_fifth, 5)
+                assert_allclose(M, M_round_trip)
+                # Test a large abs fractional power.
+                X = fractional_matrix_power(M, -5.4)
+                Y = np.linalg.matrix_power(M_one_fifth, -27)
+                assert_allclose(X, Y)
+                # Test another large abs fractional power.
+                X = fractional_matrix_power(M, 3.8)
+                Y = np.linalg.matrix_power(M_one_fifth, 19)
+                assert_allclose(X, Y)
+
+    def test_random_matrices_and_powers(self):
+        # Each independent iteration of this fuzz test picks random parameters.
+        # It tries to hit some edge cases.
+        np.random.seed(1234)
+        nsamples = 20
+        for i in range(nsamples):
+            # Sample a matrix size and a random real power.
+            n = random.randrange(1, 5)
+            p = np.random.randn()
+
+            # Sample a random real or complex matrix.
+            matrix_scale = np.exp(random.randrange(-4, 5))
+            A = np.random.randn(n, n)
+            if random.choice((True, False)):
+                A = A + 1j * np.random.randn(n, n)
+            A = A * matrix_scale
+
+            # Check a couple of analytically equivalent ways
+            # to compute the fractional matrix power.
+            # These can be compared because they both use the principal branch.
+            A_power = fractional_matrix_power(A, p)
+            A_logm, info = logm(A, disp=False)
+            A_power_expm_logm = expm(A_logm * p)
+            assert_allclose(A_power, A_power_expm_logm)
+
+    def test_al_mohy_higham_2012_experiment_1(self):
+        # Fractional powers of a tricky upper triangular matrix.
+        A = _get_al_mohy_higham_2012_experiment_1()
+
+        # Test remainder matrix power.
+        A_funm_sqrt, info = funm(A, np.sqrt, disp=False)
+        A_sqrtm, info = sqrtm(A, disp=False)
+        A_rem_power = _matfuncs_inv_ssq._remainder_matrix_power(A, 0.5)
+        A_power = fractional_matrix_power(A, 0.5)
+        assert_array_equal(A_rem_power, A_power)
+        assert_allclose(A_sqrtm, A_power)
+        assert_allclose(A_sqrtm, A_funm_sqrt)
+
+        # Test more fractional powers.
+        for p in (1/2, 5/3):
+            A_power = fractional_matrix_power(A, p)
+            A_round_trip = fractional_matrix_power(A_power, 1/p)
+            assert_allclose(A_round_trip, A, rtol=1e-2)
+            assert_allclose(np.tril(A_round_trip, 1), np.tril(A, 1))
+
+    def test_briggs_helper_function(self):
+        np.random.seed(1234)
+        for a in np.random.randn(10) + 1j * np.random.randn(10):
+            for k in range(5):
+                x_observed = _matfuncs_inv_ssq._briggs_helper_function(a, k)
+                x_expected = a ** np.exp2(-k) - 1
+                assert_allclose(x_observed, x_expected)
+
+    def test_type_preservation_and_conversion(self):
+        # The fractional_matrix_power matrix function should preserve
+        # the type of a matrix whose eigenvalues
+        # are positive with zero imaginary part.
+        # Test this preservation for variously structured matrices.
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, 1]],
+                [[1, 0], [1, 1]],
+                [[2, 1], [1, 1]],
+                [[2, 3], [1, 2]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(not any(w.imag or w.real < 0 for w in W))
+
+            # Check various positive and negative powers
+            # with absolute values bigger and smaller than 1.
+            for p in (-2.4, -0.9, 0.2, 3.3):
+
+                # check float type preservation
+                A = np.array(matrix_as_list, dtype=float)
+                A_power = fractional_matrix_power(A, p)
+                assert_(A_power.dtype.char not in complex_dtype_chars)
+
+                # check complex type preservation
+                A = np.array(matrix_as_list, dtype=complex)
+                A_power = fractional_matrix_power(A, p)
+                assert_(A_power.dtype.char in complex_dtype_chars)
+
+                # check float->complex for the matrix negation
+                A = -np.array(matrix_as_list, dtype=float)
+                A_power = fractional_matrix_power(A, p)
+                assert_(A_power.dtype.char in complex_dtype_chars)
+
+    def test_type_conversion_mixed_sign_or_complex_spectrum(self):
+        complex_dtype_chars = ('F', 'D', 'G')
+        for matrix_as_list in (
+                [[1, 0], [0, -1]],
+                [[0, 1], [1, 0]],
+                [[0, 1, 0], [0, 0, 1], [1, 0, 0]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(any(w.imag or w.real < 0 for w in W))
+
+            # Check various positive and negative powers
+            # with absolute values bigger and smaller than 1.
+            for p in (-2.4, -0.9, 0.2, 3.3):
+
+                # check complex->complex
+                A = np.array(matrix_as_list, dtype=complex)
+                A_power = fractional_matrix_power(A, p)
+                assert_(A_power.dtype.char in complex_dtype_chars)
+
+                # check float->complex
+                A = np.array(matrix_as_list, dtype=float)
+                A_power = fractional_matrix_power(A, p)
+                assert_(A_power.dtype.char in complex_dtype_chars)
+
+    def test_singular(self):
+        # Negative fractional powers do not work with singular matrices.
+        # Neither do non-integer fractional powers,
+        # because the scaling and squaring cannot deal with it.
+        for matrix_as_list in (
+                [[0, 0], [0, 0]],
+                [[1, 1], [1, 1]],
+                [[1, 2], [3, 6]],
+                [[0, 0, 0], [0, 1, 1], [0, -1, 1]]):
+
+            # check that the spectrum has the expected properties
+            W = scipy.linalg.eigvals(matrix_as_list)
+            assert_(np.count_nonzero(W) < len(W))
+
+            # check fractional powers both for float and for complex types
+            for newtype in (float, complex):
+                A = np.array(matrix_as_list, dtype=newtype)
+                for p in (-0.7, -0.9, -2.4, -1.3):
+                    A_power = fractional_matrix_power(A, p)
+                    assert_allclose(A_power, np.zeros_like(A_power))
+                for p in (0.2, 1.43):
+                    A_power = fractional_matrix_power(A, p)
+                    A_round_trip = fractional_matrix_power(A_power, 1/p)
+                    assert_allclose(A_round_trip, A)
 
 
 class TestExpM(TestCase):
