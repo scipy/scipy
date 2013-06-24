@@ -203,6 +203,26 @@ class TestLogM(TestCase):
 
 
 class TestSqrtM(TestCase):
+    def test_round_trip_random_float(self):
+        np.random.seed(1234)
+        for n in range(1, 6):
+            M_unscaled = np.random.randn(n, n)
+            for scale in np.logspace(-4, 4, 9):
+                M = M_unscaled * scale
+                M_sqrtm, info = sqrtm(M, disp=False)
+                M_sqrtm_round_trip = M_sqrtm.dot(M_sqrtm)
+                assert_allclose(M_sqrtm_round_trip, M)
+
+    def test_round_trip_random_complex(self):
+        np.random.seed(1234)
+        for n in range(1, 6):
+            M_unscaled = np.random.randn(n, n) + 1j * np.random.randn(n, n)
+            for scale in np.logspace(-4, 4, 9):
+                M = M_unscaled * scale
+                M_sqrtm, info = sqrtm(M, disp=False)
+                M_sqrtm_round_trip = M_sqrtm.dot(M_sqrtm)
+                assert_allclose(M_sqrtm_round_trip, M)
+
     def test_bad(self):
         # See http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
         e = 2**-5
