@@ -341,6 +341,14 @@ class TestSqrtM(TestCase):
         B_sqrtm, info = sqrtm(B, disp=False)
         assert_array_equal(B_sqrtm, np.zeros_like(B))
 
+    def test_disp(self):
+        from io import StringIO
+        np.random.seed(1234)
+
+        A = np.random.rand(3, 3)
+        B = sqrtm(A, disp=True)
+        assert_allclose(B.dot(B), A)
+
 
 class TestFractionalMatrixPower(TestCase):
     def test_round_trip_random_complex(self):
