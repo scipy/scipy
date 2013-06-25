@@ -234,7 +234,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             if 0 < other:
                 warn("Comparing a sparse matrix with a scalar greater than "
                      "zero using < is inefficient, try using > instead.", SparseEfficiencyWarning)
-                other_arr = self.__class__(np.ones(self.shape)) * other
+                other_arr = np.empty(self.shape)
+                other_arr.fill(other)
+                other_arr = self.__class__(other_arr)
                 return self._binopt(other_arr, '_lt_')
             else:
                 other_arr = self.copy()
@@ -260,7 +262,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             if 0 > other:
                 warn("Comparing a sparse matrix with a scalar less than zero "
                      "using > is inefficient, try using < instead.", SparseEfficiencyWarning)
-                other_arr = self.__class__(np.ones(self.shape)) * other
+                other_arr = np.empty(self.shape)
+                other_arr.fill(other)
+                other_arr = self.__class__(other_arr)
                 return self._binopt(other_arr, '_gt_')
             else:
                 other_arr = self.copy()
@@ -288,7 +292,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             elif 0 <= other:
                 warn("Comparing a sparse matrix with a scalar less than zero "
                      "using <= is inefficient, try using < instead.", SparseEfficiencyWarning)
-                other_arr = self.__class__(np.ones(self.shape)) * other
+                other_arr = np.empty(self.shape)
+                other_arr.fill(other)
+                other_arr = self.__class__(other_arr)
                 return self._binopt(other_arr, '_le_')
             else:
                 # Casting as other's type avoids corner case like
@@ -322,7 +328,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
             elif 0 >= other:
                 warn("Comparing a sparse matrix with a scalar greater than zero"
                      " using >= is inefficient, try using < instead.", SparseEfficiencyWarning)
-                other_arr = self.__class__(np.ones(self.shape)) * other
+                other_arr = np.empty(self.shape)
+                other_arr.fill(other)
+                other_arr = self.__class__(other_arr)
                 return self._binopt(other_arr, '_ge_')
             else:
                 other_arr = self.astype(type(other)).copy()
