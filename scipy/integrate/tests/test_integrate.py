@@ -242,8 +242,8 @@ class TestSolout(TestCase):
         assert_array_equal(ys[0], y0)
         assert_array_equal(ys[-1], ret)
         assert_equal(ts[0], t0)
-        assert(ts[-1] > tend/2.0)
-        assert(ts[-1] < tend)
+        assert_(ts[-1] > tend/2.0)
+        assert_(ts[-1] < tend)
 
     def test_solout_break(self):
         for integrator in ('dopri5', 'dop853'):
@@ -298,8 +298,8 @@ class TestComplexSolout(TestCase):
         assert_array_equal(ys[0], y0)
         assert_array_equal(ys[-1], ret)
         assert_equal(ts[0], t0)
-        assert(ts[-1] > tend/2.0)
-        assert(ts[-1] < tend)
+        assert_(ts[-1] > tend/2.0)
+        assert_(ts[-1] < tend)
 
     def test_solout_break(self):
         for integrator in ('dopri5', 'dop853'):
