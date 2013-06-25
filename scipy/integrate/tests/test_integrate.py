@@ -208,7 +208,7 @@ class TestSolout(TestCase):
             ys.append(y.copy())
         def rhs(t, y):
             return [y[0] + y[1], -y[1]**2]
-        ig = ode(rhs).set_integrator(integrator)
+        ig = ode(rhs).set_integrator(integrator, spam_level=-1)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
         ret = ig.integrate(tend)
@@ -235,7 +235,7 @@ class TestSolout(TestCase):
                 return -1
         def rhs(t, y):
             return [y[0] + y[1], -y[1]**2]
-        ig = ode(rhs).set_integrator(integrator)
+        ig = ode(rhs).set_integrator(integrator, spam_level=-1)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
         ret = ig.integrate(tend)
@@ -264,7 +264,7 @@ class TestComplexSolout(TestCase):
             ys.append(y.copy())
         def rhs(t, y):
             return [1.0/(t - 10.0 - 1j)]
-        ig = complex_ode(rhs).set_integrator(integrator)
+        ig = complex_ode(rhs).set_integrator(integrator, spam_level=-1)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
         ret = ig.integrate(tend)
@@ -291,7 +291,7 @@ class TestComplexSolout(TestCase):
                 return -1
         def rhs(t, y):
             return [1.0/(t - 10.0 - 1j)]
-        ig = complex_ode(rhs).set_integrator(integrator)
+        ig = complex_ode(rhs).set_integrator(integrator, spam_level=-1)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
         ret = ig.integrate(tend)
