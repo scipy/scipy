@@ -2,6 +2,8 @@
 # Author: Nathan Woods 2013 (nquad &c)
 from __future__ import division, print_function, absolute_import
 
+from functools import partial
+
 from . import _quadpack
 import sys
 import numpy
@@ -631,14 +633,17 @@ class _NQuad(object):
         self.opts = opts
 
     def integrate(self):
-        args_and_depth = self.args+(0,)
-        return (self._int(*args_and_depth),self.abserr)
+        return self._int(*self.args), self.abserr
 
-    def _int(self,*args):
-        depth = args[-1]
+    def _int(self, *args, **kwargs):
+        # Note that **kwargs should have only `depth=0` but only Python 3 will
+        # let you write it that way.  Instead we will use a pattern
+        # that I found on the internet which works for Python 2.
+        depth = kwargs.pop('depth', 0)
+
         ind = -depth-1
-        low, high = self.ranges[ind](*args[0:-1])
-        opt = self.opts[ind](*args[0:-1])
+        low, high = self.ranges[ind](*args)
+        opt = self.opts[ind](*args)
 
         # If points have been specified in the options,
         # keep only points that are within the specified range.
@@ -648,13 +653,9 @@ class _NQuad(object):
             opt['points'] = [x for x in opt['points'] if low <= x <= high]
 
         if self.ranges[ind] is self.ranges[0]:
-            newfunc = self.func
-            newargs = args[0:-1]
+            f = self.func
         else:
-            def newfunc(*args):
-                return self._int(*args)
-            newargs = list(args)
-            newargs[-1] = newargs[-1] + 1
-        out = quad(newfunc, low, high, args=tuple(newargs), **opt)
+            f = partial(self._int, depth=depth+1)
+        out = quad(f, low, high, args=args, **opt)
         self.abserr = max(self.abserr,out[1])
         return out[0]
