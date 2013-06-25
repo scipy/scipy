@@ -400,14 +400,18 @@ class ode(object):
         return self
 
     def set_solout(self, solout):
-        """Set callable to be called at every successful integration step.
+        """
+        Set callable to be called at every successful integration step.
 
-        - solout: callable ``solout(t, y)``
-                  called at each internal integrator step,
-                  t is a scalar providing the current independent position 
-                  y is the current soloution ``y.shape == (n,)``
-                  solout should return -1 to stop integration
-                  otherwise it should return None or 0
+        Parameters
+        ----------
+        solout : callable
+            ``solout(t, y)`` is called at each internal integrator step,
+            t is a scalar providing the current independent position 
+            y is the current soloution ``y.shape == (n,)``
+            solout should return -1 to stop integration
+            otherwise it should return None or 0
+
         """
         if self._integrator.supports_solout:
             self._integrator.set_solout(solout)
@@ -501,14 +505,18 @@ class complex_ode(ode):
         return y[::2] + 1j * y[1::2]
 
     def set_solout(self, solout):
-        """Set callable to be called at every successful integration step.
+        """
+        Set callable to be called at every successful integration step.
 
-        - solout: callable ``solout(t, y)``
-                  called at each internal integrator step,
-                  t is a scalar providing the current independent position 
-                  y is the current soloution ``y.shape == (n,)``
-                  solout should return -1 to stop integration
-                  otherwise it should return None or 0
+        Parameters
+        ----------
+        solout : callable
+            ``solout(t, y)`` is called at each internal integrator step,
+            t is a scalar providing the current independent position 
+            y is the current soloution ``y.shape == (n,)``
+            solout should return -1 to stop integration
+            otherwise it should return None or 0
+
         """
         if self._integrator.supports_solout:
             self._integrator.set_solout(solout, complex=True)
