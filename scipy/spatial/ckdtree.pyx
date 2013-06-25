@@ -1965,7 +1965,7 @@ cdef class cKDTree:
                     if node1 == node2:
                         min_j = i+1
                     else:
-                        min_j = lnode2.end_idx
+                        min_j = lnode2.start_idx
                         
                     for j in range(min_j, lnode2.end_idx):
                         d = _distance_p(
@@ -1973,11 +1973,13 @@ cdef class cKDTree:
                             other.raw_data + other.raw_indices[j] * self.m,
                             tracker.p, self.m, tracker.upper_bound)
                         if d <= tracker.upper_bound:
+                            if tracker.p!=1 and tracker.p!=infinity:
+                                d = d**(1./tracker.p)
                             results.add(self.raw_indices[i],
-                                        self.raw_indices[j], d)
+                                        other.raw_indices[j], d)
                             if node1 == node2:
                                 results.add(self.raw_indices[j],
-                                            self.raw_indices[i], d)
+                                            other.raw_indices[i], d)
 
             else:  # 1 is a leaf node, 2 is inner node
                 tracker.push_less_of(2, node2)
