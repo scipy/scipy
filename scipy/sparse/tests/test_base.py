@@ -145,6 +145,8 @@ class _TestCommon:
             # sparse/scalar
             assert_array_equal(dat != 0, (datsp != 0).todense())
             assert_array_equal(dat != 1, (datsp != 1).todense())
+            assert_array_equal(0 != dat, (0 != datsp).todense())
+            assert_array_equal(1 != dat, (1 != datsp).todense())
 
         for dtype in self.checked_dtypes:
             fails = not (self.__class__ == TestBSR or
@@ -186,11 +188,17 @@ class _TestCommon:
             assert_array_equal(dat < dat2, datsp < dat2)
             assert_array_equal(datcomplex < dat2, datspcomplex < dat2)
             # sparse/scalar
-            assert_array_equal(dat < 2, (datsp < 2).todense())
-            assert_array_equal(dat < 1, (datsp < 1).todense())
-            assert_array_equal(dat < 0, (datsp < 0).todense())
-            assert_array_equal(dat < -1, (datsp < -1).todense())
-            assert_array_equal(dat < -2, (datsp < -2).todense())
+            assert_array_equal((datsp < 2).todense(), dat < 2)
+            assert_array_equal((datsp < 1).todense(), dat < 1)
+            assert_array_equal((datsp < 0).todense(), dat < 0)
+            assert_array_equal((datsp < -1).todense(), dat < -1)
+            assert_array_equal((datsp < -2).todense(), dat < -2)
+
+            assert_array_equal((2 < datsp).todense(), 2 < dat)
+            assert_array_equal((1 < datsp).todense(), 1 < dat)
+            assert_array_equal((0 < datsp).todense(), 0 < dat)
+            assert_array_equal((-1 < datsp).todense(), -1 < dat)
+            assert_array_equal((-2 < datsp).todense(), -2 < dat)
 
         def check_fail(dtype):
             # data
@@ -246,11 +254,17 @@ class _TestCommon:
             assert_array_equal(dat > dat2, datsp > dat2)
             assert_array_equal(datcomplex > dat2, datspcomplex > dat2)
             # sparse/scalar
-            assert_array_equal(dat > 2, (datsp > 2).todense())
-            assert_array_equal(dat > 1, (datsp > 1).todense())
-            assert_array_equal(dat > 0, (datsp > 0).todense())
-            assert_array_equal(dat > -1, (datsp > -1).todense())
-            assert_array_equal(dat > -2, (datsp > -2).todense())
+            assert_array_equal((datsp > 2).todense(), dat > 2)
+            assert_array_equal((datsp > 1).todense(), dat > 1)
+            assert_array_equal((datsp > 0).todense(), dat > 0)
+            assert_array_equal((datsp > -1).todense(), dat > -1)
+            assert_array_equal((datsp > -2).todense(), dat > -2)
+
+            assert_array_equal((2 > datsp).todense(), 2 > dat)
+            assert_array_equal((1 > datsp).todense(), 1 > dat)
+            assert_array_equal((0 > datsp).todense(), 0 > dat)
+            assert_array_equal((-1 > datsp).todense(), -1 > dat)
+            assert_array_equal((-2 > datsp).todense(), -2 > dat)
 
         def check_fail(dtype):
             # data
@@ -306,10 +320,15 @@ class _TestCommon:
             assert_array_equal(datsp <= dat2, dat <= dat2)
             assert_array_equal(datspcomplex <= dat2, datcomplex <= dat2)
             # sparse/scalar
-            assert_array_equal(dat <= 2, (datsp <= 2).todense())
-            assert_array_equal(dat <= 1, (datsp <= 1).todense())
-            assert_array_equal(dat <= -1, (datsp <= -1).todense())
-            assert_array_equal(dat <= -2, (datsp <= -2).todense())
+            assert_array_equal((datsp <= 2).todense(), dat <= 2)
+            assert_array_equal((datsp <= 1).todense(), dat <= 1)
+            assert_array_equal((datsp <= -1).todense(), dat <= -1)
+            assert_array_equal((datsp <= -2).todense(), dat <= -2)
+
+            assert_array_equal((2 <= datsp).todense(), 2 <= dat)
+            assert_array_equal((1 <= datsp).todense(), 1 <= dat)
+            assert_array_equal((-1 <= datsp).todense(), -1 <= dat)
+            assert_array_equal((-2 <= datsp).todense(), -2 <= dat)
 
         def check_fail(dtype):
             # data
@@ -366,10 +385,15 @@ class _TestCommon:
             assert_array_equal(datsp >= dat2, dat >= dat2)
             assert_array_equal(datspcomplex >= dat2, datcomplex >= dat2)
             # sparse/scalar
-            assert_array_equal(dat >= 2, (datsp >= 2).todense())
-            assert_array_equal(dat >= 1, (datsp >= 1).todense())
-            assert_array_equal(dat >= -1, (datsp >= -1).todense())
-            assert_array_equal(dat >= -2, (datsp >= -2).todense())
+            assert_array_equal((datsp >= 2).todense(), dat >= 2)
+            assert_array_equal((datsp >= 1).todense(), dat >= 1)
+            assert_array_equal((datsp >= -1).todense(), dat >= -1)
+            assert_array_equal((datsp >= -2).todense(), dat >= -2)
+
+            assert_array_equal((2 >= datsp).todense(), 2 >= dat)
+            assert_array_equal((1 >= datsp).todense(), 1 >= dat)
+            assert_array_equal((-1 >= datsp).todense(), -1 >= dat)
+            assert_array_equal((-2 >= datsp).todense(), -2 >= dat)
 
         def check_fail(dtype):
             # data
