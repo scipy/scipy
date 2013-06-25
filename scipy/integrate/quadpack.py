@@ -493,7 +493,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     return dblquad(_infunc2,a,b,gfun,hfun,(func,qfun,rfun,args),epsabs=epsabs,epsrel=epsrel)
 
 
-def nquad(func,ranges,args=(),opts=[]):
+def nquad(func, ranges, args=None, opts=None):
     # Author: Nathan Woods 2013
     """
     Integration over multiple variables.
@@ -588,6 +588,11 @@ def nquad(func,ranges,args=(),opts=[]):
               opts=[opts0,opts1,opts2,opts3])
 
     """
+    if args is None:
+        args = ()
+    if opts is None:
+        opts = []
+
     new_ranges = [
         range_ if callable(range_) else _RangeFunc(range_) for range_ in ranges]
     if isinstance(opts,dict):
@@ -632,14 +637,16 @@ class _NQuad(object):
     def _int(self,*args):
         depth = args[-1]
         ind = -depth-1
-        range_ = self.ranges[ind](*args[0:-1])
+        low, high = self.ranges[ind](*args[0:-1])
         opt = self.opts[ind](*args[0:-1])
-        try:
-            for point in opt["points"]:
-                if point < range_[0] or point > range_[1]:
-                    opt["points"].remove(point)
-        except(KeyError):
-            pass
+
+        # If points have been specified in the options,
+        # keep only points that are within the specified range.
+        # Just to be safer, do this without modifying the original dict.
+        opt = dict(opt)
+        if 'points' in opt:
+            opt['points'] = [x for x in opt['points'] if low <= x <= high]
+
         if self.ranges[ind] is self.ranges[0]:
             newfunc = self.func
             newargs = args[0:-1]
@@ -648,6 +655,6 @@ class _NQuad(object):
                 return self._int(*args)
             newargs = list(args)
             newargs[-1] = newargs[-1] + 1
-        out = quad(newfunc,*range_,args=tuple(newargs),**opt)
+        out = quad(newfunc, low, high, args=tuple(newargs), **opt)
         self.abserr = max(self.abserr,out[1])
         return out[0]
