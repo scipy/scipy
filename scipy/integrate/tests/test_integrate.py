@@ -17,9 +17,7 @@ from scipy.integrate import odeint, ode, complex_ode
 #------------------------------------------------------------------------------
 
 class TestOdeint(TestCase):
-    """
-    Check integrate.odeint
-    """
+    # Check integrate.odeint
     def _do_problem(self, problem):
         t = arange(0.0, problem.stop_t, 0.05)
         z, infodict = odeint(problem.f, problem.z0, t, full_output=True)
@@ -32,9 +30,7 @@ class TestOdeint(TestCase):
             self._do_problem(problem)
 
 class TestOde(TestCase):
-    """
-    Check integrate.ode
-    """
+    # Check integrate.ode
     def _do_problem(self, problem, integrator, method='adams'):
 
         # ode has callback arguments in different order than odeint
@@ -55,7 +51,7 @@ class TestOde(TestCase):
         assert_(problem.verify(array([z]), problem.stop_t), (problem, method))
 
     def test_vode(self):
-        """Check the vode solver"""
+        # Check the vode solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if problem.cmplx: continue
@@ -64,7 +60,7 @@ class TestOde(TestCase):
             self._do_problem(problem, 'vode', 'bdf')
 
     def test_zvode(self):
-        """Check the zvode solver"""
+        # Check the zvode solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if not problem.stiff:
@@ -72,14 +68,14 @@ class TestOde(TestCase):
             self._do_problem(problem, 'zvode', 'bdf')
 
     def test_lsoda(self):
-        """Check the lsoda solver"""
+        # Check the lsoda solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if problem.cmplx: continue
             self._do_problem(problem, 'lsoda')
 
     def test_dopri5(self):
-        """Check the dopri5 solver"""
+        # Check the dopri5 solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if problem.cmplx: continue
@@ -88,7 +84,7 @@ class TestOde(TestCase):
             self._do_problem(problem, 'dopri5')
 
     def test_dop853(self):
-        """Check the dop853 solver"""
+        # Check the dop853 solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if problem.cmplx: continue
@@ -146,9 +142,7 @@ class TestOde(TestCase):
                 assert_allclose(r2.y, 0.2)
 
 class TestComplexOde(TestCase):
-    """
-    Check integrate.complex_ode
-    """
+    # Check integrate.complex_ode
     def _do_problem(self, problem, integrator, method='adams'):
 
         # ode has callback arguments in different order than odeint
@@ -170,7 +164,7 @@ class TestComplexOde(TestCase):
         assert_(problem.verify(array([z]), problem.stop_t), (problem, method))
 
     def test_vode(self):
-        """Check the vode solver"""
+        # Check the vode solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if not problem.stiff:
@@ -179,13 +173,13 @@ class TestComplexOde(TestCase):
                 self._do_problem(problem, 'vode', 'bdf')
 
     def test_lsoda(self):
-        """Check the lsoda solver"""
+        # Check the lsoda solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             self._do_problem(problem, 'lsoda')
 
     def test_dopri5(self):
-        """Check the dopri5 solver"""
+        # Check the dopri5 solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if problem.stiff: continue
@@ -193,7 +187,7 @@ class TestComplexOde(TestCase):
             self._do_problem(problem, 'dopri5')
 
     def test_dop853(self):
-        """Check the dop853 solver"""
+        # Check the dop853 solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if problem.stiff: continue
@@ -201,11 +195,9 @@ class TestComplexOde(TestCase):
             self._do_problem(problem, 'dop853')
 
 class TestSolout(TestCase):
-    """
-    Check integrate.ode correctly handles solout for dopri5 and dop853
-    """
+    # Check integrate.ode correctly handles solout for dopri5 and dop853
     def _run_solout_test(self, integrator):
-        """Check correct usage of solout"""
+        # Check correct usage of solout
         ts = []
         ys = []
         t0 = 0.0
@@ -230,7 +222,7 @@ class TestSolout(TestCase):
             self._run_solout_test(integrator)
 
     def _run_solout_break_test(self, integrator):
-        """Check correct usage of stopping via solout"""
+        # Check correct usage of stopping via solout
         ts = []
         ys = []
         t0 = 0.0
@@ -259,11 +251,9 @@ class TestSolout(TestCase):
 
 
 class TestComplexSolout(TestCase):
-    """
-    Check integrate.ode correctly handles solout for dopri5 and dop853
-    """
+    # Check integrate.ode correctly handles solout for dopri5 and dop853
     def _run_solout_test(self, integrator):
-        """Check correct usage of solout"""
+        # Check correct usage of solout
         ts = []
         ys = []
         t0 = 0.0
@@ -288,7 +278,7 @@ class TestComplexSolout(TestCase):
             self._run_solout_test(integrator)
 
     def _run_solout_break_test(self, integrator):
-        """Check correct usage of stopping via solout"""
+        # Check correct usage of stopping via solout
         ts = []
         ys = []
         t0 = 0.0
