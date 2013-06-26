@@ -25,7 +25,7 @@ __all__ = ['mvsdist',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
-           'fligner', 'mood', 'oneway', 'wilcoxon',
+           'fligner', 'mood', 'mood_nd', 'oneway', 'wilcoxon',
            'pdf_fromgamma', 'circmean', 'circvar', 'circstd',
            ]
 
@@ -1245,12 +1245,19 @@ def mood_nd(x, y, axis=0):
     ----------
     x, y : array_like
         Arrays of sample data.
+    axis: the axis along which the samples are tested
+        x and y can be of different length along the dimension = axis
+        Example: if the inputs are of shapes  (n0, n1, n2, n3)  and (n0, m1, n2, n3),
+        then if axis = 1, the resulting z and p values will have the following shape:
+         (n0,n2,n3)
+        if axis is None, flattens both arrays and tests 1d arrays  (behave like mood.test in R)
+
 
     Returns
     -------
-    z : float
+    z : array_like
         The z-score for the hypothesis test.
-    p-value : float
+    p-value : array_like
         The p-value for the hypothesis test.
 
     See Also
@@ -1266,33 +1273,65 @@ def mood_nd(x, y, axis=0):
     f(x/s)/s respectively, for some probability density function f.  The
     null hypothesis is that s = 1.
 
+
+    Generalized to the n-dimensional case by adding the axis argument, and using for loops, since rankdata is not vectorized.
+    For improving performance consider vectorizing rankdata function.
+
     """
 
     x = np.array(x)
     y = np.array(y)
 
+    if axis is None:
+        x = x.flatten()
+        y = y.flatten()
+        axis = 0
+
+    # shape of the result array
+    res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])
+
     n = x.shape[axis]
     m = y.shape[axis]
-    xy = r_[x, y]
+    xy = r_["{0}".format(axis), x, y]
+
     N = m+n
     if N < 3:
         raise ValueError("Not enough observations.")
-    ranks = stats.rankdata(xy)
-    Ri = ranks[:n]
-    M = sum((Ri - (N+1.0)/2)**2,axis=0)
+
+    # temporary working array
+    temp = np.zeros((N, np.prod(xy.shape) // N))
+
+    if axis != 0:
+        xy = xy.transpose((axis, ) + tuple(range(axis)) + tuple(range(axis+1,len(x.shape))) )
+
+    for i in range(N):
+        temp[i, :] = xy[i, ...].flatten()
+
+    all_ranks = np.zeros_like(temp)
+    for j in range(temp.shape[1]):
+        all_ranks[:, j] = stats.rankdata(temp[:, j])
+
+    Ri = all_ranks[:n]
+    M = sum((Ri - (N+1.0)/2)**2, axis=0)
     # Approx stat.
     mnM = n*(N*N-1.0)/12
     varM = m*n*(N+1.0)*(N+2)*(N-2)/180
     z = (M-mnM)/sqrt(varM)
 
+    pval = np.zeros_like(z)
+
     # Numerically better than p = norm.cdf(x); p = min(p, 1 - p)
-    if z > 0:
-        pval = distributions.norm.sf(z)
-    else:
-        pval = distributions.norm.cdf(z)
+    positz = z > 0
+    not_posit_z = ~positz
+    pval[positz] = distributions.norm.sf(z[positz])
+    pval[not_posit_z] = distributions.norm.cdf(z[not_posit_z])
 
     # Account for two-sidedness
     pval *= 2.
+
+    z.shape = res_shape
+    pval.shape = res_shape
+
     return z, pval
 
 
