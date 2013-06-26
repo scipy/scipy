@@ -279,8 +279,8 @@ def test_mood_order_of_args():
      z should change the  sign when the order of arguments changes, pvalue should not change
     """
 
-    x1 = np.random.randn(10)
-    x2 = np.random.randn(15)
+    x1 = np.random.randn(10, 1)
+    x2 = np.random.randn(15, 1)
 
     z1, p1 = stats.mood(x1, x2)
     z2, p2 = stats.mood(x2, x1)
@@ -288,46 +288,156 @@ def test_mood_order_of_args():
     assert_array_almost_equal([z1, p1], [-z2, p2])
 
 
-def test_mood_2d():
-    """
-     Test if the results of mood test in 2d case are consistent with, the R result for the same inputs
-     Numbers from R mood.test(  ), for 2d input vectors,
 
-    """
-    x1 = [-0.6264538,  0.1836433, -0.8356286,  1.5952808,  0.3295078, -0.8204684,  0.4874291,  0.7383247,  0.5757814, -0.3053884]
-    x2 = [-0.89691455,  0.18484918,  1.58784533, -1.13037567, -0.08025176,  0.13242028,  0.70795473, -0.23969802,  1.98447394, -0.13878701]
+class TestMoodNd(TestCase):
 
-    x1 = np.array(x1)
-    x2 = np.array(x2)
-
-    x1.shape = (5, 2)
-    x2.shape = (5, 2)
-
-    z, p = stats.mood(x1, x2)
-    assert_array_almost_equal([z, p],  [-0.44136741475, 0.65894702835], decimal=10)
+    def test_mood_nd_backward_compatibility(self):
+        """
+        Test backward compatibility of mood_nd, taken from test_mood
+        :return:
+        """
+        # numbers from R: mood.test in package stats
+        x1 = np.arange(5)
+        assert_array_almost_equal(stats.mood_nd(x1, x1**2),
+                                  (-1.3830857299399906, 0.16663858066771478), 11)
 
 
-    # Test the case from Josef's email
-    x1 = [-0.626453810742332, 0.183643324222082, -0.835628612410047, 1.59528080213779, 0.329507771815361,
-          -0.820468384118015, 0.487429052428485, 0.738324705129217, 0.575781351653492, -0.305388387156356,
-          1.51178116845085,
-          0.389843236411431, -0.621240580541804, -2.2146998871775, 1.12493091814311, -0.0449336090152309,
-          -0.0161902630989461, 0.943836210685299, 0.821221195098089, 0.593901321217509]
-    x2 = [-0.896914546624981, 0.184849184646742, 1.58784533120882, -1.13037567424629, -0.0802517565509893,
-          0.132420284381094, 0.707954729271733, -0.23969802417184, 1.98447393665293, -0.138787012119665,
-          0.417650750792556, 0.981752777463662, -0.392695355503813, -1.03966897694891, 1.78222896030858,
-          -2.31106908460517, 0.878604580921265, 0.035806718015226, 1.01282869212708, 0.432265154539617,
-          2.09081920524915, -1.19992581964387, 1.58963820029007, 1.95465164222325, 0.00493777682814261,
-          -2.45170638784613, 0.477237302613617, -0.596558168631403, 0.792203270299649, 0.289636710177348]
+    def test_mood_with_axis_none(self):
+        """
+        Test with axis = None, compare with results from R
+        """
+        x1 = [-0.626453810742332, 0.183643324222082, -0.835628612410047, 1.59528080213779, 0.329507771815361,
+              -0.820468384118015, 0.487429052428485, 0.738324705129217, 0.575781351653492, -0.305388387156356,
+              1.51178116845085, 0.389843236411431, -0.621240580541804, -2.2146998871775, 1.12493091814311,
+              -0.0449336090152309, -0.0161902630989461, 0.943836210685299, 0.821221195098089, 0.593901321217509]
 
-    x1 = np.array(x1)
-    x2 = np.array(x2)
+        x2 = [-0.896914546624981, 0.184849184646742, 1.58784533120882, -1.13037567424629, -0.0802517565509893,
+              0.132420284381094, 0.707954729271733, -0.23969802417184, 1.98447393665293, -0.138787012119665,
+              0.417650750792556, 0.981752777463662, -0.392695355503813, -1.03966897694891, 1.78222896030858,
+              -2.31106908460517, 0.878604580921265, 0.035806718015226, 1.01282869212708, 0.432265154539617,
+              2.09081920524915, -1.19992581964387, 1.58963820029007, 1.95465164222325, 0.00493777682814261,
+              -2.45170638784613, 0.477237302613617, -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
-    x1.shape = (10, 2)
-    x2.shape = (15, 2)
+        x1 = np.array(x1)
+        x2 = np.array(x2)
 
-    z, p = stats.mood(x1, x2)
-    assert_array_almost_equal([z, p],  [-1.31716607555, 0.18778296257], decimal=10)
+        x1.shape = (10, 2)
+        x2.shape = (15, 2)
+
+        assert_array_almost_equal(stats.mood_nd(x1, x2, axis=None), [-1.31716607555, 0.18778296257])
+
+
+    def test_mood_nd(self):
+        """
+         Test if the results of mood test in 2d case are consistent with, the R result for the same inputs
+         Numbers from R mood.test(  ), for 2d input vectors,
+
+        """
+        ny = 5
+        x1 = np.random.randn(10, ny)
+        x2 = np.random.randn(15, ny)
+        z_vectest, pval_vectest = stats.mood_nd(x1, x2)
+
+        for j in range(ny):
+            assert_array_almost_equal([z_vectest[j], pval_vectest[j]], stats.mood(x1[:, j], x2[:, j]))
+
+
+        # inverse order of dimensions
+        x1 = x1.transpose()
+        x2 = x2.transpose()
+        z_vectest, pval_vectest = stats.mood_nd(x1, x2, axis=1)
+
+        for i in range(ny):
+            #backward compatibility
+            assert_array_almost_equal([z_vectest[i], pval_vectest[i]], stats.mood(x1[i, :], x2[i, :]))
+
+            #self consistent
+            assert_array_almost_equal([z_vectest[i], pval_vectest[i]], stats.mood_nd(x1[i, :], x2[i, :]))
+
+
+    def test_3d_case(self):
+        """
+         Test 3d case, along different axes
+
+        """
+        the_shape = (10, 5, 6)
+        x1 = np.random.randn(*the_shape)
+        x2 = np.random.randn(*the_shape)
+
+        for axis in range(3):
+            z_vectest, pval_vectest = stats.mood_nd(x1, x2, axis=axis)
+
+            if axis == 0:
+                i_range = range(the_shape[1])
+                j_range = range(the_shape[2])
+            elif axis == 1:
+                i_range = range(the_shape[0])
+                j_range = range(the_shape[2])
+            elif axis == 2:
+                i_range = range(the_shape[0])
+                j_range = range(the_shape[1])
+
+                for i in i_range:
+                    for j in j_range:
+
+                        if axis == 0:
+                            slice1 = x1[:, i, j]
+                            slice2 = x2[:, i, j]
+                        elif axis == 1:
+                            slice1 = x1[i, :, j]
+                            slice2 = x2[i, :, j]
+                        elif axis == 2:
+                            slice1 = x1[i, j, :]
+                            slice2 = x2[i, j, :]
+
+                        assert_array_almost_equal([z_vectest[i, j], pval_vectest[i, j]], stats.mood(slice1, slice2))
+
+    def test_4d_case(self):
+        """
+        test 4d case along different axes
+        """
+        the_shape = (10, 5, 6, 7)
+        x1 = np.random.randn(*the_shape)
+        x2 = np.random.randn(*the_shape)
+
+        for axis in range(4):
+            print(axis)
+            z_vectest, pval_vectest = stats.mood_nd(x1, x2, axis=axis)
+
+            if axis == 0:
+                i_range = range(the_shape[1])
+                j_range = range(the_shape[2])
+                k_range = range(the_shape[3])
+            elif axis == 1:
+                i_range = range(the_shape[0])
+                j_range = range(the_shape[2])
+                k_range = range(the_shape[3])
+            elif axis == 2:
+                i_range = range(the_shape[0])
+                j_range = range(the_shape[1])
+                k_range = range(the_shape[3])
+            elif axis == 3:
+                i_range = range(the_shape[0])
+                j_range = range(the_shape[1])
+                k_range = range(the_shape[2])
+
+                for i in i_range:
+                    for j in j_range:
+                        for k in k_range:
+                            if axis == 0:
+                                slice1 = x1[:, i, j, k]
+                                slice2 = x2[:, i, j, k]
+                            elif axis == 1:
+                                slice1 = x1[i, :, j, k]
+                                slice2 = x2[i, :, j, k]
+                            elif axis == 2:
+                                slice1 = x1[i, j, :, k]
+                                slice2 = x2[i, j, :, k]
+                            elif axis == 3:
+                                slice1 = x1[i, j, k, :]
+                                slice2 = x2[i, j, k, :]
+
+                            assert_array_almost_equal([z_vectest[i, j, k], pval_vectest[i, j, k]], stats.mood(slice1, slice2))
 
 
 
