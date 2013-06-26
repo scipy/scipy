@@ -2,6 +2,8 @@
 # Author: Nathan Woods 2013 (nquad &c)
 from __future__ import division, print_function, absolute_import
 
+from functools import partial
+
 from . import _quadpack
 import sys
 import numpy
@@ -495,7 +497,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     return dblquad(_infunc2,a,b,gfun,hfun,(func,qfun,rfun,args),epsabs=epsabs,epsrel=epsrel)
 
 
-def nquad(func,ranges,args=(),opts=[]):
+def nquad(func, ranges, args=None, opts=None):
     # Author: Nathan Woods 2013
     """
     Integration over multiple variables.
@@ -590,6 +592,11 @@ def nquad(func,ranges,args=(),opts=[]):
               opts=[opts0,opts1,opts2,opts3])
 
     """
+    if args is None:
+        args = ()
+    if opts is None:
+        opts = []
+
     new_ranges = [
         range_ if callable(range_) else _RangeFunc(range_) for range_ in ranges]
     if isinstance(opts,dict):
@@ -600,7 +607,7 @@ def nquad(func,ranges,args=(),opts=[]):
         else:
             new_opts = [
                 opt if callable(opt) else _OptFunc(opt) for opt in opts]
-    return _NQuad(func,new_ranges,args,new_opts).integrate()
+    return _NQuad(func,new_ranges,new_opts).integrate(*args)
 
 
 class _RangeFunc(object):
@@ -620,36 +627,34 @@ class _OptFunc(object):
 
 
 class _NQuad(object):
-    def __init__(self,func,ranges,args,opts):
+    def __init__(self, func, ranges, opts):
         self.abserr = 0
         self.func = func
         self.ranges = ranges
-        self.args = args
         self.opts = opts
 
-    def integrate(self):
-        args_and_depth = self.args+(0,)
-        return (self._int(*args_and_depth),self.abserr)
+    def integrate(self, *args, **kwargs):
+        depth = kwargs.pop('depth', 0)
+        if kwargs:
+            raise ValueError('unexpected kwargs')
 
-    def _int(self,*args):
-        depth = args[-1]
+        # Get the integration range and options for this depth.
         ind = -depth-1
-        range_ = self.ranges[ind](*args[0:-1])
-        opt = self.opts[ind](*args[0:-1])
-        try:
-            for point in opt["points"]:
-                if point < range_[0] or point > range_[1]:
-                    opt["points"].remove(point)
-        except(KeyError):
-            pass
-        if self.ranges[ind] is self.ranges[0]:
-            newfunc = self.func
-            newargs = args[0:-1]
+        fn_range = self.ranges[ind]
+        fn_opt = self.opts[ind]
+        low, high = fn_range(*args)
+        opt = dict(fn_opt(*args))
+
+        if 'points' in opt:
+            opt['points'] = [x for x in opt['points'] if low <= x <= high]
+        if depth + 1 == len(self.ranges):
+            f = self.func
         else:
-            def newfunc(*args):
-                return self._int(*args)
-            newargs = list(args)
-            newargs[-1] = newargs[-1] + 1
-        out = quad(newfunc,*range_,args=tuple(newargs),**opt)
-        self.abserr = max(self.abserr,out[1])
-        return out[0]
+            f = partial(self.integrate, depth=depth+1)
+        value, abserr = quad(f, low, high, args=args, **opt)
+        self.abserr = max(self.abserr, abserr)
+        if depth:
+            return value
+        else:
+            return value, self.abserr
+
