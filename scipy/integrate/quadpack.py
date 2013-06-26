@@ -589,7 +589,7 @@ def nquad(func, ranges, args=None, opts=None):
     >>> def opts3(t0,t1):
             return {}
     >>> nquad(func,[lim0,lim1,lim2,lim3],args=(0,0),
-              opts=[opts0,opts1,opts2,opts3]) 
+              opts=[opts0,opts1,opts2,opts3])
 
     """
     if args is None:
