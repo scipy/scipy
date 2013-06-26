@@ -1302,7 +1302,7 @@ def mood_nd(x, y, axis=0):
     temp = np.zeros((N, np.prod(xy.shape) // N))
 
     if axis != 0:
-        xy = xy.transpose((axis, ) + tuple(range(axis)) + tuple(range(axis+1,len(x.shape))) )
+        xy = np.rollaxis(xy, axis)
 
     for i in range(N):
         temp[i, :] = xy[i, ...].flatten()
