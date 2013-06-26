@@ -605,7 +605,7 @@ def nquad(func, ranges, args=None, opts=None):
         else:
             new_opts = [
                 opt if callable(opt) else _OptFunc(opt) for opt in opts]
-    return _NQuad(func,new_ranges,args,new_opts).integrate()
+    return _NQuad(func,new_ranges,new_opts).integrate(*args)
 
 
 class _RangeFunc(object):
@@ -625,37 +625,34 @@ class _OptFunc(object):
 
 
 class _NQuad(object):
-    def __init__(self,func,ranges,args,opts):
+    def __init__(self, func, ranges, opts):
         self.abserr = 0
         self.func = func
         self.ranges = ranges
-        self.args = args
         self.opts = opts
 
-    def integrate(self):
-        return self._int(*self.args), self.abserr
-
-    def _int(self, *args, **kwargs):
-        # Note that **kwargs should have only `depth=0` but only Python 3 will
-        # let you write it that way.  Instead we will use a pattern
-        # that I found on the internet which works for Python 2.
+    def integrate(self, *args, **kwargs):
         depth = kwargs.pop('depth', 0)
+        if kwargs:
+            raise ValueError('unexpected kwargs')
 
+        # Get the integration range and options for this depth.
         ind = -depth-1
-        low, high = self.ranges[ind](*args)
-        opt = self.opts[ind](*args)
+        fn_range = self.ranges[ind]
+        fn_opt = self.opts[ind]
+        low, high = fn_range(*args)
+        opt = dict(fn_opt(*args))
 
-        # If points have been specified in the options,
-        # keep only points that are within the specified range.
-        # Just to be safer, do this without modifying the original dict.
-        opt = dict(opt)
         if 'points' in opt:
             opt['points'] = [x for x in opt['points'] if low <= x <= high]
-
         if self.ranges[ind] is self.ranges[0]:
             f = self.func
         else:
-            f = partial(self._int, depth=depth+1)
-        out = quad(f, low, high, args=args, **opt)
-        self.abserr = max(self.abserr,out[1])
-        return out[0]
+            f = partial(self.integrate, depth=depth+1)
+        value, abserr = quad(f, low, high, args=args, **opt)
+        self.abserr = max(self.abserr, abserr)
+        if depth:
+            return value
+        else:
+            return value, self.abserr
+
