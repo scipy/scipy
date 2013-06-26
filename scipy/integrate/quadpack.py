@@ -645,7 +645,7 @@ class _NQuad(object):
 
         if 'points' in opt:
             opt['points'] = [x for x in opt['points'] if low <= x <= high]
-        if self.ranges[ind] is self.ranges[0]:
+        if depth + 1 == len(self.ranges):
             f = self.func
         else:
             f = partial(self.integrate, depth=depth+1)
