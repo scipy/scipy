@@ -160,6 +160,9 @@ def generate_cython():
 
 
 def configuration(parent_package='',top_path=None):
+    from scipy._build_utils import monkeypatch_numpy_distutils
+    monkeypatch_numpy_distutils()
+
     from numpy.distutils.misc_util import Configuration
     config = Configuration(None, parent_package, top_path)
     config.set_options(ignore_setup_xxx_py=True,
