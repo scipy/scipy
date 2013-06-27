@@ -601,6 +601,42 @@ void bsr_ne_bsr(const I n_row, const I n_col, const I R, const I C,
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
 }
 
+template <class I, class T, class T2>
+void bsr_lt_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
+}
+
+template <class I, class T, class T2>
+void bsr_gt_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+}
+
+template <class I, class T, class T2>
+void bsr_le_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
+}
+
+template <class I, class T, class T2>
+void bsr_ge_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+}
+
 template <class I, class T>
 void bsr_elmul_bsr(const I n_row, const I n_col, const I R, const I C, 
                    const I Ap[], const I Aj[], const T Ax[],

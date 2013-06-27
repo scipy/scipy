@@ -23,3 +23,7 @@ INSTANTIATE_ALL(bsr_minus_bsr)
 INSTANTIATE_ALL(bsr_sort_indices)
 
 INSTANTIATE_BOOL_OUT(bsr_ne_bsr)
+INSTANTIATE_BOOL_OUT(bsr_lt_bsr)
+INSTANTIATE_BOOL_OUT(bsr_gt_bsr)
+INSTANTIATE_BOOL_OUT(bsr_le_bsr)
+INSTANTIATE_BOOL_OUT(bsr_ge_bsr)

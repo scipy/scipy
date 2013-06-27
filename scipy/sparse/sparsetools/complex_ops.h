@@ -68,17 +68,74 @@ class complex_wrapper : public npy_type {
           npy_type::real = temp;
           return (*this);
         }
+        /* Boolean operations */
         bool operator==(const complex_wrapper& B) const{
           return npy_type::real == B.real && npy_type::imag == B.imag;
         }
         bool operator!=(const complex_wrapper& B) const{
           return npy_type::real != B.real || npy_type::imag != B.imag;
         }
+        bool operator<(const complex_wrapper& B) const{
+            if (npy_type::real == B.real){
+                return npy_type::imag < B.imag;
+            } else {
+                return npy_type::real < B.real;
+            }
+        }
+        bool operator>(const complex_wrapper& B) const{
+            if (npy_type::real == B.real){
+                return npy_type::imag > B.imag;
+            } else {
+                return npy_type::real > B.real;
+            }
+        }
+        bool operator<=(const complex_wrapper& B) const{
+            if (npy_type::real == B.real){
+                return npy_type::imag <= B.imag;
+            } else {
+                return npy_type::real <= B.real;
+            }
+        }
+        bool operator>=(const complex_wrapper& B) const{
+            if (npy_type::real == B.real){
+                return npy_type::imag >= B.imag;
+            } else {
+                return npy_type::real >= B.real;
+            }
+        }
         bool operator==(const c_type& B) const{
           return npy_type::real == B && npy_type::imag == c_type(0);
         }
         bool operator!=(const c_type& B) const{
           return npy_type::real != B || npy_type::imag != c_type(0);
+        }
+        bool operator<(const c_type& B) const{
+            if (npy_type::real == B) {
+                return npy_type::imag < c_type(0);
+            } else {
+                return npy_type::real < B;
+            }
+        }
+        bool operator>(const c_type& B) const{
+            if (npy_type::real == B) {
+                return npy_type::imag > c_type(0);
+            } else {
+                return npy_type::real > B;
+            }
+        }
+        bool operator<=(const c_type& B) const{
+            if (npy_type::real == B) {
+                return npy_type::imag <= c_type(0);
+            } else {
+                return npy_type::real <= B;
+            }
+        }
+        bool operator>=(const c_type& B) const{
+            if (npy_type::real == B) {
+                return npy_type::imag >= c_type(0);
+            } else {
+                return npy_type::real >= B;
+            }
         }
         complex_wrapper& operator=(const complex_wrapper& B){
           npy_type::real = B.real;
@@ -97,7 +154,7 @@ std::ostream& operator<<(std::ostream& out, const complex_wrapper<x,y>& cw){
     return out << cw.real << " " << cw.imag;
 }
 
-typedef complex_wrapper<float, npy_cfloat> npy_cfloat_wrapper;
+typedef complex_wrapper<float,npy_cfloat> npy_cfloat_wrapper;
 typedef complex_wrapper<double,npy_cdouble> npy_cdouble_wrapper;
 typedef complex_wrapper<long double,npy_clongdouble> npy_clongdouble_wrapper;
 

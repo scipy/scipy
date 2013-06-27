@@ -233,6 +233,18 @@ class spmatrix(object):
     def __ne__(self, other):
         return self.tocsr().__ne__(other)
 
+    def __lt__(self,other):
+        return self.tocsr().__lt__(other)
+
+    def __gt__(self,other):
+        return self.tocsr().__gt__(other)
+
+    def __le__(self,other):
+        return self.tocsr().__le__(other)
+
+    def __ge__(self,other):
+        return self.tocsr().__ge__(other)
+
     def __abs__(self):
         return abs(self.tocsr())
 
