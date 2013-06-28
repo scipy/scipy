@@ -30,15 +30,15 @@ class npy_bool_wrapper {
             return (*this);
         }
         npy_bool_wrapper operator+(const npy_bool_wrapper& x) {
-            return x || value ? 1 : 0;
+            return (x || value) ? 1 : 0;
         }
         /* inplace operators */
         npy_bool_wrapper operator+=(const npy_bool_wrapper& x) {
-            value = x || value ? 1 : 0;
+            value = (x || value) ? 1 : 0;
             return (*this);
         }
         npy_bool_wrapper operator*=(const npy_bool_wrapper& x) {
-            value = value && x ? 1 : 0;
+            value = (value && x) ? 1 : 0;
             return (*this);
         }
         /* constructors */
@@ -47,7 +47,7 @@ class npy_bool_wrapper {
         }
         template <class T>
         npy_bool_wrapper(T x) {
-            value = x ? 1 : 0;
+            value = (x) ? 1 : 0;
         }
 };
 
