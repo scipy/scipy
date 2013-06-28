@@ -1,3 +1,5 @@
+#ifndef BOOL_OPS_H
+#define BOOL_OPS_H
 /*
  * Functions to handle arithmetic operations on NumPy Bool values.
  */
