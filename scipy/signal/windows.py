@@ -1290,7 +1290,13 @@ def cosine(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1.
+
     """
+    if M < 1:
+        return np.array([])
+    if M == 1:
+        return np.ones(1, 'd')
+
     return np.sin(np.pi / M * (np.arange(0, M) + .5))
 
 
