@@ -14,10 +14,12 @@ class complex_wrapper : public npy_type {
         friend std::ostream& operator<<(std::ostream&, const complex_wrapper<x,y>& );
 
     public:
+        /* Constructor */
         complex_wrapper( const c_type r = c_type(0), const c_type i = c_type(0) ){
             npy_type::real = r;
             npy_type::imag = i;
         }
+        /* Conversion */
         operator bool() const {
             if (npy_type::real == 0 && npy_type::imag == 0) {
                 return false;
@@ -25,6 +27,7 @@ class complex_wrapper : public npy_type {
                 return true;
             }
         }
+        /* Operators */
         complex_wrapper operator-() const {
           return complex_wrapper(-npy_type::real,-npy_type::imag);
         }
@@ -45,6 +48,7 @@ class complex_wrapper : public npy_type {
           result.imag = (npy_type::imag * B.real - npy_type::real * B.imag) * denom;
           return result;
         }
+        /* in-place operators */
         complex_wrapper& operator+=(const complex_wrapper & B){
           npy_type::real += B.real;
           npy_type::imag += B.imag;
@@ -103,36 +107,42 @@ class complex_wrapper : public npy_type {
                 return npy_type::real >= B.real;
             }
         }
-        bool operator==(const c_type& B) const{
-          return npy_type::real == B && npy_type::imag == c_type(0);
+        template <class T>
+        bool operator==(const T& B) const{
+          return npy_type::real == B && npy_type::imag == T(0);
         }
-        bool operator!=(const c_type& B) const{
-          return npy_type::real != B || npy_type::imag != c_type(0);
+        template <class T>
+        bool operator!=(const T& B) const{
+          return npy_type::real != B || npy_type::imag != T(0);
         }
-        bool operator<(const c_type& B) const{
+        template <class T>
+        bool operator<(const T& B) const{
             if (npy_type::real == B) {
-                return npy_type::imag < c_type(0);
+                return npy_type::imag < T(0);
             } else {
                 return npy_type::real < B;
             }
         }
-        bool operator>(const c_type& B) const{
+        template <class T>
+        bool operator>(const T& B) const{
             if (npy_type::real == B) {
-                return npy_type::imag > c_type(0);
+                return npy_type::imag > T(0);
             } else {
                 return npy_type::real > B;
             }
         }
-        bool operator<=(const c_type& B) const{
+        template <class T>
+        bool operator<=(const T& B) const{
             if (npy_type::real == B) {
-                return npy_type::imag <= c_type(0);
+                return npy_type::imag <= T(0);
             } else {
                 return npy_type::real <= B;
             }
         }
-        bool operator>=(const c_type& B) const{
+        template <class T>
+        bool operator>=(const T& B) const{
             if (npy_type::real == B) {
-                return npy_type::imag >= c_type(0);
+                return npy_type::imag >= T(0);
             } else {
                 return npy_type::real >= B;
             }
