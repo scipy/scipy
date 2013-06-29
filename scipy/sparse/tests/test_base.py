@@ -89,6 +89,18 @@ class _TestCommon:
             msg = "Cannot create a rank <= 2 DOK matrix."
             yield dec.skipif(fails, msg)(check), dtype
 
+    def test_bool_rollover(self):
+        """bool's underlying dtype is 1 byte, check that it does not 
+        rollover True -> False at 256.
+        """
+        dat = np.matrix([[True, False]])
+        datsp = self.spmatrix(dat)
+
+        for _ in range(10):
+            datsp = datsp + datsp
+            dat = dat + dat
+        assert_array_equal(dat, datsp.todense())
+
     def test_eq(self):
         def check(dtype):
             dat = self.dat_dtypes[dtype]
