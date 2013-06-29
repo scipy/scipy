@@ -175,7 +175,7 @@ DECLARE_DATA_TYPE( npy_clongdouble_wrapper )
 
 %define INSTANTIATE_ALL( f_name )
 /* 32-bit indices */
-%template(f_name)   f_name<int, npy_bool_wrapper>;
+%template(f_name)   f_name<int,npy_bool_wrapper>;
 %template(f_name)   f_name<int,signed char>;
 %template(f_name)   f_name<int,unsigned char>;
 %template(f_name)   f_name<int,short>;
