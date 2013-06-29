@@ -143,7 +143,7 @@ class csc_matrix(_cs_matrix, IndexMixin):
         if isinstance(key, tuple):
             row, col = self._unpack_index(key)
 
-            if (isintlike(row) or isinstance(row, slice) or isintlike(col) or 
+            if (isintlike(row) or isinstance(row, slice) or isintlike(col) or
                 isinstance(col,slice)):
                 return self.T[col,row].T
             else:

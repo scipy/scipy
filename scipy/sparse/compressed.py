@@ -698,9 +698,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
             self._set_one(ii, jj, xx)
 
-
     def _set_one(self, row, col, val):
-        """ Set one value at a time """
+        """Set one value at a time."""
         if not (isscalarlike(row) and isscalarlike(col)):
             raise NotImplementedError("Fancy indexing in assignment not "
                                       "supported for csr matrices.")
@@ -709,28 +708,27 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             row += M
         if (col < 0):
             col += N
-        if not (0<=row<M) or not (0<=col<N):
-            raise IndexError("index out of bounds")
+        if not (0 <= row < M) or not (0 <= col < N):
+            raise IndexError("Index out of bounds.")
 
         major_index, minor_index = self._swap((row,col))
 
         start = self.indptr[major_index]
-        end   = self.indptr[major_index+1]
+        end = self.indptr[major_index + 1]
         indxs = np.where(minor_index == self.indices[start:end])[0]
 
         num_matches = len(indxs)
 
-
         if not np.isscalar(val):
-            raise ValueError('setting an array element with a sequence')
+            raise ValueError("Setting an array element with a sequence.")
 
         val = self.dtype.type(val)
 
         if num_matches == 0:
             # entry not already present
-            warn('changing the sparsity structure of a %s_matrix is expensive. ' \
-                     'lil_matrix is more efficient.' % self.format, \
-                     SparseEfficiencyWarning)
+            warn("Changing the sparsity structure of a %s_matrix is expensive. "
+                 "lil_matrix is more efficient." % self.format,
+                 SparseEfficiencyWarning)
 
             if self.has_sorted_indices:
                 # preserve sorted order
@@ -742,8 +740,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             minor_index = np.array([minor_index], dtype=self.indices.dtype)
             self.data = np.concatenate((self.data[:newindx], val,
                                         self.data[newindx:]))
-            self.indices = np.concatenate((self.indices[:newindx], 
-                                           minor_index, 
+            self.indices = np.concatenate((self.indices[:newindx],
+                                           minor_index,
                                                self.indices[newindx:]))
             self.indptr = self.indptr.copy()
             self.indptr[major_index+1:] += 1

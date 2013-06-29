@@ -146,6 +146,7 @@ def ismatrix(t):
 def isdense(x):
     return isinstance(x, np.ndarray)
 
+
 class IndexMixin(object):
     """
     This class simply exists to hold the methods necessary for fancy indexing.
@@ -155,6 +156,8 @@ class IndexMixin(object):
         return np.arange(start, stop, step)
 
     def _unpack_index(self, index):
+        """ Parse index.
+        """
         if isinstance(index, tuple):
             if len(index) == 2:
                 return index
@@ -226,4 +229,3 @@ class IndexMixin(object):
             raise IndexError("Index dimension must be <= 2")
 
         return i, j
-

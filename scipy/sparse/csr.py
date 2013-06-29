@@ -232,16 +232,16 @@ class csr_matrix(_cs_matrix, IndexMixin):
         if isintlike(row):
             # [1,??]
             if isintlike(col):
-                return self._get_single_element(row, col) # [i,j]
+                return self._get_single_element(row, col)   # [i,j]
             elif isinstance(col, slice):
-                return self._get_row_slice(row, col)      # [i,1:2]
+                return self._get_row_slice(row, col)        # [i,1:2]
             elif issequence(col):
-                P = extractor(col,self.shape[1]).T        # [i,[1,2]]
+                P = extractor(col,self.shape[1]).T          # [i,[1,2]]
                 return self[row,:] * P
         elif isinstance(row, slice):
             # [1:2,??]
-            if isintlike(col) or (isinstance(col, slice) and 
-                                  col.step in (1, None) and 
+            if isintlike(col) or (isinstance(col, slice) and
+                                  col.step in (1, None) and
                                   row.step in (1, None)):
                 return self._get_submatrix(row, col)      # [1:2,j]
             elif issequence(col):
@@ -270,8 +270,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
         # If all else fails, try elementwise
         row, col = self._index_to_arrays(row, col)
-        return self.__class__([[self._get_single_element(iii, jjj) for 
-                                iii, jjj in zip(ii, jj)] for ii, jj in 
+        return self.__class__([[self._get_single_element(iii, jjj) for
+                                iii, jjj in zip(ii, jj)] for ii, jj in
                                zip(row.tolist(), col.tolist())])
 
     def _get_single_element(self,row,col):
