@@ -1275,7 +1275,7 @@ def slepian(M, width, sym=True):
     return w
 
 
-def cos(M):
+def cosine(M):
     r"""Return a window with a simple cosine shape.
 
     Parameters
@@ -1401,7 +1401,7 @@ def get_window(window, Nx, fftbins=True):
             winfunc = boxcar
         elif winstr in ['slepian', 'slep', 'optimal', 'dpss', 'dss']:
             winfunc = slepian
-        elif winstr in ['cos', 'coswin', 'halfcos', 'sin', 'sinwin', 'halfsin']:
+        elif winstr in ['cosine', 'halfcosine']:
             winfunc = cos
         elif winstr in ['chebwin', 'cheb']:
             winfunc = chebwin
