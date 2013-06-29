@@ -1278,6 +1278,8 @@ def slepian(M, width, sym=True):
 def cosine(M, sym=True):
     r"""Return a window with a simple cosine shape.
 
+    .. versionadded:: 0.13.0
+
     Parameters
     ----------
     M : int
