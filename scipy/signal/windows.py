@@ -1285,6 +1285,9 @@ def cosine(M, sym=True):
     M : int
         Number of points in the output window. If zero or less, an empty
         array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
@@ -1296,8 +1299,15 @@ def cosine(M, sym=True):
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
+    odd = M % 2
+    if not sym and not odd:
+        M = M + 1
 
-    return np.sin(np.pi / M * (np.arange(0, M) + .5))
+    w = np.sin(np.pi / M * (np.arange(0, M) + .5))
+
+    if not sym and not odd:
+        w = w[:-1]
+    return w
 
 
 def get_window(window, Nx, fftbins=True):
