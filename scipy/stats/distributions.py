@@ -584,7 +584,7 @@ class rv_generic(object):
 
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
-    def rvs(self,*args,**kwds):
+    def rvs(self, *args, **kwds):
         """
         Random variates of given type.
 
@@ -612,7 +612,7 @@ class rv_generic(object):
 
         args, loc, scale, size = self._fix_loc_scale_kwarg3(args, loc, scale,
                                                             size)
-        cond = logical_and(self._argcheck(*args),(scale >= 0))
+        cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not all(cond):
             raise ValueError("Domain error in arguments.")
 
@@ -4470,6 +4470,10 @@ loglaplace = loglaplace_gen(a=0.0, name='loglaplace', shapes='c')
 ##    distribution.
 ## the mean of the underlying distribution is log(scale)
 
+def _lognorm_logpdf(x, s):
+    return -log(x)**2 / (2*s**2) + np.where(x == 0, 0, -log(s*x*sqrt(2*pi)))
+
+
 class lognorm_gen(rv_continuous):
     """A lognormal continuous random variable.
 
@@ -4491,19 +4495,19 @@ class lognorm_gen(rv_continuous):
 
     """
     def _rvs(self, s):
-        return exp(s * norm.rvs(size=self._size))
+        return exp(s * mtrand.standard_normal(self._size))
 
     def _pdf(self, x, s):
         return exp(self._logpdf(x, s))
 
     def _logpdf(self, x, s):
-        return -log(x)**2 / (2*s**2) + np.where(x == 0, 0, - log(s*x*sqrt(2*pi)))
+        return _lognorm_logpdf(x, s)
 
     def _cdf(self, x, s):
-        return norm.cdf(log(x)/s)
+        return _norm_cdf(log(x) / s)
 
     def _ppf(self, q, s):
-        return exp(s*norm._ppf(q))
+        return exp(s * _norm_ppf(q))
 
     def _stats(self, s):
         p = exp(s*s)
@@ -4514,13 +4518,11 @@ class lognorm_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, s):
-        return 0.5*(1+log(2*pi)+2*log(s))
+        return 0.5 * (1 + log(2*pi) + 2 * log(s))
 lognorm = lognorm_gen(a=0.0, name='lognorm', shapes='s')
 
 
-# Gibrat's distribution is just lognormal with s=1
-
-class gilbrat_gen(lognorm_gen):
+class gilbrat_gen(rv_continuous):
     """A Gilbrat continuous random variable.
 
     %(before_notes)s
@@ -4531,29 +4533,36 @@ class gilbrat_gen(lognorm_gen):
 
         gilbrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
 
+    `gilbrat` is a special case of `lognorm` with ``s = 1``.
+
     %(example)s
 
     """
     def _rvs(self):
-        return lognorm_gen._rvs(self, 1.0)
+        return exp(mtrand.standard_normal(self._size))
 
     def _pdf(self, x):
-        return lognorm_gen._pdf(self, x, 1.0)
+        return exp(self._logpdf(x))
 
     def _logpdf(self, x):
-        return lognorm_gen._logpdf(self, x, 1.0)
+        return _lognorm_logpdf(x, 1.0)
 
     def _cdf(self, x):
-        return lognorm_gen._cdf(self, x, 1.0)
+        return _norm_cdf(log(x))
 
     def _ppf(self, q):
-        return lognorm_gen._ppf(self, q, 1.0)
+        return exp(_norm_ppf(q))
 
     def _stats(self):
-        return lognorm_gen._stats(self, 1.0)
+        p = np.e
+        mu = sqrt(p)
+        mu2 = p * (p - 1)
+        g1 = sqrt((p - 1)) * (2 + p)
+        g2 = numpy.polyval([1, 2, 3, 0, -6.0], p)
+        return mu, mu2, g1, g2
 
     def _entropy(self):
-        return 0.5*log(2*pi) + 0.5
+        return 0.5 * log(2 * pi) + 0.5
 gilbrat = gilbrat_gen(a=0.0, name='gilbrat')
 
 
@@ -7759,7 +7768,7 @@ class dlaplace_gen(rv_discrete):
         ea = exp(a)
         mu2 = 2.*ea/(ea-1.)**2
         mu4 = 2.*ea*(ea**2+10.*ea+1.) / (ea-1.)**4
-        return 0., mu2, 0., mu4/mu2**2 - 3. 
+        return 0., mu2, 0., mu4/mu2**2 - 3.
 
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))

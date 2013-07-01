@@ -1,10 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
-import numpy.testing as npt
 import numpy as np
-import nose
+import numpy.testing as npt
 
 from scipy import stats
 
@@ -160,6 +157,7 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 
 
 def _silence_fp_errors(func):
+    # warning: don't apply to test_ functions as is, then those will be skipped
     def wrap(*a, **kw):
         olderr = np.seterr(all='ignore')
         try:
@@ -170,7 +168,6 @@ def _silence_fp_errors(func):
     return wrap
 
 
-@_silence_fp_errors
 def test_cont_basic():
     # this test skips slow distributions
     for distname, arg in distcont[:]:
@@ -179,7 +176,7 @@ def test_cont_basic():
         distfn = getattr(stats, distname)
         np.random.seed(765456)
         sn = 1000
-        rvs = distfn.rvs(size=sn,*arg)
+        rvs = distfn.rvs(size=sn, *arg)
         sm = rvs.mean()
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
@@ -401,5 +398,4 @@ def check_distribution_rvs(dist, args, alpha, rvs):
 
 
 if __name__ == "__main__":
-    # nose.run(argv=['', __file__])
-    nose.runmodule(argv=[__file__,'-s'], exit=False)
+    npt.run_module_suite()
