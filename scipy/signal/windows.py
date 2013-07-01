@@ -8,7 +8,7 @@ from scipy.fftpack import fft
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine',  'hann', 'get_window']
+           'slepian', 'cosine', 'hann', 'get_window']
 
 
 def boxcar(M, sym=True):
@@ -1276,7 +1276,7 @@ def slepian(M, width, sym=True):
 
 
 def cosine(M, sym=True):
-    r"""Return a window with a simple cosine shape.
+    """Return a window with a simple cosine shape.
 
     .. versionadded:: 0.13.0
 
