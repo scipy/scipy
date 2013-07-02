@@ -1170,7 +1170,6 @@ def fligner(*args,**kwds):
     return Xsq, pval
 
 
-
 def mood(x, y, axis=0):
     """
     Perform Mood's test for equal scale parameters.  (generalization to the nd case)
@@ -1212,13 +1211,14 @@ def mood(x, y, axis=0):
     null hypothesis is that s = 1.
 
 
-    Generalized to the n-dimensional case by adding the axis argument, and using for loops, since rankdata is not vectorized.
+    Generalized to the n-dimensional case by adding the axis argument, and using for loops, since rankdata
+    is not vectorized.
     For improving performance consider vectorizing rankdata function.
 
     """
 
-    x = np.array(x)
-    y = np.array(y)
+    x = np.array(x, dtype=float)
+    y = np.array(y, dtype=float)
 
     if axis is None:
         x = x.flatten()
@@ -1232,29 +1232,26 @@ def mood(x, y, axis=0):
     m = y.shape[axis]
     xy = r_["{0}".format(axis), x, y]
 
-    N = m+n
+    N = m + n
     if N < 3:
         raise ValueError("Not enough observations.")
-
-    # temporary working array
-    temp = np.zeros((N, np.prod(xy.shape) // N))
 
     if axis != 0:
         xy = np.rollaxis(xy, axis)
 
-    for i in range(N):
-        temp[i, :] = xy[i, ...].flatten()
+    other_ax_len = -1 if len(xy.shape) > 1 else 1
+    xy = xy.reshape(xy.shape[0], other_ax_len)
 
-    all_ranks = np.zeros_like(temp)
-    for j in range(temp.shape[1]):
-        all_ranks[:, j] = stats.rankdata(temp[:, j])
+    all_ranks = np.zeros_like(xy)
+    for j in range(xy.shape[1]):
+        all_ranks[:, j] = stats.rankdata(xy[:, j])
 
     Ri = all_ranks[:n]
-    M = sum((Ri - (N+1.0)/2)**2, axis=0)
+    M = sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
     # Approx stat.
-    mnM = n*(N*N-1.0)/12
-    varM = m*n*(N+1.0)*(N+2)*(N-2)/180
-    z = (M-mnM)/sqrt(varM)
+    mnM = n * (N * N - 1.0) / 12
+    varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
+    z = (M - mnM) / sqrt(varM)
 
     pval = np.zeros_like(z)
 
@@ -1271,7 +1268,6 @@ def mood(x, y, axis=0):
     pval.shape = res_shape
 
     return z, pval
-
 
 
 def oneway(*args,**kwds):

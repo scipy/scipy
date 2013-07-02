@@ -270,13 +270,13 @@ class TestFligner(TestCase):
 def test_mood():
     # numbers from R: mood.test in package stats
     x1 = np.arange(5)
-    assert_array_almost_equal(stats.mood(x1,x1**2),
-            (-1.3830857299399906, 0.16663858066771478), 11)
+    assert_array_almost_equal(stats.mood(x1, x1 ** 2),
+                              (-1.3830857299399906, 0.16663858066771478), 11)
 
 
 def test_mood_order_of_args():
-     # z should change the  sign when the order of arguments
-     # changes, pvalue should not change
+# z should change the  sign when the order of arguments
+# changes, pvalue should not change
 
     x1 = np.random.randn(10, 1)
     x2 = np.random.randn(15, 1)
@@ -287,14 +287,12 @@ def test_mood_order_of_args():
     assert_array_almost_equal([z1, p1], [-z2, p2])
 
 
-
 class TestMoodNd(TestCase):
-
     def test_mood_nd_backward_compatibility(self):
         #Test backward compatibility of mood_nd, taken from test_mood
         # numbers from R: mood.test in package stats
         x1 = np.arange(5)
-        assert_array_almost_equal(stats.mood(x1, x1**2),
+        assert_array_almost_equal(stats.mood(x1, x1 ** 2),
                                   (-1.3830857299399906, 0.16663858066771478), 11)
 
 
@@ -332,7 +330,6 @@ class TestMoodNd(TestCase):
         for j in range(ny):
             assert_array_almost_equal([z_vectest[j], pval_vectest[j]], stats.mood(x1[:, j], x2[:, j]))
 
-
         # inverse order of dimensions
         x1 = x1.transpose()
         x2 = x2.transpose()
@@ -344,7 +341,6 @@ class TestMoodNd(TestCase):
 
             #self consistent
             assert_array_almost_equal([z_vectest[i], pval_vectest[i]], stats.mood(x1[i, :], x2[i, :]))
-
 
     def test_3d_case(self):
         # Test 3d case, along different axes
@@ -387,7 +383,6 @@ class TestMoodNd(TestCase):
         x2 = np.random.randn(*the_shape)
 
         for axis in range(4):
-            print(axis)
             z_vectest, pval_vectest = stats.mood(x1, x2, axis=axis)
 
             if axis == 0:
@@ -426,9 +421,6 @@ class TestMoodNd(TestCase):
                             assert_array_almost_equal([z_vectest[i, j, k],
                                                        pval_vectest[i, j, k]],
                                                       stats.mood(slice1, slice2))
-
-
-
 
 
 def test_mood_bad_arg():
