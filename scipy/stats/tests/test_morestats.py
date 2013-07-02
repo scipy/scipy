@@ -275,9 +275,8 @@ def test_mood():
 
 
 def test_mood_order_of_args():
-    """
-     z should change the  sign when the order of arguments changes, pvalue should not change
-    """
+     # z should change the  sign when the order of arguments
+     # changes, pvalue should not change
 
     x1 = np.random.randn(10, 1)
     x2 = np.random.randn(15, 1)
@@ -292,20 +291,15 @@ def test_mood_order_of_args():
 class TestMoodNd(TestCase):
 
     def test_mood_nd_backward_compatibility(self):
-        """
-        Test backward compatibility of mood_nd, taken from test_mood
-        :return:
-        """
+        #Test backward compatibility of mood_nd, taken from test_mood
         # numbers from R: mood.test in package stats
         x1 = np.arange(5)
-        assert_array_almost_equal(stats.mood_nd(x1, x1**2),
+        assert_array_almost_equal(stats.mood(x1, x1**2),
                                   (-1.3830857299399906, 0.16663858066771478), 11)
 
 
     def test_mood_with_axis_none(self):
-        """
-        Test with axis = None, compare with results from R
-        """
+        #Test with axis = None, compare with results from R
         x1 = [-0.626453810742332, 0.183643324222082, -0.835628612410047, 1.59528080213779, 0.329507771815361,
               -0.820468384118015, 0.487429052428485, 0.738324705129217, 0.575781351653492, -0.305388387156356,
               1.51178116845085, 0.389843236411431, -0.621240580541804, -2.2146998871775, 1.12493091814311,
@@ -324,19 +318,16 @@ class TestMoodNd(TestCase):
         x1.shape = (10, 2)
         x2.shape = (15, 2)
 
-        assert_array_almost_equal(stats.mood_nd(x1, x2, axis=None), [-1.31716607555, 0.18778296257])
+        assert_array_almost_equal(stats.mood(x1, x2, axis=None), [-1.31716607555, 0.18778296257])
 
 
     def test_mood_nd(self):
-        """
-         Test if the results of mood test in 2d case are consistent with, the R result for the same inputs
-         Numbers from R mood.test(  ), for 2d input vectors,
-
-        """
+        # Test if the results of mood test in 2d case are consistent with, the R result for the same inputs
+        # Numbers from R mood.test(  ), for 2d input vectors,
         ny = 5
         x1 = np.random.randn(10, ny)
         x2 = np.random.randn(15, ny)
-        z_vectest, pval_vectest = stats.mood_nd(x1, x2)
+        z_vectest, pval_vectest = stats.mood(x1, x2)
 
         for j in range(ny):
             assert_array_almost_equal([z_vectest[j], pval_vectest[j]], stats.mood(x1[:, j], x2[:, j]))
@@ -345,27 +336,24 @@ class TestMoodNd(TestCase):
         # inverse order of dimensions
         x1 = x1.transpose()
         x2 = x2.transpose()
-        z_vectest, pval_vectest = stats.mood_nd(x1, x2, axis=1)
+        z_vectest, pval_vectest = stats.mood(x1, x2, axis=1)
 
         for i in range(ny):
             #backward compatibility
             assert_array_almost_equal([z_vectest[i], pval_vectest[i]], stats.mood(x1[i, :], x2[i, :]))
 
             #self consistent
-            assert_array_almost_equal([z_vectest[i], pval_vectest[i]], stats.mood_nd(x1[i, :], x2[i, :]))
+            assert_array_almost_equal([z_vectest[i], pval_vectest[i]], stats.mood(x1[i, :], x2[i, :]))
 
 
     def test_3d_case(self):
-        """
-         Test 3d case, along different axes
-
-        """
+        # Test 3d case, along different axes
         the_shape = (10, 5, 6)
         x1 = np.random.randn(*the_shape)
         x2 = np.random.randn(*the_shape)
 
         for axis in range(3):
-            z_vectest, pval_vectest = stats.mood_nd(x1, x2, axis=axis)
+            z_vectest, pval_vectest = stats.mood(x1, x2, axis=axis)
 
             if axis == 0:
                 i_range = range(the_shape[1])
@@ -393,16 +381,14 @@ class TestMoodNd(TestCase):
                         assert_array_almost_equal([z_vectest[i, j], pval_vectest[i, j]], stats.mood(slice1, slice2))
 
     def test_4d_case(self):
-        """
-        test 4d case along different axes
-        """
+        #test 4d case along different axes
         the_shape = (10, 5, 6, 7)
         x1 = np.random.randn(*the_shape)
         x2 = np.random.randn(*the_shape)
 
         for axis in range(4):
             print(axis)
-            z_vectest, pval_vectest = stats.mood_nd(x1, x2, axis=axis)
+            z_vectest, pval_vectest = stats.mood(x1, x2, axis=axis)
 
             if axis == 0:
                 i_range = range(the_shape[1])
@@ -437,7 +423,9 @@ class TestMoodNd(TestCase):
                                 slice1 = x1[i, j, k, :]
                                 slice2 = x2[i, j, k, :]
 
-                            assert_array_almost_equal([z_vectest[i, j, k], pval_vectest[i, j, k]], stats.mood(slice1, slice2))
+                            assert_array_almost_equal([z_vectest[i, j, k],
+                                                       pval_vectest[i, j, k]],
+                                                      stats.mood(slice1, slice2))
 
 
 
