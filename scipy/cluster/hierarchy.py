@@ -640,7 +640,8 @@ def linkage(y, method='single', metric='euclidean'):
         if method not in _cpy_linkage_methods:
             raise ValueError('Invalid method: %s' % method)
         if method in _cpy_non_euclid_methods:
-            dm = distance.pdist(X, metric)
+            if distance.is_valid_dm(X): dm = distance.squareform(X)
+            else: dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_wrap(dm, Z, n,
                                        int(_cpy_non_euclid_methods[method]))
@@ -648,7 +649,8 @@ def linkage(y, method='single', metric='euclidean'):
             if metric != 'euclidean':
                 raise ValueError(('Method %s requires the distance metric to '
                                  'be euclidean') % s)
-            dm = distance.pdist(X, metric)
+            if distance.is_valid_dm(X): dm = distance.squareform(X)
+            else: dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_euclid_wrap(dm, Z, X, m, n,
                                               int(_cpy_euclid_methods[method]))
