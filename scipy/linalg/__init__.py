@@ -73,6 +73,8 @@ Decompositions
    schur - Schur decomposition of a matrix
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix
+   interpolative - Interpolative decomposition
+
 
 Matrix Functions
 ================
