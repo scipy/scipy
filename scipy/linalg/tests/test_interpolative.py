@@ -38,7 +38,7 @@ from numpy.testing import TestCase, assert_
 
 def _debug_print(s):
     if 0:
-        print s
+        print(s)
 
 
 class TestInterpolativeDecomposition(TestCase):
