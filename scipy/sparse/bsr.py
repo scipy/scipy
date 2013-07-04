@@ -264,7 +264,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
     def getnnz(self):
         R,C = self.blocksize
-        return self.indptr[-1] * R * C
+        return int(self.indptr[-1] * R * C)
     nnz = property(fget=getnnz)
 
     def __repr__(self):
@@ -502,10 +502,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
     # utility functions
     def _binopt(self, other, op, in_shape=None, out_shape=None):
-        """apply the binary operation fn to two sparse matrices"""
+        """Apply the binary operation fn to two sparse matrices."""
 
-        # ideally we'd take the GCDs of the blocksize dimensions
-        # and explode self and other to match
+        # Ideally we'd take the GCDs of the blocksize dimensions
+        # and explode self and other to match.
         other = self.__class__(other, blocksize=self.blocksize)
 
         # e.g. bsr_plus_bsr, etc.
@@ -516,7 +516,12 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         max_bnnz = len(self.data) + len(other.data)
         indptr = np.empty_like(self.indptr)
         indices = np.empty(max_bnnz, dtype=np.intc)
-        data = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
+
+        bool_ops = ['_ne_', '_lt_', '_gt_', '_le_', '_ge_']
+        if op in bool_ops:
+            data = np.empty(R*C*max_bnnz, dtype=np.bool_)
+        else:
+            data = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(self.shape[0]//R, self.shape[1]//C, R, C,
                 self.indptr, self.indices, np.ravel(self.data),

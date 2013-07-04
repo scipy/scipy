@@ -19,7 +19,7 @@ from scipy.special import gammaln as gamln
 
 import inspect
 from numpy import all, where, arange, putmask, \
-     ravel, take, ones, sum, shape, product, repeat, reshape, \
+     ravel, take, ones, sum, shape, product, reshape, \
      zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
      arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1
 from numpy import atleast_1d, polyval, ceil, place, extract, \
@@ -584,7 +584,7 @@ class rv_generic(object):
 
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
-    def rvs(self,*args,**kwds):
+    def rvs(self, *args, **kwds):
         """
         Random variates of given type.
 
@@ -612,7 +612,7 @@ class rv_generic(object):
 
         args, loc, scale, size = self._fix_loc_scale_kwarg3(args, loc, scale,
                                                             size)
-        cond = logical_and(self._argcheck(*args),(scale >= 0))
+        cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not all(cond):
             raise ValueError("Domain error in arguments.")
 
@@ -794,17 +794,14 @@ class rv_continuous(rv_generic):
     Parameters
     ----------
     momtype : int, optional
-        The type of generic moment calculation to use: 0 for pdf, 1 (default) for ppf.
+        The type of generic moment calculation to use: 0 for pdf, 1 (default)
+        for ppf.
     a : float, optional
         Lower bound of the support of the distribution, default is minus
         infinity.
     b : float, optional
         Upper bound of the support of the distribution, default is plus
         infinity.
-    xa : float, optional
-        DEPRECATED
-    xb : float, optional
-        DEPRECATED
     xtol : float, optional
         The tolerance for fixed point calculation for generic ppf.
     badvalue : object, optional
@@ -987,8 +984,8 @@ class rv_continuous(rv_generic):
 
     """
 
-    def __init__(self, momtype=1, a=None, b=None, xa=None, xb=None,
-                 xtol=1e-14, badvalue=None, name=None, longname=None,
+    def __init__(self, momtype=1, a=None, b=None, xtol=1e-14,
+                 badvalue=None, name=None, longname=None,
                  shapes=None, extradoc=None):
 
         rv_generic.__init__(self)
@@ -1005,14 +1002,6 @@ class rv_continuous(rv_generic):
             self.a = -inf
         if b is None:
             self.b = inf
-        if xa is not None:
-            warnings.warn("The `xa` parameter is deprecated and will be "
-                          "removed in scipy 0.12", DeprecationWarning)
-        if xb is not None:
-            warnings.warn("The `xb` parameter is deprecated and will be "
-                          "removed in scipy 0.12", DeprecationWarning)
-        self.xa = xa
-        self.xb = xb
         self.xtol = xtol
         self._size = 1
         self.m = 0.0
@@ -2796,60 +2785,7 @@ class dweibull_gen(rv_continuous):
 dweibull = dweibull_gen(name='dweibull', shapes='c')
 
 
-## ERLANG
-##
-## Special case of the Gamma distribution with shape parameter an integer.
-##
-class erlang_gen(rv_continuous):
-    """An Erlang continuous random variable.
-
-    %(before_notes)s
-
-    See Also
-    --------
-    gamma
-
-    Notes
-    -----
-    The Erlang distribution is a special case of the Gamma
-    distribution, with the shape parameter ``a`` an integer. Refer to
-    the ``gamma`` distribution for further examples.
-
-    """
-    def _rvs(self, a):
-        return gamma.rvs(a, size=self._size)
-
-    def _arg_check(self, a):
-        return (a > 0) & (floor(a) == a)
-
-    def _pdf(self, x, a):
-        Px = (x)**(a-1.0)*exp(-x)/special.gamma(a)
-        return Px
-
-    def _logpdf(self, x, a):
-        return (a-1.0)*log(x) - x - gamln(a)
-
-    def _cdf(self, x, a):
-        return special.gdtr(1.0,a,x)
-
-    def _sf(self, x, a):
-        return special.gdtrc(1.0,a,x)
-
-    def _ppf(self, q, a):
-        return special.gdtrix(1.0, a, q)
-
-    def _stats(self, a):
-        a = a*1.0
-        return a, a, 2/sqrt(a), 6/a
-
-    def _entropy(self, a):
-        return special.psi(a)*(1-a) + 1 + gamln(a)
-erlang = erlang_gen(a=0.0, name='erlang', shapes='a')
-
-
 ## Exponential (gamma distributed with a=1.0, loc=loc and scale=scale)
-## scale == 1.0 / lambda
-
 class expon_gen(rv_continuous):
     """An exponential continuous random variable.
 
@@ -3546,6 +3482,9 @@ class gamma_gen(rv_continuous):
     def _cdf(self, x, a):
         return special.gammainc(a, x)
 
+    def _sf(self, x, a):
+        return special.gammaincc(a, x)
+
     def _ppf(self, q, a):
         return special.gammaincinv(a,q)
 
@@ -3577,6 +3516,65 @@ class gamma_gen(rv_continuous):
         else:
             return super(gamma_gen, self).fit(data, *args, **kwds)
 gamma = gamma_gen(a=0.0, name='gamma', shapes='a')
+
+
+# Erlang
+
+class erlang_gen(gamma_gen):
+    """An Erlang continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    gamma
+
+    Notes
+    -----
+    The Erlang distribution is a special case of the Gamma distribution, with
+    the shape parameter `a` an integer.  Note that this restriction is not
+    enforced by `erlang`. It will, however, generate a warning the first time
+    a non-integer value is used for the shape parameter.
+
+    Refer to `gamma` for examples.
+
+    """
+
+    def _argcheck(self, a):
+        allint = np.all(np.floor(a) == a)
+        allpos = np.all(a > 0)
+        if not allint:
+            # An Erlang distribution shouldn't really have a non-integer
+            # shape parameter, so warn the user.
+            warnings.warn('The shape parameter of the erlang distribution '
+                'has been given a non-integer value %r.' % (a,),
+                RuntimeWarning)
+        return allpos
+
+    def _fitstart(self, data):
+        # Override gamma_gen_fitstart so that an integer initial value is
+        # used.  (Also regularize the division, to avoid issues when
+        # _skew(data) is 0 or close to 0.)
+        a = int(4.0 / (1e-8 + _skew(data)**2))
+        return super(gamma_gen, self)._fitstart(data, args=(a,))
+
+    # Trivial override of the fit method, so we can monkey-patch its
+    # docstring.
+    def fit(self, data, *args, **kwds):
+        return super(erlang_gen, self).fit(data, *args, **kwds)
+
+    fit.__doc__ = (rv_continuous.fit.__doc__ +
+        """
+        Notes
+        -----
+        The Erlang distribution is generally defined to have integer values
+        for the shape parameter.  This is not enforced by the `erlang` class.
+        When fitting the distribution, it will generally return a non-integer
+        value for the shape parameter.  By using the keyword argument
+        `f0=<integer>`, the fit method can be constrained to fit the data to
+        a specific integer shape parameter.
+        """)
+erlang = erlang_gen(a=0.0, name='erlang', shapes='a')
 
 
 # Generalized Gamma
@@ -4420,9 +4418,15 @@ class loggamma_gen(rv_continuous):
     def _ppf(self, q, c):
         return log(special.gammaincinv(c,q))
 
-    def _munp(self,n,*args):
-        # use generic moment calculation using ppf
-        return self._mom0_sc(n,*args)
+    def _stats(self, c):
+        # See, for example, "A Statistical Study of Log-Gamma Distribution", by
+        # Ping Shing Chan (thesis, McMaster University, 1993).
+        mean = special.digamma(c)
+        var = special.polygamma(1, c)
+        skewness = special.polygamma(2, c) / var**1.5
+        excess_kurtosis = special.polygamma(3, c) / (var*var)
+        return mean, var, skewness, excess_kurtosis
+
 loggamma = loggamma_gen(name='loggamma', shapes='c')
 
 
@@ -4466,6 +4470,10 @@ loglaplace = loglaplace_gen(a=0.0, name='loglaplace', shapes='c')
 ##    distribution.
 ## the mean of the underlying distribution is log(scale)
 
+def _lognorm_logpdf(x, s):
+    return -log(x)**2 / (2*s**2) + np.where(x == 0, 0, -log(s*x*sqrt(2*pi)))
+
+
 class lognorm_gen(rv_continuous):
     """A lognormal continuous random variable.
 
@@ -4487,19 +4495,19 @@ class lognorm_gen(rv_continuous):
 
     """
     def _rvs(self, s):
-        return exp(s * norm.rvs(size=self._size))
+        return exp(s * mtrand.standard_normal(self._size))
 
     def _pdf(self, x, s):
         return exp(self._logpdf(x, s))
 
     def _logpdf(self, x, s):
-        return -log(x)**2 / (2*s**2) + np.where(x == 0, 0, - log(s*x*sqrt(2*pi)))
+        return _lognorm_logpdf(x, s)
 
     def _cdf(self, x, s):
-        return norm.cdf(log(x)/s)
+        return _norm_cdf(log(x) / s)
 
     def _ppf(self, q, s):
-        return exp(s*norm._ppf(q))
+        return exp(s * _norm_ppf(q))
 
     def _stats(self, s):
         p = exp(s*s)
@@ -4510,13 +4518,11 @@ class lognorm_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, s):
-        return 0.5*(1+log(2*pi)+2*log(s))
+        return 0.5 * (1 + log(2*pi) + 2 * log(s))
 lognorm = lognorm_gen(a=0.0, name='lognorm', shapes='s')
 
 
-# Gibrat's distribution is just lognormal with s=1
-
-class gilbrat_gen(lognorm_gen):
+class gilbrat_gen(rv_continuous):
     """A Gilbrat continuous random variable.
 
     %(before_notes)s
@@ -4527,29 +4533,36 @@ class gilbrat_gen(lognorm_gen):
 
         gilbrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
 
+    `gilbrat` is a special case of `lognorm` with ``s = 1``.
+
     %(example)s
 
     """
     def _rvs(self):
-        return lognorm_gen._rvs(self, 1.0)
+        return exp(mtrand.standard_normal(self._size))
 
     def _pdf(self, x):
-        return lognorm_gen._pdf(self, x, 1.0)
+        return exp(self._logpdf(x))
 
     def _logpdf(self, x):
-        return lognorm_gen._logpdf(self, x, 1.0)
+        return _lognorm_logpdf(x, 1.0)
 
     def _cdf(self, x):
-        return lognorm_gen._cdf(self, x, 1.0)
+        return _norm_cdf(log(x))
 
     def _ppf(self, q):
-        return lognorm_gen._ppf(self, q, 1.0)
+        return exp(_norm_ppf(q))
 
     def _stats(self):
-        return lognorm_gen._stats(self, 1.0)
+        p = np.e
+        mu = sqrt(p)
+        mu2 = p * (p - 1)
+        g1 = sqrt((p - 1)) * (2 + p)
+        g2 = numpy.polyval([1, 2, 3, 0, -6.0], p)
+        return mu, mu2, g1, g2
 
     def _entropy(self):
-        return 0.5*log(2*pi) + 0.5
+        return 0.5 * log(2 * pi) + 0.5
 gilbrat = gilbrat_gen(a=0.0, name='gilbrat')
 
 
@@ -4563,12 +4576,12 @@ class maxwell_gen(rv_continuous):
     Notes
     -----
     A special case of a `chi` distribution,  with ``df = 3``, ``loc = 0.0``,
-    and given ``scale = 1.0 / sqrt(a)``, where a is the parameter used in
-    the Mathworld description [1]_.
+    and given ``scale = a``, where ``a`` is the parameter used in the
+    Mathworld description [1]_.
 
     The probability density function for `maxwell` is::
 
-        maxwell.pdf(x, a) = sqrt(2/pi)x**2 * exp(-x**2/2)
+        maxwell.pdf(x) = sqrt(2/pi)x**2 * exp(-x**2/2)
 
     for ``x > 0``.
 
@@ -4952,7 +4965,7 @@ class pareto_gen(rv_continuous):
             mask = b > 3
             bt = extract(mask,b)
             g1 = valarray(shape(b), value=nan)
-            vals = 2*(bt+1.0)*sqrt(b-2.0)/((b-3.0)*sqrt(b))
+            vals = 2 * (bt + 1.0) * sqrt(bt - 2.0) / ((bt - 3.0) * sqrt(bt))
             place(g1, mask, vals)
         if 'k' in moments:
             mask = b > 4
@@ -6159,7 +6172,7 @@ class rv_discrete(rv_generic):
 
     To create a new discrete distribution, we would do the following::
 
-        class poisson_gen(rv_continuous):
+        class poisson_gen(rv_discrete):
             #"Poisson distribution"
             def _pmf(self, k, mu):
                 ...
@@ -6900,21 +6913,14 @@ class rv_discrete(rv_generic):
         else:
             mu = int(self.stats(*args, **{'moments':'m'}))
             val = self.pmf(mu,*args)
-            if (val == 0.0):
-                ent = 0.0
-            else:
-                ent = -val*log(val)
+            ent = -special.xlogy(val, val)
             k = 1
             term = 1.0
             while (abs(term) > eps):
                 val = self.pmf(mu+k,*args)
-                if val == 0.0:
-                    term = 0.0
-                else:
-                    term = -val * log(val)
+                term = -special.xlogy(val, val)
                 val = self.pmf(mu-k,*args)
-                if val != 0.0:
-                    term -= val*log(val)
+                term -= special.xlogy(val, val)
                 k += 1
                 ent += term
             return ent
@@ -7042,8 +7048,7 @@ class rv_discrete(rv_generic):
                 pos -= self.inc
                 count += 1
         if count > maxcount:
-            # fixme: replace with proper warning
-            print('sum did not converge')
+            warnings.warn('expect(): sum did not converge', RuntimeWarning)
         return tot/invfac
 
 
@@ -7107,10 +7112,10 @@ class binom_gen(rv_discrete):
         return mu, var, g1, g2
 
     def _entropy(self, n, p):
-        k = r_[0:n+1]
-        vals = self._pmf(k,n,p)
-        lvals = where(vals == 0,0.0,log(vals))
-        return -sum(vals*lvals,axis=0)
+        k = r_[0:n + 1]
+        vals = self._pmf(k, n, p)
+        h = -sum(special.xlogy(vals, vals), axis=0)
+        return h
 binom = binom_gen(name='binom',shapes="n, p")
 
 # Bernoulli distribution
@@ -7160,7 +7165,8 @@ class bernoulli_gen(binom_gen):
         return binom._stats(1, pr)
 
     def _entropy(self, pr):
-        return -pr*log(pr)-(1-pr)*log(1-pr)
+        h = -special.xlogy(pr, pr) - special.xlogy(1 - pr, 1 - pr)
+        return h
 bernoulli = bernoulli_gen(b=1,name='bernoulli',shapes="p")
 
 # Negative binomial
@@ -7373,10 +7379,10 @@ class hypergeom_gen(rv_discrete):
         return mu, var, g1, g2
 
     def _entropy(self, M, n, N):
-        k = r_[N-(M-n):min(n,N)+1]
-        vals = self.pmf(k,M,n,N)
-        lvals = where(vals == 0.0,0.0,log(vals))
-        return -sum(vals*lvals,axis=0)
+        k = r_[N - (M - n):min(n, N) + 1]
+        vals = self.pmf(k, M, n, N)
+        h = -sum(special.xlogy(vals, vals), axis=0)
+        return h
 
     def _sf(self, k, M, n, N):
         """More precise calculation, 1 - cdf doesn't cut it."""
@@ -7758,18 +7764,11 @@ class dlaplace_gen(rv_discrete):
         temp = self._cdf(vals1, a)
         return where(temp >= q, vals1, vals)
 
-    def _stats_skip(self, a):
-        # variance mu2 does not aggree with sample variance,
-        #   nor with direct calculation using pmf
-        # remove for now because generic calculation works
-        #   except it does not show nice zeros for mean and skew(?)
-        ea = exp(-a)
-        e2a = exp(-2*a)
-        e3a = exp(-3*a)
-        e4a = exp(-4*a)
-        mu2 = 2 * (e2a + ea) / (1-ea)**3.0
-        mu4 = 2 * (e4a + 11*e3a + 11*e2a + ea) / (1-ea)**5.0
-        return 0.0, mu2, 0.0, mu4 / mu2**2.0 - 3
+    def _stats(self, a):
+        ea = exp(a)
+        mu2 = 2.*ea/(ea-1.)**2
+        mu4 = 2.*ea*(ea**2+10.*ea+1.) / (ea-1.)**4
+        return 0., mu2, 0., mu4/mu2**2 - 3.
 
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))

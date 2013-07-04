@@ -20,7 +20,6 @@ failing_fits = [
         'burr',
         'chi',
         'chi2',
-        'erlang',
         'gausshyper',
         'genexpon',
         'gengamma',
@@ -36,6 +35,10 @@ failing_fits = [
         'wrapcauchy',
 ]
 
+# Don't run the fit test on these:
+skip_fit = [
+    'erlang',  # Subclass of gamma, generates a warning.
+]
 
 @dec.slow
 def test_cont_fit():
@@ -44,7 +47,8 @@ def test_cont_fit():
     # Note: is slow, some distributions don't converge with sample size <= 10000
 
     for distname, arg in distcont:
-        yield check_cont_fit, distname,arg
+        if distname not in skip_fit:
+            yield check_cont_fit, distname,arg
 
 
 def check_cont_fit(distname,arg):

@@ -1,9 +1,34 @@
 from __future__ import division, print_function, absolute_import
 
 
-from numpy import array, ones_like
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+import numpy as np
+from numpy import array
+from numpy.testing import (assert_array_almost_equal, assert_array_equal,
+                           assert_, run_module_suite)
 from scipy import signal
+
+
+window_funcs = [
+    ('boxcar', ()),
+    ('triang', ()),
+    ('parzen', ()),
+    ('bohman', ()),
+    ('blackman', ()),
+    ('nuttall', ()),
+    ('blackmanharris', ()),
+    ('flattop', ()),
+    ('bartlett', ()),
+    ('hanning', ()),
+    ('barthann', ()),
+    ('hamming', ()),
+    ('kaiser', (1,)),
+    ('gaussian', (0.5,)),
+    ('general_gaussian', (1.5, 2)),
+    ('chebwin', (1,)),
+    ('slepian', (2,)),
+    ('cosine', ()),
+    ('hann', ()),
+    ]
 
 
 cheb_odd_true = array([0.200938, 0.107729, 0.134941, 0.165348,
@@ -56,7 +81,7 @@ class TestGetWindow(object):
 
     def test_boxcar(self):
         w = signal.get_window('boxcar', 12)
-        assert_array_equal(w, ones_like(w))
+        assert_array_equal(w, np.ones_like(w))
 
     def test_cheb_odd(self):
         w = signal.get_window(('chebwin', -40), 53, fftbins=False)
@@ -65,3 +90,18 @@ class TestGetWindow(object):
     def test_cheb_even(self):
         w = signal.get_window(('chebwin', -40), 54, fftbins=False)
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
+
+
+def test_windowfunc_basics():
+    for window_name, params in window_funcs:
+        window = getattr(signal, window_name)
+        w1 = window(7, *params, sym=True)
+        w2 = window(7, *params, sym=False)
+        assert_array_almost_equal(w1, w2)
+        # just check the below runs
+        window(6, *params, sym=True)
+        window(6, *params, sym=False)
+
+
+if __name__ == "__main__":
+    run_module_suite()

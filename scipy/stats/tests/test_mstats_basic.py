@@ -3,6 +3,8 @@ Tests for the stats.mstats module (support for maskd arrays)
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 from collections import namedtuple
 import numpy as np
 from numpy import nan
@@ -129,19 +131,35 @@ class TestRanking(TestCase):
 class TestCorr(TestCase):
 
     def test_pearsonr(self):
-        "Tests some computations of Pearson's r"
+        # Tests some computations of Pearson's r
         x = ma.arange(10)
-        olderr = np.seterr(all='ignore')
-        try:
-            assert_almost_equal(mstats.pearsonr(x,x)[0], 1.0)
-            assert_almost_equal(mstats.pearsonr(x,x[::-1])[0], -1.0)
+        with warnings.catch_warnings():
+            # The tests in this context are edge cases, with perfect
+            # correlation or anticorrelation, or totally masked data.
+            # None of these should trigger a RuntimeWarning.
+            warnings.simplefilter("error", RuntimeWarning)
+
+            assert_almost_equal(mstats.pearsonr(x, x)[0], 1.0)
+            assert_almost_equal(mstats.pearsonr(x, x[::-1])[0], -1.0)
 
             x = ma.array(x, mask=True)
-            pr = mstats.pearsonr(x,x)
-        finally:
-            np.seterr(**olderr)
-        assert_(pr[0] is masked)
-        assert_(pr[1] is masked)
+            pr = mstats.pearsonr(x, x)
+            assert_(pr[0] is masked)
+            assert_(pr[1] is masked)
+
+        x1 = ma.array([-1.0, 0.0, 1.0])
+        y1 = ma.array([0, 0, 3])
+        r, p = mstats.pearsonr(x1, y1)
+        assert_almost_equal(r, np.sqrt(3)/2)
+        assert_almost_equal(p, 1.0/3)
+
+        # (x2, y2) have the same unmasked data as (x1, y1).
+        mask = [False, False, False, True]
+        x2 = ma.array([-1.0, 0.0, 1.0, 99.0], mask=mask)
+        y2 = ma.array([0, 0, 3, -1], mask=mask)
+        r, p = mstats.pearsonr(x2, y2)
+        assert_almost_equal(r, np.sqrt(3)/2)
+        assert_almost_equal(p, 1.0/3)
 
     def test_spearmanr(self):
         "Tests some computations of Spearman's rho"

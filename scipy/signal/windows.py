@@ -8,7 +8,7 @@ from scipy.fftpack import fft
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'hann', 'get_window']
+           'slepian', 'cosine', 'hann', 'get_window']
 
 
 def boxcar(M, sym=True):
@@ -66,7 +66,8 @@ def triang(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -129,7 +130,8 @@ def parzen(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -191,7 +193,8 @@ def bohman(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -255,7 +258,8 @@ def blackman(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -335,7 +339,8 @@ def nuttall(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -395,7 +400,8 @@ def blackmanharris(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -455,7 +461,8 @@ def flattop(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -522,7 +529,8 @@ def bartlett(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -617,7 +625,8 @@ def hann(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -706,7 +715,8 @@ def barthann(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -767,7 +777,8 @@ def hamming(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -857,7 +868,8 @@ def kaiser(M, beta, sym=True):
         Shape parameter, determines trade-off between main-lobe width and
         side lobe level. As beta gets large, the window narrows.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -972,7 +984,8 @@ def gaussian(M, std, sym=True):
     std : float
         The standard deviation, sigma.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -1041,7 +1054,8 @@ def general_gaussian(M, p, sig, sym=True):
     sig : float
         The standard deviation, sigma.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -1112,7 +1126,8 @@ def chebwin(M, at, sym=True):
     at : float
         Attenuation (in dB).
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -1199,7 +1214,8 @@ def slepian(M, width, sym=True):
     width : float
         Bandwidth
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
@@ -1253,6 +1269,41 @@ def slepian(M, width, sym=True):
     ind = np.argmax(abs(lam), axis=-1)
     w = np.abs(vec[:, ind])
     w = w / max(w)
+
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+
+
+def cosine(M, sym=True):
+    """Return a window with a simple cosine shape.
+
+    .. versionadded:: 0.13.0
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    sym : bool, optional
+        When True, generates a symmetric window, for use in filter design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1.
+
+    """
+    if M < 1:
+        return np.array([])
+    if M == 1:
+        return np.ones(1, 'd')
+    odd = M % 2
+    if not sym and not odd:
+        M = M + 1
+
+    w = np.sin(np.pi / M * (np.arange(0, M) + .5))
 
     if not sym and not odd:
         w = w[:-1]
@@ -1368,6 +1419,8 @@ def get_window(window, Nx, fftbins=True):
             winfunc = boxcar
         elif winstr in ['slepian', 'slep', 'optimal', 'dpss', 'dss']:
             winfunc = slepian
+        elif winstr in ['cosine', 'halfcosine']:
+            winfunc = cosine
         elif winstr in ['chebwin', 'cheb']:
             winfunc = chebwin
         else:

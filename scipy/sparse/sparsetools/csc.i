@@ -21,4 +21,8 @@ INSTANTIATE_ALL(csc_eldiv_csc)
 INSTANTIATE_ALL(csc_plus_csc)
 INSTANTIATE_ALL(csc_minus_csc)
 
-
+INSTANTIATE_BOOL_OUT(csc_ne_csc)
+INSTANTIATE_BOOL_OUT(csc_lt_csc)
+INSTANTIATE_BOOL_OUT(csc_gt_csc)
+INSTANTIATE_BOOL_OUT(csc_le_csc)
+INSTANTIATE_BOOL_OUT(csc_ge_csc)

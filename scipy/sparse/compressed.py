@@ -84,7 +84,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         self.check_format(full_check=False)
 
     def getnnz(self):
-        return self.indptr[-1]
+        return int(self.indptr[-1])
     nnz = property(fget=getnnz)
 
     def _set_self(self, other, copy=False):
@@ -164,6 +164,199 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         #    self.sort_indices()
         #    assert(self.has_sorted_indices())
         # TODO check for duplicates?
+
+    #######################
+    # Boolean comparisons #
+    #######################
+
+    def __eq__(self, other):
+        # Scalar other.
+        if isscalarlike(other):
+            other_arr = self.copy()
+            other_arr.data[:] = other
+            res = self._binopt(other_arr,'_ne_')
+            if other == 0:
+                warn("Comparing a sparse matrix with 0 using == is inefficient"
+                        ", try using != instead.", SparseEfficiencyWarning)
+                all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+                return all_true - res
+            else:
+                self_as_bool = self.astype(bool)
+                return self_as_bool - res
+        # Dense other.
+        elif isdense(other):
+            return self.todense() == other
+        # Sparse other.
+        elif isspmatrix(other):
+            warn("Comparing sparse matrices using == is inefficient, try using"
+                    " != instead.", SparseEfficiencyWarning)
+            #TODO sparse broadcasting
+            if self.shape != other.shape:
+                return False
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            res = self._binopt(other,'_ne_')
+            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+            return all_true - res
+        else:
+            return False
+
+    def __ne__(self, other):
+        # Scalar other.
+        if isscalarlike(other):
+            if other != 0:
+                warn("Comparing a sparse matrix with a nonzero scalar using !="
+                     " is inefficient, try using == instead.", SparseEfficiencyWarning)
+                all_true = self.__class__(np.ones(self.shape), dtype=np.bool_)
+                res = (self == other)
+                return all_true - res
+            else:
+                other_arr = self.copy()
+                other_arr.data[:] = other
+                return self._binopt(other_arr,'_ne_')
+        # Dense other.
+        elif isdense(other):
+            return self.todense() != other
+        # Sparse other.
+        elif isspmatrix(other):
+            #TODO sparse broadcasting
+            if self.shape != other.shape:
+                return True
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            return self._binopt(other,'_ne_')
+        else:
+            return True
+
+    def __lt__(self, other):
+        # Scalar other.
+        if isscalarlike(other):
+            if 0 < other:
+                warn("Comparing a sparse matrix with a scalar greater than "
+                     "zero using < is inefficient, try using > instead.", SparseEfficiencyWarning)
+                other_arr = np.empty(self.shape)
+                other_arr.fill(other)
+                other_arr = self.__class__(other_arr)
+                return self._binopt(other_arr, '_lt_')
+            else:
+                other_arr = self.copy()
+                other_arr.data[:] = other
+                return self._binopt(other_arr, '_lt_')
+        # Dense other.
+        elif isdense(other):
+            return self.todense() < other
+        # Sparse other.
+        elif isspmatrix(other):
+            #TODO sparse broadcasting
+            if self.shape != other.shape:
+                raise ValueError("inconsistent shapes")
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            return self._binopt(other, '_lt_')
+        else:
+            raise ValueError("Operands could not be compared.")
+
+    def __gt__(self, other):
+        # Scalar other.
+        if isscalarlike(other):
+            if 0 > other:
+                warn("Comparing a sparse matrix with a scalar less than zero "
+                     "using > is inefficient, try using < instead.", SparseEfficiencyWarning)
+                other_arr = np.empty(self.shape)
+                other_arr.fill(other)
+                other_arr = self.__class__(other_arr)
+                return self._binopt(other_arr, '_gt_')
+            else:
+                other_arr = self.copy()
+                other_arr.data[:] = other
+                return self._binopt(other_arr, '_gt_')
+        # Dense other.
+        elif isdense(other):
+            return self.todense() > other
+        # Sparse other.
+        elif isspmatrix(other):
+            #TODO sparse broadcasting
+            if self.shape != other.shape:
+                raise ValueError("inconsistent shapes")
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            return self._binopt(other, '_gt_')
+        else:
+            raise ValueError("Operands could not be compared.")
+
+    def __le__(self,other):
+        # Scalar other.
+        if isscalarlike(other):
+            if 0 == other:
+                raise NotImplementedError(" >= and <= don't work with 0.")
+            elif 0 <= other:
+                warn("Comparing a sparse matrix with a scalar less than zero "
+                     "using <= is inefficient, try using < instead.", SparseEfficiencyWarning)
+                other_arr = np.empty(self.shape)
+                other_arr.fill(other)
+                other_arr = self.__class__(other_arr)
+                return self._binopt(other_arr, '_le_')
+            else:
+                # Casting as other's type avoids corner case like
+                # ``spmatrix(True) < -2'' from being True.
+                other_arr = self.astype(type(other)).copy()
+                other_arr.data[:] = other
+                return self._binopt(other_arr, '_le_')
+        # Dense other.
+        elif isdense(other):
+            return self.todense() <= other
+        # Sparse other.
+        elif isspmatrix(other):
+            #TODO sparse broadcasting
+            if self.shape != other.shape:
+                raise ValueError("inconsistent shapes")
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            warn("Comparing sparse matrices using >= and <= is inefficient, "
+                 "using <, >, or !=, instead.", SparseEfficiencyWarning)
+            all_true = self.__class__(np.ones(self.shape))
+            res = self._binopt(other, '_gt_')
+            return all_true - res
+        else:
+            raise ValueError("Operands could not be compared.")
+
+    def __ge__(self,other):
+        # Scalar other.
+        if isscalarlike(other):
+            if 0 == other:
+                raise NotImplementedError(" >= and <= don't work with 0.")
+            elif 0 >= other:
+                warn("Comparing a sparse matrix with a scalar greater than zero"
+                     " using >= is inefficient, try using < instead.", SparseEfficiencyWarning)
+                other_arr = np.empty(self.shape)
+                other_arr.fill(other)
+                other_arr = self.__class__(other_arr)
+                return self._binopt(other_arr, '_ge_')
+            else:
+                other_arr = self.astype(type(other)).copy()
+                other_arr.data[:] = other
+                return self._binopt(other_arr, '_ge_')
+        # Dense other.
+        elif isdense(other):
+            return self.todense() >= other
+        # Sparse other.
+        elif isspmatrix(other):
+            #TODO sparse broadcasting
+            if self.shape != other.shape:
+                raise ValueError("inconsistent shapes")
+            elif self.format != other.format:
+                other = other.asformat(self.format)
+            warn("Comparing sparse matrices using >= and <= is inefficient, "
+                 "try using <, >, or !=, instead.", SparseEfficiencyWarning)
+            all_true = self.__class__(np.ones(self.shape))
+            res = self._binopt(other, '_lt_')
+            return all_true - res
+        else:
+            raise ValueError("Operands could not be compared.")
+
+    #################################
+    # Arithmatic operator overrides #
+    #################################
 
     def __add__(self,other):
         # First check if argument is a scalar
@@ -686,7 +879,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
                                    shape=self.shape,dtype=data.dtype)
 
     def _binopt(self, other, op):
-        """apply the binary operation fn to two sparse matrices"""
+        """apply the binary operation fn to two sparse matrices."""
         other = self.__class__(other)
 
         # e.g. csr_plus_csr, csr_minus_csr, etc.
@@ -695,7 +888,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         maxnnz = self.nnz + other.nnz
         indptr = np.empty_like(self.indptr)
         indices = np.empty(maxnnz, dtype=np.intc)
-        data = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
+
+        bool_ops = ['_ne_', '_lt_', '_gt_', '_le_', '_ge_']
+        if op in bool_ops:
+            data = np.empty(maxnnz, dtype=np.bool_)
+        else:
+            data = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(self.shape[0], self.shape[1],
                 self.indptr, self.indices, self.data,

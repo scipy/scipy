@@ -67,6 +67,12 @@ The ``misc.radon`` function, which was deprecated in scipy 0.11.0, has been
 removed.  Users can find a more full-featured ``radon`` function in
 scikit-image.
 
+Removed deprecated keywords ``xa`` and ``xb`` from ``stats.distributions``
+--------------------------------------------------------------------------
+
+The keywords ``xa`` and ``xb``, which were deprecated since 0.11.0, have
+been removed from the distributions in ``scipy.stats``.
+
 
 Other changes
 =============

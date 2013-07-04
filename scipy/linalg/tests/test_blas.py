@@ -16,7 +16,7 @@ import math
 
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_almost_equal, assert_array_almost_equal
+    assert_almost_equal, assert_array_almost_equal, assert_raises
 
 from scipy.linalg import _fblas as fblas, get_blas_funcs
 
@@ -277,6 +277,175 @@ class TestFBLAS3Simple(TestCase):
                 continue
             assert_array_almost_equal(f(3j,[3-4j],[-4]),[[-48-36j]])
             assert_array_almost_equal(f(3j,[3-4j],[-4],3,[5j]),[-48-21j])
+
+
+def _get_func(func, ps='sdzc'):
+    """Just a helper: return a specified BLAS function w/typecode."""
+    for p in ps:
+        f = getattr(fblas, p+func, None)
+        if f is None:
+            continue 
+        yield f  
+
+
+class TestBLAS3Symm(TestCase):
+
+    def setUp(self):
+        self.a = np.array([[1., 2.],
+                           [0., 1.]])
+        self.b = np.array([[1., 0.,  3.],
+                           [0., -1., 2.]])
+        self.c = np.ones((2,3))
+        self.t = np.array([[2., -1., 8.],
+                           [3.,  0., 9.]])
+
+    def test_symm(self):
+        for f in _get_func('symm'):
+            res = f(a=self.a, b=self.b, c=self.c, alpha=1., beta=1.)
+            assert_array_almost_equal(res, self.t)
+
+            res = f(a=self.a.T, b=self.b, lower=1, c=self.c, alpha=1., beta=1.)
+            assert_array_almost_equal(res, self.t)
+
+            res = f(a=self.a, b=self.b.T, side=1, c=self.c.T, alpha=1., beta=1.)
+            assert_array_almost_equal(res, self.t.T)
+
+    def test_summ_wrong_side(self):
+        f = getattr(fblas, 'dsymm', None)
+        if f is not None:
+            assert_raises(Exception, f, **{'a': self.a, 'b': self.b, 'alpha':1, 
+                    'side': 1} )
+            # `side=1` means C <- B*A, hence shapes of A and B are to be 
+            #  compatible. Otherwise, f2py exception is raised
+
+
+    def test_symm_wrong_uplo(self):
+        """SYMM only considers the upper/lower part of A. Hence setting 
+        wrong value for `lower` (default is lower=0, meaning upper triangle)
+        gives a wrong result. 
+        """
+        f = getattr(fblas,'dsymm',None)
+        if f is not None:
+            res = f(a=self.a, b=self.b, c=self.c, alpha=1., beta=1.)
+            assert np.allclose(res, self.t)
+
+            res = f(a=self.a, b=self.b, lower=1, c=self.c, alpha=1., beta=1.)
+            assert not np.allclose(res, self.t)  
+
+
+
+class TestBLAS3Syrk(TestCase):
+    def setUp(self):
+        self.a = np.array([[1.,  0.],
+                           [0., -2.],
+                           [2.,  3.]])
+        self.t = np.array([[1.,  0.,  2.],
+                           [0.,  4., -6.],
+                           [2., -6., 13.]])
+        self.tt = np.array([[5., 6.],
+                            [6., 13.]])
+
+    def test_syrk(self):
+        for f in _get_func('syrk'):
+            c = f(a=self.a, alpha=1.) 
+            assert_array_almost_equal(np.triu(c), np.triu(self.t))
+
+            c = f(a=self.a, alpha=1., lower=1)
+            assert_array_almost_equal(np.tril(c), np.tril(self.t))
+
+            c0 = np.ones(self.t.shape)
+            c = f(a=self.a, alpha=1., beta=1., c=c0)
+            assert_array_almost_equal(np.triu(c), np.triu(self.t+c0))
+
+            c = f(a=self.a, alpha=1., trans=1)
+            assert_array_almost_equal(np.triu(c), np.triu(self.tt))
+
+    #prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress? 
+    # FIXME: how to catch the _fblas.error? 
+    def test_syrk_wrong_c(self):
+        f = getattr(fblas, 'dsyrk', None)
+        if f is not None:
+            assert_raises(Exception, f, **{'a': self.a, 'alpha': 1., 
+                    'c': np.ones((5, 8))})
+        # if C is supplied, it must have compatible dimensions
+
+
+class TestBLAS3Syr2k(TestCase):
+    def setUp(self):
+        self.a = np.array([[1.,  0.],
+                           [0., -2.],
+                           [2.,  3.]])
+        self.b = np.array([[0.,  1.],
+                           [1., 0.],
+                           [0,  1.]])
+        self.t = np.array([[0., -1.,  3.],
+                           [-1., 0.,  0.],
+                           [3.,  0., 6.]])
+        self.tt = np.array([[0., 1.],
+                            [1., 6]])
+
+    def test_syr2k(self):
+        for f in _get_func('syr2k'):
+            c = f(a=self.a, b=self.b, alpha=1.) 
+            assert_array_almost_equal(np.triu(c), np.triu(self.t))
+
+            c = f(a=self.a, b=self.b, alpha=1., lower=1)
+            assert_array_almost_equal(np.tril(c), np.tril(self.t))
+
+            c0 = np.ones(self.t.shape)
+            c = f(a=self.a, b=self.b, alpha=1., beta=1., c=c0)
+            assert_array_almost_equal(np.triu(c), np.triu(self.t+c0))
+
+            c = f(a=self.a, b=self.b, alpha=1., trans=1)
+            assert_array_almost_equal(np.triu(c), np.triu(self.tt))
+
+    #prints '0-th dimension must be fixed to 3 but got 5', FIXME: suppress?
+    def test_syr2k_wrong_c(self):
+        f = getattr(fblas, 'dsyr2k', None)
+        if f is not None:
+            assert_raises(Exception, f, **{'a': self.a, 'b': self.b, 'alpha': 1., 
+                    'c': np.zeros((15, 8))})
+        # if C is supplied, it must have compatible dimensions
+
+
+class TestSyHe(TestCase):
+    """Quick and simple tests for (zc)-symm, syrk, syr2k."""
+    def setUp(self):
+        self.sigma_y = np.array([[0., -1.j],
+                                 [1.j, 0.]]) 
+
+    def test_symm_zc(self):
+         for f in _get_func('symm', 'zc'):
+            #NB: a is symmetric w/upper diag of ONLY 
+            res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), np.diag([1, -1])) 
+
+    def test_hemm_zc(self):
+         for f in _get_func('hemm', 'zc'):
+            #NB: a is hermitian w/upper diag of ONLY 
+            res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), np.diag([1, 1]))
+
+    def test_syrk_zr(self):
+        for f in _get_func('syrk', 'zc'):
+            res = f(a=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), np.diag([-1, -1]))
+
+    def test_herk_zr(self):
+        for f in _get_func('herk', 'zc'):
+            res = f(a=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), np.diag([1, 1]))
+
+    def test_syr2k_zr(self):
+        for f in _get_func('syr2k', 'zc'):
+            res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), 2.*np.diag([-1, -1]))
+
+    def test_her2k_zr(self):
+        for f in _get_func('her2k', 'zc'):
+            res = f(a=self.sigma_y, b=self.sigma_y, alpha=1.)
+            assert_array_almost_equal(np.triu(res), 2.*np.diag([1, 1]))
+
 
 if __name__ == "__main__":
     run_module_suite()

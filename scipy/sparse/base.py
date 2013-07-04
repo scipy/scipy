@@ -176,12 +176,13 @@ class spmatrix(object):
 
         return out
 
-    if sys.version_info[0] >= 3:
-        def __bool__(self):  # Simple -- other ideas?
-            return self.getnnz() > 0
-    else:
-        def __nonzero__(self):  # Simple -- other ideas?
-            return self.getnnz() > 0
+    def __bool__(self):  # Simple -- other ideas?
+        if self.shape == (1, 1):
+            return True if self.nnz == 1 else False
+        else:
+            raise ValueError("The truth value of an array with more than one "
+                             "element is ambiguous. Use a.any() or a.all().")
+    __nonzero__ = __bool__
 
     # What should len(sparse) return? For consistency with dense matrices,
     # perhaps it should be the number of rows?  But for some uses the number of
@@ -225,6 +226,24 @@ class spmatrix(object):
 
     def dot(self, other):
         return self * other
+
+    def __eq__(self, other):
+        return self.tocsr().__eq__(other)
+
+    def __ne__(self, other):
+        return self.tocsr().__ne__(other)
+
+    def __lt__(self,other):
+        return self.tocsr().__lt__(other)
+
+    def __gt__(self,other):
+        return self.tocsr().__gt__(other)
+
+    def __le__(self,other):
+        return self.tocsr().__le__(other)
+
+    def __ge__(self,other):
+        return self.tocsr().__ge__(other)
 
     def __abs__(self):
         return abs(self.tocsr())
@@ -572,15 +591,28 @@ class spmatrix(object):
         # For some sparse matrix formats more efficient methods are
         # possible -- these should override this function.
         m, n = self.shape
+
+        # Mimic numpy's casting.
+        if np.issubdtype(self.dtype, np.float_):
+            res_dtype = np.float_
+        elif (np.issubdtype(self.dtype, np.int_) or
+              np.issubdtype(self.dtype, np.bool_)):
+                res_dtype = np.int_
+        elif np.issubdtype(self.dtype, np.complex_):
+            res_dtype = np.complex_
+        else:
+            res_dtype = self.dtype
+
+        # Calculate the sum.
         if axis == 0:
             # sum over columns
-            return np.asmatrix(np.ones((1, m), dtype=self.dtype)) * self
+            return np.asmatrix(np.ones((1, m), dtype=res_dtype)) * self
         elif axis == 1:
             # sum over rows
-            return self * np.asmatrix(np.ones((n, 1), dtype=self.dtype))
+            return self * np.asmatrix(np.ones((n, 1), dtype=res_dtype))
         elif axis is None:
             # sum over rows and columns
-            return (self * np.asmatrix(np.ones((n, 1), dtype=self.dtype))).sum()
+            return (self * np.asmatrix(np.ones((n, 1), dtype=res_dtype))).sum()
         else:
             raise ValueError("axis out of bounds")
 
@@ -588,12 +620,23 @@ class spmatrix(object):
         """Average the matrix over the given axis.  If the axis is None,
         average over both rows and columns, returning a scalar.
         """
+        # Mimic numpy's casting.
+        if (np.issubdtype(self.dtype, np.float_) or
+            np.issubdtype(self.dtype, np.int_) or
+            np.issubdtype(self.dtype, np.bool_)):
+                res_dtype = np.float_
+        elif np.issubdtype(self.dtype, np.complex_):
+            res_dtype = np.complex_
+        else:
+            res_dtype = self.dtype
+
+        # Calculate the mean.
         if axis == 0:
-            mean = self.sum(0)
+            mean = self.astype(res_dtype).sum(0)
             mean *= 1.0 / self.shape[0]
             return mean
         elif axis == 1:
-            mean = self.sum(1)
+            mean = self.astype(res_dtype).sum(1)
             mean *= 1.0 / self.shape[1]
             return mean
         elif axis is None:

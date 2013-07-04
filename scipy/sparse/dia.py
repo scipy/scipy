@@ -160,7 +160,7 @@ class dia_matrix(_data_matrix):
                 nnz += min(M,N-k)
             else:
                 nnz += min(M+k,N)
-        return nnz
+        return int(nnz)
 
     nnz = property(fget=getnnz)
 

@@ -927,6 +927,13 @@ class TestSVDVals(TestCase):
         assert_(len(s) == 3)
         assert_(s[0] >= s[1] >= s[2])
 
+    @dec.slow
+    def test_crash_2609(self):
+        np.random.seed(1234)
+        a = np.random.rand(1500, 2800)
+        # Shouldn't crash:
+        svdvals(a)
+
 
 class TestDiagSVD(TestCase):
 

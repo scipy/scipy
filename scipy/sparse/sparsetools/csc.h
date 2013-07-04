@@ -1,9 +1,7 @@
 #ifndef __CSC_H__
 #define __CSC_H__
 
-
 #include "csr.h"
-
 
 /*
  * Compute Y += A*X for CSC matrix A and dense vectors X,Y
@@ -137,9 +135,50 @@ void csc_matmat_pass2(const I n_row,
       	                    T Cx[])
 { csr_matmat_pass2(n_col, n_row, Bp, Bi, Bx, Ap, Ai, Ax, Cp, Ci, Cx); }
 
+template <class I, class T, class T2>
+void csc_ne_csc(const I n_row, const I n_col, 
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],      T2 Cx[])
+{
+    csr_ne_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
 
+template <class I, class T, class T2>
+void csc_lt_csc(const I n_row, const I n_col, 
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],      T2 Cx[])
+{
+    csr_lt_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
 
+template <class I, class T, class T2>
+void csc_gt_csc(const I n_row, const I n_col, 
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],      T2 Cx[])
+{
+    csr_gt_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
 
+template <class I, class T, class T2>
+void csc_le_csc(const I n_row, const I n_col, 
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],      T2 Cx[])
+{
+    csr_le_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
+
+template <class I, class T, class T2>
+void csc_ge_csc(const I n_row, const I n_col, 
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],      T2 Cx[])
+{
+    csr_ge_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
 
 template <class I, class T>
 void csc_elmul_csc(const I n_row, const I n_col, 

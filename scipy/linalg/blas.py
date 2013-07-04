@@ -34,11 +34,17 @@ All functions
    cgemv
    cgerc
    cgeru
+   chemm
    chemv
+   cherk
+   cher2k
    crotg
    cscal
    csrot
    csscal
+   csymm
+   csyrk
+   csyr2k
    cswap
    ctrmv
    dasum
@@ -55,7 +61,10 @@ All functions
    drotmg
    dscal
    dswap
+   dsymm
    dsymv
+   dsyrk
+   dsyr2k
    dtrmv
    dzasum
    dznrm2
@@ -79,7 +88,10 @@ All functions
    srotmg
    sscal
    sswap
+   ssymm
    ssymv
+   ssyrk
+   ssyr2k
    strmv
    zaxpy
    zcopy
@@ -91,9 +103,15 @@ All functions
    zgemv
    zgerc
    zgeru
+   zhemm
    zhemv
+   zherk
+   zher2k
    zrotg
    zscal
+   zsymm
+   zsyrk
+   zsyr2k
    zswap
    ztrmv
 

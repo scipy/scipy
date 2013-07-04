@@ -144,6 +144,53 @@ class TestOnenormest(TestCase):
         est_plain = scipy.sparse.linalg.onenormest(B, t=t, itmax=itmax)
         assert_allclose(est, est_plain)
 
+    @decorators.slow
+    @decorators.skipif(True, 'this test is annoyingly slow')
+    def test_onenormest_table_6_t_1(self):
+        #TODO this test seems to give estimates that match the table,
+        #TODO even though no attempt has been made to deal with
+        #TODO complex numbers in the one-norm estimation.
+        # This will take multiple seconds if your computer is slow like mine.
+        # It is stochastic, so the tolerance could be too strict.
+        np.random.seed(1234)
+        t = 1
+        n = 100
+        itmax = 5
+        nsamples = 5000
+        observed = []
+        expected = []
+        nmult_list = []
+        nresample_list = []
+        for i in range(nsamples):
+            A_inv = np.random.rand(n, n) + 1j * np.random.rand(n, n)
+            A = scipy.linalg.inv(A_inv)
+            est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax)
+            observed.append(est)
+            expected.append(scipy.linalg.norm(A, 1))
+            nmult_list.append(nmults)
+            nresample_list.append(nresamples)
+        observed = np.array(observed, dtype=float)
+        expected = np.array(expected, dtype=float)
+        relative_errors = np.abs(observed - expected) / expected
+
+        # check the mean underestimation ratio
+        underestimation_ratio = observed / expected
+        underestimation_ratio_mean = np.mean(underestimation_ratio)
+        assert_(0.90 < underestimation_ratio_mean < 0.99)
+
+        # check the required column resamples
+        max_nresamples = np.max(nresample_list)
+        assert_equal(max_nresamples, 0)
+
+        # check the proportion of norms computed exactly correctly
+        nexact = np.count_nonzero(relative_errors < 1e-14)
+        proportion_exact = nexact / float(nsamples)
+        assert_(0.7 < proportion_exact < 0.8)
+
+        # check the average number of matrix*vector multiplications
+        mean_nmult = np.mean(nmult_list)
+        assert_(4 < mean_nmult < 5)
+
     def _help_product_norm_slow(self, A, B):
         # for profiling
         C = np.dot(A, B)

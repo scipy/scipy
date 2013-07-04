@@ -2428,9 +2428,9 @@ def pearsonr(x, y):
     mx = x.mean()
     my = y.mean()
     xm, ym = x-mx, y-my
-    r_num = n*(np.add.reduce(xm*ym))
-    r_den = n*np.sqrt(ss(xm)*ss(ym))
-    r = (r_num / r_den)
+    r_num = np.add.reduce(xm * ym)
+    r_den = np.sqrt(ss(xm) * ss(ym))
+    r = r_num / r_den
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of floating
     # point arithmetic.

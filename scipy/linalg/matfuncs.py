@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet']
+           'expm_frechet', 'fractional_matrix_power']
 
 from numpy import asarray, Inf, dot, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
@@ -19,16 +19,63 @@ import numpy as np
 # Local imports
 from .misc import norm
 from .basic import solve, inv
+from .lapack import ztrsyl
 from .special_matrices import triu, all_mat
 from .decomp import eig
 from .decomp_svd import orth, svd
 from .decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet
+from ._matfuncs_sqrtm import sqrtm
 import warnings
 
 eps = np.finfo(float).eps
 feps = np.finfo(single).eps
 
+
+def fractional_matrix_power(A, t):
+    # This fixes some issue with imports;
+    # this function calls onenormest which is in scipy.sparse.
+    import scipy.linalg._matfuncs_inv_ssq
+    return scipy.linalg._matfuncs_inv_ssq.fractional_matrix_power(A, t)
+
+
+def logm(A, disp=True):
+    """
+    Compute matrix logarithm.
+
+    The matrix logarithm is the inverse of
+    expm: expm(logm(`A`)) == `A`
+
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix whose logarithm to evaluate
+    disp : bool, optional
+        Print warning if error in the result is estimated large
+        instead of returning estimated error. (Default: True)
+
+    Returns
+    -------
+    logm : (N, N) ndarray
+        Matrix logarithm of `A`
+    errest : float
+        (if disp == False)
+
+        1-norm of the estimated error, ||err||_1 / ||A||_1
+
+    """
+    import scipy.linalg._matfuncs_inv_ssq
+    A = mat(asarray(A))
+    F = scipy.linalg._matfuncs_inv_ssq.logm(A)
+    errtol = 1000*eps
+    #TODO use a better error approximation
+    errest = norm(expm(F)-A,1) / norm(A,1)
+    if disp:
+        if not isfinite(errest) or errest >= errtol:
+            print("logm result may be inaccurate, approximate err =", errest)
+        return F
+    else:
+        return F, errest
 
 def expm(A, q=None):
     """
@@ -357,64 +404,10 @@ def funm(A, func, disp=True):
         err = Inf
     if disp:
         if err > 1000*tol:
-            print("Result may be inaccurate, approximate err =", err)
+            print("funm result may be inaccurate, approximate err =", err)
         return F
     else:
         return F, err
-
-
-def logm(A, disp=True):
-    """
-    Compute matrix logarithm.
-
-    The matrix logarithm is the inverse of
-    expm: expm(logm(`A`)) == `A`
-
-    Parameters
-    ----------
-    A : (N, N) array_like
-        Matrix whose logarithm to evaluate
-    disp : bool, optional
-        Print warning if error in the result is estimated large
-        instead of returning estimated error. (Default: True)
-
-    Returns
-    -------
-    logm : (N, N) ndarray
-        Matrix logarithm of `A`
-    errest : float
-        (if disp == False)
-
-        1-norm of the estimated error, ||err||_1 / ||A||_1
-
-    """
-    # Compute using general funm but then use better error estimator and
-    #   make one step in improving estimate using a rotation matrix.
-    A = mat(asarray(A))
-    F, errest = funm(A,log,disp=0)
-    errtol = 1000*eps
-    # Only iterate if estimate of error is too large.
-    if errest >= errtol:
-        # Use better approximation of error
-        errest = norm(expm(F)-A,1) / norm(A,1)
-        if not isfinite(errest) or errest >= errtol:
-            N,N = A.shape
-            X,Y = ogrid[1:N+1,1:N+1]
-            R = mat(orth(eye(N,dtype='d')+X+Y))
-            F, dontcare = funm(R*A*R.H,log,disp=0)
-            F = R.H*F*R
-            if (norm(imag(F),1) <= 1000*errtol*norm(F,1)):
-                F = mat(real(F))
-            E = mat(expm(F))
-            temp = mat(solve(E.T,(E-A).T))
-            F = F - temp.T
-            errest = norm(expm(F)-A,1) / norm(A,1)
-    if disp:
-        if not isfinite(errest) or errest >= errtol:
-            print("Result may be inaccurate, approximate err =", errest)
-        return F
-    else:
-        return F, errest
 
 
 def signm(a, disp=True):
@@ -490,63 +483,8 @@ def signm(a, disp=True):
         prev_errest = errest
     if disp:
         if not isfinite(errest) or errest >= errtol:
-            print("Result may be inaccurate, approximate err =", errest)
+            print("signm result may be inaccurate, approximate err =", errest)
         return S0
     else:
         return S0, errest
 
-
-def sqrtm(A, disp=True):
-    """
-    Matrix square root.
-
-    Parameters
-    ----------
-    A : (N, N) array_like
-        Matrix whose square root to evaluate
-    disp : bool, optional
-        Print warning if error in the result is estimated large
-        instead of returning estimated error. (Default: True)
-
-    Returns
-    -------
-    sgrtm : (N, N) ndarray
-        Value of the sign function at `A`
-
-    errest : float
-        (if disp == False)
-
-        Frobenius norm of the estimated error, ||err||_F / ||A||_F
-
-    Notes
-    -----
-    Uses algorithm by Nicholas J. Higham
-
-    """
-    A = asarray(A)
-    if len(A.shape) != 2:
-        raise ValueError("Non-matrix input to matrix function.")
-    T, Z = schur(A)
-    T, Z = rsf2csf(T,Z)
-    n,n = T.shape
-
-    R = np.zeros((n,n),T.dtype.char)
-    for j in range(n):
-        R[j,j] = sqrt(T[j,j])
-        for i in range(j-1,-1,-1):
-            s = 0
-            for k in range(i+1,j):
-                s = s + R[i,k]*R[k,j]
-            R[i,j] = (T[i,j] - s)/(R[i,i] + R[j,j])
-
-    R, Z = all_mat(R,Z)
-    X = (Z * R * Z.H)
-
-    if disp:
-        nzeig = np.any(diag(T) == 0)
-        if nzeig:
-            print("Matrix is singular and may not have a square root.")
-        return X.A
-    else:
-        arg2 = norm(X*X - A,'fro')**2 / norm(A,'fro')
-        return X.A, arg2

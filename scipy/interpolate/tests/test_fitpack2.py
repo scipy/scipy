@@ -4,6 +4,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
+import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
 from numpy.testing.utils import WarningManager
@@ -76,6 +77,19 @@ class TestUnivariateSpline(TestCase):
         spl = UnivariateSpline(x=x, y=y, w=w, s=None)
         desired = array([0.35100374, 0.51715855, 0.87789547, 0.98719344])
         assert_allclose(spl([0.1, 0.5, 0.9, 0.99]), desired, atol=5e-4)
+
+    def test_derivative_and_antiderivative(self):
+        # Thin wrappers to splder/splantider, so light smoke test only.
+        x = np.linspace(0, 1, 70)**3
+        y = np.cos(x)
+
+        spl = UnivariateSpline(x, y, s=0)
+        spl2 = spl.antiderivative(2).derivative(2)
+        assert_allclose(spl(0.3), spl2(0.3))
+
+        spl2 = spl.antiderivative(1)
+        assert_allclose(spl2(0.6) - spl2(0.2), 
+                        spl.integral(0.2, 0.6))
 
 
 class TestLSQBivariateSpline(TestCase):

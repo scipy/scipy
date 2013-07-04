@@ -283,6 +283,7 @@ class TestWiener(TestCase):
                    [2.222222222, 4.4444444444, 5.4444444444, 4.801066874837],
                    [1.33333333333, 3.92735042735, 6.0712560386, 5.0404040404]])
         assert_array_almost_equal(signal.wiener(g), h, decimal=6)
+        assert_array_almost_equal(signal.wiener(g, mysize=3), h, decimal=6)
 
 
 class TestCSpline1DEval(TestCase):

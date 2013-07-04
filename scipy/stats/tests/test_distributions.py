@@ -14,6 +14,7 @@ import numpy as np
 from numpy import typecodes, array
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
+from scipy.special import xlogy
 import warnings
 
 
@@ -34,7 +35,7 @@ def kolmogorov_check(diststr, args=(), N=20, significance=0.01):
 dists = ['uniform','norm','lognorm','expon','beta',
          'powerlaw','bradford','burr','fisk','cauchy','halfcauchy',
          'foldcauchy','gamma','gengamma','loggamma',
-         'alpha','anglit','arcsine','betaprime','erlang',
+         'alpha','anglit','arcsine','betaprime',
          'dgamma','exponweib','exponpow','frechet_l','frechet_r',
          'gilbrat','f','ncf','chi2','chi','nakagami','genpareto',
          'genextreme','genhalflogistic','pareto','lomax','halfnorm',
@@ -66,9 +67,8 @@ def test_all_distributions():
         alpha = 0.01
         if dist == 'fatiguelife':
             alpha = 0.001
-        if dist == 'erlang':
-            args = (4,)+tuple(rand(2))
-        elif dist == 'frechet':
+
+        if dist == 'frechet':
             args = tuple(2*rand(1))+(0,)+tuple(2*rand(2))
         elif dist == 'triang':
             args = tuple(rand(nargs))
@@ -82,6 +82,7 @@ def test_all_distributions():
             args = tuple(1.0+rand(nargs))
         else:
             args = tuple(1.0+rand(nargs))
+
         yield check_distribution, dist, args, alpha
 
 
@@ -154,6 +155,22 @@ class TestBinom(TestCase):
         assert_allclose(vals1, 1.0, rtol=1e-15, atol=0)
         assert_allclose(vals2, 1.0, rtol=1e-15, atol=0)
 
+    def test_entropy(self):
+        # Basic entropy tests.
+        b = stats.binom(2, 0.5)
+        expected_p = np.array([0.25, 0.5, 0.25])
+        expected_h = -sum(xlogy(expected_p, expected_p))
+        h = b.entropy()
+        assert_allclose(h, expected_h)
+
+        b = stats.binom(2, 0.0)
+        h = b.entropy()
+        assert_equal(h, 0.0)
+
+        b = stats.binom(2, 1.0)
+        h = b.entropy()
+        assert_equal(h, 0.0)
+
 
 class TestBernoulli(TestCase):
     def test_rvs(self):
@@ -166,6 +183,21 @@ class TestBernoulli(TestCase):
         val = stats.bernoulli(0.75).rvs(3)
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
+
+    def test_entropy(self):
+        # Simple tests of entropy.
+        b = stats.bernoulli(0.25)
+        expected_h = -0.25*np.log(0.25) - 0.75*np.log(0.75)
+        h = b.entropy()
+        assert_allclose(h, expected_h)
+
+        b = stats.bernoulli(0.0)
+        h = b.entropy()
+        assert_equal(h, 0.0)
+
+        b = stats.bernoulli(1.0)
+        h = b.entropy()
+        assert_equal(h, 0.0)
 
 
 class TestNBinom(TestCase):
@@ -296,6 +328,36 @@ class TestHypergeom(TestCase):
         expected2 = [1, 0.1237904, 6.511452e-34, 3.277667e-69]
         assert_allclose(res2, expected2, atol=0, rtol=5e-7)
 
+    def test_entropy(self):
+        # Simple tests of entropy.
+        hg = stats.hypergeom(4, 1, 1)
+        h = hg.entropy()
+        expected_p = np.array([0.75, 0.25])
+        expected_h = -np.sum(xlogy(expected_p, expected_p))
+        assert_allclose(h, expected_h)
+
+        hg = stats.hypergeom(1, 1, 1)
+        h = hg.entropy()
+        assert_equal(h, 0.0)
+
+
+class TestLoggamma(TestCase):
+
+    def test_stats(self):
+        # The following precomputed values are from the table in section 2.2
+        # of "A Statistical Study of Log-Gamma Distribution", by Ping Shing
+        # Chan (thesis, McMaster University, 1993).
+        table = np.array([
+                # c,      mean,     var,      skew,    exc. kurt.
+                 0.5,   -1.9635,   4.9348,  -1.5351,   4.0000,
+                 1.0,   -0.5772,   1.6449,  -1.1395,   2.4000,
+                12.0,    2.4427,   0.0869,  -0.2946,   0.1735,
+            ]).reshape(-1, 5)
+        for c, mean, var, skew, kurt in table:
+            computed = stats.loggamma.stats(c, moments='msvk')
+            assert_array_almost_equal(computed, [mean, var, skew, kurt],
+                                      decimal=4)
+
 
 class TestLogser(TestCase):
     def test_rvs(self):
@@ -308,6 +370,68 @@ class TestLogser(TestCase):
         val = stats.logser(0.75).rvs(3)
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
+
+
+class TestPareto(TestCase):
+    def test_stats(self):
+        # Check the stats() method with some simple values. Also check
+        # that the calculations do not trigger RuntimeWarnings.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+
+            m, v, s, k = stats.pareto.stats(0.5, moments='mvsk')
+            assert_equal(m, np.inf)
+            assert_equal(v, np.inf)
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(1.0, moments='mvsk')
+            assert_equal(m, np.inf)
+            assert_equal(v, np.inf)
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(1.5, moments='mvsk')
+            assert_equal(m, 3.0)
+            assert_equal(v, np.inf)
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(2.0, moments='mvsk')
+            assert_equal(m, 2.0)
+            assert_equal(v, np.inf)
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(2.5, moments='mvsk')
+            assert_allclose(m, 2.5 / 1.5)
+            assert_allclose(v, 2.5 / (1.5*1.5*0.5))
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(3.0, moments='mvsk')
+            assert_allclose(m, 1.5)
+            assert_allclose(v, 0.75)
+            assert_equal(s, np.nan)
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(3.5, moments='mvsk')
+            assert_allclose(m, 3.5 / 2.5)
+            assert_allclose(v, 3.5 / (2.5*2.5*1.5))
+            assert_allclose(s, (2*4.5/0.5)*np.sqrt(1.5/3.5))
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(4.0, moments='mvsk')
+            assert_allclose(m, 4.0 / 3.0)
+            assert_allclose(v, 4.0 / 18.0)
+            assert_allclose(s, 2*(1+4.0)/(4.0-3) * np.sqrt((4.0-2)/4.0))
+            assert_equal(k, np.nan)
+
+            m, v, s, k = stats.pareto.stats(4.5, moments='mvsk')
+            assert_allclose(m, 4.5 / 3.5)
+            assert_allclose(v, 4.5 / (3.5*3.5*2.5))
+            assert_allclose(s, (2*5.5/1.5) * np.sqrt(2.5/4.5))
+            assert_allclose(k, 6*(4.5**3 + 4.5**2 - 6*4.5 - 2)/(4.5*1.5*0.5))
 
 
 class TestPearson3(TestCase):
@@ -380,6 +504,26 @@ class TestDLaplace(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_stats(self):
+        # compare the explicit formulas w/ direct summation using pmf
+        a = 1.
+        dl = stats.dlaplace(a)
+        m, v, s, k = dl.stats('mvsk')
+
+        N=37
+        xx = np.arange(-N, N+1)
+        pp =  dl.pmf(xx)
+        m2, m4 = np.sum(pp*xx**2), np.sum(pp*xx**4)
+        assert_equal((m, s), (0,0))
+        assert_allclose((v, k), (m2, m4/m2**2 - 3.), atol=1e-14, rtol=1e-8)
+
+    def test_stats2(self):
+        a = np.log(2.)
+        dl = stats.dlaplace(a)
+        m, v, s, k = dl.stats('mvsk')
+        assert_equal((m, s), (0.,0.))
+        assert_allclose((v, k), (4., 3.25))
+
 
 def test_rvgeneric_std():
     # Regression test for #1191
@@ -400,6 +544,18 @@ class TestRvDiscrete(TestCase):
 
         x = r.rvs()
         assert_(isinstance(x, int))
+
+    def test_entropy(self):
+        # Basic tests of entropy.
+        pvals = np.array([0.25, 0.45, 0.3])
+        p = stats.rv_discrete(values=([0, 1, 2], pvals))
+        expected_h = -sum(xlogy(pvals, pvals))
+        h = p.entropy()
+        assert_allclose(h, expected_h)
+
+        p = stats.rv_discrete(values=([0, 1, 2], [1.0, 0, 0]))
+        h = p.entropy()
+        assert_equal(h, 0.0)
 
 
 class TestExpon(TestCase):
@@ -610,7 +766,7 @@ class TestFitMethod(object):
             # Only check the length of the return
             # FIXME: should check the actual results to see if we are 'close'
             #   to what was created --- but what is 'close' enough
-            if dist in ['erlang', 'frechet']:
+            if dist == 'frechet':
                 assert_(len(vals) == len(args))
                 assert_(len(vals2) == len(args))
             else:
@@ -624,8 +780,8 @@ class TestFitMethod(object):
     def test_fix_fit(self):
         def check(func, dist, args, alpha):
             # Not sure why 'ncf', and 'beta' are failing
-            # erlang and frechet have different len(args) than distfunc.numargs
-            if dist in self.skip + ['erlang', 'frechet']:
+            # frechet has different len(args) than distfunc.numargs
+            if dist in self.skip + ['frechet']:
                 raise SkipTest("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
             with np.errstate(all='ignore'):

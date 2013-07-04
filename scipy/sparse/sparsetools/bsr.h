@@ -8,7 +8,6 @@
 #include "csr.h"
 #include "dense.h"
 
-
 template <class I, class T>
 void bsr_diagonal(const I n_brow,
                   const I n_bcol, 
@@ -349,12 +348,12 @@ bool is_nonzero_block(const T block[], const I blocksize){
  *           C will not contain any duplicate entries or explicit zeros.
  *
  */
-template <class I, class T, class bin_op>
+template <class I, class T, class T2, class bin_op>
 void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
                            const I R,      const I C,
                            const I Ap[],  const I Aj[],  const T Ax[],
                            const I Bp[],  const I Bj[],  const T Bx[],
-                                 I Cp[],        I Cj[],        T Cx[],
+                                 I Cp[],        I Cj[],       T2 Cx[],
                            const bin_op& op)
 {
     //Method that works for duplicate and/or unsorted indices
@@ -439,16 +438,16 @@ void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class bin_op>
+template <class I, class T, class T2, class bin_op>
 void bsr_binop_bsr_canonical(const I n_brow, const I n_bcol, 
                              const I R,      const I C, 
                              const I Ap[],  const I Aj[],  const T Ax[],
                              const I Bp[],  const I Bj[],  const T Bx[],
-                                   I Cp[],        I Cj[],        T Cx[],
+                                   I Cp[],        I Cj[],       T2 Cx[],
                              const bin_op& op)
 {
     const I RC = R*C;
-    T * result = Cx;
+    T2 * result = Cx;
 
     Cp[0] = 0;
     I nnz = 0;
@@ -568,12 +567,12 @@ void bsr_binop_bsr_canonical(const I n_brow, const I n_bcol,
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class bin_op>
+template <class I, class T, class T2, class bin_op>
 void bsr_binop_bsr(const I n_brow, const I n_bcol, 
                    const I R,     const I C, 
                    const I Ap[],  const I Aj[],  const T Ax[],
                    const I Bp[],  const I Bj[],  const T Bx[],
-                         I Cp[],        I Cj[],        T Cx[],
+                         I Cp[],        I Cj[],       T2 Cx[],
                    const bin_op& op)
 {
     assert( R > 0 && C > 0);
@@ -593,6 +592,51 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
 }
 
 /* element-wise binary operations */
+template <class I, class T, class T2>
+void bsr_ne_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
+}
+
+template <class I, class T, class T2>
+void bsr_lt_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
+}
+
+template <class I, class T, class T2>
+void bsr_gt_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+}
+
+template <class I, class T, class T2>
+void bsr_le_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
+}
+
+template <class I, class T, class T2>
+void bsr_ge_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+}
+
 template <class I, class T>
 void bsr_elmul_bsr(const I n_row, const I n_col, const I R, const I C, 
                    const I Ap[], const I Aj[], const T Ax[],

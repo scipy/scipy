@@ -637,11 +637,11 @@ void csr_matmat_pass2(const I n_row,
  *           C will not contain any duplicate entries or explicit zeros.
  *
  */
-template <class I, class T, class binary_op>
+template <class I, class T, class T2, class binary_op>
 void csr_binop_csr_general(const I n_row, const I n_col, 
                            const I Ap[], const I Aj[], const T Ax[],
                            const I Bp[], const I Bj[], const T Bx[],
-                                 I Cp[],       I Cj[],       T Cx[],
+                                 I Cp[],       I Cj[],       T2 Cx[],
                            const binary_op& op)
 {
     //Method that works for duplicate and/or unsorted indices
@@ -727,11 +727,11 @@ void csr_binop_csr_general(const I n_row, const I n_col,
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class binary_op>
+template <class I, class T, class T2, class binary_op>
 void csr_binop_csr_canonical(const I n_row, const I n_col, 
                              const I Ap[], const I Aj[], const T Ax[],
                              const I Bp[], const I Bj[], const T Bx[],
-                                   I Cp[],       I Cj[],       T Cx[],
+                                   I Cp[],       I Cj[],       T2 Cx[],
                              const binary_op& op)
 {
     //Method that works for canonical CSR matrices 
@@ -835,7 +835,7 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class binary_op>
+template <class I, class T, class T2, class binary_op>
 void csr_binop_csr(const I n_row,
                    const I n_col, 
                    const I Ap[], 
@@ -846,7 +846,7 @@ void csr_binop_csr(const I n_row,
                    const T Bx[],
                          I Cp[],
                          I Cj[],
-                         T Cx[],
+                         T2 Cx[],
                    const binary_op& op)
 {
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
@@ -855,9 +855,52 @@ void csr_binop_csr(const I n_row,
         csr_binop_csr_general(n_row, n_col, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
 }
 
-
-
 /* element-wise binary operations*/
+template <class I, class T, class T2>
+void csr_ne_csr(const I n_row, const I n_col, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
+}
+
+template <class I, class T, class T2>
+void csr_lt_csr(const I n_row, const I n_col, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
+}
+
+template <class I, class T, class T2>
+void csr_gt_csr(const I n_row, const I n_col, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
+}
+
+template <class I, class T, class T2>
+void csr_le_csr(const I n_row, const I n_col, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
+}
+
+template <class I, class T, class T2>
+void csr_ge_csr(const I n_row, const I n_col, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],      T2 Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
+}
+
 template <class I, class T>
 void csr_elmul_csr(const I n_row, const I n_col, 
                    const I Ap[], const I Aj[], const T Ax[],

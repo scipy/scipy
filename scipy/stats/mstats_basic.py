@@ -370,21 +370,21 @@ def pearsonr(x,y):
     (mx, my) = (x.mean(), y.mean())
     (xm, ym) = (x-mx, y-my)
     #
-    r_num = n*(ma.add.reduce(xm*ym))
-    r_den = n*ma.sqrt(ma.dot(xm,xm)*ma.dot(ym,ym))
-    r = (r_num / r_den)
+    r_num = ma.add.reduce(xm*ym)
+    r_den = ma.sqrt(ma.dot(xm,xm) * ma.dot(ym,ym))
+    r = r_num / r_den
     # Presumably, if r > 1, then it is only some small artifact of floating
     # point arithmetic.
     r = min(r, 1.0)
     r = max(r, -1.0)
-    df = n-2
-    #
-    t = ma.sqrt(df/((1.0-r)*(1.0+r))) * r
-    if t is masked:
+    df = n - 2
+
+    if r is masked or abs(r) == 1.0:
         prob = 0.
     else:
-        prob = betai(0.5*df,0.5,df/(df+t*t))
-    return (r,prob)
+        t_squared = (df / ((1.0 - r) * (1.0 + r))) * r * r
+        prob = betai(0.5*df, 0.5, df/(df + t_squared))
+    return r, prob
 
 
 def spearmanr(x, y, use_ties=True):

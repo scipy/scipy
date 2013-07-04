@@ -5,7 +5,7 @@ from numpy.testing import assert_equal, assert_allclose, assert_, \
     TestCase, assert_raises
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy.interpolate.fitpack import splrep, splev, bisplrep, bisplev, \
-     sproot, splprep, splint, spalde
+     sproot, splprep, splint, spalde, splder, splantider, insert
 
 
 def norm2(x):
@@ -257,6 +257,73 @@ class TestSplev(TestCase):
         assert_equal(z.shape, (1,))
         z = splev(1, tck)
         assert_equal(z.shape, ())
+
+
+class TestSplder(object):
+    def __init__(self):
+        # non-uniform grid, just to make it sure
+        x = np.linspace(0, 1, 100)**3
+        y = np.sin(20 * x)
+        self.spl = splrep(x, y)
+
+        # double check that knots are non-uniform
+        assert_(np.diff(self.spl[0]).ptp() > 0)
+
+    def test_inverse(self):
+        # Check that antiderivative + derivative is identity.
+        for n in range(5):
+            spl2 = splantider(self.spl, n)
+            spl3 = splder(spl2, n)
+            assert_allclose(self.spl[0], spl3[0])
+            assert_allclose(self.spl[1], spl3[1])
+            assert_equal(self.spl[2], spl3[2])
+
+    def test_splder_vs_splev(self):
+        # Check derivative vs. FITPACK
+
+        for n in range(3+1):
+            # Also extrapolation!
+            xx = np.linspace(-1, 2, 2000)
+            if n == 3:
+                # ... except that FITPACK extrapolates strangely for
+                # order 0, so let's not check that.
+                xx = xx[(xx >= 0) & (xx <= 1)]
+
+            dy = splev(xx, self.spl, n)
+            spl2 = splder(self.spl, n)
+            dy2 = splev(xx, spl2)
+            assert_allclose(dy, dy2)
+
+    def test_splantider_vs_splint(self):
+        # Check antiderivative vs. FITPACK
+        spl2 = splantider(self.spl)
+
+        # no extrapolation, splint assumes function is zero outside
+        # range
+        xx = np.linspace(0, 1, 20)
+
+        for x1 in xx:
+            for x2 in xx:
+                y1 = splint(x1, x2, self.spl)
+                y2 = splev(x2, spl2) - splev(x1, spl2)
+                assert_allclose(y1, y2)
+
+    def test_order0_diff(self):
+        assert_raises(ValueError, splder, self.spl, 4)
+
+    def test_kink(self):
+        # Should refuse to differentiate splines with kinks
+
+        spl2 = insert(0.5, self.spl, m=2)
+        splder(spl2, 2) # Should work
+        assert_raises(ValueError, splder, spl2, 3)
+
+        spl2 = insert(0.5, self.spl, m=3)
+        splder(spl2, 1) # Should work
+        assert_raises(ValueError, splder, spl2, 2)
+
+        spl2 = insert(0.5, self.spl, m=4)
+        assert_raises(ValueError, splder, spl2, 1)
 
 
 def test_bisplrep_overflow():
