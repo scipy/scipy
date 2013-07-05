@@ -1,4 +1,4 @@
-#*******************************************************************************
+#******************************************************************************
 #   Copyright (C) 2013 Kenneth L. Ho
 #
 #   Redistribution and use in source and binary forms, with or without
@@ -10,8 +10,8 @@
 #   the following disclaimer in the documentation and/or other materials
 #   provided with the distribution.
 #
-#   None of the names of the copyright holders may be used to endorse or promote
-#   products derived from this software without specific prior written
+#   None of the names of the copyright holders may be used to endorse or
+#   promote products derived from this software without specific prior written
 #   permission.
 #
 #   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -25,7 +25,7 @@
 #   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
-#*******************************************************************************
+#******************************************************************************
 
 """
 Python module for interfacing with `id_dist`.
@@ -49,15 +49,28 @@ We advise the user to consult also the `documentation for the ID package
 
 .. Not using sphinx/ReST citations because that makes sphinx crash.
 
-* [Cheng2005] H.\  Cheng, Z. Gimbutas, P.G. Martinsson, V. Rokhlin. On the compression of low rank matrices. `SIAM J. Sci. Comput.` 26 (4): 1389--1404, 2005. `doi:10.1137/030602678 <http://dx.doi.org/10.1137/030602678>`_.
+* [Cheng2005] H.\  Cheng, Z. Gimbutas, P.G. Martinsson, V. Rokhlin. On the
+  compression of low rank matrices. `SIAM J. Sci. Comput.` 26 (4): 1389--1404,
+  2005. `doi:10.1137/030602678 <http://dx.doi.org/10.1137/030602678>`_.
 
-* [Liberty2007] E.\  Liberty, F. Woolfe, P.G. Martinsson, V. Rokhlin, M. Tygert. Randomized algorithms for the low-rank approximation of matrices. `Proc. Natl. Acad. Sci. U.S.A.` 104 (51): 20167--20172, 2007. `doi:10.1073/pnas.0709640104 <http://dx.doi.org/10.1073/pnas.0709640104>`_.
+* [Liberty2007] E.\  Liberty, F. Woolfe, P.G. Martinsson, V. Rokhlin, M.
+  Tygert. Randomized algorithms for the low-rank approximation of matrices.
+  `Proc. Natl. Acad. Sci. U.S.A.` 104 (51): 20167--20172, 2007.
+  `doi:10.1073/pnas.0709640104 <http://dx.doi.org/10.1073/pnas.0709640104>`_.
 
-* [Martinsson2011] P.G. Martinsson, V. Rokhlin, M. Tygert. A randomized algorithm for the decomposition of matrices. `Appl. Comput. Harmon. Anal.` 30 (1): 47--68,  2011. `doi:10.1016/j.acha.2010.02.003 <http://dx.doi.org/10.1016/j.acha.2010.02.003>`_.
+* [Martinsson2011] P.G. Martinsson, V. Rokhlin, M. Tygert. A randomized
+  algorithm for the decomposition of matrices. `Appl. Comput. Harmon. Anal.` 30
+  (1): 47--68,  2011. `doi:10.1016/j.acha.2010.02.003
+  <http://dx.doi.org/10.1016/j.acha.2010.02.003>`_.
 
-* [MartinssonID] P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, M. Tygert. ID: a software package for low-rank approximation of matrices via interpolative decompositions, version 0.2. http://cims.nyu.edu/~tygert/id_doc.pdf.
+* [MartinssonID] P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, M. Tygert. ID: a
+  software package for low-rank approximation of matrices via interpolative
+  decompositions, version 0.2. http://cims.nyu.edu/~tygert/id_doc.pdf.
 
-* [Woolfe2008] F.\  Woolfe, E. Liberty, V. Rokhlin, M. Tygert. A fast randomized algorithm for the approximation of matrices. `Appl. Comput. Harmon. Anal.` 25 (3): 335--366, 2008. `doi:10.1016/j.acha.2007.12.002 <http://dx.doi.org/10.1016/j.acha.2007.12.002>`_.
+* [Woolfe2008] F.\  Woolfe, E. Liberty, V. Rokhlin, M. Tygert. A fast
+  randomized algorithm for the approximation of matrices. `Appl. Comput.
+  Harmon. Anal.` 25 (3): 335--366, 2008. `doi:10.1016/j.acha.2007.12.002
+  <http://dx.doi.org/10.1016/j.acha.2007.12.002>`_.
 
 .. autosummary::
    :toctree: generated/
@@ -123,7 +136,8 @@ In all cases, the ID is represented by three parameters:
 2. an index array ``idx``; and
 3. interpolation coefficients ``proj``.
 
-The ID is specified by the relation ``np.dot(A[:,idx[:k]], proj) = A[:,idx[k:]]``.
+The ID is specified by the relation
+``np.dot(A[:,idx[:k]], proj) == A[:,idx[k:]]``.
 
 From matrix entries
 ...................
@@ -322,20 +336,21 @@ Support/Test functions
 
 """
 
-_DTYPE_ERROR = TypeError ("invalid data type")
+_DTYPE_ERROR = TypeError("invalid data type")
+
 
 def rand(*args):
     """
     Generate standard uniform pseudorandom numbers via a very efficient lagged
     Fibonacci method.
 
-    This routine is used for all random number generation in this package and can
-    affect ID and SVD results.
+    This routine is used for all random number generation in this package and
+    can affect ID and SVD results.
 
     Several call signatures are available:
 
-    - If no arguments are given, then the seed values are reset to their original
-        values.
+    - If no arguments are given, then the seed values are reset to their
+      original values.
 
     - If an integer `n` is given as input, then an array of `n` pseudorandom
         numbers are returned.
@@ -343,23 +358,30 @@ def rand(*args):
     - If an array `s` of 55 values is given as input, then the seed values are
         set to `s`.
 
-    ..  For details, see :func:`backend.id_srand`, :func:`backend.id_srandi`, and
-        :func:`backend.id_srando`.
+    ..  For details, see :func:`backend.id_srand`, :func:`backend.id_srandi`,
+        and :func:`backend.id_srando`.
     """
-    if   len(args) == 0: backend.id_srando()
+    if len(args) == 0:
+        backend.id_srando()
+
     elif len(args) == 1:
         x = np.asfortranarray(args[0])
-        if   x.size ==  1: return backend.id_srand (x)
-        elif x.size == 55:        backend.id_srandi(x)
-        else: raise ValueError("invalid input size")
-    else: raise ValueError("unknown input specification")
+        if x.size == 1:
+            return backend.id_srand(x)
+        elif x.size == 55:
+            backend.id_srandi(x)
+        else:
+            raise ValueError("invalid input size")
+    else:
+        raise ValueError("unknown input specification")
+
 
 def interp_decomp(A, eps_or_k, rand=True):
     """
     Compute ID of a matrix.
 
-    An ID of a matrix `A` is a factorization defined by a rank `k`, a column index
-    array `idx`, and interpolation coefficients `proj` such that::
+    An ID of a matrix `A` is a factorization defined by a rank `k`, a column
+    index array `idx`, and interpolation coefficients `proj` such that::
 
         numpy.dot(A[:,idx[:k]], proj) = A[:,idx[k:]]
 
@@ -369,8 +391,8 @@ def interp_decomp(A, eps_or_k, rand=True):
                                     numpy.dot(A[:,idx[:k]], proj)]
                                 )[:,numpy.argsort(idx)]
 
-    or via the routine :func:`reconstruct_matrix_from_id`. This can equivalently
-    be written as::
+    or via the routine :func:`reconstruct_matrix_from_id`. This can
+    equivalently be written as::
 
         numpy.dot(A[:,idx[:k]],
                             numpy.hstack([numpy.eye(k), proj])
@@ -388,23 +410,24 @@ def interp_decomp(A, eps_or_k, rand=True):
     :func:`reconstruct_skel_matrix`.
 
     The ID can be computed to any relative precision or rank (depending on the
-    value of `eps_or_k`). If a precision is specified (`eps_or_k < 1`), then this
-    function has the output signature::
+    value of `eps_or_k`). If a precision is specified (`eps_or_k < 1`), then
+    this function has the output signature::
 
         k, idx, proj = interp_decomp(A, eps_or_k)
 
-    Otherwise, if a rank is specified (`eps_or_k >= 1`), then the output signature
-    is::
+    Otherwise, if a rank is specified (`eps_or_k >= 1`), then the output
+    signature is::
 
         idx, proj = interp_decomp(A, eps_or_k)
 
-    ..  This function automatically detects the form of the input parameters and
-        passes them to the appropriate backend. For details, see
-        :func:`backend.iddp_id`, :func:`backend.iddp_aid`, :func:`backend.iddp_rid`,
-        :func:`backend.iddr_id`, :func:`backend.iddr_aid`, :func:`backend.iddr_rid`,
-        :func:`backend.idzp_id`, :func:`backend.idzp_aid`, :func:`backend.idzp_rid`,
-        :func:`backend.idzr_id`, :func:`backend.idzr_aid`, and
-        :func:`backend.idzr_rid`.
+    ..  This function automatically detects the form of the input parameters
+        and passes them to the appropriate backend. For details, see
+        :func:`backend.iddp_id`, :func:`backend.iddp_aid`,
+        :func:`backend.iddp_rid`, :func:`backend.iddr_id`,
+        :func:`backend.iddr_aid`, :func:`backend.iddr_rid`,
+        :func:`backend.idzp_id`, :func:`backend.idzp_aid`,
+        :func:`backend.idzp_rid`, :func:`backend.idzr_id`,
+        :func:`backend.idzr_aid`, and :func:`backend.idzr_rid`.
 
     :param A:
         Matrix to be factored, given as either a :class:`numpy.ndarray` or a
@@ -435,43 +458,62 @@ def interp_decomp(A, eps_or_k, rand=True):
     from scipy.sparse.linalg import LinearOperator
 
     try:
-        if   A.dtype ==    'float64': real = True
-        elif A.dtype == 'complex128': real = False
-        else: raise _DTYPE_ERROR
-    except: raise _DTYPE_ERROR
+        if A.dtype == np.float64:
+            real = True
+        elif A.dtype == np.complex128:
+            real = False
+        else:
+            raise _DTYPE_ERROR
+    except:
+        raise _DTYPE_ERROR
+
     if isinstance(A, np.ndarray):
         if eps_or_k < 1:
             eps = eps_or_k
             if rand:
-                if real: k, idx, proj = backend.iddp_aid(eps, A)
-                else:    k, idx, proj = backend.idzp_aid(eps, A)
+                if real:
+                    k, idx, proj = backend.iddp_aid(eps, A)
+                else:
+                    k, idx, proj = backend.idzp_aid(eps, A)
             else:
-                if real: k, idx, proj = backend.iddp_id(eps, A)
-                else:    k, idx, proj = backend.idzp_id(eps, A)
+                if real:
+                    k, idx, proj = backend.iddp_id(eps, A)
+                else:
+                    k, idx, proj = backend.idzp_id(eps, A)
             return k, idx - 1, proj
         else:
             k = int(eps_or_k)
             if rand:
-                if real: idx, proj = backend.iddr_aid(A, k)
-                else:    idx, proj = backend.idzr_aid(A, k)
+                if real:
+                    idx, proj = backend.iddr_aid(A, k)
+                else:
+                    idx, proj = backend.idzr_aid(A, k)
             else:
-                if real: idx, proj = backend.iddr_id(A, k)
-                else:    idx, proj = backend.idzr_id(A, k)
+                if real:
+                    idx, proj = backend.iddr_id(A, k)
+                else:
+                    idx, proj = backend.idzr_id(A, k)
             return idx - 1, proj
     elif isinstance(A, LinearOperator):
         m, n = A.shape
         matveca = A.rmatvec
         if eps_or_k < 1:
             eps = eps_or_k
-            if real: k, idx, proj = backend.iddp_rid(eps, m, n, matveca)
-            else:    k, idx, proj = backend.idzp_rid(eps, m, n, matveca)
+            if real:
+                k, idx, proj = backend.iddp_rid(eps, m, n, matveca)
+            else:
+                k, idx, proj = backend.idzp_rid(eps, m, n, matveca)
             return k, idx - 1, proj
         else:
             k = int(eps_or_k)
-            if real: idx, proj = backend.iddr_rid(m, n, matveca, k)
-            else:    idx, proj = backend.idzr_rid(m, n, matveca, k)
+            if real:
+                idx, proj = backend.iddr_rid(m, n, matveca, k)
+            else:
+                idx, proj = backend.idzr_rid(m, n, matveca, k)
             return idx - 1, proj
-    else: raise _DTYPE_ERROR
+    else:
+        raise _DTYPE_ERROR
+
 
 def reconstruct_matrix_from_id(B, idx, proj):
     """
@@ -503,9 +545,13 @@ def reconstruct_matrix_from_id(B, idx, proj):
         Reconstructed matrix.
     :rtype: :class:`numpy.ndarray`
     """
-    if   B.dtype ==    'float64': return backend.idd_reconid(B, idx + 1, proj)
-    elif B.dtype == 'complex128': return backend.idz_reconid(B, idx + 1, proj)
-    else: raise _DTYPE_ERROR
+    if B.dtype == np.float64:
+        return backend.idd_reconid(B, idx + 1, proj)
+    elif B.dtype == np.complex128:
+        return backend.idz_reconid(B, idx + 1, proj)
+    else:
+        raise _DTYPE_ERROR
+
 
 def reconstruct_interp_matrix(idx, proj):
     """
@@ -539,9 +585,13 @@ def reconstruct_interp_matrix(idx, proj):
         Interpolation matrix.
     :rtype: :class:`numpy.ndarray`
     """
-    if   proj.dtype ==    'float64': return backend.idd_reconint(idx + 1, proj)
-    elif proj.dtype == 'complex128': return backend.idz_reconint(idx + 1, proj)
-    else: raise _DTYPE_ERROR
+    if proj.dtype == np.float64:
+        return backend.idd_reconint(idx + 1, proj)
+    elif proj.dtype == np.complex128:
+        return backend.idz_reconint(idx + 1, proj)
+    else:
+        raise _DTYPE_ERROR
+
 
 def reconstruct_skel_matrix(A, k, idx):
     """
@@ -577,9 +627,13 @@ def reconstruct_skel_matrix(A, k, idx):
         Skeleton matrix.
     :rtype: :class:`numpy.ndarray`
     """
-    if   A.dtype ==    'float64': return backend.idd_copycols(A, k, idx + 1)
-    elif A.dtype == 'complex128': return backend.idz_copycols(A, k, idx + 1)
-    else: raise _DTYPE_ERROR
+    if A.dtype == np.float64:
+        return backend.idd_copycols(A, k, idx + 1)
+    elif A.dtype == np.complex128:
+        return backend.idz_copycols(A, k, idx + 1)
+    else:
+        raise _DTYPE_ERROR
+
 
 def id_to_svd(B, idx, proj):
     """
@@ -617,10 +671,14 @@ def id_to_svd(B, idx, proj):
         Right singular vectors.
     :rtype: :class:`numpy.ndarray`
     """
-    if   B.dtype ==    'float64': U, V, S = backend.idd_id2svd(B, idx + 1, proj)
-    elif B.dtype == 'complex128': U, V, S = backend.idz_id2svd(B, idx + 1, proj)
-    else: raise _DTYPE_ERROR
+    if B.dtype == np.float64:
+        U, V, S = backend.idd_id2svd(B, idx + 1, proj)
+    elif B.dtype == np.complex128:
+        U, V, S = backend.idz_id2svd(B, idx + 1, proj)
+    else:
+        raise _DTYPE_ERROR
     return U, S, V
+
 
 def estimate_spectral_norm(A, its=20):
     """
@@ -645,13 +703,15 @@ def estimate_spectral_norm(A, its=20):
     from scipy.sparse.linalg import aslinearoperator
     A = aslinearoperator(A)
     m, n = A.shape
-    matvec  = lambda x: A. matvec(x)
+    matvec = lambda x: A. matvec(x)
     matveca = lambda x: A.rmatvec(x)
-    if A.dtype == 'float64':
+    if A.dtype == np.float64:
         return backend.idd_snorm(m, n, matveca, matvec, its=its)
-    elif A.dtype == 'complex128':
+    elif A.dtype == np.complex128:
         return backend.idz_snorm(m, n, matveca, matvec, its=its)
-    else: raise _DTYPE_ERROR
+    else:
+        raise _DTYPE_ERROR
+
 
 def estimate_spectral_norm_diff(A, B, its=20):
     """
@@ -682,17 +742,19 @@ def estimate_spectral_norm_diff(A, B, its=20):
     A = aslinearoperator(A)
     B = aslinearoperator(B)
     m, n = A.shape
-    matvec1  = lambda x: A. matvec(x)
+    matvec1 = lambda x: A. matvec(x)
     matveca1 = lambda x: A.rmatvec(x)
-    matvec2  = lambda x: B. matvec(x)
+    matvec2 = lambda x: B. matvec(x)
     matveca2 = lambda x: B.rmatvec(x)
-    if A.dtype == 'float64':
-        return backend.idd_diffsnorm(m, n, matveca1, matveca2, matvec1, matvec2,
-                                                                  its=its)
-    elif A.dtype == 'complex128':
-        return backend.idz_diffsnorm(m, n, matveca1, matveca2, matvec1, matvec2,
-                                                                  its=its)
-    else: raise _DTYPE_ERROR
+    if A.dtype == np.float64:
+        return backend.idd_diffsnorm(
+            m, n, matveca1, matveca2, matvec1, matvec2, its=its)
+    elif A.dtype == np.complex128:
+        return backend.idz_diffsnorm(
+            m, n, matveca1, matveca2, matvec1, matvec2, its=its)
+    else:
+        raise _DTYPE_ERROR
+
 
 def svd(A, eps_or_k, rand=True):
     """
@@ -746,41 +808,59 @@ def svd(A, eps_or_k, rand=True):
     from scipy.sparse.linalg import LinearOperator
 
     try:
-        if   A.dtype ==    'float64': real = True
-        elif A.dtype == 'complex128': real = False
-        else: raise _DTYPE_ERROR
-    except: raise _DTYPE_ERROR
+        if A.dtype == np.float64:
+            real = True
+        elif A.dtype == np.complex128:
+            real = False
+        else:
+            raise _DTYPE_ERROR
+    except:
+        raise _DTYPE_ERROR
     if isinstance(A, np.ndarray):
         if eps_or_k < 1:
             eps = eps_or_k
             if rand:
-                if real: U, V, S = backend.iddp_asvd(eps, A)
-                else:    U, V, S = backend.idzp_asvd(eps, A)
+                if real:
+                    U, V, S = backend.iddp_asvd(eps, A)
+                else:
+                    U, V, S = backend.idzp_asvd(eps, A)
             else:
-                if real: U, V, S = backend.iddp_svd(eps, A)
-                else:    U, V, S = backend.idzp_svd(eps, A)
+                if real:
+                    U, V, S = backend.iddp_svd(eps, A)
+                else:
+                    U, V, S = backend.idzp_svd(eps, A)
         else:
             k = int(eps_or_k)
             if rand:
-                if real: U, V, S = backend.iddr_asvd(A, k)
-                else:    U, V, S = backend.idzr_asvd(A, k)
+                if real:
+                    U, V, S = backend.iddr_asvd(A, k)
+                else:
+                    U, V, S = backend.idzr_asvd(A, k)
             else:
-                if real: U, V, S = backend.iddr_svd(A, k)
-                else:    U, V, S = backend.idzr_svd(A, k)
+                if real:
+                    U, V, S = backend.iddr_svd(A, k)
+                else:
+                    U, V, S = backend.idzr_svd(A, k)
     elif isinstance(A, LinearOperator):
         m, n = A.shape
-        matvec  = lambda x: A.matvec (x)
+        matvec = lambda x: A.matvec(x)
         matveca = lambda x: A.rmatvec(x)
         if eps_or_k < 1:
             eps = eps_or_k
-            if real: U, V, S = backend.iddp_rsvd(eps, m, n, matveca, matvec)
-            else:    U, V, S = backend.idzp_rsvd(eps, m, n, matveca, matvec)
+            if real:
+                U, V, S = backend.iddp_rsvd(eps, m, n, matveca, matvec)
+            else:
+                U, V, S = backend.idzp_rsvd(eps, m, n, matveca, matvec)
         else:
             k = int(eps_or_k)
-            if real: U, V, S = backend.iddr_rsvd(m, n, matveca, matvec, k)
-            else:    U, V, S = backend.idzr_rsvd(m, n, matveca, matvec, k)
-    else: raise _DTYPE_ERROR
+            if real:
+                U, V, S = backend.iddr_rsvd(m, n, matveca, matvec, k)
+            else:
+                U, V, S = backend.idzr_rsvd(m, n, matveca, matvec, k)
+    else:
+        raise _DTYPE_ERROR
     return U, S, V
+
 
 def estimate_rank(A, eps):
     """
@@ -813,17 +893,25 @@ def estimate_rank(A, eps):
     from scipy.sparse.linalg import LinearOperator
 
     try:
-        if   A.dtype ==    'float64': real = True
-        elif A.dtype == 'complex128': real = False
-        else: raise _DTYPE_ERROR
-    except: raise _DTYPE_ERROR
+        if A.dtype == np.float64:
+            real = True
+        elif A.dtype == np.complex128:
+            real = False
+        else:
+            raise _DTYPE_ERROR
+    except:
+        raise _DTYPE_ERROR
     if isinstance(A, np.ndarray):
-        if real: return backend.idd_estrank(eps, A)
-        else:    return backend.idz_estrank(eps, A)
+        if real:
+            return backend.idd_estrank(eps, A)
+        else:
+            return backend.idz_estrank(eps, A)
     elif isinstance(A, LinearOperator):
         m, n = A.shape
         matveca = A.rmatvec
-        if real: return backend.idd_findrank(eps, m, n, matveca)
-        else:    return backend.idz_findrank(eps, m, n, matveca)
-    else: raise _DTYPE_ERROR
-
+        if real:
+            return backend.idd_findrank(eps, m, n, matveca)
+        else:
+            return backend.idz_findrank(eps, m, n, matveca)
+    else:
+        raise _DTYPE_ERROR

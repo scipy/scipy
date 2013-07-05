@@ -1,4 +1,4 @@
-#*******************************************************************************
+#******************************************************************************
 #   Copyright (C) 2013 Kenneth L. Ho
 #
 #   Redistribution and use in source and binary forms, with or without
@@ -10,8 +10,8 @@
 #   the following disclaimer in the documentation and/or other materials
 #   provided with the distribution.
 #
-#   None of the names of the copyright holders may be used to endorse or promote
-#   products derived from this software without specific prior written
+#   None of the names of the copyright holders may be used to endorse or
+#   promote products derived from this software without specific prior written
 #   permission.
 #
 #   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -25,7 +25,7 @@
 #   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
-#*******************************************************************************
+#******************************************************************************
 
 """
 Direct wrappers for Fortran `id_dist` backend.
@@ -36,9 +36,10 @@ import numpy as np
 
 _RETCODE_ERROR = RuntimeError("nonzero return code")
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # id_rand.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def id_srand(n):
     """
@@ -55,10 +56,11 @@ def id_srand(n):
     """
     return _id.id_srand(n)
 
+
 def id_srandi(t):
     """
-    Initialize seed values for :func:`id_srand` (any appropriately random numbers
-    will do).
+    Initialize seed values for :func:`id_srand` (any appropriately random
+    numbers will do).
 
     :param t:
         Array of 55 seed values.
@@ -67,25 +69,28 @@ def id_srandi(t):
     t = np.asfortranarray(t)
     _id.id_srandi(t)
 
+
 def id_srando():
     """
     Reset seed values to their original values.
     """
     _id.id_srando()
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idd_frm.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idd_frm(n, w, x):
     """
-    Transform real vector via a composition of Rokhlin's random transform, random
-    subselection, and an FFT.
+    Transform real vector via a composition of Rokhlin's random transform,
+    random subselection, and an FFT.
 
     In contrast to :func:`idd_sfrm`, this routine works best when the length of
-    the transformed vector is the power-of-two integer output by :func:`idd_frmi`,
-    or when the length is not specified but instead determined a posteriori from
-    the output. The returned transformed vector is randomly permuted.
+    the transformed vector is the power-of-two integer output by
+    :func:`idd_frmi`, or when the length is not specified but instead
+    determined a posteriori from the output. The returned transformed vector is
+    randomly permuted.
 
     :param n:
         Greatest power-of-two integer satisfying `n <= x.size` as obtained from
@@ -104,12 +109,14 @@ def idd_frm(n, w, x):
     """
     return _id.idd_frm(n, w, x)
 
+
 def idd_sfrm(l, n, w, x):
     """
-    Transform real vector via a composition of Rokhlin's random transform, random subselection, and an FFT.
+    Transform real vector via a composition of Rokhlin's random transform,
+    random subselection, and an FFT.
 
-    In contrast to :func:`idd_frm`, this routine works best when the length of the
-    transformed vector is known a priori.
+    In contrast to :func:`idd_frm`, this routine works best when the length of
+    the transformed vector is known a priori.
 
     :param l:
         Length of transformed vector, satisfying `l <= n`.
@@ -131,6 +138,7 @@ def idd_sfrm(l, n, w, x):
     """
     return _id.idd_sfrm(l, n, w, x)
 
+
 def idd_frmi(m):
     """
     Initialize data for :func:`idd_frm`.
@@ -147,6 +155,7 @@ def idd_frmi(m):
     :rtype: :class:`numpy.ndarray`
     """
     return _id.idd_frmi(m)
+
 
 def idd_sfrmi(l, m):
     """
@@ -168,9 +177,10 @@ def idd_sfrmi(l, m):
     """
     return _id.idd_sfrmi(l, m)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idd_id.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def iddp_id(eps, A):
     """
@@ -199,6 +209,7 @@ def iddp_id(eps, A):
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
     return k, idx, proj
 
+
 def iddr_id(A, k):
     """
     Compute ID of a real matrix to a specified rank.
@@ -223,6 +234,7 @@ def iddr_id(A, k):
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
     return idx, proj
 
+
 def idd_reconid(B, idx, proj):
     """
     Reconstruct matrix from real ID.
@@ -242,8 +254,11 @@ def idd_reconid(B, idx, proj):
     :rtype: :class:`numpy.ndarray`
     """
     B = np.asfortranarray(B)
-    if proj.size > 0: return _id.idd_reconid(B, idx, proj)
-    else:             return B[:,np.argsort(idx)]
+    if proj.size > 0:
+        return _id.idd_reconid(B, idx, proj)
+    else:
+        return B[:, np.argsort(idx)]
+
 
 def idd_reconint(idx, proj):
     """
@@ -261,6 +276,7 @@ def idd_reconint(idx, proj):
     :rtype: :class:`numpy.ndarray`
     """
     return _id.idd_reconint(idx, proj)
+
 
 def idd_copycols(A, k, idx):
     """
@@ -283,9 +299,10 @@ def idd_copycols(A, k, idx):
     A = np.asfortranarray(A)
     return _id.idd_copycols(A, k, idx)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idd_id2svd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idd_id2svd(B, idx, proj):
     """
@@ -313,12 +330,14 @@ def idd_id2svd(B, idx, proj):
     """
     B = np.asfortranarray(B)
     U, V, S, ier = _id.idd_id2svd(B, idx, proj)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idd_snorm.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idd_snorm(m, n, matvect, matvec, its=20):
     """
@@ -351,6 +370,7 @@ def idd_snorm(m, n, matvect, matvec, its=20):
     snorm, v = _id.idd_snorm(m, n, matvect, matvec, its)
     return snorm
 
+
 def idd_diffsnorm(m, n, matvect, matvect2, matvec, matvec2, its=20):
     """
     Estimate spectral norm of the difference of two real matrices by the
@@ -363,14 +383,14 @@ def idd_diffsnorm(m, n, matvect, matvect2, matvec, matvec2, its=20):
         Matrix column dimension.
     :type n: int
     :param matvect:
-        Function to apply the transpose of the first matrix to a vector, with call
-        signature `y = matvect(x)`, where `x` and `y` are the input and output
-        vectors, respectively.
+        Function to apply the transpose of the first matrix to a vector, with
+        call signature `y = matvect(x)`, where `x` and `y` are the input and
+        output vectors, respectively.
     :type matvect: function
     :param matvect2:
-        Function to apply the transpose of the second matrix to a vector, with call
-        signature `y = matvect2(x)`, where `x` and `y` are the input and output
-        vectors, respectively.
+        Function to apply the transpose of the second matrix to a vector, with
+        call signature `y = matvect2(x)`, where `x` and `y` are the input and
+        output vectors, respectively.
     :type matvect2: function
     :param matvec:
         Function to apply the first matrix to a vector, with call signature
@@ -392,9 +412,10 @@ def idd_diffsnorm(m, n, matvect, matvect2, matvec, matvec2, its=20):
     """
     return _id.idd_diffsnorm(m, n, matvect, matvect2, matvec, matvec2, its)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idd_svd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def iddr_svd(A, k):
     """
@@ -419,8 +440,10 @@ def iddr_svd(A, k):
     """
     A = np.asfortranarray(A)
     U, V, S, ier = _id.iddr_svd(A, k)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     return U, V, S
+
 
 def iddp_svd(eps, A):
     """
@@ -446,15 +469,17 @@ def iddp_svd(eps, A):
     A = np.asfortranarray(A)
     m, n = A.shape
     k, iU, iV, iS, w, ier = _id.iddp_svd(eps, A)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     U = w[iU-1:iU+m*k-1].reshape((m, k), order='F')
     V = w[iV-1:iV+n*k-1].reshape((n, k), order='F')
     S = w[iS-1:iS+k-1]
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # iddp_aid.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def iddp_aid(eps, A):
     """
@@ -486,10 +511,11 @@ def iddp_aid(eps, A):
     proj = proj[:k*(n-k)].reshape((k, n-k), order='F')
     return k, idx, proj
 
+
 def idd_estrank(eps, A):
     """
-    Estimate rank of a real matrix to a specified relative precision using random
-    sampling.
+    Estimate rank of a real matrix to a specified relative precision using
+    random sampling.
 
     The output rank is typically about 8 higher than the actual rank.
 
@@ -511,9 +537,10 @@ def idd_estrank(eps, A):
     k, ra = _id.idd_estrank(eps, A, w, ra)
     return k
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # iddp_asvd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def iddp_asvd(eps, A):
     """
@@ -540,19 +567,22 @@ def iddp_asvd(eps, A):
     A = np.asfortranarray(A)
     m, n = A.shape
     n2, winit = _id.idd_frmi(m)
-    w = np.empty(max((min(m,n) + 1)*(3*m + 5*n + 1) + 25*min(m,n)**2,
-                                      (2*n + 1)*(n2 + 1)),
-                              order='F')
+    w = np.empty(
+        max((min(m, n) + 1)*(3*m + 5*n + 1) + 25*min(m, n)**2,
+            (2*n + 1)*(n2 + 1)),
+        order='F')
     k, iU, iV, iS, w, ier = _id.iddp_asvd(eps, A, winit, w)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     U = w[iU-1:iU+m*k-1].reshape((m, k), order='F')
     V = w[iV-1:iV+n*k-1].reshape((n, k), order='F')
     S = w[iS-1:iS+k-1]
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # iddp_rid.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def iddp_rid(eps, m, n, matvect):
     """
@@ -584,16 +614,18 @@ def iddp_rid(eps, m, n, matvect):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    proj = np.empty(m + 1 + 2*n*(min(m,n) + 1), order='F')
+    proj = np.empty(m + 1 + 2*n*(min(m, n) + 1), order='F')
     k, idx, proj, ier = _id.iddp_rid(eps, m, n, matvect, proj)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier != 0:
+        raise _RETCODE_ERROR
     proj = proj[:k*(n-k)].reshape((k, n-k), order='F')
     return k, idx, proj
 
+
 def idd_findrank(eps, m, n, matvect):
     """
-    Estimate rank of a real matrix to a specified relative precision using random
-    matrix-vector multiplication.
+    Estimate rank of a real matrix to a specified relative precision using
+    random matrix-vector multiplication.
 
     :param eps:
         Relative precision.
@@ -615,12 +647,14 @@ def idd_findrank(eps, m, n, matvect):
     :rtype: int
     """
     k, ra, ier = _id.idd_findrank(eps, m, n, matvect)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     return k
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # iddp_rsvd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def iddp_rsvd(eps, m, n, matvect, matvec):
     """
@@ -658,15 +692,17 @@ def iddp_rsvd(eps, m, n, matvect, matvec):
     :rtype: :class:`numpy.ndarray`
     """
     k, iU, iV, iS, w, ier = _id.iddp_rsvd(eps, m, n, matvect, matvec)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     U = w[iU-1:iU+m*k-1].reshape((m, k), order='F')
     V = w[iV-1:iV+n*k-1].reshape((n, k), order='F')
     S = w[iS-1:iS+k-1]
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # iddr_aid.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def iddr_aid(A, k):
     """
@@ -690,9 +726,12 @@ def iddr_aid(A, k):
     m, n = A.shape
     w = iddr_aidi(m, n, k)
     idx, proj = _id.iddr_aid(A, k, w)
-    if k == n: proj = np.array([], dtype='float64', order='F')
-    else:      proj = proj.reshape((k, n-k), order='F')
+    if k == n:
+        proj = np.array([], dtype='float64', order='F')
+    else:
+        proj = proj.reshape((k, n-k), order='F')
     return idx, proj
+
 
 def iddr_aidi(m, n, k):
     """
@@ -714,9 +753,10 @@ def iddr_aidi(m, n, k):
     """
     return _id.iddr_aidi(m, n, k)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # iddr_asvd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def iddr_asvd(A, k):
     """
@@ -745,12 +785,14 @@ def iddr_asvd(A, k):
     w_ = iddr_aidi(m, n, k)
     w[:w_.size] = w_
     U, V, S, ier = _id.iddr_asvd(A, k, w)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier != 0:
+        raise _RETCODE_ERROR
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # iddr_rid.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def iddr_rid(m, n, matvect, k):
     """
@@ -783,9 +825,10 @@ def iddr_rid(m, n, matvect, k):
     proj = proj[:k*(n-k)].reshape((k, n-k), order='F')
     return idx, proj
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # iddr_rsvd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def iddr_rsvd(m, n, matvect, matvec, k):
     """
@@ -823,12 +866,14 @@ def iddr_rsvd(m, n, matvect, matvec, k):
     :rtype: :class:`numpy.ndarray`
     """
     U, V, S, ier = _id.iddr_rsvd(m, n, matvect, matvec, k)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier != 0:
+        raise _RETCODE_ERROR
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idz_frm.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idz_frm(n, w, x):
     """
@@ -836,9 +881,10 @@ def idz_frm(n, w, x):
     random subselection, and an FFT.
 
     In contrast to :func:`idz_sfrm`, this routine works best when the length of
-    the transformed vector is the power-of-two integer output by :func:`idz_frmi`,
-    or when the length is not specified but instead determined a posteriori from
-    the output. The returned transformed vector is randomly permuted.
+    the transformed vector is the power-of-two integer output by
+    :func:`idz_frmi`, or when the length is not specified but instead
+    determined a posteriori from the output. The returned transformed vector is
+    randomly permuted.
 
     :param n:
         Greatest power-of-two integer satisfying `n <= x.size` as obtained from
@@ -857,13 +903,14 @@ def idz_frm(n, w, x):
     """
     return _id.idz_frm(n, w, x)
 
+
 def idz_sfrm(l, n, w, x):
     """
     Transform complex vector via a composition of Rokhlin's random transform,
     random subselection, and an FFT.
 
-    In contrast to :func:`idz_frm`, this routine works best when the length of the
-    transformed vector is known a priori.
+    In contrast to :func:`idz_frm`, this routine works best when the length of
+    the transformed vector is known a priori.
 
     :param l:
         Length of transformed vector, satisfying `l <= n`.
@@ -885,6 +932,7 @@ def idz_sfrm(l, n, w, x):
     """
     return _id.idz_sfrm(l, n, w, x)
 
+
 def idz_frmi(m):
     """
     Initialize data for :func:`idz_frm`.
@@ -901,6 +949,7 @@ def idz_frmi(m):
     :rtype: :class:`numpy.ndarray`
     """
     return _id.idz_frmi(m)
+
 
 def idz_sfrmi(l, m):
     """
@@ -922,9 +971,10 @@ def idz_sfrmi(l, m):
     """
     return _id.idz_sfrmi(l, m)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idz_id.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idzp_id(eps, A):
     """
@@ -953,6 +1003,7 @@ def idzp_id(eps, A):
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
     return k, idx, proj
 
+
 def idzr_id(A, k):
     """
     Compute ID of a complex matrix to a specified rank.
@@ -977,6 +1028,7 @@ def idzr_id(A, k):
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
     return idx, proj
 
+
 def idz_reconid(B, idx, proj):
     """
     Reconstruct matrix from complex ID.
@@ -996,8 +1048,11 @@ def idz_reconid(B, idx, proj):
     :rtype: :class:`numpy.ndarray`
     """
     B = np.asfortranarray(B)
-    if proj.size > 0: return _id.idz_reconid(B, idx, proj)
-    else:             return B[:,np.argsort(idx)]
+    if proj.size > 0:
+        return _id.idz_reconid(B, idx, proj)
+    else:
+        return B[:, np.argsort(idx)]
+
 
 def idz_reconint(idx, proj):
     """
@@ -1015,6 +1070,7 @@ def idz_reconint(idx, proj):
     :rtype: :class:`numpy.ndarray`
     """
     return _id.idz_reconint(idx, proj)
+
 
 def idz_copycols(A, k, idx):
     """
@@ -1037,9 +1093,10 @@ def idz_copycols(A, k, idx):
     A = np.asfortranarray(A)
     return _id.idz_copycols(A, k, idx)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idz_id2svd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idz_id2svd(B, idx, proj):
     """
@@ -1067,12 +1124,14 @@ def idz_id2svd(B, idx, proj):
     """
     B = np.asfortranarray(B)
     U, V, S, ier = _id.idz_id2svd(B, idx, proj)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idz_snorm.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idz_snorm(m, n, matveca, matvec, its=20):
     """
@@ -1105,6 +1164,7 @@ def idz_snorm(m, n, matveca, matvec, its=20):
     snorm, v = _id.idz_snorm(m, n, matveca, matvec, its)
     return snorm
 
+
 def idz_diffsnorm(m, n, matveca, matveca2, matvec, matvec2, its=20):
     """
     Estimate spectral norm of the difference of two complex matrices by the
@@ -1117,14 +1177,14 @@ def idz_diffsnorm(m, n, matveca, matveca2, matvec, matvec2, its=20):
         Matrix column dimension.
     :type n: int
     :param matveca:
-        Function to apply the adjoint of the first matrix to a vector, with call
-        signature `y = matveca(x)`, where `x` and `y` are the input and output
-        vectors, respectively.
+        Function to apply the adjoint of the first matrix to a vector, with
+        call signature `y = matveca(x)`, where `x` and `y` are the input and
+        output vectors, respectively.
     :type matveca: function
     :param matveca2:
-        Function to apply the adjoint of the second matrix to a vector, with call
-        signature `y = matveca2(x)`, where `x` and `y` are the input and output
-        vectors, respectively.
+        Function to apply the adjoint of the second matrix to a vector, with
+        call signature `y = matveca2(x)`, where `x` and `y` are the input and
+        output vectors, respectively.
     :type matveca2: function
     :param matvec:
         Function to apply the first matrix to a vector, with call signature
@@ -1146,9 +1206,10 @@ def idz_diffsnorm(m, n, matveca, matveca2, matvec, matvec2, its=20):
     """
     return _id.idz_diffsnorm(m, n, matveca, matveca2, matvec, matvec2, its)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idz_svd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idzr_svd(A, k):
     """
@@ -1173,8 +1234,10 @@ def idzr_svd(A, k):
     """
     A = np.asfortranarray(A)
     U, V, S, ier = _id.idzr_svd(A, k)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     return U, V, S
+
 
 def idzp_svd(eps, A):
     """
@@ -1200,20 +1263,22 @@ def idzp_svd(eps, A):
     A = np.asfortranarray(A)
     m, n = A.shape
     k, iU, iV, iS, w, ier = _id.idzp_svd(eps, A)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     U = w[iU-1:iU+m*k-1].reshape((m, k), order='F')
     V = w[iV-1:iV+n*k-1].reshape((n, k), order='F')
     S = w[iS-1:iS+k-1]
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idzp_aid.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idzp_aid(eps, A):
     """
-    Compute ID of a complex matrix to a specified relative precision using random
-    sampling.
+    Compute ID of a complex matrix to a specified relative precision using
+    random sampling.
 
     :param eps:
         Relative precision.
@@ -1240,6 +1305,7 @@ def idzp_aid(eps, A):
     proj = proj[:k*(n-k)].reshape((k, n-k), order='F')
     return k, idx, proj
 
+
 def idz_estrank(eps, A):
     """
     Estimate rank of a complex matrix to a specified relative precision using
@@ -1265,14 +1331,15 @@ def idz_estrank(eps, A):
     k, ra = _id.idz_estrank(eps, A, w, ra)
     return k
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idzp_asvd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idzp_asvd(eps, A):
     """
-    Compute SVD of a complex matrix to a specified relative precision using random
-    sampling.
+    Compute SVD of a complex matrix to a specified relative precision using
+    random sampling.
 
     :param eps:
         Relative precision.
@@ -1294,24 +1361,27 @@ def idzp_asvd(eps, A):
     A = np.asfortranarray(A)
     m, n = A.shape
     n2, winit = _id.idz_frmi(m)
-    w = np.empty(max((min(m,n) + 1)*(3*m + 5*n + 11) + 8*min(m,n)**2,
-                                      (2*n + 1)*(n2 + 1)),
-                              dtype='complex128', order='F')
+    w = np.empty(
+        max((min(m, n) + 1)*(3*m + 5*n + 11) + 8*min(m, n)**2,
+            (2*n + 1)*(n2 + 1)),
+        dtype=np.complex128, order='F')
     k, iU, iV, iS, w, ier = _id.idzp_asvd(eps, A, winit, w)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     U = w[iU-1:iU+m*k-1].reshape((m, k), order='F')
     V = w[iV-1:iV+n*k-1].reshape((n, k), order='F')
     S = w[iS-1:iS+k-1]
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idzp_rid.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idzp_rid(eps, m, n, matveca):
     """
-    Compute ID of a complex matrix to a specified relative precision using random
-    matrix-vector multiplication.
+    Compute ID of a complex matrix to a specified relative precision using
+    random matrix-vector multiplication.
 
     :param eps:
         Relative precision.
@@ -1338,11 +1408,15 @@ def idzp_rid(eps, m, n, matveca):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    proj = np.empty(m + 1 + 2*n*(min(m,n) + 1), dtype='complex128', order='F')
+    proj = np.empty(
+        m + 1 + 2*n*(min(m, n) + 1),
+        dtype=np.complex128, order='F')
     k, idx, proj, ier = _id.idzp_rid(eps, m, n, matveca, proj)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     proj = proj[:k*(n-k)].reshape((k, n-k), order='F')
     return k, idx, proj
+
 
 def idz_findrank(eps, m, n, matveca):
     """
@@ -1369,17 +1443,19 @@ def idz_findrank(eps, m, n, matveca):
     :rtype: int
     """
     k, ra, ier = _id.idz_findrank(eps, m, n, matveca)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     return k
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idzp_rsvd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idzp_rsvd(eps, m, n, matveca, matvec):
     """
-    Compute SVD of a complex matrix to a specified relative precision using random
-    matrix-vector multiplication.
+    Compute SVD of a complex matrix to a specified relative precision using
+    random matrix-vector multiplication.
 
     :param eps:
         Relative precision.
@@ -1412,15 +1488,17 @@ def idzp_rsvd(eps, m, n, matveca, matvec):
     :rtype: :class:`numpy.ndarray`
     """
     k, iU, iV, iS, w, ier = _id.idzp_rsvd(eps, m, n, matveca, matvec)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     U = w[iU-1:iU+m*k-1].reshape((m, k), order='F')
     V = w[iV-1:iV+n*k-1].reshape((n, k), order='F')
     S = w[iS-1:iS+k-1]
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idzr_aid.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idzr_aid(A, k):
     """
@@ -1444,9 +1522,12 @@ def idzr_aid(A, k):
     m, n = A.shape
     w = idzr_aidi(m, n, k)
     idx, proj = _id.idzr_aid(A, k, w)
-    if k == n: proj = np.array([], dtype='complex128', order='F')
-    else:      proj = proj.reshape((k, n-k), order='F')
+    if k == n:
+        proj = np.array([], dtype='complex128', order='F')
+    else:
+        proj = proj.reshape((k, n-k), order='F')
     return idx, proj
+
 
 def idzr_aidi(m, n, k):
     """
@@ -1468,9 +1549,10 @@ def idzr_aidi(m, n, k):
     """
     return _id.idzr_aidi(m, n, k)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idzr_asvd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idzr_asvd(A, k):
     """
@@ -1495,22 +1577,25 @@ def idzr_asvd(A, k):
     """
     A = np.asfortranarray(A)
     m, n = A.shape
-    w = np.empty((2*k + 22)*m + (6*k + 21)*n + 8*k**2 + 10*k + 90,
-                              dtype='complex128', order='F')
+    w = np.empty(
+        (2*k + 22)*m + (6*k + 21)*n + 8*k**2 + 10*k + 90,
+        dtype='complex128', order='F')
     w_ = idzr_aidi(m, n, k)
     w[:w_.size] = w_
     U, V, S, ier = _id.idzr_asvd(A, k, w)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     return U, V, S
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idzr_rid.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idzr_rid(m, n, matveca, k):
     """
-    Compute ID of a complex matrix to a specified rank using random matrix-vector
-    multiplication.
+    Compute ID of a complex matrix to a specified rank using random
+    matrix-vector multiplication.
 
     :param m:
         Matrix row dimension.
@@ -1538,14 +1623,15 @@ def idzr_rid(m, n, matveca, k):
     proj = proj[:k*(n-k)].reshape((k, n-k), order='F')
     return idx, proj
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 # idzr_rsvd.f
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def idzr_rsvd(m, n, matveca, matvec, k):
     """
-    Compute SVD of a complex matrix to a specified rank using random matrix-vector
-    multiplication.
+    Compute SVD of a complex matrix to a specified rank using random
+    matrix-vector multiplication.
 
     :param m:
         Matrix row dimension.
@@ -1578,5 +1664,6 @@ def idzr_rsvd(m, n, matveca, matvec, k):
     :rtype: :class:`numpy.ndarray`
     """
     U, V, S, ier = _id.idzr_rsvd(m, n, matveca, matvec, k)
-    if ier != 0: raise _RETCODE_ERROR
+    if ier:
+        raise _RETCODE_ERROR
     return U, V, S
