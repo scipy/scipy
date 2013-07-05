@@ -315,11 +315,11 @@ class TestSplder(object):
         # Should refuse to differentiate splines with kinks
 
         spl2 = insert(0.5, self.spl, m=2)
-        splder(spl2, 2) # Should work
+        splder(spl2, 2)  # Should work
         assert_raises(ValueError, splder, spl2, 3)
 
         spl2 = insert(0.5, self.spl, m=3)
-        splder(spl2, 1) # Should work
+        splder(spl2, 1)  # Should work
         assert_raises(ValueError, splder, spl2, 2)
 
         spl2 = insert(0.5, self.spl, m=4)

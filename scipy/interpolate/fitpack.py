@@ -1113,6 +1113,7 @@ def insert(x,tck,m=1,per=0):
             raise TypeError("An error occurred")
         return (tt, cc, k)
 
+
 def splder(tck, n=1):
     """
     Compute the spline representation of the derivative of a given spline
@@ -1186,6 +1187,7 @@ def splder(tck, n=1):
 
     return t, c, k
 
+
 def splantider(tck, n=1):
     """
     Compute the spline for the antiderivative (integral) of a given spline.
@@ -1234,7 +1236,7 @@ def splantider(tck, n=1):
     >>> splev(np.pi/2, ispl) - splev(0, ispl)
     2.2572053588768486
 
-    This is indeed an approximation to the complete elliptic integral 
+    This is indeed an approximation to the complete elliptic integral
     :math:`K(m) = \\int_0^{\\pi/2} [1 - m\\sin^2 x]^{-1/2} dx`:
 
     >>> from scipy.special import ellipk
