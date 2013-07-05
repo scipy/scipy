@@ -1239,8 +1239,7 @@ def mood(x, y, axis=0):
     if axis != 0:
         xy = np.rollaxis(xy, axis)
 
-    other_ax_len = -1 if len(xy.shape) > 1 else 1
-    xy = xy.reshape(xy.shape[0], other_ax_len)
+    xy = xy.reshape(xy.shape[0], -1)
 
     all_ranks = np.zeros_like(xy)
     for j in range(xy.shape[1]):
