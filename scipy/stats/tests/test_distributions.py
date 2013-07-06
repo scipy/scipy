@@ -14,6 +14,7 @@ import numpy as np
 from numpy import typecodes, array
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
+from scipy import special
 from scipy.special import xlogy
 import warnings
 
@@ -491,6 +492,13 @@ class TestPoisson(TestCase):
         vals = stats.poisson.pmf([0, 1, 2], 0)
         expected = [1, 0, 0]
         assert_array_equal(vals, expected)
+
+    def test_pmf_broadcasting(self):
+        k = np.array([0, 1, 2, 3])
+        mu = k.reshape(-1, 1)
+        vals = stats.poisson.pmf(k, mu)
+        expected = mu**k * np.exp(-mu) / special.gamma(k + 1)
+        assert_allclose(vals, expected)
 
 
 class TestZipf(TestCase):
