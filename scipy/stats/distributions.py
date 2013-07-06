@@ -554,10 +554,9 @@ class rv_generic(object):
 
         Works by inspecting the call signatures of `names_to_inspect`
         and constructing the argument-parsing functions dynamically.
-        Modifies the calling clas.
+        Modifies the calling class.
         Is supposed to be called in __init__ of a class for each distribution.
         """
-
         # find out the call signatures (_pdf, _cdf etc), deduce shape arguments
         shapes_list = []
         for name in names_to_inspect:
@@ -590,54 +589,6 @@ class rv_generic(object):
         ## technically, can return `shapes` and `numargs` here:
         ## setting `numargs` relies on `inspect` anyway, so it's just code dup.
 
-
-    #### these are not called in this version
-    def _fix_loc_scale(self, args, loc, scale=1):
-        """Parse args/kwargs input to other methods."""
-        args, loc, scale, kwarg3 = self._fix_loc_scale_kwarg3(args, loc, scale,
-                                                              None, None)
-        if kwarg3 is not None:
-            # 3 positional args
-            raise TypeError("Too many input arguments.")
-
-        return args, loc, scale
-
-    def _fix_loc_scale_kwarg3(self, args, loc, scale=1,
-                              kwarg3=1, kwarg3_default=None):
-        """Parse args/kwargs input to methods with a third kwarg.
-
-        At the moment these methods are ``stats`` and ``rvs``.
-        """
-        N = len(args)
-        if N > self.numargs:
-            if N == self.numargs + 1 and loc is None:
-                # loc is given without keyword
-                loc = args[-1]
-            elif N == self.numargs + 2 and loc is None and scale is None:
-                # loc and scale given without keyword
-                loc, scale = args[-2:]
-            elif N == self.numargs + 3 and loc is None and scale is None \
-                                       and kwarg3 is None:
-                # loc, scale and a third argument
-                loc, scale, kwarg3 = args[-3:]
-            else:
-                raise TypeError("Too many input arguments.")
-
-            args = args[:self.numargs]
-
-        if scale is None:
-            scale = 1.0
-        if loc is None:
-            loc = 0.0
-        if kwarg3 is None:
-            kwarg3 = kwarg3_default
-
-        return args, loc, scale, kwarg3
-
-    def _fix_loc(self, args, loc):
-        args, loc, scale = self._fix_loc_scale(args, loc)
-        return args, loc
-
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
     def rvs(self, *args, **kwds):
@@ -662,18 +613,9 @@ class rv_generic(object):
             Random variates of given `size`.
 
         """
-        try:
-            discrete = kwds.pop('discrete')
-        except KeyError:
-            discrete = None
+        discrete = kwds.pop('discrete', None)
         args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
-#        kwd_names = ['loc', 'scale', 'size', 'discrete']
-#        loc, scale, size, discrete = map(kwds.get, kwd_names,
-#                                         [None]*len(kwd_names))
-#
-#        args, loc, scale, size = self._fix_loc_scale_kwarg3(args, loc, scale,
-#                                                            size)
-        cond = logical_and(self._argcheck(*args),(scale >= 0))
+        cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not all(cond):
             raise ValueError("Domain error in arguments.")
 
@@ -1263,10 +1205,7 @@ class rv_continuous(rv_generic):
             Probability density function evaluated at x
 
         """
-##        loc,scale = map(kwds.get,['loc','scale'])
-##        args, loc, scale = self._fix_loc_scale(args, loc, scale)
         args, loc, scale = self._parse_args(*args, **kwds)
-
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = asarray((x-loc)*1.0/scale)
@@ -1308,7 +1247,6 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = asarray((x-loc)*1.0/scale)
@@ -1349,7 +1287,6 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
@@ -1390,7 +1327,6 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
@@ -1432,7 +1368,6 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
@@ -1476,7 +1411,6 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-
         x,loc,scale = map(asarray,(x,loc,scale))
         args = tuple(map(asarray,args))
         x = (x-loc)*1.0/scale
@@ -1518,7 +1452,6 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-
         q, loc, scale = map(asarray,(q, loc, scale))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
@@ -1564,8 +1497,7 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-
-        q, loc, scale = map(asarray,(q, loc, scale))
+        q, loc, scale = map(asarray, (q, loc, scale))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
         cond1 = (0 < q) & (q < 1)
@@ -1615,10 +1547,6 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale, moments = self._parse_args_stats(*args, **kwds)
-        #loc,scale,moments = map(kwds.get,['loc','scale','moments'])
-        #args, loc, scale, moments = self._fix_loc_scale_kwarg3(args, loc,
-        #                                            scale, moments, 'mv')
-
         loc, scale = map(asarray, (loc, scale))
         args = tuple(map(asarray, args))
         cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
@@ -2022,7 +1950,6 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
         output = zeros(shape(cond0),'d')
@@ -6337,10 +6264,7 @@ class rv_discrete(rv_generic):
             Probability mass function evaluated at k
 
         """
-#        loc = kwds.get('loc')
-#        args, loc = self._fix_loc(args, loc)
         args, loc, _ = self._parse_args(*args, **kwds)
-
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
@@ -6377,7 +6301,6 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
@@ -6415,7 +6338,6 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
@@ -6455,7 +6377,6 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray((k-loc))
@@ -6496,7 +6417,6 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray(k-loc)
@@ -6538,7 +6458,6 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-
         k,loc = map(asarray,(k,loc))
         args = tuple(map(asarray,args))
         k = asarray(k-loc)
@@ -6580,7 +6499,6 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-
         q,loc = map(asarray,(q,loc))
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
@@ -6621,7 +6539,6 @@ class rv_discrete(rv_generic):
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
-
         q,loc = map(asarray,(q,loc))
         args = tuple(map(asarray,args))
         cond0 = self._argcheck(*args) & (loc == loc)
@@ -6674,10 +6591,9 @@ class rv_discrete(rv_generic):
         """
         try:
             kwds["moments"] = kwds.pop("moment") # test suite is full of these; a feature?
-        except:
+        except KeyError:
             pass
         args, loc, _, moments = self._parse_args_stats(*args, **kwds)
-
         loc = asarray(loc)
         args = tuple(map(asarray,args))
         cond = self._argcheck(*args) & (loc == loc)
