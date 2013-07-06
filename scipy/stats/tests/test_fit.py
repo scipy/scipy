@@ -71,6 +71,7 @@ def check_cont_fit(distname,arg):
                                       np.ones(distfn.numargs+2)*thresh_min]),0)
 
     for fit_size in fit_sizes:
+        # Note that if a fit succeeds, the other fit_sizes are skipped
         np.random.seed(1234)
 
         with np.errstate(all='ignore'):
@@ -95,6 +96,4 @@ def check_cont_fit(distname,arg):
 
 
 if __name__ == "__main__":
-    import nose
-    # nose.run(argv=['', __file__])
-    nose.runmodule(argv=[__file__,'-s'], exit=False)
+    np.testing.run_module_suite()

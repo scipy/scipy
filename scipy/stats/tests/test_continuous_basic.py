@@ -173,7 +173,7 @@ def test_cont_basic():
             continue
         distfn = getattr(stats, distname)
         np.random.seed(765456)
-        sn = 1000
+        sn = 500
         rvs = distfn.rvs(size=sn, *arg)
         sm = rvs.mean()
         sv = rvs.var()
@@ -207,7 +207,7 @@ def test_cont_basic_slow():
             continue
         distfn = getattr(stats, distname)
         np.random.seed(765456)
-        sn = 1000
+        sn = 500
         rvs = distfn.rvs(size=sn,*arg)
         sm = rvs.mean()
         sv = rvs.var()

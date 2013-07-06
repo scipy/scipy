@@ -133,6 +133,4 @@ def test_rdist_cdf_gh1285():
 
 
 if __name__ == "__main__":
-    import nose
-    #nose.run(argv=['', __file__])
-    nose.runmodule(argv=[__file__,'-s'], exit=False)
+    npt.run_module_suite()
