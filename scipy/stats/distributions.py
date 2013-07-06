@@ -3988,6 +3988,11 @@ class invweibull_gen(rv_continuous):
 
     for ``x > 0``, ``c > 0``.
 
+    References
+    ----------
+    F.R.S. de Gusmao, E.M.M Ortega and G.M. Cordeiro, "The generalized inverse
+    Weibull distribution", Stat. Papers, vol. 52, pp. 591-619, 2011.
+
     %(example)s
 
     """
@@ -4003,6 +4008,9 @@ class invweibull_gen(rv_continuous):
 
     def _ppf(self, q, c):
         return pow(-log(q),asarray(-1.0/c))
+
+    def _munp(self, n, c):
+        return special.gamma(1 - n / c)
 
     def _entropy(self, c):
         return 1+_EULER + _EULER / c - log(c)
@@ -4329,6 +4337,11 @@ class loglaplace_gen(rv_continuous):
 
     for ``c > 0``.
 
+    References
+    ----------
+    T.J. Kozubowski and K. Podgorski, "A log-Laplace growth rate model",
+    The Mathematical Scientist, vol. 28, pp. 49-60, 2003.
+
     %(example)s
 
     """
@@ -4342,6 +4355,9 @@ class loglaplace_gen(rv_continuous):
 
     def _ppf(self, q, c):
         return where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
+
+    def _munp(self, n, c):
+        return c**2 / (c**2 - n**2)
 
     def _entropy(self, c):
         return log(2.0/c) + 1.0
