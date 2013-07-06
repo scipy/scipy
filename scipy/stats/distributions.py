@@ -1,5 +1,3 @@
-# Functions to implement several important functions for
-#   various Continous and Discrete Probability Distributions
 #
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
@@ -5114,7 +5112,6 @@ class powernorm_gen(rv_continuous):
 powernorm = powernorm_gen(name='powernorm', shapes="c")
 
 
-# FIXME: PPF does not work.
 class rdist_gen(rv_continuous):
     """An R-distributed continuous random variable.
 
@@ -5132,15 +5129,21 @@ class rdist_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        return np.power((1.0-x*x),c/2.0-1) / special.beta(0.5,c/2.0)
+        return np.power((1.0 - x**2), c / 2.0 - 1) / special.beta(0.5, c / 2.0)
 
-    def _cdf_skip(self, x, c):
-        # error in special.hyp2f1 for some values see tickets 758, 759
-        return 0.5 + x/special.beta(0.5,c/2.0) * \
-               special.hyp2f1(0.5,1.0-c/2.0,1.5,x*x)
+    def _cdf(self, x, c):
+        term1 = x / special.beta(0.5, c / 2.0)
+        res = 0.5 + term1 * special.hyp2f1(0.5, 1 - c / 2.0, 1.5, x**2)
+        # There's an issue with hyp2f1, it returns nans near x = +-1, c > 100.
+        # Use the generic implementation in that case.  See gh-1285 for
+        # background.
+        if any(np.isnan(res)):
+            return rv_continuous._cdf(self, x, c)
+
+        return res
 
     def _munp(self, n, c):
-        return (1-(n % 2))*special.beta((n+1.0)/2,c/2.0)
+        return (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0)
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist", shapes="c")
 
 

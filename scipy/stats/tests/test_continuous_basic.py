@@ -102,8 +102,6 @@ distcont = [
     ['powernorm', (4.4453652254590779,)],
     ['rayleigh', ()],
     ['rdist', (0.9,)],   # feels also slow
-#    ['rdist', (3.8266985793976525,)],  #veryslow, especially rvs
-    #['rdist', (541.0,)],   # from ticket #758    #veryslow
     ['recipinvgauss', (0.63004267809369119,)],
     ['reciprocal', (0.0062309367010521255, 1.0062309367010522)],
     ['rice', (0.7749725210111873,)],
