@@ -7276,11 +7276,18 @@ class poisson_gen(rv_discrete):
     %(example)s
 
     """
+    # Override rv_discrete._argcheck to allow 0.
+    def _argcheck(self, *args):
+        cond = 1
+        for arg in args:
+            cond &= (arg >= 0)
+        return cond
+
     def _rvs(self, mu):
         return mtrand.poisson(mu, self._size)
 
     def _logpmf(self, k, mu):
-        Pk = k*log(mu)-gamln(k+1) - mu
+        Pk = special.xlogy(k, mu) - gamln(k + 1) - mu
         return Pk
 
     def _pmf(self, k, mu):

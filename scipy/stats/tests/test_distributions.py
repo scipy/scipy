@@ -479,6 +479,19 @@ class TestPoisson(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_pmf_basic(self):
+        # Basic case
+        ln2 = np.log(2)
+        vals = stats.poisson.pmf([0, 1, 2], ln2)
+        expected = [0.5, ln2/2, ln2**2/4]
+        assert_allclose(vals, expected)
+
+    def test_pmf_edge(self):
+        # Edge case: mu=0
+        vals = stats.poisson.pmf([0, 1, 2], 0)
+        expected = [1, 0, 0]
+        assert_array_equal(vals, expected)
+
 
 class TestZipf(TestCase):
     def test_rvs(self):
