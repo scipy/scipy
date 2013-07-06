@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 from . import _quadpack
 import sys
 import numpy
-from numpy import inf, Inf
+from numpy import Inf
 
 __all__ = ['quad', 'dblquad', 'tplquad', 'quad_explain']
 
