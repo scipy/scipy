@@ -1973,8 +1973,8 @@ cdef class cKDTree:
                             other.raw_data + other.raw_indices[j] * self.m,
                             tracker.p, self.m, tracker.upper_bound)
                         if d <= tracker.upper_bound:
-                            if tracker.p!=1 and tracker.p!=infinity:
-                                d = d**(1./tracker.p)
+                            if tracker.p != 1 and tracker.p != infinity:
+                                d = d**(1. / tracker.p)
                             results.add(self.raw_indices[i],
                                         other.raw_indices[j], d)
                             if node1 == node2:
