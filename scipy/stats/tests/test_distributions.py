@@ -9,8 +9,6 @@ from numpy.testing import (TestCase, run_module_suite, assert_equal,
 from numpy.testing.utils import WarningManager
 from nose import SkipTest
 
-import inspect
-
 import numpy
 import numpy as np
 from numpy import typecodes, array
@@ -1092,22 +1090,7 @@ def test_regression_ticket_1421():
     assert_('pmf(x,' in stats.poisson.__doc__)
 
 
-def test_nan_arguments_ticket_835():
-    # are nans not overpropagated? This test asserts the following behavior:
-    #>>> stats.t.pdf(np.nan)
-    #nan
-    #>>> stats.t.pdf(1)
-    #Traceback (most recent call last):
-    # ...
-    #place(output,cond,self._pdf(*goodargs) / scale)
-    #TypeError: _pdf() takes exactly 3 arguments (2 given)
-    #
-    # which does not match what R requires:
-    #> dt(NaN)
-    #Error in dt(NaN) : argument "df" is missing, with no default
-    #
-    # Hence am changing the test to use the correct number of arguments 
-    #
+def test_nan_arguments_gh_issue_1362():
     assert_(np.isnan(stats.t.logcdf(1, np.nan)))
     assert_(np.isnan(stats.t.cdf(1, np.nan)))
     assert_(np.isnan(stats.t.logsf(1, np.nan)))
@@ -1341,6 +1324,7 @@ def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
     assert_equal(rv.cdf(0), 0)  # rv.cdf(0) previously resulted in: nan
+
 
 if __name__ == "__main__":
     run_module_suite()

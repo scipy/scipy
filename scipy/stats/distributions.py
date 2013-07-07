@@ -531,8 +531,7 @@ def argsreduce(cond, *args):
 
 
 
-parse_arg_template =\
-"""
+parse_arg_template = """
 def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
     return (%(shape_arg_str)s), %(locscale_out)s
 

@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import inspect
+
 import numpy as np
 import numpy.testing as npt
 
@@ -199,16 +200,15 @@ def test_cont_basic():
             alpha = 0.01
             yield check_distribution_rvs, distname, arg, alpha, rvs
 
-        signature = inspect.getargspec(distfn._parse_args)
         locscale_defaults = (0, 1)
-        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf, 
+        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
                  distfn.logsf]
-        # make sure arguments are within support 
+        # make sure arguments are within support
         spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
                   'pareto': 1.5, 'tukeylambda': 0.3}
         x = spec_x.get(distname, 0.5)
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
-                
+
 
 @npt.dec.slow
 def test_cont_basic_slow():
@@ -241,11 +241,10 @@ def test_cont_basic_slow():
             alpha = 0.01
             yield check_distribution_rvs, distname, arg, alpha, rvs
 
-        signature = inspect.getargspec(distfn._parse_args)
         locscale_defaults = (0, 1)
-        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf, 
+        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
                  distfn.logsf]
-        # make sure arguments are within support 
+        # make sure arguments are within support
         x = 0.5
         if distname == 'invweibull':
             arg = (1,)
@@ -428,13 +427,13 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     npt.assert_(signature.keywords is None)
     npt.assert_(signature.defaults == defaults)
 
-    shape_argnames = signature.args[1:-len(defaults)]  # self, a, b, loc=0, scale=1 
+    shape_argnames = signature.args[1:-len(defaults)]  # self, a, b, loc=0, scale=1
     if distfn.shapes:
         shapes_ = distfn.shapes.replace(',',' ').split()
-    else: 
+    else:
         shapes_ = ''
-    npt.assert_( len(shapes_) == distfn.numargs)
-    npt.assert_( len(shapes_) == len(shape_argnames))
+    npt.assert_(len(shapes_) == distfn.numargs)
+    npt.assert_(len(shapes_) == len(shape_argnames))
 
     # check calling w/ named arguments
     shape_args = list(shape_args)
