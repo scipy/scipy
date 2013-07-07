@@ -553,6 +553,7 @@ class rv_generic(object):
 
         Works by inspecting the call signatures of `names_to_inspect`
         and constructing the argument-parsing functions dynamically.
+        Also sets `numargs`, unless it's explicitly overridden.
         Modifies the calling class.
         Is supposed to be called in __init__ of a class for each distribution.
         """
@@ -569,10 +570,10 @@ class rv_generic(object):
             shapes_list.append(shapes_args.args)
         shapes = max(shapes_list, key = lambda x: len(x))
         shapes = shapes[2:]  # remove self, x,
-        shapes =', '.join(shapes) + ', ' if shapes else ''  # NB: not None
+        shapes_str =', '.join(shapes) + ', ' if shapes else ''  # NB: not None
 
         # have the arguments, construct the method from template
-        dct = dict(shape_arg_str=shapes,
+        dct = dict(shape_arg_str=shapes_str,
                    locscale_in=locscale_in,
                    locscale_out=locscale_out,
         )
@@ -581,12 +582,15 @@ class rv_generic(object):
         for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
             setattr(self.__class__, name, ns[name])
 
+        if not hasattr(self,'numargs'):
+            # allows more general subclassing with *args
+            self.numargs = len(shapes)
+
         # NB: these are not tested:
         ## subclassing w/ *args/**kwargs -- need to handle?
         ## what about defaults: def _pdf(self, x, a=1): pass
 
-        ## technically, can return `shapes` and `numargs` here:
-        ## setting `numargs` relies on `inspect` anyway, so it's just code dup.
+        ## technically, can return `shapes` here as well
 
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
@@ -1011,13 +1015,10 @@ class rv_continuous(rv_generic):
 
         self.expandarr = 1
 
-        if not hasattr(self,'numargs'):
-            # allows more general subclassing with *args
-            cdf_signature = inspect.getargspec(get_method_function(self._cdf))
-            numargs1 = len(cdf_signature[0]) - 2
-            pdf_signature = inspect.getargspec(get_method_function(self._pdf))
-            numargs2 = len(pdf_signature[0]) - 2
-            self.numargs = max(numargs1, numargs2)
+        self._construct_argparser(names_to_inspect=['_pdf', '_cdf'],
+                                  locscale_in='loc=0, scale=1',
+                                  locscale_out='loc, scale')
+
         # nin correction
         self.vecfunc = sgf(self._ppf_single_call,otypes='d')
         self.vecfunc.nin = self.numargs + 1
@@ -1049,10 +1050,6 @@ class rv_continuous(rv_generic):
 
         ## This only works for old-style classes...
         # self.__class__.__doc__ = self.__doc__
-
-        self._construct_argparser(names_to_inspect=['_pdf', '_cdf'],
-                                  locscale_in='loc=0, scale=1',
-                                  locscale_out='loc, scale')
 
 
     def _construct_default_doc(self, longname=None, extradoc=None):
@@ -6096,18 +6093,10 @@ class rv_discrete(rv_generic):
                                                  self, rv_discrete)
             self.moment_gen = instancemethod(_drv_moment_gen,
                                              self, rv_discrete)
-            self.numargs = 0
-
             self._construct_argparser(names_to_inspect=['_drv_pmf'],
                                   locscale_in='loc=0',
                                   locscale_out='loc, 1')  # scale=1 for discrete RVs
         else:
-            cdf_signature = inspect.getargspec(get_method_function(self._cdf))
-            numargs1 = len(cdf_signature[0]) - 2
-            pmf_signature = inspect.getargspec(get_method_function(self._pmf))
-            numargs2 = len(pmf_signature[0]) - 2
-            self.numargs = max(numargs1, numargs2)
-
             self._construct_argparser(names_to_inspect=['_pmf', '_cdf'],
                                   locscale_in='loc=0',
                                   locscale_out='loc, 1')  # scale=1 for discrete RVs
