@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_equal, run_module_suite
 
 from scipy.stats._tukeylambda_stats import tukeylambda_variance, \
                                             tukeylambda_kurtosis
@@ -85,3 +85,7 @@ def test_tukeylambda_stats_invalid():
     lam = [-1.0, -0.25]
     kurt = tukeylambda_kurtosis(lam)
     assert_equal(kurt, np.array([np.nan, np.inf]))
+
+
+if __name__ == "__main__":
+    run_module_suite()

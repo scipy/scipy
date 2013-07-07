@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, run_module_suite
 from scipy.stats import \
     binned_statistic, binned_statistic_2d, binned_statistic_dd
 
@@ -217,3 +217,7 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(bc, bc2)
         count1adj = count1[count1.nonzero()]
         assert_array_almost_equal(bcount, count1adj)
+
+
+if __name__ == "__main__":
+    run_module_suite()

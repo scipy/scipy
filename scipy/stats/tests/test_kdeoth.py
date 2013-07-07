@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 from scipy import stats
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_, assert_raises, \
-    assert_array_almost_equal, assert_array_almost_equal_nulp
+    assert_array_almost_equal, assert_array_almost_equal_nulp, run_module_suite
 
 
 def test_kde_1d():
@@ -178,3 +178,7 @@ def test_kde_integer_input():
     kde = stats.gaussian_kde(x1)
     y_expected = [0.13480721, 0.18222869, 0.19514935, 0.18222869, 0.13480721]
     assert_array_almost_equal(kde(x1), y_expected, decimal=6)
+
+
+if __name__ == "__main__":
+    run_module_suite()
