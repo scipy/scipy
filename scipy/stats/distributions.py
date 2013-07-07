@@ -7276,12 +7276,11 @@ class poisson_gen(rv_discrete):
     %(example)s
 
     """
-    # Override rv_discrete._argcheck to allow 0.
-    def _argcheck(self, *args):
-        cond = 1
-        for arg in args:
-            cond &= (arg >= 0)
-        return cond
+    # Override rv_discrete._argcheck to allow mu == 0.
+    def _argcheck(self, mu):
+        mu = asarray(mu)
+        self.b = np.where(mu > 0, inf, 0)
+        return mu >= 0
 
     def _rvs(self, mu):
         return mtrand.poisson(mu, self._size)
