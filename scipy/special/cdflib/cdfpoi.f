@@ -20,7 +20,7 @@ C     WHICH --> Integer indicating which  argument
 C               value is to be calculated from the others.
 C               Legal range: 1..3
 C               iwhich = 1 : Calculate P and Q from S and XLAM
-C               iwhich = 2 : Calculate A from P,Q and XLAM
+C               iwhich = 2 : Calculate S from P,Q and XLAM
 C               iwhich = 3 : Calculate XLAM from P,Q and S
 C                    INTEGER WHICH
 C
@@ -167,6 +167,11 @@ C     ..
           status = 0
 
       ELSE IF ((2).EQ. (which)) THEN
+          IF (XLAM .EQ. 0.0D0) THEN
+              s = 0.0D0
+              status = 0
+              GO TO 260
+          END IF
           s = 5.0D0
           CALL dstinv(0.0D0,inf,0.5D0,0.5D0,5.0D0,atol,tol)
           status = 0
