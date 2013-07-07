@@ -36,6 +36,11 @@ import numpy as np
 
 
 __doc__ = r"""
+
+.. moduleauthor:: Kenneth L. Ho <klho@stanford.edu>
+
+.. versionadded:: 0.13
+
 The ID software package [MartinssonID] by Martinsson, Rokhlin, Shkolnisky, and
 Tygert is a Fortran library to compute IDs using various algorithms, including
 the rank-revealing QR approach of [Cheng2005] and the more recent randomized
@@ -75,11 +80,10 @@ We advise the user to consult also the `documentation for the ID package
 .. autosummary::
    :toctree: generated/
 
+
+
 Tutorial
 ========
-
-Overview
---------
 
 Initializing
 ------------
@@ -102,8 +106,8 @@ We can also do this explicitly via::
 >>> n = 1000
 >>> A = np.empty((n, n), order='F')
 >>> for j in range(n):
-...     for i in range(m):
-...         A[i,j] = 1. / (i + j + 1)
+>>>     for i in range(m):
+>>>         A[i,j] = 1. / (i + j + 1)
 
 Note the use of the flag ``order='F'`` in :func:`numpy.empty`. This
 instantiates the matrix in Fortran-contiguous order and is important for
@@ -209,9 +213,9 @@ without having to first compute ``P``.
 
 Alternatively, this can be done explicitly as well using::
 
-  B = A[:,idx[:k]]
-  P = np.hstack([np.eye(k), proj])[:,np.argsort(idx)]
-  C = np.dot(B, P)
+>>> B = A[:,idx[:k]]
+>>> P = np.hstack([np.eye(k), proj])[:,np.argsort(idx)]
+>>> C = np.dot(B, P)
 
 Computing an SVD
 ----------------
@@ -318,6 +322,9 @@ backend routine.
 
 Reference
 =========
+
+Main functionality
+------------------
 
 .. autofunction:: interp_decomp
 .. autofunction:: reconstruct_matrix_from_id
@@ -429,31 +436,27 @@ def interp_decomp(A, eps_or_k, rand=True):
         :func:`backend.idzp_rid`, :func:`backend.idzr_id`,
         :func:`backend.idzr_aid`, and :func:`backend.idzr_rid`.
 
-    :param A:
-        Matrix to be factored, given as either a :class:`numpy.ndarray` or a
-        :class:`scipy.sparse.linalg.LinearOperator` with the `rmatvec` method (to
-        apply the matrix adjoint).
-    :type A: :class:`numpy.ndarray` or :class:`scipy.sparse.linalg.LinearOperator`
-    :param eps_or_k:
+    Parameters
+    ----------
+    A : :class:`numpy.ndarray` or :class:`scipy.sparse.linalg.LinearOperator` with `rmatvec`
+        Matrix to be factored
+    eps_or_k : float or int
         Relative error (if `eps_or_k < 1`) or rank (if `eps_or_k >= 1`) of
         approximation.
-    :type eps_or_k: float or int
-    :keyword rand:
+    rand : bool, optional
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`
         (randomized algorithms are always used if `A` is of type
         :class:`scipy.sparse.linalg.LinearOperator`).
-    :type rand: bool
 
-    :return:
+    Returns
+    -------
+    k : int
         Rank required to achieve specified relative precision if
         `eps_or_k < 1`.
-    :rtype: int
-    :return:
+    idx : :class:`numpy.ndarray`
         Column index array.
-    :rtype: :class:`numpy.ndarray`
-    :return:
+    proj : :class:`numpy.ndarray`
         Interpolation coefficients.
-    :rtype: :class:`numpy.ndarray`
     """
     from scipy.sparse.linalg import LinearOperator
 
@@ -531,19 +534,19 @@ def reconstruct_matrix_from_id(B, idx, proj):
         appropriate backend. For details, see :func:`backend.idd_reconid` and
         :func:`backend.idz_reconid`.
 
-    :param B:
+    Parameters
+    ----------
+    B : :class:`numpy.ndarray`
         Skeleton matrix.
-    :type B: :class:`numpy.ndarray`
-    :param idx:
+    idx : :class:`numpy.ndarray`
         Column index array.
-    :type idx: :class:`numpy.ndarray`
-    :param proj:
+    proj : :class:`numpy.ndarray`
         Interpolation coefficients.
-    :type proj: :class:`numpy.ndarray`
 
-    :return:
+    Returns
+    -------
+    :class:`numpy.ndarray`
         Reconstructed matrix.
-    :rtype: :class:`numpy.ndarray`
     """
     if B.dtype == np.float64:
         return backend.idd_reconid(B, idx + 1, proj)
@@ -574,16 +577,17 @@ def reconstruct_interp_matrix(idx, proj):
         appropriate backend. For details, see :func:`backend.idd_reconint` and
         :func:`backend.idz_reconint`.
 
-    :param idx:
+    Parameters
+    ----------
+    idx : :class:`numpy.ndarray`
         Column index array.
-    :type idx: :class:`numpy.ndarray`
-    :param proj:
+    proj : :class:`numpy.ndarray`
         Interpolation coefficients.
-    :type proj: :class:`numpy.ndarray`
 
-    :return:
+    Returns
+    -------
+    :class:`numpy.ndarray`
         Interpolation matrix.
-    :rtype: :class:`numpy.ndarray`
     """
     if proj.dtype == np.float64:
         return backend.idd_reconint(idx + 1, proj)
@@ -613,19 +617,19 @@ def reconstruct_skel_matrix(A, k, idx):
         appropriate backend. For details, see :func:`backend.idd_copycols` and
         :func:`backend.idz_copycols`.
 
-    :param A:
+    Parameters
+    ----------
+    A : :class:`numpy.ndarray`
         Original matrix.
-    :type A: :class:`numpy.ndarray`
-    :param k:
+    k : int
         Rank of ID.
-    :type k: int
-    :param idx:
+    idx : :class:`numpy.ndarray`
         Column index array.
-    :type idx: :class:`numpy.ndarray`
 
-    :return:
+    Returns
+    -------
+    :class:`numpy.ndarray`
         Skeleton matrix.
-    :rtype: :class:`numpy.ndarray`
     """
     if A.dtype == np.float64:
         return backend.idd_copycols(A, k, idx + 1)
@@ -651,25 +655,23 @@ def id_to_svd(B, idx, proj):
         appropriate backend. For details, see :func:`backend.idd_id2svd` and
         :func:`backend.idz_id2svd`.
 
-    :param B:
+    Parameters
+    ----------
+    B : :class:`numpy.ndarray`
         Skeleton matrix.
-    :type B: :class:`numpy.ndarray`
-    :param idx:
+    idx : :class:`numpy.ndarray`
         Column index array.
-    :type idx: :class:`numpy.ndarray`
-    :param proj:
+    proj : :class:`numpy.ndarray`
         Interpolation coefficients.
-    :type proj: :class:`numpy.ndarray`
 
-    :return:
+    Returns
+    -------
+    U : :class:`numpy.ndarray`
         Left singular vectors.
-    :rtype: :class:`numpy.ndarray`
-    :return:
+    S : :class:`numpy.ndarray`
         Singular values.
-    :rtype: :class:`numpy.ndarray`
-    :return:
+    V : :class:`numpy.ndarray`
         Right singular vectors.
-    :rtype: :class:`numpy.ndarray`
     """
     if B.dtype == np.float64:
         U, V, S = backend.idd_id2svd(B, idx + 1, proj)
@@ -688,17 +690,18 @@ def estimate_spectral_norm(A, its=20):
         appropriate backend. For details, see :func:`backend.idd_snorm` and
         :func:`backend.idz_snorm`.
 
-    :param A:
+    Parameters
+    ----------
+    A : :class:`scipy.sparse.linalg.LinearOperator`
         Matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with the
         `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    :type A: :class:`scipy.sparse.linalg.LinearOperator`
-    :keyword its:
+    its : int
         Number of power method iterations.
-    :type its: int
 
-    :return:
+    Returns
+    -------
+    float
         Spectral norm estimate.
-    :rtype: float
     """
     from scipy.sparse.linalg import aslinearoperator
     A = aslinearoperator(A)
@@ -722,21 +725,21 @@ def estimate_spectral_norm_diff(A, B, its=20):
         appropriate backend. For details, see :func:`backend.idd_diffsnorm` and
         :func:`backend.idz_diffsnorm`.
 
-    :param A:
+    Parameters
+    ----------
+    A : :class:`scipy.sparse.linalg.LinearOperator`
         First matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with the
         `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    :type A: :class:`scipy.sparse.linalg.LinearOperator`
-    :param B:
+    B : :class:`scipy.sparse.linalg.LinearOperator`
         Second matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with
         the `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    :type B: :class:`scipy.sparse.linalg.LinearOperator`
-    :keyword its:
+    its : int
         Number of power method iterations.
-    :type its: int
 
-    :return:
+    Returns
+    -------
+    float
         Spectral norm estimate of matrix difference.
-    :rtype: float
     """
     from scipy.sparse.linalg import aslinearoperator
     A = aslinearoperator(A)
@@ -780,30 +783,28 @@ def svd(A, eps_or_k, rand=True):
         :func:`backend.idzp_rsvd`, :func:`backend.idzr_svd`,
         :func:`backend.idzr_asvd`, and :func:`backend.idzr_rsvd`.
 
-    :param A:
+    Parameters
+    ----------
+    A : :class:`numpy.ndarray` or :class:`scipy.sparse.linalg.LinearOperator`
         Matrix to be factored, given as either a :class:`numpy.ndarray` or a
-        :class:`scipy.sparse.linalg.LinearOperator` with the `matvec` and `rmatvec`
-        methods (to apply the matrix and its adjoint).
-    :type A: :class:`numpy.ndarray` or :class:`scipy.sparse.linalg.LinearOperator`
-    :param eps_or_k:
+        :class:`scipy.sparse.linalg.LinearOperator` with the `matvec` and
+        `rmatvec` methods (to apply the matrix and its adjoint).
+    eps_or_k : float or int
         Relative error (if `eps_or_k < 1`) or rank (if `eps_or_k >= 1`) of
         approximation.
-    :type eps_or_k: float or int
-    :keyword rand:
+    rand : bool, optional
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`
         (randomized algorithms are always used if `A` is of type
         :class:`scipy.sparse.linalg.LinearOperator`).
-    :type rand: bool
 
-    :return:
+    Returns
+    -------
+    U : :class:`numpy.ndarray`
         Left singular vectors.
-    :rtype: :class:`numpy.ndarray`
-    :return:
+    S : :class:`numpy.ndarray`
         Singular values.
-    :rtype: :class:`numpy.ndarray`
-    :return:
+    V : :class:`numpy.ndarray`
         Right singular vectors.
-    :rtype: :class:`numpy.ndarray`
     """
     from scipy.sparse.linalg import LinearOperator
 
@@ -869,26 +870,27 @@ def estimate_rank(A, eps):
 
     The matrix `A` can be given as either a :class:`numpy.ndarray` or a
     :class:`scipy.sparse.linalg.LinearOperator`, with different algorithms used
-    for each case. If `A` is of type :class:`numpy.ndarray`, then the output rank
-    is typically about 8 higher than the actual numerical rank.
+    for each case. If `A` is of type :class:`numpy.ndarray`, then the output
+    rank is typically about 8 higher than the actual numerical rank.
 
     ..  This function automatically detects the form of the input parameters and
         passes them to the appropriate backend. For details,
         see :func:`backend.idd_estrank`, :func:`backend.idd_findrank`,
         :func:`backend.idz_estrank`, and :func:`backend.idz_findrank`.
 
-    :param A:
+    Parameters
+    ----------
+    A : :class:`numpy.ndarray` or :class:`scipy.sparse.linalg.LinearOperator`
         Matrix whose rank is to be estimated, given as either a
-        :class:`numpy.ndarray` or a :class:`scipy.sparse.linalg.LinearOperator` with
-        the `rmatvec` method (to apply the matrix adjoint).
-    :type A: :class:`numpy.ndarray` or :class:`scipy.sparse.linalg.LinearOperator`
-    :param eps:
+        :class:`numpy.ndarray` or a :class:`scipy.sparse.linalg.LinearOperator`
+        with the `rmatvec` method (to apply the matrix adjoint).
+    eps : float
         Relative error for numerical rank definition.
-    :type eps: float
 
-    :return:
+    Returns
+    -------
+    int
         Estimated matrix rank.
-    :rtype: int
     """
     from scipy.sparse.linalg import LinearOperator
 
