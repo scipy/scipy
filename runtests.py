@@ -36,6 +36,7 @@ sys.path.pop(0)
 
 import shutil
 import subprocess
+import time
 from argparse import ArgumentParser, REMAINDER
 
 def main(argv):
@@ -184,8 +185,25 @@ def build_project(args):
     else:
         print("Building, see build.log...")
         with open('build.log', 'w') as log:
-            ret = subprocess.call(cmd, env=env, stdout=log, stderr=log,
-                                  cwd=root_dir)
+            p = subprocess.Popen(cmd, env=env, stdout=log, stderr=log,
+                                 cwd=root_dir)
+
+        # Wait for it to finish, and print something to indicate the
+        # process is alive, but only if the log file has grown (to
+        # allow continuous integration environments kill a hanging
+        # process accurately if it produces no output)
+        last_blip = time.time()
+        last_log_size = os.stat('build.log').st_size
+        while p.poll() is None:
+            time.sleep(0.5)
+            if time.time() - last_blip > 60:
+                log_size = os.stat('build.log').st_size
+                if log_size > last_log_size:
+                    print("    ... build in progress")
+                    last_blip = time.time()
+                    last_log_size = log_size
+
+        ret = p.wait()
 
     if ret == 0:
         print("Build OK")
