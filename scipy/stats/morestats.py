@@ -1170,9 +1170,9 @@ def fligner(*args,**kwds):
     return Xsq, pval
 
 
-def mood(x,y):
+def mood(x, y, axis=0):
     """
-    Perform Mood's test for equal scale parameters.
+    Perform Mood's test for equal scale parameters.  (generalization to the nd case)
 
     Mood's two-sample test for scale parameters is a non-parametric
     test for the null hypothesis that two samples are drawn from the
@@ -1182,12 +1182,39 @@ def mood(x,y):
     ----------
     x, y : array_like
         Arrays of sample data.
+    axis: the axis along which the samples are tested
+        x and y can be of different length along the dimension = axis
+        Example: if the inputs are of shapes  (n0, n1, n2, n3)  and (n0, m1, n2, n3),
+        then if axis = 1, the resulting z and p values will have the following shape:
+         (n0,n2,n3)
+        if axis is None, flattens both arrays and tests 1d arrays  (behave like mood.test in R)
+
+    Examples
+    --------
+        >>> from scipy.stats import mood
+        >>> import numpy as np
+        >>> x2 = np.random.randn(2, 45, 6, 7)
+        >>> x1 = np.random.randn(2, 30, 6, 7)
+        >>> z, p = mood(x1, x2, axis = 1)
+        >>> p.shape
+        (2, 6, 7)
+        >>> (p > 0.1).sum()  #the number of points where the diff. in scale is not significant
+        74
+
+        Different scales:
+        >>> x1 = np.random.randn(2,30)
+        >>> x2 = np.random.randn(2,35)*10.0
+        >>> mood(x1,x2, axis=1)
+        (array([-5.84332354, -5.6840814 ]), array([  5.11694980e-09,   1.31517628e-08]))
+
+
+
 
     Returns
     -------
-    z : float
+    z : array_like
         The z-score for the hypothesis test.
-    p-value : float
+    p-value : array_like
         The p-value for the hypothesis test.
 
     See Also
@@ -1203,29 +1230,62 @@ def mood(x,y):
     f(x/s)/s respectively, for some probability density function f.  The
     null hypothesis is that s = 1.
 
+
+    Generalized to the n-dimensional case by adding the axis argument, and using for loops, since rankdata
+    is not vectorized.
+    For improving performance consider vectorizing rankdata function.
+
     """
-    n = len(x)
-    m = len(y)
-    xy = r_[x,y]
-    N = m+n
+
+    x = np.array(x, dtype=float)
+    y = np.array(y, dtype=float)
+
+    if axis is None:
+        x = x.flatten()
+        y = y.flatten()
+        axis = 0
+
+    # shape of the result array
+    res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])
+
+    n = x.shape[axis]
+    m = y.shape[axis]
+    xy = np.concatenate((x, y), axis=axis)
+
+    N = m + n
     if N < 3:
         raise ValueError("Not enough observations.")
-    ranks = stats.rankdata(xy)
-    Ri = ranks[:n]
-    M = sum((Ri - (N+1.0)/2)**2,axis=0)
+
+    if axis != 0:
+        xy = np.rollaxis(xy, axis)
+
+    xy = xy.reshape(xy.shape[0], -1)
+
+    all_ranks = np.zeros_like(xy)
+    for j in range(xy.shape[1]):
+        all_ranks[:, j] = stats.rankdata(xy[:, j])
+
+    Ri = all_ranks[:n]
+    M = sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
     # Approx stat.
-    mnM = n*(N*N-1.0)/12
-    varM = m*n*(N+1.0)*(N+2)*(N-2)/180
-    z = (M-mnM)/sqrt(varM)
+    mnM = n * (N * N - 1.0) / 12
+    varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
+    z = (M - mnM) / sqrt(varM)
+
+    pval = np.zeros_like(z)
 
     # Numerically better than p = norm.cdf(x); p = min(p, 1 - p)
-    if z > 0:
-        pval = distributions.norm.sf(z)
-    else:
-        pval = distributions.norm.cdf(z)
+    positz = z > 0
+    not_posit_z = ~positz
+    pval[positz] = distributions.norm.sf(z[positz])
+    pval[not_posit_z] = distributions.norm.cdf(z[not_posit_z])
 
     # Account for two-sidedness
     pval *= 2.
+
+    z.shape = res_shape
+    pval.shape = res_shape
+
     return z, pval
 
 
