@@ -90,7 +90,7 @@ class _TestCommon:
             yield dec.skipif(fails, msg)(check), dtype
 
     def test_bool_rollover(self):
-        """bool's underlying dtype is 1 byte, check that it does not 
+        """bool's underlying dtype is 1 byte, check that it does not
         rollover True -> False at 256.
         """
         dat = np.matrix([[True, False]])

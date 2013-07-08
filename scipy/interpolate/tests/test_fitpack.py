@@ -258,6 +258,7 @@ class TestSplev(TestCase):
         z = splev(1, tck)
         assert_equal(z.shape, ())
 
+
 class TestSplder(object):
     def __init__(self):
         # non-uniform grid, just to make it sure
@@ -314,11 +315,11 @@ class TestSplder(object):
         # Should refuse to differentiate splines with kinks
 
         spl2 = insert(0.5, self.spl, m=2)
-        splder(spl2, 2) # Should work
+        splder(spl2, 2)  # Should work
         assert_raises(ValueError, splder, spl2, 3)
 
         spl2 = insert(0.5, self.spl, m=3)
-        splder(spl2, 1) # Should work
+        splder(spl2, 1)  # Should work
         assert_raises(ValueError, splder, spl2, 2)
 
         spl2 = insert(0.5, self.spl, m=4)
@@ -331,6 +332,7 @@ def test_bisplrep_overflow():
     x, y = np.meshgrid(a, b)
     z = np.random.rand(*x.shape)
     assert_raises(OverflowError, bisplrep, x.ravel(), y.ravel(), z.ravel(), s=0)
+
 
 if __name__ == "__main__":
     __put_prints = True

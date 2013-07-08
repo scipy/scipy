@@ -463,10 +463,10 @@ def _fractional_power_pade_constant(i, t):
         return -t
     elif i % 2 == 0:
         j = i // 2
-        return (-j + t) / (2 * (2*j - 1) )
+        return (-j + t) / (2 * (2*j - 1))
     elif i % 2 == 1:
         j = (i - 1) // 2
-        return (-j - t) / (2 * (2*j + 1) )
+        return (-j - t) / (2 * (2*j + 1))
     else:
         raise Exception('internal error')
 
@@ -524,7 +524,7 @@ def _fractional_power_pade(R, t, m):
 def _remainder_matrix_power_triu(T, t):
     """
     Compute a fractional power of an upper triangular matrix.
-    
+
     The fractional power is restricted to fractions -1 < t < 1.
     This uses algorithm (3.1) of [1]_.
     The Pade approximation itself uses algorithm (4.1) of [2]_.
@@ -554,13 +554,13 @@ def _remainder_matrix_power_triu(T, t):
 
     """
     m_to_theta = {
-            1 : 1.51e-5,
-            2 : 2.24e-3,
-            3 : 1.88e-2,
-            4 : 6.04e-2,
-            5 : 1.24e-1,
-            6 : 2.00e-1,
-            7 : 2.79e-1,
+            1: 1.51e-5,
+            2: 2.24e-3,
+            3: 1.88e-2,
+            4: 6.04e-2,
+            5: 1.24e-1,
+            6: 2.00e-1,
+            7: 2.79e-1,
             }
     n, n = T.shape
     T0 = T
@@ -738,7 +738,7 @@ def fractional_matrix_power(A, p):
         p1 = p - np.floor(p)
         a = int(np.floor(p))
         b = p1
-        R, info = funm(A, lambda x : pow(x, b), disp=False)
+        R, info = funm(A, lambda x: pow(x, b), disp=False)
         Q = np.linalg.matrix_power(A, a)
         return Q.dot(R)
 

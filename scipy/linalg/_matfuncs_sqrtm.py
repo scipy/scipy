@@ -110,7 +110,7 @@ def _sqrtm_triu(T, blocksize=64):
             else:
                 x, scale, info = ztrsyl(Rii, Rjj, S)
             R[istart:istop, jstart:jstop] = x * scale
-    
+
     # Return the matrix square root.
     return R
 
@@ -184,4 +184,3 @@ def sqrtm(A, disp=True, blocksize=64):
             arg2 = np.inf
 
         return X.A, arg2
-

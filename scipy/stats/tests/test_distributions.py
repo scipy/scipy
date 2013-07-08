@@ -348,10 +348,10 @@ class TestLoggamma(TestCase):
         # of "A Statistical Study of Log-Gamma Distribution", by Ping Shing
         # Chan (thesis, McMaster University, 1993).
         table = np.array([
-                # c,      mean,     var,      skew,    exc. kurt.
-                 0.5,   -1.9635,   4.9348,  -1.5351,   4.0000,
-                 1.0,   -0.5772,   1.6449,  -1.1395,   2.4000,
-                12.0,    2.4427,   0.0869,  -0.2946,   0.1735,
+                # c,    mean,   var,    skew,    exc. kurt.
+                 0.5, -1.9635, 4.9348, -1.5351, 4.0000,
+                 1.0, -0.5772, 1.6449, -1.1395, 2.4000,
+                 12.0, 2.4427, 0.0869, -0.2946, 0.1735,
             ]).reshape(-1, 5)
         for c, mean, var, skew, kurt in table:
             computed = stats.loggamma.stats(c, moments='msvk')
@@ -510,9 +510,9 @@ class TestDLaplace(TestCase):
         dl = stats.dlaplace(a)
         m, v, s, k = dl.stats('mvsk')
 
-        N=37
+        N = 37
         xx = np.arange(-N, N+1)
-        pp =  dl.pmf(xx)
+        pp = dl.pmf(xx)
         m2, m4 = np.sum(pp*xx**2), np.sum(pp*xx**4)
         assert_equal((m, s), (0,0))
         assert_allclose((v, k), (m2, m4/m2**2 - 3.), atol=1e-14, rtol=1e-8)
