@@ -1553,7 +1553,7 @@ cdef class cKDTree:
 
         # Make sure trees are compatible
         if self.m != other.m:
-            raise ValueError("Trees passed to query_ball_trees have different dimensionality")
+            raise ValueError("Trees passed to query_ball_tree have different dimensionality")
 
         # Track node-to-node min/max distances
         tracker = RectRectDistanceTracker(
@@ -1898,7 +1898,7 @@ cdef class cKDTree:
 
         # Make sure trees are compatible
         if self.m != other.m:
-            raise ValueError("Trees passed to query_ball_trees have different dimensionality")
+            raise ValueError("Trees passed to count_neighbors have different dimensionality")
 
         # Make a copy of r array to ensure it's contiguous and to modify it
         # below
@@ -2063,7 +2063,7 @@ cdef class cKDTree:
 
         # Make sure trees are compatible
         if self.m != other.m:
-            raise ValueError("Trees passed to query_ball_trees have different dimensionality")
+            raise ValueError("Trees passed to sparse_distance_matrix have different dimensionality")
 
         # Calculate mins and maxes to outer box
         tracker = RectRectDistanceTracker(
