@@ -3,8 +3,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_equal, assert_array_equal, assert_almost_equal, \
-        assert_, run_module_suite
+from numpy.testing import (assert_equal, assert_array_equal,
+    assert_almost_equal, assert_array_almost_equal, assert_, run_module_suite)
 
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
@@ -84,6 +84,7 @@ class test_random(ConsistencyTests):
     def setUp(self):
         self.n = 100
         self.m = 4
+        np.random.seed(1234)
         self.data = np.random.randn(self.n, self.m)
         self.kdtree = KDTree(self.data,leafsize=2)
         self.x = np.random.randn(self.m)
@@ -110,6 +111,7 @@ class test_small(ConsistencyTests):
         self.kdtree = KDTree(self.data)
         self.n = self.kdtree.n
         self.m = self.kdtree.m
+        np.random.seed(1234)
         self.x = np.random.randn(3)
         self.d = 0.5
         self.k = 4
@@ -232,6 +234,7 @@ class test_vectorization_compiled:
         assert_equal(np.shape(i),(2,4))
 
     def test_vectorized_query_noncontiguous_values(self):
+        np.random.seed(1234)
         qs = np.random.randn(3,1000).T
         ds, i_s = self.kdtree.query(qs)
         for q, d, i in zip(qs,ds,i_s):
@@ -275,6 +278,7 @@ class test_random_ball(ball_consistency):
     def setUp(self):
         n = 100
         m = 4
+        np.random.seed(1234)
         self.data = np.random.randn(n,m)
         self.T = KDTree(self.data,leafsize=2)
         self.x = np.random.randn(m)
@@ -288,6 +292,7 @@ class test_random_ball_compiled(ball_consistency):
     def setUp(self):
         n = 100
         m = 4
+        np.random.seed(1234)
         self.data = np.random.randn(n,m)
         self.T = cKDTree(self.data,leafsize=2)
         self.x = np.random.randn(m)
@@ -367,6 +372,7 @@ def test_random_ball_vectorized_compiled():
 
     n = 20
     m = 5
+    np.random.seed(1234)
     T = cKDTree(np.random.randn(n,m))
 
     r = T.query_ball_point(np.random.randn(2,3,m),1)
@@ -395,6 +401,7 @@ class test_two_random_trees(two_trees_consistency):
     def setUp(self):
         n = 50
         m = 4
+        np.random.seed(1234)
         self.data1 = np.random.randn(n,m)
         self.T1 = KDTree(self.data1,leafsize=2)
         self.data2 = np.random.randn(n,m)
@@ -409,6 +416,7 @@ class test_two_random_trees_compiled(two_trees_consistency):
     def setUp(self):
         n = 50
         m = 4
+        np.random.seed(1234)
         self.data1 = np.random.randn(n,m)
         self.T1 = cKDTree(self.data1,leafsize=2)
         self.data2 = np.random.randn(n,m)
@@ -490,6 +498,7 @@ def test_distance_linf():
 
 
 def test_distance_vectorization():
+    np.random.seed(1234)
     x = np.random.randn(10,1,3)
     y = np.random.randn(1,7,3)
     assert_equal(distance(x,y).shape,(10,7))
@@ -500,6 +509,7 @@ class test_count_neighbors:
     def setUp(self):
         n = 50
         m = 2
+        np.random.seed(1234)
         self.T1 = KDTree(np.random.randn(n,m),leafsize=2)
         self.T2 = KDTree(np.random.randn(n,m),leafsize=2)
 
@@ -526,6 +536,7 @@ class test_count_neighbors_compiled:
     def setUp(self):
         n = 50
         m = 2
+        np.random.seed(1234)
         self.T1 = cKDTree(np.random.randn(n,m),leafsize=2)
         self.T2 = cKDTree(np.random.randn(n,m),leafsize=2)
 
@@ -551,21 +562,25 @@ class test_sparse_distance_matrix:
     def setUp(self):
         n = 50
         m = 4
+        np.random.seed(1234)
         self.T1 = KDTree(np.random.randn(n,m),leafsize=2)
         self.T2 = KDTree(np.random.randn(n,m),leafsize=2)
-        self.r = 0.3
+        self.r = 0.5
 
     def test_consistency_with_neighbors(self):
         M = self.T1.sparse_distance_matrix(self.T2, self.r)
         r = self.T1.query_ball_tree(self.T2, self.r)
         for i,l in enumerate(r):
             for j in l:
-                assert_equal(M[i,j],distance(self.T1.data[i],self.T2.data[j]))
+                assert_almost_equal(M[i,j],
+                                    distance(self.T1.data[i], self.T2.data[j]),
+                                    decimal=14)
         for ((i,j),d) in M.items():
             assert_(j in r[i])
 
     def test_zero_distance(self):
-        M = self.T1.sparse_distance_matrix(self.T1, self.r)  # raises an exception for bug 870
+        # raises an exception for bug 870
+        self.T1.sparse_distance_matrix(self.T1, self.r)
 
 
 class test_sparse_distance_matrix_compiled:
@@ -573,27 +588,42 @@ class test_sparse_distance_matrix_compiled:
         n = 50
         m = 4
         np.random.seed(0)
-        self.T1 = cKDTree(np.random.randn(n,m),leafsize=2)
-        self.T2 = cKDTree(np.random.randn(n,m),leafsize=2)
-        self.r = 0.3
+        data1 = np.random.randn(n,m)
+        data2 = np.random.randn(n,m)
+        self.T1 = cKDTree(data1,leafsize=2)
+        self.T2 = cKDTree(data2,leafsize=2)
+
+        self.ref_T1 = KDTree(data1, leafsize=2)
+        self.ref_T2 = KDTree(data2, leafsize=2)
+        self.r = 0.5
 
     def test_consistency_with_neighbors(self):
         M = self.T1.sparse_distance_matrix(self.T2, self.r)
         r = self.T1.query_ball_tree(self.T2, self.r)
         for i,l in enumerate(r):
             for j in l:
-                assert_equal(M[i,j],distance(self.T1.data[i],self.T2.data[j]))
+                assert_almost_equal(M[i,j],
+                                    distance(self.T1.data[i], self.T2.data[j]),
+                                    decimal=14)
         for ((i,j),d) in M.items():
             assert_(j in r[i])
 
     def test_zero_distance(self):
-        M = self.T1.sparse_distance_matrix(self.T1, self.r)  # raises an exception for bug 870 (FIXME: Does it?)
+        # raises an exception for bug 870 (FIXME: Does it?)
+        self.T1.sparse_distance_matrix(self.T1, self.r)
+
+    def test_consistency_with_python(self):
+        M1 = self.T1.sparse_distance_matrix(self.T2, self.r)
+        M2 = self.ref_T1.sparse_distance_matrix(self.ref_T2, self.r)
+
+        assert_array_almost_equal(M1.todense(), M2.todense(), decimal=14)
 
 
 def test_distance_matrix():
     m = 10
     n = 11
     k = 4
+    np.random.seed(1234)
     xs = np.random.randn(m,k)
     ys = np.random.randn(n,k)
     ds = distance_matrix(xs,ys)
@@ -607,6 +637,7 @@ def test_distance_matrix_looping():
     m = 10
     n = 11
     k = 4
+    np.random.seed(1234)
     xs = np.random.randn(m,k)
     ys = np.random.randn(n,k)
     ds = distance_matrix(xs,ys)
