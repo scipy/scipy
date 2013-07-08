@@ -1189,6 +1189,21 @@ def mood(x, y, axis=0):
          (n0,n2,n3)
         if axis is None, flattens both arrays and tests 1d arrays  (behave like mood.test in R)
 
+    Examples
+    --------
+        >>> from scipy.stats import mood
+        >>> import numpy as np
+        >>> x2 = np.random.randn(2, 45, 6, 7)
+        >>> x1 = np.random.randn(2, 30, 6, 7)
+        >>> z, p = mood(x1, x2, axis = 1)
+        >>> p.shape
+        (2, 6, 7)
+        >>> p[p > 0.1].sum()
+        39.753851772441067
+        >>> (p > 0.1).sum()  #the number of points where the diff. in scale is not significant
+        74
+
+
 
     Returns
     -------
@@ -1230,7 +1245,7 @@ def mood(x, y, axis=0):
 
     n = x.shape[axis]
     m = y.shape[axis]
-    xy = r_["{0}".format(axis), x, y]
+    xy = np.concatenate((x, y), axis=axis)
 
     N = m + n
     if N < 3:
