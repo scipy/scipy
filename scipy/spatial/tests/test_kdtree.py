@@ -553,7 +553,7 @@ class test_sparse_distance_matrix:
         m = 4
         self.T1 = KDTree(np.random.randn(n,m),leafsize=2)
         self.T2 = KDTree(np.random.randn(n,m),leafsize=2)
-        self.r = 0.3
+        self.r = 0.5
 
     def test_consistency_with_neighbors(self):
         M = self.T1.sparse_distance_matrix(self.T2, self.r)
@@ -573,9 +573,14 @@ class test_sparse_distance_matrix_compiled:
         n = 50
         m = 4
         np.random.seed(0)
-        self.T1 = cKDTree(np.random.randn(n,m),leafsize=2)
-        self.T2 = cKDTree(np.random.randn(n,m),leafsize=2)
-        self.r = 0.3
+        data1 = np.random.randn(n,m)
+        data2 = np.random.randn(n,m)
+        self.T1 = cKDTree(data1,leafsize=2)
+        self.T2 = cKDTree(data2,leafsize=2)
+        
+        self.ref_T1 = KDTree(data1, leafsize=2)
+        self.ref_T2 = KDTree(data2, leafsize=2)
+        self.r = 0.5
 
     def test_consistency_with_neighbors(self):
         M = self.T1.sparse_distance_matrix(self.T2, self.r)
@@ -589,6 +594,12 @@ class test_sparse_distance_matrix_compiled:
     def test_zero_distance(self):
         M = self.T1.sparse_distance_matrix(self.T1, self.r)  # raises an exception for bug 870 (FIXME: Does it?)
 
+    def test_consistecy_with_python(self):
+        M1 = self.T1.sparse_distance_matrix(self.T2, self.r)
+        M2 = self.ref_T1.sparse_distance_matrix(self.ref_T2, self.r)
+
+        assert_equal(M1, M2)
+    
 
 def test_distance_matrix():
     m = 10
