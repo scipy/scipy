@@ -1198,10 +1198,15 @@ def mood(x, y, axis=0):
         >>> z, p = mood(x1, x2, axis = 1)
         >>> p.shape
         (2, 6, 7)
-        >>> p[p > 0.1].sum()
-        39.753851772441067
         >>> (p > 0.1).sum()  #the number of points where the diff. in scale is not significant
         74
+
+        Different scales:
+        >>> x1 = np.random.randn(2,30)
+        >>> x2 = np.random.randn(2,35)*10.0
+        >>> mood(x1,x2, axis=1)
+        (array([-5.84332354, -5.6840814 ]), array([  5.11694980e-09,   1.31517628e-08]))
+
 
 
 
