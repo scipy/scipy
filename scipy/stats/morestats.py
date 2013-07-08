@@ -1214,6 +1214,27 @@ def mood(x, y, axis=0):
     resulting z and p values will have shape ``(n0, n2, n3)``.  Note that
     ``n1`` and ``m1`` don't have to be equal, but the other dimensions do.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x2 = np.random.randn(2, 45, 6, 7)
+    >>> x1 = np.random.randn(2, 30, 6, 7)
+    >>> z, p = stats.mood(x1, x2, axis=1)
+    >>> p.shape
+    (2, 6, 7)
+
+    Find the number of points where the difference in scale is not significant:
+
+    >>> (p > 0.1).sum()
+    74
+
+    Perform the test with different scales:
+
+    >>> x1 = np.random.randn(2, 30)
+    >>> x2 = np.random.randn(2, 35) * 10.0
+    >>> stats.mood(x1, x2, axis=1)
+    (array([-5.84332354, -5.6840814 ]), array([5.11694980e-09, 1.31517628e-08]))
+
     """
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
