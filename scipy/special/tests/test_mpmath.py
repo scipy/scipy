@@ -10,7 +10,6 @@ import time
 
 from distutils.version import LooseVersion
 
-import nose
 import numpy as np
 from numpy.testing import dec
 from numpy import pi
@@ -801,7 +800,11 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
             r = complex(mpmath.bessely(v, x, **HYPERKW))
             if abs(r) > 1e305:
                 # overflowing to inf a bit earlier is OK
-                r = np.inf * np.sign(r)
+                olderr = np.seterr(invalid='ignore')
+                try:
+                    r = np.inf * np.sign(r)
+                finally:
+                    np.seterr(**olderr)
             return r
         assert_mpmath_equal(lambda v, z: sc.yv(v.real, z),
                             _exception_to_nan(mpbessely),
