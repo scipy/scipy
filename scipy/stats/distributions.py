@@ -6950,32 +6950,32 @@ class bernoulli_gen(binom_gen):
     %(example)s
 
     """
-    def _rvs(self, pr):
-        return binom_gen._rvs(self, 1, pr)
+    def _rvs(self, p):
+        return binom_gen._rvs(self, 1, p)
 
-    def _argcheck(self, pr):
-        return (pr >= 0) & (pr <= 1)
+    def _argcheck(self, p):
+        return (p >= 0) & (p <= 1)
 
-    def _logpmf(self, x, pr):
-        return binom._logpmf(x, 1, pr)
+    def _logpmf(self, x, p):
+        return binom._logpmf(x, 1, p)
 
-    def _pmf(self, x, pr):
-        return binom._pmf(x, 1, pr)
+    def _pmf(self, x, p):
+        return binom._pmf(x, 1, p)
 
-    def _cdf(self, x, pr):
-        return binom._cdf(x, 1, pr)
+    def _cdf(self, x, p):
+        return binom._cdf(x, 1, p)
 
-    def _sf(self, x, pr):
-        return binom._sf(x, 1, pr)
+    def _sf(self, x, p):
+        return binom._sf(x, 1, p)
 
-    def _ppf(self, q, pr):
-        return binom._ppf(q, 1, pr)
+    def _ppf(self, q, p):
+        return binom._ppf(q, 1, p)
 
-    def _stats(self, pr):
-        return binom._stats(1, pr)
+    def _stats(self, p):
+        return binom._stats(1, p)
 
-    def _entropy(self, pr):
-        h = -special.xlogy(pr, pr) - special.xlogy(1 - pr, 1 - pr)
+    def _entropy(self, p):
+        h = -special.xlogy(p, p) - special.xlogy(1 - p, 1 - p)
         return h
 bernoulli = bernoulli_gen(b=1,name='bernoulli')
 
@@ -7056,7 +7056,7 @@ class geom_gen(rv_discrete):
 
     """
     def _rvs(self, p):
-        return mtrand.geometric(p,size=self._size)
+        return mtrand.geometric(p, size=self._size)
 
     def _argcheck(self, p):
         return (p <= 1) & (p >= 0)
@@ -7221,28 +7221,28 @@ class logser_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, pr):
-        # looks wrong for pr>0.5, too few k=1
+    def _rvs(self, p):
+        # looks wrong for p>0.5, too few k=1
         # trying to use generic is worse, no k=1 at all
-        return mtrand.logseries(pr,size=self._size)
+        return mtrand.logseries(p, size=self._size)
 
-    def _argcheck(self, pr):
-        return (pr > 0) & (pr < 1)
+    def _argcheck(self, p):
+        return (p > 0) & (p < 1)
 
-    def _pmf(self, k, pr):
-        return -pr**k * 1.0 / k / log(1-pr)
+    def _pmf(self, k, p):
+        return -p**k * 1.0 / k / log(1 - p)
 
-    def _stats(self, pr):
-        r = log(1-pr)
-        mu = pr / (pr - 1.0) / r
-        mu2p = -pr / r / (pr-1.0)**2
+    def _stats(self, p):
+        r = log(1 - p)
+        mu = p / (p - 1.0) / r
+        mu2p = -p / r / (p - 1.0)**2
         var = mu2p - mu*mu
-        mu3p = -pr / r * (1.0+pr) / (1.0-pr)**3
+        mu3p = -p / r * (1.0+p) / (1.0 - p)**3
         mu3 = mu3p - 3*mu*mu2p + 2*mu**3
         g1 = mu3 / var**1.5
 
-        mu4p = -pr / r * (1.0/(pr-1)**2 - 6*pr/(pr-1)**3 +
-                          6*pr*pr / (pr-1)**4)
+        mu4p = -p / r * (1.0 / (p-1)**2 - 6*p / (p - 1)**3 +
+                          6*p*p / (p-1)**4)
         mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
         g2 = mu4 / var**2 - 3.0
         return mu, var, g1, g2
@@ -7311,7 +7311,7 @@ class planck_gen(rv_discrete):
 
         planck.pmf(k) = (1-exp(-lambda_))*exp(-lambda_*k)
 
-    for ``k*lambda >= 0``.
+    for ``k*lambda_ >= 0``.
 
     `planck` takes ``lambda_`` as shape parameter.
 
@@ -7367,11 +7367,11 @@ class boltzmann_gen(rv_discrete):
     -----
     The probability mass function for `boltzmann` is::
 
-        boltzmann.pmf(k) = (1-exp(-lambda)*exp(-lambda*k)/(1-exp(-lambda*N))
+        boltzmann.pmf(k) = (1-exp(-lambda_)*exp(-lambda_*k)/(1-exp(-lambda_*N))
 
     for ``k = 0,...,N-1``.
 
-    `boltzmann` takes ``lambda`` and ``N`` as shape parameters.
+    `boltzmann` takes ``lambda_`` and ``N`` as shape parameters.
 
     %(example)s
 
