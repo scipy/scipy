@@ -221,8 +221,8 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
         p = 0
         for kk in range(a+1):
             p += d
-            d *= -4*x**2 * (a - k) * (-a + alpha + k + n) / (
-                (n + 1 - 2*a + 2*k) * (n + 2 - 2*a + 2*k))
+            d *= -4*x**2 * (a - kk) * (-a + alpha + kk + n) / (
+                (n + 1 - 2*a + 2*kk) * (n + 2 - 2*a + 2*kk))
             if fabs(d) == 1e-20*fabs(p):
                 # converged
                 break
@@ -397,8 +397,8 @@ cdef inline double eval_legendre_l(long n, double x) nogil:
         p = 0
         for kk in range(a+1):
             p += d
-            d *= -2 * x**2 * (a - k) * (2*n + 1 - 2*a + 2*k) / (
-                (n + 1 - 2*a + 2*k) * (n + 2 - 2*a + 2*k))
+            d *= -2 * x**2 * (a - kk) * (2*n + 1 - 2*a + 2*kk) / (
+                (n + 1 - 2*a + 2*kk) * (n + 2 - 2*a + 2*kk))
             if fabs(d) == 1e-20*fabs(p):
                 # converged
                 break
