@@ -209,6 +209,10 @@ def test_cont_basic():
         x = spec_x.get(distname, 0.5)
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
+        # comment: "I don't know when or why": is vecentropy still broken 
+        # if numargs == 0? 
+        if distfn.numargs == 0:
+            yield check_vecentropy, distfn, arg
 
 @npt.dec.slow
 def test_cont_basic_slow():
@@ -252,6 +256,8 @@ def test_cont_basic_slow():
             arg = (3,)
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
+        if distfn.numargs == 0:
+            yield check_vecentropy, distfn, arg
 
 
 @_silence_fp_errors
@@ -451,6 +457,9 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     k.update({'kaboom': 42})
     npt.assert_raises(TypeError, distfn.cdf, x, **k)
 
+
+def check_vecentropy(distfn, args):
+    npt.assert_equal( distfn.vecentropy(*args), distfn._entropy(*args) )
 
 if __name__ == "__main__":
     npt.run_module_suite()

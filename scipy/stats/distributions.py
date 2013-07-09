@@ -711,6 +711,38 @@ class rv_generic(object):
         return vals
 
 
+    def entropy(self, *args, **kwds):
+        """
+        Differential entropy of the RV.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+        scale : array_like, optional  (continuous distributions only).
+            Scale parameter (default=1).
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        # NB: for discrete distributions scale=1 by construction in _parse_args
+        args = tuple(map(asarray, args))
+        cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
+        output = zeros(shape(cond0), 'd')
+        place(output, (1-cond0), self.badvalue)
+        goodargs = argsreduce(cond0, *args)
+        # I don't know when or why vecentropy got broken when numargs == 0
+        # 09.08.2013: is this still relevant? cf check_vecentropy test 
+        # in tests/test_continuous_basic.py
+        if self.numargs == 0:
+            place(output,cond0, self._entropy() + log(scale))
+        else:
+            place(output, cond0, self.vecentropy(*goodargs) + log(scale))
+        return output
+
+
     def moment(self, n, *args, **kwds):
         """
         n'th order non-central moment of distribution.
@@ -1963,11 +1995,11 @@ class rv_continuous(rv_generic):
             val = self._pdf(x, *args)
             return special.xlogy(val, val)
 
-        entr = -integrate.quad(integ,self.a,self.b)[0]
+        entr = -integrate.quad(integ, self.a, self.b)[0]
         if not np.isnan(entr):
             return entr
         else:  # try with different limits if integration problems
-            low,upp = self.ppf([0.001,0.999],*args)
+            low, upp = self.ppf([0.001, 0.999], *args)
             if np.isinf(self.b):
                 upper = upp
             else:
@@ -1976,35 +2008,8 @@ class rv_continuous(rv_generic):
                 lower = low
             else:
                 lower = self.a
-            return -integrate.quad(integ,lower,upper)[0]
+            return -integrate.quad(integ, lower, upper)[0]
 
-    def entropy(self, *args, **kwds):
-        """
-        Differential entropy of the RV.
-
-        Parameters
-        ----------
-        arg1, arg2, arg3,... : array_like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information).
-        loc : array_like, optional
-            Location parameter (default=0).
-        scale : array_like, optional
-            Scale parameter (default=1).
-
-        """
-        args, loc, scale = self._parse_args(*args, **kwds)
-        args = tuple(map(asarray,args))
-        cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
-        output = zeros(shape(cond0),'d')
-        place(output,(1-cond0),self.badvalue)
-        goodargs = argsreduce(cond0, *args)
-        # I don't know when or why vecentropy got broken when numargs == 0
-        if self.numargs == 0:
-            place(output,cond0,self._entropy()+log(scale))
-        else:
-            place(output,cond0,self.vecentropy(*goodargs)+log(scale))
-        return output
 
     def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
                conditional=False, **kwds):
@@ -6728,17 +6733,6 @@ class rv_discrete(rv_generic):
                 k += 1
                 ent += term
             return ent
-
-    def entropy(self, *args, **kwds):
-        args, loc, _ = self._parse_args(*args, **kwds)
-        loc = asarray(loc)
-        args = list(map(asarray,args))
-        cond0 = self._argcheck(*args) & (loc == loc)
-        output = zeros(shape(cond0),'d')
-        place(output,(1-cond0),self.badvalue)
-        goodargs = argsreduce(cond0, *args)
-        place(output,cond0,self.vecentropy(*goodargs))
-        return output
 
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None, conditional=False):
