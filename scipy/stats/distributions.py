@@ -4,7 +4,6 @@
 #
 from __future__ import division, print_function, absolute_import
 
-import math
 import warnings
 
 from scipy.lib.six import callable, string_types, get_method_function
@@ -27,7 +26,7 @@ from numpy import all, where, arange, putmask, \
 from numpy import atleast_1d, polyval, ceil, place, extract, \
      any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf, \
      NINF, empty
-import numpy
+
 import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
@@ -58,8 +57,8 @@ __all__ = [
            'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
           ]
 
-floatinfo = numpy.finfo(float)
-eps = numpy.finfo(float).eps
+floatinfo = np.finfo(float)
+eps = np.finfo(float).eps
 
 gam = special.gamma
 random = mtrand.random_sample
@@ -639,6 +638,36 @@ class rv_generic(object):
             self.numargs = len(shapes)
 
 
+    def freeze(self,*args,**kwds):
+        """Freeze the distribution for the given arguments.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution.  Should include all
+            the non-optional arguments, may include ``loc`` and ``scale``.
+
+        Returns
+        -------
+        rv_frozen : rv_frozen instance
+            The frozen distribution.
+
+        """
+        return rv_frozen(self,*args,**kwds)
+
+    def __call__(self, *args, **kwds):
+        return self.freeze(*args, **kwds)
+
+    # The actual calculation functions (no basic checking need be done)
+    # If these are defined, the others won't be looked at.
+    # Otherwise, the other set can be defined.
+    def _stats(self,*args, **kwds):
+        return None, None, None, None
+
+    #  Central moments
+    def _munp(self,n,*args):
+        return self.generic_moment(n,*args)
+
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
     def rvs(self, *args, **kwds):
@@ -672,7 +701,7 @@ class rv_generic(object):
         # self._size is total size of all output values
         self._size = product(size, axis=0)
         if self._size is not None and self._size > 1:
-            size = numpy.array(size, ndmin=1)
+            size = np.array(size, ndmin=1)
 
         if np.all(scale == 0):
             return loc*ones(size, 'd')
@@ -685,12 +714,60 @@ class rv_generic(object):
 
         # Cast to int if discrete
         if discrete:
-            if numpy.isscalar(vals):
+            if np.isscalar(vals):
                 vals = int(vals)
             else:
                 vals = vals.astype(int)
 
         return vals
+
+
+    def moment(self, n, *args, **kwds):
+        """
+        n'th order non-central moment of distribution.
+
+        Parameters
+        ----------
+        n : int, n>=1
+            Order of moment.
+        arg1, arg2, arg3,... : float
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        kwds : keyword arguments, optional
+            These can include "loc" and "scale", as well as other keyword
+            arguments relevant for a given distribution.
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        if not (self._argcheck(*args) and (scale > 0)):
+            return nan
+        if (floor(n) != n):
+            raise ValueError("Moment must be an integer.")
+        if (n < 0):
+            raise ValueError("Moment must be positive.")
+        mu, mu2, g1, g2 = None, None, None, None
+        if (n > 0) and (n < 5):
+            signature = inspect.getargspec(get_method_function(self._stats))
+            if (signature[2] is not None) or ('moments' in signature[0]):
+                mdict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
+            else:
+                mdict = {}
+            mu, mu2, g1, g2 = self._stats(*args,**mdict)
+        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
+
+        # Convert to transformed  X = L + S*Y
+        # so E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n,k)*(S/L)^k E[Y^k],k=0...n)
+        if loc == 0:
+            return scale**n * val
+        else:
+            result = 0
+            fac = float(scale) / float(loc)
+            for k in range(n):
+                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
+                result += comb(n,k,exact=True)*(fac**k) * valk
+            result += fac**n * val
+            return result * loc**n
+
 
     def median(self, *args, **kwds):
         """
@@ -1223,16 +1300,6 @@ class rv_continuous(rv_generic):
     def _isf(self, q, *args):
         return self._ppf(1.0-q,*args)  # use correct _ppf for subclasses
 
-    # The actual calculation functions (no basic checking need be done)
-    # If these are defined, the others won't be looked at.
-    # Otherwise, the other set can be defined.
-    def _stats(self,*args, **kwds):
-        return None, None, None, None
-
-    #  Central moments
-    def _munp(self,n,*args):
-        return self.generic_moment(n,*args)
-
     def pdf(self,x,*args,**kwds):
         """
         Probability density function at x of the given RV.
@@ -1678,51 +1745,6 @@ class rv_continuous(rv_generic):
         else:
             return tuple(output)
 
-    def moment(self, n, *args, **kwds):
-        """
-        n'th order non-central moment of distribution.
-
-        Parameters
-        ----------
-        n : int, n>=1
-            Order of moment.
-        arg1, arg2, arg3,... : float
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information).
-        kwds : keyword arguments, optional
-            These can include "loc" and "scale", as well as other keyword
-            arguments relevant for a given distribution.
-
-        """
-        args, loc, scale = self._parse_args(*args, **kwds)
-        if not (self._argcheck(*args) and (scale > 0)):
-            return nan
-        if (floor(n) != n):
-            raise ValueError("Moment must be an integer.")
-        if (n < 0):
-            raise ValueError("Moment must be positive.")
-        mu, mu2, g1, g2 = None, None, None, None
-        if (n > 0) and (n < 5):
-            signature = inspect.getargspec(get_method_function(self._stats))
-            if (signature[2] is not None) or ('moments' in signature[0]):
-                mdict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
-            else:
-                mdict = {}
-            mu, mu2, g1, g2 = self._stats(*args,**mdict)
-        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
-
-        # Convert to transformed  X = L + S*Y
-        # so E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n,k)*(S/L)^k E[Y^k],k=0...n)
-        if loc == 0:
-            return scale**n * val
-        else:
-            result = 0
-            fac = float(scale) / float(loc)
-            for k in range(n):
-                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
-                result += comb(n,k,exact=True)*(fac**k) * valk
-            result += fac**n * val
-            return result * loc**n
 
     def _nnlf(self, x, *args):
         return -sum(self._logpdf(x, *args),axis=0)
@@ -1945,26 +1967,6 @@ class rv_continuous(rv_generic):
         """This function is deprecated, use self.fit_loc_scale(data) instead."""
         return self.fit_loc_scale(data, *args)
 
-    def freeze(self,*args,**kwds):
-        """Freeze the distribution for the given arguments.
-
-        Parameters
-        ----------
-        arg1, arg2, arg3,... : array_like
-            The shape parameter(s) for the distribution.  Should include all
-            the non-optional arguments, may include ``loc`` and ``scale``.
-
-        Returns
-        -------
-        rv_frozen : rv_frozen instance
-            The frozen distribution.
-
-        """
-        return rv_frozen(self,*args,**kwds)
-
-    def __call__(self, *args, **kwds):
-        return self.freeze(*args, **kwds)
-
     def _entropy(self, *args):
         def integ(x):
             val = self._pdf(x, *args)
@@ -2117,8 +2119,8 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 # loc = mu, scale = std
 # Keep these implementations out of the class definition so they can be reused
 # by other distributions.
-_norm_pdf_C = math.sqrt(2*pi)
-_norm_pdf_logC = math.log(_norm_pdf_C)
+_norm_pdf_C = np.sqrt(2*pi)
+_norm_pdf_logC = np.log(_norm_pdf_C)
 
 
 def _norm_pdf(x):
@@ -3722,7 +3724,7 @@ class gamma_gen(rv_continuous):
                 # log(a) - special.digamma(a) - log(xbar) + log(data.mean) = 0
                 s = log(xbar) - log(data).mean()
                 func = lambda a: log(a) - special.digamma(a) - s
-                aest = (3-s + math.sqrt((s-3)**2 + 24*s)) / (12*s)
+                aest = (3-s + np.sqrt((s-3)**2 + 24*s)) / (12*s)
                 xa = aest*(1-0.4)
                 xb = aest*(1+0.4)
                 a = optimize.brentq(func, xa, xb, disp=0)
@@ -4719,7 +4721,7 @@ class lognorm_gen(rv_continuous):
         mu = sqrt(p)
         mu2 = p*(p-1)
         g1 = sqrt((p-1))*(2+p)
-        g2 = numpy.polyval([1,2,3,0,-6.0],p)
+        g2 = np.polyval([1,2,3,0,-6.0],p)
         return mu, mu2, g1, g2
 
     def _entropy(self, s):
@@ -4763,7 +4765,7 @@ class gilbrat_gen(rv_continuous):
         mu = sqrt(p)
         mu2 = p * (p - 1)
         g1 = sqrt((p - 1)) * (2 + p)
-        g2 = numpy.polyval([1, 2, 3, 0, -6.0], p)
+        g2 = np.polyval([1, 2, 3, 0, -6.0], p)
         return mu, mu2, g1, g2
 
     def _entropy(self):
@@ -6412,7 +6414,7 @@ class rv_discrete(rv_generic):
             self.a = self.xk[0]
             self.b = self.xk[-1]
             self.P = make_dict(self.xk, self.pk)
-            self.qvals = numpy.cumsum(self.pk,axis=0)
+            self.qvals = np.cumsum(self.pk,axis=0)
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
             self._ppf = instancemethod(vectorize(_drv_ppf, otypes='d'),
@@ -6538,12 +6540,6 @@ class rv_discrete(rv_generic):
 
     def _isf(self, q, *args):
         return self._ppf(1-q,*args)
-
-    def _stats(self, *args):
-        return None, None, None, None
-
-    def _munp(self, n, *args):
-        return self.generic_moment(n, *args)
 
     def rvs(self, *args, **kwargs):
         """
@@ -6992,55 +6988,6 @@ class rv_discrete(rv_generic):
         else:
             return tuple(output)
 
-    def moment(self, n, *args, **kwds):
-        """
-        n'th non-central moment of the distribution
-
-        Parameters
-        ----------
-        n : int, n>=1
-            order of moment
-        arg1, arg2, arg3,... : float
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : float, optional
-            location parameter (default=0)
-        scale : float, optional
-            scale parameter (default=1)
-
-        """
-        args, loc, scale = self._parse_args(*args, **kwds)
-        if not (self._argcheck(*args) and (scale > 0)):
-            return nan
-        if (floor(n) != n):
-            raise ValueError("Moment must be an integer.")
-        if (n < 0):
-            raise ValueError("Moment must be positive.")
-        mu, mu2, g1, g2 = None, None, None, None
-        if (n > 0) and (n < 5):
-            signature = inspect.getargspec(get_method_function(self._stats))
-            if (signature[2] is not None) or ('moments' in signature[0]):
-                dict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
-            else:
-                dict = {}
-            mu, mu2, g1, g2 = self._stats(*args,**dict)
-        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
-
-        # Convert to transformed  X = L + S*Y
-        # so E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n,k)*(S/L)^k E[Y^k],k=0...n)
-        if loc == 0:
-            return scale**n * val
-        else:
-            result = 0
-            fac = float(scale) / float(loc)
-            for k in range(n):
-                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
-                result += comb(n,k,exact=True)*(fac**k) * valk
-            result += fac**n * val
-            return result * loc**n
-
-    def freeze(self, *args, **kwds):
-        return rv_frozen(self, *args, **kwds)
 
     def _entropy(self, *args):
         if hasattr(self,'pk'):
@@ -7076,8 +7023,6 @@ class rv_discrete(rv_generic):
 
         return output
 
-    def __call__(self, *args, **kwds):
-        return self.freeze(*args,**kwds)
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None, conditional=False):
         """
@@ -7413,7 +7358,7 @@ class geom_gen(rv_discrete):
         qr = 1.0-p
         var = qr / p / p
         g1 = (2.0-p) / sqrt(qr)
-        g2 = numpy.polyval([1,-6,6],p)/(1.0-p)
+        g2 = np.polyval([1,-6,6],p)/(1.0-p)
         return mu, var, g1, g2
 geom = geom_gen(a=1,name='geom', longname="A geometric")
 
