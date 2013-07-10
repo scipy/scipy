@@ -31,6 +31,10 @@ minimization: ``dogleg`` and ``trust-ncg``. These provide an alternative to
 traditional line search algorithms already present in ``scipy.optimize``.
 
 
+``scipy.stats`` improvements
+----------------------------
+Distributions allow both keyword and positional parameters.
+
 Deprecated features
 ===================
 

@@ -995,13 +995,19 @@ class rv_continuous(rv_generic):
     Alternatively, you can override ``_munp``, which takes n and shape
     parameters and returns the nth non-central moment of the distribution.
 
+    A note on ``shapes``: subclasses need not specify them explicitly. In this
+    case, the `shapes` will be automatically deduced from the signatures of the
+    overridden methods.
+    If, for some reason, you prefer to avoid relying on introspection, you can 
+    specify ``shapes`` explicitly as an argument to the instance constructor.  
+
     Examples
     --------
     To create a new Gaussian distribution, we would do the following::
 
         class gaussian_gen(rv_continuous):
             "Gaussian distribution"
-            def _pdf:
+            def _pdf(self, x):
                 ...
             ...
 
@@ -6019,7 +6025,7 @@ class rv_discrete(rv_generic):
 
     and create an instance::
 
-        poisson = poisson_gen(name="poisson", shapes="mu",
+        poisson = poisson_gen(name="poisson",
                               longname='A Poisson')
 
     The docstring can be created from a template.
@@ -6030,6 +6036,13 @@ class rv_discrete(rv_generic):
         myrv = generic(<shape(s)>, loc=0)
             - frozen RV object with the same methods but holding the given
               shape and location fixed.
+
+    A note on ``shapes``: subclasses need not specify them explicitly. In this
+    case, the `shapes` will be automatically deduced from the signatures of the
+    overridden methods.
+    If, for some reason, you prefer to avoid relying on introspection, you can 
+    specify ``shapes`` explicitly as an argument to the instance constructor.  
+
 
     Examples
     --------
