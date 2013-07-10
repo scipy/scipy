@@ -65,11 +65,12 @@ def test_discrete_basic():
             yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                           distname + ' chisquare'
 
-    dist_ = distdiscrete[:]
-    del dist_[6:8]  # only include hypergeom once
-    for distname, arg in dist_:
+    seen = set()
+    for distname, arg in distdiscrete:
+        if distname in seen:
+            continue
+        seen.add(distname)
         distfn = getattr(stats,distname)
-        signature = inspect.getargspec(distfn._parse_args)
         locscale_defaults = (0,)
         meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf, 
                  distfn.logsf]
@@ -307,11 +308,11 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 
     shape_argnames = signature.args[1:-len(defaults)]  # self, a, b, loc=0, scale=1 
     if distfn.shapes:
-        shapes_ = distfn.shapes.replace(',',' ').split()
+        shapes_ = distfn.shapes.replace(',', ' ').split()
     else: 
         shapes_ = ''
-    npt.assert_( len(shapes_) == distfn.numargs)
-    npt.assert_( len(shapes_) == len(shape_argnames))
+    npt.assert_(len(shapes_) == distfn.numargs)
+    npt.assert_(len(shapes_) == len(shape_argnames))
 
     # check calling w/ named arguments
     shape_args = list(shape_args)

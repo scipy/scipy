@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import warnings
 
-from scipy.lib.six import callable, string_types, text_type, get_method_function
+from scipy.lib.six import callable, string_types, get_method_function
 from scipy.lib.six import exec_
 
 from scipy.misc import comb, derivative
@@ -558,7 +558,7 @@ class rv_generic(object):
         Is supposed to be called in __init__ of a class for each distribution.
 
         If self.shapes is a non-empty string, interprets it as a comma-separated
-        list of shape parameters.  
+        list of shape parameters.
 
         Otherwise inspects the call signatures of `names_to_inspect`
         and constructs the argument-parsing functions from these.
@@ -567,16 +567,16 @@ class rv_generic(object):
 
         if self.shapes:
             # sanitize the user-supplied shapes
-            if not isinstance(self.shapes, (string_types, text_type)):
+            if not isinstance(self.shapes, string_types):
                 raise TypeError('shapes must be a string.')
 
-            shapes = self.shapes.replace(',',' ').split()
+            shapes = self.shapes.replace(',', ' ').split()
 
             for field in shapes:
                 if keyword.iskeyword(field):
                     raise SyntaxError('keywords cannot be used as shapes.')
                 if not re.match('^[_a-zA-Z][_a-zA-Z0-9]*', field):
-                    raise SyntaxError('shapes must be valid python identifiers')               
+                    raise SyntaxError('shapes must be valid python identifiers')
         else:
             # find out the call signatures (_pdf, _cdf etc), deduce shape arguments
             shapes_list = []
@@ -589,22 +589,22 @@ class rv_generic(object):
                     meth = globals()[name]
                 shapes_args = inspect.getargspec(meth)
                 shapes_list.append(shapes_args.args)
-            shapes = max(shapes_list, key = lambda x: len(x))
+            shapes = max(shapes_list, key=lambda x: len(x))
             shapes = shapes[2:]  # remove self, x,
 
         # have the arguments, construct the method from template
-        shapes_str =', '.join(shapes) + ', ' if shapes else ''  # NB: not None
+        shapes_str = ', '.join(shapes) + ', ' if shapes else ''  # NB: not None
         dct = dict(shape_arg_str=shapes_str,
                    locscale_in=locscale_in,
                    locscale_out=locscale_out,
-        )
+                  )
         ns = {}
         exec_(parse_arg_template % dct, ns)
         for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
             setattr(self.__class__, name, ns[name])
 
         self.shapes = ', '.join(shapes) if shapes else None
-        if not hasattr(self,'numargs'):
+        if not hasattr(self, 'numargs'):
             # allows more general subclassing with *args
             self.numargs = len(shapes)
 
@@ -1856,7 +1856,7 @@ class rv_continuous(rv_generic):
 
         optimizer = kwds.get('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
-        if not callable(optimizer) and isinstance(optimizer, (text_type,) + string_types):
+        if not callable(optimizer) and isinstance(optimizer, string_types):
             if not optimizer.startswith('fmin_'):
                 optimizer = "fmin_"+optimizer
             if optimizer == 'fmin_':
