@@ -661,12 +661,40 @@ class rv_generic(object):
     # The actual calculation functions (no basic checking need be done)
     # If these are defined, the others won't be looked at.
     # Otherwise, the other set can be defined.
-    def _stats(self,*args, **kwds):
+    def _stats(self, *args, **kwds):
         return None, None, None, None
 
     #  Central moments
-    def _munp(self,n,*args):
-        return self.generic_moment(n,*args)
+    def _munp(self, n, *args):
+        return self.generic_moment(n, *args)
+
+    ## These are the methods you must define (standard form functions)
+    ## NB: generic _argcheck, _pdf, _logpdf, _cdf are different for
+    ## rv_continuous and rv_discrete hence are defined in there
+	## Besides, _argcheck: bitwise and vs logical and --- is that on purpose?
+
+    ##(return 1-d using self._size to get number)
+    def _rvs(self, *args):
+        ## Use basic inverse cdf algorithm for RV generation as default.
+        U = mtrand.sample(self._size)
+        Y = self._ppf(U, *args)
+        return Y
+
+    def _logcdf(self, x, *args):
+        return log(self._cdf(x, *args))
+
+    def _sf(self, x, *args):
+        return 1.0-self._cdf(x, *args)
+
+    def _logsf(self, x, *args):
+        return log(self._sf(x, *args))
+
+    def _ppf(self, q, *args):
+        return self._ppfvec(q,*args)
+
+    def _isf(self, q, *args):
+        return self._ppf(1.0-q, *args)  # use correct _ppf for subclasses
+
 
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
@@ -831,7 +859,6 @@ class rv_generic(object):
             return output[0]
         else:
             return tuple(output)
-
 
 
     def entropy(self, *args, **kwds):
@@ -1295,12 +1322,16 @@ class rv_continuous(rv_generic):
                                   locscale_out='loc, scale')
 
         # nin correction
-        self.vecfunc = vectorize(self._ppf_single_call, otypes='d')
-        self.vecfunc.nin = self.numargs + 1
-        self.vecentropy = vectorize(self._entropy, otypes='d')
+        self._ppfvec = sgf(self._ppf_single,otypes='d')
+        self._ppfvec.nin = self.numargs + 1
+        self.vecentropy = sgf(self._entropy,otypes='d')
         self.vecentropy.nin = self.numargs + 1
-        self.veccdf = vectorize(self._cdf_single_call, otypes='d')
-        self.veccdf.nin = self.numargs + 1
+        self._cdfvec = sgf(self._cdf_single,otypes='d')
+        self._cdfvec.nin = self.numargs + 1
+
+        # backwards compatibility
+        self.vecfunc = self._ppfvec  
+        self.veccdf = self._cdfvec
 
         self.extradoc = extradoc
         if momtype == 0:
@@ -1360,7 +1391,7 @@ class rv_continuous(rv_generic):
     def _ppf_to_solve(self, x, q,*args):
         return self.cdf(*(x, )+args)-q
 
-    def _ppf_single_call(self, q, *args):
+    def _ppf_single(self, q, *args):
         left = right = None
         if self.a > -np.inf:
             left = self.a
@@ -1409,40 +1440,20 @@ class rv_continuous(rv_generic):
             cond = logical_and(cond,(asarray(arg) > 0))
         return cond
 
-    def _pdf(self,x,*args):
-        return derivative(self._cdf,x,dx=1e-5,args=args,order=5)
+    def _pdf(self, x, *args):
+        return derivative(self._cdf, x, dx=1e-5, args=args, order=5)
 
     ## Could also define any of these
     def _logpdf(self, x, *args):
         return log(self._pdf(x, *args))
 
-    ##(return 1-d using self._size to get number)
-    def _rvs(self, *args):
-        ## Use basic inverse cdf algorithm for RV generation as default.
-        U = mtrand.sample(self._size)
-        Y = self._ppf(U,*args)
-        return Y
-
-    def _cdf_single_call(self, x, *args):
+    def _cdf_single(self, x, *args):
         return integrate.quad(self._pdf, self.a, x, args=args)[0]
 
     def _cdf(self, x, *args):
-        return self.veccdf(x,*args)
+        return self._cdfvec(x, *args)
 
-    def _logcdf(self, x, *args):
-        return log(self._cdf(x, *args))
-
-    def _sf(self, x, *args):
-        return 1.0-self._cdf(x,*args)
-
-    def _logsf(self, x, *args):
-        return log(self._sf(x, *args))
-
-    def _ppf(self, q, *args):
-        return self.vecfunc(q,*args)
-
-    def _isf(self, q, *args):
-        return self._ppf(1.0-q,*args)  # use correct _ppf for subclasses
+    ## generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined in rv_generic
 
     def pdf(self,x,*args,**kwds):
         """
@@ -6437,9 +6448,9 @@ class rv_discrete(rv_generic):
         self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
-        self._cdfvec = vectorize(self._cdfsingle, otypes='d')
+        self._cdfvec = sgf(self._cdf_single,otypes='d')
         self.return_integers = 1
-        self.vecentropy = vectorize(self._entropy)
+        self.vecentropy = sgf(self._entropy)
         self.shapes = shapes
         self.extradoc = extradoc
 
@@ -6476,15 +6487,18 @@ class rv_discrete(rv_generic):
 
             # nin correction needs to be after we know numargs
             # correct nin for generic moment vectorization
-            self.vec_generic_moment = vectorize(_drv2_moment, otypes='d')
-            self.vec_generic_moment.nin = self.numargs + 2
-            self.generic_moment = instancemethod(self.vec_generic_moment,
+            _vec_generic_moment = sgf(_drv2_moment, otypes='d')
+            _vec_generic_moment.nin = self.numargs + 2
+            self.generic_moment = instancemethod(_vec_generic_moment,
                                                  self, rv_discrete)
+
+            # backwards compatibility
+            self.vec_generic_moment = _vec_generic_moment
 
             # correct nin for ppf vectorization
             _vppf = vectorize(_drv2_ppfsingle, otypes='d')
             _vppf.nin = self.numargs + 2  # +1 is for self
-            self._vecppf = instancemethod(_vppf,
+            self._ppfvec = instancemethod(_vppf,
                                           self, rv_discrete)
 
         # now that self.numargs is defined, we can adjust nin
@@ -6538,9 +6552,6 @@ class rv_discrete(rv_generic):
                 self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
             self.__doc__ = doccer.docformat(self.__doc__, tempdict)
 
-    def _rvs(self, *args):
-        return self._ppf(mtrand.random_sample(self._size),*args)
-
     def _nonzero(self, k, *args):
         return floor(k) == k
 
@@ -6551,33 +6562,20 @@ class rv_discrete(rv_generic):
         return cond
 
     def _pmf(self, k, *args):
-        return self._cdf(k,*args) - self._cdf(k-1,*args)
+        return self._cdf(k, *args) - self._cdf(k-1, *args)
 
     def _logpmf(self, k, *args):
         return log(self._pmf(k, *args))
 
-    def _cdfsingle(self, k, *args):
-        m = arange(int(self.a),k+1)
-        return sum(self._pmf(m,*args),axis=0)
+    def _cdf_single(self, k, *args):
+        m = arange(int(self.a), k+1)
+        return sum(self._pmf(m, *args), axis=0)
 
     def _cdf(self, x, *args):
         k = floor(x)
-        return self._cdfvec(k,*args)
+        return self._cdfvec(k, *args)
 
-    def _logcdf(self, x, *args):
-        return log(self._cdf(x, *args))
-
-    def _sf(self, x, *args):
-        return 1.0-self._cdf(x,*args)
-
-    def _logsf(self, x, *args):
-        return log(self._sf(x, *args))
-
-    def _ppf(self, q, *args):
-        return self._vecppf(q, *args)
-
-    def _isf(self, q, *args):
-        return self._ppf(1-q,*args)
+    # generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs defined in rv_generic
 
     def rvs(self, *args, **kwargs):
         """
@@ -7782,7 +7780,7 @@ class skellam_gen(rv_discrete):
     """
     def _rvs(self, mu1, mu2):
         n = self._size
-        return np.random.poisson(mu1, n)-np.random.poisson(mu2, n)
+        return mtrand.poisson(mu1, n) - mtrand.poisson(mu2, n)
 
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0, ncx2.pdf(2*mu2, 2*(1-x), 2*mu1)*2,
