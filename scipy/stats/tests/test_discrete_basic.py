@@ -249,7 +249,7 @@ def assert_equal_inf_nan(v1,v2,msg):
 
 
 def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
-    k,s = distfn.stats(moment='ks',*arg)
+    k,s = distfn.stats(moments='ks', *arg)
     check_sample_meanvar, sk, k, msg + 'sample skew test'
     check_sample_meanvar, ss, s, msg + 'sample kurtosis test'
 
