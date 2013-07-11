@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 from numpy import asarray
 import numpy as np
-import copy
+
 
 ListType = list
 TupleType = tuple

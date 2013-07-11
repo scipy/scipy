@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.stats
 from scipy.special import i0
-import numpy.testing
 
 
 def von_mises_cdf_series(k,x,p):

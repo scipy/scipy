@@ -32,9 +32,7 @@ import numpy as np
 from numpy.random import randint, multivariate_normal
 
 # Local imports.
-from . import stats
 from . import mvn
-import collections
 
 
 __all__ = ['gaussian_kde']

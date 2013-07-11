@@ -5,7 +5,6 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-import types
 import warnings
 
 from . import statlib
