@@ -1,8 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy import array, poly1d
-from scipy.interpolate import interp1d
+from numpy import poly1d
 from scipy.special import beta
 
 
