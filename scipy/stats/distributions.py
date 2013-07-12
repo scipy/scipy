@@ -658,9 +658,19 @@ class rv_generic(object):
         return self.generic_moment(n, *args)
 
     ## These are the methods you must define (standard form functions)
-    ## NB: generic _argcheck, _pdf, _logpdf, _cdf are different for
+    ## NB: generic _pdf, _logpdf, _cdf are different for
     ## rv_continuous and rv_discrete hence are defined in there
-	## Besides, _argcheck: bitwise and vs logical and --- is that on purpose?
+    def _argcheck(self, *args):
+        """Default check for correct values on args and keywords.
+
+        Returns condition array of 1's where arguments are correct and
+         0's where they are not.
+
+        """
+        cond = 1
+        for arg in args:
+            cond = logical_and(cond, (asarray(arg) > 0))
+        return cond
 
     ##(return 1-d using self._size to get number)
     def _rvs(self, *args):
@@ -1420,16 +1430,6 @@ class rv_continuous(rv_generic):
     def _mom1_sc(self, m,*args):
         return integrate.quad(self._mom_integ1, 0, 1,args=(m,)+args)[0]
 
-    ## These are the methods you must define (standard form functions)
-    def _argcheck(self, *args):
-        # Default check for correct values on args and keywords.
-        # Returns condition array of 1's where arguments are correct and
-        #  0's where they are not.
-        cond = 1
-        for arg in args:
-            cond = logical_and(cond,(asarray(arg) > 0))
-        return cond
-
     def _pdf(self, x, *args):
         return derivative(self._cdf, x, dx=1e-5, args=args, order=5)
 
@@ -1443,7 +1443,8 @@ class rv_continuous(rv_generic):
     def _cdf(self, x, *args):
         return self._cdfvec(x, *args)
 
-    ## generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined in rv_generic
+    ## generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined 
+    ## in rv_generic
 
     def pdf(self,x,*args,**kwds):
         """
@@ -6247,12 +6248,6 @@ class rv_discrete(rv_generic):
 
     def _nonzero(self, k, *args):
         return floor(k) == k
-
-    def _argcheck(self, *args):
-        cond = 1
-        for arg in args:
-            cond &= (arg > 0)
-        return cond
 
     def _pmf(self, k, *args):
         return self._cdf(k, *args) - self._cdf(k-1, *args)
