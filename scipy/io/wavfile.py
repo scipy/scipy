@@ -239,5 +239,5 @@ def write(file, rate, data):
     fid.seek(4)
     fid.write(struct.pack('<i', size-8))
 
-    if not hasattr(file,'read'):
+    if not hasattr(file,'write'):
         fid.close()
