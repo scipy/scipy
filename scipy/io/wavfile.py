@@ -167,21 +167,24 @@ def read(file, mmap=False):
             warnings.warn("Chunk (non-data) not understood, skipping it.",
                           WavFileWarning)
             _skip_unknown_chunk(fid)
-    fid.close()
+
+    if not hasattr(file,'read'):
+        fid.close()
+
     return rate, data
 
 # Write a wave-file
 # sample rate, data
 
 
-def write(filename, rate, data):
+def write(file, rate, data):
     """
     Write a numpy array as a WAV file
 
     Parameters
     ----------
-    filename : file
-        The name of the file to write (will be over-written).
+    file : file
+        Output wav file
     rate : int
         The sample rate (in samples/sec).
     data : ndarray
@@ -189,17 +192,23 @@ def write(filename, rate, data):
 
     Notes
     -----
+    * The file can be an open file or a filename.
+
     * Writes a simple uncompressed WAV file.
     * The bits-per-sample will be determined by the data-type.
     * To write multiple-channels, use a 2-D array of shape
       (Nsamples, Nchannels).
 
     """
+    if hasattr(file,'write'):
+        fid = file
+    else:
+        fid = open(file, 'wb')
+
     dkind = data.dtype.kind
     if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and data.dtype.itemsize == 1)):
         raise ValueError("Unsupported data type '%s'" % data.dtype)
 
-    fid = open(filename, 'wb')
     fid.write(b'RIFF')
     fid.write(b'\x00\x00\x00\x00')
     fid.write(b'WAVE')
@@ -223,10 +232,12 @@ def write(filename, rate, data):
     import sys
     if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
         data = data.byteswap()
-    data.tofile(fid)
+    fid.write(data.tostring())
     # Determine file size and place it in correct
     #  position at start of the file.
     size = fid.tell()
     fid.seek(4)
     fid.write(struct.pack('<i', size-8))
-    fid.close()
+
+    if not hasattr(file,'read'):
+        fid.close()
