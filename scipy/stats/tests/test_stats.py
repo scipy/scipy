@@ -1999,13 +1999,24 @@ def test_pointbiserial():
 
 
 def test_obrientransform():
-    # this is a regression test to check np.var replacement
-    # I didn't separately verigy the numbers
+    # This is a regression test to check np.var replacement.
+    # I didn't separately verify the numbers.
     x1 = np.arange(5)
     result = np.array(
       [[5.41666667, 1.04166667, -0.41666667, 1.04166667, 5.41666667],
        [21.66666667, 4.16666667, -1.66666667, 4.16666667, 21.66666667]])
     assert_array_almost_equal(stats.obrientransform(x1, 2*x1), result, decimal=8)
+
+    # Example from "O'Brien Test for Homogeneity of Variance"
+    # by Herve Abdi.
+    values = range(5, 11)
+    reps = np.array([5, 11, 9, 3, 2, 2])
+    data = np.repeat(values, reps)
+    transformed_values = np.array([3.1828, 0.5591, 0.0344,
+                                   1.6086, 5.2817, 11.0538])
+    expected = np.repeat(transformed_values, reps)
+    result = stats.obrientransform(data)
+    assert_array_almost_equal(result[0], expected, decimal=4)
 
 
 class HarMeanTestCase:
