@@ -18,13 +18,13 @@ from scipy.special import gammaln as gamln
 import keyword
 import re
 import inspect
-from numpy import all, where, arange, putmask, \
-     ravel, take, ones, sum, shape, product, reshape, \
-     zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1
-from numpy import atleast_1d, polyval, ceil, place, extract, \
-     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf, \
-     NINF, empty
+from numpy import (all, where, arange, putmask,
+     ravel, take, ones, sum, shape, product, reshape,
+     zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin,
+     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1)
+from numpy import (atleast_1d, polyval, ceil, place, extract,
+     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf,
+     NINF, empty)
 
 import numpy as np
 import numpy.random as mtrand
@@ -1322,11 +1322,11 @@ class rv_continuous(rv_generic):
                                   locscale_out='loc, scale')
 
         # nin correction
-        self._ppfvec = sgf(self._ppf_single,otypes='d')
+        self._ppfvec = vectorize(self._ppf_single,otypes='d')
         self._ppfvec.nin = self.numargs + 1
-        self.vecentropy = sgf(self._entropy,otypes='d')
+        self.vecentropy = vectorize(self._entropy,otypes='d')
         self.vecentropy.nin = self.numargs + 1
-        self._cdfvec = sgf(self._cdf_single,otypes='d')
+        self._cdfvec = vectorize(self._cdf_single,otypes='d')
         self._cdfvec.nin = self.numargs + 1
 
         # backwards compatibility
@@ -6146,9 +6146,9 @@ class rv_discrete(rv_generic):
         self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
-        self._cdfvec = sgf(self._cdf_single,otypes='d')
+        self._cdfvec = vectorize(self._cdf_single,otypes='d')
         self.return_integers = 1
-        self.vecentropy = sgf(self._entropy)
+        self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
         self.extradoc = extradoc
 
@@ -6185,7 +6185,7 @@ class rv_discrete(rv_generic):
 
             # nin correction needs to be after we know numargs
             # correct nin for generic moment vectorization
-            _vec_generic_moment = sgf(_drv2_moment, otypes='d')
+            _vec_generic_moment = vectorize(_drv2_moment, otypes='d')
             _vec_generic_moment.nin = self.numargs + 2
             self.generic_moment = instancemethod(_vec_generic_moment,
                                                  self, rv_discrete)
@@ -6479,7 +6479,7 @@ class rv_discrete(rv_generic):
             return output[()]
         return output
 
-    def logsf(self,k,*args,**kwds):
+    def logsf(self, k, *args, **kwds):
         """
         Log of the survival function of the given RV.
 
@@ -6498,8 +6498,8 @@ class rv_discrete(rv_generic):
 
         Returns
         -------
-        sf : ndarray
-            Survival function evaluated at `k`.
+        logsf : ndarray
+            Log of the survival function evaluated at `k`.
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
