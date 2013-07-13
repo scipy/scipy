@@ -8,7 +8,7 @@ import warnings
 
 from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
     assert_almost_equal, assert_array_less, assert_array_almost_equal, \
-    assert_raises, assert_, assert_allclose
+    assert_raises, assert_, assert_allclose, assert_equal
 from numpy.testing.utils import WarningManager
 
 import scipy.stats as stats
@@ -518,6 +518,18 @@ def test_accuracy_wilcoxon():
     T, p = stats.wilcoxon(x, y, "wilcox")
     assert_allclose(T, 327)
     assert_allclose(p, 0.00641346115861)
+
+    # Test the 'correction' option, using values computed in R with:
+    # > wilcox.test(x, y, paired=TRUE, exact=FALSE, correct={FALSE,TRUE})
+    x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
+    y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
+    T, p = stats.wilcoxon(x, y, correction=False)
+    assert_equal(T, 34)
+    assert_allclose(p, 0.6948866, rtol=1e-6)
+    T, p = stats.wilcoxon(x, y, correction=True)
+    assert_equal(T, 34)
+    assert_allclose(p, 0.7240817, rtol=1e-6)
+
 
 if __name__ == "__main__":
     run_module_suite()
