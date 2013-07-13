@@ -38,7 +38,7 @@ distdiscrete = [
 def test_discrete_basic():
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
-        # npt.assert_(stats.dlaplace.rvs(0.8) is not None)
+        #npt.assert_(stats.dlaplace.rvs(0.8) is not None)
         np.random.seed(9765456)
         rvs = distfn.rvs(size=2000,*arg)
         supp = np.unique(rvs)
@@ -60,7 +60,6 @@ def test_discrete_basic():
         alpha = 0.01
         yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                       distname + ' chisquare'
-
 
     seen = set()
     for distname, arg in distdiscrete:
