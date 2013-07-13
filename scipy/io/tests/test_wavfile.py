@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import tempfile
 import warnings
-import StringIO
+from io import BytesIO
 
 import numpy as np
 from numpy.testing import assert_equal, assert_, assert_raises, assert_array_equal
@@ -56,7 +56,7 @@ def _check_roundtrip(realfile, rate, dtype, channels):
         fd, tmpfile = tempfile.mkstemp(suffix='.wav')
         os.close(fd)
     else:
-        tmpfile = StringIO.StringIO()
+        tmpfile = BytesIO()
     try:
         data = np.random.rand(100, channels)
         if channels == 1:
