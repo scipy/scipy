@@ -67,8 +67,6 @@ def _read_data_chunk(fid, comp, noc, bits, mmap=False):
         else:
             dtype += 'f%d' % bytes
     if not mmap:
-        # Old implementation, before wavfile.read() could accept buffers
-        #data = numpy.fromfile(fid, dtype=dtype, count=size//bytes)
         data = numpy.fromstring(fid.read(size), dtype=dtype)
     else:
         start = fid.tell()
@@ -238,11 +236,7 @@ def write(filename, rate, data):
     import sys
     if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
         data = data.byteswap()
-
-    # Old implementation, before wavfile.write() could accept buffers
-    #data.tofile(fid)
     fid.write(data.tostring())
-
     # Determine file size and place it in correct
     #  position at start of the file.
     size = fid.tell()
