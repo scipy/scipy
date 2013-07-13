@@ -67,7 +67,9 @@ def _read_data_chunk(fid, comp, noc, bits, mmap=False):
         else:
             dtype += 'f%d' % bytes
     if not mmap:
-        data = numpy.fromfile(fid, dtype=dtype, count=size//bytes)
+        # Old implementation, before wavfile.read() could accept buffers
+        #data = numpy.fromfile(fid, dtype=dtype, count=size//bytes)
+        data = numpy.fromstring(fid.read(size), dtype=dtype)
     else:
         start = fid.tell()
         data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
@@ -112,16 +114,17 @@ def _read_riff_chunk(fid):
 # open a wave-file
 
 
-def read(file, mmap=False):
+def read(filename, mmap=False):
     """
     Return the sample rate (in samples/sec) and data from a WAV file
 
     Parameters
     ----------
-    file : file
+    filename : string or open file handle
         Input wav file.
     mmap : bool, optional
-        Whether to read data as memory mapped. (Default: False)
+        Whether to read data as memory mapped.
+        Only to be used on real files (Default: False)
 
         .. versionadded:: 0.12.0
 
@@ -142,10 +145,11 @@ def read(file, mmap=False):
       data-type determined from the file.
 
     """
-    if hasattr(file,'read'):
-        fid = file
+    if hasattr(filename,'read'):
+        fid = filename
+        mmap = False
     else:
-        fid = open(file, 'rb')
+        fid = open(filename, 'rb')
 
     fsize = _read_riff_chunk(fid)
     noc = 1
@@ -168,8 +172,10 @@ def read(file, mmap=False):
                           WavFileWarning)
             _skip_unknown_chunk(fid)
 
-    if not hasattr(file,'read'):
+    if not hasattr(filename,'read'):
         fid.close()
+    else:
+        fid.seek(0)
 
     return rate, data
 
@@ -177,13 +183,13 @@ def read(file, mmap=False):
 # sample rate, data
 
 
-def write(file, rate, data):
+def write(filename, rate, data):
     """
     Write a numpy array as a WAV file
 
     Parameters
     ----------
-    file : file
+    filename : string or open file handle
         Output wav file
     rate : int
         The sample rate (in samples/sec).
@@ -200,10 +206,10 @@ def write(file, rate, data):
       (Nsamples, Nchannels).
 
     """
-    if hasattr(file,'write'):
-        fid = file
+    if hasattr(filename,'write'):
+        fid = filename
     else:
-        fid = open(file, 'wb')
+        fid = open(filename, 'wb')
 
     dkind = data.dtype.kind
     if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and data.dtype.itemsize == 1)):
@@ -232,12 +238,18 @@ def write(file, rate, data):
     import sys
     if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
         data = data.byteswap()
+
+    # Old implementation, before wavfile.write() could accept buffers
+    #data.tofile(fid)
     fid.write(data.tostring())
+
     # Determine file size and place it in correct
     #  position at start of the file.
     size = fid.tell()
     fid.seek(4)
     fid.write(struct.pack('<i', size-8))
 
-    if not hasattr(file,'write'):
+    if not hasattr(filename,'write'):
         fid.close()
+    else:
+        fid.seek(0)
