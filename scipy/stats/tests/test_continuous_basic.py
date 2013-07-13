@@ -213,6 +213,8 @@ def test_cont_basic():
         # if numargs == 0? 
         if distfn.numargs == 0:
             yield check_vecentropy, distfn, arg
+        yield check_edge_support, distfn, arg
+
 
 @npt.dec.slow
 def test_cont_basic_slow():
@@ -258,7 +260,7 @@ def test_cont_basic_slow():
 
         if distfn.numargs == 0:
             yield check_vecentropy, distfn, arg
-
+        yield check_edge_support, distfn, arg
 
 @_silence_fp_errors
 def check_moment(distfn, arg, m, v, msg):
@@ -460,6 +462,21 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 
 def check_vecentropy(distfn, args):
     npt.assert_equal( distfn.vecentropy(*args), distfn._entropy(*args) )
+
+
+def check_edge_support(distfn, args):
+    """Make sure the x=self.a and self.b are handled correctly."""
+    x = [distfn.a, distfn.b]
+    npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
+    npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
+
+    npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
+    npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
+
+    npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
+    npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
+    # pdf(x=[a, b], *args) depends on the distribution
+
 
 if __name__ == "__main__":
     npt.run_module_suite()
