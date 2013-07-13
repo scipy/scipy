@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import tempfile
 import warnings
+import StringIO
 
 import numpy as np
 from numpy.testing import assert_equal, assert_, assert_raises, assert_array_equal
@@ -50,11 +51,13 @@ def test_read_fail():
         fp.close()
 
 
-def _check_roundtrip(rate, dtype, channels):
-    fd, tmpfile = tempfile.mkstemp(suffix='.wav')
-    try:
+def _check_roundtrip(realfile, rate, dtype, channels):
+    if(realfile == True):
+        fd, tmpfile = tempfile.mkstemp(suffix='.wav')
         os.close(fd)
-
+    else:
+        tmpfile = StringIO.StringIO()
+    try:
         data = np.random.rand(100, channels)
         if channels == 1:
             data = data[:,0]
@@ -75,25 +78,27 @@ def _check_roundtrip(rate, dtype, channels):
 
             del data2
     finally:
-        os.unlink(tmpfile)
+        if(realfile == True):
+            os.unlink(tmpfile)
 
 
 def test_write_roundtrip():
-    for signed in ('i', 'u', 'f'):
-        for size in (1, 2, 4, 8):
-            if size == 1 and signed == 'i':
-                # signed 8-bit integer PCM is not allowed
-                continue
-            if size > 1 and signed == 'u':
-                # unsigned > 8-bit integer PCM is not allowed
-                continue
-            if (size == 1 or size == 2) and signed == 'f':
-                # 8- or 16-bit float PCM is not expected
-                continue
-            for endianness in ('>', '<'):
-                if size == 1 and endianness == '<':
+    for realfile in (False, True):
+        for signed in ('i', 'u', 'f'):
+            for size in (1, 2, 4, 8):
+                if size == 1 and signed == 'i':
+                    # signed 8-bit integer PCM is not allowed
                     continue
-                for rate in (8000, 32000):
-                    for channels in (1, 2, 5):
-                        dt = np.dtype('%s%s%d' % (endianness, signed, size))
-                        yield _check_roundtrip, rate, dt, channels
+                if size > 1 and signed == 'u':
+                    # unsigned > 8-bit integer PCM is not allowed
+                    continue
+                if (size == 1 or size == 2) and signed == 'f':
+                    # 8- or 16-bit float PCM is not expected
+                    continue
+                for endianness in ('>', '<'):
+                    if size == 1 and endianness == '<':
+                        continue
+                    for rate in (8000, 32000):
+                        for channels in (1, 2, 5):
+                            dt = np.dtype('%s%s%d' % (endianness, signed, size))
+                            yield _check_roundtrip, realfile, rate, dt, channels
