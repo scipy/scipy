@@ -15,6 +15,7 @@
 .tox
 cythonize.dat
 _configtest.c
+build.log
 /build
 /dist
 /scipy.egg-info
