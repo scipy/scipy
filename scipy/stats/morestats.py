@@ -1334,7 +1334,7 @@ def oneway(*args,**kwds):
     return F, pval
 
 
-def wilcoxon(x, y=None, zero_method="wilcox"):
+def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     """
     Calculate the Wilcoxon signed-rank test.
 
@@ -1360,6 +1360,10 @@ def wilcoxon(x, y=None, zero_method="wilcox"):
         "zsplit":
             Zero rank split: just like Pratt, but spliting the zero rank
             between positive and negative ones
+    correction : bool, optional
+        If True, apply continuity correction by adjusting the Wilcoxon rank
+        statistic by 0.5 towards the mean value when computing the
+        z-statistic.  Default is False.
 
     Returns
     -------
@@ -1421,7 +1425,8 @@ def wilcoxon(x, y=None, zero_method="wilcox"):
         se -= 0.5 * (repnum * (repnum * repnum - 1)).sum()
 
     se = sqrt(se / 24)
-    z = (T - mn) / se
+    correction = 0.5 * int(bool(correction)) * np.sign(T - mn)
+    z = (T - mn - correction) / se
     prob = 2. * distributions.norm.sf(abs(z))
     return T, prob
 
