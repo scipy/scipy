@@ -85,6 +85,7 @@ Measurements :mod:`scipy.ndimage.measurements`
    find_objects - Find objects in a labeled array
    histogram - Histogram of the values of an array, optionally at labels
    label - Label features in an array
+   labeled_comprehension
    maximum
    maximum_position
    mean - Mean of the values of an array at labels
