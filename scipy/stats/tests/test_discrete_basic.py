@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import inspect
+
 import numpy.testing as npt
 import numpy as np
 import nose
@@ -62,6 +64,20 @@ def test_discrete_basic():
             alpha = 0.01
             yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                           distname + ' chisquare'
+
+    seen = set()
+    for distname, arg in distdiscrete:
+        if distname in seen:
+            continue
+        seen.add(distname)
+        distfn = getattr(stats,distname)
+        locscale_defaults = (0,)
+        meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf, 
+                 distfn.logsf]
+        # make sure arguments are within support 
+        spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0, }
+        k = spec_k.get(distname, 1)
+        yield check_named_args, distfn, k, arg, locscale_defaults, meths
 
 
 @npt.dec.slow
@@ -278,6 +294,41 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
     npt.assert_(pval > alpha, 'chisquare - test for %s'
            ' at arg = %s with pval = %s' % (msg,str(arg),str(pval)))
+
+
+def check_named_args(distfn, x, shape_args, defaults, meths):
+    """Check calling w/ named arguments."""
+    ### This is a copy-paste from test_continuous_basic.py; dedupe?
+
+    # check consistency of shapes, numargs and _parse signature
+    signature = inspect.getargspec(distfn._parse_args)
+    npt.assert_(signature.varargs is None)
+    npt.assert_(signature.keywords is None)
+    npt.assert_(signature.defaults == defaults)
+
+    shape_argnames = signature.args[1:-len(defaults)]  # self, a, b, loc=0, scale=1 
+    if distfn.shapes:
+        shapes_ = distfn.shapes.replace(',', ' ').split()
+    else: 
+        shapes_ = ''
+    npt.assert_(len(shapes_) == distfn.numargs)
+    npt.assert_(len(shapes_) == len(shape_argnames))
+
+    # check calling w/ named arguments
+    shape_args = list(shape_args)
+
+    vals = [meth(x, *shape_args) for meth in meths]
+    npt.assert_(np.all(np.isfinite(vals)))
+
+    names, a, k = shape_argnames[:], shape_args[:], {}
+    while names:
+        k.update({names.pop(): a.pop()})
+        v = [meth(x, *a, **k) for meth in meths]
+        npt.assert_array_equal(vals, v)
+
+    # unknown arguments should not go through:
+    k.update({'kaboom': 42})
+    npt.assert_raises(TypeError, distfn.cdf, x, **k)
 
 
 if __name__ == "__main__":

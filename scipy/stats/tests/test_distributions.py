@@ -16,6 +16,7 @@ import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
 from scipy.special import xlogy
 import warnings
+import re
 
 
 def kolmogorov_check(diststr, args=(), N=20, significance=0.01):
@@ -1090,15 +1091,15 @@ def test_regression_ticket_1421():
     assert_('pmf(x,' in stats.poisson.__doc__)
 
 
-def test_nan_arguments_ticket_835():
-    assert_(np.isnan(stats.t.logcdf(np.nan)))
-    assert_(np.isnan(stats.t.cdf(np.nan)))
-    assert_(np.isnan(stats.t.logsf(np.nan)))
-    assert_(np.isnan(stats.t.sf(np.nan)))
-    assert_(np.isnan(stats.t.pdf(np.nan)))
-    assert_(np.isnan(stats.t.logpdf(np.nan)))
-    assert_(np.isnan(stats.t.ppf(np.nan)))
-    assert_(np.isnan(stats.t.isf(np.nan)))
+def test_nan_arguments_gh_issue_1362():
+    assert_(np.isnan(stats.t.logcdf(1, np.nan)))
+    assert_(np.isnan(stats.t.cdf(1, np.nan)))
+    assert_(np.isnan(stats.t.logsf(1, np.nan)))
+    assert_(np.isnan(stats.t.sf(1, np.nan)))
+    assert_(np.isnan(stats.t.pdf(1, np.nan)))
+    assert_(np.isnan(stats.t.logpdf(1, np.nan)))
+    assert_(np.isnan(stats.t.ppf(1, np.nan)))
+    assert_(np.isnan(stats.t.isf(1, np.nan)))
 
     assert_(np.isnan(stats.bernoulli.logcdf(np.nan, 0.5)))
     assert_(np.isnan(stats.bernoulli.cdf(np.nan, 0.5)))
@@ -1324,6 +1325,57 @@ def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
     assert_equal(rv.cdf(0), 0)  # rv.cdf(0) previously resulted in: nan
+
+
+## Test subclassing distributions w/ explicit shapes
+
+class _distr_gen(stats.rv_continuous):
+    def _pdf(self, x, a):
+        return 42
+
+class TestExplicitShapes(TestCase):
+    """Construct a distribution w/ explicit shapes parameter and test it."""
+
+    def test_correct_shapes(self):
+        dummy_distr = _distr_gen(name='dummy', shapes='a')
+        assert_equal(dummy_distr.pdf(1, a=1), 42)
+
+    def test_wrong_shapes_1(self):
+        dummy_distr = _distr_gen(name='dummy', shapes='A')
+        assert_raises(TypeError, dummy_distr.pdf, 1, **dict(a=1))
+
+    def test_wrong_shapes_2(self):
+        dummy_distr = _distr_gen(name='dummy', shapes='a, b, c')
+        dct =dict(a=1, b=2, c=3) 
+        assert_raises(TypeError, dummy_distr.pdf, 1, **dct)
+        
+    def test_shapes_string(self):
+        # shapes must be a string
+        dct = dict(name='dummy', shapes=42)
+        assert_raises(TypeError, _distr_gen, **dct)
+
+    def test_shapes_identifiers_1(self):
+        # shapes must be a comma-separated list of valid python identifiers
+        dct = dict(name='dummy', shapes = '(!)')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_identifiers_2(self):
+        dct = dict(name='dummy', shapes = '4chan')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_keywords(self):
+        # python keywords cannot be used for shape parameters
+        dct = dict(name='dummy', shapes = 'a, b, c, lambda')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+
+def test_docstrings():
+    badones = [',\s*,', '\(\s*,', '^\s*:']
+    for distname in stats.__all__:
+        dist = getattr(stats, distname)
+        if isinstance(dist, (stats.rv_discrete, stats.rv_continuous)):
+            for regex in badones:
+                assert_( re.search(regex, dist.__doc__) is None)
 
 
 if __name__ == "__main__":

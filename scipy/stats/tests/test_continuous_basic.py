@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import inspect
+
 import numpy as np
 import numpy.testing as npt
 
@@ -198,6 +200,15 @@ def test_cont_basic():
             alpha = 0.01
             yield check_distribution_rvs, distname, arg, alpha, rvs
 
+        locscale_defaults = (0, 1)
+        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+                 distfn.logsf]
+        # make sure arguments are within support
+        spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
+                  'pareto': 1.5, 'tukeylambda': 0.3}
+        x = spec_x.get(distname, 0.5)
+        yield check_named_args, distfn, x, arg, locscale_defaults, meths
+
 
 @npt.dec.slow
 def test_cont_basic_slow():
@@ -229,6 +240,18 @@ def test_cont_basic_slow():
         if distname in distmissing:
             alpha = 0.01
             yield check_distribution_rvs, distname, arg, alpha, rvs
+
+        locscale_defaults = (0, 1)
+        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+                 distfn.logsf]
+        # make sure arguments are within support
+        x = 0.5
+        if distname == 'invweibull':
+            arg = (1,)
+        elif distname == 'ksone':
+            arg = (3,)
+        yield check_named_args, distfn, x, arg, locscale_defaults, meths
+
 
 
 @_silence_fp_errors
@@ -393,6 +416,40 @@ def check_distribution_rvs(dist, args, alpha, rvs):
         D,pval = stats.kstest(dist,'',args=args, N=1000)
         npt.assert_(pval > alpha, "D = " + str(D) + "; pval = " + str(pval) +
                "; alpha = " + str(alpha) + "\nargs = " + str(args))
+
+
+def check_named_args(distfn, x, shape_args, defaults, meths):
+    """Check calling w/ named arguments."""
+
+    # check consistency of shapes, numargs and _parse signature
+    signature = inspect.getargspec(distfn._parse_args)
+    npt.assert_(signature.varargs is None)
+    npt.assert_(signature.keywords is None)
+    npt.assert_(signature.defaults == defaults)
+
+    shape_argnames = signature.args[1:-len(defaults)]  # self, a, b, loc=0, scale=1
+    if distfn.shapes:
+        shapes_ = distfn.shapes.replace(',',' ').split()
+    else:
+        shapes_ = ''
+    npt.assert_(len(shapes_) == distfn.numargs)
+    npt.assert_(len(shapes_) == len(shape_argnames))
+
+    # check calling w/ named arguments
+    shape_args = list(shape_args)
+
+    vals = [meth(x, *shape_args) for meth in meths]
+    npt.assert_(np.all(np.isfinite(vals)))
+
+    names, a, k = shape_argnames[:], shape_args[:], {}
+    while names:
+        k.update({names.pop(): a.pop()})
+        v = [meth(x, *a, **k) for meth in meths]
+        npt.assert_array_equal(vals, v)
+
+    # unknown arguments should not go through:
+    k.update({'kaboom': 42})
+    npt.assert_raises(TypeError, distfn.cdf, x, **k)
 
 
 if __name__ == "__main__":
