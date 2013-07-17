@@ -149,31 +149,32 @@ def read(filename, mmap=False):
     else:
         fid = open(filename, 'rb')
 
-    fsize = _read_riff_chunk(fid)
-    noc = 1
-    bits = 8
-    comp = WAVE_FORMAT_PCM
-    while (fid.tell() < fsize):
-        # read the next chunk
-        chunk_id = fid.read(4)
-        if chunk_id == b'fmt ':
-            size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid)
-        elif chunk_id == b'fact':
-            _skip_unknown_chunk(fid)
-        elif chunk_id == b'data':
-            data = _read_data_chunk(fid, comp, noc, bits, mmap=mmap)
-        elif chunk_id == b'LIST':
-            # Someday this could be handled properly but for now skip it
-            _skip_unknown_chunk(fid)
+    try:
+        fsize = _read_riff_chunk(fid)
+        noc = 1
+        bits = 8
+        comp = WAVE_FORMAT_PCM
+        while (fid.tell() < fsize):
+            # read the next chunk
+            chunk_id = fid.read(4)
+            if chunk_id == b'fmt ':
+                size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid)
+            elif chunk_id == b'fact':
+                _skip_unknown_chunk(fid)
+            elif chunk_id == b'data':
+                data = _read_data_chunk(fid, comp, noc, bits, mmap=mmap)
+            elif chunk_id == b'LIST':
+                # Someday this could be handled properly but for now skip it
+                _skip_unknown_chunk(fid)
+            else:
+                warnings.warn("Chunk (non-data) not understood, skipping it.",
+                              WavFileWarning)
+                _skip_unknown_chunk(fid)
+    finally:
+        if not hasattr(filename,'read'):
+            fid.close()
         else:
-            warnings.warn("Chunk (non-data) not understood, skipping it.",
-                          WavFileWarning)
-            _skip_unknown_chunk(fid)
-
-    if not hasattr(filename,'read'):
-        fid.close()
-    else:
-        fid.seek(0)
+            fid.seek(0)
 
     return rate, data
 
@@ -209,41 +210,43 @@ def write(filename, rate, data):
     else:
         fid = open(filename, 'wb')
 
-    dkind = data.dtype.kind
-    if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and data.dtype.itemsize == 1)):
-        raise ValueError("Unsupported data type '%s'" % data.dtype)
+    try:
+        dkind = data.dtype.kind
+        if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and data.dtype.itemsize == 1)):
+            raise ValueError("Unsupported data type '%s'" % data.dtype)
 
-    fid.write(b'RIFF')
-    fid.write(b'\x00\x00\x00\x00')
-    fid.write(b'WAVE')
-    # fmt chunk
-    fid.write(b'fmt ')
-    if dkind == 'f':
-        comp = 3
-    else:
-        comp = 1
-    if data.ndim == 1:
-        noc = 1
-    else:
-        noc = data.shape[1]
-    bits = data.dtype.itemsize * 8
-    sbytes = rate*(bits // 8)*noc
-    ba = noc * (bits // 8)
-    fid.write(struct.pack('<ihHIIHH', 16, comp, noc, rate, sbytes, ba, bits))
-    # data chunk
-    fid.write(b'data')
-    fid.write(struct.pack('<i', data.nbytes))
-    import sys
-    if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
-        data = data.byteswap()
-    fid.write(data.tostring())
-    # Determine file size and place it in correct
-    #  position at start of the file.
-    size = fid.tell()
-    fid.seek(4)
-    fid.write(struct.pack('<i', size-8))
+        fid.write(b'RIFF')
+        fid.write(b'\x00\x00\x00\x00')
+        fid.write(b'WAVE')
+        # fmt chunk
+        fid.write(b'fmt ')
+        if dkind == 'f':
+            comp = 3
+        else:
+            comp = 1
+        if data.ndim == 1:
+            noc = 1
+        else:
+            noc = data.shape[1]
+        bits = data.dtype.itemsize * 8
+        sbytes = rate*(bits // 8)*noc
+        ba = noc * (bits // 8)
+        fid.write(struct.pack('<ihHIIHH', 16, comp, noc, rate, sbytes, ba, bits))
+        # data chunk
+        fid.write(b'data')
+        fid.write(struct.pack('<i', data.nbytes))
+        import sys
+        if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
+            data = data.byteswap()
+        fid.write(data.tostring())
+        # Determine file size and place it in correct
+        #  position at start of the file.
+        size = fid.tell()
+        fid.seek(4)
+        fid.write(struct.pack('<i', size-8))
 
-    if not hasattr(filename,'write'):
-        fid.close()
-    else:
-        fid.seek(0)
+    finally:
+        if not hasattr(filename,'write'):
+            fid.close()
+        else:
+            fid.seek(0)
