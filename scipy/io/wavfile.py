@@ -238,7 +238,7 @@ def write(filename, rate, data):
         import sys
         if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
             data = data.byteswap()
-        fid.write(data.tostring())
+        fid.write(data.ravel().data)
         # Determine file size and place it in correct
         #  position at start of the file.
         size = fid.tell()
