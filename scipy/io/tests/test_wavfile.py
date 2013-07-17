@@ -52,7 +52,7 @@ def test_read_fail():
 
 
 def _check_roundtrip(realfile, rate, dtype, channels):
-    if(realfile == True):
+    if realfile:
         fd, tmpfile = tempfile.mkstemp(suffix='.wav')
         os.close(fd)
     else:
@@ -78,7 +78,7 @@ def _check_roundtrip(realfile, rate, dtype, channels):
 
             del data2
     finally:
-        if(realfile == True):
+        if realfile:
             os.unlink(tmpfile)
 
 
