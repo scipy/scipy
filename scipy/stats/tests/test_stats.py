@@ -1999,8 +1999,30 @@ def test_pointbiserial():
 
 
 def test_obrientransform():
+    # A couple tests calculated by hand.
+    x1 = np.array([0, 2, 4])
+    t1 = stats.obrientransform(x1)
+    expected = [7, -2, 7]
+    assert_allclose(t1[0], expected)
+
+    x2 = np.array([0, 3, 6, 9])
+    t2 = stats.obrientransform(x2)
+    expected = np.array([30, 0, 0, 30])
+    assert_allclose(t2[0], expected)
+
+    # Test two arguments.
+    a, b = stats.obrientransform(x1, x2)
+    assert_equal(a, t1[0])
+    assert_equal(b, t2[0])
+
+    # Test three arguments.
+    a, b, c = stats.obrientransform(x1, x2, x1)
+    assert_equal(a, t1[0])
+    assert_equal(b, t2[0])
+    assert_equal(c, t1[0])
+
     # This is a regression test to check np.var replacement.
-    # I didn't separately verify the numbers.
+    # The author of this test didn't separately verify the numbers.
     x1 = np.arange(5)
     result = np.array(
       [[5.41666667, 1.04166667, -0.41666667, 1.04166667, 5.41666667],

@@ -1931,7 +1931,15 @@ def obrientransform(*args):
 
         arrays.append(t)
 
-    return np.array(arrays)
+    # If the arrays are not all the same shape, calling np.array(arrays)
+    # creates a 1-D array with dtype `object` in numpy 1.6+. In numpy
+    # 1.5.x, it raises an exception.  To work around this, we explicitly
+    # set the dtype to `object` when the arrays are not all the same shape.
+    if len(arrays) < 2 or all(x.shape == arrays[0].shape for x in arrays[1:]):
+        dt = None
+    else:
+        dt = object
+    return np.array(arrays, dtype=dt)
 
 
 def signaltonoise(a, axis=0, ddof=0):
