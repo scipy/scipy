@@ -998,8 +998,8 @@ class rv_continuous(rv_generic):
     A note on ``shapes``: subclasses need not specify them explicitly. In this
     case, the `shapes` will be automatically deduced from the signatures of the
     overridden methods.
-    If, for some reason, you prefer to avoid relying on introspection, you can 
-    specify ``shapes`` explicitly as an argument to the instance constructor.  
+    If, for some reason, you prefer to avoid relying on introspection, you can
+    specify ``shapes`` explicitly as an argument to the instance constructor.
 
     Examples
     --------
@@ -6040,8 +6040,8 @@ class rv_discrete(rv_generic):
     A note on ``shapes``: subclasses need not specify them explicitly. In this
     case, the `shapes` will be automatically deduced from the signatures of the
     overridden methods.
-    If, for some reason, you prefer to avoid relying on introspection, you can 
-    specify ``shapes`` explicitly as an argument to the instance constructor.  
+    If, for some reason, you prefer to avoid relying on introspection, you can
+    specify ``shapes`` explicitly as an argument to the instance constructor.
 
 
     Examples
@@ -7416,7 +7416,7 @@ class boltzmann_gen(rv_discrete):
         g2 = z*(1+4*z+z*z)*trm**4 - N**4 * zN*(1+4*zN+zN*zN)
         g2 = g2 / trm2 / trm2
         return mu, var, g1, g2
-boltzmann = boltzmann_gen(name='boltzmann', 
+boltzmann = boltzmann_gen(name='boltzmann',
         longname='A truncated discrete exponential ')
 
 
