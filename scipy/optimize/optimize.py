@@ -2793,7 +2793,7 @@ def show_options(solver, method=None):
         gtol : float
             Orthogonality desired between the function vector and the columns
             of the Jacobian.
-        maxfev : int
+        maxiter : int
             The maximum number of calls to the function. If zero, then
             100*(N+1) is the maximum where N is the number of elements in x0.
         epsfcn : float
