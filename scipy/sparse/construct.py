@@ -412,7 +412,7 @@ def hstack(blocks, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_matrix, vstack
+    >>> from scipy.sparse import coo_matrix, hstack
     >>> A = coo_matrix([[1,2],[3,4]])
     >>> B = coo_matrix([[5],[6]])
     >>> hstack( [A,B] ).todense()
