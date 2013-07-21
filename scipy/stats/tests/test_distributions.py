@@ -926,7 +926,7 @@ class TestFrozen(TestCase):
         # Call one of its methods that does not take any keyword arguments.
         m1 = frozen.moment(2)
         # Now call a method that takes a keyword argument.
-        s = frozen.stats(moments='mvsk')
+        frozen.stats(moments='mvsk')
         # Call moment(2) again.
         # After calling stats(), the following was raising an exception.
         # So this test passes if the following does not raise an exception.
@@ -961,9 +961,6 @@ class TestExpect(TestCase):
 
     def test_beta(self):
         # case with finite support interval
-##        >>> mtrue, vtrue = stats.beta.stats(10,5, loc=5., scale=2.)
-##        >>> mtrue, vtrue
-##        (array(6.333333333333333), array(0.055555555555555552))
         v = stats.beta.expect(lambda x: (x-19/3.)*(x-19/3.), args=(10,5),
                               loc=5, scale=2)
         assert_almost_equal(v, 1./18., decimal=13)
@@ -1024,6 +1021,16 @@ class TestExpect(TestCase):
         prob_lb = stats.poisson.expect(lambda x: 1, args=(2,), lb=2,
                                        conditional=True)
         assert_almost_equal(prob_lb, 1, decimal=14)
+
+    def test_genhalflogistic(self):
+        # genhalflogistic, changes upper bound of support in _argcheck
+        # regression test for gh-2622
+        halflog = stats.genhalflogistic
+        # check consistency when calling expect twice with the same input
+        res1 = halflog.expect(args=(1.5,))
+        halflog.expect(args=(0.5,))
+        res2 = halflog.expect(args=(1.5,))
+        assert_almost_equal(res1, res2, decimal=14)
 
 
 class TestNct(TestCase):

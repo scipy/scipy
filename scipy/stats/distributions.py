@@ -1965,7 +1965,12 @@ class rv_continuous(rv_generic):
                conditional=False, **kwds):
         """Calculate expected value of a function with respect to the distribution
 
-        Location and scale only tested on a few examples.
+        The expected value of a function ``f(x)`` with respect to a
+        distribution ``dist`` is defined as::
+
+                    ubound
+            E[x] = Integral(f(x) * dist.pdf(x))
+                    lbound
 
         Parameters
         ----------
@@ -1987,21 +1992,24 @@ class rv_continuous(rv_generic):
 
         Returns
         -------
-        expected value : float
+        expect : float
+            The calculated expected value.
 
         Notes
         -----
-        This function has not been checked for it's behavior when the integral is
-        not finite. The integration behavior is inherited from integrate.quad.
+        The integration behavior of this function is inherited from
+        `integrate.quad`.
+
         """
         lockwds = {'loc': loc,
                    'scale':scale}
+        self._argcheck(*args)
         if func is None:
             def fun(x, *args):
-                return x*self.pdf(x, *args, **lockwds)
+                return x * self.pdf(x, *args, **lockwds)
         else:
             def fun(x, *args):
-                return func(x)*self.pdf(x, *args, **lockwds)
+                return func(x) * self.pdf(x, *args, **lockwds)
         if lb is None:
             lb = loc + self.a * scale
         if ub is None:
