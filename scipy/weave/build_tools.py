@@ -230,7 +230,7 @@ def build_extension(module_path,compiler_name='',build_dir=None,
 
     # configure temp and build directories
     temp_dir = configure_temp_dir(temp_dir)
-    build_dir = configure_build_dir(module_dir)
+    build_dir = configure_build_dir(build_dir or module_dir)
 
     # dag. We keep having to add directories to the path to keep
     # object files separated from each other.  gcc2.x and gcc3.x C++
