@@ -73,7 +73,10 @@ Decompositions
    schur - Schur decomposition of a matrix
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix
-   interpolative - Interpolative decomposition
+
+.. seealso::
+
+   `scipy.linalg.interpolative` -- Interpolative matrix decompositions
 
 
 Matrix Functions
@@ -139,8 +142,12 @@ Low-level routines
    get_blas_funcs
    get_lapack_funcs
    find_best_blas_type
-   scipy.linalg.blas
-   scipy.linalg.lapack
+
+.. seealso::
+
+   `scipy.linalg.blas` -- Low-level BLAS functions
+
+   `scipy.linalg.lapack` -- Low-level LAPACK functions
 
 """
 

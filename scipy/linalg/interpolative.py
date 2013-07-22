@@ -27,59 +27,118 @@
 #   POSSIBILITY OF SUCH DAMAGE.
 #******************************************************************************
 
-"""
-Python module for interfacing with `id_dist`.
-"""
+# Python module for interfacing with `id_dist`.
 
-import scipy.linalg._interpolative_backend as backend
-import numpy as np
-
-
-__doc__ = r"""
+r"""
+======================================================================
+Interpolative matrix decomposition (:mod:`scipy.linalg.interpolative`)
+======================================================================
 
 .. moduleauthor:: Kenneth L. Ho <klho@stanford.edu>
 
 .. versionadded:: 0.13
 
-The ID software package [MartinssonID] by Martinsson, Rokhlin, Shkolnisky, and
-Tygert is a Fortran library to compute IDs using various algorithms, including
-the rank-revealing QR approach of [Cheng2005] and the more recent randomized
-methods described in [Liberty2007], [Martinsson2011], and [Woolfe2008]. This
-module is a Python wrapper for this package that exposes its functionality in a
-more convenient manner. Note that this module does not add any functionality
+.. currentmodule:: scipy.linalg.interpolative
+
+An interpolative decomposition (ID) of a matrix :math:`A \in
+\mathbb{C}^{m \times n}` of rank :math:`k \leq \min \{ m, n \}` is a
+factorization
+
+.. math::
+  A \Pi =
+  \begin{bmatrix}
+   A \Pi_{1} & A \Pi_{2}
+  \end{bmatrix} =
+  A \Pi_{1}
+  \begin{bmatrix}
+   I & T
+  \end{bmatrix},
+
+where :math:`\Pi = [\Pi_{1}, \Pi_{2}]` is a permutation matrix with
+:math:`\Pi_{1} \in \{ 0, 1 \}^{n \times k}`, i.e., :math:`A \Pi_{2} =
+A \Pi_{1} T`. This can equivalently be written as :math:`A = BP`,
+where :math:`B = A \Pi_{1}` and :math:`P = [I, T] \Pi^{\mathsf{T}}`
+are the *skeleton* and *interpolation matrices*, respectively.
+
+If :math:`A` does not have exact rank :math:`k`, then there exists an
+approximation in the form of an ID such that :math:`A = BP + E`, where
+:math:`\| E \| \sim \sigma_{k + 1}` is on the order of the :math:`(k +
+1)`-th largest singular value of :math:`A`. Note that :math:`\sigma_{k
++ 1}` is the best possible error for a rank-:math:`k` approximation
+and, in fact, is achieved by the singular value decomposition (SVD)
+:math:`A \approx U S V^{*}`, where :math:`U \in \mathbb{C}^{m \times
+k}` and :math:`V \in \mathbb{C}^{n \times k}` have orthonormal columns
+and :math:`S = \mathop{\mathrm{diag}} (\sigma_{i}) \in \mathbb{C}^{k
+\times k}` is diagonal with nonnegative entries. The principal
+advantages of using an ID over an SVD are that:
+
+- it is cheaper to construct;
+- it preserves the structure of :math:`A`; and
+- it is more efficient to compute with in light of the identity submatrix of :math:`P`.
+
+Routines
+========
+
+Main functionality:
+
+.. autosummary::
+   :toctree: generated/
+
+   interp_decomp
+   reconstruct_matrix_from_id
+   reconstruct_interp_matrix
+   reconstruct_skel_matrix
+   id_to_svd
+   svd
+   estimate_spectral_norm
+   estimate_spectral_norm_diff
+   estimate_rank
+
+Support functions:
+
+.. autosummary::
+   :toctree: generated/
+
+   seed
+   rand
+
+
+References
+==========
+
+This module uses the ID software package [1]_ by Martinsson, Rokhlin,
+Shkolnisky, and Tygert, which is a Fortran library for computing IDs
+using various algorithms, including the rank-revealing QR approach of
+[2]_ and the more recent randomized methods described in [3]_, [4]_,
+and [5]_. This module exposes its functionality in a way convenient
+for Python users. Note that this module does not add any functionality
 beyond that of organizing a simpler and more consistent interface.
 
 We advise the user to consult also the `documentation for the ID package
 <https://cims.nyu.edu/~tygert/id_doc.pdf>`_.
 
-.. Not using sphinx/ReST citations because that makes sphinx crash.
+.. [1] P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, M. Tygert. "ID: a
+    software package for low-rank approximation of matrices via interpolative
+    decompositions, version 0.2." http://cims.nyu.edu/~tygert/id_doc.pdf.
 
-* [Cheng2005] H.\  Cheng, Z. Gimbutas, P.G. Martinsson, V. Rokhlin. On the
-  compression of low rank matrices. `SIAM J. Sci. Comput.` 26 (4): 1389--1404,
-  2005. `doi:10.1137/030602678 <http://dx.doi.org/10.1137/030602678>`_.
+.. [2] H. Cheng, Z. Gimbutas, P.G. Martinsson, V. Rokhlin. "On the
+    compression of low rank matrices." *SIAM J. Sci. Comput.* 26 (4): 1389--1404,
+    2005. `doi:10.1137/030602678 <http://dx.doi.org/10.1137/030602678>`_.
 
-* [Liberty2007] E.\  Liberty, F. Woolfe, P.G. Martinsson, V. Rokhlin, M.
-  Tygert. Randomized algorithms for the low-rank approximation of matrices.
-  `Proc. Natl. Acad. Sci. U.S.A.` 104 (51): 20167--20172, 2007.
-  `doi:10.1073/pnas.0709640104 <http://dx.doi.org/10.1073/pnas.0709640104>`_.
+.. [3] E. Liberty, F. Woolfe, P.G. Martinsson, V. Rokhlin, M.
+    Tygert. "Randomized algorithms for the low-rank approximation of matrices."
+    *Proc. Natl. Acad. Sci. U.S.A.* 104 (51): 20167--20172, 2007.
+    `doi:10.1073/pnas.0709640104 <http://dx.doi.org/10.1073/pnas.0709640104>`_.
 
-* [Martinsson2011] P.G. Martinsson, V. Rokhlin, M. Tygert. A randomized
-  algorithm for the decomposition of matrices. `Appl. Comput. Harmon. Anal.` 30
-  (1): 47--68,  2011. `doi:10.1016/j.acha.2010.02.003
-  <http://dx.doi.org/10.1016/j.acha.2010.02.003>`_.
+.. [4] P.G. Martinsson, V. Rokhlin, M. Tygert. "A randomized
+    algorithm for the decomposition of matrices." *Appl. Comput. Harmon. Anal.* 30
+    (1): 47--68,  2011. `doi:10.1016/j.acha.2010.02.003
+    <http://dx.doi.org/10.1016/j.acha.2010.02.003>`_.
 
-* [MartinssonID] P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, M. Tygert. ID: a
-  software package for low-rank approximation of matrices via interpolative
-  decompositions, version 0.2. http://cims.nyu.edu/~tygert/id_doc.pdf.
-
-* [Woolfe2008] F.\  Woolfe, E. Liberty, V. Rokhlin, M. Tygert. A fast
-  randomized algorithm for the approximation of matrices. `Appl. Comput.
-  Harmon. Anal.` 25 (3): 335--366, 2008. `doi:10.1016/j.acha.2007.12.002
-  <http://dx.doi.org/10.1016/j.acha.2007.12.002>`_.
-
-.. autosummary::
-   :toctree: generated/
-
+.. [5] F. Woolfe, E. Liberty, V. Rokhlin, M. Tygert. "A fast
+    randomized algorithm for the approximation of matrices." *Appl. Comput.
+    Harmon. Anal.* 25 (3): 335--366, 2008. `doi:10.1016/j.acha.2007.12.002
+    <http://dx.doi.org/10.1016/j.acha.2007.12.002>`_.
 
 
 Tutorial
@@ -89,18 +148,18 @@ Initializing
 ------------
 
 The first step is to import :mod:`scipy.linalg.interpolative` by issuing the
-command::
+command:
 
 >>> import scipy.linalg.interpolative as sli
 
 Now let's build a matrix. For this, we consider a Hilbert matrix, which is well
-know to have low rank::
+know to have low rank:
 
 >>> from scipy.linalg import hilbert
 >>> n = 1000
 >>> A = hilbert(n)
 
-We can also do this explicitly via::
+We can also do this explicitly via:
 
 >>> import numpy as np
 >>> n = 1000
@@ -114,7 +173,7 @@ instantiates the matrix in Fortran-contiguous order and is important for
 avoiding data copying when passing to the backend.
 
 We then define multiplication routines for the matrix by regarding it as a
-:class:`scipy.sparse.linalg.LinearOperator`::
+:class:`scipy.sparse.linalg.LinearOperator`:
 
 >>> from scipy.sparse.linalg import aslinearoperator
 >>> L = aslinearoperator(A)
@@ -148,13 +207,13 @@ From matrix entries
 
 We first consider a matrix given in terms of its entries.
 
-To compute an ID to a fixed precision, type::
+To compute an ID to a fixed precision, type:
 
 >>> k, idx, proj = sli.interp_decomp(A, eps)
 
 where ``eps < 1`` is the desired precision.
 
-To compute an ID to a fixed rank, use::
+To compute an ID to a fixed rank, use:
 
 >>> idx, proj = sli.interp_decomp(A, k)
 
@@ -162,11 +221,11 @@ where ``k >= 1`` is the desired rank.
 
 Both algorithms use random sampling and are usually faster than the
 corresponding older, deterministic algorithms, which can be accessed via the
-commands::
+commands:
 
 >>> k, idx, proj = sli.interp_decomp(A, eps, rand=False)
 
-and::
+and:
 
 >>> idx, proj = sli.interp_decomp(A, k, rand=False)
 
@@ -178,11 +237,11 @@ From matrix action
 Now consider a matrix given in terms of its action on a vector as a
 :class:`scipy.sparse.linalg.LinearOperator`.
 
-To compute an ID to a fixed precision, type::
+To compute an ID to a fixed precision, type:
 
 >>> k, idx, proj = sli.interp_decomp(L, eps)
 
-To compute an ID to a fixed rank, use::
+To compute an ID to a fixed rank, use:
 
 >>> idx, proj = sli.interp_decomp(L, k)
 
@@ -193,25 +252,25 @@ Reconstructing an ID
 
 The ID routines above do not output the skeleton and interpolation matrices
 explicitly but instead return the relevant information in a more compact (and
-sometimes more useful) form. To build these matrices, write::
+sometimes more useful) form. To build these matrices, write:
 
 >>> B = sli.reconstruct_skel_matrix(A, k, idx)
 
-for the skeleton matrix and::
+for the skeleton matrix and:
 
 >>> P = sli.reconstruct_interp_matrix(idx, proj)
 
-for the interpolation matrix. The ID approximation can then be computed as::
+for the interpolation matrix. The ID approximation can then be computed as:
 
 >>> C = np.dot(B, P)
 
-This can also be constructed directly using::
+This can also be constructed directly using:
 
 >>> C = sli.reconstruct_matrix_from_id(B, idx, proj)
 
 without having to first compute ``P``.
 
-Alternatively, this can be done explicitly as well using::
+Alternatively, this can be done explicitly as well using:
 
 >>> B = A[:,idx[:k]]
 >>> P = np.hstack([np.eye(k), proj])[:,np.argsort(idx)]
@@ -220,11 +279,11 @@ Alternatively, this can be done explicitly as well using::
 Computing an SVD
 ----------------
 
-An ID can be converted to an SVD via the command::
+An ID can be converted to an SVD via the command:
 
 >>> U, S, V = sli.id_to_svd(B, idx, proj)
 
-The SVD approximation is then::
+The SVD approximation is then:
 
 >>> C = np.dot(U, np.dot(np.diag(S), np.dot(V.conj().T)))
 
@@ -237,11 +296,11 @@ From matrix entries
 
 We consider first SVD algorithms for a matrix given in terms of its entries.
 
-To compute an SVD to a fixed precision, type::
+To compute an SVD to a fixed precision, type:
 
 >>> U, S, V = sli.svd(A, eps)
 
-To compute an SVD to a fixed rank, use::
+To compute an SVD to a fixed rank, use:
 
 >>> U, S, V = sli.svd(A, k)
 
@@ -253,11 +312,11 @@ From matrix action
 
 Now consider a matrix given in terms of its action on a vector.
 
-To compute an SVD to a fixed precision, type::
+To compute an SVD to a fixed precision, type:
 
 >>> U, S, V = sli.svd(L, eps)
 
-To compute an SVD to a fixed rank, use::
+To compute an SVD to a fixed rank, use:
 
 >>> U, S, V = sli.svd(L, k)
 
@@ -266,7 +325,7 @@ Utility routines
 
 Several utility routines are also available.
 
-To estimate the spectral norm of a matrix, use::
+To estimate the spectral norm of a matrix, use:
 
 >>> snorm = sli.estimate_spectral_norm(A)
 
@@ -285,11 +344,11 @@ matrices ``A1`` and ``A2`` as follows:
 This is often useful for checking the accuracy of a matrix approximation.
 
 Some routines in :mod:`scipy.linalg.interpolative` require estimating the rank
-of a matrix as well. This can be done with either::
+of a matrix as well. This can be done with either:
 
 >>> k = sli.estimate_rank(A, eps)
 
-or::
+or:
 
 >>> k = sli.estimate_rank(L, eps)
 
@@ -298,18 +357,18 @@ of the numerical rank.
 
 Finally, the random number generation required for all randomized routines can
 be controlled via :func:`scipy.linalg.interpolative.rand`. To reset the seed
-values to their original values, use::
+values to their original values, use:
 
 >>> sli.seed()
 
-To specify the seed values, use::
+To specify the seed values, use:
 
 >>> sli.seed(s)
 
 where ``s`` must be an integer or array of 55 floats. If an integer, the array
 of floats is obtained by using `np.random.rand` with the given integer seed.
 
-To simply generate some random numbers, type::
+To simply generate some random numbers, type:
 
 >>> sli.rand(n)
 
@@ -322,28 +381,10 @@ The above functions all automatically detect the appropriate interface and work
 with both real and complex data types, passing input arguments to the proper
 backend routine.
 
-Reference
-=========
-
-Main functionality
-------------------
-
-.. autofunction:: interp_decomp
-.. autofunction:: reconstruct_matrix_from_id
-.. autofunction:: reconstruct_interp_matrix
-.. autofunction:: reconstruct_skel_matrix
-.. autofunction:: id_to_svd
-.. autofunction:: estimate_spectral_norm
-.. autofunction:: estimate_spectral_norm_diff
-.. autofunction:: svd
-.. autofunction:: estimate_rank
-
-Support/Test functions
-----------------------
-
-.. autofunction:: rand
-
 """
+
+import scipy.linalg._interpolative_backend as backend
+import numpy as np
 
 _DTYPE_ERROR = TypeError("invalid data type")
 
