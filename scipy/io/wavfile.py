@@ -10,6 +10,7 @@ Functions
 """
 from __future__ import division, print_function, absolute_import
 
+import sys
 import numpy
 import struct
 import warnings
@@ -235,10 +236,12 @@ def write(filename, rate, data):
         # data chunk
         fid.write(b'data')
         fid.write(struct.pack('<i', data.nbytes))
-        import sys
         if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
             data = data.byteswap()
-        fid.write(data.tostring())
+        if sys.version_info[0] >= 3:
+            fid.write(data.ravel().data)
+        else:
+            fid.write(data.tostring())
         # Determine file size and place it in correct
         #  position at start of the file.
         size = fid.tell()
