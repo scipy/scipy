@@ -29,11 +29,11 @@
 
 import scipy.linalg.interpolative as pymatrixid
 import numpy as np
-from scipy.linalg import hilbert
+from scipy.linalg import hilbert, svdvals
 from scipy.sparse.linalg import aslinearoperator
 import time
 
-from numpy.testing import TestCase, assert_
+from numpy.testing import assert_, assert_equal
 
 
 def _debug_print(s):
@@ -41,18 +41,22 @@ def _debug_print(s):
         print(s)
 
 
-class TestInterpolativeDecomposition(TestCase):
+class TestInterpolativeDecomposition(object):
     def test_id(self):
-        """
-        Test ID routines on a Hilbert matrix.
-        """
+        for dtype in [np.float64, np.complex128]:
+            yield self.check_id, dtype
+
+    def check_id(self, dtype):
+        # Test ID routines on a Hilbert matrix.
 
         # set parameters
-        n = 1000
+        n = 300
         eps = 1e-12
 
         # construct Hilbert matrix
-        A = hilbert(n)
+        A = hilbert(n).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            A = A * (1 + 1j)
         L = aslinearoperator(A)
 
         # find rank
@@ -76,7 +80,7 @@ class TestInterpolativeDecomposition(TestCase):
         _debug_print("-----------------------------------------")
 
         # fixed precision
-        _debug_print("Calling iddp_id  ...",)
+        _debug_print("Calling iddp_id / idzp_id  ...",)
         t0 = time.clock()
         k, idx, proj = pymatrixid.interp_decomp(A, eps, rand=False)
         t = time.clock() - t0
@@ -84,7 +88,7 @@ class TestInterpolativeDecomposition(TestCase):
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
-        _debug_print("Calling iddp_aid ...",)
+        _debug_print("Calling iddp_aid / idzp_aid ...",)
         t0 = time.clock()
         k, idx, proj = pymatrixid.interp_decomp(A, eps)
         t = time.clock() - t0
@@ -92,7 +96,7 @@ class TestInterpolativeDecomposition(TestCase):
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
-        _debug_print("Calling iddp_rid ...",)
+        _debug_print("Calling iddp_rid / idzp_rid ...",)
         t0 = time.clock()
         k, idx, proj = pymatrixid.interp_decomp(L, eps)
         t = time.clock() - t0
@@ -103,7 +107,7 @@ class TestInterpolativeDecomposition(TestCase):
         # fixed rank
         k = rank
 
-        _debug_print("Calling iddr_id  ...",)
+        _debug_print("Calling iddr_id / idzr_id  ...",)
         t0 = time.clock()
         idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
         t = time.clock() - t0
@@ -111,7 +115,7 @@ class TestInterpolativeDecomposition(TestCase):
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
-        _debug_print("Calling iddr_aid ...",)
+        _debug_print("Calling iddr_aid / idzr_aid ...",)
         t0 = time.clock()
         idx, proj = pymatrixid.interp_decomp(A, k)
         t = time.clock() - t0
@@ -119,7 +123,7 @@ class TestInterpolativeDecomposition(TestCase):
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
-        _debug_print("Calling iddr_rid ...",)
+        _debug_print("Calling iddr_rid / idzr_rid ...",)
         t0 = time.clock()
         idx, proj = pymatrixid.interp_decomp(L, k)
         t = time.clock() - t0
@@ -127,177 +131,98 @@ class TestInterpolativeDecomposition(TestCase):
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
-        # test real SVD routines
-        _debug_print("-----------------------------------------")
-        _debug_print("Real SVD routines")
-        _debug_print("-----------------------------------------")
-
-        # fixed precision
-        _debug_print("Calling iddp_svd ...",)
-        t0 = time.clock()
-        U, S, V = pymatrixid.svd(A, eps, rand=False)
-        t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T))
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        _debug_print("Calling iddp_asvd...",)
-        t0 = time.clock()
-        U, S, V = pymatrixid.svd(A, eps)
-        t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T))
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        _debug_print("Calling iddp_rsvd...",)
-        t0 = time.clock()
-        U, S, V = pymatrixid.svd(L, eps)
-        t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T))
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        # fixed rank
-        k = rank
-
-        _debug_print("Calling iddr_svd ...",)
-        t0 = time.clock()
-        U, S, V = pymatrixid.svd(A, k, rand=False)
-        t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T))
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        _debug_print("Calling iddr_asvd...",)
-        t0 = time.clock()
-        U, S, V = pymatrixid.svd(A, k)
-        t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T))
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        _debug_print("Calling iddr_rsvd...",)
-        t0 = time.clock()
-        U, S, V = pymatrixid.svd(L, k)
-        t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.T))
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        # complexify Hilbert matrix
-        A = A*(1 + 1j)
-        L = aslinearoperator(A)
-
-        # test complex ID routines
-        _debug_print("-----------------------------------------")
-        _debug_print("Complex ID routines")
-        _debug_print("-----------------------------------------")
-
-        # fixed precision
-        _debug_print("Calling idzp_id  ...",)
-        t0 = time.clock()
-        k, idx, proj = pymatrixid.interp_decomp(A, eps, rand=False)
-        t = time.clock() - t0
-        B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        _debug_print("Calling idzp_aid ...",)
-        t0 = time.clock()
-        k, idx, proj = pymatrixid.interp_decomp(A, eps)
-        t = time.clock() - t0
-        B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        _debug_print("Calling idzp_rid ...",)
-        t0 = time.clock()
-        k, idx, proj = pymatrixid.interp_decomp(L, eps)
-        t = time.clock() - t0
-        B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        # fixed rank
-        k = rank
-
-        _debug_print("Calling idzr_id  ...",)
-        t0 = time.clock()
+        # check skeleton and interpolation matrices
         idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
-        t = time.clock() - t0
-        B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
+        P = pymatrixid.reconstruct_interp_matrix(idx, proj)
+        B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
+        assert_(np.allclose(B, A[:,idx[:k]], eps))
+        assert_(np.allclose(B.dot(P), A, eps))
 
-        _debug_print("Calling idzr_aid ...",)
-        t0 = time.clock()
-        idx, proj = pymatrixid.interp_decomp(A, k)
-        t = time.clock() - t0
-        B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        _debug_print("Calling idzr_rid ...",)
-        t0 = time.clock()
-        idx, proj = pymatrixid.interp_decomp(L, k)
-        t = time.clock() - t0
-        B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
-        _debug_print(fmt % (t, np.allclose(A, B, eps)))
-        assert_(np.allclose(A, B, eps))
-
-        # test complex SVD routines
+        # test SVD routines
         _debug_print("-----------------------------------------")
-        _debug_print("Complex SVD routines")
+        _debug_print("SVD routines")
         _debug_print("-----------------------------------------")
 
         # fixed precision
-        _debug_print("Calling idzp_svd ...",)
+        _debug_print("Calling iddp_svd / idzp_svd ...",)
         t0 = time.clock()
         U, S, V = pymatrixid.svd(A, eps, rand=False)
         t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.conj().T))
+        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
-        _debug_print("Calling idzp_asvd...",)
+        _debug_print("Calling iddp_asvd / idzp_asvd...",)
         t0 = time.clock()
         U, S, V = pymatrixid.svd(A, eps)
         t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.conj().T))
+        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
-        _debug_print("Calling idzp_rsvd...",)
+        _debug_print("Calling iddp_rsvd / idzp_rsvd...",)
         t0 = time.clock()
         U, S, V = pymatrixid.svd(L, eps)
         t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.conj().T))
+        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
         # fixed rank
         k = rank
 
-        _debug_print("Calling idzr_svd ...",)
+        _debug_print("Calling iddr_svd / idzr_svd ...",)
         t0 = time.clock()
         U, S, V = pymatrixid.svd(A, k, rand=False)
         t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.conj().T))
+        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
-        _debug_print("Calling idzr_asvd...",)
+        _debug_print("Calling iddr_asvd / idzr_asvd ...",)
         t0 = time.clock()
         U, S, V = pymatrixid.svd(A, k)
         t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.conj().T))
+        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
-        _debug_print("Calling idzr_rsvd...",)
+        _debug_print("Calling iddr_rsvd / idzr_rsvd ...",)
         t0 = time.clock()
         U, S, V = pymatrixid.svd(L, k)
         t = time.clock() - t0
-        B = np.dot(U, np.dot(np.diag(S), V.conj().T))
+        B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
+
+        # ID to SVD
+        idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
+        Up, Sp, Vp = pymatrixid.id_to_svd(A[:, idx[:k]], idx, proj)
+        B = U.dot(np.diag(S).dot(V.T.conj()))
+        assert_(np.allclose(A, B, eps))
+
+        # Norm estimates
+        s = svdvals(A)
+        norm_2_est = pymatrixid.estimate_spectral_norm(A)
+        assert_(np.allclose(norm_2_est, s[0], 1e-6))
+
+        B = A.copy()
+        B[:,0] *= 1.2
+        s = svdvals(A - B)
+        norm_2_est = pymatrixid.estimate_spectral_norm_diff(A, B)
+        assert_(np.allclose(norm_2_est, s[0], 1e-6))
+
+        # Rank estimates
+        B = np.array([[1, 1, 0], [0, 0, 1], [0, 0, 1]], dtype=dtype)
+        for M in [A, B]:
+            ML = aslinearoperator(M)
+
+            rank_np = np.linalg.matrix_rank(M, 1e-9)
+            rank_est = pymatrixid.estimate_rank(M, 1e-9)
+            rank_est_2 = pymatrixid.estimate_rank(ML, 1e-9)
+
+            assert_(rank_est >= rank_np)
+            assert_(rank_est <= rank_np + 10)
+
+            assert_(rank_est_2 >= rank_np)
+            assert_(rank_est_2 <= rank_np + 10)
