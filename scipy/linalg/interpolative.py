@@ -905,9 +905,13 @@ def estimate_rank(A, eps):
         raise _DTYPE_ERROR
     if isinstance(A, np.ndarray):
         if real:
-            return backend.idd_estrank(eps, A)
+            rank = backend.idd_estrank(eps, A)
         else:
-            return backend.idz_estrank(eps, A)
+            rank = backend.idz_estrank(eps, A)
+        if rank == 0:
+            # special return value for nearly full rank
+            rank = min(A.shape)
+        return rank
     elif isinstance(A, LinearOperator):
         m, n = A.shape
         matveca = A.rmatvec
