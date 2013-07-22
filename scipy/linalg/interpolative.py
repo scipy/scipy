@@ -300,14 +300,16 @@ Finally, the random number generation required for all randomized routines can
 be controlled via :func:`scipy.linalg.interpolative.rand`. To reset the seed
 values to their original values, use::
 
->>> sli.rand()
+>>> sli.seed()
 
 To specify the seed values, use::
 
->>> sli.rand(s)
+>>> sli.seed(s)
 
-where ``s`` must be an array of 55 floats. To simply generate some random
-numbers, type::
+where ``s`` must be an integer or array of 55 floats. If an integer, the array
+of floats is obtained by using `np.random.rand` with the given integer seed.
+
+To simply generate some random numbers, type::
 
 >>> sli.rand(n)
 
@@ -346,7 +348,49 @@ Support/Test functions
 _DTYPE_ERROR = TypeError("invalid data type")
 
 
-def rand(*args):
+def seed(seed=None):
+    """
+    Seed the internal random number generator used in this ID package.
+
+    The generator is a lagged Fibonacci method with 55-element internal state.
+
+    Parameters
+    ----------
+    seed : int, sequence, 'default', optional
+        If 'default', the random seed is reset to a default value.
+
+        If `seed` is a sequence containing 55 floating-point numbers
+        in range [0,1], these are used to set the internal state of
+        the generator.
+
+        If the value is an integer, the internal state is obtained
+        from `numpy.random.RandomState` (MT19937) with the integer
+        used as the initial seed.
+
+        If `seed` is omitted (None), `numpy.random` is used to
+        initialize the generator.
+
+    ..  For details, see :func:`backend.id_srand`, :func:`backend.id_srandi`,
+        and :func:`backend.id_srando`.
+    """
+
+    if isinstance(seed, str) and seed == 'default':
+        backend.id_srando()
+    elif hasattr(seed, '__len__'):
+        state = np.asfortranarray(seed, dtype=float)
+        if state.shape != (55,):
+            raise ValueError("invalid input size")
+        elif state.min() < 0 or state.max() > 1:
+            raise ValueError("values not in range [0,1]")
+        backend.id_srandi(state)
+    elif seed is None:
+        backend.id_srandi(np.random.rand(55))
+    else:
+        rnd = np.random.RandomState(seed)
+        backend.id_srandi(rnd.rand(55))
+
+
+def rand(*shape):
     """
     Generate standard uniform pseudorandom numbers via a very efficient lagged
     Fibonacci method.
@@ -354,33 +398,15 @@ def rand(*args):
     This routine is used for all random number generation in this package and
     can affect ID and SVD results.
 
-    Several call signatures are available:
+    Parameters
+    ----------
+    shape
+        Shape of output array
 
-    - If no arguments are given, then the seed values are reset to their
-      original values.
+    ..  For details, see :func:`backend.id_srand`, and :func:`backend.id_srando`.
 
-    - If an integer `n` is given as input, then an array of `n` pseudorandom
-        numbers are returned.
-
-    - If an array `s` of 55 values is given as input, then the seed values are
-        set to `s`.
-
-    ..  For details, see :func:`backend.id_srand`, :func:`backend.id_srandi`,
-        and :func:`backend.id_srando`.
     """
-    if len(args) == 0:
-        backend.id_srando()
-
-    elif len(args) == 1:
-        x = np.asfortranarray(args[0])
-        if x.size == 1:
-            return backend.id_srand(x)
-        elif x.size == 55:
-            backend.id_srandi(x)
-        else:
-            raise ValueError("invalid input size")
-    else:
-        raise ValueError("unknown input specification")
+    return backend.id_srand(np.prod(shape)).reshape(shape)
 
 
 def interp_decomp(A, eps_or_k, rand=True):

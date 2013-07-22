@@ -33,7 +33,7 @@ from scipy.linalg import hilbert, svdvals
 from scipy.sparse.linalg import aslinearoperator
 import time
 
-from numpy.testing import assert_, assert_equal
+from numpy.testing import assert_, assert_equal, assert_allclose
 
 
 def _debug_print(s):
@@ -226,3 +226,22 @@ class TestInterpolativeDecomposition(object):
 
             assert_(rank_est_2 >= rank_np)
             assert_(rank_est_2 <= rank_np + 10)
+
+    def test_rand(self):
+        pymatrixid.seed('default')
+        assert_(np.allclose(pymatrixid.rand(2), [0.8932059 ,  0.64500803], 1e-4))
+
+        pymatrixid.seed(1234)
+        x1 = pymatrixid.rand(2)
+        assert_(np.allclose(x1, [0.7513823 ,  0.06861718], 1e-4))
+
+        np.random.seed(1234)
+        pymatrixid.seed()
+        x2 = pymatrixid.rand(2)
+
+        np.random.seed(1234)
+        pymatrixid.seed(np.random.rand(55))
+        x3 = pymatrixid.rand(2)
+
+        assert_allclose(x1, x2)
+        assert_allclose(x1, x3)
