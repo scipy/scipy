@@ -408,6 +408,22 @@ class ode(object):
         self.jac_params = args
         return self
 
+    def set_solout(self, solout):
+        """Set callable to be called at every successful integration step.
+
+        - solout: callable ``solout(t, y)``
+                  called at each internal integrator step,
+                  t is a scalar providing the current independent position 
+                  y is the current soloution ``y.shape == (n,)``
+                  solout should return -1 to stop integration
+                  otherwise it should return None or 0
+        """
+        if self._integrator.supports_solout:
+            self._integrator.set_solout(solout)
+        else:
+            raise TypeError("selected integrator does not support solout,"
+                            + " choose another one")
+
 
 class complex_ode(ode):
     """
@@ -493,6 +509,22 @@ class complex_ode(ode):
         y = ode.integrate(self, t, step, relax)
         return y[::2] + 1j * y[1::2]
 
+    def set_solout(self, solout):
+        """Set callable to be called at every successful integration step.
+
+        - solout: callable ``solout(t, y)``
+                  called at each internal integrator step,
+                  t is a scalar providing the current independent position 
+                  y is the current soloution ``y.shape == (n,)``
+                  solout should return -1 to stop integration
+                  otherwise it should return None or 0
+        """
+        if self._integrator.supports_solout:
+            self._integrator.set_solout(solout, complex=True)
+        else:
+            raise TypeError("selected integrator does not support solouta,"
+                            + "choose another one")
+
 
 #------------------------------------------------------------------------------
 # ODE integrators
@@ -525,6 +557,7 @@ class IntegratorBase(object):
     success = None           # success==1 if integrator was called successfully
     supports_run_relax = None
     supports_step = None
+    supports_solout = False
     integrator_classes = []
     scalar = float
 
@@ -838,6 +871,7 @@ class dopri5(IntegratorBase):
 
     runner = getattr(_dop, 'dopri5', None)
     name = 'dopri5'
+    supports_solout = True
 
     messages = {1: 'computation successful',
                 2: 'comput. successful (interrupted by solout)',
@@ -868,6 +902,15 @@ class dopri5(IntegratorBase):
         self.dfactor = dfactor
         self.beta = beta
         self.success = 1
+        self.set_solout(None)
+
+    def set_solout(self, solout, complex=False):
+        self.solout = solout
+        self.solout_cmplx = complex
+        if solout is None:
+            self.iout = 0
+        else:
+            self.iout = 1
 
     def reset(self, n, has_jac):
         work = zeros((8 * n + 21,), float)
@@ -882,7 +925,7 @@ class dopri5(IntegratorBase):
         iwork[0] = self.nsteps
         self.iwork = iwork
         self.call_args = [self.rtol, self.atol, self._solout,
-                          self.work, self.iwork]
+                          self.iout, self.work, self.iwork]
         self.success = 1
 
     def run(self, f, jac, y0, t0, t1, f_params, jac_params):
@@ -894,10 +937,13 @@ class dopri5(IntegratorBase):
             self.success = 0
         return y, x
 
-    def _solout(self, *args):
-        # dummy solout function
-        pass
-
+    def _solout(self, nr, xold, x, y, nd, icomp, con):
+        if self.solout is not None:
+            if self.solout_cmplx:
+                y = y[::2] + 1j * y[1::2]
+            return self.solout(x, y)
+        else:
+            return 1
 
 if dopri5.runner is not None:
     IntegratorBase.integrator_classes.append(dopri5)
@@ -929,6 +975,7 @@ class dop853(dopri5):
         self.dfactor = dfactor
         self.beta = beta
         self.success = 1
+        self.set_solout(None)
 
     def reset(self, n, has_jac):
         work = zeros((11 * n + 21,), float)
@@ -943,9 +990,8 @@ class dop853(dopri5):
         iwork[0] = self.nsteps
         self.iwork = iwork
         self.call_args = [self.rtol, self.atol, self._solout,
-                          self.work, self.iwork]
+                          self.iout, self.work, self.iwork]
         self.success = 1
-
 
 if dop853.runner is not None:
     IntegratorBase.integrator_classes.append(dop853)

@@ -12,7 +12,7 @@ from scipy.lib.six.moves import xrange
 
 from numpy.testing import assert_, TestCase, run_module_suite, \
         assert_array_almost_equal, assert_raises, assert_allclose, \
-        assert_array_equal
+        assert_array_equal, assert_equal
 from scipy.integrate import odeint, ode, complex_ode
 
 #------------------------------------------------------------------------------
@@ -218,6 +218,122 @@ class TestComplexOde(TestCase):
             if hasattr(problem, 'jac'):
                 continue
             self._do_problem(problem, 'dop853')
+
+class TestSolout(TestCase):
+    """
+    Check integrate.ode correctly handles solout for dopri5 and dop853
+    """
+    def _run_solout_test(self, integrator):
+        """Check correct usage of solout"""
+        ts = []
+        ys = []
+        t0 = 0.0
+        tend = 10.0
+        y0 = [1.0, 2.0]
+        def solout(t, y):
+            ts.append(t)
+            ys.append(y.copy())
+        def rhs(t, y):
+            return [y[0] + y[1], -y[1]**2]
+        ig = ode(rhs).set_integrator(integrator)
+        ig.set_solout(solout)
+        ig.set_initial_value(y0, t0)
+        ret = ig.integrate(tend)
+        assert_array_equal(ys[0], y0)
+        assert_array_equal(ys[-1], ret)
+        assert_equal(ts[0], t0)
+        assert_equal(ts[-1], tend)
+
+    def test_solout(self):
+        for integrator in ('dopri5', 'dop853'):
+            self._run_solout_test(integrator)
+
+    def _run_solout_break_test(self, integrator):
+        """Check correct usage of stopping via solout"""
+        ts = []
+        ys = []
+        t0 = 0.0
+        tend = 10.0
+        y0 = [1.0, 2.0]
+        def solout(t, y):
+            ts.append(t)
+            ys.append(y.copy())
+            if t > tend/2.0:
+                return -1
+        def rhs(t, y):
+            return [y[0] + y[1], -y[1]**2]
+        ig = ode(rhs).set_integrator(integrator)
+        ig.set_solout(solout)
+        ig.set_initial_value(y0, t0)
+        ret = ig.integrate(tend)
+        assert_array_equal(ys[0], y0)
+        assert_array_equal(ys[-1], ret)
+        assert_equal(ts[0], t0)
+        assert(ts[-1] > tend/2.0)
+        assert(ts[-1] < tend)
+
+    def test_solout_break(self):
+        for integrator in ('dopri5', 'dop853'):
+            self._run_solout_break_test(integrator)
+
+
+class TestComplexSolout(TestCase):
+    """
+    Check integrate.ode correctly handles solout for dopri5 and dop853
+    """
+    def _run_solout_test(self, integrator):
+        """Check correct usage of solout"""
+        ts = []
+        ys = []
+        t0 = 0.0
+        tend = 20.0
+        y0 = [0.0]
+        def solout(t, y):
+            ts.append(t)
+            ys.append(y.copy())
+        def rhs(t, y):
+            return [1.0/(t - 10.0 - 1j)]
+        ig = complex_ode(rhs).set_integrator(integrator)
+        ig.set_solout(solout)
+        ig.set_initial_value(y0, t0)
+        ret = ig.integrate(tend)
+        assert_array_equal(ys[0], y0)
+        assert_array_equal(ys[-1], ret)
+        assert_equal(ts[0], t0)
+        assert_equal(ts[-1], tend)
+
+    def test_solout(self):
+        for integrator in ('dopri5', 'dop853'):
+            self._run_solout_test(integrator)
+
+    def _run_solout_break_test(self, integrator):
+        """Check correct usage of stopping via solout"""
+        ts = []
+        ys = []
+        t0 = 0.0
+        tend = 20.0
+        y0 = [0.0]
+        def solout(t, y):
+            ts.append(t)
+            ys.append(y.copy())
+            if t > tend/2.0:
+                return -1
+        def rhs(t, y):
+            return [1.0/(t - 10.0 - 1j)]
+        ig = complex_ode(rhs).set_integrator(integrator)
+        ig.set_solout(solout)
+        ig.set_initial_value(y0, t0)
+        ret = ig.integrate(tend)
+        assert_array_equal(ys[0], y0)
+        assert_array_equal(ys[-1], ret)
+        assert_equal(ts[0], t0)
+        assert(ts[-1] > tend/2.0)
+        assert(ts[-1] < tend)
+
+    def test_solout_break(self):
+        for integrator in ('dopri5', 'dop853'):
+            self._run_solout_break_test(integrator)
+
 
 #------------------------------------------------------------------------------
 # Test problems
