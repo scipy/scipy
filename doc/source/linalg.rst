@@ -5,3 +5,4 @@
 
    linalg.blas
    linalg.lapack
+   linalg.interpolative

@@ -773,6 +773,34 @@ The following example illustrates the schur decomposition:
      [  1.48694940e-16   8.95109973e-16   8.92966151e-16]
      [  1.33228956e-15   1.33582317e-15   3.55373104e-15]]
 
+
+Interpolative Decomposition
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:mod:`scipy.linalg.interpolative` contains routines for computing the
+interpolative decomposition (ID) of a matrix. For a matrix :math:`A
+\in \mathbb{C}^{m \times n}` of rank :math:`k \leq \min \{ m, n \}`
+this is a factorization
+
+.. math::
+  A \Pi =
+  \begin{bmatrix}
+   A \Pi_{1} & A \Pi_{2}
+  \end{bmatrix} =
+  A \Pi_{1}
+  \begin{bmatrix}
+   I & T
+  \end{bmatrix},
+
+where :math:`\Pi = [\Pi_{1}, \Pi_{2}]` is a permutation matrix with
+:math:`\Pi_{1} \in \{ 0, 1 \}^{n \times k}`, i.e., :math:`A \Pi_{2} =
+A \Pi_{1} T`. This can equivalently be written as :math:`A = BP`,
+where :math:`B = A \Pi_{1}` and :math:`P = [I, T] \Pi^{\mathsf{T}}`
+are the *skeleton* and *interpolation matrices*, respectively.
+
+.. seealso:: `scipy.linalg.interpolative` --- for more information.
+
+
 Matrix Functions
 ----------------
 

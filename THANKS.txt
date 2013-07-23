@@ -119,6 +119,8 @@ Alex Griffing for expm 2009, expm_multiply, expm_frechet,
     trust region optimization methods, and sparse matrix onenormest
     implementations, plus bugfixes.
 Nils Werner for signal windowing and wavfile-writing improvements.
+Kenneth L. Ho for the wrapper around the Interpolative Decomposition code.
+
 
 Institutions
 ------------

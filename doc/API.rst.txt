@@ -106,6 +106,7 @@ change is made.
 
   - scipy.linalg.blas
   - scipy.linalg.lapack
+  - scipy.linalg.interpolative
 
 * scipy.misc
 

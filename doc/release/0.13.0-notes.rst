@@ -31,6 +31,19 @@ minimization: ``dogleg`` and ``trust-ncg``. These provide an alternative to
 traditional line search algorithms already present in ``scipy.optimize``.
 
 
+``scipy.linalg`` improvements
+-----------------------------
+
+Interpolative decompositions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Scipy now includes a new module `scipy.linalg.interpolative`
+containing routines for computing interpolative matrix decompositions
+(ID). This feature is based on the ID software package by
+P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, and M. Tygert, previously
+adapted for Python in the PymatrixId package by K.L. Ho.
+
+
 Deprecated features
 ===================
 
