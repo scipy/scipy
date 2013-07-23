@@ -67,6 +67,7 @@ Decompositions
    cho_factor - Cholesky decomposition for use in solving a linear system
    cho_solve - Solve previously factored linear system
    cho_solve_banded - Solve previously factored banded linear system
+   polar - Compute the polar decomposition.
    qr - QR decomposition of a matrix
    qr_multiply - QR decomposition and multiplication by Q
    qz - QZ decomposition of a pair of matrices
@@ -164,6 +165,7 @@ from .decomp_qr import *
 from ._decomp_qz import *
 from .decomp_svd import *
 from .decomp_schur import *
+from ._decomp_polar import *
 from .matfuncs import *
 from .blas import *
 from .lapack import *
