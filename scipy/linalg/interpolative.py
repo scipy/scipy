@@ -386,7 +386,19 @@ backend routine.
 import scipy.linalg._interpolative_backend as backend
 import numpy as np
 
-_DTYPE_ERROR = TypeError("invalid data type")
+_DTYPE_ERROR = ValueError("invalid input dtype (input must be float64 or complex128)")
+_TYPE_ERROR = TypeError("invalid input type (must be array or LinearOperator)")
+
+def _is_real(A):
+    try:
+        if A.dtype == np.complex128:
+            return False
+        elif A.dtype == np.float64:
+            return True
+        else:
+            raise _DTYPE_ERROR
+    except AttributeError:
+        raise _TYPE_ERROR
 
 
 def seed(seed=None):
@@ -527,15 +539,7 @@ def interp_decomp(A, eps_or_k, rand=True):
     """
     from scipy.sparse.linalg import LinearOperator
 
-    try:
-        if A.dtype == np.float64:
-            real = True
-        elif A.dtype == np.complex128:
-            real = False
-        else:
-            raise _DTYPE_ERROR
-    except:
-        raise _DTYPE_ERROR
+    real = _is_real(A)
 
     if isinstance(A, np.ndarray):
         if eps_or_k < 1:
@@ -582,7 +586,7 @@ def interp_decomp(A, eps_or_k, rand=True):
                 idx, proj = backend.idzr_rid(m, n, matveca, k)
             return idx - 1, proj
     else:
-        raise _DTYPE_ERROR
+        raise _TYPE_ERROR
 
 
 def reconstruct_matrix_from_id(B, idx, proj):
@@ -615,12 +619,10 @@ def reconstruct_matrix_from_id(B, idx, proj):
     :class:`numpy.ndarray`
         Reconstructed matrix.
     """
-    if B.dtype == np.float64:
+    if _is_real(B):
         return backend.idd_reconid(B, idx + 1, proj)
-    elif B.dtype == np.complex128:
-        return backend.idz_reconid(B, idx + 1, proj)
     else:
-        raise _DTYPE_ERROR
+        return backend.idz_reconid(B, idx + 1, proj)
 
 
 def reconstruct_interp_matrix(idx, proj):
@@ -656,12 +658,10 @@ def reconstruct_interp_matrix(idx, proj):
     :class:`numpy.ndarray`
         Interpolation matrix.
     """
-    if proj.dtype == np.float64:
+    if _is_real(proj):
         return backend.idd_reconint(idx + 1, proj)
-    elif proj.dtype == np.complex128:
-        return backend.idz_reconint(idx + 1, proj)
     else:
-        raise _DTYPE_ERROR
+        return backend.idz_reconint(idx + 1, proj)
 
 
 def reconstruct_skel_matrix(A, k, idx):
@@ -698,12 +698,10 @@ def reconstruct_skel_matrix(A, k, idx):
     :class:`numpy.ndarray`
         Skeleton matrix.
     """
-    if A.dtype == np.float64:
+    if _is_real(A):
         return backend.idd_copycols(A, k, idx + 1)
-    elif A.dtype == np.complex128:
-        return backend.idz_copycols(A, k, idx + 1)
     else:
-        raise _DTYPE_ERROR
+        return backend.idz_copycols(A, k, idx + 1)
 
 
 def id_to_svd(B, idx, proj):
@@ -740,12 +738,10 @@ def id_to_svd(B, idx, proj):
     V : :class:`numpy.ndarray`
         Right singular vectors.
     """
-    if B.dtype == np.float64:
+    if _is_real(B):
         U, V, S = backend.idd_id2svd(B, idx + 1, proj)
-    elif B.dtype == np.complex128:
-        U, V, S = backend.idz_id2svd(B, idx + 1, proj)
     else:
-        raise _DTYPE_ERROR
+        U, V, S = backend.idz_id2svd(B, idx + 1, proj)
     return U, S, V
 
 
@@ -775,12 +771,10 @@ def estimate_spectral_norm(A, its=20):
     m, n = A.shape
     matvec = lambda x: A. matvec(x)
     matveca = lambda x: A.rmatvec(x)
-    if A.dtype == np.float64:
+    if _is_real(A):
         return backend.idd_snorm(m, n, matveca, matvec, its=its)
-    elif A.dtype == np.complex128:
-        return backend.idz_snorm(m, n, matveca, matvec, its=its)
     else:
-        raise _DTYPE_ERROR
+        return backend.idz_snorm(m, n, matveca, matvec, its=its)
 
 
 def estimate_spectral_norm_diff(A, B, its=20):
@@ -816,14 +810,12 @@ def estimate_spectral_norm_diff(A, B, its=20):
     matveca1 = lambda x: A.rmatvec(x)
     matvec2 = lambda x: B. matvec(x)
     matveca2 = lambda x: B.rmatvec(x)
-    if A.dtype == np.float64:
+    if _is_real(A):
         return backend.idd_diffsnorm(
             m, n, matveca1, matveca2, matvec1, matvec2, its=its)
-    elif A.dtype == np.complex128:
+    else:
         return backend.idz_diffsnorm(
             m, n, matveca1, matveca2, matvec1, matvec2, its=its)
-    else:
-        raise _DTYPE_ERROR
 
 
 def svd(A, eps_or_k, rand=True):
@@ -875,15 +867,8 @@ def svd(A, eps_or_k, rand=True):
     """
     from scipy.sparse.linalg import LinearOperator
 
-    try:
-        if A.dtype == np.float64:
-            real = True
-        elif A.dtype == np.complex128:
-            real = False
-        else:
-            raise _DTYPE_ERROR
-    except:
-        raise _DTYPE_ERROR
+    real = _is_real(A)
+
     if isinstance(A, np.ndarray):
         if eps_or_k < 1:
             eps = eps_or_k
@@ -926,7 +911,7 @@ def svd(A, eps_or_k, rand=True):
             else:
                 U, V, S = backend.idzr_rsvd(m, n, matveca, matvec, k)
     else:
-        raise _DTYPE_ERROR
+        raise _TYPE_ERROR
     return U, S, V
 
 
@@ -961,15 +946,8 @@ def estimate_rank(A, eps):
     """
     from scipy.sparse.linalg import LinearOperator
 
-    try:
-        if A.dtype == np.float64:
-            real = True
-        elif A.dtype == np.complex128:
-            real = False
-        else:
-            raise _DTYPE_ERROR
-    except:
-        raise _DTYPE_ERROR
+    real = _is_real(A)
+
     if isinstance(A, np.ndarray):
         if real:
             rank = backend.idd_estrank(eps, A)
@@ -987,4 +965,4 @@ def estimate_rank(A, eps):
         else:
             return backend.idz_findrank(eps, m, n, matveca)
     else:
-        raise _DTYPE_ERROR
+        raise _TYPE_ERROR

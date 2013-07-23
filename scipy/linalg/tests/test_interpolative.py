@@ -33,7 +33,7 @@ from scipy.linalg import hilbert, svdvals
 from scipy.sparse.linalg import aslinearoperator
 import time
 
-from numpy.testing import assert_, assert_equal, assert_allclose
+from numpy.testing import assert_, assert_allclose, assert_raises
 
 
 def _debug_print(s):
@@ -245,3 +245,7 @@ class TestInterpolativeDecomposition(object):
 
         assert_allclose(x1, x2)
         assert_allclose(x1, x3)
+
+    def test_badcall(self):
+        A = hilbert(5).astype(np.float32)
+        assert_raises(ValueError, pymatrixid.interp_decomp, A, 1e-6, rand=False)
