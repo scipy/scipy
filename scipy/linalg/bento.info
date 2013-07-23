@@ -20,3 +20,7 @@ Library:
     Extension: calc_lwork
         Sources:
             src/calc_lwork.f
+    Extension: _interpolative
+        Sources:
+             interpolative.pyf,
+             src/id_dist/src/*.f
