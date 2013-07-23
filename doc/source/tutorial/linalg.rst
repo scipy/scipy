@@ -777,8 +777,10 @@ The following example illustrates the schur decomposition:
 Interpolative Decomposition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An interpolative decomposition (ID) of a matrix :math:`A \in \mathbb{C}^{m
-\times n}` of rank :math:`k \leq \min \{ m, n \}` is a factorization
+:mod:`scipy.linalg.interpolative` contains routines for computing the
+interpolative decomposition (ID) of a matrix. For a matrix :math:`A
+\in \mathbb{C}^{m \times n}` of rank :math:`k \leq \min \{ m, n \}`
+this is a factorization
 
 .. math::
   A \Pi =
@@ -790,15 +792,14 @@ An interpolative decomposition (ID) of a matrix :math:`A \in \mathbb{C}^{m
    I & T
   \end{bmatrix},
 
-where :math:`\Pi = [\Pi_{1}, \Pi_{2}]` is a permutation matrix with :math:`\Pi_{1} \in \{ 0, 1 \}^{n \times k}`, i.e., :math:`A \Pi_{2} = A \Pi_{1} T`. This can equivalently be written as :math:`A = BP`, where :math:`B = A \Pi_{1}` and :math:`P = [I, T] \Pi^{\mathsf{T}}` are the *skeleton* and *interpolation matrices*, respectively.
+where :math:`\Pi = [\Pi_{1}, \Pi_{2}]` is a permutation matrix with
+:math:`\Pi_{1} \in \{ 0, 1 \}^{n \times k}`, i.e., :math:`A \Pi_{2} =
+A \Pi_{1} T`. This can equivalently be written as :math:`A = BP`,
+where :math:`B = A \Pi_{1}` and :math:`P = [I, T] \Pi^{\mathsf{T}}`
+are the *skeleton* and *interpolation matrices*, respectively.
 
-If :math:`A` does not have exact rank :math:`k`, then there exists an approximation in the form of an ID such that :math:`A = BP + E`, where :math:`\| E \| \sim \sigma_{k + 1}` is on the order of the :math:`(k + 1)`-th largest singular value of :math:`A`. Note that :math:`\sigma_{k + 1}` is the best possible error for a rank-:math:`k` approximation and, in fact, is achieved by the singular value decomposition (SVD) :math:`A \approx U S V^{*}`, where :math:`U \in \mathbb{C}^{m \times k}` and :math:`V \in \mathbb{C}^{n \times k}` have orthonormal columns and :math:`S = \mathop{\mathrm{diag}} (\sigma_{i}) \in \mathbb{C}^{k \times k}` is diagonal with nonnegative entries. The principal advantages of using an ID over an SVD are that:
+.. seealso:: `scipy.linalg.interpolative` --- for more information.
 
-- it is cheaper to construct;
-- it preserves the structure of :math:`A`; and
-- it is more efficient to compute with in light of the identity submatrix of :math:`P`.
-
-See :mod:`linalg.interpolative`.
 
 Matrix Functions
 ----------------
