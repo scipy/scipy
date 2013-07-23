@@ -589,8 +589,24 @@ class rv_generic(object):
                     meth = globals()[name]
                 shapes_args = inspect.getargspec(meth)
                 shapes_list.append(shapes_args.args)
+
+                # *args or **kwargs are not allowed w/automatic shapes
+                # (generic methods have 'self, x' only)
+                if len(shapes_args.args) > 2:
+                    if shapes_args.varargs is not None:
+                        raise TypeError('*args are not allowed w/out explicit shapes')
+                    if shapes_args.keywords is not None:
+                        raise TypeError('**kwds are not allowed w/out explicit shapes')
+                # TODO: defaults?
+
             shapes = max(shapes_list, key=lambda x: len(x))
             shapes = shapes[2:]  # remove self, x,
+
+            # make sure the signatures are consistent
+            # (generic methods have 'self, x' only)
+            for item in shapes_list:
+                if len(item) > 2 and item[2:] != shapes:
+                    raise TypeError('Shape arguments are inconsistent.')
 
         # have the arguments, construct the method from template
         shapes_str = ', '.join(shapes) + ', ' if shapes else ''  # NB: not None
