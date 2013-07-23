@@ -356,10 +356,10 @@ depending on the representation. The parameter ``eps`` controls the definition
 of the numerical rank.
 
 Finally, the random number generation required for all randomized routines can
-be controlled via :func:`scipy.linalg.interpolative.rand`. To reset the seed
+be controlled via :func:`scipy.linalg.interpolative.seed`. To reset the seed
 values to their original values, use:
 
->>> sli.seed()
+>>> sli.seed('default')
 
 To specify the seed values, use:
 
@@ -423,9 +423,9 @@ def seed(seed=None):
         If `seed` is omitted (None), `numpy.random` is used to
         initialize the generator.
 
-    ..  For details, see :func:`backend.id_srand`, :func:`backend.id_srandi`,
-        and :func:`backend.id_srando`.
     """
+    # For details, see :func:`backend.id_srand`, :func:`backend.id_srandi`,
+    # and :func:`backend.id_srando`.
 
     if isinstance(seed, str) and seed == 'default':
         backend.id_srando()
@@ -456,9 +456,8 @@ def rand(*shape):
     shape
         Shape of output array
 
-    ..  For details, see :func:`backend.id_srand`, and :func:`backend.id_srando`.
-
     """
+    # For details, see :func:`backend.id_srand`, and :func:`backend.id_srando`.
     return backend.id_srand(np.prod(shape)).reshape(shape)
 
 
