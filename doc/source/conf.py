@@ -141,7 +141,7 @@ html_file_suffix = '.html'
 htmlhelp_basename = 'scipy'
 
 pngmath_use_preview = True
-pngmath_dvipng_args = ['-gamma 1.5', '-D 96', '-bg Transparent']
+pngmath_dvipng_args = ['-gamma', '1.5', '-D', '96', '-bg', 'Transparent']
 
 
 # -----------------------------------------------------------------------------
