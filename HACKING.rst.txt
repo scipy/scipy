@@ -7,6 +7,12 @@ community process works in practice.  Readers who are familiar with the SciPy
 community and are experienced Python coders may want to jump straight to the
 `git workflow`_ documentation.
 
+.. note::
+
+   You may want to check the latest version of this guide, which is
+   available at:
+   https://github.com/scipy/scipy/blob/master/HACKING.rst.txt
+
 
 Contributing new code
 ---------------------
@@ -155,6 +161,59 @@ accomplish a certain task is valuable.  `SciPy Central`_ is the place to share
 this type of code (snippets, examples, plotting code, etc.).
 
 
+Recommended development setup
+-----------------------------
+
+Since Scipy contains parts written in C, C++, and Fortran that need to be
+compiled before use, make sure you have the necessary compilers and Python
+development headers installed.  Having compiled code also means that importing
+Scipy from the development sources needs some additional steps, which are
+explained below.
+
+First fork a copy of the main Scipy repository in Github onto your own
+account and then create your local repository via::
+
+    $ git clone git@github.com:YOURUSERNAME/scipy.git scipy
+    $ cd scipy
+    $ git remote add upstream git://github.com/scipy/scipy.git
+
+To build the development version of Scipy and run tests, spawn
+interactive shells with the Python import paths properly set up etc.,
+do one of::
+
+    $ python runtests.py -v
+    $ python runtests.py -v -s optimize
+    $ python runtests.py -v -t scipy/special/tests/test_basic.py:test_xlogy
+    $ python runtests.py --ipython
+    $ python runtests.py --python somescript.py
+
+This builds Scipy first, so the first time it may take some time.  If
+you specify ``-n``, the tests are run against the version of Scipy (if
+any) found on current PYTHONPATH.
+
+You may want to set up an in-place build so that changes made to
+``.py`` files have effect without rebuild. First, run::
+
+    $ python setup.py build_ext -i
+
+Then you need to point your PYTHONPATH environment variable to this directory.
+Some IDEs (Spyder for example) have utilities to manage PYTHONPATH.  On Linux
+and OSX, you can run the command::
+
+    $ export PYTHONPATH=$PWD
+
+and on Windows
+
+    $ set PYTHONPATH=/path/to/scipy
+
+Now editing a Python source file in SciPy allows you to immediately
+test and use your changes (in ``.py`` files), by simply restarting the
+interpreter.
+
+Another good approach is to install Scipy normally in an isolated test
+environment using `virtualenv`_, and work from there (see FAQ below).
+
+
 Useful links, FAQ, checklist
 ----------------------------
 
@@ -210,48 +269,6 @@ proprietary re-use. While this allows companies to use and modify the software
 without giving anything back, it is felt that the larger user base results in 
 more contributions overall, and companies often publish their modifications 
 anyway, without being required to.  See John Hunter's `BSD pitch`_.
-
-*How do I set up SciPy so I can edit files, run the tests and make commits?*
-
-First fork a copy of the main Scipy repository in Github onto your own
-account and then create your local repository via::
-
-    $ git clone git@github.com:YOURUSERNAME/scipy.git scipy
-    $ cd scipy
-    $ git remote add upstream git://github.com/scipy/scipy.git
-
-To build Scipy and run tests etc., do one of::
-
-    $ python runtests.py -v
-    $ python runtests.py -v -s optimize
-    $ python runtests.py -v -t scipy/special/tests/test_basic.py:test_xlogy
-    $ python runtests.py --ipython
-
-This builds Scipy first, so the first time it may take some time.  If
-you specify ``-n``, the tests are run against the version of Scipy (if
-any) found on PYTHONPATH.
-
-You may want to set up an in-place build so that changes made to
-``.py`` files have effect without rebuild. First, run::
-
-    $ python setup.py build_ext -i
-
-Then you need to either set up a symlink in your site-packages or add
-this directory to your PYTHONPATH environment variable, so Python can
-find it.  Some IDEs (Spyder for example) have utilities to manage
-PYTHONPATH.  On Linux and OSX, you can run the command::
-
-    $ export PYTHONPATH=$PWD
-
-To set the Python import path to point to the current directory.
-Now editing a Python source file in SciPy allows you to immediately
-test and use your changes (in ``.py`` files), by simply restarting the
-interpreter.
-
-Another good approach is to install Scipy normally in an isolated test
-environment using `virtualenv`_, and work from there (see the next
-question).
-
 
 *How do I set up a development version of SciPy in parallel to a released
 version that I use to do my job/research?*
