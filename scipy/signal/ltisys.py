@@ -260,24 +260,19 @@ class lti(object):
         """
         N = len(args)
         if N == 2:  # Numerator denominator transfer function input
-            self.__dict__['num'], self.__dict__['den'] = normalize(*args)
-            self.__dict__['zeros'], self.__dict__['poles'], \
-            self.__dict__['gain'] = tf2zpk(*args)
-            self.__dict__['A'], self.__dict__['B'], \
-                                self.__dict__['C'], \
-                                self.__dict__['D'] = tf2ss(*args)
+            _num, _den = normalize(*args)
+            self._num = _num
+            self.den = _den
             self.inputs = 1
             if len(self.num.shape) > 1:
                 self.outputs = self.num.shape[0]
             else:
                 self.outputs = 1
         elif N == 3:      # Zero-pole-gain form
-            self.__dict__['zeros'], self.__dict__['poles'], \
-                                    self.__dict__['gain'] = args
-            self.__dict__['num'], self.__dict__['den'] = zpk2tf(*args)
-            self.__dict__['A'], self.__dict__['B'], \
-                                self.__dict__['C'], \
-                                self.__dict__['D'] = zpk2ss(*args)
+            _zeros, _poles, _gain = args
+            self._zeros = _zeros
+            self._poles = _poles
+            self.gain = _gain
             # make sure we have numpy arrays
             self.zeros = numpy.asarray(self.zeros)
             self.poles = numpy.asarray(self.poles)
@@ -287,48 +282,15 @@ class lti(object):
             else:
                 self.outputs = 1
         elif N == 4:       # State-space form
-            self.__dict__['A'], self.__dict__['B'], \
-                                self.__dict__['C'], \
-                                self.__dict__['D'] = abcd_normalize(*args)
-            self.__dict__['zeros'], self.__dict__['poles'], \
-                                    self.__dict__['gain'] = ss2zpk(*args)
-            self.__dict__['num'], self.__dict__['den'] = ss2tf(*args)
+            _A, _B, _C, _D = abcd_normalize(*args)
+            self._A = _A
+            self._B = _B
+            self._C = _C
+            self.D = _D
             self.inputs = self.B.shape[-1]
             self.outputs = self.C.shape[0]
         else:
             raise ValueError("Needs 2, 3, or 4 arguments.")
-
-    def __setattr__(self, attr, val):
-        if attr in ['num', 'den']:
-            self.__dict__[attr] = val
-            self.__dict__['zeros'], self.__dict__['poles'], \
-                                    self.__dict__['gain'] = \
-                                    tf2zpk(self.num, self.den)
-            self.__dict__['A'], self.__dict__['B'], \
-                                self.__dict__['C'], \
-                                self.__dict__['D'] = \
-                                tf2ss(self.num, self.den)
-        elif attr in ['zeros', 'poles', 'gain']:
-            self.__dict__[attr] = val
-            self.__dict__['num'], self.__dict__['den'] = \
-                                  zpk2tf(self.zeros,
-                                         self.poles, self.gain)
-            self.__dict__['A'], self.__dict__['B'], \
-                                self.__dict__['C'], \
-                                self.__dict__['D'] = \
-                                zpk2ss(self.zeros,
-                                       self.poles, self.gain)
-        elif attr in ['A', 'B', 'C', 'D']:
-            self.__dict__[attr] = val
-            self.__dict__['zeros'], self.__dict__['poles'], \
-                                    self.__dict__['gain'] = \
-                                    ss2zpk(self.A, self.B,
-                                           self.C, self.D)
-            self.__dict__['num'], self.__dict__['den'] = \
-                                  ss2tf(self.A, self.B,
-                                        self.C, self.D)
-        else:
-            self.__dict__[attr] = val
 
     def __repr__(self):
         # Canonical representation using state-space to preserve numerical
@@ -340,6 +302,109 @@ class lti(object):
             repr(self.C),
             repr(self.D),
             )
+
+    @property
+    def num(self):
+        """Numerator"""
+        return self._num
+
+    @num.setter
+    def num(self, value):
+        self._num = value
+        self._zeros, self._poles, self._gain = tf2zpk(self.num, self.den)
+        self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
+
+    @property
+    def den(self):
+        """Numerator"""
+        return self._den
+
+    @den.setter
+    def den(self, value):
+        self._den = value
+        self._zeros, self._poles, self._gain = tf2zpk(self.num, self.den)
+        self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
+
+    @property
+    def zeros(self):
+        """Numerator"""
+        return self._zeros
+
+    @zeros.setter
+    def zeros(self, value):
+        self._zeros = value
+        self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
+        self._A, self._B, self._C, self._D = zpk2ss(self.zeros, self.poles,
+                                                    self.gain)
+
+    @property
+    def poles(self):
+        """Numerator"""
+        return self._poles
+
+    @poles.setter
+    def poles(self, value):
+        self._poles = value
+        self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
+        self._A, self._B, self._C, self._D = zpk2ss(self.zeros, self.poles,
+                                                    self.gain)
+
+    @property
+    def gain(self):
+        """Numerator"""
+        return self._gain
+
+    @gain.setter
+    def gain(self, value):
+        self._gain = value
+        self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
+        self._A, self._B, self._C, self._D = zpk2ss(self.zeros, self.poles,
+                                                    self.gain)
+
+    @property
+    def A(self):
+        """Numerator"""
+        return self._A
+
+    @A.setter
+    def A(self, value):
+        self._A = value
+        self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
+        self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
+                                                      self.C, self.D)
+    @property
+    def B(self):
+        """Numerator"""
+        return self._B
+
+    @B.setter
+    def B(self, value):
+        self._B = value
+        self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
+        self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
+                                                      self.C, self.D)
+    @property
+    def C(self):
+        """Numerator"""
+        return self._C
+
+    @C.setter
+    def C(self, value):
+        self._C = value
+        self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
+        self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
+                                                      self.C, self.D)
+    @property
+    def D(self):
+        """Numerator"""
+        return self._D
+
+    @D.setter
+    def D(self, value):
+        self._D = value
+        self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
+        self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
+                                                      self.C, self.D)
 
     def impulse(self, X0=None, T=None, N=None):
         return impulse(self, X0=X0, T=T, N=N)
