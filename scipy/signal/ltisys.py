@@ -629,9 +629,15 @@ def impulse(system, X0=None, T=None, N=None):
 
     Parameters
     ----------
-    system : LTI class or tuple
-        If specified as a tuple, the system is described as
-        ``(num, den)``, ``(zero, pole, gain)``, or ``(A, B, C, D)``.
+    system : an instance of the LTI class or a tuple of array_like 
+        describing the system.
+        The following gives the number of elements in the tuple and
+        the interpretation:
+
+            * 2 (num, den)
+            * 3 (zeros, poles, gain)
+            * 4 (A, B, C, D)
+            
     X0 : array_like, optional
         Initial state-vector.  Defaults to zero.
     T : array_like, optional
@@ -677,7 +683,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple describing the system.
+    system : an instance of the LTI class or a tuple of array_like 
+        describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
 
@@ -685,13 +692,13 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
             * 3 (zeros, poles, gain)
             * 4 (A, B, C, D)
 
+    X0 : 1-D array_like, optional
+        The initial condition of the state vector.  Default: 0 (the
+        zero vector).
     T : 1-D array_like, optional
         The time steps at which the input is defined and at which the
         output is desired.  If `T` is not given, the function will
         generate a set of time samples automatically.
-    X0 : 1-D array_like, optional
-        The initial condition of the state vector.  Default: 0 (the
-        zero vector).
     N : int, optional
         Number of time points to compute.  Default: 100.
     kwargs : various types
@@ -756,7 +763,8 @@ def step(system, X0=None, T=None, N=None):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple describing the system.
+    system : an instance of the LTI class or a tuple of array_like 
+        describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
 
@@ -805,7 +813,8 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple describing the system.
+    system : an instance of the LTI class or a tuple of array_like 
+        describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
 
