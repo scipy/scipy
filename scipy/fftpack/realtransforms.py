@@ -299,8 +299,9 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 
     **type II**
 
-    There are several definitions of the DST-I; we use the following
-    for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N. ::
+    There are several definitions of the DST-II; we use the following
+    for ``norm=None``.  DST-II assumes the input is odd around n=-1/2 and 
+    n=N-1/2; the output is odd around k=-1 and even around k=N-1 ::
 
                 N-1
       y[k] = 2* sum x[n]*sin(pi*(k+1)*(n+0.5)/N), 0 <= k < N.
