@@ -716,6 +716,8 @@ def impulse(system, X0=None, T=None, N=None):
         N = 100
     if T is None:
         T = _default_response_times(sys.A, N)
+    else:
+        T = asarray(T)
     h = zeros(T.shape, sys.A.dtype)
     s, v = linalg.eig(sys.A)
     vi = linalg.inv(v)
@@ -849,6 +851,8 @@ def step(system, X0=None, T=None, N=None):
         N = 100
     if T is None:
         T = _default_response_times(sys.A, N)
+    else:
+        T = asarray(T)
     U = ones(T.shape, sys.A.dtype)
     vals = lsim(sys, U, T, X0=X0)
     return vals[0], vals[1]
@@ -907,6 +911,8 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
         N = 100
     if T is None:
         T = _default_response_times(sys.A, N)
+    else:
+        T = asarray(T)
     U = ones(T.shape, sys.A.dtype)
     vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
