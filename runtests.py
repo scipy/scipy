@@ -10,6 +10,7 @@ Examples::
     $ python runtests.py -s {SAMPLE_SUBMODULE}
     $ python runtests.py -t {SAMPLE_TEST}
     $ python runtests.py --ipython
+    $ python runtests.py --python somescript.py
 
 """
 
@@ -22,6 +23,9 @@ PROJECT_MODULE = "scipy"
 PROJECT_ROOT_FILES = ['scipy', 'LICENSE.txt', 'setup.py']
 SAMPLE_TEST = "scipy/special/tests/test_basic.py:test_xlogy"
 SAMPLE_SUBMODULE = "optimize"
+
+EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
+              '/usr/local/lib/ccache', '/usr/local/lib/f90cache']
 
 # ---------------------------------------------------------------------
 
@@ -37,6 +41,7 @@ sys.path.pop(0)
 import shutil
 import subprocess
 import time
+import imp
 from argparse import ArgumentParser, REMAINDER
 
 def main(argv):
@@ -72,7 +77,7 @@ def main(argv):
     parser.add_argument("--show-build-log", action="store_true",
                         help="Show build output rather than using a log file")
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
-                        help="Arguments to pass to Nose")
+                        help="Arguments to pass to Nose, Python or shell")
     args = parser.parse_args(argv)
 
     if args.pythonpath:
@@ -84,10 +89,26 @@ def main(argv):
         sys.path.insert(0, site_dir)
         os.environ['PYTHONPATH'] = site_dir
 
+    extra_argv = args.args[:]
+    if extra_argv and extra_argv[0] == '--':
+        extra_argv = extra_argv[1:]
+
     if args.python:
-        import code
-        code.interact()
-        sys.exit(0)
+        if extra_argv:
+            # Don't use subprocess, since we don't want to include the
+            # current path in PYTHONPATH.
+            sys.argv = extra_argv
+            with open(extra_argv[0], 'r') as f:
+                script = f.read()
+            sys.modules['__main__'] = imp.new_module('__main__')
+            ns = dict(__name__='__main__',
+                      __file__=extra_argv[0])
+            exec_(script, ns)
+            sys.exit(0)
+        else:
+            import code
+            code.interact()
+            sys.exit(0)
 
     if args.ipython:
         import IPython
@@ -97,12 +118,8 @@ def main(argv):
     if args.shell:
         shell = os.environ.get('SHELL', 'sh')
         print("Spawning a Unix shell...")
-        os.execv(shell, [shell])
+        os.execv(shell, [shell] + extra_argv)
         sys.exit(1)
-
-    extra_argv = args.args[:]
-    if extra_argv and extra_argv[0] == '--':
-        extra_argv = extra_argv[1:]
 
     if args.coverage:
         dst_dir = os.path.join('build', 'coverage')
@@ -169,8 +186,7 @@ def build_project(args):
     cmd = [sys.executable, 'setup.py']
 
     # Always use ccache, if installed
-    env['PATH'] = os.pathsep.join(['/usr/lib/ccache'] 
-                                  + env.get('PATH', '').split(os.pathsep))
+    env['PATH'] = os.pathsep.join(EXTRA_PATH + env.get('PATH', '').split(os.pathsep))
 
     if args.debug:
         # assume everyone uses gcc/gfortran
@@ -218,6 +234,22 @@ def build_project(args):
     site_dir = get_python_lib(prefix=dst_dir)
 
     return site_dir
-        
+
+if sys.version_info[0] >= 3:
+    import builtins
+    exec_ = getattr(builtins, "exec")
+else:
+    def exec_(code, globs=None, locs=None):
+        """Execute code in a namespace."""
+        if globs is None:
+            frame = sys._getframe(1)
+            globs = frame.f_globals
+            if locs is None:
+                locs = frame.f_locals
+            del frame
+        elif locs is None:
+            locs = globs
+        exec("""exec code in globs, locs""")
+
 if __name__ == "__main__":
     main(argv=sys.argv[1:])
