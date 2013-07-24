@@ -5102,45 +5102,61 @@ class nct_gen(rv_continuous):
 nct = nct_gen(name="nct")
 
 
-class nig_gen(rv_continuous):
+class norminvgauss_gen(rv_continuous):
     """A Normal Inverse Gaussian continuous random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability density for a Normal Inverse Gaussian distribution is
-        nig.pdf(x, a, b, d)=
-            (a*d/pi) * kv(1,a*np.sqrt(d**2+x**2))*
-            exp(d*sqrt(a**2-b**2)+b*x)/
-            sqrt(d**2+x**2)
-    where kv is a Bessel function of second order.
-    a is tail heaviness, b is asymmetry parameter
-    and d is scale parameter (see Wikipedia)
+    The usual probability density parametrisation for a
+    Normal Inverse Gaussian (NIG) distribution is given by
+
+    NIG.pdf(x; mu, a, b, d) = (a*d/pi) * k_1(a*sqrt(d**2+(x-mu)**2))
+                              * exp(d*sqrt(a**2-b**2)+b*(x-mu))
+                              / sqrt(d**2+(x-mu)**2)
+    where
+    mu: location
+    a: tail heaviness, 0<a
+    b: asymmetry parameter, |b|<= a
+    d: scale parameter, 0<=d
+    k_1: Bessel function of second order.
+
+    Scaling NIG(.; mu, a, b, d) by c>0 yields NIG(.; c*mu, a/c, b/c, cd)
+
+    The pdf of norminvgauss is the scale invariant centered NIG.pdf:
+
+    norminvgauss.pdf(x, a, b) = NIG.pdf(x;0, a, b, 1)
+                              = (a/pi) * k_1(a*sqrt(1+x**2))
+                                * exp(sqrt(a**2-b**2)+b*x)
+                                / sqrt(1+x**2)
+
+    Hence,
+    NIG.pdf(x; mu, a, b, d)= norminvgauss.pdf(x, a*d, b*d, loc= mu/d, scale=d)
 
     %(example)s
 
     """
-    def _argcheck(self, a, b, d):
-        return (a > 0) & (d > 0) & (np.absolute(b) < a)
+    def _argcheck(self, a, b):
+        return (a > 0) & (np.absolute(b) < a)
 
-    def _pdf(self, x, a, b, d):
-        return (a * d / pi) * \
-            special.kv(1, a * sqrt(d**2 + x**2)) *\
-            exp(d * sqrt(a**2 - b**2) + b * x) /\
-            sqrt(d**2 + x**2)
+    def _pdf(self, x, a, b):
+        return (a / pi) * \
+            special.kv(1, a * sqrt(1 + x**2)) *\
+            exp( sqrt(a**2 - b**2) + b * x) /\
+            sqrt(1 + x**2)
 
-    def _logpdf(self, x, a, b, d):
-        return log(self._pdf(x, a, b, d))
+    def _logpdf(self, x, a, b):
+        return log(self._pdf(x, a, b))
 
-    def _stats(self, a, b, d):
+    def _stats(self, a, b):
         gamma = sqrt(a**2 - b**2)
-        mean = d * b / gamma
-        variance = d * a**2 / gamma**3
-        skewness = 3 * b / (a * sqrt(d * gamma))
-        kurtosis = 3 * (1 + 4 * b**2 / a**2) / (d * gamma)
+        mean = b / gamma
+        variance = a**2 / gamma**3
+        skewness = 3 * b / (a * sqrt(gamma))
+        kurtosis = 3 * (1 + 4 * b**2 / a**2) / gamma
         return mean, variance, skewness, kurtosis
-nig = nig_gen(shapes="a, b, d")
+norminvgauss = norminvgauss_gen(name="Normal Inverse Gaussian", shapes="a, b")
 
 
 class pareto_gen(rv_continuous):
