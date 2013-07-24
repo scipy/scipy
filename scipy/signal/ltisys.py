@@ -260,19 +260,16 @@ class lti(object):
         """
         N = len(args)
         if N == 2:  # Numerator denominator transfer function input
-            _num, _den = normalize(*args)
-            self._num = _num
-            self.den = _den
+            self._num, self._den = normalize(*args)
+            self._update(self.num, self.den)
             self.inputs = 1
             if len(self.num.shape) > 1:
                 self.outputs = self.num.shape[0]
             else:
                 self.outputs = 1
         elif N == 3:      # Zero-pole-gain form
-            _zeros, _poles, _gain = args
-            self._zeros = _zeros
-            self._poles = _poles
-            self.gain = _gain
+            self._zeros, self._poles, self._gain = args
+            self._update(self.zeros, self.poles, self.gain)
             # make sure we have numpy arrays
             self.zeros = numpy.asarray(self.zeros)
             self.poles = numpy.asarray(self.poles)
@@ -282,11 +279,8 @@ class lti(object):
             else:
                 self.outputs = 1
         elif N == 4:       # State-space form
-            _A, _B, _C, _D = abcd_normalize(*args)
-            self._A = _A
-            self._B = _B
-            self._C = _C
-            self.D = _D
+            self._A, self._B, self._C, self._D = abcd_normalize(*args)
+            self._update(self.A, self.B, self.C, self.D)
             self.inputs = self.B.shape[-1]
             self.outputs = self.C.shape[0]
         else:
@@ -311,8 +305,7 @@ class lti(object):
     @num.setter
     def num(self, value):
         self._num = value
-        self._zeros, self._poles, self._gain = tf2zpk(self.num, self.den)
-        self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
+        self._update(self.num, self.den)
 
     @property
     def den(self):
@@ -322,8 +315,7 @@ class lti(object):
     @den.setter
     def den(self, value):
         self._den = value
-        self._zeros, self._poles, self._gain = tf2zpk(self.num, self.den)
-        self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
+        self._update(self.num, self.den)
 
     @property
     def zeros(self):
@@ -333,9 +325,7 @@ class lti(object):
     @zeros.setter
     def zeros(self, value):
         self._zeros = value
-        self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
-        self._A, self._B, self._C, self._D = zpk2ss(self.zeros, self.poles,
-                                                    self.gain)
+        self._update(self.zeros, self.poles, self.gain)
 
     @property
     def poles(self):
@@ -345,9 +335,7 @@ class lti(object):
     @poles.setter
     def poles(self, value):
         self._poles = value
-        self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
-        self._A, self._B, self._C, self._D = zpk2ss(self.zeros, self.poles,
-                                                    self.gain)
+        self._update(self.zeros, self.poles, self.gain)
 
     @property
     def gain(self):
@@ -357,9 +345,7 @@ class lti(object):
     @gain.setter
     def gain(self, value):
         self._gain = value
-        self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
-        self._A, self._B, self._C, self._D = zpk2ss(self.zeros, self.poles,
-                                                    self.gain)
+        self._update(self.zeros, self.poles, self.gain)
 
     @property
     def A(self):
@@ -369,9 +355,8 @@ class lti(object):
     @A.setter
     def A(self, value):
         self._A = value
-        self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
-        self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
-                                                      self.C, self.D)
+        self._update(self.A, self.B, self.C, self.D)
+
     @property
     def B(self):
         """Numerator"""
@@ -380,9 +365,8 @@ class lti(object):
     @B.setter
     def B(self, value):
         self._B = value
-        self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
-        self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
-                                                      self.C, self.D)
+        self._update(self.A, self.B, self.C, self.D)
+
     @property
     def C(self):
         """Numerator"""
@@ -391,9 +375,8 @@ class lti(object):
     @C.setter
     def C(self, value):
         self._C = value
-        self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
-        self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
-                                                      self.C, self.D)
+        self._update(self.A, self.B, self.C, self.D)
+
     @property
     def D(self):
         """Numerator"""
@@ -402,9 +385,21 @@ class lti(object):
     @D.setter
     def D(self, value):
         self._D = value
-        self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
-        self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
-                                                      self.C, self.D)
+        self._update(self.A, self.B, self.C, self.D)
+
+    def _update(self, *args):
+        N = len(args)
+        if N == 2:
+            self._zeros, self._poles, self._gain = tf2zpk(self.num, self.den)
+            self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
+        if N == 3:
+            self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
+            self._A, self._B, self._C, self._D = zpk2ss(self.zeros,
+                                                        self.poles, self.gain)
+        if N == 4:
+            self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
+            self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
+                                                          self.C, self.D)
 
     def impulse(self, X0=None, T=None, N=None):
         return impulse(self, X0=X0, T=T, N=N)
