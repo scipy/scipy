@@ -412,7 +412,7 @@ def configure_temp_dir(temp_dir=None):
               temp_dir)
         temp_dir = tempfile.gettempdir()
 
-    # final check that that directories are writable.
+    # Final check that directories are writable.
     if not os.access(temp_dir,os.W_OK):
         msg = "Either the temp or build directory wasn't writable. Check" \
               " these locations: '%s'" % temp_dir
@@ -430,9 +430,9 @@ def configure_build_dir(build_dir=None):
         build_dir = None
 
     if build_dir is None:
-        # default to building in the home directory of the given module.
+        # Default to building in the home directory of the given module.
         build_dir = os.curdir
-        # if it doesn't work use the current directory.  This should always
+        # If it doesn't work use the current directory. This should always
         # be writable.
         if not os.access(build_dir,os.W_OK):
             print("warning:, neither the module's directory nor the "
@@ -440,7 +440,7 @@ def configure_build_dir(build_dir=None):
                   "directory.")
             build_dir = tempfile.gettempdir()
 
-    # final check that that directories are writable.
+    # Final check that directories are writable.
     if not os.access(build_dir,os.W_OK):
         msg = "The build directory wasn't writable. Check" \
               " this location: '%s'" % build_dir
