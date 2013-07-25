@@ -299,7 +299,6 @@ class lti(object):
 
     @property
     def num(self):
-        """Numerator"""
         return self._num
 
     @num.setter
@@ -309,7 +308,6 @@ class lti(object):
 
     @property
     def den(self):
-        """Numerator"""
         return self._den
 
     @den.setter
@@ -319,7 +317,6 @@ class lti(object):
 
     @property
     def zeros(self):
-        """Numerator"""
         return self._zeros
 
     @zeros.setter
@@ -329,7 +326,6 @@ class lti(object):
 
     @property
     def poles(self):
-        """Numerator"""
         return self._poles
 
     @poles.setter
@@ -339,7 +335,6 @@ class lti(object):
 
     @property
     def gain(self):
-        """Numerator"""
         return self._gain
 
     @gain.setter
@@ -349,7 +344,6 @@ class lti(object):
 
     @property
     def A(self):
-        """Numerator"""
         return self._A
 
     @A.setter
@@ -359,7 +353,6 @@ class lti(object):
 
     @property
     def B(self):
-        """Numerator"""
         return self._B
 
     @B.setter
@@ -369,7 +362,6 @@ class lti(object):
 
     @property
     def C(self):
-        """Numerator"""
         return self._C
 
     @C.setter
@@ -379,7 +371,6 @@ class lti(object):
 
     @property
     def D(self):
-        """Numerator"""
         return self._D
 
     @D.setter
