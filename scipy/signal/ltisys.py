@@ -261,7 +261,7 @@ class lti(object):
         N = len(args)
         if N == 2:  # Numerator denominator transfer function input
             self._num, self._den = normalize(*args)
-            self._update(self.num, self.den)
+            self._update(N)
             self.inputs = 1
             if len(self.num.shape) > 1:
                 self.outputs = self.num.shape[0]
@@ -269,7 +269,7 @@ class lti(object):
                 self.outputs = 1
         elif N == 3:      # Zero-pole-gain form
             self._zeros, self._poles, self._gain = args
-            self._update(self.zeros, self.poles, self.gain)
+            self._update(N)
             # make sure we have numpy arrays
             self.zeros = numpy.asarray(self.zeros)
             self.poles = numpy.asarray(self.poles)
@@ -280,7 +280,7 @@ class lti(object):
                 self.outputs = 1
         elif N == 4:       # State-space form
             self._A, self._B, self._C, self._D = abcd_normalize(*args)
-            self._update(self.A, self.B, self.C, self.D)
+            self._update(N)
             self.inputs = self.B.shape[-1]
             self.outputs = self.C.shape[0]
         else:
@@ -304,7 +304,7 @@ class lti(object):
     @num.setter
     def num(self, value):
         self._num = value
-        self._update(self.num, self.den)
+        self._update(2)
 
     @property
     def den(self):
@@ -313,7 +313,7 @@ class lti(object):
     @den.setter
     def den(self, value):
         self._den = value
-        self._update(self.num, self.den)
+        self._update(2)
 
     @property
     def zeros(self):
@@ -322,7 +322,7 @@ class lti(object):
     @zeros.setter
     def zeros(self, value):
         self._zeros = value
-        self._update(self.zeros, self.poles, self.gain)
+        self._update(3)
 
     @property
     def poles(self):
@@ -331,7 +331,7 @@ class lti(object):
     @poles.setter
     def poles(self, value):
         self._poles = value
-        self._update(self.zeros, self.poles, self.gain)
+        self._update(3)
 
     @property
     def gain(self):
@@ -340,7 +340,7 @@ class lti(object):
     @gain.setter
     def gain(self, value):
         self._gain = value
-        self._update(self.zeros, self.poles, self.gain)
+        self._update(3)
 
     @property
     def A(self):
@@ -349,7 +349,7 @@ class lti(object):
     @A.setter
     def A(self, value):
         self._A = value
-        self._update(self.A, self.B, self.C, self.D)
+        self._update(4)
 
     @property
     def B(self):
@@ -358,7 +358,7 @@ class lti(object):
     @B.setter
     def B(self, value):
         self._B = value
-        self._update(self.A, self.B, self.C, self.D)
+        self._update(4)
 
     @property
     def C(self):
@@ -367,7 +367,7 @@ class lti(object):
     @C.setter
     def C(self, value):
         self._C = value
-        self._update(self.A, self.B, self.C, self.D)
+        self._update(4)
 
     @property
     def D(self):
@@ -376,10 +376,9 @@ class lti(object):
     @D.setter
     def D(self, value):
         self._D = value
-        self._update(self.A, self.B, self.C, self.D)
+        self._update(4)
 
-    def _update(self, *args):
-        N = len(args)
+    def _update(self, N):
         if N == 2:
             self._zeros, self._poles, self._gain = tf2zpk(self.num, self.den)
             self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
