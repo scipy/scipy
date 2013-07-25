@@ -754,9 +754,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
         T = _default_response_times(sys.A, N)
     # Move the impulse in the input to the initial conditions, and then
     # solve using lsim2().
-    U = zeros_like(T)
     ic = B + X0
-    Tr, Yr, Xr = lsim2(sys, U, T, ic, **kwargs)
+    Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
     return Tr, Yr
 
 
