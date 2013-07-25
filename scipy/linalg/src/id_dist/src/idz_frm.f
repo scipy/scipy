@@ -40,14 +40,11 @@ c
 c       output:
 c       y -- transform of x
 c
-c       references:
-c       Liberty, Woolfe, Martinsson, Rokhlin, Tygert, "Randomized
-c            algorithms for the low-rank approximation of matrices,"
-c            Proceedings of the National Academy of Sciences USA,
-c            104 (51): 20167-20172, 2007.
-c       Woolfe, Liberty, Rokhlin, Tygert, "A fast randomized algorithm
-c            for the approximation of matrices," Applied and
-c            Computational Harmonic Analysis, to appear.
+c       reference:
+c       Halko, Martinsson, Tropp, "Finding structure with randomness:
+c            probabilistic algorithms for constructing approximate
+c            matrix decompositions," SIAM Review, 53 (2): 217-288,
+c            2011.
 c
         implicit none
         integer m,iw,n,k
@@ -110,14 +107,11 @@ c       y -- transform of x
 c
 c       _N.B._: l must be less than or equal to n.
 c
-c       references:
-c       Liberty, Woolfe, Martinsson, Rokhlin, Tygert, "Randomized
-c            algorithms for the low-rank approximation of matrices,"
-c            Proceedings of the National Academy of Sciences USA,
-c            104 (51): 20167-20172, 2007.
-c       Woolfe, Liberty, Rokhlin, Tygert, "A fast randomized algorithm
-c            for the approximation of matrices," Applied and
-c            Computational Harmonic Analysis, to appear.
+c       reference:
+c       Halko, Martinsson, Tropp, "Finding structure with randomness:
+c            probabilistic algorithms for constructing approximate
+c            matrix decompositions," SIAM Review, 53 (2): 217-288,
+c            2011.
 c
         implicit none
         integer m,iw,n,l
@@ -289,8 +283,8 @@ c
         lw = 3+m+n+2*n+15 + 3*nsteps*m+2*m+m/4+50
 c
         if(16*m+70 .lt. lw) then
-          write(*,*) 'lw = *',lw,1
-          write(*,*) '16m+70 = *',16*m+70,1
+          !call prinf('lw = *',lw,1)
+          !call prinf('16m+70 = *',16*m+70,1)
           stop
         endif
 c
@@ -382,8 +376,8 @@ c
         lw = 4+m+l+2*l+15+3*n + 3*nsteps*m+2*m+m/4+50
 c
         if(19*m+70 .lt. lw) then
-          write(*,*) 'lw = *',lw,1
-          write(*,*) '19m+70 = *',19*m+70,1
+          !call prinf('lw = *',lw,1)
+          !call prinf('19m+70 = *',19*m+70,1)
           stop
         endif
 c

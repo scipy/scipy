@@ -197,91 +197,97 @@ c
         call iddp_qrpiv(eps,m,n,a,krank,w,w(io+1))
 c
 c
-c       Extract R from the QR decomposition.
-c
-        call idd_retriever(m,n,a,krank,w(io+1))
+        if(krank .gt. 0) then
 c
 c
-c       Rearrange R according to ind (which is stored in w).
+c         Extract R from the QR decomposition.
 c
-        call idd_permuter(krank,w,krank,n,w(io+1))
-c
-c
-c       Use LAPACK to SVD R,
-c       storing the krank (krank x 1) left singular vectors
-c       in w(io+krank*n+1 : io+krank*n+krank*krank).
-c
-        jobz = 'S'
-        ldr = krank
-        lwork = 2*(3*krank**2+n+4*krank**2+4*krank)
-        ldu = krank
-        ldvt = krank
-c
-        ivi = io+krank*n+krank*krank+lwork+1
-        lv = n*krank
-c
-        isi = ivi+lv
-        ls = krank
-c
-        if(lw .lt. isi+ls+m*krank-1) then
-          ier = -1000
-          return
-        endif
-c
-        call dgesdd(jobz,krank,n,w(io+1),ldr,w(isi),w(io+krank*n+1),
-     1              ldu,w(ivi),ldvt,w(io+krank*n+krank*krank+1),lwork,
-     2              w,info)
-c
-        if(info .ne. 0) then
-          ier = info
-          return
-        endif
+          call idd_retriever(m,n,a,krank,w(io+1))
 c
 c
-c       Transpose w(ivi:ivi+lv-1) to obtain V.
+c         Rearrange R according to ind (which is stored in w).
 c
-        iv = 1
-        call idd_transer(krank,n,w(ivi),w(iv))
-c
-c
-c       Copy w(isi:isi+ls-1) into w(is:is+ls-1).
-c
-        is = iv+lv
-c
-        do k = 1,ls
-          w(is+k-1) = w(isi+k-1)
-        enddo ! k
+          call idd_permuter(krank,w,krank,n,w(io+1))
 c
 c
-c       Multiply the U from R from the left by Q to obtain the U
-c       for A.
+c         Use LAPACK to SVD R,
+c         storing the krank (krank x 1) left singular vectors
+c         in w(io+krank*n+1 : io+krank*n+krank*krank).
 c
-        iu = is+ls
-        lu = m*krank
+          jobz = 'S'
+          ldr = krank
+          lwork = 2*(3*krank**2+n+4*krank**2+4*krank)
+          ldu = krank
+          ldvt = krank
 c
-        do k = 1,krank
+          ivi = io+krank*n+krank*krank+lwork+1
+          lv = n*krank
 c
-          do j = 1,krank
-            w(iu-1+j+krank*(k-1)) = w(io+krank*n+j+krank*(k-1))
-          enddo ! j
+          isi = ivi+lv
+          ls = krank
 c
-        enddo ! k
+          if(lw .lt. isi+ls+m*krank-1) then
+            ier = -1000
+            return
+          endif
 c
-        do k = krank,1,-1
+          call dgesdd(jobz,krank,n,w(io+1),ldr,w(isi),w(io+krank*n+1),
+     1                ldu,w(ivi),ldvt,w(io+krank*n+krank*krank+1),
+     2                lwork,w,info)
 c
-          do j = m,krank+1,-1
-            w(iu-1+j+m*(k-1)) = 0
-          enddo ! j
+          if(info .ne. 0) then
+            ier = info
+            return
+          endif
 c
-          do j = krank,1,-1
-            w(iu-1+j+m*(k-1)) = w(iu-1+j+krank*(k-1))
-          enddo ! j
 c
-        enddo ! k
+c         Transpose w(ivi:ivi+lv-1) to obtain V.
 c
-        iftranspose = 0
-        call idd_qmatmat(iftranspose,m,n,a,krank,krank,w(iu),
-     1                   w(iu+lu+1))
+          iv = 1
+          call idd_transer(krank,n,w(ivi),w(iv))
+c
+c
+c         Copy w(isi:isi+ls-1) into w(is:is+ls-1).
+c
+          is = iv+lv
+c
+          do k = 1,ls
+            w(is+k-1) = w(isi+k-1)
+          enddo ! k
+c
+c
+c         Multiply the U from R from the left by Q to obtain the U
+c         for A.
+c
+          iu = is+ls
+          lu = m*krank
+c
+          do k = 1,krank
+c
+            do j = 1,krank
+              w(iu-1+j+krank*(k-1)) = w(io+krank*n+j+krank*(k-1))
+            enddo ! j
+c
+          enddo ! k
+c
+          do k = krank,1,-1
+c
+            do j = m,krank+1,-1
+              w(iu-1+j+m*(k-1)) = 0
+            enddo ! j
+c
+            do j = krank,1,-1
+              w(iu-1+j+m*(k-1)) = w(iu-1+j+krank*(k-1))
+            enddo ! j
+c
+          enddo ! k
+c
+          iftranspose = 0
+          call idd_qmatmat(iftranspose,m,n,a,krank,krank,w(iu),
+     1                     w(iu+lu+1))
+c
+c
+        endif ! krank .gt. 0
 c
 c
         return

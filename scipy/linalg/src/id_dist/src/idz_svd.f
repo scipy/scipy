@@ -201,88 +201,95 @@ c
         call idzp_qrpiv(eps,m,n,a,krank,w,w(io+1))
 c
 c
-c       Extract R from the QR decomposition.
-c
-        call idz_retriever(m,n,a,krank,w(io+1))
+        if(krank .gt. 0) then
 c
 c
-c       Rearrange R according to ind.
+c         Extract R from the QR decomposition.
 c
-        call idz_permuter(krank,w,krank,n,w(io+1))
-c
-c
-c       Use LAPACK to SVD R,
-c       storing the krank (krank x 1) left singular vectors
-c       in w(io+krank*n+1 : io+krank*n+krank*krank).
-c
-        jobz = 'S'
-        ldr = krank
-        lwork = 2*(krank**2+2*krank+n)
-        ldu = krank
-        ldvadj = krank
-c
-        ivi = io+krank*n+krank*krank+lwork+3*krank**2+4*krank+1
-        lv = n*krank
-c
-        isi = ivi+lv
-        ls = krank
-c
-        if(lw .lt. isi+ls+m*krank-1) then
-          ier = -1000
-          return
-        endif
-c
-        call zgesdd(jobz,krank,n,w(io+1),ldr,w(isi),w(io+krank*n+1),
-     1              ldu,w(ivi),ldvadj,w(io+krank*n+krank*krank+1),
-     2              lwork,w(io+krank*n+krank*krank+lwork+1),w,info)
-c
-        if(info .ne. 0) then
-          ier = info
-          return
-        endif
+          call idz_retriever(m,n,a,krank,w(io+1))
 c
 c
-c       Take the adjoint of w(ivi:ivi+lv-1) to obtain V.
+c         Rearrange R according to ind.
 c
-        iv = 1
-        call idz_adjer(krank,n,w(ivi),w(iv))
-c
-c
-c       Copy w(isi:isi+ls/2) into w(is:is+ls-1).
-c
-        is = iv+lv
-c
-        call idz_realcomp(ls,w(isi),w(is))
+          call idz_permuter(krank,w,krank,n,w(io+1))
 c
 c
-c       Multiply the U from R from the left by Q to obtain the U
-c       for A.
+c         Use LAPACK to SVD R,
+c         storing the krank (krank x 1) left singular vectors
+c         in w(io+krank*n+1 : io+krank*n+krank*krank).
 c
-        iu = is+ls
-        lu = m*krank
+          jobz = 'S'
+          ldr = krank
+          lwork = 2*(krank**2+2*krank+n)
+          ldu = krank
+          ldvadj = krank
 c
-        do k = 1,krank
+          ivi = io+krank*n+krank*krank+lwork+3*krank**2+4*krank+1
+          lv = n*krank
 c
-          do j = 1,krank
-            w(iu-1+j+krank*(k-1)) = w(io+krank*n+j+krank*(k-1))
-          enddo ! j
+          isi = ivi+lv
+          ls = krank
 c
-        enddo ! k
+          if(lw .lt. isi+ls+m*krank-1) then
+            ier = -1000
+            return
+          endif
 c
-        do k = krank,1,-1
+          call zgesdd(jobz,krank,n,w(io+1),ldr,w(isi),w(io+krank*n+1),
+     1                ldu,w(ivi),ldvadj,w(io+krank*n+krank*krank+1),
+     2                lwork,w(io+krank*n+krank*krank+lwork+1),w,info)
 c
-          do j = m,krank+1,-1
-            w(iu-1+j+m*(k-1)) = 0
-          enddo ! j
+          if(info .ne. 0) then
+            ier = info
+            return
+          endif
 c
-          do j = krank,1,-1
-            w(iu-1+j+m*(k-1)) = w(iu-1+j+krank*(k-1))
-          enddo ! j
 c
-        enddo ! k
+c         Take the adjoint of w(ivi:ivi+lv-1) to obtain V.
 c
-        ifadjoint = 0
-        call idz_qmatmat(ifadjoint,m,n,a,krank,krank,w(iu),w(iu+lu+1))
+          iv = 1
+          call idz_adjer(krank,n,w(ivi),w(iv))
+c
+c
+c         Copy w(isi:isi+ls/2) into w(is:is+ls-1).
+c
+          is = iv+lv
+c
+          call idz_realcomp(ls,w(isi),w(is))
+c
+c
+c         Multiply the U from R from the left by Q to obtain the U
+c         for A.
+c
+          iu = is+ls
+          lu = m*krank
+c
+          do k = 1,krank
+c
+            do j = 1,krank
+              w(iu-1+j+krank*(k-1)) = w(io+krank*n+j+krank*(k-1))
+            enddo ! j
+c
+          enddo ! k
+c
+          do k = krank,1,-1
+c
+            do j = m,krank+1,-1
+              w(iu-1+j+m*(k-1)) = 0
+            enddo ! j
+c
+            do j = krank,1,-1
+              w(iu-1+j+m*(k-1)) = w(iu-1+j+krank*(k-1))
+            enddo ! j
+c
+          enddo ! k
+c
+          ifadjoint = 0
+          call idz_qmatmat(ifadjoint,m,n,a,krank,krank,w(iu),
+     1                     w(iu+lu+1))
+c
+c
+        endif ! krank .gt. 0
 c
 c
         return
