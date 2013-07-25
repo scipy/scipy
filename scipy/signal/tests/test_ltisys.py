@@ -161,6 +161,14 @@ class Test_impulse2(object):
         expected_y = tout * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
+    def test_array_like(self):
+        # Test that function can accept sequences, scalars.
+        system = ([1.0], [1.0, 2.0, 1.0])
+        # TODO: add meaningful test where X0 is a list
+        tout, y = impulse2(system, X0=[3], T=[5, 6])
+        tout, y = impulse2(system, X0=[3], T=[5])
+        tout, y = impulse2(system, X0=3, T=5)
+
 
 class Test_step2(object):
 
@@ -223,6 +231,12 @@ class Test_step2(object):
         expected_y = 1 - (1 + tout) * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
+    def test_array_like(self):
+        # Test that function can accept sequences, scalars.
+        system = ([1.0], [1.0, 2.0, 1.0])
+        # TODO: add meaningful test where X0 is a list
+        tout, y = step2(system, T=[5, 6])
+
 
 class Test_impulse(object):
 
@@ -275,6 +289,13 @@ class Test_impulse(object):
         expected_y = np.ones_like(tout)
         assert_almost_equal(y, expected_y)
 
+    def test_array_like(self):
+        # Test that function can accept sequences, scalars.
+        system = ([1.0], [1.0, 2.0, 1.0])
+        # TODO: add meaningful test where X0 is a list
+        tout, y = impulse(system, X0=[3], T=[5, 6])
+        tout, y = impulse(system, X0=[3], T=[5])
+
 
 class Test_step(object):
 
@@ -319,6 +340,12 @@ class Test_step(object):
         tout, y = step(system, X0=[3.0])
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
+
+    def test_array_like(self):
+        # Test that function can accept sequences, scalars.
+        system = ([1.0], [1.0, 2.0, 1.0])
+        # TODO: add meaningful test where X0 is a list
+        tout, y = step(system, X0=[3], T=[5, 6])
 
 
 def test_lti_instantiation():
