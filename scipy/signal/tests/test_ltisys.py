@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
 
 from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti, bode, \
-    freqresp
+    freqresp, impulse, step
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
@@ -221,6 +221,103 @@ class Test_step2(object):
         system = ([1.0], [1.0, 2.0, 1.0])
         tout, y = step2(system, atol=1e-10, rtol=1e-8)
         expected_y = 1 - (1 + tout) * np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+
+class Test_impulse(object):
+
+    def test_01(self):
+        # First order system: x'(t) + x(t) = u(t)
+        # Exact impulse response is x(t) = exp(-t).
+        system = ([1.0],[1.0,1.0])
+        tout, y = impulse(system)
+        expected_y = np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_02(self):
+        """Specify the desired time values for the output."""
+
+        # First order system: x'(t) + x(t) = u(t)
+        # Exact impulse response is x(t) = exp(-t).
+        system = ([1.0],[1.0,1.0])
+        n = 21
+        t = np.linspace(0, 2.0, n)
+        tout, y = impulse(system, T=t)
+        assert_equal(tout.shape, (n,))
+        assert_almost_equal(tout, t)
+        expected_y = np.exp(-t)
+        assert_almost_equal(y, expected_y)
+
+    def test_03(self):
+        """Specify an initial condition as a scalar."""
+
+        # First order system: x'(t) + x(t) = u(t), x(0)=3.0
+        # Exact impulse response is x(t) = 4*exp(-t).
+        system = ([1.0],[1.0,1.0])
+        tout, y = impulse(system, X0=3.0)
+        expected_y = 4.0*np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_04(self):
+        """Specify an initial condition as a list."""
+
+        # First order system: x'(t) + x(t) = u(t), x(0)=3.0
+        # Exact impulse response is x(t) = 4*exp(-t).
+        system = ([1.0],[1.0,1.0])
+        tout, y = impulse(system, X0=[3.0])
+        expected_y = 4.0*np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_05(self):
+        # Simple integrator: x'(t) = u(t)
+        system = ([1.0],[1.0,0.0])
+        tout, y = impulse(system)
+        expected_y = np.ones_like(tout)
+        assert_almost_equal(y, expected_y)
+
+
+class Test_step(object):
+
+    def test_01(self):
+        # First order system: x'(t) + x(t) = u(t)
+        # Exact step response is x(t) = 1 - exp(-t).
+        system = ([1.0],[1.0,1.0])
+        tout, y = step(system)
+        expected_y = 1.0 - np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_02(self):
+        """Specify the desired time values for the output."""
+
+        # First order system: x'(t) + x(t) = u(t)
+        # Exact step response is x(t) = 1 - exp(-t).
+        system = ([1.0],[1.0,1.0])
+        n = 21
+        t = np.linspace(0, 2.0, n)
+        tout, y = step(system, T=t)
+        assert_equal(tout.shape, (n,))
+        assert_almost_equal(tout, t)
+        expected_y = 1 - np.exp(-t)
+        assert_almost_equal(y, expected_y)
+
+    def test_03(self):
+        """Specify an initial condition as a scalar."""
+
+        # First order system: x'(t) + x(t) = u(t), x(0)=3.0
+        # Exact step response is x(t) = 1 + 2*exp(-t).
+        system = ([1.0],[1.0,1.0])
+        tout, y = step(system, X0=3.0)
+        expected_y = 1 + 2.0*np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_04(self):
+        """Specify an initial condition as a list."""
+
+        # First order system: x'(t) + x(t) = u(t), x(0)=3.0
+        # Exact step response is x(t) = 1 + 2*exp(-t).
+        system = ([1.0],[1.0,1.0])
+        tout, y = step(system, X0=[3.0])
+        expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
 
