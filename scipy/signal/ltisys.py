@@ -331,8 +331,10 @@ class lti(object):
             self.__dict__[attr] = val
 
     def __repr__(self):
-        # Canonical representation using state-space to preserve numerical
-        # precision and any MIMO information
+        """
+        Canonical representation using state-space to preserve numerical
+        precision and any MIMO information
+        """
         return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
             self.__class__.__name__,
             repr(self.A),
@@ -449,7 +451,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
         # changed from a required positional argument to a keyword,
         # and T is after U in the argument list.  So we either: change
         # the API and move T in front of U; check here for T being
-        # None and raise an excpetion; or assign a default value to T
+        # None and raise an exception; or assign a default value to T
         # here.  This code implements the latter.
         T = linspace(0, 10.0, 101)
 
@@ -527,15 +529,6 @@ def lsim(system, U, T, X0=None, interp=1):
         Time-evolution of the state-vector.
 
     """
-    # system is an lti system or a sequence
-    #  with 2 (num, den)
-    #       3 (zeros, poles, gain)
-    #       4 (A, B, C, D)
-    #  describing the system
-    #  U is an input vector at times T
-    #   if system describes multiple inputs
-    #   then U can be a rank-2 array with the number of columns
-    #   being the number of inputs
     if isinstance(system, lti):
         sys = system
     else:
@@ -613,7 +606,8 @@ def _default_response_times(A, n):
         The 1-D array of length `n` of time samples at which the response
         is to be computed.
     """
-    # Create a reasonable time interval.  This could use some more work.
+    # Create a reasonable time interval.  
+    # TODO: This could use some more work.
     # For example, what is expected when the system is unstable?
     vals = linalg.eigvals(A)
     r = min(abs(real(vals)))
