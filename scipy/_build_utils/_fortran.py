@@ -10,6 +10,9 @@ def _uses_veclib(info):
         if r_accelerate.search(arg):
             return True
 
+    if ('HAVE_ACCELERATE', 1) in info.get('define_macros', []):
+        return True
+
     return False
 
 
