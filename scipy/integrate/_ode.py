@@ -279,7 +279,7 @@ class ode(object):
           Maximum factor to increase/decrease step size by in one step
         - beta : float
           Beta parameter for stabilised step size control.
-        - spam_level : int
+        - verbosity : int
           Switch for printing messages (< 0 for no messages).
 
     "dop853"
@@ -418,7 +418,7 @@ class ode(object):
         if self._integrator.supports_solout:
             self._integrator.set_solout(solout)
         else:
-            raise TypeError("selected integrator does not support solout,"
+            raise ValueError("selected integrator does not support solout,"
                             + " choose another one")
 
 
@@ -890,7 +890,7 @@ class dopri5(IntegratorBase):
                  dfactor=0.2,
                  beta=0.0,
                  method=None,
-                 spam_level=0,  # set this to negative for no spam
+                 verbosity=-1,  # no messages if negative
                  ):
         self.rtol = rtol
         self.atol = atol
@@ -901,7 +901,7 @@ class dopri5(IntegratorBase):
         self.ifactor = ifactor
         self.dfactor = dfactor
         self.beta = beta
-        self.spam_level = spam_level
+        self.verbosity = verbosity
         self.success = 1
         self.set_solout(None)
 
@@ -924,7 +924,7 @@ class dopri5(IntegratorBase):
         self.work = work
         iwork = zeros((21,), int32)
         iwork[0] = self.nsteps
-        iwork[2] = self.spam_level
+        iwork[2] = self.verbosity
         self.iwork = iwork
         self.call_args = [self.rtol, self.atol, self._solout,
                           self.iout, self.work, self.iwork]
@@ -966,7 +966,7 @@ class dop853(dopri5):
                  dfactor=0.3,
                  beta=0.0,
                  method=None,
-                 spam_level=0,  # set this to negative for no spam
+                 verbosity=-1,  # no messages if negative
                  ):
         self.rtol = rtol
         self.atol = atol
@@ -977,7 +977,7 @@ class dop853(dopri5):
         self.ifactor = ifactor
         self.dfactor = dfactor
         self.beta = beta
-        self.spam_level = spam_level
+        self.verbosity = verbosity
         self.success = 1
         self.set_solout(None)
 
@@ -992,7 +992,7 @@ class dop853(dopri5):
         self.work = work
         iwork = zeros((21,), int32)
         iwork[0] = self.nsteps
-        iwork[2] = self.spam_level
+        iwork[2] = self.verbosity
         self.iwork = iwork
         self.call_args = [self.rtol, self.atol, self._solout,
                           self.iout, self.work, self.iwork]
