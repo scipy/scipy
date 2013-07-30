@@ -1677,9 +1677,12 @@ class rv_continuous(rv_generic):
         return -sum(self._logpdf(x, *args),axis=0)
 
     def nnlf(self, theta, x):
-        ''' Return negative loglikelihood function,
-        i.e., - sum (log pdf(x, theta),axis=0)
-           where theta are the parameters (including loc and scale)
+        '''Return negative loglikelihood function
+
+        Notes
+        -----
+        This is ``-sum(log pdf(x, theta), axis=0)`` where theta are the
+        parameters (including loc and scale).
         '''
         try:
             loc = theta[-2]
