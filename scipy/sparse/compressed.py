@@ -579,6 +579,25 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         else:
             raise IndexError("invalid index")
 
+    def __setitem__(self, index, x):
+        # Process arrays from IndexMixin
+        i, j = self._unpack_index(index)
+        i, j = self._index_to_arrays(i, j)
+
+        if isspmatrix(x):
+            x = x.toarray()
+
+        # Make x and i into the same shape
+        x = np.asarray(x, dtype=self.dtype)
+        x, _ = np.broadcast_arrays(x, i)
+
+        if x.shape != i.shape:
+            raise ValueError("shape mismatch in assignment")
+
+        # Set values
+        for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
+            self._set_one(ii, jj, xx)
+
     def _get_single_element(self,row,col):
         M, N = self.shape
         if (row < 0):
@@ -678,25 +697,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         shape = self._swap((i1 - i0, j1 - j0))
 
         return self.__class__((data, indices, indptr), shape=shape)
-
-    def __setitem__(self, index, x):
-        # Process arrays from IndexMixin
-        i, j = self._unpack_index(index)
-        i, j = self._index_to_arrays(i, j)
-
-        if isspmatrix(x):
-            x = x.toarray()
-
-        # Make x and i into the same shape
-        x = np.asarray(x, dtype=self.dtype)
-        x, _ = np.broadcast_arrays(x, i)
-
-        if x.shape != i.shape:
-            raise ValueError("shape mismatch in assignment")
-
-        # Set values
-        for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
-            self._set_one(ii, jj, xx)
 
     def _set_one(self, row, col, val):
         """Set one value at a time."""
