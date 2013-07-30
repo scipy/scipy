@@ -149,7 +149,7 @@ class csc_matrix(_cs_matrix, IndexMixin):
             else:
                 return self.T[col,row]
         elif isinstance(key, np.ndarray) and key.dtype.kind == 'b':
-            row, col = self._check_Boolean(key, slice(None))
+            row, col = self._check_boolean(key, slice(None))
             return self[row, col]
         else:
             return self.T[:,key].T                              # [i] or [1:2]

@@ -226,7 +226,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
         row, col = self._unpack_index(key)
 
         # Convert Boolean data type, otherwise asindices() sees 0s and 1s
-        row, col = self._check_Boolean(row, col)
+        row, col = self._check_boolean(row, col)
 
         # First attempt to use original row optimized methods
         if isintlike(row):
