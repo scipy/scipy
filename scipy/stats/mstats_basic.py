@@ -288,8 +288,10 @@ def mode(a, axis=0):
             return (0, 0)
         elif cnt.size:
             return (rep[cnt.argmax()], cnt.max())
-        return (a[0], 1)
-    #
+        else:
+            not_masked_indices = ma.flatnotmasked_edges(a)
+            first_not_masked_index = not_masked_indices[0]
+            return (a[first_not_masked_index], 1)
     if axis is None:
         output = _mode1D(ma.ravel(a))
         output = (ma.array(output[0]), ma.array(output[1]))
