@@ -390,16 +390,24 @@ class TestMoments(TestCase):
     def test_mode(self):
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
         a2 = np.reshape(a1, (3,5))
-        ma1 = ma.masked_where(ma.array(a1) > 2,a1)
+        a3 = np.array([1,2,3,4,5,6])
+        a4 = np.reshape(a3, (3,2))
+        ma1 = ma.masked_where(ma.array(a1) > 2, a1)
         ma2 = ma.masked_where(a2 > 2, a2)
+        ma3 = ma.masked_where(a3 < 2, a3)
+        ma4 = ma.masked_where(ma.array(a4)<2, a4)
         assert_equal(mstats.mode(a1, axis=None), (3,4))
         assert_equal(mstats.mode(ma1, axis=None), (0,3))
         assert_equal(mstats.mode(a2, axis=None), (3,4))
         assert_equal(mstats.mode(ma2, axis=None), (0,3))
-        assert_equal(mstats.mode(a2, axis=0), ([[0,0,0,1,1]],[[1,1,1,1,1]]))
-        assert_equal(mstats.mode(ma2, axis=0), ([[0,0,0,1,1]],[[1,1,1,1,1]]))
+        assert_equal(mstats.mode(a3, axis=None), (1,1))
+        assert_equal(mstats.mode(ma3, axis=None), (2,1))
+        assert_equal(mstats.mode(a2, axis=0), ([[0,0,0,1,1]], [[1,1,1,1,1]]))
+        assert_equal(mstats.mode(ma2, axis=0), ([[0,0,0,1,1]], [[1,1,1,1,1]]))
         assert_equal(mstats.mode(a2, axis=-1), ([[0],[3],[3]], [[3],[3],[1]]))
         assert_equal(mstats.mode(ma2, axis=-1), ([[0],[1],[0]], [[3],[1],[0]]))
+        assert_equal(mstats.mode(ma4, axis=0), ([[3,2]], [[1,1]]))
+        assert_equal(mstats.mode(ma4, axis=-1), ([[2],[3],[5]], [[1],[1],[1]]))
 
 
 class TestPercentile(TestCase):
