@@ -1666,7 +1666,7 @@ skewtest.__doc__ = stats.skewtest.__doc__
 
 def kurtosistest(a, axis=0):
     a, axis = _chk_asarray(a, axis)
-    n = a.count(axis=axis).astype(float)
+    n = float(a.count(axis=axis))
     if np.min(n) < 20:
         warnings.warn(
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
