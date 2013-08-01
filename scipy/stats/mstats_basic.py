@@ -282,6 +282,7 @@ hmean.__doc__ = stats.hmean.__doc__
 
 
 def mode(a, axis=0):
+    a, axis = _chk_asarray(a, axis)
     def _mode1D(a):
         (rep,cnt) = find_repeats(a)
         if not cnt.ndim:
@@ -292,6 +293,7 @@ def mode(a, axis=0):
             not_masked_indices = ma.flatnotmasked_edges(a)
             first_not_masked_index = not_masked_indices[0]
             return (a[first_not_masked_index], 1)
+
     if axis is None:
         output = _mode1D(ma.ravel(a))
         output = (ma.array(output[0]), ma.array(output[1]))
