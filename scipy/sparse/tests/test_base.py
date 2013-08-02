@@ -188,7 +188,7 @@ class _TestCommon:
             dat2 = dat.copy()
             dat2[:,0] = 0
             datsp2 = self.spmatrix(dat2)
-            datcomplex = dat.copy()
+            datcomplex = dat.astype(np.complex)
             datcomplex[:,0] = 1 + 1j
             datspcomplex = self.spmatrix(datcomplex)
             datbsr = bsr_matrix(dat)
@@ -254,7 +254,7 @@ class _TestCommon:
             dat2 = dat.copy()
             dat2[:,0] = 0
             datsp2 = self.spmatrix(dat2)
-            datcomplex = dat.copy()
+            datcomplex = dat.astype(np.complex)
             datcomplex[:,0] = 1 + 1j
             datspcomplex = self.spmatrix(datcomplex)
             datbsr = bsr_matrix(dat)
@@ -320,7 +320,7 @@ class _TestCommon:
             dat2 = dat.copy()
             dat2[:,0] = 0
             datsp2 = self.spmatrix(dat2)
-            datcomplex = dat.copy()
+            datcomplex = dat.astype(np.complex)
             datcomplex[:,0] = 1 + 1j
             datspcomplex = self.spmatrix(datcomplex)
             datbsr = bsr_matrix(dat)
@@ -384,7 +384,7 @@ class _TestCommon:
             dat2 = dat.copy()
             dat2[:,0] = 0
             datsp2 = self.spmatrix(dat2)
-            datcomplex = dat.copy()
+            datcomplex = dat.astype(np.complex)
             datcomplex[:,0] = 1 + 1j
             datspcomplex = self.spmatrix(datcomplex)
             datbsr = bsr_matrix(dat)
