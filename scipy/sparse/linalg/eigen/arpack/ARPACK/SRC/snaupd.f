@@ -117,8 +117,8 @@ c  TOL     Real  scalar.  (INPUT)
 c          Stopping criterion: the relative accuracy of the Ritz value 
 c          is considered acceptable if BOUNDS(I) .LE. TOL*ABS(RITZ(I))
 c          where ABS(RITZ(I)) is the magnitude when RITZ(I) is complex.
-c          DEFAULT = SLAMCH('EPS')  (machine precision as computed
-c                    by the LAPACK auxiliary subroutine SLAMCH).
+c          DEFAULT = wslamch('EPS')  (machine precision as computed
+c                    by the LAPACK auxiliary subroutine wslamch).
 c
 c  RESID   Real  array of length N.  (INPUT/OUTPUT)
 c          On INPUT: 
@@ -381,7 +381,7 @@ c             Arnoldi Iteration.
 c     ivout   ARPACK utility routine that prints integers.
 c     arscnd  ARPACK utility routine for timing.
 c     svout   ARPACK utility routine that prints vectors.
-c     slamch  LAPACK routine that determines machine constants.
+c     wslamch  LAPACK routine that determines machine constants.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
@@ -461,8 +461,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real 
-     &           slamch
-      external   slamch
+     &           wslamch
+      external   wslamch
 c
 c     %-----------------------%
 c     | Executable Statements |
@@ -539,7 +539,7 @@ c        | Set default parameters |
 c        %------------------------%
 c
          if (nb .le. 0)				nb = 1
-         if (tol .le. zero)			tol = slamch('EpsMach')
+         if (tol .le. zero)			tol = wslamch('EpsMach')
 c
 c        %----------------------------------------------%
 c        | NP is the number of additional steps to      |

@@ -24,19 +24,19 @@ def configuration(parent_package='',top_path=None):
     arpack_sources.extend([join('ARPACK','LAPACK', '*.f')])
 
     if needs_g77_abi_wrapper(lapack_opt):
-        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'veclib_cabi_f.f'),
-                           join('ARPACK', 'FWRAPPERS', 'veclib_cabi_c.c')]
+        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'wrap_veclib_f.f'),
+                           join('ARPACK', 'FWRAPPERS', 'wrap_veclib_c.c')]
     else:
-        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'dummy.f')]
+        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'wrap_dummy.f')]
 
     config.add_library('arpack_scipy', sources=arpack_sources,
                        include_dirs=[join('ARPACK', 'SRC')],
                        depends=[join('ARPACK', 'FWRAPPERS',
-                                       'veclib_cabi_f.f'),
+                                       'wrap_veclib_f.f'),
                                   join('ARPACK', 'FWRAPPERS',
-                                       'veclib_cabi_c.c'),
+                                       'wrap_veclib_c.c'),
                                   join('ARPACK', 'FWRAPPERS',
-                                        'dummy.f')])
+                                        'wrap_dummy.f')])
 
     config.add_extension('_arpack',
                          sources='arpack.pyf.src',
