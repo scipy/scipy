@@ -1,12 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
+import math
+
+import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_, TestCase, run_module_suite, dec,
         assert_allclose, assert_array_less)
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy.lib.six.moves import xrange
-import sys
-import math
 
 try:
     import ctypes
@@ -157,57 +159,63 @@ class TestQuad(TestCase):
                             lambda x,y: x-y, lambda x,y: x+y),
                     8/3.0 * (b**4.0 - a**4.0))
 
-    def test_nquad_fixed_limits(self):
-        def func1(x0,x1,x2,x3):
-            return x0**2+x1*x2-x3**3+sin(x0)+(
-                1 if (x0-.2*x3-.5-.25*x1>0) else 0)
-        def opts_basic(*args):
-            return {'points':[.2*args[2]+.5+.25*args[0]]}
-        assert_quad(nquad(func1,[[0,1],[-1,1],[.13,.8],[-.15,1]],
-                          opts=[opts_basic,{},{},{}]),
-                    1.5267454070738635)
-    
-    def test_nquad_variable_limits(self):
-        scale = .1
-        def func2(x0,x1,x2,x3,t0,t1):
-            return x0*x1*x3**2+sin(x2)+1+(1 if x0+t1*x1-t0>0 else 0)
-        def lim0(x1,x2,x3,t0,t1):
-            return [scale*(x1**2+x2+cos(x3)*t0*t1+1)-1, 
-                    scale*(x1**2+x2+cos(x3)*t0*t1+1)+1]
-        def lim1(x2,x3,t0,t1):
-            return [scale*(t0*x2+t1*x3)-1,
-                    scale*(t0*x2+t1*x3)+1]
-        def lim2(x3,t0,t1):
-            return [scale*(x3+t0**2*t1**3)-1, 
-                    scale*(x3+t0**2*t1**3)+1]
-        def lim3(t0,t1):
-            return [scale*(t0+t1)-1,
-                    scale*(t0+t1)+1]
-        def opts0(x1,x2,x3,t0,t1):
-            return {'points':[t0-t1*x1]}
-        def opts1(x2,x3,t0,t1):
-            return {}
-        def opts2(x3,t0,t1):
-            return {}
-        def opts3(t0,t1):
-            return {}
-        assert_quad(nquad(func2,[lim0,lim1,lim2,lim3],args=(0,0),
-                          opts=[opts0,opts1,opts2,opts3]),
-                    25.066666666666663)
 
-    def test_nquad_square_separate_ranges_and_opts(self):
+class TestNQuad(TestCase):
+    def test_fixed_limits(self):
+        def func1(x0, x1, x2, x3):
+            return x0**2 + x1*x2 - x3**3 + np.sin(x0) + (1 if
+                        (x0 - 0.2*x3 - 0.5 - 0.25*x1 > 0) else 0)
+
+        def opts_basic(*args):
+            return {'points' : [0.2*args[2] + 0.5 + 0.25*args[0]]}
+
+        res = nquad(func1, [[0,1], [-1,1], [.13,.8], [-.15,1]],
+                    opts=[opts_basic, {}, {}, {}])
+        assert_quad(res, 1.5267454070738635)
+
+    def test_variable_limits(self):
+        scale = .1
+        def func2(x0, x1, x2, x3, t0, t1):
+            return x0*x1*x3**2 + np.sin(x2) + 1 + (1 if x0 + t1*x1 - t0 > 0 else 0)
+        def lim0(x1, x2, x3, t0, t1):
+            return [scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) - 1,
+                    scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) + 1]
+        def lim1(x2, x3, t0, t1):
+            return [scale * (t0*x2 + t1*x3) - 1,
+                    scale * (t0*x2 + t1*x3) + 1]
+        def lim2(x3, t0, t1):
+            return [scale * (x3 + t0**2*t1**3) - 1,
+                    scale * (x3 + t0**2*t1**3) + 1]
+        def lim3(t0, t1):
+            return [scale * (t0 + t1) - 1, scale * (t0 + t1) + 1]
+        def opts0(x1, x2, x3, t0, t1):
+            return {'points':[t0 - t1*x1]}
+        def opts1(x2, x3, t0, t1):
+            return {}
+        def opts2(x3, t0, t1):
+            return {}
+        def opts3(t0, t1):
+            return {}
+
+        res = nquad(func2, [lim0, lim1, lim2, lim3], args=(0,0),
+                    opts=[opts0, opts1, opts2, opts3])
+        assert_quad(res, 25.066666666666663)
+
+    def test_square_separate_ranges_and_opts(self):
         def f(y, x):
             return 1.0
+
         assert_quad(nquad(f, [[-1, 1], [-1, 1]], opts=[{}, {}]), 4.0)
 
-    def test_nquad_square_aliased_ranges_and_opts(self):
+    def test_square_aliased_ranges_and_opts(self):
         def f(y, x):
             return 1.0
+
         r = [-1, 1]
         opt = {}
         assert_quad(nquad(f, [r, r], opts=[opt, opt]), 4.0)
 
-    def test_nquad_square_separate_fn_ranges_and_opts(self):
+    def test_square_separate_fn_ranges_and_opts(self):
         def f(y, x):
             return 1.0
         def fn_range0(*args):
@@ -218,17 +226,19 @@ class TestQuad(TestCase):
             return {}
         def fn_opt1(*args):
             return {}
+
         ranges = [fn_range0, fn_range1]
         opts = [fn_opt0, fn_opt1]
         assert_quad(nquad(f, ranges, opts=opts), 4.0)
 
-    def test_nquad_square_aliased_fn_ranges_and_opts(self):
+    def test_square_aliased_fn_ranges_and_opts(self):
         def f(y, x):
             return 1.0
         def fn_range(*args):
             return (-1, 1)
         def fn_opt(*args):
             return {}
+
         ranges = [fn_range, fn_range]
         opts = [fn_opt, fn_opt]
         assert_quad(nquad(f, ranges, opts=opts), 4.0)
