@@ -228,16 +228,16 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     >>> from scipy import integrate
     >>> x2 = lambda x: x**2
-    >>> integrate.quad(x2,0.,4.)
+    >>> integrate.quad(x2, 0, 4)
     (21.333333333333332, 2.3684757858670003e-13)
-    >> print(4.**3/3)
+    >>> print(4**3 / 3.)  # analytical result
     21.3333333333
 
     Calculate :math:`\\int^\\infty_0 e^{-x} dx`
 
-    >>> invexp = lambda x: exp(-x)
-    >>> integrate.quad(invexp,0,inf)
-    (0.99999999999999989, 5.8426061711142159e-11)
+    >>> invexp = lambda x: np.exp(-x)
+    >>> integrate.quad(invexp, 0, np.inf)
+    (1.0, 5.842605999138044e-11)
 
     >>> f = lambda x,a : a*x
     >>> y, err = integrate.quad(f, 0, 1, args=(1,))
@@ -564,38 +564,41 @@ def nquad(func, ranges, args=None, opts=None):
 
     Examples
     --------
-    >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + ...
-            (1 if (x0-.2*x3-.5-.25*x1>0) else 0)
-    >>> points=[[lambda (x1,x2,x3) : 0.2*x3 + 0.5 + 0.25*x1], [], [], []]
+    >>> from scipy import integrate
+    >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
+    ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)
+    >>> points = [[lambda (x1,x2,x3) : 0.2*x3 + 0.5 + 0.25*x1], [], [], []]
     >>> def opts0(*args, **kwargs):
-            return {'points':[0.2*args[2] + 0.5 + 0.25*args[0]]}
-    >>> nquad(func,[[0,1], [-1,1], [.13,.8], [-.15,1]], opts=[opts0,{},{},{}])
-    (1.5267454070738635, 2.943736000140233e-14)
+    ...     return {'points':[0.2*args[2] + 0.5 + 0.25*args[0]]}
+    >>> integrate.nquad(func, [[0,1], [-1,1], [.13,.8], [-.15,1]],
+    ...                 opts=[opts0,{},{},{}])
+    (1.5267454070738633, 2.9437360001402324e-14)
 
     >>> scale = .1
-    >>> def func(x0, x1, x2, x3, t0, t1):
-            return x0*x1*x3**2 + np.sin(x2) + 1 + (1 if x0+t1*x1-t0>0 else 0)
+    >>> def func2(x0, x1, x2, x3, t0, t1):
+    ...     return x0*x1*x3**2 + np.sin(x2) + 1 + (1 if x0+t1*x1-t0>0 else 0)
     >>> def lim0(x1, x2, x3, t0, t1):
-            return [scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) - 1,
-                    scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) + 1]
+    ...     return [scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) - 1,
+    ...             scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) + 1]
     >>> def lim1(x2, x3, t0, t1):
-            return [scale * (t0*x2 + t1*x3) - 1,
-                    scale * (t0*x2 + t1*x3) + 1]
+    ...     return [scale * (t0*x2 + t1*x3) - 1,
+    ...             scale * (t0*x2 + t1*x3) + 1]
     >>> def lim2(x3, t0, t1):
-            return [scale * (x3 + t0**2*t1**3) - 1,
-                    scale * (x3 + t0**2*t1**3) + 1]
+    ...     return [scale * (x3 + t0**2*t1**3) - 1,
+    ...             scale * (x3 + t0**2*t1**3) + 1]
     >>> def lim3(t0, t1):
-            return [scale * (t0+t1) - 1, scale * (t0+t1) + 1]
+    ...     return [scale * (t0+t1) - 1, scale * (t0+t1) + 1]
     >>> def opts0(x1, x2, x3, t0, t1):
-            return {'points' : [t0 - t1*x1]}
+    ...     return {'points' : [t0 - t1*x1]}
     >>> def opts1(x2, x3, t0, t1):
-            return {}
+    ...     return {}
     >>> def opts2(x3, t0, t1):
-            return {}
+    ...     return {}
     >>> def opts3(t0, t1):
-            return {}
-    >>> nquad(func, [lim0, lim1, lim2, lim3], args=(0,0),
-              opts=[opts0, opts1, opts2, opts3])
+    ...     return {}
+    >>> integrate.nquad(func2, [lim0, lim1, lim2, lim3], args=(0,0),
+                        opts=[opts0, opts1, opts2, opts3])
+    (25.066666666666666, 2.7829590483937256e-13)
 
     """
     if args is None:
@@ -645,7 +648,7 @@ class _NQuad(object):
             raise ValueError('unexpected kwargs')
 
         # Get the integration range and options for this depth.
-        ind = -depth-1
+        ind = -(depth + 1)
         fn_range = self.ranges[ind]
         fn_opt = self.opts[ind]
         low, high = fn_range(*args)
