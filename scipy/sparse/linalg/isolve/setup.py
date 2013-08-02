@@ -36,10 +36,10 @@ def configuration(parent_package='',top_path=None):
                ]
 
     if needs_g77_abi_wrapper(lapack_opt):
-        methods += [join('FWRAPPERS', 'veclib_cabi_f.f'),
-                    join('FWRAPPERS', 'veclib_cabi_c.c')]
+        methods += [join('FWRAPPERS', 'wrap_veclib_f.f'),
+                    join('FWRAPPERS', 'wrap_veclib_c.c')]
     else:
-        methods += [join('FWRAPPERS', 'dummy.f')]
+        methods += [join('FWRAPPERS', 'wrap_dummy.f')]
 
     Util = ['STOPTEST2.f.src','getbreak.f.src']
     sources = Util + methods + ['_iterative.pyf.src']
@@ -47,7 +47,7 @@ def configuration(parent_package='',top_path=None):
                          sources=[join('iterative', x) for x in sources],
                          extra_info=lapack_opt,
                          depends=[join('iterative', 'FWRAPPERS', x) for x in
-                         ['veclib_cabi_f.f', 'veclib_cabi_c.c', 'dummy.f']]
+                         ['wrap_veclib_f.f', 'wrap_veclib_c.c', 'wrap_dummy.f']]
                          )
 
     config.add_data_dir('tests')
