@@ -15,6 +15,7 @@ from scipy.linalg.matfuncs import funm
 from scipy.linalg import svdvals, solve_triangular
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import onenormest
+import scipy.special
 
 
 __all__ = ['logm', 'fractional_matrix_power']
@@ -26,16 +27,6 @@ class LogmError(np.linalg.LinAlgError):
 
 class FractionalMatrixPowerError(np.linalg.LinAlgError):
     pass
-
-
-def _hacked_leggauss(m):
-    # remove this if/when it is fixed in numpy
-    if m == 1:
-        nodes = np.array([0], dtype=float)
-        weights = np.array([2], dtype=float)
-    else:
-        nodes, weights = np.polynomial.legendre.leggauss(m)
-    return nodes, weights
 
 
 def _has_complex_dtype_char(A):
@@ -806,7 +797,8 @@ def _logm_triu(T):
     # corresponding to degree-m Gauss-Legendre quadrature.
     # These quadrature arrays need to be transformed from the [-1, 1] interval
     # to the [0, 1] interval.
-    nodes, weights = _hacked_leggauss(m)
+    nodes, weights = scipy.special.p_roots(m)
+    nodes = nodes.real
     if nodes.shape != (m,) or weights.shape != (m,):
         raise Exception('internal error')
     nodes = 0.5 + 0.5 * nodes
