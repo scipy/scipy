@@ -152,6 +152,9 @@ class IndexMixin(object):
     This class simply exists to hold the methods necessary for fancy indexing.
     """
     def _slicetoarange(self, j, shape):
+        """ Given a slice object, use numpy arange to change it to a 1D
+        array.
+        """
         start, stop, step = j.indices(shape)
         return np.arange(start, stop, step)
 
