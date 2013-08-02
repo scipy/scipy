@@ -83,11 +83,11 @@ def _ident_like(A):
 def _count_nonzero(A):
     # A compatibility function which should eventually disappear.
     #XXX There should be a better way to do this when A is sparse
-    #XXX in the traditional sense.
+    #    in the traditional sense.
     if isspmatrix(A):
-        return np.count_nonzero(A.toarray())
+        return np.sum(A.toarray() != 0)
     else:
-        return np.count_nonzero(A)
+        return np.sum(A != 0)
 
 
 def _is_upper_triangular(A):
