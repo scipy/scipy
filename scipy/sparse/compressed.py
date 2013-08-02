@@ -893,7 +893,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin):
         if op in bool_ops:
             data = np.empty(maxnnz, dtype=np.bool_)
         else:
-            data = np.empty(maxnnz, dtype=upcast(self.dtype,other.dtype))
+            data = np.empty(maxnnz, dtype=upcast(self.dtype, other.dtype))
 
         fn(self.shape[0], self.shape[1],
                 self.indptr, self.indices, self.data,
