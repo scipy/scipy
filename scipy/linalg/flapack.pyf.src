@@ -1733,11 +1733,16 @@ end subroutine <prefix2c>hbevx
 !          rmin  = underflow threshold - base**(emin-1)
 !          emax  = largest exponent before overflow
 !          rmax  = overflow threshold  - (base**emax)*(1-eps)
-function <prefix2>lamch(cmach)
+function dlamch(cmach)
     character :: cmach
-    <ftype2> intent(out):: dlamch
-end function <prefix2>lamch
+    double precision intent(out):: dlamch
+end function dlamch
 
+function slamch(cmach)
+    character :: cmach
+    fortranname wslamch
+    real intent(out):: wslamch
+end function slamch
 
 
 ! lu,ipiv,info = dgbtrf(ab,kl,ku,[m,n,ldab,overwrite_ab])
