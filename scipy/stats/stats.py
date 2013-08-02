@@ -3579,7 +3579,11 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     # `w` is the array of terms that are summed along `axis` to create
     # the chi-squared statistic.
     w = (f_obs - f_exp)**2 / f_exp
-    chisq = np.add.reduce(w, axis=axis)
+    if axis is None:
+        # np.add.reduce() in numpy 1.5.1 does not accept `axis=None`.
+        chisq = w.sum()
+    else:
+        chisq = np.add.reduce(w, axis=axis)
 
     # Compute the corresponding p values.
     if axis is None:
