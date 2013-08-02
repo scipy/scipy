@@ -520,7 +520,7 @@ class TestFractionalMatrixPower(TestCase):
 
             # check that the spectrum has the expected properties
             W = scipy.linalg.eigvals(matrix_as_list)
-            assert_(np.count_nonzero(W) < len(W))
+            assert_(np.sum(W != 0) < len(W))
 
             # check fractional powers both for float and for complex types
             for newtype in (float, complex):

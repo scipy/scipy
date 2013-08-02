@@ -47,6 +47,19 @@ warnings.simplefilter('ignore', SparseEfficiencyWarning)
 warnings.simplefilter('ignore', ComplexWarning)
 
 
+def _can_cast_samekind(dtype1, dtype2):
+    """Compatibility function for numpy 1.5.1; `casting` kw is numpy >=1.6.x
+
+    default for casting kw is 'safe', which gives the same result as in 1.5.x
+    and a strict subset of 'same_kind'.  So for 1.5.x we just skip the cases
+    where 'safe' is False and 'same_kind' True.
+    """
+    if np.__version__[:3] == '1.5':
+        return np.can_cast(dtype1, dtype2)
+    else:
+        return np.can_cast(dtype1, dtype2, casting='same_kind')
+
+
 #------------------------------------------------------------------------------
 # Generic tests
 #------------------------------------------------------------------------------
@@ -175,7 +188,7 @@ class _TestCommon:
             dat2 = dat.copy()
             dat2[:,0] = 0
             datsp2 = self.spmatrix(dat2)
-            datcomplex = dat.copy()
+            datcomplex = dat.astype(np.complex)
             datcomplex[:,0] = 1 + 1j
             datspcomplex = self.spmatrix(datcomplex)
             datbsr = bsr_matrix(dat)
@@ -241,7 +254,7 @@ class _TestCommon:
             dat2 = dat.copy()
             dat2[:,0] = 0
             datsp2 = self.spmatrix(dat2)
-            datcomplex = dat.copy()
+            datcomplex = dat.astype(np.complex)
             datcomplex[:,0] = 1 + 1j
             datspcomplex = self.spmatrix(datcomplex)
             datbsr = bsr_matrix(dat)
@@ -307,7 +320,7 @@ class _TestCommon:
             dat2 = dat.copy()
             dat2[:,0] = 0
             datsp2 = self.spmatrix(dat2)
-            datcomplex = dat.copy()
+            datcomplex = dat.astype(np.complex)
             datcomplex[:,0] = 1 + 1j
             datspcomplex = self.spmatrix(datcomplex)
             datbsr = bsr_matrix(dat)
@@ -371,7 +384,7 @@ class _TestCommon:
             dat2 = dat.copy()
             dat2[:,0] = 0
             datsp2 = self.spmatrix(dat2)
-            datcomplex = dat.copy()
+            datcomplex = dat.astype(np.complex)
             datcomplex[:,0] = 1 + 1j
             datspcomplex = self.spmatrix(datcomplex)
             datbsr = bsr_matrix(dat)
@@ -1213,14 +1226,14 @@ class _TestInplaceArithmetic:
             datsp = self.datsp_dtypes[dtype]
 
             # Avoid implicit casting.
-            if np.can_cast(type(2), dtype, casting='same_kind'):
+            if _can_cast_samekind(type(2), dtype):
                 a = datsp.copy()
                 a *= 2
                 b = dat.copy()
                 b *= 2
                 assert_array_equal(b, a.todense())
 
-            if np.can_cast(type(17.3), dtype, casting='same_kind'):
+            if _can_cast_samekind(type(17.3), dtype):
                 a = datsp.copy()
                 a *= 17.3
                 b = dat.copy()
@@ -1235,14 +1248,14 @@ class _TestInplaceArithmetic:
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
 
-            if np.can_cast(type(2), dtype, casting='same_kind'):
+            if _can_cast_samekind(type(2), dtype):
                 a = datsp.copy()
                 a /= 2
                 b = dat.copy()
                 b /= 2
                 assert_array_equal(b, a.todense())
 
-            if np.can_cast(type(17.3), dtype, casting='same_kind'):
+            if _can_cast_samekind(type(17.3), dtype):
                 a = datsp.copy()
                 a /= 17.3
                 b = dat.copy()
