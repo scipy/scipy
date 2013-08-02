@@ -599,22 +599,19 @@ def nquad(func, ranges, args=None, opts=None):
     (25.066666666666666, 2.7829590483937256e-13)
 
     """
+    depth = len(ranges)
+    ranges = [rng if callable(rng) else _RangeFunc(rng) for rng in ranges]
     if args is None:
         args = ()
     if opts is None:
-        opts = []
+        opts = [dict([])] * depth
 
-    new_ranges = [range_ if callable(range_) else _RangeFunc(range_) for
-                  range_ in ranges]
     if isinstance(opts, dict):
-        new_opts = [opts for ind in range(len(ranges))]
+        opts = [opts] * depth
     else:
-        if len(opts) == 0:
-            new_opts = opts
-        else:
-            new_opts = [opt if callable(opt) else _OptFunc(opt) for opt in
-                        opts]
-    return _NQuad(func, new_ranges, new_opts).integrate(*args)
+        opts = [opt if callable(opt) else _OptFunc(opt) for opt in opts]
+
+    return _NQuad(func, ranges, opts).integrate(*args)
 
 
 class _RangeFunc(object):
@@ -622,6 +619,11 @@ class _RangeFunc(object):
         self.range_ = range_
 
     def __call__(self, *args):
+        """Return stored value.
+
+        *args needed because range_ can be float or func, and is called with
+        variable number of parameters.
+        """
         return self.range_
 
 
@@ -630,6 +632,7 @@ class _OptFunc(object):
         self.opt = opt
 
     def __call__(self, *args):
+        """Return stored dict."""
         return self.opt
 
 
@@ -639,6 +642,7 @@ class _NQuad(object):
         self.func = func
         self.ranges = ranges
         self.opts = opts
+        self.maxdepth = len(ranges)
 
     def integrate(self, *args, **kwargs):
         depth = kwargs.pop('depth', 0)
@@ -648,20 +652,22 @@ class _NQuad(object):
         # Get the integration range and options for this depth.
         ind = -(depth + 1)
         fn_range = self.ranges[ind]
-        fn_opt = self.opts[ind]
         low, high = fn_range(*args)
+        fn_opt = self.opts[ind]
         opt = dict(fn_opt(*args))
 
         if 'points' in opt:
             opt['points'] = [x for x in opt['points'] if low <= x <= high]
-        if depth + 1 == len(self.ranges):
+        if depth + 1 == self.maxdepth:
             f = self.func
         else:
             f = partial(self.integrate, depth=depth+1)
+
         value, abserr = quad(f, low, high, args=args, **opt)
         self.abserr = max(self.abserr, abserr)
-        if depth:
+        if depth > 0:
             return value
         else:
+            # Final result of n-D integration with error
             return value, self.abserr
 

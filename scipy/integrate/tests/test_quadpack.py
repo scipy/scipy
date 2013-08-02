@@ -6,7 +6,7 @@ import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_, TestCase, run_module_suite, dec,
-        assert_allclose, assert_array_less)
+        assert_allclose, assert_array_less, assert_almost_equal)
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy.lib.six.moves import xrange
 
@@ -242,6 +242,35 @@ class TestNQuad(TestCase):
         ranges = [fn_range, fn_range]
         opts = [fn_opt, fn_opt]
         assert_quad(nquad(f, ranges, opts=opts), 4.0)
+
+    def test_matching_quad(self):
+        def func(x):
+            return x**2 + 1
+
+        res, reserr = quad(func, 0, 4)
+        res2, reserr2 = nquad(func, ranges=[[0, 4]])
+        assert_almost_equal(res, res2)
+        assert_almost_equal(reserr, reserr2)
+
+    def test_matching_dblquad(self):
+        def func2d(x0, x1):
+            return x0**2 + x1**3 - x0 * x1 + 1
+
+        res, reserr = dblquad(func2d, -2, 2, lambda x:-3, lambda x:3)
+        res2, reserr2 = nquad(func2d, [[-3, 3], (-2, 2)])
+        assert_almost_equal(res, res2)
+        assert_almost_equal(reserr, reserr2)
+
+    def test_matching_tplquad(self):
+        def func3d(x0, x1, x2, c0, c1):
+            return x0**2 + c0 * x1**3 - x0 * x1 + 1 + c1 * np.sin(x2)
+
+
+        res = tplquad(func3d, -1, 2, lambda x:-2, lambda x:2,
+                      lambda x, y : -np.pi, lambda x, y : np.pi,
+                      args=(2, 3))
+        res2 = nquad(func3d, [[-np.pi, np.pi], [-2, 2], (-1, 2)], args=(2, 3))
+        assert_almost_equal(res, res2)
 
 
 if __name__ == "__main__":
