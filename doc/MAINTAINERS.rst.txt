@@ -88,9 +88,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.cluster&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.cluster>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.cluster&order=priority>`__
@@ -107,9 +105,7 @@ Status:
 
 The constants module is up-to-date (NIST 2010 CODATA) and has no known bugs.
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.constants&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.constants>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.constants&order=priority>`__
@@ -127,9 +123,7 @@ Status:
 The fftpack module is stable, with few known bugs and little development
 happening currently.
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.fftpack&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.fftpack>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.fftpack&order=priority>`__
@@ -144,9 +138,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.integrate&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.integrate>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.integrate&order=priority>`__
@@ -162,9 +154,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.interpolate&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.interpolate>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.interpolate&order=priority>`__
@@ -188,9 +178,7 @@ The io.idl module is stable and has no known bugs. It will need to be updated
 as needed if the IDL file format evolves, or if there are any bugs discovered.
 There is no real need for any new features.
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.io&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.io>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.io&order=priority>`__
@@ -204,9 +192,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.linalg&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.linalg>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.linalg&order=priority>`__
@@ -221,9 +207,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.misc&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.misc>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.misc&order=priority>`__
@@ -239,9 +223,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.ndimage&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.ndimage>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.ndimage&order=priority>`__
@@ -254,9 +236,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.odr&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.odr>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.odr&order=priority>`__
@@ -272,9 +252,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.optimize&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.optimize>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.optimize&order=priority>`__
@@ -291,9 +269,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.signal&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.signal>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.signal&order=priority>`__
@@ -309,9 +285,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.sparse&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.sparse>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.sparse&order=priority>`__
@@ -327,9 +301,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.sparse.linalg&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.sparse.linalg>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.sparse.linalg&order=priority>`__
@@ -345,9 +317,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.spatial&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.spatial>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.spatial&order=priority>`__
@@ -362,9 +332,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.special&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.special>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.special&order=priority>`__
@@ -381,9 +349,7 @@ Maintainers:
 
 Status:
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.stats&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.stats>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.stats&order=priority>`__
@@ -397,9 +363,7 @@ Status:
 Weave is unmaintained, and only kept for backwards compatibility.
 For new development, it is recommended to use Cython.
 
-`Open tickets <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&component=scipy.weave&order=priority>`__
+`Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.weave>`__
 | `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
 status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
 &format=rss&component=scipy.weave&order=priority>`__
