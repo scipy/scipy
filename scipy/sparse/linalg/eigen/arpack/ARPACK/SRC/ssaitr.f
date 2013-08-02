@@ -133,14 +133,14 @@ c     sgetv0  ARPACK routine to generate the initial vector.
 c     ivout   ARPACK utility routine that prints integers.
 c     smout   ARPACK utility routine that prints matrices.
 c     svout   ARPACK utility routine that prints vectors.
-c     slamch  LAPACK routine that determines machine constants.
+c     wslamch  LAPACK routine that determines machine constants.
 c     slascl  LAPACK routine for careful scaling of a matrix.
 c     sgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     saxpy   Level 1 BLAS that computes a vector triad.
 c     sscal   Level 1 BLAS that scales a vector.
 c     scopy   Level 1 BLAS that copies one vector to another .
 c     wsdot    Level 1 BLAS that computes the scalar product of two vectors. 
-c     snrm2   Level 1 BLAS that computes the norm of a vector.
+c     wsnrm2   Level 1 BLAS that computes the norm of a vector.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
@@ -269,8 +269,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           wsdot, snrm2, slamch
-      external   wsdot, snrm2, slamch
+     &           wsdot, wsnrm2, wslamch
+      external   wsdot, wsnrm2, wslamch
 c
 c     %-----------------%
 c     | Data statements |
@@ -290,7 +290,7 @@ c        | safmin = safe minimum is such  |
 c        | that 1/sfmin does not overflow |
 c        %--------------------------------%
 c
-         safmin = slamch('safmin')
+         safmin = wslamch('safmin')
       end if
 c
       if (ido .eq. 0) then
@@ -549,7 +549,7 @@ c
             wnorm = wsdot (n, resid, 1, workd(ipj), 1)
             wnorm = sqrt(abs(wnorm))
          else if (bmat .eq. 'I') then
-            wnorm = snrm2(n, resid, 1)
+            wnorm = wsnrm2(n, resid, 1)
          end if
 c
 c        %-----------------------------------------%
@@ -635,7 +635,7 @@ c
             rnorm = wsdot (n, resid, 1, workd(ipj), 1)
             rnorm = sqrt(abs(rnorm))
          else if (bmat .eq. 'I') then
-            rnorm = snrm2(n, resid, 1)
+            rnorm = wsnrm2(n, resid, 1)
          end if
 c
 c        %-----------------------------------------------------------%
@@ -731,7 +731,7 @@ c
              rnorm1 = wsdot (n, resid, 1, workd(ipj), 1)
              rnorm1 = sqrt(abs(rnorm1))
          else if (bmat .eq. 'I') then
-             rnorm1 = snrm2(n, resid, 1)
+             rnorm1 = wsnrm2(n, resid, 1)
          end if
 c
          if (msglvl .gt. 0 .and. iter .gt. 0) then

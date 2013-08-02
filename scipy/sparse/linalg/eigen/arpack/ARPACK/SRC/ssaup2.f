@@ -150,10 +150,10 @@ c     ssortr  ARPACK sorting routine.
 c     ivout   ARPACK utility routine that prints integers.
 c     arscnd  ARPACK utility routine for timing.
 c     svout   ARPACK utility routine that prints vectors.
-c     slamch  LAPACK routine that determines machine constants.
+c     wslamch  LAPACK routine that determines machine constants.
 c     scopy   Level 1 BLAS that copies one vector to another.
 c     wsdot    Level 1 BLAS that computes the scalar product of two vectors. 
-c     snrm2   Level 1 BLAS that computes the norm of a vector.
+c     wsnrm2   Level 1 BLAS that computes the norm of a vector.
 c     sscal   Level 1 BLAS that scales a vector.
 c     sswap   Level 1 BLAS that swaps two vectors.
 c
@@ -242,8 +242,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           wsdot, snrm2, slamch
-      external   wsdot, snrm2, slamch
+     &           wsdot, wsnrm2, wslamch
+      external   wsdot, wsnrm2, wslamch
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -269,7 +269,7 @@ c        %---------------------------------%
 c        | Set machine dependent constant. |
 c        %---------------------------------%
 c
-         eps23 = slamch('Epsilon-Machine')
+         eps23 = wslamch('Epsilon-Machine')
          eps23 = eps23**(2.0E+0/3.0E+0)
 c
 c        %-------------------------------------%
@@ -803,7 +803,7 @@ c
             rnorm = wsdot (n, resid, 1, workd, 1)
             rnorm = sqrt(abs(rnorm))
          else if (bmat .eq. 'I') then
-            rnorm = snrm2(n, resid, 1)
+            rnorm = wsnrm2(n, resid, 1)
          end if
          cnorm = .false.
   130    continue

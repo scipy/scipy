@@ -67,12 +67,12 @@ c     arscnd  ARPACK utility routine for timing.
 c     smout   ARPACK utility routine that prints matrices
 c     svout   ARPACK utility routine that prints vectors.
 c     slacpy  LAPACK matrix copy routine.
-c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
+c     wslapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     strevc  LAPACK routine to compute the eigenvectors of a matrix
 c             in upper quasi-triangular form
 c     sgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     scopy   Level 1 BLAS that copies one vector to another .
-c     snrm2   Level 1 BLAS that computes the norm of a vector.
+c     wsnrm2   Level 1 BLAS that computes the norm of a vector.
 c     sscal   Level 1 BLAS that scales a vector.
 c     
 c
@@ -151,8 +151,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           slapy2, snrm2
-      external   slapy2, snrm2
+     &           wslapy2, wsnrm2
+      external   wslapy2, wsnrm2
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -228,7 +228,7 @@ c           %----------------------%
 c           | Real eigenvalue case |
 c           %----------------------%
 c    
-            temp = snrm2( n, q(1,i), 1 )
+            temp = wsnrm2( n, q(1,i), 1 )
             call sscal ( n, one / temp, q(1,i), 1 )
          else
 c
@@ -241,8 +241,8 @@ c           | square root of two.                       |
 c           %-------------------------------------------%
 c
             if (iconj .eq. 0) then
-               temp = slapy2( snrm2( n, q(1,i), 1 ), 
-     &                        snrm2( n, q(1,i+1), 1 ) )
+               temp = wslapy2( wsnrm2( n, q(1,i), 1 ), 
+     &                        wsnrm2( n, q(1,i+1), 1 ) )
                call sscal ( n, one / temp, q(1,i), 1 )
                call sscal ( n, one / temp, q(1,i+1), 1 )
                iconj = 1
@@ -283,7 +283,7 @@ c           | of the last components of the two vectors |
 c           %-------------------------------------------%
 c
             if (iconj .eq. 0) then
-               bounds(i) = rnorm * slapy2( workl(i), workl(i+1) )
+               bounds(i) = rnorm * wslapy2( workl(i), workl(i+1) )
                bounds(i+1) = bounds(i)
                iconj = 1
             else

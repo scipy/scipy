@@ -19,7 +19,14 @@ s@\bcdotu\b@wcdotu@g;
 s@\bzdotu\b@wzdotu@g;
 s@\bcladiv\b@wcladiv@g;
 s@\bzladiv\b@wzladiv@g;
-' \
+s@\bslapy2\b@wslapy2@g;
+s@\bscnrm2\b@wscnrm2@g;
+s@\bslanhs\b@wslanhs@g;
+s@\bsnrm2\b@wsnrm2@g;
+s@\bclanhs\b@wclanhs@g;
+s@\bSLAMCH\b@wslamch@g;
+s@\bslamch\b@wslamch@g;
+s@\bslanst\b@wslanst@g;' \
 SRC/*.f UTIL/*.f
 
 (ii) Using a UTIL/second_cputime.f which calls the Fortran intrinsic
