@@ -46,7 +46,7 @@ C     STOPTEST2
       <_t>   R( * ), B( * )
       <rt>   ZERO, ONE
       PARAMETER        ( ZERO = 0.0D+0, ONE = 1.0D+0 )
-      <rt> <rc=s,d,sc,dz>NRM2
+      <rt> <rc=ws,d,wsc,dz>NRM2
       EXTERNAL         <rc>NRM2
       IF( INFO.EQ.-1 ) THEN
          BNRM2 = <rc>NRM2( N, B, 1 )

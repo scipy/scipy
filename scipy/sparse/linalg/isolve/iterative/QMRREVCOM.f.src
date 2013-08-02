@@ -124,12 +124,12 @@
      $       GAMMATOL, DELTATOL,
      $       EPSTOL, XITOL,
      $       <sdsd=s,d,s,d>GETBREAK, 
-     $       <rc=s,d,sc,dz>NRM2
+     $       <rc=ws,d,wsc,dz>NRM2
 
 
       <_t>   BETA, GAMMA, GAMMA1, DELTA, EPS, ETA, XI, 
      $       RHO, RHO1, THETA, THETA1, C1, TMPVAL,
-     $     <xdot=sdot,ddot,wcdotc,wzdotc>,
+     $     <xdot=wsdot,ddot,wcdotc,wzdotc>,
      $     toz
 *
 *     indicates where to resume from. Only valid when IJOB = 2!
