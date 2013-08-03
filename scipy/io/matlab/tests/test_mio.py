@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: latin-1 -*-
 ''' Nose test generators
 
 Need function load / save / roundtrip tests
@@ -1071,6 +1072,15 @@ def test_load_mat4_le():
     mat4_fname = pjoin(test_data_path, 'test_mat4_le_floats.mat')
     vars = loadmat(mat4_fname)
     assert_array_equal(vars['a'], [[0.1, 1.2]])
+
+
+def test_unicode_mat4():
+    # Mat4 should save unicode as latin1
+    bio = BytesIO()
+    var = {'second_cat': u('Schrödinger')}
+    savemat(bio, var, format='4')
+    var_back = loadmat(bio)
+    assert_equal(var_back['second_cat'], var['second_cat'])
 
 
 if __name__ == "__main__":
