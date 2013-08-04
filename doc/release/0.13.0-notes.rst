@@ -60,10 +60,26 @@ The BLAS functions ``symm``, ``syrk``, ``syr2k``, ``hemm``, ``herk`` and
 ``scipy.sparse`` improvements
 -----------------------------
 
-Boolean sparse matrices
-^^^^^^^^^^^^^^^^^^^^^^^
+Boolean comparisons and sparse matrices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All sparse matrix types now support boolean data.
+All sparse matrix types now support boolean data, and boolean operations.
+So if we have two sparse matrices `A` and `B`, they can be compared in all the
+expected ways: `A < B`, `A >= B`, `A != B`, etc. And return sparse matrices.
+Comparisons with dense matrices and scalars are also supported. 
+
+CSR and CSC fancy indexing
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Compressed sparse row and column sparse matrix types now support fancy indexing
+with boolean matrices, slices, and lists. So where A is a (CSC or CSR) sparse
+matrix, you can do things like::
+
+    >>> A[A > 0.5] = 1  # Since Boolean sparse matrices work!
+
+    >>> A[:2, :3] = 2
+
+    >>> A[[1,2], 2] = 3
 
 
 ``scipy.special`` improvements
