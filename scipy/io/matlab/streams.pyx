@@ -82,7 +82,6 @@ cdef class GenericStream:
 
         if count != n:
             raise IOError('could not read bytes')
-            return -1
         return 0
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
@@ -301,7 +300,6 @@ cdef class FileStream(GenericStream):
         ret = fseek(self.file, offset, whence)
         if ret:
             raise IOError('Failed seek')
-            return -1
         return ret
 
     cpdef long int tell(self):
@@ -316,7 +314,6 @@ cdef class FileStream(GenericStream):
         n_red = fread(buf, 1, n, self.file)
         if n_red != n:
             raise IOError('Could not read bytes')
-            return -1
         return 0
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
