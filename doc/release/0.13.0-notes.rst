@@ -6,7 +6,7 @@ SciPy 0.13.0 Release Notes
 
 .. contents::
 
-SciPy 0.13.0 is the culmination of XXX months of hard work. It contains
+SciPy 0.13.0 is the culmination of 5 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -42,6 +42,52 @@ containing routines for computing interpolative matrix decompositions
 (ID). This feature is based on the ID software package by
 P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, and M. Tygert, previously
 adapted for Python in the PymatrixId package by K.L. Ho.
+
+Polar decomposition
+^^^^^^^^^^^^^^^^^^^
+
+A new function `scipy.linalg.polar`, to compute the polar decomposition 
+of a matrix, was added.
+
+
+BLAS level 3 functions
+^^^^^^^^^^^^^^^^^^^^^^
+
+The BLAS functions ``symm``, ``syrk``, ``syr2k``, ``hemm``, ``herk`` and
+``her2k`` are now wrapped in `scipy.linalg`.
+
+
+``scipy.sparse`` improvements
+-----------------------------
+
+Boolean sparse matrices
+^^^^^^^^^^^^^^^^^^^^^^^
+
+All sparse matrix types now support boolean data.
+
+
+``scipy.special`` improvements
+------------------------------
+
+New function `scipy.special.xlogy` and `scipy.special.xlog1py` were added.
+These functions can simplify and speed up code that has to calculate 
+``x * log(y)`` and give 0 when ``x == 0``.
+
+
+Unformatted Fortran file reader
+-------------------------------
+
+A new class `scipy.io.FortranFile` which facilitates reading unformatted
+sequential files written by Fortran code.
+
+B-spline derivatives and antiderivatives
+----------------------------------------
+
+`scipy.interpolate.splder` and `scipy.interpolate.splantider` functions 
+for computing B-splines that represent derivatives and antiderivatives
+of B-splines were added.  These functions are also available in the 
+class-based FITPACK interface as ``UnivariateSpline.derivative`` and
+``UnivariateSpline.antiderivative``.
 
 
 Deprecated features
@@ -89,6 +135,13 @@ been removed from the distributions in ``scipy.stats``.
 
 Other changes
 =============
+
+Cython is now required to build *unreleased* versions of scipy.
+The C files generated from Cython sources are not included in the git repo
+anymore.  They are however still shipped in source releases.
+
+The code base received a fairly large PEP8 cleanup.  A ``tox pep8`` 
+command has been added; new code should pass this test command.
 
 
 Authors
