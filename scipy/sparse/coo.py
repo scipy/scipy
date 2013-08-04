@@ -182,7 +182,12 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 if np.rank(M) != 2:
                     raise TypeError('expected rank <= 2 array or matrix')
 
-                self.shape = M.shape
+                elif M.size == 0:
+                    self.shape = (1,1)
+
+                else:
+                    self.shape = M.shape
+
                 self.row, self.col = M.nonzero()
                 self.data = M[self.row, self.col]
 
