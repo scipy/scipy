@@ -308,7 +308,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         call).
     cov_x : ndarray
         Uses the fjac and ipvt optional outputs to construct an
-        estimate of the jacobian around the solution.  ``None`` if a
+        estimate of the jacobian around the solution. None if a
         singular matrix encountered (indicates very flat curvature in
         some direction).  This matrix must be multiplied by the
         residual variance to get the covariance of the

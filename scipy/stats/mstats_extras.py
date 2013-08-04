@@ -194,7 +194,7 @@ def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True),
     data : array_like
         Input data.
     limits : {None, tuple}, optional
-        ``None`` or a two item tuple.
+        None or a two item tuple.
         Tuple of the percentages to cut on each side of the array, with respect
         to the number of unmasked data, as floats between 0. and 1. If ``n``
         is the number of unmasked data before trimming, then
