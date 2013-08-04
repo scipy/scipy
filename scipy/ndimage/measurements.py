@@ -262,8 +262,10 @@ def find_objects(input, max_label=0):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
+
     if max_label < 1:
         max_label = input.max()
+
     return _nd_image.find_objects(input, max_label)
 
 
@@ -367,6 +369,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
         raise ValueError("Cannot convert index values from <%s> to <%s> "
                             "(labels' type) without loss of precision" %
                             (index.dtype, labels.dtype))
+
     index = index.astype(labels.dtype)
 
     # optimization: find min/max in index, and select those parts of labels, input, and positions
@@ -391,9 +394,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     sorted_index = index[index_order]
 
     def do_map(inputs, output):
-        '''labels must be sorted'''
-
-        nlabels = labels.size
+        """labels must be sorted"""
         nidx = sorted_index.size
 
         # Find boundaries for each stretch of constant labels
@@ -404,7 +405,6 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
         for i, l, h in zip(range(nidx), lo, hi):
             if l == h:
                 continue
-            idx = sorted_index[i]
             output[i] = func(*[inp[l:h] for inp in inputs])
 
     temp = numpy.empty(index.shape, out_dtype)
@@ -413,9 +413,9 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
         do_map([input], temp)
     else:
         do_map([input, positions], temp)
+
     output = numpy.zeros(index.shape, out_dtype)
     output[index_order] = temp
-
     if as_scalar:
         output = output[0]
 
@@ -676,9 +676,7 @@ def variance(input, labels=None, index=None):
     6.1875
 
     """
-
     count, sum, sum_c_sq = _stats(input, labels, index, centered=True)
-
     return sum_c_sq / np.asanyarray(count).astype(float)
 
 
@@ -730,7 +728,6 @@ def standard_deviation(input, labels=None, index=None):
     2.4874685927665499
 
     """
-
     return numpy.sqrt(variance(input, labels, index))
 
 
@@ -1053,7 +1050,6 @@ def minimum_position(input, labels=None, index=None):
     Index must be None, a single label or sequence of labels.  If
     none, all values where label is greater than zero are used.
     """
-
     dims = numpy.array(numpy.asarray(input).shape)
     # see numpy.unravel_index to understand this line.
     dim_prod = numpy.cumprod([1] + list(dims[:0:-1]))[::-1]
@@ -1074,7 +1070,6 @@ def maximum_position(input, labels=None, index=None):
     Index must be None, a single label or sequence of labels.  If
     none, all values where label is greater than zero are used.
     """
-
     dims = numpy.array(numpy.asarray(input).shape)
     # see numpy.unravel_index to understand this line.
     dim_prod = numpy.cumprod([1] + list(dims[:0:-1]))[::-1]
@@ -1140,17 +1135,20 @@ def extrema(input, labels=None, index=None):
     (1, 9, (0, 0), (3, 0))
 
     """
-
     dims = numpy.array(numpy.asarray(input).shape)
     # see numpy.unravel_index to understand this line.
     dim_prod = numpy.cumprod([1] + list(dims[:0:-1]))[::-1]
 
-    minimums, min_positions, maximums, max_positions = _select(input, labels, index,
-                                                               find_min=True, find_max=True,
-                                                               find_min_positions=True, find_max_positions=True)
+    minimums, min_positions, maximums, max_positions = _select(input, labels,
+                                                               index,
+                                                               find_min=True,
+                                                               find_max=True,
+                                                               find_min_positions=True,
+                                                               find_max_positions=True)
 
     if numpy.isscalar(minimums):
-        return minimums, maximums, tuple((min_positions // dim_prod) % dims), tuple((max_positions // dim_prod) % dims)
+        return (minimums, maximums, tuple((min_positions // dim_prod) % dims),
+                tuple((max_positions // dim_prod) % dims))
 
     min_positions = [tuple(v) for v in (min_positions.reshape(-1, 1) // dim_prod) % dims]
     max_positions = [tuple(v) for v in (max_positions.reshape(-1, 1) // dim_prod) % dims]
@@ -1200,11 +1198,11 @@ def center_of_mass(input, labels=None, index=None):
     [(0.33333333333333331, 1.3333333333333333), (3.5, 2.5)]
 
     """
-
     normalizer = sum(input, labels, index)
     grids = numpy.ogrid[[slice(0, i) for i in input.shape]]
 
-    results = [sum(input * grids[dir].astype(float), labels, index) / normalizer for dir in range(input.ndim)]
+    results = [sum(input * grids[dir].astype(float), labels, index) / normalizer
+               for dir in range(input.ndim)]
 
     if numpy.isscalar(results[0]):
         return tuple(results)
@@ -1263,13 +1261,13 @@ def histogram(input, min, max, bins, labels=None, index=None):
     array([0, 0, 1, 1, 0, 0, 1, 1, 0, 0])
 
     """
-
     _bins = numpy.linspace(min, max, bins + 1)
 
     def _hist(vals):
         return numpy.histogram(vals, _bins)[0]
 
-    return labeled_comprehension(input, labels, index, _hist, object, None, pass_positions=False)
+    return labeled_comprehension(input, labels, index, _hist, object, None,
+                                 pass_positions=False)
 
 
 def watershed_ift(input, markers, structure=None, output=None):
@@ -1285,6 +1283,7 @@ def watershed_ift(input, markers, structure=None, output=None):
     input = numpy.asarray(input)
     if input.dtype.type not in [numpy.uint8, numpy.uint16]:
         raise TypeError('only 8 and 16 unsigned inputs are supported')
+
     if structure is None:
         structure = morphology.generate_binary_structure(input.ndim, 1)
     structure = numpy.asarray(structure, dtype=bool)
@@ -1293,6 +1292,7 @@ def watershed_ift(input, markers, structure=None, output=None):
     for ii in structure.shape:
         if ii != 3:
             raise RuntimeError('structure dimensions must be equal to 3')
+
     if not structure.flags.contiguous:
         structure = structure.copy()
     markers = numpy.asarray(markers)
@@ -1310,11 +1310,13 @@ def watershed_ift(input, markers, structure=None, output=None):
 
     if markers.dtype.type not in integral_types:
         raise RuntimeError('marker should be of integer type')
+
     if isinstance(output, numpy.ndarray):
         if output.dtype.type not in integral_types:
             raise RuntimeError('output should be of integer type')
     else:
         output = markers.dtype
+
     output, return_value = _ni_support._get_output(output, input)
     _nd_image.watershed_ift(input, markers, structure, output)
     return return_value

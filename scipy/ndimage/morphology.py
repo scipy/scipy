@@ -540,6 +540,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
         origin[ii] = -origin[ii]
         if not structure.shape[ii] & 1:
             origin[ii] -= 1
+
     return _binary_erosion(input, structure, iterations, mask,
                            output, border_value, origin, 1, brute_force)
 
@@ -654,6 +655,7 @@ def binary_opening(input, structure=None, iterations=1, output=None,
     if structure is None:
         rank = input.ndim
         structure = generate_binary_structure(rank, 1)
+
     tmp = binary_erosion(input, structure, iterations, None, None, 0,
                          origin)
     return binary_dilation(tmp, structure, iterations, None, output, 0,
@@ -793,6 +795,7 @@ def binary_closing(input, structure=None, iterations=1, output=None,
     if structure is None:
         rank = input.ndim
         structure = generate_binary_structure(rank, 1)
+
     tmp = binary_dilation(input, structure, iterations, None, None, 0,
                           origin)
     return binary_erosion(tmp, structure, iterations, None, output, 0,
@@ -1275,6 +1278,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
     """
     if size is None and footprint is None and structure is None:
         raise ValueError("size, footprint or structure must be specified")
+
     return filters._min_or_max_filter(input, size, footprint, structure,
                                       output, mode, cval, origin, 1)
 
@@ -1425,6 +1429,7 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
         footprint = numpy.asarray(footprint)
         footprint = footprint[tuple([slice(None, None, -1)] *
                                     footprint.ndim)]
+
     input = numpy.asarray(input)
     origin = _ni_support._normalize_sequence(origin, input.ndim)
     for ii in range(len(origin)):
@@ -1439,6 +1444,7 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
             sz = size[ii]
         if not sz & 1:
             origin[ii] -= 1
+
     return filters._min_or_max_filter(input, size, footprint, structure,
                                       output, mode, cval, origin, 0)
 
@@ -1779,14 +1785,12 @@ def morphological_laplace(input, size=None, footprint=None,
         grey_erosion(input, size, footprint, structure, output, mode,
                      cval, origin)
         numpy.add(tmp1, output, output)
-        del tmp1
         numpy.subtract(output, input, output)
         return numpy.subtract(output, input, output)
     else:
         tmp2 = grey_erosion(input, size, footprint, structure, None, mode,
                             cval, origin)
         numpy.add(tmp1, tmp2, tmp2)
-        del tmp1
         numpy.subtract(tmp2, input, tmp2)
         numpy.subtract(tmp2, input, tmp2)
         return tmp2
@@ -1807,7 +1811,6 @@ def white_tophat(input, size=None, footprint=None, structure=None,
     if isinstance(output, numpy.ndarray):
         grey_dilation(tmp, size, footprint, structure, output, mode, cval,
                       origin)
-        del tmp
         return numpy.subtract(input, output, output)
     else:
         tmp = grey_dilation(tmp, size, footprint, structure, None, mode,
@@ -1843,8 +1846,7 @@ def black_tophat(input, size=None, footprint=None,
                         cval, origin)
     if isinstance(output, numpy.ndarray):
         grey_erosion(tmp, size, footprint, structure, output, mode, cval,
-                      origin)
-        del tmp
+                     origin)
         return numpy.subtract(output, input, output)
     else:
         tmp = grey_erosion(tmp, size, footprint, structure, None, mode,
@@ -1888,12 +1890,12 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     if (not return_distances) and (not return_indices):
         msg = 'at least one of distances/indices must be specified'
         raise RuntimeError(msg)
+
     tmp1 = numpy.asarray(input) != 0
     struct = generate_binary_structure(tmp1.ndim, tmp1.ndim)
     tmp2 = binary_dilation(tmp1, struct)
     tmp2 = numpy.logical_xor(tmp1, tmp2)
     tmp1 = tmp1.astype(numpy.int8) - tmp2.astype(numpy.int8)
-    del tmp2
     metric = metric.lower()
     if metric == 'euclidean':
         metric = 1
@@ -1930,6 +1932,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
             dt = distances
     else:
         dt = None
+
     _nd_image.distance_transform_bf(tmp1, metric, sampling, dt, ft)
     if return_indices:
         if isinstance(indices, numpy.ndarray):
@@ -1946,12 +1949,14 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
             rtmp.shape = tmp1.shape
             tmp2[ii, ...] = rtmp
         ft = tmp2
+
     # construct and return the result
     result = []
     if return_distances and not isinstance(distances, numpy.ndarray):
         result.append(dt)
     if return_indices and not isinstance(indices, numpy.ndarray):
         result.append(ft)
+
     if len(result) == 2:
         return tuple(result)
     elif len(result) == 1:
@@ -1988,6 +1993,7 @@ def distance_transform_cdt(input, metric='chessboard',
     if (not return_distances) and (not return_indices):
         msg = 'at least one of distances/indices must be specified'
         raise RuntimeError(msg)
+
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
     input = numpy.asarray(input)
@@ -2005,6 +2011,7 @@ def distance_transform_cdt(input, metric='chessboard',
         for s in metric.shape:
             if s != 3:
                 raise RuntimeError('metric sizes must be equal to 3')
+
     if not metric.flags.contiguous:
         metric = metric.copy()
     if dt_inplace:
@@ -2016,6 +2023,7 @@ def distance_transform_cdt(input, metric='chessboard',
         dt[...] = numpy.where(input, -1, 0).astype(numpy.int32)
     else:
         dt = numpy.where(input, -1, 0).astype(numpy.int32)
+
     rank = dt.ndim
     if return_indices:
         sz = numpy.product(dt.shape,axis=0)
@@ -2023,6 +2031,7 @@ def distance_transform_cdt(input, metric='chessboard',
         ft.shape = dt.shape
     else:
         ft = None
+
     _nd_image.distance_transform_op(metric, dt, ft)
     dt = dt[tuple([slice(None, None, -1)] * rank)]
     if return_indices:
@@ -2052,6 +2061,7 @@ def distance_transform_cdt(input, metric='chessboard',
         result.append(dt)
     if return_indices and not ft_inplace:
         result.append(ft)
+
     if len(result) == 2:
         return tuple(result)
     elif len(result) == 1:
@@ -2173,6 +2183,7 @@ def distance_transform_edt(input, sampling=None,
     if (not return_distances) and (not return_indices):
         msg = 'at least one of distances/indices must be specified'
         raise RuntimeError(msg)
+
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
     # calculate the feature transform
@@ -2182,6 +2193,7 @@ def distance_transform_edt(input, sampling=None,
         sampling = numpy.asarray(sampling, dtype=numpy.float64)
         if not sampling.flags.contiguous:
             sampling = sampling.copy()
+
     if ft_inplace:
         ft = indices
         if ft.shape != (input.ndim,) + input.shape:
@@ -2191,6 +2203,7 @@ def distance_transform_edt(input, sampling=None,
     else:
         ft = numpy.zeros((input.ndim,) + input.shape,
                             dtype=numpy.int32)
+
     _nd_image.euclidean_feature_transform(input, sampling, ft)
     # if requested, calculate the distance transform
     if return_distances:
@@ -2207,16 +2220,17 @@ def distance_transform_edt(input, sampling=None,
             if distances.dtype.type != numpy.float64:
                 raise RuntimeError('indices must be of float64 type')
             numpy.sqrt(dt, distances)
-            del dt
         else:
             dt = numpy.add.reduce(dt, axis=0)
             dt = numpy.sqrt(dt)
+
     # construct and return the result
     result = []
     if return_distances and not dt_inplace:
         result.append(dt)
     if return_indices and not ft_inplace:
         result.append(ft)
+
     if len(result) == 2:
         return tuple(result)
     elif len(result) == 1:
