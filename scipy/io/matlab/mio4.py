@@ -208,7 +208,7 @@ class VarReader4(object):
         return self.read_sub_array(hdr)
 
     def read_char_array(self, hdr):
-        ''' Ascii text matrix (char matrix) reader
+        ''' latin-1 text matrix (char matrix) reader
 
         Parameters
         ----------
@@ -220,8 +220,7 @@ class VarReader4(object):
             with dtype 'U1', shape given by `hdr` ``dims``
         '''
         arr = self.read_sub_array(hdr).astype(np.uint8)
-        # ascii to unicode
-        S = arr.tostring().decode('ascii')
+        S = arr.tostring().decode('latin-1')
         return np.ndarray(shape=hdr.dims,
                           dtype=np.dtype('U1'),
                           buffer=np.array(S)).copy()
@@ -560,12 +559,12 @@ class VarWriter4(object):
             P=miUINT8,
             T=mxCHAR_CLASS)
         if arr.dtype.kind == 'U':
-            # Recode unicode to ascii
+            # Recode unicode to latin1
             n_chars = np.product(dims)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr)
-            st = st_arr.item().encode('ascii')
+            st = st_arr.item().encode('latin-1')
             arr = np.ndarray(shape=dims, dtype='S1', buffer=st)
         self.write_bytes(arr)
 
