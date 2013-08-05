@@ -1639,7 +1639,7 @@ class _TestFancyIndexing:
         A = self.spmatrix(np.zeros([5, 5]))
         assert_raises((IndexError, ValueError, TypeError), A.__getitem__, "foo")
         assert_raises((IndexError, ValueError, TypeError), A.__getitem__, (2, "foo"))
-        assert_raises((IndexError, ValueError), A.__getitem__, 
+        assert_raises((IndexError, ValueError), A.__getitem__,
                       ([1, 2, 3], [1, 2, 3, 4]))
 
     def test_fancy_indexing(self):
@@ -1747,7 +1747,7 @@ class _TestFancyIndexing:
         def todense(a):
             if isinstance(a, (np.matrix, np.ndarray)):
                 return a
-            return a.todense()        
+            return a.todense()
 
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
@@ -1759,7 +1759,7 @@ class _TestFancyIndexing:
         assert_equal(todense(A[I]), B[I])
         assert_equal(todense(A[:,J]), B[:, J])
         assert_equal(todense(A[X]), B[X])
-        assert_equal(todense(A[B > 9]), B[B>9])
+        assert_equal(todense(A[B > 9]), B[B > 9])
 
         I = np.array([True, False, True, True, False])
         J = np.array([False, True, True, False, True])
@@ -2295,6 +2295,7 @@ class TestCSR(sparse_test_class()):
         if isspmatrix(SIJ):
             SIJ = SIJ.todense()
         assert_equal(SIJ, D[I,J])
+
 
 class TestCSC(sparse_test_class()):
     spmatrix = csc_matrix
