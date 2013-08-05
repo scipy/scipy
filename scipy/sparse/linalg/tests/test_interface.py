@@ -8,29 +8,36 @@ from numpy.testing import TestCase, assert_, assert_equal, \
 
 import numpy as np
 import scipy.sparse as sparse
+from itertools import product
 
 from scipy.sparse.linalg import interface
 
 
 class TestLinearOperator(TestCase):
     def setUp(self):
-        self.matvecs = []
-
-        # these matvecs do not preserve type or shape
-        def matvec1(x):
-            return np.array([1*x[0] + 2*x[1] + 3*x[2],
-                              4*x[0] + 5*x[1] + 6*x[2]])
-
-        def matvec2(x):
-            return np.matrix(matvec1(x).reshape(2,1))
-
-        self.matvecs.append(matvec1)
-        self.matvecs.append(matvec2)
+        self.A = np.array([[1,2,3],
+                           [4,5,6]])
+        self.B = np.array([[1,2],
+                           [3,4],
+                           [5,6]])
 
     def test_matvec(self):
+        def get_matvecs(A):
+            return [{
+                        'shape': A.shape,
+                        'matvec': lambda x: np.dot(A, x).reshape(A.shape[0]),
+                        'rmatvec':
+                            lambda x: np.dot(A.T.conj(), x).reshape(A.shape[1])
+                    },
+                    {
+                        'shape': A.shape,
+                        'matvec': lambda x: np.dot(A, x),
+                        'rmatvec': lambda x: np.dot(A.T.conj(), x),
+                        'matmat': lambda x: np.dot(A, x)
+                    }]
 
-        for matvec in self.matvecs:
-            A = interface.LinearOperator((2,3), matvec)
+        for matvecs in get_matvecs(self.A):
+            A = interface.LinearOperator(**matvecs)
 
             assert_equal(A.matvec(np.array([1,2,3])), [14,32])
             assert_equal(A.matvec(np.array([[1],[2],[3]])), [[14],[32]])
@@ -43,6 +50,15 @@ class TestLinearOperator(TestCase):
             assert_equal(A * np.matrix([[1],[2],[3]]), [[14],[32]])
             assert_equal(A.dot(np.matrix([[1],[2],[3]])), [[14],[32]])
 
+            assert_equal((2*A)*[1,1,1], [12,30])
+            assert_equal((2*A)*[[1],[1],[1]], [[12],[30]])
+            assert_equal((A+A)*[1,1,1], [12, 30])
+            assert_equal((A+A)*[[1],[1],[1]], [[12], [30]])
+            assert_equal((-A)*[1,1,1], [-6,-15])
+            assert_equal((-A)*[[1],[1],[1]], [[-6],[-15]])
+            assert_equal((A-A)*[1,1,1], [0,0])
+            assert_equal((A-A)*[[1],[1],[1]], [[0],[0]])
+
             assert_(isinstance(A.matvec(np.array([1,2,3])), np.ndarray))
             assert_(isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray))
             assert_(isinstance(A * np.array([1,2,3]), np.ndarray))
@@ -54,11 +70,30 @@ class TestLinearOperator(TestCase):
             assert_(isinstance(A * np.matrix([[1],[2],[3]]), np.ndarray))
             assert_(isinstance(A.dot(np.matrix([[1],[2],[3]])), np.ndarray))
 
+            assert_(isinstance(2*A, interface.LinearOperator))
+            assert_(isinstance(A+A, interface.LinearOperator))
+            assert_(isinstance(-A, interface.LinearOperator))
+            assert_(isinstance(A-A, interface.LinearOperator))
+
             assert_raises(ValueError, A.matvec, np.array([1,2]))
             assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
             assert_raises(ValueError, A.matvec, np.array([[1],[2]]))
             assert_raises(ValueError, A.matvec, np.array([[1],[2],[3],[4]]))
 
+            assert_raises(ValueError, A.__mul__, A)
+
+        for matvecsA, matvecsB in product(get_matvecs(self.A),
+                                          get_matvecs(self.B)):
+            A = interface.LinearOperator(**matvecsA)
+            B = interface.LinearOperator(**matvecsB)
+
+            assert_equal((A*B)*[1,1], [50,113])
+            assert_equal((A*B)*[[1],[1]], [[50],[113]])
+
+            assert_(isinstance(A*B, interface.LinearOperator))
+
+            assert_raises(ValueError, A.__add__, B)
+            assert_raises(ValueError, A.__pow__, 2)
 
 class TestAsLinearOperator(TestCase):
     def setUp(self):
