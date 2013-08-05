@@ -178,19 +178,85 @@ class LinearOperator:
 
         return Y
 
-    def __mul__(self,x):
-        x = np.asarray(x)
+    def _get_dtype(self, x=None):
+        dtypes = []
+        for obj in [self, x]:
+            if obj is not None and hasattr(obj, 'dtype'):
+                dtypes.append(obj.dtype)
+        return np.find_common_type(dtypes, [])
 
-        if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
-            return self.matvec(x)
-        elif x.ndim == 2:
-            return self.matmat(x)
+    def __mul__(self, x):
+        if isinstance(x, LinearOperator):
+            if self.shape[1] != x.shape[0]:
+                raise ValueError('dimension mismatch')
+            return LinearOperator(shape=[self.shape[0], x.shape[1]],
+                     matvec=lambda y: self.matvec( x.matvec(y) ),
+                     rmatvec=lambda y: x.rmatvec( self.rmatvec(y) ),
+                     matmat=lambda y: self.matmat( x.matmat(y) ),
+                     dtype=self._get_dtype(x))
+        elif np.isscalar(x):
+            # calls __rmul__
+            return x*self
         else:
-            raise ValueError('expected rank-1 or rank-2 array or matrix')
+            x = np.asarray(x)
+
+            if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
+                return self.matvec(x)
+            elif x.ndim == 2:
+                return self.matmat(x)
+            else:
+                raise ValueError('expected rank-1 or rank-2 array or matrix')
 
     def dot(self, other):
         # modeled after scipy.sparse.base.dot
         return self * other
+
+    def __rmul__(self, x):
+        if np.isscalar(x):
+            return LinearOperator(shape=self.shape,
+                     matvec=lambda y: x*self.matvec(y),
+                     rmatvec=lambda y: numpy.conj(x)*self.rmatvec(y),
+                     matmat=lambda y: x*self.matmat(y),
+                     dtype=self._get_dtype(x))
+        else:
+            return NotImplemented
+
+    def __pow__(self, p):
+        if isinstance(p, (int, long)):
+            if self.shape[0] != self.shape[1]:
+                raise ValueError('dimension mismatch')
+            def power(y, fun):
+                res = y.copy()
+                for i in range(p):
+                    res = fun(res)
+                return res
+
+            return LinearOperator(shape=self.shape,
+                         matvec=lambda y: power(y, self.matvec),
+                         rmatvec=lambda y: power(y, self.rmatvec),
+                         matmat=lambda y: power(y, self.matmat),
+                         dtype=self._get_dtype())
+        else:
+            return NotImplemented
+
+    def __add__(self, x):
+        if self.shape != x.shape:
+            raise ValueError('dimension mismatch')
+        return LinearOperator(shape=self.shape,
+                     matvec=lambda y: self.matvec(y) + x.matvec(y),
+                     rmatvec=lambda y: self.rmatvec(y) + x.rmatvec(y),
+                     matmat=lambda y: self.matmat(y) + x.matmat(y),
+                     dtype=self._get_dtype(x))
+
+    def __neg__(self):
+        return LinearOperator(shape=self.shape,
+                     matvec=lambda y: -self.matvec(y),
+                     rmatvec=lambda y: -self.rmatvec(y),
+                     matmat=lambda y: -self.matmat(y),
+                     dtype=self._get_dtype())
+
+    def __sub__(self, x):
+        return self.__add__(-x)
 
     def __repr__(self):
         M,N = self.shape
