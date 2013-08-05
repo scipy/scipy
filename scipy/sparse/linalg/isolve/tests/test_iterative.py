@@ -55,38 +55,55 @@ class IterativeParams(object):
         data[2,:] = -1
         Poisson1D = spdiags(data, [0,-1,1], N, N, format='csr')
         self.Poisson1D = Case("poisson1d", Poisson1D)
-        self.cases.append(self.Poisson1D)
+        self.cases.append(Case("poisson1d", Poisson1D))
+        # note: minres fails for single precision
+        self.cases.append(Case("poisson1d", Poisson1D.astype('f'),
+                               skip=[minres]))
 
         # Symmetric and Negative Definite
         self.cases.append(Case("neg-poisson1d", -Poisson1D,
                                skip=posdef_solvers))
+        # note: minres fails for single precision
+        self.cases.append(Case("neg-poisson1d", (-Poisson1D).astype('f'),
+                               skip=posdef_solvers + [minres]))
 
         # Symmetric and Indefinite
         data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]],dtype='d')
         RandDiag = spdiags(data, [0], 10, 10, format='csr')
         self.cases.append(Case("rand-diag", RandDiag, skip=posdef_solvers))
+        self.cases.append(Case("rand-diag", RandDiag.astype('f'),
+                               skip=posdef_solvers))
 
         # Random real-valued
         np.random.seed(1234)
         data = np.random.rand(4, 4)
         self.cases.append(Case("rand", data, skip=posdef_solvers+sym_solvers))
+        self.cases.append(Case("rand", data.astype('f'),
+                               skip=posdef_solvers+sym_solvers))
 
         # Random symmetric real-valued
         np.random.seed(1234)
         data = np.random.rand(4, 4)
         data = data + data.T
         self.cases.append(Case("rand-sym", data, skip=posdef_solvers))
+        self.cases.append(Case("rand-sym", data.astype('f'),
+                               skip=posdef_solvers))
 
         # Random pos-def symmetric real
         np.random.seed(1234)
         data = np.random.rand(9, 9)
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-sym-pd", data))
+        # note: minres fails for single precision
+        self.cases.append(Case("rand-sym-pd", data.astype('f'),
+                               skip=[minres]))
 
         # Random complex-valued
         np.random.seed(1234)
         data = np.random.rand(4, 4) + 1j*np.random.rand(4, 4)
         self.cases.append(Case("rand-cmplx", data,
+                               skip=posdef_solvers+sym_solvers+real_solvers))
+        self.cases.append(Case("rand-cmplx", data.astype('F'),
                                skip=posdef_solvers+sym_solvers+real_solvers))
 
         # Random hermitian complex-valued
@@ -95,12 +112,16 @@ class IterativeParams(object):
         data = data + data.T.conj()
         self.cases.append(Case("rand-cmplx-herm", data,
                                skip=posdef_solvers+real_solvers))
+        self.cases.append(Case("rand-cmplx-herm", data.astype('F'),
+                               skip=posdef_solvers+real_solvers))
 
         # Random pos-def hermitian complex-valued
         np.random.seed(1234)
         data = np.random.rand(9, 9) + 1j*np.random.rand(9, 9)
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-cmplx-sym-pd", data, skip=real_solvers))
+        self.cases.append(Case("rand-cmplx-sym-pd", data.astype('F'),
+                               skip=real_solvers))
 
         # Non-symmetric and Positive Definite
         #
@@ -111,6 +132,8 @@ class IterativeParams(object):
         data[1,:] = -1
         A = spdiags(data, [0,-1], 10, 10, format='csr')
         self.cases.append(Case("nonsymposdef", A,
+                               skip=sym_solvers+[cgs, qmr, bicg]))
+        self.cases.append(Case("nonsymposdef", A.astype('F'),
                                skip=sym_solvers+[cgs, qmr, bicg]))
 
 
@@ -153,11 +176,14 @@ def assert_normclose(a, b, tol=1e-8):
 
 
 def check_convergence(solver, case):
-    tol = 1e-8
-
     A = case.A
 
-    b = arange(A.shape[0], dtype=float)
+    if A.dtype.char in "dD":
+        tol = 1e-8
+    else:
+        tol = 1e-2
+
+    b = arange(A.shape[0], dtype=A.dtype)
     x0 = 0*b
 
     x, info = solver(A, b, x0=x0, tol=tol)
