@@ -1486,13 +1486,31 @@ class _TestSlicing:
 
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
-                x = A[a,b]
-                y = B[a,b]
-
-                if b == np.array(-1) and isinstance(b, np.ndarray):
-                    # Bug in np.matrix
-                    # https://github.com/numpy/numpy/issues/3110
-                    y = B[a,-1]
+                # if, bad case.
+                # Note that this bug was causing np.array(-1) to change
+                # values, so checking b == -1 was not enough.
+                # Bug in np.matrix
+                # https://github.com/numpy/numpy/issues/3110
+                msg = "Indexing with np.array(-1) is problematic."
+                if isinstance(b, np.ndarray):
+                    if b != -1:
+                        x = A[a, -1]
+                        y = B[a, -1]
+                        yield dec.skipif(
+                                True, msg)(
+                                assert_array_equal)(
+                                x.todense(), y)
+                elif isinstance(a, np.ndarray):
+                    if a != -1:
+                        x = A[-1, b]
+                        y = B[-1, b]
+                        yield dec.skipif(True, msg)(
+                                         assert_array_equal)(
+                                         x.todense(), y)
+                # else, good case
+                else:
+                    x = A[a, b]
+                    y = B[a, b]
 
                 if y.shape == ():
                     assert_equal(x, y, repr((a, b)))
