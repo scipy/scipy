@@ -1284,7 +1284,7 @@ class _TestGetSet:
                 assert_equal(A[i,j], D[i,j])
 
         for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
-            assert_raises(IndexError, A.__getitem__, ij)
+            assert_raises((IndexError, TypeError), A.__getitem__, ij)
 
     def test_setelement(self):
         A = self.spmatrix((3,4))
