@@ -2331,7 +2331,7 @@ beta = beta_gen(a=0.0, b=1.0, name='beta', shapes='a, b')
 
 
 class betaprime_gen(rv_continuous):
-    """A beta prima continuous random variable.
+    """A beta prime continuous random variable.
 
     %(before_notes)s
 
@@ -2339,10 +2339,10 @@ class betaprime_gen(rv_continuous):
     -----
     The probability density function for `betaprime` is::
 
-        betaprime.pdf(x, a, b) =
-            gamma(a+b) / (gamma(a)*gamma(b)) * x**(a-1) * (1-x)**(-a-b)
+        betaprime.pdf(x, a, b) = x**(a-1) * (1+x)**(-a-b) / beta(a, b)
 
-    for ``x > 0``, ``a > 0``, ``b > 0``.
+    for ``x > 0``, ``a > 0``, ``b > 0``, where ``beta(a, b)`` is the beta
+    function (see `scipy.special.beta`).
 
     %(example)s
 
