@@ -15,6 +15,7 @@ from scipy.linalg.matfuncs import funm
 from scipy.linalg import svdvals, solve_triangular
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import onenormest
+import scipy.special
 
 
 __all__ = ['logm', 'fractional_matrix_power']
@@ -28,18 +29,13 @@ class FractionalMatrixPowerError(np.linalg.LinAlgError):
     pass
 
 
-def _hacked_leggauss(m):
-    # remove this if/when it is fixed in numpy
-    if m == 1:
-        nodes = np.array([0], dtype=float)
-        weights = np.array([2], dtype=float)
-    else:
-        nodes, weights = np.polynomial.legendre.leggauss(m)
-    return nodes, weights
-
-
 def _has_complex_dtype_char(A):
     return A.dtype.char in ('F', 'D', 'G')
+
+
+def _count_nonzero(x):
+    """np.count_nonzero not available in numpy 1.5.x"""
+    return np.sum(x != 0)
 
 
 #TODO renovate or move this class when scipy operators are more mature
@@ -652,7 +648,7 @@ def _remainder_matrix_power(A, t):
     # Zeros on the diagonal of the triangular matrix are forbidden,
     # because the inverse scaling and squaring cannot deal with it.
     T_diag = np.diag(T)
-    if np.count_nonzero(T_diag) != n:
+    if _count_nonzero(T_diag) != n:
         raise FractionalMatrixPowerError(
                 'cannot use inverse scaling and squaring to find '
                 'the fractional matrix power of a singular matrix')
@@ -806,7 +802,8 @@ def _logm_triu(T):
     # corresponding to degree-m Gauss-Legendre quadrature.
     # These quadrature arrays need to be transformed from the [-1, 1] interval
     # to the [0, 1] interval.
-    nodes, weights = _hacked_leggauss(m)
+    nodes, weights = scipy.special.p_roots(m)
+    nodes = nodes.real
     if nodes.shape != (m,) or weights.shape != (m,):
         raise Exception('internal error')
     nodes = 0.5 + 0.5 * nodes
@@ -884,7 +881,7 @@ def logm(A):
     try:
         if np.array_equal(A, np.triu(A)):
             A_diag = np.diag(A)
-            if np.count_nonzero(A_diag) != n:
+            if _count_nonzero(A_diag) != n:
                 raise LogmError('cannot find logm of a singular matrix')
             if np.min(A_diag) < 0:
                 A = A.astype(complex)
@@ -896,7 +893,7 @@ def logm(A):
                     T, Z = rsf2csf(T,Z)
             else:
                 T, Z = schur(A, output='complex')
-            if np.count_nonzero(np.diag(T)) != n:
+            if _count_nonzero(np.diag(T)) != n:
                 raise LogmError('cannot find logm of a singular matrix')
             U = _logm_triu(T)
             U, Z = all_mat(U, Z)

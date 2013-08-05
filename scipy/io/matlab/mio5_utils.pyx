@@ -293,7 +293,6 @@ cdef class VarReader5:
             mdtype_sde = mdtype & 0xffff
             if byte_count_sde > 4:
                 raise ValueError('Error in SDE format data')
-                return -1
             u4_ptr[0] = u4s[1]
             mdtype_ptr[0] = mdtype_sde
             byte_count_ptr[0] = byte_count_sde
@@ -472,7 +471,6 @@ cdef class VarReader5:
         self.read_element_into(&mdtype, &byte_count, <void *>int32p)
         if mdtype != miINT32:
             raise TypeError('Expecting miINT32 as data type')
-            return -1
         cdef int n_ints = byte_count // 4
         if self.is_swapped:
             for i in range(n_ints):

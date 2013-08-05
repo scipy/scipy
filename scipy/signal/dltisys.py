@@ -178,7 +178,7 @@ def dimpulse(system, x0=None, t=None, n=None):
     # If time is not specified, use the number of samples
     # and system dt
     if t is None:
-        t = np.arange(0, n * dt, dt)
+        t = np.linspace(0, n * dt, n, endpoint=False)
 
     # For each input, implement a step change
     yout = None
@@ -253,7 +253,7 @@ def dstep(system, x0=None, t=None, n=None):
     # If time is not specified, use the number of samples
     # and system dt
     if t is None:
-        t = np.arange(0, n * dt, dt)
+        t = np.linspace(0, n * dt, n, endpoint=False)
 
     # For each input, implement a step change
     yout = None

@@ -254,6 +254,15 @@ class TestDLTI(TestCase):
         assert_allclose(yi[0][:, 0], y0)
         assert_allclose(yi[1][:, 0], y1)
 
+        # Check that dt=0.1, n=3 gives 3 time values.
+        system = ([1.0], [1.0, -0.5], 0.1)
+        t, (y,) = dstep(system, n=3)
+        assert_allclose(t, [0, 0.1, 0.2])
+        assert_array_equal(y.T, [[0, 1.0, 1.5]])
+        t, (y,) = dimpulse(system, n=3)
+        assert_allclose(t, [0, 0.1, 0.2])
+        assert_array_equal(y.T, [[0, 1, 0.5]])
+
 
 if __name__ == "__main__":
     run_module_suite()
