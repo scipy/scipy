@@ -23,12 +23,12 @@ def polar(a, side="right"):
     a : (m, n) array_like
         The array to be factored.
     side : string, optional
-         Determines whether a right or left polar decomposition is computed.
-         If `side` is "right", then ``a = up``.  If `side` is "left",  then
+        Determines whether a right or left polar decomposition is computed.
+        If `side` is "right", then ``a = up``.  If `side` is "left",  then
         ``a = pu``.  The default is "right".
 
-    Return Value
-    ------------
+    Returns
+    -------
     u : (m, n) ndarray
         If `a` is square, then `u` is unitary.  If m > n, then the columns
         of `a` are orthonormal, and if m < n, then the rows of `u` are
