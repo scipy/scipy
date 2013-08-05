@@ -27,7 +27,7 @@ s@\bclanhs\b@wclanhs@g;
 s@\bSLAMCH\b@wslamch@g;
 s@\bslamch\b@wslamch@g;
 s@\bslanst\b@wslanst@g;' \
-SRC/*.f UTIL/*.f
+SRC/*.f UTIL/*.f LAPACK/*.f
 
 (ii) Using a UTIL/second_cputime.f which calls the Fortran intrinsic
 CPU_TIME function instead of ETIME.
