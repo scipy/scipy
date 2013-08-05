@@ -166,7 +166,10 @@ def configure_sys_argv(compiler_name):
     # We're gonna play some tricks with argv here to pass info to distutils
     # which is really built for command line use. better way??
     global old_argv
-    old_argv = sys.argv[:]
+    try:
+        old_argv = sys.argv[:]
+    except AttributeError:
+        pass
     sys.argv = ['','build_ext','--compiler='+compiler_name]
 
 
