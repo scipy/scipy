@@ -760,6 +760,16 @@ c
      &                ldq   , workl(iw+ncv), workl(ihb),
      &                ncv   , temp         , ierr)
 c
+c        %-----------------------------------------------------%
+c        | Make a copy of the last row into                    |
+c        | workl(iw+ncv:iw+2*ncv), as it is needed again in    |
+c        | the Ritz vector purification step below             |
+c        %-----------------------------------------------------%
+c
+         do 67 j = 1, nconv
+            workl(iw+ncv+j-1) = workl(ihb+j-1)
+ 67      continue
+
       else if (rvec .and. howmny .eq. 'S') then
 c
 c     Not yet implemented. See remark 2 above.
@@ -830,14 +840,14 @@ c
       if (rvec .and. (type .eq. 'SHIFTI' .or. type .eq. 'CAYLEY')) then
 c
          do 110 k=0, nconv-1
-            workl(iw+k) = workl(iq+k*ldq+ncv-1)
+            workl(iw+k) = workl(iw+ncv+k)
      &                  / workl(iw+k)
  110     continue
 c
       else if (rvec .and. type .eq. 'BUCKLE') then
 c
          do 120 k=0, nconv-1
-            workl(iw+k) = workl(iq+k*ldq+ncv-1)
+            workl(iw+k) = workl(iw+ncv+k)
      &                  / (workl(iw+k)-one)
  120     continue
 c
