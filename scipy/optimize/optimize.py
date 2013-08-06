@@ -82,8 +82,10 @@ class Result(dict):
         underlying solver. Refer to `message` for details.
     message : str
         Description of the cause of the termination.
-    fun, jac, hess : ndarray
-        Values of objective function, Jacobian and Hessian (if available).
+    fun, jac, hess, hess_inv : ndarray
+        Values of objective function, Jacobian, Hessian or its inverse (if
+        available). The Hessians may be approximations, see the documentation
+        of the function in question.
     nfev, njev, nhev : int
         Number of evaluations of the objective functions and of its
         Jacobian and Hessian.
@@ -775,7 +777,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
-        retlist = (res['x'], res['fun'], res['jac'], res['hess'],
+        retlist = (res['x'], res['fun'], res['jac'], res['hess_inv'],
                    res['nfev'], res['njev'], res['status'])
         if retall:
             retlist += (res['allvecs'], )
@@ -917,7 +919,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             print("         Function evaluations: %d" % func_calls[0])
             print("         Gradient evaluations: %d" % grad_calls[0])
 
-    result = Result(fun=fval, jac=gfk, hess=Hk, nfev=func_calls[0],
+    result = Result(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
                     njev=grad_calls[0], status=warnflag,
                     success=(warnflag == 0), message=msg, x=xk)
     if retall:

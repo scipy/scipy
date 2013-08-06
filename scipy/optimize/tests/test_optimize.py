@@ -102,7 +102,7 @@ class TestOptimize(object):
                                     options=opts)
 
             params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag = \
-                    res['x'], res['fun'], res['jac'], res['hess'], \
+                    res['x'], res['fun'], res['jac'], res['hess_inv'], \
                     res['nfev'], res['njev'], res['status']
         else:
             retval = optimize.fmin_bfgs(self.func, self.startparams, self.grad,
