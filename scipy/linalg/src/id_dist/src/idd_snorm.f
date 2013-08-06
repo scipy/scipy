@@ -120,9 +120,13 @@ c         Normalize v.
 c
           call idd_enorm(n,v,snorm)
 c
-          do k = 1,n
-            v(k) = v(k)/snorm
-          enddo ! k
+          if(snorm .gt. 0) then
+c
+            do k = 1,n
+              v(k) = v(k)/snorm
+            enddo ! k
+c
+          endif
 c
           snorm = sqrt(snorm)
 c
@@ -379,9 +383,13 @@ c         Normalize v.
 c
           call idd_enorm(n,v,snorm)
 c
-          do k = 1,n
-            v(k) = v(k)/snorm
-          enddo ! k
+          if(snorm .gt. 0) then
+c
+            do k = 1,n
+              v(k) = v(k)/snorm
+            enddo ! k
+c
+          endif
 c
           snorm = sqrt(snorm)
 c

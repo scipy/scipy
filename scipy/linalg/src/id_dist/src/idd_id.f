@@ -117,9 +117,13 @@ c
 c
 c       Fill rnorms for the output.
 c
-        do k = 1,krank
-          rnorms(k) = a(k,k)
-        enddo ! k
+        if(krank .gt. 0) then
+c
+          do k = 1,krank
+            rnorms(k) = a(k,k)
+          enddo ! k
+c
+        endif
 c
 c
 c       Backsolve for proj, storing it at the beginning of a.
@@ -186,8 +190,8 @@ c            low-rank matrices," SIAM Journal on Scientific Computing,
 c            26 (4): 1389-1404, 2005.
 c
         implicit none
-        integer m,n,krank,k,list(n),iswap
-        real*8 a(m,n),rnorms(n)
+        integer m,n,krank,j,k,list(n),iswap
+        real*8 a(m,n),rnorms(n),ss
 c
 c
 c       QR decompose a.
@@ -225,15 +229,30 @@ c
 c
 c       Fill rnorms for the output.
 c
+        ss = 0
+c
         do k = 1,krank
           rnorms(k) = a(k,k)
+          ss = ss+rnorms(k)**2
         enddo ! k
 c
 c
 c       Backsolve for proj, storing it at the beginning of a.
 c
-        if(krank .gt. 0) then
+        if(krank .gt. 0 .and. ss .gt. 0) then
           call idd_lssolve(m,n,a,krank)
+        endif
+c
+        if(ss .eq. 0) then
+c
+          do k = 1,n
+            do j = 1,m
+c
+              a(j,k) = 0
+c
+            enddo ! j
+          enddo ! k
+c
         endif
 c
 c
