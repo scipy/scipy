@@ -84,7 +84,8 @@ class Result(dict):
         Description of the cause of the termination.
     fun, jac, hess, hess_inv : ndarray
         Values of objective function, Jacobian, Hessian or its inverse (if
-        available).
+        available). The Hessians may be approximations, see the documentation
+        of the function in question.
     nfev, njev, nhev : int
         Number of evaluations of the objective functions and of its
         Jacobian and Hessian.
