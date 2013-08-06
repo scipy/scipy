@@ -308,8 +308,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     accept_test : callable, ``accept_test(f_new=f_new, x_new=x_new, f_old=fold, x_old=x_old)``, optional
         Define a test which will be used to judge whether or not to accept the
         step.  This will be used in addition to the Metropolis test based on
-        "temperature" ``T``.  The acceptable return values are ``True``,
-        ``False``, or ``"force accept"``.  If the latter, then this will
+        "temperature" ``T``.  The acceptable return values are True,
+        False, or ``"force accept"``.  If the latter, then this will
         override any other tests in order to accept the step.  This can be
         used, for example, to forcefully escape from a local minimum that
         ``basinhopping`` is trapped in.
@@ -319,11 +319,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         and ``accept`` is whether or not that minima was accepted.  This can be
         used, for example, to save the lowest N minima found.  Also,
         ``callback`` can be used to specify a user defined stop criterion by
-        optionally returning ``True`` to stop the ``basinhopping`` routine.
+        optionally returning True to stop the ``basinhopping`` routine.
     interval : integer, optional
         interval for how often to update the ``stepsize``
     disp : bool, optional
-        Set to ``True`` to print status messages
+        Set to True to print status messages
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.

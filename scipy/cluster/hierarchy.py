@@ -850,7 +850,7 @@ def to_tree(Z, rd=False):
         function documentation).
 
     rd : bool, optional
-        When ``False``, a reference to the root ClusterNode object is
+        When False, a reference to the root ClusterNode object is
         returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
         reference to the root node while ``d`` is a dictionary
         mapping cluster ids to ClusterNode references. If a cluster id is
@@ -1126,7 +1126,7 @@ def to_mlab_linkage(Z):
 
 def is_monotonic(Z):
     """
-    Returns ``True`` if the linkage passed is monotonic.
+    Returns True if the linkage passed is monotonic.
 
     The linkage is monotonic if for every cluster :math:`s` and :math:`t`
     joined, the distance between them is no less than the distance
@@ -1162,10 +1162,10 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     R : ndarray
         The inconsistency matrix to check for validity.
     warning : bool, optional
-         When ``True``, issues a Python warning if the linkage
+         When True, issues a Python warning if the linkage
          matrix passed is invalid.
     throw : bool, optional
-         When ``True``, throws a Python exception if the linkage
+         When True, throws a Python exception if the linkage
          matrix passed is invalid.
     name : str, optional
          This string refers to the variable name of the invalid
@@ -1263,10 +1263,10 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     Z : array_like
         Linkage matrix.
     warning : bool, optional
-        When ``True``, issues a Python warning if the linkage
+        When True, issues a Python warning if the linkage
         matrix passed is invalid.
     throw : bool, optional
-        When ``True``, throws a Python exception if the linkage
+        When True, throws a Python exception if the linkage
         matrix passed is invalid.
     name : str, optional
            This string refers to the variable name of the invalid
@@ -1927,7 +1927,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         the cut threshold :math:`t`. All links connecting nodes with
         distances greater than or equal to the threshold are colored
         blue. If :math:`t` is less than or equal to zero, all nodes
-        are colored blue. If ``color_threshold`` is ``None`` or
+        are colored blue. If ``color_threshold`` is None or
         'default', corresponding with MATLAB(TM) behavior, the
         threshold is set to ``0.7*max(Z[:,2])``.
     get_leaves : bool, optional
@@ -1952,7 +1952,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
           links going left.
 
     labels : ndarray, optional
-        By default ``labels`` is ``None`` so the index of the
+        By default ``labels`` is None so the index of the
         original observation is used to label the leaf nodes.
         Otherwise, this is an :math:`n` -sized list (or tuple). The
         ``labels[i]`` value is the text to put under the :math:`i` th
@@ -1972,7 +1972,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
           original objects in its cluster is plotted first.
 
         Note ``distance_sort`` and ``count_sort`` cannot both be
-        ``True``.
+        True.
     distance_sort : str or bool, optional
         For each node n, the order (visually, from left-to-right) n's
         two descendent links are plotted is determined by this
@@ -1987,17 +1987,17 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
           between its direct descendents is plotted first.
 
         Note ``distance_sort`` and ``count_sort`` cannot both be
-        ``True``.
+        True.
     show_leaf_counts : bool, optional
-         When ``True``, leaf nodes representing :math:`k>1` original
+         When True, leaf nodes representing :math:`k>1` original
          observation are labeled with the number of observations they
          contain in parentheses.
     no_plot : bool, optional
-        When ``True``, the final rendering is not performed. This is
+        When True, the final rendering is not performed. This is
         useful if only the data structures computed for the rendering
         are needed or if matplotlib is not available.
     no_labels : bool, optional
-        When ``True``, no labels appear next to the leaf nodes in the
+        When True, no labels appear next to the leaf nodes in the
         rendering of the dendrogram.
     leaf_label_rotation : double, optional
         Specifies the angle (in degrees) to rotate the leaf
@@ -2033,7 +2033,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         >>>  dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
 
     show_contracted : bool
-        When ``True`` the heights of non-singleton nodes contracted
+        When True the heights of non-singleton nodes contracted
         into a leaf node are plotted as crosses along the link
         connecting that leaf node.  This really is only useful when
         truncation is used (see ``truncate_mode`` parameter).
