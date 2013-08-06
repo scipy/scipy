@@ -159,7 +159,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     Method *BFGS* uses the quasi-Newton method of Broyden, Fletcher,
     Goldfarb, and Shanno (BFGS) [5]_ pp. 136. It uses the first derivatives
     only. BFGS has proven good performance even for non-smooth
-    optimizations
+    optimizations. This method also returns an approximation of the Hessian
+    inverse, stored as `hess_inv` in the Result object.
 
     Method *Newton-CG* uses a Newton-CG algorithm [5]_ pp. 168 (also known
     as the truncated Newton method). It uses a CG method to the compute the
