@@ -10,6 +10,7 @@ from warnings import warn
 import numpy as np
 from scipy.lib.six.moves import xrange
 
+from .base import isspmatrix
 from .sparsetools import csc_tocsr
 from .sputils import upcast, isintlike, IndexMixin
 
@@ -147,12 +148,33 @@ class csc_matrix(_cs_matrix, IndexMixin):
                 isinstance(col,slice)):
                 return self.T[col,row].T
             else:
-                return self.T[col,row]
+                return self.T[col, row]
         elif isinstance(key, np.ndarray) and key.dtype.kind == 'b':
             row, col = self._check_boolean(key, slice(None))
             return self[row, col]
+        elif isspmatrix(key) and key.dtype.kind == 'b':
+            row, col = self._check_boolean(key, slice(None))
+            row, col = self._bl_to_tl_sort(row, col)
+
+            return self.T[col, row]
         else:
             return self.T[:,key].T                              # [i] or [1:2]
+
+    def _bl_to_tl_sort(self, row, col):
+        """ Sort indices so they are returned properly when the matrix is
+        transposed. From bottom left to top right.
+        """
+        rc_pairs = [(r, c) for r, c in zip(row.tolist(), col.tolist())]
+        rc_pairs = sorted(rc_pairs, key=lambda i: i[1])
+        rc_pairs = sorted(rc_pairs, key=lambda i: i[0])
+
+        row = []
+        col = []
+        for r, c in rc_pairs:
+            row.append(r)
+            col.append(c)
+
+        return row, col
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
