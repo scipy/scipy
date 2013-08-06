@@ -1,4 +1,4 @@
-Multi-dimensional image processing (`scipy.ndimage`)
+Multidimensional image processing (`scipy.ndimage`)
 ====================================================
 
 .. moduleauthor:: Peter Verveer <verveer@users.sourceforge.net>
@@ -15,7 +15,7 @@ two-dimensional arrays of values. There are however a number of
 fields where images of higher dimensionality must be analyzed. Good
 examples of these are medical imaging and biological imaging.
 :mod:`numpy` is suited very well for this type of applications due
-its inherent multi-dimensional nature. The :mod:`scipy.ndimage`
+its inherent multidimensional nature. The :mod:`scipy.ndimage`
 packages provides a number of general image processing and analysis
 functions that are designed to operate with arrays of arbitrary
 dimensionality. The packages currently includes functions for
@@ -119,7 +119,7 @@ We could also have calculated the forward difference as follows:
     array([ 0  1  0  0 -1  0  0])
 
 However, using the origin parameter instead of a larger kernel is
-more efficient. For multi-dimensional kernels *origin* can be a
+more efficient. For multidimensional kernels *origin* can be a
 number, in which case the origin is assumed to be equal along all
 axes, or a sequence giving the origin along each axis.
 
@@ -154,7 +154,7 @@ Correlation and convolution
     must be a one-dimensional sequences of numbers.
 
 
-    The function :func:`correlate` implements multi-dimensional correlation
+    The function :func:`correlate` implements multidimensional correlation
     of the input array with a given kernel.
 
 
@@ -165,7 +165,7 @@ Correlation and convolution
 
     .. note:: A convolution is essentially a correlation after mirroring the kernel. As a result, the *origin* parameter behaves differently than in the case of a correlation: the result is shifted in the opposite directions.
 
-    The function :func:`convolve` implements multi-dimensional convolution of
+    The function :func:`convolve` implements multidimensional convolution of
     the input array with a given kernel.
 
     .. note:: A convolution is essentially a correlation after mirroring the kernel. As a result, the *origin* parameter behaves differently than in the case of a correlation: the results is shifted in the opposite direction.
@@ -185,7 +185,7 @@ Smoothing filters
     implemented.
 
 
-    The :func:`gaussian_filter` function implements a multi-dimensional
+    The :func:`gaussian_filter` function implements a multidimensional
     Gaussian filter. The standard-deviations of the Gaussian filter
     along each axis are passed through the parameter *sigma* as a
     sequence or numbers. If *sigma* is not a sequence but a single
@@ -198,20 +198,20 @@ Smoothing filters
     number, to specify the same order for all axes, or a sequence of
     numbers to specify a different order for each axis.
 
-    .. note:: The multi-dimensional filter is implemented as a sequence of one-dimensional Gaussian filters. The intermediate arrays are stored in  the same data type as the output.  Therefore, for output types with a lower precision, the results may be imprecise because intermediate results may be stored with insufficient precision. This can be prevented by specifying a more precise output type.
+    .. note:: The multidimensional filter is implemented as a sequence of one-dimensional Gaussian filters. The intermediate arrays are stored in  the same data type as the output.  Therefore, for output types with a lower precision, the results may be imprecise because intermediate results may be stored with insufficient precision. This can be prevented by specifying a more precise output type.
 
 
     The :func:`uniform_filter1d` function calculates a one-dimensional
     uniform filter of the given *size* along the given axis.
 
 
-    The :func:`uniform_filter` implements a multi-dimensional uniform
+    The :func:`uniform_filter` implements a multidimensional uniform
     filter. The sizes of the uniform filter are given for each axis as
     a sequence of integers by the *size* parameter. If *size* is not a
     sequence, but a single number, the sizes along all axis are assumed
     to be equal.
 
-    .. note:: The multi-dimensional filter is implemented as a sequence of one-dimensional uniform filters. The intermediate arrays are stored in the same data type as the output. Therefore, for output types with a lower precision, the results may be imprecise because intermediate results may be stored with insufficient precision. This can be prevented by specifying a more precise output type.
+    .. note:: The multidimensional filter is implemented as a sequence of one-dimensional uniform filters. The intermediate arrays are stored in the same data type as the output. Therefore, for output types with a lower precision, the results may be imprecise because intermediate results may be stored with insufficient precision. This can be prevented by specifying a more precise output type.
 
 
 Filters based on order statistics
@@ -225,7 +225,7 @@ Filters based on order statistics
     maximum filter of given *size* along the given axis.
 
 
-    The :func:`minimum_filter` function calculates a multi-dimensional
+    The :func:`minimum_filter` function calculates a multidimensional
     minimum filter. Either the sizes of a rectangular kernel or the
     footprint of the kernel must be provided. The *size* parameter, if
     provided, must be a sequence of sizes or a single number in which
@@ -234,7 +234,7 @@ Filters based on order statistics
     shape of the kernel by its non-zero elements.
 
 
-    The :func:`maximum_filter` function calculates a multi-dimensional
+    The :func:`maximum_filter` function calculates a multidimensional
     maximum filter. Either the sizes of a rectangular kernel or the
     footprint of the kernel must be provided. The *size* parameter, if
     provided, must be a sequence of sizes or a single number in which
@@ -243,7 +243,7 @@ Filters based on order statistics
     shape of the kernel by its non-zero elements.
 
 
-    The :func:`rank_filter` function calculates a multi-dimensional rank
+    The :func:`rank_filter` function calculates a multidimensional rank
     filter. The *rank* may be less then zero, i.e., *rank* = -1 indicates
     the largest element. Either the sizes of a rectangular kernel or
     the footprint of the kernel must be provided. The *size* parameter,
@@ -253,7 +253,7 @@ Filters based on order statistics
     the shape of the kernel by its non-zero elements.
 
 
-    The :func:`percentile_filter` function calculates a multi-dimensional
+    The :func:`percentile_filter` function calculates a multidimensional
     percentile filter. The *percentile* may be less then zero, i.e.,
     *percentile* = -20 equals *percentile* = 80. Either the sizes of a
     rectangular kernel or the footprint of the kernel must be provided.
@@ -264,7 +264,7 @@ Filters based on order statistics
     elements.
 
 
-    The :func:`median_filter` function calculates a multi-dimensional median
+    The :func:`median_filter` function calculates a multidimensional median
     filter. Either the sizes of a rectangular kernel or the footprint
     of the kernel must be provided. The *size* parameter, if provided,
     must be a sequence of sizes or a single number in which case the
@@ -277,7 +277,7 @@ Derivatives
 ^^^^^^^^^^^
 
 Derivative filters can be constructed in several ways. The function
-:func:`gaussian_filter1d` described in  
+:func:`gaussian_filter1d` described in
 :ref:`ndimage-filter-functions-smoothing` can be used to calculate
 derivatives along a given axis using the *order* parameter. Other
 derivative filters are the Prewitt and Sobel filters:
@@ -303,7 +303,7 @@ construct the Laplace filter:
     signature::
 
          derivative2(input, axis, output, mode, cval, *extra_arguments, **extra_keywords)
-         
+
     It should calculate the second derivative along the dimension
     *axis*. If *output* is not None it should use that for the output
     and return None, otherwise it should return the result. *mode*,
@@ -317,7 +317,7 @@ construct the Laplace filter:
 
         >>> def d2(input, axis, output, mode, cval):
         ...     return correlate1d(input, [1, -2, 1], axis, output, mode, cval, 0)
-        ... 
+        ...
         >>> a = zeros((5, 5))
         >>> a[2, 2] = 1
         >>> generic_laplace(a, d2)
@@ -332,7 +332,7 @@ construct the Laplace filter:
 
         >>> def d2(input, axis, output, mode, cval, weights):
         ...     return correlate1d(input, weights, axis, output, mode, cval, 0,)
-        ... 
+        ...
         >>> a = zeros((5, 5))
         >>> a[2, 2] = 1
         >>> generic_laplace(a, d2, extra_arguments = ([1, -2, 1],))
@@ -380,8 +380,8 @@ function that calculated the gradient magnitude of an array:
     the following signature::
 
         derivative(input, axis, output, mode, cval, *extra_arguments, **extra_keywords)
-        
-    
+
+
     It should calculate the derivative along the dimension *axis*. If
     *output* is not None it should use that for the output and return
     None, otherwise it should return the result. *mode*, *cval* have
@@ -424,8 +424,8 @@ Gaussian derivatives:
 Generic filter functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-To implement filter functions, generic functions can be used that accept a 
-callable object that implements the filtering operation. The iteration over the 
+To implement filter functions, generic functions can be used that accept a
+callable object that implements the filtering operation. The iteration over the
 input and output arrays is handled by these generic functions, along with such
 details as the implementation of the boundary conditions. Only a
 callable object implementing a callback function that does the
@@ -456,7 +456,7 @@ also be written in C and passed using a :ctype:`PyCObject` (see
 
         >>> def fnc(iline, oline):
         ...     oline[...] = iline[:-2] + 2 * iline[1:-1] + 3 * iline[2:]
-        ... 
+        ...
         >>> generic_filter1d(a, fnc, 3)
         array([[ 3,  8, 14, 17],
                [27, 32, 38, 41],
@@ -475,7 +475,7 @@ also be written in C and passed using a :ctype:`PyCObject` (see
 
         >>> def fnc(iline, oline, a, b):
         ...     oline[...] = iline[:-2] + a * iline[1:-1] + b * iline[2:]
-        ... 
+        ...
         >>> generic_filter1d(a, fnc, 3, extra_arguments = (2, 3))
         array([[ 3,  8, 14, 17],
                [27, 32, 38, 41],
@@ -507,9 +507,9 @@ also be written in C and passed using a :ctype:`PyCObject` (see
     The same operation can be implemented using *generic_filter* as
     follows::
 
-        >>> def fnc(buffer): 
+        >>> def fnc(buffer):
         ...     return (buffer * array([1, 3])).sum()
-        ... 
+        ...
         >>> generic_filter(a, fnc, footprint = [[1, 0], [0, 1]])
         array([[ 0  3  7 11],
                [12 15 19 23],
@@ -533,10 +533,10 @@ also be written in C and passed using a :ctype:`PyCObject` (see
     of named arguments that are passed to derivative at each call. For
     example, we can pass the parameters of our filter as an argument::
 
-        >>> def fnc(buffer, weights): 
+        >>> def fnc(buffer, weights):
         ...     weights = asarray(weights)
         ...     return (buffer * weights).sum()
-        ... 
+        ...
         >>> generic_filter(a, fnc, footprint = [[1, 0], [0, 1]], extra_arguments = ([1, 3],))
         array([[ 0,  3,  7, 11],
                [12, 15, 19, 23],
@@ -562,14 +562,14 @@ additionally prints the current coordinates:
 ::
 
     >>> a = arange(12).reshape(3,4)
-    >>> 
+    >>>
     >>> class fnc_class:
     ...     def __init__(self, shape):
     ...         # store the shape:
     ...         self.shape = shape
     ...         # initialize the coordinates:
     ...         self.coordinates = [0] * len(shape)
-    ...         
+    ...
     ...     def filter(self, buffer):
     ...         result = (buffer * array([1, 3])).sum()
     ...         print self.coordinates
@@ -583,9 +583,9 @@ additionally prints the current coordinates:
     ...             else:
     ...                 self.coordinates[jj] = 0
     ...         return result
-    ... 
+    ...
     >>> fnc = fnc_class(shape = (3,4))
-    >>> generic_filter(a, fnc.filter, footprint = [[1, 0], [0, 1]]) 
+    >>> generic_filter(a, fnc.filter, footprint = [[1, 0], [0, 1]])
     [0, 0]
     [0, 1]
     [0, 2]
@@ -610,7 +610,7 @@ this:
 ::
 
     >>> a = arange(12).reshape(3,4)
-    >>> 
+    >>>
     >>> class fnc1d_class:
     ...     def __init__(self, shape, axis = -1):
     ...         # store the filter axis:
@@ -619,7 +619,7 @@ this:
     ...         self.shape = shape
     ...         # initialize the coordinates:
     ...         self.coordinates = [0] * len(shape)
-    ...         
+    ...
     ...     def filter(self, iline, oline):
     ...         oline[...] = iline[:-2] + 2 * iline[1:-1] + 3 * iline[2:]
     ...         print self.coordinates
@@ -634,7 +634,7 @@ this:
     ...                 break
     ...             else:
     ...                 self.coordinates[jj] = 0
-    ... 
+    ...
     >>> fnc = fnc1d_class(shape = (3,4))
     >>> generic_filter1d(a, fnc.filter, 3)
     [0, 0]
@@ -664,26 +664,26 @@ transform. The parameter *axis* can be used to indicate along which
 axis the real transform was executed.
 
     The :func:`fourier_shift` function multiplies the input array with the
-    multi-dimensional Fourier transform of a shift operation for the
+    multidimensional Fourier transform of a shift operation for the
     given shift. The *shift* parameter is a sequences of shifts for
     each dimension, or a single value for all dimensions.
 
 
     The :func:`fourier_gaussian` function multiplies the input array with
-    the multi-dimensional Fourier transform of a Gaussian filter with
+    the multidimensional Fourier transform of a Gaussian filter with
     given standard-deviations *sigma*. The *sigma* parameter is a
     sequences of values for each dimension, or a single value for all
     dimensions.
 
 
     The :func:`fourier_uniform` function multiplies the input array with the
-    multi-dimensional Fourier transform of a uniform filter with given
+    multidimensional Fourier transform of a uniform filter with given
     sizes *size*. The *size* parameter is a sequences of values for
     each dimension, or a single value for all dimensions.
 
 
     The :func:`fourier_ellipsoid` function multiplies the input array with
-    the multi-dimensional Fourier transform of a elliptically shaped
+    the multidimensional Fourier transform of a elliptically shaped
     filter with given sizes *size*. The *size* parameter is a sequences
     of values for each dimension, or a single value for all dimensions.
     This function is only implemented for dimensions 1, 2, and 3.
@@ -701,7 +701,7 @@ This section describes various interpolation functions that are
 based on B-spline theory. A good introduction to B-splines can be
 found in: M. Unser, "Splines: A Perfect Fit for Signal and Image
 Processing," IEEE Signal Processing Magazine, vol. 16, no. 6, pp.
-22-38, November 1999. 
+22-38, November 1999.
 
 Spline pre-filters
 ^^^^^^^^^^^^^^^^^^
@@ -724,22 +724,22 @@ pre-filtering:
     than 6.
 
 
-    The :func:`spline_filter` function calculates a multi-dimensional spline
+    The :func:`spline_filter` function calculates a multidimensional spline
     filter.
 
-    .. note:: The multi-dimensional filter is implemented as a sequence of one-dimensional spline filters. The intermediate arrays are stored in the same data type as the output. Therefore, if an output with a limited precision is requested, the results may be imprecise because intermediate results may be stored with insufficient precision. This can be prevented by specifying a output type of high precision.
+    .. note:: The multidimensional filter is implemented as a sequence of one-dimensional spline filters. The intermediate arrays are stored in the same data type as the output. Therefore, if an output with a limited precision is requested, the results may be imprecise because intermediate results may be stored with insufficient precision. This can be prevented by specifying a output type of high precision.
 
 
 Interpolation functions
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Following functions all employ spline interpolation to effect some type of 
-geometric transformation of the input array. This requires a mapping of the 
-output coordinates to the input coordinates, and therefore the possibility 
+Following functions all employ spline interpolation to effect some type of
+geometric transformation of the input array. This requires a mapping of the
+output coordinates to the input coordinates, and therefore the possibility
 arises that input values outside the boundaries are needed. This problem is
-solved in the same way as described in :ref:`ndimage-filter-functions` 
-for the multi-dimensional filter functions. Therefore these functions all 
-support a *mode* parameter that determines how the boundaries are handled, and 
+solved in the same way as described in :ref:`ndimage-filter-functions`
+for the multidimensional filter functions. Therefore these functions all
+support a *mode* parameter that determines how the boundaries are handled, and
 a *cval* parameter that gives a constant value in case that the 'constant'
 mode is used.
 
@@ -758,7 +758,7 @@ mode is used.
         >>> a = arange(12).reshape(4,3).astype(np.float64)
         >>> def shift_func(output_coordinates):
         ...     return (output_coordinates[0] - 0.5, output_coordinates[1] - 0.5)
-        ... 
+        ...
         >>> geometric_transform(a, shift_func)
         array([[ 0.    ,  0.    ,  0.    ],
                [ 0.    ,  1.3625,  2.7375],
@@ -773,7 +773,7 @@ mode is used.
 
         >>> def shift_func(output_coordinates, s0, s1):
         ...     return (output_coordinates[0] - s0, output_coordinates[1] - s1)
-        ... 
+        ...
         >>> geometric_transform(a, shift_func, extra_arguments = (0.5, 0.5))
         array([[ 0.    ,  0.    ,  0.    ],
                [ 0.    ,  1.3625,  2.7375],
@@ -989,7 +989,7 @@ for convenience:
     The :func:`binary_fill_holes` function is used to close holes in
     objects in a binary image, where the structure defines the
     connectivity of the holes. The origin parameter controls the
-    placement of the structuring element as described in 
+    placement of the structuring element as described in
     :ref:`ndimage-filter-functions`. If no structuring element is
     provided, an element with connectivity equal to one is generated
     using :func:`generate_binary_structure`.
@@ -1021,7 +1021,7 @@ Grey-scale morphology operations are the equivalents of binary
 morphology operations that operate on arrays with arbitrary values.
 Below we describe the grey-scale equivalents of erosion, dilation,
 opening and closing. These operations are implemented in a similar
-fashion as the filters described in 
+fashion as the filters described in
 :ref:`ndimage-filter-functions`, and we refer to this section for the
 description of filter kernels and footprints, and the handling of
 array borders. The grey-scale morphology operations optionally take
@@ -1044,11 +1044,11 @@ elements.
 Similar to binary erosion and dilation there are operations for
 grey-scale erosion and dilation:
 
-    The :func:`grey_erosion` function calculates a multi-dimensional grey-
+    The :func:`grey_erosion` function calculates a multidimensional grey-
     scale erosion.
 
 
-    The :func:`grey_dilation` function calculates a multi-dimensional grey-
+    The :func:`grey_dilation` function calculates a multidimensional grey-
     scale dilation.
 
 
@@ -1235,7 +1235,7 @@ an array where each object is assigned a unique number:
                [0, 0, 0, 0, 1, 0]])
 
     If no structuring element is provided, one is generated by calling
-    :func:`generate_binary_structure` (see 
+    :func:`generate_binary_structure` (see
     :ref:`ndimage-binary-morphology`)
     using a connectivity of one (which in 2D is the 4-connected
     structure of the first example). The input can be of any type, any
@@ -1346,8 +1346,8 @@ containing initial markers for the objects:
     The connectivity of the objects is defined by a structuring
     element. If no structuring element is provided, one is generated by
     calling :func:`generate_binary_structure` (see
-    :ref:`ndimage-binary-morphology`) using a connectivity of one 
-    (which in 2D is a 4-connected structure.) For example, using 
+    :ref:`ndimage-binary-morphology`) using a connectivity of one
+    (which in 2D is a 4-connected structure.) For example, using
     an 8-connected structure with the last example yields a different object::
 
         >>> watershed_ift(input, markers,
@@ -1548,9 +1548,9 @@ Extending :mod:`ndimage` in C
 
 .. highlight:: c
 
-A few functions in the :mod:`scipy.ndimage` take a call-back 
+A few functions in the :mod:`scipy.ndimage` take a call-back
 argument. This can be a python function, but also a :ctype:`PyCObject`
-containing a pointer to a C function. To use this feature, you must 
+containing a pointer to a C function. To use this feature, you must
 write your own C extension that defines the function, and define a Python function that returns a :ctype:`PyCObject` containing a pointer to this function.
 
 An example of a function that supports this is
@@ -1566,7 +1566,7 @@ following function:
 
 ::
 
-    static int 
+    static int
     _shift_function(int *output_coordinates, double* input_coordinates,
                     int output_rank, int input_rank, void *callback_data)
     {
@@ -1638,7 +1638,7 @@ To use these functions, an extension module is built:
       {"shift_function", (PyCFunction)py_shift_function, METH_VARARGS, ""},
       {NULL, NULL, 0, NULL}
     };
-    
+
     void
     initexample(void)
     {
@@ -1721,6 +1721,3 @@ prototype:
     coordinates at which the input must be interpolated in
     *input_coordinates*. The rank of the input and output arrays are
     given by *input_rank* and *output_rank* respectively.
-
-
-

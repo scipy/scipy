@@ -74,17 +74,18 @@ def label(input, structure=None, output=None):
 
     Returns
     -------
-    labeled_array : array_like
-        An array-like object where each unique feature has a unique value
+    label : ndarray or int
+        An integer ndarray where each unique feature in `input` has a unique
+        label in the returned array.
     num_features : int
-        How many objects were found
+        How many objects were found.
 
-    If `output` is None or a data type, this function returns a tuple,
-    (`labeled_array`, `num_features`).
+        If `output` is None, this function returns a tuple of
+        (`labeled_array`, `num_features`).
 
-    If `output` is an array, then it will be updated with values in
-    `labeled_array` and only `num_features` will be returned by this function.
-
+        If `output` is a ndarray, then it will be updated with values in
+        `labeled_array` and only `num_features` will be returned by this
+        function.
 
     See Also
     --------
@@ -94,14 +95,13 @@ def label(input, structure=None, output=None):
 
     Examples
     --------
-
     Create an image with some features, then label it using the default
     (cross-shaped) structuring element:
 
-    >>> a = array([[0,0,1,1,0,0],
-    ...            [0,0,0,1,0,0],
-    ...            [1,1,0,0,1,0],
-    ...            [0,0,0,1,0,0]])
+    >>> a = np.array([[0,0,1,1,0,0],
+    ...               [0,0,0,1,0,0],
+    ...               [1,1,0,0,1,0],
+    ...               [0,0,0,1,0,0]])
     >>> labeled_array, num_features = label(a)
 
     Each of the 4 features are labeled with a different integer:
@@ -282,11 +282,11 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     ----------
     input : array_like
         Data from which to select `labels` to process.
-    labels : array_like, or None
+    labels : array_like or None
         Labels to objects in `input`.
         If not None, array must be same shape as `input`.
         If None, `func` is applied to raveled `input`.
-    index : int, sequence of int, or None
+    index : int, sequence of ints or None
         Subset of `labels` to which to apply `func`.
         If a scalar, a single value is returned.
         If None, `func` is applied to all non-zero values of `labels`.
@@ -294,7 +294,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
         Python function to apply to `labels` from `input`.
     out_dtype : dtype
         Dtype to use for `result`.
-    default : int, float, or None
+    default : int, float or None
         Default return value when a element of `index` does not exist
         in `labels`.
     pass_positions : bool, optional
@@ -549,13 +549,13 @@ def sum(input, labels=None, index=None):
     labels : array_like of ints, optional
         Assign labels to the values of the array. Has to have the same shape as
         `input`.
-    index : scalar or array_like, optional
+    index : array_like, optional
         A single label number or a sequence of label numbers of
         the objects to be measured.
 
     Returns
     -------
-    output : list
+    sum : list
         A list of the sums of the values of `input` inside the regions
         defined by `labels`.
 
@@ -646,7 +646,7 @@ def variance(input, labels=None, index=None):
 
     Returns
     -------
-    vars : float or ndarray
+    variance : float or ndarray
         Values of variance, for each sub-region if `labels` and `index` are
         specified.
 
@@ -698,7 +698,7 @@ def standard_deviation(input, labels=None, index=None):
 
     Returns
     -------
-    std : float or ndarray
+    standard_deviation : float or ndarray
         Values of standard deviation, for each sub-region if `labels` and
         `index` are specified.
 
@@ -863,7 +863,7 @@ def minimum(input, labels=None, index=None):
 
     Returns
     -------
-    output : float or list of floats
+    minimum : float or list of floats
         List of minima of `input` over the regions determined by `labels` and
         whose index is in `index`. If `index` or `labels` are not specified, a
         float is returned: the minimal value of `input` if `labels` is None,
@@ -998,12 +998,12 @@ def median(input, labels=None, index=None):
         over the whole array is returned.
     index : array_like, optional
         A list of region labels that are taken into account for computing the
-        medians. If index is None, the minimum over all elements where `labels`
+        medians. If index is None, the median over all elements where `labels`
         is non-zero is returned.
 
     Returns
     -------
-    output : float or list of floats
+    median : float or list of floats
         List of medians of `input` over the regions determined by `labels` and
         whose index is in `index`. If `index` or `labels` are not specified, a
         float is returned: the median value of `input` if `labels` is None,
@@ -1043,12 +1043,43 @@ def median(input, labels=None, index=None):
 
 
 def minimum_position(input, labels=None, index=None):
-    """Find the positions of the minimums of the values of an array at labels.
+    """
+    Find the positions of the minimums of the values of an array at labels.
 
-    Labels must be None or an array of the same dimensions as the input.
+    Parameters
+    ----------
+    input : array_like
+        Array_like of values.
+    labels : array_like, optional
+        An array of integers marking different regions over which the
+        position of the minimum value of `input` is to be computed.
+        `labels` must have the same shape as `input`. If `labels` is not
+        specified, the location of the first minimum over the whole
+        array is returned.
 
-    Index must be None, a single label or sequence of labels.  If
-    none, all values where label is greater than zero are used.
+        The `labels` argument only works when `index` is specified.
+    index : array_like, optional
+        A list of region labels that are taken into account for finding the
+        location of the minima. If `index` is None, the ``first`` minimum
+        over all elements where `labels` is non-zero is returned.
+
+        The `index` argument only works when `labels` is specified.
+
+    Returns
+    -------
+    output : list of tuples of floats
+        Tuple of floats or list of tuples of floats that specify the location
+        of minima of `input` over the regions determined by `labels` and
+        whose index is in `index`.
+
+        If `index` or `labels` are not specified, a tuple of floats is
+        returned specifying the location of the first minimal value of `input`.
+
+    See also
+    --------
+    label, minimum, median, maximum_position, extrema, sum, mean, variance,
+    standard_deviation
+
     """
     dims = numpy.array(numpy.asarray(input).shape)
     # see numpy.unravel_index to understand this line.
@@ -1063,12 +1094,47 @@ def minimum_position(input, labels=None, index=None):
 
 
 def maximum_position(input, labels=None, index=None):
-    """Find the positions of the maximums of the values of an array at labels.
+    """
+    Find the positions of the maximums of the values of an array at labels.
 
-    Labels must be None or an array of the same dimensions as the input.
+    For each region specified by `labels`, the position of the maximum
+    value of `input` within the region is returned.
 
-    Index must be None, a single label or sequence of labels.  If
-    none, all values where label is greater than zero are used.
+    Parameters
+    ----------
+    input : array_like
+        Array_like of values.
+    labels : array_like, optional
+        An array of integers marking different regions over which the
+        position of the maximum value of `input` is to be computed.
+        `labels` must have the same shape as `input`. If `labels` is not
+        specified, the location of the first maximum over the whole
+        array is returned.
+
+        The `labels` argument only works when `index` is specified.
+    index : array_like, optional
+        A list of region labels that are taken into account for finding the
+        location of the maxima.  If `index` is None, the first maximum
+        over all elements where `labels` is non-zero is returned.
+
+        The `index` argument only works when `labels` is specified.
+
+    Returns
+    -------
+    output : list of tuples of floats
+        List of tuples of floats that specify the location of maxima of
+        `input` over the regions determined by `labels` and whose index
+        is in `index`.
+
+        If `index` or `labels` are not specified, a tuple of floats is
+        returned specifying the location of the ``first`` maximal value
+        of `input`.
+
+    See also
+    --------
+    label, minimum, median, maximum_position, extrema, sum, mean, variance,
+    standard_deviation
+
     """
     dims = numpy.array(numpy.asarray(input).shape)
     # see numpy.unravel_index to understand this line.
@@ -1165,16 +1231,16 @@ def center_of_mass(input, labels=None, index=None):
     input : ndarray
         Data from which to calculate center-of-mass.
     labels : ndarray, optional
-        Labels for objects in `input`, as generated by ndimage.labels.
-        Dimensions must be the same as `input`.
+        Labels for objects in `input`, as generated by `ndimage.label`.
+        Only used with `index`.  Dimensions must be the same as `input`.
     index : int or sequence of ints, optional
         Labels for which to calculate centers-of-mass. If not specified,
-        all labels greater than zero are used.
+        all labels greater than zero are used.  Only used with `labels`.
 
     Returns
     -------
-    centerofmass : tuple, or list of tuples
-        Co-ordinates of centers-of-masses.
+    center_of_mass : tuple, or list of tuples
+        Coordinates of centers-of-mass.
 
     Examples
     --------
@@ -1215,8 +1281,9 @@ def histogram(input, min, max, bins, labels=None, index=None):
     Calculate the histogram of the values of an array, optionally at labels.
 
     Histogram calculates the frequency of values in an array within bins
-    determined by `min`, `max`, and `bins`. `Labels` and `index` can limit
-    the scope of the histogram to specified sub-regions within the array.
+    determined by `min`, `max`, and `bins`. The `labels` and `index`
+    keywords can limit the scope of the histogram to specified sub-regions
+    within the array.
 
     Parameters
     ----------
@@ -1271,14 +1338,29 @@ def histogram(input, min, max, bins, labels=None, index=None):
 
 
 def watershed_ift(input, markers, structure=None, output=None):
-    """Apply watershed from markers using a iterative forest transform
-    algorithm.
+    """
+    Apply watershed from markers using an iterative forest transform algorithm.
 
-    Negative markers are considered background markers which are
-    processed after the other markers. A structuring element defining
-    the connectivity of the object can be provided. If none is
-    provided, an element is generated with a squared connectivity equal
-    to one. An output array can optionally be provided.
+    Parameters
+    ----------
+    input : array_like
+        Input.
+    markers : array_like
+        Markers are points within each watershed that form the beginning
+        of the process.  Negative markers are considered background markers
+        which are processed after the other markers.
+    structure : structure element, optional
+        A structuring element defining the connectivity of the object can be
+        provided. If None, an element is generated with a squared
+        connectivity equal to one.
+    out : ndarray
+        An output array can optionally be provided.  The same shape as input.
+
+    Returns
+    -------
+    watershed_ift : ndarray
+        Output.  Same shape as `input`.
+
     """
     input = numpy.asarray(input)
     if input.dtype.type not in [numpy.uint8, numpy.uint16]:
