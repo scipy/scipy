@@ -182,7 +182,9 @@ class IndexMixin(object):
         return i
 
     def _check_boolean(self, i, j):
-        if isinstance(i, np.ndarray) and i.dtype.kind == 'b':
+        from .base import isspmatrix  # This feels dirty but...
+        if ((isinstance(i, np.ndarray) or isspmatrix(i)) and
+                i.dtype.kind == 'b'):
             i = self._boolean_index_to_array(i)
             if len(i) == 2:
                 if isinstance(j, slice):
