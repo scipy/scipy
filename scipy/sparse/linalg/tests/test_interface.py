@@ -20,6 +20,8 @@ class TestLinearOperator(TestCase):
         self.B = np.array([[1,2],
                            [3,4],
                            [5,6]])
+        self.C = np.array([[1,2],
+                           [3,4]])
 
     def test_matvec(self):
         def get_matvecs(A):
@@ -81,6 +83,7 @@ class TestLinearOperator(TestCase):
             assert_raises(ValueError, A.matvec, np.array([[1],[2],[3],[4]]))
 
             assert_raises(ValueError, A.__mul__, A)
+            assert_raises(ValueError, A.__pow__, 2)
 
         for matvecsA, matvecsB in product(get_matvecs(self.A),
                                           get_matvecs(self.B)):
@@ -94,6 +97,13 @@ class TestLinearOperator(TestCase):
 
             assert_raises(ValueError, A.__add__, B)
             assert_raises(ValueError, A.__pow__, 2)
+
+        for matvecsC in get_matvecs(self.C):
+            C = interface.LinearOperator(**matvecsC)
+
+            assert_equal((C**2)*[1,1], [17,37])
+
+            assert_(isinstance(C**2, interface.LinearOperator))
 
 class TestAsLinearOperator(TestCase):
     def setUp(self):
