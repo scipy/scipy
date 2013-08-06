@@ -83,60 +83,66 @@ c
         call idzp_aid(eps,m,n,a,winit,krank,w(ilist),w(iproj))
 c
 c
-c       Allocate more memory in w.
-c
-        lproj = krank*(n-krank)
-        lw2 = lw2+lproj
-c
-        icol = lw2+1
-        lcol = m*krank
-        lw2 = lw2+lcol
-c
-        iui = lw2+1
-        lu = m*krank
-        lw2 = lw2+lu
-c
-        ivi = lw2+1
-        lv = n*krank
-        lw2 = lw2+lv
-c
-        isi = lw2+1
-        ls = krank
-        lw2 = lw2+ls
-c
-        iwork = lw2+1
-        lwork = (krank+1)*(m+3*n+10)+9*krank**2
-        lw2 = lw2+lwork
+        if(krank .gt. 0) then
 c
 c
-        if(lw .lt. lw2) then
-          ier = -1000
-          return
-        endif
+c         Allocate more memory in w.
+c
+          lproj = krank*(n-krank)
+          lw2 = lw2+lproj
+c
+          icol = lw2+1
+          lcol = m*krank
+          lw2 = lw2+lcol
+c
+          iui = lw2+1
+          lu = m*krank
+          lw2 = lw2+lu
+c
+          ivi = lw2+1
+          lv = n*krank
+          lw2 = lw2+lv
+c
+          isi = lw2+1
+          ls = krank
+          lw2 = lw2+ls
+c
+          iwork = lw2+1
+          lwork = (krank+1)*(m+3*n+10)+9*krank**2
+          lw2 = lw2+lwork
 c
 c
-        call idzp_asvd0(m,n,a,krank,w(ilist),w(iproj),
-     1                  w(iui),w(ivi),w(isi),ier,w(icol),w(iwork))
-        if(ier .ne. 0) return
+          if(lw .lt. lw2) then
+            ier = -1000
+            return
+          endif
 c
 c
-        iu = 1
-        iv = iu+lu
-        is = iv+lv
+          call idzp_asvd0(m,n,a,krank,w(ilist),w(iproj),
+     1                    w(iui),w(ivi),w(isi),ier,w(icol),w(iwork))
+          if(ier .ne. 0) return
 c
 c
-c       Copy the singular values and singular vectors
-c       into their proper locations.
+          iu = 1
+          iv = iu+lu
+          is = iv+lv
 c
-        do k = 1,lu
-          w(iu+k-1) = w(iui+k-1)
-        enddo ! k
 c
-        do k = 1,lv
-          w(iv+k-1) = w(ivi+k-1)
-        enddo ! k
+c         Copy the singular values and singular vectors
+c         into their proper locations.
 c
-        call idz_realcomplex(ls,w(isi),w(is))
+          do k = 1,lu
+            w(iu+k-1) = w(iui+k-1)
+          enddo ! k
+c
+          do k = 1,lv
+            w(iv+k-1) = w(ivi+k-1)
+          enddo ! k
+c
+          call idz_realcomplex(ls,w(isi),w(is))
+c
+c
+        endif ! krank .gt. 0
 c
 c
         return

@@ -141,10 +141,12 @@ c
 c       references:
 c       Sorensen and Burrus, "Efficient computation of the DFT with
 c            only a subset of input or output points,"
-c            IEEE Transactions on Signal Processing, 41 (3): 1184-1200.
+c            IEEE Transactions on Signal Processing, 41 (3): 1184-1200,
+c            1993.
 c       Woolfe, Liberty, Rokhlin, Tygert, "A fast randomized algorithm
 c            for the approximation of matrices," Applied and
-c            Computational Harmonic Analysis, to appear; Section 3.3.
+c            Computational Harmonic Analysis, 25 (3): 335-366, 2008;
+c            Section 3.3.
 c
         implicit none
         integer n,m,l,k,j,ind(l),i,idivm,nblock,ii,iii

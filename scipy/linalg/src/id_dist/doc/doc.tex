@@ -15,7 +15,7 @@
 
 
 \title{ID: A software package for low-rank approximation
-       of matrices via interpolative decompositions, Version 0.2}
+       of matrices via interpolative decompositions, Version 0.3}
 \author{Per-Gunnar Martinsson, Vladimir Rokhlin,\\
         Yoel Shkolnisky, and Mark Tygert}
 
@@ -35,7 +35,7 @@ in the accompanying distribution (which is contained in the directory
 
 \bigskip
 
-Copyright \copyright\ 2008 by P.-G. Martinsson, V. Rokhlin,
+Copyright \copyright\ 2013 by P.-G. Martinsson, V. Rokhlin,
 Y. Shkolnisky, and M. Tygert.
 
 \bigskip
@@ -119,37 +119,40 @@ The ID is also commonly known as
 the approximation obtained via skeletonization,
 the approximation obtained via subsampling,
 and the approximation obtained via subset selection.
-The ID has many advantages in many applications,
+The ID provides many advantages in many applications,
 and we suspect that it will become increasingly popular
 once tools for its computation become more widely available.
-The present distribution provides some such tools,
+This software distribution includes some such tools,
 as well as tools for computing low-rank approximations
 in the form of SVDs.
 Section~\ref{defs} below defines IDs and SVDs,
 and provides references to detailed discussions of the algorithms
 used in this software package.
 
-Please beware that the block Lanczos method is better suited than
-the software in this distribution for computing principal component analyses
+Please beware that normalized power iterations are better suited than
+the software in this distribution
+for computing principal component analyses
 in the typical case when the square of the signal-to-noise ratio
-is not orders of magnitude greater than both dimensions of the data matrix;
-see~\cite{rokhlin-szlam-tygert}.
+is not orders of magnitude greater than both dimensions
+of the data matrix; see~\cite{halko-martinsson-tropp}.
 
-The algorithms used in this distribution are optimized for accuracy,
-efficiency, and reliability; as a somewhat counterintuitive consequence,
-many must be randomized. All randomized codes in this software package
-succeed with overwhelmingly high probability (see, for example,
-our survey article~\cite{liberty-woolfe-martinsson-rokhlin-tygert}).
+The algorithms used in this distribution have been optimized
+for accuracy, efficiency, and reliability;
+as a somewhat counterintuitive consequence, many must be randomized.
+All randomized codes in this software package succeed
+with overwhelmingly high probability (see, for example,
+\cite{halko-martinsson-tropp}).
 The truly paranoid are welcome to use the routines {\tt idd\_diffsnorm}
-and {\tt idz\_diffsnorm} to evaluate rapidly the quality of the approximations
-produced by the randomized algorithms (as done, for example, in the files
+and {\tt idz\_diffsnorm} to evaluate rapidly the quality
+of the approximations produced by the randomized algorithms
+(as done, for example, in the files
 {\tt idd\_a\_test.f}, {\tt idd\_r\_test.f}, {\tt idz\_a\_test.f},
 and {\tt idz\_r\_test.f} in the {\tt test} subdirectory
 of the main directory {\tt id\_dist}).
-In most circumstances, evaluating the quality of an approximation via routines
-{\tt idd\_diffsnorm} or {\tt idz\_diffsnorm} is much faster than forming
-the approximation to be evaluated. Still, we are unaware of any instance
-in which a properly-compiled routine failed to produce
+In most circumstances, evaluating the quality of an approximation
+via routines {\tt idd\_diffsnorm} or {\tt idz\_diffsnorm} is much faster
+than forming the approximation to be evaluated. Still, we are unaware
+of any instance in which a properly-compiled routine failed to produce
 an accurate approximation.
 To facilitate successful compilation, we encourage the user
 to read the instructions in the next section,
@@ -169,13 +172,12 @@ under a Unix-compatible operating system.
             sufficient for compiling the source codes!}
 \label{warning}
 
-The Fortran source in this distribution passes {\tt real*8} variables
-as integer variables, integers as {\tt real*8}'s,
+The Fortran source codes in this distribution pass {\tt real*8}
+variables as integer variables, integers as {\tt real*8}'s,
 {\tt real*8}'s as {\tt complex*16}'s, and so on.
 This is common practice in numerical codes, and is not an error;
 be sure to provide the relevant command-line flags to the compiler
-(for example, run {\tt fort77} and {\tt f2c} with the flag {\tt -!P},
-and {\tt g77} with the flag {\tt -fno-globals}).
+(for example, run {\tt fort77} and {\tt f2c} with the flag {\tt -!P}).
 When following the compilation instructions
 in Subsection~\ref{makefile_edit} below,
 be sure to set {\tt FFLAGS} appropriately.
@@ -186,7 +188,7 @@ be sure to set {\tt FFLAGS} appropriately.
 The SVD routines in this distribution depend on LAPACK.
 Before compiling the present distribution,
 create the LAPACK and BLAS archive (library) {\tt .a} files;
-information on installing LAPACK is available
+information about installing LAPACK is available
 at {\tt http://www.netlib.org/lapack/} (and several other web sites).
 
 
@@ -306,9 +308,9 @@ for all of the user-callable routines.
 
 Once all of the libraries have been made via the Makefile
 in the main {\tt id\_dist} directory,
-subdirectory {\tt bin} will contain object files (machine code),
+the subdirectory {\tt bin} will contain object files (machine code),
 each compiled from the corresponding file of source code
-in subdirectory {\tt src} of {\tt id\_dist}.
+in the subdirectory {\tt src} of {\tt id\_dist}.
 
 
 \subsection{Subdirectory {\tt development}}
@@ -338,12 +340,13 @@ supplementing comments in the source codes.
 
 \subsection{Subdirectory {\tt src}}
 
-The files in subdirectory {\tt src} provide source code
-for software libraries. Each file in subdirectory {\tt src}
+The files in the subdirectory {\tt src} provide source code
+for software libraries. Each file in the subdirectory {\tt src}
 (except for {\tt dfft.f} and {\tt prini.f}) is
 the bottom part of the corresponding file
-in subdirectory {\tt development} of {\tt id\_dist}.
-The file {\tt dfft.f} is a copy of P. N. Swarztrauber's FFTPACK library
+in the subdirectory {\tt development} of {\tt id\_dist}.
+The file {\tt dfft.f} is just a copy
+of P. N. Swarztrauber's FFTPACK library
 for computing fast Fourier transforms.
 The file {\tt prini.f} is a copy of V. Rokhlin's library
 of formatted printing routines.
@@ -834,7 +837,7 @@ pivoted $QR$ decompositions, and discrete and fast Fourier transforms
 For detailed descriptions and proofs of the mathematical facts
 discussed in the present section, see, for example,
 \cite{golub-van_loan} and the references
-in our survey article~\cite{liberty-woolfe-martinsson-rokhlin-tygert}.
+in~\cite{halko-martinsson-tropp}.
 
 Throughout this document and the accompanying software distribution,
 $\| \x \|$ always denotes the Euclidean norm of the vector $\x$,

@@ -69,14 +69,11 @@ c       _N.B._: The algorithm used by this routine is randomized.
 c               proj must be at least m+(krank+3)*n complex*16 elements
 c               long.
 c
-c       references:
-c       Liberty, Woolfe, Martinsson, Rokhlin, Tygert, "Randomized
-c            algorithms for the low-rank approximation of matrices,"
-c            Proceedings of the National Academy of Sciences USA,
-c            104 (51): 20167-20172, 2007.
-c       Martinsson, Rokhlin, Tygert, "A randomized algorithm for the
-c            approximation of matrices," Applied and Computational
-c            Harmonic Analysis, to appear.
+c       reference:
+c       Halko, Martinsson, Tropp, "Finding structure with randomness:
+c            probabilistic algorithms for constructing approximate
+c            matrix decompositions," SIAM Review, 53 (2): 217-288,
+c            2011.
 c
         implicit none
         integer m,n,krank,list(n),lw,ix,lx,iy,ly,ir,lr
