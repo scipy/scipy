@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.sparse.sputils import isshape
+from scipy.sparse.sputils import isshape, isintlike
 from scipy.sparse import isspmatrix
 
 __all__ = ['LinearOperator', 'aslinearoperator']
@@ -222,7 +222,7 @@ class LinearOperator:
             return NotImplemented
 
     def __pow__(self, p):
-        if isinstance(p, (int, long)):
+        if isintlike(p):
             if self.shape[0] != self.shape[1]:
                 raise ValueError('dimension mismatch')
             def power(y, fun):
