@@ -332,7 +332,8 @@ def msign(x):
 
 
 def pearsonr(x,y):
-    """Calculates a Pearson correlation coefficient and the p-value for testing
+    """
+    Calculates a Pearson correlation coefficient and the p-value for testing
     non-correlation.
 
     The Pearson correlation coefficient measures the linear relationship
@@ -340,8 +341,8 @@ def pearsonr(x,y):
     that each dataset be normally distributed. Like other correlation
     coefficients, this one varies between -1 and +1 with 0 implying no
     correlation. Correlations of -1 or +1 imply an exact linear
-    relationship. Positive correlations imply that as x increases, so does
-    y. Negative correlations imply that as x increases, y decreases.
+    relationship. Positive correlations imply that as `x` increases, so does
+    `y`. Negative correlations imply that as `x` increases, `y` decreases.
 
     The p-value roughly indicates the probability of an uncorrelated system
     producing datasets that have a Pearson correlation at least as extreme
@@ -350,17 +351,20 @@ def pearsonr(x,y):
 
     Parameters
     ----------
-    x : 1D array
-    y : 1D array the same length as x
+    x : 1-D array_like
+        Input
+    y : 1-D array_like
+        Input
 
     Returns
     -------
-    (Pearson's correlation coefficient,
-     2-tailed p-value)
+    pearsonr : float
+        Pearson's correlation coefficient, 2-tailed p-value.
 
     References
     ----------
     http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
+
     """
     (x, y, n) = _chk_size(x, y)
     (x, y) = (x.ravel(), y.ravel())
@@ -392,7 +396,8 @@ def pearsonr(x,y):
 
 
 def spearmanr(x, y, use_ties=True):
-    """Calculates a Spearman rank-order correlation coefficient and the p-value
+    """
+    Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
 
     The Spearman correlation is a nonparametric measure of the linear
@@ -401,33 +406,35 @@ def spearmanr(x, y, use_ties=True):
     distributed. Like other correlation coefficients, this one varies
     between -1 and +1 with 0 implying no correlation. Correlations of -1 or
     +1 imply an exact linear relationship. Positive correlations imply that
-    as x increases, so does y. Negative correlations imply that as x
-    increases, y decreases.
+    as `x` increases, so does `y`. Negative correlations imply that as `x`
+    increases, `y` decreases.
 
-    Missing values are discarded pair-wise: if a value is missing in x, the
-    corresponding value in y is masked.
+    Missing values are discarded pair-wise: if a value is missing in `x`, the
+    corresponding value in `y` is masked.
 
     The p-value roughly indicates the probability of an uncorrelated system
     producing datasets that have a Spearman correlation at least as extreme
     as the one computed from these datasets. The p-values are not entirely
     reliable but are probably reasonable for datasets larger than 500 or so.
 
-Parameters
-----------
-    x : 1D array
-    y : 1D array the same length as x
-        The lengths of both arrays must be > 2.
-    use_ties : {True, False}, optional
+    Parameters
+    ----------
+    x : array_like
+        The length of `x` must be > 2.
+    y : array_like
+        The length of `y` must be > 2.
+    use_ties : bool, optional
         Whether the correction for ties should be computed.
 
-Returns
--------
-    (Spearman correlation coefficient,
-     2-tailed p-value)
+    Returns
+    -------
+    spearmanr : float
+        Spearman correlation coefficient, 2-tailed p-value.
 
     References
     ----------
     [CRCProbStat2000] section 14.7
+
     """
     (x, y, n) = _chk_size(x, y)
     (x, y) = (x.ravel(), y.ravel())
@@ -545,13 +552,14 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
 
 
 def kendalltau_seasonal(x):
-    """Computes a multivariate extension Kendall's rank correlation tau, designed
-    for seasonal data.
+    """
+    Computes a multivariate Kendall's rank correlation tau, for seasonal data.
 
-Parameters
-----------
-    x: 2D array
+    Parameters
+    ----------
+    x : 2-D ndarray
         Array of seasonal data, with seasons in columns.
+
     """
     x = ma.array(x, subok=True, copy=False, ndmin=2)
     (n,m) = x.shape
@@ -680,28 +688,28 @@ if stats.linregress.__doc__:
 
 
 def theilslopes(y, x=None, alpha=0.05):
-    """Computes the Theil slope over the dataset (x,y), as the median of all slopes
-    between paired values.
+    """
+    Computes the Theil slope as the median of all slopes between paired values.
 
     Parameters
     ----------
-        y : sequence
-            Dependent variable.
-        x : {None, sequence}, optional
-            Independent variable. If None, use arange(len(y)) instead.
-        alpha : float
-            Confidence degree.
+    y : array_like
+        Dependent variable.
+    x : {None, array_like}, optional
+        Independent variable. If None, use arange(len(y)) instead.
+    alpha : float
+        Confidence degree.
 
     Returns
     -------
-        medslope : float
-            Theil slope
-        medintercept : float
-            Intercept of the Theil line, as median(y)-medslope*median(x)
-        lo_slope : float
-            Lower bound of the confidence interval on medslope
-        up_slope : float
-            Upper bound of the confidence interval on medslope
+    medslope : float
+        Theil slope
+    medintercept : float
+        Intercept of the Theil line, as median(y)-medslope*median(x)
+    lo_slope : float
+        Lower bound of the confidence interval on medslope
+    up_slope : float
+        Upper bound of the confidence interval on medslope
 
     """
     y = ma.asarray(y).flatten()
@@ -1106,11 +1114,12 @@ def ks_twosamp_old(data1, data2):
 #####--------------------------------------------------------------------------
 
 def threshold(a, threshmin=None, threshmax=None, newval=0):
-    """Clip array to a given value.
+    """
+    Clip array to a given value.
 
-    Similar to numpy.clip(), except that values less than threshmin or
-    greater than threshmax are replaced by newval, instead of by
-    threshmin and threshmax respectively.
+    Similar to numpy.clip(), except that values less than `threshmin` or
+    greater than `threshmax` are replaced by `newval`, instead of by
+    `threshmin` and `threshmax` respectively.
 
     Parameters
     ----------
@@ -1125,7 +1134,9 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
 
     Returns
     -------
-    a, with values less (greater) than threshmin (threshmax) replaced with newval.
+    threshold : ndarray
+        Returns `a`, with values less then `threshmin` and values greater
+        `threshmax` replaced with `newval`.
 
     """
     a = ma.array(a, copy=True)
@@ -1994,9 +2005,9 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
     Plotting positions are defined as ``(i-alpha)/(n+1-alpha-beta)``, where:
         - i is the rank order statistics
         - n is the number of unmasked values along the given axis
-        - alpha and beta are two parameters.
+        - `alpha` and `beta` are two parameters.
 
-    Typical values for alpha and beta are:
+    Typical values for `alpha` and `beta` are:
         - (0,1)    : ``p(k) = k/n``, linear interpolation of cdf (R, type 4)
         - (.5,.5)  : ``p(k) = (k-1/2.)/n``, piecewise linear function
           (R, type 5)
