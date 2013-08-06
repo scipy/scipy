@@ -1773,6 +1773,35 @@ class _TestFancyIndexing:
         assert_raises(IndexError, A.__getitem__, Y)
         assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))
 
+    def test_fancy_indexing_sparse_boolean(self):
+        random.seed(1234)  # make runs repeatable
+
+        # CSR matrix returns matrix in some cases
+        def todense(a):
+            if isinstance(a, (np.matrix, np.ndarray)):
+                return a
+            return a.todense()
+
+        B = asmatrix(arange(50).reshape(5,10))
+        A = self.spmatrix(B)
+
+        X = np.array(np.random.randint(0, 2, size=(5, 10)), dtype=bool)
+
+        Xsp = csr_matrix(X)
+
+        assert_equal(todense(A[Xsp]), B[X])
+        assert_equal(todense(A[A > 9]), B[B > 9])
+
+        Z = np.array(np.random.randint(0, 2, size=(5, 11)), dtype=bool)
+        Y = np.array(np.random.randint(0, 2, size=(6, 10)), dtype=bool)
+
+        Zsp = csr_matrix(Z)
+        Ysp = csr_matrix(Y)
+
+        assert_raises(IndexError, A.__getitem__, Zsp)
+        assert_raises(IndexError, A.__getitem__, Ysp)
+        assert_raises((IndexError, ValueError), A.__getitem__, (Xsp, 1))
+
 
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
@@ -2662,6 +2691,10 @@ class TestLIL(sparse_test_class(minmax=False)):
         a = lil_matrix(np.ones((3,3)))
         a *= 2.
         a[0, :] = 0
+
+    @dec.knownfailureif(True, "Sparse boolean indexing unimplemented for LIL")
+    def test_fancy_indexing_sparse_boolean(self):
+        pass
 
 
 class TestCOO(sparse_test_class(getset=False,
