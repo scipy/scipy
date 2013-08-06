@@ -5,30 +5,28 @@ Introduction
 .. contents::
 
 SciPy is a collection of mathematical algorithms and convenience
-functions built on the Numpy extension for Python. It adds
-significant power to the interactive Python session by exposing the
-user to high-level commands and classes for the manipulation and
-visualization of data. With SciPy, an interactive Python session
+functions built on the Numpy extension of Python. It adds
+significant power to the interactive Python session by providing the
+user with high-level commands and classes for manipulating and
+visualizing data. With SciPy an interactive Python session
 becomes a data-processing and system-prototyping environment rivaling
 sytems such as MATLAB, IDL, Octave, R-Lab, and SciLab.
 
-The additional power of using SciPy within Python, however, is that a
-powerful programming language is also available for use in developing
+The additional benefit of basing SciPy on Python is that this also makes a
+powerful programming language available for use in developing
 sophisticated programs and specialized applications. Scientific
-applications written in SciPy benefit from the development of
+applications using SciPy benefit from the development of
 additional modules in numerous niche's of the software landscape by
 developers across the world. Everything from parallel programming to
 web and data-base subroutines and classes have been made available to
 the Python programmer. All of this power is available in addition to
 the mathematical libraries in SciPy.
 
-This document provides a tutorial for the first-time user of SciPy to
-help get started with some of the features available in this powerful
-package. It is assumed that the user has already installed the
-package. Some general Python facility is also assumed such as could be
-acquired by working through the Tutorial in the Python distribution.
-For further introductory help the user is directed to the Numpy
-documentation.
+This tutorial will acquaint the first-time user of SciPy with some of its most
+important features. It assumes that the user has already installed the SciPy
+package. Some general Python facility is also assumed, such as could be
+acquired by working through the Python distribution's Tutorial. For further
+introductory help the user is directed to the Numpy documentation.
 
 For brevity and convenience, we will often assume that the main
 packages (numpy, scipy, and matplotlib) have been imported as::
@@ -78,7 +76,7 @@ Scipy sub-packages need to be imported separately, for example::
     >>> from scipy import linalg, optimize
 
 Because of their ubiquitousness, some of the functions in these
-subpackages are also made available in the scipy namespace to ease
+subpackages are also made available in the `scipy` namespace to ease
 their use in interactive sessions and programs. In addition, many
 basic array functions from :mod:`numpy` are also available at the
 top-level of the :mod:`scipy` package. Before looking at the
@@ -88,26 +86,25 @@ functions.
 Finding Documentation
 ---------------------
 
-Scipy and Numpy have HTML and PDF versions of their documentation
-available at http://docs.scipy.org/, which currently details nearly
+SciPy and NumPy have documentation versions in both HTML and PDF format
+available at http://docs.scipy.org/, that cover nearly
 all available functionality. However, this documentation is still
-work-in-progress, and some parts may be incomplete or sparse. As
+work-in-progress and some parts may be incomplete or sparse. As
 we are a volunteer organization and depend on the community for
 growth, your participation - everything from providing feedback to
 improving the documentation and code - is welcome and actively
 encouraged.
 
-Python also provides the facility of documentation strings. The
-functions and classes available in SciPy use this method for on-line
-documentation. There are two methods for reading these messages and
-getting help. Python provides the command :func:`help` in the pydoc
+Python's documentation strings are used in SciPy for on-line
+documentation. There are two methods for reading them and
+getting help. One is Python's command :func:`help` in the `pydoc`
 module. Entering this command with no arguments (i.e. ``>>> help`` )
 launches an interactive help session that allows searching through the
-keywords and modules available to all of Python. Running the command
-help with an object as the argument displays the calling signature,
-and the documentation string of the object.
+keywords and modules available to all of Python. Secondly, running the command
+`help(obj)` with an object as the argument displays that object's calling
+signature, and documentation string.
 
-The pydoc method of help is sophisticated but uses a pager to display
+The pydoc method of ``help`` is sophisticated but uses a pager to display
 the text. Sometimes this can interfere with the terminal you are
 running the interactive session within. A scipy-specific help system
 is also available under the command ``sp.info``. The signature and

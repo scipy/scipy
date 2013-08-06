@@ -22,7 +22,8 @@ def fixed_quad(func,a,b,args=(),n=5):
     """
     Compute a definite integral using fixed-order Gaussian quadrature.
 
-    Integrate `func` from a to b using Gaussian quadrature of order n.
+    Integrate `func` from `a` to `b` using Gaussian quadrature of
+    order `n`.
 
     Parameters
     ----------
@@ -45,12 +46,15 @@ def fixed_quad(func,a,b,args=(),n=5):
     See Also
     --------
     quad : adaptive quadrature using QUADPACK
-    dblquad, tplquad : double and triple integrals
+    dblquad : double integrals
+    tplquad : triple integrals
     romberg : adaptive Romberg quadrature
     quadrature : adaptive Gaussian quadrature
-    romb, simps, trapz : integrators for sampled data
+    romb : integrators for sampled data
+    simps : integrators for sampled data
     cumtrapz : cumulative integration for sampled data
-    ode, odeint - ODE integrators
+    ode : ODE integrator
+    odeint : ODE integrator
 
     """
     [x,w] = p_roots(n)
@@ -397,33 +401,35 @@ def romb(y, dx=1.0, axis=-1, show=False):
     Romberg integration using samples of a function.
 
     Parameters
-    -----------
+    ----------
     y : array_like
         A vector of ``2**k + 1`` equally-spaced samples of a function.
     dx : array_like, optional
         The sample spacing. Default is 1.
-    axis : array_like?, optional
+    axis : int, optional
         The axis along which to integrate. Default is -1 (last axis).
     show : bool, optional
-           When y is a single 1-D array, then if this argument is True
-           print the table showing Richardson extrapolation from the
-           samples. Default is False.
+        When `y` is a single 1-D array, then if this argument is True
+        print the table showing Richardson extrapolation from the
+        samples. Default is False.
 
     Returns
     -------
-    ret : array_like?
-        The integrated result for each axis.
+    romb : ndarray
+        The integrated result for `axis`.
 
     See also
     --------
-    quad - adaptive quadrature using QUADPACK
-    romberg - adaptive Romberg quadrature
-    quadrature - adaptive Gaussian quadrature
-    fixed_quad - fixed-order Gaussian quadrature
-    dblquad, tplquad - double and triple integrals
-    simps, trapz - integrators for sampled data
-    cumtrapz - cumulative integration for sampled data
-    ode, odeint - ODE integrators
+    quad : adaptive quadrature using QUADPACK
+    romberg : adaptive Romberg quadrature
+    quadrature : adaptive Gaussian quadrature
+    fixed_quad : fixed-order Gaussian quadrature
+    dblquad : double integrals
+    tplquad : triple integrals
+    simps : integrators for sampled data
+    cumtrapz : cumulative integration for sampled data
+    ode : ODE integrators
+    odeint : ODE integrators
 
     """
     y = asarray(y)
@@ -555,8 +561,8 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     over the interval (`a`, `b`).
 
     If `show` is 1, the triangular array of the intermediate results
-    will be printed.  If `vec_func` is True (default is False), then `function` is
-    assumed to support vector arguments.
+    will be printed.  If `vec_func` is True (default is False), then
+    `function` is assumed to support vector arguments.
 
     Parameters
     ----------
@@ -568,7 +574,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
         Upper limit of integration.
 
     Returns
-    --------
+    -------
     results  : float
         Result of the integration.
 
@@ -592,10 +598,13 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     --------
     fixed_quad : Fixed-order Gaussian quadrature.
     quad : Adaptive quadrature using QUADPACK.
-    dblquad, tplquad : Double and triple integrals.
-    romb, simps, trapz : Integrators for sampled data.
+    dblquad : Double integrals.
+    tplquad : Triple integrals.
+    romb : Integrators for sampled data.
+    simps : Integrators for sampled data.
     cumtrapz : Cumulative integration for sampled data.
-    ode, odeint : ODE integrators.
+    ode : ODE integrator.
+    odeint : ODE integrator.
 
     References
     ----------
