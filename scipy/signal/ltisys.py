@@ -108,13 +108,13 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
         C = zeros((MC, NC))
     if (MB == 0) and (NB == 0) and (MA != 0) and (ND != 0):
         MB, NB = MA, ND
-        B = zeros(MB, NB)
+        B = zeros((MB, NB))
     if (MD == 0) and (ND == 0) and (MC != 0) and (NB != 0):
         MD, ND = MC, NB
-        D = zeros(MD, ND)
+        D = zeros((MD, ND))
     if (MA == 0) and (NA == 0) and (MB != 0) and (NC != 0):
         MA, NA = MB, NC
-        A = zeros(MA, NA)
+        A = zeros((MA, NA))
 
     if MA != NA:
         raise ValueError("A must be square.")
@@ -542,6 +542,20 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     return T, squeeze(transpose(yout)), xout
 
 
+def _cast_to_array_dtype(in1, in2):
+    """Cast array to dtype of other array, while avoiding ComplexWarning.
+
+    Those can be raised when casting complex to real.
+    """
+    if numpy.issubdtype(in2.dtype, numpy.float):
+        # dtype to cast to is not complex, so use .real
+        in1 = in1.real.astype(in2.dtype)
+    else:
+        in1 = in1.astype(in2.dtype)
+
+    return in1
+
+
 def lsim(system, U, T, X0=None, interp=1):
     """
     Simulate output of a continuous-time linear system.
@@ -607,7 +621,9 @@ def lsim(system, U, T, X0=None, interp=1):
     lam, v = linalg.eig(A)
     vt = transpose(v)
     vti = linalg.inv(vt)
-    GT = dot(dot(vti, diag(numpy.exp(dt * lam))), vt).astype(xout.dtype)
+    GT = dot(dot(vti, diag(numpy.exp(dt * lam))), vt)
+    GT = _cast_to_array_dtype(GT, xout)
+
     ATm1 = linalg.inv(AT)
     ATm2 = dot(ATm1, ATm1)
     I = eye(A.shape[0], dtype=A.dtype)
@@ -620,8 +636,8 @@ def lsim(system, U, T, X0=None, interp=1):
         dt1 = T[k] - T[k - 1]
         if dt1 != dt:
             dt = dt1
-            GT = dot(dot(vti, diag(numpy.exp(dt * lam))),
-                     vt).astype(xout.dtype)
+            GT = dot(dot(vti, diag(numpy.exp(dt * lam))), vt)
+            GT = _cast_to_array_dtype(GT, xout)
             GTmI = GT - I
             F1T = dot(dot(BT, GTmI), ATm1)
             if interp:
@@ -656,7 +672,7 @@ def _default_response_times(A, n):
         The 1-D array of length `n` of time samples at which the response
         is to be computed.
     """
-    # Create a reasonable time interval.  
+    # Create a reasonable time interval.
     # TODO: This could use some more work.
     # For example, what is expected when the system is unstable?
     vals = linalg.eigvals(A)
@@ -673,7 +689,7 @@ def impulse(system, X0=None, T=None, N=None):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple of array_like 
+    system : an instance of the LTI class or a tuple of array_like
         describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
@@ -681,7 +697,7 @@ def impulse(system, X0=None, T=None, N=None):
             * 2 (num, den)
             * 3 (zeros, poles, gain)
             * 4 (A, B, C, D)
-            
+
     X0 : array_like, optional
         Initial state-vector.  Defaults to zero.
     T : array_like, optional
@@ -712,14 +728,17 @@ def impulse(system, X0=None, T=None, N=None):
         T = _default_response_times(sys.A, N)
     else:
         T = asarray(T)
+
     h = zeros(T.shape, sys.A.dtype)
     s, v = linalg.eig(sys.A)
     vi = linalg.inv(v)
     C = sys.C
     for k in range(len(h)):
         es = diag(numpy.exp(s * T[k]))
-        eA = (dot(dot(v, es), vi)).astype(h.dtype)
+        eA = dot(dot(v, es), vi)
+        eA = _cast_to_array_dtype(eA, h)
         h[k] = squeeze(dot(dot(C, eA), B))
+
     return T, h
 
 
@@ -729,7 +748,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple of array_like 
+    system : an instance of the LTI class or a tuple of array_like
         describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
@@ -796,6 +815,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
         N = 100
     if T is None:
         T = _default_response_times(sys.A, N)
+
     # Move the impulse in the input to the initial conditions, and then
     # solve using lsim2().
     ic = B + X0
@@ -808,7 +828,7 @@ def step(system, X0=None, T=None, N=None):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple of array_like 
+    system : an instance of the LTI class or a tuple of array_like
         describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
@@ -860,7 +880,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
 
     Parameters
     ----------
-    system : an instance of the LTI class or a tuple of array_like 
+    system : an instance of the LTI class or a tuple of array_like
         describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
