@@ -72,10 +72,10 @@ class TestLinearOperator(TestCase):
             assert_(isinstance(A * np.matrix([[1],[2],[3]]), np.ndarray))
             assert_(isinstance(A.dot(np.matrix([[1],[2],[3]])), np.ndarray))
 
-            assert_(isinstance(2*A, interface.LinearOperator))
-            assert_(isinstance(A+A, interface.LinearOperator))
-            assert_(isinstance(-A, interface.LinearOperator))
-            assert_(isinstance(A-A, interface.LinearOperator))
+            assert_(isinstance(2*A, interface._ScaledLinearOperator))
+            assert_(isinstance(A+A, interface._SumLinearOperator))
+            assert_(isinstance(-A, interface._ScaledLinearOperator))
+            assert_(isinstance(A-A, interface._SumLinearOperator))
 
             assert_raises(ValueError, A.matvec, np.array([1,2]))
             assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
@@ -93,7 +93,7 @@ class TestLinearOperator(TestCase):
             assert_equal((A*B)*[1,1], [50,113])
             assert_equal((A*B)*[[1],[1]], [[50],[113]])
 
-            assert_(isinstance(A*B, interface.LinearOperator))
+            assert_(isinstance(A*B, interface._ProductLinearOperator))
 
             assert_raises(ValueError, A.__add__, B)
             assert_raises(ValueError, A.__pow__, 2)
@@ -103,7 +103,7 @@ class TestLinearOperator(TestCase):
 
             assert_equal((C**2)*[1,1], [17,37])
 
-            assert_(isinstance(C**2, interface.LinearOperator))
+            assert_(isinstance(C**2, interface._PowerLinearOperator))
 
 class TestAsLinearOperator(TestCase):
     def setUp(self):

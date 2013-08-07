@@ -7,7 +7,7 @@ from scipy.sparse import isspmatrix
 __all__ = ['LinearOperator', 'aslinearoperator']
 
 
-class LinearOperator:
+class LinearOperator(object):
     """Common interface for performing matrix vector products
 
     Many iterative methods (e.g. cg, gmres) do not need to know the
@@ -59,6 +59,16 @@ class LinearOperator:
     array([ 2.,  3.])
 
     """
+    def __new__(cls, *args, **kwargs):
+        obj = object.__new__(cls)
+        obj._args = args
+        obj._kwargs = kwargs
+        return obj
+
+    @property
+    def args(self):
+        return self._args
+
     def __init__(self, shape, matvec, rmatvec=None, matmat=None, dtype=None):
 
         shape = tuple(shape)
@@ -178,25 +188,11 @@ class LinearOperator:
 
         return Y
 
-    def _get_dtype(self, x=None):
-        dtypes = []
-        for obj in [self, x]:
-            if obj is not None and hasattr(obj, 'dtype'):
-                dtypes.append(obj.dtype)
-        return np.find_common_type(dtypes, [])
-
     def __mul__(self, x):
         if isinstance(x, LinearOperator):
-            if self.shape[1] != x.shape[0]:
-                raise ValueError('dimension mismatch')
-            return LinearOperator(shape=[self.shape[0], x.shape[1]],
-                     matvec=lambda y: self.matvec( x.matvec(y) ),
-                     rmatvec=lambda y: x.rmatvec( self.rmatvec(y) ),
-                     matmat=lambda y: self.matmat( x.matmat(y) ),
-                     dtype=self._get_dtype(x))
+            return _ProductLinearOperator(self, x)
         elif np.isscalar(x):
-            # calls __rmul__
-            return x*self
+            return _ScaledLinearOperator(self, x)
         else:
             x = np.asarray(x)
 
@@ -213,50 +209,21 @@ class LinearOperator:
 
     def __rmul__(self, x):
         if np.isscalar(x):
-            return LinearOperator(shape=self.shape,
-                     matvec=lambda y: x*self.matvec(y),
-                     rmatvec=lambda y: numpy.conj(x)*self.rmatvec(y),
-                     matmat=lambda y: x*self.matmat(y),
-                     dtype=self._get_dtype(x))
+            return _ScaledLinearOperator(self, x)
         else:
             return NotImplemented
 
     def __pow__(self, p):
-        if isintlike(p):
-            if self.shape[0] != self.shape[1]:
-                raise ValueError('dimension mismatch')
-            def power(y, fun):
-                res = y.copy()
-                for i in range(p):
-                    res = fun(res)
-                return res
-
-            return LinearOperator(shape=self.shape,
-                         matvec=lambda y: power(y, self.matvec),
-                         rmatvec=lambda y: power(y, self.rmatvec),
-                         matmat=lambda y: power(y, self.matmat),
-                         dtype=self._get_dtype())
-        else:
-            return NotImplemented
+        return _PowerLinearOperator(self, p)
 
     def __add__(self, x):
-        if self.shape != x.shape:
-            raise ValueError('dimension mismatch')
-        return LinearOperator(shape=self.shape,
-                     matvec=lambda y: self.matvec(y) + x.matvec(y),
-                     rmatvec=lambda y: self.rmatvec(y) + x.rmatvec(y),
-                     matmat=lambda y: self.matmat(y) + x.matmat(y),
-                     dtype=self._get_dtype(x))
+        return _SumLinearOperator(self, x)
 
     def __neg__(self):
-        return LinearOperator(shape=self.shape,
-                     matvec=lambda y: -self.matvec(y),
-                     rmatvec=lambda y: -self.rmatvec(y),
-                     matmat=lambda y: -self.matmat(y),
-                     dtype=self._get_dtype())
+        return _ScaledLinearOperator(self, -1)
 
     def __sub__(self, x):
-        return self.__add__(-x)
+        return self + (-x)
 
     def __repr__(self):
         M,N = self.shape
@@ -265,8 +232,97 @@ class LinearOperator:
         else:
             dt = 'unspecified dtype'
 
-        return '<%dx%d LinearOperator with %s>' % (M,N,dt)
+        return '<%dx%d %s with %s>' % (M,N,self.__class__.__name__,dt)
 
+def _get_dtype(operators, dtypes=[]):
+    for obj in operators:
+        if obj is not None and hasattr(obj, 'dtype'):
+            dtypes.append(obj.dtype)
+    return np.find_common_type(dtypes, [])
+
+class _SumLinearOperator(LinearOperator):
+    def __init__(self, A, B):
+        if not isinstance(A, LinearOperator) or \
+                not isinstance(B, LinearOperator):
+            raise ValueError('both operands have to be a LinearOperator')
+        if A.shape!=B.shape:
+            raise ValueError('shape mismatch')
+        super(_SumLinearOperator, self).__init__(A.shape,
+                self.matvec, self.rmatvec, self.matmat, _get_dtype([A,B]))
+
+    def matvec(self, x):
+        return self.args[0].matvec(x) + self.args[1].matvec(x)
+
+    def rmatvec(self, x):
+        return self.args[0].rmatvec(x) + self.args[1].rmatvec(x)
+
+    def matmat(self, x):
+        return self.args[0].matmat(x) + self.args[1].matmat(x)
+
+class _ProductLinearOperator(LinearOperator):
+    def __init__(self, A, B):
+        if not isinstance(A, LinearOperator) or \
+                not isinstance(B, LinearOperator):
+            raise ValueError('both operands have to be a LinearOperator')
+        if A.shape[1]!=B.shape[0]:
+            raise ValueError('shape mismatch')
+        super(_ProductLinearOperator, self).__init__((A.shape[0],B.shape[1]),
+                self.matvec, self.rmatvec, self.matmat, _get_dtype([A,B]))
+
+    def matvec(self, x):
+        return self.args[0].matvec(self.args[1].matvec(x))
+
+    def rmatvec(self, x):
+        return self.args[1].rmatvec(self.args[0].rmatvec(x))
+
+    def matmat(self, x):
+        return self.args[0].matmat(self.args[1].matmat(x))
+
+class _ScaledLinearOperator(LinearOperator):
+    def __init__(self, A, alpha):
+        if not isinstance(A, LinearOperator):
+            raise ValueError('LinearOperator expected as A')
+        if not np.isscalar(alpha):
+            raise ValueError('scalar expected as alpha')
+        super(_ScaledLinearOperator, self).__init__(A.shape,
+                self.matvec, self.rmatvec, self.matmat,
+                _get_dtype([A], [type(alpha)]))
+
+    def matvec(self, x):
+        return self.args[1] * self.args[0].matvec(x)
+
+    def rmatvec(self, x):
+        return np.conj(self.args[1]) * self.args[0].rmatvec(x)
+
+    def matmat(self, x):
+        return self.args[1] * self.args[0].matmat(x)
+
+class _PowerLinearOperator(LinearOperator):
+    def __init__(self, A, p):
+        if not isinstance(A, LinearOperator):
+            raise ValueError('LinearOperator expected as A')
+        if A.shape[0]!=A.shape[1]:
+            raise ValueError('square LinearOperator expected as A')
+        if not isintlike(p):
+            raise ValueError('integer expected as p')
+        super(_PowerLinearOperator, self).__init__(A.shape,
+                self.matvec, self.rmatvec, self.matmat,
+                _get_dtype([A]))
+
+    def _power(self, fun, x):
+        res = x.copy()
+        for i in range(self.args[1]):
+            res = fun(res)
+        return res
+
+    def matvec(self, x):
+        return self._power(self.args[0].matvec, x)
+
+    def rmatvec(self, x):
+        return self._power(self.args[0].rmatvec, x)
+
+    def matmat(self, x):
+        return self._power(self.args[0].matmat, x)
 
 class MatrixLinearOperator(LinearOperator):
     def __init__(self, A):
