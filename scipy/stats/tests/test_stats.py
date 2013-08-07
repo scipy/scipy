@@ -15,6 +15,7 @@ from numpy.testing import TestCase, assert_, assert_equal, \
     assert_almost_equal, assert_array_almost_equal, assert_array_equal, \
     assert_approx_equal, assert_raises, run_module_suite, \
     assert_allclose, dec
+import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
 
@@ -1458,127 +1459,332 @@ def test_percentileofscore():
                    score, kind=kind), result
 
 
-def check_chisquare(f_obs, f_exp, ddof, axis, expected_chi2):
-    f_obs = np.asarray(f_obs)
-    if axis is None:
-        num_obs = f_obs.size
-    else:
-        if axis == 'no':
-            use_axis = 0
+PowerDivCase = namedtuple('Case', ['f_obs', 'f_exp', 'ddof', 'axis',
+                                   'chi2',     # Pearson's
+                                   'log',      # G-test (log-likelihood)
+                                   'mod_log',  # Modified log-likelihood
+                                   'cr',       # Cressie-Read (lambda=2/3)
+                                   ])
+
+# The details of the first two elements in power_div_1d_cases are used
+# in a test in TestPowerDivergence.  Check that code before making
+# any changes here.
+power_div_1d_cases = [
+    # Use the default f_exp.
+    PowerDivCase(f_obs=[4, 8, 12, 8], f_exp=None, ddof=0, axis=None,
+                 chi2=4,
+                 log=2*(4*np.log(4/8) + 12*np.log(12/8)),
+                 mod_log=2*(8*np.log(8/4) + 8*np.log(8/12)),
+                 cr=(4*((4/8)**(2/3) - 1) + 12*((12/8)**(2/3) - 1))/(5/9)),
+    # Give a non-uniform f_exp.
+    PowerDivCase(f_obs=[4, 8, 12, 8], f_exp=[2, 16, 12, 2], ddof=0, axis=None,
+                 chi2=24,
+                 log=2*(4*np.log(4/2) + 8*np.log(8/16) + 8*np.log(8/2)),
+                 mod_log=2*(2*np.log(2/4) + 16*np.log(16/8) + 2*np.log(2/8)),
+                 cr=(4*((4/2)**(2/3) - 1) + 8*((8/16)**(2/3) - 1) +
+                     8*((8/2)**(2/3) - 1))/(5/9)),
+    # f_exp is a scalar.
+    PowerDivCase(f_obs=[4, 8, 12, 8], f_exp=8, ddof=0, axis=None,
+                 chi2=4,
+                 log=2*(4*np.log(4/8) + 12*np.log(12/8)),
+                 mod_log=2*(8*np.log(8/4) + 8*np.log(8/12)),
+                 cr=(4*((4/8)**(2/3) - 1) + 12*((12/8)**(2/3) - 1))/(5/9)),
+    # f_exp equal to f_obs.
+    PowerDivCase(f_obs=[3, 5, 7, 9], f_exp=[3, 5, 7, 9], ddof=0, axis=0,
+                 chi2=0, log=0, mod_log=0, cr=0),
+]
+
+
+power_div_empty_cases = [
+    # Shape is (0,)--a data set with length 0.  The computed
+    # test statistic should be 0.
+    PowerDivCase(f_obs=[],
+                 f_exp=None, ddof=0, axis=0,
+                 chi2=0, log=0, mod_log=0, cr=0),
+    # Shape is (0, 3).  This is 3 data sets, but each data set has
+    # length 0, so the computed test statistic should be [0, 0, 0].
+    PowerDivCase(f_obs=np.array([[],[],[]]).T,
+                 f_exp=None, ddof=0, axis=None,
+                 chi2=[0, 0, 0],
+                 log=[0, 0, 0],
+                 mod_log=[0, 0, 0],
+                 cr=[0, 0, 0]),
+    # Shape is (3, 0).  This represents a empty collections of
+    # data sets in which each data set has length 3.  The test
+    # statistic should be an empty array.
+    PowerDivCase(f_obs=np.array([[],[],[]]).T,
+                 f_exp=None, ddof=0, axis=None,
+                 chi2=[],
+                 log=[],
+                 mod_log=[],
+                 cr=[]),
+]
+
+
+class TestPowerDivergence(object):
+
+    def check_power_divergence(self, f_obs, f_exp, ddof, axis, lambda_,
+                               expected_stat):
+        f_obs = np.asarray(f_obs)
+        if axis is None:
+            num_obs = f_obs.size
         else:
-            use_axis = axis
-        b = np.broadcast(f_obs, f_exp)
-        num_obs = b.shape[use_axis]
+            b = np.broadcast(f_obs, f_exp)
+            num_obs = b.shape[axis]
+        stat, p = stats.power_divergence(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+                                         axis=axis, lambda_=lambda_)
+        assert_allclose(stat, expected_stat)
 
-    if axis == 'no':
-        chi2, p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof)
-    else:
-        chi2, p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof, axis=axis)
-    assert_array_equal(chi2, expected_chi2)
+        if lambda_ == 1 or lambda_ == "pearson":
+            # Also test stats.chisquare.
+            stat, p = stats.chisquare(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+                                      axis=axis)
+            assert_allclose(stat, expected_stat)
 
-    ddof = np.asarray(ddof)
-    expected_p = stats.chisqprob(expected_chi2, num_obs - 1 - ddof)
-    assert_array_equal(p, expected_p)
+        ddof = np.asarray(ddof)
+        expected_p = stats.chisqprob(expected_stat, num_obs - 1 - ddof)
+        assert_allclose(p, expected_p)
 
+    def test_basic(self):
+        for case in power_div_1d_cases:
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   None, case.chi2)
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   "pearson", case.chi2)
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   1, case.chi2)
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   "log-likelihood", case.log)
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   "mod-log-likelihood", case.mod_log)
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   "cressie-read", case.cr)
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   2/3, case.cr)
 
-def test_chisquare():
-    # The data sets here are chosen so that the chi2 statistic
-    # can be calculated exactly, so a test for equality (rather than
-    # being numerically close) can be used.
-    Case = namedtuple('Case', ['f_obs', 'f_exp', 'ddof', 'axis',
-                                'expected_chi2'])
-    empty = np.array([[],[],[]])
-    data2da = np.array([[1, 4],
-                        [2, 8],
-                        [3, 12],
-                        [2, 8]])
-    data2db = np.array([[1, 2, 3, 2],
-                        [3, 2, 3, 0]])
-
-    # These cases use the default axis=0.
-    cases0 = [
-        # simple case, 1 data set:
-        Case(f_obs=[1,2,3,2], f_exp=None, ddof=0, axis=0,
-             expected_chi2=1.0),
-        # two simple data sets
-        Case(f_obs=data2da, f_exp=None, ddof=0, axis=0,
-             expected_chi2=[1.0, 4.0]),
-        # Edge case: one data set with length 0.
-        Case(f_obs=[], ddof=0, f_exp=None, axis=0, expected_chi2=0.0),
-        # Edge case: no data sets (data has shape (3,0)).
-        Case(f_obs=empty, f_exp=None, ddof=0, axis=0, expected_chi2=[]),
-        # Edge case: data has shape (0, 3) (3 data sets,
-        # but each has length 0).
-        Case(f_obs=empty.T, f_exp=None, ddof=0, axis=0,
-             expected_chi2=[0.0, 0.0, 0.0]),
-        # simple case, with scalar f_exp.
-        Case(f_obs=[1, 2, 3, 2], f_exp=2, ddof=0, axis=0,
-             expected_chi2=1.0),
-        # simple case with vector f_exp (uniform).
-        Case(f_obs=[1, 2, 3, 2], f_exp=[2, 2, 2, 2], ddof=0, axis=0,
-             expected_chi2=1.0),
-        # simple case with vector f_exp equal to f_obs.
-        Case(f_obs=[1, 2, 3, 2], f_exp=[1, 2, 3, 2], ddof=0, axis=0,
-             expected_chi2=0.0),
-        # 2-D data
-        Case(f_obs=data2db.T, f_exp=None, ddof=0, axis=0,
-             expected_chi2=[1.0, 3.0]),
-        Case(f_obs=data2db.T, f_exp=None, ddof=1, axis=0,
-             expected_chi2=[1.0, 3.0]),
-        # 2-D data, 1-D ddof
-        Case(f_obs=data2db.T, f_exp=None, ddof=[0,1], axis=0,
-             expected_chi2=[1.0, 3.0]),
-    ]
-    # All the cases in `cases0` have axis=0, which is the default value
-    # for the chisquare function.  Here we check each case twice, once
-    # in which the argument is not passed to chisquare (indicated by
-    # using the value 'no' in the call to check_chisquare), and again
-    # with the axis argument explicitly set to 0.
-    for case in cases0:
-        yield (check_chisquare, case.f_obs, case.f_exp, case.ddof, 'no',
-               case.expected_chi2)
-    for case in cases0:
-        yield (check_chisquare, case.f_obs, case.f_exp, case.ddof, 0,
-               case.expected_chi2)
-
-    # A few more cases, testing axis != 0 and basic broadcasting of
-    # f_obs and f_exp.
-    cases1 = [
-        Case(f_obs=data2da.T, f_exp=None, ddof=0, axis=1,
-             expected_chi2=[1.0, 4.0]),
-        Case(f_obs=data2db, f_exp=None, ddof=0, axis=None,
-             expected_chi2=[4.0]),
-        Case(f_obs=data2db.T, f_exp=None, ddof=0, axis=None,
-             expected_chi2=[4.0]),
-        Case(f_obs=[1,2,3,2], f_exp=[[2, 2, 3, 1],[2, 2, 2, 2]], ddof=0, axis=1,
-             expected_chi2=[1.5, 1.0]),
-    ]
-
-    for case in cases1:
-        yield (check_chisquare, case.f_obs, case.f_exp, case.ddof, case.axis,
-               case.expected_chi2)
+    def test_basic_masked(self):
+        for case in power_div_1d_cases:
+            mobs = np.ma.array(case.f_obs)
+            yield (self.check_power_divergence,
+                   mobs, case.f_exp, case.ddof, case.axis,
+                   None, case.chi2)
+            yield (self.check_power_divergence,
+                   mobs, case.f_exp, case.ddof, case.axis,
+                   "pearson", case.chi2)
+            yield (self.check_power_divergence,
+                   mobs, case.f_exp, case.ddof, case.axis,
+                   1, case.chi2)
+            yield (self.check_power_divergence,
+                   mobs, case.f_exp, case.ddof, case.axis,
+                   "log-likelihood", case.log)
+            yield (self.check_power_divergence,
+                   mobs, case.f_exp, case.ddof, case.axis,
+                   "mod-log-likelihood", case.mod_log)
+            yield (self.check_power_divergence,
+                   mobs, case.f_exp, case.ddof, case.axis,
+                   "cressie-read", case.cr)
+            yield (self.check_power_divergence,
+                   mobs, case.f_exp, case.ddof, case.axis,
+                   2/3, case.cr)
 
 
-def test_chisquare_ddof_broadcasting():
-    # Test that ddof broadcasts correctly.
+    def test_axis(self):
+        case0 = power_div_1d_cases[0]
+        case1 = power_div_1d_cases[1]
+        f_obs = np.vstack((case0.f_obs, case1.f_obs))
+        f_exp = np.vstack((np.ones_like(case0.f_obs)*np.mean(case0.f_obs),
+                           case1.f_exp))
+        # Check the four computational code paths in power_divergence
+        # using a 2D array with axis=1.
+        yield (self.check_power_divergence,
+               f_obs, f_exp, 0, 1,
+               "pearson", [case0.chi2, case1.chi2])
+        yield (self.check_power_divergence,
+               f_obs, f_exp, 0, 1,
+               "log-likelihood", [case0.log, case1.log])
+        yield (self.check_power_divergence,
+               f_obs, f_exp, 0, 1,
+               "mod-log-likelihood", [case0.mod_log, case1.mod_log])
+        yield (self.check_power_divergence,
+               f_obs, f_exp, 0, 1,
+               "cressie-read", [case0.cr, case1.cr])
+        # Reshape case0.f_obs to shape (2,2), and use axis=None.
+        # The result should be the same.
+        yield (self.check_power_divergence,
+               np.array(case0.f_obs).reshape(2, 2), None, 0, None,
+               "pearson", case0.chi2)
 
-    # obs has shape (4, 2).  We'll use the default axis=0, so chi2
-    # will have shape (2,).
-    obs = np.array([[1, 2, 3, 2], [3, 2, 2, 5]]).T
+    def test_ddof_broadcasting(self):
+        # Test that ddof broadcasts correctly.
+        # ddof does not affect the test statistic.  It is broadcast
+        # with the computed test statistic for the computation of
+        # the p value.
 
-    # ddof has shape (2, 1).  This is broadcast with chi2, so p will
-    # have shape (2,2).
-    ddof = np.array([[0], [1]])
+        case0 = power_div_1d_cases[0]
+        case1 = power_div_1d_cases[1]
+        # Create 4x2 arrays of observed and expected frequencies.
+        f_obs = np.vstack((case0.f_obs, case1.f_obs)).T
+        f_exp = np.vstack((np.ones_like(case0.f_obs)*np.mean(case0.f_obs),
+                           case1.f_exp)).T
 
-    chi2, p = stats.chisquare(obs, ddof=ddof)
-    assert_array_equal(chi2, [1.0, 2.0])
+        expected_chi2 = [case0.chi2, case1.chi2]
 
-    chi20, p0 = stats.chisquare(obs, ddof=ddof[0,0])
-    assert_array_equal(chi20, [1.0, 2.0])
+        # ddof has shape (2, 1).  This is broadcast with the computed
+        # statistic, so p will have shape (2,2).
+        ddof = np.array([[0], [1]])
 
-    chi21, p1 = stats.chisquare(obs, ddof=ddof[1,0])
-    assert_array_equal(chi21, [1.0, 2.0])
-    assert_array_equal(p, np.vstack((p0, p1)))
+        stat, p = stats.power_divergence(f_obs, f_exp, ddof=ddof)
+        assert_allclose(stat, expected_chi2)
+
+        # Compute the p values separately, passing in scalars for ddof.
+        stat0, p0 = stats.power_divergence(f_obs, f_exp, ddof=ddof[0,0])
+        stat1, p1 = stats.power_divergence(f_obs, f_exp, ddof=ddof[1,0])
+
+        assert_array_equal(p, np.vstack((p0, p1)))
+
+    def test_empty_cases(self):
+        for case in power_div_empty_cases:
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   "pearson", case.chi2)
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   "log-likelihood", case.log)
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   "mod-log-likelihood", case.mod_log)
+            yield (self.check_power_divergence,
+                   case.f_obs, case.f_exp, case.ddof, case.axis,
+                   "cressie-read", case.cr)
+
+
+def test_chisquare_masked_arrays():
+    # Test masked arrays.
+    obs = np.array([[8, 8, 16, 32, -1], [-1, -1, 3, 4, 5]]).T
+    mask = np.array([[0, 0, 0, 0, 1], [1, 1, 0, 0, 0]]).T
+    mobs = np.ma.masked_array(obs, mask)
+    expected_chisq = np.array([24.0, 0.5])
+    expected_g = np.array([2*(2*8*np.log(0.5) + 32*np.log(2.0)),
+                           2*(3*np.log(0.75) + 5*np.log(1.25))])
+
+    chisq, p = stats.chisquare(mobs)
+    mat.assert_array_equal(chisq, expected_chisq)
+    mat.assert_array_almost_equal(p, stats.chisqprob(expected_chisq,
+                                                     mobs.count(axis=0) - 1))
+
+    g, p = stats.power_divergence(mobs, lambda_='log-likelihood')
+    mat.assert_array_equal(g, expected_g)
+    mat.assert_array_almost_equal(p, stats.chisqprob(expected_g,
+                                                     mobs.count(axis=0) - 1))
+
+    chisq, p = stats.chisquare(mobs.T, axis=1)
+    mat.assert_array_equal(chisq, expected_chisq)
+    mat.assert_array_almost_equal(p,
+                                  stats.chisqprob(expected_chisq,
+                                                  mobs.T.count(axis=1) - 1))
+
+    g, p = stats.power_divergence(mobs.T, axis=1, lambda_="log-likelihood")
+    mat.assert_array_equal(g, expected_g)
+    mat.assert_array_almost_equal(p, stats.chisqprob(expected_g,
+                                                     mobs.count(axis=0) - 1))
+
+    obs1 = np.ma.array([3, 5, 6, 99, 10], mask=[0, 0, 0, 1, 0])
+    exp1 = np.ma.array([2, 4, 8, 10, 99], mask=[0, 0, 0, 0, 1])
+    chi2, p = stats.chisquare(obs1, f_exp=exp1)
+    # Because of the mask at index 3 of obs1 and at index 4 of exp1,
+    # only the first three elements are included in the calculation
+    # of the statistic.
+    mat.assert_array_equal(chi2, 1/2 + 1/4 + 4/8)
+
+    # When axis=None, the two values should have type np.float64.
+    chisq, p = stats.chisquare(np.ma.array([1,2,3]), axis=None)
+    assert_(isinstance(chisq, np.float64))
+    assert_(isinstance(p, np.float64))
+    assert_equal(chisq, 1.0)
+    assert_almost_equal(p, stats.chisqprob(1.0, 2))
+
+    # Empty arrays:
+    # A data set with length 0 returns a masked scalar.
+    chisq, p = stats.chisquare(np.ma.array([]))
+    assert_(isinstance(chisq, np.ma.MaskedArray))
+    assert_equal(chisq.shape, ())
+    assert_(chisq.mask)
+
+    empty3 = np.ma.array([[],[],[]])
+
+    # empty3 is a collection of 0 data sets (whose lengths would be 3, if
+    # there were any), so the return value is an array with length 0.
+    chisq, p = stats.chisquare(empty3)
+    assert_(isinstance(chisq, np.ma.MaskedArray))
+    mat.assert_array_equal(chisq, [])
+
+    # empty3.T is an array containing 3 data sets, each with length 0,
+    # so an array of size (3,) is returned, with all values masked.
+    chisq, p = stats.chisquare(empty3.T)
+    assert_(isinstance(chisq, np.ma.MaskedArray))
+    assert_equal(chisq.shape, (3,))
+    assert_(np.all(chisq.mask))
+
+
+def test_power_divergence_against_cressie_read_data():
+    # Test stats.power_divergence against tables 4 and 5 from
+    # Cressie and Read, "Multimonial Goodness-of-Fit Tests",
+    # J. R. Statist. Soc. B (1984), Vol 46, No. 3, pp. 440-464.
+    # This tests the calculation for several values of lambda.
+
+    # `table4` holds just the second and third columns from Table 4.
+    table4 = np.array([
+        # observed, expected,
+        15, 15.171,
+        11, 13.952,
+        14, 12.831,
+        17, 11.800,
+         5, 10.852,
+        11, 9.9796,
+        10, 9.1777,
+         4, 8.4402,
+         8, 7.7620,
+        10, 7.1383,
+         7, 6.5647,
+         9, 6.0371,
+        11, 5.5520,
+         3, 5.1059,
+         6, 4.6956,
+         1, 4.3183,
+         1, 3.9713,
+         4, 3.6522,
+        ]).reshape(-1, 2)
+    table5 = np.array([
+        # lambda, statistic
+        -10.0,  72.2e3,
+         -5.0,  28.9e1,
+         -3.0,  65.6,
+         -2.0,  40.6,
+         -1.5,  34.0,
+         -1.0,  29.5,
+         -0.5,  26.5,
+          0.0,  24.6,
+          0.5,  23.4,
+          0.67, 23.1,
+          1.0,  22.7,
+          1.5,  22.6,
+          2.0,  22.9,
+          3.0,  24.8,
+          5.0,  35.5,
+         10.0,  21.4e1,
+        ]).reshape(-1, 2)
+
+    for lambda_, expected_stat in table5:
+        stat, p = stats.power_divergence(table4[:,0], table4[:,1],
+                                         lambda_=lambda_)
+        assert_allclose(stat, expected_stat, rtol=5e-3)
 
 
 def test_friedmanchisquare():
