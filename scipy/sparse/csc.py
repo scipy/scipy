@@ -141,13 +141,14 @@ class csc_matrix(_cs_matrix, IndexMixin):
 
     def __getitem__(self, key):
         # use CSR to implement fancy indexing
-        if isinstance(key, tuple):
+        if isinstance(key, tuple):  # [?, ?]
             row, col = self._unpack_index(key)
 
             if (isintlike(row) or isinstance(row, slice) or isintlike(col) or
                 isinstance(col,slice)):
-                return self.T[col,row].T
+                return self.T[col,row].T  # [1, ?], [1:2, ?], [?, 1], [?, 1:2]
             else:
+                # ndarrays or something else. Dense result.
                 return self.T[col, row]
         elif isinstance(key, np.ndarray) and key.dtype.kind == 'b':
             row, col = self._check_boolean(key, slice(None))
