@@ -311,75 +311,38 @@ class TestUtilities(object):
                                                unit_cube_tol=1e7*eps)
 
 
-class TestRidgeIter2D(object):
+class TestVertexNeighborVertices(object):
+    def _check(self, tri):
+        expected = [set() for j in range(tri.points.shape[0])]
+        for s in tri.simplices:
+            for a in s:
+                for b in s:
+                    if a != b:
+                        expected[a].add(b)
 
-    def _check_ridges(self, tri, vertex, expected):
-        got = [(v1, v2) for v1, v2, i, t in qhull.RidgeIter2D(tri, vertex)]
-        got.sort()
-        expected.sort()
-        assert_equal(got, expected, err_msg="%d: %r != %r" % (
-            vertex, got, expected))
+        indices, indptr = tri.vertex_neighbor_vertices
+
+        got = []
+        for j in range(tri.points.shape[0]):
+            got.append(set(map(int, indptr[indices[j]:indices[j+1]])))
+
+        assert_equal(got, expected, err_msg="%r != %r" % (got, expected))
 
     def test_triangle(self):
         points = np.array([(0,0), (0,1), (1,0)], dtype=np.double)
         tri = qhull.Delaunay(points)
-
-        # 1
-        # +
-        # |\
-        # | \
-        # |0 \
-        # +---+
-        # 0   2
-
-        self._check_ridges(tri, 0, [(0, 1), (0, 2)])
-        self._check_ridges(tri, 1, [(1, 0), (1, 2)])
-        self._check_ridges(tri, 2, [(2, 0), (2, 1)])
+        self._check(tri)
 
     def test_rectangle(self):
         points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
         tri = qhull.Delaunay(points)
-
-        # 1   2
-        # +---+
-        # |\ 0|
-        # | \ |
-        # |1 \|
-        # +---+
-        # 0   3
-
-        self._check_ridges(tri, 0, [(0, 1), (0, 3)])
-        self._check_ridges(tri, 1, [(1, 0), (1, 3), (1, 2)])
-        self._check_ridges(tri, 2, [(2, 1), (2, 3)])
-        self._check_ridges(tri, 3, [(3, 0), (3, 1), (3, 2)])
+        self._check(tri)
 
     def test_complicated(self):
         points = np.array([(0,0), (0,1), (1,1), (1,0),
                            (0.5, 0.5), (0.9, 0.5)], dtype=np.double)
         tri = qhull.Delaunay(points)
-
-        #  1                       2
-        #  +-----------------------+
-        #  | \-                 /-||
-        #  |   \-      0      /-  /|
-        #  |     \-         /-   / |
-        #  |       \-     /-    |  |
-        #  |         \-4/-  4  5/  |
-        #  |   1       +-------+  3|
-        #  |         -/  \- 5   \  |
-        #  |      --/      \--   \ |
-        #  |   --/     2      \- | |
-        #  | -/                 \-\|
-        #  +-----------------------+
-        #  0                       3
-        #
-
-        self._check_ridges(tri, 0, [(0, 1), (0, 3), (0, 4)])
-        self._check_ridges(tri, 1, [(1, 0), (1, 2), (1, 4)])
-        self._check_ridges(tri, 2, [(2, 1), (2, 4), (2, 5), (2, 3)])
-        self._check_ridges(tri, 3, [(3, 0), (3, 4), (3, 5), (3, 2)])
-        self._check_ridges(tri, 4, [(4, 0), (4, 1), (4, 2), (4, 3), (4, 5)])
-        self._check_ridges(tri, 5, [(5, 2), (5, 3), (5, 4)])
+        self._check(tri)
 
 
 class TestDelaunay(object):

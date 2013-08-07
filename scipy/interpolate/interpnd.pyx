@@ -226,7 +226,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         start = 0
         fill_value = self.fill_value
 
-        qhull._get_delaunay_info(&info, self.tri, 1, 0)
+        qhull._get_delaunay_info(&info, self.tri, 1, 0, 0)
 
         out = np.zeros((xi.shape[0], self.values.shape[1]),
                        dtype=self.values.dtype)
@@ -314,8 +314,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
     """
     cdef double Q[2*2]
     cdef double s[2], r[2]
-    cdef int ipoint, iiter, k
-    cdef qhull.RidgeIter2D_t it
+    cdef int ipoint, iiter, k, ipoint2, jpoint2
     cdef double f1, f2, df2, ex, ey, L, L3, det, err, change
 
     # initialize
@@ -394,21 +393,22 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
                 s[k] = 0
 
             # walk over neighbours of given point
-            qhull._RidgeIter2D_init(&it, d, ipoint)
+            for jpoint2 in xrange(d.vertex_neighbors_indices[ipoint],
+                                  d.vertex_neighbors_indices[ipoint+1]):
+                ipoint2 = d.vertex_neighbors_indptr[jpoint2]
 
-            while it.index != -1:
                 # edge
-                ex = d.points[2*it.vertex2 + 0] - d.points[2*it.vertex + 0]
-                ey = d.points[2*it.vertex2 + 1] - d.points[2*it.vertex + 1]
+                ex = d.points[2*ipoint2 + 0] - d.points[2*ipoint + 0]
+                ey = d.points[2*ipoint2 + 1] - d.points[2*ipoint + 1]
                 L = sqrt(ex**2 + ey**2)
                 L3 = L*L*L
 
                 # data at vertices
-                f1 = data[it.vertex]
-                f2 = data[it.vertex2]
+                f1 = data[ipoint]
+                f2 = data[ipoint2]
 
                 # scaled gradient projections on the edge
-                df2 = -ex*y[it.vertex2*2 + 0] - ey*y[it.vertex2*2 + 1]
+                df2 = -ex*y[2*ipoint2 + 0] - ey*y[2*ipoint2 + 1]
 
                 # edge sum
                 Q[0] += 4*ex*ex / L3
@@ -418,9 +418,6 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
                 s[0] += (6*(f1 - f2) - 2*df2) * ex / L3
                 s[1] += (6*(f1 - f2) - 2*df2) * ey / L3
 
-                # next edge
-                qhull._RidgeIter2D_next(&it)
-
             Q[2] = Q[1]
 
             # solve
@@ -429,11 +426,11 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
             r[0] = ( Q[3]*s[0] - Q[1]*s[1])/det
             r[1] = (-Q[2]*s[0] + Q[0]*s[1])/det
 
-            change = max(fabs(y[it.vertex*2 + 0] + r[0]),
-                         fabs(y[it.vertex*2 + 1] + r[1]))
+            change = max(fabs(y[2*ipoint + 0] + r[0]),
+                         fabs(y[2*ipoint + 1] + r[1]))
 
-            y[it.vertex*2 + 0] = -r[0]
-            y[it.vertex*2 + 1] = -r[1]
+            y[2*ipoint + 0] = -r[0]
+            y[2*ipoint + 1] = -r[1]
 
             # relative/absolute error
             change /= max(1.0, max(fabs(r[0]), fabs(r[1])))
@@ -478,7 +475,7 @@ def estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
     data = y
     grad = yi
 
-    qhull._get_delaunay_info(&info, tri, 0, 1)
+    qhull._get_delaunay_info(&info, tri, 0, 0, 1)
     nvalues = data.shape[0]
 
     for k in xrange(nvalues):
@@ -830,7 +827,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         start = 0
         fill_value = self.fill_value
 
-        qhull._get_delaunay_info(&info, self.tri, 1, 1)
+        qhull._get_delaunay_info(&info, self.tri, 1, 1, 0)
 
         out = np.zeros((xi.shape[0], self.values.shape[1]),
                        dtype=self.values.dtype)
