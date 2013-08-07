@@ -1,11 +1,19 @@
 from __future__ import division, print_function, absolute_import
 
+import os
+import warnings
+
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_, \
     TestCase, assert_raises
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy.interpolate.fitpack import splrep, splev, bisplrep, bisplev, \
      sproot, splprep, splint, spalde, splder, splantider, insert
+
+
+def data_file(basename):
+    return os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                        'data', basename)
 
 
 def norm2(x):
@@ -326,12 +334,24 @@ class TestSplder(object):
         assert_raises(ValueError, splder, spl2, 1)
 
 
-def test_bisplrep_overflow():
-    a = np.linspace(0, 1, 620)
-    b = np.linspace(0, 1, 620)
-    x, y = np.meshgrid(a, b)
-    z = np.random.rand(*x.shape)
-    assert_raises(OverflowError, bisplrep, x.ravel(), y.ravel(), z.ravel(), s=0)
+class TestBisplrep(object):
+    def test_overflow(self):
+        a = np.linspace(0, 1, 620)
+        b = np.linspace(0, 1, 620)
+        x, y = np.meshgrid(a, b)
+        z = np.random.rand(*x.shape)
+        assert_raises(OverflowError, bisplrep, x.ravel(), y.ravel(), z.ravel(), s=0)
+
+    def test_regression_1310(self):
+        # Regression test for gh-1310
+        data = np.load(data_file('bug-1310.npz'))['data']
+
+        # Shouldn't crash -- the input data triggers work array sizes
+        # that caused previously some data to not be aligned on
+        # sizeof(double) boundaries in memory, which made the Fortran
+        # code to crash when compiled with -O3
+        bisplrep(data[:,0], data[:,1], data[:,2], kx=3, ky=3, s=0,
+                 full_output=True)
 
 
 if __name__ == "__main__":
