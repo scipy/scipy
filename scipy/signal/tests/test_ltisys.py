@@ -101,124 +101,149 @@ class Test_lsim2(object):
         assert_almost_equal(x[:,0], expected_x)
 
 
-class Test_impulse2(object):
+class _TestImpulseFuncs(object):
+    # Common tests for impulse/impulse2 (= self.func)
 
     def test_01(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact impulse response is x(t) = exp(-t).
         system = ([1.0],[1.0,1.0])
-        tout, y = impulse2(system)
+        tout, y = self.func(system)
         expected_y = np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
     def test_02(self):
-        """Specify the desired time values for the output."""
+        # Specify the desired time values for the output.
 
         # First order system: x'(t) + x(t) = u(t)
         # Exact impulse response is x(t) = exp(-t).
         system = ([1.0],[1.0,1.0])
         n = 21
         t = np.linspace(0, 2.0, n)
-        tout, y = impulse2(system, T=t)
+        tout, y = self.func(system, T=t)
         assert_equal(tout.shape, (n,))
         assert_almost_equal(tout, t)
         expected_y = np.exp(-t)
         assert_almost_equal(y, expected_y)
 
     def test_03(self):
-        """Specify an initial condition as a scalar."""
+        # Specify an initial condition as a scalar.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact impulse response is x(t) = 4*exp(-t).
         system = ([1.0],[1.0,1.0])
-        tout, y = impulse2(system, X0=3.0)
+        tout, y = self.func(system, X0=3.0)
         expected_y = 4.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
     def test_04(self):
-        """Specify an initial condition as a list."""
+        # Specify an initial condition as a list.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact impulse response is x(t) = 4*exp(-t).
         system = ([1.0],[1.0,1.0])
-        tout, y = impulse2(system, X0=[3.0])
+        tout, y = self.func(system, X0=[3.0])
         expected_y = 4.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
     def test_05(self):
         # Simple integrator: x'(t) = u(t)
         system = ([1.0],[1.0,0.0])
-        tout, y = impulse2(system)
+        tout, y = self.func(system)
         expected_y = np.ones_like(tout)
-        assert_almost_equal(y, expected_y)
-
-    def test_06(self):
-        # Second order system with a repeated root:
-        #     x''(t) + 2*x(t) + x(t) = u(t)
-        # The exact impulse response is t*exp(-t).
-        system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y = impulse2(system)
-        expected_y = tout * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
     def test_array_like(self):
         # Test that function can accept sequences, scalars.
         system = ([1.0], [1.0, 2.0, 1.0])
         # TODO: add meaningful test where X0 is a list
-        tout, y = impulse2(system, X0=[3], T=[5, 6])
-        tout, y = impulse2(system, X0=[3], T=[5])
-        tout, y = impulse2(system, X0=3, T=5)
+        tout, y = self.func(system, X0=[3], T=[5, 6])
+        tout, y = self.func(system, X0=[3], T=[5])
 
 
-class Test_step2(object):
+class TestImpulse2(_TestImpulseFuncs):
+    def setup(self):
+        self.func = impulse2
 
+    def test_array_like2(self):
+        system = ([1.0], [1.0, 2.0, 1.0])
+        tout, y = self.func(system, X0=3, T=5)
+
+    def test_06(self):
+        # Second order system with a repeated root:
+        #     x''(t) + 2*x(t) + x(t) = u(t)
+        # The exact impulse response is t*exp(-t).
+        # Doesn't pass for `impulse` (on some systems, see gh-2654)
+        system = ([1.0], [1.0, 2.0, 1.0])
+        tout, y = self.func(system)
+        expected_y = tout * np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+
+class TestImpulse(_TestImpulseFuncs):
+    def setup(self):
+        self.func = impulse
+
+
+class _TestStepFuncs(object):
     def test_01(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
         system = ([1.0],[1.0,1.0])
-        tout, y = step2(system)
+        tout, y = self.func(system)
         expected_y = 1.0 - np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
     def test_02(self):
-        """Specify the desired time values for the output."""
+        # Specify the desired time values for the output.
 
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
         system = ([1.0],[1.0,1.0])
         n = 21
         t = np.linspace(0, 2.0, n)
-        tout, y = step2(system, T=t)
+        tout, y = self.func(system, T=t)
         assert_equal(tout.shape, (n,))
         assert_almost_equal(tout, t)
         expected_y = 1 - np.exp(-t)
         assert_almost_equal(y, expected_y)
 
     def test_03(self):
-        """Specify an initial condition as a scalar."""
+        # Specify an initial condition as a scalar.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact step response is x(t) = 1 + 2*exp(-t).
         system = ([1.0],[1.0,1.0])
-        tout, y = step2(system, X0=3.0)
+        tout, y = self.func(system, X0=3.0)
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
     def test_04(self):
-        """Specify an initial condition as a list."""
+        # Specify an initial condition as a list.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact step response is x(t) = 1 + 2*exp(-t).
         system = ([1.0],[1.0,1.0])
-        tout, y = step2(system, X0=[3.0])
+        tout, y = self.func(system, X0=[3.0])
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
+
+    def test_array_like(self):
+        # Test that function can accept sequences, scalars.
+        system = ([1.0], [1.0, 2.0, 1.0])
+        # TODO: add meaningful test where X0 is a list
+        tout, y = self.func(system, T=[5, 6])
+
+
+class TestStep2(_TestStepFuncs):
+    def setup(self):
+        self.func = step2
 
     def test_05(self):
         # Simple integrator: x'(t) = u(t)
         # Exact step response is x(t) = t.
         system = ([1.0],[1.0,0.0])
-        tout, y = step2(system, atol=1e-10, rtol=1e-8)
+        tout, y = self.func(system, atol=1e-10, rtol=1e-8)
         expected_y = tout
         assert_almost_equal(y, expected_y)
 
@@ -227,125 +252,14 @@ class Test_step2(object):
         #     x''(t) + 2*x(t) + x(t) = u(t)
         # The exact step response is 1 - (1 + t)*exp(-t).
         system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y = step2(system, atol=1e-10, rtol=1e-8)
+        tout, y = self.func(system, atol=1e-10, rtol=1e-8)
         expected_y = 1 - (1 + tout) * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_array_like(self):
-        # Test that function can accept sequences, scalars.
-        system = ([1.0], [1.0, 2.0, 1.0])
-        # TODO: add meaningful test where X0 is a list
-        tout, y = step2(system, T=[5, 6])
 
-
-class Test_impulse(object):
-
-    def test_01(self):
-        # First order system: x'(t) + x(t) = u(t)
-        # Exact impulse response is x(t) = exp(-t).
-        system = ([1.0],[1.0,1.0])
-        tout, y = impulse(system)
-        expected_y = np.exp(-tout)
-        assert_almost_equal(y, expected_y)
-
-    def test_02(self):
-        """Specify the desired time values for the output."""
-
-        # First order system: x'(t) + x(t) = u(t)
-        # Exact impulse response is x(t) = exp(-t).
-        system = ([1.0],[1.0,1.0])
-        n = 21
-        t = np.linspace(0, 2.0, n)
-        tout, y = impulse(system, T=t)
-        assert_equal(tout.shape, (n,))
-        assert_almost_equal(tout, t)
-        expected_y = np.exp(-t)
-        assert_almost_equal(y, expected_y)
-
-    def test_03(self):
-        """Specify an initial condition as a scalar."""
-
-        # First order system: x'(t) + x(t) = u(t), x(0)=3.0
-        # Exact impulse response is x(t) = 4*exp(-t).
-        system = ([1.0],[1.0,1.0])
-        tout, y = impulse(system, X0=3.0)
-        expected_y = 4.0*np.exp(-tout)
-        assert_almost_equal(y, expected_y)
-
-    def test_04(self):
-        """Specify an initial condition as a list."""
-
-        # First order system: x'(t) + x(t) = u(t), x(0)=3.0
-        # Exact impulse response is x(t) = 4*exp(-t).
-        system = ([1.0],[1.0,1.0])
-        tout, y = impulse(system, X0=[3.0])
-        expected_y = 4.0*np.exp(-tout)
-        assert_almost_equal(y, expected_y)
-
-    def test_05(self):
-        # Simple integrator: x'(t) = u(t)
-        system = ([1.0],[1.0,0.0])
-        tout, y = impulse(system)
-        expected_y = np.ones_like(tout)
-        assert_almost_equal(y, expected_y)
-
-    def test_array_like(self):
-        # Test that function can accept sequences, scalars.
-        system = ([1.0], [1.0, 2.0, 1.0])
-        # TODO: add meaningful test where X0 is a list
-        tout, y = impulse(system, X0=[3], T=[5, 6])
-        tout, y = impulse(system, X0=[3], T=[5])
-
-
-class Test_step(object):
-
-    def test_01(self):
-        # First order system: x'(t) + x(t) = u(t)
-        # Exact step response is x(t) = 1 - exp(-t).
-        system = ([1.0],[1.0,1.0])
-        tout, y = step(system)
-        expected_y = 1.0 - np.exp(-tout)
-        assert_almost_equal(y, expected_y)
-
-    def test_02(self):
-        """Specify the desired time values for the output."""
-
-        # First order system: x'(t) + x(t) = u(t)
-        # Exact step response is x(t) = 1 - exp(-t).
-        system = ([1.0],[1.0,1.0])
-        n = 21
-        t = np.linspace(0, 2.0, n)
-        tout, y = step(system, T=t)
-        assert_equal(tout.shape, (n,))
-        assert_almost_equal(tout, t)
-        expected_y = 1 - np.exp(-t)
-        assert_almost_equal(y, expected_y)
-
-    def test_03(self):
-        """Specify an initial condition as a scalar."""
-
-        # First order system: x'(t) + x(t) = u(t), x(0)=3.0
-        # Exact step response is x(t) = 1 + 2*exp(-t).
-        system = ([1.0],[1.0,1.0])
-        tout, y = step(system, X0=3.0)
-        expected_y = 1 + 2.0*np.exp(-tout)
-        assert_almost_equal(y, expected_y)
-
-    def test_04(self):
-        """Specify an initial condition as a list."""
-
-        # First order system: x'(t) + x(t) = u(t), x(0)=3.0
-        # Exact step response is x(t) = 1 + 2*exp(-t).
-        system = ([1.0],[1.0,1.0])
-        tout, y = step(system, X0=[3.0])
-        expected_y = 1 + 2.0*np.exp(-tout)
-        assert_almost_equal(y, expected_y)
-
-    def test_array_like(self):
-        # Test that function can accept sequences, scalars.
-        system = ([1.0], [1.0, 2.0, 1.0])
-        # TODO: add meaningful test where X0 is a list
-        tout, y = step(system, X0=[3], T=[5, 6])
+class TestStep(_TestStepFuncs):
+    def setup(self):
+        self.func = step
 
 
 def test_lti_instantiation():
