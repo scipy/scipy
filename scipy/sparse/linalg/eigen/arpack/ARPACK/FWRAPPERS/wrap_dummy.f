@@ -147,16 +147,6 @@ c Fortran code to Accelerate.
       WCLANHE = CLANHE( NORM, UPLO, N, A, LDA, WORK )
       END FUNCTION
 
-      REAL FUNCTION WCLANHF( NORM, TRANSR, UPLO, N, A, WORK )
-      CHARACTER          NORM, TRANSR, UPLO
-      INTEGER            N
-      REAL               WORK( * )
-      COMPLEX            A( * )
-      EXTERNAL           CLANHF
-      REAL               CLANHF
-      WCLANHF = CLANHF( NORM, TRANSR, UPLO, N, A, WORK )
-      END FUNCTION
-
       REAL FUNCTION WCLANHP( NORM, UPLO, N, AP, WORK )
       CHARACTER          NORM, UPLO
       INTEGER            N
@@ -298,15 +288,6 @@ c Fortran code to Accelerate.
       EXTERNAL           SLANSB
       REAL               SLANSB
       WSLANSB = SLANSB( NORM, UPLO, N, K, AB, LDAB, WORK )
-      END FUNCTION
-
-      REAL FUNCTION WSLANSF( NORM, TRANSR, UPLO, N, A, WORK )
-      CHARACTER          NORM, TRANSR, UPLO
-      INTEGER            N
-      REAL               A( 0: * ), WORK( 0: * )
-      EXTERNAL           SLANSF
-      REAL               SLANSF
-      WSLANSF = SLANSF( NORM, TRANSR, UPLO, N, A, WORK )
       END FUNCTION
 
       REAL FUNCTION WSLANSP( NORM, UPLO, N, AP, WORK )
