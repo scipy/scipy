@@ -8,6 +8,10 @@ MATLAB is a registered trademark of the Mathworks inc.
 from __future__ import division, print_function, absolute_import
 
 import sys
+import operator
+
+from scipy.lib.six.moves import reduce
+
 import numpy as np
 
 if sys.version_info[0] >= 3:
@@ -293,11 +297,11 @@ def matdims(arr, oned_as='column'):
     ValueError: 1D option "bizarre" is strange
 
     """
-    if arr.size == 0:  # empty
-        return (0,) * np.max([arr.ndim, 2])
     shape = arr.shape
     if shape == ():  # scalar
         return (1,1)
+    if reduce(operator.mul, shape) == 0: # zero elememts
+        return (0,) * np.max([arr.ndim, 2])
     if len(shape) == 1:  # 1D
         if oned_as == 'column':
             return shape + (1,)
