@@ -245,12 +245,17 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
         PyErr_NoMemory();
         goto fail;
     }
+    /*
+     * NOTE: the work arrays MUST be aligned on double boundaries, as Fortran
+     *       compilers (e.g. gfortran) may assume that.  Malloc gives suitable
+     *       alignment, so we are here careful not to mess it up.
+     */
     tx = wa;
     ty = tx + nmax;
     c = ty + nmax;
     wrk1 = c + lcest;
     iwrk = (int *)(wrk1 + lwrk1);
-    wrk2 = (double *)(iwrk + kwrk);
+    wrk2 = ((double *)iwrk) + kwrk;
     if (iopt) {
         ap_tx = (PyArrayObject *)PyArray_ContiguousFromObject(tx_py, NPY_DOUBLE, 0, 1);
         ap_ty = (PyArrayObject *)PyArray_ContiguousFromObject(ty_py, NPY_DOUBLE, 0, 1);
