@@ -62,7 +62,6 @@ class LinearOperator(object):
     def __new__(cls, *args, **kwargs):
         obj = object.__new__(cls)
         obj._args = args
-        obj._kwargs = kwargs
         return obj
 
     @property
