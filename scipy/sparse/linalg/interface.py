@@ -59,15 +59,6 @@ class LinearOperator(object):
     array([ 2.,  3.])
 
     """
-    def __new__(cls, *args, **kwargs):
-        obj = object.__new__(cls)
-        obj._args = args
-        return obj
-
-    @property
-    def args(self):
-        return self._args
-
     def __init__(self, shape, matvec, rmatvec=None, matmat=None, dtype=None):
 
         shape = tuple(shape)
@@ -246,7 +237,7 @@ class _SumLinearOperator(LinearOperator):
             raise ValueError('both operands have to be a LinearOperator')
         if A.shape!=B.shape:
             raise ValueError('shape mismatch')
-        self._args = (A,B)
+        self.args = (A,B)
         super(_SumLinearOperator, self).__init__(A.shape,
                 self.matvec, self.rmatvec, self.matmat, _get_dtype([A,B]))
 
@@ -266,7 +257,7 @@ class _ProductLinearOperator(LinearOperator):
             raise ValueError('both operands have to be a LinearOperator')
         if A.shape[1]!=B.shape[0]:
             raise ValueError('shape mismatch')
-        self._args = (A,B)
+        self.args = (A,B)
         super(_ProductLinearOperator, self).__init__((A.shape[0],B.shape[1]),
                 self.matvec, self.rmatvec, self.matmat, _get_dtype([A,B]))
 
@@ -285,7 +276,7 @@ class _ScaledLinearOperator(LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if not np.isscalar(alpha):
             raise ValueError('scalar expected as alpha')
-        self._args = (A,alpha)
+        self.args = (A,alpha)
         super(_ScaledLinearOperator, self).__init__(A.shape,
                 self.matvec, self.rmatvec, self.matmat,
                 _get_dtype([A], [type(alpha)]))
@@ -307,7 +298,7 @@ class _PowerLinearOperator(LinearOperator):
             raise ValueError('square LinearOperator expected as A')
         if not isintlike(p):
             raise ValueError('integer expected as p')
-        self._args = (A,p)
+        self.args = (A,p)
         super(_PowerLinearOperator, self).__init__(A.shape,
                 self.matvec, self.rmatvec, self.matmat,
                 _get_dtype([A]))
