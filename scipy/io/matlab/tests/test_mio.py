@@ -1083,5 +1083,17 @@ def test_unicode_mat4():
     assert_equal(var_back['second_cat'], var['second_cat'])
 
 
+def test_empty_sparse():
+    # Can we read empty sparse matrices?
+    sio = BytesIO()
+    import scipy.sparse
+    empty_sparse = scipy.sparse.csr_matrix([[0,0],[0,0]])
+    savemat(sio, dict(x = empty_sparse))
+    sio.seek(0)
+    res = loadmat(sio)
+    assert_array_equal(res['x'].shape, empty_sparse.shape)
+    assert_array_equal(res['x'].todense(), 0)
+
+
 if __name__ == "__main__":
     run_module_suite()
