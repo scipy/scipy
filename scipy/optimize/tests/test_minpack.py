@@ -143,7 +143,7 @@ class TestFSolve(TestCase):
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
 
     def test_float32(self):
-        func = lambda x: np.array([x[0] - 1000, x[1] - 10000], dtype=np.float32)**2
+        func = lambda x: np.array([x[0] - 100, x[1] - 1000], dtype=np.float32)**2
         p = optimize.fsolve(func, np.array([1, 1], np.float32))
         assert_allclose(func(p), [0, 0], atol=1e-3)
 
@@ -316,6 +316,25 @@ class TestCurveFit(TestCase):
         assert_array_almost_equal(popt, [1.7989, 1.1642], decimal=4)
         assert_array_almost_equal(pcov, [[0.0852, -0.1260], [-0.1260, 0.1912]],
                                   decimal=4)
+
+    def test_regression_2639(self):
+        # This test fails if epsfcn in leastsq is too large.
+        x = [574.14200000000005, 574.154, 574.16499999999996,
+             574.17700000000002, 574.18799999999999, 574.19899999999996,
+             574.21100000000001, 574.22199999999998, 574.23400000000004,
+             574.245]
+        y = [859.0, 997.0, 1699.0, 2604.0, 2013.0, 1964.0, 2435.0,
+             1550.0, 949.0, 841.0]
+        guess = [574.1861428571428, 574.2155714285715, 1302.0, 1302.0,
+                 0.0035019999999983615, 859.0]
+        good = [ 5.74177150e+02, 5.74209188e+02, 1.74187044e+03, 1.58646166e+03,
+                 1.0068462e-02, 8.57450661e+02]
+
+        def f_double_gauss(x, x0, x1, A0, A1, sigma, c):
+            return (A0*np.exp(-(x-x0)**2/(2.*sigma**2))
+                    + A1*np.exp(-(x-x1)**2/(2.*sigma**2)) + c)
+        popt, pcov = curve_fit(f_double_gauss, x, y, guess, maxfev=10000)
+        assert_allclose(popt, good, rtol=1e-5)
 
 
 class TestFixedPoint(TestCase):

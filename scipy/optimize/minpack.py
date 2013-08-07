@@ -6,7 +6,7 @@ from . import _minpack
 from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, product, greater, array,
                    all, where, isscalar, asarray, inf, abs,
-                   finfo, inexact, issubdtype, dtype, sqrt)
+                   finfo, inexact, issubdtype, dtype)
 from .optimize import Result, _check_unknown_options
 
 error = _minpack.error
@@ -195,7 +195,7 @@ def _root_hybr(func, x0, args=(), jac=None,
         args = (args,)
     shape, dtype = _check_func('fsolve', 'func', func, x0, args, n, (n,))
     if epsfcn is None:
-        epsfcn = sqrt(finfo(dtype).eps)
+        epsfcn = finfo(dtype).eps
     Dfun = jac
     if Dfun is None:
         if band is None:
@@ -370,7 +370,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     if n > m:
         raise TypeError('Improper input: N=%s must not exceed M=%s' % (n, m))
     if epsfcn is None:
-        epsfcn = sqrt(finfo(dtype).eps)
+        epsfcn = finfo(dtype).eps
     if Dfun is None:
         if maxfev == 0:
             maxfev = 200*(n + 1)
