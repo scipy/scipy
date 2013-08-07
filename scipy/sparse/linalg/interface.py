@@ -320,8 +320,8 @@ class _PowerLinearOperator(LinearOperator):
 
 class MatrixLinearOperator(LinearOperator):
     def __init__(self, A):
-        LinearOperator.__init__(self, shape=A.shape, dtype=A.dtype,
-                                matvec=None, rmatvec=self.rmatvec)
+        super(MatrixLinearOperator, self).__init__(shape=A.shape,
+                dtype=A.dtype, matvec=None, rmatvec=self.rmatvec)
         self.matvec = A.dot
         self.matmat = A.dot
         self.__mul__ = A.dot
@@ -336,8 +336,8 @@ class MatrixLinearOperator(LinearOperator):
 
 class IdentityOperator(LinearOperator):
     def __init__(self, shape, dtype):
-        LinearOperator.__init__(self, shape=shape, dtype=dtype, matvec=None,
-                                rmatvec=self.rmatvec)
+        super(IdentityOperator, self).__init__(shape=shape, dtype=dtype,
+                matvec=None, rmatvec=self.rmatvec)
 
     def matvec(self, x):
         return x
