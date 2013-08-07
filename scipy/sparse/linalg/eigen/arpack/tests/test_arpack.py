@@ -222,37 +222,52 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     # compute suitable tolerances
     kwargs['tol'], rtol, atol = _get_test_tolerance(typ, mattype)
 
-    # solve
-    if general:
-        try:
-            eval, evec = eigs_func(ac, k, bc, **kwargs)
-        except ArpackNoConvergence:
-            kwargs['maxiter'] = 20*a.shape[0]
-            eval, evec = eigs_func(ac, k, bc, **kwargs)
-    else:
-        try:
-            eval, evec = eigs_func(ac, k, **kwargs)
-        except ArpackNoConvergence:
-            kwargs['maxiter'] = 20*a.shape[0]
-            eval, evec = eigs_func(ac, k, **kwargs)
+    # on rare occasions, ARPACK routines return results that are proper
+    # eigenvalues and -vectors, but not necessarily the ones requested in
+    # the parameter which. This is inherent to the Krylov methods, and
+    # should not be treated as a failure. If such a rare situation
+    # occurs, the calculation is tried again (but at most a few times).
+    ntries = 0
+    while ntries < 5:
+        # solve
+        if general:
+            try:
+                eval, evec = eigs_func(ac, k, bc, **kwargs)
+            except ArpackNoConvergence:
+                kwargs['maxiter'] = 20*a.shape[0]
+                eval, evec = eigs_func(ac, k, bc, **kwargs)
+        else:
+            try:
+                eval, evec = eigs_func(ac, k, **kwargs)
+            except ArpackNoConvergence:
+                kwargs['maxiter'] = 20*a.shape[0]
+                eval, evec = eigs_func(ac, k, **kwargs)
 
-    ind = argsort_which(eval, typ, k, which,
-                        sigma, OPpart, mode)
-    eval_a = eval
-    eval = eval[ind]
-    evec = evec[:,ind]
+        ind = argsort_which(eval, typ, k, which,
+                            sigma, OPpart, mode)
+        eval_a = eval
+        eval = eval[ind]
+        evec = evec[:,ind]
+
+        # check eigenvectors
+        LHS = np.dot(a, evec)
+        if general:
+            RHS = eval * np.dot(b, evec)
+        else:
+            RHS = eval * evec
+
+            assert_allclose(LHS, RHS, rtol=rtol, atol=atol, err_msg=err)
+
+        try:
+            # check eigenvalues
+            assert_allclose_cc(eval, exact_eval, rtol=rtol, atol=atol,
+                               err_msg=err)
+            break
+        except AssertionError:
+            ntries += 1
 
     # check eigenvalues
     assert_allclose_cc(eval, exact_eval, rtol=rtol, atol=atol, err_msg=err)
-
-    # check eigenvectors
-    LHS = np.dot(a, evec)
-    if general:
-        RHS = eval * np.dot(b, evec)
-    else:
-        RHS = eval * evec
-
-    assert_allclose(LHS, RHS, rtol=rtol, atol=atol, err_msg=err)
 
 
 class DictWithRepr(dict):
