@@ -873,21 +873,7 @@ def test_mat4_3d():
     # test behavior when writing 3D arrays to matlab 4 files
     stream = BytesIO()
     arr = np.arange(24).reshape((2,3,4))
-
-    warn_ctx = WarningManager()
-    warn_ctx.__enter__()
-    try:
-        warnings.simplefilter('error')
-        assert_raises(DeprecationWarning, savemat_future,
-                      stream, {'a': arr}, True, '4')
-        # For now, we save a 3D array as 2D
-        warnings.simplefilter('ignore')
-        savemat_future(stream, {'a': arr}, format='4')
-    finally:
-        warn_ctx.__exit__()
-
-    d = loadmat(stream)
-    assert_array_equal(d['a'], arr.reshape((6,4)))
+    assert_raises(ValueError, savemat, stream, {'a': arr}, True, '4')
 
 
 def test_func_read():

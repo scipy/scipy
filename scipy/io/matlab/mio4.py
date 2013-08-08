@@ -424,11 +424,7 @@ class MatFile4Reader(MatFileReader):
 def arr_to_2d(arr, oned_as='row'):
     ''' Make ``arr`` exactly two dimensional
 
-    If `arr` has more than 2 dimensions, then, for the sake of
-    compatibility with previous versions of scipy, we reshape to 2D
-    preserving the last dimension and increasing the first dimension.
-    In future versions we will raise an error, as this is at best a very
-    counterinituitive thing to do.
+    If `arr` has more than 2 dimensions, raise a ValueError
 
     Parameters
     ----------
@@ -444,13 +440,8 @@ def arr_to_2d(arr, oned_as='row'):
     '''
     dims = matdims(arr, oned_as)
     if len(dims) > 2:
-        warnings.warn('Matlab 4 files only support <=2 '
-                      'dimensions; the next version of scipy will '
-                      'raise an error when trying to write >2D arrays '
-                      'to matlab 4 format files',
-                      DeprecationWarning,
-                      )
-        return arr.reshape((-1,dims[-1]))
+        raise ValueError('Matlab 4 files cannot save arrays with more than '
+                         '2 dimensions')
     return arr.reshape(dims)
 
 
