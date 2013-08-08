@@ -62,7 +62,6 @@ random = mtrand.random_sample
 
 import types
 from scipy.misc import doccer
-sgf = vectorize
 
 try:
     from new import instancemethod
@@ -1015,18 +1014,18 @@ class rv_continuous(rv_generic):
             numargs2 = len(pdf_signature[0]) - 2
             self.numargs = max(numargs1, numargs2)
         # nin correction
-        self.vecfunc = sgf(self._ppf_single_call,otypes='d')
+        self.vecfunc = vectorize(self._ppf_single_call, otypes='d')
         self.vecfunc.nin = self.numargs + 1
-        self.vecentropy = sgf(self._entropy,otypes='d')
+        self.vecentropy = vectorize(self._entropy, otypes='d')
         self.vecentropy.nin = self.numargs + 1
-        self.veccdf = sgf(self._cdf_single_call,otypes='d')
+        self.veccdf = vectorize(self._cdf_single_call, otypes='d')
         self.veccdf.nin = self.numargs + 1
         self.shapes = shapes
         self.extradoc = extradoc
         if momtype == 0:
-            self.generic_moment = sgf(self._mom0_sc,otypes='d')
+            self.generic_moment = vectorize(self._mom0_sc, otypes='d')
         else:
-            self.generic_moment = sgf(self._mom1_sc,otypes='d')
+            self.generic_moment = vectorize(self._mom1_sc, otypes='d')
         self.generic_moment.nin = self.numargs+1  # Because of the *args argument
         # of _mom0_sc, vectorize cannot count the number of arguments correctly.
 
@@ -6078,7 +6077,7 @@ class rv_discrete(rv_generic):
         self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
-        self._cdfvec = sgf(self._cdfsingle,otypes='d')
+        self._cdfvec = vectorize(self._cdfsingle, otypes='d')
         self.return_integers = 1
         self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
@@ -6096,11 +6095,11 @@ class rv_discrete(rv_generic):
             self.qvals = numpy.cumsum(self.pk,axis=0)
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
-            self._ppf = instancemethod(sgf(_drv_ppf,otypes='d'),
+            self._ppf = instancemethod(vectorize(_drv_ppf, otypes='d'),
                                        self, rv_discrete)
-            self._pmf = instancemethod(sgf(_drv_pmf,otypes='d'),
+            self._pmf = instancemethod(vectorize(_drv_pmf, otypes='d'),
                                        self, rv_discrete)
-            self._cdf = instancemethod(sgf(_drv_cdf,otypes='d'),
+            self._cdf = instancemethod(vectorize(_drv_cdf, otypes='d'),
                                        self, rv_discrete)
             self._nonzero = instancemethod(_drv_nonzero, self, rv_discrete)
             self.generic_moment = instancemethod(_drv_moment,
@@ -6117,13 +6116,13 @@ class rv_discrete(rv_generic):
 
             # nin correction needs to be after we know numargs
             # correct nin for generic moment vectorization
-            self.vec_generic_moment = sgf(_drv2_moment, otypes='d')
+            self.vec_generic_moment = vectorize(_drv2_moment, otypes='d')
             self.vec_generic_moment.nin = self.numargs + 2
             self.generic_moment = instancemethod(self.vec_generic_moment,
                                                  self, rv_discrete)
 
             # correct nin for ppf vectorization
-            _vppf = sgf(_drv2_ppfsingle,otypes='d')
+            _vppf = vectorize(_drv2_ppfsingle, otypes='d')
             _vppf.nin = self.numargs + 2  # +1 is for self
             self._vecppf = instancemethod(_vppf,
                                           self, rv_discrete)
