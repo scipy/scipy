@@ -12,9 +12,8 @@ import scipy.sparse
 
 from scipy.lib.six import string_types
 
-from .miobase import MatFileReader, docfiller, matdims, \
-     read_dtype, convert_dtypes, arr_to_chars, arr_dtype_number, \
-     MatWriteError
+from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
+                      convert_dtypes, arr_to_chars, arr_dtype_number)
 
 from .mio_utils import squeeze_element, chars_to_strings
 from functools import reduce

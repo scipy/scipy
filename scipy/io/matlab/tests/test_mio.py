@@ -7,13 +7,11 @@ Need function load / save / roundtrip tests
 '''
 from __future__ import division, print_function, absolute_import
 
-import sys
 import os
 from os.path import join as pjoin, dirname
 from glob import glob
 from io import BytesIO
 from tempfile import mkdtemp
-from functools import partial
 
 from scipy.lib.six import u, text_type, string_types
 
@@ -21,11 +19,8 @@ import warnings
 import shutil
 import gzip
 
-from numpy.testing import \
-     assert_array_equal, \
-     assert_array_almost_equal, \
-     assert_equal, \
-     assert_raises, run_module_suite
+from numpy.testing import (assert_array_equal, assert_array_almost_equal,
+                           assert_equal, assert_raises, run_module_suite)
 from numpy.testing.utils import WarningManager
 
 from nose.tools import assert_true
@@ -35,12 +30,11 @@ from numpy import array
 import scipy.sparse as SP
 
 import scipy.io.matlab.byteordercodes as boc
-from scipy.io.matlab.miobase import matdims, MatFileReader, \
-    MatWriteError
-from scipy.io.matlab.mio import find_mat_file, mat_reader_factory, \
-    loadmat, savemat, whosmat
-from scipy.io.matlab.mio5 import MatlabObject, MatFile5Writer, \
-      MatFile5Reader, MatlabFunction, varmats_from_mat
+from scipy.io.matlab.miobase import matdims, MatWriteError
+from scipy.io.matlab.mio import (find_mat_file, mat_reader_factory, loadmat,
+                                 savemat, whosmat)
+from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
+                                  MatlabFunction, varmats_from_mat)
 
 # Use future defaults to silence unwanted test warnings
 savemat_future = partial(savemat, oned_as='row')
