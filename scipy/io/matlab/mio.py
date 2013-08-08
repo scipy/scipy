@@ -9,6 +9,8 @@ import os
 import sys
 import warnings
 
+import numpy as np
+
 from scipy.lib.six import string_types
 
 from .miobase import get_matfile_version, docfiller
@@ -18,7 +20,8 @@ from .mio5 import MatFile5Reader, MatFile5Writer
 __all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat',
            'whosmat']
 
-
+@np.deprecate(message='find_mat_file will be removed in the next '
+              'version of scipy')
 @docfiller
 def find_mat_file(file_name, appendmat=True):
     ''' Try to find .mat file on system path
@@ -65,19 +68,11 @@ def _open_file(file_like, appendmat):
     if isinstance(file_like, string_types):
         try:
             return open(file_like, 'rb')
-        except IOError:
-            pass
-        if appendmat and not file_like.endswith('.mat'):
-            try:
-                return open(file_like + '.mat', 'rb')
-            except IOError:
-                pass
-        # search the python path - we'll remove this soon
-        full_name = find_mat_file(file_like, appendmat)
-        if full_name is None:
-            raise IOError("%s not found on the path."
-                          % file_like)
-        return open(full_name, 'rb')
+        except IOError as e:
+            if appendmat and not file_like.endswith('.mat'):
+                file_like += '.mat'
+                return open(file_like, 'rb')
+            raise IOError(e)
     # not a string - maybe file-like object
     try:
         file_like.read(0)
