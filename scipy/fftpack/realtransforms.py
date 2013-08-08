@@ -110,11 +110,12 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 
     References
     ----------
-    http://en.wikipedia.org/wiki/Discrete_cosine_transform
-
-    'A Fast Cosine Transform in One and Two Dimensions', by J. Makhoul, `IEEE
-    Transactions on acoustics, speech and signal processing` vol. 28(1),
-    pp. 27-34, http://dx.doi.org/10.1109/TASSP.1980.1163351 (1980).
+    .. [1] 'A Fast Cosine Transform in One and Two Dimensions', by J. 
+           Makhoul, `IEEE Transactions on acoustics, speech and signal 
+           processing` vol. 28(1), pp. 27-34, 
+           http://dx.doi.org/10.1109/TASSP.1980.1163351 (1980).
+    .. [2] Wikipedia, "Discrete cosine transform",
+           http://en.wikipedia.org/wiki/Discrete_cosine_transform
 
     """
     if type == 1 and norm is not None:
@@ -328,7 +329,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=0):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Discrete_sine_transform
+    .. [1] Wikipedia, "Discrete sine transform",
+           http://en.wikipedia.org/wiki/Discrete_sine_transform
 
     """
     if type == 1 and norm is not None:
