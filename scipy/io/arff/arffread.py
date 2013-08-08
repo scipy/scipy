@@ -4,10 +4,10 @@ from __future__ import division, print_function, absolute_import
 
 import re
 import itertools
+from functools import partial
 
 import numpy as np
 
-from scipy.io.arff.utils import partial
 from scipy.lib.six import next
 
 """A module to read arff files."""
