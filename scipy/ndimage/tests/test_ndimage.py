@@ -2210,6 +2210,13 @@ class TestNdimage:
         ref = numpy.zeros((1, 10, 10))
         assert_array_almost_equal(out, ref)
 
+    def test_zoom_output_shape_roundoff(self):
+        """zoom output shape roundoff"""
+        arr = numpy.zeros((3, 11, 25))
+        zoom = (4.0 / 3.0, 15.0 / 11, 29.0 / 25)
+        out = ndimage.zoom(arr, zoom)
+        assert_array_equal(out.shape, (4, 15, 29))
+
     def test_rotate01(self):
         "rotate 1"
         data = numpy.array([[0, 0, 0, 0],
