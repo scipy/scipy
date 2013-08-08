@@ -44,6 +44,13 @@ P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, and M. Tygert, previously
 adapted for Python in the PymatrixId package by K.L. Ho.
 
 
+``scipy.stats`` improvements
+----------------------------
+
+Distributions now allow using keyword parameters in addition to
+positional parameters in all methods.
+
+
 Deprecated features
 ===================
 

@@ -3,6 +3,10 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
+import re
+import inspect
+
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
     assert_allclose, assert_, assert_raises, rand, dec)
@@ -15,7 +19,6 @@ from numpy import typecodes, array
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
 from scipy.special import xlogy
-import warnings
 
 
 def kolmogorov_check(diststr, args=(), N=20, significance=0.01):
@@ -1097,15 +1100,15 @@ def test_regression_ticket_1421():
     assert_('pmf(x,' in stats.poisson.__doc__)
 
 
-def test_nan_arguments_ticket_835():
-    assert_(np.isnan(stats.t.logcdf(np.nan)))
-    assert_(np.isnan(stats.t.cdf(np.nan)))
-    assert_(np.isnan(stats.t.logsf(np.nan)))
-    assert_(np.isnan(stats.t.sf(np.nan)))
-    assert_(np.isnan(stats.t.pdf(np.nan)))
-    assert_(np.isnan(stats.t.logpdf(np.nan)))
-    assert_(np.isnan(stats.t.ppf(np.nan)))
-    assert_(np.isnan(stats.t.isf(np.nan)))
+def test_nan_arguments_gh_issue_1362():
+    assert_(np.isnan(stats.t.logcdf(1, np.nan)))
+    assert_(np.isnan(stats.t.cdf(1, np.nan)))
+    assert_(np.isnan(stats.t.logsf(1, np.nan)))
+    assert_(np.isnan(stats.t.sf(1, np.nan)))
+    assert_(np.isnan(stats.t.pdf(1, np.nan)))
+    assert_(np.isnan(stats.t.logpdf(1, np.nan)))
+    assert_(np.isnan(stats.t.ppf(1, np.nan)))
+    assert_(np.isnan(stats.t.isf(1, np.nan)))
 
     assert_(np.isnan(stats.bernoulli.logcdf(np.nan, 0.5)))
     assert_(np.isnan(stats.bernoulli.cdf(np.nan, 0.5)))
@@ -1331,6 +1334,231 @@ def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
     assert_equal(rv.cdf(0), 0)  # rv.cdf(0) previously resulted in: nan
+
+
+## Test subclassing distributions w/ explicit shapes
+
+class _distr_gen(stats.rv_continuous):
+    def _pdf(self, x, a):
+        return 42
+
+
+class _distr2_gen(stats.rv_continuous):
+    def _cdf(self, x, a):
+        return 42 * a + x
+
+
+class _distr3_gen(stats.rv_continuous):
+    def _pdf(self, x, a, b):
+        return a + b
+
+    def _cdf(self, x, a):
+        """Different # of shape params from _pdf, to be able to check that
+        inspection catches the inconsistency."""
+        return 42 * a + x
+
+
+class _distr6_gen(stats.rv_continuous):
+    #Two shape parameters (both _pdf and _cdf defined, consistent shapes.)
+    def _pdf(self, x, a, b):
+        return a*x + b
+
+    def _cdf(self, x, a, b):
+        return 42 * a + x
+
+
+class TestSubclassingExplicitShapes(TestCase):
+    """Construct a distribution w/ explicit shapes parameter and test it."""
+
+    def test_correct_shapes(self):
+        dummy_distr = _distr_gen(name='dummy', shapes='a')
+        assert_equal(dummy_distr.pdf(1, a=1), 42)
+
+    def test_wrong_shapes_1(self):
+        dummy_distr = _distr_gen(name='dummy', shapes='A')
+        assert_raises(TypeError, dummy_distr.pdf, 1, **dict(a=1))
+
+    def test_wrong_shapes_2(self):
+        dummy_distr = _distr_gen(name='dummy', shapes='a, b, c')
+        dct =dict(a=1, b=2, c=3)
+        assert_raises(TypeError, dummy_distr.pdf, 1, **dct)
+
+    def test_shapes_string(self):
+        # shapes must be a string
+        dct = dict(name='dummy', shapes=42)
+        assert_raises(TypeError, _distr_gen, **dct)
+
+    def test_shapes_identifiers_1(self):
+        # shapes must be a comma-separated list of valid python identifiers
+        dct = dict(name='dummy', shapes='(!)')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_identifiers_2(self):
+        dct = dict(name='dummy', shapes='4chan')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_identifiers_3(self):
+        dct = dict(name='dummy', shapes='m(fti)')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_identifiers_nodefaults(self):
+        dct = dict(name='dummy', shapes='a=2')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_args(self):
+        dct = dict(name='dummy', shapes='*args')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_kwargs(self):
+        dct = dict(name='dummy', shapes='**kwargs')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_keywords(self):
+        # python keywords cannot be used for shape parameters
+        dct = dict(name='dummy', shapes='a, b, c, lambda')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+
+    def test_shapes_signature(self):
+        # test explicit shapes which agree w/ the signature of _pdf
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, a):
+                return stats.norm._pdf(x) * a
+
+        dist = _dist_gen(shapes='a')
+        assert_equal(dist.pdf(0.5, a=2), stats.norm.pdf(0.5)*2)
+
+
+    def test_shapes_signature_inconsistent(self):
+        # test explicit shapes which do not agree w/ the signature of _pdf
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, a):
+                return stats.norm._pdf(x) * a
+
+        dist = _dist_gen(shapes='a, b')
+        assert_raises(TypeError, dist.pdf, 0.5, **dict(a=1, b=2))
+
+
+    def test_star_args(self):
+        # test _pdf with only starargs
+        # NB: **kwargs of pdf will never reach _pdf
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, *args):
+                extra_kwarg = args[0]
+                return stats.norm._pdf(x) * extra_kwarg
+
+        dist = _dist_gen(shapes='extra_kwarg')
+        assert_equal(dist.pdf(0.5, extra_kwarg=33), stats.norm.pdf(0.5)*33)
+        assert_equal(dist.pdf(0.5, 33), stats.norm.pdf(0.5)*33)
+        assert_raises(TypeError, dist.pdf, 0.5, **dict(xxx=33))
+
+    def test_star_args_2(self):
+        # test _pdf with named & starargs
+        # NB: **kwargs of pdf will never reach _pdf
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, offset, *args):
+                extra_kwarg = args[0]
+                return stats.norm._pdf(x) * extra_kwarg + offset
+
+        dist = _dist_gen(shapes='offset, extra_kwarg')
+        assert_equal(dist.pdf(0.5, offset=111, extra_kwarg=33), 
+                     stats.norm.pdf(0.5)*33 + 111)
+        assert_equal(dist.pdf(0.5, 111, 33), 
+                     stats.norm.pdf(0.5)*33 + 111)
+
+    def test_extra_kwarg(self):
+        # **kwargs to _pdf are ignored.
+        # this is a limitation of the framework (_pdf(x, *goodargs))
+        class _distr_gen(stats.rv_continuous):
+            def _pdf(self, x, *args, **kwargs):
+                # _pdf should handle *args, **kwargs itself.  Here "handling" is
+                # ignoring *args and looking for ``extra_kwarg`` and using that.
+                extra_kwarg = kwargs.pop('extra_kwarg', 1)
+                return stats.norm._pdf(x) * extra_kwarg
+
+        dist = _distr_gen(shapes='extra_kwarg')
+        assert_equal(dist.pdf(1, extra_kwarg=3), stats.norm.pdf(1))
+
+
+    def shapes_empty_string(self):
+        # shapes='' is equivalent to shapes=None
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x):
+                return stats.norm.pdf(x)
+
+        dist = _dist_gen(shapes='')
+        assert_equal(dist.pdf(0.5), stats.norm.pdf(0.5))
+        
+
+class TestSubclassingNoShapes(TestCase):
+    """Construct a distribution w/o explicit shapes parameter and test it."""
+
+    def test_only__pdf(self):
+        dummy_distr = _distr_gen(name='dummy')
+        assert_equal(dummy_distr.pdf(1, a=1), 42)
+
+    def test_only__cdf(self):
+        # _pdf is determined from _cdf by taking numerical derivative
+        dummy_distr = _distr2_gen(name='dummy')
+        assert_almost_equal(dummy_distr.pdf(1, a=1), 1)
+
+    def test_signature_inspection(self):
+        # check that _pdf signature inspection works correctly, and is used in
+        # the class docstring
+        dummy_distr = _distr_gen(name='dummy')
+        assert_equal(dummy_distr.numargs, 1)
+        assert_equal(dummy_distr.shapes, 'a')
+        res = re.findall('logpdf\(x, a, loc=0, scale=1\)',
+                         dummy_distr.__doc__)
+        assert_(len(res) == 1)
+
+    def test_signature_inspection_2args(self):
+        # same for 2 shape params and both _pdf and _cdf defined
+        dummy_distr = _distr6_gen(name='dummy')
+        assert_equal(dummy_distr.numargs, 2)
+        assert_equal(dummy_distr.shapes, 'a, b')
+        res = re.findall('logpdf\(x, a, b, loc=0, scale=1\)',
+                         dummy_distr.__doc__)
+        assert_(len(res) == 1)
+
+    def test_signature_inspection_2args_incorrect_shapes(self):
+        # both _pdf and _cdf defined, but shapes are inconsistent: raises
+        try:
+            dummy_distr = _distr3_gen(name='dummy')
+        except TypeError:
+            pass
+        else:
+            raise AssertionError('TypeError not raised.')
+
+    def test_defaults_raise(self):
+        # default arguments should raise 
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, a=42):
+                return 42
+        assert_raises(TypeError, _dist_gen, **dict(name='dummy'))
+
+    def test_starargs_raise(self):
+        # without explicit shapes, *args are not allowed
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, a, *args):
+                return 42
+        assert_raises(TypeError, _dist_gen, **dict(name='dummy'))
+
+    def test_kwargs_raise(self):
+        # without explicit shapes, **kwargs are not allowed
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, a, **kwargs):
+                return 42
+        assert_raises(TypeError, _dist_gen, **dict(name='dummy'))
+
+
+def test_docstrings():
+    badones = [',\s*,', '\(\s*,', '^\s*:']
+    for distname in stats.__all__:
+        dist = getattr(stats, distname)
+        if isinstance(dist, (stats.rv_discrete, stats.rv_continuous)):
+            for regex in badones:
+                assert_( re.search(regex, dist.__doc__) is None)
 
 
 if __name__ == "__main__":
