@@ -13,11 +13,7 @@ from os.path import join as pjoin, dirname
 from glob import glob
 from io import BytesIO
 from tempfile import mkdtemp
-# functools is only available in Python >=2.5
-try:
-    from functools import partial
-except ImportError:
-    from scipy.io.arff.myfunctools import partial
+from functools import partial
 
 from scipy.lib.six import u, text_type, string_types
 
