@@ -140,26 +140,21 @@ class csc_matrix(_cs_matrix, IndexMixin):
         return A
 
     def __getitem__(self, key):
-        # use CSR to implement fancy indexing
-        # [?, ?]
-        if isinstance(key, tuple):  # [?, ?]
-            row, col = self._unpack_index(key)
-            # [1, ?], [1:2, ?], [?, 1], [?, 1:2]
-            if (isintlike(row) or isinstance(row, slice) or isintlike(col) or
-                isinstance(col, slice)):
-                return self.T[col, row].T
-            # ndarrays or something else. Dense result.
-            else:
-                return self.T[col, row]
+        """Use CSR to implement fancy indexing."""
+        row, col = self._unpack_index(key)
+        # [1, ?], [1:2, ?], [?, 1], [?, 1:2]
+        if isinstance(key, tuple) and (isintlike(row) or isinstance(row, slice)
+                or isintlike(col) or isinstance(col, slice)):
+            return self.T[col, row].T
+        # ndarrays or something else. Dense result.
+        elif isinstance(key, tuple):
+            return self.T[col, row]
         # [bool ndarray]
         elif isinstance(key, np.ndarray) and key.dtype.kind == 'b':
-            row, col = self._check_boolean(key, slice(None))
             return self[row, col]
         # [bool spmatrix]
         elif isspmatrix(key) and key.dtype.kind == 'b':
-            row, col = self._check_boolean(key, slice(None))
             row, col = self._bl_to_tl_sort(row, col)
-
             return self.T[col, row]
         # [i] or [1:2]
         else:

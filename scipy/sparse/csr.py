@@ -225,31 +225,30 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
         row, col = self._unpack_index(key)
 
-        # Convert Boolean data type, otherwise asindices() sees 0s and 1s
-        row, col = self._check_boolean(row, col)
-
         # First attempt to use original row optimized methods
+        # [1, ?]
         if isintlike(row):
-            # [1,??]
+            # [i, j]
             if isintlike(col):
-                return self._get_single_element(row, col)   # [i,j]
+                return self._get_single_element(row, col)
+            # [i, 1:2]
             elif isinstance(col, slice):
-                return self._get_row_slice(row, col)        # [i,1:2]
+                return self._get_row_slice(row, col)
+            # [i, [1, 2]]
             elif issequence(col):
-                P = extractor(col,self.shape[1]).T          # [i,[1,2]]
-                return self[row,:] * P
+                P = extractor(col,self.shape[1]).T
+                return self[row, :] * P
         elif isinstance(row, slice):
             # [1:2,??]
-            if ((isintlike(col) and
-                     row.step in (1, None)) or
-                (isinstance(col, slice) and
+            if ((isintlike(col) and row.step in (1, None)) or
+                    (isinstance(col, slice) and
                      col.step in (1, None) and
                      row.step in (1, None))):
                 # col is int or slice with step 1, row is slice with step 1.
                 return self._get_submatrix(row, col)
             elif issequence(col):
                 P = extractor(col,self.shape[1]).T        # [1:2,[1,2]]
-                # row is slice, col is slice or sequence.
+                # row is slice, col is sequence.
                 return self[row,:]*P
         elif issequence(row):
             # [[1,2],??]
