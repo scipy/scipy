@@ -616,8 +616,11 @@ class rv_generic(object):
                   )
         ns = {}
         exec_(parse_arg_template % dct, ns)
+        # NB: attach to the instance, not class
         for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
-            setattr(self.__class__, name, ns[name])
+            setattr(self, name, 
+                instancemethod(ns[name], self, self.__class__)
+            )
 
         self.shapes = ', '.join(shapes) if shapes else None
         if not hasattr(self, 'numargs'):
