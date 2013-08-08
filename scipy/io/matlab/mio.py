@@ -186,7 +186,7 @@ def savemat(file_name, mdict,
             format='5',
             long_field_names=False,
             do_compression=False,
-            oned_as=None):
+            oned_as='row'):
     """
     Save a dictionary of names and arrays into a MATLAB-style .mat file.
 
@@ -214,31 +214,14 @@ def savemat(file_name, mdict,
         which works for MATLAB 7.6+
     do_compression : bool, optional
         Whether or not to compress matrices on write.  Default is False.
-    oned_as : {'column', 'row', None}, optional
+    oned_as : {'row', 'column'}, optional
         If 'column', write 1-D numpy arrays as column vectors.
         If 'row', write 1-D numpy arrays as row vectors.
-        If None (the default), the behavior depends on the value of `format`
-        (see Notes below).
 
     See also
     --------
     mio4.MatFile4Writer
     mio5.MatFile5Writer
-
-    Notes
-    -----
-    If ``format == '4'``, `mio4.MatFile4Writer` is called, which sets
-    `oned_as` to 'row' if it had been None.  If ``format == '5'``,
-    `mio5.MatFile5Writer` is called, which sets `oned_as` to 'column' if
-    it had been None, but first it executes:
-
-    ``warnings.warn("Using oned_as default value ('column')" +``
-                  ``" This will change to 'row' in future versions",``
-                  ``FutureWarning, stacklevel=2)``
-
-    without being more specific as to precisely when the change will take
-    place.
-
     """
     file_is_string = isinstance(file_name, string_types)
     if file_is_string:

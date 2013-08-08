@@ -80,7 +80,7 @@ matlab_compatible : bool, optional
          '''do_compression : bool, optional
    Whether to compress matrices on write. Default is False.''',
      'oned_as':
-         '''oned_as : {'column', 'row'}, optional
+         '''oned_as : {'row', 'column'}, optional
    If 'column', write 1-D numpy arrays as column vectors.
    If 'row', write 1D numpy arrays as row vectors.''',
      'unicode_strings':

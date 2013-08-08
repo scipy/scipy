@@ -819,10 +819,11 @@ class MatFile5Writer(object):
         self.long_field_names = long_field_names
         # deal with deprecations
         if oned_as is None:
-            warnings.warn("Using oned_as default value ('column')" +
-                          " This will change to 'row' in future versions",
-                          FutureWarning, stacklevel=2)
-            oned_as = 'column'
+            warnings.warn("Using oned_as default value ('row') "
+                          "This default has changed from 'column' "
+                          "in scipy versions < 0.13",
+                          UserWarning, stacklevel=2)
+            oned_as = 'row'
         self.oned_as = oned_as
         self._matrix_writer = None
 
