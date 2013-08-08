@@ -162,3 +162,68 @@ command has been added; new code should pass this test command.
 
 Authors
 =======
+
+This release contains work by the following people (contributed at least
+one patch to this release, names in alphabetical order):
+
+* Jorge Cañardo Alastuey +
+* Tom Aldcroft +
+* Max Bolingbroke +
+* Joseph Jon Booker +
+* François Boulogne
+* Matthew Brett
+* Christian Brodbeck +
+* Per Brodtkorb +
+* Lars Buitinck
+* Evgeni Burovski +
+* Tim Cera
+* Lawrence Chan +
+* David Cournapeau
+* Dražen Lučanin +
+* Alexander J. Dunlap +
+* endolith
+* Ralf Gommers
+* Alex Griffing +
+* Blake Griffith +
+* Charles Harris
+* Bob Helmbold +
+* Andreas Hilboll
+* Kat Huang +
+* Oleksandr (Sasha) Huziy +
+* Gert-Ludwig Ingold +
+* Thouis (Ray) Jones
+* Juan Luis Cano Rodríguez +
+* Robert Kern
+* Andreas Kloeckner +
+* Sytse Knypstra +
+* Gustav Larsson +
+* Denis Laxalde
+* Christopher Lee
+* Tim Leslie
+* Wendy Liu +
+* Takuya Oshima +
+* Illia Polosukhin +
+* Przemek Porebski +
+* Steve Richardson +
+* Branden Rolston +
+* Skipper Seabold
+* Fazlul Shahriar
+* Leo Singer +
+* Rohit Sivaprasad +
+* Daniel B. Smith +
+* Julian Taylor
+* Louis Thibault +
+* Tomas Tomecek +
+* John Travers
+* Jacob Vanderplas
+* Patrick Varilly
+* Pauli Virtanen
+* Stefan van der Walt
+* Warren Weckesser
+* Nils Werner +
+* Michael Wimmer +
+* Tony S. Yu +
+
+A total of 57 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+
