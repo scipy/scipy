@@ -159,17 +159,56 @@ class IndexMixin(object):
         return np.arange(start, stop, step)
 
     def _unpack_index(self, index):
-        """ Parse index.
+        """ Parse index. Always return a tuple of the form (row, col).
+        Where row/col is a integer, slice, or array of integers.
         """
+        # First check for single boolean index.
+        from .base import spmatrix  # This feels dirty but...
+        if (isinstance(index, (spmatrix, np.ndarray)) and
+           (index.shape == self.shape) and
+            index.dtype.kind == 'b'):
+                return index.nonzero()
+
+        # First, parse the tuple or object
         if isinstance(index, tuple):
             if len(index) == 2:
-                return index
+                row, col = index
             elif len(index) == 1:
-                return index[0], slice(None)
+                row, col = index[0], slice(None)
             else:
                 raise IndexError('invalid number of indices')
         else:
-            return index, slice(None)
+            row, col = index, slice(None)
+
+        # Next, check for validity, or transform the index as needed.
+        row, col = self._check_boolean(row, col)
+        return row, col
+
+    def _check_boolean(self, row, col):
+        from .base import isspmatrix  # This feels dirty but...
+        if isspmatrix(row) or isspmatrix(col):
+            raise IndexError("Indexing with sparse matrices is not supported"
+                    " except boolean indexing where matrix and index are equal"
+                    " shapes.")
+        if (isinstance(row, np.ndarray) and row.dtype.kind == 'b'):
+            # Check for equal shapes.
+            if (row.shape == self.shape):
+                if col != slice(None):
+                    raise IndexError('invalid index shape')
+                else:
+                    return row.nonzero()
+
+            row = self._boolean_index_to_array(row)
+            if len(row) == 2:
+                if isinstance(col, slice):
+                    col = row[1]
+                else:
+                    raise ValueError('too many indices for array')
+            row = row[0]
+
+        if isinstance(col, np.ndarray) and col.dtype.kind == 'b':
+            col = self._boolean_index_to_array(col)[0]
+        return row, col
 
     def _boolean_index_to_array(self, i):
         if i.ndim < 2:
@@ -180,21 +219,6 @@ class IndexMixin(object):
         else:
             i = i.nonzero()
         return i
-
-    def _check_boolean(self, i, j):
-        from .base import isspmatrix  # This feels dirty but...
-        if ((isinstance(i, np.ndarray) or isspmatrix(i)) and
-                i.dtype.kind == 'b'):
-            i = self._boolean_index_to_array(i)
-            if len(i) == 2:
-                if isinstance(j, slice):
-                    j = i[1]
-                else:
-                    raise ValueError('too many indices for array')
-            i = i[0]
-        if isinstance(j, np.ndarray) and j.dtype.kind == 'b':
-            j = self._boolean_index_to_array(j)[0]
-        return i, j
 
     def _index_to_arrays(self, i, j):
         i, j = self._check_boolean(i, j)
