@@ -700,9 +700,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _set_one(self, row, col, val):
         """Set one value at a time."""
-        if not (isscalarlike(row) and isscalarlike(col)):
-            raise NotImplementedError("Fancy indexing in assignment not "
-                                      "supported for csr matrices.")
         M, N = self.shape
         if (row < 0):
             row += M
