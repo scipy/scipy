@@ -575,7 +575,7 @@ class rv_generic(object):
             for field in shapes:
                 if keyword.iskeyword(field):
                     raise SyntaxError('keywords cannot be used as shapes.')
-                if not re.match('^[_a-zA-Z][_a-zA-Z0-9]*', field):
+                if not re.match('^[_a-zA-Z][_a-zA-Z0-9]*$', field):
                     raise SyntaxError('shapes must be valid python identifiers')
         else:
             # find out the call signatures (_pdf, _cdf etc), deduce shape arguments
@@ -597,7 +597,8 @@ class rv_generic(object):
                         raise TypeError('*args are not allowed w/out explicit shapes')
                     if shapes_args.keywords is not None:
                         raise TypeError('**kwds are not allowed w/out explicit shapes')
-                # TODO: defaults?
+                    if shapes_args.defaults is not None:
+                        raise TypeError('defaults are not allowed for shapes')
 
             shapes = max(shapes_list, key=lambda x: len(x))
             shapes = shapes[2:]  # remove self, x,

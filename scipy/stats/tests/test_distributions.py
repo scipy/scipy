@@ -1390,11 +1390,98 @@ class TestSubclassingExplicitShapes(TestCase):
         dct = dict(name='dummy', shapes='4chan')
         assert_raises(SyntaxError, _distr_gen, **dct)
 
+    def test_shapes_identifiers_3(self):
+        dct = dict(name='dummy', shapes='m(fti)')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_identifiers_nodefaults(self):
+        dct = dict(name='dummy', shapes='a=2')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_args(self):
+        dct = dict(name='dummy', shapes='*args')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
+    def test_shapes_kwargs(self):
+        dct = dict(name='dummy', shapes='**kwargs')
+        assert_raises(SyntaxError, _distr_gen, **dct)
+
     def test_shapes_keywords(self):
         # python keywords cannot be used for shape parameters
         dct = dict(name='dummy', shapes='a, b, c, lambda')
         assert_raises(SyntaxError, _distr_gen, **dct)
 
+
+    def test_shapes_signature(self):
+        # test explicit shapes which agree w/ the signature of _pdf
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, a):
+                return stats.norm._pdf(x) * a
+
+        dist = _dist_gen(shapes='a')
+        assert_equal(dist.pdf(0.5, a=2), stats.norm.pdf(0.5)*2)
+
+
+    def test_shapes_signature_inconsistent(self):
+        # test explicit shapes which do not agree w/ the signature of _pdf
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, a):
+                return stats.norm._pdf(x) * a
+
+        dist = _dist_gen(shapes='a, b')
+        assert_raises(TypeError, dist.pdf, 0.5, **dict(a=1, b=2))
+
+
+    def test_star_args(self):
+        # test _pdf with only starargs
+        # NB: **kwargs of pdf will never reach _pdf
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, *args):
+                extra_kwarg = args[0]
+                return stats.norm._pdf(x) * extra_kwarg
+
+        dist = _dist_gen(shapes='extra_kwarg')
+        assert_equal(dist.pdf(0.5, extra_kwarg=33), stats.norm.pdf(0.5)*33)
+        assert_equal(dist.pdf(0.5, 33), stats.norm.pdf(0.5)*33)
+        assert_raises(TypeError, dist.pdf, 0.5, **dict(xxx=33))
+
+    def test_star_args_2(self):
+        # test _pdf with named & starargs
+        # NB: **kwargs of pdf will never reach _pdf
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x, offset, *args):
+                extra_kwarg = args[0]
+                return stats.norm._pdf(x) * extra_kwarg + offset
+
+        dist = _dist_gen(shapes='offset, extra_kwarg')
+        assert_equal(dist.pdf(0.5, offset=111, extra_kwarg=33), 
+                     stats.norm.pdf(0.5)*33 + 111)
+        assert_equal(dist.pdf(0.5, 111, 33), 
+                     stats.norm.pdf(0.5)*33 + 111)
+
+    def test_extra_kwarg(self):
+        # **kwargs to _pdf are ignored.
+        # this is a limitation of the framework (_pdf(x, *goodargs))
+        class _distr_gen(stats.rv_continuous):
+            def _pdf(self, x, *args, **kwargs):
+                # _pdf should handle *args, **kwargs itself.  Here "handling" is
+                # ignoring *args and looking for ``extra_kwarg`` and using that.
+                extra_kwarg = kwargs.pop('extra_kwarg', 1)
+                return stats.norm._pdf(x) * extra_kwarg
+
+        dist = _distr_gen(shapes='extra_kwarg')
+        assert_equal(dist.pdf(1, extra_kwarg=3), stats.norm.pdf(1))
+
+
+    def shapes_empty_string(self):
+        # shapes='' is equivalent to shapes=None
+        class _dist_gen(stats.rv_continuous):
+            def _pdf(self, x):
+                return stats.norm.pdf(x)
+
+        dist = _dist_gen(shapes='')
+        assert_equal(dist.pdf(0.5), stats.norm.pdf(0.5))
+        
 
 class TestSubclassingNoShapes(TestCase):
     """Construct a distribution w/o explicit shapes parameter and test it."""
@@ -1438,7 +1525,6 @@ class TestSubclassingNoShapes(TestCase):
 
     def test_defaults_raise(self):
         # default arguments should raise 
-        # TODO: should they? 
         class _dist_gen(stats.rv_continuous):
             def _pdf(self, x, a=42):
                 return 42
@@ -1457,61 +1543,6 @@ class TestSubclassingNoShapes(TestCase):
             def _pdf(self, x, a, **kwargs):
                 return 42
         assert_raises(TypeError, _dist_gen, **dict(name='dummy'))
-
-
-
-class _distr5_gen(stats.rv_continuous):
-    def _pdf(self, x, a, b=2):
-        return stats.gamma._pdf(x, a) * b
-
-
-class TestSubclassingKwargs(TestCase):
-    """Test explicit kwargs in _pdf."""
-    #FIXME: doesn't work now.  Explicitly disallow kwargs in _pdf & co?
-    def test_call_without_kwarg(self):
-        dist = _distr5_gen(name='gamma2')
-#        assert_allclose(dist.pdf([1, 2], 3),
-#                        2 * stats.gamma.pdf([1, 2], 3))
-        assert_allclose(dist.pdf([1, 2], 3, 3),
-                        3 * stats.gamma.pdf([1, 2], 3))
-        assert_allclose(dist.pdf([1, 2], 3, b=4),
-                        4 * stats.gamma.pdf([1, 2], 3))
-        assert_allclose(dist.pdf([1, 2], a=3, b=4),
-                        4 * stats.gamma.pdf([1, 2], 3))
-
-
-class _distr4_gen(stats.rv_continuous):
-    def _pdf(self, x, *args, **kwargs):
-        # _pdf should handle *args, **kwargs itself.  Here "handling" is
-        # ignoring *args and looking for ``extra_kwarg`` and using that.
-        extra_kwarg = kwargs.pop('extra_kwarg', 1)
-        return stats.norm._pdf(x) * extra_kwarg
-
-
-class TestSubclassingStarArgs(TestCase):
-    """Test subclassing with *args and **kwargs."""
-
-    def test_extra_kwarg(self):
-        dist = _distr4_gen()
-        assert_almost_equal(dist.pdf(1), stats.norm.pdf(1))
-        #FIXME: this doesn't work.  It's also not possible to come up with a
-        #`shapes` string to make this work (shapes='**kwargs' as well as
-        # shapes='extra_kwarg=2' give errors at the moment.)
-        assert_almost_equal(dist.pdf(1, extra_kwarg=2), 2* stats.norm.pdf(1))
-
-    def test_incorrect_shapes(self):
-        dist = _distr4_gen(shapes='a')
-        # assert_raises doesn't work here
-        try:
-            dist.pdf(1)
-        except TypeError:
-            pass
-        else:
-            AssertionError('TypeError not raised')
-
-    def test_correct_shapes(self):
-        dist = _distr4_gen(shapes='')
-        assert_almost_equal(dist.pdf(1), stats.norm.pdf(1))
 
 
 def test_docstrings():
