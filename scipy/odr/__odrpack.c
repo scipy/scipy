@@ -47,6 +47,7 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
   PyObject *result;
   PyArrayObject *result_array = NULL;
   PyArrayObject *pyXplusD;
+  void *beta_dst;
 
   arg01 = PyTuple_New(2);
 
@@ -83,8 +84,10 @@ void fcn_callback(int *n, int *m, int *np, int *nq, int *ldn, int *ldm,
   Py_DECREF(arg01);
   *istop = 0;
 
-  memcpy(((PyArrayObject *) (odr_global.pyBeta))->data, (void *)beta,
-         (*np) * sizeof(double));
+  beta_dst = ((PyArrayObject *) (odr_global.pyBeta))->data;
+  if (beta != beta_dst) {
+      memcpy(beta_dst, (void *)beta, (*np) * sizeof(double));
+  }
 
   if ((*ideval % 10) >= 1)
     {
