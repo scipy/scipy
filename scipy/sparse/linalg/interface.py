@@ -178,6 +178,9 @@ class LinearOperator(object):
 
         return Y
 
+    def __call__(self, x):
+        return self*x
+
     def __mul__(self, x):
         if isinstance(x, LinearOperator):
             return _ProductLinearOperator(self, x)
