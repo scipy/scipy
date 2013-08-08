@@ -27,10 +27,13 @@ ctypedef struct DelaunayInfo_t:
     double paraboloid_shift
     double *max_bound
     double *min_bound
+    int *vertex_neighbors_indices
+    int *vertex_neighbors_indptr
 
 cdef int _get_delaunay_info(DelaunayInfo_t *, obj,
                             int compute_transform,
-                            int compute_vertex_to_simplex) except -1
+                            int compute_vertex_to_simplex,
+                            int compute_vertex_neighbors) except -1
 
 #
 # N-D geometry
@@ -67,21 +70,3 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c, double *x,
 
 cdef int _find_simplex(DelaunayInfo_t *d, double *c, double *x, int *start,
                        double eps, double eps_broad) nogil
-
-#
-# Walking ridges connected to a vertex
-#
-
-ctypedef struct RidgeIter2D_t:
-    DelaunayInfo_t *info
-    int index
-    int vertex
-    int vertex2
-    int triangle
-    int start_triangle
-    int start_index
-    int restart
-
-cdef void _RidgeIter2D_init(RidgeIter2D_t *it, DelaunayInfo_t *d,
-                            int vertex) nogil
-cdef void _RidgeIter2D_next(RidgeIter2D_t *it) nogil

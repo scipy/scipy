@@ -15,6 +15,7 @@ import numpy as np
 cimport numpy as np
 cimport cython
 cimport qhull
+cimport setlist
 
 from numpy.compat import asbytes
 
@@ -1096,150 +1097,6 @@ cdef double _distplane(DelaunayInfo_t *d, int isimplex, double *point) nogil:
 
 
 #------------------------------------------------------------------------------
-# Iterating over ridges connected to a vertex in 2D
-#------------------------------------------------------------------------------
-
-cdef void _RidgeIter2D_init(RidgeIter2D_t *it, DelaunayInfo_t *d,
-                            int vertex) nogil:
-    """
-    Start iteration over all triangles connected to the given vertex.
-
-    """
-
-    cdef double c[3]
-    cdef int k, ivertex, start
-
-    start = 0
-    it.info = d
-    it.vertex = vertex
-    it.triangle = d.vertex_to_simplex[vertex]
-    it.start_triangle = it.triangle
-    it.restart = 0
-
-    if it.triangle != -1:
-        # find some edge connected to this vertex
-        for k in xrange(3):
-            ivertex = it.info.simplices[it.triangle*3 + k]
-            if ivertex != vertex:
-                it.vertex2 = ivertex
-                it.index = k
-                it.start_index = k
-                break
-    else:
-        it.start_index = -1
-        it.index = -1
-
-cdef void _RidgeIter2D_next(RidgeIter2D_t *it) nogil:
-    cdef int itri, k, ivertex
-
-    #
-    # Remember: k-th edge and k-th neigbour are opposite vertex k;
-    #           imagine now we are iterating around vertex `O`
-    #
-    #         .O------,
-    #       ./ |\.    |
-    #      ./  | \.   |
-    #      \   |  \.  |
-    #       \  |k  \. |
-    #        \ |    \.|
-    #         `+------k
-    #
-
-    if it.restart:
-        if it.start_index == -1:
-            # we already did that -> we have iterated over everything
-            it.index = -1
-            return
-
-        # restart to opposite direction
-        it.triangle = it.start_triangle
-        for k in xrange(3):
-            ivertex = it.info.simplices[it.triangle*3 + k]
-            if ivertex != it.vertex and k != it.start_index:
-                it.index = k
-                it.vertex2 = ivertex
-                break
-        it.start_index = -1
-        it.restart = 0
-
-        if it.info.neighbors[it.triangle*3 + it.index] == -1:
-            it.index = -1
-            return
-        else:
-            _RidgeIter2D_next(it)
-            if it.index == -1:
-                return
-
-    # jump to the next triangle
-    itri = it.info.neighbors[it.triangle*3 + it.index]
-
-    # if it's outside triangulation, take the last edge, and signal
-    # restart to the opposite direction
-    if itri == -1:
-        for k in xrange(3):
-            ivertex = it.info.simplices[it.triangle*3 + k]
-            if ivertex != it.vertex and k != it.index:
-                it.index = k
-                it.vertex2 = ivertex
-                break
-
-        it.restart = 1
-        return
-
-    # Find at which index we are now:
-    #
-    # it.vertex
-    #      O-------k------.
-    #      | \-          /
-    #      |   \- E  B  /
-    #      |     \-    /
-    #      | A     \- /
-    #      +---------´
-    #
-    # A = it.triangle
-    # B = itri
-    # E = it.index
-    # O = it.vertex
-    #
-    for k in xrange(3):
-        ivertex = it.info.simplices[itri*3 + k]
-        if it.info.neighbors[itri*3 + k] != it.triangle and \
-               ivertex != it.vertex:
-            it.index = k
-            it.vertex2 = ivertex
-            break
-
-    it.triangle = itri
-
-    # check termination
-    if it.triangle == it.start_triangle:
-        it.index = -1
-        return
-
-cdef class RidgeIter2D(object):
-    cdef RidgeIter2D_t it
-    cdef object delaunay
-    cdef DelaunayInfo_t info
-
-    def __init__(self, delaunay, ivertex):
-        if delaunay.ndim != 2:
-            raise ValueError("RidgeIter2D supports only 2-D")
-        self.delaunay = delaunay
-        _get_delaunay_info(&self.info, delaunay, 0, 1)
-        _RidgeIter2D_init(&self.it, &self.info, ivertex)
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.it.index == -1:
-            raise StopIteration()
-        ret = (self.it.vertex, self.it.vertex2, self.it.index, self.it.triangle)
-        _RidgeIter2D_next(&self.it)
-        return ret
-
-
-#------------------------------------------------------------------------------
 # Finding simplices
 #------------------------------------------------------------------------------
 
@@ -1712,6 +1569,9 @@ class Delaunay(_QhullUser):
         .. versionadded:: 0.12.0
     vertices
         Same as `simplices`, but deprecated.
+    vertex_neighbor_vertices : tuple of two ndarrays of int; (indices, indptr)
+        Neighboring vertices of vertices. The indices of neighboring
+        vertices of vertex `k` are ``indptr[indices[k]:indices[k+1]]``.
 
     Raises
     ------
@@ -1821,6 +1681,7 @@ class Delaunay(_QhullUser):
         self.nsimplex = self.simplices.shape[0]
         self._transform = None
         self._vertex_to_simplex = None
+        self._vertex_neighbor_vertices = None
 
         # Backwards compatibility (Scipy < 0.12.0)
         self.vertices = self.simplices
@@ -1888,6 +1749,46 @@ class Delaunay(_QhullUser):
                             arr[ivertex] = isimplex
 
         return self._vertex_to_simplex
+
+    @property
+    @cython.boundscheck(False)
+    def vertex_neighbor_vertices(self):
+        """
+        Neighboring vertices of vertices.
+
+        Tuple of two ndarrays of int: (indices, indptr). The indices of
+        neighboring vertices of vertex `k` are
+        ``indptr[indices[k]:indices[k+1]]``.
+
+        """
+        cdef int i, j, k, m, is_neighbor, is_missing, ndata, idata
+        cdef int nsimplex, npoints, ndim
+        cdef np.ndarray[np.npy_int, ndim=2] simplices
+        cdef setlist.setlist_t sets
+
+        if self._vertex_neighbor_vertices is None:
+            ndim = self.ndim
+            npoints = self.npoints
+            nsimplex = self.nsimplex
+            simplices = self.simplices
+
+            setlist.init(&sets, npoints, ndim+1)
+
+            try:
+                with nogil:
+                    for i in xrange(nsimplex):
+                        for j in xrange(ndim+1):
+                            for k in xrange(ndim+1):
+                                if simplices[i,j] != simplices[i,k]:
+                                    if setlist.add(&sets, simplices[i,j], simplices[i,k]):
+                                        with gil:
+                                            raise MemoryError
+
+                self._vertex_neighbor_vertices = setlist.tocsr(&sets)
+            finally:
+                setlist.free(&sets)
+
+        return self._vertex_neighbor_vertices
 
     @property
     @cython.boundscheck(False)
@@ -2014,7 +1915,7 @@ class Delaunay(_QhullUser):
         eps_broad = np.sqrt(eps)
         out = np.zeros((xi.shape[0],), dtype=np.intc)
         out_ = out
-        _get_delaunay_info(&info, self, 1, 0)
+        _get_delaunay_info(&info, self, 1, 0, 0)
 
         if bruteforce:
             with nogil:
@@ -2056,7 +1957,7 @@ class Delaunay(_QhullUser):
         xi = xi.reshape(-1, xi.shape[-1])
         x = np.ascontiguousarray(xi.astype(np.double))
 
-        _get_delaunay_info(&info, self, 0, 0)
+        _get_delaunay_info(&info, self, 0, 0, 0)
 
         out = np.zeros((x.shape[0], info.nsimplex), dtype=np.double)
         out_ = out
@@ -2108,9 +2009,11 @@ def tsearch(tri, xi):
 cdef int _get_delaunay_info(DelaunayInfo_t *info,
                             obj,
                             int compute_transform,
-                            int compute_vertex_to_simplex) except -1:
+                            int compute_vertex_to_simplex,
+                            int compute_vertex_neighbor_vertices) except -1:
     cdef np.ndarray[np.double_t, ndim=3] transform
     cdef np.ndarray[np.npy_int, ndim=1] vertex_to_simplex
+    cdef np.ndarray[np.npy_int, ndim=1] vn_indices, vn_indptr
     cdef np.ndarray[np.double_t, ndim=2] points = obj.points
     cdef np.ndarray[np.npy_int, ndim=2] simplices = obj.simplices
     cdef np.ndarray[np.npy_int, ndim=2] neighbors = obj.neighbors
@@ -2137,6 +2040,13 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
         info.vertex_to_simplex = <int*>vertex_to_simplex.data
     else:
         info.vertex_to_simplex = NULL
+    if compute_vertex_neighbor_vertices:
+        vn_indices, vn_indptr = obj.vertex_neighbor_vertices
+        info.vertex_neighbors_indices = <int*>vn_indices.data
+        info.vertex_neighbors_indptr = <int*>vn_indptr.data
+    else:
+        info.vertex_neighbors_indices = NULL
+        info.vertex_neighbors_indptr = NULL
     info.min_bound = <double*>min_bound.data
     info.max_bound = <double*>max_bound.data
 

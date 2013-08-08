@@ -1,5 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
+import os
+import warnings
+
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_almost_equal, \
         run_module_suite, assert_raises
@@ -8,6 +11,11 @@ import scipy.interpolate.interpnd as interpnd
 import scipy.spatial.qhull as qhull
 
 import pickle
+
+
+def data_file(basename):
+    return os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                        'data', basename)
 
 
 class TestLinearNDInterpolation(object):
@@ -129,6 +137,18 @@ class TestEstimateGradients2DGlobal(object):
             assert_equal(dz.shape, (6, 2))
             assert_allclose(dz, np.array(grad)[None,:] + 0*dz,
                             rtol=1e-5, atol=1e-5, err_msg="item %d" % j)
+
+    def test_regression_2359(self):
+        # Check regression --- for certain point sets, gradient
+        # estimation could end up in an infinite loop
+        points = np.load(data_file('estimate_gradients_hang.npy'))
+        values = np.random.rand(points.shape[0])
+        tri = qhull.Delaunay(points)
+
+        # This should not hang
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=interpnd.GradientEstimationWarning)
+            interpnd.estimate_gradients_2d_global(tri, values, maxiter=1)
 
 
 class TestCloughTocher2DInterpolator(object):
