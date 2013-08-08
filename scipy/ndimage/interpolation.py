@@ -518,7 +518,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     else:
         filtered = input
     zoom = _ni_support._normalize_sequence(zoom, input.ndim)
-    output_shape = tuple([int(ii * jj) for ii, jj in zip(input.shape, zoom)])
+    output_shape = tuple([int(round(ii * jj)) for ii, jj in zip(input.shape, zoom)])
 
     zoom_div = numpy.array(output_shape, float) - 1
     zoom = (numpy.array(input.shape) - 1) / zoom_div
