@@ -1898,15 +1898,25 @@ def obrientransform(*args):
 
     Examples
     --------
-    >>> a = np.array([10, 12, 5, 17, 17, 11, 9, 9])
-    >>> b = np.array([23, 19, 30, 29])
-    >>> ta, tb = obrientransform(a, b)
-    >>> ta
-    array([  0.53571429,  -0.70238095,  46.96428571,  39.53571429,
-            39.53571429,  -1.32142857,   4.86904762,   4.86904762])
-    >>> tb
-    array([  1.70833333,  58.375     ,  30.875     ,  16.70833333])
+    We'll test the following data sets for differences in their variance.
 
+    >>> x = [10, 11, 13, 9, 7, 12, 12, 9, 10]
+    >>> y = [13, 21, 5, 10, 8, 14, 10, 12, 7, 15]
+
+    Apply the O'Brien transform to the data.
+
+    >>> tx, ty = obrientransform(x, y)
+
+    Use `scipy.stats.f_oneway` to apply a one-way ANOVA test to the
+    transformed data.
+
+    >>> from scipy.stats import f_oneway
+    >>> F, p = f_oneway(tx, ty)
+    >>> p
+    0.1314139477040335
+
+    If we require that ``p < 0.05`` for significance, we cannot conclude
+    that the variances are different.
     """
     TINY = np.sqrt(np.finfo(float).eps)
 
