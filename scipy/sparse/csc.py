@@ -142,29 +142,24 @@ class csc_matrix(_cs_matrix, IndexMixin):
     def __getitem__(self, key):
         """Use CSR to implement fancy indexing."""
         row, col = self._unpack_index(key)
-        # [1, ?], [1:2, ?], [?, 1], [?, 1:2]
-        if isinstance(key, tuple) and (isintlike(row) or isinstance(row, slice)
-                or isintlike(col) or isinstance(col, slice)):
+        # Things that return submatrices. row or col is a int or slice.
+        if (isinstance(row, slice) or isinstance(col, slice) or
+            isintlike(row) or isintlike(col)):
             return self.T[col, row].T
-        # ndarrays or something else. Dense result.
-        elif isinstance(key, tuple):
-            return self.T[col, row]
-        # [bool ndarray]
-        elif isinstance(key, np.ndarray) and key.dtype.kind == 'b':
-            return self[row, col]
-        # [bool spmatrix]
-        elif isspmatrix(key) and key.dtype.kind == 'b':
-            row, col = self._bl_to_tl_sort(row, col)
-            return self.T[col, row]
-        # [i] or [1:2]
+        # Things that return a sequence of values.
         else:
-            return self.T[:, key].T
+            self._bl_to_tl_sort(row, col)
+            return self.T[col, row]
 
     def _bl_to_tl_sort(self, row, col):
         """ Sort indices so they are returned properly when the matrix is
         transposed. From bottom left to top right.
         """
-        rc_pairs = [(r, c) for r, c in zip(row.tolist(), col.tolist())]
+        if isinstance(row, np.ndarray):
+            row = row.tolist()
+        if isinstance(col, np.ndarray):
+            col = col.tolist()
+        rc_pairs = [(r, c) for r, c in zip(row, col)]
         rc_pairs = sorted(rc_pairs, key=lambda i: i[1])
         rc_pairs = sorted(rc_pairs, key=lambda i: i[0])
 
