@@ -16,7 +16,7 @@ Build sparse:
 Run tests if scipy is installed:
   python -c 'import scipy;scipy.sparse.test()'
 Run tests if sparse is not installed:
-  python tests/test_sparse.py
+  python tests/test_base.py
 """
 
 import warnings
