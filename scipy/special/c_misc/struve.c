@@ -299,6 +299,10 @@ double struve_bessel_series(double v, double z, int is_h, double *err)
     }
 
     *err = fabs(term) + fabs(maxterm) * 1e-16;
+
+    /* Account for potential underflow of the Bessel functions */
+    *err += 1e-300 * fabs(cterm);
+
     return sum;
 }
 
