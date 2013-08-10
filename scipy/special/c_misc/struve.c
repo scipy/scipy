@@ -123,7 +123,14 @@ static double struve_hl(double v, double z, int is_h)
     int n;
 
     if (z < 0) {
-        return NPY_NAN;
+        n = v;
+        if (v == n) {
+            tmp = (n % 2 == 0) ? -1 : 1;
+            return tmp * struve_hl(v, -z, is_h);
+        }
+        else {
+            return NPY_NAN;
+        }
     }
     else if (z == 0) {
         if (v < -1) {
