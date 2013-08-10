@@ -212,7 +212,7 @@ static double struve_hl(double v, double z, int is_h)
 double struve_power_series(double v, double z, int is_h, double *err)
 {
     int n, sgn;
-    double term, sum, maxterm;
+    double term, sum, maxterm, scaleexp, tmp;
     double2_t cterm, csum, cdiv, z2, c2v, ctmp, ctmp2;
 
     if (is_h) {
@@ -221,8 +221,17 @@ double struve_power_series(double v, double z, int is_h, double *err)
     else {
         sgn = 1;
     }
-    
-    term = 2 / sqrt(M_PI) * exp(-lgam(v + 1.5) + (v + 1)*log(z/2)) * gammasgn(v + 1.5);
+
+    tmp = -lgam(v + 1.5) + (v + 1)*log(z/2);
+    if (tmp < -600 || tmp > 600) {
+        /* Scale exponent to postpone underflow/overflow */
+        scaleexp = tmp/2;
+        tmp -= scaleexp;
+    }
+    else {
+        scaleexp = 0;
+    }
+    term = 2 / sqrt(M_PI) * exp(tmp) * gammasgn(v + 1.5);
     sum = term;
     maxterm = 0;
 
@@ -256,6 +265,12 @@ double struve_power_series(double v, double z, int is_h, double *err)
     }
 
     *err = fabs(term) + fabs(maxterm) * 1e-22;
+
+    if (scaleexp != 0) {
+        sum *= exp(scaleexp);
+        *err *= exp(scaleexp);
+    }
+
     return sum;
 }
 
