@@ -192,6 +192,9 @@ static double struve_hl(double v, double z, int is_h)
 
     /* Maybe it really is an overflow? */
     tmp = -lgam(v + 1.5) + (v + 1)*log(z/2);
+    if (!is_h) {
+        tmp = fabs(tmp);
+    }
     if (tmp > 700) {
         sf_error("struve", SF_ERROR_OVERFLOW, "overflow in series");
         return NPY_INFINITY * gammasgn(v + 1.5);
@@ -271,6 +274,12 @@ double struve_power_series(double v, double z, int is_h, double *err)
         *err *= exp(scaleexp);
     }
 
+    if (sum == 0 && term == 0 && v < 0 && !is_h) {
+        /* Spurious underflow */
+        *err = NPY_INFINITY;
+        return NPY_NAN;
+    }
+
     return sum;
 }
 
@@ -289,7 +298,7 @@ double struve_bessel_series(double v, double z, int is_h, double *err)
         *err = NPY_INFINITY;
         return NPY_NAN;
     }
-    
+
     sum = 0;
     maxterm = 0;
 
@@ -379,6 +388,11 @@ double struve_asymp_large_z(double v, double z, int is_h, double *err)
     }
 
     *err = fabs(term) + fabs(maxterm) * 1e-16;
+
+    if (!npy_isfinite(sum)) {
+        *err = NPY_INFINITY;
+        return NPY_NAN;
+    }
 
     return sum;
 }

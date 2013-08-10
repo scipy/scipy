@@ -1479,14 +1479,15 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_struveh(self):
         assert_mpmath_equal(sc.struve,
                             _exception_to_nan(lambda v, x: mpmath.struveh(v, x)),
-                            [Arg(-1e3, 1e3), Arg(0, 1e3)],
+                            [Arg(-1e4, 1e4), Arg(0, 1e4)],
                             rtol=1e-10)
 
     def test_struvel(self):
         assert_mpmath_equal(sc.modstruve,
                             _exception_to_nan(lambda v, x: mpmath.struvel(v, x)),
-                            [Arg(-1e3, 1e3), Arg(0, 1e3)],
-                            rtol=1e-10)
+                            [Arg(-1e4, 1e4), Arg(0, 1e4)],
+                            rtol=1e-10,
+                            ignore_inf_sign=True)
 
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,
