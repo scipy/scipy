@@ -155,41 +155,17 @@ class csc_matrix(_cs_matrix, IndexMixin):
         """CSC can't use _cs_matrix's .nonzero method because it
         returns the indices sorted for self transposed.
         """
-        # Get row and col indices
+        # Get row and col indices, from _cs_matrix.tocoo
         major_dim, minor_dim = self._swap(self.shape)
         minor_indices = self.indices
         major_indices = np.empty(len(minor_indices), dtype=np.intc)
         sparsetools.expandptr(major_dim,self.indptr, major_indices)
         row, col = self._swap((major_indices, minor_indices))
 
-        row_out = row.copy()
-        col_out = col.copy()
-
         # Sort them to be in C-style order
         ind = np.lexsort((col, row))
-        for i, j in enumerate(ind):
-            row_out[i] = row[j]
-            col_out[i] = col[j]
-
-        return row_out, col_out
-
-    def _bl_to_tl_sort(self, row, col):
-        """ Sort indices so they are returned properly when the matrix is
-        transposed. From bottom left to top right.
-        """
-        if isinstance(row, np.ndarray):
-            row = row.tolist()
-        if isinstance(col, np.ndarray):
-            col = col.tolist()
-        rc_pairs = [(r, c) for r, c in zip(row, col)]
-        rc_pairs = sorted(rc_pairs, key=lambda i: i[1])
-        rc_pairs = sorted(rc_pairs, key=lambda i: i[0])
-
-        row = []
-        col = []
-        for r, c in rc_pairs:
-            row.append(r)
-            col.append(c)
+        row = row[ind]
+        col = col[ind]
 
         return row, col
 
