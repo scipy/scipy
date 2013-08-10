@@ -60,8 +60,31 @@ where
 
     \[ \textrm{Si}\left(x\right)=\int_{0}^{x}\sin\left(\frac{\pi}{2}t^{2}\right)\, dt.\]
 
-is the Fresnel sine integral. Note that the numerically-computed
-integral is within :math:`1.04\times10^{-11}` of the exact result --- well below the reported error bound.
+is the Fresnel sine integral. Note that the numerically-computed integral is
+within :math:`1.04\times10^{-11}` of the exact result --- well below the
+reported error bound.
+
+
+If the function to integrate takes additional parameters, the can be provided
+in the `args` argument. Suppose that the following integral shall be calculated:
+
+
+
+.. math::
+   :nowrap:
+
+    \[ I(a,b)=\int_{0}^{1} ax^2+b \, dx.\]
+
+This integral can be evaluated by using the following code:
+
+>>> from scipy.integrate import quad
+>>> def integrand(x,a,b):
+...     return a * x + b
+>>> a = 2
+>>> b = 1
+>>> I = quad(integrand, 0, 1, args=(a,b))
+>>> I = (2.0, 2.220446049250313e-14)
+
 
 Infinite inputs are also allowed in :obj:`quad` by using :math:`\pm`
 ``inf`` as one of the arguments. For example, suppose that a numerical
@@ -91,9 +114,9 @@ is desired (and the fact that this integral can be computed as
     >>> special.expn(3,arange(1.0,4.0,0.5))
     array([ 0.1097,  0.0567,  0.0301,  0.0163,  0.0089,  0.0049])
 
-The function which is integrated can even use the quad argument
-(though the error bound may underestimate the error due to possible
-numerical error in the integrand from the use of :obj:`quad` ). The integral in this case is
+The function which is integrated can even use the quad argument (though the
+error bound may underestimate the error due to possible numerical error in the
+integrand from the use of :obj:`quad` ). The integral in this case is
 
 .. math::
    :nowrap:
@@ -112,14 +135,20 @@ numerical error in the integrand from the use of :obj:`quad` ). The integral in 
 8.77306560731e-11     
     
 This last example shows that multiple integration can be handled using
-repeated calls to :func:`quad`. The mechanics of this for double and
-triple integration have been wrapped up into the functions
-:obj:`dblquad` and :obj:`tplquad`. The function, :obj:`dblquad`
-performs double integration. Use the help function to be sure that the
-arguments are defined in the correct order. In addition, the limits on
-all inner integrals are actually functions which can be constant
-functions. An example of using double integration to compute several
-values of :math:`I_{n}` is shown below:
+repeated calls to :func:`quad`. 
+
+
+
+General multiple integration (:func:`dblquad`, :func:`tplquad`)
+---------------------------------------------------------------
+
+The mechanics for double and triple integration have been wrapped up into the
+functions :obj:`dblquad` and :obj:`tplquad`. These functions take the function
+to  integrate and four, or six arguments, respecively. The limits of all
+inner integrals need to be defined as functions.
+
+An example of using double integration to compute several values of
+:math:`I_{n}` is shown below:
 
     >>> from scipy.integrate import quad, dblquad
     >>> def I(n):
@@ -133,8 +162,27 @@ values of :math:`I_{n}` is shown below:
     (0.49999999999857514, 1.8855523253868967e-09)
 
 
-Gaussian quadrature (integrate.gauss_quadtol)
----------------------------------------------
+As example for non-constant limits consider the integral
+
+.. math::
+   :nowrap:
+
+    \[ I=\int_{0}^{1/2}\int_{1}^{1-2x} x y \, dx\, dy=\frac{1}{96}. \]
+
+
+This integral can be evaluated using the expression below (Note the use of the
+non-constant lambda functions for the upper limit of the inner integral):
+
+>>> from scipy.integrate import dblquad
+>>> area = dblquad(lambda x,y: x*y, 0,0.5, lambda x:0,lambda x:1-2*x)
+>>> print area
+(0.010416666666666668, 1.1564823173178715e-16)
+
+
+
+
+Gaussian quadrature
+-------------------
 
 A few functions are also provided in order to perform simple Gaussian
 quadrature over a fixed interval. The first is :obj:`fixed_quad` which
@@ -148,27 +196,74 @@ themselves are available as special functions returning instances of
 the polynomial class --- e.g. :obj:`special.legendre <scipy.special.legendre>`).
 
 
-Integrating using samples
+
+Romberg Integration
+-------------------
+
+Romberg's method [WPR]_ is another method for numerically evaluating an
+integral. See the help function for :func:`romberg` for further details.
+
+
+
+
+Integrating using Samples
 -------------------------
 
-There are three functions for computing integrals given only samples:
-:obj:`trapz` , :obj:`simps`, and :obj:`romb` . The first two
-functions use Newton-Coates formulas of order 1 and 2 respectively to
-perform integration. These two functions can handle,
-non-equally-spaced samples. The trapezoidal rule approximates the
-function as a straight line between adjacent points, while Simpson's
-rule approximates the function between three adjacent points as a
-parabola.
-
 If the samples are equally-spaced and the number of samples available
-is :math:`2^{k}+1` for some integer :math:`k`, then Romberg
+is :math:`2^{k}+1` for some integer :math:`k`, then Romberg :obj:`romb`
 integration can be used to obtain high-precision estimates of the
 integral using the available samples. Romberg integration uses the
 trapezoid rule at step-sizes related by a power of two and then
 performs Richardson extrapolation on these estimates to approximate
-the integral with a higher-degree of accuracy. (A different interface
-to Romberg integration useful when the function can be provided is
-also available as :func:`romberg`).
+the integral with a higher-degree of accuracy.
+
+In case of arbitrary spaced samples, the two functions trapz (defined in numpy
+[NPT]_) and :obj:`simps` are available. They are using Newton-Coates formulas
+of order 1 and 2 respectively to perform integration. The trapezoidal rule
+approximates the function as a straight line between adjacent points, while
+Simpson's rule approximates the function between three adjacent points as a
+parabola.
+
+For an odd number of samples that are equally spaced Simpson's rule is exact
+if the function is a polynomial of order 3 or less. If the samples are not
+equally spaced, then the result is exact only if the function is a polynomial
+of order 2 or less.
+
+>>> from scipy.integrate import simps
+>>> import numpy as np
+>>> def f(x):
+...    return x**2
+>>> def f2(x):
+...    return x**3
+>>> x = np.array([1,3,4])
+>>> y1 = f1(x)
+>>> I1 = integrate.simps(y1,x)
+>>> print(I1)
+21.0
+
+
+This corresponds exactely to 
+
+.. math::
+   :nowrap:
+
+    \[ \int_{1}^{4} x^2 \, dx = 21, \]
+
+whereas integrating the second function
+
+>>> y2 = f2(x)
+>>> I2 = integrate.simps(y2,x)
+>>> print(I2)
+61.5
+
+does not correspond to
+
+.. math::
+   :nowrap:
+
+    \[ \int_{1}^{4} x^3 \, dx = 63.75 \]
+
+because the order of the polynomial in f2 is larger than two.
 
 
 Ordinary differential equations (:func:`odeint`)
@@ -278,3 +373,13 @@ usage of the *Dfun* option which allows the user to specify a gradient
     
     >>> print y2[:36:6,1]
     [ 0.355028  0.339511  0.324067  0.308763  0.293658  0.278806]
+
+
+
+
+References
+~~~~~~~~~~
+
+.. [WPR] http://en.wikipedia.org/wiki/Romberg's_method
+
+.. [NPT] http://docs.scipy.org/doc/numpy/reference/generated/numpy.trapz.html
