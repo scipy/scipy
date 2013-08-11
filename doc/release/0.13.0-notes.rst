@@ -6,7 +6,7 @@ SciPy 0.13.0 Release Notes
 
 .. contents::
 
-SciPy 0.13.0 is the culmination of XXX months of hard work. It contains
+SciPy 0.13.0 is the culmination of 5 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -42,6 +42,68 @@ containing routines for computing interpolative matrix decompositions
 (ID). This feature is based on the ID software package by
 P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, and M. Tygert, previously
 adapted for Python in the PymatrixId package by K.L. Ho.
+
+Polar decomposition
+^^^^^^^^^^^^^^^^^^^
+
+A new function `scipy.linalg.polar`, to compute the polar decomposition 
+of a matrix, was added.
+
+
+BLAS level 3 functions
+^^^^^^^^^^^^^^^^^^^^^^
+
+The BLAS functions ``symm``, ``syrk``, ``syr2k``, ``hemm``, ``herk`` and
+``her2k`` are now wrapped in `scipy.linalg`.
+
+
+``scipy.sparse`` improvements
+-----------------------------
+
+Boolean comparisons and sparse matrices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All sparse matrix types now support boolean data, and boolean operations.
+So if we have two sparse matrices `A` and `B`, they can be compared in all the
+expected ways: `A < B`, `A >= B`, `A != B`, etc. And return sparse matrices.
+Comparisons with dense matrices and scalars are also supported. 
+
+CSR and CSC fancy indexing
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Compressed sparse row and column sparse matrix types now support fancy indexing
+with boolean matrices, slices, and lists. So where A is a (CSC or CSR) sparse
+matrix, you can do things like::
+
+    >>> A[A > 0.5] = 1  # Since Boolean sparse matrices work!
+
+    >>> A[:2, :3] = 2
+
+    >>> A[[1,2], 2] = 3
+
+
+``scipy.special`` improvements
+------------------------------
+
+New function `scipy.special.xlogy` and `scipy.special.xlog1py` were added.
+These functions can simplify and speed up code that has to calculate 
+``x * log(y)`` and give 0 when ``x == 0``.
+
+
+Unformatted Fortran file reader
+-------------------------------
+
+A new class `scipy.io.FortranFile` which facilitates reading unformatted
+sequential files written by Fortran code.
+
+B-spline derivatives and antiderivatives
+----------------------------------------
+
+`scipy.interpolate.splder` and `scipy.interpolate.splantider` functions 
+for computing B-splines that represent derivatives and antiderivatives
+of B-splines were added.  These functions are also available in the 
+class-based FITPACK interface as ``UnivariateSpline.derivative`` and
+``UnivariateSpline.antiderivative``.
 
 
 ``scipy.stats`` improvements
@@ -97,6 +159,78 @@ been removed from the distributions in ``scipy.stats``.
 Other changes
 =============
 
+Cython is now required to build *unreleased* versions of scipy.
+The C files generated from Cython sources are not included in the git repo
+anymore.  They are however still shipped in source releases.
+
+The code base received a fairly large PEP8 cleanup.  A ``tox pep8`` 
+command has been added; new code should pass this test command.
+
 
 Authors
 =======
+
+This release contains work by the following people (contributed at least
+one patch to this release, names in alphabetical order):
+
+* Jorge Cañardo Alastuey +
+* Tom Aldcroft +
+* Max Bolingbroke +
+* Joseph Jon Booker +
+* François Boulogne
+* Matthew Brett
+* Christian Brodbeck +
+* Per Brodtkorb +
+* Lars Buitinck
+* Evgeni Burovski +
+* Tim Cera
+* Lawrence Chan +
+* David Cournapeau
+* Dražen Lučanin +
+* Alexander J. Dunlap +
+* endolith
+* Ralf Gommers
+* Alex Griffing +
+* Blake Griffith +
+* Charles Harris
+* Bob Helmbold +
+* Andreas Hilboll
+* Kat Huang +
+* Oleksandr (Sasha) Huziy +
+* Gert-Ludwig Ingold +
+* Thouis (Ray) Jones
+* Juan Luis Cano Rodríguez +
+* Robert Kern
+* Andreas Kloeckner +
+* Sytse Knypstra +
+* Gustav Larsson +
+* Denis Laxalde
+* Christopher Lee
+* Tim Leslie
+* Wendy Liu +
+* Takuya Oshima +
+* Illia Polosukhin +
+* Przemek Porebski +
+* Steve Richardson +
+* Branden Rolston +
+* Skipper Seabold
+* Fazlul Shahriar
+* Leo Singer +
+* Rohit Sivaprasad +
+* Daniel B. Smith +
+* Julian Taylor
+* Louis Thibault +
+* Tomas Tomecek +
+* John Travers
+* Jacob Vanderplas
+* Patrick Varilly
+* Pauli Virtanen
+* Stefan van der Walt
+* Warren Weckesser
+* Nils Werner +
+* Michael Wimmer +
+* Tony S. Yu +
+
+A total of 57 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+
