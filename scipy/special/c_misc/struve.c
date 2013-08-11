@@ -90,7 +90,7 @@
 #include "double2.h"
 
 #define MAXITER 10000
-#define SUM_EPS 1e-100   /* be sure we are in the tail of the sum */
+#define SUM_EPS 1e-16   /* be sure we are in the tail of the sum */
 #define GOOD_EPS 1e-12
 #define ACCEPTABLE_EPS 1e-7
 #define ACCEPTABLE_ATOL 1e-300
@@ -119,7 +119,7 @@ double struve_l(double v, double z)
 
 static double struve_hl(double v, double z, int is_h)
 {
-    double value[3], err[3], tmp;
+    double value[4], err[4], tmp;
     int n;
 
     if (z < 0) {
@@ -155,7 +155,7 @@ static double struve_hl(double v, double z, int is_h)
     }
 
     /* Try the asymptotic expansion */
-    if (z >= 0.7*fabs(v) + 12) {
+    if (z >= 0.7*v + 12) {
         value[0] = struve_asymp_large_z(v, z, is_h, &err[0]);
         if (err[0] < GOOD_EPS * fabs(value[0])) {
             return value[0];
@@ -364,6 +364,12 @@ double struve_asymp_large_z(double v, double z, int is_h, double *err)
         return NPY_NAN;
     }
 
+    if (z < v) {
+        /* Exclude regions where our error estimation fails */
+        *err = NPY_INFINITY;
+        return NPY_NAN;
+    }
+
     /* Evaluate sum */
     term = -sgn / sqrt(M_PI) * exp(-lgam(v + 0.5) + (v - 1) * log(z/2)) * gammasgn(v + 0.5);
     sum = term;
@@ -387,12 +393,12 @@ double struve_asymp_large_z(double v, double z, int is_h, double *err)
         sum += bessel_i(v, z);
     }
 
+    /*
+     * This error estimate is strictly speaking valid only for
+     * n > v - 0.5, but numerical results indicate that it works
+     * reasonably.
+     */
     *err = fabs(term) + fabs(maxterm) * 1e-16;
-
-    if (!npy_isfinite(sum)) {
-        *err = NPY_INFINITY;
-        return NPY_NAN;
-    }
 
     return sum;
 }
