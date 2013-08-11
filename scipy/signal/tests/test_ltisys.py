@@ -261,6 +261,14 @@ class TestStep(_TestStepFuncs):
     def setup(self):
         self.func = step
 
+    def test_complex_input(self):
+        # Test that complex input doesn't raise an error.
+        # `step` doesn't seem to have been designed for complex input, but this
+        # works and may be used, so add regression test.  See gh-2654.
+        step(([], [-1], 1+0j))
+
+
+
 
 def test_lti_instantiation():
     # Test that lti can be instantiated with sequences, scalars.  See PR-225.
