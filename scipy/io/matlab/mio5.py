@@ -593,7 +593,11 @@ class VarWriter5(object):
     def update_matrix_tag(self, start_pos):
         curr_pos = self.file_stream.tell()
         self.file_stream.seek(start_pos)
-        self.mat_tag['byte_count'] = curr_pos - start_pos - 8
+        byte_count = curr_pos - start_pos - 8
+        if byte_count >= 2**32:
+            raise MatWriteError("Matrix too large to save with Matlab "
+                                "5 format")
+        self.mat_tag['byte_count'] = byte_count
         self.write_bytes(self.mat_tag)
         self.file_stream.seek(curr_pos)
 
