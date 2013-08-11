@@ -471,6 +471,24 @@ class dok_matrix(spmatrix, dict):
         new.update(self)
         return new
 
+    def getrow(self, i):
+        """Returns a copy of row i of the matrix as a (1 x n)
+        DOK matrix.
+        """
+        out = self.__class__((1, self.shape[1]), dtype=self.dtype)
+        for j in range(self.shape[1]):
+            out[0, j] = self[i, j]
+        return out
+
+    def getcol(self, j):
+        """Returns a copy of column j of the matrix as a (m x 1)
+        DOK matrix.
+        """
+        out = self.__class__((self.shape[0], 1), dtype=self.dtype)
+        for i in range(self.shape[0]):
+            out[i, 0] = self[i, j]
+        return out
+
     def take(self, cols_or_rows, columns=1):
         # Extract columns or rows as indictated from matrix
         # assume cols_or_rows is sorted
