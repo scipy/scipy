@@ -1802,6 +1802,24 @@ class _TestFancyIndexing:
         assert_raises(IndexError, A.__getitem__, Ysp)
         assert_raises((IndexError, ValueError), A.__getitem__, (Xsp, 1))
 
+    def test_fancy_indexing_empty_index(self):
+        def check():
+            B = asmatrix(arange(50).reshape(5,10))
+            A = self.spmatrix(B)
+            expected_empty_result = self.spmatrix(np.array([[0]]))
+
+            assert_equal(A[1:1], expected_empty_result)
+            assert_equal(A[1:2:-1], expected_empty_result)
+
+        msg = "LIL can actually be 0x0 but converting it to other formats "
+        "causes problems, so we mark it as known fail."
+
+        fails = False
+        if self.__class__ == TestLIL:
+            fails = True
+
+        yield dec.skipif(fails, msg)(check)
+
 
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
