@@ -91,6 +91,7 @@
 
 #define MAXITER 10000
 #define SUM_EPS 1e-16   /* be sure we are in the tail of the sum */
+#define SUM_TINY 1e-100
 #define GOOD_EPS 1e-12
 #define ACCEPTABLE_EPS 1e-7
 #define ACCEPTABLE_ATOL 1e-300
@@ -234,6 +235,7 @@ double struve_power_series(double v, double z, int is_h, double *err)
     else {
         scaleexp = 0;
     }
+    
     term = 2 / sqrt(M_PI) * exp(tmp) * gammasgn(v + 1.5);
     sum = term;
     maxterm = 0;
@@ -262,7 +264,7 @@ double struve_power_series(double v, double z, int is_h, double *err)
         if (fabs(term) > maxterm) {
             maxterm = fabs(term);
         }
-        if (fabs(term) < SUM_EPS * fabs(sum) || term == 0 || !npy_isfinite(sum)) {
+        if (fabs(term) < SUM_TINY * fabs(sum) || term == 0 || !npy_isfinite(sum)) {
             break;
         }
     }
