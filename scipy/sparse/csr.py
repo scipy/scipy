@@ -352,7 +352,10 @@ class csr_matrix(_cs_matrix, IndexMixin):
                 row_data = row_data[::-1]
                 row_indices = abs(row_indices[::-1])
 
-            shape = (1, np.ceil(float(stop - start) / stride))
+            shape = (1, int(np.ceil(float(stop - start) / stride)))
+            # Catch empty slice.
+            if 0 in shape:
+                shape = (1,1)
 
             row_slice = csr_matrix((row_data, row_indices, row_indptr),
                                    shape=shape)
