@@ -42,6 +42,7 @@ NAME_MAP = {
     u('Christolph Gohlke'): u('Christoph Gohlke'),
     u('ckuster'): u('Christopher Kuster'),
     u('Collin Stocks'): u('Collin RM Stocks'),
+    u('cnovak'): u('Clemens Novak'),
     u('Daniel Smith'): u('Daniel B. Smith'),
     u('dellsystem'): u('Wendy Liu'),
     u('Derek Homeir'): u('Derek Homeier'),

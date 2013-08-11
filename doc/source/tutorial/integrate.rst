@@ -132,7 +132,6 @@ This last example shows that multiple integration can be handled using
 repeated calls to :func:`quad`. 
 
 
-
 General multiple integration (:func:`dblquad`, :func:`tplquad`)
 ---------------------------------------------------------------
 
@@ -168,9 +167,8 @@ non-constant lambda functions for the upper limit of the inner integral):
 
 >>> from scipy.integrate import dblquad
 >>> area = dblquad(lambda x, y: x*y, 0, 0.5, lambda x: 0, lambda x: 1-2*x)
+>>> area
 (0.010416666666666668, 1.1564823173178715e-16)
-
-
 
 
 Gaussian quadrature
@@ -188,14 +186,11 @@ themselves are available as special functions returning instances of
 the polynomial class --- e.g. :obj:`special.legendre <scipy.special.legendre>`).
 
 
-
 Romberg Integration
 -------------------
 
 Romberg's method [WPR]_ is another method for numerically evaluating an
 integral. See the help function for :func:`romberg` for further details.
-
-
 
 
 Integrating using Samples
@@ -357,8 +352,6 @@ usage of the *Dfun* option which allows the user to specify a gradient
     
     >>> print y2[:36:6,1]
     [ 0.355028  0.339511  0.324067  0.308763  0.293658  0.278806]
-
-
 
 
 References
