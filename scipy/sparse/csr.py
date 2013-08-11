@@ -388,15 +388,18 @@ class csr_matrix(_cs_matrix, IndexMixin):
                 raise TypeError('expected slice or scalar')
 
         def check_bounds(i0, i1, num):
-            if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 < i1):
+            if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 <= i1):
                 raise IndexError(
-                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %
+                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<=%d" %
                       (i0, num, i1, num, i0, i1))
 
         i0, i1 = process_slice(row_slice, M)
         j0, j1 = process_slice(col_slice, N)
         check_bounds(i0, i1, M)
         check_bounds(j0, j1, N)
+
+        if i0 == i1 or j0 == j1:
+            return self.__class__((1, 1), dtype=self.dtype)
 
         indptr, indices, data = get_csr_submatrix(M, N,
                 self.indptr, self.indices, self.data,
