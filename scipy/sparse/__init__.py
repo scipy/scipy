@@ -5,6 +5,9 @@ Sparse matrices (:mod:`scipy.sparse`)
 
 .. currentmodule:: scipy.sparse
 
+|   Sparse is better than dense.
+|   --- *Tim Peters*, The Zen of Python
+
 SciPy 2-D sparse matrix package.
 
 Contents
