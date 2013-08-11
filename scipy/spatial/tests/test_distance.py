@@ -40,16 +40,17 @@ from scipy.lib.six.moves import xrange
 
 import numpy as np
 from numpy.linalg import norm
-from numpy.testing import verbose, TestCase, run_module_suite, \
-        assert_raises, assert_array_equal, assert_equal, assert_almost_equal
+from numpy.testing import (verbose, TestCase, run_module_suite,
+        assert_raises, assert_array_equal, assert_equal, assert_almost_equal,
+        assert_allclose)
 
 from scipy.lib.six import u
 
-from scipy.spatial.distance import squareform, pdist, cdist, matching, \
-        jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule, \
-        num_obs_y, num_obs_dm, is_valid_dm, is_valid_y, minkowski, wminkowski, \
-        euclidean, sqeuclidean, cosine, correlation, mahalanobis, \
-        canberra, braycurtis, sokalmichener, _validate_vector
+from scipy.spatial.distance import (squareform, pdist, cdist, matching,
+        jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule,
+        num_obs_y, num_obs_dm, is_valid_dm, is_valid_y, minkowski, wminkowski,
+        euclidean, sqeuclidean, cosine, correlation, mahalanobis,
+        canberra, braycurtis, sokalmichener, _validate_vector)
 
 
 _filenames = ["iris.txt",
@@ -896,16 +897,16 @@ class TestPdist(TestCase):
                        1.5, 3.0,
                        2.5]
         dist = pdist(x, metric=wminkowski, w=[1.0, 1.0, 1.0])
-        assert_array_equal(dist, p2_expected)
+        assert_allclose(dist, p2_expected, rtol=1e-14)
 
         dist = pdist(x, metric=wminkowski, w=[0.5, 1.0, 2.0], p=1)
-        assert_array_equal(dist, p1_expected)
+        assert_allclose(dist, p1_expected, rtol=1e-14)
 
         dist = pdist(x, metric='wminkowski', w=[1.0, 1.0, 1.0])
-        assert_array_equal(dist, p2_expected)
+        assert_allclose(dist, p2_expected, rtol=1e-14)
 
         dist = pdist(x, metric='wminkowski', w=[0.5, 1.0, 2.0], p=1)
-        assert_array_equal(dist, p1_expected)
+        assert_allclose(dist, p1_expected, rtol=1e-14)
 
     ################### pdist: hamming
     def test_pdist_hamming_random(self):
