@@ -208,6 +208,7 @@ one patch to this release, names in alphabetical order):
 * Christopher Lee
 * Tim Leslie
 * Wendy Liu +
+* Clemens Novak +
 * Takuya Oshima +
 * Illia Polosukhin +
 * Przemek Porebski +
@@ -231,6 +232,6 @@ one patch to this release, names in alphabetical order):
 * Michael Wimmer +
 * Tony S. Yu +
 
-A total of 57 people contributed to this release.
+A total of 58 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 
