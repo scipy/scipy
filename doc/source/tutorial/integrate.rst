@@ -22,6 +22,7 @@ suppose you wish to integrate a bessel function ``jv(2.5,x)`` along
 the interval :math:`[0,4.5].`
 
 .. math::
+
     I=\int_{0}^{4.5}J_{2.5}\left(x\right)\, dx.
 
 
@@ -48,11 +49,13 @@ element holding an upper bound on the error. Notice, that in this
 case, the true value of this integral is
 
 .. math::
+
     I=\sqrt{\frac{2}{\pi}}\left(\frac{18}{27}\sqrt{2}\cos\left(4.5\right)-\frac{4}{27}\sqrt{2}\sin\left(4.5\right)+\sqrt{2\pi}\textrm{Si}\left(\frac{3}{\sqrt{\pi}}\right)\right),
 
 where
 
 .. math::
+
     \textrm{Si}\left(x\right)=\int_{0}^{x}\sin\left(\frac{\pi}{2}t^{2}\right)\, dt.
 
 is the Fresnel sine integral. Note that the numerically-computed integral is
@@ -64,6 +67,7 @@ If the function to integrate takes additional parameters, the can be provided
 in the `args` argument. Suppose that the following integral shall be calculated:
 
 .. math::
+
     I(a,b)=\int_{0}^{1} ax^2+b \, dx.
 
 
@@ -83,6 +87,7 @@ Infinite inputs are also allowed in :obj:`quad` by using :math:`\pm`
 value for the exponential integral:
 
 .. math::
+
     E_{n}\left(x\right)=\int_{1}^{\infty}\frac{e^{-xt}}{t^{n}}\, dt.
 
 is desired (and the fact that this integral can be computed as
@@ -109,6 +114,7 @@ error bound may underestimate the error due to possible numerical error in the
 integrand from the use of :obj:`quad` ). The integral in this case is
 
 .. math::
+
     I_{n}=\int_{0}^{\infty}\int_{1}^{\infty}\frac{e^{-xt}}{t^{n}}\, dt\, dx=\frac{1}{n}.
 
 >>> result = quad(lambda x: expint(3, x), 0, inf)
@@ -153,6 +159,7 @@ An example of using double integration to compute several values of
 As example for non-constant limits consider the integral
 
 .. math::
+
     I=\int_{0}^{1/2}\int_{1}^{1-2x} x y \, dx\, dy=\frac{1}{96}.
 
 
@@ -230,6 +237,7 @@ of order 2 or less.
 This corresponds exactly to 
 
 .. math::
+
     \int_{1}^{4} x^2 \, dx = 21,
 
 whereas integrating the second function
@@ -242,6 +250,7 @@ whereas integrating the second function
 does not correspond to
 
 .. math::
+
     \int_{1}^{4} x^3 \, dx = 63.75
 
 because the order of the polynomial in f2 is larger than two.
@@ -256,6 +265,7 @@ initial conditions is another useful example. The function
 vector differential equation:
 
 .. math::
+
     \frac{d\mathbf{y}}{dt}=\mathbf{f}\left(\mathbf{y},t\right),
 
 given initial conditions :math:`\mathbf{y}\left(0\right)=y_{0}`, where
@@ -269,12 +279,14 @@ For example suppose it is desired to find the solution to the
 following second-order differential equation:
 
 .. math::
+
     \frac{d^{2}w}{dz^{2}}-zw(z)=0
 
 with initial conditions :math:`w\left(0\right)=\frac{1}{\sqrt[3]{3^{2}}\Gamma\left(\frac{2}{3}\right)}` and :math:`\left.\frac{dw}{dz}\right|_{z=0}=-\frac{1}{\sqrt[3]{3}\Gamma\left(\frac{1}{3}\right)}.` It is known that the solution to this differential equation with these
 boundary conditions is the Airy function
 
 .. math::
+
     w=\textrm{Ai}\left(z\right),
 
 which gives a means to check the integrator using :func:`special.airy <scipy.special.airy>`.
@@ -284,11 +296,13 @@ First, convert this ODE into standard form by setting
 the differential equation becomes
 
 .. math::
+
     \frac{d\mathbf{y}}{dt}=\left[\begin{array}{c} ty_{1}\\ y_{0}\end{array}\right]=\left[\begin{array}{cc} 0 & t\\ 1 & 0\end{array}\right]\left[\begin{array}{c} y_{0}\\ y_{1}\end{array}\right]=\left[\begin{array}{cc} 0 & t\\ 1 & 0\end{array}\right]\mathbf{y}.
 
 In other words,
 
 .. math::
+
     \mathbf{f}\left(\mathbf{y},t\right)=\mathbf{A}\left(t\right)\mathbf{y}.
 
 As an interesting reminder, if :math:`\mathbf{A}\left(t\right)`
@@ -297,6 +311,7 @@ under matrix multiplication, then this linear differential equation
 has an exact solution using the matrix exponential:
 
 .. math::
+
     \mathbf{y}\left(t\right)=\exp\left(\int_{0}^{t}\mathbf{A}\left(\tau\right)d\tau\right)\mathbf{y}\left(0\right),
 
 However, in this case, :math:`\mathbf{A}\left(t\right)` and its integral do not commute.
