@@ -26,6 +26,7 @@ the interval :math:`[0,4.5].`
 
     \[ I=\int_{0}^{4.5}J_{2.5}\left(x\right)\, dx.\]
 
+
 This could be computed using :obj:`quad`:
 
     >>> result = integrate.quad(lambda x: special.jv(2.5,x), 0, 4.5)
@@ -68,17 +69,14 @@ reported error bound.
 If the function to integrate takes additional parameters, the can be provided
 in the `args` argument. Suppose that the following integral shall be calculated:
 
-
-
 .. math::
-   :nowrap:
+    I(a,b)=\int_{0}^{1} ax^2+b \, dx.
 
-    \[ I(a,b)=\int_{0}^{1} ax^2+b \, dx.\]
 
 This integral can be evaluated by using the following code:
 
 >>> from scipy.integrate import quad
->>> def integrand(x,a,b):
+>>> def integrand(x, a, b):
 ...     return a * x + b
 >>> a = 2
 >>> b = 1
@@ -174,8 +172,7 @@ This integral can be evaluated using the expression below (Note the use of the
 non-constant lambda functions for the upper limit of the inner integral):
 
 >>> from scipy.integrate import dblquad
->>> area = dblquad(lambda x,y: x*y, 0,0.5, lambda x:0,lambda x:1-2*x)
->>> print area
+>>> area = dblquad(lambda x, y: x*y, 0, 0.5, lambda x: 0, lambda x: 1-2*x)
 (0.010416666666666668, 1.1564823173178715e-16)
 
 
@@ -242,7 +239,7 @@ of order 2 or less.
 21.0
 
 
-This corresponds exactely to 
+This corresponds exactly to 
 
 .. math::
    :nowrap:
