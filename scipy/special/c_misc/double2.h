@@ -132,13 +132,13 @@ static void double_split(double a, double *hi, double *lo)
 {
     volatile double b, c;
     if (a > _QD_SPLIT_THRESH || a < -_QD_SPLIT_THRESH) {
-        a *= 3.7252902984619140625e-09;  // 2^-28
+        a *= 3.7252902984619140625e-09;  /* 2^-28 */
         b = _QD_SPLITTER * a;
         c = b - a;
         *hi = b - c;
         *lo = a - *hi;
-        *hi *= 268435456.0;          // 2^28
-        *lo *= 268435456.0;          // 2^28
+        *hi *= 268435456.0;          /* 2^28 */
+        *lo *= 268435456.0;          /* 2^28 */
     } else {
         b = _QD_SPLITTER * a;
         c = b - a;
