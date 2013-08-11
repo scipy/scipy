@@ -588,7 +588,7 @@ class _TestCommon:
             sM = self.spmatrix(M, shape=(3,3), dtype=dtype)
             sMinv = inv(sM)
             assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
-        for dtype in [float, bool]:
+        for dtype in [float]:
             yield check, dtype
 
     def test_from_array(self):
@@ -1473,7 +1473,7 @@ class _TestSlicing:
                   0, 1, s_[:], s_[1:5], -1, -2, -5,
                   array(-1), np.int8(-3)]
 
-        for j, a in enumerate(slices):
+        def check_1(a):
             x = A[a]
             y = B[a]
             if y.shape == ():
@@ -1484,41 +1484,36 @@ class _TestSlicing:
                 else:
                     assert_array_equal(x.todense(), y, repr(a))
 
+        for j, a in enumerate(slices):
+            yield check_1, a
+
+        def check_2(a, b):
+            # Indexing np.matrix with 0-d arrays seems to be broken,
+            # as they seem not to be treated as scalars.
+            # https://github.com/numpy/numpy/issues/3110
+            if isinstance(a, np.ndarray):
+                ai = int(a)
+            else:
+                ai = a
+            if isinstance(b, np.ndarray):
+                bi = int(b)
+            else:
+                bi = b
+
+            x = A[a, b]
+            y = B[ai, bi]
+
+            if y.shape == ():
+                assert_equal(x, y, repr((a, b)))
+            else:
+                if x.size == 0 and y.size == 0:
+                    pass
+                else:
+                    assert_array_equal(x.todense(), y, repr((a, b)))
+
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
-                # if, bad case.
-                # Note that this bug was causing np.array(-1) to change
-                # values, so checking b == -1 was not enough.
-                # Bug in np.matrix
-                # https://github.com/numpy/numpy/issues/3110
-                msg = "Indexing with np.array(-1) is problematic."
-                if isinstance(b, np.ndarray):
-                    if b != -1:
-                        x = A[a, -1]
-                        y = B[a, -1]
-                        yield dec.skipif(
-                                True, msg)(
-                                assert_array_equal)(
-                                x.todense(), y)
-                elif isinstance(a, np.ndarray):
-                    if a != -1:
-                        x = A[-1, b]
-                        y = B[-1, b]
-                        yield dec.skipif(True, msg)(
-                                         assert_array_equal)(
-                                         x.todense(), y)
-                # else, good case
-                else:
-                    x = A[a, b]
-                    y = B[a, b]
-
-                if y.shape == ():
-                    assert_equal(x, y, repr((a, b)))
-                else:
-                    if x.size == 0 and y.size == 0:
-                        pass
-                    else:
-                        assert_array_equal(x.todense(), y, repr((a, b)))
+                yield check_2, a, b
 
 
 class _TestSlicingAssign:
