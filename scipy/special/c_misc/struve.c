@@ -18,32 +18,29 @@
  * (i)
  *
  * Looking at the error in the asymptotic expansion, one finds that
- * it's not worth trying it out unless |z| ~> 0.7 * |v| + 12.
+ * it's not worth trying if z ~> 0.7 * v + 12 for v > 0.
  *
  * (ii)
  *
  * The Bessel function expansion tends to fail for |z| >~ |v| and is not tried
  * there.
  *
- * For Struve H it covers the quadrant v > z where the power series tends to
- * fail to produce reasonable results due to loss of precision.
+ * For Struve H it covers the quadrant v > z where the power series may fail to
+ * produce reasonable results.
  *
  * (iii)
  *
  * The three expansions together cover for Struve H the region z > 0, v real.
+ *
+ * They also cover Struve L, except that some loss of precision may occur around
+ * the transition region z ~ 0.7 |v|, v < 0, |v| >> 1 where the function changes
+ * rapidly.
  *
  * (iv)
  *
  * The power series is evaluated in double-double precision. This fixes accuracy
  * issues in Struve H for |v| << |z| before the asymptotic expansion kicks in.
  * Moreover, it improves the Struve L behavior for negative v.
- *
- * (iv)
- *
- * For Struve L there remains a difficult region around v < 0, z ~ -0.7 v >> 1,
- * where all the expansions have convergence problems.
- *
- * This implementation returns NAN in this region for large -v.
  *
  *
  * References
