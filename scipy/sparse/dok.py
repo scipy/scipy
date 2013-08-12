@@ -491,52 +491,6 @@ class dok_matrix(spmatrix, dict):
             out[i, 0] = self[i, j]
         return out
 
-    def take(self, cols_or_rows, columns=1):
-        # Extract columns or rows as indictated from matrix
-        # assume cols_or_rows is sorted
-        new = dok_matrix(dtype=self.dtype)    # what should the dimensions be ?!
-        indx = int((columns == 1))
-        N = len(cols_or_rows)
-        if indx:  # columns
-            for key in self.keys():
-                num = np.searchsorted(cols_or_rows, key[1])
-                if num < N:
-                    newkey = (key[0], num)
-                    new[newkey] = self[key]
-        else:
-            for key in self.keys():
-                num = np.searchsorted(cols_or_rows, key[0])
-                if num < N:
-                    newkey = (num, key[1])
-                    new[newkey] = self[key]
-        return new
-
-    def split(self, cols_or_rows, columns=1):
-        # Similar to take but returns two arrays, the extracted columns plus
-        # the resulting array.  Assumes cols_or_rows is sorted
-        base = dok_matrix()
-        ext = dok_matrix()
-        indx = int((columns == 1))
-        if indx:
-            for key in self.keys():
-                num = np.searchsorted(cols_or_rows, key[1])
-                if cols_or_rows[num] == key[1]:
-                    newkey = (key[0], num)
-                    ext[newkey] = self[key]
-                else:
-                    newkey = (key[0], key[1]-num)
-                    base[newkey] = self[key]
-        else:
-            for key in self.keys():
-                num = np.searchsorted(cols_or_rows, key[0])
-                if cols_or_rows[num] == key[0]:
-                    newkey = (num, key[1])
-                    ext[newkey] = self[key]
-                else:
-                    newkey = (key[0]-num, key[1])
-                    base[newkey] = self[key]
-        return base, ext
-
     def tocoo(self):
         """ Return a copy of this matrix in COOrdinate format"""
         from .coo import coo_matrix
