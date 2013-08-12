@@ -8,7 +8,7 @@ Sparse matrices (:mod:`scipy.sparse`)
 |   Sparse is better than dense.
 |   --- *Tim Peters*, The Zen of Python
 
-SciPy 2-D sparse matrix package.
+SciPy 2-D sparse matrix package for numeric data.
 
 Contents
 ========
