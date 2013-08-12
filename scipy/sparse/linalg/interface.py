@@ -182,38 +182,50 @@ class LinearOperator(object):
         return self*x
 
     def __mul__(self, x):
-        if isinstance(x, LinearOperator):
-            return _ProductLinearOperator(self, x)
-        elif np.isscalar(x):
-            return _ScaledLinearOperator(self, x)
-        else:
-            x = np.asarray(x)
-
-            if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
-                return self.matvec(x)
-            elif x.ndim == 2:
-                return self.matmat(x)
+        try:
+            if isinstance(x, LinearOperator):
+                return _ProductLinearOperator(self, x)
+            elif np.isscalar(x):
+                return _ScaledLinearOperator(self, x)
             else:
-                raise ValueError('expected rank-1 or rank-2 array or matrix')
+                x = np.asarray(x)
+
+                if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
+                    return self.matvec(x)
+                elif x.ndim == 2:
+                    return self.matmat(x)
+                else:
+                    raise ValueError('expected rank-1 or rank-2 array or matrix')
+        except ValueError:
+            return NotImplemented
 
     def dot(self, other):
         # modeled after scipy.sparse.base.dot
         return self * other
 
     def __rmul__(self, x):
-        if np.isscalar(x):
+        try:
             return _ScaledLinearOperator(self, x)
-        else:
+        except ValueError:
             return NotImplemented
 
     def __pow__(self, p):
-        return _PowerLinearOperator(self, p)
+        try:
+            return _PowerLinearOperator(self, p)
+        except ValueError:
+            return NotImplemented
 
     def __add__(self, x):
-        return _SumLinearOperator(self, x)
+        try:
+            return _SumLinearOperator(self, x)
+        except ValueError:
+            return NotImplemented
 
     def __neg__(self):
-        return _ScaledLinearOperator(self, -1)
+        try:
+            return _ScaledLinearOperator(self, -1)
+        except ValueError:
+            return NotImplemented
 
     def __sub__(self, x):
         return self + (-x)
