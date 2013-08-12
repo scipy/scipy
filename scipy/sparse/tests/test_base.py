@@ -1473,6 +1473,10 @@ class _TestSlicing:
                   0, 1, s_[:], s_[1:5], -1, -2, -5,
                   array(-1), np.int8(-3)]
 
+        # These slices would return a size zero spares matrix which is
+        # currently unsupported.
+        bad_slices = [s_[:5:-1]]
+
         def check_1(a):
             x = A[a]
             y = B[a]
@@ -1484,8 +1488,15 @@ class _TestSlicing:
                 else:
                     assert_array_equal(x.todense(), y, repr(a))
 
+        fail = False
+        msg = "This slice returns a size 0 sparse matrix which is currently "
+        "unsupported."
         for j, a in enumerate(slices):
-            yield check_1, a
+            if a in bad_slices:
+                fail = True
+            else:
+                fail = False
+            yield dec.knownfailureif(fail, msg)(check_1), a
 
         def check_2(a, b):
             # Indexing np.matrix with 0-d arrays seems to be broken,
@@ -1511,9 +1522,14 @@ class _TestSlicing:
                 else:
                     assert_array_equal(x.todense(), y, repr((a, b)))
 
+        fail = False
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
-                yield check_2, a, b
+                if (a in bad_slices) or (b in bad_slices):
+                    fail = True
+                else:
+                    fail = False
+                yield dec.knownfailureif(fail, msg)(check_2), a, b
 
 
 class _TestSlicingAssign:
@@ -1796,24 +1812,6 @@ class _TestFancyIndexing:
         assert_raises(IndexError, A.__getitem__, Zsp)
         assert_raises(IndexError, A.__getitem__, Ysp)
         assert_raises((IndexError, ValueError), A.__getitem__, (Xsp, 1))
-
-    def test_fancy_indexing_empty_index(self):
-        def check():
-            B = asmatrix(arange(50).reshape(5,10))
-            A = self.spmatrix(B)
-            expected_empty_result = self.spmatrix(np.array([[0]]))
-
-            assert_equal(A[1:1], expected_empty_result)
-            assert_equal(A[1:2:-1], expected_empty_result)
-
-        msg = "LIL can actually be 0x0 but converting it to other formats "
-        "causes problems, so we mark it as known fail."
-
-        fails = False
-        if self.__class__ == TestLIL:
-            fails = True
-
-        yield dec.skipif(fails, msg)(check)
 
 
 class _TestFancyIndexingAssign:
