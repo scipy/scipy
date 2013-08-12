@@ -273,6 +273,11 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
         # If all else fails, try elementwise
         row, col = self._index_to_arrays(row, col)
+
+        if row.size == 0 or col.size == 0:
+            raise ValueError("Slice returns a size 0 matrix which is not "
+            "supported by sparse matrices.")
+
         return self.__class__([[self._get_single_element(iii, jjj) for
                                 iii, jjj in zip(ii, jj)] for ii, jj in
                                zip(row.tolist(), col.tolist())])
@@ -353,9 +358,9 @@ class csr_matrix(_cs_matrix, IndexMixin):
                 row_indices = abs(row_indices[::-1])
 
             shape = (1, int(np.ceil(float(stop - start) / stride)))
-            # Catch empty slice.
             if 0 in shape:
-                shape = (1,1)
+                raise ValueError("Slice returns a size 0 matrix which is not "
+                "supported by sparse matrices.")
 
             row_slice = csr_matrix((row_data, row_indices, row_indptr),
                                    shape=shape)
