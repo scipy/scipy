@@ -392,8 +392,10 @@ class dok_matrix(spmatrix, dict):
         return new
 
     def _mul_scalar(self, other):
+        # Get the result dtype in a bad way.
+        res_dtype = (np.array([0], dtype=self.dtype) * other).dtype
         # Multiply this scalar by every element.
-        new = dok_matrix(self.shape, dtype=self.dtype)
+        new = dok_matrix(self.shape, dtype=res_dtype)
         for (key, val) in iteritems(self):
             new[key] = val * other
         return new
