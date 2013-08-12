@@ -381,7 +381,11 @@ class lil_matrix(spmatrix):
             # Multiply by zero: return the zero matrix
             new = lil_matrix(self.shape, dtype=self.dtype)
         else:
+            # Get the result dtype in a bad way.
+            res_dtype = (np.array([0], dtype=self.dtype) * other).dtype
+
             new = self.copy()
+            new = new.astype(res_dtype)
             # Multiply this scalar by every element.
             new.data[:] = [[val*other for val in rowvals] for
                            rowvals in new.data]
