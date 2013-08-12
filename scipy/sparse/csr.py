@@ -14,13 +14,12 @@ from scipy.lib.six.moves import xrange
 
 from .sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix, csr_sample_values
-from .sputils import upcast, isintlike
-
+from .sputils import upcast, isintlike, IndexMixin, issequence
 
 from .compressed import _cs_matrix
 
 
-class csr_matrix(_cs_matrix):
+class csr_matrix(_cs_matrix, IndexMixin):
     """
     Compressed Sparse Row matrix
 
@@ -224,66 +223,64 @@ class csr_matrix(_cs_matrix):
 
             return csr_matrix((data,indices,indptr), shape=shape)
 
-        if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
+        row, col = self._unpack_index(key)
 
-            if isintlike(row):
-                #[1,??]
-                if isintlike(col):
-                    return self._get_single_element(row, col)  # [i,j]
-                elif isinstance(col, slice):
-                    return self._get_row_slice(row, col)      # [i,1:2]
-                else:
-                    P = extractor(col,self.shape[1]).T        # [i,[1,2]]
-                    return self[row,:]*P
+        # First attempt to use original row optimized methods
+        # [1, ?]
+        if isintlike(row):
+            # [i, j]
+            if isintlike(col):
+                return self._get_single_element(row, col)
+            # [i, 1:2]
+            elif isinstance(col, slice):
+                return self._get_row_slice(row, col)
+            # [i, [1, 2]]
+            elif issequence(col):
+                P = extractor(col,self.shape[1]).T
+                return self[row, :] * P
+        elif isinstance(row, slice):
+            # [1:2,??]
+            if ((isintlike(col) and row.step in (1, None)) or
+                    (isinstance(col, slice) and
+                     col.step in (1, None) and
+                     row.step in (1, None))):
+                # col is int or slice with step 1, row is slice with step 1.
+                return self._get_submatrix(row, col)
+            elif issequence(col):
+                P = extractor(col,self.shape[1]).T        # [1:2,[1,2]]
+                # row is slice, col is sequence.
+                return self[row,:]*P
+        elif issequence(row):
+            # [[1,2],??]
+            if isintlike(col) or isinstance(col,slice):
+                P = extractor(row, self.shape[0])     # [[1,2],j] or [[1,2],1:2]
+                return (P*self)[:,col]
+            elif issequence(col):                     # [[1,2],[1,2]]
+                row = asindices(row)
+                col = asindices(col)
+                if row.ndim == 1:
+                    if row.shape != col.shape:
+                        raise IndexError('number of row and column indices differ')
+                    check_bounds(row, self.shape[0])
+                    check_bounds(col, self.shape[1])
 
-            elif isinstance(row, slice):
-                #[1:2,??]
-                if isintlike(col) or isinstance(col, slice):
-                    return self._get_submatrix(row, col)      # [1:2,j]
-                else:
-                    P = extractor(col,self.shape[1]).T        # [1:2,[1,2]]
-                    return self[row,:]*P
+                    num_samples = len(row)
+                    val = np.empty(num_samples, dtype=self.dtype)
+                    csr_sample_values(self.shape[0], self.shape[1],
+                                      self.indptr, self.indices, self.data,
+                                      num_samples, row, col, val)
+                    return np.asmatrix(val)
 
-            else:
-                #[[1,2],??] or [[[1],[2]],??]
-                if isintlike(col) or isinstance(col,slice):
-                    P = extractor(row, self.shape[0])        # [[1,2],j] or [[1,2],1:2]
-                    return (P*self)[:,col]
+        # If all else fails, try elementwise
+        row, col = self._index_to_arrays(row, col)
 
-                else:
-                    row = asindices(row)
-                    col = asindices(col)
-                    if len(row.shape) == 1:
-                        if len(row) != len(col):             # [[1,2],[1,2]]
-                            raise IndexError('number of row and column indices differ')
+        if row.size == 0 or col.size == 0:
+            raise ValueError("Slice returns a size 0 matrix which is not "
+            "supported by sparse matrices.")
 
-                        check_bounds(row, self.shape[0])
-                        check_bounds(col, self.shape[1])
-
-                        num_samples = len(row)
-                        val = np.empty(num_samples, dtype=self.dtype)
-                        csr_sample_values(self.shape[0], self.shape[1],
-                                          self.indptr, self.indices, self.data,
-                                          num_samples, row, col, val)
-                        # val = []
-                        # for i,j in zip(row,col):
-                        #    val.append(self._get_single_element(i,j))
-                        return np.asmatrix(val)
-
-                    elif len(row.shape) == 2:
-                        row = np.ravel(row)                   # [[[1],[2]],[1,2]]
-                        P = extractor(row, self.shape[0])
-                        return (P*self)[:,col]
-
-                    else:
-                        raise NotImplementedError('unsupported indexing')
-
-        elif isintlike(key) or isinstance(key,slice):
-            return self[key,:]                                # [i] or [1:2]
-        else:
-            return self[asindices(key),:]                     # [[1,2]]
+        return self.__class__([[self._get_single_element(iii, jjj) for
+                                iii, jjj in zip(ii, jj)] for ii, jj in
+                               zip(row.tolist(), col.tolist())])
 
     def _get_single_element(self,row,col):
         """Returns the single element self[row, col]
@@ -360,7 +357,10 @@ class csr_matrix(_cs_matrix):
                 row_data = row_data[::-1]
                 row_indices = abs(row_indices[::-1])
 
-            shape = (1, np.ceil(float(stop - start) / stride))
+            shape = (1, int(np.ceil(float(stop - start) / stride)))
+            if 0 in shape:
+                raise ValueError("Slice returns a size 0 matrix which is not "
+                "supported by sparse matrices.")
 
             row_slice = csr_matrix((row_data, row_indices, row_indptr),
                                    shape=shape)
@@ -386,28 +386,28 @@ class csr_matrix(_cs_matrix):
                     i1 = num
                 elif i1 < 0:
                     i1 = num + i1
-
                 return i0, i1
 
             elif isintlike(sl):
                 if sl < 0:
                     sl += num
-
                 return sl, sl + 1
-
             else:
                 raise TypeError('expected slice or scalar')
 
         def check_bounds(i0, i1, num):
-            if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 < i1):
+            if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 <= i1):
                 raise IndexError(
-                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %
+                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<=%d" %
                       (i0, num, i1, num, i0, i1))
 
         i0, i1 = process_slice(row_slice, M)
         j0, j1 = process_slice(col_slice, N)
         check_bounds(i0, i1, M)
         check_bounds(j0, j1, N)
+
+        if i0 == i1 or j0 == j1:
+            return self.__class__((1, 1), dtype=self.dtype)
 
         indptr, indices, data = get_csr_submatrix(M, N,
                 self.indptr, self.indices, self.data,

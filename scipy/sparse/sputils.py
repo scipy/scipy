@@ -134,7 +134,7 @@ def isshape(x):
 
 
 def issequence(t):
-    return isinstance(t, (list, tuple))\
+    return (isinstance(t, (list, tuple)) and np.isscalar(t[0]))\
            or (isinstance(t, np.ndarray) and (t.ndim == 1))
 
 
@@ -145,3 +145,98 @@ def ismatrix(t):
 
 def isdense(x):
     return isinstance(x, np.ndarray)
+
+
+class IndexMixin(object):
+    """
+    This class simply exists to hold the methods necessary for fancy indexing.
+    """
+    def _slicetoarange(self, j, shape):
+        """ Given a slice object, use numpy arange to change it to a 1D
+        array.
+        """
+        start, stop, step = j.indices(shape)
+        return np.arange(start, stop, step)
+
+    def _unpack_index(self, index):
+        """ Parse index. Always return a tuple of the form (row, col).
+        Where row/col is a integer, slice, or array of integers.
+        """
+        # First, check if indexing with single boolean matrix.
+        from .base import spmatrix  # This feels dirty but...
+        if (isinstance(index, (spmatrix, np.ndarray)) and
+           (index.ndim == 2) and index.dtype.kind == 'b'):
+                return index.nonzero()
+
+        # Next, parse the tuple or object
+        if isinstance(index, tuple):
+            if len(index) == 2:
+                row, col = index
+            elif len(index) == 1:
+                row, col = index[0], slice(None)
+            else:
+                raise IndexError('invalid number of indices')
+        else:
+            row, col = index, slice(None)
+
+        # Next, check for validity, or transform the index as needed.
+        row, col = self._check_boolean(row, col)
+        return row, col
+
+    def _check_boolean(self, row, col):
+        from .base import isspmatrix  # ew...
+        # Supporting sparse boolean indexing with both row and col does
+        # not work because spmatrix.ndim is always 2.
+        if isspmatrix(row) or isspmatrix(col):
+            raise IndexError("Indexing with sparse matrices is not supported"
+                    " except boolean indexing where matrix and index are equal"
+                    " shapes.")
+        if isinstance(row, np.ndarray) and row.dtype.kind == 'b':
+            row = self._boolean_index_to_array(row)
+        if isinstance(col, np.ndarray) and col.dtype.kind == 'b':
+            col = self._boolean_index_to_array(col)
+        return row, col
+
+    def _boolean_index_to_array(self, i):
+        if i.ndim > 1:
+            raise IndexError('invalid index shape')
+        return i.nonzero()[0]
+
+    def _index_to_arrays(self, i, j):
+        i, j = self._check_boolean(i, j)
+
+        i_slice = isinstance(i, slice)
+        if i_slice:
+            i = self._slicetoarange(i, self.shape[0])[:,None]
+        else:
+            i = np.atleast_1d(i)
+
+        if isinstance(j, slice):
+            j = self._slicetoarange(j, self.shape[1])[None,:]
+            if i.ndim == 1:
+                i = i[:,None]
+            elif not i_slice:
+                raise IndexError('index returns 3-dim structure')
+        elif isscalarlike(j):
+            # row vector special case
+            j = np.atleast_1d(j)
+            if i.ndim == 1:
+                i, j = np.broadcast_arrays(i, j)
+                i = i[:, None]
+                j = j[:, None]
+                return i, j
+        else:
+            j = np.atleast_1d(j)
+            if i_slice and j.ndim > 1:
+                raise IndexError('index returns 3-dim structure')
+
+        i, j = np.broadcast_arrays(i, j)
+
+        if i.ndim == 1:
+            # return column vectors for 1-D indexing
+            i = i[None,:]
+            j = j[None,:]
+        elif i.ndim > 2:
+            raise IndexError("Index dimension must be <= 2")
+
+        return i, j

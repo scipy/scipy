@@ -10,13 +10,15 @@ from warnings import warn
 import numpy as np
 from scipy.lib.six.moves import xrange
 
+from .base import isspmatrix
 from .sparsetools import csc_tocsr
-from .sputils import upcast, isintlike
+from . import sparsetools
+from .sputils import upcast, isintlike, IndexMixin
 
 from .compressed import _cs_matrix
 
 
-class csc_matrix(_cs_matrix):
+class csc_matrix(_cs_matrix, IndexMixin):
     """
     Compressed Sparse Column matrix
 
@@ -139,34 +141,33 @@ class csc_matrix(_cs_matrix):
         return A
 
     def __getitem__(self, key):
-        # use CSR to implement fancy indexing
-        if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
-
-            if isintlike(row) or isinstance(row, slice):
-                return self.T[col,row].T
-            else:
-                #[[1,2],??] or [[[1],[2]],??]
-                if isintlike(col) or isinstance(col,slice):
-                    return self.T[col,row].T
-                else:
-                    row = np.asarray(row, dtype=np.intc)
-                    col = np.asarray(col, dtype=np.intc)
-                    if len(row.shape) == 1:
-                        return self.T[col,row]
-                    elif len(row.shape) == 2:
-                        row = row.reshape(-1)
-                        col = col.reshape(-1,1)
-                        return self.T[col,row].T
-                    else:
-                        raise NotImplementedError('unsupported indexing')
-
-            return self.T[col,row].T
-        elif isintlike(key) or isinstance(key,slice):
-            return self.T[:,key].T                              # [i] or [1:2]
+        """Use CSR to implement fancy indexing."""
+        row, col = self._unpack_index(key)
+        # Things that return submatrices. row or col is a int or slice.
+        if (isinstance(row, slice) or isinstance(col, slice) or
+            isintlike(row) or isintlike(col)):
+            return self.T[col, row].T
+        # Things that return a sequence of values.
         else:
-            return self.T[:,key].T                              # [[1,2]]
+            return self.T[col, row]
+
+    def nonzero(self):
+        """CSC can't use _cs_matrix's .nonzero method because it
+        returns the indices sorted for self transposed.
+        """
+        # Get row and col indices, from _cs_matrix.tocoo
+        major_dim, minor_dim = self._swap(self.shape)
+        minor_indices = self.indices
+        major_indices = np.empty(len(minor_indices), dtype=np.intc)
+        sparsetools.expandptr(major_dim,self.indptr, major_indices)
+        row, col = self._swap((major_indices, minor_indices))
+
+        # Sort them to be in C-style order
+        ind = np.lexsort((col, row))
+        row = row[ind]
+        col = col[ind]
+
+        return row, col
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
