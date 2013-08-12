@@ -765,11 +765,7 @@ class _TestCommon:
             assert_array_equal(dat*17.3,(datsp*17.3).todense())
 
         for dtype in self.checked_dtypes:
-            fails = ((dtype == np.typeDict['int']) and
-                    (self.__class__ == TestLIL or
-                     self.__class__ == TestDOK))
-            msg = "LIL and DOK type's __mul__ method has problems with int data."
-            yield dec.knownfailureif(fails, msg)(check), dtype
+            yield check, dtype
 
     def test_rmul_scalar(self):
         def check(dtype):
