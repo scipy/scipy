@@ -1504,16 +1504,16 @@ power_div_empty_cases = [
     # Shape is (0, 3).  This is 3 data sets, but each data set has
     # length 0, so the computed test statistic should be [0, 0, 0].
     PowerDivCase(f_obs=np.array([[],[],[]]).T,
-                 f_exp=None, ddof=0, axis=None,
+                 f_exp=None, ddof=0, axis=0,
                  chi2=[0, 0, 0],
                  log=[0, 0, 0],
                  mod_log=[0, 0, 0],
                  cr=[0, 0, 0]),
-    # Shape is (3, 0).  This represents a empty collections of
+    # Shape is (3, 0).  This represents an empty collection of
     # data sets in which each data set has length 3.  The test
     # statistic should be an empty array.
-    PowerDivCase(f_obs=np.array([[],[],[]]).T,
-                 f_exp=None, ddof=0, axis=None,
+    PowerDivCase(f_obs=np.array([[],[],[]]),
+                 f_exp=None, ddof=0, axis=0,
                  chi2=[],
                  log=[],
                  mod_log=[],
