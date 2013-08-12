@@ -136,15 +136,15 @@ c     arscnd  ARPACK utility routine for timing.
 c     smout   ARPACK utility routine that prints matrices
 c     svout   ARPACK utility routine that prints vectors.
 c     slabad  LAPACK routine that computes machine constants.
-c     slamch  LAPACK routine that determines machine constants.
+c     wslamch  LAPACK routine that determines machine constants.
 c     slascl  LAPACK routine for careful scaling of a matrix.
-c     slanhs  LAPACK routine that computes various norms of a matrix.
+c     wslanhs  LAPACK routine that computes various norms of a matrix.
 c     sgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     saxpy   Level 1 BLAS that computes a vector triad.
 c     sscal   Level 1 BLAS that scales a vector.
 c     scopy   Level 1 BLAS that copies one vector to another .
 c     wsdot    Level 1 BLAS that computes the scalar product of two vectors. 
-c     snrm2   Level 1 BLAS that computes the norm of a vector.
+c     wsnrm2   Level 1 BLAS that computes the norm of a vector.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
@@ -275,8 +275,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           wsdot, snrm2, slanhs, slamch
-      external   wsdot, snrm2, slanhs, slamch
+     &           wsdot, wsnrm2, wslanhs, wslamch
+      external   wsdot, wsnrm2, wslanhs, wslamch
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -304,10 +304,10 @@ c        | overflow should not occur.              |
 c        | REFERENCE: LAPACK subroutine slahqr     |
 c        %-----------------------------------------%
 c
-         unfl = slamch( 'safe minimum' )
+         unfl = wslamch( 'safe minimum' )
          ovfl = one / unfl
          call slabad( unfl, ovfl )
-         ulp = slamch( 'precision' )
+         ulp = wslamch( 'precision' )
          smlnum = unfl*( n / ulp )
          first = .false.
       end if
@@ -546,7 +546,7 @@ c
              wnorm = wsdot (n, resid, 1, workd(ipj), 1)
              wnorm = sqrt(abs(wnorm))
          else if (bmat .eq. 'I') then
-            wnorm = snrm2(n, resid, 1)
+            wnorm = wsnrm2(n, resid, 1)
          end if
 c
 c        %-----------------------------------------%
@@ -618,7 +618,7 @@ c
             rnorm = wsdot (n, resid, 1, workd(ipj), 1)
             rnorm = sqrt(abs(rnorm))
          else if (bmat .eq. 'I') then
-            rnorm = snrm2(n, resid, 1)
+            rnorm = wsnrm2(n, resid, 1)
          end if
 c 
 c        %-----------------------------------------------------------%
@@ -717,7 +717,7 @@ c
              rnorm1 = wsdot (n, resid, 1, workd(ipj), 1)
              rnorm1 = sqrt(abs(rnorm1))
          else if (bmat .eq. 'I') then
-             rnorm1 = snrm2(n, resid, 1)
+             rnorm1 = wsnrm2(n, resid, 1)
          end if
 c
          if (msglvl .gt. 0 .and. iter .gt. 0) then
@@ -805,7 +805,7 @@ c              %--------------------------------------------%
 c     
                tst1 = abs( h( i, i ) ) + abs( h( i+1, i+1 ) )
                if( tst1.eq.zero )
-     &              tst1 = slanhs( '1', k+np, h, ldh, workd(n+1) )
+     &              tst1 = wslanhs( '1', k+np, h, ldh, workd(n+1) )
                if( abs( h( i+1,i ) ).le.max( ulp*tst1, smlnum ) ) 
      &              h(i+1,i) = zero
  110        continue

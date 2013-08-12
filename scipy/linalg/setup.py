@@ -27,22 +27,29 @@ def configuration(parent_package='',top_path=None):
     if needs_g77_abi_wrapper(lapack_opt):
         sources = ['fblas.pyf.src', join('src', 'fblaswrap_veclib_c.c')],
     else:
-        sources = ['fblas.pyf.src', join('src', 'fblaswrap.f')]
+        sources = ['fblas.pyf.src', join('src', 'fblaswrap_dummy.f')]
 
     # Note: `depends` needs to include fblaswrap(_veclib) for both files to be
     # included by "python setup.py sdist"
     config.add_extension('_fblas',
                          sources=sources,
                          depends=['fblas_l?.pyf.src',
-                                    join('src', 'fblaswrap_veclib_c.c'),
-                                    join('src', 'fblaswrap.f')],
+                                  join('src', 'fblaswrap_veclib_c.c'),
+                                  join('src', 'fblaswrap_dummy.f')],
                          extra_info=lapack_opt
                          )
 
     # flapack:
+    if needs_g77_abi_wrapper(lapack_opt):
+        sources = ['flapack.pyf.src', join('src', 'flapackwrap_veclib.f')],
+    else:
+        sources = ['flapack.pyf.src', join('src', 'flapackwrap_dummy.f')]
+
     config.add_extension('_flapack',
-                         sources=['flapack.pyf.src'],
-                         depends=['flapack_user.pyf.src'],
+                         sources=sources,
+                         depends=['flapack_user.pyf.src',
+                                  join('src', 'flapackwrap_veclib.f'),
+                                  join('src', 'flapackwrap_dummy.f')],
                          extra_info=lapack_opt
                          )
 

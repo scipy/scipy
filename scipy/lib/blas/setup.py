@@ -34,13 +34,13 @@ def configuration(parent_package='',top_path=None):
 
     target_dir = ''
 
-    depends = [__file__, 'fblas_l?.pyf.src', 'fblas.pyf.src','fblaswrap.f.src',
-               'fblaswrap_veclib_c.c.src']
+    depends = [__file__, 'fblas_l?.pyf.src', 'fblas.pyf.src',
+               'fblaswrap_dummy.f', 'fblaswrap_veclib_c.c']
     # fblas:
     if needs_g77_abi_wrapper(blas_opt):
-        sources = ['fblas.pyf.src', 'fblaswrap_veclib_c.c.src'],
+        sources = ['fblas.pyf.src', 'fblaswrap_veclib_c.c'],
     else:
-        sources = ['fblas.pyf.src','fblaswrap.f.src']
+        sources = ['fblas.pyf.src','fblaswrap_dummy.f']
     config.add_extension('fblas',
                          sources=sources,
                          depends=depends,

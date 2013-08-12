@@ -56,19 +56,6 @@ from scipy.sparse.linalg import gmres, splu
 from scipy.linalg.lapack import get_lapack_funcs
 
 
-def _single_precision_cast(typechar):
-    # This check is required, for now, because we have unresolved crashes
-    # occurring in single precision Veclib routines, on at least 64-bit OSX
-    # and some Linux systems.  When these crashes are resolved, this
-    # restriction can be removed.
-    if typechar in ('f', 'F'):
-        warnings.warn("Single-precision types in `eigs` and `eighs` "
-                      "are not supported currently. "
-                      "Double precision routines are used instead.")
-        return {'f': 'd', 'F': 'D'}[typechar]
-    return typechar
-
-
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
 _ndigits = {'f': 5, 'd': 12, 'F': 5, 'D': 12}
 
@@ -326,8 +313,6 @@ class _ArpackParams(object):
 
         if tp not in 'fdFD':
             raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
-
-        tp = _single_precision_cast(tp)
 
         if v0 is not None:
             # ARPACK overwrites its initial resid,  make a copy

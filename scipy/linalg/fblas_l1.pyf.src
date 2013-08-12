@@ -249,15 +249,17 @@ subroutine <prefix>axpy(n,a,x,offx,incx,y,offy,incy)
 end subroutine <prefix>axpy
 
 
-function <prefix2>dot(n,x,offx,incx,y,offy,incy) result (xy)
+function sdot(n,x,offx,incx,y,offy,incy) result (xy)
   ! Computes a vector-vector dot product.
 
-  callstatement (*f2py_func)(&<prefix2>dot,&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument <ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*
+  fortranname wsdot
 
-  <ftype2> dimension(*), intent(in) :: x
-  <ftype2> dimension(*), intent(in) :: y
-  <ftype2> <prefix2>dot,xy
+  callstatement (*f2py_func)(&sdot,&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument float*,int*,float*,int*,float*,int*
+
+  real dimension(*), intent(in) :: x
+  real dimension(*), intent(in) :: y
+  real sdot,xy
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
   integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
   integer optional, intent(in),depend(x) :: offx=0
@@ -269,8 +271,30 @@ function <prefix2>dot(n,x,offx,incx,y,offy,incy) result (xy)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-end function <prefix2>dot
+end function sdot
 
+
+function ddot(n,x,offx,incx,y,offy,incy) result (xy)
+  ! Computes a vector-vector dot product.
+
+  callstatement (*f2py_func)(&ddot,&n,x+offx,&incx,y+offy,&incy)
+  callprotoargument double*,int*,double*,int*,double*,int*
+
+  double precision dimension(*), intent(in) :: x
+  double precision dimension(*), intent(in) :: y
+  double precision ddot,xy
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+  integer optional, intent(in),depend(x) :: offx=0
+  integer optional, intent(in),depend(y) :: offy=0
+  check(offx>=0 && offx<len(x)) :: offx
+  check(offy>=0 && offy<len(y)) :: offy
+  integer optional, intent(in),depend(x,incx,offx,y,incy,offy) :: &
+       n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+  check(len(y)-offy>(n-1)*abs(incy)) :: n
+
+end function ddot
 
 
 ! <prefix2c=c,z> <ftype2c=complex,double complex> <ctype2c=complex_float,complex_double>
@@ -326,15 +350,17 @@ subroutine <prefix2c>dotc(xy,n,x,offx,incx,y,offy,incy)
 
 end subroutine <prefix2c>dotc
 
-! <prefix3=s,d,sc,dz>
+! <prefix3=s,sc> <ctype3=float,complex_float> <ctypereal3=float,float>
+! <ftype3=real,complex> <ftypereal3=real,real>
 function <prefix3>nrm2(n,x,offx,incx) result(n2)
 
-  <ftypereal> <prefix3>nrm2, n2
+  fortranname w<prefix3>nrm2
+  <ftypereal3> <prefix3>nrm2, n2
 
   callstatement (*f2py_func)(&<prefix3>nrm2, &n,x+offx,&incx)
-  callprotoargument <ctypereal>*,int*,<ctype>*,int*
+  callprotoargument <ctypereal3>*,int*,<ctype3>*,int*
 
-  <ftype> dimension(*),intent(in) :: x
+  <ftype3> dimension(*),intent(in) :: x
 
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
 
@@ -347,21 +373,63 @@ function <prefix3>nrm2(n,x,offx,incx) result(n2)
 end function <prefix3>nrm2
 
 
-function <tchar=s,d,sc,dz>asum(n,x,offx,incx) result (s)
+! <prefix4=d,dz> <ctype4=double,complex_double> <ctypereal4=double,double>
+! <ftype4=double precision,double complex>
+! <ftypereal4=double precision,double precision>
+function <prefix4>nrm2(n,x,offx,incx) result(n2)
+
+  <ftypereal4> <prefix4>nrm2, n2
+
+  callstatement (*f2py_func)(&<prefix4>nrm2, &n,x+offx,&incx)
+  callprotoargument <ctypereal4>*,int*,<ctype4>*,int*
+
+  <ftype4> dimension(*),intent(in) :: x
+
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+
+  integer optional,intent(in),depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+
+  integer optional,intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+
+end function <prefix4>nrm2
+
+
+function <prefix3>asum(n,x,offx,incx) result (s)
   ! Computes the sum of magnitudes of the vector elements
 
-  callstatement (*f2py_func)(&<tchar=s,d,sc,dz>asum,&n,x+offx,&incx)
-  callprotoargument <ctypereal>*,int*,<ctype>*,int*
+  fortranname w<prefix3>asum
 
-  <ftype> dimension(*), intent(in) :: x
-  <ftypereal> <tchar=s,d,sc,dz>asum,s
+  callstatement (*f2py_func)(&<prefix3>asum,&n,x+offx,&incx)
+  callprotoargument <ctypereal3>*,int*,<ctype3>*,int*
+
+  <ftype3> dimension(*), intent(in) :: x
+  <ftypereal3> <prefix3>asum,s
   integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
   integer optional, intent(in), depend(x) :: offx=0
   check(offx>=0 && offx<len(x)) :: offx
   integer optional, intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
 
-end function <tchar=s,d,sc,dz>asum
+end function <prefix3>asum
+
+
+function <prefix4>asum(n,x,offx,incx) result (s)
+  ! Computes the sum of magnitudes of the vector elements
+
+  callstatement (*f2py_func)(&<prefix4>asum,&n,x+offx,&incx)
+  callprotoargument <ctypereal4>*,int*,<ctype4>*,int*
+
+  <ftype4> dimension(*), intent(in) :: x
+  <ftypereal4> <prefix4>asum,s
+  integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in), depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+  integer optional, intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
+  check(len(x)-offx>(n-1)*abs(incx)) :: n
+
+end function <prefix4>asum
 
 
 function i<prefix>amax(n,x,offx,incx) result(k)
