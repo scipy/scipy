@@ -294,9 +294,14 @@ class spmatrix(object):
             other.shape
         except AttributeError:
             # If it's a list or whatever, treat it like a matrix
-            other = np.asanyarray(other)
+            other_a = np.asanyarray(other)
 
-        other = np.asanyarray(other)
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                # Not interpretable as an array; raise NotImplemented so that
+                # other's __rmul__ can kick in if that's implemented.
+                return NotImplemented
+
+            other = other_a
 
         if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
             # dense row or column vector

@@ -60,6 +60,16 @@ def _can_cast_samekind(dtype1, dtype2):
         return np.can_cast(dtype1, dtype2, casting='same_kind')
 
 
+class MultipliesWithMatrix(object):
+    """Class that knows how to multiply with a sparse matrix."""
+
+    def __mul__(self, other):
+        return "matrix on the right"
+
+    def __rmul__(self, other):
+        return "matrix on the left"
+
+
 #------------------------------------------------------------------------------
 # Generic tests
 #------------------------------------------------------------------------------
@@ -971,6 +981,12 @@ class _TestCommon:
         assert_equal((A * array(1)).todense(), [[1],[2],[3]])
         assert_equal(A * array([1]), array([1,2,3]))
         assert_equal(A * array([[1]]), array([[1],[2],[3]]))
+
+    def test_multiply_custom(self):
+        A = self.spmatrix([[1], [2], [3]])
+        B = MultipliesWithMatrix()
+        assert_equal(A * B, "matrix on the left")
+        assert_equal(B * A, "matrix on the right")
 
     def test_matvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
