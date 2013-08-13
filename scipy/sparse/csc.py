@@ -141,7 +141,8 @@ class csc_matrix(_cs_matrix, IndexMixin):
         return A
 
     def __getitem__(self, key):
-        """Use CSR to implement fancy indexing."""
+        # Use CSR to implement fancy indexing.
+
         row, col = self._unpack_index(key)
         # Things that return submatrices. row or col is a int or slice.
         if (isinstance(row, slice) or isinstance(col, slice) or
@@ -152,9 +153,9 @@ class csc_matrix(_cs_matrix, IndexMixin):
             return self.T[col, row]
 
     def nonzero(self):
-        """CSC can't use _cs_matrix's .nonzero method because it
-        returns the indices sorted for self transposed.
-        """
+        # CSC can't use _cs_matrix's .nonzero method because it
+        # returns the indices sorted for self transposed.
+
         # Get row and col indices, from _cs_matrix.tocoo
         major_dim, minor_dim = self._swap(self.shape)
         minor_indices = self.indices
@@ -168,6 +169,8 @@ class csc_matrix(_cs_matrix, IndexMixin):
         col = col[ind]
 
         return row, col
+
+    nonzero.__doc__ = _cs_matrix.nonzero.__doc__
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)

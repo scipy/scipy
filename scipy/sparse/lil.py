@@ -229,9 +229,8 @@ class lil_matrix(spmatrix, IndexMixin):
         """Return the element(s) index=(i, j), where j may be a slice.
         This always returns a copy for consistency, since slices into
         Python lists return copies.
-
-        Utilities found in IndexMixin
         """
+        # Utilities found in IndexMixin
         i, j = self._unpack_index(index)
 
         if isscalarlike(i) and isscalarlike(j):

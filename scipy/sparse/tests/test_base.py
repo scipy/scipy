@@ -103,9 +103,8 @@ class _TestCommon:
             yield dec.skipif(fails, msg)(check), dtype
 
     def test_bool_rollover(self):
-        """bool's underlying dtype is 1 byte, check that it does not
-        rollover True -> False at 256.
-        """
+        # bool's underlying dtype is 1 byte, check that it does not
+        # rollover True -> False at 256.
         dat = np.matrix([[True, False]])
         datsp = self.spmatrix(dat)
 
@@ -1489,8 +1488,8 @@ class _TestSlicing:
                     assert_array_equal(x.todense(), y, repr(a))
 
         fail = False
-        msg = "This slice returns a size 0 sparse matrix which is currently "
-        "unsupported."
+        msg = ("This slice returns a size 0 sparse matrix which is currently "
+               "unsupported.")
         for j, a in enumerate(slices):
             if a in bad_slices:
                 fail = True
