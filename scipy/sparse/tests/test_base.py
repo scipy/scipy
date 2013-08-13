@@ -16,7 +16,7 @@ Build sparse:
 Run tests if scipy is installed:
   python -c 'import scipy;scipy.sparse.test()'
 Run tests if sparse is not installed:
-  python tests/test_sparse.py
+  python tests/test_base.py
 """
 
 import warnings
@@ -103,9 +103,8 @@ class _TestCommon:
             yield dec.skipif(fails, msg)(check), dtype
 
     def test_bool_rollover(self):
-        """bool's underlying dtype is 1 byte, check that it does not
-        rollover True -> False at 256.
-        """
+        # bool's underlying dtype is 1 byte, check that it does not
+        # rollover True -> False at 256.
         dat = np.matrix([[True, False]])
         datsp = self.spmatrix(dat)
 
@@ -588,7 +587,7 @@ class _TestCommon:
             sM = self.spmatrix(M, shape=(3,3), dtype=dtype)
             sMinv = inv(sM)
             assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
-        for dtype in [float, bool]:
+        for dtype in [float]:
             yield check, dtype
 
     def test_from_array(self):
@@ -1283,8 +1282,8 @@ class _TestGetSet:
             for j in range(-N, N):
                 assert_equal(A[i,j], D[i,j])
 
-        for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1)]:
-            assert_raises(IndexError, A.__getitem__, ij)
+        for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
+            assert_raises((IndexError, TypeError), A.__getitem__, ij)
 
     def test_setelement(self):
         A = self.spmatrix((3,4))
@@ -1473,7 +1472,11 @@ class _TestSlicing:
                   0, 1, s_[:], s_[1:5], -1, -2, -5,
                   array(-1), np.int8(-3)]
 
-        for j, a in enumerate(slices):
+        # These slices would return a size zero spares matrix which is
+        # currently unsupported.
+        bad_slices = [s_[:5:-1]]
+
+        def check_1(a):
             x = A[a]
             y = B[a]
             if y.shape == ():
@@ -1484,23 +1487,48 @@ class _TestSlicing:
                 else:
                     assert_array_equal(x.todense(), y, repr(a))
 
+        fail = False
+        msg = ("This slice returns a size 0 sparse matrix which is currently "
+               "unsupported.")
+        for j, a in enumerate(slices):
+            if a in bad_slices:
+                fail = True
+            else:
+                fail = False
+            yield dec.knownfailureif(fail, msg)(check_1), a
+
+        def check_2(a, b):
+            # Indexing np.matrix with 0-d arrays seems to be broken,
+            # as they seem not to be treated as scalars.
+            # https://github.com/numpy/numpy/issues/3110
+            if isinstance(a, np.ndarray):
+                ai = int(a)
+            else:
+                ai = a
+            if isinstance(b, np.ndarray):
+                bi = int(b)
+            else:
+                bi = b
+
+            x = A[a, b]
+            y = B[ai, bi]
+
+            if y.shape == ():
+                assert_equal(x, y, repr((a, b)))
+            else:
+                if x.size == 0 and y.size == 0:
+                    pass
+                else:
+                    assert_array_equal(x.todense(), y, repr((a, b)))
+
+        fail = False
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
-                x = A[a,b]
-                y = B[a,b]
-
-                if b == np.array(-1) and isinstance(b, np.ndarray):
-                    # Bug in np.matrix
-                    # https://github.com/numpy/numpy/issues/3110
-                    y = B[a,-1]
-
-                if y.shape == ():
-                    assert_equal(x, y, repr((a, b)))
+                if (a in bad_slices) or (b in bad_slices):
+                    fail = True
                 else:
-                    if x.size == 0 and y.size == 0:
-                        pass
-                    else:
-                        assert_array_equal(x.todense(), y, repr((a, b)))
+                    fail = False
+                yield dec.knownfailureif(fail, msg)(check_2), a, b
 
 
 class _TestSlicingAssign:
@@ -1621,6 +1649,8 @@ class _TestFancyIndexing:
         A = self.spmatrix(np.zeros([5, 5]))
         assert_raises((IndexError, ValueError, TypeError), A.__getitem__, "foo")
         assert_raises((IndexError, ValueError, TypeError), A.__getitem__, (2, "foo"))
+        assert_raises((IndexError, ValueError), A.__getitem__,
+                      ([1, 2, 3], [1, 2, 3, 4]))
 
     def test_fancy_indexing(self):
         B = asmatrix(arange(50).reshape(5,10))
@@ -1723,6 +1753,12 @@ class _TestFancyIndexing:
     def test_fancy_indexing_boolean(self):
         random.seed(1234)  # make runs repeatable
 
+        # CSR matrix returns matrix in some cases
+        def todense(a):
+            if isinstance(a, (np.matrix, np.ndarray)):
+                return a
+            return a.todense()
+
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
 
@@ -1730,22 +1766,51 @@ class _TestFancyIndexing:
         J = np.array(np.random.randint(0, 2, size=10), dtype=bool)
         X = np.array(np.random.randint(0, 2, size=(5, 10)), dtype=bool)
 
-        assert_equal(A[I].todense(), B[I])
-        assert_equal(A[:,J].todense(), B[:, J])
-        assert_equal(A[X].todense(), B[X])
-        assert_equal(A[B > 9].todense(), B[B > 9])
+        assert_equal(todense(A[I]), B[I])
+        assert_equal(todense(A[:,J]), B[:, J])
+        assert_equal(todense(A[X]), B[X])
+        assert_equal(todense(A[B > 9]), B[B > 9])
 
         I = np.array([True, False, True, True, False])
         J = np.array([False, True, True, False, True])
 
-        assert_equal(A[I, J].todense(), B[I, J])
+        assert_equal(todense(A[I, J]), B[I, J])
 
         Z = np.array(np.random.randint(0, 2, size=(5, 11)), dtype=bool)
         Y = np.array(np.random.randint(0, 2, size=(6, 10)), dtype=bool)
 
         assert_raises(IndexError, A.__getitem__, Z)
         assert_raises(IndexError, A.__getitem__, Y)
-        assert_raises(ValueError, A.__getitem__, (X, 1))
+        assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))
+
+    def test_fancy_indexing_sparse_boolean(self):
+        random.seed(1234)  # make runs repeatable
+
+        # CSR matrix returns matrix in some cases
+        def todense(a):
+            if isinstance(a, (np.matrix, np.ndarray)):
+                return a
+            return a.todense()
+
+        B = asmatrix(arange(50).reshape(5,10))
+        A = self.spmatrix(B)
+
+        X = np.array(np.random.randint(0, 2, size=(5, 10)), dtype=bool)
+
+        Xsp = csr_matrix(X)
+
+        assert_equal(todense(A[Xsp]), B[X])
+        assert_equal(todense(A[A > 9]), B[B > 9])
+
+        Z = np.array(np.random.randint(0, 2, size=(5, 11)), dtype=bool)
+        Y = np.array(np.random.randint(0, 2, size=(6, 10)), dtype=bool)
+
+        Zsp = csr_matrix(Z)
+        Ysp = csr_matrix(Y)
+
+        assert_raises(IndexError, A.__getitem__, Zsp)
+        assert_raises(IndexError, A.__getitem__, Ysp)
+        assert_raises((IndexError, ValueError), A.__getitem__, (Xsp, 1))
 
 
 class _TestFancyIndexingAssign:
@@ -2141,8 +2206,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 # Matrix class based tests
 #------------------------------------------------------------------------------
 
-class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
-                                fancy_multidim_indexing=False)):
+class TestCSR(sparse_test_class()):
     spmatrix = csr_matrix
     checked_dtypes = [np.bool_, np.int_, np.float_, np.complex_]
 
@@ -2271,17 +2335,8 @@ class TestCSR(sparse_test_class(slicing_assign=False, fancy_assign=False,
             SIJ = SIJ.todense()
         assert_equal(SIJ, D[I,J])
 
-    @dec.knownfailureif(True, "CSR not implemented")
-    def test_slicing_3(self):
-        pass
 
-    @dec.knownfailureif(True, "CSR not implemented")
-    def test_fancy_indexing_boolean(self):
-        pass
-
-
-class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
-                                fancy_multidim_indexing=False)):
+class TestCSC(sparse_test_class()):
     spmatrix = csc_matrix
     checked_dtypes = [np.bool_, np.int_, np.float_, np.complex_]
 
@@ -2386,22 +2441,6 @@ class TestCSC(sparse_test_class(slicing_assign=False, fancy_assign=False,
         if isspmatrix(SIJ):
             SIJ = SIJ.todense()
         assert_equal(SIJ, D[I,J])
-
-    ##
-    ## TODO: CSC fails the following tests by producing invalid results
-    ##
-
-    @dec.knownfailureif(True, "CSC bug")
-    def test_fancy_indexing_ndarray(self):
-        pass
-
-    @dec.knownfailureif(True, "CSC not implemented")
-    def test_slicing_3(self):
-        pass
-
-    @dec.knownfailureif(True, "CSC not implemented")
-    def test_fancy_indexing_boolean(self):
-        pass
 
 
 class TestDOK(sparse_test_class(slicing=False,
