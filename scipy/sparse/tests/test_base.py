@@ -2702,10 +2702,6 @@ class TestLIL(sparse_test_class(minmax=False)):
         a *= 2.
         a[0, :] = 0
 
-    @dec.knownfailureif(True, "Sparse boolean indexing unimplemented for LIL")
-    def test_fancy_indexing_sparse_boolean(self):
-        pass
-
 
 class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
