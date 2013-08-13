@@ -57,6 +57,20 @@ The BLAS functions ``symm``, ``syrk``, ``syr2k``, ``hemm``, ``herk`` and
 ``her2k`` are now wrapped in `scipy.linalg`.
 
 
+Matrix functions
+^^^^^^^^^^^^^^^^
+
+Several matrix function algorithms have been implemented or updated
+following detailed descriptions in recent papers of Nick Higham
+and his co-authors.
+These include
+the matrix square root (``sqrtm``),
+the matrix logarithm (``logm``),
+the matrix exponential (``expm``)
+and its Frechet derivative (``expm_frechet``),
+and fractional matrix powers (``fractional_matrix_power``).
+
+
 ``scipy.sparse`` improvements
 -----------------------------
 
@@ -80,6 +94,22 @@ matrix, you can do things like::
     >>> A[:2, :3] = 2
 
     >>> A[[1,2], 2] = 3
+
+
+``scipy.sparse.linalg`` improvements
+------------------------------------
+
+The new function ``onenormest``
+provides a lower bound of the 1-norm of a linear operator
+and has been implemented according to Higham and Tisseur (2000).
+This function is not only useful for sparse matrices,
+but can also be used to estimate the norm of
+products or powers of dense matrices without explictly building the
+intermediate matrix.
+
+The multiplicative action of the matrix exponential of a linear operator
+(``expm_multiply``) has been implemented following the description
+in Al-Mohy and Higham (2011).
 
 
 ``scipy.special`` improvements
