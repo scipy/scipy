@@ -909,15 +909,13 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             lambda n, x: _time_limited()(_exception_to_nan(mpmath.chebyu))(n, x, **HYPERKW),
                             [Arg(-101, 101), Arg()])
 
-    @knownfailure_overridable("overflows to inf somewhat too early at large arguments")
     def test_chi(self):
         def chi(x):
             return sc.shichi(x)[1]
-        assert_mpmath_equal(chi,
-                            mpmath.chi,
-                            [Arg()])
+        assert_mpmath_equal(chi, mpmath.chi, [Arg()])
+        # check asymptotic series cross-over
+        assert_mpmath_equal(chi, mpmath.chi, [FixedArg([88 - 1e-9, 88, 88 + 1e-9])])
 
-    @knownfailure_overridable("Issues at extremely large arguments (absolute tolerance OK, relative not)")
     def test_ci(self):
         def ci(x):
             return sc.sici(x)[1]
@@ -1448,21 +1446,17 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.rf,
                             [Arg(), Arg()], dps=100)
 
-    @knownfailure_overridable("overflows to inf earlier than necessary")
     def test_shi(self):
         def shi(x):
             return sc.shichi(x)[0]
-        assert_mpmath_equal(shi,
-                            mpmath.shi,
-                            [Arg()],
-                            n=3000)
+        assert_mpmath_equal(shi, mpmath.shi, [Arg()])
+        # check asymptotic series cross-over
+        assert_mpmath_equal(shi, mpmath.shi, [FixedArg([88 - 1e-9, 88, 88 + 1e-9])])
 
     def test_si(self):
         def si(x):
             return sc.sici(x)[0]
-        assert_mpmath_equal(si,
-                            mpmath.si,
-                            [Arg()])
+        assert_mpmath_equal(si, mpmath.si, [Arg()])
 
     def test_spherharm(self):
         def spherharm(l, m, theta, phi):
