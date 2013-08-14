@@ -4,11 +4,13 @@ Test functions for multivariate normal distributions.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import run_module_suite, assert_allclose
+from numpy.testing import run_module_suite, assert_allclose, assert_equal
 
 import numpy
 import numpy as np
 
+import scipy.linalg
+import scipy.stats._multivariate
 from scipy.stats import multivariate_normal
 from scipy.stats import norm
 
@@ -37,6 +39,29 @@ def test_logpdf():
     d1 = multivariate_normal.logpdf(x, mean, cov)
     d2 = multivariate_normal.pdf(x, mean, cov)
     assert_allclose(d1, np.log(d2))
+
+def test_large_pseudo_determinant():
+    # Check that large pseudo-determinants are handled appropriately.
+
+    # Construct a singular diagonal covariance matrix
+    # whose pseudo determinant overflows double precision.
+    large_total_log = 1000.0
+    npos = 100
+    nzero = 2
+    large_entry = np.exp(large_total_log / npos)
+    n = npos + nzero
+    cov = np.zeros((n, n), dtype=float)
+    np.fill_diagonal(cov, large_entry)
+    cov[-nzero:, -nzero:] = 0
+
+    # check some determinants
+    assert_equal(scipy.linalg.det(cov), 0)
+    assert_equal(scipy.linalg.det(cov[:npos, :npos]), np.inf)
+    assert_allclose(np.linalg.slogdet(cov[:npos, :npos]), (1, 1000))
+
+    # check the pseudo-determinant
+    pv, log_pdet = scipy.stats._multivariate._psd_pinv_log_pdet(cov)
+    assert_allclose(log_pdet, 1000)
 
 
 def test_normal_1D():

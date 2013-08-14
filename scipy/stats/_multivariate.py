@@ -107,10 +107,30 @@ def process_arguments(f):
     return _f
 
 
-def _pseudo_det(mat, eps=1e-5):
+def _pinv_1d(v, eps=1e-5):
     """
-    Compute the pseudo-determinant of a symmetric positive semi-definite
-    matrix.
+    A helper function for computing the pseudoinverse.
+
+    Parameters
+    ----------
+    v : iterable of numbers
+        This may be thought of as a vector of eigenvalues or singular values.
+    eps : float
+        Elements of v smaller than eps are considered negligible.
+
+    Returns
+    -------
+    v_pinv : 1d float ndarray
+        A vector of pseudo-inverted numbers.
+        
+    """
+    return np.array([0 if abs(x) < eps else 1/x for x in v], dtype=float)
+
+
+def _psd_pinv_log_pdet(mat, eps=1e-5):
+    """
+    Compute the logarithm of the pseudo-determinant and pseudo-inverse
+    of a symmetric positive semi-definite matrix.
 
     The pseudo-determinant of a matrix is defined as the product of
     the non-zero eigenvalues, and coincides with the usual determinant
@@ -128,8 +148,10 @@ def _pseudo_det(mat, eps=1e-5):
 
     Returns
     -------
-    det : float
-        Pseudo-determinant of the matrix.
+    pinv : array_like
+        Pseudo-inverse of the matrix.
+    log_pdet : float
+        Logarithm of the pseudo-determinant of the matrix.
 
     Notes
     -----
@@ -138,8 +160,11 @@ def _pseudo_det(mat, eps=1e-5):
     symmetric positive semi-definite, but we do not check this.
 
     """
-    s = np.linalg.svd(mat, compute_uv=False)
-    return np.prod(s[s > eps])
+    u, s, vt = np.linalg.svd(mat)
+    s_pinv = _pinv_1d(s, eps)
+    pv = np.dot(vt.T, np.multiply(s_pinv[:, np.newaxis], u.T))
+    log_pdet = np.sum(np.log(s[s > eps]))
+    return pv, log_pdet
 
 
 _doc_default_callparams = \
@@ -299,8 +324,7 @@ class multivariate_normal_gen(object):
             Log of the probability density function evaluated at `x`
 
         """
-        inv_cov = np.linalg.pinv(cov)
-        log_det_cov = np.log(_pseudo_det(cov))
+        inv_cov, log_det_cov = _psd_pinv_log_pdet(cov)
         return self._logpdf(x, mean, inv_cov, log_det_cov)
 
     @process_arguments
@@ -320,8 +344,7 @@ class multivariate_normal_gen(object):
             Probability density function evaluated at `x`
 
         """
-        inv_cov = np.linalg.pinv(cov)
-        log_det_cov = np.log(_pseudo_det(cov))
+        inv_cov, log_det_cov = _psd_pinv_log_pdet(cov)
         return np.exp(self._logpdf(x, mean, inv_cov, log_det_cov))
 
 multivariate_normal = multivariate_normal_gen()
@@ -356,8 +379,7 @@ class multivariate_normal_frozen(object):
 
         self.dim, self.mean, self.cov = _process_parameters(dim, mean, cov)
 
-        self.precision = np.linalg.pinv(self.cov)
-        self._log_det_cov = np.log(_pseudo_det(self.cov))
+        self.precision, self._log_det_cov = _psd_pinv_log_pdet(self.cov)
 
     def logpdf(self, x):
         # TODO: the output processing below can be made into a generator
