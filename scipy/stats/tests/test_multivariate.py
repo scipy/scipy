@@ -57,11 +57,14 @@ def test_large_pseudo_determinant():
     # check some determinants
     assert_equal(scipy.linalg.det(cov), 0)
     assert_equal(scipy.linalg.det(cov[:npos, :npos]), np.inf)
-    assert_allclose(np.linalg.slogdet(cov[:npos, :npos]), (1, 1000))
+
+    # np.linalg.slogdet is only available in numpy 1.6+
+    # but scipy currently supports numpy 1.5.1.
+    #assert_allclose(np.linalg.slogdet(cov[:npos, :npos]), (1, large_total_log))
 
     # check the pseudo-determinant
     pv, log_pdet = scipy.stats._multivariate._psd_pinv_log_pdet(cov)
-    assert_allclose(log_pdet, 1000)
+    assert_allclose(log_pdet, large_total_log)
 
 
 def test_normal_1D():
