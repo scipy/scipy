@@ -513,9 +513,11 @@ def nquad(func, ranges, args=None, opts=None):
     ----------
     func : callable
         The function to be integrated. Has arguments of ``x0, ... xn``,
-        ``t0, tn``, where integration is carried out over ``x0, ... xn``, which
+        ``t0, tm``, where integration is carried out over ``x0, ... xn``, which
         must be floats.  Function signature should be
-        ``func(x0, x1, ..., xn, t0, t1, ..., tn``).
+        ``func(x0, x1, ..., xn, t0, t1, ..., tm)``. Integration is carried out 
+        in order. That is, integration over x0 is the innermost integral, and 
+        xn is the outermost.
     ranges : iterable object
         Each element of ranges may be either a sequence  of 2 numbers, or else
         a callable that returns such a sequence.  ``ranges[0]`` corresponds to
