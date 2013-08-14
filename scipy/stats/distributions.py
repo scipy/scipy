@@ -562,8 +562,8 @@ class rv_generic(object):
     def _construct_argparser(self, names_to_inspect, locscale_in, locscale_out):
         """Construct the parser for the shape arguments.
 
-        Generates the argument-parsing functions dynamically.
-        Modifies the calling class.
+        Generates the argument-parsing functions dynamically and attaches
+        them to the instance. 
         Is supposed to be called in __init__ of a class for each distribution.
 
         If self.shapes is a non-empty string, interprets it as a comma-separated
@@ -704,7 +704,6 @@ class rv_generic(object):
 
     def _isf(self, q, *args):
         return self._ppf(1.0-q, *args)  # use correct _ppf for subclasses
-
 
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
@@ -1340,7 +1339,7 @@ class rv_continuous(rv_generic):
         self._cdfvec.nin = self.numargs + 1
 
         # backwards compatibility
-        self.vecfunc = self._ppfvec  
+        self.vecfunc = self._ppfvec
         self.veccdf = self._cdfvec
 
         self.extradoc = extradoc
@@ -1792,7 +1791,10 @@ class rv_continuous(rv_generic):
             return output[()]
         return output
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> DOC: correct the docstring of _construct_argparser
     def _nnlf(self, x, *args):
         return -sum(self._logpdf(x, *args),axis=0)
 
@@ -2107,7 +2109,7 @@ class rv_continuous(rv_generic):
 
         """
         lockwds = {'loc': loc,
-                   'scale':scale}
+                   'scale': scale}
         self._argcheck(*args)
         if func is None:
             def fun(x, *args):
