@@ -230,6 +230,8 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     Examples
     --------
     >>> from scipy import integrate
+    >>> import matplotlib.pyplot as plt
+
     >>> x = np.linspace(-2, 2, num=20)
     >>> y = x
     >>> y_int = integrate.cumtrapz(y, x, initial=0)
@@ -614,10 +616,11 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     --------
     Integrate a gaussian from 0 to 1 and compare to the error function.
 
+    >>> from scipy import integrate
     >>> from scipy.special import erf
     >>> gaussian = lambda x: 1/np.sqrt(np.pi) * np.exp(-x**2)
-    >>> result = romberg(gaussian, 0, 1, show=True)
-    Romberg integration of <function vfunc at 0x101eceaa0> from [0, 1]
+    >>> result = integrate.romberg(gaussian, 0, 1, show=True)
+    Romberg integration of <function vfunc at ...> from [0, 1]
 
     ::
 
@@ -632,7 +635,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     The final result is 0.421350396475 after 33 function evaluations.
 
     >>> print("%g %g" % (2*result, erf(1)))
-    0.84270079295 0.84270079295
+    0.842701 0.842701
 
     """
     if isinf(a) or isinf(b):

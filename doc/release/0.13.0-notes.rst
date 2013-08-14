@@ -120,6 +120,14 @@ These functions can simplify and speed up code that has to calculate
 ``x * log(y)`` and give 0 when ``x == 0``.
 
 
+N-dimensional numerical integration
+-----------------------------------
+
+A new function `scipy.integrate.nquad`, which provides N-dimensional
+integration functionality with a more flexible interface than ``dblquad`` and
+``tplquad``, has been added.
+
+
 Unformatted Fortran file reader
 -------------------------------
 
@@ -260,8 +268,9 @@ one patch to this release, names in alphabetical order):
 * Warren Weckesser
 * Nils Werner +
 * Michael Wimmer +
+* Nathan Woods +
 * Tony S. Yu +
 
-A total of 58 people contributed to this release.
+A total of 59 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 
