@@ -40,6 +40,7 @@ def test_logpdf():
     d2 = multivariate_normal.pdf(x, mean, cov)
     assert_allclose(d1, np.log(d2))
 
+
 def test_large_pseudo_determinant():
     # Check that large pseudo-determinants are handled appropriately.
 
@@ -54,7 +55,7 @@ def test_large_pseudo_determinant():
     np.fill_diagonal(cov, large_entry)
     cov[-nzero:, -nzero:] = 0
 
-    # check some determinants
+    # Check some determinants.
     assert_equal(scipy.linalg.det(cov), 0)
     assert_equal(scipy.linalg.det(cov[:npos, :npos]), np.inf)
 
@@ -62,9 +63,29 @@ def test_large_pseudo_determinant():
     # but scipy currently supports numpy 1.5.1.
     #assert_allclose(np.linalg.slogdet(cov[:npos, :npos]), (1, large_total_log))
 
-    # check the pseudo-determinant
-    pv, log_pdet = scipy.stats._multivariate._psd_pinv_log_pdet(cov)
+    # Check the pseudo-determinant.
+    U, log_pdet = scipy.stats._multivariate._psd_pinv_decomposed_log_pdet(cov)
     assert_allclose(log_pdet, large_total_log)
+
+
+def test_broadcasting():
+    n = 4
+
+    # Construct a random covariance matrix.
+    data = np.random.randn(n, n)
+    cov = np.dot(data, data.T)
+    mean = np.random.randn(n)
+
+    # Construct an ndarray which can be interpreted as
+    # a 2x3 array whose elements are random data vectors.
+    X = np.random.randn(2, 3, n)
+    
+    # Check that multiple data points can be evaluated at once.
+    for i in range(2):
+        for j in range(3):
+            actual = multivariate_normal.pdf(X[i, j], mean, cov)
+            desired = multivariate_normal.pdf(X, mean, cov)[i, j]
+            assert_allclose(actual, desired)
 
 
 def test_normal_1D():
