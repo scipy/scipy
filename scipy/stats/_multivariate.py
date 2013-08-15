@@ -129,7 +129,7 @@ def _pinv_1d(v, eps=1e-5):
 
 def _psd_pinv_log_pdet(mat, eps=1e-5):
     """
-    Compute the logarithm of the pseudo-determinant and pseudo-inverse
+    Compute the pseudo-inverse and logarithm of the pseudo-determinant
     of a symmetric positive semi-definite matrix.
 
     The pseudo-determinant of a matrix is defined as the product of
