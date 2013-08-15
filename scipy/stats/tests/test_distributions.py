@@ -16,6 +16,7 @@ from nose import SkipTest
 import numpy
 import numpy as np
 from numpy import typecodes, array
+from scipy import special
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
 from scipy.special import xlogy
@@ -818,6 +819,112 @@ class TestFitMethod(object):
             x = stats.lognorm.rvs(0.25, 0., 20.0, size=20)
             assert_allclose(np.array(stats.lognorm.fit(x, floc=0, fscale=20)),
                             [0.25888672, 0, 20], atol=1e-5)
+
+    def test_fix_fit_norm(self):
+        x = np.arange(1, 6)
+
+        loc, scale = stats.norm.fit(x)
+        assert_almost_equal(loc, 3)
+        assert_almost_equal(scale, np.sqrt(2))
+
+        loc, scale = stats.norm.fit(x, floc=2)
+        assert_equal(loc, 2)
+        assert_equal(scale, np.sqrt(3))
+
+        loc, scale = stats.norm.fit(x, fscale=2)
+        assert_almost_equal(loc, 3)
+        assert_equal(scale, 2)
+
+
+    def test_fix_fit_gamma(self):
+        x = np.arange(1, 6)
+        meanlog = np.log(x).mean()
+
+        # A basic test of gamma.fit with floc=0.
+        floc = 0
+        a, loc, scale = stats.gamma.fit(x, floc=floc)
+        s = np.log(x.mean()) - meanlog
+        assert_almost_equal(np.log(a) - special.digamma(a), s, decimal=5)
+        assert_equal(loc, floc)
+        assert_almost_equal(scale, x.mean()/a, decimal=8)
+
+        # Regression tests for gh-2514.
+        # The problem was that if `floc=0` was given, any other fixed
+        # parameters were ignored.
+        f0 = 1
+        floc = 0
+        a, loc, scale = stats.gamma.fit(x, f0=f0, floc=floc)
+        assert_equal(a, f0)
+        assert_equal(loc, floc)
+        assert_almost_equal(scale, x.mean()/a, decimal=8)
+
+        f0 = 2
+        floc = 0
+        a, loc, scale = stats.gamma.fit(x, f0=f0, floc=floc)
+        assert_equal(a, f0)
+        assert_equal(loc, floc)
+        assert_almost_equal(scale, x.mean()/a, decimal=8)
+
+        # loc and scale fixed.
+        floc = 0
+        fscale = 2
+        a, loc, scale = stats.gamma.fit(x, floc=floc, fscale=fscale)
+        assert_equal(loc, floc)
+        assert_equal(scale, fscale)
+        c = meanlog - np.log(fscale)
+        assert_almost_equal(special.digamma(a), c)
+
+
+    def test_fix_fit_beta(self):
+        # Test beta.fit when both floc and fscale are given.
+
+        def mlefunc(a, b, x):
+            # Zeros of this function are critical points of
+            # the maximum likelihood function.
+            n = len(x)
+            s1 = np.log(x).sum()
+            s2 = np.log(1-x).sum()
+            psiab = special.psi(a + b)
+            func = [s1 - n * (-psiab + special.psi(a)),
+                    s2 - n * (-psiab + special.psi(b))]
+            return func
+
+        # Basic test with floc and fscale given.
+        x = np.array([0.125, 0.25, 0.5])
+        a, b, loc, scale = stats.beta.fit(x, floc=0, fscale=1)
+        assert_equal(loc, 0)
+        assert_equal(scale, 1)
+        assert_allclose(mlefunc(a, b, x), [0,0], atol=1e-6)
+
+        # Basic test with f0, floc and fscale given.
+        # This is also a regression test for gh-2514.
+        x = np.array([0.125, 0.25, 0.5])
+        a, b, loc, scale = stats.beta.fit(x, f0=2, floc=0, fscale=1)
+        assert_equal(a, 2)
+        assert_equal(loc, 0)
+        assert_equal(scale, 1)
+        da, db = mlefunc(a, b, x)
+        assert_allclose(db, 0, atol=1e-5)
+
+        # Same floc and fscale values as above, but reverse the data
+        # and fix b (f1).
+        x2 = 1 - x
+        a2, b2, loc2, scale2 = stats.beta.fit(x2, f1=2, floc=0, fscale=1)
+        assert_equal(b2, 2)
+        assert_equal(loc2, 0)
+        assert_equal(scale2, 1)
+        da, db = mlefunc(a2, b2, x2)
+        assert_allclose(da, 0, atol=1e-5)
+        # a2 of this test should equal b from above.
+        assert_almost_equal(a2, b)
+
+        # Check for detection of data out of bounds when floc and fscale
+        # are given.
+        assert_raises(ValueError, stats.beta.fit, x, floc=0.5, fscale=1)
+        y = np.array([0, .5, 1])
+        assert_raises(ValueError, stats.beta.fit, y, floc=0, fscale=1)
+        assert_raises(ValueError, stats.beta.fit, y, floc=0, fscale=1, f0=2)
+        assert_raises(ValueError, stats.beta.fit, y, floc=0, fscale=1, f1=2)
 
 
 class TestFrozen(TestCase):
