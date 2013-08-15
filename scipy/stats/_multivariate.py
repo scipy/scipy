@@ -127,9 +127,10 @@ def _pinv_1d(v, eps=1e-5):
     return np.array([0 if abs(x) < eps else 1/x for x in v], dtype=float)
 
 
-def _psd_pinv_log_pdet(mat, eps=1e-5):
+def _psd_pinv_decomposed_log_pdet(mat, eps=1e-5):
     """
-    Compute the pseudo-inverse and logarithm of the pseudo-determinant
+    Compute a decomposition of the pseudo-inverse
+    and the logarithm of the pseudo-determinant
     of a symmetric positive semi-definite matrix.
 
     The pseudo-determinant of a matrix is defined as the product of
@@ -148,8 +149,8 @@ def _psd_pinv_log_pdet(mat, eps=1e-5):
 
     Returns
     -------
-    pinv : array_like
-        Pseudo-inverse of the matrix.
+    M : array_like
+        The pseudo-inverse of the input matrix is np.dot(M, M.T).
     log_pdet : float
         Logarithm of the pseudo-determinant of the matrix.
 
@@ -162,9 +163,9 @@ def _psd_pinv_log_pdet(mat, eps=1e-5):
     """
     u, s, vt = np.linalg.svd(mat)
     s_pinv = _pinv_1d(s, eps)
-    pv = np.dot(vt.T, np.multiply(s_pinv[:, np.newaxis], u.T))
+    U = np.multiply(u, np.sqrt(s_pinv))
     log_pdet = np.sum(np.log(s[s > eps]))
-    return pv, log_pdet
+    return U, log_pdet
 
 
 _doc_default_callparams = \
@@ -287,7 +288,7 @@ class multivariate_normal_gen(object):
 
         return multivariate_normal_frozen(*args, **kwargs)
 
-    def _logpdf(self, x, mean, prec, log_det_cov):
+    def _logpdf(self, x, mean, prec_U, log_det_cov):
         """
         Parameters
         ----------
@@ -296,15 +297,16 @@ class multivariate_normal_gen(object):
             density function
         mean : array_like
             Mean of the distribution
-        prec : array_like
-            Precision matrix, i.e. inverse of the covariance matrix
+        prec_U : array_like
+            A decomposition such that np.dot(prec_U, prec_U.T)
+            is the precision matrix, i.e. inverse of the covariance matrix.
         log_det_cov : float
             Logarithm of the determinant of the covariance matrix
 
         """
         dim = x.shape[-1]
         dev = x - mean
-        maha = np.einsum('...k,...kl,...l->...', dev, prec, dev)
+        maha = np.sum(np.square(np.dot(dev, prec_U)), axis=-1)
         return -0.5 * (dim * _LOG_2PI + log_det_cov + maha)
 
     @process_arguments
@@ -324,8 +326,8 @@ class multivariate_normal_gen(object):
             Log of the probability density function evaluated at `x`
 
         """
-        inv_cov, log_det_cov = _psd_pinv_log_pdet(cov)
-        return self._logpdf(x, mean, inv_cov, log_det_cov)
+        prec_U, log_det_cov = _psd_pinv_decomposed_log_pdet(cov)
+        return self._logpdf(x, mean, prec_U, log_det_cov)
 
     @process_arguments
     def pdf(self, x, mean, cov):
@@ -344,8 +346,8 @@ class multivariate_normal_gen(object):
             Probability density function evaluated at `x`
 
         """
-        inv_cov, log_det_cov = _psd_pinv_log_pdet(cov)
-        return np.exp(self._logpdf(x, mean, inv_cov, log_det_cov))
+        prec_U, log_det_cov = _psd_pinv_decomposed_log_pdet(cov)
+        return np.exp(self._logpdf(x, mean, prec_U, log_det_cov))
 
 multivariate_normal = multivariate_normal_gen()
 
@@ -376,13 +378,13 @@ class multivariate_normal_frozen(object):
 
         """
         self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
-        self.precision, self._log_det_cov = _psd_pinv_log_pdet(self.cov)
+        self.prec_U, self._log_det_cov = _psd_pinv_decomposed_log_pdet(self.cov)
 
     def logpdf(self, x):
         # TODO: the output processing below can be made into a generator
         # just as for the multivariate_normal class.
         x = _process_quantiles(x, self.dim)
-        out = multivariate_normal._logpdf(x, self.mean, self.precision,
+        out = multivariate_normal._logpdf(x, self.mean, self.prec_U,
                                           self._log_det_cov).squeeze()
         if out.ndim == 0:
             out = out[()]
