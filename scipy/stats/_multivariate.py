@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 from scipy.misc import doccer
 from functools import wraps
 import numpy as np
+import scipy.linalg
 
 __all__ = ['multivariate_normal']
 
@@ -161,7 +162,13 @@ def _psd_pinv_decomposed_log_pdet(mat, eps=1e-5):
     symmetric positive semi-definite, but we do not check this.
 
     """
-    u, s, vt = np.linalg.svd(mat)
+    # Compute the symmetric eigendecomposition.
+    # The input covariance matrix is required to be real symmetric
+    # and positive semidefinite which implies that its eigenvalues
+    # are all real and non-negative,
+    # but clip them anyway to avoid numerical issues.
+    s, u = scipy.linalg.eigh(mat)
+    s = np.maximum(s, 0)
     s_pinv = _pinv_1d(s, eps)
     U = np.multiply(u, np.sqrt(s_pinv))
     log_pdet = np.sum(np.log(s[s > eps]))
