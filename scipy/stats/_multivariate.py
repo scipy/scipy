@@ -26,13 +26,13 @@ def _process_parameters(dim, mean, cov):
             if cov is None:
                 dim = 1
             else:
-                cov = np.asarray(cov)
+                cov = np.asarray(cov, dtype=float)
                 if cov.ndim < 2:
                     dim = 1
                 else:
                     dim = cov.shape[0]
         else:
-            mean = np.asarray(mean)
+            mean = np.asarray(mean, dtype=float)
             dim = mean.size
     else:
         if not np.isscalar(dim):
@@ -41,11 +41,11 @@ def _process_parameters(dim, mean, cov):
     # Check input sizes and return full arrays for mean and cov if necessary
     if mean is None:
         mean = np.zeros(dim)
-    mean = np.asarray(mean)
+    mean = np.asarray(mean, dtype=float)
 
     if cov is None:
         cov = 1.0
-    cov = np.asarray(cov)
+    cov = np.asarray(cov, dtype=float)
 
     if dim == 1:
         mean.shape = (1,)
@@ -71,7 +71,7 @@ def _process_quantiles(x, dim):
     each data point.
 
     """
-    x = np.asarray(x)
+    x = np.asarray(x, dtype=float)
 
     if x.ndim == 0:
         x = x[np.newaxis]
@@ -351,34 +351,31 @@ multivariate_normal = multivariate_normal_gen()
 
 
 class multivariate_normal_frozen(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, mean=None, cov=1):
         """
         Create a frozen multivariate normal distribution.
 
         Parameters
         ----------
-        dim : integer, optional
-            Dimension of the random variable.
         mean : array_like, optional
             Mean of the distribution (default zero)
         cov : array_like, optional
             Covariance matrix of the distribution (default one)
 
-        See the class documentation for more details on the calling convention.
+        Examples
+        --------
+        When called with the default parameters, this will create a 1D random 
+        variable with mean 0 and covariance 1:
+
+        >>> from scipy.stats import multivariate_normal
+        >>> r = multivariate_normal()
+        >>> r.mean
+        array([ 0.])
+        >>> r.cov
+        array([[1.]])
 
         """
-        dim, mean, cov = [kwargs.get(name) for name in  ('dim', 'mean', 'cov')]
-
-        N = len(args)
-        if N == 3:
-            dim, mean, cov = args
-        elif N == 2:
-            mean, cov = args
-        elif N == 1 and mean is None:
-            mean, = args
-
-        self.dim, self.mean, self.cov = _process_parameters(dim, mean, cov)
-
+        self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
         self.precision, self._log_det_cov = _psd_pinv_log_pdet(self.cov)
 
     def logpdf(self, x):
