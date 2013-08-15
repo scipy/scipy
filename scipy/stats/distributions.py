@@ -618,7 +618,7 @@ class rv_generic(object):
         exec_(parse_arg_template % dct, ns)
         # NB: attach to the instance, not class
         for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
-            setattr(self, name, 
+            setattr(self, name,
                 instancemethod(ns[name], self, self.__class__)
             )
 
@@ -1997,11 +1997,12 @@ class rv_continuous(rv_generic):
         output = zeros(shape(cond0),'d')
         place(output,(1-cond0),self.badvalue)
         goodargs = argsreduce(cond0, *args)
-        # I don't know when or why vecentropy got broken when numargs == 0
+        # np.vectorize doesn't work when numargs == 0 in numpy 1.5.1
         if self.numargs == 0:
             place(output,cond0,self._entropy()+log(scale))
         else:
             place(output,cond0,self.vecentropy(*goodargs)+log(scale))
+
         return output
 
     def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
@@ -6791,7 +6792,12 @@ class rv_discrete(rv_generic):
         output = zeros(shape(cond0),'d')
         place(output,(1-cond0),self.badvalue)
         goodargs = argsreduce(cond0, *args)
-        place(output,cond0,self.vecentropy(*goodargs))
+        # np.vectorize doesn't work when numargs == 0 in numpy 1.5.1
+        if self.numargs == 0:
+            place(output, cond0, self._entropy())
+        else:
+            place(output, cond0, self.vecentropy(*goodargs))
+
         return output
 
     def __call__(self, *args, **kwds):
