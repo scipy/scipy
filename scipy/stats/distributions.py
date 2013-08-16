@@ -5102,6 +5102,123 @@ class nct_gen(rv_continuous):
 nct = nct_gen(name="nct")
 
 
+class genhyp_gen(rv_continuous):
+    """A (proper) Generalized Hyperbolic Distribution.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The usual probability density parametrisation for a (proper)
+    Generalized Hyperbolic Distribution (GHyp) distribution is given by
+
+    GHyp.pdf(x; l, a, b, d, mu) =
+            (a^2-b^2)^(l/2)
+            * (sqrt( d^2 + (x-mu)^2))^(l-1/2)
+            * k_{l-1/2}(a * sqrt(d^2 + (x-mu)^2))
+            * exp(b (x-mu))
+            / [
+                sqrt(2 * pi) * a^(l-1/2) * d^l
+                * k_l( d * sqrt( a^2-b^2))
+              ]
+
+    where
+    l: parameter real
+    a: tail heaviness, 0<a
+    b: asymmetry parameter, |b|<= a
+    d: scale parameter, 0< d
+    mu: location parameter
+    k_v: Bessel function of second order .
+
+    Given X~Ghyp(l, a, b, 1, 0), then cX +mu ~ GHyp(l, a/|c|, b/c, |c|, mu)
+
+    Therefore, we use here the normalized parametrization
+
+    GHyp(l, a, b):= GHyp(l, a, b, 1, 0)
+
+    So that to get a GHyp(l, bara, barb, d, mu) just set
+    GHyp(l, a, b, loc=mu, scale = d)
+    for a=bara*d and b = barb*d
+
+    %(example)s
+
+    """
+    def __call__(self, l=1, a=1, b=0, *args, **kwds):
+        gamma = sqrt(a**2 - b**2)
+        kl0 = special.kv(l, gamma)
+        kl1 = special.kv(l+1, gamma)
+        kl2 = special.kv(l+2, gamma)
+        self.fact = gamma**(l) * a**(0.5-l) / (sqrt(2*pi) * kl0)
+        x_min = b * kl1 / (gamma * kl0) -\
+                sqrt(3) * (kl1 / (gamma * kl0) +
+                           b**2 * (kl0 * kl2 - kl1**2) /
+                           (gamma**2 * kl0**2))
+        x_max = b * kl1 / (gamma * kl0) +\
+                sqrt(3) * (kl1 / (gamma * kl0) +
+                           b**2 * (kl0 * kl2 - kl1**2) /
+                           (gamma**2 * kl0**2))
+        self.x_opt = optimize.minimize_scalar(lambda x:
+                                              - self._logpdf(x, l, a, b),
+                                              bounds=(x_min, x_max),
+                                              method = 'bounded').x
+        return self.freeze(l, a, b, *args, **kwds)
+
+    def _argcheck(self, l, a, b):
+        return (a > 0) & (np.absolute(b) < a)
+
+    def _pdf(self, x, l, a, b):
+        try:
+            fact = self.fact
+        except AttributeError:
+            gamma = sqrt(a**2 - b**2)
+            fact = gamma**(l) * a**(0.5-l) /\
+                (sqrt(2*pi) * special.kv(l, gamma))
+        return fact * (1 + x**2)**(0.5*l-0.25) * \
+            special.kve(l-0.5, a*sqrt(1+x**2)) * exp(b*x - a*sqrt(1+x**2))
+
+    def _logpdf(self, x, l, a, b):
+        return log(self._pdf(x, l, a, b))
+
+    def _cdf_single_call(self, x, l, a, b):
+        try:
+            x_opt = self.x_opt
+        except AttributeError:
+            gamma = sqrt(a**2 - b**2)
+            kl0 = special.kv(l, gamma)
+            kl1 = special.kv(l+1, gamma)
+            kl2 = special.kv(l+2, gamma)
+            x_min = b * kl1 / (gamma * kl0) -\
+                    sqrt(3) * (kl1 / (gamma * kl0) +
+                               b**2 * (kl0 * kl2 - kl1**2) /
+                               (gamma**2 * kl0**2))
+            x_max = b * kl1 / (gamma * kl0) +\
+                    sqrt(3) * (kl1 / (gamma * kl0) +
+                               b**2 * (kl0 * kl2 - kl1**2) /
+                               (gamma**2 * kl0**2))
+            self.x_opt = optimize.minimize_scalar(lambda x:
+                                                  - self._logpdf(x, l, a, b),
+                                                  bounds=(x_min, x_max),
+                                                  method = 'bounded').x
+            x_opt = self.x_opt
+        if x <= x_opt:
+            return integrate.quad(self._pdf, -np.Inf, x, args=(l, a, b,))[0]
+        else:
+            h = integrate.quad(self._pdf, x, np.Inf, args=(l, a, b,))[0]
+            return 1-h
+
+    def _stats(self, l, a, b):
+        gamma = sqrt(a**2 - b**2)
+        kl0 = special.kv(l, gamma)
+        kl1 = special.kv(l+1, gamma)
+        kl2 = special.kv(l+2, gamma)
+        mean = b * kl1 / (gamma * kl0)
+        variance = kl1 / (gamma * kl0) + \
+            b**2 * (kl0 * kl2 - kl1**2) / (gamma**2 * kl0**2)
+        return mean, variance
+genhyp = genhyp_gen(name="(proper) Generalized Hyperbolic distribution",
+                    shapes="l, a, b")
+
+
 class norminvgauss_gen(rv_continuous):
     """A Normal Inverse Gaussian continuous random variable.
 
@@ -5137,14 +5254,47 @@ class norminvgauss_gen(rv_continuous):
     %(example)s
 
     """
+    def __call__(self, a=1, b=0, *args, **kwds):
+        gamma = sqrt(a**2 - b**2)
+        self.fac1 = (a/pi) * exp(gamma)
+        x_min = b/gamma - (sqrt(3) * a**2 / gamma**3)
+        x_max = b/gamma + (sqrt(3) * a**2 / gamma**3)
+        self.x_opt = optimize.minimize_scalar(lambda x:
+                                              - self._logpdf(x, a, b),
+                                              bounds=(x_min, x_max),
+                                              method = 'bounded').x
+        return self.freeze(a, b, *args, **kwds)
+
     def _argcheck(self, a, b):
         return (a > 0) & (np.absolute(b) < a)
 
     def _pdf(self, x, a, b):
-        return (a / pi) * \
-            special.kv(1, a * sqrt(1 + x**2)) *\
-            exp( sqrt(a**2 - b**2) + b * x) /\
+        try:
+            fac1 = self.fac1
+        except AttributeError:
+            gamma = sqrt(a**2 - b**2)
+            fac1 = (a/pi) * exp(gamma)
+        return fac1 * \
+            special.k1e(a*sqrt(1 + x**2)) * exp(b*x - a*sqrt(1 + x**2)) /\
             sqrt(1 + x**2)
+
+    def _cdf_single_call(self, x, a, b):
+        try:
+            x_opt = self.x_opt
+        except AttributeError:
+            gamma = sqrt(a**2 - b**2)
+            x_min = b/gamma - (sqrt(3) * a**2 / gamma**3)
+            x_max = b/gamma + (sqrt(3) * a**2 / gamma**3)
+            self.x_opt = optimize.minimize_scalar(lambda x:
+                                                  - self._logpdf(x, a, b),
+                                                  bounds=(x_min, x_max),
+                                                  method = 'bounded').x
+            x_opt = self.x_opt
+        if x <= x_opt:
+            return integrate.quad(self._pdf, -np.Inf, x, args=(a, b,))[0]
+        else:
+            h = integrate.quad(self._pdf, x, np.Inf, args=(a, b,))[0]
+            return 1-h
 
     def _logpdf(self, x, a, b):
         return log(self._pdf(x, a, b))
@@ -5153,10 +5303,11 @@ class norminvgauss_gen(rv_continuous):
         gamma = sqrt(a**2 - b**2)
         mean = b / gamma
         variance = a**2 / gamma**3
-        skewness = 3 * b / (a * sqrt(gamma))
-        kurtosis = 3 * (1 + 4 * b**2 / a**2) / gamma
+        skewness = 3.0 * b / (a * sqrt(gamma))
+        kurtosis = 3.0 * (1 + 4 * b**2 / a**2) / gamma
         return mean, variance, skewness, kurtosis
-norminvgauss = norminvgauss_gen(name="Normal Inverse Gaussian", shapes="a, b")
+norminvgauss = norminvgauss_gen(name="Normal Inverse Gaussian distribution",
+                                shapes="a, b")
 
 
 class pareto_gen(rv_continuous):
