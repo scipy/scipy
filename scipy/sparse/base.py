@@ -360,9 +360,15 @@ class spmatrix(object):
 
     def __truediv__(self, other):
         if isscalarlike(other):
-            return self * (1./other)
+            if np.can_cast(self.dtype, np.float_):
+                return self.astype(np.float_) * (1./other)
+            else:
+                return self * (1./other)
         else:
-            return self.tocsr().__truediv__(other)
+            if np.can_cast(self.dtype, np.float_):
+                return self.astype(np.float_).tocsr().__truediv__(other)
+            else:
+                return self.tocsr().__truediv__(other)
 
     def __div__(self, other):
         # Always do true division

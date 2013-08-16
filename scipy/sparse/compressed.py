@@ -415,13 +415,21 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def __truediv__(self,other):
         if isscalarlike(other):
-            return self * (1./other)
+            if np.can_cast(self.dtype, np.float_):
+                return self.astype(np.float_) * (1./other)
+            else:
+                return self * (1./other)
 
         elif isspmatrix(other):
             if other.shape != self.shape:
                 raise ValueError('inconsistent shapes')
+            elif np.can_cast(self.dtype, np.float_):
+                return self.astype(np.float_)._binopt(other,'_eldiv_')
+            else:
+                return self._binopt(other,'_eldiv_')
 
-            return self._binopt(other,'_eldiv_')
+        elif isdense(other):
+            return self.todense().__truediv__(other)
 
         else:
             raise NotImplementedError
