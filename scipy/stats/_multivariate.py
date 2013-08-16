@@ -130,9 +130,9 @@ def _pinv_1d(v, eps=1e-5):
 
 def _psd_pinv_decomposed_log_pdet(mat, eps=1e-5):
     """
-    Compute a decomposition of the pseudo-inverse
-    and the logarithm of the pseudo-determinant
-    of a symmetric positive semi-definite matrix.
+    Compute a decomposition of the pseudo-inverse and the logarithm of
+    the pseudo-determinant of a symmetric positive semi-definite
+    matrix.
 
     The pseudo-determinant of a matrix is defined as the product of
     the non-zero eigenvalues, and coincides with the usual determinant
@@ -373,7 +373,7 @@ class multivariate_normal_frozen(object):
 
         Examples
         --------
-        When called with the default parameters, this will create a 1D random 
+        When called with the default parameters, this will create a 1D random
         variable with mean 0 and covariance 1:
 
         >>> from scipy.stats import multivariate_normal
