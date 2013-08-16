@@ -78,6 +78,7 @@ def test_discrete_basic():
         spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0, }
         k = spec_k.get(distname, 1)
         yield check_named_args, distfn, k, arg, locscale_defaults, meths
+        yield check_scale_docstring, distfn
 
 
 @npt.dec.slow
@@ -333,6 +334,10 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
     npt.assert_raises(TypeError, distfn.cdf, x, **k)
+
+
+def check_scale_docstring(distfn):
+    npt.assert_('scale' not in distfn.__doc__)
 
 
 if __name__ == "__main__":
