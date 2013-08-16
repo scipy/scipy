@@ -370,9 +370,17 @@ class spmatrix(object):
             else:
                 return self.tocsr().__truediv__(other)
 
+    def __rtruediv__(self, other):
+        # should 1 / spmatrix invert it ?
+        return NotImplementedError
+
     def __div__(self, other):
         # Always do true division
         return self.__truediv__(other)
+
+    def __rdiv__(self, other):
+        # Always do true division
+        return self.__rtruediv__(other)
 
     def __neg__(self):
         return -self.tocsr()
