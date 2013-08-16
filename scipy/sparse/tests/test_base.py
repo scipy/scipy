@@ -18,6 +18,7 @@ Run tests if scipy is installed:
 Run tests if sparse is not installed:
   python tests/test_base.py
 """
+from distutils.version import LooseVersion
 
 import warnings
 
@@ -1244,20 +1245,6 @@ class _TestCommon:
         for x, y in zip(A, B):
             assert_equal(x.todense(), y)
 
-    # Eventually we'd like to allow matrix products between dense
-    # and sparse matrices using the normal dot() function:
-    # def test_dense_dot_sparse(self):
-    #    a = array([1.,2.,3.])
-    #    dense_dot_dense = dot(a, self.dat)
-    #    dense_dot_sparse = dot(a, self.datsp)
-    #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
-
-    # def test_sparse_dot_dense(self):
-    #    b = array([1.,2.,3.,4.])
-    #    dense_dot_dense = dot(self.dat, b)
-    #    dense_dot_sparse = dot(self.datsp, b)
-    #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
-
     def test_size_zero_matrix_arithmetic(self):
         # Test basic matrix arithmatic with shapes like (0,0), (10,0),
         # (0, 3), etc.
@@ -1330,6 +1317,56 @@ class _TestCommon:
             assert_array_equal(spm.tolil().A, m)
             assert_array_equal(spm.todok().A, m)
             assert_array_equal(spm.tobsr().A, m)
+
+    # Eventually we'd like to allow matrix products between dense
+    # and sparse matrices using the normal dot() function:
+    # def test_dense_dot_sparse(self):
+    #    a = array([1.,2.,3.])
+    #    dense_dot_dense = dot(a, self.dat)
+    #    dense_dot_sparse = dot(a, self.datsp)
+    #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
+
+    # def test_sparse_dot_dense(self):
+    #    b = array([1.,2.,3.,4.])
+    #    dense_dot_dense = dot(self.dat, b)
+    #    dense_dot_sparse = dot(self.datsp, b)
+    #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
+
+    def test_ufunc_overrides(self):
+        def check():
+            #data
+            a = np.array([[1, 2, 3],
+                          [4, 5, 6],
+                          [7, 8, 9]])
+            b = np.array([[9, 8, 7],
+                          [6, 5, 4],
+                          [3, 2, 1]])
+
+            asp = self.spmatrix(a)
+            bsp = self.spmatrix(b)
+
+            # associative
+            # multiply
+            assert_array_equal(np.multiply(asp, bsp).A, np.multiply(a, b))
+            # add
+            assert_array_equal(np.add(asp, bsp).A, np.add(a, b))
+
+            # non-associative
+            # dot
+            assert_array_equal(np.dot(asp, bsp).A, np.dot(a, b))
+            assert_array_equal(np.dot(a, bsp), np.dot(a, b))
+            assert_array_equal(np.dot(asp, b), np.dot(a, b))
+            # subtract
+            assert_array_equal(np.subtract(asp, bsp).A, np.subtract(a, b))
+            assert_array_equal(np.subtract(a, bsp).A, np.subtract(a, b))
+            assert_array_equal(np.subtract(asp, b).A, np.subtract(a, b))
+            # divide
+            assert_array_equal(np.divide(asp, bsp).A, np.divide(a, b))
+            assert_array_equal(np.divide(asp, b).A, np.divide(a, b))
+            assert_raises(TypeError, np.divide, a, bsp)
+
+        if LooseVersion(np.version.version) > LooseVersion('1.9'):
+            yield check
 
 
 class _TestInplaceArithmetic:
