@@ -6188,6 +6188,10 @@ class rv_discrete(rv_generic):
         else:
             self._construct_doc()
 
+        #discrete RV do not have the scale parameter, remove it
+        self.__doc__ = self.__doc__.replace(
+            '\n    scale : array_like, optional\n        scale parameter (default=1)','')
+
         ## This only works for old-style classes...
         # self.__class__.__doc__ = self.__doc__
 
